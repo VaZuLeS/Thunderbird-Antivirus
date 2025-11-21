@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thunderbird Security Antivirus</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+        header { text-align: center; padding: 40px 0; border-bottom: 1px solid #eee; }
+        h1 { margin-bottom: 10px; color: #0a66c2; }
+        .btn { display: inline-block; background: #009688; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .btn:hover { background: #00796b; }
+        section { margin: 40px 0; }
+        code { background: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
+        .step { background: #f9f9f9; padding: 15px; border-left: 4px solid #009688; margin-bottom: 10px; }
+        footer { text-align: center; font-size: 0.8em; color: #777; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Thunderbird Security Antivirus</h1>
+    <p>Erweiterter E-Mail-Schutz durch Hybrid Analysis (CrowdStrike Falcon Sandbox)</p>
+    <br>
+    <a href="https://addons.thunderbird.net/de/thunderbird/" class="btn">Add-on herunterladen (Bald verfügbar)</a>
+</header>
+
+<section id="about">
+    <h2>Über das Projekt</h2>
+    <p>Thunderbird Security Antivirus ("Thundy AV") prüft E-Mail-Anhänge automatisch gegen über 70 Virenscanner und Sandbox-Systeme. Es nutzt die kostenlose API von <strong>Hybrid Analysis</strong>, um Bedrohungen zu erkennen, die herkömmliche Virenscanner oft übersehen.</p>
+</section>
+
+<section id="setup">
+    <h2>Einrichtung & API Key</h2>
+    <p>Um die Erweiterung nutzen zu können, benötigen Sie einen kostenlosen API-Schlüssel. Da dies ein Community-Projekt ist, nutzt jeder Benutzer seinen eigenen Zugang (Fair Use).</p>
+    
+    <div class="step">
+        <strong>Schritt 1:</strong> Registrieren Sie sich kostenlos auf <a href="https://www.hybrid-analysis.com/signup" target="_blank">hybrid-analysis.com</a>.
+    </div>
+    <div class="step">
+        <strong>Schritt 2:</strong> Gehen Sie nach der Anmeldung auf Ihr Profil (oben rechts) -> "Profile".
+    </div>
+    <div class="step">
+        <strong>Schritt 3:</strong> Kopieren Sie den "API Key" unter API Settings.
+    </div>
+    <div class="step">
+        <strong>Schritt 4:</strong> Öffnen Sie in Thunderbird den Add-on Manager, klicken Sie auf das Zahnrad bei "Thundy AV" und fügen Sie den Schlüssel ein.
+    </div>
+</section>
+
+<section id="privacy">
+    <h2>Datenschutz & Sicherheit</h2>
+    <p>Transparenz ist uns wichtig:</p>
+    <ul>
+        <li>Die Erweiterung liest <strong>keine</strong> E-Mail-Inhalte, nur Anhänge.</li>
+        <li>Dateien werden direkt von Ihrem Computer an <code>hybrid-analysis.com</code> gesendet.</li>
+        <li>Der Entwickler dieses Add-ons hat <strong>keinen Zugriff</strong> auf Ihre Dateien oder Ihren API-Schlüssel.</li>
+        <li>Der Quellcode ist offen (Open Source) und kann hier auf GitHub überprüft werden.</li>
+    </ul>
+</section>
+
+<footer>
+    <p>&copy; 2025 Jan Bludau. Veröffentlicht unter der MIT Lizenz.</p>
+    <p><a href="https://github.com/vazules/thunderbird-antivirus">Zum GitHub Repository</a></p>
+</footer>
+
+</body>
+</html>
