@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Thunderbird SECurity AntiVirus",
   "author": "Jan Bludau",
-  "version": "1.4",
+  "version": "1.5",
   "description": "Checking every Email Attachment at Hybrid-Analysis.com a service Provider that scanns with 70+ Antivirus Programs.",
   "browser_specific_settings": {
     "gecko": {
@@ -39,4 +39,5 @@
     "32": "img/icon-32px.jpg",
     "64": "img/icon-64px.jpg"
   }
+
 }
