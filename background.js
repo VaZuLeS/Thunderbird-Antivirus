@@ -89,7 +89,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
                 console.log("SHA-256:", json_data.sha256);
                 
                 // Ergebnis in der lokalen Datenbank speichern
-                indexedDB_save_hybrid_data_to_db(message, json_data);
+                await indexedDB_save_hybrid_data_to_db(message, json_data, attachment);
             } else {
                 console.error('Fehler beim Senden an Hybrid Analysis:', json_data);
             }
@@ -101,51 +101,84 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
 }
 
 // Speicherung der Ergebnisse in IndexedDB
-function indexedDB_save_hybrid_data_to_db(message, hybrid_data) {
-  let openRequest = indexedDB.open("thunderbird_av", 3);
+function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachment) {
+  return new Promise((resolve, reject) => {
+    let openRequest = indexedDB.open("thunderbird_av", 3);
 
-  openRequest.onupgradeneeded = function (e) {
-    let db = e.target.result;
-    if (!db.objectStoreNames.contains('hybridanalysis')) {
-      db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
-      console.log('Datenbank hybridanalysis wurde erstellt.');
-    }
-  };
-
-  openRequest.onsuccess = function (e) {
-    const db = e.target.result;
-    const transaction = db.transaction(['hybridanalysis'], 'readwrite');
-    const store = transaction.objectStore('hybridanalysis');
-    
-    let item = {
-      messageHeader: message.headerMessageId,
-      hybrid_submission_id: hybrid_data.submission_id,
-      hybrid_job_id: hybrid_data.job_id,
-      hybrid_sha256: hybrid_data.sha256,
-      author: message.author,
-      subject: message.subject,
-      created: new Date()
+    openRequest.onupgradeneeded = function (e) {
+      let db = e.target.result;
+      if (!db.objectStoreNames.contains('hybridanalysis')) {
+        db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
+        console.log('Datenbank hybridanalysis wurde erstellt.');
+      }
     };
 
-    if (item.messageHeader) {
-      // Prüfen, ob Eintrag schon existiert (um Duplikate zu vermeiden oder zu aktualisieren)
-      let getRequest = store.get(item.messageHeader);
-      getRequest.onsuccess = function () {
-        // Wir überschreiben/aktualisieren einfach oder fügen neu hinzu
-        let addRequest = store.put(item); // .put ist meist besser als .add für Updates
-        addRequest.onsuccess = function () {
-            console.log('Daten erfolgreich in DB gespeichert.');
-        };
-        addRequest.onerror = function () {
-            console.error('Fehler beim Speichern in DB.');
-        };
+    openRequest.onsuccess = function (e) {
+      const db = e.target.result;
+      const transaction = db.transaction(['hybridanalysis'], 'readwrite');
+      const store = transaction.objectStore('hybridanalysis');
+
+      let attachmentData = {
+        name: attachment.name,
+        hybrid_submission_id: hybrid_data.submission_id,
+        hybrid_job_id: hybrid_data.job_id,
+        hybrid_sha256: hybrid_data.sha256,
       };
-    }
-  };
-  
-  openRequest.onerror = function (e) {
-    console.error('Fehler beim Öffnen der Datenbank:', e);
-  };  
+
+      if (message.headerMessageId) {
+        let getRequest = store.get(message.headerMessageId);
+        getRequest.onsuccess = function () {
+          let item = getRequest.result;
+          if (item) {
+            if (!item.attachments) {
+               // Migration for older items
+               item.attachments = [];
+               if (item.hybrid_sha256) {
+                  item.attachments.push({
+                     name: "unknown_attachment",
+                     hybrid_submission_id: item.hybrid_submission_id,
+                     hybrid_job_id: item.hybrid_job_id,
+                     hybrid_sha256: item.hybrid_sha256,
+                  });
+               }
+            }
+            // Prevent duplicates by checking sha256 and name
+            let exists = item.attachments.some(a => a.hybrid_sha256 === hybrid_data.sha256 && a.name === attachment.name);
+            if (!exists) {
+              item.attachments.push(attachmentData);
+            }
+          } else {
+            item = {
+              messageHeader: message.headerMessageId,
+              author: message.author,
+              subject: message.subject,
+              created: new Date(),
+              attachments: [attachmentData]
+            };
+          }
+          let putRequest = store.put(item);
+          putRequest.onsuccess = function () {
+              console.log('Daten erfolgreich in DB gespeichert.');
+              resolve();
+          };
+          putRequest.onerror = function () {
+              console.error('Fehler beim Speichern in DB.');
+              reject(new Error('Fehler beim Speichern in DB.'));
+          };
+        };
+        getRequest.onerror = function() {
+          reject(new Error('Fehler beim Abrufen aus DB.'));
+        };
+      } else {
+        resolve();
+      }
+    };
+
+    openRequest.onerror = function (e) {
+      console.error('Fehler beim Öffnen der Datenbank:', e);
+      reject(e);
+    };
+  });
 }
 
 // Listener registrieren

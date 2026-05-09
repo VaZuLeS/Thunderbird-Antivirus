@@ -53,12 +53,22 @@ try {
         let getRequest = store.get(message.headerMessageId);
         console.log(getRequest);
         getRequest.onsuccess = function (e) {
-            // Wenn der Hash gefunden wird, zeigen Sie ihn an.
             console.log(getRequest.result);
             if (getRequest.result) {
-                const hash256 = getRequest.result.hybrid_sha256;
-                console.log(hash256);
-                get_hybrid_report_by_sha256(hash256);
+                const item = getRequest.result;
+                let attachments = item.attachments;
+                if (!attachments && item.hybrid_sha256) {
+                    attachments = [{ hybrid_sha256: item.hybrid_sha256, name: 'unknown_attachment' }];
+                }
+
+                if (attachments && attachments.length > 0) {
+                    attachments.forEach(att => {
+                        console.log(att.hybrid_sha256);
+                        get_hybrid_report_by_sha256(att.hybrid_sha256, att.name);
+                    });
+                } else {
+                    console.log("Keine Anhänge gefunden.");
+                }
             } else {
                 console.log("Kein Hash gefunden.");
             }
@@ -72,7 +82,7 @@ try {
     console.log('Error opening local Hybrid Analysis Database:', error);
 }
 
-async function get_hybrid_report_by_sha256(hybrid_sha) {
+async function get_hybrid_report_by_sha256(hybrid_sha, attachment_name) {
 
     // Set the request options
     const options = {
@@ -95,9 +105,14 @@ async function get_hybrid_report_by_sha256(hybrid_sha) {
 
         if (response.status === 200) {
             // Dateidetails
-            // Erstellen Sie ein neues div-Element
-            // Erstellen Sie ein neues div-Element
             let div = document.createElement('div');
+            div.style.border = "1px solid #ccc";
+            div.style.margin = "10px 0";
+            div.style.padding = "10px";
+
+            let attTitle = document.createElement('h2');
+            attTitle.innerText = 'Anhang: ' + (attachment_name || 'Unbekannt');
+            div.appendChild(attTitle);
 
             // Fügen Sie den Titel hinzu
             let h1 = document.createElement('h1');
@@ -292,20 +307,22 @@ async function get_hybrid_report_by_sha256(hybrid_sha) {
             div.appendChild(p32);
 
             // Fügen Sie das div-Element zum DOM hinzu
-            document.body.appendChild(div);
-
-
-            // Fügen Sie das div-Element zum DOM hinzu
-            //document.getElementById('hybrid_analysis_api_content').insertAdjacentHTML('beforeend',div);
+            document.getElementById('hybrid_analysis_api_content').appendChild(div);
 
         } else {
-            // Fügen Sie das div-Element zum DOM hinzu
-            document.getElementById('hybrid_analysis_api_content').innerText = 'Failed to Get Report for SHA256 at Hybrid Analysis.' + errorData.validation_errors[0].errors[0].message;
-
+            let errorDiv = document.createElement('div');
+            errorDiv.style.border = "1px solid red";
+            errorDiv.style.margin = "10px 0";
+            errorDiv.style.padding = "10px";
+            errorDiv.innerText = 'Fehler beim Abrufen des Berichts für Anhang ' + (attachment_name || hybrid_sha) + ' (' + response.status + ').';
+            document.getElementById('hybrid_analysis_api_content').appendChild(errorDiv);
         }
     } catch (error) {
-
-        // Fügen Sie das div-Element zum DOM hinzu
-        document.getElementById('hybrid_analysis_api_content').innerText = 'Error getting analysis from Hybrid Analysis:' + error;
+        let errorDiv = document.createElement('div');
+        errorDiv.style.border = "1px solid red";
+        errorDiv.style.margin = "10px 0";
+        errorDiv.style.padding = "10px";
+        errorDiv.innerText = 'Error getting analysis from Hybrid Analysis for ' + (attachment_name || hybrid_sha) + ': ' + error;
+        document.getElementById('hybrid_analysis_api_content').appendChild(errorDiv);
     }
 }
