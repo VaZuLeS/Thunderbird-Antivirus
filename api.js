@@ -1,12 +1,18 @@
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 let apikey_hybridanalysis;
 
-async function loadSettings() {
-    await messenger.storage.local.get('apikey').then((result) => {
-        console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
-        apikey_hybridanalysis = result.apikey;
-    });
-}
-loadSettings();
+(async () => {
+let result = await messenger.storage.local.get('apikey');
+apikey_hybridanalysis = result.apikey;
 
 // Der Benutzer hat auf unseren Button geklickt, holen Sie sich den aktiven Tab im aktuellen Fenster mit
 // der Tabs API.
@@ -24,7 +30,6 @@ console.log(message.headerMessageId);
 document.getElementById("subject").textContent = message.subject;
 document.getElementById("from").textContent = message.author;
 document.getElementById("MessageHeaderID").textContent = message.headerMessageId;
-document.getElementById("status_message").textContent = "Status: Lade Daten...";
 try {
 
     let db;
@@ -54,29 +59,32 @@ try {
         let getRequest = store.get(message.headerMessageId);
         console.log(getRequest);
         getRequest.onsuccess = function (e) {
-            // Wenn der Hash gefunden wird, zeigen Sie ihn an.
-            console.log(getRequest.result);
-            if (getRequest.result) {
-                document.getElementById("status_message").textContent = "Status: Lade Report von Hybrid-Analysis...";
-                const hash256 = getRequest.result.hybrid_sha256;
-                console.log(hash256);
-                get_hybrid_report_by_sha256(hash256);
+            if (getRequest.result && getRequest.result.attachments && getRequest.result.attachments.length > 0) {
+                document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
+                for (const att of getRequest.result.attachments) {
+                    const hash256 = att.hybrid_sha256;
+                    console.log("Found hash: " + hash256 + " for attachment: " + att.attachment_name + " state: " + att.state);
+                    if (att.state === 'UNKNOWN') {
+                        renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
+                    } else {
+                        get_hybrid_report_by_sha256(hash256, att.attachment_name);
+                    }
+                }
             } else {
-                document.getElementById("status_message").textContent = "Status: Kein Scan in Datenbank. Möglicherweise läuft der Scan noch oder es gibt keine Anhänge.";
-                console.log("Kein Hash gefunden.");
+                console.log("Kein Hash/Anhang gefunden.");
+                document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
             }
         };
         getRequest.onerror = function (e) {
-            document.getElementById("status_message").textContent = "Status: Fehler beim Abrufen aus der Datenbank.";
             console.log("Fehler beim Abrufen des Datensatzes:", e.target.error);
         };
-
     };
 } catch (error) {
     console.log('Error opening local Hybrid Analysis Database:', error);
 }
+})();
 
-async function get_hybrid_report_by_sha256(hybrid_sha) {
+async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
 
     // Set the request options
     const options = {
@@ -97,226 +105,113 @@ async function get_hybrid_report_by_sha256(hybrid_sha) {
         const json_data = await response.json();
         console.log(json_data);
 
-        if (response.status === 200 || response.status === 202) {
-            if (json_data.verdict === 'in progress' || response.status === 202) {
-                document.getElementById("status_message").textContent = "Status: Scan läuft...";
-                return;
-            }
-            document.getElementById("status_message").textContent = "";
-            // Dateidetails
-            // Erstellen Sie ein neues div-Element
-            // Erstellen Sie ein neues div-Element
-            let div = document.createElement('div');
+        if (response.status === 200) {
+            let container = document.getElementById('hybrid_analysis_api_content');
+            let resultHtml = '';
 
-            // Fügen Sie den Titel hinzu
-            let h1 = document.createElement('h1');
-            h1.innerText = 'Thundy AV Checker';
-            div.appendChild(h1);
+            // Pending check (in_progress)
+            if (json_data.state === 'IN_PROGRESS') {
+                resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+                    <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
+                    <p style="color: orange;"><strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.</p>
+                    <p>SHA-256: ${json_data.sha256 || hybrid_sha}</p>
+                </div>`;
+            } else {
+                let threatColor = "green";
+                if (json_data.threat_score > 50) threatColor = "orange";
+                if (json_data.threat_score > 80) threatColor = "red";
 
-            // Fügen Sie den Link hinzu
-            let a = document.createElement('a');
-            a.href = 'https://www.hybrid-analysis.com/my-submissions/all';
-            a.innerText = 'Alle Übertragungen zu Hybrid Analysis anzeigen';
-            div.appendChild(a);
+                resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+                    <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
+                    <p><strong class="head_line" style="color: ${threatColor};">Bedrohungsscore:</strong> ${json_data.threat_score}</p>
+                    <p><strong class="head_line" style="color: ${threatColor};">Urteil:</strong> ${json_data.verdict}</p>
+                    <p><strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}</p>
+                    <p>Multiscan-Ergebnis: ${escapeHTML(json_data.multiscan_result || 'N/A')}</p>
+                    <p><strong>Additional Information:</strong></p>
+                    <p>Analysis start time: ${json_data.analysis_start_time || 'N/A'}</p>
+                    <p>Tags: ${escapeHTML(json_data.tags ? json_data.tags.join(', ') : 'N/A')}</p>
+                    <div class="head_line">Scannerergebnisse:</div>`;
 
-            // Fügen Sie den Bedrohungsscore hinzu
-            let p1 = document.createElement('p');
-            let strong1 = document.createElement('strong');
-            let span1 = document.createElement('span');
-            span1.className = "head_line";
-            span1.style.color = "red";
-            span1.innerText = "Bedrohungsscore:";
-            strong1.appendChild(span1);
-            p1.appendChild(strong1);
-            p1.appendChild(document.createTextNode(" " + json_data.threat_score));
-            div.appendChild(p1);
-
-            // Fügen Sie das Urteil hinzu
-            let p2 = document.createElement('p');
-            let strong2 = document.createElement('strong');
-            let span2 = document.createElement('span');
-            span2.className = "head_line";
-            span2.style.color = "red";
-            span2.innerText = "Urteil:";
-            strong2.appendChild(span2);
-            p2.appendChild(strong2);
-            p2.appendChild(document.createTextNode(" " + json_data.verdict));
-            div.appendChild(p2);
-
-            // Fügen Sie die Vx-Familie hinzu
-            let p3 = document.createElement('p');
-            let strong3 = document.createElement('strong');
-            strong3.innerText = "Vx-Familie:";
-            p3.appendChild(strong3);
-            p3.appendChild(document.createTextNode(" " + json_data.vx_family));
-            div.appendChild(p3);
-
-            // Fügen Sie das Multiscan-Ergebnis hinzu
-            let p4 = document.createElement('p');
-            p4.innerText = "Multiscan-Ergebnis: " + json_data.multiscan_result;
-            div.appendChild(p4);
-
-            // Fügen Sie die zusätzlichen Informationen hinzu
-            let p5 = document.createElement('p');
-            p5.innerHTML = "<strong>Additional Information:</strong>";
-            div.appendChild(p5);
-
-            // Fügen Sie die Analysestartzeit hinzu
-            let p6 = document.createElement('p');
-            p6.innerText = "Analysis start time: " + json_data.analysis_start_time;
-            div.appendChild(p6);
-
-            // Fügen Sie den letzten Multiscan hinzu
-            let p7 = document.createElement('p');
-            p7.innerText = "Last multiscan: " + json_data.last_multiscan;
-            div.appendChild(p7);
-
-            // Fügen Sie die Tags hinzu
-            let p8 = document.createElement('p');
-            p8.innerText = "Tags: " + json_data.tags;
-            div.appendChild(p8);
-
-            // Fügen Sie die Scannerergebnisse hinzu
-            let div2 = document.createElement('div');
-            div2.className = 'head_line';
-            div2.innerText = 'Scannerergebnisse:';
-            div.appendChild(div2);
-
-            // Fügen Sie die Scanner hinzu
-            for (const scanner of json_data.scanners) {
-                let p9 = document.createElement('p');
-                p9.innerText = '  Scanner: ' + scanner.name;
-                div.appendChild(p9);
-                let p10 = document.createElement('p');
-                p10.innerText = '    Status: ' + scanner.status;
-                div.appendChild(p10);
-                if (scanner.anti_virus_results) {
-                    let p11 = document.createElement('p');
-                    p11.innerText = '      AV-Ergebnisse:';
-                    div.appendChild(p11);
-                    for (const avResult of scanner.anti_virus_results) {
-                        let p12 = document.createElement('p');
-                        p12.innerText = '        AV: ' + avResult.product;
-                        div.appendChild(p12);
-                        let p13 = document.createElement('p');
-                        p13.innerText = '        Urteil: ' + avResult.verdict;
-                        div.appendChild(p13);
+                if (json_data.scanners && json_data.scanners.length > 0) {
+                    for (const scanner of json_data.scanners) {
+                        resultHtml += `<p style="margin-left: 10px;">Scanner: ${escapeHTML(scanner.name)}</p>`;
+                        resultHtml += `<p style="margin-left: 20px;">Status: ${escapeHTML(scanner.status)}</p>`;
+                        if (scanner.anti_virus_results) {
+                            resultHtml += `<p style="margin-left: 20px;">AV-Ergebnisse:</p>`;
+                            for (const avResult of scanner.anti_virus_results) {
+                                resultHtml += `<p style="margin-left: 30px;">AV: ${escapeHTML(avResult.product)} - Urteil: ${escapeHTML(avResult.verdict)}</p>`;
+                            }
+                        }
                     }
+                } else {
+                    resultHtml += `<p style="margin-left: 10px;">Keine Scanner-Ergebnisse verfügbar.</p>`;
                 }
+
+                resultHtml += `
+                    <p>SHA-256-Hashwert: ${json_data.sha256}</p>
+                    <p>Letzter Dateiname: ${escapeHTML(json_data.last_file_name || 'N/A')}</p>
+                    <p>Größe: ${json_data.size || 'N/A'} Bytes</p>
+                    <p>Typ: ${escapeHTML(json_data.type || 'N/A')}</p>
+                </div>`;
             }
 
-            // Fügen Sie den SHA-256-Hashwert hinzu
-            let p14 = document.createElement('p');
-            p14.innerText = '  SHA-256-Hashwert: ' + json_data.sha256;
-            div.appendChild(p14);
-
-            // Fügen Sie den letzten Dateinamen hinzu
-            let p15 = document.createElement('p');
-            p15.innerText = '  Letzter Dateiname: ' + json_data.last_file_name;
-            div.appendChild(p15);
-
-            // Fügen Sie die weiteren Dateinamen hinzu
-            let p16 = document.createElement('p');
-            p16.innerText = '  Weitere Dateinamen: ' + json_data.other_file_name;
-            div.appendChild(p16);
-
-            // Fügen Sie die URL-Analyse hinzu
-            let p17 = document.createElement('p');
-            p17.innerText = '  URL-Analyse: ' + json_data.url_analysis;
-            div.appendChild(p17);
-
-            // Fügen Sie die Größe hinzu
-            let p18 = document.createElement('p');
-            p18.innerText = '  Größe: ' + json_data.size;
-            div.appendChild(p18);
-
-            // Fügen Sie den Typ hinzu
-            let p19 = document.createElement('p');
-            p19.innerText = '  Typ: ' + json_data.type;
-            div.appendChild(p19);
-
-            // Fügen Sie die Architektur hinzu
-            let p20 = document.createElement('p');
-            p20.innerText = '  Architektur: ' + json_data.architecture;
-            div.appendChild(p20);
-
-            // Fügen Sie die zusätzlichen Informationen hinzu
-            let p21 = document.createElement('p');
-            p21.innerText = 'Zusätzliche Informationen:';
-            div.appendChild(p21);
-
-            // Fügen Sie die Analysestartzeit hinzu
-            let p22 = document.createElement('p');
-            p22.innerText = '  Analysebeginn: ' + json_data.analysis_start_time;
-            div.appendChild(p22);
-
-            // Fügen Sie den letzten Multiscan hinzu
-            let p23 = document.createElement('p');
-            p23.innerText = '  Letzte Multiscan: ' + json_data.last_multiscan;
-            div.appendChild(p23);
-
-            // Fügen Sie die Tags hinzu
-            let p24 = document.createElement('p');
-            p24.innerText = '  Tags: ' + json_data.tags;
-            div.appendChild(p24);
-
-            // Fügen Sie den Whitelist-Status hinzu
-            let p25 = document.createElement('p');
-            p25.innerText = '  Whitelist-Status: ' + json_data.whitelisted;
-            div.appendChild(p25);
-
-            // Fügen Sie die verwandten Elternhashes hinzu
-            let p26 = document.createElement('p');
-            p26.innerText = '  Verwandte Elternhashes: ' + json_data.related_parent_hashes;
-            div.appendChild(p26);
-
-            // Fügen Sie die verwandten Kindhashes hinzu
-            let p27 = document.createElement('p');
-            p27.innerText = '  Verwandte Kindhashes: ' + json_data.related_children_hashes;
-            div.appendChild(p27);
-
-            // Fügen Sie die Berichte hinzu
-            let p28 = document.createElement('p');
-            p28.innerText = '  Berichte: ' + json_data.reports;
-            div.appendChild(p28);
-
-            // Fügen Sie die Gesamtbewertung hinzu
-            let p29 = document.createElement('p');
-            p29.innerText = 'Gesamtbewertung:';
-            div.appendChild(p29);
-
-            // Fügen Sie den Bedrohungsscore hinzu
-            let p30 = document.createElement('p');
-            p30.innerText = '  Bedrohungsscore: ' + json_data.threat_score;
-            div.appendChild(p30);
-
-            // Fügen Sie das Urteil hinzu
-            let p31 = document.createElement('p');
-            p31.innerText = '  Urteil: ' + json_data.verdict;
-            div.appendChild(p31);
-
-            // Fügen Sie den Whitelist-Status hinzu
-            let p32 = document.createElement('p');
-            p32.innerText = '  Whitelist status: ' + json_data.whitelisted;
-            div.appendChild(p32);
-
-            // Fügen Sie das div-Element zum DOM hinzu
-            document.body.appendChild(div);
-
-
-            // Fügen Sie das div-Element zum DOM hinzu
-            //document.getElementById('hybrid_analysis_api_content').insertAdjacentHTML('beforeend',div);
+            container.insertAdjacentHTML('beforeend', resultHtml);
 
         } else {
-            document.getElementById("status_message").textContent = "";
             // Fügen Sie das div-Element zum DOM hinzu
-            let errorMsg = json_data.message || 'Unknown error';
-            document.getElementById('hybrid_analysis_api_content').innerText = 'Failed to Get Report for SHA256 at Hybrid Analysis. ' + errorMsg;
-
+            let container = document.getElementById('hybrid_analysis_api_content');
+            container.insertAdjacentHTML('beforeend', `<div style="color: red;">Failed to Get Report for SHA256 at Hybrid Analysis.</div>`);
         }
     } catch (error) {
-        document.getElementById("status_message").textContent = "";
+
         // Fügen Sie das div-Element zum DOM hinzu
-        document.getElementById('hybrid_analysis_api_content').innerText = 'Error getting analysis from Hybrid Analysis:' + error;
+        let container = document.getElementById('hybrid_analysis_api_content');
+        if (container) {
+            container.insertAdjacentHTML('beforeend', `<div style="color: red;">Error getting analysis from Hybrid Analysis: ${escapeHTML(error)}</div>`);
+        }
     }
+}
+function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
+    let container = document.getElementById('hybrid_analysis_api_content');
+    let resultHtml = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-left: 5px solid blue;" id="upload-container-${hash}">
+        <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
+        <p>SHA-256: ${hash}</p>
+        <p style="color: blue;">Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
+        <button id="btn-upload-${hash}" style="padding: 10px; background-color: #005a9e; color: white; border: none; cursor: pointer;">Datei jetzt scannen (Upload)</button>
+        <p id="upload-status-${hash}" style="margin-top: 5px;"></p>
+    </div>`;
+    container.insertAdjacentHTML('beforeend', resultHtml);
+
+    document.getElementById(`btn-upload-${hash}`).addEventListener('click', function() {
+        let btn = this;
+        let statusEl = document.getElementById(`upload-status-${hash}`);
+        btn.disabled = true;
+        btn.innerText = "Lade hoch...";
+        statusEl.innerText = "Datei wird an Hybrid Analysis übertragen...";
+
+        messenger.runtime.sendMessage({
+            action: "uploadAttachment",
+            messageId: messageId,
+            partName: partName,
+            attachmentName: attachmentName,
+            hash: hash,
+            headerMessageId: headerMessageId
+        }).then(response => {
+            if (response && response.status === 'success') {
+                statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
+                setTimeout(() => {
+                    document.getElementById(`upload-container-${hash}`).remove();
+                    get_hybrid_report_by_sha256(hash, attachmentName);
+                }, 3000);
+            } else {
+                statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
+                btn.disabled = false;
+                btn.innerText = "Erneut versuchen";
+            }
+        }).catch(err => {
+            statusEl.innerText = "Kommunikationsfehler: " + err;
+            btn.disabled = false;
+            btn.innerText = "Erneut versuchen";
+        });
+    });
 }
