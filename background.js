@@ -9,6 +9,14 @@ async function loadSettings() {
 }
 loadSettings();
 
+// Listener für Änderungen an den Einstellungen (API Key)
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.apikey) {
+    apikey_hybridanalysis = changes.apikey.newValue;
+    console.log("Hybrid-Analysis API-KEY wurde dynamisch aktualisiert.");
+  }
+});
+
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
   console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
