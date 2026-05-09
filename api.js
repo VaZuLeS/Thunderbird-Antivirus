@@ -58,7 +58,11 @@ try {
             if (getRequest.result) {
                 const hash256 = getRequest.result.hybrid_sha256;
                 console.log(hash256);
-                get_hybrid_report_by_sha256(hash256);
+                if (getRequest.result.needs_upload) {
+                    show_manual_upload_button(message.headerMessageId, hash256);
+                } else {
+                    get_hybrid_report_by_sha256(hash256);
+                }
             } else {
                 console.log("Kein Hash gefunden.");
             }
@@ -309,3 +313,37 @@ async function get_hybrid_report_by_sha256(hybrid_sha) {
         document.getElementById('hybrid_analysis_api_content').innerText = 'Error getting analysis from Hybrid Analysis:' + error;
     }
 }
+
+async function show_manual_upload_button(headerMessageId, hash256) {
+    let div = document.createElement('div');
+    div.innerHTML = `
+        <p><strong>Datenschutz-Hinweis:</strong> Der Anhang (Hash: ${hash256}) ist der Hybrid-Analysis-API noch nicht bekannt.
+        Möchten Sie die Datei zur Analyse hochladen?</p>
+        <button id="upload_button_${headerMessageId}">Diese Datei scannen</button>
+    `;
+    document.getElementById('hybrid_analysis_api_content').appendChild(div);
+
+    document.getElementById(`upload_button_${headerMessageId}`).addEventListener('click', async () => {
+        document.getElementById(`upload_button_${headerMessageId}`).innerText = "Wird hochgeladen...";
+        document.getElementById(`upload_button_${headerMessageId}`).disabled = true;
+
+        // We need to trigger the upload from the background script, since api.js is in popup/extension page
+        // Or we can just re-read the file here. Reading the file here might be complex without the message object.
+        // Let's send a message to background script to do the upload.
+        browser.runtime.sendMessage({
+            action: "upload_to_hybrid",
+            headerMessageId: headerMessageId
+        });
+    });
+}
+
+// Listener für Antworten vom Hintergrund-Skript (z.B. erfolgreicher Upload)
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === "upload_success" && message.sha256) {
+        // UI aufräumen
+        let contentDiv = document.getElementById('hybrid_analysis_api_content');
+        contentDiv.innerHTML = '';
+        // Bericht abrufen und anzeigen
+        get_hybrid_report_by_sha256(message.sha256);
+    }
+});
