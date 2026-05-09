@@ -24,6 +24,7 @@ console.log(message.headerMessageId);
 document.getElementById("subject").textContent = message.subject;
 document.getElementById("from").textContent = message.author;
 document.getElementById("MessageHeaderID").textContent = message.headerMessageId;
+document.getElementById("status_message").textContent = "Status: Lade Daten...";
 try {
 
     let db;
@@ -56,14 +57,17 @@ try {
             // Wenn der Hash gefunden wird, zeigen Sie ihn an.
             console.log(getRequest.result);
             if (getRequest.result) {
+                document.getElementById("status_message").textContent = "Status: Lade Report von Hybrid-Analysis...";
                 const hash256 = getRequest.result.hybrid_sha256;
                 console.log(hash256);
                 get_hybrid_report_by_sha256(hash256);
             } else {
+                document.getElementById("status_message").textContent = "Status: Kein Scan in Datenbank. Möglicherweise läuft der Scan noch oder es gibt keine Anhänge.";
                 console.log("Kein Hash gefunden.");
             }
         };
         getRequest.onerror = function (e) {
+            document.getElementById("status_message").textContent = "Status: Fehler beim Abrufen aus der Datenbank.";
             console.log("Fehler beim Abrufen des Datensatzes:", e.target.error);
         };
 
@@ -94,6 +98,7 @@ async function get_hybrid_report_by_sha256(hybrid_sha) {
         console.log(json_data);
 
         if (response.status === 200) {
+            document.getElementById("status_message").textContent = "";
             // Dateidetails
             // Erstellen Sie ein neues div-Element
             // Erstellen Sie ein neues div-Element
@@ -299,12 +304,13 @@ async function get_hybrid_report_by_sha256(hybrid_sha) {
             //document.getElementById('hybrid_analysis_api_content').insertAdjacentHTML('beforeend',div);
 
         } else {
+            document.getElementById("status_message").textContent = "";
             // Fügen Sie das div-Element zum DOM hinzu
             document.getElementById('hybrid_analysis_api_content').innerText = 'Failed to Get Report for SHA256 at Hybrid Analysis.' + errorData.validation_errors[0].errors[0].message;
 
         }
     } catch (error) {
-
+        document.getElementById("status_message").textContent = "";
         // Fügen Sie das div-Element zum DOM hinzu
         document.getElementById('hybrid_analysis_api_content').innerText = 'Error getting analysis from Hybrid Analysis:' + error;
     }

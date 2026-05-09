@@ -5,7 +5,7 @@ async function loadSettings() {
   await messenger.storage.local.get('apikey').then((result) => {
       console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
       apikey_hybridanalysis =  result.apikey;
-    });    
+    });
 }
 loadSettings();
 
@@ -14,6 +14,8 @@ async function tab_mail_open_display(tab, message) {
   console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
 
   try {
+    browser.messageDisplayAction.setBadgeText({text: "", tabId: tab.id});
+
     // Die volle Nachricht inkl. Anhänge laden
     // message_full wird hier definiert, falls es später benötigt wird, aktuell wird es nicht direkt weiterverwendet
     let message_full = await browser.messages.getFull(message.id);
@@ -22,9 +24,9 @@ async function tab_mail_open_display(tab, message) {
     let attachments = await browser.messages.listAttachments(message.id);
 
     console.log("Gefundene Anhänge:", attachments);
-    
+
     if (attachments.length > 0) {
-      await sent_to_hybrid_by_attachment(message, attachments);
+      await sent_to_hybrid_by_attachment(message, attachments, tab.id);
     }
 
   } catch (error) {
@@ -33,7 +35,7 @@ async function tab_mail_open_display(tab, message) {
 }
 
 // Funktion zum Senden der Anhänge an Hybrid Analysis
-async function sent_to_hybrid_by_attachment(message, attachments) {
+async function sent_to_hybrid_by_attachment(message, attachments, tabId) {
   if (!apikey_hybridanalysis) {
       console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
       return;
@@ -57,9 +59,12 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
       case 'application/xhtml+xml':
         console.log(`Überspringe Datei vom Typ ${attachment.contentType}`);
         break;
-        
+
       default:
         console.log(`Sende Datei an hybrid-analysis.com | Typ: ${attachment.contentType}`);
+
+        browser.messageDisplayAction.setBadgeText({text: "Lade...", tabId: tabId});
+        browser.messageDisplayAction.setBadgeBackgroundColor({color: "yellow", tabId: tabId});
 
         try {
             const content_of_atachment = file.slice();
@@ -70,7 +75,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             formData.append('file', file_to_submit);
 
             const options = {
-            method: 'POST', 
+            method: 'POST',
             url: 'https://hybrid-analysis.com/api/v2/quick-scan/file',
             headers: {
                 accept: 'application/json',
@@ -87,9 +92,10 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             if (response.status === 200 || response.status === 201) {
                 console.log('Datei erfolgreich an Hybrid Analysis gesendet.');
                 console.log("SHA-256:", json_data.sha256);
-                
+
                 // Ergebnis in der lokalen Datenbank speichern
                 indexedDB_save_hybrid_data_to_db(message, json_data);
+                poll_hybrid_analysis(json_data.sha256, tabId);
             } else {
                 console.error('Fehler beim Senden an Hybrid Analysis:', json_data);
             }
@@ -116,7 +122,7 @@ function indexedDB_save_hybrid_data_to_db(message, hybrid_data) {
     const db = e.target.result;
     const transaction = db.transaction(['hybridanalysis'], 'readwrite');
     const store = transaction.objectStore('hybridanalysis');
-    
+
     let item = {
       messageHeader: message.headerMessageId,
       hybrid_submission_id: hybrid_data.submission_id,
@@ -142,10 +148,47 @@ function indexedDB_save_hybrid_data_to_db(message, hybrid_data) {
       };
     }
   };
-  
+
   openRequest.onerror = function (e) {
     console.error('Fehler beim Öffnen der Datenbank:', e);
-  };  
+  };
+}
+
+async function poll_hybrid_analysis(sha256, tabId) {
+    try {
+        const options = {
+            method: 'GET',
+            url: 'https://hybrid-analysis.com/api/v2/overview/' + sha256,
+            headers: {
+                accept: 'application/json',
+                'api-key': apikey_hybridanalysis,
+                'user-agent': 'Falcon',
+            }
+        };
+        const response = await fetch(options.url, options);
+        if (response.status === 200) {
+            const json_data = await response.json();
+            if (json_data.verdict === 'in progress' || json_data.threat_score === undefined) {
+                setTimeout(() => poll_hybrid_analysis(sha256, tabId), 15000);
+                return;
+            }
+            if (json_data.threat_score > 0 || json_data.verdict === 'malicious' || json_data.verdict === 'suspicious') {
+                let threatText = json_data.threat_score ? json_data.threat_score.toString() : "Gefahr";
+                browser.messageDisplayAction.setBadgeText({text: threatText, tabId: tabId});
+                browser.messageDisplayAction.setBadgeBackgroundColor({color: "red", tabId: tabId});
+            } else {
+                browser.messageDisplayAction.setBadgeText({text: "OK", tabId: tabId});
+                browser.messageDisplayAction.setBadgeBackgroundColor({color: "green", tabId: tabId});
+            }
+        } else if (response.status === 202) {
+            setTimeout(() => poll_hybrid_analysis(sha256, tabId), 15000);
+        } else {
+            browser.messageDisplayAction.setBadgeText({text: "ERR", tabId: tabId});
+            browser.messageDisplayAction.setBadgeBackgroundColor({color: "red", tabId: tabId});
+        }
+    } catch (error) {
+        console.error("Polling error:", error);
+    }
 }
 
 // Listener registrieren
