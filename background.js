@@ -9,6 +9,14 @@ async function loadSettings() {
 }
 loadSettings();
 
+// Listener für Änderungen an den Einstellungen (API Key)
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.apikey) {
+    apikey_hybridanalysis = changes.apikey.newValue;
+    console.log("Hybrid-Analysis API-KEY wurde dynamisch aktualisiert.");
+  }
+});
+
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.apikey) {
     console.log("Hybrid-Analysis API-KEY wurde aktualisiert.");
