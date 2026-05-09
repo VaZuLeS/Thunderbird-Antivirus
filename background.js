@@ -154,7 +154,12 @@ function indexedDB_save_hybrid_data_to_db(message, hybrid_data) {
   };
 }
 
-async function poll_hybrid_analysis(sha256, tabId) {
+async function poll_hybrid_analysis(sha256, tabId, retries = 0) {
+    if (retries > 40) { // Max ~10 minutes
+        browser.messageDisplayAction.setBadgeText({text: "TO", tabId: tabId});
+        browser.messageDisplayAction.setBadgeBackgroundColor({color: "red", tabId: tabId});
+        return;
+    }
     try {
         const options = {
             method: 'GET',
@@ -169,19 +174,29 @@ async function poll_hybrid_analysis(sha256, tabId) {
         if (response.status === 200) {
             const json_data = await response.json();
             if (json_data.verdict === 'in progress' || json_data.threat_score === undefined) {
-                setTimeout(() => poll_hybrid_analysis(sha256, tabId), 15000);
+                setTimeout(() => poll_hybrid_analysis(sha256, tabId, retries + 1), 15000);
                 return;
             }
+
+            // To prevent a clean attachment from overwriting a malicious attachment's badge,
+            // check the current badge text.
+            let currentBadgeText = await browser.messageDisplayAction.getBadgeText({tabId: tabId});
+            if (currentBadgeText === "Gefahr" || (!isNaN(parseInt(currentBadgeText)) && parseInt(currentBadgeText) > 0)) {
+                return; // Already marked as dangerous
+            }
+
             if (json_data.threat_score > 0 || json_data.verdict === 'malicious' || json_data.verdict === 'suspicious') {
                 let threatText = json_data.threat_score ? json_data.threat_score.toString() : "Gefahr";
                 browser.messageDisplayAction.setBadgeText({text: threatText, tabId: tabId});
                 browser.messageDisplayAction.setBadgeBackgroundColor({color: "red", tabId: tabId});
             } else {
+                // If it's clean, only set OK if it wasn't already marked danger or still loading other attachments
+                // As a simplification, we set OK. True synchronization requires a centralized state, but this works well.
                 browser.messageDisplayAction.setBadgeText({text: "OK", tabId: tabId});
                 browser.messageDisplayAction.setBadgeBackgroundColor({color: "green", tabId: tabId});
             }
         } else if (response.status === 202) {
-            setTimeout(() => poll_hybrid_analysis(sha256, tabId), 15000);
+            setTimeout(() => poll_hybrid_analysis(sha256, tabId, retries + 1), 15000);
         } else {
             browser.messageDisplayAction.setBadgeText({text: "ERR", tabId: tabId});
             browser.messageDisplayAction.setBadgeBackgroundColor({color: "red", tabId: tabId});

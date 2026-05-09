@@ -2,7 +2,7 @@ let apikey_hybridanalysis;
 
 async function loadSettings() {
     await messenger.storage.local.get('apikey').then((result) => {
-        console.log("Ihr Hybris-Analysis API-KEY: " + result.apikey);
+        console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
         apikey_hybridanalysis = result.apikey;
     });
 }
@@ -97,7 +97,11 @@ async function get_hybrid_report_by_sha256(hybrid_sha) {
         const json_data = await response.json();
         console.log(json_data);
 
-        if (response.status === 200) {
+        if (response.status === 200 || response.status === 202) {
+            if (json_data.verdict === 'in progress' || response.status === 202) {
+                document.getElementById("status_message").textContent = "Status: Scan läuft...";
+                return;
+            }
             document.getElementById("status_message").textContent = "";
             // Dateidetails
             // Erstellen Sie ein neues div-Element
@@ -306,7 +310,8 @@ async function get_hybrid_report_by_sha256(hybrid_sha) {
         } else {
             document.getElementById("status_message").textContent = "";
             // Fügen Sie das div-Element zum DOM hinzu
-            document.getElementById('hybrid_analysis_api_content').innerText = 'Failed to Get Report for SHA256 at Hybrid Analysis.' + errorData.validation_errors[0].errors[0].message;
+            let errorMsg = json_data.message || 'Unknown error';
+            document.getElementById('hybrid_analysis_api_content').innerText = 'Failed to Get Report for SHA256 at Hybrid Analysis. ' + errorMsg;
 
         }
     } catch (error) {
