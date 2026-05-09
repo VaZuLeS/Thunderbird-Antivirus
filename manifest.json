@@ -15,7 +15,9 @@
     "messagesRead",
     "https://hybrid-analysis.com/*",
     "webRequest",
-    "storage"
+    "storage",
+    "notifications",
+    "scripting"
   ],
 "content_security_policy": {
     "script-src": "self https://hybrid-analysis.com/api/v2/analysis/ https://hybrid-analysis.com/api/v2/overview/api.js"
