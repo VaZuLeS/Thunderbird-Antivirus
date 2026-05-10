@@ -405,6 +405,24 @@ describe('background.js', () => {
     });
 
     describe('calculateThreatScore', () => {
+        it('calculates threat score correctly for spf=fail', async () => {
+            const author = 'Service <service@paypal.com>';
+            const urls = [];
+            const authHeaders = ["spf=fail"];
+            const result = context.calculateThreatScore(author, urls, authHeaders);
+            assert.strictEqual(result.score, 50);
+            assert.ok(result.reasons.some(r => r.includes("SPF-Prüfung fehlgeschlagen")));
+        });
+
+        it('calculates threat score correctly for urlhaus blacklisted domain', async () => {
+            const author = 'Service <service@paypal.com>';
+            const urls = ["http://malware.com/"];
+            const urlhausDomains = ["malware.com"];
+            const result = context.calculateThreatScore(author, urls, [], urlhausDomains);
+            assert.strictEqual(result.score >= 80, true);
+            assert.ok(result.reasons.some(r => r.includes("auf URLhaus als bösartig gelistet")));
+        });
+
         it('calculates threat score correctly for typosquatting sender', async () => {
             const author = 'Service <service@amaz0n.de>';
             const urls = [];

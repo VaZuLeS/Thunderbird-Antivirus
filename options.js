@@ -1,15 +1,21 @@
 // Event-Listener für das Laden der Seite
 document.addEventListener('DOMContentLoaded', function() {
     // Abrufen der gespeicherten Einstellung
-    browser.storage.local.get('apikey').then((result) => {
-      document.getElementById('apikey').value = result.apikey;
+    browser.storage.local.get(['apikey', 'urlhausApikey', 'alwaysManual']).then((result) => {
+      document.getElementById('apikey').value = result.apikey || "";
+      document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
+      document.getElementById('alwaysManual').checked = result.alwaysManual || false;
     });
   });
   
   document.getElementById('save').addEventListener('click', function() {
     let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
+    let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
+    let alwaysManualSetting = document.getElementById('alwaysManual').checked;
     browser.storage.local.set({
-        apikey: mySetting
+        apikey: mySetting,
+        urlhausApikey: urlhausSetting,
+        alwaysManual: alwaysManualSetting
     }).then(() => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
