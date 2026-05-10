@@ -406,11 +406,11 @@ describe('background.js', () => {
 
     describe('calculateThreatScore', () => {
         it('calculates threat score correctly for typosquatting sender', async () => {
-            const author = 'Service <service@paypa1.com>';
+            const author = 'Service <service@amaz0n.de>';
             const urls = [];
             const result = context.calculateThreatScore(author, urls);
             assert.strictEqual(result.score, 60);
-            assert.ok(result.reasons.some(r => r.includes('paypa1.com')));
+            assert.ok(result.reasons.some(r => r.includes('amaz0n.de')));
         });
 
         it('calculates threat score correctly for domain mismatch', async () => {
@@ -423,10 +423,10 @@ describe('background.js', () => {
 
         it('calculates threat score correctly for typosquatting link and mismatch', async () => {
             const author = 'Service <service@paypal-support.com>';
-            const urls = ['http://login.paypa1.com'];
+            const urls = ['https://login.amaz0n.de'];
             const result = context.calculateThreatScore(author, urls);
             assert.strictEqual(result.score, 100);
-            assert.ok(result.reasons.some(r => r.includes('paypa1.com')));
+            assert.ok(result.reasons.some(r => r.includes('amaz0n.de')));
         });
 
         it('calculates threat score correctly for legitimate emails', async () => {
@@ -448,7 +448,7 @@ describe('background.js', () => {
             context.browser.messages.listAttachments = async () => ([]);
             context.browser.messages.getFull = async () => ({
                 contentType: 'text/html',
-                body: '<a href="http://login.paypa1.com">Click</a>'
+                body: '<a href="https://login.amaz0n.de">Click</a>'
             });
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal-support.com>', subject: 'Action required' });
