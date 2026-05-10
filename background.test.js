@@ -498,9 +498,12 @@ describe('background.js', () => {
         });
 
         it('does not inject warning banner if score < 50', async () => {
-            let executedScript = null;
+            let executedWarningScript = null;
             context.browser.scripting.executeScript = async (opts) => {
-                executedScript = opts;
+                // Ignore the time-of-click style injection script
+                if (opts.args && opts.args.length > 0) {
+                    executedWarningScript = opts;
+                }
             };
 
             context.browser.messages.listAttachments = async () => ([]);
@@ -511,7 +514,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal.com>', subject: 'Action required' });
 
-            assert.strictEqual(executedScript, null);
+            assert.strictEqual(executedWarningScript, null);
         });
     });
 });
