@@ -34,9 +34,68 @@ async function tab_mail_open_display(tab, message) {
       await sent_to_hybrid_by_attachment(message, attachments);
     }
 
+    // Vollständige Nachricht abrufen für Link-Extraktion
+    let fullMessage = await browser.messages.getFull(message.id);
+    let messageText = extractTextFromParts(fullMessage);
+    let urls = extractUrls(messageText);
+    let filteredUrls = filterUrls(urls);
+
+    console.log("Gefundene URLs:", filteredUrls);
+    if (filteredUrls.length > 0) {
+      await indexedDB_save_links_to_db(message, filteredUrls);
+    }
+
   } catch (error) {
-    console.log(`Fehler beim Laden der Anhänge: ${error}`);
+    console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
   }
+}
+
+function extractTextFromParts(part) {
+  let text = "";
+  if (part.contentType === "text/plain" || part.contentType === "text/html") {
+      if (part.body) {
+         text += part.body + " ";
+      }
+  }
+  if (part.parts) {
+      for (let subPart of part.parts) {
+          text += extractTextFromParts(subPart);
+      }
+  }
+  return text;
+}
+
+function extractUrls(text) {
+    const urlRegex = /(https?:\/\/[^\s"'<>]+)/g;
+    const urls = new Set();
+    let match;
+    while ((match = urlRegex.exec(text)) !== null) {
+        // Bereinige ggf. am Ende hängende Satzzeichen
+        let url = match[1].replace(/[.,;:!)\]]+$/, '');
+        urls.add(url);
+    }
+    return Array.from(urls);
+}
+
+function filterUrls(urls) {
+    const ignoredDomains = [
+        'w3.org', 'google.com', 'microsoft.com', 'apple.com',
+        'mozilla.org', 'schemas.microsoft.com', 'yahoo.com', 'github.com'
+    ];
+
+    return urls.filter(url => {
+        try {
+            let parsed = new URL(url);
+            for (let domain of ignoredDomains) {
+                if (parsed.hostname === domain || parsed.hostname.endsWith('.' + domain)) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (e) {
+            return false; // Ungültige URL
+        }
+    });
 }
 
 // Funktion zum Senden der Anhänge an Hybrid Analysis
@@ -180,6 +239,45 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
 }
 
 // Speicherung der Ergebnisse in IndexedDB
+async function indexedDB_save_links_to_db(message, urls) {
+  try {
+    const db = await openDB("thunderbird_av", 3);
+
+    if (message.headerMessageId) {
+      const newLinks = urls.map(url => ({
+        url: url,
+        state: 'UNKNOWN',
+        created: new Date()
+      }));
+
+      await updateStore(db, 'hybridanalysis', message.headerMessageId, (existingRecord) => {
+        let recordToSave;
+        if (existingRecord) {
+          recordToSave = existingRecord;
+          if (!recordToSave.links) recordToSave.links = [];
+
+          for (const newLink of newLinks) {
+            if (!recordToSave.links.find(l => l.url === newLink.url)) {
+              recordToSave.links.push(newLink);
+            }
+          }
+        } else {
+          recordToSave = {
+            messageHeader: message.headerMessageId,
+            author: message.author,
+            subject: message.subject,
+            links: newLinks
+          };
+        }
+        return recordToSave;
+      });
+      console.log('URLs erfolgreich in DB gespeichert.');
+    }
+  } catch (error) {
+    console.error('Fehler bei der URL-Speicherung in der Datenbank:', error);
+  }
+}
+
 async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName) {
   try {
     const db = await openDB("thunderbird_av", 3);
@@ -234,8 +332,63 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .then(res => sendResponse({status: 'success', data: res}))
             .catch(err => sendResponse({status: 'error', message: err.message}));
         return true;
+    } else if (request.action === "scanUrl") {
+        handleUrlScan(request.url, request.headerMessageId)
+            .then(res => sendResponse({status: 'success', data: res}))
+            .catch(err => sendResponse({status: 'error', message: err.message}));
+        return true;
     }
 });
+
+async function handleUrlScan(url, headerMessageId) {
+    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+
+    const formBody = new URLSearchParams();
+    formBody.append('scan_type', 'all');
+    formBody.append('url', url);
+
+    const options = {
+        method: 'POST',
+        url: 'https://hybrid-analysis.com/api/v2/quick-scan/url',
+        headers: {
+            accept: 'application/json',
+            'api-key': apikey_hybridanalysis,
+            'user-agent': 'Falcon',
+            'scan_type': 'all',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: formBody
+    };
+
+    const response = await fetch(options.url, options);
+    const json_data = await response.json();
+
+    if (response.status === 200 || response.status === 201) {
+        console.log('URL manuell an Hybrid Analysis gesendet.');
+
+        // Update DB record
+        try {
+            const db = await openDB("thunderbird_av", 3);
+            await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
+                if (existingRecord && existingRecord.links) {
+                    let linkIndex = existingRecord.links.findIndex(l => l.url === url);
+                    if (linkIndex > -1) {
+                        existingRecord.links[linkIndex].hybrid_submission_id = json_data.submission_id;
+                        existingRecord.links[linkIndex].hybrid_job_id = json_data.job_id;
+                        existingRecord.links[linkIndex].hybrid_sha256 = json_data.sha256;
+                        existingRecord.links[linkIndex].state = 'UPLOADED';
+                    }
+                }
+                return existingRecord;
+            });
+        } catch (dbError) {
+            console.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
+        }
+        return json_data;
+    } else {
+        throw new Error("Fehler beim URL-Scan: " + JSON.stringify(json_data));
+    }
+}
 
 async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
