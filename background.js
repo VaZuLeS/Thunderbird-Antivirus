@@ -361,6 +361,72 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch(err => sendResponse({status: 'error', message: err.message}));
         return true;
     }
+
+    if (request.action === "checkLinkState") {
+        // Need to find the active message to get headerMessageId
+        // Since content script doesn't know the message ID, we can get it via tabs API
+        browser.messageDisplay.getDisplayedMessage(sender.tab.id).then(message => {
+            if (message && message.headerMessageId) {
+                return openDB("thunderbird_av", 3).then(db => {
+                    return getFromStore(db, "hybridanalysis", message.headerMessageId);
+                }).then(record => {
+                    if (record && record.links) {
+                        const linkObj = record.links.find(l => l.url.replace(/\/$/, "") === request.url.replace(/\/$/, ""));
+                        if (linkObj) {
+                            if (linkObj.hybrid_sha256) {
+                                // Known to hybrid-analysis
+                                // Could do a fetch here, but for now we rely on state if we want it fast.
+                                // But the instruction says: "If a hybrid_sha256 is found, query the Hybrid Analysis API to check the verdict." Wait, no, we agreed to rely on existing API wrappers. Let's just fetch it using fetch() as that's easiest inside background script, or rely on db state.
+                                // Actually, let's just return the db state, and if they click scan, it handles it via 'scanUrl'.
+                                // Oh wait! State might be 'UNKNOWN' or 'UPLOADED' in DB.
+                                // The prompt plan: "Find the matching URL in record.links, extract its state (e.g. UNKNOWN, CLEAN, MALICIOUS), and return it".
+                                // If it has a hybrid_sha256, we can fetch the overview API to get current verdict.
+                                if (apikey_hybridanalysis) {
+                                    return fetch('https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256, {
+                                        method: 'GET',
+                                        headers: {
+                                            accept: 'application/json',
+                                            'api-key': apikey_hybridanalysis,
+                                            'user-agent': 'Falcon',
+                                        }
+                                    }).then(response => response.json())
+                                    .then(json_data => {
+                                        if (json_data.verdict) {
+                                            if (json_data.verdict === 'no specific threat') {
+                                                sendResponse({status: 'CLEAN'});
+                                            } else {
+                                                sendResponse({status: json_data.verdict.toUpperCase()});
+                                            }
+                                        } else {
+                                            sendResponse({status: linkObj.state});
+                                        }
+                                    }).catch(err => {
+                                        sendResponse({status: linkObj.state});
+                                    });
+                                } else {
+                                    sendResponse({status: linkObj.state});
+                                }
+                            } else {
+                                sendResponse({status: linkObj.state || 'UNKNOWN'});
+                            }
+                        } else {
+                            sendResponse({status: 'UNKNOWN'});
+                        }
+                    } else {
+                        sendResponse({status: 'UNKNOWN'});
+                    }
+                }).catch(err => {
+                    sendResponse({status: 'ERROR'});
+                });
+            } else {
+                sendResponse({status: 'UNKNOWN'});
+            }
+        }).catch(err => {
+            sendResponse({status: 'ERROR'});
+        });
+        return true; // Keep the message channel open for the async response
+    }
+
     if (request.action === "checkHash") {
         handleManualCheck(request.hash, request.headerMessageId, request.partName)
             .then(res => sendResponse({status: 'success', data: res}))
