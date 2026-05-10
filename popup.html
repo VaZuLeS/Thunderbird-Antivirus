@@ -6,33 +6,15 @@
     <meta http-equiv="Content-Security-Policy" content="script-src 'self';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thunderbird Security Antivirus aka Thundy AV</title>
+    <link rel="stylesheet" href="theme.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
             font-size: 14px;
             margin: 10px;
             width: 600px;
         }
         h1 {
             font-size: 18px;
-            color: #333;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: 150px 1fr;
-            gap: 10px;
-            margin-top: 15px;
-            background-color: #f9f9f9;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-        }
-        .header {
-            font-weight: bold;
-            color: #555;
-        }
-        .content {
-            word-break: break-all;
         }
         #hybrid_analysis_api_content {
             grid-column: 1 / -1;
@@ -46,18 +28,18 @@
     <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer">Alle Übertragungen zu Hybrid Analysis aufrufen</a>
 
     <div class="grid-container">
-        <div class="header">Betreff:</div>
-        <div id="subject" class="content"></div>
+        <div class="grid-header">Betreff:</div>
+        <div id="subject" class="grid-content"></div>
 
-        <div class="header">Von:</div>
-        <div id="from" class="content"></div>
+        <div class="grid-header">Von:</div>
+        <div id="from" class="grid-content"></div>
 
-        <div class="header">MessageHeaderID:</div>
-        <div id="MessageHeaderID" class="content"></div>
+        <div class="grid-header">MessageHeaderID:</div>
+        <div id="MessageHeaderID" class="grid-content"></div>
     </div>
 
-    <div id="status_message" class="content" style="margin-top: 10px; font-weight: bold;"></div>
-    <div id="hybrid_analysis_api_content" class="content"></div>
+    <div id="status_message" class="grid-content mt-2" style="font-weight: bold;"></div>
+    <div id="hybrid_analysis_api_content" class="grid-content mt-3"></div>
 
     <script src="db.js"></script>
     <script type="module" src="api.js"></script>

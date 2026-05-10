@@ -19,7 +19,7 @@ let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
 
 if (!apikey_hybridanalysis) {
-    document.getElementById('hybrid_analysis_api_content').innerHTML = '<div style="color: red; padding: 10px; border: 1px solid red; background-color: #fee;"><strong>Warnung:</strong> Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.</div>';
+    document.getElementById('hybrid_analysis_api_content').innerHTML = '<div class="alert-error"><strong>Warnung:</strong> Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.</div>';
     return;
 }
 
@@ -108,20 +108,20 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
 
     // Pending check (in_progress)
     if (json_data.state === 'IN_PROGRESS') {
-        resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+        resultHtml += `<div class="card mb-3">
             <h2>Geprüftes Element: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-            <p style="color: orange;"><strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.</p>
+            <p class="text-warning"><strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.</p>
             <p>SHA-256: ${escapeHTML(json_data.sha256 || hybrid_sha)}</p>
         </div>`;
     } else {
-        let threatColor = "green";
-        if (json_data.threat_score > 50) threatColor = "orange";
-        if (json_data.threat_score > 80) threatColor = "red";
+        let threatClass = "text-success";
+        if (json_data.threat_score > 50) threatClass = "text-warning";
+        if (json_data.threat_score > 80) threatClass = "text-danger";
 
-        resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+        resultHtml += `<div class="card mb-3">
             <h2>Geprüftes Element: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-            <p><strong class="head_line" style="color: ${threatColor};">Bedrohungsscore:</strong> ${escapeHTML(json_data.threat_score)}</p>
-            <p><strong class="head_line" style="color: ${threatColor};">Urteil:</strong> ${escapeHTML(json_data.verdict)}</p>
+            <p><strong class="head_line ${threatClass}">Bedrohungsscore:</strong> <span class="${threatClass}">${escapeHTML(json_data.threat_score)}</span></p>
+            <p><strong class="head_line ${threatClass}">Urteil:</strong> <span class="${threatClass}">${escapeHTML(json_data.verdict)}</span></p>
             <p><strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}</p>
             <p>Multiscan-Ergebnis: ${escapeHTML(json_data.multiscan_result || 'N/A')}</p>
             <p><strong>Additional Information:</strong></p>
@@ -131,17 +131,17 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
 
         if (json_data.scanners && json_data.scanners.length > 0) {
             for (const scanner of json_data.scanners) {
-                resultHtml += `<p style="margin-left: 10px;">Scanner: ${escapeHTML(scanner.name)}</p>`;
-                resultHtml += `<p style="margin-left: 20px;">Status: ${escapeHTML(scanner.status)}</p>`;
+                resultHtml += `<p class="ml-2">Scanner: ${escapeHTML(scanner.name)}</p>`;
+                resultHtml += `<p class="ml-4">Status: ${escapeHTML(scanner.status)}</p>`;
                 if (scanner.anti_virus_results) {
-                    resultHtml += `<p style="margin-left: 20px;">AV-Ergebnisse:</p>`;
+                    resultHtml += `<p class="ml-4">AV-Ergebnisse:</p>`;
                     for (const avResult of scanner.anti_virus_results) {
-                        resultHtml += `<p style="margin-left: 30px;">AV: ${escapeHTML(avResult.product)} - Urteil: ${escapeHTML(avResult.verdict)}</p>`;
+                        resultHtml += `<p class="ml-6">AV: ${escapeHTML(avResult.product)} - Urteil: ${escapeHTML(avResult.verdict)}</p>`;
                     }
                 }
             }
         } else {
-            resultHtml += `<p style="margin-left: 10px;">Keine Scanner-Ergebnisse verfügbar.</p>`;
+            resultHtml += `<p class="ml-2">Keine Scanner-Ergebnisse verfügbar.</p>`;
         }
 
         resultHtml += `
@@ -149,8 +149,8 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
             <p>Letzter Dateiname: ${escapeHTML(json_data.last_file_name || 'N/A')}</p>
             <p>Größe: ${escapeHTML(json_data.size || 'N/A')} Bytes</p>
             <p>Typ: ${escapeHTML(json_data.type || 'N/A')}</p>
-            <button id="btn-rescan-${escapeHTML(hybrid_sha)}" style="padding: 10px; margin-top: 10px; background-color: #008000; color: white; border: none; cursor: pointer;">Erneut scannen (Rescan)</button>
-            <p id="rescan-status-${escapeHTML(hybrid_sha)}" style="margin-top: 5px;"></p>
+            <button id="btn-rescan-${escapeHTML(hybrid_sha)}" class="btn-success mt-2">Erneut scannen (Rescan)</button>
+            <p id="rescan-status-${escapeHTML(hybrid_sha)}" class="mt-2"></p>
         </div>`;
     }
     return resultHtml;
@@ -219,11 +219,11 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 
         } else {
             console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
-            document.getElementById('hybrid_analysis_api_content').innerHTML += `<div style="color:red;">API Error: ${response.status} für Element ${escapeHTML(attachmentName)}</div>`;
+            document.getElementById('hybrid_analysis_api_content').innerHTML += `<div class="text-danger">API Error: ${response.status} für Element ${escapeHTML(attachmentName)}</div>`;
         }
     } catch (error) {
         console.error('Fetch error:', error);
-        document.getElementById('hybrid_analysis_api_content').innerHTML += `<div style="color:red;">Netzwerkfehler: ${escapeHTML(error.message)} für Element ${escapeHTML(attachmentName)}</div>`;
+        document.getElementById('hybrid_analysis_api_content').innerHTML += `<div class="text-danger">Netzwerkfehler: ${escapeHTML(error.message)} für Element ${escapeHTML(attachmentName)}</div>`;
     }
 }
 
@@ -234,11 +234,11 @@ function renderManualUrlScanUI(url, headerMessageId) {
     let urlId = Array.from(new TextEncoder().encode(url))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
-    let resultHtml = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-left: 5px solid blue;" id="upload-container-${urlId}">
+    let resultHtml = `<div class="card card-info mb-3" id="upload-container-${urlId}">
         <h2>URL: ${safeUrl}</h2>
-        <p style="color: blue;">Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
-        <button id="btn-upload-${urlId}" style="padding: 10px; background-color: #005a9e; color: white; border: none; cursor: pointer;">URL jetzt scannen</button>
-        <p id="upload-status-${urlId}" style="margin-top: 5px;"></p>
+        <p class="text-info">Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
+        <button id="btn-upload-${urlId}" class="btn-primary mt-2">URL jetzt scannen</button>
+        <p id="upload-status-${urlId}" class="mt-2"></p>
     </div>`;
     container.insertAdjacentHTML('beforeend', resultHtml);
 
@@ -277,12 +277,12 @@ function renderManualUrlScanUI(url, headerMessageId) {
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
     let safeHash = escapeHTML(hash);
-    let resultHtml = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-left: 5px solid blue;" id="upload-container-${safeHash}">
+    let resultHtml = `<div class="card card-info mb-3" id="upload-container-${safeHash}">
         <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
         <p>SHA-256: ${safeHash}</p>
-        <p style="color: blue;">Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
-        <button id="btn-upload-${safeHash}" style="padding: 10px; background-color: #005a9e; color: white; border: none; cursor: pointer;">Datei jetzt scannen (Upload)</button>
-        <p id="upload-status-${safeHash}" style="margin-top: 5px;"></p>
+        <p class="text-info">Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
+        <button id="btn-upload-${safeHash}" class="btn-primary mt-2">Datei jetzt scannen (Upload)</button>
+        <p id="upload-status-${safeHash}" class="mt-2"></p>
     </div>`;
     container.insertAdjacentHTML('beforeend', resultHtml);
 
