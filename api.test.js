@@ -11,7 +11,7 @@ describe('escapeHTML', () => {
     before(() => {
         // Create mock environment
         context = {
-            messenger: {
+            browser: {
                 storage: {
                     local: {
                         get: async () => ({ apikey: 'test' })
@@ -75,5 +75,87 @@ describe('escapeHTML', () => {
             escapeHTML('<script>alert("XSS & \'test\'")</script>'),
             '&lt;script&gt;alert(&quot;XSS &amp; &#39;test&#39;&quot;)&lt;/script&gt;'
         );
+    });
+});
+
+
+describe('get_hybrid_report_by_sha256', () => {
+    let context;
+    let get_hybrid_report_by_sha256;
+
+    before(() => {
+        // Create mock environment
+        context = {
+            browser: {
+                storage: {
+                    local: {
+                        get: async () => ({ apikey: 'test' })
+                    }
+                },
+                tabs: {
+                    query: async () => [{ id: 1 }]
+                },
+                messageDisplay: {
+                    getDisplayedMessage: async () => ({ headerMessageId: '123', subject: 'test', author: 'author' })
+                }
+            },
+            document: {
+                getElementById: (id) => {
+                    if (id === 'hybrid_analysis_api_content') {
+                        if (!context.apiContentElement) {
+                            context.apiContentElement = {
+                                _html: '',
+                                get innerHTML() { return this._html; },
+                                set innerHTML(val) { this._html = val; },
+                                insertAdjacentHTML: function(position, text) {
+                                    this._html += text;
+                                }
+                            };
+                        }
+                        return context.apiContentElement;
+                    }
+                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '' };
+                }
+            },
+            indexedDB: {
+                open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null })
+            },
+            console: { log: () => {}, error: () => {} }, // Mock console to avoid noisy logs
+            fetch: null, // Will be overridden in each test
+            setTimeout: setTimeout,
+            String: String
+        };
+
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        get_hybrid_report_by_sha256 = context.get_hybrid_report_by_sha256;
+    });
+
+    it('injects Netzwerkfehler message on fetch network failure', async () => {
+        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement._html = '';
+        context.fetch = async () => {
+            throw new Error('Network timeout');
+        };
+
+        await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
+
+        assert.ok(context.apiContentElement._html.includes('<div style="color:red;">Netzwerkfehler: Network timeout für Anhang test.txt</div>'));
+    });
+
+    it('injects API Error message on fetch non-200 status', async () => {
+        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement._html = '';
+        context.fetch = async () => {
+            return {
+                status: 500,
+                statusText: 'Internal Server Error',
+                json: async () => ({})
+            };
+        };
+
+        await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
+
+        assert.ok(context.apiContentElement._html.includes('<div style="color:red;">API Error: 500 for attachment test.txt</div>'));
     });
 });
