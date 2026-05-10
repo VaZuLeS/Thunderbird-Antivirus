@@ -54,80 +54,93 @@ async function get_sha256_hash(fileData) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+async function check_and_prepare_attachment_data(message, attachment) {
+  console.log(`Prüfe Anhang: ${attachment.name} (${attachment.contentType}, ${attachment.size} bytes)`);
+
+  switch (attachment.contentType) {
+    case 'text/plain':
+    case 'text/html':
+    case 'text/css':
+    case 'text/csv':
+    case 'text/javascript':
+    case 'application/json':
+    case 'application/xml':
+    case 'application/xhtml+xml':
+      console.log(`Überspringe Datei vom Typ ${attachment.contentType}`);
+      return null;
+
+    default:
+      console.log(`Berechne lokalen Hash für Datei | Typ: ${attachment.contentType}`);
+
+      try {
+          let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
+          const content_of_atachment = file.slice();
+          const arrayBuffer = await content_of_atachment.arrayBuffer();
+          const local_hash = await get_sha256_hash(arrayBuffer);
+          console.log("Lokaler SHA-256:", local_hash);
+
+          // First check if it exists using hash
+          const optionsCheck = {
+              method: 'GET',
+              url: 'https://hybrid-analysis.com/api/v2/overview/' + local_hash,
+              headers: {
+                  accept: 'application/json',
+                  'api-key': apikey_hybridanalysis,
+                  'user-agent': 'Falcon',
+              }
+          };
+
+          const responseCheck = await fetch(optionsCheck.url, optionsCheck);
+
+          if (responseCheck.status === 200) {
+              const json_data = await responseCheck.json();
+              console.log('Datei ist der API bereits bekannt.');
+              return {
+                  attachmentName: attachment.name,
+                  hybrid_data: {
+                      submission_id: json_data.submission_id || 'N/A',
+                      job_id: json_data.job_id || 'N/A',
+                      sha256: local_hash,
+                      state: 'KNOWN'
+                  }
+              };
+          } else {
+              console.log('Datei ist der API unbekannt. Speichere Metadaten für manuellen Upload.');
+              return {
+                  attachmentName: attachment.name,
+                  hybrid_data: {
+                      submission_id: 'PENDING_UPLOAD',
+                      job_id: 'PENDING_UPLOAD',
+                      sha256: local_hash,
+                      state: 'UNKNOWN',
+                      partName: attachment.partName
+                  }
+              };
+          }
+
+      } catch (error) {
+        console.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
+        return null;
+      }
+  }
+}
+
 async function sent_to_hybrid_by_attachment(message, attachments) {
   if (!apikey_hybridanalysis) {
       console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
       return;
   }
 
-  for (const attachment of attachments) {
-    console.log(`Prüfe Anhang: ${attachment.name} (${attachment.contentType}, ${attachment.size} bytes)`);
+  const results = await Promise.all(attachments.map(attachment => check_and_prepare_attachment_data(message, attachment)));
+  const validResults = results.filter(result => result !== null);
 
-    let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
-
-    switch (attachment.contentType) {
-      case 'text/plain':
-      case 'text/html':
-      case 'text/css':
-      case 'text/csv':
-      case 'text/javascript':
-      case 'application/json':
-      case 'application/xml':
-      case 'application/xhtml+xml':
-        console.log(`Überspringe Datei vom Typ ${attachment.contentType}`);
-        break;
-
-      default:
-        console.log(`Berechne lokalen Hash für Datei | Typ: ${attachment.contentType}`);
-
-        try {
-            const content_of_atachment = file.slice();
-            const arrayBuffer = await content_of_atachment.arrayBuffer();
-            const local_hash = await get_sha256_hash(arrayBuffer);
-            console.log("Lokaler SHA-256:", local_hash);
-
-            // First check if it exists using hash
-            const optionsCheck = {
-                method: 'GET',
-                url: 'https://hybrid-analysis.com/api/v2/overview/' + local_hash,
-                headers: {
-                    accept: 'application/json',
-                    'api-key': apikey_hybridanalysis,
-                    'user-agent': 'Falcon',
-                }
-            };
-
-            const responseCheck = await fetch(optionsCheck.url, optionsCheck);
-
-            if (responseCheck.status === 200) {
-                const json_data = await responseCheck.json();
-                console.log('Datei ist der API bereits bekannt.');
-                indexedDB_save_hybrid_data_to_db(message, {
-                    submission_id: json_data.submission_id || 'N/A',
-                    job_id: json_data.job_id || 'N/A',
-                    sha256: local_hash,
-                    state: 'KNOWN'
-                }, attachment.name);
-            } else {
-                console.log('Datei ist der API unbekannt. Speichere Metadaten für manuellen Upload.');
-                indexedDB_save_hybrid_data_to_db(message, {
-                    submission_id: 'PENDING_UPLOAD',
-                    job_id: 'PENDING_UPLOAD',
-                    sha256: local_hash,
-                    state: 'UNKNOWN',
-                    partName: attachment.partName
-                }, attachment.name);
-            }
-
-        } catch (error) {
-          console.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
-        }
-    }
+  if (validResults.length > 0) {
+      indexedDB_save_batch_hybrid_data_to_db(message, validResults);
   }
 }
 
 // Speicherung der Ergebnisse in IndexedDB
-function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName) {
+function indexedDB_save_batch_hybrid_data_to_db(message, hybrid_data_list) {
   let openRequest = indexedDB.open("thunderbird_av", 3);
 
   openRequest.onupgradeneeded = function (e) {
@@ -146,36 +159,37 @@ function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName) 
     if (message.headerMessageId) {
       let getRequest = store.get(message.headerMessageId);
       getRequest.onsuccess = function () {
-        let existingRecord = getRequest.result;
-        let newAttachment = {
-          hybrid_submission_id: hybrid_data.submission_id,
-          hybrid_job_id: hybrid_data.job_id,
-          hybrid_sha256: hybrid_data.sha256,
-          attachment_name: attachmentName,
-          state: hybrid_data.state,
-          partName: hybrid_data.partName,
-          created: new Date()
-        };
+        let recordToSave = getRequest.result;
 
-        let recordToSave;
-        if (existingRecord) {
-          // Update existing record
-          recordToSave = existingRecord;
-          if (!recordToSave.attachments) recordToSave.attachments = [];
+        if (!recordToSave) {
+          recordToSave = {
+            messageHeader: message.headerMessageId,
+            author: message.author,
+            subject: message.subject,
+            attachments: []
+          };
+        }
+
+        if (!recordToSave.attachments) recordToSave.attachments = [];
+
+        for (const item of hybrid_data_list) {
+          const { hybrid_data, attachmentName } = item;
+          let newAttachment = {
+            hybrid_submission_id: hybrid_data.submission_id,
+            hybrid_job_id: hybrid_data.job_id,
+            hybrid_sha256: hybrid_data.sha256,
+            attachment_name: attachmentName,
+            state: hybrid_data.state,
+            partName: hybrid_data.partName,
+            created: new Date()
+          };
+
           let existingAttIndex = recordToSave.attachments.findIndex(a => a.attachment_name === attachmentName);
           if (existingAttIndex > -1) {
               recordToSave.attachments[existingAttIndex] = newAttachment;
           } else {
               recordToSave.attachments.push(newAttachment);
           }
-        } else {
-          // Create new record
-          recordToSave = {
-            messageHeader: message.headerMessageId,
-            author: message.author,
-            subject: message.subject,
-            attachments: [newAttachment]
-          };
         }
 
         let addRequest = store.put(recordToSave);
