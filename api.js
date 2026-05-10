@@ -63,7 +63,6 @@ try {
                 document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
                 for (const att of getRequest.result.attachments) {
                     const hash256 = att.hybrid_sha256;
-                    console.log("Found hash: " + hash256 + " for attachment: " + att.attachment_name + " state: " + att.state);
                     if (att.state === 'UNKNOWN') {
                         renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                     } else {
