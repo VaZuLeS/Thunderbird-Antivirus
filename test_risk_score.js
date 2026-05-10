@@ -30,13 +30,32 @@ function calculateThreatScore(author, urls) {
     const parts = email.split('@');
     let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
 
-    if (senderDomain) {
+    // Hilfsfunktion zur Ermittlung der Hauptdomain
+    function getMainDomain(domain) {
         for (let brand of knownBrands) {
-            if (senderDomain !== brand) {
-                let distance = levenshteinDistance(senderDomain, brand);
-                if (distance > 0 && distance <= 2 && senderDomain.length >= 4) {
+            if (domain === brand || domain.endsWith('.' + brand)) {
+                return brand;
+            }
+        }
+        const dParts = domain.split('.');
+        if (dParts.length >= 2) {
+            return dParts.slice(-2).join('.');
+        }
+        return domain;
+    }
+
+    let senderMainDomain = "";
+    if (senderDomain) {
+        senderMainDomain = getMainDomain(senderDomain);
+
+        let isSenderKnownBrand = knownBrands.includes(senderMainDomain);
+
+        if (!isSenderKnownBrand) {
+            for (let brand of knownBrands) {
+                let distance = levenshteinDistance(senderMainDomain, brand);
+                if (distance > 0 && distance <= 2 && senderMainDomain.length >= 4) {
                     score += 60;
-                    reasons.push(`Absender-Domain (${senderDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
+                    reasons.push(`Absender-Domain (${senderMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
                     break;
                 }
             }
@@ -54,22 +73,24 @@ function calculateThreatScore(author, urls) {
     if (linkDomains.size > 0 && senderDomain) {
         let matchFound = false;
         let typosquatLinkFound = false;
+
         for (let ld of linkDomains) {
-            if (ld === senderDomain || ld.endsWith('.' + senderDomain)) {
+            if (ld === senderDomain || ld.endsWith('.' + senderDomain) || senderDomain.endsWith('.' + ld)) {
                 matchFound = true;
+            } else if (senderMainDomain && (ld === senderMainDomain || ld.endsWith('.' + senderMainDomain))) {
+                 matchFound = true;
             }
-            for (let brand of knownBrands) {
-                if (ld !== brand && !ld.endsWith('.' + brand)) {
-                    let mainDomainPart = ld;
-                    const ldParts = ld.split('.');
-                    if (ldParts.length >= 2) {
-                        mainDomainPart = ldParts.slice(-2).join('.');
-                    }
-                    let distance = levenshteinDistance(mainDomainPart, brand);
-                    if (distance > 0 && distance <= 2 && mainDomainPart.length >= 4) {
+
+            let linkMainDomain = getMainDomain(ld);
+            let isLinkKnownBrand = knownBrands.includes(linkMainDomain);
+
+            if (!isLinkKnownBrand) {
+                for (let brand of knownBrands) {
+                    let distance = levenshteinDistance(linkMainDomain, brand);
+                    if (distance > 0 && distance <= 2 && linkMainDomain.length >= 4) {
                         typosquatLinkFound = true;
-                        if (!reasons.some(r => r.includes(mainDomainPart))) {
-                            reasons.push(`Link-Domain (${mainDomainPart}) ähnelt verdächtig der bekannten Marke ${brand}.`);
+                        if (!reasons.some(r => r.includes(linkMainDomain))) {
+                            reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
                         }
                     }
                 }
@@ -90,6 +111,7 @@ function calculateThreatScore(author, urls) {
     return { score: Math.min(score, 100), reasons: reasons };
 }
 
+console.log("Test 0: Legit subdomain sender, root link", calculateThreatScore("Service <service@service.paypal.com>", ["http://paypal.com/login"]));
 console.log("Test 1: Typosquatting sender", calculateThreatScore("Service <service@paypa1.com>", []));
 console.log("Test 2: Domain mismatch", calculateThreatScore("Service <service@paypal.com>", ["http://login.hacker.com/123"]));
 console.log("Test 3: Both", calculateThreatScore("Service <service@paypal-support.com>", ["http://login.paypa1.com"]));
