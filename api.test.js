@@ -35,6 +35,7 @@ describe('escapeHTML', () => {
             setTimeout: setTimeout,
             String: String
         };
+        context.browser = context.messenger;
 
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
@@ -75,5 +76,10 @@ describe('escapeHTML', () => {
             escapeHTML('<script>alert("XSS & \'test\'")</script>'),
             '&lt;script&gt;alert(&quot;XSS &amp; &#39;test&#39;&quot;)&lt;/script&gt;'
         );
+    });
+
+    it('safely handles numbers and errors by casting to string', () => {
+        assert.strictEqual(escapeHTML(100), '100');
+        assert.strictEqual(escapeHTML(new Error('test')), 'Error: test');
     });
 });

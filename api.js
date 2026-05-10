@@ -1,6 +1,6 @@
 function escapeHTML(str) {
     if (!str) return '';
-    return str.replace(/[&<>"']/g, function(match) {
+    return String(str).replace(/[&<>"']/g, function(match) {
         const escape = {
             '&': '&amp;',
             '<': '&lt;',
@@ -126,8 +126,8 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
 
                 resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
                     <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-                    <p><strong class="head_line" style="color: ${threatColor};">Bedrohungsscore:</strong> ${escapeHTML(json_data.threat_score)}</p>
-                    <p><strong class="head_line" style="color: ${threatColor};">Urteil:</strong> ${escapeHTML(json_data.verdict)}</p>
+                    <p><strong class="head_line" style="color: ${threatColor};">Bedrohungsscore:</strong> ${escapeHTML(String(json_data.threat_score))}</p>
+                    <p><strong class="head_line" style="color: ${threatColor};">Urteil:</strong> ${escapeHTML(String(json_data.verdict))}</p>
                     <p><strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}</p>
                     <p>Multiscan-Ergebnis: ${escapeHTML(json_data.multiscan_result || 'N/A')}</p>
                     <p><strong>Additional Information:</strong></p>
