@@ -85,6 +85,57 @@ try {
 }
 })();
 
+function renderReport(json_data, attachmentName, hybrid_sha) {
+    let resultHtml = '';
+
+    // Pending check (in_progress)
+    if (json_data.state === 'IN_PROGRESS') {
+        resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+            <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
+            <p style="color: orange;"><strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.</p>
+            <p>SHA-256: ${escapeHTML(json_data.sha256 || hybrid_sha)}</p>
+        </div>`;
+    } else {
+        let threatColor = "green";
+        if (json_data.threat_score > 50) threatColor = "orange";
+        if (json_data.threat_score > 80) threatColor = "red";
+
+        resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
+            <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
+            <p><strong class="head_line" style="color: ${threatColor};">Bedrohungsscore:</strong> ${escapeHTML(json_data.threat_score)}</p>
+            <p><strong class="head_line" style="color: ${threatColor};">Urteil:</strong> ${escapeHTML(json_data.verdict)}</p>
+            <p><strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}</p>
+            <p>Multiscan-Ergebnis: ${escapeHTML(json_data.multiscan_result || 'N/A')}</p>
+            <p><strong>Additional Information:</strong></p>
+            <p>Analysis start time: ${escapeHTML(json_data.analysis_start_time || 'N/A')}</p>
+            <p>Tags: ${escapeHTML(json_data.tags ? json_data.tags.join(', ') : 'N/A')}</p>
+            <div class="head_line">Scannerergebnisse:</div>`;
+
+        if (json_data.scanners && json_data.scanners.length > 0) {
+            for (const scanner of json_data.scanners) {
+                resultHtml += `<p style="margin-left: 10px;">Scanner: ${escapeHTML(scanner.name)}</p>`;
+                resultHtml += `<p style="margin-left: 20px;">Status: ${escapeHTML(scanner.status)}</p>`;
+                if (scanner.anti_virus_results) {
+                    resultHtml += `<p style="margin-left: 20px;">AV-Ergebnisse:</p>`;
+                    for (const avResult of scanner.anti_virus_results) {
+                        resultHtml += `<p style="margin-left: 30px;">AV: ${escapeHTML(avResult.product)} - Urteil: ${escapeHTML(avResult.verdict)}</p>`;
+                    }
+                }
+            }
+        } else {
+            resultHtml += `<p style="margin-left: 10px;">Keine Scanner-Ergebnisse verfügbar.</p>`;
+        }
+
+        resultHtml += `
+            <p>SHA-256-Hashwert: ${escapeHTML(json_data.sha256)}</p>
+            <p>Letzter Dateiname: ${escapeHTML(json_data.last_file_name || 'N/A')}</p>
+            <p>Größe: ${escapeHTML(json_data.size || 'N/A')} Bytes</p>
+            <p>Typ: ${escapeHTML(json_data.type || 'N/A')}</p>
+        </div>`;
+    }
+    return resultHtml;
+}
+
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
 
     // Set the request options
@@ -108,54 +159,7 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
 
         if (response.status === 200) {
             let container = document.getElementById('hybrid_analysis_api_content');
-            let resultHtml = '';
-
-            // Pending check (in_progress)
-            if (json_data.state === 'IN_PROGRESS') {
-                resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
-                    <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-                    <p style="color: orange;"><strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.</p>
-                    <p>SHA-256: ${escapeHTML(json_data.sha256 || hybrid_sha)}</p>
-                </div>`;
-            } else {
-                let threatColor = "green";
-                if (json_data.threat_score > 50) threatColor = "orange";
-                if (json_data.threat_score > 80) threatColor = "red";
-
-                resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
-                    <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-                    <p><strong class="head_line" style="color: ${threatColor};">Bedrohungsscore:</strong> ${escapeHTML(json_data.threat_score)}</p>
-                    <p><strong class="head_line" style="color: ${threatColor};">Urteil:</strong> ${escapeHTML(json_data.verdict)}</p>
-                    <p><strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}</p>
-                    <p>Multiscan-Ergebnis: ${escapeHTML(json_data.multiscan_result || 'N/A')}</p>
-                    <p><strong>Additional Information:</strong></p>
-                    <p>Analysis start time: ${escapeHTML(json_data.analysis_start_time || 'N/A')}</p>
-                    <p>Tags: ${escapeHTML(json_data.tags ? json_data.tags.join(', ') : 'N/A')}</p>
-                    <div class="head_line">Scannerergebnisse:</div>`;
-
-                if (json_data.scanners && json_data.scanners.length > 0) {
-                    for (const scanner of json_data.scanners) {
-                        resultHtml += `<p style="margin-left: 10px;">Scanner: ${escapeHTML(scanner.name)}</p>`;
-                        resultHtml += `<p style="margin-left: 20px;">Status: ${escapeHTML(scanner.status)}</p>`;
-                        if (scanner.anti_virus_results) {
-                            resultHtml += `<p style="margin-left: 20px;">AV-Ergebnisse:</p>`;
-                            for (const avResult of scanner.anti_virus_results) {
-                                resultHtml += `<p style="margin-left: 30px;">AV: ${escapeHTML(avResult.product)} - Urteil: ${escapeHTML(avResult.verdict)}</p>`;
-                            }
-                        }
-                    }
-                } else {
-                    resultHtml += `<p style="margin-left: 10px;">Keine Scanner-Ergebnisse verfügbar.</p>`;
-                }
-
-                resultHtml += `
-                    <p>SHA-256-Hashwert: ${escapeHTML(json_data.sha256)}</p>
-                    <p>Letzter Dateiname: ${escapeHTML(json_data.last_file_name || 'N/A')}</p>
-                    <p>Größe: ${escapeHTML(json_data.size || 'N/A')} Bytes</p>
-                    <p>Typ: ${escapeHTML(json_data.type || 'N/A')}</p>
-                </div>`;
-            }
-
+            let resultHtml = renderReport(json_data, attachmentName, hybrid_sha);
             container.insertAdjacentHTML('beforeend', resultHtml);
 
         } else {
