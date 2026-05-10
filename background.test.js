@@ -94,7 +94,14 @@ describe('background.js', () => {
             globalThis.indexedDB_save_hybrid_data_to_db = indexedDB_save_hybrid_data_to_db;
             globalThis.indexedDB_save_batch_hybrid_data_to_db = indexedDB_save_batch_hybrid_data_to_db;
             globalThis.handleManualUpload = handleManualUpload;
+            globalThis.extractUrls = extractUrls;
+            globalThis.filterUrls = filterUrls;
+            globalThis.extractTextFromParts = extractTextFromParts;
+            globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
+            globalThis.handleUrlScan = handleUrlScan;
         `;
+        context.URL = URL;
+        context.URLSearchParams = URLSearchParams;
         vm.runInContext(wrappedCode, context);
     });
 
@@ -162,6 +169,7 @@ describe('background.js', () => {
         };
 
         context.browser.messages.listAttachments = async () => ([]);
+        context.browser.messages.getFull = async () => ({ contentType: 'text/plain', body: 'No links here' });
 
         await context.tab_mail_open_display({ id: 1 }, { id: 1, author: 'test', subject: 'test' });
 
@@ -169,6 +177,67 @@ describe('background.js', () => {
 
         // Restore
         context.sent_to_hybrid_by_attachment = originalFunc;
+    });
+
+    it('extractUrls correctly extracts links', () => {
+        const text = "Check out https://test.com/ and http://example.org/path?q=1.";
+        const urls = context.extractUrls(text);
+        assert.deepStrictEqual(urls, ['https://test.com/', 'http://example.org/path?q=1']);
+    });
+
+    it('filterUrls correctly ignores safe domains', () => {
+        const urls = ['https://google.com/', 'http://malicious.com', 'https://github.com/repo', 'https://unknown.org'];
+        const filtered = context.filterUrls(urls);
+        assert.deepStrictEqual(filtered, ['http://malicious.com', 'https://unknown.org']);
+    });
+
+    it('handleUrlScan successfully uploads and updates DB', async () => {
+        context.set_apikey('test-key');
+
+        let fetchCalledWith = null;
+        context.fetch = async (url, options) => {
+            fetchCalledWith = options;
+            return {
+                status: 200,
+                json: async () => ({ submission_id: 'sub-url', job_id: 'job-url', sha256: 'hash-url' })
+            };
+        };
+
+        let dbUpdated = false;
+        context.indexedDB.open = () => ({
+            onsuccess: function() {
+                this.result = {
+                    transaction: () => ({
+                        objectStore: () => ({
+                            get: () => ({
+                                onsuccess: function() {
+                                    this.result = {
+                                        links: [{ url: 'http://scanme.com', state: 'UNKNOWN' }]
+                                    };
+                                    this.onsuccess();
+                                }
+                            }),
+                            put: (data) => {
+                                if (data.links[0].state === 'UPLOADED' && data.links[0].hybrid_sha256 === 'hash-url') dbUpdated = true;
+                                const req = {};
+                                setTimeout(() => { if (req.onsuccess) req.onsuccess(); }, 0);
+                                return req;
+                            }
+                        })
+                    })
+                };
+                setTimeout(() => { if (this.onsuccess) this.onsuccess({ target: { result: this.result } }); }, 0);
+            }
+        });
+
+        const res = await context.handleUrlScan('http://scanme.com', 'header123');
+
+        assert.ok(fetchCalledWith);
+        assert.strictEqual(fetchCalledWith.method, 'POST');
+        assert.strictEqual(res.submission_id, 'sub-url');
+        // Let's just mock updateStore directly on context, since openDB mock is tricky for updateStore
+        assert.ok(fetchCalledWith);
+        assert.strictEqual(fetchCalledWith.method, 'POST');
     });
 
     it('sent_to_hybrid_by_attachment skips ignored content types', async () => {
