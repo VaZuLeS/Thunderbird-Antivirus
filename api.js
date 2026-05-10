@@ -114,7 +114,7 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
                 resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
                     <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
                     <p style="color: orange;"><strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.</p>
-                    <p>SHA-256: ${json_data.sha256 || hybrid_sha}</p>
+                    <p>SHA-256: ${escapeHTML(json_data.sha256 || hybrid_sha)}</p>
                 </div>`;
             } else {
                 let threatColor = "green";
@@ -123,12 +123,12 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
 
                 resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
                     <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-                    <p><strong class="head_line" style="color: ${threatColor};">Bedrohungsscore:</strong> ${json_data.threat_score}</p>
-                    <p><strong class="head_line" style="color: ${threatColor};">Urteil:</strong> ${json_data.verdict}</p>
+                    <p><strong class="head_line" style="color: ${threatColor};">Bedrohungsscore:</strong> ${escapeHTML(json_data.threat_score)}</p>
+                    <p><strong class="head_line" style="color: ${threatColor};">Urteil:</strong> ${escapeHTML(json_data.verdict)}</p>
                     <p><strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}</p>
                     <p>Multiscan-Ergebnis: ${escapeHTML(json_data.multiscan_result || 'N/A')}</p>
                     <p><strong>Additional Information:</strong></p>
-                    <p>Analysis start time: ${json_data.analysis_start_time || 'N/A'}</p>
+                    <p>Analysis start time: ${escapeHTML(json_data.analysis_start_time || 'N/A')}</p>
                     <p>Tags: ${escapeHTML(json_data.tags ? json_data.tags.join(', ') : 'N/A')}</p>
                     <div class="head_line">Scannerergebnisse:</div>`;
 
@@ -148,9 +148,9 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
                 }
 
                 resultHtml += `
-                    <p>SHA-256-Hashwert: ${json_data.sha256}</p>
+                    <p>SHA-256-Hashwert: ${escapeHTML(json_data.sha256)}</p>
                     <p>Letzter Dateiname: ${escapeHTML(json_data.last_file_name || 'N/A')}</p>
-                    <p>Größe: ${json_data.size || 'N/A'} Bytes</p>
+                    <p>Größe: ${escapeHTML(json_data.size || 'N/A')} Bytes</p>
                     <p>Typ: ${escapeHTML(json_data.type || 'N/A')}</p>
                 </div>`;
             }
@@ -173,18 +173,19 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
 }
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
-    let resultHtml = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-left: 5px solid blue;" id="upload-container-${hash}">
+    let safeHash = escapeHTML(hash);
+    let resultHtml = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-left: 5px solid blue;" id="upload-container-${safeHash}">
         <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-        <p>SHA-256: ${hash}</p>
+        <p>SHA-256: ${safeHash}</p>
         <p style="color: blue;">Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
-        <button id="btn-upload-${hash}" style="padding: 10px; background-color: #005a9e; color: white; border: none; cursor: pointer;">Datei jetzt scannen (Upload)</button>
-        <p id="upload-status-${hash}" style="margin-top: 5px;"></p>
+        <button id="btn-upload-${safeHash}" style="padding: 10px; background-color: #005a9e; color: white; border: none; cursor: pointer;">Datei jetzt scannen (Upload)</button>
+        <p id="upload-status-${safeHash}" style="margin-top: 5px;"></p>
     </div>`;
     container.insertAdjacentHTML('beforeend', resultHtml);
 
-    document.getElementById(`btn-upload-${hash}`).addEventListener('click', function() {
+    document.getElementById(`btn-upload-${safeHash}`).addEventListener('click', function() {
         let btn = this;
-        let statusEl = document.getElementById(`upload-status-${hash}`);
+        let statusEl = document.getElementById(`upload-status-${safeHash}`);
         btn.disabled = true;
         btn.innerText = "Lade hoch...";
         statusEl.innerText = "Datei wird an Hybrid Analysis übertragen...";
@@ -200,7 +201,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
             if (response && response.status === 'success') {
                 statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
                 setTimeout(() => {
-                    document.getElementById(`upload-container-${hash}`).remove();
+                    document.getElementById(`upload-container-${safeHash}`).remove();
                     get_hybrid_report_by_sha256(hash, attachmentName);
                 }, 3000);
             } else {
