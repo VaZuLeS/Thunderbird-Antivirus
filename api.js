@@ -74,8 +74,10 @@ try {
             } else {
                 get_hybrid_report_by_sha256(hash256, att.attachment_name);
             }
-        }
-    } else {
+        };
+    };
+
+    openRequest.onerror = function(e) {
         console.log("Kein Hash/Anhang gefunden.");
         document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
     }
