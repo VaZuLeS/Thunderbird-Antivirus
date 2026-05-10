@@ -47,17 +47,12 @@ try {
 
 
     openRequest.onsuccess = async function (e) {
-        console.log("Datenbank wurde erfolgreich geöffnet/aktualisiert");
         db = e.target.result;
-        console.log(db);
         // Erstellen Sie eine Transaktion und öffnen Sie den Object Store
         let transaction = db.transaction(["hybridanalysis"], "readonly");
-        console.log(transaction);
         let store = transaction.objectStore("hybridanalysis");
-        console.log(store);
         // Führen Sie eine Anfrage aus, um den Hash für die angegebene MessageHeaderId zu finden.
         let getRequest = store.get(message.headerMessageId);
-        console.log(getRequest);
         getRequest.onsuccess = function (e) {
             if (getRequest.result && getRequest.result.attachments && getRequest.result.attachments.length > 0) {
                 document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
