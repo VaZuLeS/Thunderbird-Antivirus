@@ -1,11 +1,16 @@
 let apikey_hybridanalysis;
+let alwaysManual = false;
 
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get('apikey');
+    const result = await browser.storage.local.get(['apikey', 'alwaysManual']);
     console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
     apikey_hybridanalysis = result.apikey;
+    if (result.alwaysManual !== undefined) {
+      alwaysManual = result.alwaysManual;
+      console.log("alwaysManual erfolgreich geladen:", alwaysManual);
+    }
   } catch (error) {
     console.error("Fehler beim Laden der Einstellungen:", error);
   }
@@ -17,6 +22,10 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.apikey) {
     apikey_hybridanalysis = changes.apikey.newValue;
     console.log("Hybrid-Analysis API-KEY wurde dynamisch aktualisiert.");
+  }
+  if (area === 'local' && changes.alwaysManual !== undefined) {
+    alwaysManual = changes.alwaysManual.newValue;
+    console.log("alwaysManual wurde aktualisiert:", alwaysManual);
   }
 });
 
@@ -136,6 +145,20 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             const arrayBuffer = await content_of_atachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
             console.log("Lokaler SHA-256:", local_hash);
+
+            if (alwaysManual) {
+                console.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
+                return {
+                    hybrid_data: {
+                        submission_id: 'MANUAL_CHECK',
+                        job_id: 'MANUAL_CHECK',
+                        sha256: local_hash,
+                        state: 'MANUAL_CHECK_PENDING',
+                        partName: attachment.partName
+                    },
+                    attachmentName: attachment.name
+                };
+            }
 
             // First check if it exists using hash
             const optionsCheck = {
@@ -334,6 +357,12 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     } else if (request.action === "scanUrl") {
         handleUrlScan(request.url, request.headerMessageId)
+            .then(res => sendResponse({status: 'success', data: res}))
+            .catch(err => sendResponse({status: 'error', message: err.message}));
+        return true;
+    }
+    if (request.action === "checkHash") {
+        handleManualCheck(request.hash, request.headerMessageId, request.partName)
             .then(res => sendResponse({status: 'success', data: res}))
             .catch(err => sendResponse({status: 'error', message: err.message}));
         return true;

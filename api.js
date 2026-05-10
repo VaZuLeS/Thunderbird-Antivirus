@@ -103,7 +103,7 @@ try {
 }
 })();
 
-function renderReport(json_data, attachmentName, hybrid_sha) {
+function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId) {
     let resultHtml = '';
 
     // Pending check (in_progress)
@@ -149,12 +149,14 @@ function renderReport(json_data, attachmentName, hybrid_sha) {
             <p>Letzter Dateiname: ${escapeHTML(json_data.last_file_name || 'N/A')}</p>
             <p>Größe: ${escapeHTML(json_data.size || 'N/A')} Bytes</p>
             <p>Typ: ${escapeHTML(json_data.type || 'N/A')}</p>
+            <button id="btn-rescan-${escapeHTML(hybrid_sha)}" style="padding: 10px; margin-top: 10px; background-color: #008000; color: white; border: none; cursor: pointer;">Erneut scannen (Rescan)</button>
+            <p id="rescan-status-${escapeHTML(hybrid_sha)}" style="margin-top: 5px;"></p>
         </div>`;
     }
     return resultHtml;
 }
 
-async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
+async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId) {
 
     // Set the request options
     const options = {
@@ -177,8 +179,43 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
 
         if (response.status === 200) {
             let container = document.getElementById('hybrid_analysis_api_content');
-            let resultHtml = renderReport(json_data, attachmentName, hybrid_sha);
+            let resultHtml = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId);
             container.insertAdjacentHTML('beforeend', resultHtml);
+
+            let rescanBtn = document.getElementById(`btn-rescan-${escapeHTML(hybrid_sha)}`);
+            if (rescanBtn) {
+                rescanBtn.addEventListener('click', function() {
+                    let btn = this;
+                    let statusEl = document.getElementById(`rescan-status-${escapeHTML(hybrid_sha)}`);
+                    btn.disabled = true;
+                    btn.innerText = "Sende Rescan...";
+                    statusEl.innerText = "Datei wird für Rescan hochgeladen...";
+
+                    browser.runtime.sendMessage({
+                        action: "uploadAttachment",
+                        messageId: messageId,
+                        partName: partName,
+                        attachmentName: attachmentName,
+                        hash: hybrid_sha,
+                        headerMessageId: headerMessageId
+                    }).then(res => {
+                        if (res && res.status === 'success') {
+                            statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            statusEl.innerText = "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler");
+                            btn.disabled = false;
+                            btn.innerText = "Erneut versuchen";
+                        }
+                    }).catch(err => {
+                        statusEl.innerText = "Kommunikationsfehler: " + err;
+                        btn.disabled = false;
+                        btn.innerText = "Erneut versuchen";
+                    });
+                });
+            }
 
         } else {
             console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
@@ -268,7 +305,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
                 statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
                 setTimeout(() => {
                     document.getElementById(`upload-container-${safeHash}`).remove();
-                    get_hybrid_report_by_sha256(hash, attachmentName);
+                    get_hybrid_report_by_sha256(hash, attachmentName, messageId, partName, headerMessageId);
                 }, 3000);
             } else {
                 statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
