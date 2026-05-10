@@ -2,10 +2,13 @@ let apikey_hybridanalysis;
 
 // Einstellungen laden
 async function loadSettings() {
-  await messenger.storage.local.get('apikey').then((result) => {
-      console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
-      apikey_hybridanalysis =  result.apikey;
-    });    
+  try {
+    const result = await browser.storage.local.get('apikey');
+    console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
+    apikey_hybridanalysis = result.apikey;
+  } catch (error) {
+    console.error("Fehler beim Laden der Einstellungen:", error);
+  }
 }
 loadSettings();
 
@@ -14,13 +17,6 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.apikey) {
     apikey_hybridanalysis = changes.apikey.newValue;
     console.log("Hybrid-Analysis API-KEY wurde dynamisch aktualisiert.");
-  }
-});
-
-browser.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.apikey) {
-    console.log("Hybrid-Analysis API-KEY wurde aktualisiert.");
-    apikey_hybridanalysis = changes.apikey.newValue;
   }
 });
 

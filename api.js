@@ -11,18 +11,23 @@ function escapeHTML(str) {
 let apikey_hybridanalysis;
 
 (async () => {
-let result = await messenger.storage.local.get('apikey');
+let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
+
+if (!apikey_hybridanalysis) {
+    document.getElementById('hybrid_analysis_api_content').innerHTML = '<div style="color: red; padding: 10px; border: 1px solid red; background-color: #fee;"><strong>Warnung:</strong> Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.</div>';
+    return;
+}
 
 // Der Benutzer hat auf unseren Button geklickt, holen Sie sich den aktiven Tab im aktuellen Fenster mit
 // der Tabs API.
-let tabs = await messenger.tabs.query({ active: true, currentWindow: true });
+let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 
 // Holen Sie sich die aktuell angezeigte Nachricht im aktiven Tab, mit der
 // messageDisplay API. Hinweis: Dies benötigt die messagesRead Berechtigung.
 // Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
 // Informationen.
-let message = await messenger.messageDisplay.getDisplayedMessage(tabs[0].id);
+let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
 console.log(message.headerMessageId);
 
 
@@ -189,7 +194,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
         btn.innerText = "Lade hoch...";
         statusEl.innerText = "Datei wird an Hybrid Analysis übertragen...";
 
-        messenger.runtime.sendMessage({
+        browser.runtime.sendMessage({
             action: "uploadAttachment",
             messageId: messageId,
             partName: partName,
