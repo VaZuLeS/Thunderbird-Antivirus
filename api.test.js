@@ -11,7 +11,7 @@ describe('escapeHTML', () => {
     before(() => {
         // Create mock environment
         context = {
-            messenger: {
+            browser: {
                 storage: {
                     local: {
                         get: async () => ({ apikey: 'test' })
