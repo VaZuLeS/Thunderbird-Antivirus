@@ -1,27 +1,31 @@
 let apikey_hybridanalysis;
 let urlhausApikey = "";
+let urlscanApikey = "";
 let alwaysManual = false;
-let ipReputationProvider = "none";
-let ipReputationApiKey = "";
+let autoScanLinks = false;
+let timeOfClickProtection = true;
 
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'alwaysManual', 'ipReputationProvider', 'ipReputationApiKey']);
+    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection']);
     console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
     apikey_hybridanalysis = result.apikey;
     if (result.urlhausApikey !== undefined) {
       urlhausApikey = result.urlhausApikey;
     }
+    if (result.urlscanApikey !== undefined) {
+      urlscanApikey = result.urlscanApikey;
+    }
     if (result.alwaysManual !== undefined) {
       alwaysManual = result.alwaysManual;
       console.log("alwaysManual erfolgreich geladen:", alwaysManual);
     }
-    if (result.ipReputationProvider !== undefined) {
-      ipReputationProvider = result.ipReputationProvider;
+    if (result.autoScanLinks !== undefined) {
+      autoScanLinks = result.autoScanLinks;
     }
-    if (result.ipReputationApiKey !== undefined) {
-      ipReputationApiKey = result.ipReputationApiKey;
+    if (result.timeOfClickProtection !== undefined) {
+      timeOfClickProtection = result.timeOfClickProtection;
     }
   } catch (error) {
     console.error("Fehler beim Laden der Einstellungen:", error);
@@ -39,15 +43,19 @@ browser.storage.onChanged.addListener((changes, area) => {
     urlhausApikey = changes.urlhausApikey.newValue;
     console.log("URLhaus API-KEY wurde aktualisiert.");
   }
+  if (area === 'local' && changes.urlscanApikey !== undefined) {
+    urlscanApikey = changes.urlscanApikey.newValue;
+    console.log("urlscan.io API-KEY wurde aktualisiert.");
+  }
   if (area === 'local' && changes.alwaysManual !== undefined) {
     alwaysManual = changes.alwaysManual.newValue;
     console.log("alwaysManual wurde aktualisiert:", alwaysManual);
   }
-  if (area === 'local' && changes.ipReputationProvider !== undefined) {
-    ipReputationProvider = changes.ipReputationProvider.newValue;
+  if (area === 'local' && changes.autoScanLinks !== undefined) {
+    autoScanLinks = changes.autoScanLinks.newValue;
   }
-  if (area === 'local' && changes.ipReputationApiKey !== undefined) {
-    ipReputationApiKey = changes.ipReputationApiKey.newValue;
+  if (area === 'local' && changes.timeOfClickProtection !== undefined) {
+    timeOfClickProtection = changes.timeOfClickProtection.newValue;
   }
 });
 
@@ -141,20 +149,41 @@ function levenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], maliciousIps = []) {
+function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {
     let score = 0;
     let reasons = [];
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
 
-    if (maliciousIps && maliciousIps.length > 0) {
-        for (let ip of maliciousIps) {
-            score += 50;
-            reasons.push(`Einliefernder Mailserver-IP (${ip}) ist auf einer Blacklist (Botnet/Spam).`);
+    const emailMatch = author.match(/<([^>]+)>/);
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
+    const parts = email.split('@');
+    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    // Check Blacklist
+    if (customBlacklist && customBlacklist.length > 0) {
+        if (customBlacklist.includes(email)) {
+            return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`] };
+        }
+        for (let b of customBlacklist) {
+            if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
+                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`] };
+            }
         }
     }
 
-    // Auth-Header Checks (SPF, DKIM, DMARC, BIMI)
-    let authStatus = 'unknown';
+    // Check Whitelist
+    if (customWhitelist && customWhitelist.length > 0) {
+        if (customWhitelist.includes(email)) {
+            return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`] };
+        }
+        for (let w of customWhitelist) {
+            if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
+                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`] };
+            }
+        }
+    }
+
+    // Auth-Header Checks (SPF, DKIM, DMARC)
     if (authHeaders && authHeaders.length > 0) {
         const headerStr = authHeaders.join(' ').toLowerCase();
         let fail = false;
@@ -192,9 +221,46 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     }
 
     const emailMatch = author.match(/<([^>]+)>/);
-    let email = emailMatch ? emailMatch[1] : author;
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
     const parts = email.split('@');
     let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    // Reply-To Check
+    let replyToEmail = "";
+    if (replyTo) {
+        const replyMatch = replyTo.match(/<([^>]+)>/);
+        replyToEmail = replyMatch ? replyMatch[1].toLowerCase() : replyTo.toLowerCase();
+    }
+
+    if (replyToEmail && senderDomain) {
+        const replyParts = replyToEmail.split('@');
+        const replyDomain = replyParts.length === 2 ? replyParts[1] : "";
+        if (replyDomain && replyDomain !== senderDomain) {
+            score += 50;
+            reasons.push(`Diskrepanz erkannt: "Reply-To" Domain (${replyDomain}) weicht von der Absender-Domain (${senderDomain}) ab.`);
+        }
+    }
+
+    // Verhaltensanalyse / BEC Schutz
+    const urgencyWords = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
+    let textToAnalyze = (subject + " " + messageText).toLowerCase();
+    let foundUrgencyWords = urgencyWords.filter(word => {
+        let regex = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${word})(?=[^\\wäöüßÄÖÜ]|$)`, 'i');
+        return regex.test(textToAnalyze);
+    });
+
+    if (foundUrgencyWords.length > 0) {
+        if (isFirstCommunication) {
+            score += 50;
+            reasons.push(`Mögliches BEC (Business Email Compromise): Erste Kommunikation mit diesem Absender und Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}).`);
+        } else {
+            score += 20;
+            reasons.push(`Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}). Bitte prüfen Sie die Anfrage sorgfältig.`);
+        }
+    } else if (isFirstCommunication) {
+        score += 10;
+        reasons.push("Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.");
+    }
 
     // Hilfsfunktion zur Ermittlung der Hauptdomain
     function getMainDomain(domain) {
@@ -299,7 +365,64 @@ async function tab_mail_open_display(tab, message) {
 
     console.log("Gefundene URLs:", filteredUrls);
     if (filteredUrls.length > 0) {
-      await indexedDB_save_links_to_db(message, filteredUrls);
+      if (privacyTier === 'max') {
+         console.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
+         const urlResults = await Promise.all(filteredUrls.map(async (url) => {
+            try {
+                if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+                const formBody = new URLSearchParams();
+                formBody.append('scan_type', 'all');
+                formBody.append('url', url);
+
+                const options = {
+                    method: 'POST',
+                    url: 'https://hybrid-analysis.com/api/v2/quick-scan/url',
+                    headers: {
+                        accept: 'application/json',
+                        'api-key': apikey_hybridanalysis,
+                        'user-agent': 'Falcon',
+                        'scan_type': 'all',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formBody
+                };
+                const response = await fetch(options.url, options);
+                if (response.status === 200 || response.status === 201) {
+                    const json_data = await response.json();
+                    return {
+                        url: url,
+                        state: 'UPLOADED',
+                        hybrid_submission_id: json_data.submission_id,
+                        hybrid_job_id: json_data.job_id,
+                        hybrid_sha256: json_data.sha256
+                    };
+                }
+            } catch (e) {
+                console.error('Fehler beim automatischen URL-Upload', e);
+            }
+            return { url: url, state: 'UNKNOWN' };
+         }));
+
+         await indexedDB_save_links_objects_to_db(message, urlResults);
+      } else {
+         await indexedDB_save_links_to_db(message, filteredUrls);
+      }
+    }
+
+    // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
+    if (timeOfClickProtection && filteredUrls.length > 0) {
+       browser.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: function() {
+              const links = document.querySelectorAll('a');
+              links.forEach(link => {
+                  if (link.href && link.href.startsWith('http')) {
+                      link.title = "Protected by Thundy Time-of-Click";
+                      link.style.borderBottom = "1px dashed #ff8c00";
+                  }
+              });
+          }
+       }).catch(e => console.log("Fehler beim Injecten von Time-of-Click Styles:", e));
     }
 
     let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
@@ -322,6 +445,29 @@ async function tab_mail_open_display(tab, message) {
         }
     }
 
+    // BEC Protection Data Extraction
+    const emailMatch = message.author.match(/<([^>]+)>/);
+    let senderEmail = emailMatch ? emailMatch[1].toLowerCase() : message.author.toLowerCase();
+
+    let isFirstCommunication = false;
+    try {
+        if (browser.messages.query) {
+            let previousMsgs = await browser.messages.query({ to: senderEmail });
+            if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
+                isFirstCommunication = true;
+            }
+        }
+    } catch (e) {
+        console.log("Fehler bei messages.query (Möglicherweise nicht unterstützt):", e);
+    }
+
+    let replyTo = "";
+    if (fullMessage.headers && fullMessage.headers['reply-to']) {
+        replyTo = fullMessage.headers['reply-to'][0];
+    }
+
+    let subject = message.subject || "";
+
     if (urlhausApikey && filteredUrls.length > 0) {
       let linkDomains = new Set();
       for (let url of filteredUrls) {
@@ -343,10 +489,9 @@ async function tab_mail_open_display(tab, message) {
       urlhausDomains = checkResults.filter(d => d !== null);
     }
 
-    let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains, maliciousIps);
-
-    if (threat.score >= 50 || threat.authStatus === 'pass') {
-      console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons, `AuthStatus:`, threat.authStatus);
+    let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains, isFirstCommunication, messageText, subject, replyTo);
+    if (threat.score >= 50) {
+      console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
       await browser.scripting.executeScript({
         target: { tabId: tab.id },
         func: function(score, reasons, authStatus) {
@@ -496,6 +641,11 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             const local_hash = await get_sha256_hash(arrayBuffer);
             console.log("Lokaler SHA-256:", local_hash);
 
+            let virustotal_stats = null;
+            if (apikey_virustotal) {
+                virustotal_stats = await checkVirusTotal(local_hash, apikey_virustotal);
+            }
+
             if (alwaysManual) {
                 console.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
                 return {
@@ -506,7 +656,8 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
                         state: 'MANUAL_CHECK_PENDING',
                         partName: attachment.partName
                     },
-                    attachmentName: attachment.name
+                    attachmentName: attachment.name,
+                    virustotal_stats: virustotal_stats
                 };
             }
 
@@ -534,10 +685,52 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
                         state: 'KNOWN',
                         partName: attachment.partName
                     },
-                    attachmentName: attachment.name
+                    attachmentName: attachment.name,
+                    virustotal_stats: virustotal_stats
                 };
             } else {
-                console.log('Datei ist der API unbekannt. Speichere Metadaten für manuellen Upload.');
+                console.log('Datei ist der API unbekannt.');
+                if (privacyTier === 'balanced' || privacyTier === 'max') {
+                    console.log('Lade unbekannte Datei automatisch hoch...');
+                    try {
+                        const file_to_submit = new File([content_of_atachment], attachment.name, { type: file.type || 'application/octet-stream' });
+                        const formData = new FormData();
+                        formData.append('scan_type', 'all');
+                        formData.append('file', file_to_submit);
+
+                        const uploadOptions = {
+                            method: 'POST',
+                            url: 'https://hybrid-analysis.com/api/v2/quick-scan/file',
+                            headers: {
+                                accept: 'application/json',
+                                'api-key': apikey_hybridanalysis,
+                                'user-agent': 'Falcon',
+                                'scan_type': 'all'
+                            },
+                            body: formData
+                        };
+                        const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
+                        if (uploadResponse.status === 200 || uploadResponse.status === 201) {
+                            const uploadData = await uploadResponse.json();
+                            return {
+                                hybrid_data: {
+                                    submission_id: uploadData.submission_id,
+                                    job_id: uploadData.job_id,
+                                    sha256: uploadData.sha256 || local_hash,
+                                    state: 'UPLOADED',
+                                    partName: attachment.partName
+                                },
+                                attachmentName: attachment.name
+                            };
+                        } else {
+                            console.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
+                        }
+                    } catch (uploadError) {
+                        console.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
+                    }
+                }
+
+                console.log('Speichere Metadaten für manuellen Upload.');
                 return {
                     hybrid_data: {
                         submission_id: 'PENDING_UPLOAD',
@@ -546,7 +739,8 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
                         state: 'UNKNOWN',
                         partName: attachment.partName
                     },
-                    attachmentName: attachment.name
+                    attachmentName: attachment.name,
+                    virustotal_stats: virustotal_stats
                 };
             }
 
@@ -575,6 +769,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         attachment_name: result.attachmentName,
         state: result.hybrid_data.state,
         partName: result.hybrid_data.partName,
+        virustotal_stats: result.virustotal_stats,
         created: new Date()
       }));
 
@@ -612,6 +807,46 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
 }
 
 // Speicherung der Ergebnisse in IndexedDB
+async function indexedDB_save_links_objects_to_db(message, urlObjects) {
+  try {
+    const db = await openDB("thunderbird_av", 3);
+
+    if (message.headerMessageId) {
+      const newLinks = urlObjects.map(obj => ({
+        ...obj,
+        created: new Date()
+      }));
+
+      await updateStore(db, 'hybridanalysis', message.headerMessageId, (existingRecord) => {
+        let recordToSave;
+        if (existingRecord) {
+          recordToSave = existingRecord;
+          if (!recordToSave.links) recordToSave.links = [];
+
+          for (const newLink of newLinks) {
+            let existingIdx = recordToSave.links.findIndex(l => l.url === newLink.url);
+            if (existingIdx > -1) {
+                recordToSave.links[existingIdx] = newLink;
+            } else {
+                recordToSave.links.push(newLink);
+            }
+          }
+        } else {
+          recordToSave = {
+            messageHeader: message.headerMessageId,
+            author: message.author,
+            subject: message.subject,
+            links: newLinks
+          };
+        }
+        return recordToSave;
+      });
+    }
+  } catch (error) {
+    console.error('Fehler bei der Batch-Interaktion (Links Objects) mit der Datenbank:', error);
+  }
+}
+
 async function indexedDB_save_links_to_db(message, urls) {
   try {
     const db = await openDB("thunderbird_av", 3);
@@ -651,7 +886,7 @@ async function indexedDB_save_links_to_db(message, urls) {
   }
 }
 
-async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName) {
+async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName, virustotal_stats = null) {
   try {
     const db = await openDB("thunderbird_av", 3);
     
@@ -663,6 +898,7 @@ async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachment
         attachment_name: attachmentName,
         state: hybrid_data.state,
         partName: hybrid_data.partName,
+        virustotal_stats: virustotal_stats,
         created: new Date()
       };
 
@@ -760,53 +996,54 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (request.action === "checkLinkState") {
         // Need to find the active message to get headerMessageId
-        // Since content script doesn't know the message ID, we can get it via tabs API
         browser.messageDisplay.getDisplayedMessage(sender.tab.id).then(message => {
             if (message && message.headerMessageId) {
                 return openDB("thunderbird_av", 3).then(db => {
                     return getFromStore(db, "hybridanalysis", message.headerMessageId);
-                }).then(record => {
+                }).then(async record => {
+                    let linkObj = null;
                     if (record && record.links) {
-                        const linkObj = record.links.find(l => l.url.replace(/\/$/, "") === request.url.replace(/\/$/, ""));
-                        if (linkObj) {
-                            if (linkObj.hybrid_sha256) {
-                                // Known to hybrid-analysis
-                                // Could do a fetch here, but for now we rely on state if we want it fast.
-                                // But the instruction says: "If a hybrid_sha256 is found, query the Hybrid Analysis API to check the verdict." Wait, no, we agreed to rely on existing API wrappers. Let's just fetch it using fetch() as that's easiest inside background script, or rely on db state.
-                                // Actually, let's just return the db state, and if they click scan, it handles it via 'scanUrl'.
-                                // Oh wait! State might be 'UNKNOWN' or 'UPLOADED' in DB.
-                                // The prompt plan: "Find the matching URL in record.links, extract its state (e.g. UNKNOWN, CLEAN, MALICIOUS), and return it".
-                                // If it has a hybrid_sha256, we can fetch the overview API to get current verdict.
-                                if (apikey_hybridanalysis) {
-                                    return fetch('https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256, {
-                                        method: 'GET',
-                                        headers: {
-                                            accept: 'application/json',
-                                            'api-key': apikey_hybridanalysis,
-                                            'user-agent': 'Falcon',
-                                        }
-                                    }).then(response => response.json())
-                                    .then(json_data => {
-                                        if (json_data.verdict) {
-                                            if (json_data.verdict === 'no specific threat') {
-                                                sendResponse({status: 'CLEAN'});
-                                            } else {
-                                                sendResponse({status: json_data.verdict.toUpperCase()});
-                                            }
-                                        } else {
-                                            sendResponse({status: linkObj.state});
-                                        }
-                                    }).catch(err => {
-                                        sendResponse({status: linkObj.state});
-                                    });
+                        linkObj = record.links.find(l => l.url.replace(/\/$/, "") === request.url.replace(/\/$/, ""));
+                    }
+
+                    // Time-of-Click Live Scan via urlscan.io
+                    if (urlscanApikey && (!linkObj || linkObj.state === 'UNKNOWN')) {
+                        try {
+                            const res = await checkUrlscanIo(request.url, urlscanApikey);
+                            if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT') {
+                                // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
+                                return sendResponse({ status: res.status, reasons: res.reasons });
+                            }
+                        } catch (e) {
+                            console.log("Fehler bei Time-of-Click Live-Scan:", e);
+                        }
+                    }
+
+                    if (linkObj) {
+                        if (linkObj.hybrid_sha256 && apikey_hybridanalysis) {
+                            return fetch('https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256, {
+                                method: 'GET',
+                                headers: {
+                                    accept: 'application/json',
+                                    'api-key': apikey_hybridanalysis,
+                                    'user-agent': 'Falcon',
+                                }
+                            }).then(response => response.json())
+                            .then(json_data => {
+                                if (json_data.verdict) {
+                                    if (json_data.verdict === 'no specific threat') {
+                                        sendResponse({status: 'CLEAN'});
+                                    } else {
+                                        sendResponse({status: json_data.verdict.toUpperCase()});
+                                    }
                                 } else {
                                     sendResponse({status: linkObj.state});
                                 }
-                            } else {
-                                sendResponse({status: linkObj.state || 'UNKNOWN'});
-                            }
+                            }).catch(err => {
+                                sendResponse({status: linkObj.state});
+                            });
                         } else {
-                            sendResponse({status: 'UNKNOWN'});
+                            sendResponse({status: linkObj.state || 'UNKNOWN'});
                         }
                     } else {
                         sendResponse({status: 'UNKNOWN'});
@@ -820,7 +1057,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }).catch(err => {
             sendResponse({status: 'ERROR'});
         });
-        return true; // Keep the message channel open for the async response
+        return true;
     }
 
     if (request.action === "checkHash") {
@@ -829,7 +1066,46 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch(err => sendResponse({status: 'error', message: err.message}));
         return true;
     }
+
+    if (request.action === "downloadDisarmed") {
+        handleDownloadDisarmed(request.messageId, request.partName, request.attachmentName)
+            .then(res => sendResponse({status: 'success', data: res}))
+            .catch(err => sendResponse({status: 'error', message: err.message}));
+        return true;
+    }
 });
+
+async function handleDownloadDisarmed(messageId, partName, attachmentName) {
+    let file = await browser.messages.getAttachmentFile(messageId, partName);
+    const contentBuffer = await file.arrayBuffer();
+    const decoder = new TextDecoder('utf-8');
+    const htmlString = decoder.decode(contentBuffer);
+
+    // Disarm the HTML locally
+    const safeHtml = disarmHTML(htmlString);
+
+    // Create a blob from the safe HTML
+    const blob = new Blob([safeHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    // Download the file
+    let safeName = attachmentName || 'disarmed.html';
+    if (!safeName.toLowerCase().endsWith('.html') && !safeName.toLowerCase().endsWith('.htm')) {
+        safeName += '.html';
+    }
+    const downloadId = await browser.downloads.download({
+        url: url,
+        filename: 'disarmed_' + safeName,
+        saveAs: true
+    });
+
+    // Revoke object URL after a short delay to free memory, giving download time to start
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+    }, 10000);
+
+    return { downloadId: downloadId };
+}
 
 async function handleUrlScan(url, headerMessageId) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
@@ -933,6 +1209,31 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
     }
 }
 
+async function checkVirusTotal(hash, apikey) {
+    if (!apikey) return null;
+    const url = `https://www.virustotal.com/api/v3/files/${hash}`;
+    const options = {
+        method: 'GET',
+        headers: {
+            'x-apikey': apikey,
+            'accept': 'application/json'
+        }
+    };
+    try {
+        const response = await fetch(url, options);
+        if (response.status === 200) {
+            const data = await response.json();
+            if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
+                return data.data.attributes.last_analysis_stats;
+            }
+        }
+        return null;
+    } catch (e) {
+        console.error("Fehler bei VirusTotal Abfrage:", e);
+        return null;
+    }
+}
+
 async function checkURLhaus(domain, apikey) {
     if (!apikey) return false;
     try {
@@ -954,4 +1255,71 @@ async function checkURLhaus(domain, apikey) {
         console.error("Fehler bei URLhaus Abfrage", e);
     }
     return false;
+}
+
+async function checkUrlscanIo(url, apikey) {
+    if (!apikey) return null;
+    try {
+        // Start Scan
+        const scanRes = await fetch('https://urlscan.io/api/v1/scan/', {
+            method: 'POST',
+            headers: {
+                'API-Key': apikey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url: url, visibility: 'public' })
+        });
+
+        if (scanRes.status === 400) {
+           console.log("urlscan.io API Error 400 (e.g. Domain not resolvable)", await scanRes.json());
+           return { status: 'ERROR', details: 'Domain not resolvable' };
+        }
+
+        if (!scanRes.ok) throw new Error("Fehler beim Starten des Scans (urlscan.io): " + scanRes.status);
+
+        const scanData = await scanRes.json();
+        const uuid = scanData.uuid;
+
+        if (!uuid) throw new Error("Keine UUID von urlscan.io erhalten.");
+
+        // Wait for result (Polling)
+        for (let i = 0; i < 15; i++) {
+            await new Promise(r => setTimeout(r, 2000)); // wait 2s
+            const resultRes = await fetch(`https://urlscan.io/api/v1/result/${uuid}/`);
+            if (resultRes.status === 200) {
+                const resultData = await resultRes.json();
+
+                let isMalicious = false;
+                let reasons = [];
+
+                if (resultData.verdicts && resultData.verdicts.overall && resultData.verdicts.overall.malicious) {
+                    isMalicious = true;
+                    reasons.push("Die URL wurde von urlscan.io generell als bösartig eingestuft.");
+                }
+
+                if (resultData.verdicts && resultData.verdicts.urlscan && resultData.verdicts.urlscan.brands && resultData.verdicts.urlscan.brands.length > 0) {
+                     // Check if it's visually trying to spoof a brand
+                     if (resultData.verdicts.urlscan.malicious) {
+                        isMalicious = true;
+                        reasons.push("Visuelle Erkennung: Die Seite gibt sich als " + resultData.verdicts.urlscan.brands.join(', ') + " aus (Phishing-Verdacht).");
+                     }
+                }
+
+                if (isMalicious) {
+                    return { status: 'MALICIOUS_VISUAL', reasons: reasons };
+                } else {
+                    return { status: 'CLEAN' };
+                }
+            } else if (resultRes.status === 404) {
+                // Not ready yet, continue polling
+            } else {
+                throw new Error("Fehler beim Abrufen der Ergebnisse (urlscan.io): " + resultRes.status);
+            }
+        }
+
+        return { status: 'TIMEOUT' }; // Took too long
+    } catch (e) {
+        console.error("Fehler bei urlscan.io Abfrage", e);
+        return { status: 'ERROR', details: e.message };
+    }
 }

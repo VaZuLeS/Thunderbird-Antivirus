@@ -20,10 +20,39 @@ function levenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = []) {
+function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {
     let score = 0;
     let reasons = [];
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
+
+    const emailMatch = author.match(/<([^>]+)>/);
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
+    const parts = email.split('@');
+    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    // Check Blacklist
+    if (customBlacklist && customBlacklist.length > 0) {
+        if (customBlacklist.includes(email)) {
+            return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`] };
+        }
+        for (let b of customBlacklist) {
+            if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
+                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`] };
+            }
+        }
+    }
+
+    // Check Whitelist
+    if (customWhitelist && customWhitelist.length > 0) {
+        if (customWhitelist.includes(email)) {
+            return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`] };
+        }
+        for (let w of customWhitelist) {
+            if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
+                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`] };
+            }
+        }
+    }
 
     // Auth-Header Checks (SPF, DKIM, DMARC)
     if (authHeaders && authHeaders.length > 0) {
@@ -51,9 +80,46 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     }
 
     const emailMatch = author.match(/<([^>]+)>/);
-    let email = emailMatch ? emailMatch[1] : author;
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
     const parts = email.split('@');
     let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    // Reply-To Check
+    let replyToEmail = "";
+    if (replyTo) {
+        const replyMatch = replyTo.match(/<([^>]+)>/);
+        replyToEmail = replyMatch ? replyMatch[1].toLowerCase() : replyTo.toLowerCase();
+    }
+
+    if (replyToEmail && senderDomain) {
+        const replyParts = replyToEmail.split('@');
+        const replyDomain = replyParts.length === 2 ? replyParts[1] : "";
+        if (replyDomain && replyDomain !== senderDomain) {
+            score += 50;
+            reasons.push(`Diskrepanz erkannt: "Reply-To" Domain (${replyDomain}) weicht von der Absender-Domain (${senderDomain}) ab.`);
+        }
+    }
+
+    // Verhaltensanalyse / BEC Schutz
+    const urgencyWords = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
+    let textToAnalyze = (subject + " " + messageText).toLowerCase();
+    let foundUrgencyWords = urgencyWords.filter(word => {
+        let regex = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${word})(?=[^\\wäöüßÄÖÜ]|$)`, 'i');
+        return regex.test(textToAnalyze);
+    });
+
+    if (foundUrgencyWords.length > 0) {
+        if (isFirstCommunication) {
+            score += 50;
+            reasons.push(`Mögliches BEC (Business Email Compromise): Erste Kommunikation mit diesem Absender und Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}).`);
+        } else {
+            score += 20;
+            reasons.push(`Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}). Bitte prüfen Sie die Anfrage sorgfältig.`);
+        }
+    } else if (isFirstCommunication) {
+        score += 10;
+        reasons.push("Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.");
+    }
 
     // Hilfsfunktion zur Ermittlung der Hauptdomain
     function getMainDomain(domain) {
@@ -146,3 +212,7 @@ console.log("Test 5: SPF fail", calculateThreatScore("Service <service@paypal.co
 console.log("Test 6: DKIM fail", calculateThreatScore("Service <service@paypal.com>", [], ["dkim=fail"]));
 console.log("Test 7: URLhaus listing", calculateThreatScore("Service <service@paypal.com>", ["http://malware.example.com"], [], ["malware.example.com"]));
 console.log("Test 8: Multiple fails", calculateThreatScore("Hacker <hacker@evil.com>", ["http://evil.com/bad"], ["spf=fail dkim=fail"], ["evil.com"]));
+
+console.log("Test 9: Reply-To discrepancy", calculateThreatScore("CEO <ceo@company.com>", [], [], [], false, "Hello", "Hi", "Hacker <hacker@evil.com>"));
+console.log("Test 10: BEC (First comm + urgency)", calculateThreatScore("CEO <ceo@company.com>", [], [], [], true, "Bitte schnell überweisung tätigen.", "Wichtig!"));
+console.log("Test 11: First comm, no urgency", calculateThreatScore("Bob <bob@example.com>", [], [], [], true, "Hi there", "Hello"));
