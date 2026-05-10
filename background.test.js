@@ -13,7 +13,7 @@ describe('background.js', () => {
             browser: {
                 storage: {
                     local: {
-                        get: async () => ({ apikey: 'test-api-key' })
+                        get: async () => ({ apikey: 'test-api-key', virustotalApikey: 'test-vt-key' })
                     },
                     onChanged: {
                         addListener: (listener) => {
@@ -272,11 +272,21 @@ describe('background.js', () => {
             savedResults = results;
         };
 
-        // Mock fetch to return 200 OK (known file)
-        context.fetch = async () => ({
-            status: 200,
-            json: async () => ({ submission_id: 'sub123', job_id: 'job123' })
-        });
+        // Mock fetch to return 200 OK (known file) and handle virustotal mock
+        context.fetch = async (url) => {
+            if (url && url.includes('virustotal.com')) {
+                return {
+                    status: 200,
+                    json: async () => ({
+                        data: { attributes: { last_analysis_stats: { malicious: 2, undetected: 68 } } }
+                    })
+                };
+            }
+            return {
+                status: 200,
+                json: async () => ({ submission_id: 'sub123', job_id: 'job123' })
+            };
+        };
 
         const attachments = [
             { name: 'test.exe', contentType: 'application/x-msdownload', size: 100, partName: '1' }
@@ -290,6 +300,7 @@ describe('background.js', () => {
         assert.strictEqual(savedResults[0].hybrid_data.submission_id, 'sub123');
         assert.strictEqual(savedResults[0].hybrid_data.job_id, 'job123');
         assert.strictEqual(savedResults[0].attachmentName, 'test.exe');
+        assert.deepStrictEqual(savedResults[0].virustotal_stats, { malicious: 2, undetected: 68 });
     });
 
     it('sent_to_hybrid_by_attachment processes valid attachments (unknown file)', async () => {

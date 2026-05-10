@@ -1,9 +1,10 @@
 // Event-Listener für das Laden der Seite
 document.addEventListener('DOMContentLoaded', function() {
     // Abrufen der gespeicherten Einstellung
-    browser.storage.local.get(['apikey', 'urlhausApikey', 'alwaysManual']).then((result) => {
+    browser.storage.local.get(['apikey', 'urlhausApikey', 'virustotalApikey', 'alwaysManual']).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
+      document.getElementById('virustotalApikey').value = result.virustotalApikey || "";
       document.getElementById('alwaysManual').checked = result.alwaysManual || false;
     });
   });
@@ -11,10 +12,12 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('save').addEventListener('click', function() {
     let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
     let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
+    let virustotalSetting = document.getElementById('virustotalApikey').value.trim().replace(/\r|\n/g, '');
     let alwaysManualSetting = document.getElementById('alwaysManual').checked;
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
+        virustotalApikey: virustotalSetting,
         alwaysManual: alwaysManualSetting
     }).then(() => {
         let statusSpan = document.getElementById('saveStatus');
