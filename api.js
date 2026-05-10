@@ -1,6 +1,6 @@
 function escapeHTML(str) {
     if (!str) return '';
-    return str.replace(/[&<>"']/g, function(match) {
+    return String(str).replace(/[&<>"']/g, function(match) {
         const escape = {
             '&': '&amp;',
             '<': '&lt;',
