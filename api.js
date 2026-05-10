@@ -74,7 +74,7 @@ try {
                         if (att.state === 'UNKNOWN') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                         } else {
-                            get_hybrid_report_by_sha256(hash256, att.attachment_name);
+                            get_hybrid_report_by_sha256(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, att.virustotal_stats);
                         }
                     }
                 }
@@ -103,7 +103,7 @@ try {
 }
 })();
 
-function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId) {
+function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null) {
     let resultHtml = '';
 
     // Pending check (in_progress)
@@ -128,6 +128,14 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
             <p>Analysis start time: ${escapeHTML(json_data.analysis_start_time || 'N/A')}</p>
             <p>Tags: ${escapeHTML(json_data.tags ? json_data.tags.join(', ') : 'N/A')}</p>
             <div class="head_line">Scannerergebnisse:</div>`;
+
+        if (virustotal_stats) {
+            resultHtml += `<p class="ml-2"><strong>VirusTotal Ergebnisse:</strong></p>`;
+            resultHtml += `<p class="ml-4 text-warning">Malicious: ${escapeHTML(virustotal_stats.malicious || 0)}</p>`;
+            resultHtml += `<p class="ml-4">Undetected: ${escapeHTML(virustotal_stats.undetected || 0)}</p>`;
+            resultHtml += `<p class="ml-4">Suspicious: ${escapeHTML(virustotal_stats.suspicious || 0)}</p>`;
+            resultHtml += `<p class="ml-4">Harmless: ${escapeHTML(virustotal_stats.harmless || 0)}</p>`;
+        }
 
         if (json_data.scanners && json_data.scanners.length > 0) {
             for (const scanner of json_data.scanners) {
@@ -164,7 +172,7 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
     return resultHtml;
 }
 
-async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId) {
+async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
 
     // Set the request options
     const options = {
@@ -187,7 +195,7 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 
         if (response.status === 200) {
             let container = document.getElementById('hybrid_analysis_api_content');
-            let resultHtml = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId);
+            let resultHtml = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats);
             container.insertAdjacentHTML('beforeend', resultHtml);
 
             let rescanBtn = document.getElementById(`btn-rescan-${escapeHTML(hybrid_sha)}`);

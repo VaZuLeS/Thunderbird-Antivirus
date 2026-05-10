@@ -456,6 +456,11 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             const local_hash = await get_sha256_hash(arrayBuffer);
             console.log("Lokaler SHA-256:", local_hash);
 
+            let virustotal_stats = null;
+            if (apikey_virustotal) {
+                virustotal_stats = await checkVirusTotal(local_hash, apikey_virustotal);
+            }
+
             if (alwaysManual) {
                 console.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
                 return {
@@ -466,7 +471,8 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
                         state: 'MANUAL_CHECK_PENDING',
                         partName: attachment.partName
                     },
-                    attachmentName: attachment.name
+                    attachmentName: attachment.name,
+                    virustotal_stats: virustotal_stats
                 };
             }
 
@@ -494,7 +500,8 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
                         state: 'KNOWN',
                         partName: attachment.partName
                     },
-                    attachmentName: attachment.name
+                    attachmentName: attachment.name,
+                    virustotal_stats: virustotal_stats
                 };
             } else {
                 console.log('Datei ist der API unbekannt. Speichere Metadaten für manuellen Upload.');
@@ -506,7 +513,8 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
                         state: 'UNKNOWN',
                         partName: attachment.partName
                     },
-                    attachmentName: attachment.name
+                    attachmentName: attachment.name,
+                    virustotal_stats: virustotal_stats
                 };
             }
 
@@ -535,6 +543,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         attachment_name: result.attachmentName,
         state: result.hybrid_data.state,
         partName: result.hybrid_data.partName,
+        virustotal_stats: result.virustotal_stats,
         created: new Date()
       }));
 
@@ -611,7 +620,7 @@ async function indexedDB_save_links_to_db(message, urls) {
   }
 }
 
-async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName) {
+async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName, virustotal_stats = null) {
   try {
     const db = await openDB("thunderbird_av", 3);
     
@@ -623,6 +632,7 @@ async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachment
         attachment_name: attachmentName,
         state: hybrid_data.state,
         partName: hybrid_data.partName,
+        virustotal_stats: virustotal_stats,
         created: new Date()
       };
 
@@ -884,6 +894,31 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
         return json_data;
     } else {
         throw new Error("Fehler beim Upload: " + JSON.stringify(json_data));
+    }
+}
+
+async function checkVirusTotal(hash, apikey) {
+    if (!apikey) return null;
+    const url = `https://www.virustotal.com/api/v3/files/${hash}`;
+    const options = {
+        method: 'GET',
+        headers: {
+            'x-apikey': apikey,
+            'accept': 'application/json'
+        }
+    };
+    try {
+        const response = await fetch(url, options);
+        if (response.status === 200) {
+            const data = await response.json();
+            if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
+                return data.data.attributes.last_analysis_stats;
+            }
+        }
+        return null;
+    } catch (e) {
+        console.error("Fehler bei VirusTotal Abfrage:", e);
+        return null;
     }
 }
 
