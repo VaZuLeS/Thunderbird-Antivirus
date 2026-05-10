@@ -56,10 +56,10 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
       return;
   }
 
-  for (const attachment of attachments) {
-    console.log(`Prüfe Anhang: ${attachment.name} (${attachment.contentType}, ${attachment.size} bytes)`);
+  const results = [];
 
-    let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
+  await Promise.all(attachments.map(async (attachment) => {
+    console.log(`Prüfe Anhang: ${attachment.name} (${attachment.contentType}, ${attachment.size} bytes)`);
 
     switch (attachment.contentType) {
       case 'text/plain':
@@ -77,6 +77,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
         console.log(`Berechne lokalen Hash für Datei | Typ: ${attachment.contentType}`);
 
         try {
+            let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
             const content_of_atachment = file.slice();
             const arrayBuffer = await content_of_atachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
@@ -98,32 +99,42 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             if (responseCheck.status === 200) {
                 const json_data = await responseCheck.json();
                 console.log('Datei ist der API bereits bekannt.');
-                indexedDB_save_hybrid_data_to_db(message, {
-                    submission_id: json_data.submission_id || 'N/A',
-                    job_id: json_data.job_id || 'N/A',
-                    sha256: local_hash,
-                    state: 'KNOWN'
-                }, attachment.name);
+                results.push({
+                    attachmentName: attachment.name,
+                    hybrid_data: {
+                        submission_id: json_data.submission_id || 'N/A',
+                        job_id: json_data.job_id || 'N/A',
+                        sha256: local_hash,
+                        state: 'KNOWN'
+                    }
+                });
             } else {
                 console.log('Datei ist der API unbekannt. Speichere Metadaten für manuellen Upload.');
-                indexedDB_save_hybrid_data_to_db(message, {
-                    submission_id: 'PENDING_UPLOAD',
-                    job_id: 'PENDING_UPLOAD',
-                    sha256: local_hash,
-                    state: 'UNKNOWN',
-                    partName: attachment.partName
-                }, attachment.name);
+                results.push({
+                    attachmentName: attachment.name,
+                    hybrid_data: {
+                        submission_id: 'PENDING_UPLOAD',
+                        job_id: 'PENDING_UPLOAD',
+                        sha256: local_hash,
+                        state: 'UNKNOWN',
+                        partName: attachment.partName
+                    }
+                });
             }
 
         } catch (error) {
           console.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
         }
     }
+  }));
+
+  if (results.length > 0) {
+    indexedDB_save_batch_hybrid_data_to_db(message, results);
   }
 }
 
-// Speicherung der Ergebnisse in IndexedDB
-function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName) {
+// Batch-Speicherung der Ergebnisse in IndexedDB
+function indexedDB_save_batch_hybrid_data_to_db(message, results) {
   let openRequest = indexedDB.open("thunderbird_av", 3);
 
   openRequest.onupgradeneeded = function (e) {
@@ -143,43 +154,46 @@ function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName) 
       let getRequest = store.get(message.headerMessageId);
       getRequest.onsuccess = function () {
         let existingRecord = getRequest.result;
-        let newAttachment = {
-          hybrid_submission_id: hybrid_data.submission_id,
-          hybrid_job_id: hybrid_data.job_id,
-          hybrid_sha256: hybrid_data.sha256,
-          attachment_name: attachmentName,
-          state: hybrid_data.state,
-          partName: hybrid_data.partName,
-          created: new Date()
-        };
-
         let recordToSave;
+
         if (existingRecord) {
-          // Update existing record
           recordToSave = existingRecord;
           if (!recordToSave.attachments) recordToSave.attachments = [];
+        } else {
+          recordToSave = {
+            messageHeader: message.headerMessageId,
+            author: message.author,
+            subject: message.subject,
+            attachments: []
+          };
+        }
+
+        for (const item of results) {
+          const { hybrid_data, attachmentName } = item;
+          let newAttachment = {
+            hybrid_submission_id: hybrid_data.submission_id,
+            hybrid_job_id: hybrid_data.job_id,
+            hybrid_sha256: hybrid_data.sha256,
+            attachment_name: attachmentName,
+            state: hybrid_data.state,
+            partName: hybrid_data.partName,
+            created: new Date()
+          };
+
           let existingAttIndex = recordToSave.attachments.findIndex(a => a.attachment_name === attachmentName);
           if (existingAttIndex > -1) {
               recordToSave.attachments[existingAttIndex] = newAttachment;
           } else {
               recordToSave.attachments.push(newAttachment);
           }
-        } else {
-          // Create new record
-          recordToSave = {
-            messageHeader: message.headerMessageId,
-            author: message.author,
-            subject: message.subject,
-            attachments: [newAttachment]
-          };
         }
 
         let addRequest = store.put(recordToSave);
         addRequest.onsuccess = function () {
-            console.log('Daten erfolgreich in DB gespeichert.');
+            console.log('Batch-Daten erfolgreich in DB gespeichert.');
         };
         addRequest.onerror = function () {
-            console.error('Fehler beim Speichern in DB.');
+            console.error('Fehler beim Speichern der Batch-Daten in DB.');
         };
       };
     }
