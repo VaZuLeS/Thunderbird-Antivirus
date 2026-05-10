@@ -41,13 +41,11 @@ document.getElementById("from").textContent = message.author;
 document.getElementById("MessageHeaderID").textContent = message.headerMessageId;
 try {
 
-    let db;
-
     // Öffnen Sie die Datenbank
     let openRequest = indexedDB.open("thunderbird_av", 3);
 
     openRequest.onupgradeneeded = function (e) {
-        db = e.target.result;
+        let db = e.target.result;
 
         if (!db.objectStoreNames.contains('hybridanalysis')) {
             db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
@@ -56,7 +54,7 @@ try {
 
 
     openRequest.onsuccess = async function (e) {
-        db = e.target.result;
+        let db = e.target.result;
         // Erstellen Sie eine Transaktion und öffnen Sie den Object Store
         let transaction = db.transaction(["hybridanalysis"], "readonly");
         let store = transaction.objectStore("hybridanalysis");
