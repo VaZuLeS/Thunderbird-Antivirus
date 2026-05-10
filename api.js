@@ -72,16 +72,15 @@ try {
                     }
                 }
             } else {
-                console.log("Kein Hash/Anhang gefunden.");
-                document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
+                get_hybrid_report_by_sha256(hash256, att.attachment_name);
             }
-        };
-        getRequest.onerror = function (e) {
-            console.log("Fehler beim Abrufen des Datensatzes:", e.target.error);
-        };
-    };
+        }
+    } else {
+        console.log("Kein Hash/Anhang gefunden.");
+        document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
+    }
 } catch (error) {
-    console.log('Error opening local Hybrid Analysis Database:', error);
+    console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
 })();
 

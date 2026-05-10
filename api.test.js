@@ -40,6 +40,18 @@ describe('escapeHTML', () => {
         };
 
         vm.createContext(context);
+
+        // Load db.js into the context first so the global async functions exist
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        // Mock getFromStore since we don't have a real IndexedDB in node test
+        // and api.js expects getFromStore to resolve immediately.
+        vm.runInContext(`
+            openDB = async () => ({});
+            getFromStore = async () => ({ attachments: [] });
+        `, context);
+
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         vm.runInContext(code, context);
 
