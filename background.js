@@ -645,7 +645,46 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch(err => sendResponse({status: 'error', message: err.message}));
         return true;
     }
+
+    if (request.action === "downloadDisarmed") {
+        handleDownloadDisarmed(request.messageId, request.partName, request.attachmentName)
+            .then(res => sendResponse({status: 'success', data: res}))
+            .catch(err => sendResponse({status: 'error', message: err.message}));
+        return true;
+    }
 });
+
+async function handleDownloadDisarmed(messageId, partName, attachmentName) {
+    let file = await browser.messages.getAttachmentFile(messageId, partName);
+    const contentBuffer = await file.arrayBuffer();
+    const decoder = new TextDecoder('utf-8');
+    const htmlString = decoder.decode(contentBuffer);
+
+    // Disarm the HTML locally
+    const safeHtml = disarmHTML(htmlString);
+
+    // Create a blob from the safe HTML
+    const blob = new Blob([safeHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    // Download the file
+    let safeName = attachmentName || 'disarmed.html';
+    if (!safeName.toLowerCase().endsWith('.html') && !safeName.toLowerCase().endsWith('.htm')) {
+        safeName += '.html';
+    }
+    const downloadId = await browser.downloads.download({
+        url: url,
+        filename: 'disarmed_' + safeName,
+        saveAs: true
+    });
+
+    // Revoke object URL after a short delay to free memory, giving download time to start
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+    }, 10000);
+
+    return { downloadId: downloadId };
+}
 
 async function handleUrlScan(url, headerMessageId) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
@@ -770,4 +809,64 @@ async function checkURLhaus(domain, apikey) {
         console.error("Fehler bei URLhaus Abfrage", e);
     }
     return false;
+}
+
+/**
+ * Perform local Content Disarm and Reconstruction (CDR) on HTML strings.
+ * It uses DOMParser to remove active and potentially malicious elements and attributes.
+ * @param {string} htmlString - The raw HTML string.
+ * @returns {string} - The sanitized HTML string.
+ */
+function disarmHTML(htmlString) {
+    if (typeof DOMParser === 'undefined') {
+        // Fallback for tests if DOMParser is not mocked, though it should be.
+        if (globalThis.DOMParserMock) {
+            var parser = new globalThis.DOMParserMock();
+        } else {
+            return htmlString; // Cannot parse without DOMParser
+        }
+    } else {
+        var parser = new DOMParser();
+    }
+
+    let doc = parser.parseFromString(htmlString, 'text/html');
+
+    // Tags to remove entirely
+    const tagsToRemove = ['script', 'object', 'embed', 'applet', 'base', 'form', 'meta', 'iframe', 'frame', 'frameset'];
+    tagsToRemove.forEach(tag => {
+        let elements = doc.getElementsByTagName(tag);
+        for (let i = elements.length - 1; i >= 0; i--) {
+            elements[i].parentNode.removeChild(elements[i]);
+        }
+    });
+
+    // Remove inline event handlers (attributes starting with 'on') and javascript: URIs
+    let allElements = doc.getElementsByTagName('*');
+    for (let i = 0; i < allElements.length; i++) {
+        let el = allElements[i];
+
+        // Remove 'on...' attributes
+        let attributesToRemove = [];
+        for (let j = 0; j < el.attributes.length; j++) {
+            let attrName = el.attributes[j].name.toLowerCase();
+            if (attrName.startsWith('on')) {
+                attributesToRemove.push(el.attributes[j].name);
+            }
+        }
+        attributesToRemove.forEach(attr => el.removeAttribute(attr));
+
+        // Clean href and src attributes
+        ['href', 'src', 'action'].forEach(attr => {
+            if (el.hasAttribute(attr)) {
+                let val = el.getAttribute(attr);
+                // Remove invisible control characters and whitespace from the value to prevent evasions
+                let sanitizedVal = val.replace(/[\x00-\x20]/g, '').toLowerCase();
+                if (sanitizedVal.startsWith('javascript:') || sanitizedVal.startsWith('vbscript:') || sanitizedVal.startsWith('data:text/html')) {
+                    el.removeAttribute(attr);
+                }
+            }
+        });
+    }
+
+    return doc.documentElement.outerHTML;
 }
