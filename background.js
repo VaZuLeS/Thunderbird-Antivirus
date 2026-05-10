@@ -1,19 +1,31 @@
 let apikey_hybridanalysis;
 let urlhausApikey = "";
+let urlscanApikey = "";
 let alwaysManual = false;
+let autoScanLinks = false;
+let timeOfClickProtection = true;
 
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'alwaysManual']);
+    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection']);
     console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
     apikey_hybridanalysis = result.apikey;
     if (result.urlhausApikey !== undefined) {
       urlhausApikey = result.urlhausApikey;
     }
+    if (result.urlscanApikey !== undefined) {
+      urlscanApikey = result.urlscanApikey;
+    }
     if (result.alwaysManual !== undefined) {
       alwaysManual = result.alwaysManual;
       console.log("alwaysManual erfolgreich geladen:", alwaysManual);
+    }
+    if (result.autoScanLinks !== undefined) {
+      autoScanLinks = result.autoScanLinks;
+    }
+    if (result.timeOfClickProtection !== undefined) {
+      timeOfClickProtection = result.timeOfClickProtection;
     }
   } catch (error) {
     console.error("Fehler beim Laden der Einstellungen:", error);
@@ -31,9 +43,19 @@ browser.storage.onChanged.addListener((changes, area) => {
     urlhausApikey = changes.urlhausApikey.newValue;
     console.log("URLhaus API-KEY wurde aktualisiert.");
   }
+  if (area === 'local' && changes.urlscanApikey !== undefined) {
+    urlscanApikey = changes.urlscanApikey.newValue;
+    console.log("urlscan.io API-KEY wurde aktualisiert.");
+  }
   if (area === 'local' && changes.alwaysManual !== undefined) {
     alwaysManual = changes.alwaysManual.newValue;
     console.log("alwaysManual wurde aktualisiert:", alwaysManual);
+  }
+  if (area === 'local' && changes.autoScanLinks !== undefined) {
+    autoScanLinks = changes.autoScanLinks.newValue;
+  }
+  if (area === 'local' && changes.timeOfClickProtection !== undefined) {
+    timeOfClickProtection = changes.timeOfClickProtection.newValue;
   }
 });
 
@@ -59,7 +81,7 @@ function levenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = []) {
+function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {
     let score = 0;
     let reasons = [];
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
@@ -90,9 +112,46 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     }
 
     const emailMatch = author.match(/<([^>]+)>/);
-    let email = emailMatch ? emailMatch[1] : author;
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
     const parts = email.split('@');
     let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    // Reply-To Check
+    let replyToEmail = "";
+    if (replyTo) {
+        const replyMatch = replyTo.match(/<([^>]+)>/);
+        replyToEmail = replyMatch ? replyMatch[1].toLowerCase() : replyTo.toLowerCase();
+    }
+
+    if (replyToEmail && senderDomain) {
+        const replyParts = replyToEmail.split('@');
+        const replyDomain = replyParts.length === 2 ? replyParts[1] : "";
+        if (replyDomain && replyDomain !== senderDomain) {
+            score += 50;
+            reasons.push(`Diskrepanz erkannt: "Reply-To" Domain (${replyDomain}) weicht von der Absender-Domain (${senderDomain}) ab.`);
+        }
+    }
+
+    // Verhaltensanalyse / BEC Schutz
+    const urgencyWords = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
+    let textToAnalyze = (subject + " " + messageText).toLowerCase();
+    let foundUrgencyWords = urgencyWords.filter(word => {
+        let regex = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${word})(?=[^\\wäöüßÄÖÜ]|$)`, 'i');
+        return regex.test(textToAnalyze);
+    });
+
+    if (foundUrgencyWords.length > 0) {
+        if (isFirstCommunication) {
+            score += 50;
+            reasons.push(`Mögliches BEC (Business Email Compromise): Erste Kommunikation mit diesem Absender und Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}).`);
+        } else {
+            score += 20;
+            reasons.push(`Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}). Bitte prüfen Sie die Anfrage sorgfältig.`);
+        }
+    } else if (isFirstCommunication) {
+        score += 10;
+        reasons.push("Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.");
+    }
 
     // Hilfsfunktion zur Ermittlung der Hauptdomain
     function getMainDomain(domain) {
@@ -200,8 +259,47 @@ async function tab_mail_open_display(tab, message) {
       await indexedDB_save_links_to_db(message, filteredUrls);
     }
 
+    // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
+    if (timeOfClickProtection && filteredUrls.length > 0) {
+       browser.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: function() {
+              const links = document.querySelectorAll('a');
+              links.forEach(link => {
+                  if (link.href && link.href.startsWith('http')) {
+                      link.title = "Protected by Thundy Time-of-Click";
+                      link.style.borderBottom = "1px dashed #ff8c00";
+                  }
+              });
+          }
+       }).catch(e => console.log("Fehler beim Injecten von Time-of-Click Styles:", e));
+    }
+
     let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
     let urlhausDomains = [];
+
+    // BEC Protection Data Extraction
+    const emailMatch = message.author.match(/<([^>]+)>/);
+    let senderEmail = emailMatch ? emailMatch[1].toLowerCase() : message.author.toLowerCase();
+
+    let isFirstCommunication = false;
+    try {
+        if (browser.messages.query) {
+            let previousMsgs = await browser.messages.query({ to: senderEmail });
+            if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
+                isFirstCommunication = true;
+            }
+        }
+    } catch (e) {
+        console.log("Fehler bei messages.query (Möglicherweise nicht unterstützt):", e);
+    }
+
+    let replyTo = "";
+    if (fullMessage.headers && fullMessage.headers['reply-to']) {
+        replyTo = fullMessage.headers['reply-to'][0];
+    }
+
+    let subject = message.subject || "";
 
     if (urlhausApikey && filteredUrls.length > 0) {
       let linkDomains = new Set();
@@ -224,7 +322,7 @@ async function tab_mail_open_display(tab, message) {
       urlhausDomains = checkResults.filter(d => d !== null);
     }
 
-    let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains);
+    let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains, isFirstCommunication, messageText, subject, replyTo);
     if (threat.score >= 50) {
       console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
       await browser.scripting.executeScript({
@@ -576,53 +674,54 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (request.action === "checkLinkState") {
         // Need to find the active message to get headerMessageId
-        // Since content script doesn't know the message ID, we can get it via tabs API
         browser.messageDisplay.getDisplayedMessage(sender.tab.id).then(message => {
             if (message && message.headerMessageId) {
                 return openDB("thunderbird_av", 3).then(db => {
                     return getFromStore(db, "hybridanalysis", message.headerMessageId);
-                }).then(record => {
+                }).then(async record => {
+                    let linkObj = null;
                     if (record && record.links) {
-                        const linkObj = record.links.find(l => l.url.replace(/\/$/, "") === request.url.replace(/\/$/, ""));
-                        if (linkObj) {
-                            if (linkObj.hybrid_sha256) {
-                                // Known to hybrid-analysis
-                                // Could do a fetch here, but for now we rely on state if we want it fast.
-                                // But the instruction says: "If a hybrid_sha256 is found, query the Hybrid Analysis API to check the verdict." Wait, no, we agreed to rely on existing API wrappers. Let's just fetch it using fetch() as that's easiest inside background script, or rely on db state.
-                                // Actually, let's just return the db state, and if they click scan, it handles it via 'scanUrl'.
-                                // Oh wait! State might be 'UNKNOWN' or 'UPLOADED' in DB.
-                                // The prompt plan: "Find the matching URL in record.links, extract its state (e.g. UNKNOWN, CLEAN, MALICIOUS), and return it".
-                                // If it has a hybrid_sha256, we can fetch the overview API to get current verdict.
-                                if (apikey_hybridanalysis) {
-                                    return fetch('https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256, {
-                                        method: 'GET',
-                                        headers: {
-                                            accept: 'application/json',
-                                            'api-key': apikey_hybridanalysis,
-                                            'user-agent': 'Falcon',
-                                        }
-                                    }).then(response => response.json())
-                                    .then(json_data => {
-                                        if (json_data.verdict) {
-                                            if (json_data.verdict === 'no specific threat') {
-                                                sendResponse({status: 'CLEAN'});
-                                            } else {
-                                                sendResponse({status: json_data.verdict.toUpperCase()});
-                                            }
-                                        } else {
-                                            sendResponse({status: linkObj.state});
-                                        }
-                                    }).catch(err => {
-                                        sendResponse({status: linkObj.state});
-                                    });
+                        linkObj = record.links.find(l => l.url.replace(/\/$/, "") === request.url.replace(/\/$/, ""));
+                    }
+
+                    // Time-of-Click Live Scan via urlscan.io
+                    if (urlscanApikey && (!linkObj || linkObj.state === 'UNKNOWN')) {
+                        try {
+                            const res = await checkUrlscanIo(request.url, urlscanApikey);
+                            if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT') {
+                                // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
+                                return sendResponse({ status: res.status, reasons: res.reasons });
+                            }
+                        } catch (e) {
+                            console.log("Fehler bei Time-of-Click Live-Scan:", e);
+                        }
+                    }
+
+                    if (linkObj) {
+                        if (linkObj.hybrid_sha256 && apikey_hybridanalysis) {
+                            return fetch('https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256, {
+                                method: 'GET',
+                                headers: {
+                                    accept: 'application/json',
+                                    'api-key': apikey_hybridanalysis,
+                                    'user-agent': 'Falcon',
+                                }
+                            }).then(response => response.json())
+                            .then(json_data => {
+                                if (json_data.verdict) {
+                                    if (json_data.verdict === 'no specific threat') {
+                                        sendResponse({status: 'CLEAN'});
+                                    } else {
+                                        sendResponse({status: json_data.verdict.toUpperCase()});
+                                    }
                                 } else {
                                     sendResponse({status: linkObj.state});
                                 }
-                            } else {
-                                sendResponse({status: linkObj.state || 'UNKNOWN'});
-                            }
+                            }).catch(err => {
+                                sendResponse({status: linkObj.state});
+                            });
                         } else {
-                            sendResponse({status: 'UNKNOWN'});
+                            sendResponse({status: linkObj.state || 'UNKNOWN'});
                         }
                     } else {
                         sendResponse({status: 'UNKNOWN'});
@@ -636,7 +735,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }).catch(err => {
             sendResponse({status: 'ERROR'});
         });
-        return true; // Keep the message channel open for the async response
+        return true;
     }
 
     if (request.action === "checkHash") {
@@ -811,62 +910,69 @@ async function checkURLhaus(domain, apikey) {
     return false;
 }
 
-/**
- * Perform local Content Disarm and Reconstruction (CDR) on HTML strings.
- * It uses DOMParser to remove active and potentially malicious elements and attributes.
- * @param {string} htmlString - The raw HTML string.
- * @returns {string} - The sanitized HTML string.
- */
-function disarmHTML(htmlString) {
-    if (typeof DOMParser === 'undefined') {
-        // Fallback for tests if DOMParser is not mocked, though it should be.
-        if (globalThis.DOMParserMock) {
-            var parser = new globalThis.DOMParserMock();
-        } else {
-            return htmlString; // Cannot parse without DOMParser
-        }
-    } else {
-        var parser = new DOMParser();
-    }
-
-    let doc = parser.parseFromString(htmlString, 'text/html');
-
-    // Tags to remove entirely
-    const tagsToRemove = ['script', 'object', 'embed', 'applet', 'base', 'form', 'meta', 'iframe', 'frame', 'frameset'];
-    tagsToRemove.forEach(tag => {
-        let elements = doc.getElementsByTagName(tag);
-        for (let i = elements.length - 1; i >= 0; i--) {
-            elements[i].parentNode.removeChild(elements[i]);
-        }
-    });
-
-    // Remove inline event handlers (attributes starting with 'on') and javascript: URIs
-    let allElements = doc.getElementsByTagName('*');
-    for (let i = 0; i < allElements.length; i++) {
-        let el = allElements[i];
-
-        // Remove 'on...' attributes
-        let attributesToRemove = [];
-        for (let j = 0; j < el.attributes.length; j++) {
-            let attrName = el.attributes[j].name.toLowerCase();
-            if (attrName.startsWith('on')) {
-                attributesToRemove.push(el.attributes[j].name);
-            }
-        }
-        attributesToRemove.forEach(attr => el.removeAttribute(attr));
-
-        // Clean href and src attributes
-        ['href', 'src', 'action'].forEach(attr => {
-            if (el.hasAttribute(attr)) {
-                let val = el.getAttribute(attr);
-                // Remove invisible control characters and whitespace from the value to prevent evasions
-                let sanitizedVal = val.replace(/[\x00-\x20]/g, '').toLowerCase();
-                if (sanitizedVal.startsWith('javascript:') || sanitizedVal.startsWith('vbscript:') || sanitizedVal.startsWith('data:text/html')) {
-                    el.removeAttribute(attr);
-                }
-            }
+async function checkUrlscanIo(url, apikey) {
+    if (!apikey) return null;
+    try {
+        // Start Scan
+        const scanRes = await fetch('https://urlscan.io/api/v1/scan/', {
+            method: 'POST',
+            headers: {
+                'API-Key': apikey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url: url, visibility: 'public' })
         });
-    }
 
-    return doc.documentElement.outerHTML;
+        if (scanRes.status === 400) {
+           console.log("urlscan.io API Error 400 (e.g. Domain not resolvable)", await scanRes.json());
+           return { status: 'ERROR', details: 'Domain not resolvable' };
+        }
+
+        if (!scanRes.ok) throw new Error("Fehler beim Starten des Scans (urlscan.io): " + scanRes.status);
+
+        const scanData = await scanRes.json();
+        const uuid = scanData.uuid;
+
+        if (!uuid) throw new Error("Keine UUID von urlscan.io erhalten.");
+
+        // Wait for result (Polling)
+        for (let i = 0; i < 15; i++) {
+            await new Promise(r => setTimeout(r, 2000)); // wait 2s
+            const resultRes = await fetch(`https://urlscan.io/api/v1/result/${uuid}/`);
+            if (resultRes.status === 200) {
+                const resultData = await resultRes.json();
+
+                let isMalicious = false;
+                let reasons = [];
+
+                if (resultData.verdicts && resultData.verdicts.overall && resultData.verdicts.overall.malicious) {
+                    isMalicious = true;
+                    reasons.push("Die URL wurde von urlscan.io generell als bösartig eingestuft.");
+                }
+
+                if (resultData.verdicts && resultData.verdicts.urlscan && resultData.verdicts.urlscan.brands && resultData.verdicts.urlscan.brands.length > 0) {
+                     // Check if it's visually trying to spoof a brand
+                     if (resultData.verdicts.urlscan.malicious) {
+                        isMalicious = true;
+                        reasons.push("Visuelle Erkennung: Die Seite gibt sich als " + resultData.verdicts.urlscan.brands.join(', ') + " aus (Phishing-Verdacht).");
+                     }
+                }
+
+                if (isMalicious) {
+                    return { status: 'MALICIOUS_VISUAL', reasons: reasons };
+                } else {
+                    return { status: 'CLEAN' };
+                }
+            } else if (resultRes.status === 404) {
+                // Not ready yet, continue polling
+            } else {
+                throw new Error("Fehler beim Abrufen der Ergebnisse (urlscan.io): " + resultRes.status);
+            }
+        }
+
+        return { status: 'TIMEOUT' }; // Took too long
+    } catch (e) {
+        console.error("Fehler bei urlscan.io Abfrage", e);
+        return { status: 'ERROR', details: e.message };
+    }
 }
