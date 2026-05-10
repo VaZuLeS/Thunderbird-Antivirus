@@ -59,6 +59,74 @@ browser.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+function extractPublicIPs(receivedHeaders) {
+    if (!receivedHeaders) return [];
+    let ips = new Set();
+    const ipv4Regex = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+
+    for (let header of receivedHeaders) {
+        let matches = header.match(ipv4Regex);
+        if (matches) {
+            for (let ip of matches) {
+                // Filter private/local IPs
+                let parts = ip.split('.').map(Number);
+                if (
+                    parts[0] === 10 ||
+                    (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+                    (parts[0] === 192 && parts[1] === 168) ||
+                    parts[0] === 127 ||
+                    parts[0] === 0 ||
+                    (parts[0] === 169 && parts[1] === 254)
+                ) {
+                    continue;
+                }
+                ips.add(ip);
+            }
+        }
+    }
+    return Array.from(ips);
+}
+
+async function checkAbuseIPDB(ip, apikey) {
+    try {
+        const response = await fetch(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, {
+            method: 'GET',
+            headers: {
+                'Key': apikey,
+                'Accept': 'application/json'
+            }
+        });
+        const data = await response.json();
+        if (data && data.data && data.data.abuseConfidenceScore > 50) {
+            return true;
+        }
+    } catch (e) {
+        console.error("Fehler bei AbuseIPDB Abfrage", e);
+    }
+    return false;
+}
+
+async function checkVirusTotalIP(ip, apikey) {
+    try {
+        const response = await fetch(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`, {
+            method: 'GET',
+            headers: {
+                'x-apikey': apikey,
+                'Accept': 'application/json'
+            }
+        });
+        const data = await response.json();
+        if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
+            if (data.data.attributes.last_analysis_stats.malicious > 0) {
+                return true;
+            }
+        }
+    } catch (e) {
+        console.error("Fehler bei VirusTotal IP Abfrage", e);
+    }
+    return false;
+}
+
 function levenshteinDistance(a, b) {
     if (a.length === 0) return b.length;
     if (b.length === 0) return a.length;
@@ -118,17 +186,29 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     // Auth-Header Checks (SPF, DKIM, DMARC)
     if (authHeaders && authHeaders.length > 0) {
         const headerStr = authHeaders.join(' ').toLowerCase();
+        let fail = false;
+
         if (headerStr.includes("spf=fail") || headerStr.includes("spf=softfail")) {
             score += 50;
             reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+            fail = true;
         }
         if (headerStr.includes("dkim=fail")) {
             score += 50;
             reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
+            fail = true;
         }
         if (headerStr.includes("dmarc=fail")) {
             score += 50;
             reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+            fail = true;
+        }
+
+        if (fail) {
+            authStatus = 'fail';
+        } else if (headerStr.includes("spf=pass") && headerStr.includes("dkim=pass") && headerStr.includes("dmarc=pass")) {
+            // Need at least SPF, DKIM, and DMARC passing for full verification. BIMI is a bonus.
+            authStatus = 'pass';
         }
     }
 
@@ -260,7 +340,7 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
         }
     }
 
-    return { score: Math.min(score, 100), reasons: reasons };
+    return { score: Math.min(score, 100), reasons: reasons, authStatus: authStatus };
 }
 
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
@@ -346,7 +426,24 @@ async function tab_mail_open_display(tab, message) {
     }
 
     let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
+    let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
     let urlhausDomains = [];
+    let maliciousIps = [];
+
+    if (ipReputationProvider !== "none" && ipReputationApiKey) {
+        let publicIps = extractPublicIPs(receivedHeaders);
+        for (let ip of publicIps) {
+            let isMalicious = false;
+            if (ipReputationProvider === "abuseipdb") {
+                isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
+            } else if (ipReputationProvider === "virustotal") {
+                isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
+            }
+            if (isMalicious) {
+                maliciousIps.push(ip);
+            }
+        }
+    }
 
     // BEC Protection Data Extraction
     const emailMatch = message.author.match(/<([^>]+)>/);
@@ -397,40 +494,58 @@ async function tab_mail_open_display(tab, message) {
       console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
       await browser.scripting.executeScript({
         target: { tabId: tab.id },
-        func: function(score, reasons) {
-          // Sichere DOM-Manipulation ohne innerHTML
-          const banner = document.createElement('div');
-          banner.style.backgroundColor = '#ffeeee';
-          banner.style.border = '1px solid #ff0000';
-          banner.style.color = '#ff0000';
-          banner.style.padding = '10px';
-          banner.style.margin = '10px';
-          banner.style.borderRadius = '4px';
-          banner.style.fontWeight = 'bold';
-          banner.style.fontFamily = 'Arial, sans-serif';
-          banner.style.zIndex = '9999';
+        func: function(score, reasons, authStatus) {
+          if (score >= 50) {
+            // Sichere DOM-Manipulation ohne innerHTML
+            const banner = document.createElement('div');
+            banner.style.backgroundColor = '#ffeeee';
+            banner.style.border = '1px solid #ff0000';
+            banner.style.color = '#ff0000';
+            banner.style.padding = '10px';
+            banner.style.margin = '10px';
+            banner.style.borderRadius = '4px';
+            banner.style.fontWeight = 'bold';
+            banner.style.fontFamily = 'Arial, sans-serif';
+            banner.style.zIndex = '9999';
 
-          const title = document.createElement('div');
-          title.textContent = `⚠️ Warnung! Mögliches Phishing erkannt (Risk Score: ${score}/100)`;
-          title.style.fontSize = '16px';
-          title.style.marginBottom = '5px';
-          banner.appendChild(title);
+            const title = document.createElement('div');
+            title.textContent = `🔴 ⚠️ Warnung! Mögliches Phishing erkannt (Risk Score: ${score}/100)`;
+            title.style.fontSize = '16px';
+            title.style.marginBottom = '5px';
+            banner.appendChild(title);
 
-          const reasonList = document.createElement('ul');
-          reasonList.style.margin = '0';
-          reasonList.style.paddingLeft = '20px';
-          reasonList.style.fontSize = '14px';
+            const reasonList = document.createElement('ul');
+            reasonList.style.margin = '0';
+            reasonList.style.paddingLeft = '20px';
+            reasonList.style.fontSize = '14px';
 
-          for (const reason of reasons) {
-            const li = document.createElement('li');
-            li.textContent = reason;
-            reasonList.appendChild(li);
+            for (const reason of reasons) {
+                const li = document.createElement('li');
+                li.textContent = reason;
+                reasonList.appendChild(li);
+            }
+            banner.appendChild(reasonList);
+
+            document.body.prepend(banner);
+          } else if (authStatus === 'pass') {
+            const badge = document.createElement('div');
+            badge.style.display = 'inline-block';
+            badge.style.backgroundColor = '#e6ffe6';
+            badge.style.border = '1px solid #008000';
+            badge.style.color = '#008000';
+            badge.style.padding = '5px 10px';
+            badge.style.margin = '10px';
+            badge.style.borderRadius = '20px';
+            badge.style.fontWeight = 'bold';
+            badge.style.fontFamily = 'Arial, sans-serif';
+            badge.style.fontSize = '12px';
+            badge.style.zIndex = '9999';
+            badge.textContent = `🟢 🛡️ Absender verifiziert`;
+
+            document.body.prepend(badge);
           }
-          banner.appendChild(reasonList);
-
-          document.body.prepend(banner);
         },
-        args: [threat.score, threat.reasons]
+        args: [threat.score, threat.reasons, threat.authStatus]
       });
     }
 
@@ -819,6 +934,52 @@ async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachment
 
 // Listener registrieren
 browser.messageDisplay.onMessageDisplayed.addListener(tab_mail_open_display);
+
+browser.menus.create({
+    id: "scan-link-thundy",
+    title: "Link mit Thundy scannen",
+    contexts: ["link"]
+});
+
+browser.menus.onClicked.addListener(async (info, tab) => {
+    if (info.menuItemId === "scan-link-thundy") {
+        let url = info.linkUrl;
+
+        browser.notifications.create({
+            type: "basic",
+            iconUrl: "img/icon-64px.jpg",
+            title: "Thundy AV Scanner",
+            message: "Scan gestartet für: " + url
+        });
+
+        try {
+            // Need a dummy headerMessageId as context menu might be clicked outside standard flow
+            // or we just fetch the active message
+            let activeMessage = null;
+            try {
+                activeMessage = await browser.messageDisplay.getDisplayedMessage(tab.id);
+            } catch (e) {}
+
+            let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
+
+            let result = await handleUrlScan(url, msgId);
+
+            browser.notifications.create({
+                type: "basic",
+                iconUrl: "img/icon-64px.jpg",
+                title: "Thundy AV Scanner",
+                message: "Scan erfolgreich eingereicht. Job ID: " + result.job_id
+            });
+        } catch (error) {
+            browser.notifications.create({
+                type: "basic",
+                iconUrl: "img/icon-64px.jpg",
+                title: "Thundy AV Scanner Fehler",
+                message: error.message
+            });
+        }
+    }
+});
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "uploadAttachment") {
