@@ -13,7 +13,7 @@ describe('background.js', () => {
             browser: {
                 storage: {
                     local: {
-                        get: async () => ({ apikey: 'test-api-key' })
+                        get: async () => ({ apikey: 'test-api-key', virustotalApikey: 'test-vt-key' })
                     },
                     onChanged: {
                         addListener: (listener) => {
@@ -50,6 +50,15 @@ describe('background.js', () => {
                 },
                 scripting: {
                     executeScript: async () => {}
+                },
+                menus: {
+                    create: () => {},
+                    onClicked: {
+                        addListener: () => {}
+                    }
+                },
+                notifications: {
+                    create: () => {}
                 }
             },
             crypto: globalThis.crypto,
@@ -272,11 +281,21 @@ describe('background.js', () => {
             savedResults = results;
         };
 
-        // Mock fetch to return 200 OK (known file)
-        context.fetch = async () => ({
-            status: 200,
-            json: async () => ({ submission_id: 'sub123', job_id: 'job123' })
-        });
+        // Mock fetch to return 200 OK (known file) and handle virustotal mock
+        context.fetch = async (url) => {
+            if (url && url.includes('virustotal.com')) {
+                return {
+                    status: 200,
+                    json: async () => ({
+                        data: { attributes: { last_analysis_stats: { malicious: 2, undetected: 68 } } }
+                    })
+                };
+            }
+            return {
+                status: 200,
+                json: async () => ({ submission_id: 'sub123', job_id: 'job123' })
+            };
+        };
 
         const attachments = [
             { name: 'test.exe', contentType: 'application/x-msdownload', size: 100, partName: '1' }
@@ -290,6 +309,7 @@ describe('background.js', () => {
         assert.strictEqual(savedResults[0].hybrid_data.submission_id, 'sub123');
         assert.strictEqual(savedResults[0].hybrid_data.job_id, 'job123');
         assert.strictEqual(savedResults[0].attachmentName, 'test.exe');
+        assert.deepStrictEqual(savedResults[0].virustotal_stats, { malicious: 2, undetected: 68 });
     });
 
     it('sent_to_hybrid_by_attachment processes valid attachments (unknown file)', async () => {
@@ -462,6 +482,18 @@ describe('background.js', () => {
             assert.strictEqual(result.score, 0);
             assert.strictEqual(result.reasons.length, 0);
         });
+
+        it('calculates threat score correctly for reply-to discrepancy', async () => {
+            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], [], [], false, "Hello", "Hi", "Hacker <hacker@evil.com>");
+            assert.strictEqual(result.score, 50);
+            assert.ok(result.reasons.some(r => r.includes("Diskrepanz erkannt")));
+        });
+
+        it('calculates threat score correctly for BEC first comm + urgency', async () => {
+            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], [], [], true, "Bitte schnell überweisung tätigen.", "Wichtig!");
+            assert.strictEqual(result.score, 50);
+            assert.ok(result.reasons.some(r => r.includes("Erste Kommunikation")));
+        });
     });
 
     describe('tab_mail_open_display with threat score', () => {
@@ -485,10 +517,13 @@ describe('background.js', () => {
             assert.strictEqual(executedScript.args[0], 100); // 100 score
         });
 
-        it('injects moderate warning banner if score > 0 and < 50', async () => {
-            let executedScript = null;
+        it('does not inject warning banner if score < 50', async () => {
+            let executedWarningScript = null;
             context.browser.scripting.executeScript = async (opts) => {
-                executedScript = opts;
+                // Ignore the time-of-click style injection script
+                if (opts.args && opts.args.length > 0) {
+                    executedWarningScript = opts;
+                }
             };
 
             context.browser.messages.listAttachments = async () => ([]);
@@ -522,7 +557,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            assert.strictEqual(executedScript, null);
+            assert.strictEqual(executedWarningScript, null);
         });
     });
 });
