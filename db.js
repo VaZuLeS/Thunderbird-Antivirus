@@ -1,0 +1,101 @@
+function openDB(dbName = "thunderbird_av", version = 3) {
+    return new Promise((resolve, reject) => {
+        let openRequest = indexedDB.open(dbName, version);
+
+        openRequest.onupgradeneeded = function (e) {
+            let db = e.target.result;
+            if (!db.objectStoreNames.contains('hybridanalysis')) {
+                db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
+                console.log('Datenbank hybridanalysis wurde erstellt.');
+            }
+        };
+
+        openRequest.onsuccess = function (e) {
+            resolve(e.target.result);
+        };
+
+        openRequest.onerror = function (e) {
+            console.error('Fehler beim Öffnen der Datenbank:', e);
+            reject(e.target.error || new Error('Fehler beim Öffnen der Datenbank'));
+        };
+    });
+}
+
+function updateStore(db, storeName, key, updateFn) {
+    return new Promise((resolve, reject) => {
+        let transaction = db.transaction([storeName], "readwrite");
+        let store = transaction.objectStore(storeName);
+        let request = store.get(key);
+
+        request.onsuccess = function () {
+            let record = request.result;
+            let updatedRecord = updateFn(record);
+            let putRequest = store.put(updatedRecord);
+
+            putRequest.onsuccess = function() {
+                resolve(putRequest.result);
+            };
+
+            putRequest.onerror = function(e) {
+                reject(e.target.error || new Error('Fehler beim Aktualisieren im Store: ' + storeName));
+            }
+        };
+
+        request.onerror = function (e) {
+            reject(e.target.error || new Error('Fehler beim Abrufen aus Store für Update: ' + storeName));
+        };
+    });
+}
+
+function getFromStore(db, storeName, key) {
+    return new Promise((resolve, reject) => {
+        let transaction = db.transaction([storeName], "readonly");
+        let store = transaction.objectStore(storeName);
+        let request = store.get(key);
+
+        request.onsuccess = function () {
+            resolve(request.result);
+        };
+
+        request.onerror = function (e) {
+            reject(e.target.error || new Error('Fehler beim Abrufen aus Store: ' + storeName));
+        };
+    });
+}
+
+function putToStore(db, storeName, item) {
+    return new Promise((resolve, reject) => {
+        let transaction = db.transaction([storeName], "readwrite");
+        let store = transaction.objectStore(storeName);
+        let request = store.put(item);
+
+        request.onsuccess = function () {
+            resolve(request.result);
+        };
+
+        request.onerror = function (e) {
+            reject(e.target.error || new Error('Fehler beim Speichern in Store: ' + storeName));
+        };
+    });
+}
+
+function clearStore(db, storeName) {
+    return new Promise((resolve, reject) => {
+        if (!db.objectStoreNames.contains(storeName)) {
+             resolve(false); // store doesn't exist
+             return;
+        }
+
+        let transaction = db.transaction([storeName], 'readwrite');
+        let store = transaction.objectStore(storeName);
+        let clearRequest = store.clear();
+
+        clearRequest.onsuccess = function () {
+            resolve(true);
+        };
+
+        clearRequest.onerror = function (e) {
+            reject(e.target.error || new Error('Fehler beim Leeren des Stores: ' + storeName));
+        };
+    });
+}

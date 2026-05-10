@@ -40,50 +40,25 @@ document.getElementById("subject").textContent = message.subject;
 document.getElementById("from").textContent = message.author;
 document.getElementById("MessageHeaderID").textContent = message.headerMessageId;
 try {
+    const db = await openDB("thunderbird_av", 3);
+    const result = await getFromStore(db, "hybridanalysis", message.headerMessageId);
 
-    let db;
-
-    // Öffnen Sie die Datenbank
-    let openRequest = indexedDB.open("thunderbird_av", 3);
-
-    openRequest.onupgradeneeded = function (e) {
-        db = e.target.result;
-
-        if (!db.objectStoreNames.contains('hybridanalysis')) {
-            db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
-        }
-    };
-
-
-    openRequest.onsuccess = async function (e) {
-        db = e.target.result;
-        // Erstellen Sie eine Transaktion und öffnen Sie den Object Store
-        let transaction = db.transaction(["hybridanalysis"], "readonly");
-        let store = transaction.objectStore("hybridanalysis");
-        // Führen Sie eine Anfrage aus, um den Hash für die angegebene MessageHeaderId zu finden.
-        let getRequest = store.get(message.headerMessageId);
-        getRequest.onsuccess = function (e) {
-            if (getRequest.result && getRequest.result.attachments && getRequest.result.attachments.length > 0) {
-                document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
-                for (const att of getRequest.result.attachments) {
-                    const hash256 = att.hybrid_sha256;
-                    if (att.state === 'UNKNOWN') {
-                        renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
-                    } else {
-                        get_hybrid_report_by_sha256(hash256, att.attachment_name);
-                    }
-                }
+    if (result && result.attachments && result.attachments.length > 0) {
+        document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
+        for (const att of result.attachments) {
+            const hash256 = att.hybrid_sha256;
+            if (att.state === 'UNKNOWN') {
+                renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
             } else {
-                console.log("Kein Hash/Anhang gefunden.");
-                document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
+                get_hybrid_report_by_sha256(hash256, att.attachment_name);
             }
-        };
-        getRequest.onerror = function (e) {
-            console.log("Fehler beim Abrufen des Datensatzes:", e.target.error);
-        };
-    };
+        }
+    } else {
+        console.log("Kein Hash/Anhang gefunden.");
+        document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
+    }
 } catch (error) {
-    console.log('Error opening local Hybrid Analysis Database:', error);
+    console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
 })();
 

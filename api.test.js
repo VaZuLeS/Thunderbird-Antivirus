@@ -11,6 +11,19 @@ describe('escapeHTML', () => {
     before(() => {
         // Create mock environment
         context = {
+            browser: {
+                storage: {
+                    local: {
+                        get: async () => ({ apikey: 'test' })
+                    }
+                },
+                tabs: {
+                    query: async () => [{ id: 1 }]
+                },
+                messageDisplay: {
+                    getDisplayedMessage: async () => ({ headerMessageId: '123', subject: 'test', author: 'author' })
+                }
+            },
             messenger: {
                 storage: {
                     local: {
@@ -37,6 +50,18 @@ describe('escapeHTML', () => {
         };
 
         vm.createContext(context);
+
+        // Load db.js into the context first so the global async functions exist
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        // Mock getFromStore since we don't have a real IndexedDB in node test
+        // and api.js expects getFromStore to resolve immediately.
+        vm.runInContext(`
+            openDB = async () => ({});
+            getFromStore = async () => ({ attachments: [] });
+        `, context);
+
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         vm.runInContext(code, context);
 
