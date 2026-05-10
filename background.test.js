@@ -92,6 +92,7 @@ describe('background.js', () => {
             globalThis.sent_to_hybrid_by_attachment = sent_to_hybrid_by_attachment;
             globalThis.get_sha256_hash = get_sha256_hash;
             globalThis.indexedDB_save_hybrid_data_to_db = indexedDB_save_hybrid_data_to_db;
+            globalThis.indexedDB_save_batch_hybrid_data_to_db = indexedDB_save_batch_hybrid_data_to_db;
             globalThis.handleManualUpload = handleManualUpload;
         `;
         vm.runInContext(wrappedCode, context);
@@ -173,7 +174,7 @@ describe('background.js', () => {
     it('sent_to_hybrid_by_attachment skips ignored content types', async () => {
         context.set_apikey('test-key');
         let dbSaved = false;
-        context.indexedDB_save_hybrid_data_to_db = () => { dbSaved = true; };
+        context.indexedDB_save_batch_hybrid_data_to_db = () => { dbSaved = true; };
 
         const attachments = [
             { name: 'test.txt', contentType: 'text/plain', size: 100, partName: '1' },
@@ -189,9 +190,9 @@ describe('background.js', () => {
     it('sent_to_hybrid_by_attachment processes valid attachments (known file)', async () => {
         context.set_apikey('test-key');
 
-        let savedData = null;
-        context.indexedDB_save_hybrid_data_to_db = (msg, data, name) => {
-            savedData = data;
+        let savedResults = null;
+        context.indexedDB_save_batch_hybrid_data_to_db = (msg, results) => {
+            savedResults = results;
         };
 
         // Mock fetch to return 200 OK (known file)
@@ -206,18 +207,20 @@ describe('background.js', () => {
 
         await context.sent_to_hybrid_by_attachment({ id: 1 }, attachments);
 
-        assert.ok(savedData);
-        assert.strictEqual(savedData.state, 'KNOWN');
-        assert.strictEqual(savedData.submission_id, 'sub123');
-        assert.strictEqual(savedData.job_id, 'job123');
+        assert.ok(savedResults);
+        assert.strictEqual(savedResults.length, 1);
+        assert.strictEqual(savedResults[0].hybrid_data.state, 'KNOWN');
+        assert.strictEqual(savedResults[0].hybrid_data.submission_id, 'sub123');
+        assert.strictEqual(savedResults[0].hybrid_data.job_id, 'job123');
+        assert.strictEqual(savedResults[0].attachmentName, 'test.exe');
     });
 
     it('sent_to_hybrid_by_attachment processes valid attachments (unknown file)', async () => {
         context.set_apikey('test-key');
 
-        let savedData = null;
-        context.indexedDB_save_hybrid_data_to_db = (msg, data, name) => {
-            savedData = data;
+        let savedResults = null;
+        context.indexedDB_save_batch_hybrid_data_to_db = (msg, results) => {
+            savedResults = results;
         };
 
         // Mock fetch to return 404 (unknown file)
@@ -232,10 +235,12 @@ describe('background.js', () => {
 
         await context.sent_to_hybrid_by_attachment({ id: 1 }, attachments);
 
-        assert.ok(savedData);
-        assert.strictEqual(savedData.state, 'UNKNOWN');
-        assert.strictEqual(savedData.submission_id, 'PENDING_UPLOAD');
-        assert.strictEqual(savedData.job_id, 'PENDING_UPLOAD');
+        assert.ok(savedResults);
+        assert.strictEqual(savedResults.length, 1);
+        assert.strictEqual(savedResults[0].hybrid_data.state, 'UNKNOWN');
+        assert.strictEqual(savedResults[0].hybrid_data.submission_id, 'PENDING_UPLOAD');
+        assert.strictEqual(savedResults[0].hybrid_data.job_id, 'PENDING_UPLOAD');
+        assert.strictEqual(savedResults[0].attachmentName, 'unknown.exe');
     });
 
     it('handleManualUpload successfully uploads and updates DB', async () => {

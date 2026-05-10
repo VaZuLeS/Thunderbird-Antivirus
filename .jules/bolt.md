@@ -1,0 +1,3 @@
+## 2024-05-24 - Attachment processing loop refactor
+**Learning:** Sequential await loops over collections like email attachments block subsequent requests and increase processing time significantly in Manifest V3 extensions doing network IO. However, naively switching to `Promise.all` can cause race conditions when updating IndexedDB if multiple promises try to read/write the exact same DB record concurrently.
+**Action:** When migrating sequential loops to concurrent `Promise.all` in background workers, also batch the resulting database writes into a single transaction to prevent race conditions during `readwrite` IndexedDB operations.
