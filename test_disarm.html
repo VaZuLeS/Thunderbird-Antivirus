@@ -1,0 +1,14 @@
+<html>
+<head>
+<script>alert("hacked!");</script>
+<meta http-equiv="refresh" content="0; url=http://example.com">
+<base href="http://evil.com">
+</head>
+<body onload="doEvil()">
+<p onclick="alert('test')">Hello <a href="javascript:alert('xss')">World</a></p>
+<object data="flash.swf"></object>
+<embed src="test.swf"></embed>
+<applet code="test.class"></applet>
+<form action="http://evil.com/submit" method="post"><input type="submit"></form>
+</body>
+</html>

@@ -744,7 +744,46 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch(err => sendResponse({status: 'error', message: err.message}));
         return true;
     }
+
+    if (request.action === "downloadDisarmed") {
+        handleDownloadDisarmed(request.messageId, request.partName, request.attachmentName)
+            .then(res => sendResponse({status: 'success', data: res}))
+            .catch(err => sendResponse({status: 'error', message: err.message}));
+        return true;
+    }
 });
+
+async function handleDownloadDisarmed(messageId, partName, attachmentName) {
+    let file = await browser.messages.getAttachmentFile(messageId, partName);
+    const contentBuffer = await file.arrayBuffer();
+    const decoder = new TextDecoder('utf-8');
+    const htmlString = decoder.decode(contentBuffer);
+
+    // Disarm the HTML locally
+    const safeHtml = disarmHTML(htmlString);
+
+    // Create a blob from the safe HTML
+    const blob = new Blob([safeHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    // Download the file
+    let safeName = attachmentName || 'disarmed.html';
+    if (!safeName.toLowerCase().endsWith('.html') && !safeName.toLowerCase().endsWith('.htm')) {
+        safeName += '.html';
+    }
+    const downloadId = await browser.downloads.download({
+        url: url,
+        filename: 'disarmed_' + safeName,
+        saveAs: true
+    });
+
+    // Revoke object URL after a short delay to free memory, giving download time to start
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+    }, 10000);
+
+    return { downloadId: downloadId };
+}
 
 async function handleUrlScan(url, headerMessageId) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");

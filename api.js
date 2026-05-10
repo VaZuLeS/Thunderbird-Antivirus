@@ -150,7 +150,15 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
             <p>Größe: ${escapeHTML(json_data.size || 'N/A')} Bytes</p>
             <p>Typ: ${escapeHTML(json_data.type || 'N/A')}</p>
             <button id="btn-rescan-${escapeHTML(hybrid_sha)}" class="btn-success mt-2">Erneut scannen (Rescan)</button>
-            <p id="rescan-status-${escapeHTML(hybrid_sha)}" class="mt-2"></p>
+            <p id="rescan-status-${escapeHTML(hybrid_sha)}" class="mt-2"></p>`;
+
+        if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
+            resultHtml += `
+            <button id="btn-cdr-${escapeHTML(hybrid_sha)}" class="btn-primary mt-2 ml-2">Bereinigen & Herunterladen (Lokales CDR)</button>
+            <p id="cdr-status-${escapeHTML(hybrid_sha)}" class="mt-2"></p>`;
+        }
+
+        resultHtml += `
         </div>`;
     }
     return resultHtml;
@@ -206,6 +214,37 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
                             }, 2000);
                         } else {
                             statusEl.innerText = "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler");
+                            btn.disabled = false;
+                            btn.innerText = "Erneut versuchen";
+                        }
+                    }).catch(err => {
+                        statusEl.innerText = "Kommunikationsfehler: " + err;
+                        btn.disabled = false;
+                        btn.innerText = "Erneut versuchen";
+                    });
+                });
+            }
+
+            let cdrBtn = document.getElementById(`btn-cdr-${escapeHTML(hybrid_sha)}`);
+            if (cdrBtn) {
+                cdrBtn.addEventListener('click', function() {
+                    let btn = this;
+                    let statusEl = document.getElementById(`cdr-status-${escapeHTML(hybrid_sha)}`);
+                    btn.disabled = true;
+                    btn.innerText = "Bereinige...";
+                    statusEl.innerText = "Lokales CDR wird durchgeführt...";
+
+                    browser.runtime.sendMessage({
+                        action: "downloadDisarmed",
+                        messageId: messageId,
+                        partName: partName,
+                        attachmentName: attachmentName
+                    }).then(res => {
+                        if (res && res.status === 'success') {
+                            statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                            btn.innerText = "Bereinigt";
+                        } else {
+                            statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
                             btn.disabled = false;
                             btn.innerText = "Erneut versuchen";
                         }
@@ -282,9 +321,48 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
         <p>SHA-256: ${safeHash}</p>
         <p class="text-info">Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
         <button id="btn-upload-${safeHash}" class="btn-primary mt-2">Datei jetzt scannen (Upload)</button>
-        <p id="upload-status-${safeHash}" class="mt-2"></p>
+        <p id="upload-status-${safeHash}" class="mt-2"></p>`;
+
+    if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
+        resultHtml += `
+        <button id="btn-cdr-${safeHash}" class="btn-primary mt-2 ml-2">Bereinigen & Herunterladen (Lokales CDR)</button>
+        <p id="cdr-status-${safeHash}" class="mt-2"></p>`;
+    }
+
+    resultHtml += `
     </div>`;
     container.insertAdjacentHTML('beforeend', resultHtml);
+
+    let cdrBtn = document.getElementById(`btn-cdr-${safeHash}`);
+    if (cdrBtn) {
+        cdrBtn.addEventListener('click', function() {
+            let btn = this;
+            let statusEl = document.getElementById(`cdr-status-${safeHash}`);
+            btn.disabled = true;
+            btn.innerText = "Bereinige...";
+            statusEl.innerText = "Lokales CDR wird durchgeführt...";
+
+            browser.runtime.sendMessage({
+                action: "downloadDisarmed",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName
+            }).then(res => {
+                if (res && res.status === 'success') {
+                    statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                    btn.innerText = "Bereinigt";
+                } else {
+                    statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
+                    btn.disabled = false;
+                    btn.innerText = "Erneut versuchen";
+                }
+            }).catch(err => {
+                statusEl.innerText = "Kommunikationsfehler: " + err;
+                btn.disabled = false;
+                btn.innerText = "Erneut versuchen";
+            });
+        });
+    }
 
     document.getElementById(`btn-upload-${safeHash}`).addEventListener('click', function() {
         let btn = this;
