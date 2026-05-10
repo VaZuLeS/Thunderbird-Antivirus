@@ -61,21 +61,35 @@ try {
         // Führen Sie eine Anfrage aus, um den Hash für die angegebene MessageHeaderId zu finden.
         let getRequest = store.get(message.headerMessageId);
         getRequest.onsuccess = function (e) {
-            if (getRequest.result && getRequest.result.attachments && getRequest.result.attachments.length > 0) {
+            const record = getRequest.result;
+            const hasAttachments = record && record.attachments && record.attachments.length > 0;
+            const hasLinks = record && record.links && record.links.length > 0;
+
+            if (hasAttachments || hasLinks) {
                 document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
-                for (const att of getRequest.result.attachments) {
-                    const hash256 = att.hybrid_sha256;
-                    if (att.state === 'MANUAL_CHECK_PENDING') {
-                        renderManualCheckUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
-                    } else if (att.state === 'UNKNOWN') {
-                        renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
-                    } else {
-                        get_hybrid_report_by_sha256(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
+
+                if (hasAttachments) {
+                    for (const att of record.attachments) {
+                        const hash256 = att.hybrid_sha256;
+                        if (att.state === 'UNKNOWN') {
+                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
+                        } else {
+                            get_hybrid_report_by_sha256(hash256, att.attachment_name);
+                        }
+                    }
+                }
+
+                if (hasLinks) {
+                    for (const linkObj of record.links) {
+                        if (linkObj.state === 'UNKNOWN') {
+                            renderManualUrlScanUI(linkObj.url, message.headerMessageId);
+                        } else if (linkObj.hybrid_sha256) {
+                            get_hybrid_report_by_sha256(linkObj.hybrid_sha256, linkObj.url);
+                        }
                     }
                 }
             } else {
-                // Bug fix: The else block does not have `hash256` or `att` defined.
-                document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
+                 document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Anhänge oder URLs für diese E-Mail gefunden.</p>';
             }
         };
     };
@@ -95,7 +109,7 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
     // Pending check (in_progress)
     if (json_data.state === 'IN_PROGRESS') {
         resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
-            <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
+            <h2>Geprüftes Element: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
             <p style="color: orange;"><strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.</p>
             <p>SHA-256: ${escapeHTML(json_data.sha256 || hybrid_sha)}</p>
         </div>`;
@@ -105,7 +119,7 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
         if (json_data.threat_score > 80) threatColor = "red";
 
         resultHtml += `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc;">
-            <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
+            <h2>Geprüftes Element: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
             <p><strong class="head_line" style="color: ${threatColor};">Bedrohungsscore:</strong> ${escapeHTML(json_data.threat_score)}</p>
             <p><strong class="head_line" style="color: ${threatColor};">Urteil:</strong> ${escapeHTML(json_data.verdict)}</p>
             <p><strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}</p>
@@ -205,57 +219,57 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 
         } else {
             console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
-            document.getElementById('hybrid_analysis_api_content').innerHTML += `<div style="color:red;">API Error: ${response.status} for attachment ${escapeHTML(attachmentName)}</div>`;
+            document.getElementById('hybrid_analysis_api_content').innerHTML += `<div style="color:red;">API Error: ${response.status} für Element ${escapeHTML(attachmentName)}</div>`;
         }
     } catch (error) {
         console.error('Fetch error:', error);
-        document.getElementById('hybrid_analysis_api_content').innerHTML += `<div style="color:red;">Netzwerkfehler: ${escapeHTML(error.message)} für Anhang ${escapeHTML(attachmentName)}</div>`;
+        document.getElementById('hybrid_analysis_api_content').innerHTML += `<div style="color:red;">Netzwerkfehler: ${escapeHTML(error.message)} für Element ${escapeHTML(attachmentName)}</div>`;
     }
 }
-function renderManualCheckUI(hash, attachmentName, messageId, partName, headerMessageId) {
+
+function renderManualUrlScanUI(url, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
-    let safeHash = escapeHTML(hash);
-    let resultHtml = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-left: 5px solid purple;" id="check-container-${safeHash}">
-        <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-        <p>SHA-256: ${safeHash}</p>
-        <p style="color: purple;">Automatischer Hash-Check ist deaktiviert (Immer manuell scannen).</p>
-        <button id="btn-check-${safeHash}" style="padding: 10px; background-color: purple; color: white; border: none; cursor: pointer;">Hash jetzt prüfen</button>
-        <p id="check-status-${safeHash}" style="margin-top: 5px;"></p>
+    let safeUrl = escapeHTML(url);
+    // Erzeuge eine sichere, eindeutige ID für die URL
+    let urlId = Array.from(new TextEncoder().encode(url))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    let resultHtml = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-left: 5px solid blue;" id="upload-container-${urlId}">
+        <h2>URL: ${safeUrl}</h2>
+        <p style="color: blue;">Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
+        <button id="btn-upload-${urlId}" style="padding: 10px; background-color: #005a9e; color: white; border: none; cursor: pointer;">URL jetzt scannen</button>
+        <p id="upload-status-${urlId}" style="margin-top: 5px;"></p>
     </div>`;
     container.insertAdjacentHTML('beforeend', resultHtml);
 
-    document.getElementById(`btn-check-${safeHash}`).addEventListener('click', function() {
+    document.getElementById(`btn-upload-${urlId}`).addEventListener('click', function() {
         let btn = this;
-        let statusEl = document.getElementById(`check-status-${safeHash}`);
+        let statusEl = document.getElementById(`upload-status-${urlId}`);
         btn.disabled = true;
-        btn.innerText = "Prüfe...";
-        statusEl.innerText = "Prüfe Hash bei Hybrid Analysis...";
+        btn.innerText = "Sende URL...";
+        statusEl.innerText = "URL wird an Hybrid Analysis übertragen...";
 
         browser.runtime.sendMessage({
-            action: "checkHash",
-            hash: hash,
-            headerMessageId: headerMessageId,
-            partName: partName
+            action: "scanUrl",
+            url: url,
+            headerMessageId: headerMessageId
         }).then(response => {
             if (response && response.status === 'success') {
-                statusEl.innerText = "Prüfung abgeschlossen. Aktualisiere Anzeige...";
+                statusEl.innerText = "Scan erfolgreich beauftragt! Lade Analyseergebnisse...";
                 setTimeout(() => {
-                    document.getElementById(`check-container-${safeHash}`).remove();
-                    if (response.data.state === 'KNOWN') {
-                        get_hybrid_report_by_sha256(hash, attachmentName, messageId, partName, headerMessageId);
-                    } else {
-                        renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId);
-                    }
-                }, 1000);
+                    document.getElementById(`upload-container-${urlId}`).remove();
+                    // response.data.sha256 enthält den sha256-Hash des URL-Scans
+                    get_hybrid_report_by_sha256(response.data.sha256, url);
+                }, 3000);
             } else {
-                statusEl.innerText = "Fehler bei der Prüfung: " + (response ? response.message : "Unbekannter Fehler");
+                statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
                 btn.disabled = false;
-                btn.innerText = "Erneut prüfen";
+                btn.innerText = "Erneut versuchen";
             }
         }).catch(err => {
             statusEl.innerText = "Kommunikationsfehler: " + err;
             btn.disabled = false;
-            btn.innerText = "Erneut prüfen";
+            btn.innerText = "Erneut versuchen";
         });
     });
 }

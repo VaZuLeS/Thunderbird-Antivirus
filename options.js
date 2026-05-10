@@ -1,18 +1,15 @@
 // Event-Listener für das Laden der Seite
 document.addEventListener('DOMContentLoaded', function() {
     // Abrufen der gespeicherten Einstellung
-    browser.storage.local.get(['apikey', 'alwaysManual']).then((result) => {
-      document.getElementById('apikey').value = result.apikey || '';
-      document.getElementById('alwaysManual').checked = result.alwaysManual || false;
+    browser.storage.local.get('apikey').then((result) => {
+      document.getElementById('apikey').value = result.apikey;
     });
   });
-
+  
   document.getElementById('save').addEventListener('click', function() {
-    let mySetting = document.getElementById('apikey').value;
-    let alwaysManualSetting = document.getElementById('alwaysManual').checked;
+    let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
     browser.storage.local.set({
-        apikey: mySetting,
-        alwaysManual: alwaysManualSetting
+        apikey: mySetting
     }).then(() => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';

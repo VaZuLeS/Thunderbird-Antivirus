@@ -8,7 +8,7 @@ describe('escapeHTML', () => {
     let context;
     let escapeHTML;
 
-    before(() => {
+    before(async () => {
         // Create mock environment
         context = {
             browser: {
@@ -36,7 +36,9 @@ describe('escapeHTML', () => {
             console: { log: () => {}, error: () => {} }, // Mock console to avoid noisy logs
             fetch: async () => ({ status: 200, json: async () => ({}) }),
             setTimeout: setTimeout,
-            String: String
+            String: String,
+            Array: Array,
+            TextEncoder: TextEncoder
         };
         context.messenger = context.browser;
 
@@ -46,15 +48,10 @@ describe('escapeHTML', () => {
         const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
         vm.runInContext(dbCode, context);
 
-        // Mock getFromStore since we don't have a real IndexedDB in node test
-        // and api.js expects getFromStore to resolve immediately.
-        vm.runInContext(`
-            openDB = async () => ({});
-            getFromStore = async () => ({ attachments: [] });
-        `, context);
-
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        vm.runInContext(code, context);
+        // Prevent the IIFE from executing during test initialization
+        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        vm.runInContext(wrappedCode, context);
 
         escapeHTML = context.escapeHTML;
     });
@@ -104,7 +101,7 @@ describe('get_hybrid_report_by_sha256', () => {
     let context;
     let get_hybrid_report_by_sha256;
 
-    before(() => {
+    before(async () => {
         // Create mock environment
         context = {
             browser: {
@@ -144,12 +141,21 @@ describe('get_hybrid_report_by_sha256', () => {
             console: { log: () => {}, error: () => {} }, // Mock console to avoid noisy logs
             fetch: null, // Will be overridden in each test
             setTimeout: setTimeout,
-            String: String
+            String: String,
+            Array: Array,
+            TextEncoder: TextEncoder
         };
+        context.messenger = context.browser;
 
         vm.createContext(context);
+
+        // Load db.js into the context first
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        vm.runInContext(code, context);
+        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        vm.runInContext(wrappedCode, context);
 
         get_hybrid_report_by_sha256 = context.get_hybrid_report_by_sha256;
     });
@@ -162,7 +168,7 @@ describe('get_hybrid_report_by_sha256', () => {
 
         await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
 
-        assert.ok(context.apiContentElement._html.includes('<div style="color:red;">Netzwerkfehler: Network timeout für Anhang test.txt</div>'));
+        assert.ok(context.apiContentElement._html.includes('<div style="color:red;">Netzwerkfehler: Network timeout für Element test.txt</div>'));
     });
 
     it('injects API Error message on fetch non-200 status', async () => {
@@ -177,6 +183,6 @@ describe('get_hybrid_report_by_sha256', () => {
 
         await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
 
-        assert.ok(context.apiContentElement._html.includes('<div style="color:red;">API Error: 500 for attachment test.txt</div>'));
+        assert.ok(context.apiContentElement._html.includes('<div style="color:red;">API Error: 500 für Element test.txt</div>'));
     });
 });
