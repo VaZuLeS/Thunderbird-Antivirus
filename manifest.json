@@ -19,14 +19,14 @@
     "notifications",
     "scripting"
   ],
-"content_security_policy": {
-    "script-src": "self https://hybrid-analysis.com/api/v2/analysis/ https://hybrid-analysis.com/api/v2/overview/api.js"
-},
-"background": {
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
+  "background": {
     "scripts": [
-        "background.js"
+      "background.js"
     ]
-},
+  },
   "message_display_action": {
     "default_icon": "img/icon-64px.jpg",
     "default_title": "Thundy AV Checker",
@@ -44,4 +44,3 @@
   }
 
 }
-
