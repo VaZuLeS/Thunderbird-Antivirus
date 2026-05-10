@@ -20,10 +20,35 @@ function levenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-function calculateThreatScore(author, urls) {
+function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = []) {
     let score = 0;
     let reasons = [];
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
+
+    // Auth-Header Checks (SPF, DKIM, DMARC)
+    if (authHeaders && authHeaders.length > 0) {
+        const headerStr = authHeaders.join(' ').toLowerCase();
+        if (headerStr.includes("spf=fail") || headerStr.includes("spf=softfail")) {
+            score += 50;
+            reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+        }
+        if (headerStr.includes("dkim=fail")) {
+            score += 50;
+            reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
+        }
+        if (headerStr.includes("dmarc=fail")) {
+            score += 50;
+            reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+        }
+    }
+
+    // URLhaus Checks
+    if (urlhausDomains && urlhausDomains.length > 0) {
+        for (let domain of urlhausDomains) {
+            score += 80;
+            reasons.push(`Domain (${domain}) ist auf URLhaus als bösartig gelistet.`);
+        }
+    }
 
     const emailMatch = author.match(/<([^>]+)>/);
     let email = emailMatch ? emailMatch[1] : author;
@@ -116,3 +141,8 @@ console.log("Test 1: Typosquatting sender", calculateThreatScore("Service <servi
 console.log("Test 2: Domain mismatch", calculateThreatScore("Service <service@paypal.com>", ["http://login.hacker.com/123"]));
 console.log("Test 3: Both", calculateThreatScore("Service <service@paypal-support.com>", ["http://login.paypa1.com"]));
 console.log("Test 4: Legitimate", calculateThreatScore("Service <service@paypal.com>", ["http://paypal.com/login", "http://info.paypal.com/test"]));
+
+console.log("Test 5: SPF fail", calculateThreatScore("Service <service@paypal.com>", [], ["spf=fail"]));
+console.log("Test 6: DKIM fail", calculateThreatScore("Service <service@paypal.com>", [], ["dkim=fail"]));
+console.log("Test 7: URLhaus listing", calculateThreatScore("Service <service@paypal.com>", ["http://malware.example.com"], [], ["malware.example.com"]));
+console.log("Test 8: Multiple fails", calculateThreatScore("Hacker <hacker@evil.com>", ["http://evil.com/bad"], ["spf=fail dkim=fail"], ["evil.com"]));

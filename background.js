@@ -1,12 +1,16 @@
 let apikey_hybridanalysis;
+let urlhausApikey = "";
 let alwaysManual = false;
 
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'alwaysManual']);
+    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'alwaysManual']);
     console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
     apikey_hybridanalysis = result.apikey;
+    if (result.urlhausApikey !== undefined) {
+      urlhausApikey = result.urlhausApikey;
+    }
     if (result.alwaysManual !== undefined) {
       alwaysManual = result.alwaysManual;
       console.log("alwaysManual erfolgreich geladen:", alwaysManual);
@@ -22,6 +26,10 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.apikey) {
     apikey_hybridanalysis = changes.apikey.newValue;
     console.log("Hybrid-Analysis API-KEY wurde dynamisch aktualisiert.");
+  }
+  if (area === 'local' && changes.urlhausApikey !== undefined) {
+    urlhausApikey = changes.urlhausApikey.newValue;
+    console.log("URLhaus API-KEY wurde aktualisiert.");
   }
   if (area === 'local' && changes.alwaysManual !== undefined) {
     alwaysManual = changes.alwaysManual.newValue;
@@ -51,10 +59,35 @@ function levenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-function calculateThreatScore(author, urls) {
+function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = []) {
     let score = 0;
     let reasons = [];
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
+
+    // Auth-Header Checks (SPF, DKIM, DMARC)
+    if (authHeaders && authHeaders.length > 0) {
+        const headerStr = authHeaders.join(' ').toLowerCase();
+        if (headerStr.includes("spf=fail") || headerStr.includes("spf=softfail")) {
+            score += 50;
+            reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+        }
+        if (headerStr.includes("dkim=fail")) {
+            score += 50;
+            reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
+        }
+        if (headerStr.includes("dmarc=fail")) {
+            score += 50;
+            reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+        }
+    }
+
+    // URLhaus Checks
+    if (urlhausDomains && urlhausDomains.length > 0) {
+        for (let domain of urlhausDomains) {
+            score += 80;
+            reasons.push(`Domain (${domain}) ist auf URLhaus als bösartig gelistet.`);
+        }
+    }
 
     const emailMatch = author.match(/<([^>]+)>/);
     let email = emailMatch ? emailMatch[1] : author;
@@ -167,7 +200,31 @@ async function tab_mail_open_display(tab, message) {
       await indexedDB_save_links_to_db(message, filteredUrls);
     }
 
-    let threat = calculateThreatScore(message.author, urls);
+    let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
+    let urlhausDomains = [];
+
+    if (urlhausApikey && filteredUrls.length > 0) {
+      let linkDomains = new Set();
+      for (let url of filteredUrls) {
+        try {
+          let parsed = new URL(url);
+          linkDomains.add(parsed.hostname.toLowerCase());
+        } catch (e) {}
+      }
+
+      const domainChecks = Array.from(linkDomains).map(async (domain) => {
+        let isMalicious = await checkURLhaus(domain, urlhausApikey);
+        if (isMalicious) {
+          return domain;
+        }
+        return null;
+      });
+
+      const checkResults = await Promise.all(domainChecks);
+      urlhausDomains = checkResults.filter(d => d !== null);
+    }
+
+    let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains);
     if (threat.score >= 50) {
       console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
       await browser.scripting.executeScript({
@@ -690,4 +747,27 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
     } else {
         throw new Error("Fehler beim Upload: " + JSON.stringify(json_data));
     }
+}
+
+async function checkURLhaus(domain, apikey) {
+    if (!apikey) return false;
+    try {
+        const body = new URLSearchParams();
+        body.append('host', domain);
+        const response = await fetch('https://urlhaus-api.abuse.ch/v1/host/', {
+            method: 'POST',
+            headers: {
+                'Auth-Key': apikey,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: body.toString()
+        });
+        const data = await response.json();
+        if (data.query_status === 'ok' && data.url_count > 0) {
+            return true;
+        }
+    } catch (e) {
+        console.error("Fehler bei URLhaus Abfrage", e);
+    }
+    return false;
 }
