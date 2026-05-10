@@ -225,16 +225,26 @@ async function tab_mail_open_display(tab, message) {
     }
 
     let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains);
-    if (threat.score >= 50) {
+    if (threat.score > 0) {
       console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
       await browser.scripting.executeScript({
         target: { tabId: tab.id },
         func: function(score, reasons) {
           // Sichere DOM-Manipulation ohne innerHTML
           const banner = document.createElement('div');
-          banner.style.backgroundColor = '#ffeeee';
-          banner.style.border = '1px solid #ff0000';
-          banner.style.color = '#ff0000';
+
+          const isHighRisk = score >= 50;
+
+          if (isHighRisk) {
+              banner.style.backgroundColor = '#ffeeee';
+              banner.style.border = '1px solid #ff0000';
+              banner.style.color = '#ff0000';
+          } else {
+              banner.style.backgroundColor = '#fff3cd';
+              banner.style.border = '1px solid #ffeeba';
+              banner.style.color = '#856404';
+          }
+
           banner.style.padding = '10px';
           banner.style.margin = '10px';
           banner.style.borderRadius = '4px';
@@ -243,7 +253,11 @@ async function tab_mail_open_display(tab, message) {
           banner.style.zIndex = '9999';
 
           const title = document.createElement('div');
-          title.textContent = `⚠️ Warnung! Mögliches Phishing erkannt (Risk Score: ${score}/100)`;
+          if (isHighRisk) {
+              title.textContent = `⚠️ Warnung! Mögliches Phishing erkannt (Risk Score: ${score}/100)`;
+          } else {
+              title.textContent = `⚠️ Hinweis: Auffälligkeiten erkannt (Risk Score: ${score}/100)`;
+          }
           title.style.fontSize = '16px';
           title.style.marginBottom = '5px';
           banner.appendChild(title);
@@ -252,6 +266,7 @@ async function tab_mail_open_display(tab, message) {
           reasonList.style.margin = '0';
           reasonList.style.paddingLeft = '20px';
           reasonList.style.fontSize = '14px';
+          reasonList.style.marginBottom = '10px';
 
           for (const reason of reasons) {
             const li = document.createElement('li');
@@ -259,6 +274,25 @@ async function tab_mail_open_display(tab, message) {
             reasonList.appendChild(li);
           }
           banner.appendChild(reasonList);
+
+          const coachingTitle = document.createElement('div');
+          coachingTitle.textContent = 'Handlungsempfehlung:';
+          coachingTitle.style.marginTop = '10px';
+          coachingTitle.style.marginBottom = '5px';
+          coachingTitle.style.fontWeight = 'bold';
+          coachingTitle.style.fontSize = '14px';
+          banner.appendChild(coachingTitle);
+
+          const coachingText = document.createElement('div');
+          coachingText.style.fontSize = '14px';
+          coachingText.style.fontWeight = 'normal';
+
+          if (isHighRisk) {
+              coachingText.textContent = "Klicken Sie auf keine Links, öffnen Sie keine Anhänge und geben Sie keine persönlichen Daten preis. Löschen Sie diese E-Mail am besten sofort.";
+          } else {
+              coachingText.textContent = "Seien Sie vorsichtig. Überprüfen Sie den Absender genau und klicken Sie nur auf Links, wenn Sie sicher sind, dass die E-Mail legitim ist.";
+          }
+          banner.appendChild(coachingText);
 
           document.body.prepend(banner);
         },
