@@ -25,10 +25,6 @@ async function tab_mail_open_display(tab, message) {
   console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
 
   try {
-    // Die volle Nachricht inkl. Anhänge laden
-    // message_full wird hier definiert, falls es später benötigt wird, aktuell wird es nicht direkt weiterverwendet
-    let message_full = await browser.messages.getFull(message.id);
-
     // Liste der Anhänge abrufen
     let attachments = await browser.messages.listAttachments(message.id);
 
