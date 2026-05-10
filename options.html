@@ -43,7 +43,17 @@
     <label>
         URLhaus API Schlüssel (Optional für Echtzeit-Domain-Checks):
         <input type="text" id="urlhausApikey">
-        <br><small>Sie können einen kostenlosen API Schlüssel unter <a href="https://urlhaus.abuse.ch/api/">urlhaus.abuse.ch</a> erhalten.</small>
+        <br><small>Sie können einen kostenlosen API Schlüssel unter <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer">urlhaus.abuse.ch</a> erhalten.</small>
+    </label>
+    <label>
+        urlscan.io API Schlüssel (Computer Vision Erkennung von z.B. gefälschten Logins):
+        <input type="text" id="urlscanApikey">
+        <br><small>Einen kostenlosen API Schlüssel erhalten Sie unter <a href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer">urlscan.io</a>.</small>
+    </label>
+    <label>
+        VirusTotal API Schlüssel (Optional für Datei-Scanner-Engines):
+        <input type="text" id="virustotalApikey">
+        <br><small>Sie können einen kostenlosen API Schlüssel unter <a href="https://www.virustotal.com/">virustotal.com</a> erhalten.</small>
     </label>
     <label>
         Datenschutz-Stufe (Privacy Tier):
@@ -62,6 +72,15 @@
     <label>
         Blacklist (Domains oder E-Mail-Adressen, kommagetrennt):
         <textarea id="customBlacklist" rows="3" style="width: 100%;"></textarea>
+    </label>
+    <label>
+        <input type="checkbox" id="autoScanLinks">
+        Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)
+        <br><small>Wenn deaktiviert, werden Links erst im Moment des Klickens gescannt (Time-of-Click Protection).</small>
+    </label>
+    <label>
+        <input type="checkbox" id="timeOfClickProtection" checked>
+        Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo bei Hover)
     </label>
     <strong>Bitte nicht vergessen zu speichern.</strong>
     <button id="save" class="btn-primary mt-2">Speichern</button>

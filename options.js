@@ -1,27 +1,31 @@
 // Event-Listener für das Laden der Seite
 document.addEventListener('DOMContentLoaded', function() {
     // Abrufen der gespeicherten Einstellung
-    browser.storage.local.get(['apikey', 'urlhausApikey', 'privacyTier', 'customWhitelist', 'customBlacklist']).then((result) => {
+    browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection']).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
-      document.getElementById('privacyTier').value = result.privacyTier || "balanced";
-      document.getElementById('customWhitelist').value = result.customWhitelist || "";
-      document.getElementById('customBlacklist').value = result.customBlacklist || "";
+      document.getElementById('urlscanApikey').value = result.urlscanApikey || "";
+      document.getElementById('alwaysManual').checked = result.alwaysManual || false;
+      document.getElementById('autoScanLinks').checked = result.autoScanLinks || false;
+      // Default für timeOfClickProtection ist true
+      document.getElementById('timeOfClickProtection').checked = result.timeOfClickProtection !== undefined ? result.timeOfClickProtection : true;
     });
   });
   
   document.getElementById('save').addEventListener('click', function() {
     let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
     let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
-    let privacyTierSetting = document.getElementById('privacyTier').value;
-    let customWhitelistSetting = document.getElementById('customWhitelist').value;
-    let customBlacklistSetting = document.getElementById('customBlacklist').value;
+    let urlscanSetting = document.getElementById('urlscanApikey').value.trim().replace(/\r|\n/g, '');
+    let alwaysManualSetting = document.getElementById('alwaysManual').checked;
+    let autoScanLinksSetting = document.getElementById('autoScanLinks').checked;
+    let timeOfClickProtectionSetting = document.getElementById('timeOfClickProtection').checked;
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
-        privacyTier: privacyTierSetting,
-        customWhitelist: customWhitelistSetting,
-        customBlacklist: customBlacklistSetting
+        urlscanApikey: urlscanSetting,
+        alwaysManual: alwaysManualSetting,
+        autoScanLinks: autoScanLinksSetting,
+        timeOfClickProtection: timeOfClickProtectionSetting
     }).then(() => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
