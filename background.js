@@ -81,7 +81,7 @@ function levenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = []) {
+function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {
     let score = 0;
     let reasons = [];
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
@@ -112,9 +112,46 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     }
 
     const emailMatch = author.match(/<([^>]+)>/);
-    let email = emailMatch ? emailMatch[1] : author;
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
     const parts = email.split('@');
     let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    // Reply-To Check
+    let replyToEmail = "";
+    if (replyTo) {
+        const replyMatch = replyTo.match(/<([^>]+)>/);
+        replyToEmail = replyMatch ? replyMatch[1].toLowerCase() : replyTo.toLowerCase();
+    }
+
+    if (replyToEmail && senderDomain) {
+        const replyParts = replyToEmail.split('@');
+        const replyDomain = replyParts.length === 2 ? replyParts[1] : "";
+        if (replyDomain && replyDomain !== senderDomain) {
+            score += 50;
+            reasons.push(`Diskrepanz erkannt: "Reply-To" Domain (${replyDomain}) weicht von der Absender-Domain (${senderDomain}) ab.`);
+        }
+    }
+
+    // Verhaltensanalyse / BEC Schutz
+    const urgencyWords = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
+    let textToAnalyze = (subject + " " + messageText).toLowerCase();
+    let foundUrgencyWords = urgencyWords.filter(word => {
+        let regex = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${word})(?=[^\\wäöüßÄÖÜ]|$)`, 'i');
+        return regex.test(textToAnalyze);
+    });
+
+    if (foundUrgencyWords.length > 0) {
+        if (isFirstCommunication) {
+            score += 50;
+            reasons.push(`Mögliches BEC (Business Email Compromise): Erste Kommunikation mit diesem Absender und Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}).`);
+        } else {
+            score += 20;
+            reasons.push(`Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}). Bitte prüfen Sie die Anfrage sorgfältig.`);
+        }
+    } else if (isFirstCommunication) {
+        score += 10;
+        reasons.push("Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.");
+    }
 
     // Hilfsfunktion zur Ermittlung der Hauptdomain
     function getMainDomain(domain) {
@@ -241,6 +278,29 @@ async function tab_mail_open_display(tab, message) {
     let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
     let urlhausDomains = [];
 
+    // BEC Protection Data Extraction
+    const emailMatch = message.author.match(/<([^>]+)>/);
+    let senderEmail = emailMatch ? emailMatch[1].toLowerCase() : message.author.toLowerCase();
+
+    let isFirstCommunication = false;
+    try {
+        if (browser.messages.query) {
+            let previousMsgs = await browser.messages.query({ to: senderEmail });
+            if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
+                isFirstCommunication = true;
+            }
+        }
+    } catch (e) {
+        console.log("Fehler bei messages.query (Möglicherweise nicht unterstützt):", e);
+    }
+
+    let replyTo = "";
+    if (fullMessage.headers && fullMessage.headers['reply-to']) {
+        replyTo = fullMessage.headers['reply-to'][0];
+    }
+
+    let subject = message.subject || "";
+
     if (urlhausApikey && filteredUrls.length > 0) {
       let linkDomains = new Set();
       for (let url of filteredUrls) {
@@ -262,22 +322,7 @@ async function tab_mail_open_display(tab, message) {
       urlhausDomains = checkResults.filter(d => d !== null);
     }
 
-    if (autoScanLinks && filteredUrls.length > 0) {
-        // Falls Auto-Scan für urlscan.io aktiv ist, können wir hier im Hintergrund scannen.
-        // Um Rate Limits zu schonen, machen wir das hier nur optional oder verlassen uns auf Time-of-Click.
-        // Der User wünschte "Option für automatisch", also scannen wir die URLs asynchron im Hintergrund.
-        if (urlscanApikey) {
-            filteredUrls.forEach(async (url) => {
-                let res = await checkUrlscanIo(url, urlscanApikey);
-                if (res && res.status === 'MALICIOUS_VISUAL') {
-                    console.log(`Auto-Scan: Phishing erkannt auf ${url}:`, res.reasons);
-                    // Hier könnten wir das DB-Objekt updaten
-                }
-            });
-        }
-    }
-
-    let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains);
+    let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains, isFirstCommunication, messageText, subject, replyTo);
     if (threat.score >= 50) {
       console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
       await browser.scripting.executeScript({
