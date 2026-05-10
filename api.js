@@ -10,77 +10,76 @@ function escapeHTML(str) {
 
 let apikey_hybridanalysis;
 
-(async () => {
-let result = await browser.storage.local.get('apikey');
-apikey_hybridanalysis = result.apikey;
-
-if (!apikey_hybridanalysis) {
-    document.getElementById('hybrid_analysis_api_content').innerHTML = '<div style="color: red; padding: 10px; border: 1px solid red; background-color: #fee;"><strong>Warnung:</strong> Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.</div>';
-    return;
-}
-
-// Der Benutzer hat auf unseren Button geklickt, holen Sie sich den aktiven Tab im aktuellen Fenster mit
-// der Tabs API.
-let tabs = await browser.tabs.query({ active: true, currentWindow: true });
-
-// Holen Sie sich die aktuell angezeigte Nachricht im aktiven Tab, mit der
-// messageDisplay API. Hinweis: Dies benötigt die messagesRead Berechtigung.
-// Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
-// Informationen.
-let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
-console.log(message.headerMessageId);
-
-
-// Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
-document.getElementById("subject").textContent = message.subject;
-document.getElementById("from").textContent = message.author;
-document.getElementById("MessageHeaderID").textContent = message.headerMessageId;
-try {
-
-    let db;
-
-    // Öffnen Sie die Datenbank
-    let openRequest = indexedDB.open("thunderbird_av", 3);
-
-    openRequest.onupgradeneeded = function (e) {
-        db = e.target.result;
-
-        if (!db.objectStoreNames.contains('hybridanalysis')) {
-            db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
-        }
-    };
-
-
-    openRequest.onsuccess = async function (e) {
-        db = e.target.result;
-        // Erstellen Sie eine Transaktion und öffnen Sie den Object Store
-        let transaction = db.transaction(["hybridanalysis"], "readonly");
-        let store = transaction.objectStore("hybridanalysis");
-        // Führen Sie eine Anfrage aus, um den Hash für die angegebene MessageHeaderId zu finden.
-        let getRequest = store.get(message.headerMessageId);
-        getRequest.onsuccess = function (e) {
-            if (getRequest.result && getRequest.result.attachments && getRequest.result.attachments.length > 0) {
-                document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
-                for (const att of getRequest.result.attachments) {
-                    const hash256 = att.hybrid_sha256;
-                    if (att.state === 'UNKNOWN') {
-                        renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
-                    } else {
-                        get_hybrid_report_by_sha256(hash256, att.attachment_name);
-                    }
-                }
-            } else {
-                console.log("Kein Hash/Anhang gefunden.");
-                document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
+async function openDB() {
+    return new Promise((resolve, reject) => {
+        const openRequest = indexedDB.open("thunderbird_av", 3);
+        openRequest.onupgradeneeded = (e) => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('hybridanalysis')) {
+                db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
             }
         };
-        getRequest.onerror = function (e) {
-            console.log("Fehler beim Abrufen des Datensatzes:", e.target.error);
-        };
-    };
-} catch (error) {
-    console.log('Error opening local Hybrid Analysis Database:', error);
+        openRequest.onsuccess = (e) => resolve(e.target.result);
+        openRequest.onerror = (e) => reject(e.target.error);
+    });
 }
+
+async function getFromStore(db, storeName, key) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([storeName], "readonly");
+        const store = transaction.objectStore(storeName);
+        const getRequest = store.get(key);
+        getRequest.onsuccess = (e) => resolve(e.target.result);
+        getRequest.onerror = (e) => reject(e.target.error);
+    });
+}
+
+(async () => {
+    let result = await browser.storage.local.get('apikey');
+    apikey_hybridanalysis = result.apikey;
+
+    if (!apikey_hybridanalysis) {
+        document.getElementById('hybrid_analysis_api_content').innerHTML = '<div style="color: red; padding: 10px; border: 1px solid red; background-color: #fee;"><strong>Warnung:</strong> Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.</div>';
+        return;
+    }
+
+    // Der Benutzer hat auf unseren Button geklickt, holen Sie sich den aktiven Tab im aktuellen Fenster mit
+    // der Tabs API.
+    let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+
+    // Holen Sie sich die aktuell angezeigte Nachricht im aktiven Tab, mit der
+    // messageDisplay API. Hinweis: Dies benötigt die messagesRead Berechtigung.
+    // Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
+    // Informationen.
+    let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
+    console.log(message.headerMessageId);
+
+
+    // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
+    document.getElementById("subject").textContent = message.subject;
+    document.getElementById("from").textContent = message.author;
+    document.getElementById("MessageHeaderID").textContent = message.headerMessageId;
+    try {
+        const db = await openDB();
+        const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
+
+        if (record && record.attachments && record.attachments.length > 0) {
+            document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
+            for (const att of record.attachments) {
+                const hash256 = att.hybrid_sha256;
+                if (att.state === 'UNKNOWN') {
+                    renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
+                } else {
+                    get_hybrid_report_by_sha256(hash256, att.attachment_name);
+                }
+            }
+        } else {
+            console.log("Kein Hash/Anhang gefunden.");
+            document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
+        }
+    } catch (error) {
+        console.log('Error accessing local Hybrid Analysis Database:', error);
+    }
 })();
 
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
