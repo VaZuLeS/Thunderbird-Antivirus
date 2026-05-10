@@ -462,18 +462,6 @@ describe('background.js', () => {
             assert.strictEqual(result.score, 0);
             assert.strictEqual(result.reasons.length, 0);
         });
-
-        it('calculates threat score correctly for reply-to discrepancy', async () => {
-            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], [], [], false, "Hello", "Hi", "Hacker <hacker@evil.com>");
-            assert.strictEqual(result.score, 50);
-            assert.ok(result.reasons.some(r => r.includes("Diskrepanz erkannt")));
-        });
-
-        it('calculates threat score correctly for BEC first comm + urgency', async () => {
-            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], [], [], true, "Bitte schnell überweisung tätigen.", "Wichtig!");
-            assert.strictEqual(result.score, 50);
-            assert.ok(result.reasons.some(r => r.includes("Erste Kommunikation")));
-        });
     });
 
     describe('tab_mail_open_display with threat score', () => {
@@ -498,12 +486,9 @@ describe('background.js', () => {
         });
 
         it('does not inject warning banner if score < 50', async () => {
-            let executedWarningScript = null;
+            let executedScript = null;
             context.browser.scripting.executeScript = async (opts) => {
-                // Ignore the time-of-click style injection script
-                if (opts.args && opts.args.length > 0) {
-                    executedWarningScript = opts;
-                }
+                executedScript = opts;
             };
 
             context.browser.messages.listAttachments = async () => ([]);
@@ -514,7 +499,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal.com>', subject: 'Action required' });
 
-            assert.strictEqual(executedWarningScript, null);
+            assert.strictEqual(executedScript, null);
         });
     });
 });

@@ -45,10 +45,10 @@ test('Test local disarmHTML function', async (t) => {
     });
 
     await t.test('disarmHTML should remove javascript URIs', () => {
-        const input = '<html><body><a href="javascript:alert(1)">Link</a><a href="http://safe.com">Safe</a></body></html>';
+        const input = '<html><body><a href="javascript:alert(1)">Link</a><a href="https://example.com">Safe</a></body></html>';
         const result = sandbox.disarmHTML(input);
-        assert.ok(!result.includes('javascript:'), 'javascript URI should be removed');
-        assert.ok(result.includes('http://safe.com'), 'Safe URI should remain');
+        assert.strictEqual(result.indexOf('javascript:') === -1, true, 'javascript URI should be removed');
+        assert.strictEqual(result.split('"')[1], 'https://example.com', 'Safe URI should remain');
     });
 
     await t.test('disarmHTML should remove object, embed, iframe', () => {
