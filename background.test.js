@@ -436,6 +436,14 @@ describe('background.js', () => {
             assert.strictEqual(result.score, 0);
             assert.strictEqual(result.reasons.length, 0);
         });
+
+        it('calculates threat score correctly for legitimate emails with subdomain sender and root link', async () => {
+            const author = 'Service <service@service.paypal.com>';
+            const urls = ['http://paypal.com/login', 'http://info.paypal.com/test'];
+            const result = context.calculateThreatScore(author, urls);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.reasons.length, 0);
+        });
     });
 
     describe('tab_mail_open_display with threat score', () => {
