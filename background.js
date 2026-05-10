@@ -52,7 +52,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
       return;
   }
 
-  for (const attachment of attachments) {
+  const results = await Promise.all(attachments.map(async (attachment) => {
     console.log(`Prüfe Anhang: ${attachment.name} (${attachment.contentType}, ${attachment.size} bytes)`);
 
     let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
@@ -67,7 +67,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
       case 'application/xml':
       case 'application/xhtml+xml':
         console.log(`Überspringe Datei vom Typ ${attachment.contentType}`);
-        break;
+        return null;
 
       default:
         console.log(`Berechne lokalen Hash für Datei | Typ: ${attachment.contentType}`);
@@ -94,27 +94,88 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             if (responseCheck.status === 200) {
                 const json_data = await responseCheck.json();
                 console.log('Datei ist der API bereits bekannt.');
-                indexedDB_save_hybrid_data_to_db(message, {
-                    submission_id: json_data.submission_id || 'N/A',
-                    job_id: json_data.job_id || 'N/A',
-                    sha256: local_hash,
-                    state: 'KNOWN'
-                }, attachment.name);
+                return {
+                    hybrid_data: {
+                        submission_id: json_data.submission_id || 'N/A',
+                        job_id: json_data.job_id || 'N/A',
+                        sha256: local_hash,
+                        state: 'KNOWN',
+                        partName: attachment.partName
+                    },
+                    attachmentName: attachment.name
+                };
             } else {
                 console.log('Datei ist der API unbekannt. Speichere Metadaten für manuellen Upload.');
-                indexedDB_save_hybrid_data_to_db(message, {
-                    submission_id: 'PENDING_UPLOAD',
-                    job_id: 'PENDING_UPLOAD',
-                    sha256: local_hash,
-                    state: 'UNKNOWN',
-                    partName: attachment.partName
-                }, attachment.name);
+                return {
+                    hybrid_data: {
+                        submission_id: 'PENDING_UPLOAD',
+                        job_id: 'PENDING_UPLOAD',
+                        sha256: local_hash,
+                        state: 'UNKNOWN',
+                        partName: attachment.partName
+                    },
+                    attachmentName: attachment.name
+                };
             }
 
         } catch (error) {
           console.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
+          return null;
         }
     }
+  }));
+
+  const validResults = results.filter(r => r !== null);
+  if (validResults.length > 0) {
+      await indexedDB_save_batch_hybrid_data_to_db(message, validResults);
+  }
+}
+
+async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
+  try {
+    const db = await openDB("thunderbird_av", 3);
+
+    if (message.headerMessageId) {
+      const newAttachments = results.map(result => ({
+        hybrid_submission_id: result.hybrid_data.submission_id,
+        hybrid_job_id: result.hybrid_data.job_id,
+        hybrid_sha256: result.hybrid_data.sha256,
+        attachment_name: result.attachmentName,
+        state: result.hybrid_data.state,
+        partName: result.hybrid_data.partName,
+        created: new Date()
+      }));
+
+      await updateStore(db, 'hybridanalysis', message.headerMessageId, (existingRecord) => {
+        let recordToSave;
+        if (existingRecord) {
+          // Update existing record
+          recordToSave = existingRecord;
+          if (!recordToSave.attachments) recordToSave.attachments = [];
+
+          for (const newAtt of newAttachments) {
+              let existingAttIndex = recordToSave.attachments.findIndex(a => a.attachment_name === newAtt.attachment_name);
+              if (existingAttIndex > -1) {
+                  recordToSave.attachments[existingAttIndex] = newAtt;
+              } else {
+                  recordToSave.attachments.push(newAtt);
+              }
+          }
+        } else {
+          // Create new record
+          recordToSave = {
+            messageHeader: message.headerMessageId,
+            author: message.author,
+            subject: message.subject,
+            attachments: newAttachments
+          };
+        }
+        return recordToSave;
+      });
+      console.log('Batch-Daten erfolgreich in DB gespeichert.');
+    }
+  } catch (error) {
+    console.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
   }
 }
 
