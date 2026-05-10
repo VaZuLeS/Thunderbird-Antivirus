@@ -10,6 +10,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let mySetting = document.getElementById('apikey').value;
     browser.storage.local.set({
         apikey: mySetting
+    }).then(() => {
+        let statusSpan = document.getElementById('saveStatus');
+        statusSpan.style.display = 'inline';
+        setTimeout(() => {
+            statusSpan.style.display = 'none';
+        }, 3000);
     });
   });
 
