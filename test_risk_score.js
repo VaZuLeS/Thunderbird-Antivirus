@@ -25,6 +25,35 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     let reasons = [];
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
 
+    const emailMatch = author.match(/<([^>]+)>/);
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
+    const parts = email.split('@');
+    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    // Check Blacklist
+    if (customBlacklist && customBlacklist.length > 0) {
+        if (customBlacklist.includes(email)) {
+            return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`] };
+        }
+        for (let b of customBlacklist) {
+            if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
+                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`] };
+            }
+        }
+    }
+
+    // Check Whitelist
+    if (customWhitelist && customWhitelist.length > 0) {
+        if (customWhitelist.includes(email)) {
+            return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`] };
+        }
+        for (let w of customWhitelist) {
+            if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
+                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`] };
+            }
+        }
+    }
+
     // Auth-Header Checks (SPF, DKIM, DMARC)
     if (authHeaders && authHeaders.length > 0) {
         const headerStr = authHeaders.join(' ').toLowerCase();

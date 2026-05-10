@@ -86,6 +86,35 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     let reasons = [];
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
 
+    const emailMatch = author.match(/<([^>]+)>/);
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
+    const parts = email.split('@');
+    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    // Check Blacklist
+    if (customBlacklist && customBlacklist.length > 0) {
+        if (customBlacklist.includes(email)) {
+            return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`] };
+        }
+        for (let b of customBlacklist) {
+            if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
+                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`] };
+            }
+        }
+    }
+
+    // Check Whitelist
+    if (customWhitelist && customWhitelist.length > 0) {
+        if (customWhitelist.includes(email)) {
+            return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`] };
+        }
+        for (let w of customWhitelist) {
+            if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
+                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`] };
+            }
+        }
+    }
+
     // Auth-Header Checks (SPF, DKIM, DMARC)
     if (authHeaders && authHeaders.length > 0) {
         const headerStr = authHeaders.join(' ').toLowerCase();
@@ -256,7 +285,48 @@ async function tab_mail_open_display(tab, message) {
 
     console.log("Gefundene URLs:", filteredUrls);
     if (filteredUrls.length > 0) {
-      await indexedDB_save_links_to_db(message, filteredUrls);
+      if (privacyTier === 'max') {
+         console.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
+         const urlResults = await Promise.all(filteredUrls.map(async (url) => {
+            try {
+                if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+                const formBody = new URLSearchParams();
+                formBody.append('scan_type', 'all');
+                formBody.append('url', url);
+
+                const options = {
+                    method: 'POST',
+                    url: 'https://hybrid-analysis.com/api/v2/quick-scan/url',
+                    headers: {
+                        accept: 'application/json',
+                        'api-key': apikey_hybridanalysis,
+                        'user-agent': 'Falcon',
+                        'scan_type': 'all',
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formBody
+                };
+                const response = await fetch(options.url, options);
+                if (response.status === 200 || response.status === 201) {
+                    const json_data = await response.json();
+                    return {
+                        url: url,
+                        state: 'UPLOADED',
+                        hybrid_submission_id: json_data.submission_id,
+                        hybrid_job_id: json_data.job_id,
+                        hybrid_sha256: json_data.sha256
+                    };
+                }
+            } catch (e) {
+                console.error('Fehler beim automatischen URL-Upload', e);
+            }
+            return { url: url, state: 'UNKNOWN' };
+         }));
+
+         await indexedDB_save_links_objects_to_db(message, urlResults);
+      } else {
+         await indexedDB_save_links_to_db(message, filteredUrls);
+      }
     }
 
     // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
@@ -504,7 +574,48 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
                     virustotal_stats: virustotal_stats
                 };
             } else {
-                console.log('Datei ist der API unbekannt. Speichere Metadaten für manuellen Upload.');
+                console.log('Datei ist der API unbekannt.');
+                if (privacyTier === 'balanced' || privacyTier === 'max') {
+                    console.log('Lade unbekannte Datei automatisch hoch...');
+                    try {
+                        const file_to_submit = new File([content_of_atachment], attachment.name, { type: file.type || 'application/octet-stream' });
+                        const formData = new FormData();
+                        formData.append('scan_type', 'all');
+                        formData.append('file', file_to_submit);
+
+                        const uploadOptions = {
+                            method: 'POST',
+                            url: 'https://hybrid-analysis.com/api/v2/quick-scan/file',
+                            headers: {
+                                accept: 'application/json',
+                                'api-key': apikey_hybridanalysis,
+                                'user-agent': 'Falcon',
+                                'scan_type': 'all'
+                            },
+                            body: formData
+                        };
+                        const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
+                        if (uploadResponse.status === 200 || uploadResponse.status === 201) {
+                            const uploadData = await uploadResponse.json();
+                            return {
+                                hybrid_data: {
+                                    submission_id: uploadData.submission_id,
+                                    job_id: uploadData.job_id,
+                                    sha256: uploadData.sha256 || local_hash,
+                                    state: 'UPLOADED',
+                                    partName: attachment.partName
+                                },
+                                attachmentName: attachment.name
+                            };
+                        } else {
+                            console.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
+                        }
+                    } catch (uploadError) {
+                        console.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
+                    }
+                }
+
+                console.log('Speichere Metadaten für manuellen Upload.');
                 return {
                     hybrid_data: {
                         submission_id: 'PENDING_UPLOAD',
@@ -581,6 +692,46 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
 }
 
 // Speicherung der Ergebnisse in IndexedDB
+async function indexedDB_save_links_objects_to_db(message, urlObjects) {
+  try {
+    const db = await openDB("thunderbird_av", 3);
+
+    if (message.headerMessageId) {
+      const newLinks = urlObjects.map(obj => ({
+        ...obj,
+        created: new Date()
+      }));
+
+      await updateStore(db, 'hybridanalysis', message.headerMessageId, (existingRecord) => {
+        let recordToSave;
+        if (existingRecord) {
+          recordToSave = existingRecord;
+          if (!recordToSave.links) recordToSave.links = [];
+
+          for (const newLink of newLinks) {
+            let existingIdx = recordToSave.links.findIndex(l => l.url === newLink.url);
+            if (existingIdx > -1) {
+                recordToSave.links[existingIdx] = newLink;
+            } else {
+                recordToSave.links.push(newLink);
+            }
+          }
+        } else {
+          recordToSave = {
+            messageHeader: message.headerMessageId,
+            author: message.author,
+            subject: message.subject,
+            links: newLinks
+          };
+        }
+        return recordToSave;
+      });
+    }
+  } catch (error) {
+    console.error('Fehler bei der Batch-Interaktion (Links Objects) mit der Datenbank:', error);
+  }
+}
+
 async function indexedDB_save_links_to_db(message, urls) {
   try {
     const db = await openDB("thunderbird_av", 3);

@@ -56,8 +56,22 @@
         <br><small>Sie können einen kostenlosen API Schlüssel unter <a href="https://www.virustotal.com/">virustotal.com</a> erhalten.</small>
     </label>
     <label>
-        <input type="checkbox" id="alwaysManual">
-        Immer manuell scannen (Hash nicht automatisch an API senden)
+        Datenschutz-Stufe (Privacy Tier):
+        <select id="privacyTier">
+            <option value="strict">Strikt (Nur Hashes senden, kein Upload)</option>
+            <option value="balanced">Ausgewogen (Unbekannte Dateien hochladen, keine URLs)</option>
+            <option value="max">Maximaler Schutz (Alles hochladen inkl. URLs)</option>
+        </select>
+    </label>
+
+    <label>
+        Whitelist (Domains oder E-Mail-Adressen, kommagetrennt):
+        <textarea id="customWhitelist" rows="3" style="width: 100%;"></textarea>
+    </label>
+
+    <label>
+        Blacklist (Domains oder E-Mail-Adressen, kommagetrennt):
+        <textarea id="customBlacklist" rows="3" style="width: 100%;"></textarea>
     </label>
     <label>
         <input type="checkbox" id="autoScanLinks">
