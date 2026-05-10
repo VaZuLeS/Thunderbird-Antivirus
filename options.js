@@ -13,42 +13,26 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  document.getElementById('clearCache').addEventListener('click', function() {
+  document.getElementById('clearCache').addEventListener('click', async function() {
     let statusSpan = document.getElementById('clearCacheStatus');
     statusSpan.style.display = 'none';
     statusSpan.textContent = '';
     statusSpan.style.color = 'green';
 
-    let openRequest = indexedDB.open('thunderbird_av', 3);
+    try {
+        const db = await openDB('thunderbird_av', 3);
+        const cleared = await clearStore(db, 'hybridanalysis');
 
-    openRequest.onerror = function(e) {
-      statusSpan.style.color = 'red';
-      statusSpan.textContent = 'Fehler beim Öffnen der Datenbank.';
-      statusSpan.style.display = 'inline';
-    };
-
-    openRequest.onsuccess = function(e) {
-      let db = e.target.result;
-
-      if (!db.objectStoreNames.contains('hybridanalysis')) {
-        statusSpan.textContent = 'Datenbank existiert noch nicht oder ist bereits leer.';
-        statusSpan.style.display = 'inline';
-        return;
-      }
-
-      let transaction = db.transaction(['hybridanalysis'], 'readwrite');
-      let store = transaction.objectStore('hybridanalysis');
-      let clearRequest = store.clear();
-
-      clearRequest.onsuccess = function() {
-        statusSpan.textContent = 'Cache erfolgreich geleert.';
-        statusSpan.style.display = 'inline';
-      };
-
-      clearRequest.onerror = function() {
+        if (cleared) {
+            statusSpan.textContent = 'Cache erfolgreich geleert.';
+        } else {
+            statusSpan.textContent = 'Datenbank existiert noch nicht oder ist bereits leer.';
+        }
+    } catch (error) {
         statusSpan.style.color = 'red';
         statusSpan.textContent = 'Fehler beim Leeren des Caches.';
-        statusSpan.style.display = 'inline';
-      };
-    };
+        console.error(error);
+    }
+
+    statusSpan.style.display = 'inline';
   });

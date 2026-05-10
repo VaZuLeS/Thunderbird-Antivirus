@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thunderbird Security Antivirus aka Thundy AV</title>
     <style>
@@ -58,6 +59,7 @@
     <div id="status_message" class="content" style="margin-top: 10px; font-weight: bold;"></div>
     <div id="hybrid_analysis_api_content" class="content"></div>
 
+    <script src="db.js"></script>
     <script type="module" src="api.js"></script>
 </body>
 

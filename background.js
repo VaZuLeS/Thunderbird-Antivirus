@@ -25,10 +25,6 @@ async function tab_mail_open_display(tab, message) {
   console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
 
   try {
-    // Die volle Nachricht inkl. Anhänge laden
-    // message_full wird hier definiert, falls es später benötigt wird, aktuell wird es nicht direkt weiterverwendet
-    let message_full = await browser.messages.getFull(message.id);
-
     // Liste der Anhänge abrufen
     let attachments = await browser.messages.listAttachments(message.id);
 
@@ -123,36 +119,22 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
 }
 
 // Speicherung der Ergebnisse in IndexedDB
-function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName) {
-  let openRequest = indexedDB.open("thunderbird_av", 3);
-
-  openRequest.onupgradeneeded = function (e) {
-    let db = e.target.result;
-    if (!db.objectStoreNames.contains('hybridanalysis')) {
-      db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
-      console.log('Datenbank hybridanalysis wurde erstellt.');
-    }
-  };
-
-  openRequest.onsuccess = function (e) {
-    const db = e.target.result;
-    const transaction = db.transaction(['hybridanalysis'], 'readwrite');
-    const store = transaction.objectStore('hybridanalysis');
+async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName) {
+  try {
+    const db = await openDB("thunderbird_av", 3);
     
     if (message.headerMessageId) {
-      let getRequest = store.get(message.headerMessageId);
-      getRequest.onsuccess = function () {
-        let existingRecord = getRequest.result;
-        let newAttachment = {
-          hybrid_submission_id: hybrid_data.submission_id,
-          hybrid_job_id: hybrid_data.job_id,
-          hybrid_sha256: hybrid_data.sha256,
-          attachment_name: attachmentName,
-          state: hybrid_data.state,
-          partName: hybrid_data.partName,
-          created: new Date()
-        };
+      let newAttachment = {
+        hybrid_submission_id: hybrid_data.submission_id,
+        hybrid_job_id: hybrid_data.job_id,
+        hybrid_sha256: hybrid_data.sha256,
+        attachment_name: attachmentName,
+        state: hybrid_data.state,
+        partName: hybrid_data.partName,
+        created: new Date()
+      };
 
+      await updateStore(db, 'hybridanalysis', message.headerMessageId, (existingRecord) => {
         let recordToSave;
         if (existingRecord) {
           // Update existing record
@@ -173,21 +155,13 @@ function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName) 
             attachments: [newAttachment]
           };
         }
-
-        let addRequest = store.put(recordToSave);
-        addRequest.onsuccess = function () {
-            console.log('Daten erfolgreich in DB gespeichert.');
-        };
-        addRequest.onerror = function () {
-            console.error('Fehler beim Speichern in DB.');
-        };
-      };
+        return recordToSave;
+      });
+      console.log('Daten erfolgreich in DB gespeichert.');
     }
-  };
-  
-  openRequest.onerror = function (e) {
-    console.error('Fehler beim Öffnen der Datenbank:', e);
-  };  
+  } catch (error) {
+    console.error('Fehler bei der Interaktion mit der Datenbank:', error);
+  }
 }
 
 // Listener registrieren
@@ -232,25 +206,22 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
         console.log('Datei manuell an Hybrid Analysis gesendet.');
 
         // Update DB record
-        let openRequest = indexedDB.open("thunderbird_av", 3);
-        openRequest.onsuccess = function (e) {
-            const db = e.target.result;
-            const transaction = db.transaction(['hybridanalysis'], 'readwrite');
-            const store = transaction.objectStore('hybridanalysis');
-            let getRequest = store.get(headerMessageId);
-            getRequest.onsuccess = function () {
-                let existingRecord = getRequest.result;
+        try {
+            const db = await openDB("thunderbird_av", 3);
+            await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
                 if (existingRecord && existingRecord.attachments) {
                     let attIndex = existingRecord.attachments.findIndex(a => a.partName === partName);
                     if (attIndex > -1) {
                         existingRecord.attachments[attIndex].hybrid_submission_id = json_data.submission_id;
                         existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id;
                         existingRecord.attachments[attIndex].state = 'UPLOADED';
-                        store.put(existingRecord);
                     }
                 }
-            }
-        };
+                return existingRecord;
+            });
+        } catch (dbError) {
+            console.error('Fehler beim Aktualisieren des DB Records:', dbError);
+        }
         return json_data;
     } else {
         throw new Error("Fehler beim Upload: " + JSON.stringify(json_data));
