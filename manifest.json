@@ -17,7 +17,8 @@
     "webRequest",
     "storage",
     "notifications",
-    "scripting"
+    "scripting",
+    "menus"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none';"

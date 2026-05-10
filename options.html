@@ -49,6 +49,28 @@
         <input type="checkbox" id="alwaysManual">
         Immer manuell scannen (Hash nicht automatisch an API senden)
     </label>
+
+    <br><br>
+    <hr>
+
+    <h3>IP-Reputation (Header-Analyse)</h3>
+    <p>Hier können Sie einen Anbieter auswählen, um die IPs der einliefernden Mailserver (Received-Header) auf Spam-Botnets oder andere Gefahren zu überprüfen.</p>
+    <label>
+        Anbieter:
+        <select id="ipReputationProvider">
+            <option value="none">Deaktiviert</option>
+            <option value="abuseipdb">AbuseIPDB</option>
+            <option value="virustotal">VirusTotal</option>
+        </select>
+    </label>
+    <label>
+        API Schlüssel (IP-Reputation):
+        <input type="text" id="ipReputationApiKey">
+        <br>
+        <small>Einen kostenlosen API-Schlüssel erhalten Sie unter <a href="https://www.abuseipdb.com/">AbuseIPDB</a> (1.000 Abfragen/Tag) oder <a href="https://www.virustotal.com/gui/join-us">VirusTotal</a> (500 Abfragen/Tag).</small>
+    </label>
+
+    <br>
     <strong>Bitte nicht vergessen zu speichern.</strong>
     <button id="save" class="btn-primary mt-2">Speichern</button>
     <span id="saveStatus" class="text-success ml-2" style="display: none;">Erfolgreich gespeichert!</span>

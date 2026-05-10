@@ -50,6 +50,15 @@ describe('background.js', () => {
                 },
                 scripting: {
                     executeScript: async () => {}
+                },
+                menus: {
+                    create: () => {},
+                    onClicked: {
+                        addListener: () => {}
+                    }
+                },
+                notifications: {
+                    create: () => {}
                 }
             },
             crypto: globalThis.crypto,
