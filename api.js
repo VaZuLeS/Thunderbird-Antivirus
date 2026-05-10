@@ -162,17 +162,12 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
             container.insertAdjacentHTML('beforeend', resultHtml);
 
         } else {
-            // Fügen Sie das div-Element zum DOM hinzu
-            let container = document.getElementById('hybrid_analysis_api_content');
-            container.insertAdjacentHTML('beforeend', `<div style="color: red;">Failed to Get Report for SHA256 at Hybrid Analysis.</div>`);
+            console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
+            document.getElementById('hybrid_analysis_api_content').innerHTML += `<div style="color:red;">API Error: ${response.status} for attachment ${escapeHTML(attachmentName)}</div>`;
         }
     } catch (error) {
-
-        // Fügen Sie das div-Element zum DOM hinzu
-        let container = document.getElementById('hybrid_analysis_api_content');
-        if (container) {
-            container.insertAdjacentHTML('beforeend', `<div style="color: red;">Error getting analysis from Hybrid Analysis: ${escapeHTML(error)}</div>`);
-        }
+        console.error('Fetch error:', error);
+        document.getElementById('hybrid_analysis_api_content').innerHTML += `<div style="color:red;">Netzwerkfehler: ${escapeHTML(error.message)} für Anhang ${escapeHTML(attachmentName)}</div>`;
     }
 }
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
