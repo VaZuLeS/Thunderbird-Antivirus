@@ -11,6 +11,19 @@ describe('escapeHTML', () => {
     before(() => {
         // Create mock environment
         context = {
+            browser: {
+                storage: {
+                    local: {
+                        get: async () => ({ apikey: 'test' })
+                    }
+                },
+                tabs: {
+                    query: async () => [{ id: 1 }]
+                },
+                messageDisplay: {
+                    getDisplayedMessage: async () => ({ headerMessageId: '123', subject: 'test', author: 'author' })
+                }
+            },
             messenger: {
                 storage: {
                     local: {
