@@ -1,0 +1,16 @@
+{
+  "name": "thunderbird-sec-antivirus",
+  "version": "1.0.0",
+  "description": "Thunderbird Extension for scanning attachments with Hybrid Analysis",
+  "main": "background.js",
+  "scripts": {
+    "test": "node tests/test_sha256.js"
+  },
+  "keywords": [
+    "thunderbird",
+    "antivirus",
+    "hybrid-analysis"
+  ],
+  "author": "",
+  "license": "ISC"
+}
