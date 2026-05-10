@@ -47,9 +47,15 @@ describe('background.js', () => {
                         },
                         listeners: []
                     }
+                },
+                scripting: {
+                    executeScript: async () => {}
                 }
             },
             crypto: globalThis.crypto,
+            Math: globalThis.Math,
+            Set: globalThis.Set,
+            URL: globalThis.URL,
             indexedDB: {
                 open: () => ({
                     onupgradeneeded: null,
@@ -99,6 +105,8 @@ describe('background.js', () => {
             globalThis.extractTextFromParts = extractTextFromParts;
             globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
             globalThis.handleUrlScan = handleUrlScan;
+            globalThis.calculateThreatScore = calculateThreatScore;
+            globalThis.levenshteinDistance = levenshteinDistance;
         `;
         context.URL = URL;
         context.URLSearchParams = URLSearchParams;
@@ -394,5 +402,78 @@ describe('background.js', () => {
 
         assert.ok(sentResponse);
         assert.strictEqual(sentResponse.status, 'success');
+    });
+
+    describe('calculateThreatScore', () => {
+        it('calculates threat score correctly for typosquatting sender', async () => {
+            const author = 'Service <service@amaz0n.de>';
+            const urls = [];
+            const result = context.calculateThreatScore(author, urls);
+            assert.strictEqual(result.score, 60);
+            assert.ok(result.reasons.some(r => r.includes('amaz0n.de')));
+        });
+
+        it('calculates threat score correctly for domain mismatch', async () => {
+            const author = 'Service <service@paypal.com>';
+            const urls = ['http://login.hacker.com/123'];
+            const result = context.calculateThreatScore(author, urls);
+            assert.strictEqual(result.score, 40);
+            assert.ok(result.reasons.some(r => r.includes('Keiner der Links')));
+        });
+
+        it('calculates threat score correctly for typosquatting link and mismatch', async () => {
+            const author = 'Service <service@paypal-support.com>';
+            const urls = ['https://login.amaz0n.de'];
+            const result = context.calculateThreatScore(author, urls);
+            assert.strictEqual(result.score, 100);
+            assert.ok(result.reasons.some(r => r.includes('amaz0n.de')));
+        });
+
+        it('calculates threat score correctly for legitimate emails', async () => {
+            const author = 'Service <service@paypal.com>';
+            const urls = ['http://paypal.com/login', 'http://info.paypal.com/test'];
+            const result = context.calculateThreatScore(author, urls);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.reasons.length, 0);
+        });
+    });
+
+    describe('tab_mail_open_display with threat score', () => {
+        it('injects warning banner if score >= 50', async () => {
+            let executedScript = null;
+            context.browser.scripting.executeScript = async (opts) => {
+                executedScript = opts;
+            };
+
+            context.browser.messages.listAttachments = async () => ([]);
+            context.browser.messages.getFull = async () => ({
+                contentType: 'text/html',
+                body: '<a href="https://login.amaz0n.de">Click</a>'
+            });
+
+            await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal-support.com>', subject: 'Action required' });
+
+            assert.notStrictEqual(executedScript, null);
+            assert.strictEqual(executedScript.target.tabId, 10);
+            assert.strictEqual(typeof executedScript.func, 'function');
+            assert.strictEqual(executedScript.args[0], 100); // 100 score
+        });
+
+        it('does not inject warning banner if score < 50', async () => {
+            let executedScript = null;
+            context.browser.scripting.executeScript = async (opts) => {
+                executedScript = opts;
+            };
+
+            context.browser.messages.listAttachments = async () => ([]);
+            context.browser.messages.getFull = async () => ({
+                contentType: 'text/html',
+                body: '<a href="http://paypal.com">Click</a>'
+            });
+
+            await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal.com>', subject: 'Action required' });
+
+            assert.strictEqual(executedScript, null);
+        });
     });
 });

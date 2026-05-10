@@ -29,6 +29,98 @@ browser.storage.onChanged.addListener((changes, area) => {
   }
 });
 
+function levenshteinDistance(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1,
+                                        Math.min(matrix[i][j - 1] + 1,
+                                                 matrix[i - 1][j] + 1));
+            }
+        }
+    }
+    return matrix[b.length][a.length];
+}
+
+function calculateThreatScore(author, urls) {
+    let score = 0;
+    let reasons = [];
+    const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
+
+    const emailMatch = author.match(/<([^>]+)>/);
+    let email = emailMatch ? emailMatch[1] : author;
+    const parts = email.split('@');
+    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    if (senderDomain) {
+        for (let brand of knownBrands) {
+            if (senderDomain !== brand) {
+                let distance = levenshteinDistance(senderDomain, brand);
+                if (distance > 0 && distance <= 2 && senderDomain.length >= 4) {
+                    score += 60;
+                    reasons.push(`Absender-Domain (${senderDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
+                    break;
+                }
+            }
+        }
+    }
+
+    let linkDomains = new Set();
+    for (let url of urls) {
+        try {
+            let parsed = new URL(url);
+            linkDomains.add(parsed.hostname.toLowerCase());
+        } catch (e) {}
+    }
+
+    if (linkDomains.size > 0 && senderDomain) {
+        let matchFound = false;
+        let typosquatLinkFound = false;
+        for (let ld of linkDomains) {
+            if (ld === senderDomain || ld.endsWith('.' + senderDomain)) {
+                matchFound = true;
+            }
+            for (let brand of knownBrands) {
+                if (ld !== brand && !ld.endsWith('.' + brand)) {
+                    let mainDomainPart = ld;
+                    const ldParts = ld.split('.');
+                    if (ldParts.length >= 2) {
+                        mainDomainPart = ldParts.slice(-2).join('.');
+                    }
+                    let distance = levenshteinDistance(mainDomainPart, brand);
+                    if (distance > 0 && distance <= 2 && mainDomainPart.length >= 4) {
+                        typosquatLinkFound = true;
+                        if (!reasons.some(r => r.includes(mainDomainPart))) {
+                            reasons.push(`Link-Domain (${mainDomainPart}) ähnelt verdächtig der bekannten Marke ${brand}.`);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!matchFound) {
+            score += 40;
+            if (!reasons.some(r => r.includes('Keiner der Links'))) {
+                 reasons.push(`Keiner der Links im Text verweist auf die Absender-Domain (${senderDomain}).`);
+            }
+        }
+        if (typosquatLinkFound) {
+            score += 60;
+        }
+    }
+
+    return { score: Math.min(score, 100), reasons: reasons };
+}
+
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
   console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
@@ -52,6 +144,48 @@ async function tab_mail_open_display(tab, message) {
     console.log("Gefundene URLs:", filteredUrls);
     if (filteredUrls.length > 0) {
       await indexedDB_save_links_to_db(message, filteredUrls);
+    }
+
+    let threat = calculateThreatScore(message.author, urls);
+    if (threat.score >= 50) {
+      console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
+      await browser.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: function(score, reasons) {
+          // Sichere DOM-Manipulation ohne innerHTML
+          const banner = document.createElement('div');
+          banner.style.backgroundColor = '#ffeeee';
+          banner.style.border = '1px solid #ff0000';
+          banner.style.color = '#ff0000';
+          banner.style.padding = '10px';
+          banner.style.margin = '10px';
+          banner.style.borderRadius = '4px';
+          banner.style.fontWeight = 'bold';
+          banner.style.fontFamily = 'Arial, sans-serif';
+          banner.style.zIndex = '9999';
+
+          const title = document.createElement('div');
+          title.textContent = `⚠️ Warnung! Mögliches Phishing erkannt (Risk Score: ${score}/100)`;
+          title.style.fontSize = '16px';
+          title.style.marginBottom = '5px';
+          banner.appendChild(title);
+
+          const reasonList = document.createElement('ul');
+          reasonList.style.margin = '0';
+          reasonList.style.paddingLeft = '20px';
+          reasonList.style.fontSize = '14px';
+
+          for (const reason of reasons) {
+            const li = document.createElement('li');
+            li.textContent = reason;
+            reasonList.appendChild(li);
+          }
+          banner.appendChild(reasonList);
+
+          document.body.prepend(banner);
+        },
+        args: [threat.score, threat.reasons]
+      });
     }
 
   } catch (error) {
