@@ -13,7 +13,7 @@ describe('background.js', () => {
             browser: {
                 storage: {
                     local: {
-                        get: async () => ({ apikey: 'test-api-key' })
+                        get: async () => ({ apikey: 'test-api-key', privacyTier: 'balanced', customWhitelist: '', customBlacklist: '' })
                     },
                     onChanged: {
                         addListener: (listener) => {
@@ -461,6 +461,26 @@ describe('background.js', () => {
             const result = context.calculateThreatScore(author, urls);
             assert.strictEqual(result.score, 0);
             assert.strictEqual(result.reasons.length, 0);
+        });
+
+        it('returns score 0 when sender is whitelisted', async () => {
+            const author = 'Hacker <hacker@evil.com>';
+            const urls = ["http://evil.com/bad"];
+            const authHeaders = ["spf=fail"];
+            const urlhausDomains = ["evil.com"];
+            const customWhitelist = ["evil.com"];
+            const result = context.calculateThreatScore(author, urls, authHeaders, urlhausDomains, customWhitelist);
+            assert.strictEqual(result.score, 0);
+            assert.ok(result.reasons.some(r => r.includes("steht auf der Whitelist")));
+        });
+
+        it('returns score 100 when sender is blacklisted', async () => {
+            const author = 'Service <service@paypal.com>';
+            const urls = ['http://paypal.com/login'];
+            const customBlacklist = ["paypal.com"];
+            const result = context.calculateThreatScore(author, urls, [], [], [], customBlacklist);
+            assert.strictEqual(result.score, 100);
+            assert.ok(result.reasons.some(r => r.includes("steht auf der Blacklist")));
         });
     });
 

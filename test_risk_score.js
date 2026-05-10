@@ -20,10 +20,39 @@ function levenshteinDistance(a, b) {
     return matrix[b.length][a.length];
 }
 
-function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = []) {
+function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], customWhitelist = [], customBlacklist = []) {
     let score = 0;
     let reasons = [];
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
+
+    const emailMatch = author.match(/<([^>]+)>/);
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
+    const parts = email.split('@');
+    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    // Check Blacklist
+    if (customBlacklist && customBlacklist.length > 0) {
+        if (customBlacklist.includes(email)) {
+            return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`] };
+        }
+        for (let b of customBlacklist) {
+            if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
+                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`] };
+            }
+        }
+    }
+
+    // Check Whitelist
+    if (customWhitelist && customWhitelist.length > 0) {
+        if (customWhitelist.includes(email)) {
+            return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`] };
+        }
+        for (let w of customWhitelist) {
+            if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
+                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`] };
+            }
+        }
+    }
 
     // Auth-Header Checks (SPF, DKIM, DMARC)
     if (authHeaders && authHeaders.length > 0) {
@@ -49,11 +78,6 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
             reasons.push(`Domain (${domain}) ist auf URLhaus als bösartig gelistet.`);
         }
     }
-
-    const emailMatch = author.match(/<([^>]+)>/);
-    let email = emailMatch ? emailMatch[1] : author;
-    const parts = email.split('@');
-    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
 
     // Hilfsfunktion zur Ermittlung der Hauptdomain
     function getMainDomain(domain) {
@@ -146,3 +170,8 @@ console.log("Test 5: SPF fail", calculateThreatScore("Service <service@paypal.co
 console.log("Test 6: DKIM fail", calculateThreatScore("Service <service@paypal.com>", [], ["dkim=fail"]));
 console.log("Test 7: URLhaus listing", calculateThreatScore("Service <service@paypal.com>", ["http://malware.example.com"], [], ["malware.example.com"]));
 console.log("Test 8: Multiple fails", calculateThreatScore("Hacker <hacker@evil.com>", ["http://evil.com/bad"], ["spf=fail dkim=fail"], ["evil.com"]));
+
+console.log("Test 9: Whitelist exact email", calculateThreatScore("Hacker <hacker@evil.com>", ["http://evil.com/bad"], ["spf=fail dkim=fail"], ["evil.com"], ["hacker@evil.com"]));
+console.log("Test 10: Whitelist domain", calculateThreatScore("Hacker <hacker@evil.com>", ["http://evil.com/bad"], ["spf=fail dkim=fail"], ["evil.com"], ["evil.com"]));
+console.log("Test 11: Blacklist exact email", calculateThreatScore("Service <service@paypal.com>", ["http://paypal.com/login"], [], [], [], ["service@paypal.com"]));
+console.log("Test 12: Blacklist domain", calculateThreatScore("Service <service@paypal.com>", ["http://paypal.com/login"], [], [], [], ["paypal.com"]));

@@ -1,21 +1,27 @@
 // Event-Listener für das Laden der Seite
 document.addEventListener('DOMContentLoaded', function() {
     // Abrufen der gespeicherten Einstellung
-    browser.storage.local.get(['apikey', 'urlhausApikey', 'alwaysManual']).then((result) => {
+    browser.storage.local.get(['apikey', 'urlhausApikey', 'privacyTier', 'customWhitelist', 'customBlacklist']).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
-      document.getElementById('alwaysManual').checked = result.alwaysManual || false;
+      document.getElementById('privacyTier').value = result.privacyTier || "balanced";
+      document.getElementById('customWhitelist').value = result.customWhitelist || "";
+      document.getElementById('customBlacklist').value = result.customBlacklist || "";
     });
   });
   
   document.getElementById('save').addEventListener('click', function() {
     let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
     let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
-    let alwaysManualSetting = document.getElementById('alwaysManual').checked;
+    let privacyTierSetting = document.getElementById('privacyTier').value;
+    let customWhitelistSetting = document.getElementById('customWhitelist').value;
+    let customBlacklistSetting = document.getElementById('customBlacklist').value;
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
-        alwaysManual: alwaysManualSetting
+        privacyTier: privacyTierSetting,
+        customWhitelist: customWhitelistSetting,
+        customBlacklist: customBlacklistSetting
     }).then(() => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
