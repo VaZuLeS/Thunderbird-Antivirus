@@ -168,7 +168,7 @@ describe('get_hybrid_report_by_sha256', () => {
 
         await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
 
-        assert.ok(context.apiContentElement._html.includes('<div style="color:red;">Netzwerkfehler: Network timeout für Element test.txt</div>'));
+        assert.ok(context.apiContentElement._html.includes('<div class="text-danger">Netzwerkfehler: Network timeout für Element test.txt</div>'));
     });
 
     it('injects API Error message on fetch non-200 status', async () => {
@@ -183,6 +183,6 @@ describe('get_hybrid_report_by_sha256', () => {
 
         await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
 
-        assert.ok(context.apiContentElement._html.includes('<div style="color:red;">API Error: 500 für Element test.txt</div>'));
+        assert.ok(context.apiContentElement._html.includes('<div class="text-danger">API Error: 500 für Element test.txt</div>'));
     });
 });

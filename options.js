@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let statusSpan = document.getElementById('clearCacheStatus');
     statusSpan.style.display = 'none';
     statusSpan.textContent = '';
-    statusSpan.style.color = 'green';
+    statusSpan.className = 'text-success ml-2';
 
     try {
         const db = await openDB('thunderbird_av', 3);
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
             statusSpan.textContent = 'Datenbank existiert noch nicht oder ist bereits leer.';
         }
     } catch (error) {
-        statusSpan.style.color = 'red';
+        statusSpan.className = 'text-danger ml-2';
         statusSpan.textContent = 'Fehler beim Leeren des Caches.';
         console.error(error);
     }

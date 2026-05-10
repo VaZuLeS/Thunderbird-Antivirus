@@ -5,28 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thundy AV Checker Einstellungen</title>
+    <link rel="stylesheet" href="theme.css">
     <style>
         body {
-            font-family: Arial, sans-serif;
             font-size: 1.2em;
             margin: 10px;
         }
-
-        h1 {
-            color: #333;
-        }
-
         label {
             display: block;
             margin-bottom: 10px;
-        }
-
-        button {
-            margin-top: 10px;
-        }
-
-        .head_line {
-            font-size: 16px;
         }
     </style>
 </head>
@@ -48,7 +35,7 @@
         href="https://www.hybrid-analysis.com/">hybrid-analysis.com</a><br />
     Nach der Anmeldung finden Sie diesen API Schlüssel unter "Nickname" -> "Profil" -> "API KEY".<br />
     Diesen API Schlüssel hier einfügen.<br />
-  
+
     <label>
         API Schlüssel:
         <input type="text" id="apikey">
@@ -58,16 +45,16 @@
         Immer manuell scannen (Hash nicht automatisch an API senden)
     </label>
     <strong>Bitte nicht vergessen zu speichern.</strong>
-    <button id="save">Speichern</button>
-    <span id="saveStatus" style="color: green; margin-left: 10px; display: none;">Erfolgreich gespeichert!</span>
+    <button id="save" class="btn-primary mt-2">Speichern</button>
+    <span id="saveStatus" class="text-success ml-2" style="display: none;">Erfolgreich gespeichert!</span>
 
     <br><br>
     <hr>
 
     <h3>Datenmanagement</h3>
     <p>Hier können Sie den lokalen Cache leeren, um Speicherplatz freizugeben und alte Metadaten zu löschen.</p>
-    <button id="clearCache">Cache leeren</button>
-    <span id="clearCacheStatus" style="color: green; margin-left: 10px; display: none;"></span>
+    <button id="clearCache" class="btn-primary mt-2">Cache leeren</button>
+    <span id="clearCacheStatus" class="text-success ml-2" style="display: none;"></span>
 
     <script src="db.js"></script>
     <script src="options.js"></script>
