@@ -38,7 +38,7 @@ describe('escapeHTML', () => {
             setTimeout: setTimeout,
             String: String
         };
-        context.browser = context.messenger;
+        context.messenger = context.browser;
 
         vm.createContext(context);
 

@@ -65,14 +65,17 @@ try {
                 document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
                 for (const att of getRequest.result.attachments) {
                     const hash256 = att.hybrid_sha256;
-                    if (att.state === 'UNKNOWN') {
+                    if (att.state === 'MANUAL_CHECK_PENDING') {
+                        renderManualCheckUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
+                    } else if (att.state === 'UNKNOWN') {
                         renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                     } else {
-                        get_hybrid_report_by_sha256(hash256, att.attachment_name);
+                        get_hybrid_report_by_sha256(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                     }
                 }
             } else {
-                get_hybrid_report_by_sha256(hash256, att.attachment_name);
+                // Bug fix: The else block does not have `hash256` or `att` defined.
+                document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
             }
         };
     };
@@ -86,7 +89,7 @@ try {
 }
 })();
 
-function renderReport(json_data, attachmentName, hybrid_sha) {
+function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId) {
     let resultHtml = '';
 
     // Pending check (in_progress)
@@ -132,12 +135,14 @@ function renderReport(json_data, attachmentName, hybrid_sha) {
             <p>Letzter Dateiname: ${escapeHTML(json_data.last_file_name || 'N/A')}</p>
             <p>Größe: ${escapeHTML(json_data.size || 'N/A')} Bytes</p>
             <p>Typ: ${escapeHTML(json_data.type || 'N/A')}</p>
+            <button id="btn-rescan-${escapeHTML(hybrid_sha)}" style="padding: 10px; margin-top: 10px; background-color: #008000; color: white; border: none; cursor: pointer;">Erneut scannen (Rescan)</button>
+            <p id="rescan-status-${escapeHTML(hybrid_sha)}" style="margin-top: 5px;"></p>
         </div>`;
     }
     return resultHtml;
 }
 
-async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
+async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId) {
 
     // Set the request options
     const options = {
@@ -160,8 +165,43 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
 
         if (response.status === 200) {
             let container = document.getElementById('hybrid_analysis_api_content');
-            let resultHtml = renderReport(json_data, attachmentName, hybrid_sha);
+            let resultHtml = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId);
             container.insertAdjacentHTML('beforeend', resultHtml);
+
+            let rescanBtn = document.getElementById(`btn-rescan-${escapeHTML(hybrid_sha)}`);
+            if (rescanBtn) {
+                rescanBtn.addEventListener('click', function() {
+                    let btn = this;
+                    let statusEl = document.getElementById(`rescan-status-${escapeHTML(hybrid_sha)}`);
+                    btn.disabled = true;
+                    btn.innerText = "Sende Rescan...";
+                    statusEl.innerText = "Datei wird für Rescan hochgeladen...";
+
+                    browser.runtime.sendMessage({
+                        action: "uploadAttachment",
+                        messageId: messageId,
+                        partName: partName,
+                        attachmentName: attachmentName,
+                        hash: hybrid_sha,
+                        headerMessageId: headerMessageId
+                    }).then(res => {
+                        if (res && res.status === 'success') {
+                            statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            statusEl.innerText = "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler");
+                            btn.disabled = false;
+                            btn.innerText = "Erneut versuchen";
+                        }
+                    }).catch(err => {
+                        statusEl.innerText = "Kommunikationsfehler: " + err;
+                        btn.disabled = false;
+                        btn.innerText = "Erneut versuchen";
+                    });
+                });
+            }
 
         } else {
             console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
@@ -172,6 +212,54 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName) {
         document.getElementById('hybrid_analysis_api_content').innerHTML += `<div style="color:red;">Netzwerkfehler: ${escapeHTML(error.message)} für Anhang ${escapeHTML(attachmentName)}</div>`;
     }
 }
+function renderManualCheckUI(hash, attachmentName, messageId, partName, headerMessageId) {
+    let container = document.getElementById('hybrid_analysis_api_content');
+    let safeHash = escapeHTML(hash);
+    let resultHtml = `<div style="margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; border-left: 5px solid purple;" id="check-container-${safeHash}">
+        <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
+        <p>SHA-256: ${safeHash}</p>
+        <p style="color: purple;">Automatischer Hash-Check ist deaktiviert (Immer manuell scannen).</p>
+        <button id="btn-check-${safeHash}" style="padding: 10px; background-color: purple; color: white; border: none; cursor: pointer;">Hash jetzt prüfen</button>
+        <p id="check-status-${safeHash}" style="margin-top: 5px;"></p>
+    </div>`;
+    container.insertAdjacentHTML('beforeend', resultHtml);
+
+    document.getElementById(`btn-check-${safeHash}`).addEventListener('click', function() {
+        let btn = this;
+        let statusEl = document.getElementById(`check-status-${safeHash}`);
+        btn.disabled = true;
+        btn.innerText = "Prüfe...";
+        statusEl.innerText = "Prüfe Hash bei Hybrid Analysis...";
+
+        browser.runtime.sendMessage({
+            action: "checkHash",
+            hash: hash,
+            headerMessageId: headerMessageId,
+            partName: partName
+        }).then(response => {
+            if (response && response.status === 'success') {
+                statusEl.innerText = "Prüfung abgeschlossen. Aktualisiere Anzeige...";
+                setTimeout(() => {
+                    document.getElementById(`check-container-${safeHash}`).remove();
+                    if (response.data.state === 'KNOWN') {
+                        get_hybrid_report_by_sha256(hash, attachmentName, messageId, partName, headerMessageId);
+                    } else {
+                        renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId);
+                    }
+                }, 1000);
+            } else {
+                statusEl.innerText = "Fehler bei der Prüfung: " + (response ? response.message : "Unbekannter Fehler");
+                btn.disabled = false;
+                btn.innerText = "Erneut prüfen";
+            }
+        }).catch(err => {
+            statusEl.innerText = "Kommunikationsfehler: " + err;
+            btn.disabled = false;
+            btn.innerText = "Erneut prüfen";
+        });
+    });
+}
+
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
     let safeHash = escapeHTML(hash);
@@ -203,7 +291,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
                 statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
                 setTimeout(() => {
                     document.getElementById(`upload-container-${safeHash}`).remove();
-                    get_hybrid_report_by_sha256(hash, attachmentName);
+                    get_hybrid_report_by_sha256(hash, attachmentName, messageId, partName, headerMessageId);
                 }, 3000);
             } else {
                 statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");

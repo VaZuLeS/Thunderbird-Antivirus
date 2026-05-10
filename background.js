@@ -1,11 +1,16 @@
 let apikey_hybridanalysis;
+let alwaysManual = false;
 
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get('apikey');
+    const result = await browser.storage.local.get(['apikey', 'alwaysManual']);
     console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
     apikey_hybridanalysis = result.apikey;
+    if (result.alwaysManual !== undefined) {
+      alwaysManual = result.alwaysManual;
+      console.log("alwaysManual erfolgreich geladen:", alwaysManual);
+    }
   } catch (error) {
     console.error("Fehler beim Laden der Einstellungen:", error);
   }
@@ -17,6 +22,10 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.apikey) {
     apikey_hybridanalysis = changes.apikey.newValue;
     console.log("Hybrid-Analysis API-KEY wurde dynamisch aktualisiert.");
+  }
+  if (area === 'local' && changes.alwaysManual !== undefined) {
+    alwaysManual = changes.alwaysManual.newValue;
+    console.log("alwaysManual wurde aktualisiert:", alwaysManual);
   }
 });
 
@@ -77,6 +86,20 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             const arrayBuffer = await content_of_atachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
             console.log("Lokaler SHA-256:", local_hash);
+
+            if (alwaysManual) {
+                console.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
+                return {
+                    hybrid_data: {
+                        submission_id: 'MANUAL_CHECK',
+                        job_id: 'MANUAL_CHECK',
+                        sha256: local_hash,
+                        state: 'MANUAL_CHECK_PENDING',
+                        partName: attachment.partName
+                    },
+                    attachmentName: attachment.name
+                };
+            }
 
             // First check if it exists using hash
             const optionsCheck = {
@@ -235,7 +258,62 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch(err => sendResponse({status: 'error', message: err.message}));
         return true;
     }
+    if (request.action === "checkHash") {
+        handleManualCheck(request.hash, request.headerMessageId, request.partName)
+            .then(res => sendResponse({status: 'success', data: res}))
+            .catch(err => sendResponse({status: 'error', message: err.message}));
+        return true;
+    }
 });
+
+async function handleManualCheck(hash, headerMessageId, partName) {
+    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+
+    const optionsCheck = {
+        method: 'GET',
+        url: 'https://hybrid-analysis.com/api/v2/overview/' + hash,
+        headers: {
+            accept: 'application/json',
+            'api-key': apikey_hybridanalysis,
+            'user-agent': 'Falcon',
+        }
+    };
+
+    const responseCheck = await fetch(optionsCheck.url, optionsCheck);
+
+    let newState = 'UNKNOWN';
+    let subId = 'PENDING_UPLOAD';
+    let jobId = 'PENDING_UPLOAD';
+
+    if (responseCheck.status === 200) {
+        const json_data = await responseCheck.json();
+        console.log('Manuelle Prüfung: Datei ist der API bereits bekannt.');
+        newState = 'KNOWN';
+        subId = json_data.submission_id || 'N/A';
+        jobId = json_data.job_id || 'N/A';
+    } else {
+        console.log('Manuelle Prüfung: Datei ist der API unbekannt.');
+    }
+
+    try {
+        const db = await openDB("thunderbird_av", 3);
+        await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
+            if (existingRecord && existingRecord.attachments) {
+                let attIndex = existingRecord.attachments.findIndex(a => a.partName === partName);
+                if (attIndex > -1) {
+                    existingRecord.attachments[attIndex].hybrid_submission_id = subId;
+                    existingRecord.attachments[attIndex].hybrid_job_id = jobId;
+                    existingRecord.attachments[attIndex].state = newState;
+                }
+            }
+            return existingRecord;
+        });
+    } catch (dbError) {
+        console.error('Fehler beim Aktualisieren des DB Records:', dbError);
+    }
+
+    return { state: newState };
+}
 
 async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
