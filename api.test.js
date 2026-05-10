@@ -79,4 +79,9 @@ describe('escapeHTML', () => {
             '&lt;script&gt;alert(&quot;XSS &amp; &#39;test&#39;&quot;)&lt;/script&gt;'
         );
     });
+
+    it('handles non-string types gracefully by converting them to string', () => {
+        assert.strictEqual(escapeHTML(123), '123');
+        assert.strictEqual(escapeHTML(true), 'true');
+    });
 });
