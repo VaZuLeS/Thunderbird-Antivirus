@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   document.getElementById('save').addEventListener('click', function() {
-    let mySetting = document.getElementById('apikey').value;
+    let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
     browser.storage.local.set({
         apikey: mySetting
     }).then(() => {
