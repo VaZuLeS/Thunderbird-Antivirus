@@ -1,3 +1,6 @@
+let customBlacklist = [];
+let customWhitelist = [];
+let authStatus = null;
 let apikey_hybridanalysis;
 let urlhausApikey = "";
 let urlscanApikey = "";
@@ -131,22 +134,29 @@ function levenshteinDistance(a, b) {
     if (a.length === 0) return b.length;
     if (b.length === 0) return a.length;
 
-    const matrix = [];
-    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    if (a.length > b.length) {
+        let tmp = a; a = b; b = tmp;
+    }
+
+    let prevRow = [];
+    for (let j = 0; j <= a.length; j++) prevRow[j] = j;
 
     for (let i = 1; i <= b.length; i++) {
+        let currRow = [i];
         for (let j = 1; j <= a.length; j++) {
             if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                matrix[i][j] = matrix[i - 1][j - 1];
+                currRow[j] = prevRow[j - 1];
             } else {
-                matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1,
-                                        Math.min(matrix[i][j - 1] + 1,
-                                                 matrix[i - 1][j] + 1));
+                currRow[j] = 1 + Math.min(
+                    prevRow[j - 1], // substitution
+                    prevRow[j],     // deletion
+                    currRow[j - 1]  // insertion
+                );
             }
         }
+        prevRow = currRow;
     }
-    return matrix[b.length][a.length];
+    return prevRow[a.length];
 }
 
 function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {
@@ -154,10 +164,10 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     let reasons = [];
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
 
-    const emailMatch = author.match(/<([^>]+)>/);
-    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
-    const parts = email.split('@');
-    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+    var emailMatch = author.match(/<([^>]+)>/);
+    var email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
+    var parts = email.split('@');
+    var senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
 
     // Check Blacklist
     if (customBlacklist && customBlacklist.length > 0) {
@@ -220,10 +230,10 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
         }
     }
 
-    const emailMatch = author.match(/<([^>]+)>/);
-    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
-    const parts = email.split('@');
-    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+    var emailMatch = author.match(/<([^>]+)>/);
+    var email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
+    var parts = email.split('@');
+    var senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
 
     // Reply-To Check
     let replyToEmail = "";
