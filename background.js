@@ -4,11 +4,13 @@ let urlscanApikey = "";
 let alwaysManual = false;
 let autoScanLinks = false;
 let timeOfClickProtection = true;
+let ipReputationProvider = "none";
+let ipReputationApiKey = "";
 
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection']);
+    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey']);
     console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
     apikey_hybridanalysis = result.apikey;
     if (result.urlhausApikey !== undefined) {
@@ -26,6 +28,12 @@ async function loadSettings() {
     }
     if (result.timeOfClickProtection !== undefined) {
       timeOfClickProtection = result.timeOfClickProtection;
+    }
+    if (result.ipReputationProvider !== undefined) {
+      ipReputationProvider = result.ipReputationProvider;
+    }
+    if (result.ipReputationApiKey !== undefined) {
+      ipReputationApiKey = result.ipReputationApiKey;
     }
   } catch (error) {
     console.error("Fehler beim Laden der Einstellungen:", error);
