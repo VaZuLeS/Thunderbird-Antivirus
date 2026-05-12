@@ -106,7 +106,7 @@
     <br>
     <strong>Bitte nicht vergessen zu speichern.</strong>
     <button id="save" class="btn-primary mt-2">Speichern</button>
-    <span id="saveStatus" class="text-success ml-2" style="display: none;">Erfolgreich gespeichert!</span>
+    <span id="saveStatus" class="text-success ml-2" style="display: none;" aria-live="polite" role="status">Erfolgreich gespeichert!</span>
 
     <br><br>
     <hr>
@@ -114,7 +114,7 @@
     <h3>Datenmanagement</h3>
     <p>Hier können Sie den lokalen Cache leeren, um Speicherplatz freizugeben und alte Metadaten zu löschen.</p>
     <button id="clearCache" class="btn-primary mt-2">Cache leeren</button>
-    <span id="clearCacheStatus" class="text-success ml-2" style="display: none;"></span>
+    <span id="clearCacheStatus" class="text-success ml-2" style="display: none;" aria-live="polite" role="status"></span>
 
     <script src="db.js"></script>
     <script src="options.js"></script>

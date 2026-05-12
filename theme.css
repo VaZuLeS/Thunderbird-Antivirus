@@ -76,6 +76,35 @@ button {
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
+    transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+    filter: brightness(0.9);
+}
+
+@media (prefers-color-scheme: dark) {
+    button:hover:not(:disabled) {
+        filter: brightness(1.1);
+    }
+}
+
+button:active:not(:disabled) {
+    filter: brightness(0.8);
+}
+
+@media (prefers-color-scheme: dark) {
+    button:active:not(:disabled) {
+        filter: brightness(1.2);
+    }
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--link-color);
+    outline-offset: 2px;
 }
 
 button:disabled {
