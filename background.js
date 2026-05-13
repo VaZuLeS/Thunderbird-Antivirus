@@ -1152,19 +1152,19 @@ function disarmHTML(htmlString) {
             }
         }
 
-        // Prevent javascript: URIs
+        // Prevent malicious URIs
         if (el.hasAttribute('href')) {
             let href = el.getAttribute('href');
             // Remove control characters (like tabs/newlines) that might evade the check
             let cleanHref = href.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
-            if (cleanHref.startsWith('javascript:')) {
+            if (cleanHref.startsWith('javascript:') || cleanHref.startsWith('data:') || cleanHref.startsWith('vbscript:')) {
                 el.removeAttribute('href');
             }
         }
         if (el.hasAttribute('src')) {
              let src = el.getAttribute('src');
              let cleanSrc = src.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
-             if (cleanSrc.startsWith('javascript:')) {
+             if (cleanSrc.startsWith('javascript:') || cleanSrc.startsWith('data:') || cleanSrc.startsWith('vbscript:')) {
                  el.removeAttribute('src');
              }
         }
