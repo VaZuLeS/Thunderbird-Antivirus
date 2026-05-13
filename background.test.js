@@ -498,9 +498,9 @@ describe('background.js', () => {
 
     describe('tab_mail_open_display with threat score', () => {
         it('injects warning banner if score >= 50', async () => {
-            let executedScript = null;
+            let executedWarningScript = null;
             context.browser.scripting.executeScript = async (opts) => {
-                executedScript = opts;
+                executedWarningScript = opts;
             };
 
             context.browser.messages.listAttachments = async () => ([]);
@@ -511,10 +511,10 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal-support.com>', subject: 'Action required' });
 
-            assert.notStrictEqual(executedScript, null);
-            assert.strictEqual(executedScript.target.tabId, 10);
-            assert.strictEqual(typeof executedScript.func, 'function');
-            assert.strictEqual(executedScript.args[0], 100); // 100 score
+            assert.notStrictEqual(executedWarningScript, null);
+            assert.strictEqual(executedWarningScript.target.tabId, 10);
+            assert.strictEqual(typeof executedWarningScript.func, 'function');
+            assert.strictEqual(executedWarningScript.args[0], 100); // 100 score
         });
 
         it('does not inject warning banner if score < 50', async () => {
@@ -537,16 +537,16 @@ describe('background.js', () => {
             // If sender is "test@example.com" and body has no links matching sender, it adds 40.
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'User <user@example.com>', subject: 'Action required' });
 
-            assert.notStrictEqual(executedScript, null);
-            assert.strictEqual(executedScript.target.tabId, 10);
-            assert.strictEqual(typeof executedScript.func, 'function');
-            assert.strictEqual(executedScript.args[0], 40); // 40 score
+            assert.notStrictEqual(executedWarningScript, null);
+            assert.strictEqual(executedWarningScript.target.tabId, 10);
+            assert.strictEqual(typeof executedWarningScript.func, 'function');
+            assert.strictEqual(executedWarningScript.args[0], 40); // 40 score
         });
 
         it('does not inject warning banner if score === 0', async () => {
-            let executedScript = null;
+            let executedWarningScript = null;
             context.browser.scripting.executeScript = async (opts) => {
-                executedScript = opts;
+                executedWarningScript = opts;
             };
 
             context.browser.messages.listAttachments = async () => ([]);

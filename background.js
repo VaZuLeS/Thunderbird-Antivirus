@@ -170,16 +170,17 @@ function levenshteinDistance(a, b) {
 function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {
     let score = 0;
     let reasons = [];
+    let authStatus = 'neutral';
     const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
 
-    var emailMatch = author.match(/<([^>]+)>/);
-    var email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
-    var parts = email.split('@');
-    var senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+    let emailMatch = author.match(/<([^>]+)>/);
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
+    let parts = email.split('@');
+    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
 
     // Check Blacklist
-    if (customBlacklist && customBlacklist.length > 0) {
-        if (customBlacklist.includes(email)) {
+    if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.length > 0) {
+        if (typeof customBlacklist !== 'undefined' && customBlacklist.includes(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`] };
         }
         for (let b of customBlacklist) {
@@ -190,8 +191,8 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     }
 
     // Check Whitelist
-    if (customWhitelist && customWhitelist.length > 0) {
-        if (customWhitelist.includes(email)) {
+    if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.length > 0) {
+        if (typeof customWhitelist !== 'undefined' && customWhitelist.includes(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`] };
         }
         for (let w of customWhitelist) {
@@ -238,10 +239,10 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
         }
     }
 
-    var emailMatch = author.match(/<([^>]+)>/);
-    var email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
-    var parts = email.split('@');
-    var senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+    emailMatch = author.match(/<([^>]+)>/);
+    email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
+    parts = email.split('@');
+    senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
 
     // Reply-To Check
     let replyToEmail = "";
@@ -464,7 +465,7 @@ async function tab_mail_open_display(tab, message) {
     }
 
     // BEC Protection Data Extraction
-    const emailMatch = message.author.match(/<([^>]+)>/);
+    emailMatch = message.author.match(/<([^>]+)>/);
     let senderEmail = emailMatch ? emailMatch[1].toLowerCase() : message.author.toLowerCase();
 
     let isFirstCommunication = false;
