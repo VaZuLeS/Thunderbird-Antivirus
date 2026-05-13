@@ -9,16 +9,25 @@ class ApiGateway {
 
     _injectAuthHeaders(url, options) {
         let headers = options.headers || {};
+        let hostname;
 
-        if (url.includes('virustotal.com') && this.apikeys['virustotal']) {
+        try {
+            const parsedUrl = new URL(url);
+            hostname = parsedUrl.hostname;
+        } catch (e) {
+            // Invalid URL, do not inject auth headers to be safe
+            return options;
+        }
+
+        if ((hostname === 'virustotal.com' || hostname === 'www.virustotal.com') && this.apikeys['virustotal']) {
             headers['x-apikey'] = this.apikeys['virustotal'];
-        } else if (url.includes('urlhaus-api.abuse.ch') && this.apikeys['urlhaus']) {
+        } else if (hostname === 'urlhaus-api.abuse.ch' && this.apikeys['urlhaus']) {
             headers['Auth-Key'] = this.apikeys['urlhaus'];
-        } else if (url.includes('hybrid-analysis.com') && this.apikeys['hybridanalysis']) {
+        } else if ((hostname === 'hybrid-analysis.com' || hostname === 'www.hybrid-analysis.com') && this.apikeys['hybridanalysis']) {
             headers['api-key'] = this.apikeys['hybridanalysis'];
-        } else if (url.includes('urlscan.io') && this.apikeys['urlscan']) {
+        } else if ((hostname === 'urlscan.io' || hostname === 'www.urlscan.io') && this.apikeys['urlscan']) {
             headers['API-Key'] = this.apikeys['urlscan'];
-        } else if (url.includes('api.abuseipdb.com') && this.apikeys['abuseipdb']) {
+        } else if (hostname === 'api.abuseipdb.com' && this.apikeys['abuseipdb']) {
             headers['Key'] = this.apikeys['abuseipdb'];
         }
 
