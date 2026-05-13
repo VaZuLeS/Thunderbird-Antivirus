@@ -1,10 +1,21 @@
 // Event-Listener für das Laden der Seite
 document.addEventListener('DOMContentLoaded', function() {
     // Abrufen der gespeicherten Einstellung
-    browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection']).then((result) => {
+    browser.storage.local.get([
+        'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
+        'alwaysManual', 'autoScanLinks', 'timeOfClickProtection',
+        'privacyTier', 'customWhitelist', 'customBlacklist',
+        'ipReputationProvider', 'ipReputationApiKey'
+    ]).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
       document.getElementById('urlscanApikey').value = result.urlscanApikey || "";
+      document.getElementById('virustotalApikey').value = result.virustotalApikey || "";
+      document.getElementById('privacyTier').value = result.privacyTier || "balanced";
+      document.getElementById('customWhitelist').value = (result.customWhitelist || []).join(', ');
+      document.getElementById('customBlacklist').value = (result.customBlacklist || []).join(', ');
+      document.getElementById('ipReputationProvider').value = result.ipReputationProvider || "none";
+      document.getElementById('ipReputationApiKey').value = result.ipReputationApiKey || "";
       document.getElementById('alwaysManual').checked = result.alwaysManual || false;
       document.getElementById('autoScanLinks').checked = result.autoScanLinks || false;
       // Default für timeOfClickProtection ist true
@@ -16,6 +27,18 @@ document.addEventListener('DOMContentLoaded', function() {
     let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
     let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
     let urlscanSetting = document.getElementById('urlscanApikey').value.trim().replace(/\r|\n/g, '');
+    let virustotalSetting = document.getElementById('virustotalApikey').value.trim().replace(/\r|\n/g, '');
+    let privacyTierSetting = document.getElementById('privacyTier').value;
+
+    let whitelistStr = document.getElementById('customWhitelist').value;
+    let whitelistSetting = whitelistStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+    let blacklistStr = document.getElementById('customBlacklist').value;
+    let blacklistSetting = blacklistStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+    let ipReputationProviderSetting = document.getElementById('ipReputationProvider').value;
+    let ipReputationApiKeySetting = document.getElementById('ipReputationApiKey').value.trim().replace(/\r|\n/g, '');
+
     let alwaysManualSetting = document.getElementById('alwaysManual').checked;
     let autoScanLinksSetting = document.getElementById('autoScanLinks').checked;
     let timeOfClickProtectionSetting = document.getElementById('timeOfClickProtection').checked;
@@ -23,6 +46,12 @@ document.addEventListener('DOMContentLoaded', function() {
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
         urlscanApikey: urlscanSetting,
+        virustotalApikey: virustotalSetting,
+        privacyTier: privacyTierSetting,
+        customWhitelist: whitelistSetting,
+        customBlacklist: blacklistSetting,
+        ipReputationProvider: ipReputationProviderSetting,
+        ipReputationApiKey: ipReputationApiKeySetting,
         alwaysManual: alwaysManualSetting,
         autoScanLinks: autoScanLinksSetting,
         timeOfClickProtection: timeOfClickProtectionSetting
