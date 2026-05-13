@@ -1,14 +1,19 @@
+let customBlacklist = [];
+let customWhitelist = [];
+let authStatus = null;
 let apikey_hybridanalysis;
 let urlhausApikey = "";
 let urlscanApikey = "";
 let alwaysManual = false;
 let autoScanLinks = false;
 let timeOfClickProtection = true;
+let ipReputationProvider = "none";
+let ipReputationApiKey = "";
 
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection']);
+    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey']);
     console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
     apikey_hybridanalysis = result.apikey;
     if (result.urlhausApikey !== undefined) {
@@ -26,6 +31,12 @@ async function loadSettings() {
     }
     if (result.timeOfClickProtection !== undefined) {
       timeOfClickProtection = result.timeOfClickProtection;
+    }
+    if (result.ipReputationProvider !== undefined) {
+      ipReputationProvider = result.ipReputationProvider;
+    }
+    if (result.ipReputationApiKey !== undefined) {
+      ipReputationApiKey = result.ipReputationApiKey;
     }
   } catch (error) {
     console.error("Fehler beim Laden der Einstellungen:", error);
@@ -131,22 +142,29 @@ function levenshteinDistance(a, b) {
     if (a.length === 0) return b.length;
     if (b.length === 0) return a.length;
 
-    const matrix = [];
-    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
-    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    if (a.length > b.length) {
+        let tmp = a; a = b; b = tmp;
+    }
+
+    let prevRow = [];
+    for (let j = 0; j <= a.length; j++) prevRow[j] = j;
 
     for (let i = 1; i <= b.length; i++) {
+        let currRow = [i];
         for (let j = 1; j <= a.length; j++) {
             if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                matrix[i][j] = matrix[i - 1][j - 1];
+                currRow[j] = prevRow[j - 1];
             } else {
-                matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1,
-                                        Math.min(matrix[i][j - 1] + 1,
-                                                 matrix[i - 1][j] + 1));
+                currRow[j] = 1 + Math.min(
+                    prevRow[j - 1], // substitution
+                    prevRow[j],     // deletion
+                    currRow[j - 1]  // insertion
+                );
             }
         }
+        prevRow = currRow;
     }
-    return matrix[b.length][a.length];
+    return prevRow[a.length];
 }
 
 function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {

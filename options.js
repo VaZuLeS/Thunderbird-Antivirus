@@ -20,6 +20,8 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('autoScanLinks').checked = result.autoScanLinks || false;
       // Default für timeOfClickProtection ist true
       document.getElementById('timeOfClickProtection').checked = result.timeOfClickProtection !== undefined ? result.timeOfClickProtection : true;
+      document.getElementById('ipReputationProvider').value = result.ipReputationProvider || "none";
+      document.getElementById('ipReputationApiKey').value = result.ipReputationApiKey || "";
     });
   });
   
@@ -42,6 +44,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let alwaysManualSetting = document.getElementById('alwaysManual').checked;
     let autoScanLinksSetting = document.getElementById('autoScanLinks').checked;
     let timeOfClickProtectionSetting = document.getElementById('timeOfClickProtection').checked;
+    let ipReputationProviderSetting = document.getElementById('ipReputationProvider').value;
+    let ipReputationApiKeySetting = document.getElementById('ipReputationApiKey').value.trim().replace(/\r|\n/g, '');
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
@@ -54,7 +58,9 @@ document.addEventListener('DOMContentLoaded', function() {
         ipReputationApiKey: ipReputationApiKeySetting,
         alwaysManual: alwaysManualSetting,
         autoScanLinks: autoScanLinksSetting,
-        timeOfClickProtection: timeOfClickProtectionSetting
+        timeOfClickProtection: timeOfClickProtectionSetting,
+        ipReputationProvider: ipReputationProviderSetting,
+        ipReputationApiKey: ipReputationApiKeySetting
     }).then(() => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
