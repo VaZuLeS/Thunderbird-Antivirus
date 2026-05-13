@@ -158,12 +158,12 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
             <p>Größe: ${escapeHTML(json_data.size || 'N/A')} Bytes</p>
             <p>Typ: ${escapeHTML(json_data.type || 'N/A')}</p>
             <button id="btn-rescan-${escapeHTML(hybrid_sha)}" class="btn-success mt-2">Erneut scannen (Rescan)</button>
-            <p id="rescan-status-${escapeHTML(hybrid_sha)}" class="mt-2"></p>`;
+            <p id="rescan-status-${escapeHTML(hybrid_sha)}" class="mt-2" aria-live="polite" role="status"></p>`;
 
         if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
             resultHtml += `
             <button id="btn-cdr-${escapeHTML(hybrid_sha)}" class="btn-primary mt-2 ml-2">Bereinigen & Herunterladen (Lokales CDR)</button>
-            <p id="cdr-status-${escapeHTML(hybrid_sha)}" class="mt-2"></p>`;
+            <p id="cdr-status-${escapeHTML(hybrid_sha)}" class="mt-2" aria-live="polite" role="status"></p>`;
         }
 
         resultHtml += `
@@ -285,7 +285,7 @@ function renderManualUrlScanUI(url, headerMessageId) {
         <h2>URL: ${safeUrl}</h2>
         <p class="text-info">Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
         <button id="btn-upload-${urlId}" class="btn-primary mt-2">URL jetzt scannen</button>
-        <p id="upload-status-${urlId}" class="mt-2"></p>
+        <p id="upload-status-${urlId}" class="mt-2" aria-live="polite" role="status"></p>
     </div>`;
     container.insertAdjacentHTML('beforeend', resultHtml);
 
@@ -329,12 +329,12 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
         <p>SHA-256: ${safeHash}</p>
         <p class="text-info">Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
         <button id="btn-upload-${safeHash}" class="btn-primary mt-2">Datei jetzt scannen (Upload)</button>
-        <p id="upload-status-${safeHash}" class="mt-2"></p>`;
+        <p id="upload-status-${safeHash}" class="mt-2" aria-live="polite" role="status"></p>`;
 
     if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
         resultHtml += `
         <button id="btn-cdr-${safeHash}" class="btn-primary mt-2 ml-2">Bereinigen & Herunterladen (Lokales CDR)</button>
-        <p id="cdr-status-${safeHash}" class="mt-2"></p>`;
+        <p id="cdr-status-${safeHash}" class="mt-2" aria-live="polite" role="status"></p>`;
     }
 
     resultHtml += `
