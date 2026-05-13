@@ -65,4 +65,11 @@ test('Test local disarmHTML function', async (t) => {
         assert.ok(!result.includes('javascript:'), 'evaded javascript URI should be removed');
     });
 
+    await t.test('disarmHTML should remove data and vbscript URIs', () => {
+        const input = '<html><body><a href="data:text/html,<script>alert(1)</script>">Data Link</a><img src="vbscript:msgbox(\'hello\')"></body></html>';
+        const result = sandbox.disarmHTML(input);
+        assert.ok(!result.includes('data:'), 'data URI should be removed');
+        assert.ok(!result.includes('vbscript:'), 'vbscript URI should be removed');
+    });
+
 });

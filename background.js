@@ -957,13 +957,13 @@ async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachment
 // Listener registrieren
 browser.messageDisplay.onMessageDisplayed.addListener(tab_mail_open_display);
 
-browser.menus.create({
+if (browser.menus) browser.menus.create({
     id: "scan-link-thundy",
     title: "Link mit Thundy scannen",
     contexts: ["link"]
 });
 
-browser.menus.onClicked.addListener(async (info, tab) => {
+if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === "scan-link-thundy") {
         let url = info.linkUrl;
 
@@ -1127,6 +1127,53 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     }, 10000);
 
     return { downloadId: downloadId };
+}
+
+function disarmHTML(htmlString) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+
+    // Remove active content tags
+    const activeTags = ['script', 'object', 'embed', 'iframe'];
+    activeTags.forEach(tag => {
+        const elements = doc.getElementsByTagName(tag);
+        for (let i = elements.length - 1; i >= 0; i--) {
+            elements[i].parentNode.removeChild(elements[i]);
+        }
+    });
+
+    // Remove inline event handlers and javascript: URIs
+    const allElements = doc.getElementsByTagName('*');
+    for (let i = 0; i < allElements.length; i++) {
+        const el = allElements[i];
+
+        // Remove event handlers
+        for (let j = el.attributes.length - 1; j >= 0; j--) {
+            const attrName = el.attributes[j].name.toLowerCase();
+            if (attrName.startsWith('on')) {
+                el.removeAttribute(attrName);
+            }
+        }
+
+        // Prevent malicious URIs
+        if (el.hasAttribute('href')) {
+            let href = el.getAttribute('href');
+            // Remove control characters (like tabs/newlines) that might evade the check
+            let cleanHref = href.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
+            if (cleanHref.startsWith('javascript:') || cleanHref.startsWith('data:') || cleanHref.startsWith('vbscript:')) {
+                el.removeAttribute('href');
+            }
+        }
+        if (el.hasAttribute('src')) {
+             let src = el.getAttribute('src');
+             let cleanSrc = src.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
+             if (cleanSrc.startsWith('javascript:') || cleanSrc.startsWith('data:') || cleanSrc.startsWith('vbscript:')) {
+                 el.removeAttribute('src');
+             }
+        }
+    }
+
+    return doc.documentElement.outerHTML;
 }
 
 async function handleUrlScan(url, headerMessageId) {
