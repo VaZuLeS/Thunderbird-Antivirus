@@ -10,6 +10,12 @@ let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 
+const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
+const URGENCY_REGEXES = URGENCY_WORDS.map(word => ({
+    word,
+    regex: new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${word})(?=[^\\wäöüßÄÖÜ]|$)`, 'i')
+}));
+
 // Einstellungen laden
 async function loadSettings() {
   try {
@@ -261,12 +267,9 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     }
 
     // Verhaltensanalyse / BEC Schutz
-    const urgencyWords = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
     let textToAnalyze = (subject + " " + messageText).toLowerCase();
-    let foundUrgencyWords = urgencyWords.filter(word => {
-        let regex = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${word})(?=[^\\wäöüßÄÖÜ]|$)`, 'i');
-        return regex.test(textToAnalyze);
-    });
+
+    let foundUrgencyWords = URGENCY_REGEXES.filter(item => item.regex.test(textToAnalyze)).map(item => item.word);
 
     if (foundUrgencyWords.length > 0) {
         if (isFirstCommunication) {
