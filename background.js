@@ -306,8 +306,12 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
 
         if (!isSenderKnownBrand) {
             for (let brand of knownBrands) {
+                // Optimization: Skip expensive Levenshtein distance calculation if the length difference
+                // makes it impossible to be within the distance threshold of 2, or if the string is too short.
+                if (senderMainDomain.length < 4 || Math.abs(senderMainDomain.length - brand.length) > 2) continue;
+
                 let distance = levenshteinDistance(senderMainDomain, brand);
-                if (distance > 0 && distance <= 2 && senderMainDomain.length >= 4) {
+                if (distance > 0 && distance <= 2) {
                     score += 60;
                     reasons.push(`Absender-Domain (${senderMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
                     break;
@@ -340,8 +344,12 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
 
             if (!isLinkKnownBrand) {
                 for (let brand of knownBrands) {
+                    // Optimization: Skip expensive Levenshtein distance calculation if the length difference
+                    // makes it impossible to be within the distance threshold of 2, or if the string is too short.
+                    if (linkMainDomain.length < 4 || Math.abs(linkMainDomain.length - brand.length) > 2) continue;
+
                     let distance = levenshteinDistance(linkMainDomain, brand);
-                    if (distance > 0 && distance <= 2 && linkMainDomain.length >= 4) {
+                    if (distance > 0 && distance <= 2) {
                         typosquatLinkFound = true;
                         if (!reasons.some(r => r.includes(linkMainDomain))) {
                             reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
