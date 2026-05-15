@@ -72,4 +72,23 @@ test('Test local disarmHTML function', async (t) => {
         assert.ok(!result.includes('vbscript:'), 'vbscript URI should be removed');
     });
 
+    await t.test('disarmHTML should remove base and meta tags', () => {
+        const input = '<html><head><base href="http://evil.com"><meta http-equiv="refresh" content="0;url=javascript:alert(1)"></head><body></body></html>';
+        const result = sandbox.disarmHTML(input);
+        assert.ok(!result.includes('<base'), 'base tag should be removed');
+        assert.ok(!result.includes('<meta'), 'meta tag should be removed');
+    });
+
+    await t.test('disarmHTML should sanitize action, formaction, and xlink:href attributes', () => {
+        const input = `<html><body>
+            <form action="javascript:alert(1)"><input type="submit"></form>
+            <button formaction="data:text/html,<script>alert(1)</script>">Click</button>
+            <svg><use xlink:href="javascript:alert(1)"></use></svg>
+        </body></html>`;
+        const result = sandbox.disarmHTML(input);
+        assert.ok(!result.includes('javascript:'), 'javascript URI should be removed from action/xlink:href');
+        assert.ok(!result.includes('data:'), 'data URI should be removed from formaction');
+        assert.ok(!result.includes('action="javascript'), 'action attribute should be removed/sanitized');
+    });
+
 });
