@@ -1,3 +1,3 @@
-## 2024-05-11 - Adding screen reader announcements to vanilla JS status updates
-**Learning:** In vanilla JS applications that update DOM elements asynchronously (like setting `statusSpan.style.display = 'inline'` after a save or clear cache action), screen readers will not announce the new text by default. This is a common accessibility gap in apps that don't use frontend frameworks with built-in accessibility features.
-**Action:** Always add `aria-live="polite"` and `role="status"` to elements (like `<span>` or `<div>`) that receive dynamic status text updates, ensuring screen readers announce the changes without interrupting the user.
+## 2026-05-14 - Vanilla JS DOM Modal Accessibility
+**Learning:** Custom DOM-injected overlay modals require manual focus management (e.g. focusing a safe cancel button) and explicit ARIA roles (`role="dialog"`, `aria-modal="true"`) to be screen reader and keyboard accessible, as vanilla JS lacks the built-in semantic wrappers often provided by modern component libraries.
+**Action:** When creating raw JS overlays, ensure the safe/cancel action receives focus automatically upon injection and bind the appropriate `aria-labelledby` and `aria-describedby` IDs to the modal container.

@@ -6,12 +6,18 @@
 
         const modal = document.createElement('div');
         modal.className = 'card card-info thundy-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'thundy-warning-title');
+        modal.setAttribute('aria-describedby', 'thundy-warning-message');
 
         const title = document.createElement('h2');
+        title.id = 'thundy-warning-title';
         title.className = 'text-warning';
         title.textContent = 'Achtung: Sie verlassen Thunderbird';
 
         const message = document.createElement('p');
+        message.id = 'thundy-warning-message';
         message.className = 'text-info';
 
         if (state === 'MALICIOUS_VISUAL') {
@@ -71,6 +77,7 @@
 
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
+        cancelBtn.focus();
     }
 
     function createLoadingModal(url) {
@@ -80,12 +87,18 @@
 
         const modal = document.createElement('div');
         modal.className = 'card card-info thundy-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'thundy-loading-title');
+        modal.setAttribute('aria-describedby', 'thundy-loading-message');
 
         const title = document.createElement('h2');
+        title.id = 'thundy-loading-title';
         title.className = 'text-info';
         title.textContent = 'Time-of-Click Protection aktiv...';
 
         const message = document.createElement('p');
+        message.id = 'thundy-loading-message';
         message.textContent = 'URL wird in Echtzeit auf Bedrohungen analysiert (Computer Vision & Reputations-Check). Bitte haben Sie einen Moment Geduld.';
 
         modal.appendChild(title);
