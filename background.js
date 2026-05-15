@@ -1134,7 +1134,7 @@ function disarmHTML(htmlString) {
     const doc = parser.parseFromString(htmlString, 'text/html');
 
     // Remove active content tags
-    const activeTags = ['script', 'object', 'embed', 'iframe'];
+    const activeTags = ['script', 'object', 'embed', 'iframe', 'base', 'meta'];
     activeTags.forEach(tag => {
         const elements = doc.getElementsByTagName(tag);
         for (let i = elements.length - 1; i >= 0; i--) {
@@ -1144,6 +1144,8 @@ function disarmHTML(htmlString) {
 
     // Remove inline event handlers and javascript: URIs
     const allElements = doc.getElementsByTagName('*');
+    const dangerousAttributes = ['href', 'src', 'action', 'formaction', 'xlink:href'];
+
     for (let i = 0; i < allElements.length; i++) {
         const el = allElements[i];
 
@@ -1155,22 +1157,17 @@ function disarmHTML(htmlString) {
             }
         }
 
-        // Prevent malicious URIs
-        if (el.hasAttribute('href')) {
-            let href = el.getAttribute('href');
-            // Remove control characters (like tabs/newlines) that might evade the check
-            let cleanHref = href.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
-            if (cleanHref.startsWith('javascript:') || cleanHref.startsWith('data:') || cleanHref.startsWith('vbscript:')) {
-                el.removeAttribute('href');
+        // Prevent malicious URIs in multiple attributes
+        dangerousAttributes.forEach(attr => {
+            if (el.hasAttribute(attr)) {
+                let val = el.getAttribute(attr);
+                // Remove control characters (like tabs/newlines) that might evade the check
+                let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
+                if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
+                    el.removeAttribute(attr);
+                }
             }
-        }
-        if (el.hasAttribute('src')) {
-             let src = el.getAttribute('src');
-             let cleanSrc = src.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
-             if (cleanSrc.startsWith('javascript:') || cleanSrc.startsWith('data:') || cleanSrc.startsWith('vbscript:')) {
-                 el.removeAttribute('src');
-             }
-        }
+        });
     }
 
     return doc.documentElement.outerHTML;
