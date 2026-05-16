@@ -26,6 +26,10 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   document.getElementById('save').addEventListener('click', function() {
+    const saveBtn = document.getElementById('save');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Wird gespeichert...';
+
     let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
     let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
     let urlscanSetting = document.getElementById('urlscanApikey').value.trim().replace(/\r|\n/g, '');
@@ -64,13 +68,23 @@ document.addEventListener('DOMContentLoaded', function() {
     }).then(() => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Speichern';
         setTimeout(() => {
             statusSpan.style.display = 'none';
         }, 3000);
+    }).catch(error => {
+        console.error("Speichern fehlgeschlagen", error);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Speichern';
     });
   });
 
   document.getElementById('clearCache').addEventListener('click', async function() {
+    const clearBtn = document.getElementById('clearCache');
+    clearBtn.disabled = true;
+    clearBtn.textContent = 'Wird geleert...';
+
     let statusSpan = document.getElementById('clearCacheStatus');
     statusSpan.style.display = 'none';
     statusSpan.textContent = '';
@@ -89,6 +103,9 @@ document.addEventListener('DOMContentLoaded', function() {
         statusSpan.className = 'text-danger ml-2';
         statusSpan.textContent = 'Fehler beim Leeren des Caches.';
         console.error(error);
+    } finally {
+        clearBtn.disabled = false;
+        clearBtn.textContent = 'Cache leeren';
     }
 
     statusSpan.style.display = 'inline';
