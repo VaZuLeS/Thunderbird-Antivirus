@@ -10,11 +10,12 @@ let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 
+// Precompiled Regexes for Performance
+const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+const GLOBAL_URL_REGEX = /(https?:\/\/[^\s"'<>]+)/g;
+
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
-const URGENCY_REGEXES = URGENCY_WORDS.map(word => ({
-    word,
-    regex: new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${word})(?=[^\\wäöüßÄÖÜ]|$)`, 'i')
-}));
+const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_WORDS.join('|')})(?=[^\\wäöüßÄÖÜ]|$)`, 'gi');
 
 // Einstellungen laden
 async function loadSettings() {
@@ -79,10 +80,9 @@ browser.storage.onChanged.addListener((changes, area) => {
 function extractPublicIPs(receivedHeaders) {
     if (!receivedHeaders) return [];
     let ips = new Set();
-    const ipv4Regex = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
 
     for (let header of receivedHeaders) {
-        let matches = header.match(ipv4Regex);
+        let matches = header.match(GLOBAL_IPV4_REGEX);
         if (matches) {
             for (let ip of matches) {
                 // Filter private/local IPs
@@ -269,7 +269,13 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     // Verhaltensanalyse / BEC Schutz
     let textToAnalyze = (subject + " " + messageText).toLowerCase();
 
-    let foundUrgencyWords = URGENCY_REGEXES.filter(item => item.regex.test(textToAnalyze)).map(item => item.word);
+    let foundUrgencyWords = [];
+    let match;
+    URGENCY_REGEX_COMBINED.lastIndex = 0;
+    while ((match = URGENCY_REGEX_COMBINED.exec(textToAnalyze)) !== null) {
+        foundUrgencyWords.push(match[1].toLowerCase());
+    }
+    foundUrgencyWords = [...new Set(foundUrgencyWords)];
 
     if (foundUrgencyWords.length > 0) {
         if (isFirstCommunication) {
@@ -600,10 +606,10 @@ function extractTextFromParts(part) {
 }
 
 function extractUrls(text) {
-    const urlRegex = /(https?:\/\/[^\s"'<>]+)/g;
     const urls = new Set();
     let match;
-    while ((match = urlRegex.exec(text)) !== null) {
+    GLOBAL_URL_REGEX.lastIndex = 0; // Reset lastIndex for global regex
+    while ((match = GLOBAL_URL_REGEX.exec(text)) !== null) {
         // Bereinige ggf. am Ende hängende Satzzeichen
         let url = match[1].replace(/[.,;:!)\]]+$/, '');
         urls.add(url);
@@ -1119,7 +1125,10 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     const url = URL.createObjectURL(blob);
 
     // Download the file
+    // Prevent path traversal by extracting the basename and replacing suspicious characters
     let safeName = attachmentName || 'disarmed.html';
+    safeName = safeName.split(/[\/\\]/).pop().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+
     if (!safeName.toLowerCase().endsWith('.html') && !safeName.toLowerCase().endsWith('.htm')) {
         safeName += '.html';
     }
