@@ -2,10 +2,7 @@ let customBlacklist = [];
 let customWhitelist = [];
 let authStatus = null;
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
-const URGENCY_REGEXES = URGENCY_WORDS.map(word => ({
-    word,
-    regex: new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${word})(?=[^\\wäöüßÄÖÜ]|$)`, 'i')
-}));
+const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_WORDS.join('|')})(?=[^\\wäöüßÄÖÜ]|$)`, 'gi');
 
 function levenshteinDistance(a, b) {
     if (a.length === 0) return b.length;
@@ -120,7 +117,13 @@ function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [
     // Verhaltensanalyse / BEC Schutz
     let textToAnalyze = (subject + " " + messageText).toLowerCase();
 
-    let foundUrgencyWords = URGENCY_REGEXES.filter(item => item.regex.test(textToAnalyze)).map(item => item.word);
+    let foundUrgencyWords = [];
+    let match;
+    URGENCY_REGEX_COMBINED.lastIndex = 0;
+    while ((match = URGENCY_REGEX_COMBINED.exec(textToAnalyze)) !== null) {
+        foundUrgencyWords.push(match[1].toLowerCase());
+    }
+    foundUrgencyWords = [...new Set(foundUrgencyWords)];
 
     if (foundUrgencyWords.length > 0) {
         if (isFirstCommunication) {
