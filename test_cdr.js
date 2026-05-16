@@ -48,7 +48,18 @@ test('Test local disarmHTML function', async (t) => {
         const input = '<html><body><a href="javascript:alert(1)">Link</a><a href="http://safe.com">Safe</a></body></html>';
         const result = sandbox.disarmHTML(input);
         assert.ok(!result.includes('javascript:'), 'javascript URI should be removed');
-        assert.ok(result.includes('http://safe.com'), 'Safe URI should remain');
+        const sanitizedDom = new JSDOM(result);
+        const hrefs = Array.from(sanitizedDom.window.document.querySelectorAll('a'))
+            .map((a) => a.getAttribute('href'))
+            .filter(Boolean);
+        const hasSafeHost = hrefs.some((href) => {
+            try {
+                return new URL(href).hostname === 'safe.com';
+            } catch {
+                return false;
+            }
+        });
+        assert.ok(hasSafeHost, 'Safe URI host should remain');
     });
 
     await t.test('disarmHTML should remove object, embed, iframe', () => {
