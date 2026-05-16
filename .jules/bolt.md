@@ -13,3 +13,7 @@
 ## 2024-05-26 - Early Exit in Expensive Distance Algorithms
 **Learning:** Checking string edit distance (like Levenshtein) for typosquatting checks against a list of known brands in a loop (`calculateThreatScore`) is computationally expensive, especially for long URLs or domains where the edit distance is significantly higher than the allowed threshold.
 **Action:** Added an early exit check `Math.abs(str1.length - str2.length) > threshold` before computing the Levenshtein distance. It is mathematically impossible for the edit distance to be less than or equal to the threshold if the difference in string lengths already exceeds that threshold. This optimization reduces the execution time of loops filtering for minor typosquatting variations from ~734ms to ~4ms for 10,000 iterations.
+
+## 2024-05-27 - Precompiled Regular Expressions & Global Scope
+**Learning:** Instantiating Regex objects (e.g. `/(https?:\/\/[^\s"'<>]+)/g`) inside frequently executed functions adds measurable overhead. Further, filtering text sequentially with a `.map()` over 14 distinct regexes takes ~3-4x longer than running a single OR'd regex `new RegExp('(word1|word2)', 'gi')`.
+**Action:** When a regex is static, move it to the global scope (e.g., `GLOBAL_URL_REGEX`). When multiple related regexes search the same text, combine them into one OR'd precompiled expression. **Crucially**, when using `.exec()` on global regexes, you must reset `.lastIndex = 0` before the `while` loop to prevent state leakage across function calls.
