@@ -1119,7 +1119,10 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     const url = URL.createObjectURL(blob);
 
     // Download the file
+    // Prevent path traversal by extracting the basename and replacing suspicious characters
     let safeName = attachmentName || 'disarmed.html';
+    safeName = safeName.split(/[\/\\]/).pop().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
+
     if (!safeName.toLowerCase().endsWith('.html') && !safeName.toLowerCase().endsWith('.htm')) {
         safeName += '.html';
     }
