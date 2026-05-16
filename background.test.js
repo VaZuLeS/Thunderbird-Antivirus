@@ -283,7 +283,19 @@ describe('background.js', () => {
 
         // Mock fetch to return 200 OK (known file) and handle virustotal mock
         context.fetch = async (url) => {
-            if (url && url.includes('virustotal.com')) {
+            let isVirusTotalHost = false;
+            if (url) {
+                try {
+                    const parsedUrl = new URL(url);
+                    isVirusTotalHost =
+                        parsedUrl.hostname === 'virustotal.com' ||
+                        parsedUrl.hostname.endsWith('.virustotal.com');
+                } catch (_) {
+                    isVirusTotalHost = false;
+                }
+            }
+
+            if (isVirusTotalHost) {
                 return {
                     status: 200,
                     json: async () => ({
