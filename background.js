@@ -945,49 +945,11 @@ async function indexedDB_save_links_to_db(message, urls) {
 }
 
 async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName, virustotal_stats = null) {
-  try {
-    const db = await openDB("thunderbird_av", 3);
-    
-    if (message.headerMessageId) {
-      let newAttachment = {
-        hybrid_submission_id: hybrid_data.submission_id,
-        hybrid_job_id: hybrid_data.job_id,
-        hybrid_sha256: hybrid_data.sha256,
-        attachment_name: attachmentName,
-        state: hybrid_data.state,
-        partName: hybrid_data.partName,
-        virustotal_stats: virustotal_stats,
-        created: new Date()
-      };
-
-      await updateStore(db, 'hybridanalysis', message.headerMessageId, (existingRecord) => {
-        let recordToSave;
-        if (existingRecord) {
-          // Update existing record
-          recordToSave = existingRecord;
-          if (!recordToSave.attachments) recordToSave.attachments = [];
-          let existingAttIndex = recordToSave.attachments.findIndex(a => a.attachment_name === attachmentName);
-          if (existingAttIndex > -1) {
-              recordToSave.attachments[existingAttIndex] = newAttachment;
-          } else {
-              recordToSave.attachments.push(newAttachment);
-          }
-        } else {
-          // Create new record
-          recordToSave = {
-            messageHeader: message.headerMessageId,
-            author: message.author,
-            subject: message.subject,
-            attachments: [newAttachment]
-          };
-        }
-        return recordToSave;
-      });
-      console.log('Daten erfolgreich in DB gespeichert.');
-    }
-  } catch (error) {
-    console.error('Fehler bei der Interaktion mit der Datenbank:', error);
-  }
+  return indexedDB_save_batch_hybrid_data_to_db(message, [{
+    hybrid_data: hybrid_data,
+    attachmentName: attachmentName,
+    virustotal_stats: virustotal_stats
+  }]);
 }
 
 // Listener registrieren
