@@ -21,7 +21,6 @@ const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_
 async function loadSettings() {
   try {
     const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey']);
-    console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
     apikey_hybridanalysis = result.apikey;
     if (result.urlhausApikey !== undefined) {
       urlhausApikey = result.urlhausApikey;
@@ -31,7 +30,6 @@ async function loadSettings() {
     }
     if (result.alwaysManual !== undefined) {
       alwaysManual = result.alwaysManual;
-      console.log("alwaysManual erfolgreich geladen:", alwaysManual);
     }
     if (result.autoScanLinks !== undefined) {
       autoScanLinks = result.autoScanLinks;
@@ -55,19 +53,15 @@ loadSettings();
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.apikey) {
     apikey_hybridanalysis = changes.apikey.newValue;
-    console.log("Hybrid-Analysis API-KEY wurde dynamisch aktualisiert.");
   }
   if (area === 'local' && changes.urlhausApikey !== undefined) {
     urlhausApikey = changes.urlhausApikey.newValue;
-    console.log("URLhaus API-KEY wurde aktualisiert.");
   }
   if (area === 'local' && changes.urlscanApikey !== undefined) {
     urlscanApikey = changes.urlscanApikey.newValue;
-    console.log("urlscan.io API-KEY wurde aktualisiert.");
   }
   if (area === 'local' && changes.alwaysManual !== undefined) {
     alwaysManual = changes.alwaysManual.newValue;
-    console.log("alwaysManual wurde aktualisiert:", alwaysManual);
   }
   if (area === 'local' && changes.autoScanLinks !== undefined) {
     autoScanLinks = changes.autoScanLinks.newValue;
@@ -152,13 +146,17 @@ function levenshteinDistance(a, b) {
         let tmp = a; a = b; b = tmp;
     }
 
-    let prevRow = [];
+    // ⚡ Bolt Optimization: Use typed arrays (Uint16Array) and array pooling
+    // to avoid garbage collection overhead in the hot loop.
+    // charCodeAt is also faster than charAt.
+    let prevRow = new Uint16Array(a.length + 1);
+    let currRow = new Uint16Array(a.length + 1);
     for (let j = 0; j <= a.length; j++) prevRow[j] = j;
 
     for (let i = 1; i <= b.length; i++) {
-        let currRow = [i];
+        currRow[0] = i;
         for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+            if (b.charCodeAt(i - 1) === a.charCodeAt(j - 1)) {
                 currRow[j] = prevRow[j - 1];
             } else {
                 currRow[j] = 1 + Math.min(
@@ -168,12 +166,21 @@ function levenshteinDistance(a, b) {
                 );
             }
         }
-        prevRow = currRow;
+        // Swap arrays to avoid allocating a new one next iteration
+        let tmp = prevRow; prevRow = currRow; currRow = tmp;
     }
     return prevRow[a.length];
 }
 
-function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {
+function calculateThreatScore(author, urls, options = {}) {
+    const {
+        authHeaders = [],
+        urlhausDomains = [],
+        isFirstCommunication = false,
+        messageText = "",
+        subject = "",
+        replyTo = ""
+    } = options;
     let score = 0;
     let reasons = [];
     let authStatus = 'neutral';
@@ -468,15 +475,20 @@ async function tab_mail_open_display(tab, message) {
 
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
-        for (let ip of publicIps) {
+        let ipChecks = publicIps.map(async (ip) => {
             let isMalicious = false;
             if (ipReputationProvider === "abuseipdb") {
                 isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
             } else if (ipReputationProvider === "virustotal") {
                 isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
             }
-            if (isMalicious) {
-                maliciousIps.push(ip);
+            return { ip, isMalicious };
+        });
+
+        let results = await Promise.all(ipChecks);
+        for (let result of results) {
+            if (result.isMalicious) {
+                maliciousIps.push(result.ip);
             }
         }
     }
@@ -525,7 +537,14 @@ async function tab_mail_open_display(tab, message) {
       urlhausDomains = checkResults.filter(d => d !== null);
     }
 
-    let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains, isFirstCommunication, messageText, subject, replyTo);
+    let threat = calculateThreatScore(message.author, urls, {
+      authHeaders,
+      urlhausDomains,
+      isFirstCommunication,
+      messageText,
+      subject,
+      replyTo
+    });
     if (threat.score >= 50) {
       console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
       await browser.scripting.executeScript({
@@ -816,11 +835,15 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
           recordToSave = existingRecord;
           if (!recordToSave.attachments) recordToSave.attachments = [];
 
+          const existingAttMap = new Map();
+          recordToSave.attachments.forEach((a, i) => existingAttMap.set(a.attachment_name, i));
+
           for (const newAtt of newAttachments) {
-              let existingAttIndex = recordToSave.attachments.findIndex(a => a.attachment_name === newAtt.attachment_name);
-              if (existingAttIndex > -1) {
+              const existingAttIndex = existingAttMap.get(newAtt.attachment_name);
+              if (existingAttIndex !== undefined) {
                   recordToSave.attachments[existingAttIndex] = newAtt;
               } else {
+                  existingAttMap.set(newAtt.attachment_name, recordToSave.attachments.length);
                   recordToSave.attachments.push(newAtt);
               }
           }
@@ -859,14 +882,17 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
           recordToSave = existingRecord;
           if (!recordToSave.links) recordToSave.links = [];
 
+          // Pre-compute map for O(1) lookups, changing complexity from O(N*M) to O(N+M)
+          const existingUrlMap = new Map(recordToSave.links.map((l, idx) => [l.url, idx]));
           for (const newLink of newLinks) {
-            let existingIdx = recordToSave.links.findIndex(l => l.url === newLink.url);
-            if (existingIdx > -1) {
-                recordToSave.links[existingIdx] = newLink;
+            if (existingUrlMap.has(newLink.url)) {
+                recordToSave.links[existingUrlMap.get(newLink.url)] = newLink;
             } else {
                 recordToSave.links.push(newLink);
+                existingUrlMap.set(newLink.url, recordToSave.links.length - 1);
             }
           }
+
         } else {
           recordToSave = {
             messageHeader: message.headerMessageId,
@@ -900,9 +926,12 @@ async function indexedDB_save_links_to_db(message, urls) {
           recordToSave = existingRecord;
           if (!recordToSave.links) recordToSave.links = [];
 
+          // Pre-compute Set for O(1) lookups, changing complexity from O(N*M) to O(N+M)
+          const existingUrls = new Set(recordToSave.links.map(l => l.url));
           for (const newLink of newLinks) {
-            if (!recordToSave.links.find(l => l.url === newLink.url)) {
+            if (!existingUrls.has(newLink.url)) {
               recordToSave.links.push(newLink);
+              existingUrls.add(newLink.url); // Keep Set in sync with newly added links
             }
           }
         } else {

@@ -33,7 +33,15 @@ function levenshteinDistance(a, b) {
     return prevRow[a.length];
 }
 
-function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {
+function calculateThreatScore(author, urls, options = {}) {
+    const {
+        authHeaders = [],
+        urlhausDomains = [],
+        isFirstCommunication = false,
+        messageText = "",
+        subject = "",
+        replyTo = ""
+    } = options;
     let score = 0;
     let reasons = [];
     let authStatus = 'neutral';
@@ -225,11 +233,11 @@ console.log("Test 2: Domain mismatch", calculateThreatScore("Service <service@pa
 console.log("Test 3: Both", calculateThreatScore("Service <service@paypal-support.com>", ["http://login.paypa1.com"]));
 console.log("Test 4: Legitimate", calculateThreatScore("Service <service@paypal.com>", ["http://paypal.com/login", "http://info.paypal.com/test"]));
 
-console.log("Test 5: SPF fail", calculateThreatScore("Service <service@paypal.com>", [], ["spf=fail"]));
-console.log("Test 6: DKIM fail", calculateThreatScore("Service <service@paypal.com>", [], ["dkim=fail"]));
-console.log("Test 7: URLhaus listing", calculateThreatScore("Service <service@paypal.com>", ["http://malware.example.com"], [], ["malware.example.com"]));
-console.log("Test 8: Multiple fails", calculateThreatScore("Hacker <hacker@evil.com>", ["http://evil.com/bad"], ["spf=fail dkim=fail"], ["evil.com"]));
+console.log("Test 5: SPF fail", calculateThreatScore("Service <service@paypal.com>", [], { authHeaders: ["spf=fail"] }));
+console.log("Test 6: DKIM fail", calculateThreatScore("Service <service@paypal.com>", [], { authHeaders: ["dkim=fail"] }));
+console.log("Test 7: URLhaus listing", calculateThreatScore("Service <service@paypal.com>", ["http://malware.example.com"], { urlhausDomains: ["malware.example.com"] }));
+console.log("Test 8: Multiple fails", calculateThreatScore("Hacker <hacker@evil.com>", ["http://evil.com/bad"], { authHeaders: ["spf=fail dkim=fail"], urlhausDomains: ["evil.com"] }));
 
-console.log("Test 9: Reply-To discrepancy", calculateThreatScore("CEO <ceo@company.com>", [], [], [], false, "Hello", "Hi", "Hacker <hacker@evil.com>"));
-console.log("Test 10: BEC (First comm + urgency)", calculateThreatScore("CEO <ceo@company.com>", [], [], [], true, "Bitte schnell überweisung tätigen.", "Wichtig!"));
-console.log("Test 11: First comm, no urgency", calculateThreatScore("Bob <bob@example.com>", [], [], [], true, "Hi there", "Hello"));
+console.log("Test 9: Reply-To discrepancy", calculateThreatScore("CEO <ceo@company.com>", [], { messageText: "Hello", subject: "Hi", replyTo: "Hacker <hacker@evil.com>" }));
+console.log("Test 10: BEC (First comm + urgency)", calculateThreatScore("CEO <ceo@company.com>", [], { isFirstCommunication: true, messageText: "Bitte schnell überweisung tätigen.", subject: "Wichtig!" }));
+console.log("Test 11: First comm, no urgency", calculateThreatScore("Bob <bob@example.com>", [], { isFirstCommunication: true, messageText: "Hi there", subject: "Hello" }));
