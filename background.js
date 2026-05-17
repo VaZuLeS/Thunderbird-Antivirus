@@ -1043,6 +1043,67 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
     }
 });
 
+async function handleCheckLinkState(request, sender, sendResponse) {
+    try {
+        // Need to find the active message to get headerMessageId
+        const message = await browser.messageDisplay.getDisplayedMessage(sender.tab.id);
+        if (!message || !message.headerMessageId) {
+            sendResponse({status: 'UNKNOWN'});
+            return;
+        }
+
+        const db = await openDB("thunderbird_av", 3);
+        const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
+
+        let linkObj = null;
+        if (record && record.links) {
+            linkObj = record.links.find(l => l.url.replace(/\/$/, "") === request.url.replace(/\/$/, ""));
+        }
+
+        // Time-of-Click Live Scan via urlscan.io
+        if (urlscanApikey && (!linkObj || linkObj.state === 'UNKNOWN')) {
+            try {
+                const res = await checkUrlscanIo(request.url, urlscanApikey);
+                if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT') {
+                    // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
+                    sendResponse({ status: res.status, reasons: res.reasons });
+                    return;
+                }
+            } catch (e) {
+                console.log("Fehler bei Time-of-Click Live-Scan:", e);
+            }
+        }
+
+        if (linkObj) {
+            if (linkObj.hybrid_sha256 && apikey_hybridanalysis) {
+                const overviewOptions = getHybridAnalysisOptions('GET');
+                overviewOptions.url = 'https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256;
+                try {
+                    const response = await fetch(overviewOptions.url, overviewOptions);
+                    const json_data = await response.json();
+                    if (json_data.verdict) {
+                        if (json_data.verdict === 'no specific threat') {
+                            sendResponse({status: 'CLEAN'});
+                        } else {
+                            sendResponse({status: json_data.verdict.toUpperCase()});
+                        }
+                    } else {
+                        sendResponse({status: linkObj.state});
+                    }
+                } catch (err) {
+                    sendResponse({status: linkObj.state});
+                }
+            } else {
+                sendResponse({status: linkObj.state || 'UNKNOWN'});
+            }
+        } else {
+            sendResponse({status: 'UNKNOWN'});
+        }
+    } catch (err) {
+        sendResponse({status: 'ERROR'});
+    }
+}
+
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "uploadAttachment") {
         handleManualUpload(request.messageId, request.partName, request.attachmentName, request.hash, request.headerMessageId)
@@ -1057,63 +1118,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === "checkLinkState") {
-        // Need to find the active message to get headerMessageId
-        browser.messageDisplay.getDisplayedMessage(sender.tab.id).then(message => {
-            if (message && message.headerMessageId) {
-                return openDB("thunderbird_av", 3).then(db => {
-                    return getFromStore(db, "hybridanalysis", message.headerMessageId);
-                }).then(async record => {
-                    let linkObj = null;
-                    if (record && record.links) {
-                        linkObj = record.links.find(l => l.url.replace(/\/$/, "") === request.url.replace(/\/$/, ""));
-                    }
-
-                    // Time-of-Click Live Scan via urlscan.io
-                    if (urlscanApikey && (!linkObj || linkObj.state === 'UNKNOWN')) {
-                        try {
-                            const res = await checkUrlscanIo(request.url, urlscanApikey);
-                            if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT') {
-                                // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
-                                return sendResponse({ status: res.status, reasons: res.reasons });
-                            }
-                        } catch (e) {
-                            console.log("Fehler bei Time-of-Click Live-Scan:", e);
-                        }
-                    }
-
-                    if (linkObj) {
-                        if (linkObj.hybrid_sha256 && apikey_hybridanalysis) {
-                            const overviewOptions = getHybridAnalysisOptions('GET');
-                            overviewOptions.url = 'https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256;
-                            return fetch(overviewOptions.url, overviewOptions).then(response => response.json())
-                            .then(json_data => {
-                                if (json_data.verdict) {
-                                    if (json_data.verdict === 'no specific threat') {
-                                        sendResponse({status: 'CLEAN'});
-                                    } else {
-                                        sendResponse({status: json_data.verdict.toUpperCase()});
-                                    }
-                                } else {
-                                    sendResponse({status: linkObj.state});
-                                }
-                            }).catch(err => {
-                                sendResponse({status: linkObj.state});
-                            });
-                        } else {
-                            sendResponse({status: linkObj.state || 'UNKNOWN'});
-                        }
-                    } else {
-                        sendResponse({status: 'UNKNOWN'});
-                    }
-                }).catch(err => {
-                    sendResponse({status: 'ERROR'});
-                });
-            } else {
-                sendResponse({status: 'UNKNOWN'});
-            }
-        }).catch(err => {
-            sendResponse({status: 'ERROR'});
-        });
+        handleCheckLinkState(request, sender, sendResponse);
         return true;
     }
 
