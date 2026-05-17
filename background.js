@@ -21,7 +21,6 @@ const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_
 async function loadSettings() {
   try {
     const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey']);
-    console.log("Ihr Hybrid-Analysis API-KEY wurde geladen.");
     apikey_hybridanalysis = result.apikey;
     if (result.urlhausApikey !== undefined) {
       urlhausApikey = result.urlhausApikey;
@@ -31,7 +30,6 @@ async function loadSettings() {
     }
     if (result.alwaysManual !== undefined) {
       alwaysManual = result.alwaysManual;
-      console.log("alwaysManual erfolgreich geladen:", alwaysManual);
     }
     if (result.autoScanLinks !== undefined) {
       autoScanLinks = result.autoScanLinks;
@@ -55,19 +53,15 @@ loadSettings();
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.apikey) {
     apikey_hybridanalysis = changes.apikey.newValue;
-    console.log("Hybrid-Analysis API-KEY wurde dynamisch aktualisiert.");
   }
   if (area === 'local' && changes.urlhausApikey !== undefined) {
     urlhausApikey = changes.urlhausApikey.newValue;
-    console.log("URLhaus API-KEY wurde aktualisiert.");
   }
   if (area === 'local' && changes.urlscanApikey !== undefined) {
     urlscanApikey = changes.urlscanApikey.newValue;
-    console.log("urlscan.io API-KEY wurde aktualisiert.");
   }
   if (area === 'local' && changes.alwaysManual !== undefined) {
     alwaysManual = changes.alwaysManual.newValue;
-    console.log("alwaysManual wurde aktualisiert:", alwaysManual);
   }
   if (area === 'local' && changes.autoScanLinks !== undefined) {
     autoScanLinks = changes.autoScanLinks.newValue;
