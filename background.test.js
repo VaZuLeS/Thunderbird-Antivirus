@@ -601,45 +601,42 @@ describe('background.js', () => {
         });
     });
 
-    describe('levenshteinDistance', () => {
-        it('returns 0 for identical strings', () => {
-            assert.strictEqual(context.levenshteinDistance('hello', 'hello'), 0);
-            assert.strictEqual(context.levenshteinDistance('', ''), 0);
+    describe('extractTextFromParts', () => {
+        it('extracts text from plain text parts', () => {
+            const part = { contentType: 'text/plain', body: 'Hello World' };
+            assert.strictEqual(context.extractTextFromParts(part), 'Hello World ');
         });
 
-        it('returns the length of the other string if one is empty', () => {
-            assert.strictEqual(context.levenshteinDistance('', 'hello'), 5);
-            assert.strictEqual(context.levenshteinDistance('world', ''), 5);
+        it('extracts text from HTML parts', () => {
+            const part = { contentType: 'text/html', body: '<b>Hello</b> World' };
+            assert.strictEqual(context.extractTextFromParts(part), '<b>Hello</b> World ');
         });
 
-        it('calculates distance correctly for substitutions', () => {
-            assert.strictEqual(context.levenshteinDistance('amazon.de', 'amaz0n.de'), 1);
-            assert.strictEqual(context.levenshteinDistance('paypal.com', 'paypa1.com'), 1);
+        it('ignores parts that are not text/plain or text/html', () => {
+            const part = { contentType: 'image/png', body: 'base64data' };
+            assert.strictEqual(context.extractTextFromParts(part), '');
         });
 
-        it('calculates distance correctly for insertions', () => {
-            assert.strictEqual(context.levenshteinDistance('test', 'tests'), 1);
-            assert.strictEqual(context.levenshteinDistance('car', 'cars'), 1);
+        it('handles parts with missing body safely', () => {
+            const part = { contentType: 'text/plain' }; // no body
+            assert.strictEqual(context.extractTextFromParts(part), '');
         });
 
-        it('calculates distance correctly for deletions', () => {
-            assert.strictEqual(context.levenshteinDistance('tests', 'test'), 1);
-            assert.strictEqual(context.levenshteinDistance('cars', 'car'), 1);
-        });
-
-        it('is case-sensitive', () => {
-            assert.strictEqual(context.levenshteinDistance('Test', 'test'), 1);
-        });
-
-        it('calculates distance correctly for completely different strings', () => {
-            assert.strictEqual(context.levenshteinDistance('kitten', 'sitting'), 3);
-            assert.strictEqual(context.levenshteinDistance('flaw', 'lawn'), 2);
-        });
-
-        it('is symmetric', () => {
-            const distance1 = context.levenshteinDistance('kitten', 'sitting');
-            const distance2 = context.levenshteinDistance('sitting', 'kitten');
-            assert.strictEqual(distance1, distance2);
+        it('recursively extracts text from nested subparts', () => {
+            const part = {
+                contentType: 'multipart/alternative',
+                parts: [
+                    { contentType: 'text/plain', body: 'Part 1' },
+                    {
+                        contentType: 'multipart/mixed',
+                        parts: [
+                            { contentType: 'image/jpeg', body: 'ignored' },
+                            { contentType: 'text/html', body: 'Part 2' }
+                        ]
+                    }
+                ]
+            };
+            assert.strictEqual(context.extractTextFromParts(part), 'Part 1 Part 2 ');
         });
     });
 
