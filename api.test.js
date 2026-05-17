@@ -118,6 +118,12 @@ describe('get_hybrid_report_by_sha256', () => {
                 }
             },
             document: {
+                createElement: (tag) => {
+                    return {
+                        className: '',
+                        textContent: '',
+                    };
+                },
                 getElementById: (id) => {
                     if (id === 'hybrid_analysis_api_content') {
                         if (!context.apiContentElement) {
@@ -125,14 +131,30 @@ describe('get_hybrid_report_by_sha256', () => {
                                 _html: '',
                                 get innerHTML() { return this._html; },
                                 set innerHTML(val) { this._html = val; },
+                                appendChild: function(el) {
+                                    let content = el.textContent || '';
+                                    if (el.className) {
+                                        this._html += `<div class="${el.className}">${content}</div>`;
+                                    } else {
+                                        this._html += `<div>${content}</div>`;
+                                    }
+                                },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
+                                },
+                                appendChild: function(node) {
+                                    // VERY simplified mock for test purposes
+                                    // In a real mock, this would serialize the DOM node
+                                    // For these tests, we just care that appendChild is called or we update innerHTML with string representation if possible.
+                                    // Actually, tests in this file don't test the successful UI path, they only test fetch errors which use innerHTML += string.
+                                    // Let's just provide a mock appendChild.
+                                    this._html += node.outerHTML || node.textContent || '';
                                 }
                             };
                         }
                         return context.apiContentElement;
                     }
-                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '' };
+                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '', appendChild: () => {} };
                 }
             },
             indexedDB: {

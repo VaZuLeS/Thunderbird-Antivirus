@@ -152,13 +152,17 @@ function levenshteinDistance(a, b) {
         let tmp = a; a = b; b = tmp;
     }
 
-    let prevRow = [];
+    // ⚡ Bolt Optimization: Use typed arrays (Uint16Array) and array pooling
+    // to avoid garbage collection overhead in the hot loop.
+    // charCodeAt is also faster than charAt.
+    let prevRow = new Uint16Array(a.length + 1);
+    let currRow = new Uint16Array(a.length + 1);
     for (let j = 0; j <= a.length; j++) prevRow[j] = j;
 
     for (let i = 1; i <= b.length; i++) {
-        let currRow = [i];
+        currRow[0] = i;
         for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+            if (b.charCodeAt(i - 1) === a.charCodeAt(j - 1)) {
                 currRow[j] = prevRow[j - 1];
             } else {
                 currRow[j] = 1 + Math.min(
@@ -168,12 +172,21 @@ function levenshteinDistance(a, b) {
                 );
             }
         }
-        prevRow = currRow;
+        // Swap arrays to avoid allocating a new one next iteration
+        let tmp = prevRow; prevRow = currRow; currRow = tmp;
     }
     return prevRow[a.length];
 }
 
-function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {
+function calculateThreatScore(author, urls, options = {}) {
+    const {
+        authHeaders = [],
+        urlhausDomains = [],
+        isFirstCommunication = false,
+        messageText = "",
+        subject = "",
+        replyTo = ""
+    } = options;
     let score = 0;
     let reasons = [];
     let authStatus = 'neutral';
@@ -525,7 +538,14 @@ async function tab_mail_open_display(tab, message) {
       urlhausDomains = checkResults.filter(d => d !== null);
     }
 
-    let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains, isFirstCommunication, messageText, subject, replyTo);
+    let threat = calculateThreatScore(message.author, urls, {
+      authHeaders,
+      urlhausDomains,
+      isFirstCommunication,
+      messageText,
+      subject,
+      replyTo
+    });
     if (threat.score >= 50) {
       console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
       await browser.scripting.executeScript({
@@ -816,11 +836,15 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
           recordToSave = existingRecord;
           if (!recordToSave.attachments) recordToSave.attachments = [];
 
+          const existingAttMap = new Map();
+          recordToSave.attachments.forEach((a, i) => existingAttMap.set(a.attachment_name, i));
+
           for (const newAtt of newAttachments) {
-              let existingAttIndex = recordToSave.attachments.findIndex(a => a.attachment_name === newAtt.attachment_name);
-              if (existingAttIndex > -1) {
+              const existingAttIndex = existingAttMap.get(newAtt.attachment_name);
+              if (existingAttIndex !== undefined) {
                   recordToSave.attachments[existingAttIndex] = newAtt;
               } else {
+                  existingAttMap.set(newAtt.attachment_name, recordToSave.attachments.length);
                   recordToSave.attachments.push(newAtt);
               }
           }
@@ -859,14 +883,20 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
           recordToSave = existingRecord;
           if (!recordToSave.links) recordToSave.links = [];
 
+          let linkMap = new Map();
+          for (let i = 0; i < recordToSave.links.length; i++) {
+            linkMap.set(recordToSave.links[i].url, i);
+          }
           for (const newLink of newLinks) {
-            let existingIdx = recordToSave.links.findIndex(l => l.url === newLink.url);
-            if (existingIdx > -1) {
-                recordToSave.links[existingIdx] = newLink;
+            const existingIdx = linkMap.get(newLink.url);
+            if (existingIdx !== undefined) {
+              recordToSave.links[existingIdx] = newLink;
             } else {
-                recordToSave.links.push(newLink);
+              linkMap.set(newLink.url, recordToSave.links.length);
+              recordToSave.links.push(newLink);
             }
           }
+
         } else {
           recordToSave = {
             messageHeader: message.headerMessageId,
