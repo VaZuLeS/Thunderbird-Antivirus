@@ -48,8 +48,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let alwaysManualSetting = document.getElementById('alwaysManual').checked;
     let autoScanLinksSetting = document.getElementById('autoScanLinks').checked;
     let timeOfClickProtectionSetting = document.getElementById('timeOfClickProtection').checked;
-    let ipReputationProviderSetting = document.getElementById('ipReputationProvider').value;
-    let ipReputationApiKeySetting = document.getElementById('ipReputationApiKey').value.trim().replace(/\r|\n/g, '');
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
@@ -58,8 +56,6 @@ document.addEventListener('DOMContentLoaded', function() {
         privacyTier: privacyTierSetting,
         customWhitelist: whitelistSetting,
         customBlacklist: blacklistSetting,
-        ipReputationProvider: ipReputationProviderSetting,
-        ipReputationApiKey: ipReputationApiKeySetting,
         alwaysManual: alwaysManualSetting,
         autoScanLinks: autoScanLinksSetting,
         timeOfClickProtection: timeOfClickProtectionSetting,
