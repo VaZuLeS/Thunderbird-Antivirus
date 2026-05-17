@@ -6,3 +6,4 @@
 **Vulnerability:** API keys in `options.html` were visible in plain text due to using `type="text"`.
 **Learning:** For UI elements handling sensitive data like API keys always use `<input type="password">` rather than `<input type="text">` to prevent visual exposure and shoulder surfing.
 **Prevention:** Always use `type="password"` for sensitive inputs.
+- 🔒 [Security] Fixed DOM-based Cross-Site Scripting (XSS) in api.js by refactoring insertAdjacentHTML injections to native DOM API elements (document.createElement/textContent).
