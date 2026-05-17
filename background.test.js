@@ -601,6 +601,48 @@ describe('background.js', () => {
         });
     });
 
+    describe('levenshteinDistance', () => {
+        it('returns 0 for identical strings', () => {
+            assert.strictEqual(context.levenshteinDistance('hello', 'hello'), 0);
+            assert.strictEqual(context.levenshteinDistance('', ''), 0);
+        });
+
+        it('returns the length of the other string if one is empty', () => {
+            assert.strictEqual(context.levenshteinDistance('', 'hello'), 5);
+            assert.strictEqual(context.levenshteinDistance('world', ''), 5);
+        });
+
+        it('calculates distance correctly for substitutions', () => {
+            assert.strictEqual(context.levenshteinDistance('amazon.de', 'amaz0n.de'), 1);
+            assert.strictEqual(context.levenshteinDistance('paypal.com', 'paypa1.com'), 1);
+        });
+
+        it('calculates distance correctly for insertions', () => {
+            assert.strictEqual(context.levenshteinDistance('test', 'tests'), 1);
+            assert.strictEqual(context.levenshteinDistance('car', 'cars'), 1);
+        });
+
+        it('calculates distance correctly for deletions', () => {
+            assert.strictEqual(context.levenshteinDistance('tests', 'test'), 1);
+            assert.strictEqual(context.levenshteinDistance('cars', 'car'), 1);
+        });
+
+        it('is case-sensitive', () => {
+            assert.strictEqual(context.levenshteinDistance('Test', 'test'), 1);
+        });
+
+        it('calculates distance correctly for completely different strings', () => {
+            assert.strictEqual(context.levenshteinDistance('kitten', 'sitting'), 3);
+            assert.strictEqual(context.levenshteinDistance('flaw', 'lawn'), 2);
+        });
+
+        it('is symmetric', () => {
+            const distance1 = context.levenshteinDistance('kitten', 'sitting');
+            const distance2 = context.levenshteinDistance('sitting', 'kitten');
+            assert.strictEqual(distance1, distance2);
+        });
+    });
+
     describe('disarmHTML', () => {
         it('removes script tags and their content', () => {
             const input = '<html><body><h1>Test</h1><script>alert(1);</script></body></html>';
