@@ -1,47 +1,72 @@
 const { performance } = require('perf_hooks');
 
-function testOld(newLinks, existingRecordLinks) {
-  const recordToSave = { links: [...existingRecordLinks] };
-  for (const newLink of newLinks) {
-    if (!recordToSave.links.find(l => l.url === newLink.url)) {
-      recordToSave.links.push(newLink);
+// Mock data and functions
+const publicIps = ['1.1.1.1', '8.8.8.8', '9.9.9.9', '4.4.4.4', '2.2.2.2'];
+const ipReputationProvider = "abuseipdb";
+const ipReputationApiKey = "test-key";
+
+async function checkAbuseIPDB(ip, apiKey) {
+    // Simulate network delay of 100ms
+    return new Promise(resolve => setTimeout(() => resolve(ip === '9.9.9.9'), 100));
+}
+
+async function checkVirusTotalIP(ip, apiKey) {
+    return new Promise(resolve => setTimeout(() => resolve(false), 100));
+}
+
+async function runSequential() {
+    let maliciousIps = [];
+    const start = performance.now();
+
+    for (let ip of publicIps) {
+        let isMalicious = false;
+        if (ipReputationProvider === "abuseipdb") {
+            isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
+        } else if (ipReputationProvider === "virustotal") {
+            isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
+        }
+        if (isMalicious) {
+            maliciousIps.push(ip);
+        }
     }
-  }
-  return recordToSave.links;
+
+    const end = performance.now();
+    return { time: end - start, maliciousIps };
 }
 
-function testNew(newLinks, existingRecordLinks) {
-  const recordToSave = { links: [...existingRecordLinks] };
-  const existingUrls = new Set(recordToSave.links.map(l => l.url));
-  for (const newLink of newLinks) {
-    if (!existingUrls.has(newLink.url)) {
-      recordToSave.links.push(newLink);
-      existingUrls.add(newLink.url);
+async function runConcurrent() {
+    let maliciousIps = [];
+    const start = performance.now();
+
+    let ipChecks = publicIps.map(async (ip) => {
+        let isMalicious = false;
+        if (ipReputationProvider === "abuseipdb") {
+            isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
+        } else if (ipReputationProvider === "virustotal") {
+            isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
+        }
+        return { ip, isMalicious };
+    });
+
+    let results = await Promise.all(ipChecks);
+    for (let result of results) {
+        if (result.isMalicious) {
+            maliciousIps.push(result.ip);
+        }
     }
-  }
-  return recordToSave.links;
+
+    const end = performance.now();
+    return { time: end - start, maliciousIps };
 }
 
-const numExisting = 10000;
-const numNew = 5000;
+async function run() {
+    console.log("Running Sequential...");
+    const seqRes = await runSequential();
+    console.log(`Sequential: ${seqRes.time.toFixed(2)}ms, found: ${seqRes.maliciousIps}`);
 
-const existingRecordLinks = [];
-for (let i = 0; i < numExisting; i++) {
-  existingRecordLinks.push({ url: `http://example.com/${i}` });
+    console.log("Running Concurrent...");
+    const conRes = await runConcurrent();
+    console.log(`Concurrent: ${conRes.time.toFixed(2)}ms, found: ${conRes.maliciousIps}`);
 }
 
-const newLinks = [];
-for (let i = numExisting - 1000; i < numExisting + numNew - 1000; i++) {
-  newLinks.push({ url: `http://example.com/${i}` });
-}
-
-const startOld = performance.now();
-testOld(newLinks, existingRecordLinks);
-const endOld = performance.now();
-
-const startNew = performance.now();
-testNew(newLinks, existingRecordLinks);
-const endNew = performance.now();
-
-console.log(`Old: ${endOld - startOld} ms`);
-console.log(`New: ${endNew - startNew} ms`);
+run();

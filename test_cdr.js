@@ -90,6 +90,13 @@ test('Test local disarmHTML function', async (t) => {
         assert.ok(!result.includes('<meta'), 'meta tag should be removed');
     });
 
+    await t.test('disarmHTML should remove applet and link tags', () => {
+        const input = '<html><head><link rel="stylesheet" href="http://evil.com/style.css"></head><body><applet code="test.class"></applet></body></html>';
+        const result = sandbox.disarmHTML(input);
+        assert.ok(!result.includes('<applet'), 'applet tag should be removed');
+        assert.ok(!result.includes('<link'), 'link tag should be removed');
+    });
+
     await t.test('disarmHTML should sanitize action, formaction, and xlink:href attributes', () => {
         const input = `<html><body>
             <form action="javascript:alert(1)"><input type="submit"></form>

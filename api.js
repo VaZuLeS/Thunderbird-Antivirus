@@ -12,6 +12,22 @@ function escapeHTML(str) {
     });
 }
 
+function sendExtensionMessage(message, btn, statusEl, errorPrefix, onSuccess) {
+    return browser.runtime.sendMessage(message).then(res => {
+        if (res && res.status === 'success') {
+            if (onSuccess) onSuccess(res);
+        } else {
+            statusEl.innerText = errorPrefix + (res ? res.message : "Unbekannter Fehler");
+            btn.disabled = false;
+            btn.innerText = "Erneut versuchen";
+        }
+    }).catch(err => {
+        statusEl.innerText = "Kommunikationsfehler: " + err;
+        btn.disabled = false;
+        btn.innerText = "Erneut versuchen";
+    });
+}
+
 let apikey_hybridanalysis;
 
 (async () => {
@@ -19,15 +35,7 @@ let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
 
 if (!apikey_hybridanalysis) {
-    let container = document.getElementById('hybrid_analysis_api_content');
-    container.textContent = '';
-    let alertDiv = document.createElement('div');
-    alertDiv.className = 'alert-error';
-    let strong = document.createElement('strong');
-    strong.textContent = 'Warnung:';
-    alertDiv.appendChild(strong);
-    alertDiv.appendChild(document.createTextNode(' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.'));
-    container.appendChild(alertDiv);
+    setElementHtml('hybrid_analysis_api_content', '<div class="alert-error"><strong>Warnung:</strong> Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.</div>');
     return;
 }
 
@@ -40,13 +48,12 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
 // Informationen.
 let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
-console.log(message.headerMessageId);
 
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
-document.getElementById("subject").textContent = message.subject;
-document.getElementById("from").textContent = message.author;
-document.getElementById("MessageHeaderID").textContent = message.headerMessageId;
+setElementText("subject", message.subject);
+setElementText("from", message.author);
+setElementText("MessageHeaderID", message.headerMessageId);
 try {
 
     // Öffnen Sie die Datenbank
@@ -74,7 +81,7 @@ try {
             const hasLinks = record && record.links && record.links.length > 0;
 
             if (hasAttachments || hasLinks) {
-                document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
+                setElementHtml('hybrid_analysis_api_content', ''); // clear
 
                 if (hasAttachments) {
                     for (const att of record.attachments) {
@@ -107,17 +114,16 @@ try {
                     }
                 }
             } else {
-                 let p1 = document.createElement('p'); p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p1);
+                 setElementHtml('hybrid_analysis_api_content', '<p>Keine Anhänge oder URLs für diese E-Mail gefunden.</p>');
             }
         };
     };
 
     openRequest.onerror = function(e) {
-        console.log("Kein Hash/Anhang gefunden.");
-        let p2 = document.createElement('p'); p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p2);
+        setElementHtml('hybrid_analysis_api_content', '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>');
     }
 } catch (error) {
-    console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
+    console.error('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
 })();
 
@@ -128,7 +134,7 @@ function createEl(tag, className = '', textContent = '') {
     return el;
 }
 
-function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null) {
+function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null }) {
     const card = document.createElement('div');
     card.className = "card mb-3";
 
@@ -307,47 +313,40 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
     // Send the request and handle the response
     try {
         const response = await fetch(options.url, options);
-        console.log(response);
         const json_data = await response.json();
-        console.log(json_data);
 
         if (response.status === 200) {
-            let container = document.getElementById('hybrid_analysis_api_content');
-            let reportNode = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats);
-            container.appendChild(reportNode);
+            let resultHtml = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats);
+            appendElementHtml('hybrid_analysis_api_content', resultHtml);
 
             let rescanBtn = document.getElementById(`btn-rescan-${hybrid_sha}`);
             if (rescanBtn) {
                 rescanBtn.addEventListener('click', function() {
                     let btn = this;
-                    let statusEl = document.getElementById(`rescan-status-${hybrid_sha}`);
+                    let statusId = `rescan-status-${escapeHTML(hybrid_sha)}`;
                     btn.disabled = true;
                     btn.innerText = "Sende Rescan...";
-                    statusEl.innerText = "Datei wird für Rescan hochgeladen...";
+                    setElementText(statusId, "Datei wird für Rescan hochgeladen...");
 
-                    browser.runtime.sendMessage({
-                        action: "uploadAttachment",
-                        messageId: messageId,
-                        partName: partName,
-                        attachmentName: attachmentName,
-                        hash: hybrid_sha,
-                        headerMessageId: headerMessageId
-                    }).then(res => {
-                        if (res && res.status === 'success') {
+                    sendExtensionMessage(
+                        {
+                            action: "uploadAttachment",
+                            messageId: messageId,
+                            partName: partName,
+                            attachmentName: attachmentName,
+                            hash: hybrid_sha,
+                            headerMessageId: headerMessageId
+                        },
+                        btn,
+                        statusEl,
+                        "Fehler beim Rescan: ",
+                        (res) => {
                             statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
                             setTimeout(() => {
                                 window.location.reload();
                             }, 2000);
-                        } else {
-                            statusEl.innerText = "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler");
-                            btn.disabled = false;
-                            btn.innerText = "Erneut versuchen";
                         }
-                    }).catch(err => {
-                        statusEl.innerText = "Kommunikationsfehler: " + err;
-                        btn.disabled = false;
-                        btn.innerText = "Erneut versuchen";
-                    });
+                    );
                 });
             }
 
@@ -355,99 +354,70 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
             if (cdrBtn) {
                 cdrBtn.addEventListener('click', function() {
                     let btn = this;
-                    let statusEl = document.getElementById(`cdr-status-${hybrid_sha}`);
+                    let statusId = `cdr-status-${escapeHTML(hybrid_sha)}`;
                     btn.disabled = true;
                     btn.innerText = "Bereinige...";
-                    statusEl.innerText = "Lokales CDR wird durchgeführt...";
+                    setElementText(statusId, "Lokales CDR wird durchgeführt...");
 
-                    browser.runtime.sendMessage({
-                        action: "downloadDisarmed",
-                        messageId: messageId,
-                        partName: partName,
-                        attachmentName: attachmentName
-                    }).then(res => {
-                        if (res && res.status === 'success') {
+                    sendExtensionMessage(
+                        {
+                            action: "downloadDisarmed",
+                            messageId: messageId,
+                            partName: partName,
+                            attachmentName: attachmentName
+                        },
+                        btn,
+                        statusEl,
+                        "Fehler beim Herunterladen: ",
+                        (res) => {
                             statusEl.innerText = "Herunterladen erfolgreich initiiert.";
                             btn.innerText = "Bereinigt";
-                        } else {
-                            statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
-                            btn.disabled = false;
-                            btn.innerText = "Erneut versuchen";
                         }
-                    }).catch(err => {
-                        statusEl.innerText = "Kommunikationsfehler: " + err;
-                        btn.disabled = false;
-                        btn.innerText = "Erneut versuchen";
-                    });
+                    );
                 });
             }
 
         } else {
             console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
-            let errorDiv = document.createElement('div');
-            errorDiv.className = 'text-danger';
-            errorDiv.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
-            document.getElementById('hybrid_analysis_api_content').appendChild(errorDiv);
+            appendElementHtml('hybrid_analysis_api_content', `<div class="text-danger">API Error: ${response.status} für Element ${escapeHTML(attachmentName)}</div>`);
         }
     } catch (error) {
         console.error('Fetch error:', error);
-        let errorDiv = document.createElement('div');
-        errorDiv.className = 'text-danger';
-        errorDiv.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`;
-        document.getElementById('hybrid_analysis_api_content').appendChild(errorDiv);
+        appendElementHtml('hybrid_analysis_api_content', `<div class="text-danger">Netzwerkfehler: ${escapeHTML(error.message)} für Element ${escapeHTML(attachmentName)}</div>`);
     }
 }
 
 function renderManualUrlScanUI(url, headerMessageId) {
-    let container = document.getElementById('hybrid_analysis_api_content');
-
+    let safeUrl = escapeHTML(url);
     // Erzeuge eine sichere, eindeutige ID für die URL
     let urlId = Array.from(new TextEncoder().encode(url))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
+    let resultHtml = `<div class="card card-info mb-3" id="upload-container-${urlId}">
+        <h2>URL: ${safeUrl}</h2>
+        <p class="text-info">Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
+        <button id="btn-upload-${urlId}" class="btn-primary mt-2">URL jetzt scannen</button>
+        <p id="upload-status-${urlId}" class="mt-2" aria-live="polite" role="status"></p>
+    </div>`;
+    appendElementHtml('hybrid_analysis_api_content', resultHtml);
 
-    let cardDiv = document.createElement('div');
-    cardDiv.className = 'card card-info mb-3';
-    cardDiv.id = `upload-container-${urlId}`;
-
-    let h2 = document.createElement('h2');
-    h2.textContent = `URL: ${url}`;
-
-    let pInfo = document.createElement('p');
-    pInfo.className = 'text-info';
-    pInfo.innerHTML = `Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.`;
-
-    let button = document.createElement('button');
-    button.id = `btn-upload-${urlId}`;
-    button.className = 'btn-primary mt-2';
-    button.textContent = 'URL jetzt scannen';
-
-    let pStatus = document.createElement('p');
-    pStatus.id = `upload-status-${urlId}`;
-    pStatus.className = 'mt-2';
-    pStatus.setAttribute('aria-live', 'polite');
-    pStatus.setAttribute('role', 'status');
-
-    cardDiv.appendChild(h2);
-    cardDiv.appendChild(pInfo);
-    cardDiv.appendChild(button);
-    cardDiv.appendChild(pStatus);
-
-    container.appendChild(cardDiv);
-
-    button.addEventListener('click', function() {
+    document.getElementById(`btn-upload-${urlId}`).addEventListener('click', function() {
         let btn = this;
-        let statusEl = document.getElementById(`upload-status-${urlId}`);
+        let statusId = `upload-status-${urlId}`;
         btn.disabled = true;
         btn.innerText = "Sende URL...";
-        statusEl.innerText = "URL wird an Hybrid Analysis übertragen...";
+        setElementText(statusId, "URL wird an Hybrid Analysis übertragen...");
 
-        browser.runtime.sendMessage({
-            action: "scanUrl",
-            url: url,
-            headerMessageId: headerMessageId
-        }).then(response => {
-            if (response && response.status === 'success') {
+        sendExtensionMessage(
+            {
+                action: "scanUrl",
+                url: url,
+                headerMessageId: headerMessageId
+            },
+            btn,
+            statusEl,
+            "Fehler beim Upload: ",
+            (response) => {
                 statusEl.innerText = "Scan erfolgreich beauftragt! Lade Analyseergebnisse...";
                 setTimeout(() => {
                     document.getElementById(`upload-container-${urlId}`).remove();
@@ -457,21 +427,12 @@ function renderManualUrlScanUI(url, headerMessageId) {
                         attachmentName: url
                     });
                 }, 3000);
-            } else {
-                statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
-                btn.disabled = false;
-                btn.innerText = "Erneut versuchen";
             }
-        }).catch(err => {
-            statusEl.innerText = "Kommunikationsfehler: " + err;
-            btn.disabled = false;
-            btn.innerText = "Erneut versuchen";
-        });
+        );
     });
 }
 
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
-    let container = document.getElementById('hybrid_analysis_api_content');
     let safeHash = escapeHTML(hash);
 
     let card = document.createElement('div');
@@ -520,54 +481,56 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
         card.appendChild(pCdrStatus);
     }
 
-    container.appendChild(card);
+    resultHtml += `
+    </div>`;
+    appendElementHtml('hybrid_analysis_api_content', resultHtml);
 
     if (cdrBtn) {
         cdrBtn.addEventListener('click', function() {
             let btn = this;
-            let statusEl = document.getElementById(`cdr-status-${hash}`);
+            let statusId = `cdr-status-${safeHash}`;
             btn.disabled = true;
             btn.innerText = "Bereinige...";
-            statusEl.innerText = "Lokales CDR wird durchgeführt...";
+            setElementText(statusId, "Lokales CDR wird durchgeführt...");
 
-            browser.runtime.sendMessage({
-                action: "downloadDisarmed",
-                messageId: messageId,
-                partName: partName,
-                attachmentName: attachmentName
-            }).then(res => {
-                if (res && res.status === 'success') {
+            sendExtensionMessage(
+                {
+                    action: "downloadDisarmed",
+                    messageId: messageId,
+                    partName: partName,
+                    attachmentName: attachmentName
+                },
+                btn,
+                statusEl,
+                "Fehler beim Herunterladen: ",
+                (res) => {
                     statusEl.innerText = "Herunterladen erfolgreich initiiert.";
                     btn.innerText = "Bereinigt";
-                } else {
-                    statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
-                    btn.disabled = false;
-                    btn.innerText = "Erneut versuchen";
                 }
-            }).catch(err => {
-                statusEl.innerText = "Kommunikationsfehler: " + err;
-                btn.disabled = false;
-                btn.innerText = "Erneut versuchen";
-            });
+            );
         });
     }
 
     document.getElementById(`btn-upload-${hash}`).addEventListener('click', function() {
         let btn = this;
-        let statusEl = document.getElementById(`upload-status-${hash}`);
+        let statusId = `upload-status-${safeHash}`;
         btn.disabled = true;
         btn.innerText = "Lade hoch...";
-        statusEl.innerText = "Datei wird an Hybrid Analysis übertragen...";
+        setElementText(statusId, "Datei wird an Hybrid Analysis übertragen...");
 
-        browser.runtime.sendMessage({
-            action: "uploadAttachment",
-            messageId: messageId,
-            partName: partName,
-            attachmentName: attachmentName,
-            hash: hash,
-            headerMessageId: headerMessageId
-        }).then(response => {
-            if (response && response.status === 'success') {
+        sendExtensionMessage(
+            {
+                action: "uploadAttachment",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName,
+                hash: hash,
+                headerMessageId: headerMessageId
+            },
+            btn,
+            statusEl,
+            "Fehler beim Upload: ",
+            (response) => {
                 statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
                 setTimeout(() => {
                     document.getElementById(`upload-container-${safeHash}`).remove();
@@ -579,15 +542,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
                         headerMessageId: headerMessageId
                     });
                 }, 3000);
-            } else {
-                statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
-                btn.disabled = false;
-                btn.innerText = "Erneut versuchen";
             }
-        }).catch(err => {
-            statusEl.innerText = "Kommunikationsfehler: " + err;
-            btn.disabled = false;
-            btn.innerText = "Erneut versuchen";
-        });
+        );
     });
 }

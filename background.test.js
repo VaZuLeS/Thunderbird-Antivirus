@@ -3,12 +3,14 @@ const vm = require('vm');
 const path = require('path');
 const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert');
+const { JSDOM } = require('jsdom');
 
 describe('background.js', () => {
     let context;
 
     beforeEach(() => {
         // Create mock environment
+        const dom = new JSDOM();
         context = {
             browser: {
                 storage: {
@@ -65,6 +67,7 @@ describe('background.js', () => {
             Math: globalThis.Math,
             Set: globalThis.Set,
             URL: globalThis.URL,
+            DOMParser: dom.window.DOMParser,
             indexedDB: {
                 open: () => ({
                     onupgradeneeded: null,
@@ -116,6 +119,7 @@ describe('background.js', () => {
             globalThis.handleUrlScan = handleUrlScan;
             globalThis.calculateThreatScore = calculateThreatScore;
             globalThis.levenshteinDistance = levenshteinDistance;
+            globalThis.extractPublicIPs = extractPublicIPs;
         `;
         context.URL = URL;
         context.URLSearchParams = URLSearchParams;
@@ -202,10 +206,61 @@ describe('background.js', () => {
         assert.deepStrictEqual(urls, ['https://test.com/', 'http://example.org/path?q=1']);
     });
 
+    it('extractUrls filters duplicate URLs', () => {
+        const text = "Check out https://test.com/ and https://test.com/ again.";
+        const urls = context.extractUrls(text);
+        assert.deepStrictEqual(urls, ['https://test.com/']);
+    });
+
+    it('extractUrls handles URLs with various trailing punctuation', () => {
+        const text = "See https://test.com/!, https://test.com/?, (https://test.com/), [https://test.com/]; and https://test.com/:";
+        const urls = context.extractUrls(text);
+        // The regex replaces trailing characters `[.,;:!)\]]` but DOES NOT remove `?`.
+        // 'https://test.com/?,' -> 'https://test.com/?'
+
+        // Assert length and elements instead of exact order / deep equality,
+        // because we want the test to FAIL if the punctuation IS NOT stripped,
+        // rather than accidentally passing if both the stripped and unstripped versions are sorted the same.
+        // If trailing punctuation is NOT removed, urls will have 5 unique items:
+        // ['https://test.com/!,', 'https://test.com/?,', 'https://test.com/),', 'https://test.com/];', 'https://test.com/:']
+        assert.strictEqual(urls.length, 2);
+        assert.ok(urls.find(u => u === 'https://test.com/'));
+        assert.ok(urls.find(u => u === 'https://test.com/?'));
+    });
+
+    it('extractUrls returns empty array for text with no URLs', () => {
+        const text = "This is a simple text without any URLs.";
+        const urls = context.extractUrls(text);
+        assert.deepStrictEqual(urls, []);
+    });
+
+    it('extractUrls returns empty array for empty string', () => {
+        const text = "";
+        const urls = context.extractUrls(text);
+        assert.deepStrictEqual(urls, []);
+    });
+
     it('filterUrls correctly ignores safe domains', () => {
         const urls = ['https://google.com/', 'http://malicious.com', 'https://github.com/repo', 'https://unknown.org'];
         const filtered = context.filterUrls(urls);
         assert.deepStrictEqual(filtered, ['http://malicious.com', 'https://unknown.org']);
+    });
+
+    it('filterUrls correctly ignores subdomains of safe domains', () => {
+        const urls = ['https://mail.google.com/', 'https://sub.github.com/repo', 'https://not-safe.google.com.malicious.net/'];
+        const filtered = context.filterUrls(urls);
+        assert.deepStrictEqual(filtered, ['https://not-safe.google.com.malicious.net/']);
+    });
+
+    it('filterUrls removes invalid URLs', () => {
+        const urls = ['not_a_url', 'https://good-domain.com/', 'http://'];
+        const filtered = context.filterUrls(urls);
+        assert.deepStrictEqual(filtered, ['https://good-domain.com/']);
+    });
+
+    it('filterUrls handles empty array', () => {
+        const filtered = context.filterUrls([]);
+        assert.deepStrictEqual(filtered, []);
     });
 
     it('handleUrlScan successfully uploads and updates DB', async () => {
@@ -578,6 +633,170 @@ describe('background.js', () => {
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
             assert.strictEqual(executedWarningScript, null);
+        });
+    });
+
+    describe('extractTextFromParts', () => {
+        it('extracts text from plain text parts', () => {
+            const part = { contentType: 'text/plain', body: 'Hello World' };
+            assert.strictEqual(context.extractTextFromParts(part), 'Hello World ');
+        });
+
+        it('extracts text from HTML parts', () => {
+            const part = { contentType: 'text/html', body: '<b>Hello</b> World' };
+            assert.strictEqual(context.extractTextFromParts(part), '<b>Hello</b> World ');
+        });
+
+        it('ignores parts that are not text/plain or text/html', () => {
+            const part = { contentType: 'image/png', body: 'base64data' };
+            assert.strictEqual(context.extractTextFromParts(part), '');
+        });
+
+        it('handles parts with missing body safely', () => {
+            const part = { contentType: 'text/plain' }; // no body
+            assert.strictEqual(context.extractTextFromParts(part), '');
+        });
+
+        it('recursively extracts text from nested subparts', () => {
+            const part = {
+                contentType: 'multipart/alternative',
+                parts: [
+                    { contentType: 'text/plain', body: 'Part 1' },
+                    {
+                        contentType: 'multipart/mixed',
+                        parts: [
+                            { contentType: 'image/jpeg', body: 'ignored' },
+                            { contentType: 'text/html', body: 'Part 2' }
+                        ]
+                    }
+                ]
+            };
+            assert.strictEqual(context.extractTextFromParts(part), 'Part 1 Part 2 ');
+        });
+    });
+
+    describe('disarmHTML', () => {
+        it('removes script tags and their content', () => {
+            const input = '<html><body><h1>Test</h1><script>alert(1);</script></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('<script>'), 'Script tag should be removed');
+            assert.ok(!result.includes('alert(1)'), 'Script content should be removed');
+            assert.ok(result.includes('Test'), 'Safe content should remain');
+        });
+
+        it('removes inline event handlers', () => {
+            const input = '<html><body><button onclick="evil()">Click</button></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('onclick'), 'onclick attribute should be removed');
+            assert.ok(!result.includes('evil()'), 'Event handler content should be removed');
+            assert.ok(result.includes('<button>Click</button>'), 'Button element should remain');
+        });
+
+        it('removes javascript URIs', () => {
+            const input = '<html><body><a href="javascript:alert(1)">Link</a><a href="http://safe.com">Safe</a></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('javascript:'), 'javascript URI should be removed');
+            const sanitizedDom = new (new JSDOM()).window.DOMParser().parseFromString(result, 'text/html');
+            const hrefs = Array.from(sanitizedDom.querySelectorAll('a'))
+                .map((a) => a.getAttribute('href'))
+                .filter(Boolean);
+            const hasSafeHost = hrefs.some((href) => {
+                try {
+                    return new URL(href).hostname === 'safe.com';
+                } catch {
+                    return false;
+                }
+            });
+            assert.ok(hasSafeHost, 'Safe URI host should remain');
+        });
+
+        it('removes object, embed, iframe', () => {
+            const input = '<html><body><object data="evil.swf"></object><embed src="evil.swf"></embed><iframe src="evil.html"></iframe></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('object'), 'object should be removed');
+            assert.ok(!result.includes('embed'), 'embed should be removed');
+            assert.ok(!result.includes('iframe'), 'iframe should be removed');
+        });
+
+        it('prevents javascript URI evasion', () => {
+            const input = '<html><body><a href="java\tscript:alert(1)">Link</a><a href="jav&#x09;ascript:alert(1)">Link2</a></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('javascript:'), 'evaded javascript URI should be removed');
+        });
+
+        it('removes data and vbscript URIs', () => {
+            const input = '<html><body><a href="data:text/html,<script>alert(1)</script>">Data Link</a><img src="vbscript:msgbox(\'hello\')"></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('data:'), 'data URI should be removed');
+            assert.ok(!result.includes('vbscript:'), 'vbscript URI should be removed');
+        });
+
+        it('removes base and meta tags', () => {
+            const input = '<html><head><base href="http://evil.com"><meta http-equiv="refresh" content="0;url=javascript:alert(1)"></head><body></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('<base'), 'base tag should be removed');
+            assert.ok(!result.includes('<meta'), 'meta tag should be removed');
+        });
+
+        it('sanitizes action, formaction, and xlink:href attributes', () => {
+            const input = `<html><body>
+                <form action="javascript:alert(1)"><input type="submit"></form>
+                <button formaction="data:text/html,<script>alert(1)</script>">Click</button>
+                <svg><use xlink:href="javascript:alert(1)"></use></svg>
+            </body></html>`;
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('javascript:'), 'javascript URI should be removed from action/xlink:href');
+            assert.ok(!result.includes('data:'), 'data URI should be removed from formaction');
+            assert.ok(!result.includes('action="javascript'), 'action attribute should be removed/sanitized');
+        });
+    });
+
+    describe('extractPublicIPs', () => {
+        it('should return empty array for null/undefined/empty headers', () => {
+            assert.strictEqual(context.extractPublicIPs(null).length, 0);
+            assert.strictEqual(context.extractPublicIPs(undefined).length, 0);
+            assert.strictEqual(context.extractPublicIPs([]).length, 0);
+        });
+
+        it('should filter out private and local IPs', () => {
+            const headers = [
+                "Received: from 10.0.0.1 (localhost [127.0.0.1])",
+                "Received: from 172.16.0.5 by 192.168.1.100",
+                "Received: from 0.0.0.0 or 169.254.1.2"
+            ];
+            assert.strictEqual(context.extractPublicIPs(headers).length, 0);
+        });
+
+        it('should extract public IPs correctly', () => {
+            const headers = [
+                "Received: from mx.google.com (8.8.8.8)",
+                "Received: from unknown (1.1.1.1) by 8.8.4.4"
+            ];
+            const ips = context.extractPublicIPs(headers);
+            assert.strictEqual(ips.length, 3);
+            assert.ok(ips.includes('8.8.8.8'));
+            assert.ok(ips.includes('1.1.1.1'));
+            assert.ok(ips.includes('8.8.4.4'));
+        });
+
+        it('should return unique public IPs when there are duplicates', () => {
+            const headers = [
+                "Received: from 8.8.8.8 by 8.8.8.8",
+                "Received: from 9.9.9.9 and 8.8.8.8"
+            ];
+            const ips = context.extractPublicIPs(headers);
+            assert.strictEqual(ips.length, 2);
+            assert.ok(ips.includes('8.8.8.8'));
+            assert.ok(ips.includes('9.9.9.9'));
+        });
+
+        it('should ignore non-IP numbers', () => {
+            const headers = [
+                "Received: id 12345.6789 by 9.9.9.9 version 1.2.3"
+            ];
+            const ips = context.extractPublicIPs(headers);
+            assert.strictEqual(ips.length, 1);
+            assert.strictEqual(ips[0], '9.9.9.9');
         });
     });
 });
