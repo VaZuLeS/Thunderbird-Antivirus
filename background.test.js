@@ -119,6 +119,7 @@ describe('background.js', () => {
             globalThis.handleUrlScan = handleUrlScan;
             globalThis.calculateThreatScore = calculateThreatScore;
             globalThis.levenshteinDistance = levenshteinDistance;
+            globalThis.extractPublicIPs = extractPublicIPs;
         `;
         context.URL = URL;
         context.URLSearchParams = URLSearchParams;
@@ -674,6 +675,55 @@ describe('background.js', () => {
             assert.ok(!result.includes('javascript:'), 'javascript URI should be removed from action/xlink:href');
             assert.ok(!result.includes('data:'), 'data URI should be removed from formaction');
             assert.ok(!result.includes('action="javascript'), 'action attribute should be removed/sanitized');
+        });
+    });
+
+    describe('extractPublicIPs', () => {
+        it('should return empty array for null/undefined/empty headers', () => {
+            assert.strictEqual(context.extractPublicIPs(null).length, 0);
+            assert.strictEqual(context.extractPublicIPs(undefined).length, 0);
+            assert.strictEqual(context.extractPublicIPs([]).length, 0);
+        });
+
+        it('should filter out private and local IPs', () => {
+            const headers = [
+                "Received: from 10.0.0.1 (localhost [127.0.0.1])",
+                "Received: from 172.16.0.5 by 192.168.1.100",
+                "Received: from 0.0.0.0 or 169.254.1.2"
+            ];
+            assert.strictEqual(context.extractPublicIPs(headers).length, 0);
+        });
+
+        it('should extract public IPs correctly', () => {
+            const headers = [
+                "Received: from mx.google.com (8.8.8.8)",
+                "Received: from unknown (1.1.1.1) by 8.8.4.4"
+            ];
+            const ips = context.extractPublicIPs(headers);
+            assert.strictEqual(ips.length, 3);
+            assert.ok(ips.includes('8.8.8.8'));
+            assert.ok(ips.includes('1.1.1.1'));
+            assert.ok(ips.includes('8.8.4.4'));
+        });
+
+        it('should return unique public IPs when there are duplicates', () => {
+            const headers = [
+                "Received: from 8.8.8.8 by 8.8.8.8",
+                "Received: from 9.9.9.9 and 8.8.8.8"
+            ];
+            const ips = context.extractPublicIPs(headers);
+            assert.strictEqual(ips.length, 2);
+            assert.ok(ips.includes('8.8.8.8'));
+            assert.ok(ips.includes('9.9.9.9'));
+        });
+
+        it('should ignore non-IP numbers', () => {
+            const headers = [
+                "Received: id 12345.6789 by 9.9.9.9 version 1.2.3"
+            ];
+            const ips = context.extractPublicIPs(headers);
+            assert.strictEqual(ips.length, 1);
+            assert.strictEqual(ips[0], '9.9.9.9');
         });
     });
 });
