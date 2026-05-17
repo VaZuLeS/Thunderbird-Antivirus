@@ -19,7 +19,15 @@ let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
 
 if (!apikey_hybridanalysis) {
-    document.getElementById('hybrid_analysis_api_content').innerHTML = '<div class="alert-error"><strong>Warnung:</strong> Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.</div>';
+    let container = document.getElementById('hybrid_analysis_api_content');
+    container.textContent = '';
+    let alertDiv = document.createElement('div');
+    alertDiv.className = 'alert-error';
+    let strong = document.createElement('strong');
+    strong.textContent = 'Warnung:';
+    alertDiv.appendChild(strong);
+    alertDiv.appendChild(document.createTextNode(' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.'));
+    container.appendChild(alertDiv);
     return;
 }
 
@@ -66,7 +74,7 @@ try {
             const hasLinks = record && record.links && record.links.length > 0;
 
             if (hasAttachments || hasLinks) {
-                document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
+                document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
                 if (hasAttachments) {
                     for (const att of record.attachments) {
@@ -89,87 +97,128 @@ try {
                     }
                 }
             } else {
-                 document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Anhänge oder URLs für diese E-Mail gefunden.</p>';
+                 let p1 = document.createElement('p'); p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p1);
             }
         };
     };
 
     openRequest.onerror = function(e) {
         console.log("Kein Hash/Anhang gefunden.");
-        document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
+        let p2 = document.createElement('p'); p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p2);
     }
 } catch (error) {
     console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
 })();
 
-function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null) {
-    let resultHtml = '';
+function createEl(tag, className = '', textContent = '') {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (textContent) el.textContent = textContent;
+    return el;
+}
 
-    // Pending check (in_progress)
+function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null) {
+    const fragment = document.createDocumentFragment();
+    const card = createEl('div', 'card mb-3');
+    fragment.appendChild(card);
+
+    const title = createEl('h2', '', `Geprüftes Element: ${attachmentName || 'Unbekannt'}`);
+    card.appendChild(title);
+
     if (json_data.state === 'IN_PROGRESS') {
-        resultHtml += `<div class="card mb-3">
-            <h2>Geprüftes Element: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-            <p class="text-warning"><strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.</p>
-            <p>SHA-256: ${escapeHTML(json_data.sha256 || hybrid_sha)}</p>
-        </div>`;
+        const p1 = createEl('p', 'text-warning');
+        const s1 = createEl('strong', '', 'Status:');
+        p1.appendChild(s1);
+        p1.appendChild(document.createTextNode(' Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.'));
+        card.appendChild(p1);
+
+        card.appendChild(createEl('p', '', `SHA-256: ${json_data.sha256 || hybrid_sha}`));
     } else {
         let threatClass = "text-success";
         if (json_data.threat_score > 50) threatClass = "text-warning";
         if (json_data.threat_score > 80) threatClass = "text-danger";
 
-        resultHtml += `<div class="card mb-3">
-            <h2>Geprüftes Element: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-            <p><strong class="head_line ${threatClass}">Bedrohungsscore:</strong> <span class="${threatClass}">${escapeHTML(json_data.threat_score)}</span></p>
-            <p><strong class="head_line ${threatClass}">Urteil:</strong> <span class="${threatClass}">${escapeHTML(json_data.verdict)}</span></p>
-            <p><strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}</p>
-            <p>Multiscan-Ergebnis: ${escapeHTML(json_data.multiscan_result || 'N/A')}</p>
-            <p><strong>Additional Information:</strong></p>
-            <p>Analysis start time: ${escapeHTML(json_data.analysis_start_time || 'N/A')}</p>
-            <p>Tags: ${escapeHTML(json_data.tags ? json_data.tags.join(', ') : 'N/A')}</p>
-            <div class="head_line">Scannerergebnisse:</div>`;
+        const pThreat = createEl('p');
+        pThreat.appendChild(createEl('strong', `head_line ${threatClass}`, 'Bedrohungsscore: '));
+        pThreat.appendChild(createEl('span', threatClass, String(json_data.threat_score)));
+        card.appendChild(pThreat);
+
+        const pVerdict = createEl('p');
+        pVerdict.appendChild(createEl('strong', `head_line ${threatClass}`, 'Urteil: '));
+        pVerdict.appendChild(createEl('span', threatClass, String(json_data.verdict)));
+        card.appendChild(pVerdict);
+
+        const pVxFam = createEl('p');
+        pVxFam.appendChild(createEl('strong', '', 'Vx-Familie: '));
+        pVxFam.appendChild(document.createTextNode(String(json_data.vx_family || 'N/A')));
+        card.appendChild(pVxFam);
+
+        card.appendChild(createEl('p', '', `Multiscan-Ergebnis: ${json_data.multiscan_result || 'N/A'}`));
+
+        const pAdditionalInfo = createEl('p');
+        pAdditionalInfo.appendChild(createEl('strong', '', 'Additional Information:'));
+        card.appendChild(pAdditionalInfo);
+
+        card.appendChild(createEl('p', '', `Analysis start time: ${json_data.analysis_start_time || 'N/A'}`));
+        card.appendChild(createEl('p', '', `Tags: ${json_data.tags ? json_data.tags.join(', ') : 'N/A'}`));
+
+        card.appendChild(createEl('div', 'head_line', 'Scannerergebnisse:'));
 
         if (virustotal_stats) {
-            resultHtml += `<p class="ml-2"><strong>VirusTotal Ergebnisse:</strong></p>`;
-            resultHtml += `<p class="ml-4 text-warning">Malicious: ${escapeHTML(virustotal_stats.malicious || 0)}</p>`;
-            resultHtml += `<p class="ml-4">Undetected: ${escapeHTML(virustotal_stats.undetected || 0)}</p>`;
-            resultHtml += `<p class="ml-4">Suspicious: ${escapeHTML(virustotal_stats.suspicious || 0)}</p>`;
-            resultHtml += `<p class="ml-4">Harmless: ${escapeHTML(virustotal_stats.harmless || 0)}</p>`;
+            const pVT = createEl('p', 'ml-2');
+            pVT.appendChild(createEl('strong', '', 'VirusTotal Ergebnisse:'));
+            card.appendChild(pVT);
+
+            card.appendChild(createEl('p', 'ml-4 text-warning', `Malicious: ${virustotal_stats.malicious || 0}`));
+            card.appendChild(createEl('p', 'ml-4', `Undetected: ${virustotal_stats.undetected || 0}`));
+            card.appendChild(createEl('p', 'ml-4', `Suspicious: ${virustotal_stats.suspicious || 0}`));
+            card.appendChild(createEl('p', 'ml-4', `Harmless: ${virustotal_stats.harmless || 0}`));
         }
 
         if (json_data.scanners && json_data.scanners.length > 0) {
             for (const scanner of json_data.scanners) {
-                resultHtml += `<p class="ml-2">Scanner: ${escapeHTML(scanner.name)}</p>`;
-                resultHtml += `<p class="ml-4">Status: ${escapeHTML(scanner.status)}</p>`;
+                card.appendChild(createEl('p', 'ml-2', `Scanner: ${scanner.name}`));
+                card.appendChild(createEl('p', 'ml-4', `Status: ${scanner.status}`));
                 if (scanner.anti_virus_results) {
-                    resultHtml += `<p class="ml-4">AV-Ergebnisse:</p>`;
+                    card.appendChild(createEl('p', 'ml-4', 'AV-Ergebnisse:'));
                     for (const avResult of scanner.anti_virus_results) {
-                        resultHtml += `<p class="ml-6">AV: ${escapeHTML(avResult.product)} - Urteil: ${escapeHTML(avResult.verdict)}</p>`;
+                        card.appendChild(createEl('p', 'ml-6', `AV: ${avResult.product} - Urteil: ${avResult.verdict}`));
                     }
                 }
             }
         } else {
-            resultHtml += `<p class="ml-2">Keine Scanner-Ergebnisse verfügbar.</p>`;
+            card.appendChild(createEl('p', 'ml-2', 'Keine Scanner-Ergebnisse verfügbar.'));
         }
 
-        resultHtml += `
-            <p>SHA-256-Hashwert: ${escapeHTML(json_data.sha256)}</p>
-            <p>Letzter Dateiname: ${escapeHTML(json_data.last_file_name || 'N/A')}</p>
-            <p>Größe: ${escapeHTML(json_data.size || 'N/A')} Bytes</p>
-            <p>Typ: ${escapeHTML(json_data.type || 'N/A')}</p>
-            <button id="btn-rescan-${escapeHTML(hybrid_sha)}" class="btn-success mt-2">Erneut scannen (Rescan)</button>
-            <p id="rescan-status-${escapeHTML(hybrid_sha)}" class="mt-2" aria-live="polite" role="status"></p>`;
+        card.appendChild(createEl('p', '', `SHA-256-Hashwert: ${json_data.sha256}`));
+        card.appendChild(createEl('p', '', `Letzter Dateiname: ${json_data.last_file_name || 'N/A'}`));
+        card.appendChild(createEl('p', '', `Größe: ${json_data.size || 'N/A'} Bytes`));
+        card.appendChild(createEl('p', '', `Typ: ${json_data.type || 'N/A'}`));
+
+        const rescanBtn = createEl('button', 'btn-success mt-2', 'Erneut scannen (Rescan)');
+        rescanBtn.id = `btn-rescan-${hybrid_sha}`;
+        card.appendChild(rescanBtn);
+
+        const rescanStatus = createEl('p', 'mt-2');
+        rescanStatus.id = `rescan-status-${hybrid_sha}`;
+        rescanStatus.setAttribute('aria-live', 'polite');
+        rescanStatus.setAttribute('role', 'status');
+        card.appendChild(rescanStatus);
 
         if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
-            resultHtml += `
-            <button id="btn-cdr-${escapeHTML(hybrid_sha)}" class="btn-primary mt-2 ml-2">Bereinigen & Herunterladen (Lokales CDR)</button>
-            <p id="cdr-status-${escapeHTML(hybrid_sha)}" class="mt-2" aria-live="polite" role="status"></p>`;
-        }
+            const cdrBtn = createEl('button', 'btn-primary mt-2 ml-2', 'Bereinigen & Herunterladen (Lokales CDR)');
+            cdrBtn.id = `btn-cdr-${hybrid_sha}`;
+            card.appendChild(cdrBtn);
 
-        resultHtml += `
-        </div>`;
+            const cdrStatus = createEl('p', 'mt-2');
+            cdrStatus.id = `cdr-status-${hybrid_sha}`;
+            cdrStatus.setAttribute('aria-live', 'polite');
+            cdrStatus.setAttribute('role', 'status');
+            card.appendChild(cdrStatus);
+        }
     }
-    return resultHtml;
+    return fragment;
 }
 
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
@@ -196,7 +245,7 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
         if (response.status === 200) {
             let container = document.getElementById('hybrid_analysis_api_content');
             let resultHtml = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats);
-            container.insertAdjacentHTML('beforeend', resultHtml);
+            container.appendChild(resultHtml);
 
             let rescanBtn = document.getElementById(`btn-rescan-${escapeHTML(hybrid_sha)}`);
             if (rescanBtn) {
@@ -266,28 +315,53 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 
         } else {
             console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
-            document.getElementById('hybrid_analysis_api_content').innerHTML += `<div class="text-danger">API Error: ${response.status} für Element ${escapeHTML(attachmentName)}</div>`;
+            let errDiv1 = document.createElement('div'); errDiv1.className = 'text-danger'; errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
         }
     } catch (error) {
         console.error('Fetch error:', error);
-        document.getElementById('hybrid_analysis_api_content').innerHTML += `<div class="text-danger">Netzwerkfehler: ${escapeHTML(error.message)} für Element ${escapeHTML(attachmentName)}</div>`;
+        let errDiv2 = document.createElement('div'); errDiv2.className = 'text-danger'; errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);
     }
 }
 
 function renderManualUrlScanUI(url, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
-    let safeUrl = escapeHTML(url);
+
     // Erzeuge eine sichere, eindeutige ID für die URL
     let urlId = Array.from(new TextEncoder().encode(url))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
-    let resultHtml = `<div class="card card-info mb-3" id="upload-container-${urlId}">
-        <h2>URL: ${safeUrl}</h2>
-        <p class="text-info">Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
-        <button id="btn-upload-${urlId}" class="btn-primary mt-2">URL jetzt scannen</button>
-        <p id="upload-status-${urlId}" class="mt-2" aria-live="polite" role="status"></p>
-    </div>`;
-    container.insertAdjacentHTML('beforeend', resultHtml);
+
+    const card = document.createElement('div');
+    card.className = 'card card-info mb-3';
+    card.id = `upload-container-${urlId}`;
+
+    const title = document.createElement('h2');
+    title.textContent = `URL: ${url}`;
+    card.appendChild(title);
+
+    const pInfo = document.createElement('p');
+    pInfo.className = 'text-info';
+    pInfo.appendChild(document.createTextNode('Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie '));
+    const strong = document.createElement('strong');
+    strong.textContent = 'nicht automatisch hochgeladen';
+    pInfo.appendChild(strong);
+    pInfo.appendChild(document.createTextNode('.'));
+    card.appendChild(pInfo);
+
+    const btnUpload = document.createElement('button');
+    btnUpload.className = 'btn-primary mt-2';
+    btnUpload.id = `btn-upload-${urlId}`;
+    btnUpload.textContent = 'URL jetzt scannen';
+    card.appendChild(btnUpload);
+
+    const pStatus = document.createElement('p');
+    pStatus.className = 'mt-2';
+    pStatus.id = `upload-status-${urlId}`;
+    pStatus.setAttribute('aria-live', 'polite');
+    pStatus.setAttribute('role', 'status');
+    card.appendChild(pStatus);
+
+    container.appendChild(card);
 
     document.getElementById(`btn-upload-${urlId}`).addEventListener('click', function() {
         let btn = this;
@@ -323,29 +397,63 @@ function renderManualUrlScanUI(url, headerMessageId) {
 
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
-    let safeHash = escapeHTML(hash);
-    let resultHtml = `<div class="card card-info mb-3" id="upload-container-${safeHash}">
-        <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-        <p>SHA-256: ${safeHash}</p>
-        <p class="text-info">Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
-        <button id="btn-upload-${safeHash}" class="btn-primary mt-2">Datei jetzt scannen (Upload)</button>
-        <p id="upload-status-${safeHash}" class="mt-2" aria-live="polite" role="status"></p>`;
+
+    const card = document.createElement('div');
+    card.className = 'card card-info mb-3';
+    card.id = `upload-container-${hash}`;
+
+    const title = document.createElement('h2');
+    title.textContent = `Anhang: ${attachmentName || 'Unbekannt'}`;
+    card.appendChild(title);
+
+    const pHash = document.createElement('p');
+    pHash.textContent = `SHA-256: ${hash}`;
+    card.appendChild(pHash);
+
+    const pInfo = document.createElement('p');
+    pInfo.className = 'text-info';
+    pInfo.appendChild(document.createTextNode('Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie '));
+    const strong = document.createElement('strong');
+    strong.textContent = 'nicht automatisch hochgeladen';
+    pInfo.appendChild(strong);
+    pInfo.appendChild(document.createTextNode('.'));
+    card.appendChild(pInfo);
+
+    const btnUpload = document.createElement('button');
+    btnUpload.className = 'btn-primary mt-2';
+    btnUpload.id = `btn-upload-${hash}`;
+    btnUpload.textContent = 'Datei jetzt scannen (Upload)';
+    card.appendChild(btnUpload);
+
+    const pStatus = document.createElement('p');
+    pStatus.className = 'mt-2';
+    pStatus.id = `upload-status-${hash}`;
+    pStatus.setAttribute('aria-live', 'polite');
+    pStatus.setAttribute('role', 'status');
+    card.appendChild(pStatus);
 
     if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
-        resultHtml += `
-        <button id="btn-cdr-${safeHash}" class="btn-primary mt-2 ml-2">Bereinigen & Herunterladen (Lokales CDR)</button>
-        <p id="cdr-status-${safeHash}" class="mt-2" aria-live="polite" role="status"></p>`;
+        const cdrBtn = document.createElement('button');
+        cdrBtn.className = 'btn-primary mt-2 ml-2';
+        cdrBtn.id = `btn-cdr-${hash}`;
+        cdrBtn.textContent = 'Bereinigen & Herunterladen (Lokales CDR)';
+        card.appendChild(cdrBtn);
+
+        const cdrStatus = document.createElement('p');
+        cdrStatus.className = 'mt-2';
+        cdrStatus.id = `cdr-status-${hash}`;
+        cdrStatus.setAttribute('aria-live', 'polite');
+        cdrStatus.setAttribute('role', 'status');
+        card.appendChild(cdrStatus);
     }
 
-    resultHtml += `
-    </div>`;
-    container.insertAdjacentHTML('beforeend', resultHtml);
+    container.appendChild(card);
 
-    let cdrBtn = document.getElementById(`btn-cdr-${safeHash}`);
+    let cdrBtn = document.getElementById(`btn-cdr-${hash}`);
     if (cdrBtn) {
         cdrBtn.addEventListener('click', function() {
             let btn = this;
-            let statusEl = document.getElementById(`cdr-status-${safeHash}`);
+            let statusEl = document.getElementById(`cdr-status-${hash}`);
             btn.disabled = true;
             btn.innerText = "Bereinige...";
             statusEl.innerText = "Lokales CDR wird durchgeführt...";
@@ -372,9 +480,9 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
         });
     }
 
-    document.getElementById(`btn-upload-${safeHash}`).addEventListener('click', function() {
+    document.getElementById(`btn-upload-${hash}`).addEventListener('click', function() {
         let btn = this;
-        let statusEl = document.getElementById(`upload-status-${safeHash}`);
+        let statusEl = document.getElementById(`upload-status-${hash}`);
         btn.disabled = true;
         btn.innerText = "Lade hoch...";
         statusEl.innerText = "Datei wird an Hybrid Analysis übertragen...";
@@ -390,7 +498,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
             if (response && response.status === 'success') {
                 statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
                 setTimeout(() => {
-                    document.getElementById(`upload-container-${safeHash}`).remove();
+                    document.getElementById(`upload-container-${hash}`).remove();
                     get_hybrid_report_by_sha256(hash, attachmentName, messageId, partName, headerMessageId);
                 }, 3000);
             } else {
