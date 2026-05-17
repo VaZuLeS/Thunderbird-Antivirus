@@ -859,12 +859,14 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
           recordToSave = existingRecord;
           if (!recordToSave.links) recordToSave.links = [];
 
+          // Pre-compute map for O(1) lookups, changing complexity from O(N*M) to O(N+M)
+          const existingUrlMap = new Map(recordToSave.links.map((l, idx) => [l.url, idx]));
           for (const newLink of newLinks) {
-            let existingIdx = recordToSave.links.findIndex(l => l.url === newLink.url);
-            if (existingIdx > -1) {
-                recordToSave.links[existingIdx] = newLink;
+            if (existingUrlMap.has(newLink.url)) {
+                recordToSave.links[existingUrlMap.get(newLink.url)] = newLink;
             } else {
                 recordToSave.links.push(newLink);
+                existingUrlMap.set(newLink.url, recordToSave.links.length - 1);
             }
           }
         } else {
@@ -900,9 +902,12 @@ async function indexedDB_save_links_to_db(message, urls) {
           recordToSave = existingRecord;
           if (!recordToSave.links) recordToSave.links = [];
 
+          // Pre-compute Set for O(1) lookups, changing complexity from O(N*M) to O(N+M)
+          const existingUrls = new Set(recordToSave.links.map(l => l.url));
           for (const newLink of newLinks) {
-            if (!recordToSave.links.find(l => l.url === newLink.url)) {
+            if (!existingUrls.has(newLink.url)) {
               recordToSave.links.push(newLink);
+              existingUrls.add(newLink.url); // Keep Set in sync with newly added links
             }
           }
         } else {
