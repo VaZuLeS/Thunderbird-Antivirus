@@ -127,12 +127,26 @@ describe('get_hybrid_report_by_sha256', () => {
                                 set innerHTML(val) { this._html = val; },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
+                                },
+                                appendChild: function(child) {
+                                    if (child.className) {
+                                        this._html += `<div class="${child.className}">${child.textContent}</div>`;
+                                    } else {
+                                        this._html += `<div>${child.textContent}</div>`;
+                                    }
                                 }
                             };
                         }
                         return context.apiContentElement;
                     }
-                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '' };
+                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '', appendChild: () => {} };
+                },
+                createElement: (tagName) => {
+                    return {
+                        tagName: tagName,
+                        className: '',
+                        textContent: ''
+                    };
                 }
             },
             indexedDB: {
