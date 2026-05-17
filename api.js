@@ -82,7 +82,14 @@ try {
                         if (att.state === 'UNKNOWN') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                         } else {
-                            get_hybrid_report_by_sha256(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, att.virustotal_stats);
+                            get_hybrid_report_by_sha256({
+                                hybrid_sha: hash256,
+                                attachmentName: att.attachment_name,
+                                messageId: message.id,
+                                partName: att.partName,
+                                headerMessageId: message.headerMessageId,
+                                virustotal_stats: att.virustotal_stats
+                            });
                         }
                     }
                 }
@@ -92,7 +99,10 @@ try {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId);
                         } else if (linkObj.hybrid_sha256) {
-                            get_hybrid_report_by_sha256(linkObj.hybrid_sha256, linkObj.url);
+                            get_hybrid_report_by_sha256({
+                                hybrid_sha: linkObj.hybrid_sha256,
+                                attachmentName: linkObj.url
+                            });
                         }
                     }
                 }
@@ -280,7 +290,7 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
     return card;
 }
 
-async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
+async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }) {
 
     // Set the request options
     const options = {
@@ -442,7 +452,10 @@ function renderManualUrlScanUI(url, headerMessageId) {
                 setTimeout(() => {
                     document.getElementById(`upload-container-${urlId}`).remove();
                     // response.data.sha256 enthält den sha256-Hash des URL-Scans
-                    get_hybrid_report_by_sha256(response.data.sha256, url);
+                    get_hybrid_report_by_sha256({
+                        hybrid_sha: response.data.sha256,
+                        attachmentName: url
+                    });
                 }, 3000);
             } else {
                 statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
@@ -557,8 +570,14 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
             if (response && response.status === 'success') {
                 statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
                 setTimeout(() => {
-                    document.getElementById(`upload-container-${hash}`).remove();
-                    get_hybrid_report_by_sha256(hash, attachmentName, messageId, partName, headerMessageId);
+                    document.getElementById(`upload-container-${safeHash}`).remove();
+                    get_hybrid_report_by_sha256({
+                        hybrid_sha: hash,
+                        attachmentName: attachmentName,
+                        messageId: messageId,
+                        partName: partName,
+                        headerMessageId: headerMessageId
+                    });
                 }, 3000);
             } else {
                 statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");

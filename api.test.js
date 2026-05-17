@@ -188,7 +188,7 @@ describe('get_hybrid_report_by_sha256', () => {
             throw new Error('Network timeout');
         };
 
-        await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
+        await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
         assert.ok(context.apiContentElement._html.includes('<div class="text-danger">Netzwerkfehler: Network timeout für Element test.txt</div>'));
     });
@@ -203,7 +203,7 @@ describe('get_hybrid_report_by_sha256', () => {
             };
         };
 
-        await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
+        await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
         assert.ok(context.apiContentElement._html.includes('<div class="text-danger">API Error: 500 für Element test.txt</div>'));
     });
