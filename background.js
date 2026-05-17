@@ -152,13 +152,17 @@ function levenshteinDistance(a, b) {
         let tmp = a; a = b; b = tmp;
     }
 
-    let prevRow = [];
+    // ⚡ Bolt Optimization: Use typed arrays (Uint16Array) and array pooling
+    // to avoid garbage collection overhead in the hot loop.
+    // charCodeAt is also faster than charAt.
+    let prevRow = new Uint16Array(a.length + 1);
+    let currRow = new Uint16Array(a.length + 1);
     for (let j = 0; j <= a.length; j++) prevRow[j] = j;
 
     for (let i = 1; i <= b.length; i++) {
-        let currRow = [i];
+        currRow[0] = i;
         for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+            if (b.charCodeAt(i - 1) === a.charCodeAt(j - 1)) {
                 currRow[j] = prevRow[j - 1];
             } else {
                 currRow[j] = 1 + Math.min(
@@ -168,7 +172,8 @@ function levenshteinDistance(a, b) {
                 );
             }
         }
-        prevRow = currRow;
+        // Swap arrays to avoid allocating a new one next iteration
+        let tmp = prevRow; prevRow = currRow; currRow = tmp;
     }
     return prevRow[a.length];
 }
@@ -816,11 +821,15 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
           recordToSave = existingRecord;
           if (!recordToSave.attachments) recordToSave.attachments = [];
 
+          const existingAttMap = new Map();
+          recordToSave.attachments.forEach((a, i) => existingAttMap.set(a.attachment_name, i));
+
           for (const newAtt of newAttachments) {
-              let existingAttIndex = recordToSave.attachments.findIndex(a => a.attachment_name === newAtt.attachment_name);
-              if (existingAttIndex > -1) {
+              const existingAttIndex = existingAttMap.get(newAtt.attachment_name);
+              if (existingAttIndex !== undefined) {
                   recordToSave.attachments[existingAttIndex] = newAtt;
               } else {
+                  existingAttMap.set(newAtt.attachment_name, recordToSave.attachments.length);
                   recordToSave.attachments.push(newAtt);
               }
           }
