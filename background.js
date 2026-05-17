@@ -192,50 +192,37 @@ function levenshteinDistance(a, b) {
     return prevRow[a.length];
 }
 
-function calculateThreatScore(author, urls, options = {}) {
-    const {
-        authHeaders = [],
-        urlhausDomains = [],
-        isFirstCommunication = false,
-        messageText = "",
-        subject = "",
-        replyTo = ""
-    } = options;
-    let score = 0;
-    let reasons = [];
-    let authStatus = 'neutral';
-    const knownBrands = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
+const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
 
-    let emailMatch = author.match(/<([^>]+)>/);
-    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
-    let parts = email.split('@');
-    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
-
+function checkLists(email, senderDomain) {
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.length > 0) {
-        if (typeof customBlacklist !== 'undefined' && customBlacklist.includes(email)) {
-            return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`] };
+        if (customBlacklist.includes(email)) {
+            return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
         for (let b of customBlacklist) {
             if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
-                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`] };
+                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`], listType: 'blacklist' };
             }
         }
     }
 
     // Check Whitelist
     if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.length > 0) {
-        if (typeof customWhitelist !== 'undefined' && customWhitelist.includes(email)) {
-            return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`] };
+        if (customWhitelist.includes(email)) {
+            return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
         for (let w of customWhitelist) {
             if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
-                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`] };
+                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`], listType: 'whitelist' };
             }
         }
     }
+    return null;
+}
 
-    // Auth-Header Checks (SPF, DKIM, DMARC)
+function evaluateAuthHeaders(authHeaders, score, reasons) {
+    let authStatus = 'neutral';
     if (authHeaders && authHeaders.length > 0) {
         const headerStr = authHeaders.join(' ').toLowerCase();
         let fail = false;
@@ -259,43 +246,39 @@ function calculateThreatScore(author, urls, options = {}) {
         if (fail) {
             authStatus = 'fail';
         } else if (headerStr.includes("spf=pass") && headerStr.includes("dkim=pass") && headerStr.includes("dmarc=pass")) {
-            // Need at least SPF, DKIM, and DMARC passing for full verification. BIMI is a bonus.
             authStatus = 'pass';
         }
     }
+    return { score, authStatus };
+}
 
-    // URLhaus Checks
+function evaluateUrlhaus(urlhausDomains, score, reasons) {
     if (urlhausDomains && urlhausDomains.length > 0) {
         for (let domain of urlhausDomains) {
             score += 80;
             reasons.push(`Domain (${domain}) ist auf URLhaus als bösartig gelistet.`);
         }
     }
+    return score;
+}
 
-    emailMatch = author.match(/<([^>]+)>/);
-    email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
-    parts = email.split('@');
-    senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
-
-    // Reply-To Check
-    let replyToEmail = "";
-    if (replyTo) {
+function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
+    if (replyTo && senderDomain) {
         const replyMatch = replyTo.match(/<([^>]+)>/);
-        replyToEmail = replyMatch ? replyMatch[1].toLowerCase() : replyTo.toLowerCase();
-    }
-
-    if (replyToEmail && senderDomain) {
+        const replyToEmail = replyMatch ? replyMatch[1].toLowerCase() : replyTo.toLowerCase();
         const replyParts = replyToEmail.split('@');
         const replyDomain = replyParts.length === 2 ? replyParts[1] : "";
+
         if (replyDomain && replyDomain !== senderDomain) {
             score += 50;
             reasons.push(`Diskrepanz erkannt: "Reply-To" Domain (${replyDomain}) weicht von der Absender-Domain (${senderDomain}) ab.`);
         }
     }
+    return score;
+}
 
-    // Verhaltensanalyse / BEC Schutz
+function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
     let textToAnalyze = (subject + " " + messageText).toLowerCase();
-
     let foundUrgencyWords = [];
     let match;
     URGENCY_REGEX_COMBINED.lastIndex = 0;
@@ -316,31 +299,30 @@ function calculateThreatScore(author, urls, options = {}) {
         score += 10;
         reasons.push("Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.");
     }
+    return score;
+}
 
-    // Hilfsfunktion zur Ermittlung der Hauptdomain
-    function getMainDomain(domain) {
-        for (let brand of knownBrands) {
-            if (domain === brand || domain.endsWith('.' + brand)) {
-                return brand;
-            }
+function getMainDomain(domain) {
+    for (let brand of KNOWN_BRANDS) {
+        if (domain === brand || domain.endsWith('.' + brand)) {
+            return brand;
         }
-        const dParts = domain.split('.');
-        if (dParts.length >= 2) {
-            return dParts.slice(-2).join('.');
-        }
-        return domain;
     }
+    const dParts = domain.split('.');
+    if (dParts.length >= 2) {
+        return dParts.slice(-2).join('.');
+    }
+    return domain;
+}
 
+function evaluateSenderDomain(senderDomain, score, reasons) {
     let senderMainDomain = "";
     if (senderDomain) {
         senderMainDomain = getMainDomain(senderDomain);
-
-        let isSenderKnownBrand = knownBrands.includes(senderMainDomain);
+        let isSenderKnownBrand = KNOWN_BRANDS.includes(senderMainDomain);
 
         if (!isSenderKnownBrand) {
-            for (let brand of knownBrands) {
-                // Optimization: Skip expensive Levenshtein distance calculation if the length difference
-                // makes it impossible to be within the distance threshold of 2, or if the string is too short.
+            for (let brand of KNOWN_BRANDS) {
                 if (senderMainDomain.length < 4 || Math.abs(senderMainDomain.length - brand.length) > 2) continue;
 
                 let distance = levenshteinDistance(senderMainDomain, brand);
@@ -352,7 +334,10 @@ function calculateThreatScore(author, urls, options = {}) {
             }
         }
     }
+    return { score, senderMainDomain };
+}
 
+function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     let linkDomains = new Set();
     for (let url of urls) {
         try {
@@ -373,12 +358,10 @@ function calculateThreatScore(author, urls, options = {}) {
             }
 
             let linkMainDomain = getMainDomain(ld);
-            let isLinkKnownBrand = knownBrands.includes(linkMainDomain);
+            let isLinkKnownBrand = KNOWN_BRANDS.includes(linkMainDomain);
 
             if (!isLinkKnownBrand) {
-                for (let brand of knownBrands) {
-                    // Optimization: Skip expensive Levenshtein distance calculation if the length difference
-                    // makes it impossible to be within the distance threshold of 2, or if the string is too short.
+                for (let brand of KNOWN_BRANDS) {
                     if (linkMainDomain.length < 4 || Math.abs(linkMainDomain.length - brand.length) > 2) continue;
 
                     let distance = levenshteinDistance(linkMainDomain, brand);
@@ -402,6 +385,44 @@ function calculateThreatScore(author, urls, options = {}) {
             score += 60;
         }
     }
+    return score;
+}
+
+function calculateThreatScore(author, urls, options = {}) {
+    const {
+        authHeaders = [],
+        urlhausDomains = [],
+        isFirstCommunication = false,
+        messageText = "",
+        subject = "",
+        replyTo = ""
+    } = options;
+    let score = 0;
+    let reasons = [];
+
+    let emailMatch = author.match(/<([^>]+)>/);
+    let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
+    let parts = email.split('@');
+    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+
+    const listCheck = checkLists(email, senderDomain);
+    if (listCheck) {
+        return { score: listCheck.score, reasons: listCheck.reasons, authStatus: 'neutral' };
+    }
+
+    const authEval = evaluateAuthHeaders(authHeaders, score, reasons);
+    score = authEval.score;
+    let authStatus = authEval.authStatus;
+
+    score = evaluateUrlhaus(urlhausDomains, score, reasons);
+    score = evaluateReplyTo(replyTo, senderDomain, score, reasons);
+    score = evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons);
+
+    const senderEval = evaluateSenderDomain(senderDomain, score, reasons);
+    score = senderEval.score;
+    let senderMainDomain = senderEval.senderMainDomain;
+
+    score = evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons);
 
     return { score: Math.min(score, 100), reasons: reasons, authStatus: authStatus };
 }
