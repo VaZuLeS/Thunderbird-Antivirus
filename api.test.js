@@ -342,7 +342,7 @@ describe('renderManualUrlScanUI', () => {
             .map(b => b.toString(16).padStart(2, '0')).join('');
 
         assert.ok(context.apiContentElement._html.includes(`upload-container-${urlId}`));
-        assert.ok(context.apiContentElement._html.includes('example.com'));
+        assert.ok(context.apiContentElement._html.includes('http://example.com/test?a=1&amp;b=2'));
     });
 
     it('handles button click, updates UI and sends scan message', async () => {
