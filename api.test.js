@@ -118,6 +118,33 @@ describe('get_hybrid_report_by_sha256', () => {
                 }
             },
             document: {
+                createTextNode: (text) => ({ textContent: text, outerHTML: text }),
+                createElement: (tag) => ({
+                    tag: tag,
+                    className: '',
+                    textContent: '',
+                    _html: '',
+                    children: [],
+                    get outerHTML() {
+                        let inner = this.children.map(c => c.outerHTML || c.textContent || '').join('') + this._html + this.textContent;
+                        let cls = this.className ? ` class="${this.className}"` : '';
+                        return `<${this.tag}${cls}>${inner}</${this.tag}>`;
+                    },
+                    appendChild: function(node) {
+                        this.children.push(node);
+                    },
+                    setAttribute: function() {},
+                    removeAttribute: function() {}
+                }),
+                createDocumentFragment: () => ({
+                    children: [],
+                    appendChild: function(node) {
+                        this.children.push(node);
+                    },
+                    get outerHTML() {
+                        return this.children.map(c => c.outerHTML || c.textContent || '').join('');
+                    }
+                }),
                 getElementById: (id) => {
                     if (id === 'hybrid_analysis_api_content') {
                         if (!context.apiContentElement) {
@@ -125,27 +152,37 @@ describe('get_hybrid_report_by_sha256', () => {
                                 _html: '',
                                 get innerHTML() { return this._html; },
                                 set innerHTML(val) { this._html = val; },
+                                set textContent(val) { this._html = val; },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
                                 },
-                                appendChild: function(child) {
-                                    if (child.className) {
-                                        this._html += `<div class="${child.className}">${child.textContent}</div>`;
-                                    } else {
-                                        this._html += `<div>${child.textContent}</div>`;
-                                    }
+                                appendChild: function(node) {
+                                    // VERY simplified mock for test purposes
+                                    // In a real mock, this would serialize the DOM node
+                                    // For these tests, we just care that appendChild is called or we update innerHTML with string representation if possible.
+                                    // Actually, tests in this file don't test the successful UI path, they only test fetch errors which use innerHTML += string.
+                                    // Let's just provide a mock appendChild.
+                                    this._html += node.outerHTML || node.textContent || '';
                                 }
                             };
                         }
                         return context.apiContentElement;
                     }
                     return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '', appendChild: () => {} };
-                },
-                createElement: (tagName) => {
+                }
+            },
+            DOMParser: class DOMParser {
+                parseFromString(string, type) {
                     return {
-                        tagName: tagName,
-                        className: '',
-                        textContent: ''
+                        body: {
+                            get firstChild() {
+                                if (this._nodes === undefined) {
+                                    // Simplistic mock to let loop run once and then stop
+                                    this._nodes = [{ outerHTML: string }];
+                                }
+                                return this._nodes.shift() || null;
+                            }
+                        }
                     };
                 }
             },
