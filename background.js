@@ -1180,7 +1180,7 @@ function disarmHTML(htmlString) {
     const doc = parser.parseFromString(htmlString, 'text/html');
 
     // Remove active content tags
-    const activeTags = ['script', 'object', 'embed', 'iframe', 'base', 'meta'];
+    const activeTags = ['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link'];
     activeTags.forEach(tag => {
         const elements = doc.getElementsByTagName(tag);
         for (let i = elements.length - 1; i >= 0; i--) {
