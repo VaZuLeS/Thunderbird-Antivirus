@@ -12,7 +12,6 @@ class DatabaseDAO {
                 let db = e.target.result;
                 if (!db.objectStoreNames.contains('hybridanalysis')) {
                     db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
-                    console.log('Datenbank hybridanalysis wurde erstellt.');
                 }
             };
 
