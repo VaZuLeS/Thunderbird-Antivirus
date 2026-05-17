@@ -388,7 +388,6 @@ function renderManualUrlScanUI(url, headerMessageId) {
     let urlId = Array.from(new TextEncoder().encode(url))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
-
     let card = document.createElement('div');
     card.className = "card card-info mb-3";
     card.id = `upload-container-${urlId}`;
@@ -399,7 +398,7 @@ function renderManualUrlScanUI(url, headerMessageId) {
 
     let pInfo = document.createElement('p');
     pInfo.className = "text-info";
-    pInfo.innerHTML = `Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.`;
+    pInfo.innerHTML = 'Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.';
     card.appendChild(pInfo);
 
     let btnUpload = document.createElement('button');
@@ -411,8 +410,8 @@ function renderManualUrlScanUI(url, headerMessageId) {
     let pStatus = document.createElement('p');
     pStatus.id = `upload-status-${urlId}`;
     pStatus.className = "mt-2";
-    pStatus.setAttribute('aria-live', 'polite');
-    pStatus.setAttribute('role', 'status');
+    pStatus.setAttribute("aria-live", "polite");
+    pStatus.setAttribute("role", "status");
     card.appendChild(pStatus);
 
     container.appendChild(card);
@@ -451,10 +450,11 @@ function renderManualUrlScanUI(url, headerMessageId) {
 
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
+    let safeHash = escapeHTML(hash);
 
     let card = document.createElement('div');
     card.className = "card card-info mb-3";
-    card.id = `upload-container-${hash}`;
+    card.id = `upload-container-${safeHash}`;
 
     let h2 = document.createElement('h2');
     h2.textContent = `Anhang: ${attachmentName || 'Unbekannt'}`;
@@ -466,40 +466,40 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
 
     let pInfo = document.createElement('p');
     pInfo.className = "text-info";
-    pInfo.innerHTML = `Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.`;
+    pInfo.innerHTML = 'Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.';
     card.appendChild(pInfo);
 
     let btnUpload = document.createElement('button');
-    btnUpload.id = `btn-upload-${hash}`;
+    btnUpload.id = `btn-upload-${safeHash}`;
     btnUpload.className = "btn-primary mt-2";
-    btnUpload.textContent = `Datei jetzt scannen (Upload)`;
+    btnUpload.textContent = "Datei jetzt scannen (Upload)";
     card.appendChild(btnUpload);
 
-    let pUploadStatus = document.createElement('p');
-    pUploadStatus.id = `upload-status-${hash}`;
-    pUploadStatus.className = "mt-2";
-    pUploadStatus.setAttribute('aria-live', 'polite');
-    pUploadStatus.setAttribute('role', 'status');
-    card.appendChild(pUploadStatus);
+    let pStatus = document.createElement('p');
+    pStatus.id = `upload-status-${safeHash}`;
+    pStatus.className = "mt-2";
+    pStatus.setAttribute("aria-live", "polite");
+    pStatus.setAttribute("role", "status");
+    card.appendChild(pStatus);
 
+    let cdrBtn = null;
     if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
-        let btnCdr = document.createElement('button');
-        btnCdr.id = `btn-cdr-${hash}`;
-        btnCdr.className = "btn-primary mt-2 ml-2";
-        btnCdr.textContent = `Bereinigen & Herunterladen (Lokales CDR)`;
-        card.appendChild(btnCdr);
+        cdrBtn = document.createElement('button');
+        cdrBtn.id = `btn-cdr-${safeHash}`;
+        cdrBtn.className = "btn-primary mt-2 ml-2";
+        cdrBtn.textContent = "Bereinigen & Herunterladen (Lokales CDR)";
+        card.appendChild(cdrBtn);
 
         let pCdrStatus = document.createElement('p');
-        pCdrStatus.id = `cdr-status-${hash}`;
+        pCdrStatus.id = `cdr-status-${safeHash}`;
         pCdrStatus.className = "mt-2";
-        pCdrStatus.setAttribute('aria-live', 'polite');
-        pCdrStatus.setAttribute('role', 'status');
+        pCdrStatus.setAttribute("aria-live", "polite");
+        pCdrStatus.setAttribute("role", "status");
         card.appendChild(pCdrStatus);
     }
 
     container.appendChild(card);
 
-    let cdrBtn = document.getElementById(`btn-cdr-${hash}`);
     if (cdrBtn) {
         cdrBtn.addEventListener('click', function() {
             let btn = this;
