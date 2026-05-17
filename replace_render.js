@@ -11,7 +11,7 @@ const replacement = `function createEl(tag, className = '', textContent = '') {
     return el;
 }
 
-function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null) {
+function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null }) {
     const fragment = document.createDocumentFragment();
     const card = createEl('div', 'card mb-3');
     fragment.appendChild(card);

@@ -128,7 +128,7 @@ function createEl(tag, className = '', textContent = '') {
     return el;
 }
 
-function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null) {
+function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null }) {
     const card = document.createElement('div');
     card.className = "card mb-3";
 
@@ -313,7 +313,7 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
 
         if (response.status === 200) {
             let container = document.getElementById('hybrid_analysis_api_content');
-            let reportNode = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats);
+            let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats });
             container.appendChild(reportNode);
 
             let rescanBtn = document.getElementById(`btn-rescan-${hybrid_sha}`);
