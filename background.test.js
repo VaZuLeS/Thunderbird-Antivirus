@@ -441,7 +441,7 @@ describe('background.js', () => {
             const author = 'Service <service@paypal.com>';
             const urls = [];
             const authHeaders = ["spf=fail"];
-            const result = context.calculateThreatScore(author, urls, authHeaders);
+            const result = context.calculateThreatScore(author, urls, { authHeaders });
             assert.strictEqual(result.score, 50);
             assert.ok(result.reasons.some(r => r.includes("SPF-Prüfung fehlgeschlagen")));
         });
@@ -450,7 +450,7 @@ describe('background.js', () => {
             const author = 'Service <service@paypal.com>';
             const urls = ["http://malware.com/"];
             const urlhausDomains = ["malware.com"];
-            const result = context.calculateThreatScore(author, urls, [], urlhausDomains);
+            const result = context.calculateThreatScore(author, urls, { urlhausDomains });
             assert.strictEqual(result.score >= 80, true);
             assert.ok(result.reasons.some(r => r.includes("auf URLhaus als bösartig gelistet")));
         });
@@ -496,13 +496,21 @@ describe('background.js', () => {
         });
 
         it('calculates threat score correctly for reply-to discrepancy', async () => {
-            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], [], [], false, "Hello", "Hi", "Hacker <hacker@evil.com>");
+            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], {
+                replyTo: "Hacker <hacker@evil.com>",
+                messageText: "Hello",
+                subject: "Hi"
+            });
             assert.strictEqual(result.score, 50);
             assert.ok(result.reasons.some(r => r.includes("Diskrepanz erkannt")));
         });
 
         it('calculates threat score correctly for BEC first comm + urgency', async () => {
-            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], [], [], true, "Bitte schnell überweisung tätigen.", "Wichtig!");
+            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], {
+                isFirstCommunication: true,
+                messageText: "Bitte schnell überweisung tätigen.",
+                subject: "Wichtig!"
+            });
             assert.strictEqual(result.score, 50);
             assert.ok(result.reasons.some(r => r.includes("Erste Kommunikation")));
         });

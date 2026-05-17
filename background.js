@@ -178,7 +178,15 @@ function levenshteinDistance(a, b) {
     return prevRow[a.length];
 }
 
-function calculateThreatScore(author, urls, authHeaders = [], urlhausDomains = [], isFirstCommunication = false, messageText = "", subject = "", replyTo = "") {
+function calculateThreatScore(author, urls, options = {}) {
+    const {
+        authHeaders = [],
+        urlhausDomains = [],
+        isFirstCommunication = false,
+        messageText = "",
+        subject = "",
+        replyTo = ""
+    } = options;
     let score = 0;
     let reasons = [];
     let authStatus = 'neutral';
@@ -530,7 +538,14 @@ async function tab_mail_open_display(tab, message) {
       urlhausDomains = checkResults.filter(d => d !== null);
     }
 
-    let threat = calculateThreatScore(message.author, urls, authHeaders, urlhausDomains, isFirstCommunication, messageText, subject, replyTo);
+    let threat = calculateThreatScore(message.author, urls, {
+      authHeaders,
+      urlhausDomains,
+      isFirstCommunication,
+      messageText,
+      subject,
+      replyTo
+    });
     if (threat.score >= 50) {
       console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
       await browser.scripting.executeScript({
