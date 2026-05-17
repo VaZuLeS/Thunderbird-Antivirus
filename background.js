@@ -475,15 +475,20 @@ async function tab_mail_open_display(tab, message) {
 
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
-        for (let ip of publicIps) {
+        let ipChecks = publicIps.map(async (ip) => {
             let isMalicious = false;
             if (ipReputationProvider === "abuseipdb") {
                 isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
             } else if (ipReputationProvider === "virustotal") {
                 isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
             }
-            if (isMalicious) {
-                maliciousIps.push(ip);
+            return { ip, isMalicious };
+        });
+
+        let results = await Promise.all(ipChecks);
+        for (let result of results) {
+            if (result.isMalicious) {
+                maliciousIps.push(result.ip);
             }
         }
     }
