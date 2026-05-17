@@ -12,25 +12,20 @@ function escapeHTML(str) {
     });
 }
 
-function setElementHtml(id, html) {
-    let element = document.getElementById(id);
-    if (element) {
-        element.innerHTML = html;
-    }
-}
-
-function appendElementHtml(id, html) {
-    let element = document.getElementById(id);
-    if (element) {
-        element.insertAdjacentHTML('beforeend', html);
-    }
-}
-
-function setElementText(id, text) {
-    let element = document.getElementById(id);
-    if (element) {
-        element.textContent = text;
-    }
+function sendExtensionMessage(message, btn, statusEl, errorPrefix, onSuccess) {
+    return browser.runtime.sendMessage(message).then(res => {
+        if (res && res.status === 'success') {
+            if (onSuccess) onSuccess(res);
+        } else {
+            statusEl.innerText = errorPrefix + (res ? res.message : "Unbekannter Fehler");
+            btn.disabled = false;
+            btn.innerText = "Erneut versuchen";
+        }
+    }).catch(err => {
+        statusEl.innerText = "Kommunikationsfehler: " + err;
+        btn.disabled = false;
+        btn.innerText = "Erneut versuchen";
+    });
 }
 
 let apikey_hybridanalysis;
@@ -337,29 +332,25 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
                     btn.innerText = "Sende Rescan...";
                     setElementText(statusId, "Datei wird für Rescan hochgeladen...");
 
-                    browser.runtime.sendMessage({
-                        action: "uploadAttachment",
-                        messageId: messageId,
-                        partName: partName,
-                        attachmentName: attachmentName,
-                        hash: hybrid_sha,
-                        headerMessageId: headerMessageId
-                    }).then(res => {
-                        if (res && res.status === 'success') {
-                            setElementText(statusId, "Rescan erfolgreich initiiert. Lade Seite neu...");
+                    sendExtensionMessage(
+                        {
+                            action: "uploadAttachment",
+                            messageId: messageId,
+                            partName: partName,
+                            attachmentName: attachmentName,
+                            hash: hybrid_sha,
+                            headerMessageId: headerMessageId
+                        },
+                        btn,
+                        statusEl,
+                        "Fehler beim Rescan: ",
+                        (res) => {
+                            statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
                             setTimeout(() => {
                                 window.location.reload();
                             }, 2000);
-                        } else {
-                            setElementText(statusId, "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler"));
-                            btn.disabled = false;
-                            btn.innerText = "Erneut versuchen";
                         }
-                    }).catch(err => {
-                        setElementText(statusId, "Kommunikationsfehler: " + err);
-                        btn.disabled = false;
-                        btn.innerText = "Erneut versuchen";
-                    });
+                    );
                 });
             }
 
@@ -372,25 +363,21 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
                     btn.innerText = "Bereinige...";
                     setElementText(statusId, "Lokales CDR wird durchgeführt...");
 
-                    browser.runtime.sendMessage({
-                        action: "downloadDisarmed",
-                        messageId: messageId,
-                        partName: partName,
-                        attachmentName: attachmentName
-                    }).then(res => {
-                        if (res && res.status === 'success') {
-                            setElementText(statusId, "Herunterladen erfolgreich initiiert.");
+                    sendExtensionMessage(
+                        {
+                            action: "downloadDisarmed",
+                            messageId: messageId,
+                            partName: partName,
+                            attachmentName: attachmentName
+                        },
+                        btn,
+                        statusEl,
+                        "Fehler beim Herunterladen: ",
+                        (res) => {
+                            statusEl.innerText = "Herunterladen erfolgreich initiiert.";
                             btn.innerText = "Bereinigt";
-                        } else {
-                            setElementText(statusId, "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler"));
-                            btn.disabled = false;
-                            btn.innerText = "Erneut versuchen";
                         }
-                    }).catch(err => {
-                        setElementText(statusId, "Kommunikationsfehler: " + err);
-                        btn.disabled = false;
-                        btn.innerText = "Erneut versuchen";
-                    });
+                    );
                 });
             }
 
@@ -425,13 +412,17 @@ function renderManualUrlScanUI(url, headerMessageId) {
         btn.innerText = "Sende URL...";
         setElementText(statusId, "URL wird an Hybrid Analysis übertragen...");
 
-        browser.runtime.sendMessage({
-            action: "scanUrl",
-            url: url,
-            headerMessageId: headerMessageId
-        }).then(response => {
-            if (response && response.status === 'success') {
-                setElementText(statusId, "Scan erfolgreich beauftragt! Lade Analyseergebnisse...");
+        sendExtensionMessage(
+            {
+                action: "scanUrl",
+                url: url,
+                headerMessageId: headerMessageId
+            },
+            btn,
+            statusEl,
+            "Fehler beim Upload: ",
+            (response) => {
+                statusEl.innerText = "Scan erfolgreich beauftragt! Lade Analyseergebnisse...";
                 setTimeout(() => {
                     document.getElementById(`upload-container-${urlId}`).remove();
                     // response.data.sha256 enthält den sha256-Hash des URL-Scans
@@ -440,16 +431,8 @@ function renderManualUrlScanUI(url, headerMessageId) {
                         attachmentName: url
                     });
                 }, 3000);
-            } else {
-                setElementText(statusId, "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler"));
-                btn.disabled = false;
-                btn.innerText = "Erneut versuchen";
             }
-        }).catch(err => {
-            setElementText(statusId, "Kommunikationsfehler: " + err);
-            btn.disabled = false;
-            btn.innerText = "Erneut versuchen";
-        });
+        );
     });
 }
 
@@ -514,25 +497,21 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
             btn.innerText = "Bereinige...";
             setElementText(statusId, "Lokales CDR wird durchgeführt...");
 
-            browser.runtime.sendMessage({
-                action: "downloadDisarmed",
-                messageId: messageId,
-                partName: partName,
-                attachmentName: attachmentName
-            }).then(res => {
-                if (res && res.status === 'success') {
-                    setElementText(statusId, "Herunterladen erfolgreich initiiert.");
+            sendExtensionMessage(
+                {
+                    action: "downloadDisarmed",
+                    messageId: messageId,
+                    partName: partName,
+                    attachmentName: attachmentName
+                },
+                btn,
+                statusEl,
+                "Fehler beim Herunterladen: ",
+                (res) => {
+                    statusEl.innerText = "Herunterladen erfolgreich initiiert.";
                     btn.innerText = "Bereinigt";
-                } else {
-                    setElementText(statusId, "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler"));
-                    btn.disabled = false;
-                    btn.innerText = "Erneut versuchen";
                 }
-            }).catch(err => {
-                setElementText(statusId, "Kommunikationsfehler: " + err);
-                btn.disabled = false;
-                btn.innerText = "Erneut versuchen";
-            });
+            );
         });
     }
 
@@ -543,16 +522,20 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
         btn.innerText = "Lade hoch...";
         setElementText(statusId, "Datei wird an Hybrid Analysis übertragen...");
 
-        browser.runtime.sendMessage({
-            action: "uploadAttachment",
-            messageId: messageId,
-            partName: partName,
-            attachmentName: attachmentName,
-            hash: hash,
-            headerMessageId: headerMessageId
-        }).then(response => {
-            if (response && response.status === 'success') {
-                setElementText(statusId, "Upload erfolgreich! Lade Analyseergebnisse...");
+        sendExtensionMessage(
+            {
+                action: "uploadAttachment",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName,
+                hash: hash,
+                headerMessageId: headerMessageId
+            },
+            btn,
+            statusEl,
+            "Fehler beim Upload: ",
+            (response) => {
+                statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
                 setTimeout(() => {
                     document.getElementById(`upload-container-${safeHash}`).remove();
                     get_hybrid_report_by_sha256({
@@ -563,15 +546,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
                         headerMessageId: headerMessageId
                     });
                 }, 3000);
-            } else {
-                setElementText(statusId, "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler"));
-                btn.disabled = false;
-                btn.innerText = "Erneut versuchen";
             }
-        }).catch(err => {
-            setElementText(statusId, "Kommunikationsfehler: " + err);
-            btn.disabled = false;
-            btn.innerText = "Erneut versuchen";
-        });
+        );
     });
 }
