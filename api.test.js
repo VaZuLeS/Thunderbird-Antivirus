@@ -118,33 +118,12 @@ describe('get_hybrid_report_by_sha256', () => {
                 }
             },
             document: {
-                createTextNode: (text) => ({ textContent: text, outerHTML: text }),
-                createElement: (tag) => ({
-                    tag: tag,
-                    className: '',
-                    textContent: '',
-                    _html: '',
-                    children: [],
-                    get outerHTML() {
-                        let inner = this.children.map(c => c.outerHTML || c.textContent || '').join('') + this._html + this.textContent;
-                        let cls = this.className ? ` class="${this.className}"` : '';
-                        return `<${this.tag}${cls}>${inner}</${this.tag}>`;
-                    },
-                    appendChild: function(node) {
-                        this.children.push(node);
-                    },
-                    setAttribute: function() {},
-                    removeAttribute: function() {}
-                }),
-                createDocumentFragment: () => ({
-                    children: [],
-                    appendChild: function(node) {
-                        this.children.push(node);
-                    },
-                    get outerHTML() {
-                        return this.children.map(c => c.outerHTML || c.textContent || '').join('');
-                    }
-                }),
+                createElement: (tag) => {
+                    return {
+                        className: '',
+                        textContent: '',
+                    };
+                },
                 getElementById: (id) => {
                     if (id === 'hybrid_analysis_api_content') {
                         if (!context.apiContentElement) {
@@ -152,7 +131,14 @@ describe('get_hybrid_report_by_sha256', () => {
                                 _html: '',
                                 get innerHTML() { return this._html; },
                                 set innerHTML(val) { this._html = val; },
-                                set textContent(val) { this._html = val; },
+                                appendChild: function(el) {
+                                    let content = el.textContent || '';
+                                    if (el.className) {
+                                        this._html += `<div class="${el.className}">${content}</div>`;
+                                    } else {
+                                        this._html += `<div>${content}</div>`;
+                                    }
+                                },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
                                 },
@@ -169,21 +155,6 @@ describe('get_hybrid_report_by_sha256', () => {
                         return context.apiContentElement;
                     }
                     return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '', appendChild: () => {} };
-                }
-            },
-            DOMParser: class DOMParser {
-                parseFromString(string, type) {
-                    return {
-                        body: {
-                            get firstChild() {
-                                if (this._nodes === undefined) {
-                                    // Simplistic mock to let loop run once and then stop
-                                    this._nodes = [{ outerHTML: string }];
-                                }
-                                return this._nodes.shift() || null;
-                            }
-                        }
-                    };
                 }
             },
             indexedDB: {
