@@ -3,12 +3,14 @@ const vm = require('vm');
 const path = require('path');
 const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert');
+const { JSDOM } = require('jsdom');
 
 describe('background.js', () => {
     let context;
 
     beforeEach(() => {
         // Create mock environment
+        const dom = new JSDOM();
         context = {
             browser: {
                 storage: {
@@ -65,6 +67,7 @@ describe('background.js', () => {
             Math: globalThis.Math,
             Set: globalThis.Set,
             URL: globalThis.URL,
+            DOMParser: dom.window.DOMParser,
             indexedDB: {
                 open: () => ({
                     onupgradeneeded: null,
@@ -206,6 +209,23 @@ describe('background.js', () => {
         const urls = ['https://google.com/', 'http://malicious.com', 'https://github.com/repo', 'https://unknown.org'];
         const filtered = context.filterUrls(urls);
         assert.deepStrictEqual(filtered, ['http://malicious.com', 'https://unknown.org']);
+    });
+
+    it('filterUrls correctly ignores subdomains of safe domains', () => {
+        const urls = ['https://mail.google.com/', 'https://sub.github.com/repo', 'https://not-safe.google.com.malicious.net/'];
+        const filtered = context.filterUrls(urls);
+        assert.deepStrictEqual(filtered, ['https://not-safe.google.com.malicious.net/']);
+    });
+
+    it('filterUrls removes invalid URLs', () => {
+        const urls = ['not_a_url', 'https://good-domain.com/', 'http://'];
+        const filtered = context.filterUrls(urls);
+        assert.deepStrictEqual(filtered, ['https://good-domain.com/']);
+    });
+
+    it('filterUrls handles empty array', () => {
+        const filtered = context.filterUrls([]);
+        assert.deepStrictEqual(filtered, []);
     });
 
     it('handleUrlScan successfully uploads and updates DB', async () => {
@@ -441,7 +461,7 @@ describe('background.js', () => {
             const author = 'Service <service@paypal.com>';
             const urls = [];
             const authHeaders = ["spf=fail"];
-            const result = context.calculateThreatScore(author, urls, authHeaders);
+            const result = context.calculateThreatScore(author, urls, { authHeaders });
             assert.strictEqual(result.score, 50);
             assert.ok(result.reasons.some(r => r.includes("SPF-Prüfung fehlgeschlagen")));
         });
@@ -450,7 +470,7 @@ describe('background.js', () => {
             const author = 'Service <service@paypal.com>';
             const urls = ["http://malware.com/"];
             const urlhausDomains = ["malware.com"];
-            const result = context.calculateThreatScore(author, urls, [], urlhausDomains);
+            const result = context.calculateThreatScore(author, urls, { urlhausDomains });
             assert.strictEqual(result.score >= 80, true);
             assert.ok(result.reasons.some(r => r.includes("auf URLhaus als bösartig gelistet")));
         });
@@ -496,13 +516,21 @@ describe('background.js', () => {
         });
 
         it('calculates threat score correctly for reply-to discrepancy', async () => {
-            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], [], [], false, "Hello", "Hi", "Hacker <hacker@evil.com>");
+            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], {
+                replyTo: "Hacker <hacker@evil.com>",
+                messageText: "Hello",
+                subject: "Hi"
+            });
             assert.strictEqual(result.score, 50);
             assert.ok(result.reasons.some(r => r.includes("Diskrepanz erkannt")));
         });
 
         it('calculates threat score correctly for BEC first comm + urgency', async () => {
-            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], [], [], true, "Bitte schnell überweisung tätigen.", "Wichtig!");
+            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], {
+                isFirstCommunication: true,
+                messageText: "Bitte schnell überweisung tätigen.",
+                subject: "Wichtig!"
+            });
             assert.strictEqual(result.score, 50);
             assert.ok(result.reasons.some(r => r.includes("Erste Kommunikation")));
         });
@@ -570,6 +598,82 @@ describe('background.js', () => {
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
             assert.strictEqual(executedWarningScript, null);
+        });
+    });
+
+    describe('disarmHTML', () => {
+        it('removes script tags and their content', () => {
+            const input = '<html><body><h1>Test</h1><script>alert(1);</script></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('<script>'), 'Script tag should be removed');
+            assert.ok(!result.includes('alert(1)'), 'Script content should be removed');
+            assert.ok(result.includes('Test'), 'Safe content should remain');
+        });
+
+        it('removes inline event handlers', () => {
+            const input = '<html><body><button onclick="evil()">Click</button></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('onclick'), 'onclick attribute should be removed');
+            assert.ok(!result.includes('evil()'), 'Event handler content should be removed');
+            assert.ok(result.includes('<button>Click</button>'), 'Button element should remain');
+        });
+
+        it('removes javascript URIs', () => {
+            const input = '<html><body><a href="javascript:alert(1)">Link</a><a href="http://safe.com">Safe</a></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('javascript:'), 'javascript URI should be removed');
+            const sanitizedDom = new (new JSDOM()).window.DOMParser().parseFromString(result, 'text/html');
+            const hrefs = Array.from(sanitizedDom.querySelectorAll('a'))
+                .map((a) => a.getAttribute('href'))
+                .filter(Boolean);
+            const hasSafeHost = hrefs.some((href) => {
+                try {
+                    return new URL(href).hostname === 'safe.com';
+                } catch {
+                    return false;
+                }
+            });
+            assert.ok(hasSafeHost, 'Safe URI host should remain');
+        });
+
+        it('removes object, embed, iframe', () => {
+            const input = '<html><body><object data="evil.swf"></object><embed src="evil.swf"></embed><iframe src="evil.html"></iframe></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('object'), 'object should be removed');
+            assert.ok(!result.includes('embed'), 'embed should be removed');
+            assert.ok(!result.includes('iframe'), 'iframe should be removed');
+        });
+
+        it('prevents javascript URI evasion', () => {
+            const input = '<html><body><a href="java\tscript:alert(1)">Link</a><a href="jav&#x09;ascript:alert(1)">Link2</a></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('javascript:'), 'evaded javascript URI should be removed');
+        });
+
+        it('removes data and vbscript URIs', () => {
+            const input = '<html><body><a href="data:text/html,<script>alert(1)</script>">Data Link</a><img src="vbscript:msgbox(\'hello\')"></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('data:'), 'data URI should be removed');
+            assert.ok(!result.includes('vbscript:'), 'vbscript URI should be removed');
+        });
+
+        it('removes base and meta tags', () => {
+            const input = '<html><head><base href="http://evil.com"><meta http-equiv="refresh" content="0;url=javascript:alert(1)"></head><body></body></html>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('<base'), 'base tag should be removed');
+            assert.ok(!result.includes('<meta'), 'meta tag should be removed');
+        });
+
+        it('sanitizes action, formaction, and xlink:href attributes', () => {
+            const input = `<html><body>
+                <form action="javascript:alert(1)"><input type="submit"></form>
+                <button formaction="data:text/html,<script>alert(1)</script>">Click</button>
+                <svg><use xlink:href="javascript:alert(1)"></use></svg>
+            </body></html>`;
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('javascript:'), 'javascript URI should be removed from action/xlink:href');
+            assert.ok(!result.includes('data:'), 'data URI should be removed from formaction');
+            assert.ok(!result.includes('action="javascript'), 'action attribute should be removed/sanitized');
         });
     });
 });

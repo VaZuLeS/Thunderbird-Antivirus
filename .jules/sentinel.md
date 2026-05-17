@@ -6,3 +6,4 @@
 **Vulnerability:** API keys in `options.html` were visible in plain text due to using `type="text"`.
 **Learning:** For UI elements handling sensitive data like API keys always use `<input type="password">` rather than `<input type="text">` to prevent visual exposure and shoulder surfing.
 **Prevention:** Always use `type="password"` for sensitive inputs.
+- Fixed XSS vulnerability in `renderManualUrlScanUI` (`api.js`) by replacing `insertAdjacentHTML` with safe DOM creation (`document.createElement`, `textContent`, `appendChild`).
