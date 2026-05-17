@@ -208,6 +208,23 @@ describe('background.js', () => {
         assert.deepStrictEqual(filtered, ['http://malicious.com', 'https://unknown.org']);
     });
 
+    it('filterUrls correctly ignores subdomains of safe domains', () => {
+        const urls = ['https://mail.google.com/', 'https://sub.github.com/repo', 'https://not-safe.google.com.malicious.net/'];
+        const filtered = context.filterUrls(urls);
+        assert.deepStrictEqual(filtered, ['https://not-safe.google.com.malicious.net/']);
+    });
+
+    it('filterUrls removes invalid URLs', () => {
+        const urls = ['not_a_url', 'https://good-domain.com/', 'http://'];
+        const filtered = context.filterUrls(urls);
+        assert.deepStrictEqual(filtered, ['https://good-domain.com/']);
+    });
+
+    it('filterUrls handles empty array', () => {
+        const filtered = context.filterUrls([]);
+        assert.deepStrictEqual(filtered, []);
+    });
+
     it('handleUrlScan successfully uploads and updates DB', async () => {
         context.set_apikey('test-key');
 
