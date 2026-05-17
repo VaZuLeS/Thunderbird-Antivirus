@@ -390,39 +390,42 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 
 function renderManualUrlScanUI(url, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
+
     // Erzeuge eine sichere, eindeutige ID für die URL
     let urlId = Array.from(new TextEncoder().encode(url))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
-    let card = document.createElement('div');
-    card.className = "card card-info mb-3";
-    card.id = `upload-container-${urlId}`;
+
+    let cardDiv = document.createElement('div');
+    cardDiv.className = 'card card-info mb-3';
+    cardDiv.id = `upload-container-${urlId}`;
 
     let h2 = document.createElement('h2');
     h2.textContent = `URL: ${url}`;
-    card.appendChild(h2);
 
     let pInfo = document.createElement('p');
-    pInfo.className = "text-info";
-    pInfo.innerHTML = 'Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.';
-    card.appendChild(pInfo);
+    pInfo.className = 'text-info';
+    pInfo.innerHTML = `Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.`;
 
-    let btnUpload = document.createElement('button');
-    btnUpload.id = `btn-upload-${urlId}`;
-    btnUpload.className = "btn-primary mt-2";
-    btnUpload.textContent = "URL jetzt scannen";
-    card.appendChild(btnUpload);
+    let button = document.createElement('button');
+    button.id = `btn-upload-${urlId}`;
+    button.className = 'btn-primary mt-2';
+    button.textContent = 'URL jetzt scannen';
 
     let pStatus = document.createElement('p');
     pStatus.id = `upload-status-${urlId}`;
-    pStatus.className = "mt-2";
-    pStatus.setAttribute("aria-live", "polite");
-    pStatus.setAttribute("role", "status");
-    card.appendChild(pStatus);
+    pStatus.className = 'mt-2';
+    pStatus.setAttribute('aria-live', 'polite');
+    pStatus.setAttribute('role', 'status');
 
-    container.appendChild(card);
+    cardDiv.appendChild(h2);
+    cardDiv.appendChild(pInfo);
+    cardDiv.appendChild(button);
+    cardDiv.appendChild(pStatus);
 
-    btnUpload.addEventListener('click', function() {
+    container.appendChild(cardDiv);
+
+    button.addEventListener('click', function() {
         let btn = this;
         let statusEl = document.getElementById(`upload-status-${urlId}`);
         btn.disabled = true;
