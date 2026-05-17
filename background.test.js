@@ -601,6 +601,45 @@ describe('background.js', () => {
         });
     });
 
+    describe('extractTextFromParts', () => {
+        it('extracts text from plain text parts', () => {
+            const part = { contentType: 'text/plain', body: 'Hello World' };
+            assert.strictEqual(context.extractTextFromParts(part), 'Hello World ');
+        });
+
+        it('extracts text from HTML parts', () => {
+            const part = { contentType: 'text/html', body: '<b>Hello</b> World' };
+            assert.strictEqual(context.extractTextFromParts(part), '<b>Hello</b> World ');
+        });
+
+        it('ignores parts that are not text/plain or text/html', () => {
+            const part = { contentType: 'image/png', body: 'base64data' };
+            assert.strictEqual(context.extractTextFromParts(part), '');
+        });
+
+        it('handles parts with missing body safely', () => {
+            const part = { contentType: 'text/plain' }; // no body
+            assert.strictEqual(context.extractTextFromParts(part), '');
+        });
+
+        it('recursively extracts text from nested subparts', () => {
+            const part = {
+                contentType: 'multipart/alternative',
+                parts: [
+                    { contentType: 'text/plain', body: 'Part 1' },
+                    {
+                        contentType: 'multipart/mixed',
+                        parts: [
+                            { contentType: 'image/jpeg', body: 'ignored' },
+                            { contentType: 'text/html', body: 'Part 2' }
+                        ]
+                    }
+                ]
+            };
+            assert.strictEqual(context.extractTextFromParts(part), 'Part 1 Part 2 ');
+        });
+    });
+
     describe('disarmHTML', () => {
         it('removes script tags and their content', () => {
             const input = '<html><body><h1>Test</h1><script>alert(1);</script></body></html>';
