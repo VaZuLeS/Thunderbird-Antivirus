@@ -102,8 +102,12 @@ describe('background.js', () => {
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'background.js'), 'utf8');
         const wrappedCode = `
+            globalThis.customBlacklist = [];
+            globalThis.customWhitelist = [];
             ${code}
             globalThis.loadSettings = loadSettings;
+            globalThis.set_customBlacklist = (list) => { customBlacklist = list; };
+            globalThis.set_customWhitelist = (list) => { customWhitelist = list; };
             globalThis.get_apikey = () => apikey_hybridanalysis;
             globalThis.set_apikey = (val) => { apikey_hybridanalysis = val; };
             globalThis.tab_mail_open_display = tab_mail_open_display;
@@ -498,7 +502,37 @@ describe('background.js', () => {
             const authHeaders = ["spf=fail"];
             const result = context.calculateThreatScore(author, urls, { authHeaders });
             assert.strictEqual(result.score, 50);
+            assert.strictEqual(result.authStatus, 'fail');
             assert.ok(result.reasons.some(r => r.includes("SPF-Prüfung fehlgeschlagen")));
+        });
+
+        it('calculates threat score correctly for dkim=fail', async () => {
+            const author = 'Service <service@paypal.com>';
+            const urls = [];
+            const authHeaders = ["dkim=fail"];
+            const result = context.calculateThreatScore(author, urls, { authHeaders });
+            assert.strictEqual(result.score, 50);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.ok(result.reasons.some(r => r.includes("DKIM-Signatur ungültig")));
+        });
+
+        it('calculates threat score correctly for dmarc=fail', async () => {
+            const author = 'Service <service@paypal.com>';
+            const urls = [];
+            const authHeaders = ["dmarc=fail"];
+            const result = context.calculateThreatScore(author, urls, { authHeaders });
+            assert.strictEqual(result.score, 50);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.ok(result.reasons.some(r => r.includes("DMARC-Prüfung fehlgeschlagen")));
+        });
+
+        it('calculates threat score correctly for auth pass', async () => {
+            const author = 'Service <service@paypal.com>';
+            const urls = [];
+            const authHeaders = ["spf=pass", "dkim=pass", "dmarc=pass"];
+            const result = context.calculateThreatScore(author, urls, { authHeaders });
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.authStatus, 'pass');
         });
 
         it('calculates threat score correctly for urlhaus blacklisted domain', async () => {
@@ -568,6 +602,62 @@ describe('background.js', () => {
             });
             assert.strictEqual(result.score, 50);
             assert.ok(result.reasons.some(r => r.includes("Erste Kommunikation")));
+        });
+
+        it('calculates threat score correctly for urgency without first comm', async () => {
+            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], {
+                isFirstCommunication: false,
+                messageText: "Bitte schnell überweisung tätigen.",
+                subject: "Wichtig!"
+            });
+            assert.strictEqual(result.score, 20);
+            assert.ok(result.reasons.some(r => r.includes("Dringlichkeits-Signalwörter gefunden")));
+        });
+
+        it('calculates threat score correctly for first comm without urgency', async () => {
+            const result = context.calculateThreatScore("CEO <ceo@company.com>", [], {
+                isFirstCommunication: true,
+                messageText: "Hallo wie geht es dir.",
+                subject: "Hi"
+            });
+            assert.strictEqual(result.score, 10);
+            assert.ok(result.reasons.some(r => r.includes("erste Mal, dass Sie mit diesem Absender kommunizieren")));
+        });
+
+        it('calculates threat score correctly for custom blacklist exact match', async () => {
+            context.set_customBlacklist(['hacker@evil.com']);
+            const result = context.calculateThreatScore("Hacker <hacker@evil.com>", []);
+            assert.strictEqual(result.score, 100);
+            assert.ok(result.reasons.some(r => r.includes("steht auf der Blacklist")));
+            context.set_customBlacklist([]);
+        });
+
+        it('calculates threat score correctly for custom blacklist domain match', async () => {
+            context.set_customBlacklist(['evil.com']);
+            const result = context.calculateThreatScore("Hacker <hacker@evil.com>", []);
+            assert.strictEqual(result.score, 100);
+            assert.ok(result.reasons.some(r => r.includes("steht auf der Blacklist")));
+            context.set_customBlacklist([]);
+        });
+
+        it('calculates threat score correctly for custom whitelist exact match', async () => {
+            context.set_customWhitelist(['good@guy.com']);
+            const result = context.calculateThreatScore("Good <good@guy.com>", [], {
+                urlhausDomains: ['malware.com'] // should be ignored due to whitelist return
+            });
+            assert.strictEqual(result.score, 0);
+            assert.ok(result.reasons.some(r => r.includes("steht auf der Whitelist")));
+            context.set_customWhitelist([]);
+        });
+
+        it('calculates threat score correctly for custom whitelist domain match', async () => {
+            context.set_customWhitelist(['guy.com']);
+            const result = context.calculateThreatScore("Good <good@guy.com>", [], {
+                urlhausDomains: ['malware.com'] // should be ignored due to whitelist return
+            });
+            assert.strictEqual(result.score, 0);
+            assert.ok(result.reasons.some(r => r.includes("steht auf der Whitelist")));
+            context.set_customWhitelist([]);
         });
     });
 
