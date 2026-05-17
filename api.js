@@ -48,7 +48,6 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
 // Informationen.
 let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
-console.log(message.headerMessageId);
 
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
@@ -121,11 +120,10 @@ try {
     };
 
     openRequest.onerror = function(e) {
-        console.log("Kein Hash/Anhang gefunden.");
         setElementHtml('hybrid_analysis_api_content', '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>');
     }
 } catch (error) {
-    console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
+    console.error('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
 })();
 
@@ -315,9 +313,7 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
     // Send the request and handle the response
     try {
         const response = await fetch(options.url, options);
-        console.log(response);
         const json_data = await response.json();
-        console.log(json_data);
 
         if (response.status === 200) {
             let resultHtml = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats);
