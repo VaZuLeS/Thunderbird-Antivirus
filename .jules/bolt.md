@@ -17,3 +17,4 @@
 ## 2024-05-27 - Precompiled Regular Expressions & Global Scope
 **Learning:** Instantiating Regex objects (e.g. `/(https?:\/\/[^\s"'<>]+)/g`) inside frequently executed functions adds measurable overhead. Further, filtering text sequentially with a `.map()` over 14 distinct regexes takes ~3-4x longer than running a single OR'd regex `new RegExp('(word1|word2)', 'gi')`.
 **Action:** When a regex is static, move it to the global scope (e.g., `GLOBAL_URL_REGEX`). When multiple related regexes search the same text, combine them into one OR'd precompiled expression. **Crucially**, when using `.exec()` on global regexes, you must reset `.lastIndex = 0` before the `while` loop to prevent state leakage across function calls.
+To resolve O(N*M) time complexity bottlenecks when merging or cross-referencing JavaScript arrays, convert the base array search into a Map for O(1) keyed lookups rather than iterating with nested loops or findIndex.

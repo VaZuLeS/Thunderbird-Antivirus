@@ -816,11 +816,15 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
           recordToSave = existingRecord;
           if (!recordToSave.attachments) recordToSave.attachments = [];
 
+          const existingAttMap = new Map();
+          recordToSave.attachments.forEach((a, i) => existingAttMap.set(a.attachment_name, i));
+
           for (const newAtt of newAttachments) {
-              let existingAttIndex = recordToSave.attachments.findIndex(a => a.attachment_name === newAtt.attachment_name);
-              if (existingAttIndex > -1) {
+              const existingAttIndex = existingAttMap.get(newAtt.attachment_name);
+              if (existingAttIndex !== undefined) {
                   recordToSave.attachments[existingAttIndex] = newAtt;
               } else {
+                  existingAttMap.set(newAtt.attachment_name, recordToSave.attachments.length);
                   recordToSave.attachments.push(newAtt);
               }
           }
