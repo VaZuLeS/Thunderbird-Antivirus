@@ -58,4 +58,66 @@ describe('db.js module', () => {
         const result = await clearStore(dbMock, 'hybridanalysis');
         assert.strictEqual(result, true);
     });
+
+    it('should resolve getFromStore correctly on success', async () => {
+        let expectedResult = { id: 123, data: 'test data' };
+        let dbMock = {
+            transaction: () => ({
+                objectStore: () => ({
+                    get: () => {
+                        let req = {};
+                        setTimeout(() => {
+                            req.result = expectedResult;
+                            req.onsuccess();
+                        }, 10);
+                        return req;
+                    }
+                })
+            })
+        };
+        context = {
+            Promise: Promise,
+            console: { log: () => {}, error: () => {} }
+        };
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        const getFromStore = context.getFromStore;
+        const result = await getFromStore(dbMock, 'hybridanalysis', 'some_key');
+        assert.deepStrictEqual(result, expectedResult);
+    });
+
+    it('should reject getFromStore correctly on error', async () => {
+        let expectedError = new Error('Test error');
+        let dbMock = {
+            transaction: () => ({
+                objectStore: () => ({
+                    get: () => {
+                        let req = {};
+                        setTimeout(() => {
+                            req.target = { error: expectedError };
+                            req.onerror({ target: req.target });
+                        }, 10);
+                        return req;
+                    }
+                })
+            })
+        };
+        context = {
+            Promise: Promise,
+            console: { log: () => {}, error: () => {} }
+        };
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        const getFromStore = context.getFromStore;
+        try {
+            await getFromStore(dbMock, 'hybridanalysis', 'some_key');
+            assert.fail('Should have rejected');
+        } catch (e) {
+            assert.strictEqual(e, expectedError);
+        }
+    });
 });

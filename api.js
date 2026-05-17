@@ -19,7 +19,15 @@ let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
 
 if (!apikey_hybridanalysis) {
-    document.getElementById('hybrid_analysis_api_content').innerHTML = '<div class="alert-error"><strong>Warnung:</strong> Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.</div>';
+    let container = document.getElementById('hybrid_analysis_api_content');
+    container.textContent = '';
+    let alertDiv = document.createElement('div');
+    alertDiv.className = 'alert-error';
+    let strong = document.createElement('strong');
+    strong.textContent = 'Warnung:';
+    alertDiv.appendChild(strong);
+    alertDiv.appendChild(document.createTextNode(' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.'));
+    container.appendChild(alertDiv);
     return;
 }
 
@@ -66,7 +74,7 @@ try {
             const hasLinks = record && record.links && record.links.length > 0;
 
             if (hasAttachments || hasLinks) {
-                document.getElementById('hybrid_analysis_api_content').innerHTML = ''; // clear
+                document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
                 if (hasAttachments) {
                     for (const att of record.attachments) {
@@ -89,19 +97,26 @@ try {
                     }
                 }
             } else {
-                 document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Anhänge oder URLs für diese E-Mail gefunden.</p>';
+                 let p1 = document.createElement('p'); p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p1);
             }
         };
     };
 
     openRequest.onerror = function(e) {
         console.log("Kein Hash/Anhang gefunden.");
-        document.getElementById('hybrid_analysis_api_content').innerHTML = '<p>Keine Analyseergebnisse für diese E-Mail vorhanden.</p>';
+        let p2 = document.createElement('p'); p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p2);
     }
 } catch (error) {
     console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
 })();
+
+function createEl(tag, className = '', textContent = '') {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (textContent) el.textContent = textContent;
+    return el;
+}
 
 function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null) {
     const card = document.createElement('div');
@@ -111,7 +126,6 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
     h2.textContent = `Geprüftes Element: ${attachmentName || 'Unbekannt'}`;
     card.appendChild(h2);
 
-    // Pending check (in_progress)
     if (json_data.state === 'IN_PROGRESS') {
         const pStatus = document.createElement('p');
         pStatus.className = "text-warning";
@@ -360,11 +374,11 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 
         } else {
             console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
-            document.getElementById('hybrid_analysis_api_content').innerHTML += `<div class="text-danger">API Error: ${response.status} für Element ${escapeHTML(attachmentName)}</div>`;
+            let errDiv1 = document.createElement('div'); errDiv1.className = 'text-danger'; errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
         }
     } catch (error) {
         console.error('Fetch error:', error);
-        document.getElementById('hybrid_analysis_api_content').innerHTML += `<div class="text-danger">Netzwerkfehler: ${escapeHTML(error.message)} für Element ${escapeHTML(attachmentName)}</div>`;
+        let errDiv2 = document.createElement('div'); errDiv2.className = 'text-danger'; errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);
     }
 }
 
