@@ -12,6 +12,28 @@ function escapeHTML(str) {
     });
 }
 
+
+function setElementHtml(id, html) {
+    let el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+}
+
+function appendElementHtml(id, html) {
+    let el = document.getElementById(id);
+    if (el) {
+        if (typeof html === 'string') {
+            el.insertAdjacentHTML('beforeend', html);
+        } else if (html instanceof Node) {
+            el.appendChild(html);
+        }
+    }
+}
+
+function setElementText(id, text) {
+    let el = document.getElementById(id);
+    if (el) el.textContent = text;
+}
+
 function sendExtensionMessage(message, btn, statusEl, errorPrefix, onSuccess) {
     return browser.runtime.sendMessage(message).then(res => {
         if (res && res.status === 'success') {
@@ -298,6 +320,62 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     return card;
 }
 
+function bindRescanButton(btn, hybrid_sha, messageId, partName, attachmentName, headerMessageId) {
+    btn.addEventListener('click', function() {
+        let statusId = `rescan-status-${escapeHTML(hybrid_sha)}`;
+        let statusEl = document.getElementById(statusId);
+        btn.disabled = true;
+        btn.innerText = "Sende Rescan...";
+        setElementText(statusId, "Datei wird für Rescan hochgeladen...");
+
+        sendExtensionMessage(
+            {
+                action: "uploadAttachment",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName,
+                hash: hybrid_sha,
+                headerMessageId: headerMessageId
+            },
+            btn,
+            statusEl,
+            "Fehler beim Rescan: ",
+            (res) => {
+                if(statusEl) statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        );
+    });
+}
+
+function bindCdrButton(btn, hybrid_sha, messageId, partName, attachmentName) {
+    btn.addEventListener('click', function() {
+        let statusId = `cdr-status-${escapeHTML(hybrid_sha)}`;
+        let statusEl = document.getElementById(statusId);
+        btn.disabled = true;
+        btn.innerText = "Bereinige...";
+        setElementText(statusId, "Lokales CDR wird durchgeführt...");
+
+        sendExtensionMessage(
+            {
+                action: "downloadDisarmed",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName
+            },
+            btn,
+            statusEl,
+            "Fehler beim Herunterladen: ",
+            (res) => {
+                if(statusEl) statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                btn.innerText = "Bereinigt";
+            }
+        );
+    });
+}
+
 async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }) {
 
     // Set the request options
@@ -325,60 +403,12 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
 
             let rescanBtn = document.getElementById(`btn-rescan-${hybrid_sha}`);
             if (rescanBtn) {
-                rescanBtn.addEventListener('click', function() {
-                    let btn = this;
-                    let statusId = `rescan-status-${escapeHTML(hybrid_sha)}`;
-                    btn.disabled = true;
-                    btn.innerText = "Sende Rescan...";
-                    setElementText(statusId, "Datei wird für Rescan hochgeladen...");
-
-                    sendExtensionMessage(
-                        {
-                            action: "uploadAttachment",
-                            messageId: messageId,
-                            partName: partName,
-                            attachmentName: attachmentName,
-                            hash: hybrid_sha,
-                            headerMessageId: headerMessageId
-                        },
-                        btn,
-                        statusEl,
-                        "Fehler beim Rescan: ",
-                        (res) => {
-                            statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 2000);
-                        }
-                    );
-                });
+                bindRescanButton(rescanBtn, hybrid_sha, messageId, partName, attachmentName, headerMessageId);
             }
 
             let cdrBtn = document.getElementById(`btn-cdr-${hybrid_sha}`);
             if (cdrBtn) {
-                cdrBtn.addEventListener('click', function() {
-                    let btn = this;
-                    let statusId = `cdr-status-${escapeHTML(hybrid_sha)}`;
-                    btn.disabled = true;
-                    btn.innerText = "Bereinige...";
-                    setElementText(statusId, "Lokales CDR wird durchgeführt...");
-
-                    sendExtensionMessage(
-                        {
-                            action: "downloadDisarmed",
-                            messageId: messageId,
-                            partName: partName,
-                            attachmentName: attachmentName
-                        },
-                        btn,
-                        statusEl,
-                        "Fehler beim Herunterladen: ",
-                        (res) => {
-                            statusEl.innerText = "Herunterladen erfolgreich initiiert.";
-                            btn.innerText = "Bereinigt";
-                        }
-                    );
-                });
+                bindCdrButton(cdrBtn, hybrid_sha, messageId, partName, attachmentName);
             }
 
         } else {
