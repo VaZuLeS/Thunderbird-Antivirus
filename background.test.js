@@ -202,6 +202,40 @@ describe('background.js', () => {
         assert.deepStrictEqual(urls, ['https://test.com/', 'http://example.org/path?q=1']);
     });
 
+    it('extractUrls filters duplicate URLs', () => {
+        const text = "Check out https://test.com/ and https://test.com/ again.";
+        const urls = context.extractUrls(text);
+        assert.deepStrictEqual(urls, ['https://test.com/']);
+    });
+
+    it('extractUrls handles URLs with various trailing punctuation', () => {
+        const text = "See https://test.com/!, https://test.com/?, (https://test.com/), [https://test.com/]; and https://test.com/:";
+        const urls = context.extractUrls(text);
+        // The regex replaces trailing characters `[.,;:!)\]]` but DOES NOT remove `?`.
+        // 'https://test.com/?,' -> 'https://test.com/?'
+
+        // Assert length and elements instead of exact order / deep equality,
+        // because we want the test to FAIL if the punctuation IS NOT stripped,
+        // rather than accidentally passing if both the stripped and unstripped versions are sorted the same.
+        // If trailing punctuation is NOT removed, urls will have 5 unique items:
+        // ['https://test.com/!,', 'https://test.com/?,', 'https://test.com/),', 'https://test.com/];', 'https://test.com/:']
+        assert.strictEqual(urls.length, 2);
+        assert.ok(urls.includes('https://test.com/'));
+        assert.ok(urls.includes('https://test.com/?'));
+    });
+
+    it('extractUrls returns empty array for text with no URLs', () => {
+        const text = "This is a simple text without any URLs.";
+        const urls = context.extractUrls(text);
+        assert.deepStrictEqual(urls, []);
+    });
+
+    it('extractUrls returns empty array for empty string', () => {
+        const text = "";
+        const urls = context.extractUrls(text);
+        assert.deepStrictEqual(urls, []);
+    });
+
     it('filterUrls correctly ignores safe domains', () => {
         const urls = ['https://google.com/', 'http://malicious.com', 'https://github.com/repo', 'https://unknown.org'];
         const filtered = context.filterUrls(urls);
