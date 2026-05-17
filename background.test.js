@@ -220,8 +220,8 @@ describe('background.js', () => {
         // If trailing punctuation is NOT removed, urls will have 5 unique items:
         // ['https://test.com/!,', 'https://test.com/?,', 'https://test.com/),', 'https://test.com/];', 'https://test.com/:']
         assert.strictEqual(urls.length, 2);
-        assert.ok(urls.includes('https://test.com/'));
-        assert.ok(urls.includes('https://test.com/?'));
+        assert.ok(urls.find(u => u === 'https://test.com/'));
+        assert.ok(urls.find(u => u === 'https://test.com/?'));
     });
 
     it('extractUrls returns empty array for text with no URLs', () => {
