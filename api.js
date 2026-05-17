@@ -281,15 +281,35 @@ function renderManualUrlScanUI(url, headerMessageId) {
     let urlId = Array.from(new TextEncoder().encode(url))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
-    let resultHtml = `<div class="card card-info mb-3" id="upload-container-${urlId}">
-        <h2>URL: ${safeUrl}</h2>
-        <p class="text-info">Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
-        <button id="btn-upload-${urlId}" class="btn-primary mt-2">URL jetzt scannen</button>
-        <p id="upload-status-${urlId}" class="mt-2" aria-live="polite" role="status"></p>
-    </div>`;
-    container.insertAdjacentHTML('beforeend', resultHtml);
+    let card = document.createElement('div');
+    card.className = "card card-info mb-3";
+    card.id = `upload-container-${urlId}`;
 
-    document.getElementById(`btn-upload-${urlId}`).addEventListener('click', function() {
+    let h2 = document.createElement('h2');
+    h2.textContent = `URL: ${url}`;
+    card.appendChild(h2);
+
+    let pInfo = document.createElement('p');
+    pInfo.className = "text-info";
+    pInfo.innerHTML = 'Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.';
+    card.appendChild(pInfo);
+
+    let btnUpload = document.createElement('button');
+    btnUpload.id = `btn-upload-${urlId}`;
+    btnUpload.className = "btn-primary mt-2";
+    btnUpload.textContent = "URL jetzt scannen";
+    card.appendChild(btnUpload);
+
+    let pStatus = document.createElement('p');
+    pStatus.id = `upload-status-${urlId}`;
+    pStatus.className = "mt-2";
+    pStatus.setAttribute("aria-live", "polite");
+    pStatus.setAttribute("role", "status");
+    card.appendChild(pStatus);
+
+    container.appendChild(card);
+
+    btnUpload.addEventListener('click', function() {
         let btn = this;
         let statusEl = document.getElementById(`upload-status-${urlId}`);
         btn.disabled = true;
@@ -324,24 +344,55 @@ function renderManualUrlScanUI(url, headerMessageId) {
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
     let safeHash = escapeHTML(hash);
-    let resultHtml = `<div class="card card-info mb-3" id="upload-container-${safeHash}">
-        <h2>Anhang: ${escapeHTML(attachmentName || 'Unbekannt')}</h2>
-        <p>SHA-256: ${safeHash}</p>
-        <p class="text-info">Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.</p>
-        <button id="btn-upload-${safeHash}" class="btn-primary mt-2">Datei jetzt scannen (Upload)</button>
-        <p id="upload-status-${safeHash}" class="mt-2" aria-live="polite" role="status"></p>`;
 
+    let card = document.createElement('div');
+    card.className = "card card-info mb-3";
+    card.id = `upload-container-${safeHash}`;
+
+    let h2 = document.createElement('h2');
+    h2.textContent = `Anhang: ${attachmentName || 'Unbekannt'}`;
+    card.appendChild(h2);
+
+    let pHash = document.createElement('p');
+    pHash.textContent = `SHA-256: ${hash}`;
+    card.appendChild(pHash);
+
+    let pInfo = document.createElement('p');
+    pInfo.className = "text-info";
+    pInfo.innerHTML = 'Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.';
+    card.appendChild(pInfo);
+
+    let btnUpload = document.createElement('button');
+    btnUpload.id = `btn-upload-${safeHash}`;
+    btnUpload.className = "btn-primary mt-2";
+    btnUpload.textContent = "Datei jetzt scannen (Upload)";
+    card.appendChild(btnUpload);
+
+    let pStatus = document.createElement('p');
+    pStatus.id = `upload-status-${safeHash}`;
+    pStatus.className = "mt-2";
+    pStatus.setAttribute("aria-live", "polite");
+    pStatus.setAttribute("role", "status");
+    card.appendChild(pStatus);
+
+    let cdrBtn = null;
     if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
-        resultHtml += `
-        <button id="btn-cdr-${safeHash}" class="btn-primary mt-2 ml-2">Bereinigen & Herunterladen (Lokales CDR)</button>
-        <p id="cdr-status-${safeHash}" class="mt-2" aria-live="polite" role="status"></p>`;
+        cdrBtn = document.createElement('button');
+        cdrBtn.id = `btn-cdr-${safeHash}`;
+        cdrBtn.className = "btn-primary mt-2 ml-2";
+        cdrBtn.textContent = "Bereinigen & Herunterladen (Lokales CDR)";
+        card.appendChild(cdrBtn);
+
+        let pCdrStatus = document.createElement('p');
+        pCdrStatus.id = `cdr-status-${safeHash}`;
+        pCdrStatus.className = "mt-2";
+        pCdrStatus.setAttribute("aria-live", "polite");
+        pCdrStatus.setAttribute("role", "status");
+        card.appendChild(pCdrStatus);
     }
 
-    resultHtml += `
-    </div>`;
-    container.insertAdjacentHTML('beforeend', resultHtml);
+    container.appendChild(card);
 
-    let cdrBtn = document.getElementById(`btn-cdr-${safeHash}`);
     if (cdrBtn) {
         cdrBtn.addEventListener('click', function() {
             let btn = this;
