@@ -673,6 +673,53 @@ async function get_sha256_hash(fileData) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+async function handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, fileType) {
+    console.log('Datei ist der API unbekannt.');
+    if (privacyTier === 'balanced' || privacyTier === 'max') {
+        console.log('Lade unbekannte Datei automatisch hoch...');
+        try {
+            const file_to_submit = new File([content_of_atachment], attachment.name, { type: fileType || 'application/octet-stream' });
+            const formData = new FormData();
+            formData.append('scan_type', 'all');
+            formData.append('file', file_to_submit);
+
+            const uploadOptions = getHybridAnalysisOptions('POST', formData);
+            uploadOptions.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
+            const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
+            if (uploadResponse.status === 200 || uploadResponse.status === 201) {
+                const uploadData = await uploadResponse.json();
+                return {
+                    hybrid_data: {
+                        submission_id: uploadData.submission_id,
+                        job_id: uploadData.job_id,
+                        sha256: uploadData.sha256 || local_hash,
+                        state: 'UPLOADED',
+                        partName: attachment.partName
+                    },
+                    attachmentName: attachment.name
+                };
+            } else {
+                console.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
+            }
+        } catch (uploadError) {
+            console.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
+        }
+    }
+
+    console.log('Speichere Metadaten für manuellen Upload.');
+    return {
+        hybrid_data: {
+            submission_id: 'PENDING_UPLOAD',
+            job_id: 'PENDING_UPLOAD',
+            sha256: local_hash,
+            state: 'UNKNOWN',
+            partName: attachment.partName
+        },
+        attachmentName: attachment.name,
+        virustotal_stats: virustotal_stats
+    };
+}
+
 async function sent_to_hybrid_by_attachment(message, attachments) {
   if (!apikey_hybridanalysis) {
       console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
@@ -746,50 +793,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
                     virustotal_stats: virustotal_stats
                 };
             } else {
-                console.log('Datei ist der API unbekannt.');
-                if (privacyTier === 'balanced' || privacyTier === 'max') {
-                    console.log('Lade unbekannte Datei automatisch hoch...');
-                    try {
-                        const file_to_submit = new File([content_of_atachment], attachment.name, { type: file.type || 'application/octet-stream' });
-                        const formData = new FormData();
-                        formData.append('scan_type', 'all');
-                        formData.append('file', file_to_submit);
-
-                        const uploadOptions = getHybridAnalysisOptions('POST', formData);
-                        uploadOptions.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
-                        const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
-                        if (uploadResponse.status === 200 || uploadResponse.status === 201) {
-                            const uploadData = await uploadResponse.json();
-                            return {
-                                hybrid_data: {
-                                    submission_id: uploadData.submission_id,
-                                    job_id: uploadData.job_id,
-                                    sha256: uploadData.sha256 || local_hash,
-                                    state: 'UPLOADED',
-                                    partName: attachment.partName
-                                },
-                                attachmentName: attachment.name
-                            };
-                        } else {
-                            console.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
-                        }
-                    } catch (uploadError) {
-                        console.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
-                    }
-                }
-
-                console.log('Speichere Metadaten für manuellen Upload.');
-                return {
-                    hybrid_data: {
-                        submission_id: 'PENDING_UPLOAD',
-                        job_id: 'PENDING_UPLOAD',
-                        sha256: local_hash,
-                        state: 'UNKNOWN',
-                        partName: attachment.partName
-                    },
-                    attachmentName: attachment.name,
-                    virustotal_stats: virustotal_stats
-                };
+                return await handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, file.type);
             }
 
         } catch (error) {
