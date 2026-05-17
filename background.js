@@ -859,14 +859,20 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
           recordToSave = existingRecord;
           if (!recordToSave.links) recordToSave.links = [];
 
+          let linkMap = new Map();
+          for (let i = 0; i < recordToSave.links.length; i++) {
+            linkMap.set(recordToSave.links[i].url, i);
+          }
           for (const newLink of newLinks) {
-            let existingIdx = recordToSave.links.findIndex(l => l.url === newLink.url);
-            if (existingIdx > -1) {
-                recordToSave.links[existingIdx] = newLink;
+            const existingIdx = linkMap.get(newLink.url);
+            if (existingIdx !== undefined) {
+              recordToSave.links[existingIdx] = newLink;
             } else {
-                recordToSave.links.push(newLink);
+              linkMap.set(newLink.url, recordToSave.links.length);
+              recordToSave.links.push(newLink);
             }
           }
+
         } else {
           recordToSave = {
             messageHeader: message.headerMessageId,
