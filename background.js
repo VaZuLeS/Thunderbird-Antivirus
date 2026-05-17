@@ -10,6 +10,26 @@ let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 
+function getHybridAnalysisOptions(method, body = null, isUrl = false) {
+    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+    const options = {
+        method: method,
+        headers: {
+            accept: 'application/json',
+            'api-key': apikey_hybridanalysis,
+            'user-agent': 'Falcon'
+        }
+    };
+    if (body) {
+        options.body = body;
+        options.headers['scan_type'] = 'all';
+    }
+    if (isUrl) {
+        options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    }
+    return options;
+}
+
 // Precompiled Regexes for Performance
 const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
 const GLOBAL_URL_REGEX = /(https?:\/\/[^\s"'<>]+)/g;
@@ -418,23 +438,12 @@ async function tab_mail_open_display(tab, message) {
          console.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
          const urlResults = await Promise.all(filteredUrls.map(async (url) => {
             try {
-                if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
                 const formBody = new URLSearchParams();
                 formBody.append('scan_type', 'all');
                 formBody.append('url', url);
 
-                const options = {
-                    method: 'POST',
-                    url: 'https://hybrid-analysis.com/api/v2/quick-scan/url',
-                    headers: {
-                        accept: 'application/json',
-                        'api-key': apikey_hybridanalysis,
-                        'user-agent': 'Falcon',
-                        'scan_type': 'all',
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: formBody
-                };
+                const options = getHybridAnalysisOptions('POST', formBody, true);
+                options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url';
                 const response = await fetch(options.url, options);
                 if (response.status === 200 || response.status === 201) {
                     const json_data = await response.json();
@@ -718,15 +727,8 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             }
 
             // First check if it exists using hash
-            const optionsCheck = {
-                method: 'GET',
-                url: 'https://hybrid-analysis.com/api/v2/overview/' + local_hash,
-                headers: {
-                    accept: 'application/json',
-                    'api-key': apikey_hybridanalysis,
-                    'user-agent': 'Falcon',
-                }
-            };
+            const optionsCheck = getHybridAnalysisOptions('GET');
+            optionsCheck.url = 'https://hybrid-analysis.com/api/v2/overview/' + local_hash;
 
             const responseCheck = await fetch(optionsCheck.url, optionsCheck);
 
@@ -754,17 +756,8 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
                         formData.append('scan_type', 'all');
                         formData.append('file', file_to_submit);
 
-                        const uploadOptions = {
-                            method: 'POST',
-                            url: 'https://hybrid-analysis.com/api/v2/quick-scan/file',
-                            headers: {
-                                accept: 'application/json',
-                                'api-key': apikey_hybridanalysis,
-                                'user-agent': 'Falcon',
-                                'scan_type': 'all'
-                            },
-                            body: formData
-                        };
+                        const uploadOptions = getHybridAnalysisOptions('POST', formData);
+                        uploadOptions.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
                         const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
                         if (uploadResponse.status === 200 || uploadResponse.status === 201) {
                             const uploadData = await uploadResponse.json();
@@ -1087,14 +1080,9 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                     if (linkObj) {
                         if (linkObj.hybrid_sha256 && apikey_hybridanalysis) {
-                            return fetch('https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256, {
-                                method: 'GET',
-                                headers: {
-                                    accept: 'application/json',
-                                    'api-key': apikey_hybridanalysis,
-                                    'user-agent': 'Falcon',
-                                }
-                            }).then(response => response.json())
+                            const overviewOptions = getHybridAnalysisOptions('GET');
+                            overviewOptions.url = 'https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256;
+                            return fetch(overviewOptions.url, overviewOptions).then(response => response.json())
                             .then(json_data => {
                                 if (json_data.verdict) {
                                     if (json_data.verdict === 'no specific threat') {
@@ -1227,18 +1215,8 @@ async function handleUrlScan(url, headerMessageId) {
     formBody.append('scan_type', 'all');
     formBody.append('url', url);
 
-    const options = {
-        method: 'POST',
-        url: 'https://hybrid-analysis.com/api/v2/quick-scan/url',
-        headers: {
-            accept: 'application/json',
-            'api-key': apikey_hybridanalysis,
-            'user-agent': 'Falcon',
-            'scan_type': 'all',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: formBody
-    };
+    const options = getHybridAnalysisOptions('POST', formBody, true);
+    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url';
 
     const response = await fetch(options.url, options);
     const json_data = await response.json();
@@ -1281,17 +1259,8 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
     formData.append('scan_type', 'all');
     formData.append('file', file_to_submit);
 
-    const options = {
-        method: 'POST',
-        url: 'https://hybrid-analysis.com/api/v2/quick-scan/file',
-        headers: {
-            accept: 'application/json',
-            'api-key': apikey_hybridanalysis,
-            'user-agent': 'Falcon',
-            'scan_type': 'all'
-        },
-        body: formData
-    };
+    const options = getHybridAnalysisOptions('POST', formData);
+    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
 
     const response = await fetch(options.url, options);
     const json_data = await response.json();
