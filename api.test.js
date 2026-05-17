@@ -118,6 +118,12 @@ describe('get_hybrid_report_by_sha256', () => {
                 }
             },
             document: {
+                createElement: (tag) => {
+                    return {
+                        className: '',
+                        textContent: '',
+                    };
+                },
                 getElementById: (id) => {
                     if (id === 'hybrid_analysis_api_content') {
                         if (!context.apiContentElement) {
@@ -125,6 +131,14 @@ describe('get_hybrid_report_by_sha256', () => {
                                 _html: '',
                                 get innerHTML() { return this._html; },
                                 set innerHTML(val) { this._html = val; },
+                                appendChild: function(el) {
+                                    let content = el.textContent || '';
+                                    if (el.className) {
+                                        this._html += `<div class="${el.className}">${content}</div>`;
+                                    } else {
+                                        this._html += `<div>${content}</div>`;
+                                    }
+                                },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
                                 }
@@ -132,7 +146,7 @@ describe('get_hybrid_report_by_sha256', () => {
                         }
                         return context.apiContentElement;
                     }
-                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '' };
+                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '', appendChild: () => {} };
                 }
             },
             indexedDB: {

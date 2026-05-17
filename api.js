@@ -266,11 +266,17 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 
         } else {
             console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
-            document.getElementById('hybrid_analysis_api_content').innerHTML += `<div class="text-danger">API Error: ${response.status} für Element ${escapeHTML(attachmentName)}</div>`;
+            let errorDiv = document.createElement('div');
+            errorDiv.className = 'text-danger';
+            errorDiv.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+            document.getElementById('hybrid_analysis_api_content').appendChild(errorDiv);
         }
     } catch (error) {
         console.error('Fetch error:', error);
-        document.getElementById('hybrid_analysis_api_content').innerHTML += `<div class="text-danger">Netzwerkfehler: ${escapeHTML(error.message)} für Element ${escapeHTML(attachmentName)}</div>`;
+        let errorDiv = document.createElement('div');
+        errorDiv.className = 'text-danger';
+        errorDiv.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`;
+        document.getElementById('hybrid_analysis_api_content').appendChild(errorDiv);
     }
 }
 
