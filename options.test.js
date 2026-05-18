@@ -196,7 +196,7 @@ describe('options.js', () => {
         const statusSpan = context.document.getElementById('clearCacheStatus');
         assert.strictEqual(statusSpan.textContent, 'Cache erfolgreich geleert.');
         assert.strictEqual(statusSpan.className, 'text-success ml-2');
-        assert.strictEqual(statusSpan.style.display, 'inline');
+        assert.strictEqual(statusSpan.style.display, 'none');
     });
 
     it('should display info if cache is already empty or DB does not exist', async () => {
@@ -208,6 +208,7 @@ describe('options.js', () => {
         const statusSpan = context.document.getElementById('clearCacheStatus');
         assert.strictEqual(statusSpan.textContent, 'Datenbank existiert noch nicht oder ist bereits leer.');
         assert.strictEqual(statusSpan.className, 'text-success ml-2');
+        assert.strictEqual(statusSpan.style.display, 'none');
     });
 
     it('should handle clear cache error', async () => {
@@ -221,5 +222,6 @@ describe('options.js', () => {
         const statusSpan = context.document.getElementById('clearCacheStatus');
         assert.strictEqual(statusSpan.textContent, 'Fehler beim Leeren des Caches.');
         assert.strictEqual(statusSpan.className, 'text-danger ml-2');
+        assert.strictEqual(statusSpan.style.display, 'none');
     });
 });
