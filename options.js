@@ -105,4 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     statusSpan.style.display = 'inline';
+    setTimeout(() => {
+        statusSpan.style.display = 'none';
+    }, 3000);
   });
