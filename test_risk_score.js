@@ -119,7 +119,7 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
 }
 
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
-    let textToAnalyze = (subject + " " + messageText).toLowerCase();
+    let textToAnalyze = subject + " " + messageText;
     let foundUrgencyWords = [];
     let match;
     URGENCY_REGEX_COMBINED.lastIndex = 0;

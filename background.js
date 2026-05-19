@@ -278,7 +278,9 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
 }
 
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
-    let textToAnalyze = (subject + " " + messageText).toLowerCase();
+    // ⚡ Bolt Optimization: Avoid calling .toLowerCase() on the potentially large
+    // email body, as the URGENCY_REGEX_COMBINED regex already uses the 'i' flag.
+    let textToAnalyze = subject + " " + messageText;
     let foundUrgencyWords = [];
     let match;
     URGENCY_REGEX_COMBINED.lastIndex = 0;
@@ -666,21 +668,19 @@ function extractUrls(text) {
     return Array.from(urls);
 }
 
-function filterUrls(urls) {
-    const ignoredDomains = [
-        'w3.org', 'google.com', 'microsoft.com', 'apple.com',
-        'mozilla.org', 'schemas.microsoft.com', 'yahoo.com', 'github.com'
-    ];
+const IGNORED_DOMAINS = [
+    'w3.org', 'google.com', 'microsoft.com', 'apple.com',
+    'mozilla.org', 'schemas.microsoft.com', 'yahoo.com', 'github.com'
+];
+// Precompiled regex for faster O(1) checks instead of O(N) array loops
+const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d.replace(/\./g, '\\.')).join('|')})$`, 'i');
 
+function filterUrls(urls) {
     return urls.filter(url => {
         try {
             let parsed = new URL(url);
-            for (let domain of ignoredDomains) {
-                if (parsed.hostname === domain || parsed.hostname.endsWith('.' + domain)) {
-                    return false;
-                }
-            }
-            return true;
+            // ⚡ Bolt Optimization: Use precompiled regex instead of iterating over ignoredDomains array
+            return !IGNORED_DOMAINS_REGEX.test(parsed.hostname);
         } catch (e) {
             return false; // Ungültige URL
         }

@@ -49,3 +49,6 @@ for (const newLink of newLinks) {
 ```
 
 **Measured Impact:** In a benchmark testing 10,000 existing links and 5,000 new links, the execution time dropped from ~1160ms to ~5ms.
+## 2024-05-28 - Optimize Array Search Loops with Regex
+**Learning:** Checking elements of an array against a list of static strings by iterating over the list and using `.endsWith()` or `===` takes roughly O(N) where N is the length of the list, doing this for many items causes significant slowdowns.
+**Action:** Compile static lists into a single regular expression outside the loop. E.g. replace an inner loop checking `urls.filter(url => list.some(domain => url.endsWith(domain)))` with a precompiled regex `const REGEX = new RegExp('(domain1|domain2)$', 'i'); urls.filter(url => !REGEX.test(url))`. This reduces O(N) array loops to O(1) regex evaluations inside hot loops.
