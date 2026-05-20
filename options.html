@@ -37,26 +37,26 @@
     Nach der Anmeldung finden Sie diesen API Schlüssel unter "Nickname" -> "Profil" -> "API KEY".<br />
     Diesen API Schlüssel hier einfügen.<br />
 
-    <label>
+    <label for="apikey">
         API Schlüssel (Hybrid-Analysis):
         <input type="password" id="apikey">
     </label>
-    <label>
+    <label for="urlhausApikey">
         URLhaus API Schlüssel (Optional für Echtzeit-Domain-Checks):
         <input type="password" id="urlhausApikey">
         <br><small>Sie können einen kostenlosen API Schlüssel unter <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer" aria-label="urlhaus.abuse.ch (öffnet in einem neuen Tab)">urlhaus.abuse.ch <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
     </label>
-    <label>
+    <label for="urlscanApikey">
         urlscan.io API Schlüssel (Computer Vision Erkennung von z.B. gefälschten Logins):
         <input type="password" id="urlscanApikey">
         <br><small>Einen kostenlosen API Schlüssel erhalten Sie unter <a href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer" aria-label="urlscan.io (öffnet in einem neuen Tab)">urlscan.io <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>.</small>
     </label>
-    <label>
+    <label for="virustotalApikey">
         VirusTotal API Schlüssel (Optional für Datei-Scanner-Engines):
         <input type="password" id="virustotalApikey">
         <br><small>Sie können einen kostenlosen API Schlüssel unter <a href="https://www.virustotal.com/" target="_blank" rel="noopener noreferrer" aria-label="virustotal.com (öffnet in einem neuen Tab)">virustotal.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
     </label>
-    <label>
+    <label for="privacyTier">
         Datenschutz-Stufe (Privacy Tier):
         <select id="privacyTier">
             <option value="strict">Strikt (Nur Hashes senden, kein Upload)</option>
@@ -65,25 +65,25 @@
         </select>
     </label>
 
-    <label>
+    <label for="customWhitelist">
         Whitelist (Domains oder E-Mail-Adressen, kommagetrennt):
         <textarea id="customWhitelist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com"></textarea>
     </label>
 
-    <label>
+    <label for="customBlacklist">
         Blacklist (Domains oder E-Mail-Adressen, kommagetrennt):
         <textarea id="customBlacklist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com"></textarea>
     </label>
-    <label>
+    <label for="alwaysManual">
         <input type="checkbox" id="alwaysManual">
         Immer manuell scannen (Kein Auto-Upload)
     </label>
-    <label>
+    <label for="autoScanLinks">
         <input type="checkbox" id="autoScanLinks">
         Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)
         <br><small>Wenn deaktiviert, werden Links erst im Moment des Klickens gescannt (Time-of-Click Protection).</small>
     </label>
-    <label>
+    <label for="timeOfClickProtection">
         <input type="checkbox" id="timeOfClickProtection" checked>
         Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo bei Hover)
     </label>
@@ -93,7 +93,7 @@
 
     <h3>IP-Reputation (Header-Analyse)</h3>
     <p>Hier können Sie einen Anbieter auswählen, um die IPs der einliefernden Mailserver (Received-Header) auf Spam-Botnets oder andere Gefahren zu überprüfen.</p>
-    <label>
+    <label for="ipReputationProvider">
         Anbieter:
         <select id="ipReputationProvider">
             <option value="none">Deaktiviert</option>
@@ -101,7 +101,7 @@
             <option value="virustotal">VirusTotal</option>
         </select>
     </label>
-    <label>
+    <label for="ipReputationApiKey">
         API Schlüssel (IP-Reputation):
         <input type="password" id="ipReputationApiKey">
         <br>
