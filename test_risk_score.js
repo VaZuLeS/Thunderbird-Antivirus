@@ -38,10 +38,11 @@ const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'mic
 function checkLists(email, senderDomain) {
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.length > 0) {
-        if (customBlacklist.includes(email)) {
+        const lowerBlacklist = customBlacklist.map(s => s ? s.toLowerCase() : "");
+        if (lowerBlacklist.includes(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
-        for (let b of customBlacklist) {
+        for (let b of lowerBlacklist) {
             if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
                 return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`], listType: 'blacklist' };
             }
@@ -50,10 +51,11 @@ function checkLists(email, senderDomain) {
 
     // Check Whitelist
     if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.length > 0) {
-        if (customWhitelist.includes(email)) {
+        const lowerWhitelist = customWhitelist.map(s => s ? s.toLowerCase() : "");
+        if (lowerWhitelist.includes(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
-        for (let w of customWhitelist) {
+        for (let w of lowerWhitelist) {
             if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
                 return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`], listType: 'whitelist' };
             }

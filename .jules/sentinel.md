@@ -11,3 +11,8 @@
 **Vulnerability:** The `disarmHTML` function failed to strip `<applet>` and `<link>` tags, allowing Java applet execution and CSS-based data exfiltration or injection in Content Disarm and Reconstruction (CDR).
 **Learning:** Hardcoded blacklists for CDR need to be comprehensive. Missing legacy tags (`<applet>`) or style-related tags (`<link>`) can lead to bypasses. Additionally, fixing `innerHTML` with already-escaped data is "security theater" and should be avoided.
 **Prevention:** Always include all active content tags in HTML sanitizers and avoid making security theater changes that don't mitigate real flaws.
+
+## 2026-05-20 - Fix Blacklist Case Sensitivity Bypass
+**Vulnerability:** The custom blacklist allowed malicious domains to bypass protection if the user entered uppercase letters in the configuration UI, due to a strict case-sensitive comparison against a lowercase sender domain.
+**Learning:** Always normalize security configuration data (like blacklists and whitelists) to a consistent case (e.g., lowercase) during ingestion or evaluation to prevent trivial evasion.
+**Prevention:** Apply `.toLowerCase()` universally when comparing user-defined rules against normalized incoming data.
