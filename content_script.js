@@ -105,6 +105,8 @@
         modal.appendChild(message);
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
+        modal.tabIndex = -1;
+        modal.focus();
 
         return overlay;
     }
