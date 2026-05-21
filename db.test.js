@@ -121,6 +121,67 @@ describe('db.js module', () => {
         }
     });
 
+    it('should resolve getFromStore correctly when key is not found', async () => {
+        let expectedResult = undefined;
+        let dbMock = {
+            transaction: () => ({
+                objectStore: () => ({
+                    get: () => {
+                        let req = {};
+                        setTimeout(() => {
+                            req.result = expectedResult;
+                            req.onsuccess();
+                        }, 10);
+                        return req;
+                    }
+                })
+            })
+        };
+        context = {
+            Promise: Promise,
+            console: { log: () => {}, error: () => {} }
+        };
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        const getFromStore = context.getFromStore;
+        const result = await getFromStore(dbMock, 'hybridanalysis', 'some_key');
+        assert.strictEqual(result, expectedResult);
+    });
+
+    it('should reject getFromStore correctly with fallback error message', async () => {
+        let dbMock = {
+            transaction: () => ({
+                objectStore: () => ({
+                    get: () => {
+                        let req = {};
+                        setTimeout(() => {
+                            req.target = {}; // No explicitly defined target.error
+                            req.onerror({ target: req.target });
+                        }, 10);
+                        return req;
+                    }
+                })
+            })
+        };
+        context = {
+            Promise: Promise,
+            console: { log: () => {}, error: () => {} }
+        };
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        const getFromStore = context.getFromStore;
+        try {
+            await getFromStore(dbMock, 'hybridanalysis', 'some_key');
+            assert.fail('Should have rejected');
+        } catch (e) {
+            assert.strictEqual(e.message, 'Fehler beim Abrufen aus Store: hybridanalysis');
+        }
+    });
+
     it('should resolve updateStore correctly on success', async () => {
         let initialRecord = { id: 123, count: 1 };
         let updatedRecord = { id: 123, count: 2 };
