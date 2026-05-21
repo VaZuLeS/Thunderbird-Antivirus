@@ -62,18 +62,26 @@ describe('db.js module', () => {
     it('should resolve getFromStore correctly on success', async () => {
         let expectedResult = { id: 123, data: 'test data' };
         let dbMock = {
-            transaction: () => ({
-                objectStore: () => ({
-                    get: () => {
-                        let req = {};
-                        setTimeout(() => {
-                            req.result = expectedResult;
-                            req.onsuccess();
-                        }, 10);
-                        return req;
+            transaction: (storeNames, mode) => {
+                assert.strictEqual(Array.from(storeNames).join(','), 'hybridanalysis');
+                assert.strictEqual(mode, 'readonly');
+                return {
+                    objectStore: (storeName) => {
+                        assert.strictEqual(storeName, 'hybridanalysis');
+                        return {
+                            get: (key) => {
+                                assert.strictEqual(key, 'some_key');
+                                let req = {};
+                                setTimeout(() => {
+                                    req.result = expectedResult;
+                                    req.onsuccess();
+                                }, 10);
+                                return req;
+                            }
+                        };
                     }
-                })
-            })
+                };
+            }
         };
         context = {
             Promise: Promise,
@@ -88,21 +96,65 @@ describe('db.js module', () => {
         assert.deepStrictEqual(result, expectedResult);
     });
 
+    it('should resolve getFromStore correctly when item not found', async () => {
+        let dbMock = {
+            transaction: (storeNames, mode) => {
+                assert.strictEqual(Array.from(storeNames).join(','), 'hybridanalysis');
+                assert.strictEqual(mode, 'readonly');
+                return {
+                    objectStore: (storeName) => {
+                        assert.strictEqual(storeName, 'hybridanalysis');
+                        return {
+                            get: (key) => {
+                                assert.strictEqual(key, 'missing_key');
+                                let req = {};
+                                setTimeout(() => {
+                                    req.result = undefined;
+                                    req.onsuccess();
+                                }, 10);
+                                return req;
+                            }
+                        };
+                    }
+                };
+            }
+        };
+        context = {
+            Promise: Promise,
+            console: { log: () => {}, error: () => {} }
+        };
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        const getFromStore = context.getFromStore;
+        const result = await getFromStore(dbMock, 'hybridanalysis', 'missing_key');
+        assert.strictEqual(result, undefined);
+    });
+
     it('should reject getFromStore correctly on error', async () => {
         let expectedError = new Error('Test error');
         let dbMock = {
-            transaction: () => ({
-                objectStore: () => ({
-                    get: () => {
-                        let req = {};
-                        setTimeout(() => {
-                            req.target = { error: expectedError };
-                            req.onerror({ target: req.target });
-                        }, 10);
-                        return req;
+            transaction: (storeNames, mode) => {
+                assert.strictEqual(Array.from(storeNames).join(','), 'hybridanalysis');
+                assert.strictEqual(mode, 'readonly');
+                return {
+                    objectStore: (storeName) => {
+                        assert.strictEqual(storeName, 'hybridanalysis');
+                        return {
+                            get: (key) => {
+                                assert.strictEqual(key, 'some_key');
+                                let req = {};
+                                setTimeout(() => {
+                                    req.target = { error: expectedError };
+                                    req.onerror({ target: req.target });
+                                }, 10);
+                                return req;
+                            }
+                        };
                     }
-                })
-            })
+                };
+            }
         };
         context = {
             Promise: Promise,
