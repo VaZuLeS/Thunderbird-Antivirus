@@ -1,8 +1,28 @@
-1. **Fix CodeQL Security Vulnerability (Insecure URL checks)**
-   - The issue is caused by `url.includes('domain.com')` allowing subdomains or domains like `malicious-domain.com?q=virustotal.com`.
-   - Update `_injectAuthHeaders` in `api_gateway.js` to parse the URL using `new URL(url)` and check the `hostname` instead of a simple substring match.
-   - For example: `const parsedUrl = new URL(url); if (parsedUrl.hostname === 'www.virustotal.com' || parsedUrl.hostname === 'virustotal.com')`
-2. **Verify Changes locally**
-   - Run existing unit tests (`node --test`) to ensure no logic is broken.
-3. **Submit Code**
-   - Push branch and run pre-commit if necessary.
+1. **Optimize `getMainDomain` in `background.js` and `test_risk_score.js`**:
+   - Replace the `O(N)` loop (`for (let brand of KNOWN_BRANDS) ... endsWith`) with a precompiled regular expression matching exact domains or subdomains.
+   - Example optimization logic:
+     ```javascript
+     const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(b => b.replace(/\./g, '\\.')).join('|')})$`, 'i');
+
+     function getMainDomain(domain) {
+         const match = domain.match(KNOWN_BRANDS_REGEX);
+         if (match) return match[1].toLowerCase();
+
+         const dParts = domain.split('.');
+         if (dParts.length >= 2) {
+             return dParts.slice(-2).join('.');
+         }
+         return domain;
+     }
+     ```
+   - This optimization turns the complexity from `O(N)` string iterations inside hot loops (like evaluating multiple URLs in emails) to a single `O(1)` regex execution.
+
+2. **Run tests**:
+   - Verify `background.test.js` passes.
+   - Verify `test_risk_score.js` passes.
+   - Ensure `npm test` works perfectly.
+
+3. **Complete pre-commit steps to ensure proper testing, verification, review, and reflection are done.**
+
+4. **Submit changes**:
+   - Use the submit tool with branch `bolt-optimizations` and a commit message detailing the `getMainDomain` optimization.

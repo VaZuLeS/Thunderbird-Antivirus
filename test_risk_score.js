@@ -40,6 +40,9 @@ function escapeRegExp(str) {
 }
 const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => escapeRegExp(d)).join('|')})$`, 'i');
 
+// ⚡ Bolt Optimization: Use precompiled regex for O(1) checks instead of O(N) array loops
+const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(b => b.replace(/\\./g, '\\.')).join('|')})$`, 'i');
+
 function checkLists(email, senderDomain) {
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.length > 0) {

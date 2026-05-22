@@ -284,16 +284,18 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
 }
 
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
-    // ⚡ Bolt Optimization: Avoid calling .toLowerCase() on the potentially large
-    // email body, as the URGENCY_REGEX_COMBINED regex already uses the 'i' flag.
-    let textToAnalyze = subject + " " + messageText;
-    let foundUrgencyWords = [];
+    // ⚡ Bolt Optimization: Call .toLowerCase() exactly once on the large combined text string
+    // *before* regex execution. This avoids redundantly calling .toLowerCase() on every captured
+    // match group inside the hot loop, reducing memory allocations while keeping the extracted
+    // terms normalized for deduplication.
+    let textToAnalyze = (subject + " " + messageText).toLowerCase();
+    let foundUrgencyWords = new Set();
     let match;
     URGENCY_REGEX_COMBINED.lastIndex = 0;
     while ((match = URGENCY_REGEX_COMBINED.exec(textToAnalyze)) !== null) {
-        foundUrgencyWords.push(match[1].toLowerCase());
+        foundUrgencyWords.add(match[1]);
     }
-    foundUrgencyWords = [...new Set(foundUrgencyWords)];
+    foundUrgencyWords = Array.from(foundUrgencyWords);
 
     if (foundUrgencyWords.length > 0) {
         if (isFirstCommunication) {

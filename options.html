@@ -43,18 +43,18 @@
     </label>
     <label for="urlhausApikey">
         URLhaus API Schlüssel (Optional für Echtzeit-Domain-Checks):
-        <input type="password" id="urlhausApikey">
-        <br><small>Sie können einen kostenlosen API Schlüssel unter <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer" aria-label="urlhaus.abuse.ch (öffnet in einem neuen Tab)">urlhaus.abuse.ch <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
+        <input type="password" id="urlhausApikey" aria-describedby="urlhausHelp">
+        <br><small id="urlhausHelp">Sie können einen kostenlosen API Schlüssel unter <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer" aria-label="urlhaus.abuse.ch (öffnet in einem neuen Tab)">urlhaus.abuse.ch <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
     </label>
     <label for="urlscanApikey">
         urlscan.io API Schlüssel (Computer Vision Erkennung von z.B. gefälschten Logins):
-        <input type="password" id="urlscanApikey">
-        <br><small>Einen kostenlosen API Schlüssel erhalten Sie unter <a href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer" aria-label="urlscan.io (öffnet in einem neuen Tab)">urlscan.io <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>.</small>
+        <input type="password" id="urlscanApikey" aria-describedby="urlscanHelp">
+        <br><small id="urlscanHelp">Einen kostenlosen API Schlüssel erhalten Sie unter <a href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer" aria-label="urlscan.io (öffnet in einem neuen Tab)">urlscan.io <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>.</small>
     </label>
     <label for="virustotalApikey">
         VirusTotal API Schlüssel (Optional für Datei-Scanner-Engines):
-        <input type="password" id="virustotalApikey">
-        <br><small>Sie können einen kostenlosen API Schlüssel unter <a href="https://www.virustotal.com/" target="_blank" rel="noopener noreferrer" aria-label="virustotal.com (öffnet in einem neuen Tab)">virustotal.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
+        <input type="password" id="virustotalApikey" aria-describedby="virustotalHelp">
+        <br><small id="virustotalHelp">Sie können einen kostenlosen API Schlüssel unter <a href="https://www.virustotal.com/" target="_blank" rel="noopener noreferrer" aria-label="virustotal.com (öffnet in einem neuen Tab)">virustotal.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
     </label>
     <label for="privacyTier">
         Datenschutz-Stufe (Privacy Tier):
@@ -79,9 +79,9 @@
         Immer manuell scannen (Kein Auto-Upload)
     </label>
     <label for="autoScanLinks">
-        <input type="checkbox" id="autoScanLinks">
+        <input type="checkbox" id="autoScanLinks" aria-describedby="autoScanHelp">
         Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)
-        <br><small>Wenn deaktiviert, werden Links erst im Moment des Klickens gescannt (Time-of-Click Protection).</small>
+        <br><small id="autoScanHelp">Wenn deaktiviert, werden Links erst im Moment des Klickens gescannt (Time-of-Click Protection).</small>
     </label>
     <label for="timeOfClickProtection">
         <input type="checkbox" id="timeOfClickProtection" checked>
@@ -103,9 +103,9 @@
     </label>
     <label for="ipReputationApiKey">
         API Schlüssel (IP-Reputation):
-        <input type="password" id="ipReputationApiKey">
+        <input type="password" id="ipReputationApiKey" aria-describedby="ipReputationHelp">
         <br>
-        <small>Einen kostenlosen API-Schlüssel erhalten Sie unter <a href="https://www.abuseipdb.com/" target="_blank" rel="noopener noreferrer" aria-label="AbuseIPDB (öffnet in einem neuen Tab)">AbuseIPDB <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> (1.000 Abfragen/Tag) oder <a href="https://www.virustotal.com/gui/join-us" target="_blank" rel="noopener noreferrer" aria-label="VirusTotal (öffnet in einem neuen Tab)">VirusTotal <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> (500 Abfragen/Tag).</small>
+        <small id="ipReputationHelp">Einen kostenlosen API-Schlüssel erhalten Sie unter <a href="https://www.abuseipdb.com/" target="_blank" rel="noopener noreferrer" aria-label="AbuseIPDB (öffnet in einem neuen Tab)">AbuseIPDB <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> (1.000 Abfragen/Tag) oder <a href="https://www.virustotal.com/gui/join-us" target="_blank" rel="noopener noreferrer" aria-label="VirusTotal (öffnet in einem neuen Tab)">VirusTotal <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> (500 Abfragen/Tag).</small>
     </label>
 
     <br>
