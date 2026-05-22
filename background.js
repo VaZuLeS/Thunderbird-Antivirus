@@ -196,7 +196,7 @@ const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'mic
 // ⚡ Bolt Optimization: Precompiled Set for O(1) existence checks instead of O(N) array loops
 const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
 // ⚡ Bolt Optimization: Precompiled Regex for O(1) .endsWith() checks instead of O(N) array loops
-const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.replace(/\./g, '\\.')).join('|')})$`, 'i');
+const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`, 'i');
 
 function checkLists(email, senderDomain) {
     // Check Blacklist
