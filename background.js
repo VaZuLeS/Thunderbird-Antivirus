@@ -193,6 +193,8 @@ function levenshteinDistance(a, b) {
 }
 
 const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
+// ⚡ Bolt Optimization: Use precompiled regex for O(1) checks instead of O(N) array loops
+const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(b => b.replace(/\\./g, '\\.')).join('|')})$`, 'i');
 
 function checkLists(email, senderDomain) {
     // Check Blacklist
@@ -309,11 +311,9 @@ function evaluateBehavior(subject, messageText, isFirstCommunication, score, rea
 }
 
 function getMainDomain(domain) {
-    for (let brand of KNOWN_BRANDS) {
-        if (domain === brand || domain.endsWith('.' + brand)) {
-            return brand;
-        }
-    }
+    const match = domain.match(KNOWN_BRANDS_REGEX);
+    if (match) return match[1].toLowerCase();
+
     const dParts = domain.split('.');
     if (dParts.length >= 2) {
         return dParts.slice(-2).join('.');
