@@ -35,7 +35,10 @@ function levenshteinDistance(a, b) {
 
 const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
 const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
-const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.replace(/\./g, '\\.')).join('|')})$`, 'i');
+function escapeRegExp(str) {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => escapeRegExp(d)).join('|')})$`, 'i');
 
 function checkLists(email, senderDomain) {
     // Check Blacklist
