@@ -37,15 +37,18 @@ function setElementText(id, text) {
 function sendExtensionMessage(message, btn, statusEl, errorPrefix, onSuccess) {
     return browser.runtime.sendMessage(message).then(res => {
         if (res && res.status === 'success') {
+            if (btn) btn.removeAttribute('aria-busy');
             if (onSuccess) onSuccess(res);
         } else {
             statusEl.innerText = errorPrefix + (res ? res.message : "Unbekannter Fehler");
             btn.disabled = false;
+            if (btn) btn.removeAttribute('aria-busy');
             btn.innerText = "Erneut versuchen";
         }
     }).catch(err => {
         statusEl.innerText = "Kommunikationsfehler: " + err;
         btn.disabled = false;
+        if (btn) btn.removeAttribute('aria-busy');
         btn.innerText = "Erneut versuchen";
     });
 }
@@ -323,6 +326,7 @@ function bindRescanButton(btn, hybrid_sha, messageId, partName, attachmentName, 
         let statusId = `rescan-status-${escapeHTML(hybrid_sha)}`;
         let statusEl = document.getElementById(statusId);
         btn.disabled = true;
+        if (btn) btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Sende Rescan...";
         setElementText(statusId, "Datei wird für Rescan hochgeladen...");
 
@@ -353,6 +357,7 @@ function bindCdrButton(btn, hybrid_sha, messageId, partName, attachmentName) {
         let statusId = `cdr-status-${escapeHTML(hybrid_sha)}`;
         let statusEl = document.getElementById(statusId);
         btn.disabled = true;
+        if (btn) btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Bereinige...";
         setElementText(statusId, "Lokales CDR wird durchgeführt...");
 
@@ -435,6 +440,7 @@ function renderManualUrlScanUI(url, headerMessageId) {
         let btn = this;
         let statusId = `upload-status-${urlId}`;
         btn.disabled = true;
+        if (btn) btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Sende URL...";
         setElementText(statusId, "URL wird an Hybrid Analysis übertragen...");
 
@@ -520,6 +526,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
             let btn = this;
             let statusId = `cdr-status-${safeHash}`;
             btn.disabled = true;
+            if (btn) btn.setAttribute('aria-busy', 'true');
             btn.innerText = "Bereinige...";
             setElementText(statusId, "Lokales CDR wird durchgeführt...");
 
@@ -545,6 +552,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
         let btn = this;
         let statusId = `upload-status-${safeHash}`;
         btn.disabled = true;
+        if (btn) btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Lade hoch...";
         setElementText(statusId, "Datei wird an Hybrid Analysis übertragen...");
 

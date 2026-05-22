@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('save').addEventListener('click', function() {
     const saveBtn = document.getElementById('save');
     saveBtn.disabled = true;
+    saveBtn.setAttribute('aria-busy', 'true');
     saveBtn.textContent = 'Wird gespeichert...';
 
     let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
@@ -65,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
+        saveBtn.removeAttribute('aria-busy');
         saveBtn.textContent = 'Speichern';
         setTimeout(() => {
             statusSpan.style.display = 'none';
@@ -72,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }).catch(error => {
         console.error("Speichern fehlgeschlagen", error);
         saveBtn.disabled = false;
+        saveBtn.removeAttribute('aria-busy');
         saveBtn.textContent = 'Speichern';
     });
   });
@@ -79,6 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('clearCache').addEventListener('click', async function() {
     const clearBtn = document.getElementById('clearCache');
     clearBtn.disabled = true;
+    clearBtn.setAttribute('aria-busy', 'true');
     clearBtn.textContent = 'Wird geleert...';
 
     let statusSpan = document.getElementById('clearCacheStatus');
@@ -101,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error(error);
     } finally {
         clearBtn.disabled = false;
+        clearBtn.removeAttribute('aria-busy');
         clearBtn.textContent = 'Cache leeren';
     }
 

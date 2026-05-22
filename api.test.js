@@ -273,6 +273,8 @@ describe('renderManualUrlScanUI', () => {
                                         this.clicks.forEach(cb => cb.call(this));
                                     }
                                 },
+                                removeAttribute: function() {},
+                                setAttribute: function() {},
                                 remove: function() {
                                     this.removed = true;
                                 }
@@ -287,7 +289,10 @@ describe('renderManualUrlScanUI', () => {
                          }
                          return context.mockElements[id];
                     }
-                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '', appendChild: () => {}, addEventListener: () => {}, remove: () => {} };
+                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '', appendChild: () => {}, addEventListener: () => {},
+                        removeAttribute: function() {},
+                        setAttribute: function() {},
+                        remove: () => {} };
                 }
             },
             indexedDB: { open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null }) },
