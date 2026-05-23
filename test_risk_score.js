@@ -34,6 +34,14 @@ function levenshteinDistance(a, b) {
 }
 
 const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
+const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
+function escapeRegExp(str) {
+    return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => escapeRegExp(d)).join('|')})$`, 'i');
+
+// ⚡ Bolt Optimization: Use precompiled regex for O(1) checks instead of O(N) array loops
+const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(b => b.replace(/\\./g, '\\.')).join('|')})$`, 'i');
 
 function checkLists(email, senderDomain) {
     // Check Blacklist
@@ -146,10 +154,9 @@ function evaluateBehavior(subject, messageText, isFirstCommunication, score, rea
 }
 
 function getMainDomain(domain) {
-    for (let brand of KNOWN_BRANDS) {
-        if (domain === brand || domain.endsWith('.' + brand)) {
-            return brand;
-        }
+    const match = domain.match(KNOWN_BRANDS_REGEX);
+    if (match) {
+        return match[1].toLowerCase();
     }
     const dParts = domain.split('.');
     if (dParts.length >= 2) {
@@ -162,7 +169,7 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
     let senderMainDomain = "";
     if (senderDomain) {
         senderMainDomain = getMainDomain(senderDomain);
-        let isSenderKnownBrand = KNOWN_BRANDS.includes(senderMainDomain);
+        let isSenderKnownBrand = KNOWN_BRANDS_SET.has(senderMainDomain);
 
         if (!isSenderKnownBrand) {
             for (let brand of KNOWN_BRANDS) {
@@ -201,7 +208,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
             }
 
             let linkMainDomain = getMainDomain(ld);
-            let isLinkKnownBrand = KNOWN_BRANDS.includes(linkMainDomain);
+            let isLinkKnownBrand = KNOWN_BRANDS_SET.has(linkMainDomain);
 
             if (!isLinkKnownBrand) {
                 for (let brand of KNOWN_BRANDS) {
