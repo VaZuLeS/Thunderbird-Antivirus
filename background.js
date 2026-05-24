@@ -40,8 +40,14 @@ const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey']);
+    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist']);
     apikey_hybridanalysis = result.apikey;
+    if (result.customBlacklist !== undefined) {
+      customBlacklist = result.customBlacklist.map(s => s ? s.toLowerCase() : "");
+    }
+    if (result.customWhitelist !== undefined) {
+      customWhitelist = result.customWhitelist.map(s => s ? s.toLowerCase() : "");
+    }
     if (result.urlhausApikey !== undefined) {
       urlhausApikey = result.urlhausApikey;
     }
@@ -88,6 +94,12 @@ browser.storage.onChanged.addListener((changes, area) => {
   }
   if (area === 'local' && changes.timeOfClickProtection !== undefined) {
     timeOfClickProtection = changes.timeOfClickProtection.newValue;
+  }
+  if (area === 'local' && changes.customBlacklist !== undefined) {
+    customBlacklist = (changes.customBlacklist.newValue || []).map(s => s ? s.toLowerCase() : "");
+  }
+  if (area === 'local' && changes.customWhitelist !== undefined) {
+    customWhitelist = (changes.customWhitelist.newValue || []).map(s => s ? s.toLowerCase() : "");
   }
 });
 
@@ -201,11 +213,11 @@ const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.repla
 function checkLists(email, senderDomain) {
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.length > 0) {
-        const lowerBlacklist = customBlacklist.map(s => s ? s.toLowerCase() : "");
-        if (lowerBlacklist.includes(email)) {
+        // ⚡ Bolt Optimization: Use pre-lowercased list directly instead of mapping on every call
+        if (customBlacklist.includes(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
-        for (let b of lowerBlacklist) {
+        for (let b of customBlacklist) {
             if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
                 return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`], listType: 'blacklist' };
             }
@@ -214,11 +226,11 @@ function checkLists(email, senderDomain) {
 
     // Check Whitelist
     if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.length > 0) {
-        const lowerWhitelist = customWhitelist.map(s => s ? s.toLowerCase() : "");
-        if (lowerWhitelist.includes(email)) {
+        // ⚡ Bolt Optimization: Use pre-lowercased list directly instead of mapping on every call
+        if (customWhitelist.includes(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
-        for (let w of lowerWhitelist) {
+        for (let w of customWhitelist) {
             if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
                 return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`], listType: 'whitelist' };
             }
