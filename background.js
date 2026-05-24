@@ -454,31 +454,10 @@ function calculateThreatScore(author, urls, options = {}) {
     return { score: Math.min(score, 100), reasons: reasons, authStatus: authStatus };
 }
 
-// Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
-async function tab_mail_open_display(tab, message) {
-  console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
-
-  try {
-    // Liste der Anhänge abrufen
-    let attachments = await browser.messages.listAttachments(message.id);
-
-    console.log("Gefundene Anhänge:", attachments);
-    
-    if (attachments.length > 0) {
-      await sent_to_hybrid_by_attachment(message, attachments);
-    }
-
-    // Vollständige Nachricht abrufen für Link-Extraktion
-    let fullMessage = await browser.messages.getFull(message.id);
-    let messageText = extractTextFromParts(fullMessage);
-    let urls = extractUrls(messageText);
-    let filteredUrls = filterUrls(urls);
-
-    console.log("Gefundene URLs:", filteredUrls);
-    if (filteredUrls.length > 0) {
-      if (privacyTier === 'max') {
-         console.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
-         const urlResults = await Promise.all(filteredUrls.map(async (url) => {
+async function processAndUploadUrls(message, filteredUrls) {
+    if (privacyTier === 'max') {
+        console.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
+        const urlResults = await Promise.all(filteredUrls.map(async (url) => {
             try {
                 const formBody = new URLSearchParams();
                 formBody.append('scan_type', 'all');
@@ -501,35 +480,33 @@ async function tab_mail_open_display(tab, message) {
                 console.error('Fehler beim automatischen URL-Upload', e);
             }
             return { url: url, state: 'UNKNOWN' };
-         }));
+        }));
 
-         await indexedDB_save_links_objects_to_db(message, urlResults);
-      } else {
-         await indexedDB_save_links_to_db(message, filteredUrls);
-      }
+        await indexedDB_save_links_objects_to_db(message, urlResults);
+    } else {
+        await indexedDB_save_links_to_db(message, filteredUrls);
     }
+}
 
-    // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
+async function injectTimeOfClickProtection(tabId, filteredUrls) {
     if (timeOfClickProtection && filteredUrls.length > 0) {
-       browser.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: function() {
-              const links = document.querySelectorAll('a');
-              links.forEach(link => {
-                  if (link.href && link.href.startsWith('http')) {
-                      link.title = "Protected by Thundy Time-of-Click";
-                      link.style.borderBottom = "1px dashed #ff8c00";
-                  }
-              });
-          }
-       }).catch(e => console.log("Fehler beim Injecten von Time-of-Click Styles:", e));
+        await browser.scripting.executeScript({
+            target: { tabId: tabId },
+            func: function() {
+                const links = document.querySelectorAll('a');
+                links.forEach(link => {
+                    if (link.href && link.href.startsWith('http')) {
+                        link.title = "Protected by Thundy Time-of-Click";
+                        link.style.borderBottom = "1px dashed #ff8c00";
+                    }
+                });
+            }
+        }).catch(e => console.log("Fehler beim Injecten von Time-of-Click Styles:", e));
     }
+}
 
-    let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
-    let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
-    let urlhausDomains = [];
+async function checkIPReputation(receivedHeaders) {
     let maliciousIps = [];
-
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
         let ipChecks = publicIps.map(async (ip) => {
@@ -549,11 +526,10 @@ async function tab_mail_open_display(tab, message) {
             }
         }
     }
+    return maliciousIps;
+}
 
-    // BEC Protection Data Extraction
-    emailMatch = message.author.match(/<([^>]+)>/);
-    let senderEmail = emailMatch ? emailMatch[1].toLowerCase() : message.author.toLowerCase();
-
+async function checkFirstCommunication(senderEmail) {
     let isFirstCommunication = false;
     try {
         if (browser.messages.query) {
@@ -574,6 +550,133 @@ async function tab_mail_open_display(tab, message) {
     } catch (e) {
         console.log("Fehler bei messages.query (Möglicherweise nicht unterstützt):", e);
     }
+    return isFirstCommunication;
+}
+
+async function checkURLhausDomains(filteredUrls) {
+    let urlhausDomains = [];
+    if (urlhausApikey && filteredUrls.length > 0) {
+        let linkDomains = new Set();
+        for (let url of filteredUrls) {
+            try {
+                let parsed = new URL(url);
+                linkDomains.add(parsed.hostname.toLowerCase());
+            } catch (e) { /* Ignore invalid URLs */ }
+        }
+
+        const domainChecks = Array.from(linkDomains).map(async (domain) => {
+            let isMalicious = await checkURLhaus(domain, urlhausApikey);
+            if (isMalicious) {
+                return domain;
+            }
+            return null;
+        });
+
+        const checkResults = await Promise.all(domainChecks);
+        urlhausDomains = checkResults.filter(d => d !== null);
+    }
+    return urlhausDomains;
+}
+
+async function injectThreatBanner(tabId, threat) {
+    if (threat.score >= 50) {
+        console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
+        await browser.scripting.executeScript({
+            target: { tabId: tabId },
+            func: function(score, reasons, authStatus) {
+                if (score >= 50) {
+                    // Sichere DOM-Manipulation ohne innerHTML
+                    const banner = document.createElement('div');
+                    banner.style.backgroundColor = '#ffeeee';
+                    banner.style.border = '1px solid #ff0000';
+                    banner.style.color = '#ff0000';
+                    banner.style.padding = '10px';
+                    banner.style.margin = '10px';
+                    banner.style.borderRadius = '4px';
+                    banner.style.fontWeight = 'bold';
+                    banner.style.fontFamily = 'Arial, sans-serif';
+                    banner.style.zIndex = '9999';
+
+                    const title = document.createElement('div');
+                    title.textContent = `🔴 ⚠️ Warnung! Mögliches Phishing erkannt (Risk Score: ${score}/100)`;
+                    title.style.fontSize = '16px';
+                    title.style.marginBottom = '5px';
+                    banner.appendChild(title);
+
+                    const reasonList = document.createElement('ul');
+                    reasonList.style.margin = '0';
+                    reasonList.style.paddingLeft = '20px';
+                    reasonList.style.fontSize = '14px';
+
+                    for (const reason of reasons) {
+                        const li = document.createElement('li');
+                        li.textContent = reason;
+                        reasonList.appendChild(li);
+                    }
+                    banner.appendChild(reasonList);
+
+                    document.body.prepend(banner);
+                } else if (authStatus === 'pass') {
+                    const badge = document.createElement('div');
+                    badge.style.display = 'inline-block';
+                    badge.style.backgroundColor = '#e6ffe6';
+                    badge.style.border = '1px solid #008000';
+                    badge.style.color = '#008000';
+                    badge.style.padding = '5px 10px';
+                    badge.style.margin = '10px';
+                    badge.style.borderRadius = '20px';
+                    badge.style.fontWeight = 'bold';
+                    badge.style.fontFamily = 'Arial, sans-serif';
+                    badge.style.fontSize = '12px';
+                    badge.style.zIndex = '9999';
+                    badge.textContent = `🟢 🛡️ Absender verifiziert`;
+
+                    document.body.prepend(badge);
+                }
+            },
+            args: [threat.score, threat.reasons, threat.authStatus]
+        });
+    }
+}
+
+// Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
+async function tab_mail_open_display(tab, message) {
+  console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
+
+  try {
+    // Liste der Anhänge abrufen
+    let attachments = await browser.messages.listAttachments(message.id);
+
+    console.log("Gefundene Anhänge:", attachments);
+
+    if (attachments.length > 0) {
+      await sent_to_hybrid_by_attachment(message, attachments);
+    }
+
+    // Vollständige Nachricht abrufen für Link-Extraktion
+    let fullMessage = await browser.messages.getFull(message.id);
+    let messageText = extractTextFromParts(fullMessage);
+    let urls = extractUrls(messageText);
+    let filteredUrls = filterUrls(urls);
+
+    console.log("Gefundene URLs:", filteredUrls);
+    if (filteredUrls.length > 0) {
+      await processAndUploadUrls(message, filteredUrls);
+    }
+
+    // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
+    await injectTimeOfClickProtection(tab.id, filteredUrls);
+
+    let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
+    let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
+
+    let maliciousIps = await checkIPReputation(receivedHeaders);
+
+    // BEC Protection Data Extraction
+    let emailMatch = message.author.match(/<([^>]+)>/);
+    let senderEmail = emailMatch ? emailMatch[1].toLowerCase() : message.author.toLowerCase();
+
+    let isFirstCommunication = await checkFirstCommunication(senderEmail);
 
     let replyTo = "";
     if (fullMessage.headers && fullMessage.headers['reply-to']) {
@@ -581,27 +684,7 @@ async function tab_mail_open_display(tab, message) {
     }
 
     let subject = message.subject || "";
-
-    if (urlhausApikey && filteredUrls.length > 0) {
-      let linkDomains = new Set();
-      for (let url of filteredUrls) {
-        try {
-          let parsed = new URL(url);
-          linkDomains.add(parsed.hostname.toLowerCase());
-        } catch (e) { /* Ignore invalid URLs */ }
-      }
-
-      const domainChecks = Array.from(linkDomains).map(async (domain) => {
-        let isMalicious = await checkURLhaus(domain, urlhausApikey);
-        if (isMalicious) {
-          return domain;
-        }
-        return null;
-      });
-
-      const checkResults = await Promise.all(domainChecks);
-      urlhausDomains = checkResults.filter(d => d !== null);
-    }
+    let urlhausDomains = await checkURLhausDomains(filteredUrls);
 
     let threat = calculateThreatScore(message.author, urls, {
       authHeaders,
@@ -611,64 +694,8 @@ async function tab_mail_open_display(tab, message) {
       subject,
       replyTo
     });
-    if (threat.score >= 50) {
-      console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
-      await browser.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: function(score, reasons, authStatus) {
-          if (score >= 50) {
-            // Sichere DOM-Manipulation ohne innerHTML
-            const banner = document.createElement('div');
-            banner.style.backgroundColor = '#ffeeee';
-            banner.style.border = '1px solid #ff0000';
-            banner.style.color = '#ff0000';
-            banner.style.padding = '10px';
-            banner.style.margin = '10px';
-            banner.style.borderRadius = '4px';
-            banner.style.fontWeight = 'bold';
-            banner.style.fontFamily = 'Arial, sans-serif';
-            banner.style.zIndex = '9999';
 
-            const title = document.createElement('div');
-            title.textContent = `🔴 ⚠️ Warnung! Mögliches Phishing erkannt (Risk Score: ${score}/100)`;
-            title.style.fontSize = '16px';
-            title.style.marginBottom = '5px';
-            banner.appendChild(title);
-
-            const reasonList = document.createElement('ul');
-            reasonList.style.margin = '0';
-            reasonList.style.paddingLeft = '20px';
-            reasonList.style.fontSize = '14px';
-
-            for (const reason of reasons) {
-                const li = document.createElement('li');
-                li.textContent = reason;
-                reasonList.appendChild(li);
-            }
-            banner.appendChild(reasonList);
-
-            document.body.prepend(banner);
-          } else if (authStatus === 'pass') {
-            const badge = document.createElement('div');
-            badge.style.display = 'inline-block';
-            badge.style.backgroundColor = '#e6ffe6';
-            badge.style.border = '1px solid #008000';
-            badge.style.color = '#008000';
-            badge.style.padding = '5px 10px';
-            badge.style.margin = '10px';
-            badge.style.borderRadius = '20px';
-            badge.style.fontWeight = 'bold';
-            badge.style.fontFamily = 'Arial, sans-serif';
-            badge.style.fontSize = '12px';
-            badge.style.zIndex = '9999';
-            badge.textContent = `🟢 🛡️ Absender verifiziert`;
-
-            document.body.prepend(badge);
-          }
-        },
-        args: [threat.score, threat.reasons, threat.authStatus]
-      });
-    }
+    await injectThreatBanner(tab.id, threat);
 
   } catch (error) {
     console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
