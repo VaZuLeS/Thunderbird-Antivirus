@@ -366,7 +366,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
         try {
             let parsed = new URL(url);
             linkDomains.add(parsed.hostname.toLowerCase());
-        } catch (e) {}
+        } catch (e) { /* Ignore invalid URLs */ }
     }
 
     if (linkDomains.size > 0 && senderDomain) {
@@ -576,7 +576,7 @@ async function tab_mail_open_display(tab, message) {
         try {
           let parsed = new URL(url);
           linkDomains.add(parsed.hostname.toLowerCase());
-        } catch (e) {}
+        } catch (e) { /* Ignore invalid URLs */ }
       }
 
       const domainChecks = Array.from(linkDomains).map(async (domain) => {
@@ -989,14 +989,6 @@ async function indexedDB_save_links_to_db(message, urls) {
   } catch (error) {
     console.error('Fehler bei der URL-Speicherung in der Datenbank:', error);
   }
-}
-
-async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName, virustotal_stats = null) {
-  return indexedDB_save_batch_hybrid_data_to_db(message, [{
-    hybrid_data: hybrid_data,
-    attachmentName: attachmentName,
-    virustotal_stats: virustotal_stats
-  }]);
 }
 
 // Listener registrieren
