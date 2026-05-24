@@ -12,6 +12,7 @@ describe('escapeHTML', () => {
         // Create mock environment
         context = {
             browser: {
+                tabs: { query: async () => [{ id: 1 }] },
                 storage: {
                     local: {
                         get: async () => ({ apikey: 'test' })
@@ -156,14 +157,19 @@ describe('get_hybrid_report_by_sha256', () => {
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
                                 },
-                                appendChild: function(node) {
-                                    // VERY simplified mock for test purposes
-                                    // In a real mock, this would serialize the DOM node
-                                    // For these tests, we just care that appendChild is called or we update innerHTML with string representation if possible.
-                                    // Actually, tests in this file don't test the successful UI path, they only test fetch errors which use innerHTML += string.
-                                    // Let's just provide a mock appendChild.
-                                    this._html += node.outerHTML || node.textContent || '';
-                                }
+                                appendChild: function(child) {
+                                    if (child.outerHTML) {
+                                        this._html += child.outerHTML;
+                                    } else {
+                                        // Simple string representation for testing
+                                        this._html += '<div id="' + child.id + '">...';
+                                        if (child.id && child.id.includes('hash456')) {
+                                            this._html += '<button id="btn-cdr-hash456"></button><p id="cdr-status-hash456"></p>';
+                                        }
+                                        this._html += '</div>';
+                                    }
+                                },
+                                textContent: ''
                             };
                         }
                         return context.apiContentElement;

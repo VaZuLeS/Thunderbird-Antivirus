@@ -366,7 +366,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
         try {
             let parsed = new URL(url);
             linkDomains.add(parsed.hostname.toLowerCase());
-        } catch (e) {}
+        } catch (e) { /* Ignore invalid URLs */ }
     }
 
     if (linkDomains.size > 0 && senderDomain) {
@@ -576,7 +576,7 @@ async function tab_mail_open_display(tab, message) {
         try {
           let parsed = new URL(url);
           linkDomains.add(parsed.hostname.toLowerCase());
-        } catch (e) {}
+        } catch (e) { /* Ignore invalid URLs */ }
       }
 
       const domainChecks = Array.from(linkDomains).map(async (domain) => {
@@ -991,14 +991,6 @@ async function indexedDB_save_links_to_db(message, urls) {
   }
 }
 
-async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName, virustotal_stats = null) {
-  return indexedDB_save_batch_hybrid_data_to_db(message, [{
-    hybrid_data: hybrid_data,
-    attachmentName: attachmentName,
-    virustotal_stats: virustotal_stats
-  }]);
-}
-
 // Listener registrieren
 browser.messageDisplay.onMessageDisplayed.addListener(tab_mail_open_display);
 
@@ -1025,7 +1017,9 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             let activeMessage = null;
             try {
                 activeMessage = await browser.messageDisplay.getDisplayedMessage(tab.id);
-            } catch (e) {}
+            } catch (e) {
+                console.error("Failed to get displayed message for context menu scan:", e);
+            }
 
             let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
 
@@ -1191,31 +1185,36 @@ function disarmHTML(htmlString) {
     });
 
     // Remove inline event handlers and javascript: URIs
-    const allElements = doc.getElementsByTagName('*');
     const dangerousAttributes = ['href', 'src', 'action', 'formaction', 'xlink:href'];
 
-    for (let i = 0; i < allElements.length; i++) {
-        const el = allElements[i];
-
-        // Remove event handlers
-        for (let j = el.attributes.length - 1; j >= 0; j--) {
-            const attrName = el.attributes[j].name.toLowerCase();
-            if (attrName.startsWith('on')) {
-                el.removeAttribute(attrName);
+    const walker = doc.createTreeWalker(doc.documentElement, 1 /* NodeFilter.SHOW_ELEMENT */);
+    let el = walker.currentNode;
+    while (el) {
+        if (el.hasAttributes()) {
+            for (let j = el.attributes.length - 1; j >= 0; j--) {
+                const attrName = el.attributes[j].name.toLowerCase();
+                if (attrName.startsWith('on')) {
+                    el.removeAttribute(attrName);
+                }
             }
         }
+        el = walker.nextNode();
+    }
 
-        // Prevent malicious URIs in multiple attributes
-        dangerousAttributes.forEach(attr => {
-            if (el.hasAttribute(attr)) {
-                let val = el.getAttribute(attr);
+    const dangEls = doc.querySelectorAll('[href], [src], [action], [formaction], [xlink\\:href]');
+    for (let i = 0; i < dangEls.length; i++) {
+        const dEl = dangEls[i];
+        for (let k = 0; k < dangerousAttributes.length; k++) {
+            const attr = dangerousAttributes[k];
+            if (dEl.hasAttribute(attr)) {
+                let val = dEl.getAttribute(attr);
                 // Remove control characters (like tabs/newlines) that might evade the check
                 let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                    el.removeAttribute(attr);
+                    dEl.removeAttribute(attr);
                 }
             }
-        });
+        }
     }
 
     return doc.documentElement.outerHTML;
@@ -1378,8 +1377,15 @@ async function checkUrlscanIo(url, apikey) {
         if (!uuid) throw new Error("Keine UUID von urlscan.io erhalten.");
 
         // Wait for result (Polling)
-        for (let i = 0; i < 15; i++) {
-            await new Promise(r => setTimeout(r, 2000)); // wait 2s
+        let waitTime = 2000;
+        let elapsed = 0;
+        const maxTime = 30000;
+
+        while (elapsed < maxTime) {
+            await new Promise(r => setTimeout(r, waitTime));
+            elapsed += waitTime;
+            waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
+
             const resultRes = await fetch(`https://urlscan.io/api/v1/result/${uuid}/`);
             if (resultRes.status === 200) {
                 const resultData = await resultRes.json();
