@@ -125,6 +125,7 @@ describe('background.js', () => {
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.extractPublicIPs = extractPublicIPs;
+            globalThis.checkURLhaus = checkURLhaus;
         `;
         context.URL = URL;
         context.URLSearchParams = URLSearchParams;
@@ -649,6 +650,68 @@ describe('background.js', () => {
                 const result = await context.checkVirusTotal('dummyhash', 'dummyapikey');
 
                 assert.strictEqual(result, null);
+                assert.strictEqual(errorLogged, true);
+            } finally {
+                context.fetch = originalFetch;
+                context.console.error = originalConsoleError;
+            }
+        });
+    });
+
+    describe('checkURLhaus', () => {
+        it('returns false immediately if apikey is falsy', async () => {
+            const result = await context.checkURLhaus('example.com', null);
+            assert.strictEqual(result, false);
+        });
+
+        it('returns true on successful match and sends correct request', async () => {
+            let fetchCalledWith = null;
+            context.fetch = async (url, options) => {
+                fetchCalledWith = options;
+                return {
+                    status: 200,
+                    json: async () => ({ query_status: 'ok', url_count: 1 })
+                };
+            };
+
+            const result = await context.checkURLhaus('example.com', 'test-urlhaus-key');
+
+            assert.strictEqual(result, true);
+            assert.ok(fetchCalledWith);
+            assert.strictEqual(fetchCalledWith.method, 'POST');
+            assert.strictEqual(fetchCalledWith.headers['Auth-Key'], 'test-urlhaus-key');
+            assert.strictEqual(fetchCalledWith.headers['Content-Type'], 'application/x-www-form-urlencoded');
+            assert.ok(fetchCalledWith.body.includes('host=example.com'));
+        });
+
+        it('returns false when no results found', async () => {
+            context.fetch = async () => ({
+                status: 200,
+                json: async () => ({ query_status: 'no_results' })
+            });
+
+            const result = await context.checkURLhaus('example.com', 'test-urlhaus-key');
+            assert.strictEqual(result, false);
+        });
+
+        it('returns false and handles error gracefully on fetch failure', async () => {
+            const originalFetch = context.fetch;
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
+
+            try {
+                context.fetch = async () => {
+                    throw new Error("Network failure");
+                };
+                context.console.error = (msg, e) => {
+                    if (msg.includes("Fehler bei URLhaus Abfrage")) {
+                        errorLogged = true;
+                    }
+                };
+
+                const result = await context.checkURLhaus('example.com', 'test-urlhaus-key');
+
+                assert.strictEqual(result, false);
                 assert.strictEqual(errorLogged, true);
             } finally {
                 context.fetch = originalFetch;
