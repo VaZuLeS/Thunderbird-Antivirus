@@ -366,9 +366,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
         try {
             let parsed = new URL(url);
             linkDomains.add(parsed.hostname.toLowerCase());
-        } catch (e) {
-            console.error("Error parsing URL:", url, e);
-        }
+        } catch (e) { /* Ignore invalid URLs */ }
     }
 
     if (linkDomains.size > 0 && senderDomain) {
@@ -578,9 +576,7 @@ async function tab_mail_open_display(tab, message) {
         try {
           let parsed = new URL(url);
           linkDomains.add(parsed.hostname.toLowerCase());
-        } catch (e) {
-          console.error("Error parsing URL:", url, e);
-        }
+        } catch (e) { /* Ignore invalid URLs */ }
       }
 
       const domainChecks = Array.from(linkDomains).map(async (domain) => {
@@ -1021,9 +1017,7 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             let activeMessage = null;
             try {
                 activeMessage = await browser.messageDisplay.getDisplayedMessage(tab.id);
-            } catch (e) {
-                console.error("Error fetching active message:", e);
-            }
+            } catch (e) { /* Ignore error if no active message */ }
 
             let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
 
