@@ -10,6 +10,9 @@ let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 
+const knownSendersCache = new Set();
+const MAX_KNOWN_SENDERS = 1000;
+
 function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
     const options = {
@@ -554,9 +557,18 @@ async function tab_mail_open_display(tab, message) {
     let isFirstCommunication = false;
     try {
         if (browser.messages.query) {
-            let previousMsgs = await browser.messages.query({ to: senderEmail });
-            if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
-                isFirstCommunication = true;
+            if (knownSendersCache.has(senderEmail)) {
+                isFirstCommunication = false;
+            } else {
+                let previousMsgs = await browser.messages.query({ to: senderEmail });
+                if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
+                    isFirstCommunication = true;
+                } else {
+                    if (knownSendersCache.size > MAX_KNOWN_SENDERS) {
+                        knownSendersCache.clear();
+                    }
+                    knownSendersCache.add(senderEmail);
+                }
             }
         }
     } catch (e) {
