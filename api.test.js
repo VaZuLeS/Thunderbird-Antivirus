@@ -198,18 +198,18 @@ describe('get_hybrid_report_by_sha256', () => {
     });
 
     it('injects Netzwerkfehler message on fetch network failure', async () => {
-        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement._html = '';
+        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement.innerHTML = '';
         context.fetch = async () => {
             throw new Error('Network timeout');
         };
 
         await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
-        assert.ok(context.apiContentElement._html.includes('<div class="text-danger">Netzwerkfehler: Network timeout für Element test.txt</div>'));
+        assert.ok(context.apiContentElement.innerHTML.includes('<div class="text-danger">Netzwerkfehler: Network timeout für Element test.txt</div>'));
     });
 
     it('injects API Error message on fetch non-200 status', async () => {
-        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement._html = '';
+        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement.innerHTML = '';
         context.fetch = async () => {
             return {
                 status: 500,
@@ -220,7 +220,7 @@ describe('get_hybrid_report_by_sha256', () => {
 
         await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
-        assert.ok(context.apiContentElement._html.includes('<div class="text-danger">API Error: 500 für Element test.txt</div>'));
+        assert.ok(context.apiContentElement.innerHTML.includes('<div class="text-danger">API Error: 500 für Element test.txt</div>'));
     });
 });
 
@@ -338,7 +338,7 @@ describe('renderManualUrlScanUI', () => {
 
     it('renders the URL scan UI with correct ID', () => {
         context.document.getElementById('hybrid_analysis_api_content');
-        context.apiContentElement._html = '';
+        context.apiContentElement.innerHTML = '';
         const url = 'http://example.com/test?a=1&b=2';
 
         renderManualUrlScanUI(url, 'msg-123');
@@ -346,12 +346,12 @@ describe('renderManualUrlScanUI', () => {
         const urlId = Array.from(new TextEncoder().encode(url))
             .map(b => b.toString(16).padStart(2, '0')).join('');
 
-        assert.ok(context.apiContentElement._html.includes(`upload-container-${urlId}`));
-        assert.ok(context.apiContentElement._html.includes('http://example.com/test?a=1&amp;b=2'));
+        assert.ok(context.apiContentElement.innerHTML.includes(`upload-container-${urlId}`));
+        assert.ok(context.apiContentElement.innerHTML.includes('http://example.com/test?a=1&amp;b=2'));
     });
 
     it('handles button click, updates UI and sends scan message', async () => {
-        context.apiContentElement._html = '';
+        context.apiContentElement.innerHTML = '';
         const url = 'http://example.com/test';
 
         // Setup mock extension message handler

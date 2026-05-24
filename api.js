@@ -468,6 +468,104 @@ function renderManualUrlScanUI(url, headerMessageId) {
     });
 }
 
+function createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId) {
+    let btnUpload = document.createElement('button');
+    btnUpload.id = `btn-upload-${safeHash}`;
+    btnUpload.className = "btn-primary mt-2";
+    btnUpload.textContent = "Datei jetzt scannen (Upload)";
+    card.appendChild(btnUpload);
+
+    let pStatus = document.createElement('p');
+    pStatus.id = `upload-status-${safeHash}`;
+    pStatus.className = "mt-2";
+    pStatus.setAttribute("aria-live", "polite");
+    pStatus.setAttribute("role", "status");
+    card.appendChild(pStatus);
+
+    btnUpload.addEventListener('click', function() {
+        let btn = this;
+        let statusId = `upload-status-${safeHash}`;
+        let statusEl = document.getElementById(statusId);
+        btn.disabled = true;
+        if (btn) btn.setAttribute('aria-busy', 'true');
+        btn.innerText = "Lade hoch...";
+        setElementText(statusId, "Datei wird an Hybrid Analysis übertragen...");
+
+        sendExtensionMessage(
+            {
+                action: "uploadAttachment",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName,
+                hash: hash,
+                headerMessageId: headerMessageId
+            },
+            btn,
+            statusEl,
+            "Fehler beim Upload: ",
+            (response) => {
+                if (statusEl) statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
+                setTimeout(() => {
+                    let container = document.getElementById(`upload-container-${safeHash}`);
+                    if (container) container.remove();
+                    get_hybrid_report_by_sha256({
+                        hybrid_sha: hash,
+                        attachmentName: attachmentName,
+                        messageId: messageId,
+                        partName: partName,
+                        headerMessageId: headerMessageId
+                    });
+                }, 3000);
+            }
+        );
+    });
+}
+
+function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
+    if (!attachmentName || (!attachmentName.toLowerCase().endsWith('.html') && !attachmentName.toLowerCase().endsWith('.htm'))) {
+        return;
+    }
+
+    let cdrBtn = document.createElement('button');
+    cdrBtn.id = `btn-cdr-${safeHash}`;
+    cdrBtn.className = "btn-primary mt-2 ml-2";
+    cdrBtn.textContent = "Bereinigen & Herunterladen (Lokales CDR)";
+    card.appendChild(cdrBtn);
+
+    let pCdrStatus = document.createElement('p');
+    pCdrStatus.id = `cdr-status-${safeHash}`;
+    pCdrStatus.className = "mt-2";
+    pCdrStatus.setAttribute("aria-live", "polite");
+    pCdrStatus.setAttribute("role", "status");
+    card.appendChild(pCdrStatus);
+
+    cdrBtn.addEventListener('click', function() {
+        let btn = this;
+        let statusId = `cdr-status-${safeHash}`;
+        let statusEl = document.getElementById(statusId);
+        btn.disabled = true;
+        if (btn) btn.setAttribute('aria-busy', 'true');
+        btn.innerText = "Bereinige...";
+        setElementText(statusId, "Lokales CDR wird durchgeführt...");
+
+        sendExtensionMessage(
+            {
+                action: "downloadDisarmed",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName
+            },
+            btn,
+            statusEl,
+            "Fehler beim Herunterladen: ",
+            (res) => {
+                if (statusEl) statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                btn.innerText = "Bereinigt";
+            }
+        );
+    });
+}
+
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
     let safeHash = escapeHTML(hash);
 
@@ -488,99 +586,8 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     pInfo.innerHTML = 'Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.';
     card.appendChild(pInfo);
 
-    let btnUpload = document.createElement('button');
-    btnUpload.id = `btn-upload-${safeHash}`;
-    btnUpload.className = "btn-primary mt-2";
-    btnUpload.textContent = "Datei jetzt scannen (Upload)";
-    card.appendChild(btnUpload);
+    createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
+    createCdrButton(card, safeHash, attachmentName, messageId, partName);
 
-    let pStatus = document.createElement('p');
-    pStatus.id = `upload-status-${safeHash}`;
-    pStatus.className = "mt-2";
-    pStatus.setAttribute("aria-live", "polite");
-    pStatus.setAttribute("role", "status");
-    card.appendChild(pStatus);
-
-    let cdrBtn = null;
-    if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
-        cdrBtn = document.createElement('button');
-        cdrBtn.id = `btn-cdr-${safeHash}`;
-        cdrBtn.className = "btn-primary mt-2 ml-2";
-        cdrBtn.textContent = "Bereinigen & Herunterladen (Lokales CDR)";
-        card.appendChild(cdrBtn);
-
-        let pCdrStatus = document.createElement('p');
-        pCdrStatus.id = `cdr-status-${safeHash}`;
-        pCdrStatus.className = "mt-2";
-        pCdrStatus.setAttribute("aria-live", "polite");
-        pCdrStatus.setAttribute("role", "status");
-        card.appendChild(pCdrStatus);
-    }
-
-    resultHtml += `
-    </div>`;
-    appendElementHtml('hybrid_analysis_api_content', resultHtml);
-
-    if (cdrBtn) {
-        cdrBtn.addEventListener('click', function() {
-            let btn = this;
-            let statusId = `cdr-status-${safeHash}`;
-            btn.disabled = true;
-            if (btn) btn.setAttribute('aria-busy', 'true');
-            btn.innerText = "Bereinige...";
-            setElementText(statusId, "Lokales CDR wird durchgeführt...");
-
-            sendExtensionMessage(
-                {
-                    action: "downloadDisarmed",
-                    messageId: messageId,
-                    partName: partName,
-                    attachmentName: attachmentName
-                },
-                btn,
-                statusEl,
-                "Fehler beim Herunterladen: ",
-                (res) => {
-                    statusEl.innerText = "Herunterladen erfolgreich initiiert.";
-                    btn.innerText = "Bereinigt";
-                }
-            );
-        });
-    }
-
-    document.getElementById(`btn-upload-${hash}`).addEventListener('click', function() {
-        let btn = this;
-        let statusId = `upload-status-${safeHash}`;
-        btn.disabled = true;
-        if (btn) btn.setAttribute('aria-busy', 'true');
-        btn.innerText = "Lade hoch...";
-        setElementText(statusId, "Datei wird an Hybrid Analysis übertragen...");
-
-        sendExtensionMessage(
-            {
-                action: "uploadAttachment",
-                messageId: messageId,
-                partName: partName,
-                attachmentName: attachmentName,
-                hash: hash,
-                headerMessageId: headerMessageId
-            },
-            btn,
-            statusEl,
-            "Fehler beim Upload: ",
-            (response) => {
-                statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
-                setTimeout(() => {
-                    document.getElementById(`upload-container-${safeHash}`).remove();
-                    get_hybrid_report_by_sha256({
-                        hybrid_sha: hash,
-                        attachmentName: attachmentName,
-                        messageId: messageId,
-                        partName: partName,
-                        headerMessageId: headerMessageId
-                    });
-                }, 3000);
-            }
-        );
-    });
+    appendElementHtml('hybrid_analysis_api_content', card);
 }
