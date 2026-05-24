@@ -128,7 +128,162 @@ function createEl(tag, className = '', textContent = '') {
     return el;
 }
 
-function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null) {
+function renderInProgressStatus(json_data, hybrid_sha, card) {
+    const pStatus = document.createElement('p');
+    pStatus.className = "text-warning";
+    pStatus.innerHTML = `<strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.`;
+    card.appendChild(pStatus);
+
+    const pHash = document.createElement('p');
+    pHash.textContent = `SHA-256: ${json_data.sha256 || hybrid_sha}`;
+    card.appendChild(pHash);
+}
+
+function renderThreatInfo(json_data, card) {
+    let threatClass = "text-success";
+    if (json_data.threat_score > 50) threatClass = "text-warning";
+    if (json_data.threat_score > 80) threatClass = "text-danger";
+
+    const pThreat = document.createElement('p');
+    pThreat.innerHTML = `<strong class="head_line ${threatClass}">Bedrohungsscore:</strong> <span class="${threatClass}">${escapeHTML(json_data.threat_score)}</span>`;
+    card.appendChild(pThreat);
+
+    const pVerdict = document.createElement('p');
+    pVerdict.innerHTML = `<strong class="head_line ${threatClass}">Urteil:</strong> <span class="${threatClass}">${escapeHTML(json_data.verdict)}</span>`;
+    card.appendChild(pVerdict);
+
+    const pVxFamily = document.createElement('p');
+    pVxFamily.innerHTML = `<strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}`;
+    card.appendChild(pVxFamily);
+
+    const pMulti = document.createElement('p');
+    pMulti.textContent = `Multiscan-Ergebnis: ${json_data.multiscan_result || 'N/A'}`;
+    card.appendChild(pMulti);
+
+    const pAddInfo = document.createElement('p');
+    pAddInfo.innerHTML = `<strong>Additional Information:</strong>`;
+    card.appendChild(pAddInfo);
+
+    const pAnalysisTime = document.createElement('p');
+    pAnalysisTime.textContent = `Analysis start time: ${json_data.analysis_start_time || 'N/A'}`;
+    card.appendChild(pAnalysisTime);
+
+    const pTags = document.createElement('p');
+    pTags.textContent = `Tags: ${json_data.tags ? json_data.tags.join(', ') : 'N/A'}`;
+    card.appendChild(pTags);
+}
+
+function renderVirusTotalStats(virustotal_stats, card) {
+    const pVtHead = document.createElement('p');
+    pVtHead.className = "ml-2";
+    pVtHead.innerHTML = `<strong>VirusTotal Ergebnisse:</strong>`;
+    card.appendChild(pVtHead);
+
+    const pVtMal = document.createElement('p');
+    pVtMal.className = "ml-4 text-warning";
+    pVtMal.textContent = `Malicious: ${virustotal_stats.malicious || 0}`;
+    card.appendChild(pVtMal);
+
+    const pVtUnd = document.createElement('p');
+    pVtUnd.className = "ml-4";
+    pVtUnd.textContent = `Undetected: ${virustotal_stats.undetected || 0}`;
+    card.appendChild(pVtUnd);
+
+    const pVtSus = document.createElement('p');
+    pVtSus.className = "ml-4";
+    pVtSus.textContent = `Suspicious: ${virustotal_stats.suspicious || 0}`;
+    card.appendChild(pVtSus);
+
+    const pVtHarm = document.createElement('p');
+    pVtHarm.className = "ml-4";
+    pVtHarm.textContent = `Harmless: ${virustotal_stats.harmless || 0}`;
+    card.appendChild(pVtHarm);
+}
+
+function renderScannerResults(scanners, card) {
+    if (scanners && scanners.length > 0) {
+        for (const scanner of scanners) {
+            const pScanner = document.createElement('p');
+            pScanner.className = "ml-2";
+            pScanner.textContent = `Scanner: ${scanner.name}`;
+            card.appendChild(pScanner);
+
+            const pStatus = document.createElement('p');
+            pStatus.className = "ml-4";
+            pStatus.textContent = `Status: ${scanner.status}`;
+            card.appendChild(pStatus);
+
+            if (scanner.anti_virus_results) {
+                const pAvRes = document.createElement('p');
+                pAvRes.className = "ml-4";
+                pAvRes.textContent = `AV-Ergebnisse:`;
+                card.appendChild(pAvRes);
+
+                for (const avResult of scanner.anti_virus_results) {
+                    const pAv = document.createElement('p');
+                    pAv.className = "ml-6";
+                    pAv.textContent = `AV: ${avResult.product} - Urteil: ${avResult.verdict}`;
+                    card.appendChild(pAv);
+                }
+            }
+        }
+    } else {
+        const pNoScanners = document.createElement('p');
+        pNoScanners.className = "ml-2";
+        pNoScanners.textContent = `Keine Scanner-Ergebnisse verfügbar.`;
+        card.appendChild(pNoScanners);
+    }
+}
+
+function renderFileDetails(json_data, card) {
+    const pHash256 = document.createElement('p');
+    pHash256.textContent = `SHA-256-Hashwert: ${json_data.sha256}`;
+    card.appendChild(pHash256);
+
+    const pFileName = document.createElement('p');
+    pFileName.textContent = `Letzter Dateiname: ${json_data.last_file_name || 'N/A'}`;
+    card.appendChild(pFileName);
+
+    const pSize = document.createElement('p');
+    pSize.textContent = `Größe: ${json_data.size || 'N/A'} Bytes`;
+    card.appendChild(pSize);
+
+    const pType = document.createElement('p');
+    pType.textContent = `Typ: ${json_data.type || 'N/A'}`;
+    card.appendChild(pType);
+}
+
+function renderActionButtons(hybrid_sha, attachmentName, card) {
+    const btnRescan = document.createElement('button');
+    btnRescan.id = `btn-rescan-${hybrid_sha}`;
+    btnRescan.className = "btn-success mt-2";
+    btnRescan.textContent = `Erneut scannen (Rescan)`;
+    card.appendChild(btnRescan);
+
+    const pRescanStatus = document.createElement('p');
+    pRescanStatus.id = `rescan-status-${hybrid_sha}`;
+    pRescanStatus.className = "mt-2";
+    pRescanStatus.setAttribute('aria-live', 'polite');
+    pRescanStatus.setAttribute('role', 'status');
+    card.appendChild(pRescanStatus);
+
+    if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
+        const btnCdr = document.createElement('button');
+        btnCdr.id = `btn-cdr-${hybrid_sha}`;
+        btnCdr.className = "btn-primary mt-2 ml-2";
+        btnCdr.textContent = `Bereinigen & Herunterladen (Lokales CDR)`;
+        card.appendChild(btnCdr);
+
+        const pCdrStatus = document.createElement('p');
+        pCdrStatus.id = `cdr-status-${hybrid_sha}`;
+        pCdrStatus.className = "mt-2";
+        pCdrStatus.setAttribute('aria-live', 'polite');
+        pCdrStatus.setAttribute('role', 'status');
+        card.appendChild(pCdrStatus);
+    }
+}
+
+function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null }) {
     const card = document.createElement('div');
     card.className = "card mb-3";
 
@@ -137,46 +292,9 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
     card.appendChild(h2);
 
     if (json_data.state === 'IN_PROGRESS') {
-        const pStatus = document.createElement('p');
-        pStatus.className = "text-warning";
-        pStatus.innerHTML = `<strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.`;
-        card.appendChild(pStatus);
-
-        const pHash = document.createElement('p');
-        pHash.textContent = `SHA-256: ${json_data.sha256 || hybrid_sha}`;
-        card.appendChild(pHash);
+        renderInProgressStatus(json_data, hybrid_sha, card);
     } else {
-        let threatClass = "text-success";
-        if (json_data.threat_score > 50) threatClass = "text-warning";
-        if (json_data.threat_score > 80) threatClass = "text-danger";
-
-        const pThreat = document.createElement('p');
-        pThreat.innerHTML = `<strong class="head_line ${threatClass}">Bedrohungsscore:</strong> <span class="${threatClass}">${escapeHTML(json_data.threat_score)}</span>`;
-        card.appendChild(pThreat);
-
-        const pVerdict = document.createElement('p');
-        pVerdict.innerHTML = `<strong class="head_line ${threatClass}">Urteil:</strong> <span class="${threatClass}">${escapeHTML(json_data.verdict)}</span>`;
-        card.appendChild(pVerdict);
-
-        const pVxFamily = document.createElement('p');
-        pVxFamily.innerHTML = `<strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}`;
-        card.appendChild(pVxFamily);
-
-        const pMulti = document.createElement('p');
-        pMulti.textContent = `Multiscan-Ergebnis: ${json_data.multiscan_result || 'N/A'}`;
-        card.appendChild(pMulti);
-
-        const pAddInfo = document.createElement('p');
-        pAddInfo.innerHTML = `<strong>Additional Information:</strong>`;
-        card.appendChild(pAddInfo);
-
-        const pAnalysisTime = document.createElement('p');
-        pAnalysisTime.textContent = `Analysis start time: ${json_data.analysis_start_time || 'N/A'}`;
-        card.appendChild(pAnalysisTime);
-
-        const pTags = document.createElement('p');
-        pTags.textContent = `Tags: ${json_data.tags ? json_data.tags.join(', ') : 'N/A'}`;
-        card.appendChild(pTags);
+        renderThreatInfo(json_data, card);
 
         const divScanners = document.createElement('div');
         divScanners.className = "head_line";
@@ -184,108 +302,12 @@ function renderReport(json_data, attachmentName, hybrid_sha, messageId, partName
         card.appendChild(divScanners);
 
         if (virustotal_stats) {
-            const pVtHead = document.createElement('p');
-            pVtHead.className = "ml-2";
-            pVtHead.innerHTML = `<strong>VirusTotal Ergebnisse:</strong>`;
-            card.appendChild(pVtHead);
-
-            const pVtMal = document.createElement('p');
-            pVtMal.className = "ml-4 text-warning";
-            pVtMal.textContent = `Malicious: ${virustotal_stats.malicious || 0}`;
-            card.appendChild(pVtMal);
-
-            const pVtUnd = document.createElement('p');
-            pVtUnd.className = "ml-4";
-            pVtUnd.textContent = `Undetected: ${virustotal_stats.undetected || 0}`;
-            card.appendChild(pVtUnd);
-
-            const pVtSus = document.createElement('p');
-            pVtSus.className = "ml-4";
-            pVtSus.textContent = `Suspicious: ${virustotal_stats.suspicious || 0}`;
-            card.appendChild(pVtSus);
-
-            const pVtHarm = document.createElement('p');
-            pVtHarm.className = "ml-4";
-            pVtHarm.textContent = `Harmless: ${virustotal_stats.harmless || 0}`;
-            card.appendChild(pVtHarm);
+            renderVirusTotalStats(virustotal_stats, card);
         }
 
-        if (json_data.scanners && json_data.scanners.length > 0) {
-            for (const scanner of json_data.scanners) {
-                const pScanner = document.createElement('p');
-                pScanner.className = "ml-2";
-                pScanner.textContent = `Scanner: ${scanner.name}`;
-                card.appendChild(pScanner);
-
-                const pStatus = document.createElement('p');
-                pStatus.className = "ml-4";
-                pStatus.textContent = `Status: ${scanner.status}`;
-                card.appendChild(pStatus);
-
-                if (scanner.anti_virus_results) {
-                    const pAvRes = document.createElement('p');
-                    pAvRes.className = "ml-4";
-                    pAvRes.textContent = `AV-Ergebnisse:`;
-                    card.appendChild(pAvRes);
-
-                    for (const avResult of scanner.anti_virus_results) {
-                        const pAv = document.createElement('p');
-                        pAv.className = "ml-6";
-                        pAv.textContent = `AV: ${avResult.product} - Urteil: ${avResult.verdict}`;
-                        card.appendChild(pAv);
-                    }
-                }
-            }
-        } else {
-            const pNoScanners = document.createElement('p');
-            pNoScanners.className = "ml-2";
-            pNoScanners.textContent = `Keine Scanner-Ergebnisse verfügbar.`;
-            card.appendChild(pNoScanners);
-        }
-
-        const pHash256 = document.createElement('p');
-        pHash256.textContent = `SHA-256-Hashwert: ${json_data.sha256}`;
-        card.appendChild(pHash256);
-
-        const pFileName = document.createElement('p');
-        pFileName.textContent = `Letzter Dateiname: ${json_data.last_file_name || 'N/A'}`;
-        card.appendChild(pFileName);
-
-        const pSize = document.createElement('p');
-        pSize.textContent = `Größe: ${json_data.size || 'N/A'} Bytes`;
-        card.appendChild(pSize);
-
-        const pType = document.createElement('p');
-        pType.textContent = `Typ: ${json_data.type || 'N/A'}`;
-        card.appendChild(pType);
-
-        const btnRescan = document.createElement('button');
-        btnRescan.id = `btn-rescan-${hybrid_sha}`;
-        btnRescan.className = "btn-success mt-2";
-        btnRescan.textContent = `Erneut scannen (Rescan)`;
-        card.appendChild(btnRescan);
-
-        const pRescanStatus = document.createElement('p');
-        pRescanStatus.id = `rescan-status-${hybrid_sha}`;
-        pRescanStatus.className = "mt-2";
-        pRescanStatus.setAttribute('aria-live', 'polite');
-        pRescanStatus.setAttribute('role', 'status');
-        card.appendChild(pRescanStatus);
-
-        if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
-            const btnCdr = document.createElement('button');
-            btnCdr.id = `btn-cdr-${hybrid_sha}`;
-            btnCdr.className = "btn-primary mt-2 ml-2";
-            btnCdr.textContent = `Bereinigen & Herunterladen (Lokales CDR)`;
-            card.appendChild(btnCdr);
-
-            const pCdrStatus = document.createElement('p');
-            pCdrStatus.id = `cdr-status-${hybrid_sha}`;
-            pCdrStatus.className = "mt-2";
-            pCdrStatus.setAttribute('aria-live', 'polite');
-            pCdrStatus.setAttribute('role', 'status');
-            card.appendChild(pCdrStatus);
-        }
+        renderScannerResults(json_data.scanners, card);
+        renderFileDetails(json_data, card);
+        renderActionButtons(hybrid_sha, attachmentName, card);
     }
     return card;
 }
