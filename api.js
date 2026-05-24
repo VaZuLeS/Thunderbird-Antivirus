@@ -517,9 +517,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
         card.appendChild(pCdrStatus);
     }
 
-    resultHtml += `
-    </div>`;
-    appendElementHtml('hybrid_analysis_api_content', resultHtml);
+    document.getElementById('hybrid_analysis_api_content').appendChild(card);
 
     if (cdrBtn) {
         cdrBtn.addEventListener('click', function() {
