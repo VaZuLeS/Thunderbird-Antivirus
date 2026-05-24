@@ -991,14 +991,6 @@ async function indexedDB_save_links_to_db(message, urls) {
   }
 }
 
-async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName, virustotal_stats = null) {
-  return indexedDB_save_batch_hybrid_data_to_db(message, [{
-    hybrid_data: hybrid_data,
-    attachmentName: attachmentName,
-    virustotal_stats: virustotal_stats
-  }]);
-}
-
 // Listener registrieren
 browser.messageDisplay.onMessageDisplayed.addListener(tab_mail_open_display);
 
