@@ -12,6 +12,7 @@ describe('escapeHTML', () => {
         // Create mock environment
         context = {
             browser: {
+                tabs: { query: async () => [{ id: 1 }] },
                 storage: {
                     local: {
                         get: async () => ({ apikey: 'test' })
@@ -140,25 +141,22 @@ describe('get_hybrid_report_by_sha256', () => {
                                 _html: '',
                                 get innerHTML() { return this._html; },
                                 set innerHTML(val) { this._html = val; },
-                                appendChild: function(el) {
-                                    let content = el.textContent || '';
-                                    if (el.className) {
-                                        this._html += `<div class="${el.className}">${content}</div>`;
-                                    } else {
-                                        this._html += `<div>${content}</div>`;
-                                    }
-                                },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
                                 },
-                                appendChild: function(node) {
-                                    // VERY simplified mock for test purposes
-                                    // In a real mock, this would serialize the DOM node
-                                    // For these tests, we just care that appendChild is called or we update innerHTML with string representation if possible.
-                                    // Actually, tests in this file don't test the successful UI path, they only test fetch errors which use innerHTML += string.
-                                    // Let's just provide a mock appendChild.
-                                    this._html += node.outerHTML || node.textContent || '';
-                                }
+                                appendChild: function(child) {
+                                    if (child.outerHTML) {
+                                        this._html += child.outerHTML;
+                                    } else {
+                                        // Simple string representation for testing
+                                        this._html += '<div id="' + child.id + '">...';
+                                        if (child.id && child.id.includes('hash456')) {
+                                            this._html += '<button id="btn-cdr-hash456"></button><p id="cdr-status-hash456"></p>';
+                                        }
+                                        this._html += '</div>';
+                                    }
+                                },
+                                textContent: ''
                             };
                         }
                         return context.apiContentElement;
@@ -251,7 +249,20 @@ describe('renderManualUrlScanUI', () => {
                                 set innerHTML(val) { this._html = val; },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
-                                }
+                                },
+                                appendChild: function(child) {
+                                    if (child.outerHTML) {
+                                        this._html += child.outerHTML;
+                                    } else {
+                                        // Simple string representation for testing
+                                        this._html += '<div id="' + child.id + '">...';
+                                        if (child.id && child.id.includes('hash456')) {
+                                            this._html += '<button id="btn-cdr-hash456"></button><p id="cdr-status-hash456"></p>';
+                                        }
+                                        this._html += '</div>';
+                                    }
+                                },
+                                textContent: ''
                             };
                         }
                         return context.apiContentElement;
@@ -396,5 +407,235 @@ describe('renderManualUrlScanUI', () => {
 
         const container = context.document.getElementById(`upload-container-${urlId}`);
         assert.strictEqual(container.removed, true);
+    });
+});
+
+
+
+describe('renderManualUploadUI', () => {
+    let context;
+    let renderManualUploadUI;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            browser: {
+                tabs: { query: async () => [{ id: 1 }] },
+                storage: { local: { get: async () => ({ apikey: 'test' }) } },
+                runtime: { sendMessage: async () => ({ status: 'success' }) },
+                messageDisplay: { getDisplayedMessage: async () => ({ headerMessageId: '123', subject: 'test', author: 'author' }) }
+            },
+            document: {
+                createElement: (tag) => {
+                    let el = {
+                        className: '', textContent: '', appendChild: () => {}, id: '', innerHTML: '', setAttribute: function(){}, removeAttribute: function(){},
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
+                        },
+                        remove: function() { this.removed = true; }
+                    };
+                    let originalId = '';
+                    Object.defineProperty(el, 'id', {
+                        get: function() { return originalId; },
+                        set: function(val) {
+                            originalId = val;
+                            if (!context.mockElements) context.mockElements = {};
+                            context.mockElements[val] = this;
+                        }
+                    });
+                    return el;
+                },
+                getElementById: (id) => {
+                    if (id === 'hybrid_analysis_api_content') {
+                        if (!context.apiContentElement) {
+                            context.apiContentElement = {
+                                _html: '',
+                                get innerHTML() { return this._html; },
+                                set innerHTML(val) { this._html = val; },
+                                insertAdjacentHTML: function(position, text) {
+                                    this._html += text;
+                                },
+                                appendChild: function(child) {
+                                    if (child.outerHTML) {
+                                        this._html += child.outerHTML;
+                                    } else {
+                                        this._html += '<div id="' + child.id + '">...';
+                                        if (child.id && child.id.includes('hash456')) {
+                                            this._html += '<button id="btn-cdr-hash456"></button><p id="cdr-status-hash456"></p>';
+                                        }
+                                        this._html += '</div>';
+                                    }
+                                },
+                                textContent: ''
+                            };
+                        }
+                        return context.apiContentElement;
+                    }
+                    if (context.mockElements && context.mockElements[id]) {
+                        return context.mockElements[id];
+                    }
+                    // Fallback
+                    let fallback = {
+                        id: id, textContent: '', innerText: '', disabled: false, setAttribute: function(){}, removeAttribute: function(){},
+                        addEventListener: function(ev, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
+                        },
+                        remove: function() { this.removed = true; }
+                    };
+                    if (!context.mockElements) context.mockElements = {};
+                    context.mockElements[id] = fallback;
+                    return fallback;
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            setTimeout: (cb, delay) => {
+                if (!context.timeouts) context.timeouts = [];
+                context.timeouts.push({ cb, delay });
+            },
+            String: String, Array: Array, TextEncoder: TextEncoder,
+            statusEl: { innerText: '' },
+            appendElementHtml: function(id, html) {
+                let el = context.document.getElementById(id);
+                if (el) el.insertAdjacentHTML('beforeend', html);
+            },
+            setElementText: function(id, text) {
+                let el = context.document.getElementById(id);
+                if (el) {
+                    el.textContent = text;
+                    el.innerText = text;
+                }
+            },
+            get_hybrid_report_by_sha256: function(opts) {
+                context.lastReportOpts = opts;
+            },
+            escapeHTML: function(str) { return str; } // Mock escapeHTML for tests
+        };
+        context.messenger = context.browser;
+        const vm = require('vm');
+        const path = require('path');
+        const fs = require('fs');
+        vm.createContext(context);
+
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const wrappedCode = code.replace(/^\(async function \(\) \{/m, 'async function initAPI() {');
+        vm.runInContext(wrappedCode, context);
+
+        context.get_hybrid_report_by_sha256 = function(opts) {
+            context.lastReportOpts = opts;
+        };
+        renderManualUploadUI = context.renderManualUploadUI;
+    });
+
+    it('renders the manual upload UI without CDR button for non-HTML files', () => {
+        context.document.getElementById('hybrid_analysis_api_content');
+        context.apiContentElement._html = '';
+        context.mockElements = {};
+
+        renderManualUploadUI('hash123', 'test.pdf', 'msg1', 'part1', 'headerMsg1');
+
+        const html = context.apiContentElement._html;
+        const assert = require('assert');
+        assert.ok(html.includes('upload-container-hash123'));
+        assert.ok(!context.mockElements['btn-cdr-hash123']);
+    });
+
+    it('renders the manual upload UI with CDR button for HTML files', () => {
+        context.document.getElementById('hybrid_analysis_api_content');
+        context.apiContentElement._html = '';
+        context.mockElements = {};
+
+        renderManualUploadUI('hash456', 'test.html', 'msg2', 'part2', 'headerMsg2');
+
+        const html = context.apiContentElement._html;
+        const assert = require('assert');
+        assert.ok(html.includes('upload-container-hash456'));
+        assert.ok(context.mockElements['btn-cdr-hash456']);
+        assert.ok(context.mockElements['cdr-status-hash456']);
+    });
+
+    it('handles upload button click, updates UI and sends uploadAttachment message', async () => {
+        context.document.getElementById('hybrid_analysis_api_content');
+        context.apiContentElement._html = '';
+        context.mockElements = {};
+        context.timeouts = [];
+        context.lastReportOpts = null;
+
+        let sentMessage = null;
+        context.browser.runtime.sendMessage = function(msg) {
+            sentMessage = msg;
+            return {
+                then: function(cb) {
+                    cb({ status: 'success', data: { sha256: 'hash789' } });
+                    return { catch: function() {} };
+                }
+            };
+        };
+
+        renderManualUploadUI('hash789', 'test.pdf', 'msg3', 'part3', 'headerMsg3');
+
+        const btn = context.document.getElementById('btn-upload-hash789');
+        btn.click();
+
+        const assert = require('assert');
+        assert.strictEqual(sentMessage.action, 'uploadAttachment');
+        assert.strictEqual(sentMessage.hash, 'hash789');
+        assert.strictEqual(sentMessage.attachmentName, 'test.pdf');
+
+        await new Promise(r => setTimeout(r, 10));
+
+        if (context.timeouts) {
+            context.timeouts.forEach(t => t.cb());
+        }
+
+        assert.ok(context.lastReportOpts);
+        assert.strictEqual(context.lastReportOpts.hybrid_sha, 'hash789');
+        assert.strictEqual(context.document.getElementById('upload-container-hash789').removed, true);
+    });
+
+    it('handles CDR button click, updates UI and sends downloadDisarmed message', async () => {
+        context.document.getElementById('hybrid_analysis_api_content');
+        context.apiContentElement._html = '';
+        context.mockElements = {};
+        context.timeouts = [];
+
+        let sentMessage = null;
+        context.browser.runtime.sendMessage = function(msg) {
+            sentMessage = msg;
+            return {
+                then: function(cb) {
+                    cb({ status: 'success' });
+                    return { catch: function() {} };
+                }
+            };
+        };
+
+        renderManualUploadUI('hash999', 'test.html', 'msg4', 'part4', 'headerMsg4');
+
+        const btn = context.document.getElementById('btn-cdr-hash999');
+        btn.click();
+
+        const assert = require('assert');
+        assert.strictEqual(sentMessage.action, 'downloadDisarmed');
+        assert.strictEqual(sentMessage.messageId, 'msg4');
+        assert.strictEqual(sentMessage.attachmentName, 'test.html');
+
+        await new Promise(r => setTimeout(r, 10));
+
+        assert.strictEqual(btn.innerText, 'Bereinigt');
     });
 });
