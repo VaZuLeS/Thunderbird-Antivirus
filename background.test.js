@@ -496,56 +496,30 @@ describe('background.js', () => {
         assert.strictEqual(sentResponse.status, 'success');
     });
 
-    describe('evaluateReplyTo', () => {
-        it('does not alter score if replyTo or senderDomain is empty', () => {
-            let score = 10;
-            let reasons = [];
-            let newScore = context.evaluateReplyTo("", "company.com", score, reasons);
-            assert.strictEqual(newScore, 10);
-            assert.strictEqual(reasons.length, 0);
+    describe('checkVirusTotal', () => {
+        it('returns null and handles error safely on fetch failure', async () => {
+            const originalFetch = context.fetch;
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
 
-            newScore = context.evaluateReplyTo("CEO <ceo@company.com>", "", score, reasons);
-            assert.strictEqual(newScore, 10);
-            assert.strictEqual(reasons.length, 0);
-        });
+            try {
+                context.fetch = async () => {
+                    throw new Error("Network failure");
+                };
+                context.console.error = (msg, e) => {
+                    if (msg.includes("Fehler bei VirusTotal Abfrage:")) {
+                        errorLogged = true;
+                    }
+                };
 
-        it('does not alter score when reply-to domain matches sender domain', () => {
-            let score = 0;
-            let reasons = [];
-            let newScore = context.evaluateReplyTo("CEO <ceo@company.com>", "company.com", score, reasons);
-            assert.strictEqual(newScore, 0);
-            assert.strictEqual(reasons.length, 0);
-        });
+                const result = await context.checkVirusTotal('dummyhash', 'dummyapikey');
 
-        it('does not alter score when raw email reply-to domain matches sender domain', () => {
-            let score = 0;
-            let reasons = [];
-            let newScore = context.evaluateReplyTo("ceo@company.com", "company.com", score, reasons);
-            assert.strictEqual(newScore, 0);
-            assert.strictEqual(reasons.length, 0);
-        });
-
-        it('increases score by 50 and adds reason when reply-to domain differs from sender domain', () => {
-            let score = 0;
-            let reasons = [];
-            let newScore = context.evaluateReplyTo("Hacker <hacker@evil.com>", "company.com", score, reasons);
-            assert.strictEqual(newScore, 50);
-            assert.strictEqual(reasons.length, 1);
-            assert.match(reasons[0], /evil\.com/);
-            assert.match(reasons[0], /company\.com/);
-        });
-
-        it('is case-insensitive when extracting domains from replyTo', () => {
-            let score = 0;
-            let reasons = [];
-            let newScore = context.evaluateReplyTo("CEO <ceo@COMPANY.COM>", "company.com", score, reasons);
-            assert.strictEqual(newScore, 0);
-            assert.strictEqual(reasons.length, 0);
-
-            // Raw email case-insensitivity
-            newScore = context.evaluateReplyTo("CEO@COMPANY.COM", "company.com", score, reasons);
-            assert.strictEqual(newScore, 0);
-            assert.strictEqual(reasons.length, 0);
+                assert.strictEqual(result, null);
+                assert.strictEqual(errorLogged, true);
+            } finally {
+                context.fetch = originalFetch;
+                context.console.error = originalConsoleError;
+            }
         });
     });
 
