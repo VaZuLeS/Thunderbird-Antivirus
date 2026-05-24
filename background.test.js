@@ -531,8 +531,8 @@ describe('background.js', () => {
             let newScore = context.evaluateReplyTo("Hacker <hacker@evil.com>", "company.com", score, reasons);
             assert.strictEqual(newScore, 50);
             assert.strictEqual(reasons.length, 1);
-            assert.ok(reasons[0].includes("evil.com"));
-            assert.ok(reasons[0].includes("company.com"));
+            assert.match(reasons[0], /evil\.com/);
+            assert.match(reasons[0], /company\.com/);
         });
 
         it('is case-insensitive when extracting domains from replyTo', () => {
