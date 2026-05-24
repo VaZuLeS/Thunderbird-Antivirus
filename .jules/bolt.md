@@ -4,3 +4,16 @@
 ## 2024-05-24 - [Avoid Array.map() inside Hot Loops]
 **Learning:** Calling `.map(s => s.toLowerCase())` on dynamically sized arrays inside frequently called functions (like `checkLists` running for every link or email evaluation) introduces an O(N) array allocation overhead per call. Moving this `.map()` to occur only once during configuration loading avoids redundant allocations, significantly reducing GC pressure.
 **Action:** Always pre-process configuration arrays (e.g. lowecase normalization) at initialization time rather than mapping them inline during hot evaluation paths.
+## 2026-05-24
+
+### 💡 What:
+Replaced the fixed 2-second polling loop in `checkUrlscanIo` (`background.js`) with an exponential backoff loop.
+
+### 🎯 Why:
+The previous implementation made up to 15 rapid API requests over 30 seconds when waiting for URLScan results. Using exponential backoff (starting at 2s, increasing 1.5x up to 10s max) achieves the same 30-second timeout window while significantly reducing the number of requests to the URLScan API, preventing rate limits and saving bandwidth.
+
+### 📊 Impact:
+In the worst-case scenario (timeout), API requests are reduced from 15 to 6 (a 60% reduction in unnecessary API polling overhead).
+
+### 🔬 Measurement:
+A standalone benchmark script confirmed the reduction in loop iterations and total requests across varying response time limits. Verified functionality using the native test suite `node --test background.test.js`.

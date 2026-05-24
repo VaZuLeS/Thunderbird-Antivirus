@@ -1378,8 +1378,15 @@ async function checkUrlscanIo(url, apikey) {
         if (!uuid) throw new Error("Keine UUID von urlscan.io erhalten.");
 
         // Wait for result (Polling)
-        for (let i = 0; i < 15; i++) {
-            await new Promise(r => setTimeout(r, 2000)); // wait 2s
+        let waitTime = 2000;
+        let elapsed = 0;
+        const maxTime = 30000;
+
+        while (elapsed < maxTime) {
+            await new Promise(r => setTimeout(r, waitTime));
+            elapsed += waitTime;
+            waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
+
             const resultRes = await fetch(`https://urlscan.io/api/v1/result/${uuid}/`);
             if (resultRes.status === 200) {
                 const resultData = await resultRes.json();
