@@ -106,8 +106,8 @@ describe('background.js', () => {
             globalThis.customWhitelist = [];
             ${code}
             globalThis.loadSettings = loadSettings;
-            globalThis.set_customBlacklist = (list) => { customBlacklist = list; };
-            globalThis.set_customWhitelist = (list) => { customWhitelist = list; };
+            globalThis.set_customBlacklist = (list) => { customBlacklist = list.map(s => s ? s.toLowerCase() : ""); };
+            globalThis.set_customWhitelist = (list) => { customWhitelist = list.map(s => s ? s.toLowerCase() : ""); };
             globalThis.get_apikey = () => apikey_hybridanalysis;
             globalThis.set_apikey = (val) => { apikey_hybridanalysis = val; };
             globalThis.tab_mail_open_display = tab_mail_open_display;
