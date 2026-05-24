@@ -120,6 +120,7 @@ describe('background.js', () => {
             globalThis.extractTextFromParts = extractTextFromParts;
             globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
             globalThis.handleUrlScan = handleUrlScan;
+            globalThis.checkVirusTotal = checkVirusTotal;
             globalThis.calculateThreatScore = calculateThreatScore;
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
@@ -496,6 +497,81 @@ describe('background.js', () => {
     });
 
     describe('checkVirusTotal', () => {
+        it('returns null if apikey is not provided', async () => {
+            const result = await context.checkVirusTotal('dummyhash', null);
+            assert.strictEqual(result, null);
+        });
+
+        it('returns last_analysis_stats on successful response with status 200', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async (url, options) => {
+                    assert.strictEqual(url, 'https://www.virustotal.com/api/v3/files/dummyhash');
+                    assert.strictEqual(options.method, 'GET');
+                    assert.strictEqual(options.headers['x-apikey'], 'dummyapikey');
+                    assert.strictEqual(options.headers['accept'], 'application/json');
+
+                    return {
+                        status: 200,
+                        json: async () => ({
+                            data: {
+                                attributes: {
+                                    last_analysis_stats: { malicious: 5, undetected: 60 }
+                                }
+                            }
+                        })
+                    };
+                };
+
+                const result = await context.checkVirusTotal('dummyhash', 'dummyapikey');
+                assert.deepStrictEqual(result, { malicious: 5, undetected: 60 });
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns null on response with status 200 but missing JSON structure', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => {
+                    return {
+                        status: 200,
+                        json: async () => ({
+                            data: {
+                                attributes: {
+                                    // missing last_analysis_stats
+                                }
+                            }
+                        })
+                    };
+                };
+
+                const result = await context.checkVirusTotal('dummyhash', 'dummyapikey');
+                assert.strictEqual(result, null);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns null on response with status other than 200', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => {
+                    return {
+                        status: 404,
+                        json: async () => ({
+                            error: { code: 'NotFoundError', message: 'File not found' }
+                        })
+                    };
+                };
+
+                const result = await context.checkVirusTotal('dummyhash', 'dummyapikey');
+                assert.strictEqual(result, null);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
         it('returns null and handles error safely on fetch failure', async () => {
             const originalFetch = context.fetch;
             const originalConsoleError = context.console.error;
