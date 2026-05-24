@@ -495,6 +495,33 @@ describe('background.js', () => {
         assert.strictEqual(sentResponse.status, 'success');
     });
 
+    describe('checkVirusTotal', () => {
+        it('returns null and handles error safely on fetch failure', async () => {
+            const originalFetch = context.fetch;
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
+
+            try {
+                context.fetch = async () => {
+                    throw new Error("Network failure");
+                };
+                context.console.error = (msg, e) => {
+                    if (msg.includes("Fehler bei VirusTotal Abfrage:")) {
+                        errorLogged = true;
+                    }
+                };
+
+                const result = await context.checkVirusTotal('dummyhash', 'dummyapikey');
+
+                assert.strictEqual(result, null);
+                assert.strictEqual(errorLogged, true);
+            } finally {
+                context.fetch = originalFetch;
+                context.console.error = originalConsoleError;
+            }
+        });
+    });
+
     describe('calculateThreatScore', () => {
         it('calculates threat score correctly for spf=fail', async () => {
             const author = 'Service <service@paypal.com>';
