@@ -1179,31 +1179,36 @@ function disarmHTML(htmlString) {
     });
 
     // Remove inline event handlers and javascript: URIs
-    const allElements = doc.getElementsByTagName('*');
     const dangerousAttributes = ['href', 'src', 'action', 'formaction', 'xlink:href'];
 
-    for (let i = 0; i < allElements.length; i++) {
-        const el = allElements[i];
-
-        // Remove event handlers
-        for (let j = el.attributes.length - 1; j >= 0; j--) {
-            const attrName = el.attributes[j].name.toLowerCase();
-            if (attrName.startsWith('on')) {
-                el.removeAttribute(attrName);
+    const walker = doc.createTreeWalker(doc.documentElement, 1 /* NodeFilter.SHOW_ELEMENT */);
+    let el = walker.currentNode;
+    while (el) {
+        if (el.hasAttributes()) {
+            for (let j = el.attributes.length - 1; j >= 0; j--) {
+                const attrName = el.attributes[j].name.toLowerCase();
+                if (attrName.startsWith('on')) {
+                    el.removeAttribute(attrName);
+                }
             }
         }
+        el = walker.nextNode();
+    }
 
-        // Prevent malicious URIs in multiple attributes
-        dangerousAttributes.forEach(attr => {
-            if (el.hasAttribute(attr)) {
-                let val = el.getAttribute(attr);
+    const dangEls = doc.querySelectorAll('[href], [src], [action], [formaction], [xlink\\:href]');
+    for (let i = 0; i < dangEls.length; i++) {
+        const dEl = dangEls[i];
+        for (let k = 0; k < dangerousAttributes.length; k++) {
+            const attr = dangerousAttributes[k];
+            if (dEl.hasAttribute(attr)) {
+                let val = dEl.getAttribute(attr);
                 // Remove control characters (like tabs/newlines) that might evade the check
                 let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                    el.removeAttribute(attr);
+                    dEl.removeAttribute(attr);
                 }
             }
-        });
+        }
     }
 
     return doc.documentElement.outerHTML;
