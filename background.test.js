@@ -113,7 +113,6 @@ describe('background.js', () => {
             globalThis.tab_mail_open_display = tab_mail_open_display;
             globalThis.sent_to_hybrid_by_attachment = sent_to_hybrid_by_attachment;
             globalThis.get_sha256_hash = get_sha256_hash;
-            globalThis.indexedDB_save_hybrid_data_to_db = indexedDB_save_hybrid_data_to_db;
             globalThis.indexedDB_save_batch_hybrid_data_to_db = indexedDB_save_batch_hybrid_data_to_db;
             globalThis.handleManualUpload = handleManualUpload;
             globalThis.extractUrls = extractUrls;
