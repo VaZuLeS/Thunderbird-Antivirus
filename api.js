@@ -449,26 +449,7 @@ function renderManualUrlScanUI(url, headerMessageId) {
     });
 }
 
-function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
-    let container = document.getElementById('hybrid_analysis_api_content');
-
-    let card = document.createElement('div');
-    card.className = "card card-info mb-3";
-    card.id = `upload-container-${hash}`;
-
-    let h2 = document.createElement('h2');
-    h2.textContent = `Anhang: ${attachmentName || 'Unbekannt'}`;
-    card.appendChild(h2);
-
-    let pHash = document.createElement('p');
-    pHash.textContent = `SHA-256: ${hash}`;
-    card.appendChild(pHash);
-
-    let pInfo = document.createElement('p');
-    pInfo.className = "text-info";
-    pInfo.innerHTML = `Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.`;
-    card.appendChild(pInfo);
-
+function createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId) {
     let btnUpload = document.createElement('button');
     btnUpload.id = `btn-upload-${hash}`;
     btnUpload.className = "btn-primary mt-2";
@@ -482,74 +463,38 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     pUploadStatus.setAttribute('role', 'status');
     card.appendChild(pUploadStatus);
 
-    if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
-        let btnCdr = document.createElement('button');
-        btnCdr.id = `btn-cdr-${hash}`;
-        btnCdr.className = "btn-primary mt-2 ml-2";
-        btnCdr.textContent = `Bereinigen & Herunterladen (Lokales CDR)`;
-        card.appendChild(btnCdr);
-
-        let pCdrStatus = document.createElement('p');
-        pCdrStatus.id = `cdr-status-${hash}`;
-        pCdrStatus.className = "mt-2";
-        pCdrStatus.setAttribute('aria-live', 'polite');
-        pCdrStatus.setAttribute('role', 'status');
-        card.appendChild(pCdrStatus);
-    }
-
-    container.appendChild(card);
-
-    let cdrBtn = document.getElementById(`btn-cdr-${hash}`);
-    if (cdrBtn) {
-        cdrBtn.addEventListener('click', function() {
-            let btn = this;
-            let statusEl = document.getElementById(`cdr-status-${hash}`);
-            btn.disabled = true;
-            btn.innerText = "Bereinige...";
-            statusEl.innerText = "Lokales CDR wird durchgeführt...";
-
-            browser.runtime.sendMessage({
-                action: "downloadDisarmed",
-                messageId: messageId,
-                partName: partName,
-                attachmentName: attachmentName
-            }).then(res => {
-                if (res && res.status === 'success') {
-                    statusEl.innerText = "Herunterladen erfolgreich initiiert.";
-                    btn.innerText = "Bereinigt";
-                } else {
-                    statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
-                    btn.disabled = false;
-                    btn.innerText = "Erneut versuchen";
-                }
-            }).catch(err => {
-                statusEl.innerText = "Kommunikationsfehler: " + err;
-                btn.disabled = false;
-                btn.innerText = "Erneut versuchen";
-            });
-        });
-    }
-
-    document.getElementById(`btn-upload-${hash}`).addEventListener('click', function() {
+    btnUpload.addEventListener('click', function() {
         let btn = this;
-        let statusEl = document.getElementById(`upload-status-${hash}`);
+        let statusId = `upload-status-${safeHash}`;
+        let statusEl = document.getElementById(statusId);
         btn.disabled = true;
         btn.innerText = "Lade hoch...";
-        statusEl.innerText = "Datei wird an Hybrid Analysis übertragen...";
+        setElementText(statusId, "Datei wird an Hybrid Analysis übertragen...");
 
-        browser.runtime.sendMessage({
-            action: "uploadAttachment",
-            messageId: messageId,
-            partName: partName,
-            attachmentName: attachmentName,
-            hash: hash,
-            headerMessageId: headerMessageId
-        }).then(response => {
-            if (response && response.status === 'success') {
-                statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
+        sendExtensionMessage(
+            {
+                action: "uploadAttachment",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName,
+                hash: hash,
+                headerMessageId: headerMessageId
+            },
+            btn,
+            statusEl,
+            "Fehler beim Upload: ",
+            (response) => {
+                if (statusEl) statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
                 setTimeout(() => {
-                    document.getElementById(`upload-container-${hash}`).remove();
-                    get_hybrid_report_by_sha256(hash, attachmentName, messageId, partName, headerMessageId);
+                    let container = document.getElementById(`upload-container-${safeHash}`);
+                    if (container) container.remove();
+                    get_hybrid_report_by_sha256({
+                        hybrid_sha: hash,
+                        attachmentName: attachmentName,
+                        messageId: messageId,
+                        partName: partName,
+                        headerMessageId: headerMessageId
+                    });
                 }, 3000);
             } else {
                 statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
@@ -562,4 +507,75 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
             btn.innerText = "Erneut versuchen";
         });
     });
+}
+
+function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
+    if (!attachmentName || (!attachmentName.toLowerCase().endsWith('.html') && !attachmentName.toLowerCase().endsWith('.htm'))) {
+        return;
+    }
+
+    let cdrBtn = document.createElement('button');
+    cdrBtn.id = `btn-cdr-${safeHash}`;
+    cdrBtn.className = "btn-primary mt-2 ml-2";
+    cdrBtn.textContent = "Bereinigen & Herunterladen (Lokales CDR)";
+    card.appendChild(cdrBtn);
+
+    let pCdrStatus = document.createElement('p');
+    pCdrStatus.id = `cdr-status-${safeHash}`;
+    pCdrStatus.className = "mt-2";
+    pCdrStatus.setAttribute("aria-live", "polite");
+    pCdrStatus.setAttribute("role", "status");
+    card.appendChild(pCdrStatus);
+
+    cdrBtn.addEventListener('click', function() {
+        let btn = this;
+        let statusId = `cdr-status-${safeHash}`;
+        let statusEl = document.getElementById(statusId);
+        btn.disabled = true;
+        if (btn) btn.setAttribute('aria-busy', 'true');
+        btn.innerText = "Bereinige...";
+        setElementText(statusId, "Lokales CDR wird durchgeführt...");
+
+        sendExtensionMessage(
+            {
+                action: "downloadDisarmed",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName
+            },
+            btn,
+            statusEl,
+            "Fehler beim Herunterladen: ",
+            (res) => {
+                if (statusEl) statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                btn.innerText = "Bereinigt";
+            }
+        );
+    });
+}
+
+function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
+    let safeHash = escapeHTML(hash);
+
+    let card = document.createElement('div');
+    card.className = "card card-info mb-3";
+    card.id = `upload-container-${safeHash}`;
+
+    let h2 = document.createElement('h2');
+    h2.textContent = `Anhang: ${attachmentName || 'Unbekannt'}`;
+    card.appendChild(h2);
+
+    let pHash = document.createElement('p');
+    pHash.textContent = `SHA-256: ${hash}`;
+    card.appendChild(pHash);
+
+    let pInfo = document.createElement('p');
+    pInfo.className = "text-info";
+    pInfo.innerHTML = 'Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.';
+    card.appendChild(pInfo);
+
+    createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
+    createCdrButton(card, safeHash, attachmentName, messageId, partName);
+
+    appendElementHtml('hybrid_analysis_api_content', card);
 }
