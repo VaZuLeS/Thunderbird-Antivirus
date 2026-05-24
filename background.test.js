@@ -495,6 +495,73 @@ describe('background.js', () => {
         assert.strictEqual(sentResponse.status, 'success');
     });
 
+    describe('evaluateAuthHeaders', () => {
+        it('returns neutral status for empty or null headers', () => {
+            let result = context.evaluateAuthHeaders(null, 0, []);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.authStatus, 'neutral');
+
+            result = context.evaluateAuthHeaders([], 0, []);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.authStatus, 'neutral');
+        });
+
+        it('identifies spf=fail and spf=softfail', () => {
+            let reasons = [];
+            let result = context.evaluateAuthHeaders(['spf=fail'], 0, reasons);
+            assert.strictEqual(result.score, 50);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.ok(reasons.some(r => r.includes('SPF-Prüfung fehlgeschlagen')));
+
+            reasons = [];
+            result = context.evaluateAuthHeaders(['spf=softfail'], 0, reasons);
+            assert.strictEqual(result.score, 50);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.ok(reasons.some(r => r.includes('SPF-Prüfung fehlgeschlagen')));
+        });
+
+        it('identifies dkim=fail', () => {
+            let reasons = [];
+            let result = context.evaluateAuthHeaders(['dkim=fail'], 0, reasons);
+            assert.strictEqual(result.score, 50);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.ok(reasons.some(r => r.includes('DKIM-Signatur ungültig')));
+        });
+
+        it('identifies dmarc=fail', () => {
+            let reasons = [];
+            let result = context.evaluateAuthHeaders(['dmarc=fail'], 0, reasons);
+            assert.strictEqual(result.score, 50);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.ok(reasons.some(r => r.includes('DMARC-Prüfung fehlgeschlagen')));
+        });
+
+        it('identifies all passing headers correctly', () => {
+            let reasons = [];
+            let result = context.evaluateAuthHeaders(['spf=pass', 'dkim=pass', 'dmarc=pass'], 0, reasons);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.authStatus, 'pass');
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('handles case insensitivity', () => {
+            let reasons = [];
+            let result = context.evaluateAuthHeaders(['SPF=FAIL', 'DKIM=FAIL'], 0, reasons);
+            assert.strictEqual(result.score, 100);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.ok(reasons.some(r => r.includes('SPF-Prüfung fehlgeschlagen')));
+            assert.ok(reasons.some(r => r.includes('DKIM-Signatur ungültig')));
+        });
+
+        it('accumulates scores for multiple failures', () => {
+            let reasons = [];
+            let result = context.evaluateAuthHeaders(['spf=fail', 'dkim=fail', 'dmarc=fail'], 10, reasons);
+            assert.strictEqual(result.score, 160); // 10 + 50 + 50 + 50
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(reasons.length, 3);
+        });
+    });
+
     describe('calculateThreatScore', () => {
         it('calculates threat score correctly for spf=fail', async () => {
             const author = 'Service <service@paypal.com>';

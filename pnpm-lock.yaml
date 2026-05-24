@@ -141,11 +141,11 @@ packages:
   symbol-tree@3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
 
-  tldts-core@7.1.0:
-    resolution: {integrity: sha512-Ou+YJ467tR700sk2mZBB1/uFah6LDeH/VKO0N4xfjFOXE0hJkZgiOgXj16gEi1wQ4L6334UTKjxF6gum8ftZzQ==}
+  tldts-core@7.1.1:
+    resolution: {integrity: sha512-v9zYcyFEAJBeyG7g4+y/HFL9i2cHqpV+9cHohNZIhA6xjO2MSVgijFgx6quQaRBDzM5FT8fs5NPjsNITOhlCzg==}
 
-  tldts@7.1.0:
-    resolution: {integrity: sha512-Y+iRHtDrPOlNH9ZZpqpIogonv7jwSPHIt3Gpe+kRvYJlBaK+QGNXu+xooJY0QEmb62/ERo3GF3zCxRMbMtKEEA==}
+  tldts@7.1.1:
+    resolution: {integrity: sha512-VuvOq9QVVdzQyIwynB0MRZlEup+u5BD62FjgmKvRDFO8u1RgAzpeg7Qd70hUmrxwkkecqoz1N6t1yGMygx7rnA==}
     hasBin: true
 
   tough-cookie@6.0.1:
@@ -309,15 +309,15 @@ snapshots:
 
   symbol-tree@3.2.4: {}
 
-  tldts-core@7.1.0: {}
+  tldts-core@7.1.1: {}
 
-  tldts@7.1.0:
+  tldts@7.1.1:
     dependencies:
-      tldts-core: 7.1.0
+      tldts-core: 7.1.1
 
   tough-cookie@6.0.1:
     dependencies:
-      tldts: 7.1.0
+      tldts: 7.1.1
 
   tr46@6.0.0:
     dependencies:
