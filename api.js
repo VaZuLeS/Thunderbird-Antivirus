@@ -100,7 +100,7 @@ try {
         let store = transaction.objectStore("hybridanalysis");
         // Führen Sie eine Anfrage aus, um den Hash für die angegebene MessageHeaderId zu finden.
         let getRequest = store.get(message.headerMessageId);
-        getRequest.onsuccess = function (e) {
+        getRequest.onsuccess = async function (e) {
             const record = getRequest.result;
             const hasAttachments = record && record.attachments && record.attachments.length > 0;
             const hasLinks = record && record.links && record.links.length > 0;
@@ -114,7 +114,7 @@ try {
                         if (att.state === 'UNKNOWN') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                         } else {
-                            get_hybrid_report_by_sha256({
+                            await get_hybrid_report_by_sha256({
                                 hybrid_sha: hash256,
                                 attachmentName: att.attachment_name,
                                 messageId: message.id,
@@ -131,7 +131,7 @@ try {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId);
                         } else if (linkObj.hybrid_sha256) {
-                            get_hybrid_report_by_sha256({
+                            await get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
                                 attachmentName: linkObj.url
                             });

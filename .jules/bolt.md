@@ -21,3 +21,11 @@ In the worst-case scenario (timeout), API requests are reduced from 15 to 6 (a 6
 
 ### 🔬 Measurement:
 A standalone benchmark script confirmed the reduction in loop iterations and total requests across varying response time limits. Verified functionality using the native test suite `node --test background.test.js`.
+## 2024-05-24
+
+### Learning
+When iterating over arrays (like attachments or links) and dispatching asynchronous API calls (`get_hybrid_report_by_sha256`) from an IndexedDB `onsuccess` callback, firing them concurrently without `await` acts as a "fire-and-forget". While this initiates all requests instantly (e.g., 100 requests in 0.5ms), it floods the background event loop with concurrent HTTP requests. This can lead to unhandled promise rejections, memory spikes, and aggressive HTTP 429 Rate Limiting from third-party APIs.
+
+To solve this, the callback can be made `async` and the API calls `await`ed. This ensures a sequential request flow, resolving the spamming issue.
+
+**Note on IndexedDB:** Making an `onsuccess` handler `async` causes the underlying transaction to automatically commit when the microtask queue yields (at the first `await`). This is safe *only* if there are no subsequent IndexedDB operations dependent on that specific transaction after the `await`. In this codebase, the transaction is only used to retrieve a single record before the network loop begins, so this optimization is safe.
