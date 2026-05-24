@@ -1,7 +1,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const { describe, it, beforeEach, afterEach } = require('node:test');
+const { describe, it, before, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
 const { JSDOM } = require('jsdom');
 
@@ -61,6 +61,9 @@ describe('background.js', () => {
                 },
                 notifications: {
                     create: () => {}
+                },
+                downloads: {
+                    download: async () => {}
                 }
             },
             crypto: globalThis.crypto,
@@ -68,6 +71,8 @@ describe('background.js', () => {
             Set: globalThis.Set,
             URL: globalThis.URL,
             DOMParser: dom.window.DOMParser,
+            TextDecoder: globalThis.TextDecoder,
+            Blob: globalThis.Blob,
             indexedDB: {
                 open: () => ({
                     onupgradeneeded: null,
@@ -125,9 +130,10 @@ describe('background.js', () => {
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.extractPublicIPs = extractPublicIPs;
-            globalThis.checkURLhaus = checkURLhaus;
+            globalThis.handleDownloadDisarmed = handleDownloadDisarmed;
         `;
         context.URL = URL;
+        context.URL.createObjectURL = () => 'blob:test';
         context.URLSearchParams = URLSearchParams;
         vm.runInContext(wrappedCode, context);
     });
@@ -979,6 +985,95 @@ describe('background.js', () => {
             assert.strictEqual(result.score, 0);
             assert.ok(result.reasons.some(r => r.includes("steht auf der Whitelist")));
             context.set_customWhitelist([]);
+        });
+    });
+
+    describe('handleDownloadDisarmed', () => {
+        let originalBlob;
+
+        beforeEach(() => {
+            originalBlob = context.Blob;
+        });
+
+        afterEach(() => {
+            context.Blob = originalBlob;
+        });
+
+        it('disarms HTML and triggers download with safe name', async () => {
+            const htmlContent = '<html><body><h1>Test</h1><script>alert(1);</script></body></html>';
+            const encoder = new TextEncoder();
+            const arrayBuffer = encoder.encode(htmlContent).buffer;
+
+            context.browser.messages.getAttachmentFile = async () => ({
+                arrayBuffer: async () => arrayBuffer
+            });
+
+            let blobContent = '';
+            context.Blob = class {
+                constructor(content, options) {
+                    blobContent = content[0];
+                }
+            };
+
+            let downloadArgs = null;
+            context.browser.downloads.download = async (args) => {
+                downloadArgs = args;
+            };
+
+            await context.handleDownloadDisarmed(1, 'part1', 'test_attachment.html');
+
+            assert.ok(!blobContent.includes('<script>'), 'Script tag should be removed');
+            assert.ok(!blobContent.includes('alert(1)'), 'Script content should be removed');
+            assert.ok(blobContent.includes('Test'), 'Safe content should remain');
+
+            assert.strictEqual(downloadArgs.filename, 'disarmed_test_attachment.html');
+            assert.strictEqual(downloadArgs.saveAs, true);
+        });
+
+        it('appends .html to files missing html extension', async () => {
+            const htmlContent = '<html><body><h1>Test</h1></body></html>';
+            const encoder = new TextEncoder();
+            const arrayBuffer = encoder.encode(htmlContent).buffer;
+
+            context.browser.messages.getAttachmentFile = async () => ({
+                arrayBuffer: async () => arrayBuffer
+            });
+
+            context.Blob = class { constructor(content) {} };
+
+            let downloadArgs = null;
+            context.browser.downloads.download = async (args) => {
+                downloadArgs = args;
+            };
+
+            await context.handleDownloadDisarmed(1, 'part1', 'test_attachment.txt');
+
+            assert.strictEqual(downloadArgs.filename, 'disarmed_test_attachment.txt.html');
+        });
+
+        it('sanitizes malicious attachment names', async () => {
+            const htmlContent = '<html><body><h1>Test</h1></body></html>';
+            const encoder = new TextEncoder();
+            const arrayBuffer = encoder.encode(htmlContent).buffer;
+
+            context.browser.messages.getAttachmentFile = async () => ({
+                arrayBuffer: async () => arrayBuffer
+            });
+
+            context.Blob = class { constructor(content) {} };
+
+            let downloadArgs = null;
+            context.browser.downloads.download = async (args) => {
+                downloadArgs = args;
+            };
+
+            await context.handleDownloadDisarmed(1, 'part1', '../../../etc/passwd.html');
+
+            assert.strictEqual(downloadArgs.filename, 'disarmed_passwd.html');
+
+            await context.handleDownloadDisarmed(1, 'part1', 'hello?world*.html');
+
+            assert.strictEqual(downloadArgs.filename, 'disarmed_hello_world_.html');
         });
     });
 
