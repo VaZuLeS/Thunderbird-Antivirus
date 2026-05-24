@@ -1,7 +1,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const { describe, it, before, beforeEach } = require('node:test');
+const { describe, it, before, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert');
 const { JSDOM } = require('jsdom');
 
@@ -61,6 +61,9 @@ describe('background.js', () => {
                 },
                 notifications: {
                     create: () => {}
+                },
+                downloads: {
+                    download: async () => {}
                 }
             },
             crypto: globalThis.crypto,
@@ -68,6 +71,8 @@ describe('background.js', () => {
             Set: globalThis.Set,
             URL: globalThis.URL,
             DOMParser: dom.window.DOMParser,
+            TextDecoder: globalThis.TextDecoder,
+            Blob: globalThis.Blob,
             indexedDB: {
                 open: () => ({
                     onupgradeneeded: null,
@@ -125,9 +130,10 @@ describe('background.js', () => {
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.extractPublicIPs = extractPublicIPs;
-            globalThis.checkURLhaus = checkURLhaus;
+            globalThis.handleDownloadDisarmed = handleDownloadDisarmed;
         `;
         context.URL = URL;
+        context.URL.createObjectURL = () => 'blob:test';
         context.URLSearchParams = URLSearchParams;
         vm.runInContext(wrappedCode, context);
     });
@@ -658,65 +664,161 @@ describe('background.js', () => {
         });
     });
 
-    describe('checkURLhaus', () => {
-        it('returns false immediately if apikey is falsy', async () => {
-            const result = await context.checkURLhaus('example.com', null);
-            assert.strictEqual(result, false);
-        });
+    describe('checkUrlscanIo', () => {
+        let originalFetch;
+        let originalConsoleError;
+        let originalConsoleLog;
+        let originalSetTimeout;
 
-        it('returns true on successful match and sends correct request', async () => {
-            let fetchCalledWith = null;
-            context.fetch = async (url, options) => {
-                fetchCalledWith = options;
-                return {
-                    status: 200,
-                    json: async () => ({ query_status: 'ok', url_count: 1 })
-                };
+        beforeEach(() => {
+            originalFetch = context.fetch;
+            originalConsoleError = context.console.error;
+            originalConsoleLog = context.console.log;
+            originalSetTimeout = context.setTimeout;
+            context.console.error = () => {};
+            context.console.log = () => {};
+            context.setTimeout = (cb) => {
+                cb(); // execute instantly
             };
-
-            const result = await context.checkURLhaus('example.com', 'test-urlhaus-key');
-
-            assert.strictEqual(result, true);
-            assert.ok(fetchCalledWith);
-            assert.strictEqual(fetchCalledWith.method, 'POST');
-            assert.strictEqual(fetchCalledWith.headers['Auth-Key'], 'test-urlhaus-key');
-            assert.strictEqual(fetchCalledWith.headers['Content-Type'], 'application/x-www-form-urlencoded');
-            assert.ok(fetchCalledWith.body.includes('host=example.com'));
         });
 
-        it('returns false when no results found', async () => {
+        afterEach(() => {
+            context.fetch = originalFetch;
+            context.console.error = originalConsoleError;
+            context.console.log = originalConsoleLog;
+            context.setTimeout = originalSetTimeout;
+        });
+
+        it('returns null if no apikey', async () => {
+            const result = await context.checkUrlscanIo('http://example.com', null);
+            assert.strictEqual(result, null);
+        });
+
+        it('handles 400 error correctly', async () => {
             context.fetch = async () => ({
-                status: 200,
-                json: async () => ({ query_status: 'no_results' })
+                status: 400,
+                json: async () => ({ error: 'bad request' })
             });
 
-            const result = await context.checkURLhaus('example.com', 'test-urlhaus-key');
-            assert.strictEqual(result, false);
+            const result = await context.checkUrlscanIo('http://example.com', 'apikey');
+            assert.strictEqual(result.status, 'ERROR');
+            assert.strictEqual(result.details, 'Domain not resolvable');
         });
 
-        it('returns false and handles error gracefully on fetch failure', async () => {
-            const originalFetch = context.fetch;
-            const originalConsoleError = context.console.error;
+        it('handles successful scan and result polling (malicious overall)', async () => {
+            let callCount = 0;
+            context.fetch = async (url) => {
+                callCount++;
+                if (callCount === 1) {
+                    return {
+                        ok: true,
+                        status: 200,
+                        json: async () => ({ uuid: 'test-uuid-1' })
+                    };
+                } else if (callCount === 2) {
+                    return {
+                        status: 200,
+                        json: async () => ({
+                            verdicts: {
+                                overall: { malicious: true }
+                            }
+                        })
+                    };
+                }
+            };
+
+            const result = await context.checkUrlscanIo('http://malicious.com', 'apikey');
+            assert.strictEqual(result.status, 'MALICIOUS_VISUAL');
+            assert.ok(result.reasons.includes("Die URL wurde von urlscan.io generell als bösartig eingestuft."));
+        });
+
+        it('handles successful scan and result polling (malicious brand)', async () => {
+            let callCount = 0;
+            context.fetch = async (url) => {
+                callCount++;
+                if (callCount === 1) {
+                    return {
+                        ok: true,
+                        status: 200,
+                        json: async () => ({ uuid: 'test-uuid-2' })
+                    };
+                } else if (callCount === 2) {
+                    return {
+                        status: 200,
+                        json: async () => ({
+                            verdicts: {
+                                urlscan: {
+                                    malicious: true,
+                                    brands: ['PayPal']
+                                }
+                            }
+                        })
+                    };
+                }
+            };
+
+            const result = await context.checkUrlscanIo('http://phishing.com', 'apikey');
+            assert.strictEqual(result.status, 'MALICIOUS_VISUAL');
+            assert.ok(result.reasons.includes("Visuelle Erkennung: Die Seite gibt sich als PayPal aus (Phishing-Verdacht)."));
+        });
+
+        it('handles successful scan and result polling (clean)', async () => {
+            let callCount = 0;
+            context.fetch = async (url) => {
+                callCount++;
+                if (callCount === 1) {
+                    return {
+                        ok: true,
+                        status: 200,
+                        json: async () => ({ uuid: 'test-uuid-3' })
+                    };
+                } else if (callCount === 2) {
+                    return {
+                        status: 200,
+                        json: async () => ({ verdicts: {} })
+                    };
+                }
+            };
+
+            const result = await context.checkUrlscanIo('http://clean.com', 'apikey');
+            assert.strictEqual(result.status, 'CLEAN');
+        });
+
+        it('handles successful scan but polling timeout', async () => {
+            let callCount = 0;
+            context.fetch = async (url) => {
+                callCount++;
+                if (callCount === 1) {
+                    return {
+                        ok: true,
+                        status: 200,
+                        json: async () => ({ uuid: 'test-uuid-4' })
+                    };
+                } else {
+                    return {
+                        status: 404, // Not ready
+                        json: async () => ({})
+                    };
+                }
+            };
+
+            const result = await context.checkUrlscanIo('http://slow.com', 'apikey');
+            assert.strictEqual(result.status, 'TIMEOUT');
+        });
+
+        it('handles fetch failure/exception gracefully', async () => {
             let errorLogged = false;
+            context.console.error = (msg, e) => {
+                if (msg.includes("Fehler bei urlscan.io Abfrage")) errorLogged = true;
+            };
+            context.fetch = async () => {
+                throw new Error("Network offline");
+            };
 
-            try {
-                context.fetch = async () => {
-                    throw new Error("Network failure");
-                };
-                context.console.error = (msg, e) => {
-                    if (msg.includes("Fehler bei URLhaus Abfrage")) {
-                        errorLogged = true;
-                    }
-                };
-
-                const result = await context.checkURLhaus('example.com', 'test-urlhaus-key');
-
-                assert.strictEqual(result, false);
-                assert.strictEqual(errorLogged, true);
-            } finally {
-                context.fetch = originalFetch;
-                context.console.error = originalConsoleError;
-            }
+            const result = await context.checkUrlscanIo('http://error.com', 'apikey');
+            assert.strictEqual(result.status, 'ERROR');
+            assert.strictEqual(result.details, 'Network offline');
+            assert.strictEqual(errorLogged, true);
         });
     });
 
@@ -883,6 +985,95 @@ describe('background.js', () => {
             assert.strictEqual(result.score, 0);
             assert.ok(result.reasons.some(r => r.includes("steht auf der Whitelist")));
             context.set_customWhitelist([]);
+        });
+    });
+
+    describe('handleDownloadDisarmed', () => {
+        let originalBlob;
+
+        beforeEach(() => {
+            originalBlob = context.Blob;
+        });
+
+        afterEach(() => {
+            context.Blob = originalBlob;
+        });
+
+        it('disarms HTML and triggers download with safe name', async () => {
+            const htmlContent = '<html><body><h1>Test</h1><script>alert(1);</script></body></html>';
+            const encoder = new TextEncoder();
+            const arrayBuffer = encoder.encode(htmlContent).buffer;
+
+            context.browser.messages.getAttachmentFile = async () => ({
+                arrayBuffer: async () => arrayBuffer
+            });
+
+            let blobContent = '';
+            context.Blob = class {
+                constructor(content, options) {
+                    blobContent = content[0];
+                }
+            };
+
+            let downloadArgs = null;
+            context.browser.downloads.download = async (args) => {
+                downloadArgs = args;
+            };
+
+            await context.handleDownloadDisarmed(1, 'part1', 'test_attachment.html');
+
+            assert.ok(!blobContent.includes('<script>'), 'Script tag should be removed');
+            assert.ok(!blobContent.includes('alert(1)'), 'Script content should be removed');
+            assert.ok(blobContent.includes('Test'), 'Safe content should remain');
+
+            assert.strictEqual(downloadArgs.filename, 'disarmed_test_attachment.html');
+            assert.strictEqual(downloadArgs.saveAs, true);
+        });
+
+        it('appends .html to files missing html extension', async () => {
+            const htmlContent = '<html><body><h1>Test</h1></body></html>';
+            const encoder = new TextEncoder();
+            const arrayBuffer = encoder.encode(htmlContent).buffer;
+
+            context.browser.messages.getAttachmentFile = async () => ({
+                arrayBuffer: async () => arrayBuffer
+            });
+
+            context.Blob = class { constructor(content) {} };
+
+            let downloadArgs = null;
+            context.browser.downloads.download = async (args) => {
+                downloadArgs = args;
+            };
+
+            await context.handleDownloadDisarmed(1, 'part1', 'test_attachment.txt');
+
+            assert.strictEqual(downloadArgs.filename, 'disarmed_test_attachment.txt.html');
+        });
+
+        it('sanitizes malicious attachment names', async () => {
+            const htmlContent = '<html><body><h1>Test</h1></body></html>';
+            const encoder = new TextEncoder();
+            const arrayBuffer = encoder.encode(htmlContent).buffer;
+
+            context.browser.messages.getAttachmentFile = async () => ({
+                arrayBuffer: async () => arrayBuffer
+            });
+
+            context.Blob = class { constructor(content) {} };
+
+            let downloadArgs = null;
+            context.browser.downloads.download = async (args) => {
+                downloadArgs = args;
+            };
+
+            await context.handleDownloadDisarmed(1, 'part1', '../../../etc/passwd.html');
+
+            assert.strictEqual(downloadArgs.filename, 'disarmed_passwd.html');
+
+            await context.handleDownloadDisarmed(1, 'part1', 'hello?world*.html');
+
+            assert.strictEqual(downloadArgs.filename, 'disarmed_hello_world_.html');
         });
     });
 
