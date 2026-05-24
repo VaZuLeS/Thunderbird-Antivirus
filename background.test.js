@@ -122,6 +122,7 @@ describe('background.js', () => {
             globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
             globalThis.handleUrlScan = handleUrlScan;
             globalThis.calculateThreatScore = calculateThreatScore;
+            globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.extractPublicIPs = extractPublicIPs;
         `;
@@ -493,6 +494,59 @@ describe('background.js', () => {
 
         assert.ok(sentResponse);
         assert.strictEqual(sentResponse.status, 'success');
+    });
+
+    describe('evaluateReplyTo', () => {
+        it('does not alter score if replyTo or senderDomain is empty', () => {
+            let score = 10;
+            let reasons = [];
+            let newScore = context.evaluateReplyTo("", "company.com", score, reasons);
+            assert.strictEqual(newScore, 10);
+            assert.strictEqual(reasons.length, 0);
+
+            newScore = context.evaluateReplyTo("CEO <ceo@company.com>", "", score, reasons);
+            assert.strictEqual(newScore, 10);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('does not alter score when reply-to domain matches sender domain', () => {
+            let score = 0;
+            let reasons = [];
+            let newScore = context.evaluateReplyTo("CEO <ceo@company.com>", "company.com", score, reasons);
+            assert.strictEqual(newScore, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('does not alter score when raw email reply-to domain matches sender domain', () => {
+            let score = 0;
+            let reasons = [];
+            let newScore = context.evaluateReplyTo("ceo@company.com", "company.com", score, reasons);
+            assert.strictEqual(newScore, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('increases score by 50 and adds reason when reply-to domain differs from sender domain', () => {
+            let score = 0;
+            let reasons = [];
+            let newScore = context.evaluateReplyTo("Hacker <hacker@evil.com>", "company.com", score, reasons);
+            assert.strictEqual(newScore, 50);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes("evil.com"));
+            assert.ok(reasons[0].includes("company.com"));
+        });
+
+        it('is case-insensitive when extracting domains from replyTo', () => {
+            let score = 0;
+            let reasons = [];
+            let newScore = context.evaluateReplyTo("CEO <ceo@COMPANY.COM>", "company.com", score, reasons);
+            assert.strictEqual(newScore, 0);
+            assert.strictEqual(reasons.length, 0);
+
+            // Raw email case-insensitivity
+            newScore = context.evaluateReplyTo("CEO@COMPANY.COM", "company.com", score, reasons);
+            assert.strictEqual(newScore, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
     });
 
     describe('calculateThreatScore', () => {
