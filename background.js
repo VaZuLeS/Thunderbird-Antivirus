@@ -1017,7 +1017,9 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             let activeMessage = null;
             try {
                 activeMessage = await browser.messageDisplay.getDisplayedMessage(tab.id);
-            } catch (e) { /* Ignore error if no active message */ }
+            } catch (e) {
+                console.error("Failed to get displayed message for context menu scan:", e);
+            }
 
             let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
 
