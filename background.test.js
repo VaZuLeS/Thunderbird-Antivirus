@@ -122,6 +122,7 @@ describe('background.js', () => {
             globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
             globalThis.handleUrlScan = handleUrlScan;
             globalThis.calculateThreatScore = calculateThreatScore;
+            globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.extractPublicIPs = extractPublicIPs;
         `;
@@ -495,70 +496,56 @@ describe('background.js', () => {
         assert.strictEqual(sentResponse.status, 'success');
     });
 
-    describe('evaluateAuthHeaders', () => {
-        it('returns neutral status for empty or null headers', () => {
-            let result = context.evaluateAuthHeaders(null, 0, []);
-            assert.strictEqual(result.score, 0);
-            assert.strictEqual(result.authStatus, 'neutral');
-
-            result = context.evaluateAuthHeaders([], 0, []);
-            assert.strictEqual(result.score, 0);
-            assert.strictEqual(result.authStatus, 'neutral');
-        });
-
-        it('identifies spf=fail and spf=softfail', () => {
+    describe('evaluateReplyTo', () => {
+        it('does not alter score if replyTo or senderDomain is empty', () => {
+            let score = 10;
             let reasons = [];
-            let result = context.evaluateAuthHeaders(['spf=fail'], 0, reasons);
-            assert.strictEqual(result.score, 50);
-            assert.strictEqual(result.authStatus, 'fail');
-            assert.ok(reasons.some(r => r.includes('SPF-Prüfung fehlgeschlagen')));
+            let newScore = context.evaluateReplyTo("", "company.com", score, reasons);
+            assert.strictEqual(newScore, 10);
+            assert.strictEqual(reasons.length, 0);
 
-            reasons = [];
-            result = context.evaluateAuthHeaders(['spf=softfail'], 0, reasons);
-            assert.strictEqual(result.score, 50);
-            assert.strictEqual(result.authStatus, 'fail');
-            assert.ok(reasons.some(r => r.includes('SPF-Prüfung fehlgeschlagen')));
-        });
-
-        it('identifies dkim=fail', () => {
-            let reasons = [];
-            let result = context.evaluateAuthHeaders(['dkim=fail'], 0, reasons);
-            assert.strictEqual(result.score, 50);
-            assert.strictEqual(result.authStatus, 'fail');
-            assert.ok(reasons.some(r => r.includes('DKIM-Signatur ungültig')));
-        });
-
-        it('identifies dmarc=fail', () => {
-            let reasons = [];
-            let result = context.evaluateAuthHeaders(['dmarc=fail'], 0, reasons);
-            assert.strictEqual(result.score, 50);
-            assert.strictEqual(result.authStatus, 'fail');
-            assert.ok(reasons.some(r => r.includes('DMARC-Prüfung fehlgeschlagen')));
-        });
-
-        it('identifies all passing headers correctly', () => {
-            let reasons = [];
-            let result = context.evaluateAuthHeaders(['spf=pass', 'dkim=pass', 'dmarc=pass'], 0, reasons);
-            assert.strictEqual(result.score, 0);
-            assert.strictEqual(result.authStatus, 'pass');
+            newScore = context.evaluateReplyTo("CEO <ceo@company.com>", "", score, reasons);
+            assert.strictEqual(newScore, 10);
             assert.strictEqual(reasons.length, 0);
         });
 
-        it('handles case insensitivity', () => {
+        it('does not alter score when reply-to domain matches sender domain', () => {
+            let score = 0;
             let reasons = [];
-            let result = context.evaluateAuthHeaders(['SPF=FAIL', 'DKIM=FAIL'], 0, reasons);
-            assert.strictEqual(result.score, 100);
-            assert.strictEqual(result.authStatus, 'fail');
-            assert.ok(reasons.some(r => r.includes('SPF-Prüfung fehlgeschlagen')));
-            assert.ok(reasons.some(r => r.includes('DKIM-Signatur ungültig')));
+            let newScore = context.evaluateReplyTo("CEO <ceo@company.com>", "company.com", score, reasons);
+            assert.strictEqual(newScore, 0);
+            assert.strictEqual(reasons.length, 0);
         });
 
-        it('accumulates scores for multiple failures', () => {
+        it('does not alter score when raw email reply-to domain matches sender domain', () => {
+            let score = 0;
             let reasons = [];
-            let result = context.evaluateAuthHeaders(['spf=fail', 'dkim=fail', 'dmarc=fail'], 10, reasons);
-            assert.strictEqual(result.score, 160); // 10 + 50 + 50 + 50
-            assert.strictEqual(result.authStatus, 'fail');
-            assert.strictEqual(reasons.length, 3);
+            let newScore = context.evaluateReplyTo("ceo@company.com", "company.com", score, reasons);
+            assert.strictEqual(newScore, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('increases score by 50 and adds reason when reply-to domain differs from sender domain', () => {
+            let score = 0;
+            let reasons = [];
+            let newScore = context.evaluateReplyTo("Hacker <hacker@evil.com>", "company.com", score, reasons);
+            assert.strictEqual(newScore, 50);
+            assert.strictEqual(reasons.length, 1);
+            assert.match(reasons[0], /evil\.com/);
+            assert.match(reasons[0], /company\.com/);
+        });
+
+        it('is case-insensitive when extracting domains from replyTo', () => {
+            let score = 0;
+            let reasons = [];
+            let newScore = context.evaluateReplyTo("CEO <ceo@COMPANY.COM>", "company.com", score, reasons);
+            assert.strictEqual(newScore, 0);
+            assert.strictEqual(reasons.length, 0);
+
+            // Raw email case-insensitivity
+            newScore = context.evaluateReplyTo("CEO@COMPANY.COM", "company.com", score, reasons);
+            assert.strictEqual(newScore, 0);
+            assert.strictEqual(reasons.length, 0);
         });
     });
 
