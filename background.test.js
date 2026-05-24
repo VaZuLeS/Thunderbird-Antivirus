@@ -495,7 +495,67 @@ describe('background.js', () => {
         assert.strictEqual(sentResponse.status, 'success');
     });
 
+
+    describe('checkAbuseIPDB', () => {
+        it('returns true if abuse confidence score is > 50', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({
+                        data: {
+                            abuseConfidenceScore: 51
+                        }
+                    })
+                });
+                const result = await context.checkAbuseIPDB('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, true);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false if abuse confidence score is <= 50', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({
+                        data: {
+                            abuseConfidenceScore: 50
+                        }
+                    })
+                });
+                const result = await context.checkAbuseIPDB('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false and handles error gracefully on fetch failure', async () => {
+            const originalFetch = context.fetch;
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
+            try {
+                context.fetch = async () => {
+                    throw new Error("Network failure");
+                };
+                context.console.error = (msg, e) => {
+                    if (msg.includes("Fehler bei AbuseIPDB Abfrage")) {
+                        errorLogged = true;
+                    }
+                };
+                const result = await context.checkAbuseIPDB('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+                assert.strictEqual(errorLogged, true);
+            } finally {
+                context.fetch = originalFetch;
+                context.console.error = originalConsoleError;
+            }
+        });
+    });
+
     describe('checkVirusTotal', () => {
+
         it('returns null and handles error safely on fetch failure', async () => {
             const originalFetch = context.fetch;
             const originalConsoleError = context.console.error;
