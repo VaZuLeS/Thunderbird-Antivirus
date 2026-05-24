@@ -109,6 +109,8 @@ describe('background.js', () => {
         const wrappedCode = `
             globalThis.customBlacklist = [];
             globalThis.customWhitelist = [];
+            globalThis.knownSendersCache = new Set();
+            globalThis.MAX_KNOWN_SENDERS = 1000;
             ${code}
             globalThis.loadSettings = loadSettings;
             globalThis.set_customBlacklist = (list) => { customBlacklist = list.map(s => s ? s.toLowerCase() : ""); };
@@ -130,12 +132,15 @@ describe('background.js', () => {
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.extractPublicIPs = extractPublicIPs;
-            globalThis.handleDownloadDisarmed = handleDownloadDisarmed;
+            globalThis.checkURLhaus = checkURLhaus;
+            globalThis.knownSendersCache = knownSendersCache;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
         context.URLSearchParams = URLSearchParams;
         vm.runInContext(wrappedCode, context);
+
+        if (context.knownSendersCache) context.knownSendersCache.clear();
     });
 
     it('should initialize successfully', () => {
