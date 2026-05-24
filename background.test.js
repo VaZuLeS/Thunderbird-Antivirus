@@ -106,8 +106,8 @@ describe('background.js', () => {
             globalThis.customWhitelist = [];
             ${code}
             globalThis.loadSettings = loadSettings;
-            globalThis.set_customBlacklist = (list) => { customBlacklist = list; };
-            globalThis.set_customWhitelist = (list) => { customWhitelist = list; };
+            globalThis.set_customBlacklist = (list) => { customBlacklist = list.map(s => s ? s.toLowerCase() : ""); };
+            globalThis.set_customWhitelist = (list) => { customWhitelist = list.map(s => s ? s.toLowerCase() : ""); };
             globalThis.get_apikey = () => apikey_hybridanalysis;
             globalThis.set_apikey = (val) => { apikey_hybridanalysis = val; };
             globalThis.tab_mail_open_display = tab_mail_open_display;
@@ -122,6 +122,7 @@ describe('background.js', () => {
             globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
             globalThis.handleUrlScan = handleUrlScan;
             globalThis.calculateThreatScore = calculateThreatScore;
+            globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.extractPublicIPs = extractPublicIPs;
         `;

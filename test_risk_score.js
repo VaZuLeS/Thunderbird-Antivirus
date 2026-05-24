@@ -1,5 +1,10 @@
 let customBlacklist = [];
 let customWhitelist = [];
+
+function setCustomListsForTesting(blacklist, whitelist) {
+    customBlacklist = (blacklist || []).map(s => s ? s.toLowerCase() : "");
+    customWhitelist = (whitelist || []).map(s => s ? s.toLowerCase() : "");
+}
 let authStatus = null;
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
 const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_WORDS.join('|')})(?=[^\\wäöüßÄÖÜ]|$)`, 'gi');
@@ -38,19 +43,17 @@ const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
 function escapeRegExp(str) {
     return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => escapeRegExp(d)).join('|')})$`, 'i');
-
 // ⚡ Bolt Optimization: Use precompiled regex for O(1) checks instead of O(N) array loops
-const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(b => b.replace(/\\./g, '\\.')).join('|')})$`, 'i');
+const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(b => escapeRegExp(b)).join('|')})$`, 'i');
 
 function checkLists(email, senderDomain) {
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.length > 0) {
-        const lowerBlacklist = customBlacklist.map(s => s ? s.toLowerCase() : "");
-        if (lowerBlacklist.includes(email)) {
+        // ⚡ Bolt Optimization: Use pre-lowercased list directly instead of mapping on every call
+        if (customBlacklist.includes(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
-        for (let b of lowerBlacklist) {
+        for (let b of customBlacklist) {
             if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
                 return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`], listType: 'blacklist' };
             }
@@ -59,11 +62,11 @@ function checkLists(email, senderDomain) {
 
     // Check Whitelist
     if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.length > 0) {
-        const lowerWhitelist = customWhitelist.map(s => s ? s.toLowerCase() : "");
-        if (lowerWhitelist.includes(email)) {
+        // ⚡ Bolt Optimization: Use pre-lowercased list directly instead of mapping on every call
+        if (customWhitelist.includes(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
-        for (let w of lowerWhitelist) {
+        for (let w of customWhitelist) {
             if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
                 return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`], listType: 'whitelist' };
             }
