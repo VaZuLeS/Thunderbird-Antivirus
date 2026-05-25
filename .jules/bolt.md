@@ -1,6 +1,10 @@
-## 2024-05-20 - [Avoid .toLowerCase() in Regex Hot Loops]
-**Learning:** Calling `.toLowerCase()` individually on captured regex match groups (`match[n].toLowerCase()`) inside a `while` loop parsing large text blocks (like email bodies) creates massive redundant memory allocations. Pre-converting the *entire* input string once before the loop reduces processing time for 10k iterations from ~395ms down to ~227ms (a ~42% speedup). Additionally, micro-optimizations like `Set.has()` vs `Array.includes()` for tiny arrays (e.g., 12 items) yield zero measurable benefit and should be ignored.
-**Action:** Always pre-normalize (lowercase) large input strings *before* iterating over them with case-insensitive regular expressions, especially when the extracted groups need to be normalized downstream anyway.
-## 2024-05-24 - [Avoid Array.map() inside Hot Loops]
-**Learning:** Calling `.map(s => s.toLowerCase())` on dynamically sized arrays inside frequently called functions (like `checkLists` running for every link or email evaluation) introduces an O(N) array allocation overhead per call. Moving this `.map()` to occur only once during configuration loading avoids redundant allocations, significantly reducing GC pressure.
-**Action:** Always pre-process configuration arrays (e.g. lowecase normalization) at initialization time rather than mapping them inline during hot evaluation paths.
+## 2024-05-24
+
+### Observation
+Repeatedly querying the local Thunderbird email database using `browser.messages.query` for the same recipient in the `tab_mail_open_display` hook is inefficient and adds redundant I/O overhead.
+
+### Action
+Introduced a `Set` (`knownSendersCache`) in `background.js` to memorize the `senderEmail` after a successful database query confirms prior communication. Future emails from the same sender skip the database query entirely.
+
+### Prevention / Guidelines
+When dealing with repeated I/O operations inside frequently invoked event hooks (like opening an email), cache the results for known positive states using a simple structure like a `Set`. Use a bounded size (e.g., clearing at 1000 items) to prevent memory leaks while maintaining an O(1) fast path.

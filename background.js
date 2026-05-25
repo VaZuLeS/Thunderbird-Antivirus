@@ -10,6 +10,9 @@ let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 
+const knownSendersCache = new Set();
+const MAX_KNOWN_SENDERS = 1000;
+
 function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
     const options = {
@@ -366,7 +369,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
         try {
             let parsed = new URL(url);
             linkDomains.add(parsed.hostname.toLowerCase());
-        } catch (e) {}
+        } catch (e) { /* Ignore invalid URLs */ }
     }
 
     if (linkDomains.size > 0 && senderDomain) {
@@ -451,31 +454,10 @@ function calculateThreatScore(author, urls, options = {}) {
     return { score: Math.min(score, 100), reasons: reasons, authStatus: authStatus };
 }
 
-// Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
-async function tab_mail_open_display(tab, message) {
-  console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
-
-  try {
-    // Liste der Anhänge abrufen
-    let attachments = await browser.messages.listAttachments(message.id);
-
-    console.log("Gefundene Anhänge:", attachments);
-    
-    if (attachments.length > 0) {
-      await sent_to_hybrid_by_attachment(message, attachments);
-    }
-
-    // Vollständige Nachricht abrufen für Link-Extraktion
-    let fullMessage = await browser.messages.getFull(message.id);
-    let messageText = extractTextFromParts(fullMessage);
-    let urls = extractUrls(messageText);
-    let filteredUrls = filterUrls(urls);
-
-    console.log("Gefundene URLs:", filteredUrls);
-    if (filteredUrls.length > 0) {
-      if (privacyTier === 'max') {
-         console.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
-         const urlResults = await Promise.all(filteredUrls.map(async (url) => {
+async function processAndUploadUrls(message, filteredUrls) {
+    if (privacyTier === 'max') {
+        console.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
+        const urlResults = await Promise.all(filteredUrls.map(async (url) => {
             try {
                 const formBody = new URLSearchParams();
                 formBody.append('scan_type', 'all');
@@ -498,35 +480,33 @@ async function tab_mail_open_display(tab, message) {
                 console.error('Fehler beim automatischen URL-Upload', e);
             }
             return { url: url, state: 'UNKNOWN' };
-         }));
+        }));
 
-         await indexedDB_save_links_objects_to_db(message, urlResults);
-      } else {
-         await indexedDB_save_links_to_db(message, filteredUrls);
-      }
+        await indexedDB_save_links_objects_to_db(message, urlResults);
+    } else {
+        await indexedDB_save_links_to_db(message, filteredUrls);
     }
+}
 
-    // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
+async function injectTimeOfClickProtection(tabId, filteredUrls) {
     if (timeOfClickProtection && filteredUrls.length > 0) {
-       browser.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: function() {
-              const links = document.querySelectorAll('a');
-              links.forEach(link => {
-                  if (link.href && link.href.startsWith('http')) {
-                      link.title = "Protected by Thundy Time-of-Click";
-                      link.style.borderBottom = "1px dashed #ff8c00";
-                  }
-              });
-          }
-       }).catch(e => console.log("Fehler beim Injecten von Time-of-Click Styles:", e));
+        await browser.scripting.executeScript({
+            target: { tabId: tabId },
+            func: function() {
+                const links = document.querySelectorAll('a');
+                links.forEach(link => {
+                    if (link.href && link.href.startsWith('http')) {
+                        link.title = "Protected by Thundy Time-of-Click";
+                        link.style.borderBottom = "1px dashed #ff8c00";
+                    }
+                });
+            }
+        }).catch(e => console.log("Fehler beim Injecten von Time-of-Click Styles:", e));
     }
+}
 
-    let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
-    let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
-    let urlhausDomains = [];
+async function checkIPReputation(receivedHeaders) {
     let maliciousIps = [];
-
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
         let ipChecks = publicIps.map(async (ip) => {
@@ -546,22 +526,157 @@ async function tab_mail_open_display(tab, message) {
             }
         }
     }
+    return maliciousIps;
+}
 
-    // BEC Protection Data Extraction
-    emailMatch = message.author.match(/<([^>]+)>/);
-    let senderEmail = emailMatch ? emailMatch[1].toLowerCase() : message.author.toLowerCase();
-
+async function checkFirstCommunication(senderEmail) {
     let isFirstCommunication = false;
     try {
         if (browser.messages.query) {
-            let previousMsgs = await browser.messages.query({ to: senderEmail });
-            if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
-                isFirstCommunication = true;
+            if (knownSendersCache.has(senderEmail)) {
+                isFirstCommunication = false;
+            } else {
+                let previousMsgs = await browser.messages.query({ to: senderEmail });
+                if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
+                    isFirstCommunication = true;
+                } else {
+                    if (knownSendersCache.size > MAX_KNOWN_SENDERS) {
+                        knownSendersCache.clear();
+                    }
+                    knownSendersCache.add(senderEmail);
+                }
             }
         }
     } catch (e) {
         console.log("Fehler bei messages.query (Möglicherweise nicht unterstützt):", e);
     }
+    return isFirstCommunication;
+}
+
+async function checkURLhausDomains(filteredUrls) {
+    let urlhausDomains = [];
+    if (urlhausApikey && filteredUrls.length > 0) {
+        let linkDomains = new Set();
+        for (let url of filteredUrls) {
+            try {
+                let parsed = new URL(url);
+                linkDomains.add(parsed.hostname.toLowerCase());
+            } catch (e) { /* Ignore invalid URLs */ }
+        }
+
+        const domainChecks = Array.from(linkDomains).map(async (domain) => {
+            let isMalicious = await checkURLhaus(domain, urlhausApikey);
+            if (isMalicious) {
+                return domain;
+            }
+            return null;
+        });
+
+        const checkResults = await Promise.all(domainChecks);
+        urlhausDomains = checkResults.filter(d => d !== null);
+    }
+    return urlhausDomains;
+}
+
+async function injectThreatBanner(tabId, threat) {
+    if (threat.score >= 50) {
+        console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
+        await browser.scripting.executeScript({
+            target: { tabId: tabId },
+            func: function(score, reasons, authStatus) {
+                if (score >= 50) {
+                    // Sichere DOM-Manipulation ohne innerHTML
+                    const banner = document.createElement('div');
+                    banner.style.backgroundColor = '#ffeeee';
+                    banner.style.border = '1px solid #ff0000';
+                    banner.style.color = '#ff0000';
+                    banner.style.padding = '10px';
+                    banner.style.margin = '10px';
+                    banner.style.borderRadius = '4px';
+                    banner.style.fontWeight = 'bold';
+                    banner.style.fontFamily = 'Arial, sans-serif';
+                    banner.style.zIndex = '9999';
+
+                    const title = document.createElement('div');
+                    title.textContent = `🔴 ⚠️ Warnung! Mögliches Phishing erkannt (Risk Score: ${score}/100)`;
+                    title.style.fontSize = '16px';
+                    title.style.marginBottom = '5px';
+                    banner.appendChild(title);
+
+                    const reasonList = document.createElement('ul');
+                    reasonList.style.margin = '0';
+                    reasonList.style.paddingLeft = '20px';
+                    reasonList.style.fontSize = '14px';
+
+                    for (const reason of reasons) {
+                        const li = document.createElement('li');
+                        li.textContent = reason;
+                        reasonList.appendChild(li);
+                    }
+                    banner.appendChild(reasonList);
+
+                    document.body.prepend(banner);
+                } else if (authStatus === 'pass') {
+                    const badge = document.createElement('div');
+                    badge.style.display = 'inline-block';
+                    badge.style.backgroundColor = '#e6ffe6';
+                    badge.style.border = '1px solid #008000';
+                    badge.style.color = '#008000';
+                    badge.style.padding = '5px 10px';
+                    badge.style.margin = '10px';
+                    badge.style.borderRadius = '20px';
+                    badge.style.fontWeight = 'bold';
+                    badge.style.fontFamily = 'Arial, sans-serif';
+                    badge.style.fontSize = '12px';
+                    badge.style.zIndex = '9999';
+                    badge.textContent = `🟢 🛡️ Absender verifiziert`;
+
+                    document.body.prepend(badge);
+                }
+            },
+            args: [threat.score, threat.reasons, threat.authStatus]
+        });
+    }
+}
+
+// Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
+async function tab_mail_open_display(tab, message) {
+  console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
+
+  try {
+    // Liste der Anhänge abrufen
+    let attachments = await browser.messages.listAttachments(message.id);
+
+    console.log("Gefundene Anhänge:", attachments);
+
+    if (attachments.length > 0) {
+      await sent_to_hybrid_by_attachment(message, attachments);
+    }
+
+    // Vollständige Nachricht abrufen für Link-Extraktion
+    let fullMessage = await browser.messages.getFull(message.id);
+    let messageText = extractTextFromParts(fullMessage);
+    let urls = extractUrls(messageText);
+    let filteredUrls = filterUrls(urls);
+
+    console.log("Gefundene URLs:", filteredUrls);
+    if (filteredUrls.length > 0) {
+      await processAndUploadUrls(message, filteredUrls);
+    }
+
+    // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
+    await injectTimeOfClickProtection(tab.id, filteredUrls);
+
+    let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
+    let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
+
+    let maliciousIps = await checkIPReputation(receivedHeaders);
+
+    // BEC Protection Data Extraction
+    let emailMatch = message.author.match(/<([^>]+)>/);
+    let senderEmail = emailMatch ? emailMatch[1].toLowerCase() : message.author.toLowerCase();
+
+    let isFirstCommunication = await checkFirstCommunication(senderEmail);
 
     let replyTo = "";
     if (fullMessage.headers && fullMessage.headers['reply-to']) {
@@ -569,27 +684,7 @@ async function tab_mail_open_display(tab, message) {
     }
 
     let subject = message.subject || "";
-
-    if (urlhausApikey && filteredUrls.length > 0) {
-      let linkDomains = new Set();
-      for (let url of filteredUrls) {
-        try {
-          let parsed = new URL(url);
-          linkDomains.add(parsed.hostname.toLowerCase());
-        } catch (e) {}
-      }
-
-      const domainChecks = Array.from(linkDomains).map(async (domain) => {
-        let isMalicious = await checkURLhaus(domain, urlhausApikey);
-        if (isMalicious) {
-          return domain;
-        }
-        return null;
-      });
-
-      const checkResults = await Promise.all(domainChecks);
-      urlhausDomains = checkResults.filter(d => d !== null);
-    }
+    let urlhausDomains = await checkURLhausDomains(filteredUrls);
 
     let threat = calculateThreatScore(message.author, urls, {
       authHeaders,
@@ -599,64 +694,8 @@ async function tab_mail_open_display(tab, message) {
       subject,
       replyTo
     });
-    if (threat.score >= 50) {
-      console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
-      await browser.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: function(score, reasons, authStatus) {
-          if (score >= 50) {
-            // Sichere DOM-Manipulation ohne innerHTML
-            const banner = document.createElement('div');
-            banner.style.backgroundColor = '#ffeeee';
-            banner.style.border = '1px solid #ff0000';
-            banner.style.color = '#ff0000';
-            banner.style.padding = '10px';
-            banner.style.margin = '10px';
-            banner.style.borderRadius = '4px';
-            banner.style.fontWeight = 'bold';
-            banner.style.fontFamily = 'Arial, sans-serif';
-            banner.style.zIndex = '9999';
 
-            const title = document.createElement('div');
-            title.textContent = `🔴 ⚠️ Warnung! Mögliches Phishing erkannt (Risk Score: ${score}/100)`;
-            title.style.fontSize = '16px';
-            title.style.marginBottom = '5px';
-            banner.appendChild(title);
-
-            const reasonList = document.createElement('ul');
-            reasonList.style.margin = '0';
-            reasonList.style.paddingLeft = '20px';
-            reasonList.style.fontSize = '14px';
-
-            for (const reason of reasons) {
-                const li = document.createElement('li');
-                li.textContent = reason;
-                reasonList.appendChild(li);
-            }
-            banner.appendChild(reasonList);
-
-            document.body.prepend(banner);
-          } else if (authStatus === 'pass') {
-            const badge = document.createElement('div');
-            badge.style.display = 'inline-block';
-            badge.style.backgroundColor = '#e6ffe6';
-            badge.style.border = '1px solid #008000';
-            badge.style.color = '#008000';
-            badge.style.padding = '5px 10px';
-            badge.style.margin = '10px';
-            badge.style.borderRadius = '20px';
-            badge.style.fontWeight = 'bold';
-            badge.style.fontFamily = 'Arial, sans-serif';
-            badge.style.fontSize = '12px';
-            badge.style.zIndex = '9999';
-            badge.textContent = `🟢 🛡️ Absender verifiziert`;
-
-            document.body.prepend(badge);
-          }
-        },
-        args: [threat.score, threat.reasons, threat.authStatus]
-      });
-    }
+    await injectThreatBanner(tab.id, threat);
 
   } catch (error) {
     console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
@@ -991,14 +1030,6 @@ async function indexedDB_save_links_to_db(message, urls) {
   }
 }
 
-async function indexedDB_save_hybrid_data_to_db(message, hybrid_data, attachmentName, virustotal_stats = null) {
-  return indexedDB_save_batch_hybrid_data_to_db(message, [{
-    hybrid_data: hybrid_data,
-    attachmentName: attachmentName,
-    virustotal_stats: virustotal_stats
-  }]);
-}
-
 // Listener registrieren
 browser.messageDisplay.onMessageDisplayed.addListener(tab_mail_open_display);
 
@@ -1025,7 +1056,9 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             let activeMessage = null;
             try {
                 activeMessage = await browser.messageDisplay.getDisplayedMessage(tab.id);
-            } catch (e) {}
+            } catch (e) {
+                console.error("Failed to get displayed message for context menu scan:", e);
+            }
 
             let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
 
@@ -1191,31 +1224,36 @@ function disarmHTML(htmlString) {
     });
 
     // Remove inline event handlers and javascript: URIs
-    const allElements = doc.getElementsByTagName('*');
     const dangerousAttributes = ['href', 'src', 'action', 'formaction', 'xlink:href'];
 
-    for (let i = 0; i < allElements.length; i++) {
-        const el = allElements[i];
-
-        // Remove event handlers
-        for (let j = el.attributes.length - 1; j >= 0; j--) {
-            const attrName = el.attributes[j].name.toLowerCase();
-            if (attrName.startsWith('on')) {
-                el.removeAttribute(attrName);
+    const walker = doc.createTreeWalker(doc.documentElement, 1 /* NodeFilter.SHOW_ELEMENT */);
+    let el = walker.currentNode;
+    while (el) {
+        if (el.hasAttributes()) {
+            for (let j = el.attributes.length - 1; j >= 0; j--) {
+                const attrName = el.attributes[j].name.toLowerCase();
+                if (attrName.startsWith('on')) {
+                    el.removeAttribute(attrName);
+                }
             }
         }
+        el = walker.nextNode();
+    }
 
-        // Prevent malicious URIs in multiple attributes
-        dangerousAttributes.forEach(attr => {
-            if (el.hasAttribute(attr)) {
-                let val = el.getAttribute(attr);
+    const dangEls = doc.querySelectorAll('[href], [src], [action], [formaction], [xlink\\:href]');
+    for (let i = 0; i < dangEls.length; i++) {
+        const dEl = dangEls[i];
+        for (let k = 0; k < dangerousAttributes.length; k++) {
+            const attr = dangerousAttributes[k];
+            if (dEl.hasAttribute(attr)) {
+                let val = dEl.getAttribute(attr);
                 // Remove control characters (like tabs/newlines) that might evade the check
                 let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                    el.removeAttribute(attr);
+                    dEl.removeAttribute(attr);
                 }
             }
-        });
+        }
     }
 
     return doc.documentElement.outerHTML;
@@ -1378,8 +1416,15 @@ async function checkUrlscanIo(url, apikey) {
         if (!uuid) throw new Error("Keine UUID von urlscan.io erhalten.");
 
         // Wait for result (Polling)
-        for (let i = 0; i < 15; i++) {
-            await new Promise(r => setTimeout(r, 2000)); // wait 2s
+        let waitTime = 2000;
+        let elapsed = 0;
+        const maxTime = 30000;
+
+        while (elapsed < maxTime) {
+            await new Promise(r => setTimeout(r, waitTime));
+            elapsed += waitTime;
+            waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
+
             const resultRes = await fetch(`https://urlscan.io/api/v1/result/${uuid}/`);
             if (resultRes.status === 200) {
                 const resultData = await resultRes.json();

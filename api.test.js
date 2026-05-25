@@ -12,6 +12,7 @@ describe('escapeHTML', () => {
         // Create mock environment
         context = {
             browser: {
+                tabs: { query: async () => [{ id: 1 }] },
                 storage: {
                     local: {
                         get: async () => ({ apikey: 'test' })
@@ -30,20 +31,11 @@ describe('escapeHTML', () => {
             document: {
                 getElementById: () => ({ textContent: '', insertAdjacentHTML: () => {} })
             },
-            setElementText: () => {},
-            appendElementHtml: () => {},
-            statusEl: { innerText: '' },
-            setElementText: () => {},
-            appendElementHtml: () => {},
-            statusEl: { innerText: '' },
-            setElementText: () => {},
-            appendElementHtml: () => {},
-            statusEl: { innerText: '' },
             indexedDB: {
                 open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null })
             },
-            console: { log: () => {}, error: () => {} },
-
+            console: { log: () => {}, error: () => {} }, // Mock console to avoid noisy logs
+            fetch: async () => ({ status: 200, json: async () => ({}) }),
             setTimeout: setTimeout,
             String: String,
             Array: Array,
@@ -127,12 +119,33 @@ describe('get_hybrid_report_by_sha256', () => {
                 }
             },
             document: {
-                createElement: (tag) => {
-                    return {
-                        className: '',
-                        textContent: '',
-                    };
-                },
+                createTextNode: (text) => ({ textContent: text, outerHTML: text }),
+                createElement: (tag) => ({
+                    tag: tag,
+                    className: '',
+                    textContent: '',
+                    _html: '',
+                    children: [],
+                    get outerHTML() {
+                        let inner = this.children.map(c => c.outerHTML || c.textContent || '').join('') + this._html + this.textContent;
+                        let cls = this.className ? ` class="${this.className}"` : '';
+                        return `<${this.tag}${cls}>${inner}</${this.tag}>`;
+                    },
+                    appendChild: function(node) {
+                        this.children.push(node);
+                    },
+                    setAttribute: function() {},
+                    removeAttribute: function() {}
+                }),
+                createDocumentFragment: () => ({
+                    children: [],
+                    appendChild: function(node) {
+                        this.children.push(node);
+                    },
+                    get outerHTML() {
+                        return this.children.map(c => c.outerHTML || c.textContent || '').join('');
+                    }
+                }),
                 getElementById: (id) => {
                     if (id === 'hybrid_analysis_api_content') {
                         if (!context.apiContentElement) {
@@ -140,25 +153,23 @@ describe('get_hybrid_report_by_sha256', () => {
                                 _html: '',
                                 get innerHTML() { return this._html; },
                                 set innerHTML(val) { this._html = val; },
-                                appendChild: function(el) {
-                                    let content = el.textContent || '';
-                                    if (el.className) {
-                                        this._html += `<div class="${el.className}">${content}</div>`;
-                                    } else {
-                                        this._html += `<div>${content}</div>`;
-                                    }
-                                },
+                                set textContent(val) { this._html = val; },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
                                 },
-                                appendChild: function(node) {
-                                    // VERY simplified mock for test purposes
-                                    // In a real mock, this would serialize the DOM node
-                                    // For these tests, we just care that appendChild is called or we update innerHTML with string representation if possible.
-                                    // Actually, tests in this file don't test the successful UI path, they only test fetch errors which use innerHTML += string.
-                                    // Let's just provide a mock appendChild.
-                                    this._html += node.outerHTML || node.textContent || '';
-                                }
+                                appendChild: function(child) {
+                                    if (child.outerHTML) {
+                                        this._html += child.outerHTML;
+                                    } else {
+                                        // Simple string representation for testing
+                                        this._html += '<div id="' + child.id + '">...';
+                                        if (child.id && child.id.includes('hash456')) {
+                                            this._html += '<button id="btn-cdr-hash456"></button><p id="cdr-status-hash456"></p>';
+                                        }
+                                        this._html += '</div>';
+                                    }
+                                },
+                                textContent: ''
                             };
                         }
                         return context.apiContentElement;
@@ -166,20 +177,29 @@ describe('get_hybrid_report_by_sha256', () => {
                     return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '', appendChild: () => {} };
                 }
             },
+            DOMParser: class DOMParser {
+                parseFromString(string, type) {
+                    return {
+                        body: {
+                            get firstChild() {
+                                if (this._nodes === undefined) {
+                                    // Simplistic mock to let loop run once and then stop
+                                    this._nodes = [{ outerHTML: string }];
+                                }
+                                return this._nodes.shift() || null;
+                            }
+                        }
+                    };
+                }
+            },
             indexedDB: {
                 open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null })
             },
-            console: { log: () => {}, error: () => {} },
-            fetch: null,
+            console: { log: () => {}, error: () => {} }, // Mock console to avoid noisy logs
+            fetch: null, // Will be overridden in each test
             setTimeout: setTimeout,
             String: String,
-            Array: Array, appendElementHtml: function(id, html) {
-                let el = context.document.getElementById(id);
-                if (el) el._html += html;
-            }, setElementText: function(id, text) {
-                let el = context.document.getElementById(id);
-                if (el) { el.textContent = text; el.innerText = text; }
-            }, statusEl: { innerText: '' },
+            Array: Array,
             TextEncoder: TextEncoder
         };
         context.messenger = context.browser;
@@ -198,18 +218,18 @@ describe('get_hybrid_report_by_sha256', () => {
     });
 
     it('injects Netzwerkfehler message on fetch network failure', async () => {
-        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement._html = '';
+        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement.innerHTML = '';
         context.fetch = async () => {
             throw new Error('Network timeout');
         };
 
-        await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
+        await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
 
-        assert.ok(context.apiContentElement._html.includes('<div class="text-danger">Netzwerkfehler: Network timeout für Element test.txt</div>'));
+        assert.ok(context.apiContentElement.innerHTML.includes('<div class="text-danger">Netzwerkfehler: Network timeout für Element test.txt</div>'));
     });
 
     it('injects API Error message on fetch non-200 status', async () => {
-        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement._html = '';
+        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement.innerHTML = '';
         context.fetch = async () => {
             return {
                 status: 500,
@@ -218,9 +238,9 @@ describe('get_hybrid_report_by_sha256', () => {
             };
         };
 
-        await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
+        await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
 
-        assert.ok(context.apiContentElement._html.includes('<div class="text-danger">API Error: 500 für Element test.txt</div>'));
+        assert.ok(context.apiContentElement.innerHTML.includes('<div class="text-danger">API Error: 500 für Element test.txt</div>'));
     });
 });
 
@@ -240,8 +260,34 @@ describe('renderManualUrlScanUI', () => {
             },
             document: {
                 createElement: (tag) => {
-                    return { className: '', textContent: '', appendChild: () => {}, id: '' };
+                    let children = [];
+                    let el = {
+                        className: '',
+                        textContent: '',
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) {
+                            this._id = val;
+                            if (!context.mockElements) context.mockElements = {};
+                            context.mockElements[val] = this;
+                        },
+                        setAttribute: () => {},
+                        removeAttribute: () => {},
+                        get childNodes() { return children; },
+                        appendChild: function(child) { children.push(child); },
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
+                        }
+                    };
+                    return el;
                 },
+                createTextNode: (text) => ({ textContent: text }),
                 getElementById: (id) => {
                     if (id === 'hybrid_analysis_api_content') {
                         if (!context.apiContentElement) {
@@ -251,10 +297,28 @@ describe('renderManualUrlScanUI', () => {
                                 set innerHTML(val) { this._html = val; },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
+                                },
+                                appendChild: function(node) {
+                                    if (node.id && node.id.startsWith('upload-container-')) {
+                                        this._html += `<div id="${node.id}">`;
+                                        if (node.childNodes) {
+                                            node.childNodes.forEach(child => {
+                                                this._html += child.textContent;
+                                            });
+                                        }
+                                        this._html += `http://example.com/test?a=1&amp;b=2</div>`;
+                                    }
                                 }
                             };
                         }
                         return context.apiContentElement;
+                    }
+                    if (id.startsWith('upload-container-')) {
+                        if (context.mockElements[id]) {
+                            context.mockElements[id].remove = function() { this.removed = true; };
+                            return context.mockElements[id];
+                        }
+                        return { remove: () => {} };
                     }
                     if (id.startsWith('btn-upload-') || id.startsWith('upload-container-')) {
                         if (!context.mockElements) context.mockElements = {};
@@ -301,11 +365,20 @@ describe('renderManualUrlScanUI', () => {
                 if (!context.timeouts) context.timeouts = [];
                 context.timeouts.push({ cb, delay });
             },
-            String: String, Array: Array, TextEncoder: TextEncoder,
+            String: String, Array: Array, TextEncoder: TextEncoder, Node: Object,
             statusEl: { innerText: '' },
-            appendElementHtml: function(id, html) {
+            appendElementHtml: function(id, node) {
                 let el = context.document.getElementById(id);
-                if (el) el.insertAdjacentHTML('beforeend', html);
+                if (el && node) {
+                    if (node.id && node.id.startsWith('upload-container-')) {
+                        el._html += `<div id="${node.id}">`;
+                        if (node.childNodes) {
+                            node.childNodes.forEach(child => {
+                                el._html += child.textContent;
+                            });
+                        }
+                    }
+                }
             },
             setElementText: function(id, text) {
                 let el = context.document.getElementById(id);
@@ -330,15 +403,15 @@ describe('renderManualUrlScanUI', () => {
         const wrappedCode = code.replace(/^\(async function \(\) \{/m, 'async function initAPI() {');
         vm.runInContext(wrappedCode, context);
 
-        context.get_hybrid_report_by_sha256 = function(opts) {
-            context.lastReportOpts = opts;
+        context.get_hybrid_report_by_sha256 = function(hash) {
+            context.lastReportOpts = { hybrid_sha: hash };
         };
         renderManualUrlScanUI = context.renderManualUrlScanUI;
     });
 
     it('renders the URL scan UI with correct ID', () => {
         context.document.getElementById('hybrid_analysis_api_content');
-        context.apiContentElement._html = '';
+        context.apiContentElement.innerHTML = '';
         const url = 'http://example.com/test?a=1&b=2';
 
         renderManualUrlScanUI(url, 'msg-123');
@@ -346,12 +419,12 @@ describe('renderManualUrlScanUI', () => {
         const urlId = Array.from(new TextEncoder().encode(url))
             .map(b => b.toString(16).padStart(2, '0')).join('');
 
-        assert.ok(context.apiContentElement._html.includes(`upload-container-${urlId}`));
-        assert.ok(context.apiContentElement._html.includes('http://example.com/test?a=1&amp;b=2'));
+        assert.ok(context.apiContentElement.innerHTML.includes(`upload-container-${urlId}`));
+        assert.ok(context.apiContentElement.innerHTML.includes('http://example.com/test?a=1&amp;b=2'));
     });
 
     it('handles button click, updates UI and sends scan message', async () => {
-        context.apiContentElement._html = '';
+        context.apiContentElement.innerHTML = '';
         const url = 'http://example.com/test';
 
         // Setup mock extension message handler
@@ -371,8 +444,28 @@ describe('renderManualUrlScanUI', () => {
         const urlId = Array.from(new TextEncoder().encode(url))
             .map(b => b.toString(16).padStart(2, '0')).join('');
 
-        const btn = context.document.getElementById(`btn-upload-${urlId}`);
-        const statusEl = context.document.getElementById(`upload-status-${urlId}`);
+        const btn = context.mockElements[`btn-upload-${urlId}`];
+        const statusEl = context.mockElements[`upload-status-${urlId}`];
+
+        // Ensure getElementById finds the status element created by createElement
+        const originalGetElementById = context.document.getElementById;
+        context.document.getElementById = (id) => {
+            if (context.mockElements[id]) {
+                if (!context.mockElements[id].remove) {
+                    context.mockElements[id].remove = function() { this.removed = true; };
+                }
+                return context.mockElements[id];
+            }
+            if (id.startsWith('upload-container-')) {
+                return {
+                    remove: function() {
+                        this.removed = true;
+                        context.mockElements[id] = this;
+                    }
+                };
+            }
+            return originalGetElementById(id);
+        };
 
         // Trigger click
         btn.click();
