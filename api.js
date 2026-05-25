@@ -296,10 +296,10 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     } else {
         renderThreatInfo(json_data, card);
 
-        const divScanners = document.createElement('div');
-        divScanners.className = "head_line";
-        divScanners.textContent = `Scannerergebnisse:`;
-        card.appendChild(divScanners);
+    const pTags = document.createElement('p');
+    pTags.textContent = `Tags: ${json_data.tags ? json_data.tags.join(', ') : 'N/A'}`;
+    card.appendChild(pTags);
+}
 
         if (virustotal_stats) {
             renderVirusTotalStats(virustotal_stats, card);
@@ -309,7 +309,6 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
         renderFileDetails(json_data, card);
         renderActionButtons(hybrid_sha, attachmentName, card);
     }
-    return card;
 }
 
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
@@ -584,6 +583,28 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
             btn.innerText = "Erneut versuchen";
         });
     });
+}
+
+function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
+    let safeHash = escapeHTML(hash);
+
+    let card = document.createElement('div');
+    card.className = "card card-info mb-3";
+    card.id = `upload-container-${urlId}`;
+
+    let h2 = document.createElement('h2');
+    h2.textContent = `URL: ${url}`;
+    card.appendChild(h2);
+
+    let pInfo = document.createElement('p');
+    pInfo.className = "text-info";
+    pInfo.innerHTML = `Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.`;
+    card.appendChild(pInfo);
+
+    createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
+    createCdrButton(card, safeHash, attachmentName, messageId, partName);
+
+    appendElementHtml('hybrid_analysis_api_content', card);
 }
 
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
