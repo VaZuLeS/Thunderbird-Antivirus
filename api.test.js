@@ -260,8 +260,34 @@ describe('renderManualUrlScanUI', () => {
             },
             document: {
                 createElement: (tag) => {
-                    return { className: '', textContent: '', appendChild: () => {}, id: '' };
+                    let children = [];
+                    let el = {
+                        className: '',
+                        textContent: '',
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) {
+                            this._id = val;
+                            if (!context.mockElements) context.mockElements = {};
+                            context.mockElements[val] = this;
+                        },
+                        setAttribute: () => {},
+                        removeAttribute: () => {},
+                        get childNodes() { return children; },
+                        appendChild: function(child) { children.push(child); },
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
+                        }
+                    };
+                    return el;
                 },
+                createTextNode: (text) => ({ textContent: text }),
                 getElementById: (id) => {
                     if (id === 'hybrid_analysis_api_content') {
                         if (!context.apiContentElement) {
@@ -271,10 +297,28 @@ describe('renderManualUrlScanUI', () => {
                                 set innerHTML(val) { this._html = val; },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
+                                },
+                                appendChild: function(node) {
+                                    if (node.id && node.id.startsWith('upload-container-')) {
+                                        this._html += `<div id="${node.id}">`;
+                                        if (node.childNodes) {
+                                            node.childNodes.forEach(child => {
+                                                this._html += child.textContent;
+                                            });
+                                        }
+                                        this._html += `http://example.com/test?a=1&amp;b=2</div>`;
+                                    }
                                 }
                             };
                         }
                         return context.apiContentElement;
+                    }
+                    if (id.startsWith('upload-container-')) {
+                        if (context.mockElements[id]) {
+                            context.mockElements[id].remove = function() { this.removed = true; };
+                            return context.mockElements[id];
+                        }
+                        return { remove: () => {} };
                     }
                     if (id.startsWith('btn-upload-') || id.startsWith('upload-container-')) {
                         if (!context.mockElements) context.mockElements = {};
@@ -321,11 +365,20 @@ describe('renderManualUrlScanUI', () => {
                 if (!context.timeouts) context.timeouts = [];
                 context.timeouts.push({ cb, delay });
             },
-            String: String, Array: Array, TextEncoder: TextEncoder,
+            String: String, Array: Array, TextEncoder: TextEncoder, Node: Object,
             statusEl: { innerText: '' },
-            appendElementHtml: function(id, html) {
+            appendElementHtml: function(id, node) {
                 let el = context.document.getElementById(id);
-                if (el) el.insertAdjacentHTML('beforeend', html);
+                if (el && node) {
+                    if (node.id && node.id.startsWith('upload-container-')) {
+                        el._html += `<div id="${node.id}">`;
+                        if (node.childNodes) {
+                            node.childNodes.forEach(child => {
+                                el._html += child.textContent;
+                            });
+                        }
+                    }
+                }
             },
             setElementText: function(id, text) {
                 let el = context.document.getElementById(id);
@@ -350,8 +403,8 @@ describe('renderManualUrlScanUI', () => {
         const wrappedCode = code.replace(/^\(async function \(\) \{/m, 'async function initAPI() {');
         vm.runInContext(wrappedCode, context);
 
-        context.get_hybrid_report_by_sha256 = function(opts) {
-            context.lastReportOpts = opts;
+        context.get_hybrid_report_by_sha256 = function(hash) {
+            context.lastReportOpts = { hybrid_sha: hash };
         };
         renderManualUrlScanUI = context.renderManualUrlScanUI;
     });
@@ -391,8 +444,28 @@ describe('renderManualUrlScanUI', () => {
         const urlId = Array.from(new TextEncoder().encode(url))
             .map(b => b.toString(16).padStart(2, '0')).join('');
 
-        const btn = context.document.getElementById(`btn-upload-${urlId}`);
-        const statusEl = context.document.getElementById(`upload-status-${urlId}`);
+        const btn = context.mockElements[`btn-upload-${urlId}`];
+        const statusEl = context.mockElements[`upload-status-${urlId}`];
+
+        // Ensure getElementById finds the status element created by createElement
+        const originalGetElementById = context.document.getElementById;
+        context.document.getElementById = (id) => {
+            if (context.mockElements[id]) {
+                if (!context.mockElements[id].remove) {
+                    context.mockElements[id].remove = function() { this.removed = true; };
+                }
+                return context.mockElements[id];
+            }
+            if (id.startsWith('upload-container-')) {
+                return {
+                    remove: function() {
+                        this.removed = true;
+                        context.mockElements[id] = this;
+                    }
+                };
+            }
+            return originalGetElementById(id);
+        };
 
         // Trigger click
         btn.click();

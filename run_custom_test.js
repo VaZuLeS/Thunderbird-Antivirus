@@ -1,7 +1,5 @@
-const { test } = require('node:test');
 const vm = require('node:vm');
 const fs = require('fs');
-const assert = require('node:assert');
 
 async function run() {
     const code = fs.readFileSync('background.js', 'utf8').replace(/let /g, 'var ');

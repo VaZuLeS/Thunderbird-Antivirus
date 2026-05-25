@@ -82,14 +82,14 @@ try {
                         if (att.state === 'UNKNOWN') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                         } else {
-                            await get_hybrid_report_by_sha256({
-                                hybrid_sha: hash256,
-                                attachmentName: att.attachment_name,
-                                messageId: message.id,
-                                partName: att.partName,
-                                headerMessageId: message.headerMessageId,
-                                virustotal_stats: att.virustotal_stats
-                            });
+                            await get_hybrid_report_by_sha256(
+                                hash256,
+                                att.attachment_name,
+                                message.id,
+                                att.partName,
+                                message.headerMessageId,
+                                att.virustotal_stats
+                            );
                         }
                     }
                 }
@@ -99,10 +99,10 @@ try {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId);
                         } else if (linkObj.hybrid_sha256) {
-                            await get_hybrid_report_by_sha256({
-                                hybrid_sha: linkObj.hybrid_sha256,
-                                attachmentName: linkObj.url
-                            });
+                            await get_hybrid_report_by_sha256(
+                                linkObj.hybrid_sha256,
+                                linkObj.url
+                            );
                         }
                     }
                 }
@@ -296,10 +296,10 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     } else {
         renderThreatInfo(json_data, card);
 
-        const divScanners = document.createElement('div');
-        divScanners.className = "head_line";
-        divScanners.textContent = `Scannerergebnisse:`;
-        card.appendChild(divScanners);
+    const pTags = document.createElement('p');
+    pTags.textContent = `Tags: ${json_data.tags ? json_data.tags.join(', ') : 'N/A'}`;
+    card.appendChild(pTags);
+}
 
         if (virustotal_stats) {
             renderVirusTotalStats(virustotal_stats, card);
@@ -309,7 +309,6 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
         renderFileDetails(json_data, card);
         renderActionButtons(hybrid_sha, attachmentName, card);
     }
-    return card;
 }
 
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
@@ -503,38 +502,34 @@ function createUploadButton(card, hash, safeHash, attachmentName, messageId, par
         btn.innerText = "Lade hoch...";
         setElementText(statusId, "Datei wird an Hybrid Analysis übertragen...");
 
-        sendExtensionMessage(
-            {
-                action: "uploadAttachment",
-                messageId: messageId,
-                partName: partName,
-                attachmentName: attachmentName,
-                hash: hash,
-                headerMessageId: headerMessageId
-            },
-            btn,
-            statusEl,
-            "Fehler beim Upload: ",
-            (response) => {
+        browser.runtime.sendMessage({
+            action: "uploadAttachment",
+            messageId: messageId,
+            partName: partName,
+            attachmentName: attachmentName,
+            hash: hash,
+            headerMessageId: headerMessageId
+        }).then(response => {
+            if (response && response.status === 'success') {
                 if (statusEl) statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
                 setTimeout(() => {
                     let container = document.getElementById(`upload-container-${safeHash}`);
                     if (container) container.remove();
-                    get_hybrid_report_by_sha256({
-                        hybrid_sha: hash,
-                        attachmentName: attachmentName,
-                        messageId: messageId,
-                        partName: partName,
-                        headerMessageId: headerMessageId
-                    });
+                    get_hybrid_report_by_sha256(
+                        hash,
+                        attachmentName,
+                        messageId,
+                        partName,
+                        headerMessageId
+                    );
                 }, 3000);
             } else {
-                statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
+                if (statusEl) statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
                 btn.disabled = false;
                 btn.innerText = "Erneut versuchen";
             }
         }).catch(err => {
-            statusEl.innerText = "Kommunikationsfehler: " + err;
+            if (statusEl) statusEl.innerText = "Kommunikationsfehler: " + err;
             btn.disabled = false;
             btn.innerText = "Erneut versuchen";
         });
@@ -568,22 +563,48 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
         btn.innerText = "Bereinige...";
         setElementText(statusId, "Lokales CDR wird durchgeführt...");
 
-        sendExtensionMessage(
-            {
-                action: "downloadDisarmed",
-                messageId: messageId,
-                partName: partName,
-                attachmentName: attachmentName
-            },
-            btn,
-            statusEl,
-            "Fehler beim Herunterladen: ",
-            (res) => {
+        browser.runtime.sendMessage({
+            action: "downloadDisarmed",
+            messageId: messageId,
+            partName: partName,
+            attachmentName: attachmentName
+        }).then(res => {
+            if (res && res.status === 'success') {
                 if (statusEl) statusEl.innerText = "Herunterladen erfolgreich initiiert.";
                 btn.innerText = "Bereinigt";
+            } else {
+                if (statusEl) statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
+                btn.disabled = false;
+                btn.innerText = "Erneut versuchen";
             }
-        );
+        }).catch(err => {
+            if (statusEl) statusEl.innerText = "Kommunikationsfehler: " + err;
+            btn.disabled = false;
+            btn.innerText = "Erneut versuchen";
+        });
     });
+}
+
+function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
+    let safeHash = escapeHTML(hash);
+
+    let card = document.createElement('div');
+    card.className = "card card-info mb-3";
+    card.id = `upload-container-${urlId}`;
+
+    let h2 = document.createElement('h2');
+    h2.textContent = `URL: ${url}`;
+    card.appendChild(h2);
+
+    let pInfo = document.createElement('p');
+    pInfo.className = "text-info";
+    pInfo.innerHTML = `Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.`;
+    card.appendChild(pInfo);
+
+    createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
+    createCdrButton(card, safeHash, attachmentName, messageId, partName);
+
+    appendElementHtml('hybrid_analysis_api_content', card);
 }
 
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
