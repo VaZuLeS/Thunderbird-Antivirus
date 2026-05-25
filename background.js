@@ -1234,26 +1234,26 @@ function disarmHTML(htmlString) {
                 const attrName = el.attributes[j].name.toLowerCase();
                 if (attrName.startsWith('on')) {
                     el.removeAttribute(attrName);
+                    continue;
+                }
+
+                // ⚡ Bolt Optimization: Check dangerous attributes in the same pass instead of
+                // querying the entire DOM again with querySelectorAll. Reduces O(N*M) DOM traversal.
+                for (let k = 0; k < dangerousAttributes.length; k++) {
+                    const attr = dangerousAttributes[k];
+                    if (attrName === attr) {
+                        let val = el.attributes[j].value;
+                        // Remove control characters (like tabs/newlines) that might evade the check
+                        let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
+                        if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
+                            el.removeAttribute(attrName);
+                        }
+                        break;
+                    }
                 }
             }
         }
         el = walker.nextNode();
-    }
-
-    const dangEls = doc.querySelectorAll('[href], [src], [action], [formaction], [xlink\\:href]');
-    for (let i = 0; i < dangEls.length; i++) {
-        const dEl = dangEls[i];
-        for (let k = 0; k < dangerousAttributes.length; k++) {
-            const attr = dangerousAttributes[k];
-            if (dEl.hasAttribute(attr)) {
-                let val = dEl.getAttribute(attr);
-                // Remove control characters (like tabs/newlines) that might evade the check
-                let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
-                if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                    dEl.removeAttribute(attr);
-                }
-            }
-        }
     }
 
     return doc.documentElement.outerHTML;
