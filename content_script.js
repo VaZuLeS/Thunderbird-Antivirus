@@ -1,4 +1,6 @@
 (function() {
+    const allowedLinks = new WeakSet();
+
     function createWarningModal(url, linkElement, state, reasons) {
         // Create overlay
         const overlay = document.createElement('div');
@@ -59,7 +61,7 @@
         openBtn.className = 'btn-primary ml-2';
         openBtn.textContent = 'Auf eigene Gefahr öffnen';
         openBtn.addEventListener('click', () => {
-            linkElement.setAttribute('data-thundy-allowed', 'true');
+            allowedLinks.add(linkElement);
             overlay.remove();
             linkElement.click();
         });
@@ -116,7 +118,7 @@
 
         if (linkElement && linkElement.href) {
             // Check if we already allowed it
-            if (linkElement.getAttribute('data-thundy-allowed') === 'true') {
+            if (allowedLinks.has(linkElement)) {
                 return; // Let the default action happen
             }
 
@@ -140,7 +142,7 @@
 
                 if (response && response.status === 'CLEAN') {
                     // Safe to open
-                    linkElement.setAttribute('data-thundy-allowed', 'true');
+                    allowedLinks.add(linkElement);
                     linkElement.click();
                 } else if (response && response.status === 'MALICIOUS_VISUAL') {
                     createWarningModal(url, linkElement, response.status, response.reasons);

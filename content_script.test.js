@@ -79,14 +79,14 @@ describe('content_script.js', () => {
         const link = context.document.getElementById('safe-link');
         let allowedClickSeen = false;
         context.document.addEventListener('click', (e) => {
-            if (e.target.getAttribute('data-thundy-allowed') === 'true') {
+            if (!e.defaultPrevented) {
                 allowedClickSeen = true;
             }
         });
 
         const event = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
         // The first click is intercepted and preventDefault is called.
-        // Then, after async completion, the content script clicks the link again.
+        // Then, after async completion, the content script clicks the link again (without preventing default).
         link.dispatchEvent(event);
 
         // Wait for microtasks
@@ -190,7 +190,7 @@ describe('content_script.js', () => {
         const link = context.document.getElementById('unsafe-link');
         let allowedClickSeen = false;
         context.document.addEventListener('click', (e) => {
-            if (e.target.getAttribute('data-thundy-allowed') === 'true') {
+            if (!e.defaultPrevented) {
                 allowedClickSeen = true;
             }
         });

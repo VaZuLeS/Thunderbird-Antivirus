@@ -3,10 +3,12 @@
 ### Vulnerability
 The `api.js` file used custom functions `setElementHtml` and `appendElementHtml` which directly assigned unfiltered inputs to `el.innerHTML` and `el.insertAdjacentHTML`. This exposed the application to severe Cross-Site Scripting (XSS) risks when displaying API responses, attachment names, or URL data.
 
-### Learning
-Automated remediation scripts (like `replace_inner_html.js` and `replace_render.js`) might exist in the repository to clean up known legacy issues, but when fixing the core logic, all callers dynamically passing strings (such as `renderManualUploadUI` and `renderReport`) must be individually updated to use `document.createElement` to properly build a DOM tree. Furthermore, updating the functions requires rigorous updates to Node.js `vm` testing mocks so they support `childNodes`, `outerHTML`, and inline `click()` listeners if the real DOM isn't present.
+## 2026-05-20 - Fix Blacklist Case Sensitivity Bypass
+**Vulnerability:** The custom blacklist allowed malicious domains to bypass protection if the user entered uppercase letters in the configuration UI, due to a strict case-sensitive comparison against a lowercase sender domain.
+**Learning:** Always normalize security configuration data (like blacklists and whitelists) to a consistent case (e.g., lowercase) during ingestion or evaluation to prevent trivial evasion.
+**Prevention:** Apply `.toLowerCase()` universally when comparing user-defined rules against normalized incoming data.
 
-### Prevention
-1. Never use `innerHTML` or `insertAdjacentHTML` with generic string inputs.
-2. Always construct DOM hierarchies programmatically using `document.createElement` and `textContent`.
-3. When refactoring UI code tested under a simulated Node context, update the `document.createElement` mock to correctly intercept `.id` assignments and `addEventListener` logic to ensure tests can find and interact with the newly secure elements.
+## 2024-05-24 - Time-of-Click Bypass via DOM Attributes
+**Vulnerability:** The `content_script.js` relied on checking a DOM attribute (`data-thundy-allowed="true"`) to bypass the Time-of-Click protection and allow users to open links. Attackers could add this attribute directly to malicious HTML email payloads, effectively bypassing the extension's visual and reputational checks.
+**Learning:** Security state should never be stored in user-controlled contexts (like DOM attributes) where the attacker dictates the markup.
+**Prevention:** Store security validation state in memory using constructs like `WeakSet` or `Set` that map directly to the DOM objects rather than relying on mutable string attributes.
