@@ -1,18 +1,12 @@
-## 2026-05-13 - Missing CDR function implementation
-**Vulnerability:** The `disarmHTML` function was being invoked but not defined, breaking the Content Disarm and Reconstruction (CDR) feature.
-**Learning:** Critical security functions can accidentally be dropped during refactors, causing features that users rely on for safety to fail silently or loudly but leaving them unprotected.
-**Prevention:** Ensure robust test suites specifically check the definition and execution of core security functions, and do not ignore test suite failures.
-##  2026-05-16  - Fix exposed API Keys
-**Vulnerability:** API keys in `options.html` were visible in plain text due to using `type="text"`.
-**Learning:** For UI elements handling sensitive data like API keys always use `<input type="password">` rather than `<input type="text">` to prevent visual exposure and shoulder surfing.
-**Prevention:** Always use `type="password"` for sensitive inputs.
+## 2026-05-25: Unsafe innerHTML API
 
-## 2026-05-18 - Missing CDR tags
-**Vulnerability:** The `disarmHTML` function failed to strip `<applet>` and `<link>` tags, allowing Java applet execution and CSS-based data exfiltration or injection in Content Disarm and Reconstruction (CDR).
-**Learning:** Hardcoded blacklists for CDR need to be comprehensive. Missing legacy tags (`<applet>`) or style-related tags (`<link>`) can lead to bypasses. Additionally, fixing `innerHTML` with already-escaped data is "security theater" and should be avoided.
-**Prevention:** Always include all active content tags in HTML sanitizers and avoid making security theater changes that don't mitigate real flaws.
+### Vulnerability
+The `api.js` file used custom functions `setElementHtml` and `appendElementHtml` which directly assigned unfiltered inputs to `el.innerHTML` and `el.insertAdjacentHTML`. This exposed the application to severe Cross-Site Scripting (XSS) risks when displaying API responses, attachment names, or URL data.
 
-## 2026-05-20 - Fix Blacklist Case Sensitivity Bypass
-**Vulnerability:** The custom blacklist allowed malicious domains to bypass protection if the user entered uppercase letters in the configuration UI, due to a strict case-sensitive comparison against a lowercase sender domain.
-**Learning:** Always normalize security configuration data (like blacklists and whitelists) to a consistent case (e.g., lowercase) during ingestion or evaluation to prevent trivial evasion.
-**Prevention:** Apply `.toLowerCase()` universally when comparing user-defined rules against normalized incoming data.
+### Learning
+Automated remediation scripts (like `replace_inner_html.js` and `replace_render.js`) might exist in the repository to clean up known legacy issues, but when fixing the core logic, all callers dynamically passing strings (such as `renderManualUploadUI` and `renderReport`) must be individually updated to use `document.createElement` to properly build a DOM tree. Furthermore, updating the functions requires rigorous updates to Node.js `vm` testing mocks so they support `childNodes`, `outerHTML`, and inline `click()` listeners if the real DOM isn't present.
+
+### Prevention
+1. Never use `innerHTML` or `insertAdjacentHTML` with generic string inputs.
+2. Always construct DOM hierarchies programmatically using `document.createElement` and `textContent`.
+3. When refactoring UI code tested under a simulated Node context, update the `document.createElement` mock to correctly intercept `.id` assignments and `addEventListener` logic to ensure tests can find and interact with the newly secure elements.
