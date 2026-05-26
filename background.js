@@ -1215,13 +1215,14 @@ function disarmHTML(htmlString) {
     const doc = parser.parseFromString(htmlString, 'text/html');
 
     // Remove active content tags
-    const activeTags = ['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link'];
-    activeTags.forEach(tag => {
-        const elements = doc.getElementsByTagName(tag);
-        for (let i = elements.length - 1; i >= 0; i--) {
-            elements[i].parentNode.removeChild(elements[i]);
-        }
-    });
+    // ⚡ Bolt Optimization: Use querySelectorAll for a single native DOM traversal
+    // instead of multiple getElementsByTagName loops that create live HTMLCollections,
+    // severely reducing O(N*M) DOM overhead on large payloads.
+    const activeTagsStr = 'script, object, embed, iframe, base, meta, applet, link';
+    const elements = doc.querySelectorAll(activeTagsStr);
+    for (let i = elements.length - 1; i >= 0; i--) {
+        elements[i].parentNode.removeChild(elements[i]);
+    }
 
     // Remove inline event handlers and javascript: URIs
     const dangerousAttributes = ['href', 'src', 'action', 'formaction', 'xlink:href'];
