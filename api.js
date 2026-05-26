@@ -343,6 +343,7 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
                     let btn = this;
                     let statusEl = document.getElementById(`rescan-status-${hybrid_sha}`);
                     btn.disabled = true;
+                    btn.setAttribute('aria-busy', 'true');
                     btn.innerText = "Sende Rescan...";
                     statusEl.innerText = "Datei wird für Rescan hochgeladen...";
 
@@ -356,17 +357,20 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
                     }).then(res => {
                         if (res && res.status === 'success') {
                             statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
+                            btn.removeAttribute('aria-busy');
                             setTimeout(() => {
                                 window.location.reload();
                             }, 2000);
                         } else {
                             statusEl.innerText = "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler");
                             btn.disabled = false;
+                            btn.removeAttribute('aria-busy');
                             btn.innerText = "Erneut versuchen";
                         }
                     }).catch(err => {
                         statusEl.innerText = "Kommunikationsfehler: " + err;
                         btn.disabled = false;
+                        btn.removeAttribute('aria-busy');
                         btn.innerText = "Erneut versuchen";
                     });
                 });
@@ -378,6 +382,7 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
                     let btn = this;
                     let statusEl = document.getElementById(`cdr-status-${hybrid_sha}`);
                     btn.disabled = true;
+                    btn.setAttribute('aria-busy', 'true');
                     btn.innerText = "Bereinige...";
                     statusEl.innerText = "Lokales CDR wird durchgeführt...";
 
@@ -389,15 +394,18 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
                     }).then(res => {
                         if (res && res.status === 'success') {
                             statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                            btn.removeAttribute('aria-busy');
                             btn.innerText = "Bereinigt";
                         } else {
                             statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
                             btn.disabled = false;
+                            btn.removeAttribute('aria-busy');
                             btn.innerText = "Erneut versuchen";
                         }
                     }).catch(err => {
                         statusEl.innerText = "Kommunikationsfehler: " + err;
                         btn.disabled = false;
+                        btn.removeAttribute('aria-busy');
                         btn.innerText = "Erneut versuchen";
                     });
                 });
@@ -452,6 +460,7 @@ function renderManualUrlScanUI(url, headerMessageId) {
         let btn = this;
         let statusEl = document.getElementById(`upload-status-${urlId}`);
         btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Sende URL...";
         statusEl.innerText = "URL wird an Hybrid Analysis übertragen...";
 
@@ -462,6 +471,7 @@ function renderManualUrlScanUI(url, headerMessageId) {
         }).then(response => {
             if (response && response.status === 'success') {
                 statusEl.innerText = "Scan erfolgreich beauftragt! Lade Analyseergebnisse...";
+                btn.removeAttribute('aria-busy');
                 setTimeout(() => {
                     document.getElementById(`upload-container-${urlId}`).remove();
                     // response.data.sha256 enthält den sha256-Hash des URL-Scans
@@ -470,11 +480,13 @@ function renderManualUrlScanUI(url, headerMessageId) {
             } else {
                 statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
                 btn.disabled = false;
+                btn.removeAttribute('aria-busy');
                 btn.innerText = "Erneut versuchen";
             }
         }).catch(err => {
             statusEl.innerText = "Kommunikationsfehler: " + err;
             btn.disabled = false;
+            btn.removeAttribute('aria-busy');
             btn.innerText = "Erneut versuchen";
         });
     });
@@ -499,6 +511,7 @@ function createUploadButton(card, hash, safeHash, attachmentName, messageId, par
         let statusId = `upload-status-${safeHash}`;
         let statusEl = document.getElementById(statusId);
         btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Lade hoch...";
         setElementText(statusId, "Datei wird an Hybrid Analysis übertragen...");
 
@@ -512,6 +525,7 @@ function createUploadButton(card, hash, safeHash, attachmentName, messageId, par
         }).then(response => {
             if (response && response.status === 'success') {
                 if (statusEl) statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
+                btn.removeAttribute('aria-busy');
                 setTimeout(() => {
                     let container = document.getElementById(`upload-container-${safeHash}`);
                     if (container) container.remove();
@@ -526,11 +540,13 @@ function createUploadButton(card, hash, safeHash, attachmentName, messageId, par
             } else {
                 if (statusEl) statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
                 btn.disabled = false;
+                btn.removeAttribute('aria-busy');
                 btn.innerText = "Erneut versuchen";
             }
         }).catch(err => {
             if (statusEl) statusEl.innerText = "Kommunikationsfehler: " + err;
             btn.disabled = false;
+            btn.removeAttribute('aria-busy');
             btn.innerText = "Erneut versuchen";
         });
     });
@@ -571,15 +587,18 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
         }).then(res => {
             if (res && res.status === 'success') {
                 if (statusEl) statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                if (btn) btn.removeAttribute('aria-busy');
                 btn.innerText = "Bereinigt";
             } else {
                 if (statusEl) statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
                 btn.disabled = false;
+                if (btn) btn.removeAttribute('aria-busy');
                 btn.innerText = "Erneut versuchen";
             }
         }).catch(err => {
             if (statusEl) statusEl.innerText = "Kommunikationsfehler: " + err;
             btn.disabled = false;
+            if (btn) btn.removeAttribute('aria-busy');
             btn.innerText = "Erneut versuchen";
         });
     });
