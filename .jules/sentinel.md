@@ -12,3 +12,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The `content_script.js` relied on checking a DOM attribute (`data-thundy-allowed="true"`) to bypass the Time-of-Click protection and allow users to open links. Attackers could add this attribute directly to malicious HTML email payloads, effectively bypassing the extension's visual and reputational checks.
 **Learning:** Security state should never be stored in user-controlled contexts (like DOM attributes) where the attacker dictates the markup.
 **Prevention:** Store security validation state in memory using constructs like `WeakSet` or `Set` that map directly to the DOM objects rather than relying on mutable string attributes.
+
+## 2026-05-25: Unsafe innerHTML API (Continued)
+**Vulnerability:** Additional `innerHTML` assignments in `api.js` (e.g. `pStatus.innerHTML`, `pThreat.innerHTML`) allowed unescaped HTML content insertion, maintaining a severe XSS vector despite earlier patches.
+**Learning:** Code reviewers and security linters flag all usages of `innerHTML` as high-risk, even when developers attempt to manually escape some inputs, due to the high likelihood of missing an edge case.
+**Prevention:** Establish a strict policy to completely avoid `innerHTML` and `insertAdjacentHTML`. Always use secure DOM methods like `document.createElement`, `document.createTextNode`, and `textContent` for constructing UI elements from dynamic or external data sources.
