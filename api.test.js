@@ -123,7 +123,15 @@ describe('get_hybrid_report_by_sha256', () => {
             document: {
                 createTextNode: (text) => ({ textContent: text, outerHTML: text }),
                 createElement: (tag) => ({
-                    tag: tag,
+                                        appendChild: function(child) {
+                        this.children.push(child);
+                        if (child.outerHTML) {
+                           this._html += child.outerHTML;
+                        } else if (child.textContent) {
+                           this._html += child.textContent;
+                        }
+                    },
+tag: tag,
                     className: '',
                     textContent: '',
                     _html: '',

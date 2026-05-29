@@ -168,7 +168,7 @@ function renderThreatInfo(json_data, card) {
     pThreat.appendChild(document.createTextNode(" "));
     const threatSpan = document.createElement('span');
     threatSpan.className = threatClass;
-    threatSpan.textContent = escapeHTML(json_data.threat_score);
+    threatSpan.textContent = json_data.threat_score;
     pThreat.appendChild(threatSpan);
     card.appendChild(pThreat);
 
@@ -180,7 +180,7 @@ function renderThreatInfo(json_data, card) {
     pVerdict.appendChild(document.createTextNode(" "));
     const verdictSpan = document.createElement('span');
     verdictSpan.className = threatClass;
-    verdictSpan.textContent = escapeHTML(json_data.verdict);
+    verdictSpan.textContent = json_data.verdict;
     pVerdict.appendChild(verdictSpan);
     card.appendChild(pVerdict);
 
@@ -188,7 +188,7 @@ function renderThreatInfo(json_data, card) {
     const vxStrong = document.createElement('strong');
     vxStrong.textContent = "Vx-Familie:";
     pVxFamily.appendChild(vxStrong);
-    pVxFamily.appendChild(document.createTextNode(` ${escapeHTML(json_data.vx_family || 'N/A')}`));
+    pVxFamily.appendChild(document.createTextNode(` ${json_data.vx_family || 'N/A'}`));
     card.appendChild(pVxFamily);
 
     const pMulti = document.createElement('p');
@@ -213,9 +213,9 @@ function renderThreatInfo(json_data, card) {
 function renderVirusTotalStats(virustotal_stats, card) {
     const pVtHead = document.createElement('p');
     pVtHead.className = "ml-2";
-    const vtStrong = document.createElement('strong');
-    vtStrong.textContent = "VirusTotal Ergebnisse:";
-    pVtHead.appendChild(vtStrong);
+    const vtHeadStrong = document.createElement('strong');
+    vtHeadStrong.textContent = "VirusTotal Ergebnisse:";
+    pVtHead.appendChild(vtHeadStrong);
     card.appendChild(pVtHead);
 
     const pVtMal = document.createElement('p');
@@ -338,7 +338,10 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
         const pTags = document.createElement('p');
         pTags.textContent = `Tags: ${json_data.tags ? json_data.tags.join(', ') : 'N/A'}`;
         card.appendChild(pTags);
-    }
+
+        if (virustotal_stats) {
+            renderVirusTotalStats(virustotal_stats, card);
+        }
 
     if (virustotal_stats) {
         renderVirusTotalStats(virustotal_stats, card);
@@ -477,9 +480,9 @@ function renderManualUrlScanUI(url, headerMessageId) {
     let pInfo = document.createElement('p');
     pInfo.className = "text-info";
     pInfo.appendChild(document.createTextNode("Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie "));
-    let pInfoStrong = document.createElement('strong');
-    pInfoStrong.textContent = "nicht automatisch hochgeladen";
-    pInfo.appendChild(pInfoStrong);
+    const infoStrong = document.createElement('strong');
+    infoStrong.textContent = "nicht automatisch hochgeladen";
+    pInfo.appendChild(infoStrong);
     pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
 
@@ -651,6 +654,32 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
 
     let card = document.createElement('div');
     card.className = "card card-info mb-3";
+    card.id = `upload-container-${urlId}`;
+
+    let h2 = document.createElement('h2');
+    h2.textContent = `URL: ${url}`;
+    card.appendChild(h2);
+
+    let pInfo = document.createElement('p');
+    pInfo.className = "text-info";
+    pInfo.appendChild(document.createTextNode("Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie "));
+    const infoStrong = document.createElement('strong');
+    infoStrong.textContent = "nicht automatisch hochgeladen";
+    pInfo.appendChild(infoStrong);
+    pInfo.appendChild(document.createTextNode("."));
+    card.appendChild(pInfo);
+
+    createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
+    createCdrButton(card, safeHash, attachmentName, messageId, partName);
+
+    appendElementHtml('hybrid_analysis_api_content', card);
+}
+
+function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
+    let safeHash = escapeHTML(hash);
+
+    let card = document.createElement('div');
+    card.className = "card card-info mb-3";
     card.id = `upload-container-${safeHash}`;
 
     let h2 = document.createElement('h2');
@@ -664,9 +693,9 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     let pInfo = document.createElement('p');
     pInfo.className = "text-info";
     pInfo.appendChild(document.createTextNode("Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie "));
-    let pInfoStrong = document.createElement('strong');
-    pInfoStrong.textContent = "nicht automatisch hochgeladen";
-    pInfo.appendChild(pInfoStrong);
+    const infoStrong = document.createElement('strong');
+    infoStrong.textContent = "nicht automatisch hochgeladen";
+    pInfo.appendChild(infoStrong);
     pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
 
