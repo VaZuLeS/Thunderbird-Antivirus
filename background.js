@@ -1214,35 +1214,28 @@ function disarmHTML(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
 
-    // Remove active content tags
-    // ⚡ Bolt Optimization: Use querySelectorAll for a single native DOM traversal
-    // instead of multiple getElementsByTagName loops that create live HTMLCollections,
-    // severely reducing O(N*M) DOM overhead on large payloads.
-    const activeTagsStr = 'script, object, embed, iframe, base, meta, applet, link';
-    const elements = doc.querySelectorAll(activeTagsStr);
-    for (let i = elements.length - 1; i >= 0; i--) {
-        elements[i].parentNode.removeChild(elements[i]);
-    }
-
-    // Remove inline event handlers and javascript: URIs
+    // ⚡ Bolt Optimization: Precompiled Set for O(1) tag lookup
+    const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link']);
     const dangerousAttributes = ['href', 'src', 'action', 'formaction', 'xlink:href'];
+    const nodesToRemove = [];
 
+    // ⚡ Bolt Optimization: Merge tag removal and attribute sanitization into a single TreeWalker pass.
+    // This eliminates the redundant DOM traversal previously caused by calling querySelectorAll
+    // before the TreeWalker loop, significantly reducing overhead on large HTML payloads.
     const walker = doc.createTreeWalker(doc.documentElement, 1 /* NodeFilter.SHOW_ELEMENT */);
     let el = walker.currentNode;
     while (el) {
-        if (el.hasAttributes()) {
+        if (activeTags.has(el.tagName.toLowerCase())) {
+            nodesToRemove.push(el);
+        } else if (el.hasAttributes()) {
             for (let j = el.attributes.length - 1; j >= 0; j--) {
                 const attrName = el.attributes[j].name.toLowerCase();
                 if (attrName.startsWith('on')) {
                     el.removeAttribute(attrName);
                     continue;
                 }
-
-                // ⚡ Bolt Optimization: Check dangerous attributes in the same pass instead of
-                // querying the entire DOM again with querySelectorAll. Reduces O(N*M) DOM traversal.
                 for (let k = 0; k < dangerousAttributes.length; k++) {
-                    const attr = dangerousAttributes[k];
-                    if (attrName === attr) {
+                    if (attrName === dangerousAttributes[k]) {
                         let val = el.attributes[j].value;
                         // Remove control characters (like tabs/newlines) that might evade the check
                         let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
@@ -1255,6 +1248,13 @@ function disarmHTML(htmlString) {
             }
         }
         el = walker.nextNode();
+    }
+
+    // Remove active tags collected during the pass
+    for (let i = nodesToRemove.length - 1; i >= 0; i--) {
+        if (nodesToRemove[i].parentNode) {
+            nodesToRemove[i].parentNode.removeChild(nodesToRemove[i]);
+        }
     }
 
     return doc.documentElement.outerHTML;
