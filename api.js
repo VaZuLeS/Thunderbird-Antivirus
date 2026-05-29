@@ -48,6 +48,18 @@ console.log(message.headerMessageId);
 document.getElementById("subject").textContent = message.subject;
 document.getElementById("from").textContent = message.author;
 document.getElementById("MessageHeaderID").textContent = message.headerMessageId;
+
+// Initialen Lade-Status für async Operationen setzen
+let apiContainer = document.getElementById('hybrid_analysis_api_content');
+if (apiContainer) {
+    let loadingP = document.createElement('p');
+    loadingP.id = 'thundy-initial-loading';
+    loadingP.setAttribute('aria-live', 'polite');
+    loadingP.setAttribute('role', 'status');
+    loadingP.textContent = 'Lade Analyseergebnisse...';
+    apiContainer.appendChild(loadingP);
+}
+
 try {
 
     // Öffnen Sie die Datenbank
@@ -132,7 +144,10 @@ function createEl(tag, className = '', textContent = '') {
 function renderInProgressStatus(json_data, hybrid_sha, card) {
     const pStatus = document.createElement('p');
     pStatus.className = "text-warning";
-    pStatus.innerHTML = `<strong>Status:</strong> Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.`;
+    const statusStrong = document.createElement('strong');
+    statusStrong.textContent = "Status:";
+    pStatus.appendChild(statusStrong);
+    pStatus.appendChild(document.createTextNode(" Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut."));
     card.appendChild(pStatus);
 
     const pHash = document.createElement('p');
@@ -146,15 +161,34 @@ function renderThreatInfo(json_data, card) {
     if (json_data.threat_score > 80) threatClass = "text-danger";
 
     const pThreat = document.createElement('p');
-    pThreat.innerHTML = `<strong class="head_line ${threatClass}">Bedrohungsscore:</strong> <span class="${threatClass}">${escapeHTML(json_data.threat_score)}</span>`;
+    const threatStrong = document.createElement('strong');
+    threatStrong.className = `head_line ${threatClass}`;
+    threatStrong.textContent = "Bedrohungsscore:";
+    pThreat.appendChild(threatStrong);
+    pThreat.appendChild(document.createTextNode(" "));
+    const threatSpan = document.createElement('span');
+    threatSpan.className = threatClass;
+    threatSpan.textContent = escapeHTML(json_data.threat_score);
+    pThreat.appendChild(threatSpan);
     card.appendChild(pThreat);
 
     const pVerdict = document.createElement('p');
-    pVerdict.innerHTML = `<strong class="head_line ${threatClass}">Urteil:</strong> <span class="${threatClass}">${escapeHTML(json_data.verdict)}</span>`;
+    const verdictStrong = document.createElement('strong');
+    verdictStrong.className = `head_line ${threatClass}`;
+    verdictStrong.textContent = "Urteil:";
+    pVerdict.appendChild(verdictStrong);
+    pVerdict.appendChild(document.createTextNode(" "));
+    const verdictSpan = document.createElement('span');
+    verdictSpan.className = threatClass;
+    verdictSpan.textContent = escapeHTML(json_data.verdict);
+    pVerdict.appendChild(verdictSpan);
     card.appendChild(pVerdict);
 
     const pVxFamily = document.createElement('p');
-    pVxFamily.innerHTML = `<strong>Vx-Familie:</strong> ${escapeHTML(json_data.vx_family || 'N/A')}`;
+    const vxStrong = document.createElement('strong');
+    vxStrong.textContent = "Vx-Familie:";
+    pVxFamily.appendChild(vxStrong);
+    pVxFamily.appendChild(document.createTextNode(` ${escapeHTML(json_data.vx_family || 'N/A')}`));
     card.appendChild(pVxFamily);
 
     const pMulti = document.createElement('p');
@@ -162,7 +196,9 @@ function renderThreatInfo(json_data, card) {
     card.appendChild(pMulti);
 
     const pAddInfo = document.createElement('p');
-    pAddInfo.innerHTML = `<strong>Additional Information:</strong>`;
+    const addInfoStrong = document.createElement('strong');
+    addInfoStrong.textContent = "Additional Information:";
+    pAddInfo.appendChild(addInfoStrong);
     card.appendChild(pAddInfo);
 
     const pAnalysisTime = document.createElement('p');
@@ -177,7 +213,9 @@ function renderThreatInfo(json_data, card) {
 function renderVirusTotalStats(virustotal_stats, card) {
     const pVtHead = document.createElement('p');
     pVtHead.className = "ml-2";
-    pVtHead.innerHTML = `<strong>VirusTotal Ergebnisse:</strong>`;
+    const vtStrong = document.createElement('strong');
+    vtStrong.textContent = "VirusTotal Ergebnisse:";
+    pVtHead.appendChild(vtStrong);
     card.appendChild(pVtHead);
 
     const pVtMal = document.createElement('p');
@@ -297,19 +335,18 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     } else {
         renderThreatInfo(json_data, card);
 
-    const pTags = document.createElement('p');
-    pTags.textContent = `Tags: ${json_data.tags ? json_data.tags.join(', ') : 'N/A'}`;
-    card.appendChild(pTags);
-}
-
-        if (virustotal_stats) {
-            renderVirusTotalStats(virustotal_stats, card);
-        }
-
-        renderScannerResults(json_data.scanners, card);
-        renderFileDetails(json_data, card);
-        renderActionButtons(hybrid_sha, attachmentName, card);
+        const pTags = document.createElement('p');
+        pTags.textContent = `Tags: ${json_data.tags ? json_data.tags.join(', ') : 'N/A'}`;
+        card.appendChild(pTags);
     }
+
+    if (virustotal_stats) {
+        renderVirusTotalStats(virustotal_stats, card);
+    }
+
+    renderScannerResults(json_data.scanners, card);
+    renderFileDetails(json_data, card);
+    renderActionButtons(hybrid_sha, attachmentName, card);
 }
 
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
@@ -439,7 +476,11 @@ function renderManualUrlScanUI(url, headerMessageId) {
 
     let pInfo = document.createElement('p');
     pInfo.className = "text-info";
-    pInfo.innerHTML = `Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.`;
+    pInfo.appendChild(document.createTextNode("Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie "));
+    let pInfoStrong = document.createElement('strong');
+    pInfoStrong.textContent = "nicht automatisch hochgeladen";
+    pInfo.appendChild(pInfoStrong);
+    pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
 
     let btnUpload = document.createElement('button');
@@ -610,28 +651,6 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
 
     let card = document.createElement('div');
     card.className = "card card-info mb-3";
-    card.id = `upload-container-${urlId}`;
-
-    let h2 = document.createElement('h2');
-    h2.textContent = `URL: ${url}`;
-    card.appendChild(h2);
-
-    let pInfo = document.createElement('p');
-    pInfo.className = "text-info";
-    pInfo.innerHTML = `Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.`;
-    card.appendChild(pInfo);
-
-    createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
-    createCdrButton(card, safeHash, attachmentName, messageId, partName);
-
-    appendElementHtml('hybrid_analysis_api_content', card);
-}
-
-function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
-    let safeHash = escapeHTML(hash);
-
-    let card = document.createElement('div');
-    card.className = "card card-info mb-3";
     card.id = `upload-container-${safeHash}`;
 
     let h2 = document.createElement('h2');
@@ -644,7 +663,11 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
 
     let pInfo = document.createElement('p');
     pInfo.className = "text-info";
-    pInfo.innerHTML = 'Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie <strong>nicht automatisch hochgeladen</strong>.';
+    pInfo.appendChild(document.createTextNode("Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie "));
+    let pInfoStrong = document.createElement('strong');
+    pInfoStrong.textContent = "nicht automatisch hochgeladen";
+    pInfo.appendChild(pInfoStrong);
+    pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
 
     createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
