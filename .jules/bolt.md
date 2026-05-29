@@ -16,3 +16,7 @@ When dealing with repeated I/O operations inside frequently invoked event hooks 
 ## 2024-05-26 - Optimized DOM active tag removal with querySelectorAll
 **Learning:** In the HTML sanitization loop (`disarmHTML`), iterating over an array of tag names to call `getElementsByTagName` creates a massive performance bottleneck on large HTML payloads. `getElementsByTagName` returns live `HTMLCollection` objects, and repeatedly calling it forces the browser engine to traverse the DOM repeatedly.
 **Action:** Replace sequential `getElementsByTagName` iterations with a single `querySelectorAll('tag1, tag2, ...')` call. `querySelectorAll` returns a static `NodeList` and traverses the document exactly once in native engine code, turning O(K*N) traversals into a highly optimized O(N) operation.
+
+## 2024-05-27 - Merged DOM traversals for sanitization
+**Learning:** Using `querySelectorAll` to find and remove specific tags, followed by a `TreeWalker` pass to sanitize attributes, still traverses the DOM twice.
+**Action:** When performing multiple DOM checks or mutations (like removing tags and sanitizing attributes), merge them into a single `TreeWalker` pass. Check the `tagName` first against a precompiled `Set`, collect nodes for removal, and sanitize attributes on the rest. This eliminates a redundant full-tree traversal.

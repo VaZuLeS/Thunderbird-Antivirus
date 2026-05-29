@@ -23,6 +23,7 @@ if (!apikey_hybridanalysis) {
     container.textContent = '';
     let alertDiv = document.createElement('div');
     alertDiv.className = 'alert-error';
+    alertDiv.setAttribute('role', 'alert');
     let strong = document.createElement('strong');
     strong.textContent = 'Warnung:';
     alertDiv.appendChild(strong);
@@ -47,6 +48,18 @@ console.log(message.headerMessageId);
 document.getElementById("subject").textContent = message.subject;
 document.getElementById("from").textContent = message.author;
 document.getElementById("MessageHeaderID").textContent = message.headerMessageId;
+
+// Initialen Lade-Status für async Operationen setzen
+let apiContainer = document.getElementById('hybrid_analysis_api_content');
+if (apiContainer) {
+    let loadingP = document.createElement('p');
+    loadingP.id = 'thundy-initial-loading';
+    loadingP.setAttribute('aria-live', 'polite');
+    loadingP.setAttribute('role', 'status');
+    loadingP.textContent = 'Lade Analyseergebnisse...';
+    apiContainer.appendChild(loadingP);
+}
+
 try {
 
     // Öffnen Sie die Datenbank
@@ -330,10 +343,13 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
             renderVirusTotalStats(virustotal_stats, card);
         }
 
-        renderScannerResults(json_data.scanners, card);
-        renderFileDetails(json_data, card);
-        renderActionButtons(hybrid_sha, attachmentName, card);
+    if (virustotal_stats) {
+        renderVirusTotalStats(virustotal_stats, card);
     }
+
+    renderScannerResults(json_data.scanners, card);
+    renderFileDetails(json_data, card);
+    renderActionButtons(hybrid_sha, attachmentName, card);
 }
 
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
@@ -438,11 +454,11 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 
         } else {
             console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
-            let errDiv1 = document.createElement('div'); errDiv1.className = 'text-danger'; errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
+            let errDiv1 = document.createElement('div'); errDiv1.className = 'text-danger'; errDiv1.setAttribute('role', 'alert'); errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
         }
     } catch (error) {
         console.error('Fetch error:', error);
-        let errDiv2 = document.createElement('div'); errDiv2.className = 'text-danger'; errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);
+        let errDiv2 = document.createElement('div'); errDiv2.className = 'text-danger'; errDiv2.setAttribute('role', 'alert'); errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);
     }
 }
 

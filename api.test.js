@@ -29,7 +29,9 @@ describe('escapeHTML', () => {
                 }
             },
             document: {
-                getElementById: () => ({ textContent: '', insertAdjacentHTML: () => {} })
+                getElementById: () => ({ textContent: '', insertAdjacentHTML: () => {}, appendChild: () => {} }),
+                createElement: () => ({ setAttribute: () => {}, appendChild: () => {} }),
+                createTextNode: () => ({})
             },
             indexedDB: {
                 open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null })
