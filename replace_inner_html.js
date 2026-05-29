@@ -10,6 +10,7 @@ replaced = replaced.replace(
     container.textContent = '';
     let alertDiv = document.createElement('div');
     alertDiv.className = 'alert-error';
+    alertDiv.setAttribute('role', 'alert');
     let strong = document.createElement('strong');
     strong.textContent = 'Warnung:';
     alertDiv.appendChild(strong);
@@ -38,13 +39,13 @@ replaced = replaced.replace(
 // line 269
 replaced = replaced.replace(
     /document\.getElementById\('hybrid_analysis_api_content'\)\.innerHTML \+= \`<div class="text-danger">API Error: \$\{response\.status\} für Element \$\{escapeHTML\(attachmentName\)\}<\/div>\`;/,
-    `let errDiv1 = document.createElement('div'); errDiv1.className = 'text-danger'; errDiv1.textContent = \`API Error: \${response.status} für Element \${attachmentName}\`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);`
+    `let errDiv1 = document.createElement('div'); errDiv1.className = 'text-danger'; errDiv1.setAttribute('role', 'alert'); errDiv1.textContent = \`API Error: \${response.status} für Element \${attachmentName}\`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);`
 );
 
 // line 273
 replaced = replaced.replace(
     /document\.getElementById\('hybrid_analysis_api_content'\)\.innerHTML \+= \`<div class="text-danger">Netzwerkfehler: \$\{escapeHTML\(error\.message\)\} für Element \$\{escapeHTML\(attachmentName\)\}<\/div>\`;/,
-    `let errDiv2 = document.createElement('div'); errDiv2.className = 'text-danger'; errDiv2.textContent = \`Netzwerkfehler: \${error.message} für Element \${attachmentName}\`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);`
+    `let errDiv2 = document.createElement('div'); errDiv2.className = 'text-danger'; errDiv2.setAttribute('role', 'alert'); errDiv2.textContent = \`Netzwerkfehler: \${error.message} für Element \${attachmentName}\`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);`
 );
 
 fs.writeFileSync('api.js', replaced);
