@@ -1,3 +1,7 @@
+## 2024-05-30 - Required Form Fields and Helper Text Links
+**Learning:** The primary API key field lacked visual distinction as a required field and its instructional text wasn't programmatically linked for screen readers. Using `aria-describedby` to link helper paragraphs and adding a visible `*` enhances both clarity and screen reader usability.
+**Action:** Always verify that critical configuration inputs have explicit required indicators and that any preceding setup instructions are linked via `aria-describedby` during UX/accessibility reviews.
+
 ## 2024-05-20 - Explicit Form Label Association
 **Learning:** Relying solely on implicit association (wrapping inputs inside `<label>` tags) is suboptimal for screen reader accessibility. Explicit association using the `for` attribute pointing to the input `id` guarantees better compatibility across various assistive technologies.
 **Action:** Always verify and enforce explicit `for` attributes on form labels during UX/accessibility reviews.

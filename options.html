@@ -32,14 +32,16 @@
     derzeit von SOCs, CERTs, DFIR-Teams, IT-Sicherheitsforensiklabors, Forschern und Anbietern von Bedrohungsdaten
     auf der ganzen Welt genutzt.<br />
     <h3>Installationshinweise zum API Schlüssel</h3>
-    Sie benötigen einen kostenlosen API Schlüssel von <a
-        href="https://www.hybrid-analysis.com/" target="_blank" rel="noopener noreferrer" aria-label="hybrid-analysis.com (öffnet in einem neuen Tab)">hybrid-analysis.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a><br />
-    Nach der Anmeldung finden Sie diesen API Schlüssel unter "Nickname" -> "Profil" -> "API KEY".<br />
-    Diesen API Schlüssel hier einfügen.<br />
+    <p id="apikeyHelp">
+        Sie benötigen einen kostenlosen API Schlüssel von <a
+            href="https://www.hybrid-analysis.com/" target="_blank" rel="noopener noreferrer" aria-label="hybrid-analysis.com (öffnet in einem neuen Tab)">hybrid-analysis.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a><br />
+        Nach der Anmeldung finden Sie diesen API Schlüssel unter "Nickname" -> "Profil" -> "API KEY".<br />
+        Diesen API Schlüssel hier einfügen.
+    </p>
 
     <div class="mb-3">
-        <label for="apikey">API Schlüssel (Hybrid-Analysis):</label>
-        <input type="password" id="apikey">
+        <label for="apikey">API Schlüssel (Hybrid-Analysis) <span class="text-danger" aria-hidden="true">*</span>:</label>
+        <input type="password" id="apikey" aria-describedby="apikeyHelp" required>
     </div>
 
     <div class="mb-3">
