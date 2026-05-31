@@ -131,6 +131,7 @@ describe('background.js', () => {
             globalThis.calculateThreatScore = calculateThreatScore;
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
+            globalThis.evaluateLinks = evaluateLinks;
             globalThis.evaluateSenderDomain = evaluateSenderDomain;
             globalThis.evaluateBehavior = evaluateBehavior;
             globalThis.extractPublicIPs = extractPublicIPs;
