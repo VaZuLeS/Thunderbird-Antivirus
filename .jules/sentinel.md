@@ -17,3 +17,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** Additional `innerHTML` assignments in `api.js` (e.g. `pStatus.innerHTML`, `pThreat.innerHTML`) allowed unescaped HTML content insertion, maintaining a severe XSS vector despite earlier patches.
 **Learning:** Code reviewers and security linters flag all usages of `innerHTML` as high-risk, even when developers attempt to manually escape some inputs, due to the high likelihood of missing an edge case.
 **Prevention:** Establish a strict policy to completely avoid `innerHTML` and `insertAdjacentHTML`. Always use secure DOM methods like `document.createElement`, `document.createTextNode`, and `textContent` for constructing UI elements from dynamic or external data sources.
+
+## 2026-05-31 - Fix Unhandled ReferenceError in UI rendering
+**Vulnerability:** A duplicate, broken definition of `renderManualUploadUI` in `api.js` contained reference errors (`url` and `urlId` were undefined). If triggered, it would crash the UI rendering, potentially allowing denial-of-service in the email parsing or analysis context.
+**Learning:** Duplicate, copy-pasted code segments can introduce hidden reference errors that manifest as crashes during execution. Always verify that variables used in string templates or DOM attribute assignments are properly scoped.
+**Prevention:** Utilize linting and strict mode to catch undefined variables at build/lint time. Remove dead or duplicate code to prevent it from accidentally being invoked.
