@@ -126,6 +126,7 @@ describe('background.js', () => {
             globalThis.filterUrls = filterUrls;
             globalThis.extractTextFromParts = extractTextFromParts;
             globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
+            globalThis.indexedDB_save_links_objects_to_db = indexedDB_save_links_objects_to_db;
             globalThis.handleUrlScan = handleUrlScan;
             globalThis.checkVirusTotal = checkVirusTotal;
             globalThis.calculateThreatScore = calculateThreatScore;
@@ -1491,6 +1492,53 @@ describe('background.js', () => {
             const result = await context.checkURLhausDomains(['http://bad.com', 'http://good.com']);
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], 'bad.com');
+        });
+    });
+
+    describe('IndexedDB Catch Blocks', () => {
+        let originalConsoleError;
+        let originalOpenDB;
+
+        beforeEach(() => {
+            originalConsoleError = context.console.error;
+            originalOpenDB = context.openDB;
+        });
+
+        afterEach(() => {
+            context.console.error = originalConsoleError;
+            context.openDB = originalOpenDB;
+        });
+
+        it('tests catch block in indexedDB_save_links_objects_to_db', async () => {
+            let errorLogged = null;
+            context.console.error = (msg, err) => {
+                errorLogged = { msg, err };
+            };
+
+            // Mock openDB to throw
+            vm.runInContext('globalThis.openDB = async () => { throw new Error("Mock DB Error"); };', context);
+
+            await context.indexedDB_save_links_objects_to_db({ headerMessageId: '123' }, [{ url: 'http://test.com' }]);
+
+            assert.ok(errorLogged, 'Expected console.error to be called');
+            assert.strictEqual(errorLogged.msg, 'IndexedDB (Links) Save Error:');
+            assert.strictEqual(errorLogged.err.message, 'Mock DB Error');
+        });
+
+        it('tests catch block in indexedDB_save_links_to_db', async () => {
+            let errorLogged = null;
+            context.console.error = (msg, err) => {
+                errorLogged = { msg, err };
+            };
+
+            // Mock openDB to throw
+            vm.runInContext('globalThis.openDB = async () => { throw new Error("Mock DB Error 2"); };', context);
+
+            await context.indexedDB_save_links_to_db({ headerMessageId: '123' }, ['http://test.com']);
+
+            assert.ok(errorLogged, 'Expected console.error to be called');
+            assert.strictEqual(errorLogged.msg, 'Fehler bei der URL-Speicherung in der Datenbank:');
+            assert.strictEqual(errorLogged.err.message, 'Mock DB Error 2');
         });
     });
 

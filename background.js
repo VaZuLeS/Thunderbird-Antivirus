@@ -984,7 +984,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
       });
     }
   } catch (error) {
-    console.error('Fehler bei der Batch-Interaktion (Links Objects) mit der Datenbank:', error);
+    console.error('IndexedDB (Links) Save Error:', error);
   }
 }
 
