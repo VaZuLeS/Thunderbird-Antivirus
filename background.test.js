@@ -131,6 +131,7 @@ describe('background.js', () => {
             globalThis.calculateThreatScore = calculateThreatScore;
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
+            globalThis.evaluateLinks = evaluateLinks;
             globalThis.evaluateSenderDomain = evaluateSenderDomain;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
@@ -853,6 +854,58 @@ describe('background.js', () => {
             assert.strictEqual(result.status, 'ERROR');
             assert.strictEqual(result.details, 'Network offline');
             assert.strictEqual(errorLogged, true);
+        });
+    });
+
+    describe('evaluateLinks', () => {
+        it('ignores invalid URLs without throwing', () => {
+            const reasons = [];
+            const urls = ['not-a-url', 'http://valid.com'];
+            const result = context.evaluateLinks(urls, 'sender.com', 'sender.com', 10, reasons);
+            assert.strictEqual(result, 50); // 10 + 40 (no links match sender.com)
+        });
+
+        it('returns original score when no valid links exist', () => {
+            const reasons = [];
+            const result = context.evaluateLinks([], 'sender.com', 'sender.com', 10, reasons);
+            assert.strictEqual(result, 10);
+        });
+
+        it('increases score by 40 when no links match the sender domain', () => {
+            const reasons = [];
+            const result = context.evaluateLinks(['http://other.com'], 'sender.com', 'sender.com', 10, reasons);
+            assert.strictEqual(result, 50);
+            assert.ok(reasons.some(r => r.includes('Keiner der Links im Text verweist auf die Absender-Domain (sender.com)')));
+        });
+
+        it('maintains score when links match the sender domain', () => {
+            const reasons = [];
+            const result = context.evaluateLinks(['http://sender.com'], 'sender.com', 'sender.com', 10, reasons);
+            assert.strictEqual(result, 10);
+        });
+
+        it('maintains score when links match the sender main domain', () => {
+            const reasons = [];
+            const result = context.evaluateLinks(['http://sub.sender.com'], 'sub.sender.com', 'sender.com', 10, reasons);
+            assert.strictEqual(result, 10);
+        });
+
+        it('increases score by 60 and adds reason for typosquatting', () => {
+            const reasons = [];
+            const result = context.evaluateLinks(['http://paypel.com'], 'sender.com', 'sender.com', 10, reasons);
+            // score += 40 (doesn't match sender) + 60 (typosquatting) = 110
+            assert.strictEqual(result, 110);
+            assert.ok(reasons.some(r => r.includes('ähnelt verdächtig der bekannten Marke paypal.com')));
+        });
+
+        it('prevents duplicate reason entries', () => {
+            const reasons = ['Keiner der Links im Text verweist auf die Absender-Domain (sender.com).', 'Link-Domain (paypel.com) ähnelt verdächtig der bekannten Marke paypal.com.'];
+            const result = context.evaluateLinks(['http://paypel.com', 'http://other.com'], 'sender.com', 'sender.com', 10, reasons);
+            assert.strictEqual(result, 110);
+            const countNoLink = reasons.filter(r => r.includes('Keiner der Links im Text verweist')).length;
+            const countTyposquat = reasons.filter(r => r.includes('ähnelt verdächtig der bekannten Marke paypal.com')).length;
+            assert.strictEqual(countNoLink, 1);
+            assert.strictEqual(countTyposquat, 1);
         });
     });
 
