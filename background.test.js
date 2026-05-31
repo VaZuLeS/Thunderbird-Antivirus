@@ -134,7 +134,7 @@ describe('background.js', () => {
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
             globalThis.checkURLhaus = checkURLhaus;
-            globalThis.evaluateAuthHeaders = evaluateAuthHeaders;
+            globalThis.evaluateUrlhaus = evaluateUrlhaus;
             globalThis.knownSendersCache = knownSendersCache;
             globalThis.getHybridAnalysisOptions = getHybridAnalysisOptions;
         `;
@@ -830,35 +830,41 @@ describe('background.js', () => {
         });
     });
 
-    describe('getMainDomain', () => {
-        it('should return exact known brand', async () => {
-            const domain = await vm.runInContext('getMainDomain("paypal.com")', context);
-            assert.strictEqual(domain, 'paypal.com');
+    describe('evaluateUrlhaus', () => {
+        it('returns original score and unmodified reasons if urlhausDomains is empty, null, or undefined', () => {
+            let score = 10;
+            let reasons = [];
+            assert.strictEqual(context.evaluateUrlhaus(null, score, reasons), 10);
+            assert.deepStrictEqual(reasons, []);
+
+            assert.strictEqual(context.evaluateUrlhaus(undefined, score, reasons), 10);
+            assert.deepStrictEqual(reasons, []);
+
+            assert.strictEqual(context.evaluateUrlhaus([], score, reasons), 10);
+            assert.deepStrictEqual(reasons, []);
         });
 
-        it('should extract known brand from subdomain', async () => {
-            const domain = await vm.runInContext('getMainDomain("www.amazon.de")', context);
-            assert.strictEqual(domain, 'amazon.de');
+        it('adds 80 to score and appends a reason when one domain is provided', () => {
+            let score = 20;
+            let reasons = ['Initial reason.'];
+            const urlhausDomains = ['malicious.com'];
+            const newScore = context.evaluateUrlhaus(urlhausDomains, score, reasons);
+
+            assert.strictEqual(newScore, 100);
+            assert.strictEqual(reasons.length, 2);
+            assert.strictEqual(reasons[1], 'Domain (malicious.com) ist auf URLhaus als bösartig gelistet.');
         });
 
-        it('should extract unknown domain with 2 parts', async () => {
-            const domain = await vm.runInContext('getMainDomain("example.com")', context);
-            assert.strictEqual(domain, 'example.com');
-        });
+        it('adds 80 per domain to score and appends multiple reasons when multiple domains are provided', () => {
+            let score = 0;
+            let reasons = [];
+            const urlhausDomains = ['bad.com', 'evil.com'];
+            const newScore = context.evaluateUrlhaus(urlhausDomains, score, reasons);
 
-        it('should extract unknown domain with multiple subdomains', async () => {
-            const domain = await vm.runInContext('getMainDomain("a.b.c.unknown.org")', context);
-            assert.strictEqual(domain, 'unknown.org');
-        });
-
-        it('should return domain as-is if no dots are present', async () => {
-            const domain = await vm.runInContext('getMainDomain("localhost")', context);
-            assert.strictEqual(domain, 'localhost');
-        });
-
-        it('should extract known brand even with deeper subdomains', async () => {
-            const domain = await vm.runInContext('getMainDomain("login.auth.facebook.com")', context);
-            assert.strictEqual(domain, 'facebook.com');
+            assert.strictEqual(newScore, 160);
+            assert.strictEqual(reasons.length, 2);
+            assert.strictEqual(reasons[0], 'Domain (bad.com) ist auf URLhaus als bösartig gelistet.');
+            assert.strictEqual(reasons[1], 'Domain (evil.com) ist auf URLhaus als bösartig gelistet.');
         });
     });
 
