@@ -18,6 +18,8 @@ describe('content_script.js', () => {
                     <a id="safe-link" href="https://example.com/safe">Safe</a>
                     <a id="unsafe-link" href="http://example.com/unsafe">Unsafe</a>
                     <a id="non-http-link" href="mailto:test@example.com">Email</a>
+                    <a id="js-link" href="javascript:alert(1)">JS</a>
+                    <a id="data-link" href="data:text/html,<h1>Hello</h1>">Data</a>
                     <span id="not-a-link">Not a link</span>
                 </body>
             </html>
@@ -34,9 +36,10 @@ describe('content_script.js', () => {
             },
             console: {
                 error: () => {},
-                log: () => {}
+                log: () => {},
+                warn: () => {}
             },
-            Node: dom.window.Node,
+            Node: dom.window.Node, URL: dom.window.URL,
             setTimeout: (cb, ms) => cb()
         };
 
@@ -65,6 +68,26 @@ describe('content_script.js', () => {
         link.dispatchEvent(event);
 
         assert.strictEqual(messageSent, false);
+        assert.strictEqual(event.defaultPrevented, false);
+    });
+
+    it('should block dangerous URIs like javascript: and data:', async () => {
+        let messageSent = false;
+        sendMessageMock = async () => { messageSent = true; return { status: 'CLEAN' }; };
+
+        const jsLink = context.document.getElementById('js-link');
+        const jsEvent = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+        jsLink.dispatchEvent(jsEvent);
+
+        assert.strictEqual(messageSent, false);
+        assert.strictEqual(jsEvent.defaultPrevented, true);
+
+        const dataLink = context.document.getElementById('data-link');
+        const dataEvent = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+        dataLink.dispatchEvent(dataEvent);
+
+        assert.strictEqual(messageSent, false);
+        assert.strictEqual(dataEvent.defaultPrevented, true);
     });
 
     it('should allow the click when status is CLEAN', async () => {
