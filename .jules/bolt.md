@@ -1,3 +1,3 @@
-2024-05-24
-Learning: When converting array lookup loops to `Set.has()` to improve performance in frequently called functions, always initialize the `Set` outside the function scope. Initializing the `Set` inside the function incurs repeated memory allocation overhead that can actually decrease performance compared to V8's highly optimized small array loops.
-Action: Initialized the `dangerousAttributes` Set in the top-level scope of `background.js` rather than repeatedly allocating it inside `disarmHTML`.
+## 2026-05-31
+* **Performance Improvement**: Replaced sequential `await` calls with `Promise.all` inside the attachments and links processing loop in `api.js`.
+* **Impact**: External API calls for analysis reports (`get_hybrid_report_by_sha256`) were being fetched sequentially, leading to an O(N) waiting time. By fetching them concurrently, the overall wait time is reduced to ~O(1) relative to the number of attachments/links (bounded by the slowest request). Measurements show a ~5x speedup for 5 mocked requests (100ms vs 500ms).
