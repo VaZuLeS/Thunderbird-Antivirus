@@ -514,6 +514,85 @@ describe('background.js', () => {
     });
 
 
+    describe('checkVirusTotalIP', () => {
+        it('returns true if malicious > 0', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({
+                        data: {
+                            attributes: {
+                                last_analysis_stats: {
+                                    malicious: 1
+                                }
+                            }
+                        }
+                    })
+                });
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, true);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false if malicious === 0', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({
+                        data: {
+                            attributes: {
+                                last_analysis_stats: {
+                                    malicious: 0
+                                }
+                            }
+                        }
+                    })
+                });
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false if data is missing', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({})
+                });
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false and logs error on fetch failure', async () => {
+            const originalFetch = context.fetch;
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
+            try {
+                context.fetch = async () => {
+                    throw new Error("Network failure");
+                };
+                context.console.error = (msg, e) => {
+                    if (msg.includes("Fehler bei VirusTotal IP Abfrage")) {
+                        errorLogged = true;
+                    }
+                };
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+                assert.strictEqual(errorLogged, true);
+            } finally {
+                context.fetch = originalFetch;
+                context.console.error = originalConsoleError;
+            }
+        });
+    });
+
     describe('checkAbuseIPDB', () => {
         it('returns true if abuse confidence score is > 50', async () => {
             const originalFetch = context.fetch;
