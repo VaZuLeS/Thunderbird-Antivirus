@@ -185,6 +185,25 @@ describe('background.js', () => {
         assert.strictEqual(hash, '916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9');
     });
 
+    it('get_sha256_hash throws error if crypto.subtle.digest fails', async () => {
+        const buffer = new TextEncoder().encode('test data').buffer;
+        const originalDigest = context.crypto.subtle.digest;
+        context.crypto.subtle.digest = async () => {
+            throw new Error('Crypto API Error');
+        };
+
+        try {
+            await assert.rejects(
+                async () => {
+                    await context.get_sha256_hash(buffer);
+                },
+                { message: 'Crypto API Error' }
+            );
+        } finally {
+            context.crypto.subtle.digest = originalDigest;
+        }
+    });
+
     it('tab_mail_open_display processes attachments correctly', async () => {
         let sentAttachments = [];
         // Mock sent_to_hybrid_by_attachment to verify it's called
