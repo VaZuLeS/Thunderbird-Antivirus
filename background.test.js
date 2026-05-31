@@ -133,6 +133,7 @@ describe('background.js', () => {
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.checkURLhaus = checkURLhaus;
+            globalThis.evaluateAuthHeaders = evaluateAuthHeaders;
             globalThis.knownSendersCache = knownSendersCache;
         `;
         context.URL = URL;
@@ -1308,6 +1309,76 @@ describe('background.js', () => {
             const ips = context.extractPublicIPs(headers);
             assert.strictEqual(ips.length, 1);
             assert.strictEqual(ips[0], '9.9.9.9');
+        });
+    });
+
+    describe('evaluateAuthHeaders', () => {
+        it('should return neutral and unchanged score for empty or null headers', () => {
+            let reasons = [];
+            let result = context.evaluateAuthHeaders(null, 10, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 10);
+            assert.strictEqual(reasons.length, 0);
+
+            result = context.evaluateAuthHeaders([], 20, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 20);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('should return fail and increase score for a single failure (SPF)', () => {
+            let reasons = [];
+            const result = context.evaluateAuthHeaders(["Authentication-Results: mx.example.com; spf=fail"], 0, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 50);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('SPF-Prüfung fehlgeschlagen'));
+        });
+
+        it('should handle multiple failures and increase score for each', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=softfail",
+                "Authentication-Results: mx.example.com; dkim=fail header.i=@example.com"
+            ];
+            const result = context.evaluateAuthHeaders(headers, 10, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 110); // 10 + 50 (spf) + 50 (dkim)
+            assert.strictEqual(reasons.length, 2);
+        });
+
+        it('should return pass if SPF, DKIM, and DMARC all pass', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=pass smtp.mailfrom=example.com;",
+                " dkim=pass header.i=@example.com;",
+                " dmarc=pass"
+            ];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'pass');
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('should return neutral for partial passes without any failures', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=pass",
+                " dkim=pass"
+                // Missing dmarc=pass
+            ];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('should handle case insensitivity correctly', () => {
+            let reasons = [];
+            const headers = ["Authentication-Results: mx.example.com; SPF=FAIL"];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 50);
         });
     });
 });
