@@ -501,3 +501,97 @@ describe('renderManualUrlScanUI', () => {
         assert.strictEqual(container.removed, true);
     });
 });
+
+describe('renderVirusTotalStats', () => {
+    let context;
+    let renderVirusTotalStats;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createElement: (tag) => {
+                    return {
+                        tag: tag,
+                        className: '',
+                        textContent: '',
+                        children: [],
+                        _innerHTML: null,
+                        appendChild: function(node) {
+                            this.children.push(node);
+                        },
+                        get innerHTML() {
+                            if (this._innerHTML !== null) return this._innerHTML;
+                            return this.children.map(c => {
+                                let cls = c.className ? ` class="${c.className}"` : '';
+                                let inner = c.innerHTML || c.textContent || '';
+                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
+                            }).join('');
+                        },
+                        set innerHTML(val) {
+                            this._innerHTML = val;
+                        }
+                    };
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String,
+            Array: Array
+        };
+
+        vm.createContext(context);
+
+        // We load api.js and prevent the IIFE from executing
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+
+        vm.runInContext(wrappedCode, context);
+
+        renderVirusTotalStats = context.renderVirusTotalStats;
+    });
+
+    it('should render correct stats for a complete virustotal_stats object', () => {
+        const stats = {
+            malicious: 2,
+            undetected: 60,
+            suspicious: 1,
+            harmless: 50
+        };
+        const card = context.document.createElement('div');
+        renderVirusTotalStats(stats, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('<strong>VirusTotal Ergebnisse:</strong>'), 'Should have correct heading');
+        assert.ok(html.includes('Malicious: 2'), 'Should render malicious stats');
+        assert.ok(html.includes('Undetected: 60'), 'Should render undetected stats');
+        assert.ok(html.includes('Suspicious: 1'), 'Should render suspicious stats');
+        assert.ok(html.includes('Harmless: 50'), 'Should render harmless stats');
+        assert.ok(html.includes('class="ml-4 text-warning"'), 'Malicious should have warning class');
+    });
+
+    it('should handle missing properties by defaulting to 0', () => {
+        const stats = {
+            malicious: 5
+            // other properties missing
+        };
+        const card = context.document.createElement('div');
+        renderVirusTotalStats(stats, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('Malicious: 5'), 'Should render malicious stats');
+        assert.ok(html.includes('Undetected: 0'), 'Should default undetected to 0');
+        assert.ok(html.includes('Suspicious: 0'), 'Should default suspicious to 0');
+        assert.ok(html.includes('Harmless: 0'), 'Should default harmless to 0');
+    });
+
+    it('should handle empty virustotal_stats object by defaulting all to 0', () => {
+        const card = context.document.createElement('div');
+        renderVirusTotalStats({}, card);
+        const html = card.innerHTML;
+        assert.ok(html.includes('Malicious: 0'), 'Should default malicious to 0');
+        assert.ok(html.includes('Undetected: 0'), 'Should default undetected to 0');
+        assert.ok(html.includes('Suspicious: 0'), 'Should default suspicious to 0');
+        assert.ok(html.includes('Harmless: 0'), 'Should default harmless to 0');
+    });
+});
