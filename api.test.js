@@ -53,7 +53,9 @@ describe('escapeHTML', () => {
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         // Prevent the IIFE from executing during test initialization
-        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
 
         escapeHTML = context.escapeHTML;
@@ -311,7 +313,9 @@ tag: tag,
         vm.runInContext(dbCode, context);
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
 
         get_hybrid_report_by_sha256 = context.get_hybrid_report_by_sha256;
@@ -500,7 +504,9 @@ describe('renderManualUrlScanUI', () => {
         vm.runInContext(dbCode, context);
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        const wrappedCode = code.replace(/^\(async function \(\) \{/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
 
         context.get_hybrid_report_by_sha256 = function(hash) {
@@ -579,7 +585,7 @@ describe('renderManualUrlScanUI', () => {
         await new Promise(r => setTimeout(r, 10));
 
         // Call the setTimeouts (the 3000ms one)
-        if (context.timeouts) {
+            if (context.timeouts) {
             context.timeouts.forEach(t => t.cb());
         }
 
