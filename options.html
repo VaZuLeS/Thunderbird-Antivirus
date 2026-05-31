@@ -31,17 +31,17 @@
     Die Falcon Sandbox ist ein hochmodernes Malware-Analyse-Framework mit einer sehr agilen Architektur. Sie wird
     derzeit von SOCs, CERTs, DFIR-Teams, IT-Sicherheitsforensiklabors, Forschern und Anbietern von Bedrohungsdaten
     auf der ganzen Welt genutzt.<br />
-    <h3>Installationshinweise zum API Schlüssel</h3>
-    <p id="apikeyHelp">
+    <div id="apiKeyInstructions">
+        <h3>Installationshinweise zum API Schlüssel</h3>
         Sie benötigen einen kostenlosen API Schlüssel von <a
             href="https://www.hybrid-analysis.com/" target="_blank" rel="noopener noreferrer" aria-label="hybrid-analysis.com (öffnet in einem neuen Tab)">hybrid-analysis.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a><br />
         Nach der Anmeldung finden Sie diesen API Schlüssel unter "Nickname" -> "Profil" -> "API KEY".<br />
-        Diesen API Schlüssel hier einfügen.
-    </p>
+        Diesen API Schlüssel hier einfügen.<br />
+    </div>
 
-    <div class="mb-3">
-        <label for="apikey">API Schlüssel (Hybrid-Analysis) <span class="text-danger" aria-hidden="true">*</span>:</label>
-        <input type="password" id="apikey" aria-describedby="apikeyHelp" required>
+    <div class="mb-3 mt-3">
+        <label for="apikey">API Schlüssel (Hybrid-Analysis): <span aria-hidden="true" class="text-danger">*</span></label>
+        <input type="password" id="apikey" required aria-describedby="apiKeyInstructions">
     </div>
 
     <div class="mb-3">
