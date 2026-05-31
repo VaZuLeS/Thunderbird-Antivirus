@@ -1,3 +1,7 @@
+// ⚡ Bolt Optimization: Precompiled Hexadecimal Look-Up Table (LUT) for O(1) byte-to-hex conversion
+const byteToHex = new Array(256);
+for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
+
 function escapeHTML(str) {
     if (!str) return '';
     return String(str).replace(/[&<>"']/g, function(match) {
@@ -479,9 +483,10 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 function renderManualUrlScanUI(url, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
-    let urlId = Array.from(new TextEncoder().encode(url))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
+    const u8 = new TextEncoder().encode(url);
+    let urlId = '';
+    // ⚡ Bolt Optimization: Use fast loop with LUT instead of Array.from().map().join('')
+    for (let j = 0; j < u8.length; j++) urlId += byteToHex[u8[j]];
 
     let card = document.createElement('div');
     card.className = "card card-info mb-3";

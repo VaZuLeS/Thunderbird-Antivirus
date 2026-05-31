@@ -509,6 +509,8 @@ describe('renderManualUrlScanUI', () => {
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
 
+        context.byteToHex = new Array(256);
+        for (let i = 0; i < 256; i++) context.byteToHex[i] = i.toString(16).padStart(2, '0');
         context.get_hybrid_report_by_sha256 = function(hash) {
             context.lastReportOpts = { hybrid_sha: hash };
         };
@@ -522,8 +524,9 @@ describe('renderManualUrlScanUI', () => {
 
         renderManualUrlScanUI(url, 'msg-123');
 
-        const urlId = Array.from(new TextEncoder().encode(url))
-            .map(b => b.toString(16).padStart(2, '0')).join('');
+        const u8 = new TextEncoder().encode(url);
+        let urlId = '';
+        for (let j = 0; j < u8.length; j++) urlId += context.byteToHex[u8[j]];
 
         assert.ok(context.apiContentElement.innerHTML.includes(`upload-container-${urlId}`));
         assert.ok(context.apiContentElement.innerHTML.includes('http://example.com/test?a=1&amp;b=2'));
