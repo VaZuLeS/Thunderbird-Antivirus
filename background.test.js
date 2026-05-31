@@ -280,6 +280,12 @@ describe('background.js', () => {
         assert.deepStrictEqual(filtered, ['https://good-domain.com/']);
     });
 
+    it('filterUrls triggers exception block for malformed URLs', () => {
+        const urls = ['::::', 'http://[::1', 'https://:80', 'https://good.com/'];
+        const filtered = context.filterUrls(urls);
+        assert.deepStrictEqual(filtered, ['https://good.com/']);
+    });
+
     it('filterUrls handles empty array', () => {
         const filtered = context.filterUrls([]);
         assert.deepStrictEqual(filtered, []);
