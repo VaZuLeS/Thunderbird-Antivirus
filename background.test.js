@@ -134,6 +134,7 @@ describe('background.js', () => {
             globalThis.evaluateSenderDomain = evaluateSenderDomain;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
+            globalThis.checkURLhausDomains = checkURLhausDomains;
             globalThis.checkURLhaus = checkURLhaus;
             globalThis.evaluateUrlhaus = evaluateUrlhaus;
             globalThis.knownSendersCache = knownSendersCache;
@@ -1430,6 +1431,42 @@ describe('background.js', () => {
             const ips = context.extractPublicIPs(headers);
             assert.strictEqual(ips.length, 1);
             assert.strictEqual(ips[0], '9.9.9.9');
+        });
+    });
+
+    describe('checkURLhausDomains', () => {
+        let originalCheckURLhaus;
+
+        beforeEach(() => {
+            originalCheckURLhaus = context.checkURLhaus;
+            vm.runInContext('urlhausApikey = "test-key";', context);
+        });
+
+        afterEach(() => {
+            context.checkURLhaus = originalCheckURLhaus;
+            vm.runInContext('urlhausApikey = "";', context);
+        });
+
+        it('ignores invalid URLs without throwing an error', async () => {
+            context.checkURLhaus = async (domain, apikey) => {
+                return false;
+            };
+
+            const invalidUrl = 'not-a-valid-url';
+            const validUrl = 'http://example.com';
+
+            const result = await context.checkURLhausDomains([invalidUrl, validUrl]);
+            assert.strictEqual(result.length, 0);
+        });
+
+        it('returns malicious domains for valid URLs', async () => {
+            context.checkURLhaus = async (domain, apikey) => {
+                return domain === 'bad.com';
+            };
+
+            const result = await context.checkURLhausDomains(['http://bad.com', 'http://good.com']);
+            assert.strictEqual(result.length, 1);
+            assert.strictEqual(result[0], 'bad.com');
         });
     });
 
