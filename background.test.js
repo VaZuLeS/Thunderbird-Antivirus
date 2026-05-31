@@ -548,7 +548,7 @@ describe('background.js', () => {
             }
         });
 
-        it('returns false and handles error gracefully on fetch failure', async () => {
+        it('returns false and handles error gracefully on fetch network failure', async () => {
             const originalFetch = context.fetch;
             const originalConsoleError = context.console.error;
             let errorLogged = false;
@@ -556,6 +556,30 @@ describe('background.js', () => {
                 context.fetch = async () => {
                     throw new Error("Network failure");
                 };
+                context.console.error = (msg, e) => {
+                    if (msg.includes("Fehler bei AbuseIPDB Abfrage")) {
+                        errorLogged = true;
+                    }
+                };
+                const result = await context.checkAbuseIPDB('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+                assert.strictEqual(errorLogged, true);
+            } finally {
+                context.fetch = originalFetch;
+                context.console.error = originalConsoleError;
+            }
+        });
+
+        it('returns false and handles error gracefully on fetch json parse failure', async () => {
+            const originalFetch = context.fetch;
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
+            try {
+                context.fetch = async () => ({
+                    json: async () => {
+                        throw new Error("Invalid JSON");
+                    }
+                });
                 context.console.error = (msg, e) => {
                     if (msg.includes("Fehler bei AbuseIPDB Abfrage")) {
                         errorLogged = true;
