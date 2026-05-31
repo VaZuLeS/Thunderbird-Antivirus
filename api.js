@@ -113,17 +113,21 @@ try {
                 }
 
                 if (hasLinks) {
-                    for (const linkObj of record.links) {
+                    const linkPromises = record.links.map(linkObj => {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId);
+                            return null;
                         } else if (linkObj.hybrid_sha256) {
-                            fetchPromises.push(
-                                get_hybrid_report_by_sha256(
-                                    linkObj.hybrid_sha256,
-                                    linkObj.url
-                                )
+                            return get_hybrid_report_by_sha256(
+                                linkObj.hybrid_sha256,
+                                linkObj.url
                             );
                         }
+                        return null;
+                    }).filter(Boolean);
+
+                    if (linkPromises.length > 0) {
+                        fetchPromises.push(Promise.all(linkPromises));
                     }
                 }
 
