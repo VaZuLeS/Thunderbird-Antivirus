@@ -991,7 +991,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
       });
     }
   } catch (error) {
-    console.error('Fehler bei der Batch-Interaktion (Links Objects) mit der Datenbank:', error);
+    console.error('IndexedDB (Links) Save Error:', error);
   }
 }
 
@@ -1217,13 +1217,15 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     return { downloadId: downloadId };
 }
 
+// ⚡ Bolt Optimization: Precompiled Set for O(1) attribute lookup
+const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xlink:href']);
+
 function disarmHTML(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
 
     // ⚡ Bolt Optimization: Precompiled Set for O(1) tag lookup
     const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link']);
-    const dangerousAttributes = ['href', 'src', 'action', 'formaction', 'xlink:href'];
     const nodesToRemove = [];
 
     // ⚡ Bolt Optimization: Merge tag removal and attribute sanitization into a single TreeWalker pass.
@@ -1241,15 +1243,12 @@ function disarmHTML(htmlString) {
                     el.removeAttribute(attrName);
                     continue;
                 }
-                for (let k = 0; k < dangerousAttributes.length; k++) {
-                    if (attrName === dangerousAttributes[k]) {
-                        let val = el.attributes[j].value;
-                        // Remove control characters (like tabs/newlines) that might evade the check
-                        let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
-                        if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                            el.removeAttribute(attrName);
-                        }
-                        break;
+                if (dangerousAttributes.has(attrName)) {
+                    let val = el.attributes[j].value;
+                    // Remove control characters (like tabs/newlines) that might evade the check
+                    let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
+                    if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
+                        el.removeAttribute(attrName);
                     }
                 }
             }

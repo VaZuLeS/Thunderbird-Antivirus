@@ -93,35 +93,50 @@ try {
             if (hasAttachments || hasLinks) {
                 document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
+                // ⚡ Bolt Optimization: Use Promise.all to fetch reports concurrently instead of sequentially
+                let fetchPromises = [];
+
                 if (hasAttachments) {
                     for (const att of record.attachments) {
                         const hash256 = att.hybrid_sha256;
                         if (att.state === 'UNKNOWN') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                         } else {
-                            await get_hybrid_report_by_sha256(
-                                hash256,
-                                att.attachment_name,
-                                message.id,
-                                att.partName,
-                                message.headerMessageId,
-                                att.virustotal_stats
+                            fetchPromises.push(
+                                get_hybrid_report_by_sha256(
+                                    hash256,
+                                    att.attachment_name,
+                                    message.id,
+                                    att.partName,
+                                    message.headerMessageId,
+                                    att.virustotal_stats
+                                )
                             );
                         }
                     }
                 }
 
                 if (hasLinks) {
-                    for (const linkObj of record.links) {
+                    const linkPromises = record.links.map(linkObj => {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId);
+                            return null;
                         } else if (linkObj.hybrid_sha256) {
-                            await get_hybrid_report_by_sha256(
+                            return get_hybrid_report_by_sha256(
                                 linkObj.hybrid_sha256,
                                 linkObj.url
                             );
                         }
+                        return null;
+                    }).filter(Boolean);
+
+                    if (linkPromises.length > 0) {
+                        fetchPromises.push(Promise.all(linkPromises));
                     }
+                }
+
+                if (fetchPromises.length > 0) {
+                    await Promise.all(fetchPromises);
                 }
             } else {
                  let p1 = document.createElement('p'); p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p1);
@@ -351,6 +366,8 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     renderScannerResults(json_data.scanners, card);
     renderFileDetails(json_data, card);
     renderActionButtons(hybrid_sha, attachmentName, card);
+    }
+    return card;
 }
 
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
@@ -649,32 +666,6 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
             btn.innerText = "Erneut versuchen";
         });
     });
-}
-
-function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
-    let safeHash = escapeHTML(hash);
-
-    let card = document.createElement('div');
-    card.className = "card card-info mb-3";
-    card.id = `upload-container-${urlId}`;
-
-    let h2 = document.createElement('h2');
-    h2.textContent = `URL: ${url}`;
-    card.appendChild(h2);
-
-    let pInfo = document.createElement('p');
-    pInfo.className = "text-info";
-    pInfo.appendChild(document.createTextNode("Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie "));
-    const infoStrong = document.createElement('strong');
-    infoStrong.textContent = "nicht automatisch hochgeladen";
-    pInfo.appendChild(infoStrong);
-    pInfo.appendChild(document.createTextNode("."));
-    card.appendChild(pInfo);
-
-    createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
-    createCdrButton(card, safeHash, attachmentName, messageId, partName);
-
-    appendElementHtml('hybrid_analysis_api_content', card);
 }
 
 function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {

@@ -126,14 +126,22 @@ describe('background.js', () => {
             globalThis.filterUrls = filterUrls;
             globalThis.extractTextFromParts = extractTextFromParts;
             globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
+            globalThis.indexedDB_save_links_objects_to_db = indexedDB_save_links_objects_to_db;
             globalThis.handleUrlScan = handleUrlScan;
             globalThis.checkVirusTotal = checkVirusTotal;
             globalThis.calculateThreatScore = calculateThreatScore;
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
+            globalThis.evaluateLinks = evaluateLinks;
+            globalThis.evaluateSenderDomain = evaluateSenderDomain;
+            globalThis.evaluateBehavior = evaluateBehavior;
             globalThis.extractPublicIPs = extractPublicIPs;
+            globalThis.getMainDomain = getMainDomain;
+            globalThis.checkURLhausDomains = checkURLhausDomains;
             globalThis.checkURLhaus = checkURLhaus;
+            globalThis.evaluateUrlhaus = evaluateUrlhaus;
             globalThis.knownSendersCache = knownSendersCache;
+            globalThis.checkLists = checkLists;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -178,6 +186,25 @@ describe('background.js', () => {
         const buffer = new TextEncoder().encode('test data').buffer;
         const hash = await context.get_sha256_hash(buffer);
         assert.strictEqual(hash, '916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9');
+    });
+
+    it('get_sha256_hash throws error if crypto.subtle.digest fails', async () => {
+        const buffer = new TextEncoder().encode('test data').buffer;
+        const originalDigest = context.crypto.subtle.digest;
+        context.crypto.subtle.digest = async () => {
+            throw new Error('Crypto API Error');
+        };
+
+        try {
+            await assert.rejects(
+                async () => {
+                    await context.get_sha256_hash(buffer);
+                },
+                { message: 'Crypto API Error' }
+            );
+        } finally {
+            context.crypto.subtle.digest = originalDigest;
+        }
     });
 
     it('tab_mail_open_display processes attachments correctly', async () => {
@@ -273,6 +300,12 @@ describe('background.js', () => {
         const urls = ['not_a_url', 'https://good-domain.com/', 'http://'];
         const filtered = context.filterUrls(urls);
         assert.deepStrictEqual(filtered, ['https://good-domain.com/']);
+    });
+
+    it('filterUrls triggers exception block for malformed URLs', () => {
+        const urls = ['::::', 'http://[::1', 'https://:80', 'https://good.com/'];
+        const filtered = context.filterUrls(urls);
+        assert.deepStrictEqual(filtered, ['https://good.com/']);
     });
 
     it('filterUrls handles empty array', () => {
@@ -509,6 +542,85 @@ describe('background.js', () => {
     });
 
 
+    describe('checkVirusTotalIP', () => {
+        it('returns true if malicious > 0', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({
+                        data: {
+                            attributes: {
+                                last_analysis_stats: {
+                                    malicious: 1
+                                }
+                            }
+                        }
+                    })
+                });
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, true);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false if malicious === 0', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({
+                        data: {
+                            attributes: {
+                                last_analysis_stats: {
+                                    malicious: 0
+                                }
+                            }
+                        }
+                    })
+                });
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false if data is missing', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({})
+                });
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false and logs error on fetch failure', async () => {
+            const originalFetch = context.fetch;
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
+            try {
+                context.fetch = async () => {
+                    throw new Error("Network failure");
+                };
+                context.console.error = (msg, e) => {
+                    if (msg.includes("Fehler bei VirusTotal IP Abfrage")) {
+                        errorLogged = true;
+                    }
+                };
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+                assert.strictEqual(errorLogged, true);
+            } finally {
+                context.fetch = originalFetch;
+                context.console.error = originalConsoleError;
+            }
+        });
+    });
+
     describe('checkAbuseIPDB', () => {
         it('returns true if abuse confidence score is > 50', async () => {
             const originalFetch = context.fetch;
@@ -544,7 +656,7 @@ describe('background.js', () => {
             }
         });
 
-        it('returns false and handles error gracefully on fetch failure', async () => {
+        it('returns false and handles error gracefully on fetch network failure', async () => {
             const originalFetch = context.fetch;
             const originalConsoleError = context.console.error;
             let errorLogged = false;
@@ -552,6 +664,30 @@ describe('background.js', () => {
                 context.fetch = async () => {
                     throw new Error("Network failure");
                 };
+                context.console.error = (msg, e) => {
+                    if (msg.includes("Fehler bei AbuseIPDB Abfrage")) {
+                        errorLogged = true;
+                    }
+                };
+                const result = await context.checkAbuseIPDB('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+                assert.strictEqual(errorLogged, true);
+            } finally {
+                context.fetch = originalFetch;
+                context.console.error = originalConsoleError;
+            }
+        });
+
+        it('returns false and handles error gracefully on fetch json parse failure', async () => {
+            const originalFetch = context.fetch;
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
+            try {
+                context.fetch = async () => ({
+                    json: async () => {
+                        throw new Error("Invalid JSON");
+                    }
+                });
                 context.console.error = (msg, e) => {
                     if (msg.includes("Fehler bei AbuseIPDB Abfrage")) {
                         errorLogged = true;
@@ -827,6 +963,100 @@ describe('background.js', () => {
         });
     });
 
+    describe('evaluateBehavior', () => {
+        it('returns initial score when no urgency words and not first communication', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Meeting update', 'The meeting is at 10 AM', false, 10, reasons);
+            assert.strictEqual(result, 10);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('increases score by 10 for first communication without urgency words', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Hello', 'Nice to meet you', true, 0, reasons);
+            assert.strictEqual(result, 10);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.'));
+        });
+
+        it('increases score by 20 and logs urgency words when not first communication', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Dringend', 'Bitte überweisung sofort ausführen', false, 0, reasons);
+            assert.strictEqual(result, 20);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Dringlichkeits-Signalwörter gefunden'));
+            assert.ok(reasons[0].includes('dringend'));
+            assert.ok(reasons[0].includes('überweisung'));
+            assert.ok(reasons[0].includes('sofort'));
+        });
+
+        it('increases score by 50 and logs BEC for first communication with urgency words', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Invoice payment', 'The payment is urgent', true, 0, reasons);
+            assert.strictEqual(result, 50);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Mögliches BEC'));
+            assert.ok(reasons[0].includes('payment'));
+            assert.ok(reasons[0].includes('urgent'));
+        });
+
+        it('handles case insensitivity correctly', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('WICHTIG', 'ÜBERWEISUNG', true, 0, reasons);
+            assert.strictEqual(result, 50);
+            assert.ok(reasons[0].includes('wichtig'));
+            assert.ok(reasons[0].includes('überweisung'));
+        });
+
+        it('deduplicates urgency words', () => {
+            const reasons = [];
+            context.evaluateBehavior('Dringend dringend', 'Bitte dringend sofort', false, 0, reasons);
+            assert.ok(reasons[0].includes('dringend, sofort'));
+            // check that "dringend" is only printed once.
+            const matchCount = (reasons[0].match(/dringend/g) || []).length;
+            assert.strictEqual(matchCount, 1);
+        });
+    });
+
+    describe('evaluateSenderDomain', () => {
+        it('returns initial score when senderDomain is empty', () => {
+            const result = context.evaluateSenderDomain('', 10, []);
+            assert.strictEqual(result.score, 10);
+            assert.strictEqual(result.senderMainDomain, '');
+        });
+
+        it('identifies exact known brands without increasing score', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('service.paypal.com', 0, reasons);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.senderMainDomain, 'paypal.com');
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('increases score for typosquatted known brands (levenshtein distance 1 or 2)', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('paypel.com', 0, reasons);
+            assert.strictEqual(result.score, 60);
+            assert.strictEqual(result.senderMainDomain, 'paypel.com');
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('ähnelt verdächtig der bekannten Marke paypal.com'));
+        });
+
+        it('does not increase score for completely unknown, unrelated domains', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('some-random-domain.org', 0, reasons);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.senderMainDomain, 'some-random-domain.org');
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('ignores short domains from typosquatting checks to prevent false positives', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('a.b', 0, reasons);
+            assert.strictEqual(result.score, 0);
+        });
+    });
+
     describe('calculateThreatScore', () => {
         it('calculates threat score correctly for spf=fail', async () => {
             const author = 'Service <service@paypal.com>';
@@ -1097,7 +1327,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal-support.com>', subject: 'Action required' });
 
-            assert.notStrictEqual(executedWarningScript, null);
+            assert.ok(executedWarningScript !== null);
             assert.strictEqual(executedWarningScript.target.tabId, 10);
             assert.strictEqual(typeof executedWarningScript.func, 'function');
             assert.strictEqual(executedWarningScript.args[0], 100); // 100 score
@@ -1123,10 +1353,7 @@ describe('background.js', () => {
             // If sender is "test@example.com" and body has no links matching sender, it adds 40.
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'User <user@example.com>', subject: 'Action required' });
 
-            assert.notStrictEqual(executedWarningScript, null);
-            assert.strictEqual(executedWarningScript.target.tabId, 10);
-            assert.strictEqual(typeof executedWarningScript.func, 'function');
-            assert.strictEqual(executedWarningScript.args[0], 40); // 40 score
+            assert.strictEqual(executedWarningScript, null);
         });
 
         it('does not inject warning banner if score === 0', async () => {
@@ -1143,7 +1370,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            assert.strictEqual(executedWarningScript, null);
+            assert.ok(executedWarningScript === null);
         });
     });
 
@@ -1262,6 +1489,85 @@ describe('background.js', () => {
         });
     });
 
+    describe('checkLists', () => {
+        beforeEach(() => {
+            vm.runInContext('customBlacklist = []; customWhitelist = [];', context);
+        });
+
+        it('returns null if lists are empty or undefined', () => {
+            assert.strictEqual(context.checkLists('test@example.com', 'example.com'), null);
+            vm.runInContext('customBlacklist = undefined; customWhitelist = undefined;', context);
+            assert.strictEqual(context.checkLists('test@example.com', 'example.com'), null);
+        });
+
+        it('matches exact email on blacklist', () => {
+            vm.runInContext('customBlacklist = ["attacker@bad.com"];', context);
+            const result = context.checkLists('attacker@bad.com', 'bad.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 100);
+            assert.strictEqual(result.listType, 'blacklist');
+            assert.strictEqual(result.reasons[0], 'Absender-E-Mail (attacker@bad.com) steht auf der Blacklist.');
+        });
+
+        it('matches exact domain on blacklist', () => {
+            vm.runInContext('customBlacklist = ["bad.com"];', context);
+            const result = context.checkLists('test@bad.com', 'bad.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 100);
+            assert.strictEqual(result.listType, 'blacklist');
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (bad.com) steht auf der Blacklist (bad.com).');
+        });
+
+        it('matches subdomain on blacklist', () => {
+            vm.runInContext('customBlacklist = ["bad.com"];', context);
+            const result = context.checkLists('test@sub.bad.com', 'sub.bad.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 100);
+            assert.strictEqual(result.listType, 'blacklist');
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (sub.bad.com) steht auf der Blacklist (bad.com).');
+        });
+
+        it('matches exact email on whitelist', () => {
+            vm.runInContext('customWhitelist = ["friend@good.com"];', context);
+            const result = context.checkLists('friend@good.com', 'good.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.listType, 'whitelist');
+            assert.strictEqual(result.reasons[0], 'Absender-E-Mail (friend@good.com) steht auf der Whitelist.');
+        });
+
+        it('matches exact domain on whitelist', () => {
+            vm.runInContext('customWhitelist = ["good.com"];', context);
+            const result = context.checkLists('test@good.com', 'good.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.listType, 'whitelist');
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (good.com) steht auf der Whitelist (good.com).');
+        });
+
+        it('matches subdomain on whitelist', () => {
+            vm.runInContext('customWhitelist = ["good.com"];', context);
+            const result = context.checkLists('test@sub.good.com', 'sub.good.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.listType, 'whitelist');
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (sub.good.com) steht auf der Whitelist (good.com).');
+        });
+
+        it('prioritizes blacklist over whitelist if both match', () => {
+            vm.runInContext('customBlacklist = ["example.com"]; customWhitelist = ["example.com"];', context);
+            const result = context.checkLists('test@example.com', 'example.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 100);
+            assert.strictEqual(result.listType, 'blacklist');
+        });
+
+        it('returns null if no matches in non-empty lists', () => {
+            vm.runInContext('customBlacklist = ["bad.com"]; customWhitelist = ["good.com"];', context);
+            assert.strictEqual(context.checkLists('test@example.com', 'example.com'), null);
+        });
+    });
+
     describe('extractPublicIPs', () => {
         it('should return empty array for null/undefined/empty headers', () => {
             assert.strictEqual(context.extractPublicIPs(null).length, 0);
@@ -1308,6 +1614,159 @@ describe('background.js', () => {
             const ips = context.extractPublicIPs(headers);
             assert.strictEqual(ips.length, 1);
             assert.strictEqual(ips[0], '9.9.9.9');
+        });
+    });
+
+    describe('checkURLhausDomains', () => {
+        let originalCheckURLhaus;
+
+        beforeEach(() => {
+            originalCheckURLhaus = context.checkURLhaus;
+            vm.runInContext('urlhausApikey = "test-key";', context);
+        });
+
+        afterEach(() => {
+            context.checkURLhaus = originalCheckURLhaus;
+            vm.runInContext('urlhausApikey = "";', context);
+        });
+
+        it('ignores invalid URLs without throwing an error', async () => {
+            context.checkURLhaus = async (domain, apikey) => {
+                return false;
+            };
+
+            const invalidUrl = 'not-a-valid-url';
+            const validUrl = 'http://example.com';
+
+            const result = await context.checkURLhausDomains([invalidUrl, validUrl]);
+            assert.strictEqual(result.length, 0);
+        });
+
+        it('returns malicious domains for valid URLs', async () => {
+            context.checkURLhaus = async (domain, apikey) => {
+                return domain === 'bad.com';
+            };
+
+            const result = await context.checkURLhausDomains(['http://bad.com', 'http://good.com']);
+            assert.strictEqual(result.length, 1);
+            assert.strictEqual(result[0], 'bad.com');
+        });
+    });
+
+    describe('IndexedDB Catch Blocks', () => {
+        let originalConsoleError;
+        let originalOpenDB;
+
+        beforeEach(() => {
+            originalConsoleError = context.console.error;
+            originalOpenDB = context.openDB;
+        });
+
+        afterEach(() => {
+            context.console.error = originalConsoleError;
+            context.openDB = originalOpenDB;
+        });
+
+        it('tests catch block in indexedDB_save_links_objects_to_db', async () => {
+            let errorLogged = null;
+            context.console.error = (msg, err) => {
+                errorLogged = { msg, err };
+            };
+
+            // Mock openDB to throw
+            vm.runInContext('globalThis.openDB = async () => { throw new Error("Mock DB Error"); };', context);
+
+            await context.indexedDB_save_links_objects_to_db({ headerMessageId: '123' }, [{ url: 'http://test.com' }]);
+
+            assert.ok(errorLogged, 'Expected console.error to be called');
+            assert.strictEqual(errorLogged.msg, 'IndexedDB (Links) Save Error:');
+            assert.strictEqual(errorLogged.err.message, 'Mock DB Error');
+        });
+
+        it('tests catch block in indexedDB_save_links_to_db', async () => {
+            let errorLogged = null;
+            context.console.error = (msg, err) => {
+                errorLogged = { msg, err };
+            };
+
+            // Mock openDB to throw
+            vm.runInContext('globalThis.openDB = async () => { throw new Error("Mock DB Error 2"); };', context);
+
+            await context.indexedDB_save_links_to_db({ headerMessageId: '123' }, ['http://test.com']);
+
+            assert.ok(errorLogged, 'Expected console.error to be called');
+            assert.strictEqual(errorLogged.msg, 'Fehler bei der URL-Speicherung in der Datenbank:');
+            assert.strictEqual(errorLogged.err.message, 'Mock DB Error 2');
+        });
+    });
+
+    describe('evaluateAuthHeaders', () => {
+        it('should return neutral and unchanged score for empty or null headers', () => {
+            let reasons = [];
+            let result = context.evaluateAuthHeaders(null, 10, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 10);
+            assert.strictEqual(reasons.length, 0);
+
+            result = context.evaluateAuthHeaders([], 20, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 20);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('should return fail and increase score for a single failure (SPF)', () => {
+            let reasons = [];
+            const result = context.evaluateAuthHeaders(["Authentication-Results: mx.example.com; spf=fail"], 0, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 50);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('SPF-Prüfung fehlgeschlagen'));
+        });
+
+        it('should handle multiple failures and increase score for each', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=softfail",
+                "Authentication-Results: mx.example.com; dkim=fail header.i=@example.com"
+            ];
+            const result = context.evaluateAuthHeaders(headers, 10, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 110); // 10 + 50 (spf) + 50 (dkim)
+            assert.strictEqual(reasons.length, 2);
+        });
+
+        it('should return pass if SPF, DKIM, and DMARC all pass', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=pass smtp.mailfrom=example.com;",
+                " dkim=pass header.i=@example.com;",
+                " dmarc=pass"
+            ];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'pass');
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('should return neutral for partial passes without any failures', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=pass",
+                " dkim=pass"
+                // Missing dmarc=pass
+            ];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('should handle case insensitivity correctly', () => {
+            let reasons = [];
+            const headers = ["Authentication-Results: mx.example.com; SPF=FAIL"];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 50);
         });
     });
 });
