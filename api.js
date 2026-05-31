@@ -357,9 +357,6 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
         if (virustotal_stats) {
             renderVirusTotalStats(virustotal_stats, card);
         }
-
-    if (virustotal_stats) {
-        renderVirusTotalStats(virustotal_stats, card);
     }
 
     renderScannerResults(json_data.scanners, card);
