@@ -131,6 +131,7 @@ describe('background.js', () => {
             globalThis.calculateThreatScore = calculateThreatScore;
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
+            globalThis.evaluateSenderDomain = evaluateSenderDomain;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
             globalThis.checkURLhaus = checkURLhaus;
@@ -830,41 +831,42 @@ describe('background.js', () => {
         });
     });
 
-    describe('evaluateUrlhaus', () => {
-        it('returns original score and unmodified reasons if urlhausDomains is empty, null, or undefined', () => {
-            let score = 10;
-            let reasons = [];
-            assert.strictEqual(context.evaluateUrlhaus(null, score, reasons), 10);
-            assert.deepStrictEqual(reasons, []);
-
-            assert.strictEqual(context.evaluateUrlhaus(undefined, score, reasons), 10);
-            assert.deepStrictEqual(reasons, []);
-
-            assert.strictEqual(context.evaluateUrlhaus([], score, reasons), 10);
-            assert.deepStrictEqual(reasons, []);
+    describe('evaluateSenderDomain', () => {
+        it('returns initial score when senderDomain is empty', () => {
+            const result = context.evaluateSenderDomain('', 10, []);
+            assert.strictEqual(result.score, 10);
+            assert.strictEqual(result.senderMainDomain, '');
         });
 
-        it('adds 80 to score and appends a reason when one domain is provided', () => {
-            let score = 20;
-            let reasons = ['Initial reason.'];
-            const urlhausDomains = ['malicious.com'];
-            const newScore = context.evaluateUrlhaus(urlhausDomains, score, reasons);
-
-            assert.strictEqual(newScore, 100);
-            assert.strictEqual(reasons.length, 2);
-            assert.strictEqual(reasons[1], 'Domain (malicious.com) ist auf URLhaus als bösartig gelistet.');
+        it('identifies exact known brands without increasing score', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('service.paypal.com', 0, reasons);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.senderMainDomain, 'paypal.com');
+            assert.strictEqual(reasons.length, 0);
         });
 
-        it('adds 80 per domain to score and appends multiple reasons when multiple domains are provided', () => {
-            let score = 0;
-            let reasons = [];
-            const urlhausDomains = ['bad.com', 'evil.com'];
-            const newScore = context.evaluateUrlhaus(urlhausDomains, score, reasons);
+        it('increases score for typosquatted known brands (levenshtein distance 1 or 2)', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('paypel.com', 0, reasons);
+            assert.strictEqual(result.score, 60);
+            assert.strictEqual(result.senderMainDomain, 'paypel.com');
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('ähnelt verdächtig der bekannten Marke paypal.com'));
+        });
 
-            assert.strictEqual(newScore, 160);
-            assert.strictEqual(reasons.length, 2);
-            assert.strictEqual(reasons[0], 'Domain (bad.com) ist auf URLhaus als bösartig gelistet.');
-            assert.strictEqual(reasons[1], 'Domain (evil.com) ist auf URLhaus als bösartig gelistet.');
+        it('does not increase score for completely unknown, unrelated domains', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('some-random-domain.org', 0, reasons);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.senderMainDomain, 'some-random-domain.org');
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('ignores short domains from typosquatting checks to prevent false positives', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('a.b', 0, reasons);
+            assert.strictEqual(result.score, 0);
         });
     });
 
