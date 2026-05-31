@@ -131,6 +131,7 @@ describe('background.js', () => {
             globalThis.calculateThreatScore = calculateThreatScore;
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
+            globalThis.evaluateSenderDomain = evaluateSenderDomain;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.checkURLhaus = checkURLhaus;
             globalThis.knownSendersCache = knownSendersCache;
@@ -824,6 +825,45 @@ describe('background.js', () => {
             assert.strictEqual(result.status, 'ERROR');
             assert.strictEqual(result.details, 'Network offline');
             assert.strictEqual(errorLogged, true);
+        });
+    });
+
+    describe('evaluateSenderDomain', () => {
+        it('returns initial score when senderDomain is empty', () => {
+            const result = context.evaluateSenderDomain('', 10, []);
+            assert.strictEqual(result.score, 10);
+            assert.strictEqual(result.senderMainDomain, '');
+        });
+
+        it('identifies exact known brands without increasing score', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('service.paypal.com', 0, reasons);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.senderMainDomain, 'paypal.com');
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('increases score for typosquatted known brands (levenshtein distance 1 or 2)', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('paypel.com', 0, reasons);
+            assert.strictEqual(result.score, 60);
+            assert.strictEqual(result.senderMainDomain, 'paypel.com');
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('ähnelt verdächtig der bekannten Marke paypal.com'));
+        });
+
+        it('does not increase score for completely unknown, unrelated domains', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('some-random-domain.org', 0, reasons);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.senderMainDomain, 'some-random-domain.org');
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('ignores short domains from typosquatting checks to prevent false positives', () => {
+            const reasons = [];
+            const result = context.evaluateSenderDomain('a.b', 0, reasons);
+            assert.strictEqual(result.score, 0);
         });
     });
 
