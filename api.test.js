@@ -100,6 +100,96 @@ describe('escapeHTML', () => {
 });
 
 
+describe('renderInProgressStatus', () => {
+    let context;
+    let renderInProgressStatus;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _html: '',
+                        get innerHTML() { return this._html; },
+                        set innerHTML(val) {
+                            this._html = val;
+                            if (val === '') children.length = 0; // Clear childNodes on innerHTML = ''
+                        },
+                        get childNodes() { return children; },
+                        appendChild: function(child) { children.push(child); }
+                    };
+                    return el;
+                },
+                createTextNode: (text) => ({ textContent: text })
+            }
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+
+        // Load db.js first just like in other suites, to define global functions
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        // Instead of parsing the brittle regex, extract the function by properly accounting for braces,
+        // or just execute a cleaned up version of the whole file like other tests do.
+        // Other tests use: const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        // Let's emulate what get_hybrid_report_by_sha256 test does.
+        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        try {
+            vm.runInContext(wrappedCode, context);
+        } catch(e) {
+            // It might fail due to the async () => { ... })(); issue in the file,
+            // but the functions outside the IIFE are hoisted and available!
+        }
+
+        renderInProgressStatus = context.renderInProgressStatus;
+    });
+
+    it('renders correctly with json_data.sha256', () => {
+        const card = context.document.createElement('div');
+        const json_data = { sha256: 'test-sha-256-from-json' };
+        const hybrid_sha = 'fallback-sha-256';
+
+        renderInProgressStatus(json_data, hybrid_sha, card);
+
+        assert.strictEqual(card.childNodes.length, 2);
+
+        const pStatus = card.childNodes[0];
+        assert.strictEqual(pStatus.tagName, 'p');
+        assert.strictEqual(pStatus.className, 'text-warning');
+        assert.strictEqual(pStatus.childNodes.length, 2);
+        assert.strictEqual(pStatus.childNodes[0].tagName, 'strong');
+        assert.strictEqual(pStatus.childNodes[0].textContent, 'Status:');
+        assert.strictEqual(pStatus.childNodes[1].textContent, ' Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.');
+
+        const pHash = card.childNodes[1];
+        assert.strictEqual(pHash.tagName, 'p');
+        assert.strictEqual(pHash.textContent, 'SHA-256: test-sha-256-from-json');
+    });
+
+    it('renders correctly falling back to hybrid_sha when json_data.sha256 is missing', () => {
+        const card = context.document.createElement('div');
+        const json_data = {};
+        const hybrid_sha = 'fallback-sha-256';
+
+        renderInProgressStatus(json_data, hybrid_sha, card);
+
+        assert.strictEqual(card.childNodes.length, 2);
+
+        const pHash = card.childNodes[1];
+        assert.strictEqual(pHash.tagName, 'p');
+        assert.strictEqual(pHash.textContent, 'SHA-256: fallback-sha-256');
+    });
+});
+
+
 describe('get_hybrid_report_by_sha256', () => {
     let context;
     let get_hybrid_report_by_sha256;
