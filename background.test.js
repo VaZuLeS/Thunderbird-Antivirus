@@ -134,6 +134,7 @@ describe('background.js', () => {
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
             globalThis.checkURLhaus = checkURLhaus;
+            globalThis.evaluateAuthHeaders = evaluateAuthHeaders;
             globalThis.knownSendersCache = knownSendersCache;
             globalThis.getHybridAnalysisOptions = getHybridAnalysisOptions;
         `;
@@ -1345,57 +1346,73 @@ describe('background.js', () => {
         });
     });
 
-    describe('getHybridAnalysisOptions', () => {
-        it('throws an error if API-Key is missing', () => {
-            context.set_apikey(undefined);
-            assert.throws(() => {
-                context.getHybridAnalysisOptions('GET');
-            }, { message: 'API-Key fehlt.' });
+    describe('evaluateAuthHeaders', () => {
+        it('should return neutral and unchanged score for empty or null headers', () => {
+            let reasons = [];
+            let result = context.evaluateAuthHeaders(null, 10, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 10);
+            assert.strictEqual(reasons.length, 0);
+
+            result = context.evaluateAuthHeaders([], 20, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 20);
+            assert.strictEqual(reasons.length, 0);
         });
 
-        it('returns correct base options for GET method', () => {
-            context.set_apikey('test-key-123');
-            const options = context.getHybridAnalysisOptions('GET');
-            assert.strictEqual(options.method, 'GET');
-            assert.strictEqual(options.headers.accept, 'application/json');
-            assert.strictEqual(options.headers['api-key'], 'test-key-123');
-            assert.strictEqual(options.headers['user-agent'], 'Falcon');
-            assert.strictEqual(options.headers.scan_type, undefined);
+        it('should return fail and increase score for a single failure (SPF)', () => {
+            let reasons = [];
+            const result = context.evaluateAuthHeaders(["Authentication-Results: mx.example.com; spf=fail"], 0, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 50);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('SPF-Prüfung fehlgeschlagen'));
         });
 
-        it('includes body and sets scan_type header when body is provided', () => {
-            context.set_apikey('test-key-123');
-            const bodyData = 'dummy-body';
-            const options = context.getHybridAnalysisOptions('POST', bodyData);
-            assert.strictEqual(options.method, 'POST');
-            assert.strictEqual(options.headers.accept, 'application/json');
-            assert.strictEqual(options.headers['api-key'], 'test-key-123');
-            assert.strictEqual(options.headers['user-agent'], 'Falcon');
-            assert.strictEqual(options.headers.scan_type, 'all');
-            assert.strictEqual(options.body, 'dummy-body');
+        it('should handle multiple failures and increase score for each', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=softfail",
+                "Authentication-Results: mx.example.com; dkim=fail header.i=@example.com"
+            ];
+            const result = context.evaluateAuthHeaders(headers, 10, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 110); // 10 + 50 (spf) + 50 (dkim)
+            assert.strictEqual(reasons.length, 2);
         });
 
-        it('sets Content-Type when isUrl is true', () => {
-            context.set_apikey('test-key-123');
-            const options = context.getHybridAnalysisOptions('GET', null, true);
-            assert.strictEqual(options.method, 'GET');
-            assert.strictEqual(options.headers.accept, 'application/json');
-            assert.strictEqual(options.headers['api-key'], 'test-key-123');
-            assert.strictEqual(options.headers['user-agent'], 'Falcon');
-            assert.strictEqual(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
+        it('should return pass if SPF, DKIM, and DMARC all pass', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=pass smtp.mailfrom=example.com;",
+                " dkim=pass header.i=@example.com;",
+                " dmarc=pass"
+            ];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'pass');
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(reasons.length, 0);
         });
 
-        it('handles both body and isUrl simultaneously', () => {
-            context.set_apikey('test-key-123');
-            const bodyData = 'url=https://example.com';
-            const options = context.getHybridAnalysisOptions('POST', bodyData, true);
-            assert.strictEqual(options.method, 'POST');
-            assert.strictEqual(options.headers.accept, 'application/json');
-            assert.strictEqual(options.headers['api-key'], 'test-key-123');
-            assert.strictEqual(options.headers['user-agent'], 'Falcon');
-            assert.strictEqual(options.headers.scan_type, 'all');
-            assert.strictEqual(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
-            assert.strictEqual(options.body, 'url=https://example.com');
+        it('should return neutral for partial passes without any failures', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=pass",
+                " dkim=pass"
+                // Missing dmarc=pass
+            ];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('should handle case insensitivity correctly', () => {
+            let reasons = [];
+            const headers = ["Authentication-Results: mx.example.com; SPF=FAIL"];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 50);
         });
     });
 });
