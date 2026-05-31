@@ -20,3 +20,7 @@ When dealing with repeated I/O operations inside frequently invoked event hooks 
 ## 2024-05-27 - Merged DOM traversals for sanitization
 **Learning:** Using `querySelectorAll` to find and remove specific tags, followed by a `TreeWalker` pass to sanitize attributes, still traverses the DOM twice.
 **Action:** When performing multiple DOM checks or mutations (like removing tags and sanitizing attributes), merge them into a single `TreeWalker` pass. Check the `tagName` first against a precompiled `Set`, collect nodes for removal, and sanitize attributes on the rest. This eliminates a redundant full-tree traversal.
+
+## 2026-05-31 - Fast Byte to Hex String Conversion
+**Learning:** Using `Array.from(uint8array).map(b => b.toString(16).padStart(2, '0')).join('')` for generating hex strings (like SHA-256 hashes or IDs) creates a significant performance overhead and unnecessary garbage collection pressure due to mapping over an array and creating new string segments.
+**Action:** Use a precompiled hexadecimal Look Up Table (LUT) with a standard string concatenation `for` loop (`for (let j = 0; j < u8.length; j++) hex += byteToHex[u8[j]];`) to drastically improve string generation performance and avoid `Array.from()` memory allocations.
