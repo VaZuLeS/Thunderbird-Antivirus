@@ -1280,7 +1280,7 @@ describe('background.js', () => {
             assert.ok(result);
             assert.strictEqual(result.score, 100);
             assert.strictEqual(result.listType, 'blacklist');
-            assert.ok(result.reasons[0].includes('attacker@bad.com'));
+            assert.strictEqual(result.reasons[0], 'Absender-E-Mail (attacker@bad.com) steht auf der Blacklist.');
         });
 
         it('matches exact domain on blacklist', () => {
@@ -1289,7 +1289,7 @@ describe('background.js', () => {
             assert.ok(result);
             assert.strictEqual(result.score, 100);
             assert.strictEqual(result.listType, 'blacklist');
-            assert.ok(result.reasons[0].includes('bad.com'));
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (bad.com) steht auf der Blacklist (bad.com).');
         });
 
         it('matches subdomain on blacklist', () => {
@@ -1298,7 +1298,7 @@ describe('background.js', () => {
             assert.ok(result);
             assert.strictEqual(result.score, 100);
             assert.strictEqual(result.listType, 'blacklist');
-            assert.ok(result.reasons[0].includes('sub.bad.com'));
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (sub.bad.com) steht auf der Blacklist (bad.com).');
         });
 
         it('matches exact email on whitelist', () => {
@@ -1307,7 +1307,7 @@ describe('background.js', () => {
             assert.ok(result);
             assert.strictEqual(result.score, 0);
             assert.strictEqual(result.listType, 'whitelist');
-            assert.ok(result.reasons[0].includes('friend@good.com'));
+            assert.strictEqual(result.reasons[0], 'Absender-E-Mail (friend@good.com) steht auf der Whitelist.');
         });
 
         it('matches exact domain on whitelist', () => {
@@ -1316,7 +1316,7 @@ describe('background.js', () => {
             assert.ok(result);
             assert.strictEqual(result.score, 0);
             assert.strictEqual(result.listType, 'whitelist');
-            assert.ok(result.reasons[0].includes('good.com'));
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (good.com) steht auf der Whitelist (good.com).');
         });
 
         it('matches subdomain on whitelist', () => {
@@ -1325,7 +1325,7 @@ describe('background.js', () => {
             assert.ok(result);
             assert.strictEqual(result.score, 0);
             assert.strictEqual(result.listType, 'whitelist');
-            assert.ok(result.reasons[0].includes('sub.good.com'));
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (sub.good.com) steht auf der Whitelist (good.com).');
         });
 
         it('prioritizes blacklist over whitelist if both match', () => {
