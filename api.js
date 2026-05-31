@@ -89,19 +89,24 @@ try {
             if (hasAttachments || hasLinks) {
                 document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
+                // ⚡ Bolt Optimization: Use Promise.all to fetch reports concurrently instead of sequentially
+                let fetchPromises = [];
+
                 if (hasAttachments) {
                     for (const att of record.attachments) {
                         const hash256 = att.hybrid_sha256;
                         if (att.state === 'UNKNOWN') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                         } else {
-                            await get_hybrid_report_by_sha256(
-                                hash256,
-                                att.attachment_name,
-                                message.id,
-                                att.partName,
-                                message.headerMessageId,
-                                att.virustotal_stats
+                            fetchPromises.push(
+                                get_hybrid_report_by_sha256(
+                                    hash256,
+                                    att.attachment_name,
+                                    message.id,
+                                    att.partName,
+                                    message.headerMessageId,
+                                    att.virustotal_stats
+                                )
                             );
                         }
                     }
@@ -112,12 +117,18 @@ try {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId);
                         } else if (linkObj.hybrid_sha256) {
-                            await get_hybrid_report_by_sha256(
-                                linkObj.hybrid_sha256,
-                                linkObj.url
+                            fetchPromises.push(
+                                get_hybrid_report_by_sha256(
+                                    linkObj.hybrid_sha256,
+                                    linkObj.url
+                                )
                             );
                         }
                     }
+                }
+
+                if (fetchPromises.length > 0) {
+                    await Promise.all(fetchPromises);
                 }
             } else {
                  let p1 = document.createElement('p'); p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p1);
