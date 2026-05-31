@@ -124,8 +124,24 @@
 
             const url = linkElement.href;
 
+            let protocol;
+            try {
+                protocol = new URL(url).protocol.toLowerCase();
+            } catch (e) {
+                /* Ignore invalid URLs */
+                return;
+            }
+
+            // Block execution of dangerous protocols immediately
+            if (protocol === 'javascript:' || protocol === 'data:' || protocol === 'vbscript:') {
+                event.preventDefault();
+                event.stopPropagation();
+                console.warn('Thundy AV: Blocked dangerous URI scheme:', protocol);
+                return;
+            }
+
             // Only intercept http/https
-            if (!url.startsWith('http')) return;
+            if (protocol !== 'http:' && protocol !== 'https:') return;
 
             event.preventDefault();
             event.stopPropagation();
