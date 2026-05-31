@@ -117,8 +117,12 @@ describe('background.js', () => {
             globalThis.set_customWhitelist = (list) => { customWhitelist = list.map(s => s ? s.toLowerCase() : ""); };
             globalThis.get_apikey = () => apikey_hybridanalysis;
             globalThis.set_apikey = (val) => { apikey_hybridanalysis = val; };
+            globalThis.set_vt_apikey = (val) => { apikey_virustotal = val; };
             globalThis.tab_mail_open_display = tab_mail_open_display;
             globalThis.sent_to_hybrid_by_attachment = sent_to_hybrid_by_attachment;
+            globalThis.injectTimeOfClickProtection = injectTimeOfClickProtection;
+            globalThis.set_timeOfClickProtection = (val) => { timeOfClickProtection = val; };
+            globalThis.set_privacyTier = (val) => { privacyTier = val; };
             globalThis.get_sha256_hash = get_sha256_hash;
             globalThis.indexedDB_save_batch_hybrid_data_to_db = indexedDB_save_batch_hybrid_data_to_db;
             globalThis.handleManualUpload = handleManualUpload;
@@ -352,6 +356,8 @@ describe('background.js', () => {
 
     it('sent_to_hybrid_by_attachment processes valid attachments (known file)', async () => {
         context.set_apikey('test-key');
+        context.set_vt_apikey('test-vt-key');
+        context.set_privacyTier('balanced');
 
         let savedResults = null;
         context.indexedDB_save_batch_hybrid_data_to_db = (msg, results) => {
@@ -403,6 +409,8 @@ describe('background.js', () => {
 
     it('sent_to_hybrid_by_attachment processes valid attachments (unknown file)', async () => {
         context.set_apikey('test-key');
+        context.set_vt_apikey('test-vt-key');
+        context.set_privacyTier('balanced');
 
         let savedResults = null;
         context.indexedDB_save_batch_hybrid_data_to_db = (msg, results) => {
@@ -1150,12 +1158,82 @@ describe('background.js', () => {
         });
     });
 
+    describe('injectTimeOfClickProtection', () => {
+        let executedScripts = [];
+
+        beforeEach(() => {
+            executedScripts = [];
+            context.browser.scripting.executeScript = async (opts) => {
+                executedScripts.push(opts);
+            };
+        });
+
+        it('injects script when timeOfClickProtection is true and filteredUrls exist', async () => {
+            context.set_timeOfClickProtection(true);
+            const filteredUrls = ['http://malicious.com'];
+
+            await context.injectTimeOfClickProtection(10, filteredUrls);
+
+            assert.strictEqual(executedScripts.length, 1);
+            assert.strictEqual(executedScripts[0].target.tabId, 10);
+            assert.strictEqual(typeof executedScripts[0].func, 'function');
+            // The injected script for time of click does not take arguments
+            assert.strictEqual(executedScripts[0].args, undefined);
+        });
+
+        it('does not inject script when timeOfClickProtection is false', async () => {
+            context.set_timeOfClickProtection(false);
+            const filteredUrls = ['http://malicious.com'];
+
+            await context.injectTimeOfClickProtection(10, filteredUrls);
+
+            assert.strictEqual(executedScripts.length, 0);
+        });
+
+        it('does not inject script when filteredUrls is empty', async () => {
+            context.set_timeOfClickProtection(true);
+            const filteredUrls = [];
+
+            await context.injectTimeOfClickProtection(10, filteredUrls);
+
+            assert.strictEqual(executedScripts.length, 0);
+        });
+
+        it('handles executeScript error gracefully', async () => {
+            context.set_timeOfClickProtection(true);
+            const filteredUrls = ['http://malicious.com'];
+
+            context.browser.scripting.executeScript = async () => {
+                throw new Error("Simulated injection failure");
+            };
+
+            let errorLogged = false;
+            const originalConsoleLog = context.console.log;
+            context.console.log = (msg, e) => {
+                if (msg.includes("Fehler beim Injecten von Time-of-Click Styles")) {
+                    errorLogged = true;
+                }
+            };
+
+            try {
+                await context.injectTimeOfClickProtection(10, filteredUrls);
+                assert.strictEqual(errorLogged, true);
+            } finally {
+                context.console.log = originalConsoleLog;
+            }
+        });
+    });
+
     describe('tab_mail_open_display with threat score', () => {
         it('injects warning banner if score >= 50', async () => {
-            let executedWarningScript = null;
+            let executedWarningScripts = [];
             context.browser.scripting.executeScript = async (opts) => {
-                executedWarningScript = opts;
+                executedWarningScripts.push(opts);
             };
+
+            // disable timeOfClickProtection to avoid another executeScript call
+            context.set_timeOfClickProtection(false);
+            context.set_privacyTier('balanced');
 
             context.browser.messages.listAttachments = async () => ([]);
             context.browser.messages.getFull = async () => ({
@@ -1165,43 +1243,41 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal-support.com>', subject: 'Action required' });
 
-            assert.notStrictEqual(executedWarningScript, null);
+            const executedWarningScript = executedWarningScripts.find(s => s.args && s.args.length > 0);
+            assert.notStrictEqual(executedWarningScript, undefined);
             assert.strictEqual(executedWarningScript.target.tabId, 10);
             assert.strictEqual(typeof executedWarningScript.func, 'function');
             assert.strictEqual(executedWarningScript.args[0], 100); // 100 score
         });
 
         it('does not inject warning banner if score < 50', async () => {
-            let executedWarningScript = null;
+            let executedWarningScripts = [];
             context.browser.scripting.executeScript = async (opts) => {
-                // Ignore the time-of-click style injection script
-                if (opts.args && opts.args.length > 0) {
-                    executedWarningScript = opts;
-                }
+                executedWarningScripts.push(opts);
             };
+            context.set_timeOfClickProtection(false);
+            context.set_privacyTier('balanced');
 
             context.browser.messages.listAttachments = async () => ([]);
             context.browser.messages.getFull = async () => ({
-                contentType: 'text/html',
-                body: '<a href="http://paypal.com">Click</a>'
+                contentType: 'text/plain',
+                body: 'Just a normal text.'
             });
 
-            // "service@newsletter.paypal.com" has domain "newsletter.paypal.com", not quite "paypal.com" but close
-            // This might trigger a moderate score. Actually, let's use a known scenario that yields a score < 50 but > 0.
-            // If sender is "test@example.com" and body has no links matching sender, it adds 40.
+            // This will trigger a score of 20 because of the "Action required" subject and no other reasons.
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'User <user@example.com>', subject: 'Action required' });
 
-            assert.notStrictEqual(executedWarningScript, null);
-            assert.strictEqual(executedWarningScript.target.tabId, 10);
-            assert.strictEqual(typeof executedWarningScript.func, 'function');
-            assert.strictEqual(executedWarningScript.args[0], 40); // 40 score
+            const executedWarningScript = executedWarningScripts.find(s => s.args && s.args.length > 0);
+            assert.strictEqual(executedWarningScript, undefined);
         });
 
         it('does not inject warning banner if score === 0', async () => {
-            let executedWarningScript = null;
+            let executedWarningScripts = [];
             context.browser.scripting.executeScript = async (opts) => {
-                executedWarningScript = opts;
+                executedWarningScripts.push(opts);
             };
+            context.set_timeOfClickProtection(false);
+            context.set_privacyTier('balanced');
 
             context.browser.messages.listAttachments = async () => ([]);
             context.browser.messages.getFull = async () => ({
@@ -1211,7 +1287,8 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            assert.strictEqual(executedWarningScript, null);
+            const executedWarningScript = executedWarningScripts.find(s => s.args && s.args.length > 0);
+            assert.strictEqual(executedWarningScript, undefined);
         });
     });
 
