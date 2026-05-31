@@ -132,7 +132,9 @@ describe('background.js', () => {
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.extractPublicIPs = extractPublicIPs;
+            globalThis.getMainDomain = getMainDomain;
             globalThis.checkURLhaus = checkURLhaus;
+            globalThis.evaluateUrlhaus = evaluateUrlhaus;
             globalThis.knownSendersCache = knownSendersCache;
             globalThis.checkLists = checkLists;
         `;
@@ -828,6 +830,44 @@ describe('background.js', () => {
         });
     });
 
+    describe('evaluateUrlhaus', () => {
+        it('returns original score and unmodified reasons if urlhausDomains is empty, null, or undefined', () => {
+            let score = 10;
+            let reasons = [];
+            assert.strictEqual(context.evaluateUrlhaus(null, score, reasons), 10);
+            assert.deepStrictEqual(reasons, []);
+
+            assert.strictEqual(context.evaluateUrlhaus(undefined, score, reasons), 10);
+            assert.deepStrictEqual(reasons, []);
+
+            assert.strictEqual(context.evaluateUrlhaus([], score, reasons), 10);
+            assert.deepStrictEqual(reasons, []);
+        });
+
+        it('adds 80 to score and appends a reason when one domain is provided', () => {
+            let score = 20;
+            let reasons = ['Initial reason.'];
+            const urlhausDomains = ['malicious.com'];
+            const newScore = context.evaluateUrlhaus(urlhausDomains, score, reasons);
+
+            assert.strictEqual(newScore, 100);
+            assert.strictEqual(reasons.length, 2);
+            assert.strictEqual(reasons[1], 'Domain (malicious.com) ist auf URLhaus als bösartig gelistet.');
+        });
+
+        it('adds 80 per domain to score and appends multiple reasons when multiple domains are provided', () => {
+            let score = 0;
+            let reasons = [];
+            const urlhausDomains = ['bad.com', 'evil.com'];
+            const newScore = context.evaluateUrlhaus(urlhausDomains, score, reasons);
+
+            assert.strictEqual(newScore, 160);
+            assert.strictEqual(reasons.length, 2);
+            assert.strictEqual(reasons[0], 'Domain (bad.com) ist auf URLhaus als bösartig gelistet.');
+            assert.strictEqual(reasons[1], 'Domain (evil.com) ist auf URLhaus als bösartig gelistet.');
+        });
+    });
+
     describe('calculateThreatScore', () => {
         it('calculates threat score correctly for spf=fail', async () => {
             const author = 'Service <service@paypal.com>';
@@ -1388,6 +1428,76 @@ describe('background.js', () => {
             const ips = context.extractPublicIPs(headers);
             assert.strictEqual(ips.length, 1);
             assert.strictEqual(ips[0], '9.9.9.9');
+        });
+    });
+
+    describe('evaluateAuthHeaders', () => {
+        it('should return neutral and unchanged score for empty or null headers', () => {
+            let reasons = [];
+            let result = context.evaluateAuthHeaders(null, 10, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 10);
+            assert.strictEqual(reasons.length, 0);
+
+            result = context.evaluateAuthHeaders([], 20, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 20);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('should return fail and increase score for a single failure (SPF)', () => {
+            let reasons = [];
+            const result = context.evaluateAuthHeaders(["Authentication-Results: mx.example.com; spf=fail"], 0, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 50);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('SPF-Prüfung fehlgeschlagen'));
+        });
+
+        it('should handle multiple failures and increase score for each', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=softfail",
+                "Authentication-Results: mx.example.com; dkim=fail header.i=@example.com"
+            ];
+            const result = context.evaluateAuthHeaders(headers, 10, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 110); // 10 + 50 (spf) + 50 (dkim)
+            assert.strictEqual(reasons.length, 2);
+        });
+
+        it('should return pass if SPF, DKIM, and DMARC all pass', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=pass smtp.mailfrom=example.com;",
+                " dkim=pass header.i=@example.com;",
+                " dmarc=pass"
+            ];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'pass');
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('should return neutral for partial passes without any failures', () => {
+            let reasons = [];
+            const headers = [
+                "Authentication-Results: mx.example.com; spf=pass",
+                " dkim=pass"
+                // Missing dmarc=pass
+            ];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'neutral');
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('should handle case insensitivity correctly', () => {
+            let reasons = [];
+            const headers = ["Authentication-Results: mx.example.com; SPF=FAIL"];
+            const result = context.evaluateAuthHeaders(headers, 0, reasons);
+            assert.strictEqual(result.authStatus, 'fail');
+            assert.strictEqual(result.score, 50);
         });
     });
 });
