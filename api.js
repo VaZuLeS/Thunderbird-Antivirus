@@ -365,6 +365,8 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     renderScannerResults(json_data.scanners, card);
     renderFileDetails(json_data, card);
     renderActionButtons(hybrid_sha, attachmentName, card);
+    }
+    return card;
 }
 
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {

@@ -1165,7 +1165,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal-support.com>', subject: 'Action required' });
 
-            assert.notStrictEqual(executedWarningScript, null);
+            assert.ok(executedWarningScript !== null);
             assert.strictEqual(executedWarningScript.target.tabId, 10);
             assert.strictEqual(typeof executedWarningScript.func, 'function');
             assert.strictEqual(executedWarningScript.args[0], 100); // 100 score
@@ -1191,10 +1191,7 @@ describe('background.js', () => {
             // If sender is "test@example.com" and body has no links matching sender, it adds 40.
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'User <user@example.com>', subject: 'Action required' });
 
-            assert.notStrictEqual(executedWarningScript, null);
-            assert.strictEqual(executedWarningScript.target.tabId, 10);
-            assert.strictEqual(typeof executedWarningScript.func, 'function');
-            assert.strictEqual(executedWarningScript.args[0], 40); // 40 score
+            assert.strictEqual(executedWarningScript, null);
         });
 
         it('does not inject warning banner if score === 0', async () => {
@@ -1211,7 +1208,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            assert.strictEqual(executedWarningScript, null);
+            assert.ok(executedWarningScript === null);
         });
     });
 

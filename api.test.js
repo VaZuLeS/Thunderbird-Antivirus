@@ -53,7 +53,9 @@ describe('escapeHTML', () => {
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         // Prevent the IIFE from executing during test initialization
-        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
 
         escapeHTML = context.escapeHTML;
@@ -221,7 +223,9 @@ tag: tag,
         vm.runInContext(dbCode, context);
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
 
         get_hybrid_report_by_sha256 = context.get_hybrid_report_by_sha256;
@@ -410,7 +414,9 @@ describe('renderManualUrlScanUI', () => {
         vm.runInContext(dbCode, context);
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        const wrappedCode = code.replace(/^\(async function \(\) \{/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
 
         context.get_hybrid_report_by_sha256 = function(hash) {
@@ -489,7 +495,7 @@ describe('renderManualUrlScanUI', () => {
         await new Promise(r => setTimeout(r, 10));
 
         // Call the setTimeouts (the 3000ms one)
-        if (context.timeouts) {
+            if (context.timeouts) {
             context.timeouts.forEach(t => t.cb());
         }
 
@@ -499,5 +505,161 @@ describe('renderManualUrlScanUI', () => {
 
         const container = context.document.getElementById(`upload-container-${urlId}`);
         assert.strictEqual(container.removed, true);
+    });
+});
+describe('createUploadButton', () => {
+    let context;
+    let createUploadButton;
+
+    before(async () => {
+        context = {
+            browser: {
+                storage: { local: { get: async () => ({ apikey: 'test' }) } },
+                tabs: { query: async () => [{ id: 1 }] },
+                runtime: { sendMessage: async () => ({ status: 'success' }) }
+            },
+            document: {
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        className: '',
+                        textContent: '',
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) {
+                            this._id = val;
+                            if (!context.mockElements) context.mockElements = {};
+                            context.mockElements[val] = this;
+                        },
+                        setAttribute: () => {},
+                        removeAttribute: () => {},
+                        get childNodes() { return children; },
+                        appendChild: function(child) { children.push(child); },
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
+                        }
+                    };
+                    return el;
+                },
+                createTextNode: (text) => ({ textContent: text }),
+                getElementById: (id) => {
+                    if (id.startsWith('upload-container-')) {
+                        if (context.mockElements[id]) {
+                            context.mockElements[id].remove = function() { this.removed = true; };
+                            return context.mockElements[id];
+                        }
+                        return { remove: () => {} };
+                    }
+                    if (id.startsWith('btn-upload-')) {
+                        if (!context.mockElements) context.mockElements = {};
+                        if (!context.mockElements[id]) {
+                            context.mockElements[id] = {
+                                id: id,
+                                textContent: '',
+                                innerText: '',
+                                disabled: false,
+                                addEventListener: function(event, cb) {
+                                    this.clicks = this.clicks || [];
+                                    this.clicks.push(cb);
+                                },
+                                click: function() {
+                                    if (this.clicks) {
+                                        this.clicks.forEach(cb => cb.call(this));
+                                    }
+                                },
+                                removeAttribute: function() {},
+                                setAttribute: function() {},
+                                remove: function() { this.removed = true; }
+                            };
+                        }
+                        return context.mockElements[id];
+                    }
+                    if (id.startsWith('upload-status-')) {
+                         if (!context.mockElements) context.mockElements = {};
+                         if (!context.mockElements[id]) {
+                             context.mockElements[id] = { id: id, textContent: '', innerText: '' };
+                         }
+                         return context.mockElements[id];
+                    }
+                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '', appendChild: () => {}, addEventListener: () => {}, removeAttribute: () => {}, setAttribute: () => {}, remove: () => {} };
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            setTimeout: (cb, delay) => {
+                if (!context.timeouts) context.timeouts = [];
+                context.timeouts.push({ cb, delay });
+            },
+            String: String, Array: Array, TextEncoder: TextEncoder, Node: Object,
+            setElementText: function(id, text) {
+                let el = context.document.getElementById(id);
+                if (el) {
+                    el.textContent = text;
+                    el.innerText = text;
+                }
+            },
+            get_hybrid_report_by_sha256: function(hash, attachmentName, messageId, partName, headerMessageId) {
+                context.lastReportOpts = { hash, attachmentName, messageId, partName, headerMessageId };
+            }
+        };
+        context.messenger = context.browser;
+        const vm = require('vm');
+        const path = require('path');
+        const fs = require('fs');
+        vm.createContext(context);
+
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        vm.runInContext(wrappedCode, context);
+
+        createUploadButton = context.createUploadButton; context.get_hybrid_report_by_sha256 = function(hash) { context.lastReportOpts = { hash: hash }; };
+    });
+
+    it('handles successful upload properly', async () => {
+        const card = context.document.createElement('div');
+        const safeHash = 'safe123';
+        context.mockElements = {};
+        context.timeouts = [];
+
+        let sentMessage = null;
+        context.browser.runtime.sendMessage = function(msg) {
+            sentMessage = msg;
+            return {
+                then: function(cb) {
+                    cb({ status: 'success' });
+                    return { catch: function() {} };
+                }
+            };
+        };
+
+        createUploadButton(card, 'hash123', 'hash123', 'att.txt', 'msg123', 'part1', 'header123');
+
+        const btn = context.mockElements[`btn-upload-hash123`];
+
+        // click button
+        btn.click();
+
+        assert.strictEqual(sentMessage.action, 'uploadAttachment');
+        assert.strictEqual(sentMessage.attachmentName, 'att.txt');
+        assert.strictEqual(sentMessage.hash, 'hash123');
+
+        await new Promise(r => setTimeout(r, 10));
+
+        if (context.timeouts) {
+            context.timeouts.forEach(t => t.cb());
+        }
+
+        assert.ok(context.lastReportOpts, "get_hybrid_report_by_sha256 should be called");
+        assert.strictEqual(context.lastReportOpts.hash, 'hash123');
     });
 });
