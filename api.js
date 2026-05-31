@@ -665,32 +665,6 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
 
     let card = document.createElement('div');
     card.className = "card card-info mb-3";
-    card.id = `upload-container-${urlId}`;
-
-    let h2 = document.createElement('h2');
-    h2.textContent = `URL: ${url}`;
-    card.appendChild(h2);
-
-    let pInfo = document.createElement('p');
-    pInfo.className = "text-info";
-    pInfo.appendChild(document.createTextNode("Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie "));
-    const infoStrong = document.createElement('strong');
-    infoStrong.textContent = "nicht automatisch hochgeladen";
-    pInfo.appendChild(infoStrong);
-    pInfo.appendChild(document.createTextNode("."));
-    card.appendChild(pInfo);
-
-    createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
-    createCdrButton(card, safeHash, attachmentName, messageId, partName);
-
-    appendElementHtml('hybrid_analysis_api_content', card);
-}
-
-function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
-    let safeHash = escapeHTML(hash);
-
-    let card = document.createElement('div');
-    card.className = "card card-info mb-3";
     card.id = `upload-container-${safeHash}`;
 
     let h2 = document.createElement('h2');
