@@ -132,6 +132,7 @@ describe('background.js', () => {
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.evaluateSenderDomain = evaluateSenderDomain;
+            globalThis.evaluateBehavior = evaluateBehavior;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
             globalThis.checkURLhausDomains = checkURLhausDomains;
@@ -853,6 +854,61 @@ describe('background.js', () => {
             assert.strictEqual(result.status, 'ERROR');
             assert.strictEqual(result.details, 'Network offline');
             assert.strictEqual(errorLogged, true);
+        });
+    });
+
+    describe('evaluateBehavior', () => {
+        it('returns initial score when no urgency words and not first communication', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Meeting update', 'The meeting is at 10 AM', false, 10, reasons);
+            assert.strictEqual(result, 10);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('increases score by 10 for first communication without urgency words', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Hello', 'Nice to meet you', true, 0, reasons);
+            assert.strictEqual(result, 10);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.'));
+        });
+
+        it('increases score by 20 and logs urgency words when not first communication', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Dringend', 'Bitte überweisung sofort ausführen', false, 0, reasons);
+            assert.strictEqual(result, 20);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Dringlichkeits-Signalwörter gefunden'));
+            assert.ok(reasons[0].includes('dringend'));
+            assert.ok(reasons[0].includes('überweisung'));
+            assert.ok(reasons[0].includes('sofort'));
+        });
+
+        it('increases score by 50 and logs BEC for first communication with urgency words', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Invoice payment', 'The payment is urgent', true, 0, reasons);
+            assert.strictEqual(result, 50);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Mögliches BEC'));
+            assert.ok(reasons[0].includes('payment'));
+            assert.ok(reasons[0].includes('urgent'));
+        });
+
+        it('handles case insensitivity correctly', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('WICHTIG', 'ÜBERWEISUNG', true, 0, reasons);
+            assert.strictEqual(result, 50);
+            assert.ok(reasons[0].includes('wichtig'));
+            assert.ok(reasons[0].includes('überweisung'));
+        });
+
+        it('deduplicates urgency words', () => {
+            const reasons = [];
+            context.evaluateBehavior('Dringend dringend', 'Bitte dringend sofort', false, 0, reasons);
+            assert.ok(reasons[0].includes('dringend, sofort'));
+            // check that "dringend" is only printed once.
+            const matchCount = (reasons[0].match(/dringend/g) || []).length;
+            assert.strictEqual(matchCount, 1);
         });
     });
 
