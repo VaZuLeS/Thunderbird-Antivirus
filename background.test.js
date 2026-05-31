@@ -132,6 +132,7 @@ describe('background.js', () => {
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.extractPublicIPs = extractPublicIPs;
+            globalThis.getMainDomain = getMainDomain;
             globalThis.checkURLhaus = checkURLhaus;
             globalThis.knownSendersCache = knownSendersCache;
             globalThis.getHybridAnalysisOptions = getHybridAnalysisOptions;
@@ -825,6 +826,38 @@ describe('background.js', () => {
             assert.strictEqual(result.status, 'ERROR');
             assert.strictEqual(result.details, 'Network offline');
             assert.strictEqual(errorLogged, true);
+        });
+    });
+
+    describe('getMainDomain', () => {
+        it('should return exact known brand', async () => {
+            const domain = await vm.runInContext('getMainDomain("paypal.com")', context);
+            assert.strictEqual(domain, 'paypal.com');
+        });
+
+        it('should extract known brand from subdomain', async () => {
+            const domain = await vm.runInContext('getMainDomain("www.amazon.de")', context);
+            assert.strictEqual(domain, 'amazon.de');
+        });
+
+        it('should extract unknown domain with 2 parts', async () => {
+            const domain = await vm.runInContext('getMainDomain("example.com")', context);
+            assert.strictEqual(domain, 'example.com');
+        });
+
+        it('should extract unknown domain with multiple subdomains', async () => {
+            const domain = await vm.runInContext('getMainDomain("a.b.c.unknown.org")', context);
+            assert.strictEqual(domain, 'unknown.org');
+        });
+
+        it('should return domain as-is if no dots are present', async () => {
+            const domain = await vm.runInContext('getMainDomain("localhost")', context);
+            assert.strictEqual(domain, 'localhost');
+        });
+
+        it('should extract known brand even with deeper subdomains', async () => {
+            const domain = await vm.runInContext('getMainDomain("login.auth.facebook.com")', context);
+            assert.strictEqual(domain, 'facebook.com');
         });
     });
 
