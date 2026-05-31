@@ -136,7 +136,7 @@ describe('background.js', () => {
             globalThis.checkURLhaus = checkURLhaus;
             globalThis.evaluateUrlhaus = evaluateUrlhaus;
             globalThis.knownSendersCache = knownSendersCache;
-            globalThis.getHybridAnalysisOptions = getHybridAnalysisOptions;
+            globalThis.checkLists = checkLists;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -1300,6 +1300,85 @@ describe('background.js', () => {
             assert.ok(!result.includes('javascript:'), 'javascript URI should be removed from action/xlink:href');
             assert.ok(!result.includes('data:'), 'data URI should be removed from formaction');
             assert.ok(!result.includes('action="javascript'), 'action attribute should be removed/sanitized');
+        });
+    });
+
+    describe('checkLists', () => {
+        beforeEach(() => {
+            vm.runInContext('customBlacklist = []; customWhitelist = [];', context);
+        });
+
+        it('returns null if lists are empty or undefined', () => {
+            assert.strictEqual(context.checkLists('test@example.com', 'example.com'), null);
+            vm.runInContext('customBlacklist = undefined; customWhitelist = undefined;', context);
+            assert.strictEqual(context.checkLists('test@example.com', 'example.com'), null);
+        });
+
+        it('matches exact email on blacklist', () => {
+            vm.runInContext('customBlacklist = ["attacker@bad.com"];', context);
+            const result = context.checkLists('attacker@bad.com', 'bad.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 100);
+            assert.strictEqual(result.listType, 'blacklist');
+            assert.strictEqual(result.reasons[0], 'Absender-E-Mail (attacker@bad.com) steht auf der Blacklist.');
+        });
+
+        it('matches exact domain on blacklist', () => {
+            vm.runInContext('customBlacklist = ["bad.com"];', context);
+            const result = context.checkLists('test@bad.com', 'bad.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 100);
+            assert.strictEqual(result.listType, 'blacklist');
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (bad.com) steht auf der Blacklist (bad.com).');
+        });
+
+        it('matches subdomain on blacklist', () => {
+            vm.runInContext('customBlacklist = ["bad.com"];', context);
+            const result = context.checkLists('test@sub.bad.com', 'sub.bad.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 100);
+            assert.strictEqual(result.listType, 'blacklist');
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (sub.bad.com) steht auf der Blacklist (bad.com).');
+        });
+
+        it('matches exact email on whitelist', () => {
+            vm.runInContext('customWhitelist = ["friend@good.com"];', context);
+            const result = context.checkLists('friend@good.com', 'good.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.listType, 'whitelist');
+            assert.strictEqual(result.reasons[0], 'Absender-E-Mail (friend@good.com) steht auf der Whitelist.');
+        });
+
+        it('matches exact domain on whitelist', () => {
+            vm.runInContext('customWhitelist = ["good.com"];', context);
+            const result = context.checkLists('test@good.com', 'good.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.listType, 'whitelist');
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (good.com) steht auf der Whitelist (good.com).');
+        });
+
+        it('matches subdomain on whitelist', () => {
+            vm.runInContext('customWhitelist = ["good.com"];', context);
+            const result = context.checkLists('test@sub.good.com', 'sub.good.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.listType, 'whitelist');
+            assert.strictEqual(result.reasons[0], 'Absender-Domain (sub.good.com) steht auf der Whitelist (good.com).');
+        });
+
+        it('prioritizes blacklist over whitelist if both match', () => {
+            vm.runInContext('customBlacklist = ["example.com"]; customWhitelist = ["example.com"];', context);
+            const result = context.checkLists('test@example.com', 'example.com');
+            assert.ok(result);
+            assert.strictEqual(result.score, 100);
+            assert.strictEqual(result.listType, 'blacklist');
+        });
+
+        it('returns null if no matches in non-empty lists', () => {
+            vm.runInContext('customBlacklist = ["bad.com"]; customWhitelist = ["good.com"];', context);
+            assert.strictEqual(context.checkLists('test@example.com', 'example.com'), null);
         });
     });
 
