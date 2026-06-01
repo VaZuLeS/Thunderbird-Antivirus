@@ -1,0 +1,2 @@
+## 🧪 Testing Improvement Task - 2026-05-31
+Targeted the missing coverage for `injectTimeOfClickProtection`. Discovered test context isolation complexities because the node:test suite runs within a JS `vm`. Exposed the internal toggles (e.g., `timeOfClickProtection`) to `globalThis` to directly control extension state across test runs. Mocked `executeScript` to assert arguments and simulate promise rejections to verify the exception catch block.
