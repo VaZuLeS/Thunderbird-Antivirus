@@ -4,16 +4,14 @@ for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
 function escapeHTML(str) {
     if (!str) return '';
-    return String(str).replace(/[&<>"']/g, function(match) {
-        const escape = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-        };
-        return escape[match];
-    });
+    // ⚡ Bolt Optimization: Chained string replacement is faster than regex with a function callback
+    // that allocates a new dictionary object on every invocation.
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 let apikey_hybridanalysis;
