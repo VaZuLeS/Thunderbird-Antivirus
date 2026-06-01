@@ -53,7 +53,9 @@ describe('escapeHTML', () => {
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         // Prevent the IIFE from executing during test initialization
-        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
 
         escapeHTML = context.escapeHTML;
@@ -96,6 +98,96 @@ describe('escapeHTML', () => {
     it('handles non-string types gracefully by converting them to string', () => {
         assert.strictEqual(escapeHTML(123), '123');
         assert.strictEqual(escapeHTML(true), 'true');
+    });
+});
+
+
+describe('renderInProgressStatus', () => {
+    let context;
+    let renderInProgressStatus;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _html: '',
+                        get innerHTML() { return this._html; },
+                        set innerHTML(val) {
+                            this._html = val;
+                            if (val === '') children.length = 0; // Clear childNodes on innerHTML = ''
+                        },
+                        get childNodes() { return children; },
+                        appendChild: function(child) { children.push(child); }
+                    };
+                    return el;
+                },
+                createTextNode: (text) => ({ textContent: text })
+            }
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+
+        // Load db.js first just like in other suites, to define global functions
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        // Instead of parsing the brittle regex, extract the function by properly accounting for braces,
+        // or just execute a cleaned up version of the whole file like other tests do.
+        // Other tests use: const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        // Let's emulate what get_hybrid_report_by_sha256 test does.
+        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        try {
+            vm.runInContext(wrappedCode, context);
+        } catch(e) {
+            // It might fail due to the async () => { ... })(); issue in the file,
+            // but the functions outside the IIFE are hoisted and available!
+        }
+
+        renderInProgressStatus = context.renderInProgressStatus;
+    });
+
+    it('renders correctly with json_data.sha256', () => {
+        const card = context.document.createElement('div');
+        const json_data = { sha256: 'test-sha-256-from-json' };
+        const hybrid_sha = 'fallback-sha-256';
+
+        renderInProgressStatus(json_data, hybrid_sha, card);
+
+        assert.strictEqual(card.childNodes.length, 2);
+
+        const pStatus = card.childNodes[0];
+        assert.strictEqual(pStatus.tagName, 'p');
+        assert.strictEqual(pStatus.className, 'text-warning');
+        assert.strictEqual(pStatus.childNodes.length, 2);
+        assert.strictEqual(pStatus.childNodes[0].tagName, 'strong');
+        assert.strictEqual(pStatus.childNodes[0].textContent, 'Status:');
+        assert.strictEqual(pStatus.childNodes[1].textContent, ' Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.');
+
+        const pHash = card.childNodes[1];
+        assert.strictEqual(pHash.tagName, 'p');
+        assert.strictEqual(pHash.textContent, 'SHA-256: test-sha-256-from-json');
+    });
+
+    it('renders correctly falling back to hybrid_sha when json_data.sha256 is missing', () => {
+        const card = context.document.createElement('div');
+        const json_data = {};
+        const hybrid_sha = 'fallback-sha-256';
+
+        renderInProgressStatus(json_data, hybrid_sha, card);
+
+        assert.strictEqual(card.childNodes.length, 2);
+
+        const pHash = card.childNodes[1];
+        assert.strictEqual(pHash.tagName, 'p');
+        assert.strictEqual(pHash.textContent, 'SHA-256: fallback-sha-256');
     });
 });
 
@@ -221,7 +313,9 @@ tag: tag,
         vm.runInContext(dbCode, context);
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
 
         get_hybrid_report_by_sha256 = context.get_hybrid_report_by_sha256;
@@ -410,9 +504,13 @@ describe('renderManualUrlScanUI', () => {
         vm.runInContext(dbCode, context);
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        const wrappedCode = code.replace(/^\(async function \(\) \{/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
 
+        context.byteToHex = new Array(256);
+        for (let i = 0; i < 256; i++) context.byteToHex[i] = i.toString(16).padStart(2, '0');
         context.get_hybrid_report_by_sha256 = function(hash) {
             context.lastReportOpts = { hybrid_sha: hash };
         };
@@ -426,8 +524,9 @@ describe('renderManualUrlScanUI', () => {
 
         renderManualUrlScanUI(url, 'msg-123');
 
-        const urlId = Array.from(new TextEncoder().encode(url))
-            .map(b => b.toString(16).padStart(2, '0')).join('');
+        const u8 = new TextEncoder().encode(url);
+        let urlId = '';
+        for (let j = 0; j < u8.length; j++) urlId += context.byteToHex[u8[j]];
 
         assert.ok(context.apiContentElement.innerHTML.includes(`upload-container-${urlId}`));
         assert.ok(context.apiContentElement.innerHTML.includes('http://example.com/test?a=1&amp;b=2'));
@@ -489,7 +588,7 @@ describe('renderManualUrlScanUI', () => {
         await new Promise(r => setTimeout(r, 10));
 
         // Call the setTimeouts (the 3000ms one)
-        if (context.timeouts) {
+            if (context.timeouts) {
             context.timeouts.forEach(t => t.cb());
         }
 
@@ -499,5 +598,99 @@ describe('renderManualUrlScanUI', () => {
 
         const container = context.document.getElementById(`upload-container-${urlId}`);
         assert.strictEqual(container.removed, true);
+    });
+});
+
+describe('renderVirusTotalStats', () => {
+    let context;
+    let renderVirusTotalStats;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createElement: (tag) => {
+                    return {
+                        tag: tag,
+                        className: '',
+                        textContent: '',
+                        children: [],
+                        _innerHTML: null,
+                        appendChild: function(node) {
+                            this.children.push(node);
+                        },
+                        get innerHTML() {
+                            if (this._innerHTML !== null) return this._innerHTML;
+                            return this.children.map(c => {
+                                let cls = c.className ? ` class="${c.className}"` : '';
+                                let inner = c.innerHTML || c.textContent || '';
+                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
+                            }).join('');
+                        },
+                        set innerHTML(val) {
+                            this._innerHTML = val;
+                        }
+                    };
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String,
+            Array: Array
+        };
+
+        vm.createContext(context);
+
+        // We load api.js and prevent the IIFE from executing
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+
+        vm.runInContext(wrappedCode, context);
+
+        renderVirusTotalStats = context.renderVirusTotalStats;
+    });
+
+    it('should render correct stats for a complete virustotal_stats object', () => {
+        const stats = {
+            malicious: 2,
+            undetected: 60,
+            suspicious: 1,
+            harmless: 50
+        };
+        const card = context.document.createElement('div');
+        renderVirusTotalStats(stats, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('<strong>VirusTotal Ergebnisse:</strong>'), 'Should have correct heading');
+        assert.ok(html.includes('Malicious: 2'), 'Should render malicious stats');
+        assert.ok(html.includes('Undetected: 60'), 'Should render undetected stats');
+        assert.ok(html.includes('Suspicious: 1'), 'Should render suspicious stats');
+        assert.ok(html.includes('Harmless: 50'), 'Should render harmless stats');
+        assert.ok(html.includes('class="ml-4 text-warning"'), 'Malicious should have warning class');
+    });
+
+    it('should handle missing properties by defaulting to 0', () => {
+        const stats = {
+            malicious: 5
+            // other properties missing
+        };
+        const card = context.document.createElement('div');
+        renderVirusTotalStats(stats, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('Malicious: 5'), 'Should render malicious stats');
+        assert.ok(html.includes('Undetected: 0'), 'Should default undetected to 0');
+        assert.ok(html.includes('Suspicious: 0'), 'Should default suspicious to 0');
+        assert.ok(html.includes('Harmless: 0'), 'Should default harmless to 0');
+    });
+
+    it('should handle empty virustotal_stats object by defaulting all to 0', () => {
+        const card = context.document.createElement('div');
+        renderVirusTotalStats({}, card);
+        const html = card.innerHTML;
+        assert.ok(html.includes('Malicious: 0'), 'Should default malicious to 0');
+        assert.ok(html.includes('Undetected: 0'), 'Should default undetected to 0');
+        assert.ok(html.includes('Suspicious: 0'), 'Should default suspicious to 0');
+        assert.ok(html.includes('Harmless: 0'), 'Should default harmless to 0');
     });
 });

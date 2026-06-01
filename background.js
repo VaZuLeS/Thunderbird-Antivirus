@@ -33,6 +33,10 @@ function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     return options;
 }
 
+// ⚡ Bolt Optimization: Precompiled Hexadecimal Look-Up Table (LUT) for O(1) byte-to-hex conversion
+const byteToHex = new Array(256);
+for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
+
 // Precompiled Regexes for Performance
 const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
 const GLOBAL_URL_REGEX = /(https?:\/\/[^\s"'<>]+)/g;
@@ -751,8 +755,11 @@ function filterUrls(urls) {
 // Funktion zum Senden der Anhänge an Hybrid Analysis
 async function get_sha256_hash(fileData) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', fileData);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    const u8 = new Uint8Array(hashBuffer);
+    let hashStr = '';
+    // ⚡ Bolt Optimization: Use fast loop with LUT instead of Array.from().map().join('')
+    for (let j = 0; j < u8.length; j++) hashStr += byteToHex[u8[j]];
+    return hashStr;
 }
 
 async function handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, fileType) {
@@ -984,7 +991,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
       });
     }
   } catch (error) {
-    console.error('Fehler bei der Batch-Interaktion (Links Objects) mit der Datenbank:', error);
+    console.error('IndexedDB (Links) Save Error:', error);
   }
 }
 

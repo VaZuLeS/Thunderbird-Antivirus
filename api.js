@@ -1,15 +1,17 @@
+// ⚡ Bolt Optimization: Precompiled Hexadecimal Look-Up Table (LUT) for O(1) byte-to-hex conversion
+const byteToHex = new Array(256);
+for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
+
 function escapeHTML(str) {
     if (!str) return '';
-    return String(str).replace(/[&<>"']/g, function(match) {
-        const escape = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-        };
-        return escape[match];
-    });
+    // ⚡ Bolt Optimization: Chained string replacement is faster than regex with a function callback
+    // that allocates a new dictionary object on every invocation.
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 let apikey_hybridanalysis;
@@ -357,14 +359,13 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
         if (virustotal_stats) {
             renderVirusTotalStats(virustotal_stats, card);
         }
-
-    if (virustotal_stats) {
-        renderVirusTotalStats(virustotal_stats, card);
     }
 
     renderScannerResults(json_data.scanners, card);
     renderFileDetails(json_data, card);
     renderActionButtons(hybrid_sha, attachmentName, card);
+    }
+    return card;
 }
 
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
@@ -480,9 +481,10 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 function renderManualUrlScanUI(url, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
-    let urlId = Array.from(new TextEncoder().encode(url))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
+    const u8 = new TextEncoder().encode(url);
+    let urlId = '';
+    // ⚡ Bolt Optimization: Use fast loop with LUT instead of Array.from().map().join('')
+    for (let j = 0; j < u8.length; j++) urlId += byteToHex[u8[j]];
 
     let card = document.createElement('div');
     card.className = "card card-info mb-3";

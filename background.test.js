@@ -130,12 +130,15 @@ describe('background.js', () => {
             globalThis.filterUrls = filterUrls;
             globalThis.extractTextFromParts = extractTextFromParts;
             globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
+            globalThis.indexedDB_save_links_objects_to_db = indexedDB_save_links_objects_to_db;
             globalThis.handleUrlScan = handleUrlScan;
             globalThis.checkVirusTotal = checkVirusTotal;
             globalThis.calculateThreatScore = calculateThreatScore;
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
+            globalThis.evaluateLinks = evaluateLinks;
             globalThis.evaluateSenderDomain = evaluateSenderDomain;
+            globalThis.evaluateBehavior = evaluateBehavior;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
             globalThis.checkURLhausDomains = checkURLhausDomains;
@@ -187,6 +190,25 @@ describe('background.js', () => {
         const buffer = new TextEncoder().encode('test data').buffer;
         const hash = await context.get_sha256_hash(buffer);
         assert.strictEqual(hash, '916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9');
+    });
+
+    it('get_sha256_hash throws error if crypto.subtle.digest fails', async () => {
+        const buffer = new TextEncoder().encode('test data').buffer;
+        const originalDigest = context.crypto.subtle.digest;
+        context.crypto.subtle.digest = async () => {
+            throw new Error('Crypto API Error');
+        };
+
+        try {
+            await assert.rejects(
+                async () => {
+                    await context.get_sha256_hash(buffer);
+                },
+                { message: 'Crypto API Error' }
+            );
+        } finally {
+            context.crypto.subtle.digest = originalDigest;
+        }
     });
 
     it('tab_mail_open_display processes attachments correctly', async () => {
@@ -282,6 +304,12 @@ describe('background.js', () => {
         const urls = ['not_a_url', 'https://good-domain.com/', 'http://'];
         const filtered = context.filterUrls(urls);
         assert.deepStrictEqual(filtered, ['https://good-domain.com/']);
+    });
+
+    it('filterUrls triggers exception block for malformed URLs', () => {
+        const urls = ['::::', 'http://[::1', 'https://:80', 'https://good.com/'];
+        const filtered = context.filterUrls(urls);
+        assert.deepStrictEqual(filtered, ['https://good.com/']);
     });
 
     it('filterUrls handles empty array', () => {
@@ -521,6 +549,85 @@ describe('background.js', () => {
         assert.strictEqual(sentResponse.status, 'success');
     });
 
+
+    describe('checkVirusTotalIP', () => {
+        it('returns true if malicious > 0', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({
+                        data: {
+                            attributes: {
+                                last_analysis_stats: {
+                                    malicious: 1
+                                }
+                            }
+                        }
+                    })
+                });
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, true);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false if malicious === 0', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({
+                        data: {
+                            attributes: {
+                                last_analysis_stats: {
+                                    malicious: 0
+                                }
+                            }
+                        }
+                    })
+                });
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false if data is missing', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    json: async () => ({})
+                });
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('returns false and logs error on fetch failure', async () => {
+            const originalFetch = context.fetch;
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
+            try {
+                context.fetch = async () => {
+                    throw new Error("Network failure");
+                };
+                context.console.error = (msg, e) => {
+                    if (msg.includes("Fehler bei VirusTotal IP Abfrage")) {
+                        errorLogged = true;
+                    }
+                };
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, false);
+                assert.strictEqual(errorLogged, true);
+            } finally {
+                context.fetch = originalFetch;
+                context.console.error = originalConsoleError;
+            }
+        });
+    });
 
     describe('checkAbuseIPDB', () => {
         it('returns true if abuse confidence score is > 50', async () => {
@@ -861,6 +968,61 @@ describe('background.js', () => {
             assert.strictEqual(result.status, 'ERROR');
             assert.strictEqual(result.details, 'Network offline');
             assert.strictEqual(errorLogged, true);
+        });
+    });
+
+    describe('evaluateBehavior', () => {
+        it('returns initial score when no urgency words and not first communication', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Meeting update', 'The meeting is at 10 AM', false, 10, reasons);
+            assert.strictEqual(result, 10);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('increases score by 10 for first communication without urgency words', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Hello', 'Nice to meet you', true, 0, reasons);
+            assert.strictEqual(result, 10);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.'));
+        });
+
+        it('increases score by 20 and logs urgency words when not first communication', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Dringend', 'Bitte überweisung sofort ausführen', false, 0, reasons);
+            assert.strictEqual(result, 20);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Dringlichkeits-Signalwörter gefunden'));
+            assert.ok(reasons[0].includes('dringend'));
+            assert.ok(reasons[0].includes('überweisung'));
+            assert.ok(reasons[0].includes('sofort'));
+        });
+
+        it('increases score by 50 and logs BEC for first communication with urgency words', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('Invoice payment', 'The payment is urgent', true, 0, reasons);
+            assert.strictEqual(result, 50);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Mögliches BEC'));
+            assert.ok(reasons[0].includes('payment'));
+            assert.ok(reasons[0].includes('urgent'));
+        });
+
+        it('handles case insensitivity correctly', () => {
+            const reasons = [];
+            const result = context.evaluateBehavior('WICHTIG', 'ÜBERWEISUNG', true, 0, reasons);
+            assert.strictEqual(result, 50);
+            assert.ok(reasons[0].includes('wichtig'));
+            assert.ok(reasons[0].includes('überweisung'));
+        });
+
+        it('deduplicates urgency words', () => {
+            const reasons = [];
+            context.evaluateBehavior('Dringend dringend', 'Bitte dringend sofort', false, 0, reasons);
+            assert.ok(reasons[0].includes('dringend, sofort'));
+            // check that "dringend" is only printed once.
+            const matchCount = (reasons[0].match(/dringend/g) || []).length;
+            assert.strictEqual(matchCount, 1);
         });
     });
 
@@ -1243,8 +1405,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal-support.com>', subject: 'Action required' });
 
-            const executedWarningScript = executedWarningScripts.find(s => s.args && s.args.length > 0);
-            assert.notStrictEqual(executedWarningScript, undefined);
+            assert.ok(executedWarningScript !== null);
             assert.strictEqual(executedWarningScript.target.tabId, 10);
             assert.strictEqual(typeof executedWarningScript.func, 'function');
             assert.strictEqual(executedWarningScript.args[0], 100); // 100 score
@@ -1267,8 +1428,7 @@ describe('background.js', () => {
             // This will trigger a score of 20 because of the "Action required" subject and no other reasons.
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'User <user@example.com>', subject: 'Action required' });
 
-            const executedWarningScript = executedWarningScripts.find(s => s.args && s.args.length > 0);
-            assert.strictEqual(executedWarningScript, undefined);
+            assert.strictEqual(executedWarningScript, null);
         });
 
         it('does not inject warning banner if score === 0', async () => {
@@ -1287,8 +1447,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            const executedWarningScript = executedWarningScripts.find(s => s.args && s.args.length > 0);
-            assert.strictEqual(executedWarningScript, undefined);
+            assert.ok(executedWarningScript === null);
         });
     });
 
@@ -1568,6 +1727,53 @@ describe('background.js', () => {
             const result = await context.checkURLhausDomains(['http://bad.com', 'http://good.com']);
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], 'bad.com');
+        });
+    });
+
+    describe('IndexedDB Catch Blocks', () => {
+        let originalConsoleError;
+        let originalOpenDB;
+
+        beforeEach(() => {
+            originalConsoleError = context.console.error;
+            originalOpenDB = context.openDB;
+        });
+
+        afterEach(() => {
+            context.console.error = originalConsoleError;
+            context.openDB = originalOpenDB;
+        });
+
+        it('tests catch block in indexedDB_save_links_objects_to_db', async () => {
+            let errorLogged = null;
+            context.console.error = (msg, err) => {
+                errorLogged = { msg, err };
+            };
+
+            // Mock openDB to throw
+            vm.runInContext('globalThis.openDB = async () => { throw new Error("Mock DB Error"); };', context);
+
+            await context.indexedDB_save_links_objects_to_db({ headerMessageId: '123' }, [{ url: 'http://test.com' }]);
+
+            assert.ok(errorLogged, 'Expected console.error to be called');
+            assert.strictEqual(errorLogged.msg, 'IndexedDB (Links) Save Error:');
+            assert.strictEqual(errorLogged.err.message, 'Mock DB Error');
+        });
+
+        it('tests catch block in indexedDB_save_links_to_db', async () => {
+            let errorLogged = null;
+            context.console.error = (msg, err) => {
+                errorLogged = { msg, err };
+            };
+
+            // Mock openDB to throw
+            vm.runInContext('globalThis.openDB = async () => { throw new Error("Mock DB Error 2"); };', context);
+
+            await context.indexedDB_save_links_to_db({ headerMessageId: '123' }, ['http://test.com']);
+
+            assert.ok(errorLogged, 'Expected console.error to be called');
+            assert.strictEqual(errorLogged.msg, 'Fehler bei der URL-Speicherung in der Datenbank:');
+            assert.strictEqual(errorLogged.err.message, 'Mock DB Error 2');
         });
     });
 
