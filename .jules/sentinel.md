@@ -22,3 +22,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** A duplicate, broken definition of `renderManualUploadUI` in `api.js` contained reference errors (`url` and `urlId` were undefined). If triggered, it would crash the UI rendering, potentially allowing denial-of-service in the email parsing or analysis context.
 **Learning:** Duplicate, copy-pasted code segments can introduce hidden reference errors that manifest as crashes during execution. Always verify that variables used in string templates or DOM attribute assignments are properly scoped.
 **Prevention:** Utilize linting and strict mode to catch undefined variables at build/lint time. Remove dead or duplicate code to prevent it from accidentally being invoked.
+
+## 2026-06-03 - Unhandled URI Schemes in Time-of-Click Protection Bypass
+**Vulnerability:** In `content_script.js`, the Time-of-Click protection check for links only intercepts HTTP and HTTPS URLs. Links using alternative schemes supported by Thunderbird (like `file:`, `ftp:`, `smb:`, or `mailto:`) bypass the warning mechanisms, allowing potentially malicious local or network links to be opened without inspection.
+**Learning:** Only intercepting known safe protocols allows attackers to pivot to unexpected vectors that native desktop applications support.
+**Prevention:** If a security mechanism cannot validate a URI scheme, it should fail closed (block the click) rather than failing open (allowing the unhandled protocol to execute). Ensure default actions are prevented for unhandled protocols.
