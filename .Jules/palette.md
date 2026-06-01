@@ -23,3 +23,6 @@
 ## 2024-05-31 - Accessible Required Form Elements and Instructions
 **Learning:** Adding a visual `*` (wrapped in `aria-hidden="true"`) helps sighted users quickly identify required fields, while explicit `required` and `aria-describedby` attributes ensure screen readers announce the requirement and the associated setup instructions context immediately.
 **Action:** Always link complex setup instruction paragraphs directly to their corresponding input using `aria-describedby` and a unique wrapper ID so screen reader users aren't forced to navigate away to understand what is expected.
+## 2024-06-01 - Keyboard Accessibility for Modals/Dialogs
+**Learning:** When custom modals or dialogs are opened, they trap focus. For true keyboard accessibility (following WCAG guidelines), it's essential that users can dismiss these dialogs using the `Escape` key and that the focus is subsequently restored to the element that triggered the modal (e.g., the clicked link).
+**Action:** Always implement a `keydown` listener for the `Escape` key on custom modals, and store a reference to the triggering element so focus can be programmatically returned via `.focus()` upon dismissal.

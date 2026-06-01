@@ -71,6 +71,7 @@
         cancelBtn.textContent = 'Abbrechen';
         cancelBtn.addEventListener('click', () => {
             overlay.remove();
+            linkElement.focus();
         });
 
         buttonGroup.appendChild(cancelBtn);
@@ -79,6 +80,15 @@
 
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
+
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                overlay.remove();
+                linkElement.focus();
+            }
+        });
+
         cancelBtn.focus();
     }
 
