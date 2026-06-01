@@ -59,7 +59,7 @@ describe('content_script.js', () => {
         assert.strictEqual(messageSent, false);
     });
 
-    it('should ignore non-HTTP(S) links', async () => {
+    it('should allow legitimate non-HTTP(S) protocols like mailto:', async () => {
         let messageSent = false;
         sendMessageMock = async () => { messageSent = true; return { status: 'CLEAN' }; };
 
@@ -69,6 +69,21 @@ describe('content_script.js', () => {
 
         assert.strictEqual(messageSent, false);
         assert.strictEqual(event.defaultPrevented, false);
+    });
+
+    it('should block unhandled risky protocols like file:', async () => {
+        let messageSent = false;
+        sendMessageMock = async () => { messageSent = true; return { status: 'CLEAN' }; };
+
+        const fileLink = context.document.createElement('a');
+        fileLink.href = 'file:///etc/passwd';
+        context.document.body.appendChild(fileLink);
+
+        const event = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+        fileLink.dispatchEvent(event);
+
+        assert.strictEqual(messageSent, false);
+        assert.strictEqual(event.defaultPrevented, true);
     });
 
     it('should block dangerous URIs like javascript: and data:', async () => {

@@ -150,6 +150,14 @@
                 return;
             }
 
+            // Block local and unhandled risky protocols
+            if (protocol !== 'http:' && protocol !== 'https:' && protocol !== 'mailto:' && protocol !== 'tel:' && protocol !== 'cid:' && protocol !== 'mid:') {
+                event.preventDefault();
+                event.stopPropagation();
+                console.warn('Thundy AV: Blocked unhandled URI scheme:', protocol);
+                return;
+            }
+
             // Only intercept http/https
             if (protocol !== 'http:' && protocol !== 'https:') return;
 
