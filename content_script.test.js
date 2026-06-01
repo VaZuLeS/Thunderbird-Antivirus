@@ -202,9 +202,40 @@ describe('content_script.js', () => {
         const cancelBtn = warningOverlay.querySelector('.btn-success');
         assert.strictEqual(cancelBtn.textContent, 'Abbrechen');
 
+        let focusCalled = false;
+        link.focus = () => { focusCalled = true; };
+
         cancelBtn.click();
 
         assert.strictEqual(context.document.querySelector('.thundy-overlay'), null);
+        assert.strictEqual(focusCalled, true);
+    });
+
+    it('should remove the warning modal when Escape key is pressed', async () => {
+        sendMessageMock = async () => ({ status: 'UNKNOWN' });
+
+        const link = context.document.getElementById('unsafe-link');
+        const event = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+        link.dispatchEvent(event);
+
+        await new Promise(resolve => setImmediate(resolve));
+
+        const warningOverlay = context.document.querySelector('.thundy-overlay');
+        assert.ok(warningOverlay);
+
+        let focusCalled = false;
+        link.focus = () => { focusCalled = true; };
+
+        const modal = warningOverlay.querySelector('.thundy-modal');
+        const keydownEvent = new dom.window.KeyboardEvent('keydown', {
+            key: 'Escape',
+            bubbles: true,
+            cancelable: true
+        });
+        modal.dispatchEvent(keydownEvent);
+
+        assert.strictEqual(context.document.querySelector('.thundy-overlay'), null);
+        assert.strictEqual(focusCalled, true);
     });
 
     it('should remove the warning modal and allow click when Open Anyway is clicked', async () => {
