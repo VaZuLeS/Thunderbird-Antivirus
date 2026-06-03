@@ -1220,12 +1220,15 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
 // ⚡ Bolt Optimization: Precompiled Set for O(1) attribute lookup
 const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xlink:href']);
 
+// ⚡ Bolt Optimization: Precompiled Set for O(1) tag lookup.
+// Moved outside the function to avoid redundant memory allocations and garbage collection
+// overhead on every invocation, preserving the Set.has() performance benefit.
+const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link']);
+
 function disarmHTML(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
 
-    // ⚡ Bolt Optimization: Precompiled Set for O(1) tag lookup
-    const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link']);
     const nodesToRemove = [];
 
     // ⚡ Bolt Optimization: Merge tag removal and attribute sanitization into a single TreeWalker pass.
