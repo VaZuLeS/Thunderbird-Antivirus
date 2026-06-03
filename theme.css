@@ -102,7 +102,8 @@ button:active:not(:disabled) {
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible {
+textarea:focus-visible,
+a:focus-visible {
     outline: 2px solid var(--link-color);
     outline-offset: 2px;
 }
