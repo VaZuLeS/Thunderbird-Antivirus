@@ -30,3 +30,7 @@
 ## 2024-06-02 - Custom Focus Rings on Links
 **Learning:** In this project's design system (`theme.css`), custom `:focus-visible` styles with enhanced offsets and colors were applied to form inputs and buttons, but standard link elements (`<a>`) were omitted. This omission caused links to fall back to less visible browser default focus rings, creating an inconsistent keyboard navigation experience across the extension.
 **Action:** When defining custom focus ring styles (`outline`, `outline-offset`) for interactive elements in the design system, always explicitly include `a:focus-visible` to ensure a consistent and highly visible focus state for all tab-navigable elements.
+
+## 2024-06-03 - Disabling Irrelevant Form Inputs
+**Learning:** Displaying form inputs that are irrelevant based on other selections (e.g., an API key input when the provider is set to "Deaktiviert") causes user confusion.
+**Action:** Always dynamically disable irrelevant form inputs based on preceding select choices. Additionally, update the `title` and `placeholder` of the disabled input, and set `aria-disabled="true"` to explicitly convey the disabled context to assistive technologies.

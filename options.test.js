@@ -98,6 +98,26 @@ describe('options.js', () => {
         assert.strictEqual(context.document.getElementById('alwaysManual').checked, true);
         assert.strictEqual(context.document.getElementById('autoScanLinks').checked, true);
         assert.strictEqual(context.document.getElementById('timeOfClickProtection').checked, false);
+
+        // Initial provider is 'provider1' so api key should be enabled
+        const apiKeyInput = context.document.getElementById('ipReputationApiKey');
+        assert.strictEqual(apiKeyInput.disabled, false);
+        assert.strictEqual(apiKeyInput.title, '');
+        assert.strictEqual(apiKeyInput.placeholder, '');
+        assert.strictEqual(apiKeyInput.getAttribute('aria-disabled'), null);
+
+        // Simulate changing to 'none'
+        const providerSelect = context.document.getElementById('ipReputationProvider');
+        providerSelect.value = 'none';
+        const changeEvent = context.document.createEvent('Event');
+        changeEvent.initEvent('change', true, true);
+        providerSelect.dispatchEvent(changeEvent);
+
+        // Check if disabled correctly
+        assert.strictEqual(apiKeyInput.disabled, true);
+        assert.strictEqual(apiKeyInput.title, 'Wählen Sie zuerst einen Anbieter aus');
+        assert.strictEqual(apiKeyInput.placeholder, 'Deaktiviert');
+        assert.strictEqual(apiKeyInput.getAttribute('aria-disabled'), 'true');
     });
 
     it('should save settings when save button is clicked', async () => {
