@@ -27,3 +27,7 @@ When dealing with repeated I/O operations inside frequently invoked event hooks 
 
 **Learning:** Using `.replace(/[&<>"']/g, function(match) { return map[match]; })` with a new `map` object declared inside the callback causes unnecessary memory allocations and puts pressure on the garbage collector in hot paths like `escapeHTML`.
 **Action:** Replace regex function callbacks with either a pre-allocated static mapping object outside the function scope, or use a series of chained `.replace()` calls. Chained replace operations (e.g., `.replace(/&/g, '&amp;').replace(/</g, '&lt;')`) are highly optimized by the V8 engine and avoid per-match allocations, leading to measurable performance improvements (e.g., ~20% faster).
+
+## 2024-05-32 - Move Set initializations outside function scopes
+**Learning:** Initializing a `Set` inside a frequently called function (like `disarmHTML`) to use `Set.has()` for fast lookups incurs significant memory allocation overhead on every invocation. This negates the O(1) lookup speed advantage and causes high garbage collection pressure.
+**Action:** Always move static `Set` initializations to the module scope. This guarantees they are allocated only once while keeping the fast O(1) lookups in the hot path.
