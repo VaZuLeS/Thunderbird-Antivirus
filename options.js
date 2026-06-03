@@ -20,8 +20,32 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('autoScanLinks').checked = result.autoScanLinks || false;
       // Default für timeOfClickProtection ist true
       document.getElementById('timeOfClickProtection').checked = result.timeOfClickProtection !== undefined ? result.timeOfClickProtection : true;
-      document.getElementById('ipReputationProvider').value = result.ipReputationProvider || "none";
-      document.getElementById('ipReputationApiKey').value = result.ipReputationApiKey || "";
+
+      const providerSelect = document.getElementById('ipReputationProvider');
+      const apiKeyInput = document.getElementById('ipReputationApiKey');
+
+      providerSelect.value = result.ipReputationProvider || "none";
+      apiKeyInput.value = result.ipReputationApiKey || "";
+
+      function updateIpReputationApiKeyStatus() {
+          if (providerSelect.value === 'none') {
+              apiKeyInput.disabled = true;
+              apiKeyInput.title = 'Wählen Sie zuerst einen Anbieter aus';
+              apiKeyInput.placeholder = 'Deaktiviert';
+              apiKeyInput.setAttribute('aria-disabled', 'true');
+          } else {
+              apiKeyInput.disabled = false;
+              apiKeyInput.title = '';
+              apiKeyInput.placeholder = '';
+              apiKeyInput.removeAttribute('aria-disabled');
+          }
+      }
+
+      // Initiale Setzung
+      updateIpReputationApiKeyStatus();
+
+      // Event Listener für Änderungen
+      providerSelect.addEventListener('change', updateIpReputationApiKeyStatus);
     });
   });
   
