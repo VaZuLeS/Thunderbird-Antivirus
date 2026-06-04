@@ -34,3 +34,7 @@
 ## 2024-06-03 - Disabling Irrelevant Form Inputs
 **Learning:** Displaying form inputs that are irrelevant based on other selections (e.g., an API key input when the provider is set to "Deaktiviert") causes user confusion.
 **Action:** Always dynamically disable irrelevant form inputs based on preceding select choices. Additionally, update the `title` and `placeholder` of the disabled input, and set `aria-disabled="true"` to explicitly convey the disabled context to assistive technologies.
+
+## 2024-06-04 - Confirm Destructive Actions
+**Learning:** The 'Clear Cache' button executed immediately upon clicking, which could lead to accidental loss of data (e.g. analysis results). Providing a native confirmation dialog before performing such destructive actions prevents unintended consequences and creates a safer user experience.
+**Action:** Always add a confirmation step (like `confirm()`) before executing destructive actions, such as clearing caches, deleting items, or submitting unrecoverable state changes.

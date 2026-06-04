@@ -104,6 +104,9 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   document.getElementById('clearCache').addEventListener('click', async function() {
+    if (!confirm('Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse.')) {
+        return;
+    }
     const clearBtn = document.getElementById('clearCache');
     clearBtn.disabled = true;
     clearBtn.setAttribute('aria-busy', 'true');
