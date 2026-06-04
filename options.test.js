@@ -69,6 +69,7 @@ describe('options.js', () => {
                 error: () => {},
                 log: () => {}
             },
+            confirm: () => true, // default confirm behavior for tests
             setTimeout: (cb, ms) => cb() // fire immediately for tests
         };
 
@@ -217,6 +218,34 @@ describe('options.js', () => {
         assert.strictEqual(statusSpan.textContent, 'Cache erfolgreich geleert.');
         assert.strictEqual(statusSpan.className, 'text-success ml-2');
         assert.strictEqual(statusSpan.style.display, 'none');
+    });
+
+    it('should not clear cache when confirmation is cancelled', async () => {
+        let openDBCalled = false;
+        let clearStoreCalled = false;
+
+        context.confirm = () => false;
+
+        context.openDB = async (name, version) => {
+            openDBCalled = true;
+            return { db: true };
+        };
+
+        context.clearStore = async (db, storeName) => {
+            clearStoreCalled = true;
+            return true;
+        };
+
+        const clearBtn = context.document.getElementById('clearCache');
+        clearBtn.click();
+
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(openDBCalled, false);
+        assert.strictEqual(clearStoreCalled, false);
+
+        // Reset the mock
+        context.confirm = () => true;
     });
 
     it('should display info if cache is already empty or DB does not exist', async () => {
