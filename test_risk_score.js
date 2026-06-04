@@ -9,6 +9,9 @@ let authStatus = null;
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
 const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_WORDS.join('|')})(?=[^\\wäöüßÄÖÜ]|$)`, 'gi');
 
+let lev_prevRow = new Uint16Array(64);
+let lev_currRow = new Uint16Array(64);
+
 function levenshteinDistance(a, b) {
     if (a.length === 0) return b.length;
     if (b.length === 0) return a.length;
@@ -17,13 +20,20 @@ function levenshteinDistance(a, b) {
         let tmp = a; a = b; b = tmp;
     }
 
-    let prevRow = [];
+    if (a.length + 1 > lev_prevRow.length) {
+        lev_prevRow = new Uint16Array(a.length + 1);
+        lev_currRow = new Uint16Array(a.length + 1);
+    }
+
+    let prevRow = lev_prevRow;
+    let currRow = lev_currRow;
+
     for (let j = 0; j <= a.length; j++) prevRow[j] = j;
 
     for (let i = 1; i <= b.length; i++) {
-        let currRow = [i];
+        currRow[0] = i;
         for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+            if (b.charCodeAt(i - 1) === a.charCodeAt(j - 1)) {
                 currRow[j] = prevRow[j - 1];
             } else {
                 currRow[j] = 1 + Math.min(
@@ -33,7 +43,7 @@ function levenshteinDistance(a, b) {
                 );
             }
         }
-        prevRow = currRow;
+        let tmp = prevRow; prevRow = currRow; currRow = tmp;
     }
     return prevRow[a.length];
 }
