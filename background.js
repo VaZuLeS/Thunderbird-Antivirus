@@ -177,6 +177,9 @@ async function checkVirusTotalIP(ip, apikey) {
     return false;
 }
 
+let lev_prevRow = new Uint16Array(64);
+let lev_currRow = new Uint16Array(64);
+
 function levenshteinDistance(a, b) {
     if (a.length === 0) return b.length;
     if (b.length === 0) return a.length;
@@ -188,8 +191,14 @@ function levenshteinDistance(a, b) {
     // ⚡ Bolt Optimization: Use typed arrays (Uint16Array) and array pooling
     // to avoid garbage collection overhead in the hot loop.
     // charCodeAt is also faster than charAt.
-    let prevRow = new Uint16Array(a.length + 1);
-    let currRow = new Uint16Array(a.length + 1);
+    if (a.length + 1 > lev_prevRow.length) {
+        lev_prevRow = new Uint16Array(a.length + 1);
+        lev_currRow = new Uint16Array(a.length + 1);
+    }
+
+    let prevRow = lev_prevRow;
+    let currRow = lev_currRow;
+
     for (let j = 0; j <= a.length; j++) prevRow[j] = j;
 
     for (let i = 1; i <= b.length; i++) {

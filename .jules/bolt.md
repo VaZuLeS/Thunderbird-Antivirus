@@ -31,3 +31,7 @@ When dealing with repeated I/O operations inside frequently invoked event hooks 
 ## 2024-05-32 - Move Set initializations outside function scopes
 **Learning:** Initializing a `Set` inside a frequently called function (like `disarmHTML`) to use `Set.has()` for fast lookups incurs significant memory allocation overhead on every invocation. This negates the O(1) lookup speed advantage and causes high garbage collection pressure.
 **Action:** Always move static `Set` initializations to the module scope. This guarantees they are allocated only once while keeping the fast O(1) lookups in the hot path.
+
+## 2024-06-04 - True Array Pooling
+**Learning:** Re-allocating typed arrays (`new Uint16Array()`) inside a frequently called function (like `levenshteinDistance` in a loop) creates massive garbage collection overhead, even if intended for "array pooling". True pooling requires the buffers to be allocated *outside* the function scope.
+**Action:** Move typed array buffer allocations to the module/global level and reuse them by reference inside hot-path functions, dynamically expanding them only when the required size exceeds the pooled buffer size.
