@@ -145,6 +145,8 @@ describe('background.js', () => {
             globalThis.checkURLhaus = checkURLhaus;
             globalThis.evaluateUrlhaus = evaluateUrlhaus;
             globalThis.knownSendersCache = knownSendersCache;
+            globalThis.urlhausCache = urlhausCache;
+            globalThis.MAX_URLHAUS_CACHE_SIZE = MAX_URLHAUS_CACHE_SIZE;
             globalThis.checkLists = checkLists;
         `;
         context.URL = URL;
@@ -153,6 +155,7 @@ describe('background.js', () => {
         vm.runInContext(wrappedCode, context);
 
         if (context.knownSendersCache) context.knownSendersCache.clear();
+        if (context.urlhausCache) context.urlhausCache.clear();
     });
 
     it('should initialize successfully', () => {
@@ -1727,6 +1730,30 @@ describe('background.js', () => {
             const result = await context.checkURLhausDomains(['http://bad.com', 'http://good.com']);
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], 'bad.com');
+        });
+
+        it('should use the cache for repeated domain checks', async () => {
+            let apiCallCount = 0;
+            context.checkURLhaus = async (domain, apikey) => {
+                apiCallCount++;
+                return domain === 'bad.com';
+            };
+
+            // First call should increment apiCallCount
+            let result1 = await context.checkURLhausDomains(['http://bad.com']);
+            assert.strictEqual(apiCallCount, 1);
+            assert.strictEqual(result1.length, 1);
+
+            // Second call with the same domain should use cache, apiCallCount should remain 1
+            let result2 = await context.checkURLhausDomains(['http://bad.com']);
+            assert.strictEqual(apiCallCount, 1);
+            assert.strictEqual(result2.length, 1);
+
+            // Ensure cache size is respected
+            for (let i = 0; i < context.MAX_URLHAUS_CACHE_SIZE + 10; i++) {
+                await context.checkURLhausDomains([`http://domain${i}.com`]);
+            }
+            assert.strictEqual(context.urlhausCache.size, context.MAX_URLHAUS_CACHE_SIZE);
         });
     });
 
