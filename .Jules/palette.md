@@ -38,3 +38,7 @@
 ## 2024-06-04 - Confirm Destructive Actions
 **Learning:** The 'Clear Cache' button executed immediately upon clicking, which could lead to accidental loss of data (e.g. analysis results). Providing a native confirmation dialog before performing such destructive actions prevents unintended consequences and creates a safer user experience.
 **Action:** Always add a confirmation step (like `confirm()`) before executing destructive actions, such as clearing caches, deleting items, or submitting unrecoverable state changes.
+
+## 2026-06-07 - Redundant ARIA Disabled Attribute
+**Learning:** Adding `aria-disabled="true"` to standard HTML input elements (like text inputs) that already use the native `disabled` attribute is redundant and unnecessary. The native `disabled` attribute already conveys the disabled state to assistive technologies automatically.
+**Action:** Always rely solely on the native `disabled` attribute for standard HTML form elements to indicate disabled state, avoiding redundant ARIA attributes that clutter the DOM without providing additional accessibility value.

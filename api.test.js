@@ -1,7 +1,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const { describe, it, before } = require('node:test');
+const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert');
 
 describe('escapeHTML', () => {
@@ -145,9 +145,10 @@ describe('renderInProgressStatus', () => {
 
         // Instead of parsing the brittle regex, extract the function by properly accounting for braces,
         // or just execute a cleaned up version of the whole file like other tests do.
-        // Other tests use: const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+
         // Let's emulate what get_hybrid_report_by_sha256 test does.
-        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         try {
             vm.runInContext(wrappedCode, context);
         } catch(e) {
@@ -195,6 +196,109 @@ describe('renderInProgressStatus', () => {
     });
 });
 
+
+describe('renderThreatInfo', () => {
+    let context;
+    let renderThreatInfo;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createTextNode: (text) => ({ textContent: text, nodeType: 3 }),
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _html: '',
+                        setAttribute: () => {},
+                        get innerHTML() { return this._html; },
+                        set innerHTML(val) {
+                            this._html = val;
+                            if (val === '') children.length = 0; // Clear childNodes on innerHTML = ''
+                        },
+                        get childNodes() { return children; },
+                        appendChild: function(child) { children.push(child); }
+                    };
+                    return el;
+                }
+            }
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+
+        // Load db.js first just like in other suites, to define global functions
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        try {
+            vm.runInContext(wrappedCode, context);
+        } catch(e) {
+            // It might fail due to the async () => { ... })(); issue in the file,
+            // but the functions outside the IIFE are hoisted and available!
+        }
+
+        renderThreatInfo = context.renderThreatInfo;
+    });
+
+    it('renders low threat score with text-success class', () => {
+        const card = context.document.createElement('div');
+        const json_data = { threat_score: 10, verdict: 'clean' };
+        renderThreatInfo(json_data, card);
+        const pThreat = card.childNodes[0];
+        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-success');
+        assert.strictEqual(pThreat.childNodes[2].className, 'text-success');
+        assert.strictEqual(pThreat.childNodes[2].textContent, 10);
+    });
+
+    it('renders medium threat score with text-warning class', () => {
+        const card = context.document.createElement('div');
+        const json_data = { threat_score: 60, verdict: 'suspicious' };
+        renderThreatInfo(json_data, card);
+        const pThreat = card.childNodes[0];
+        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-warning');
+        assert.strictEqual(pThreat.childNodes[2].className, 'text-warning');
+        assert.strictEqual(pThreat.childNodes[2].textContent, 60);
+    });
+
+    it('renders high threat score with text-danger class', () => {
+        const card = context.document.createElement('div');
+        const json_data = { threat_score: 90, verdict: 'malicious' };
+        renderThreatInfo(json_data, card);
+        const pThreat = card.childNodes[0];
+        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-danger');
+        assert.strictEqual(pThreat.childNodes[2].className, 'text-danger');
+        assert.strictEqual(pThreat.childNodes[2].textContent, 90);
+    });
+
+    it('renders fallback N/A values for missing optional fields', () => {
+        const card = context.document.createElement('div');
+        const json_data = { threat_score: 10, verdict: 'clean' };
+        renderThreatInfo(json_data, card);
+        const pVxFamily = card.childNodes[2];
+        assert.strictEqual(pVxFamily.childNodes[1].textContent, ' N/A');
+        const pMulti = card.childNodes[3];
+        assert.strictEqual(pMulti.textContent, 'Multiscan-Ergebnis: N/A');
+        const pAnalysisTime = card.childNodes[5];
+        assert.strictEqual(pAnalysisTime.textContent, 'Analysis start time: N/A');
+        const pTags = card.childNodes[6];
+        assert.strictEqual(pTags.textContent, 'Tags: N/A');
+    });
+
+    it('renders tags correctly when provided as an array', () => {
+        const card = context.document.createElement('div');
+        const json_data = { threat_score: 10, verdict: 'clean', tags: ['pdf', 'phishing'] };
+        renderThreatInfo(json_data, card);
+        const pTags = card.childNodes[6];
+        assert.strictEqual(pTags.textContent, 'Tags: pdf, phishing');
+    });
+});
 
 describe('get_hybrid_report_by_sha256', () => {
     let context;

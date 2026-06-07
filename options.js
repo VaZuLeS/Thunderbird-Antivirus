@@ -32,12 +32,10 @@ document.addEventListener('DOMContentLoaded', function() {
               apiKeyInput.disabled = true;
               apiKeyInput.title = 'Wählen Sie zuerst einen Anbieter aus';
               apiKeyInput.placeholder = 'Deaktiviert';
-              apiKeyInput.setAttribute('aria-disabled', 'true');
           } else {
               apiKeyInput.disabled = false;
               apiKeyInput.title = '';
               apiKeyInput.placeholder = '';
-              apiKeyInput.removeAttribute('aria-disabled');
           }
       }
 
