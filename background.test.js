@@ -150,6 +150,7 @@ describe('background.js', () => {
             globalThis.MAX_URLHAUS_CACHE_SIZE = MAX_URLHAUS_CACHE_SIZE;
             globalThis.checkLists = checkLists;
             globalThis.handle_unknown_attachment = handle_unknown_attachment;
+            globalThis.getHybridAnalysisOptions = getHybridAnalysisOptions;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -1966,6 +1967,56 @@ describe('background.js', () => {
 
             context.console.log = originalLog;
             assert.strictEqual(result, false);
+        });
+    });
+
+    describe('getHybridAnalysisOptions', () => {
+        it('throws an error if apikey_hybridanalysis is not set', () => {
+            context.set_apikey(''); // Clear API key
+            assert.throws(() => {
+                context.getHybridAnalysisOptions('GET');
+            }, /API-Key fehlt/);
+        });
+
+        it('returns correct options for basic GET request (no body, isUrl=false)', () => {
+            context.set_apikey('test-key');
+            const options = context.getHybridAnalysisOptions('GET');
+            assert.strictEqual(options.method, 'GET');
+            assert.strictEqual(options.headers.accept, 'application/json');
+            assert.strictEqual(options.headers['api-key'], 'test-key');
+            assert.strictEqual(options.headers['user-agent'], 'Falcon');
+            assert.strictEqual(options.body, undefined);
+            assert.strictEqual(options.headers['scan_type'], undefined);
+            assert.strictEqual(options.headers['Content-Type'], undefined);
+        });
+
+        it('returns correct options when body is provided', () => {
+            context.set_apikey('test-key');
+            const body = 'test-body';
+            const options = context.getHybridAnalysisOptions('POST', body);
+            assert.strictEqual(options.method, 'POST');
+            assert.strictEqual(options.body, 'test-body');
+            assert.strictEqual(options.headers['scan_type'], 'all');
+            assert.strictEqual(options.headers['Content-Type'], undefined);
+        });
+
+        it('returns correct options when isUrl is true', () => {
+            context.set_apikey('test-key');
+            const options = context.getHybridAnalysisOptions('POST', null, true);
+            assert.strictEqual(options.method, 'POST');
+            assert.strictEqual(options.body, undefined);
+            assert.strictEqual(options.headers['scan_type'], undefined);
+            assert.strictEqual(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
+        });
+
+        it('returns correct options when both body and isUrl are provided', () => {
+            context.set_apikey('test-key');
+            const body = 'url=http://example.com';
+            const options = context.getHybridAnalysisOptions('POST', body, true);
+            assert.strictEqual(options.method, 'POST');
+            assert.strictEqual(options.body, 'url=http://example.com');
+            assert.strictEqual(options.headers['scan_type'], 'all');
+            assert.strictEqual(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
         });
     });
 
