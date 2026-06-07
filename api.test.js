@@ -1,7 +1,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const { describe, it, before } = require('node:test');
+const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert');
 
 describe('escapeHTML', () => {
@@ -695,6 +695,186 @@ describe('renderVirusTotalStats', () => {
         assert.ok(html.includes('Undetected: 0'), 'Should default undetected to 0');
         assert.ok(html.includes('Suspicious: 0'), 'Should default suspicious to 0');
         assert.ok(html.includes('Harmless: 0'), 'Should default harmless to 0');
+    });
+});
+
+
+describe('createCdrButton', () => {
+    let context;
+    let createCdrButton;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createElement: (tag) => {
+                    return {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        innerText: '',
+                        id: '',
+                        _attributes: {},
+                        setAttribute: function(name, val) { this._attributes[name] = val; },
+                        removeAttribute: function(name) { delete this._attributes[name]; },
+                        addEventListener: function(evt, cb) {
+                            if (!this._listeners) this._listeners = {};
+                            this._listeners[evt] = cb;
+                        },
+                        click: function() {
+                            if (this._listeners && this._listeners['click']) {
+                                this._listeners['click'].call(this);
+                            }
+                        }
+                    };
+                },
+                getElementById: function(id) {
+                    return context.mockElements ? context.mockElements[id] : null;
+                }
+            },
+            setElementText: function(id, text) {
+                if (context.mockElements && context.mockElements[id]) {
+                    context.mockElements[id].innerText = text;
+                }
+            },
+            browser: {
+                runtime: {
+                    sendMessage: async (msg) => {
+                        context.lastMessage = msg;
+                        if (context.sendMessageMockResponse !== undefined) {
+                            return context.sendMessageMockResponse;
+                        }
+                        if (context.sendMessageMockError !== undefined) {
+                            throw context.sendMessageMockError;
+                        }
+                        return { status: 'success' };
+                    }
+                }
+            },
+            mockElements: {},
+            lastMessage: null,
+            String: String,
+            Array: Array
+        };
+        const vm = require('vm');
+        const path = require('path');
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        vm.runInContext(wrappedCode, context);
+
+        createCdrButton = context.createCdrButton;
+    });
+
+    beforeEach(() => {
+        context.mockElements = {};
+        context.lastMessage = null;
+        context.sendMessageMockResponse = undefined;
+        context.sendMessageMockError = undefined;
+    });
+
+    it('returns early if attachmentName is missing or not .html/.htm', () => {
+        let card = { appendChild: function(child) { if (!this.childNodes) this.childNodes = []; this.childNodes.push(child); } };
+
+        createCdrButton(card, 'hash', undefined, 'msg1', 'part1');
+        assert.strictEqual(card.childNodes, undefined);
+
+        createCdrButton(card, 'hash', 'test.txt', 'msg1', 'part1');
+        assert.strictEqual(card.childNodes, undefined);
+
+        createCdrButton(card, 'hash', 'test.exe', 'msg1', 'part1');
+        assert.strictEqual(card.childNodes, undefined);
+    });
+
+    it('creates button and status element for .html files', () => {
+        let card = { appendChild: function(child) { if (!this.childNodes) this.childNodes = []; this.childNodes.push(child); } };
+
+        createCdrButton(card, 'hash123', 'test.html', 'msg1', 'part1');
+
+        assert.strictEqual(card.childNodes.length, 2);
+
+        const btn = card.childNodes[0];
+        assert.strictEqual(btn.tagName, 'button');
+        assert.strictEqual(btn.id, 'btn-cdr-hash123');
+        assert.strictEqual(btn.textContent, 'Bereinigen & Herunterladen (Lokales CDR)');
+
+        const statusEl = card.childNodes[1];
+        assert.strictEqual(statusEl.tagName, 'p');
+        assert.strictEqual(statusEl.id, 'cdr-status-hash123');
+        assert.strictEqual(statusEl._attributes['aria-live'], 'polite');
+    });
+
+    it('handles button click and successful download message', async () => {
+        let card = { appendChild: function(child) { if (!this.childNodes) this.childNodes = []; this.childNodes.push(child); } };
+        createCdrButton(card, 'hash456', 'index.htm', 'msg2', 'part2');
+
+        const btn = card.childNodes[0];
+        const statusEl = card.childNodes[1];
+        context.mockElements['cdr-status-hash456'] = statusEl;
+
+        context.sendMessageMockResponse = { status: 'success' };
+
+        btn.click();
+
+        // Assert synchronous state changes
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn._attributes['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Bereinige...');
+        assert.strictEqual(statusEl.innerText, 'Lokales CDR wird durchgeführt...');
+
+        assert.strictEqual(context.lastMessage.action, 'downloadDisarmed');
+        assert.strictEqual(context.lastMessage.messageId, 'msg2');
+        assert.strictEqual(context.lastMessage.partName, 'part2');
+        assert.strictEqual(context.lastMessage.attachmentName, 'index.htm');
+
+        // Wait a tick for promise to resolve
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(statusEl.innerText, 'Herunterladen erfolgreich initiiert.');
+        assert.strictEqual(btn._attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Bereinigt');
+    });
+
+    it('handles button click and failure download message', async () => {
+        let card = { appendChild: function(child) { if (!this.childNodes) this.childNodes = []; this.childNodes.push(child); } };
+        createCdrButton(card, 'hash789', 'index.htm', 'msg3', 'part3');
+
+        const btn = card.childNodes[0];
+        const statusEl = card.childNodes[1];
+        context.mockElements['cdr-status-hash789'] = statusEl;
+
+        context.sendMessageMockResponse = { status: 'error', message: 'Not found' };
+
+        btn.click();
+
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(statusEl.innerText, 'Fehler beim Herunterladen: Not found');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn._attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles button click and communication error', async () => {
+        let card = { appendChild: function(child) { if (!this.childNodes) this.childNodes = []; this.childNodes.push(child); } };
+        createCdrButton(card, 'hash000', 'index.htm', 'msg4', 'part4');
+
+        const btn = card.childNodes[0];
+        const statusEl = card.childNodes[1];
+        context.mockElements['cdr-status-hash000'] = statusEl;
+
+        context.sendMessageMockError = new Error('Network timeout');
+
+        btn.click();
+
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(statusEl.innerText, 'Kommunikationsfehler: Error: Network timeout');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn._attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 });
 
