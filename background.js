@@ -617,7 +617,6 @@ async function checkURLhausDomains(filteredUrls) {
 
 async function injectThreatBanner(tabId, threat) {
     if (threat.score >= 50) {
-        console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
         await browser.scripting.executeScript({
             target: { tabId: tabId },
             func: function(score, reasons, authStatus) {
