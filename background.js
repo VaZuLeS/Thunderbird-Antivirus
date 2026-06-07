@@ -526,12 +526,22 @@ async function checkIPReputation(receivedHeaders) {
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
         let ipChecks = publicIps.map(async (ip) => {
+            if (ipReputationCache.has(ip)) {
+                return { ip, isMalicious: ipReputationCache.get(ip) };
+            }
+
             let isMalicious = false;
             if (ipReputationProvider === "abuseipdb") {
                 isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
             } else if (ipReputationProvider === "virustotal") {
                 isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
             }
+
+            if (ipReputationCache.size >= MAX_IP_CACHE) {
+                ipReputationCache.clear();
+            }
+            ipReputationCache.set(ip, isMalicious);
+
             return { ip, isMalicious };
         });
 

@@ -141,9 +141,8 @@ describe('renderInProgressStatus', () => {
 
         // Instead of parsing the brittle regex, extract the function by properly accounting for braces,
         // or just execute a cleaned up version of the whole file like other tests do.
-        // Other tests use: const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
-        // Let's emulate what get_hybrid_report_by_sha256 test does.
-        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         try {
             vm.runInContext(wrappedCode, context);
         } catch(e) {
