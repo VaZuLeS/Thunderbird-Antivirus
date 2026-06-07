@@ -590,6 +590,10 @@ describe('renderManualUrlScanUI', () => {
                 runtime: { sendMessage: async () => ({ status: 'success' }) }
             },
             document: {
+                createTextNode: () => ({}),
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : { textContent: '', insertAdjacentHTML: () => {}, appendChild: () => {}, _id: id };
+                },
                 createElement: (tag) => {
                     let children = [];
                     let el = {
@@ -1029,6 +1033,10 @@ describe('createUploadButton', () => {
                 }
             },
             document: {
+                createTextNode: () => ({}),
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : { textContent: '', insertAdjacentHTML: () => {}, appendChild: () => {}, _id: id };
+                },
                 createElement: (tag) => {
                     if (!context.mockElements) context.mockElements = {};
                     let el = {
@@ -1251,36 +1259,57 @@ describe('createUploadButton', () => {
     });
 });
 
-describe('renderFileDetails', () => {
+describe('renderActionButtons', () => {
     let context;
-    let renderFileDetails;
+    let renderActionButtons;
 
     before(async () => {
         // Create mock environment
         context = {
+            browser: {
+                storage: { local: { get: async () => ({}) } },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
             document: {
+                createTextNode: () => ({}),
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : { textContent: '', insertAdjacentHTML: () => {}, appendChild: () => {}, _id: id };
+                },
                 createElement: (tag) => {
-                    return {
-                        tag: tag,
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
+                        tagName: tag,
                         className: '',
                         textContent: '',
-                        children: [],
-                        _innerHTML: null,
-                        appendChild: function(node) {
-                            this.children.push(node);
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(v) { this._innerText = v; this.textContent = v; },
+                        disabled: false,
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) {
+                            this._id = val;
+                            context.mockElements[val] = this;
                         },
-                        get innerHTML() {
-                            if (this._innerHTML !== null) return this._innerHTML;
-                            return this.children.map(c => {
-                                let cls = c.className ? ` class="${c.className}"` : '';
-                                let inner = c.innerHTML || c.textContent || '';
-                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
-                            }).join('');
+                        setAttribute: function(k, v) { this[k] = v; },
+                        removeAttribute: function(k) { delete this[k]; },
+                        appendChild: function(child) {
+                            if (!this.childNodes) this.childNodes = [];
+                            this.childNodes.push(child);
                         },
-                        set innerHTML(val) {
-                            this._innerHTML = val;
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
                         }
                     };
+                    return el;
                 }
             },
             console: { log: () => {}, error: () => {} },
@@ -1288,52 +1317,71 @@ describe('renderFileDetails', () => {
             Array: Array
         };
 
-        const vm = require('vm');
-        const fs = require('fs');
-        const path = require('path');
         vm.createContext(context);
 
-        // We load api.js and prevent the IIFE from executing
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
-        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+        const modifiedCode = code + '\n; globalThis.renderActionButtons = renderActionButtons;';
 
-        vm.runInContext(wrappedCode, context);
-
-        renderFileDetails = context.renderFileDetails;
+        vm.runInContext(modifiedCode, context);
     });
 
-    it('should render correct details for a complete file payload', () => {
-        const jsonData = {
-            sha256: 'abcdef1234567890',
-            last_file_name: 'test_file.exe',
-            size: 1048576,
-            type: 'application/x-dosexec'
-        };
-        const card = context.document.createElement('div');
-        renderFileDetails(jsonData, card);
-
-        const html = card.innerHTML;
-        const assert = require('assert');
-        assert.ok(html.includes('SHA-256-Hashwert: abcdef1234567890'), 'Should render sha256 hash');
-        assert.ok(html.includes('Letzter Dateiname: test_file.exe'), 'Should render last file name');
-        assert.ok(html.includes('Größe: 1048576 Bytes'), 'Should render size');
-        assert.ok(html.includes('Typ: application/x-dosexec'), 'Should render type');
+    beforeEach(() => {
+        context.mockElements = {};
     });
 
-    it('should fallback to N/A for missing optional fields', () => {
-        const jsonData = {
-            sha256: 'abcdef1234567890'
-            // Missing last_file_name, size, type
-        };
+    it('renders a "Rescan" button and status element for standard attachments', () => {
+        renderActionButtons = context.renderActionButtons;
         const card = context.document.createElement('div');
-        renderFileDetails(jsonData, card);
+        const hybrid_sha = 'abc123sha';
 
-        const html = card.innerHTML;
-        const assert = require('assert');
-        assert.ok(html.includes('SHA-256-Hashwert: abcdef1234567890'), 'Should render sha256 hash');
-        assert.ok(html.includes('Letzter Dateiname: N/A'), 'Should render N/A for missing file name');
-        assert.ok(html.includes('Größe: N/A Bytes'), 'Should render N/A for missing size');
-        assert.ok(html.includes('Typ: N/A'), 'Should render N/A for missing type');
+        renderActionButtons(hybrid_sha, 'test.txt', card);
+
+        const btnRescan = context.mockElements[`btn-rescan-${hybrid_sha}`];
+        assert.ok(btnRescan);
+        assert.strictEqual(btnRescan.tagName, 'button');
+        assert.strictEqual(btnRescan.className, 'btn-success mt-2');
+        assert.strictEqual(btnRescan.textContent, 'Erneut scannen (Rescan)');
+
+        const pRescanStatus = context.mockElements[`rescan-status-${hybrid_sha}`];
+        assert.ok(pRescanStatus);
+        assert.strictEqual(pRescanStatus.tagName, 'p');
+        assert.strictEqual(pRescanStatus.className, 'mt-2');
+        assert.strictEqual(pRescanStatus['aria-live'], 'polite');
+        assert.strictEqual(pRescanStatus['role'], 'status');
+
+        const btnCdr = context.mockElements[`btn-cdr-${hybrid_sha}`];
+        assert.strictEqual(btnCdr, undefined);
+    });
+
+    it('renders a "CDR" button and status element when attachment ends with .html', () => {
+        renderActionButtons = context.renderActionButtons;
+        const card = context.document.createElement('div');
+        const hybrid_sha = 'abc123sha';
+
+        renderActionButtons(hybrid_sha, 'test.html', card);
+
+        const btnCdr = context.mockElements[`btn-cdr-${hybrid_sha}`];
+        assert.ok(btnCdr);
+        assert.strictEqual(btnCdr.tagName, 'button');
+        assert.strictEqual(btnCdr.className, 'btn-primary mt-2 ml-2');
+        assert.strictEqual(btnCdr.textContent, 'Bereinigen & Herunterladen (Lokales CDR)');
+
+        const pCdrStatus = context.mockElements[`cdr-status-${hybrid_sha}`];
+        assert.ok(pCdrStatus);
+        assert.strictEqual(pCdrStatus.tagName, 'p');
+        assert.strictEqual(pCdrStatus.className, 'mt-2');
+        assert.strictEqual(pCdrStatus['aria-live'], 'polite');
+        assert.strictEqual(pCdrStatus['role'], 'status');
+    });
+
+    it('renders a "CDR" button and status element when attachment ends with .htm', () => {
+        renderActionButtons = context.renderActionButtons;
+        const card = context.document.createElement('div');
+        const hybrid_sha = 'abc123sha';
+
+        renderActionButtons(hybrid_sha, 'test.htm', card);
+
+        const btnCdr = context.mockElements[`btn-cdr-${hybrid_sha}`];
+        assert.ok(btnCdr);
     });
 });
