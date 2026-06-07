@@ -1,7 +1,30 @@
-1. Modify `levenshteinDistance` in `background.js` to allocate the buffers globally.
-2. The current code re-allocates two `Uint16Array(a.length + 1)` buffers on every call to `levenshteinDistance`. Since this function is called in a nested loop (for each domain and for each known brand), this creates massive garbage collection overhead.
-3. We will declare `let lev_prevRow = new Uint16Array(64); let lev_currRow = new Uint16Array(64);` outside the function. Inside the function, we'll ensure they are large enough, expanding them if `a.length + 1 > lev_prevRow.length`.
-4. We will run tests to verify that `levenshteinDistance` continues to work properly and the code doesn't introduce any cross-test/concurrency issues (since it's a synchronous extension background script, single-threaded execution is guaranteed for this synchronous block).
-5. Add a journal entry in `.jules/bolt.md`.
-6. Complete pre commit steps to make sure proper testing, verifications, reviews and reflections are done.
-7. Submit the PR.
+1. **Understand the Testing Gap**:
+   - The issue requests tests for the `processAndUploadUrls` function in `background.js`. This function handles uploading URLs to Hybrid Analysis if the `privacyTier` is set to 'max', or otherwise just saves them locally using `indexedDB_save_links_to_db`.
+
+2. **Design the Test Strategy**:
+   - Test framework: `node:test` with assertions from `node:assert`.
+   - Add `globalThis.processAndUploadUrls = processAndUploadUrls;` to the `vm.runInContext` evaluation script in `background.test.js`.
+   - Add a describe block `describe('processAndUploadUrls', ...)` in `background.test.js`.
+   - Scenarios to test:
+     1. When `privacyTier` is not 'max' (e.g. 'balanced'): it calls `indexedDB_save_links_to_db` and NOT `indexedDB_save_links_objects_to_db`.
+     2. When `privacyTier` is 'max' and `fetch` succeeds (status 200): it calls `indexedDB_save_links_objects_to_db` with the correct state 'UPLOADED', job_id, etc.
+     3. When `privacyTier` is 'max' and `fetch` fails (status 500): it falls back to 'UNKNOWN' state.
+     4. When `privacyTier` is 'max' and `fetch` throws an error: it catches the error and falls back to 'UNKNOWN' state.
+
+3. **Implementation Details**:
+   - Use `replace_with_git_merge_diff` to modify `background.test.js`.
+   - Update `vm.runInContext` setup block to expose `processAndUploadUrls`.
+   - Mocking involves setting functions on `context`:
+     - `context.set_privacyTier('max')` or `'balanced'`
+     - Mock `context.indexedDB_save_links_to_db`
+     - Mock `context.indexedDB_save_links_objects_to_db`
+     - Mock `context.fetch`
+     - Mock `context.getHybridAnalysisOptions` to return an object (so it won't crash)
+
+4. **Execution**:
+   - Apply edits to `background.test.js`.
+   - Temporarily break `processAndUploadUrls` in `background.js` (e.g. return early) using `replace_with_git_merge_diff` and run the specific test with `run_in_bash_session` (`NODE_PATH=node_modules node --test background.test.js --test-name-pattern="processAndUploadUrls"`) to verify the test fails and catches the bug.
+   - Revert the break in `background.js`.
+   - Run full test suite with `NODE_PATH=node_modules node --test` using `run_in_bash_session`.
+   - Complete pre-commit steps to ensure proper testing, verification, review, and reflection are done using `run_in_bash_session` to call `pre_commit_instructions` or directly.
+   - Submit PR with `submit` tool using the exact title format requested ("🧪 [testing improvement description]").

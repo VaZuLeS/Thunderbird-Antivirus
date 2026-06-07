@@ -141,6 +141,7 @@ describe('background.js', () => {
             globalThis.evaluateBehavior = evaluateBehavior;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
+            globalThis.processAndUploadUrls = processAndUploadUrls;
             globalThis.checkFirstCommunication = checkFirstCommunication;
             globalThis.checkURLhausDomains = checkURLhausDomains;
             globalThis.checkURLhaus = checkURLhaus;
@@ -1966,6 +1967,119 @@ describe('background.js', () => {
 
             context.console.log = originalLog;
             assert.strictEqual(result, false);
+        });
+    });
+
+    describe('processAndUploadUrls', () => {
+        let originalFetch;
+        let originalIndexedDBSaveLinksToDb;
+        let originalIndexedDBSaveLinksObjectsToDb;
+        let originalGetHybridAnalysisOptions;
+
+        beforeEach(() => {
+            originalFetch = context.fetch;
+            originalIndexedDBSaveLinksToDb = context.indexedDB_save_links_to_db;
+            originalIndexedDBSaveLinksObjectsToDb = context.indexedDB_save_links_objects_to_db;
+            originalGetHybridAnalysisOptions = context.getHybridAnalysisOptions;
+        });
+
+        afterEach(() => {
+            context.fetch = originalFetch;
+            context.indexedDB_save_links_to_db = originalIndexedDBSaveLinksToDb;
+            context.indexedDB_save_links_objects_to_db = originalIndexedDBSaveLinksObjectsToDb;
+            context.getHybridAnalysisOptions = originalGetHybridAnalysisOptions;
+        });
+
+        it('should call indexedDB_save_links_to_db when privacyTier is not max', async () => {
+            context.set_privacyTier('balanced');
+            let saveCalled = false;
+            let savedUrls = null;
+
+            context.indexedDB_save_links_to_db = async (message, urls) => {
+                saveCalled = true;
+                savedUrls = urls;
+            };
+
+            await context.processAndUploadUrls({ id: 1 }, ['http://example.com']);
+            assert.ok(saveCalled);
+            assert.strictEqual(savedUrls[0], 'http://example.com');
+        });
+
+        it('should call indexedDB_save_links_objects_to_db with UPLOADED state when fetch succeeds', async () => {
+            context.set_privacyTier('max');
+            let objectsSaved = null;
+
+            context.getHybridAnalysisOptions = () => ({});
+            context.fetch = async () => ({
+                status: 200,
+                json: async () => ({ submission_id: 'sub123', job_id: 'job456', sha256: 'hash789' })
+            });
+
+            context.indexedDB_save_links_objects_to_db = async (message, results) => {
+                objectsSaved = results;
+            };
+
+            await context.processAndUploadUrls({ id: 1 }, ['http://example.com']);
+
+            assert.ok(objectsSaved);
+            assert.strictEqual(objectsSaved.length, 1);
+            assert.strictEqual(objectsSaved[0].url, 'http://example.com');
+            assert.strictEqual(objectsSaved[0].state, 'UPLOADED');
+            assert.strictEqual(objectsSaved[0].hybrid_submission_id, 'sub123');
+            assert.strictEqual(objectsSaved[0].hybrid_job_id, 'job456');
+            assert.strictEqual(objectsSaved[0].hybrid_sha256, 'hash789');
+        });
+
+        it('should fallback to UNKNOWN state when fetch returns non-200 status', async () => {
+            context.set_privacyTier('max');
+            let objectsSaved = null;
+
+            context.getHybridAnalysisOptions = () => ({});
+            context.fetch = async () => ({
+                status: 500
+            });
+
+            context.indexedDB_save_links_objects_to_db = async (message, results) => {
+                objectsSaved = results;
+            };
+
+            await context.processAndUploadUrls({ id: 1 }, ['http://example.com']);
+
+            assert.ok(objectsSaved);
+            assert.strictEqual(objectsSaved.length, 1);
+            assert.strictEqual(objectsSaved[0].url, 'http://example.com');
+            assert.strictEqual(objectsSaved[0].state, 'UNKNOWN');
+            assert.strictEqual(objectsSaved[0].hybrid_submission_id, undefined);
+        });
+
+        it('should catch fetch errors and fallback to UNKNOWN state', async () => {
+            context.set_privacyTier('max');
+            let objectsSaved = null;
+
+            context.getHybridAnalysisOptions = () => ({});
+            context.fetch = async () => {
+                throw new Error('Network error');
+            };
+
+            context.indexedDB_save_links_objects_to_db = async (message, results) => {
+                objectsSaved = results;
+            };
+
+            let originalError = context.console.error;
+            let errorLogged = false;
+            context.console.error = () => { errorLogged = true; };
+
+            try {
+                await context.processAndUploadUrls({ id: 1 }, ['http://example.com']);
+            } finally {
+                context.console.error = originalError;
+            }
+
+            assert.ok(objectsSaved);
+            assert.strictEqual(objectsSaved.length, 1);
+            assert.strictEqual(objectsSaved[0].url, 'http://example.com');
+            assert.strictEqual(objectsSaved[0].state, 'UNKNOWN');
+            assert.ok(errorLogged);
         });
     });
 
