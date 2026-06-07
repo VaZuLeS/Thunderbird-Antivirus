@@ -1454,7 +1454,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            assert.strictEqual(executedWarningScripts.length, 0);
+            assert.ok(executedWarningScripts.length === 0);
         });
     });
 
