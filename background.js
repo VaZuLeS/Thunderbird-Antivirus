@@ -853,13 +853,7 @@ async function handle_unknown_attachment(attachment, content_of_atachment, local
     );
 }
 
-async function sent_to_hybrid_by_attachment(message, attachments) {
-  if (!apikey_hybridanalysis) {
-      console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
-      return;
-  }
-
-  const results = await Promise.all(attachments.map(async (attachment) => {
+async function process_single_attachment(message, attachment) {
     console.log(`Prüfe Anhang: ${attachment.name} (${attachment.contentType}, ${attachment.size} bytes)`);
 
     let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
@@ -928,6 +922,16 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
           return null;
         }
     }
+}
+
+async function sent_to_hybrid_by_attachment(message, attachments) {
+  if (!apikey_hybridanalysis) {
+      console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
+      return;
+  }
+
+  const results = await Promise.all(attachments.map(async (attachment) => {
+    return await process_single_attachment(message, attachment);
   }));
 
   const validResults = results.filter(r => r !== null);
