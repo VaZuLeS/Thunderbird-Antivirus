@@ -13,6 +13,9 @@ let ipReputationApiKey = "";
 const knownSendersCache = new Set();
 const MAX_KNOWN_SENDERS = 1000;
 
+const urlhausCache = new Map();
+const MAX_URLHAUS_CACHE_SIZE = 1000;
+
 function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
     const options = {
@@ -578,7 +581,18 @@ async function checkURLhausDomains(filteredUrls) {
         }
 
         const domainChecks = Array.from(linkDomains).map(async (domain) => {
+            if (urlhausCache.has(domain)) {
+                return urlhausCache.get(domain) ? domain : null;
+            }
+
             let isMalicious = await checkURLhaus(domain, urlhausApikey);
+
+            if (urlhausCache.size >= MAX_URLHAUS_CACHE_SIZE) {
+                const firstKey = urlhausCache.keys().next().value;
+                urlhausCache.delete(firstKey);
+            }
+            urlhausCache.set(domain, isMalicious);
+
             if (isMalicious) {
                 return domain;
             }
