@@ -13,6 +13,9 @@ let ipReputationApiKey = "";
 const knownSendersCache = new Set();
 const MAX_KNOWN_SENDERS = 1000;
 
+const ipReputationCache = new Map();
+const MAX_IP_CACHE = 1000;
+
 function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
     const options = {
@@ -523,12 +526,22 @@ async function checkIPReputation(receivedHeaders) {
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
         let ipChecks = publicIps.map(async (ip) => {
+            if (ipReputationCache.has(ip)) {
+                return { ip, isMalicious: ipReputationCache.get(ip) };
+            }
+
             let isMalicious = false;
             if (ipReputationProvider === "abuseipdb") {
                 isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
             } else if (ipReputationProvider === "virustotal") {
                 isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
             }
+
+            if (ipReputationCache.size >= MAX_IP_CACHE) {
+                ipReputationCache.clear();
+            }
+            ipReputationCache.set(ip, isMalicious);
+
             return { ip, isMalicious };
         });
 
