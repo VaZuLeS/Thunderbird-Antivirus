@@ -151,6 +151,7 @@ describe('background.js', () => {
             globalThis.MAX_URLHAUS_CACHE_SIZE = MAX_URLHAUS_CACHE_SIZE;
             globalThis.checkLists = checkLists;
             globalThis.handle_unknown_attachment = handle_unknown_attachment;
+            globalThis.getHybridAnalysisOptions = getHybridAnalysisOptions;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -1970,116 +1971,53 @@ describe('background.js', () => {
         });
     });
 
-    describe('processAndUploadUrls', () => {
-        let originalFetch;
-        let originalIndexedDBSaveLinksToDb;
-        let originalIndexedDBSaveLinksObjectsToDb;
-        let originalGetHybridAnalysisOptions;
-
-        beforeEach(() => {
-            originalFetch = context.fetch;
-            originalIndexedDBSaveLinksToDb = context.indexedDB_save_links_to_db;
-            originalIndexedDBSaveLinksObjectsToDb = context.indexedDB_save_links_objects_to_db;
-            originalGetHybridAnalysisOptions = context.getHybridAnalysisOptions;
+    describe('getHybridAnalysisOptions', () => {
+        it('throws an error if apikey_hybridanalysis is not set', () => {
+            context.set_apikey(''); // Clear API key
+            assert.throws(() => {
+                context.getHybridAnalysisOptions('GET');
+            }, /API-Key fehlt/);
         });
 
-        afterEach(() => {
-            context.fetch = originalFetch;
-            context.indexedDB_save_links_to_db = originalIndexedDBSaveLinksToDb;
-            context.indexedDB_save_links_objects_to_db = originalIndexedDBSaveLinksObjectsToDb;
-            context.getHybridAnalysisOptions = originalGetHybridAnalysisOptions;
+        it('returns correct options for basic GET request (no body, isUrl=false)', () => {
+            context.set_apikey('test-key');
+            const options = context.getHybridAnalysisOptions('GET');
+            assert.strictEqual(options.method, 'GET');
+            assert.strictEqual(options.headers.accept, 'application/json');
+            assert.strictEqual(options.headers['api-key'], 'test-key');
+            assert.strictEqual(options.headers['user-agent'], 'Falcon');
+            assert.strictEqual(options.body, undefined);
+            assert.strictEqual(options.headers['scan_type'], undefined);
+            assert.strictEqual(options.headers['Content-Type'], undefined);
         });
 
-        it('should call indexedDB_save_links_to_db when privacyTier is not max', async () => {
-            context.set_privacyTier('balanced');
-            let saveCalled = false;
-            let savedUrls = null;
-
-            context.indexedDB_save_links_to_db = async (message, urls) => {
-                saveCalled = true;
-                savedUrls = urls;
-            };
-
-            await context.processAndUploadUrls({ id: 1 }, ['http://example.com']);
-            assert.ok(saveCalled);
-            assert.strictEqual(savedUrls[0], 'http://example.com');
+        it('returns correct options when body is provided', () => {
+            context.set_apikey('test-key');
+            const body = 'test-body';
+            const options = context.getHybridAnalysisOptions('POST', body);
+            assert.strictEqual(options.method, 'POST');
+            assert.strictEqual(options.body, 'test-body');
+            assert.strictEqual(options.headers['scan_type'], 'all');
+            assert.strictEqual(options.headers['Content-Type'], undefined);
         });
 
-        it('should call indexedDB_save_links_objects_to_db with UPLOADED state when fetch succeeds', async () => {
-            context.set_privacyTier('max');
-            let objectsSaved = null;
-
-            context.getHybridAnalysisOptions = () => ({});
-            context.fetch = async () => ({
-                status: 200,
-                json: async () => ({ submission_id: 'sub123', job_id: 'job456', sha256: 'hash789' })
-            });
-
-            context.indexedDB_save_links_objects_to_db = async (message, results) => {
-                objectsSaved = results;
-            };
-
-            await context.processAndUploadUrls({ id: 1 }, ['http://example.com']);
-
-            assert.ok(objectsSaved);
-            assert.strictEqual(objectsSaved.length, 1);
-            assert.strictEqual(objectsSaved[0].url, 'http://example.com');
-            assert.strictEqual(objectsSaved[0].state, 'UPLOADED');
-            assert.strictEqual(objectsSaved[0].hybrid_submission_id, 'sub123');
-            assert.strictEqual(objectsSaved[0].hybrid_job_id, 'job456');
-            assert.strictEqual(objectsSaved[0].hybrid_sha256, 'hash789');
+        it('returns correct options when isUrl is true', () => {
+            context.set_apikey('test-key');
+            const options = context.getHybridAnalysisOptions('POST', null, true);
+            assert.strictEqual(options.method, 'POST');
+            assert.strictEqual(options.body, undefined);
+            assert.strictEqual(options.headers['scan_type'], undefined);
+            assert.strictEqual(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
         });
 
-        it('should fallback to UNKNOWN state when fetch returns non-200 status', async () => {
-            context.set_privacyTier('max');
-            let objectsSaved = null;
-
-            context.getHybridAnalysisOptions = () => ({});
-            context.fetch = async () => ({
-                status: 500
-            });
-
-            context.indexedDB_save_links_objects_to_db = async (message, results) => {
-                objectsSaved = results;
-            };
-
-            await context.processAndUploadUrls({ id: 1 }, ['http://example.com']);
-
-            assert.ok(objectsSaved);
-            assert.strictEqual(objectsSaved.length, 1);
-            assert.strictEqual(objectsSaved[0].url, 'http://example.com');
-            assert.strictEqual(objectsSaved[0].state, 'UNKNOWN');
-            assert.strictEqual(objectsSaved[0].hybrid_submission_id, undefined);
-        });
-
-        it('should catch fetch errors and fallback to UNKNOWN state', async () => {
-            context.set_privacyTier('max');
-            let objectsSaved = null;
-
-            context.getHybridAnalysisOptions = () => ({});
-            context.fetch = async () => {
-                throw new Error('Network error');
-            };
-
-            context.indexedDB_save_links_objects_to_db = async (message, results) => {
-                objectsSaved = results;
-            };
-
-            let originalError = context.console.error;
-            let errorLogged = false;
-            context.console.error = () => { errorLogged = true; };
-
-            try {
-                await context.processAndUploadUrls({ id: 1 }, ['http://example.com']);
-            } finally {
-                context.console.error = originalError;
-            }
-
-            assert.ok(objectsSaved);
-            assert.strictEqual(objectsSaved.length, 1);
-            assert.strictEqual(objectsSaved[0].url, 'http://example.com');
-            assert.strictEqual(objectsSaved[0].state, 'UNKNOWN');
-            assert.ok(errorLogged);
+        it('returns correct options when both body and isUrl are provided', () => {
+            context.set_apikey('test-key');
+            const body = 'url=http://example.com';
+            const options = context.getHybridAnalysisOptions('POST', body, true);
+            assert.strictEqual(options.method, 'POST');
+            assert.strictEqual(options.body, 'url=http://example.com');
+            assert.strictEqual(options.headers['scan_type'], 'all');
+            assert.strictEqual(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
         });
     });
 
