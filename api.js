@@ -142,11 +142,9 @@ try {
     };
 
     openRequest.onerror = function(e) {
-        console.log("Kein Hash/Anhang gefunden.");
         let p2 = document.createElement('p'); p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p2);
     }
 } catch (error) {
-    console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
 })();
 
