@@ -43,7 +43,6 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
 // Informationen.
 let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
-console.log(message.headerMessageId);
 
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
