@@ -457,6 +457,125 @@ tag: tag,
 });
 
 
+
+describe('renderManualUploadUI', () => {
+    let context;
+    let renderManualUploadUI;
+
+    before(async () => {
+        context = {
+            document: {
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tag: tag,
+                        className: '',
+                        textContent: '',
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) { this._id = val; },
+                        appendChild: function(child) { children.push(child); },
+                        get children() { return children; },
+                        setAttribute: function() {},
+                        addEventListener: function() {}
+                    };
+                    return el;
+                },
+                createTextNode: (text) => ({ textContent: text, type: 'textNode' }),
+                getElementById: (id) => ({
+                    appendChild: function() {},
+                    insertAdjacentHTML: function() {},
+                    setAttribute: function() {}
+                })
+            },
+            escapeHTML: (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'),
+            createUploadButtonCalls: [],
+            createCdrButtonCalls: [],
+            appendElementHtmlCalls: [],
+            String: String,
+        };
+
+        const vm = require('vm');
+        const path = require('path');
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        vm.runInContext(wrappedCode, context);
+
+        renderManualUploadUI = context.renderManualUploadUI;
+
+        vm.runInContext(`
+            createUploadButton = function(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId) {
+                createUploadButtonCalls.push({card, hash, safeHash, attachmentName, messageId, partName, headerMessageId});
+            };
+            createCdrButton = function(card, safeHash, attachmentName, messageId, partName) {
+                createCdrButtonCalls.push({card, safeHash, attachmentName, messageId, partName});
+            };
+            appendElementHtml = function(id, node) {
+                appendElementHtmlCalls.push({id, node});
+            };
+        `, context);
+    });
+
+    it('renders correctly with attachmentName', () => {
+        context.createUploadButtonCalls.length = 0;
+        context.createCdrButtonCalls.length = 0;
+        context.appendElementHtmlCalls.length = 0;
+
+        renderManualUploadUI('hash123', 'test.txt', 'msg1', 'part1', 'hdr1');
+
+        assert.strictEqual(context.appendElementHtmlCalls.length, 1);
+        const appendCall = context.appendElementHtmlCalls[0];
+        assert.strictEqual(appendCall.id, 'hybrid_analysis_api_content');
+
+        const card = appendCall.node;
+        assert.strictEqual(card.tag, 'div');
+        assert.strictEqual(card.className, 'card card-info mb-3');
+        assert.strictEqual(card.id, 'upload-container-hash123');
+
+        // Check children
+        assert.strictEqual(card.children.length, 3);
+
+        // h2
+        assert.strictEqual(card.children[0].tag, 'h2');
+        assert.strictEqual(card.children[0].textContent, 'Anhang: test.txt');
+
+        // pHash
+        assert.strictEqual(card.children[1].tag, 'p');
+        assert.strictEqual(card.children[1].textContent, 'SHA-256: hash123');
+
+        // pInfo
+        assert.strictEqual(card.children[2].tag, 'p');
+        assert.strictEqual(card.children[2].className, 'text-info');
+
+        // helper function calls
+        assert.strictEqual(context.createUploadButtonCalls.length, 1);
+        assert.strictEqual(context.createUploadButtonCalls[0].hash, 'hash123');
+        assert.strictEqual(context.createUploadButtonCalls[0].attachmentName, 'test.txt');
+
+        assert.strictEqual(context.createCdrButtonCalls.length, 1);
+        assert.strictEqual(context.createCdrButtonCalls[0].safeHash, 'hash123');
+        assert.strictEqual(context.createCdrButtonCalls[0].attachmentName, 'test.txt');
+    });
+
+    it('renders correctly falling back to Unbekannt if attachmentName is missing', () => {
+        context.createUploadButtonCalls.length = 0;
+        context.createCdrButtonCalls.length = 0;
+        context.appendElementHtmlCalls.length = 0;
+
+        renderManualUploadUI('hash123', null, 'msg1', 'part1', 'hdr1');
+
+        assert.strictEqual(context.appendElementHtmlCalls.length, 1);
+        const card = context.appendElementHtmlCalls[0].node;
+        assert.strictEqual(card.children[0].tag, 'h2');
+        assert.strictEqual(card.children[0].textContent, 'Anhang: Unbekannt');
+    });
+});
+
+
 describe('renderManualUrlScanUI', () => {
     let context;
     let renderManualUrlScanUI;
@@ -804,6 +923,98 @@ describe('renderVirusTotalStats', () => {
         assert.ok(html.includes('Undetected: 0'), 'Should default undetected to 0');
         assert.ok(html.includes('Suspicious: 0'), 'Should default suspicious to 0');
         assert.ok(html.includes('Harmless: 0'), 'Should default harmless to 0');
+    });
+});
+
+
+describe('renderScannerResults', () => {
+    let context;
+    let renderScannerResults;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createElement: (tag) => {
+                    return {
+                        tag: tag,
+                        className: '',
+                        textContent: '',
+                        children: [],
+                        _innerHTML: null,
+                        appendChild: function(node) {
+                            this.children.push(node);
+                        },
+                        get innerHTML() {
+                            if (this._innerHTML !== null) return this._innerHTML;
+                            return this.children.map(c => {
+                                let cls = c.className ? ` class="${c.className}"` : '';
+                                let inner = c.innerHTML || c.textContent || '';
+                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
+                            }).join('');
+                        },
+                        set innerHTML(val) {
+                            this._innerHTML = val;
+                        }
+                    };
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String,
+            Array: Array
+        };
+
+        vm.createContext(context);
+
+        // We load api.js and prevent the IIFE from executing
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+
+        vm.runInContext(wrappedCode, context);
+
+        renderScannerResults = context.renderScannerResults;
+    });
+
+    it('should render "Keine Scanner-Ergebnisse verfügbar." if scanners is null or empty', () => {
+        const card1 = context.document.createElement('div');
+        renderScannerResults(null, card1);
+        assert.ok(card1.innerHTML.includes('Keine Scanner-Ergebnisse verfügbar.'));
+
+        const card2 = context.document.createElement('div');
+        renderScannerResults([], card2);
+        assert.ok(card2.innerHTML.includes('Keine Scanner-Ergebnisse verfügbar.'));
+    });
+
+    it('should render scanner name and status when anti_virus_results is not present', () => {
+        const scanners = [{ name: 'TestScanner', status: 'clean' }];
+        const card = context.document.createElement('div');
+        renderScannerResults(scanners, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('Scanner: TestScanner'));
+        assert.ok(html.includes('Status: clean'));
+        assert.ok(!html.includes('AV-Ergebnisse:'));
+    });
+
+    it('should render scanner name, status, and anti_virus_results when present', () => {
+        const scanners = [{
+            name: 'AdvancedScanner',
+            status: 'malicious',
+            anti_virus_results: [
+                { product: 'AV-1', verdict: 'Threat found' },
+                { product: 'AV-2', verdict: 'Clean' }
+            ]
+        }];
+        const card = context.document.createElement('div');
+        renderScannerResults(scanners, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('Scanner: AdvancedScanner'));
+        assert.ok(html.includes('Status: malicious'));
+        assert.ok(html.includes('AV-Ergebnisse:'));
+        assert.ok(html.includes('AV: AV-1 - Urteil: Threat found'));
+        assert.ok(html.includes('AV: AV-2 - Urteil: Clean'));
     });
 });
 
