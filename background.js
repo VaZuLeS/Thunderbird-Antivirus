@@ -1172,32 +1172,37 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         }
 
         if (linkObj) {
-            if (linkObj.hybrid_sha256 && apikey_hybridanalysis) {
-                const overviewOptions = getHybridAnalysisOptions('GET');
-                overviewOptions.url = 'https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256;
-                try {
-                    const response = await fetch(overviewOptions.url, overviewOptions);
-                    const json_data = await response.json();
-                    if (json_data.verdict) {
-                        if (json_data.verdict === 'no specific threat') {
-                            sendResponse({status: 'CLEAN'});
-                        } else {
-                            sendResponse({status: json_data.verdict.toUpperCase()});
-                        }
-                    } else {
-                        sendResponse({status: linkObj.state});
-                    }
-                } catch (err) {
-                    sendResponse({status: linkObj.state});
-                }
-            } else {
-                sendResponse({status: linkObj.state || 'UNKNOWN'});
-            }
+            const status = await checkHybridAnalysisVerdict(linkObj.hybrid_sha256, linkObj.state);
+            sendResponse({status: status});
         } else {
             sendResponse({status: 'UNKNOWN'});
         }
     } catch (err) {
         sendResponse({status: 'ERROR'});
+    }
+}
+
+async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
+    if (hybrid_sha256 && apikey_hybridanalysis) {
+        const overviewOptions = getHybridAnalysisOptions('GET');
+        overviewOptions.url = 'https://hybrid-analysis.com/api/v2/overview/' + hybrid_sha256;
+        try {
+            const response = await fetch(overviewOptions.url, overviewOptions);
+            const json_data = await response.json();
+            if (json_data.verdict) {
+                if (json_data.verdict === 'no specific threat') {
+                    return 'CLEAN';
+                } else {
+                    return json_data.verdict.toUpperCase();
+                }
+            } else {
+                return fallbackState;
+            }
+        } catch (err) {
+            return fallbackState;
+        }
+    } else {
+        return fallbackState || 'UNKNOWN';
     }
 }
 
