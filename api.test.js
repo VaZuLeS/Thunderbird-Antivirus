@@ -109,8 +109,10 @@ describe('renderInProgressStatus', () => {
     before(async () => {
         // Create mock environment
         context = {
+            browser: { storage: { local: { get: async () => ({}) } } },
             document: {
-                createTextNode: (text) => ({ textContent: text, nodeType: 3 }),
+                getElementById: () => ({ textContent: '', appendChild: () => {} }),
+                createTextNode: (text) => ({ textContent: text }),
                 createElement: (tag) => {
                     let children = [];
                     let el = {
@@ -802,298 +804,238 @@ describe('renderVirusTotalStats', () => {
 });
 
 
-describe('createCdrButton', () => {
+describe('createUploadButton', () => {
     let context;
-    let createCdrButton;
+    let createUploadButton;
 
     before(async () => {
         // Create mock environment
         context = {
+            browser: {
+                storage: { local: { get: async () => ({}) } },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
             document: {
                 createElement: (tag) => {
-                    return {
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
                         tagName: tag,
                         className: '',
                         textContent: '',
-                        innerText: '',
-                        id: '',
-                        _attributes: {},
-                        setAttribute: function(name, val) { this._attributes[name] = val; },
-                        removeAttribute: function(name) { delete this._attributes[name]; },
-                        addEventListener: function(evt, cb) {
-                            if (!this._listeners) this._listeners = {};
-                            this._listeners[evt] = cb;
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(v) { this._innerText = v; this.textContent = v; },
+                        disabled: false,
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) {
+                            this._id = val;
+                            context.mockElements[val] = this;
+                        },
+                        setAttribute: function(k, v) { this[k] = v; },
+                        removeAttribute: function(k) { delete this[k]; },
+                        appendChild: function(child) {
+                            if (!this.childNodes) this.childNodes = [];
+                            this.childNodes.push(child);
+                        },
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
                         },
                         click: function() {
-                            if (this._listeners && this._listeners['click']) {
-                                this._listeners['click'].call(this);
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
                             }
-                        }
+                        },
+                        remove: function() { this.removed = true; }
                     };
+                    return el;
                 },
-                getElementById: function(id) {
-                    return context.mockElements ? context.mockElements[id] : null;
-                }
-            },
-            setElementText: function(id, text) {
-                if (context.mockElements && context.mockElements[id]) {
-                    context.mockElements[id].innerText = text;
-                }
-            },
-            browser: {
-                runtime: {
-                    sendMessage: async (msg) => {
-                        context.lastMessage = msg;
-                        if (context.sendMessageMockResponse !== undefined) {
-                            return context.sendMessageMockResponse;
-                        }
-                        if (context.sendMessageMockError !== undefined) {
-                            throw context.sendMessageMockError;
-                        }
-                        return { status: 'success' };
+                getElementById: (id) => {
+                    if (context.mockElements && context.mockElements[id]) {
+                        return context.mockElements[id];
                     }
+                    if (!context.mockElements) context.mockElements = {};
+                    if (id.startsWith('upload-container-')) {
+                        context.mockElements[id] = { remove: function() { this.removed = true; } };
+                        return context.mockElements[id];
+                    }
+                    if (id.startsWith('upload-status-')) {
+                        context.mockElements[id] = {
+                            _innerText: "",
+                            get innerText() { return this._innerText; },
+                            set innerText(v) { this._innerText = v; this.textContent = v; },
+                            textContent: "",
+                            setAttribute: () => {}
+                        };
+                        return context.mockElements[id];
+                    }
+                    return null;
                 }
             },
-            mockElements: {},
-            lastMessage: null,
-            String: String,
-            Array: Array
+            setElementText: (id, text) => {
+                let el = context.document.getElementById(id);
+                if (el) {
+                    el.innerText = text;
+                    el.textContent = text;
+                }
+            },
+            setTimeout: (cb, delay) => {
+                if (!context.timeouts) context.timeouts = [];
+                context.timeouts.push({cb, delay});
+            },
+            get_hybrid_report_by_sha256: function(...args) {
+                context.lastReportArgs = args;
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String, Array: Array
         };
+
         const vm = require('vm');
+        const fs = require('fs');
         const path = require('path');
         vm.createContext(context);
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
         vm.runInContext(wrappedCode, context);
-
-        createCdrButton = context.createCdrButton;
+        createUploadButton = context.createUploadButton;
     });
 
-    beforeEach(() => {
-        context.mockElements = {};
-        context.lastMessage = null;
-        context.sendMessageMockResponse = undefined;
-        context.sendMessageMockError = undefined;
-    });
+    it('renders the upload button and status element correctly', () => {
+        const card = context.document.createElement('div');
+        createUploadButton(card, 'hash1', 'safeHash1', 'test.txt', 'msg1', 'part1', 'header1');
 
-    it('returns early if attachmentName is missing or not .html/.htm', () => {
-        let card = { appendChild: function(child) { if (!this.childNodes) this.childNodes = []; this.childNodes.push(child); } };
-
-        createCdrButton(card, 'hash', undefined, 'msg1', 'part1');
-        assert.strictEqual(card.childNodes, undefined);
-
-        createCdrButton(card, 'hash', 'test.txt', 'msg1', 'part1');
-        assert.strictEqual(card.childNodes, undefined);
-
-        createCdrButton(card, 'hash', 'test.exe', 'msg1', 'part1');
-        assert.strictEqual(card.childNodes, undefined);
-    });
-
-    it('creates button and status element for .html files', () => {
-        let card = { appendChild: function(child) { if (!this.childNodes) this.childNodes = []; this.childNodes.push(child); } };
-
-        createCdrButton(card, 'hash123', 'test.html', 'msg1', 'part1');
-
+        const assert = require('assert');
         assert.strictEqual(card.childNodes.length, 2);
-
         const btn = card.childNodes[0];
+        const status = card.childNodes[1];
+
         assert.strictEqual(btn.tagName, 'button');
-        assert.strictEqual(btn.id, 'btn-cdr-hash123');
-        assert.strictEqual(btn.textContent, 'Bereinigen & Herunterladen (Lokales CDR)');
+        assert.strictEqual(btn.id, 'btn-upload-hash1');
+        assert.strictEqual(btn.className, 'btn-primary mt-2');
+        assert.strictEqual(btn.textContent, 'Datei jetzt scannen (Upload)');
 
-        const statusEl = card.childNodes[1];
-        assert.strictEqual(statusEl.tagName, 'p');
-        assert.strictEqual(statusEl.id, 'cdr-status-hash123');
-        assert.strictEqual(statusEl._attributes['aria-live'], 'polite');
+        assert.strictEqual(status.tagName, 'p');
+        assert.strictEqual(status.id, 'upload-status-hash1');
+        assert.strictEqual(status.className, 'mt-2');
+        assert.strictEqual(status['aria-live'], 'polite');
+        assert.strictEqual(status['role'], 'status');
     });
 
-    it('handles button click and successful download message', async () => {
-        let card = { appendChild: function(child) { if (!this.childNodes) this.childNodes = []; this.childNodes.push(child); } };
-        createCdrButton(card, 'hash456', 'index.htm', 'msg2', 'part2');
+    it('disables button and updates UI on click, then handles success', async () => {
+        const assert = require('assert');
+        const card = context.document.createElement('div');
+        context.mockElements = {}; // reset
+        context.timeouts = []; // reset
+        context.lastReportArgs = null; // reset
 
-        const btn = card.childNodes[0];
-        const statusEl = card.childNodes[1];
-        context.mockElements['cdr-status-hash456'] = statusEl;
-
-        context.sendMessageMockResponse = { status: 'success' };
-
-        btn.click();
-
-        // Assert synchronous state changes
-        assert.strictEqual(btn.disabled, true);
-        assert.strictEqual(btn._attributes['aria-busy'], 'true');
-        assert.strictEqual(btn.innerText, 'Bereinige...');
-        assert.strictEqual(statusEl.innerText, 'Lokales CDR wird durchgeführt...');
-
-        assert.strictEqual(context.lastMessage.action, 'downloadDisarmed');
-        assert.strictEqual(context.lastMessage.messageId, 'msg2');
-        assert.strictEqual(context.lastMessage.partName, 'part2');
-        assert.strictEqual(context.lastMessage.attachmentName, 'index.htm');
-
-        // Wait a tick for promise to resolve
-        await new Promise(resolve => setTimeout(resolve, 10));
-
-        assert.strictEqual(statusEl.innerText, 'Herunterladen erfolgreich initiiert.');
-        assert.strictEqual(btn._attributes['aria-busy'], undefined);
-        assert.strictEqual(btn.innerText, 'Bereinigt');
-    });
-
-    it('handles button click and failure download message', async () => {
-        let card = { appendChild: function(child) { if (!this.childNodes) this.childNodes = []; this.childNodes.push(child); } };
-        createCdrButton(card, 'hash789', 'index.htm', 'msg3', 'part3');
-
-        const btn = card.childNodes[0];
-        const statusEl = card.childNodes[1];
-        context.mockElements['cdr-status-hash789'] = statusEl;
-
-        context.sendMessageMockResponse = { status: 'error', message: 'Not found' };
-
-        btn.click();
-
-        await new Promise(resolve => setTimeout(resolve, 10));
-
-        assert.strictEqual(statusEl.innerText, 'Fehler beim Herunterladen: Not found');
-        assert.strictEqual(btn.disabled, false);
-        assert.strictEqual(btn._attributes['aria-busy'], undefined);
-        assert.strictEqual(btn.innerText, 'Erneut versuchen');
-    });
-
-    it('handles button click and communication error', async () => {
-        let card = { appendChild: function(child) { if (!this.childNodes) this.childNodes = []; this.childNodes.push(child); } };
-        createCdrButton(card, 'hash000', 'index.htm', 'msg4', 'part4');
-
-        const btn = card.childNodes[0];
-        const statusEl = card.childNodes[1];
-        context.mockElements['cdr-status-hash000'] = statusEl;
-
-        context.sendMessageMockError = new Error('Network timeout');
-
-        btn.click();
-
-        await new Promise(resolve => setTimeout(resolve, 10));
-
-        assert.strictEqual(statusEl.innerText, 'Kommunikationsfehler: Error: Network timeout');
-        assert.strictEqual(btn.disabled, false);
-        assert.strictEqual(btn._attributes['aria-busy'], undefined);
-        assert.strictEqual(btn.innerText, 'Erneut versuchen');
-    });
-});
-
-
-describe('renderReport', () => {
-    let context;
-    let renderReport;
-
-    before(async () => {
-        // Create mock environment
-        context = {
-            document: {
-                createTextNode: (text) => ({ textContent: text, nodeType: 3 }),
-                createElement: (tag) => {
-                    let children = [];
-                    let el = {
-                        tagName: tag.toUpperCase(),
-                        className: '',
-                        textContent: '',
-                        _html: '',
-                        setAttribute: () => {},
-                        removeAttribute: () => {},
-                        get innerHTML() { return this._html; },
-                        set innerHTML(val) {
-                            this._html = val;
-                            if (val === '') children.length = 0;
-                        },
-                        get childNodes() { return children; },
-                        appendChild: function(child) { children.push(child); }
-                    };
-                    return el;
-                }
-            },
-            browser: { tabs: { query: async () => [{ id: 1 }] }, storage: { local: { get: async () => ({ apikey: 'test' }) } }, runtime: { sendMessage: async () => ({ status: 'success' }) } },
-            // Mock functions called by renderReport. We mock them, but since they are inside the evaluated script, they might be shadowed.
-            // However, we can inject a mock if we want by replacing them in the code, or just let them run with mocked DOM.
-            // Wait, we can test that they are called if we mock them by overwriting them on context AND inside the script!
-            renderInProgressStatus: () => {},
-            renderThreatInfo: () => {},
-            renderVirusTotalStats: () => {},
-            renderScannerResults: () => {},
-            renderFileDetails: () => {},
-            renderActionButtons: () => {}
+        // Mock successful sendMessage
+        context.browser.runtime.sendMessage = async (msg) => {
+            context.lastMsg = msg;
+            return { status: 'success' };
         };
-        vm.createContext(context);
 
-        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
-        vm.runInContext(dbCode, context);
+        createUploadButton(card, 'hash2', 'safeHash2', 'test.txt', 'msg1', 'part1', 'header1');
+        const btn = context.mockElements['btn-upload-hash2'];
+        const status = context.mockElements['upload-status-hash2'];
+        context.mockElements['upload-status-safeHash2'] = status;
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
-        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        // Initially enabled
+        assert.strictEqual(btn.disabled, false);
 
-        vm.runInContext(wrappedCode, context);
-        renderReport = context.renderReport;
+        // Click it
+        btn.click();
+
+        // Check intermediate state
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Lade hoch...');
+        assert.strictEqual(status.innerText, 'Datei wird an Hybrid Analysis übertragen...');
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(context.lastMsg.action, 'uploadAttachment');
+        assert.strictEqual(context.lastMsg.hash, 'hash2');
+
+        assert.strictEqual(status.innerText, 'Upload erfolgreich! Lade Analyseergebnisse...');
+        assert.strictEqual(btn['aria-busy'], undefined); // removed
+
+        // Check timeout
+        assert.strictEqual(context.timeouts.length, 1);
+        assert.strictEqual(context.timeouts[0].delay, 3000);
+
+        // Execute timeout callback
+        let originalGetElement = context.document.getElementById;
+        context.document.getElementById = (id) => {
+            if (id === 'upload-container-safeHash2') return { remove: function() { this.removed = true; } };
+            return originalGetElement(id);
+        };
+        // Mock get_hybrid_report_by_sha256 avoiding dom node operations
+        let prev = context.get_hybrid_report_by_sha256;
+        context.get_hybrid_report_by_sha256 = function(...args) { context.lastReportArgs = args; };
+
+        context.timeouts[0].cb();
+
+        context.document.getElementById = originalGetElement;
+        context.get_hybrid_report_by_sha256 = prev;
+
+        assert.strictEqual(context.lastReportArgs[0], 'hash2');
+        assert.strictEqual(context.lastReportArgs[1], 'test.txt');
     });
 
-    it('renders correct heading with attachmentName', () => {
-        const json_data = { state: 'FINISHED', scanners: [] };
-        const el = renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-        assert.strictEqual(el.childNodes[0].tagName, 'H2');
-        assert.strictEqual(el.childNodes[0].textContent, 'Geprüftes Element: test.txt');
+    it('handles upload failure response correctly', async () => {
+        const assert = require('assert');
+        const card = context.document.createElement('div');
+        context.mockElements = {};
+
+        context.browser.runtime.sendMessage = async () => {
+            return { status: 'error', message: 'Invalid API key' };
+        };
+
+        createUploadButton(card, 'hash3', 'safeHash3', 'test.txt', 'msg1', 'part1', 'header1');
+        const btn = context.mockElements['btn-upload-hash3'];
+        const status = context.mockElements['upload-status-hash3'];
+        context.mockElements['upload-status-safeHash3'] = status;
+
+        btn.click();
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(status.innerText, 'Fehler beim Upload: Invalid API key');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 
-    it('renders correct heading falling back to Unbekannt if attachmentName is missing', () => {
-        const json_data = { state: 'FINISHED', scanners: [] };
-        const el = renderReport({ json_data, attachmentName: null, hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-        assert.strictEqual(el.childNodes[0].tagName, 'H2');
-        assert.strictEqual(el.childNodes[0].textContent, 'Geprüftes Element: Unbekannt');
-    });
+    it('handles upload exception correctly', async () => {
+        const assert = require('assert');
+        const card = context.document.createElement('div');
+        context.mockElements = {};
 
-    it('calls renderInProgressStatus when state is IN_PROGRESS', () => {
-        let called = false;
-        context.renderInProgressStatus = () => { called = true; };
-        const json_data = { state: 'IN_PROGRESS', scanners: [] };
-        renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-        assert.strictEqual(called, true);
-    });
+        context.browser.runtime.sendMessage = async () => {
+            throw new Error('Network error');
+        };
 
-    it('calls renderThreatInfo and renders tags when state is not IN_PROGRESS', () => {
-        let threatInfoCalled = false;
-        context.renderThreatInfo = () => { threatInfoCalled = true; };
-        const json_data = { state: 'FINISHED', tags: ['malicious', 'exe'], scanners: [] };
-        const el = renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-        assert.strictEqual(threatInfoCalled, true);
+        createUploadButton(card, 'hash4', 'safeHash4', 'test.txt', 'msg1', 'part1', 'header1');
+        const btn = context.mockElements['btn-upload-hash4'];
+        const status = context.mockElements['upload-status-hash4'];
+        context.mockElements['upload-status-safeHash4'] = status;
 
-        const pTags = el.childNodes.find(child => child.tagName === 'P' && child.textContent && child.textContent.startsWith('Tags:'));
-        assert.ok(pTags);
-        assert.strictEqual(pTags.textContent, 'Tags: malicious, exe');
-    });
+        btn.click();
 
-    it('renders N/A for tags if missing', () => {
-        const json_data = { state: 'FINISHED', scanners: [] };
-        const el = renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-        const pTags = el.childNodes.find(child => child.tagName === 'P' && child.textContent && child.textContent.startsWith('Tags:'));
-        assert.ok(pTags);
-        assert.strictEqual(pTags.textContent, 'Tags: N/A');
-    });
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
 
-    it('calls renderVirusTotalStats if virustotal_stats is provided', () => {
-        let vtCalled = false;
-        context.renderVirusTotalStats = () => { vtCalled = true; };
-        const json_data = { state: 'FINISHED', scanners: [] };
-        renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: { malicious: 1 } });
-        assert.strictEqual(vtCalled, true);
-    });
-
-    it('calls renderScannerResults, renderFileDetails, and renderActionButtons', () => {
-        let called = 0;
-        context.renderScannerResults = () => { called++; };
-        context.renderFileDetails = () => { called++; };
-        context.renderActionButtons = () => { called++; };
-
-        const json_data = { state: 'FINISHED', scanners: ['scanner1'] };
-        renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-
-        assert.strictEqual(called, 3);
+        assert.ok(status.innerText.includes('Kommunikationsfehler: Error: Network error'));
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 });
