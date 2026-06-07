@@ -10,6 +10,15 @@ let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 
+let sharedDBPromise = null;
+
+function getSharedDB() {
+    if (!sharedDBPromise) {
+        sharedDBPromise = openDB("thunderbird_av", 3);
+    }
+    return sharedDBPromise;
+}
+
 const knownSendersCache = new Set();
 const MAX_KNOWN_SENDERS = 1000;
 
@@ -938,7 +947,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
 
 async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
   try {
-    const db = await openDB("thunderbird_av", 3);
+    const db = await getSharedDB();
 
     if (message.headerMessageId) {
       const newAttachments = results.map(result => ({
@@ -992,7 +1001,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
 // Speicherung der Ergebnisse in IndexedDB
 async function indexedDB_save_links_objects_to_db(message, urlObjects) {
   try {
-    const db = await openDB("thunderbird_av", 3);
+    const db = await getSharedDB();
 
     if (message.headerMessageId) {
       const newLinks = urlObjects.map(obj => ({
@@ -1035,7 +1044,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
 
 async function indexedDB_save_links_to_db(message, urls) {
   try {
-    const db = await openDB("thunderbird_av", 3);
+    const db = await getSharedDB();
 
     if (message.headerMessageId) {
       const newLinks = urls.map(url => ({
@@ -1135,7 +1144,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
             return;
         }
 
-        const db = await openDB("thunderbird_av", 3);
+        const db = await getSharedDB();
         const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
 
         let linkObj = null;
@@ -1325,7 +1334,7 @@ async function handleUrlScan(url, headerMessageId) {
 
         // Update DB record
         try {
-            const db = await openDB("thunderbird_av", 3);
+            const db = await getSharedDB();
             await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
                 if (existingRecord && existingRecord.links) {
                     let linkIndex = existingRecord.links.findIndex(l => l.url === url);
@@ -1369,7 +1378,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
 
         // Update DB record
         try {
-            const db = await openDB("thunderbird_av", 3);
+            const db = await getSharedDB();
             await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
                 if (existingRecord && existingRecord.attachments) {
                     let attIndex = existingRecord.attachments.findIndex(a => a.partName === partName);
