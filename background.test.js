@@ -2021,6 +2021,74 @@ describe('background.js', () => {
         });
     });
 
+    describe('checkHybridAnalysisVerdict', () => {
+        let originalFetch;
+        let originalOptions;
+        let originalApiKey;
+
+        beforeEach(() => {
+            originalFetch = context.fetch;
+            originalOptions = context.getHybridAnalysisOptions;
+            originalApiKey = context.apikey_hybridanalysis;
+            context.getHybridAnalysisOptions = () => ({ headers: {} });
+        });
+
+        afterEach(() => {
+            context.fetch = originalFetch;
+            context.getHybridAnalysisOptions = originalOptions;
+            context.apikey_hybridanalysis = originalApiKey;
+        });
+
+        it('should return fallbackState if apikey_hybridanalysis is missing', async () => {
+            context.apikey_hybridanalysis = null;
+            const res = await context.checkHybridAnalysisVerdict('hash123', 'UNKNOWN');
+            assert.strictEqual(res, 'UNKNOWN');
+        });
+
+        it('should return fallbackState if hybrid_sha256 is falsy', async () => {
+            context.apikey_hybridanalysis = 'some_key';
+            const res = await context.checkHybridAnalysisVerdict(null, 'UNKNOWN');
+            assert.strictEqual(res, 'UNKNOWN');
+        });
+
+        it('should return CLEAN if verdict is no specific threat', async () => {
+            context.apikey_hybridanalysis = 'some_key';
+            context.fetch = async (url) => {
+                assert.strictEqual(url, 'https://hybrid-analysis.com/api/v2/overview/hash123');
+                return {
+                    json: async () => ({ verdict: 'no specific threat' })
+                };
+            };
+            const res = await context.checkHybridAnalysisVerdict('hash123', 'UNKNOWN');
+            assert.strictEqual(res, 'CLEAN');
+        });
+
+        it('should return uppercase verdict if verdict is specific threat', async () => {
+            context.apikey_hybridanalysis = 'some_key';
+            context.fetch = async () => ({
+                json: async () => ({ verdict: 'malicious' })
+            });
+            const res = await context.checkHybridAnalysisVerdict('hash123', 'UNKNOWN');
+            assert.strictEqual(res, 'MALICIOUS');
+        });
+
+        it('should return fallbackState if fetch throws an error', async () => {
+            context.apikey_hybridanalysis = 'some_key';
+            context.fetch = async () => { throw new Error('Network error'); };
+            const res = await context.checkHybridAnalysisVerdict('hash123', 'FALLBACK');
+            assert.strictEqual(res, 'FALLBACK');
+        });
+
+        it('should return fallbackState if verdict is missing in response', async () => {
+            context.apikey_hybridanalysis = 'some_key';
+            context.fetch = async () => ({
+                json: async () => ({ other_field: 'value' })
+            });
+            const res = await context.checkHybridAnalysisVerdict('hash123', 'FALLBACK');
+            assert.strictEqual(res, 'FALLBACK');
+        });
+    });
+
     describe('handle_unknown_attachment', () => {
         it('should auto-upload when privacyTier is balanced or max', async () => {
             let fetchCalled = false;
