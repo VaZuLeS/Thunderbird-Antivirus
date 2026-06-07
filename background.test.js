@@ -141,10 +141,13 @@ describe('background.js', () => {
             globalThis.evaluateBehavior = evaluateBehavior;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
+            globalThis.checkFirstCommunication = checkFirstCommunication;
             globalThis.checkURLhausDomains = checkURLhausDomains;
             globalThis.checkURLhaus = checkURLhaus;
             globalThis.evaluateUrlhaus = evaluateUrlhaus;
             globalThis.knownSendersCache = knownSendersCache;
+            globalThis.urlhausCache = urlhausCache;
+            globalThis.MAX_URLHAUS_CACHE_SIZE = MAX_URLHAUS_CACHE_SIZE;
             globalThis.checkLists = checkLists;
         `;
         context.URL = URL;
@@ -153,6 +156,7 @@ describe('background.js', () => {
         vm.runInContext(wrappedCode, context);
 
         if (context.knownSendersCache) context.knownSendersCache.clear();
+        if (context.urlhausCache) context.urlhausCache.clear();
     });
 
     it('should initialize successfully', () => {
@@ -1405,10 +1409,10 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal-support.com>', subject: 'Action required' });
 
-            assert.ok(executedWarningScript !== null);
-            assert.strictEqual(executedWarningScript.target.tabId, 10);
-            assert.strictEqual(typeof executedWarningScript.func, 'function');
-            assert.strictEqual(executedWarningScript.args[0], 100); // 100 score
+            assert.ok(executedWarningScripts.length > 0);
+            assert.strictEqual(executedWarningScripts[0].target.tabId, 10);
+            assert.strictEqual(typeof executedWarningScripts[0].func, 'function');
+            assert.strictEqual(executedWarningScripts[0].args[0], 100); // 100 score
         });
 
         it('does not inject warning banner if score < 50', async () => {
@@ -1428,7 +1432,7 @@ describe('background.js', () => {
             // This will trigger a score of 20 because of the "Action required" subject and no other reasons.
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'User <user@example.com>', subject: 'Action required' });
 
-            assert.strictEqual(executedWarningScript, null);
+            assert.strictEqual(executedWarningScripts.length, 0);
         });
 
         it('does not inject warning banner if score === 0', async () => {
@@ -1447,7 +1451,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            assert.ok(executedWarningScript === null);
+            assert.strictEqual(executedWarningScripts.length, 0);
         });
     });
 
@@ -1728,6 +1732,30 @@ describe('background.js', () => {
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], 'bad.com');
         });
+
+        it('should use the cache for repeated domain checks', async () => {
+            let apiCallCount = 0;
+            context.checkURLhaus = async (domain, apikey) => {
+                apiCallCount++;
+                return domain === 'bad.com';
+            };
+
+            // First call should increment apiCallCount
+            let result1 = await context.checkURLhausDomains(['http://bad.com']);
+            assert.strictEqual(apiCallCount, 1);
+            assert.strictEqual(result1.length, 1);
+
+            // Second call with the same domain should use cache, apiCallCount should remain 1
+            let result2 = await context.checkURLhausDomains(['http://bad.com']);
+            assert.strictEqual(apiCallCount, 1);
+            assert.strictEqual(result2.length, 1);
+
+            // Ensure cache size is respected
+            for (let i = 0; i < context.MAX_URLHAUS_CACHE_SIZE + 10; i++) {
+                await context.checkURLhausDomains([`http://domain${i}.com`]);
+            }
+            assert.strictEqual(context.urlhausCache.size, context.MAX_URLHAUS_CACHE_SIZE);
+        });
     });
 
     describe('IndexedDB Catch Blocks', () => {
@@ -1844,6 +1872,99 @@ describe('background.js', () => {
             const result = context.evaluateAuthHeaders(headers, 0, reasons);
             assert.strictEqual(result.authStatus, 'fail');
             assert.strictEqual(result.score, 50);
+        });
+    });
+
+    describe('checkFirstCommunication', () => {
+        let originalQuery;
+
+        beforeEach(() => {
+            originalQuery = context.browser.messages.query;
+            context.knownSendersCache.clear();
+        });
+
+        afterEach(() => {
+            context.browser.messages.query = originalQuery;
+        });
+
+        it('returns false if browser.messages.query is not supported', async () => {
+            context.browser.messages.query = undefined;
+            const result = await context.checkFirstCommunication('test@example.com');
+            assert.strictEqual(result, false);
+        });
+
+        it('returns false and does not query if sender is in knownSendersCache', async () => {
+            context.knownSendersCache.add('known@example.com');
+            let queryCalled = false;
+            context.browser.messages.query = async () => {
+                queryCalled = true;
+                return { messages: [] };
+            };
+            const result = await context.checkFirstCommunication('known@example.com');
+            assert.strictEqual(result, false);
+            assert.strictEqual(queryCalled, false);
+        });
+
+        it('returns true if previousMsgs is empty and does not add to cache', async () => {
+            context.browser.messages.query = async ({ to }) => {
+                assert.strictEqual(to, 'new@example.com');
+                return { messages: [] };
+            };
+            const result = await context.checkFirstCommunication('new@example.com');
+            assert.strictEqual(result, true);
+            assert.strictEqual(context.knownSendersCache.has('new@example.com'), false);
+        });
+
+        it('returns false if previousMsgs is not empty and adds sender to cache', async () => {
+            context.browser.messages.query = async ({ to }) => {
+                assert.strictEqual(to, 'old@example.com');
+                return { messages: [{ id: 1 }] };
+            };
+            const result = await context.checkFirstCommunication('old@example.com');
+            assert.strictEqual(result, false);
+            assert.strictEqual(context.knownSendersCache.has('old@example.com'), true);
+        });
+
+        it('clears knownSendersCache if it exceeds MAX_KNOWN_SENDERS', async () => {
+            // Mock the knownSendersCache property 'size' so it pretends to be > 1000
+            // Since MAX_KNOWN_SENDERS is a const (1000) inside background.js
+            let originalSizeGetter = Object.getOwnPropertyDescriptor(Set.prototype, 'size').get;
+
+            Object.defineProperty(context.knownSendersCache, 'size', {
+                get: function() { return 1001; },
+                configurable: true
+            });
+
+            context.browser.messages.query = async () => {
+                return { messages: [{ id: 1 }] }; // Returning messages makes it a known sender
+            };
+
+            const result = await context.checkFirstCommunication('new_user@example.com');
+            assert.strictEqual(result, false);
+            // After clear is called, our getter might still return 1001 or we check if clear was called.
+            // But .add is also called after .clear. We can test if clear was called by overriding clear.
+            // Instead, let's restore the size getter right before checking real size.
+
+            // Revert back
+            delete context.knownSendersCache.size;
+
+            // Wait, if it cleared it and added 'new_user@example.com', the real size should be 1.
+            assert.strictEqual(context.knownSendersCache.size, 1);
+            assert.strictEqual(context.knownSendersCache.has('new_user@example.com'), true);
+        });
+
+        it('handles exceptions from browser.messages.query gracefully and returns false', async () => {
+            context.browser.messages.query = async () => {
+                throw new Error('Test Error');
+            };
+            // Stub console.log to avoid cluttering test output
+            const originalLog = context.console.log;
+            context.console.log = () => {};
+
+            const result = await context.checkFirstCommunication('error@example.com');
+
+            context.console.log = originalLog;
+            assert.strictEqual(result, false);
         });
     });
 });

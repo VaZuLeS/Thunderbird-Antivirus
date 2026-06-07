@@ -27,3 +27,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** In `content_script.js`, the Time-of-Click protection check for links only intercepts HTTP and HTTPS URLs. Links using alternative schemes supported by Thunderbird (like `file:`, `ftp:`, `smb:`, or `mailto:`) bypass the warning mechanisms, allowing potentially malicious local or network links to be opened without inspection.
 **Learning:** Only intercepting known safe protocols allows attackers to pivot to unexpected vectors that native desktop applications support.
 **Prevention:** If a security mechanism cannot validate a URI scheme, it should fail closed (block the click) rather than failing open (allowing the unhandled protocol to execute). Ensure default actions are prevented for unhandled protocols.
+
+## 2026-06-08 - Insecure Sensitive API Key Input Configuration
+**Vulnerability:** The API key configuration inputs in `options.html` were implemented as standard `<input type="password">` fields without bounding constraints or autocomplete directives. This could allow resource exhaustion (Denial of Service) via excessively large string injections and inadvertently permit browser password managers to cache and expose sensitive API tokens.
+**Learning:** Browser autofill and unbounded inputs pose secondary risks for high-privilege secrets that shouldn't be managed like standard passwords.
+**Prevention:** Always explicitly define `maxlength` bounds (e.g., `255`) and apply `autocomplete="off"` to sensitive configuration inputs (like API keys and tokens) to enforce limits and prevent unauthorized local caching.

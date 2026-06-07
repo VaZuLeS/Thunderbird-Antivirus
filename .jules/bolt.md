@@ -35,3 +35,7 @@ When dealing with repeated I/O operations inside frequently invoked event hooks 
 ## 2024-06-04 - True Array Pooling
 **Learning:** Re-allocating typed arrays (`new Uint16Array()`) inside a frequently called function (like `levenshteinDistance` in a loop) creates massive garbage collection overhead, even if intended for "array pooling". True pooling requires the buffers to be allocated *outside* the function scope.
 **Action:** Move typed array buffer allocations to the module/global level and reuse them by reference inside hot-path functions, dynamically expanding them only when the required size exceeds the pooled buffer size.
+
+## 2024-05-24
+* **Learning:** When processing multiple items sequentially (e.g., extracting domains and calling an external API like URLhaus for each), redundant calls to the same API endpoint for identical items can cause significant performance bottlenecks and network overhead.
+* **Action:** Implement a bounded, module-level in-memory cache (like `Map`) with a reasonable maximum size to store previous API responses. Before invoking the API, check the cache. If the maximum size is reached, evict the oldest entry using `.keys().next().value` to maintain O(1) time complexity while preventing unbounded memory growth.
