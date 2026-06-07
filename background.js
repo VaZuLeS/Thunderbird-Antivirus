@@ -10,6 +10,15 @@ let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 
+let sharedDBPromise = null;
+
+function getSharedDB() {
+    if (!sharedDBPromise) {
+        sharedDBPromise = openDB("thunderbird_av", 3);
+    }
+    return sharedDBPromise;
+}
+
 const knownSendersCache = new Set();
 const MAX_KNOWN_SENDERS = 1000;
 
@@ -616,8 +625,10 @@ async function checkURLhausDomains(filteredUrls) {
 }
 
 async function injectThreatBanner(tabId, threat) {
-    if (threat.score >= 50) {
-        console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
+    if (threat.score >= 50 || threat.authStatus === 'pass') {
+        if (threat.score >= 50) {
+            console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
+        }
         await browser.scripting.executeScript({
             target: { tabId: tabId },
             func: function(score, reasons, authStatus) {
@@ -678,7 +689,6 @@ async function injectThreatBanner(tabId, threat) {
 
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
-  console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
 
   try {
     // Liste der Anhänge abrufen
@@ -853,13 +863,7 @@ async function handle_unknown_attachment(attachment, content_of_atachment, local
     );
 }
 
-async function sent_to_hybrid_by_attachment(message, attachments) {
-  if (!apikey_hybridanalysis) {
-      console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
-      return;
-  }
-
-  const results = await Promise.all(attachments.map(async (attachment) => {
+async function process_single_attachment(message, attachment) {
     console.log(`Prüfe Anhang: ${attachment.name} (${attachment.contentType}, ${attachment.size} bytes)`);
 
     let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
@@ -928,6 +932,16 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
           return null;
         }
     }
+}
+
+async function sent_to_hybrid_by_attachment(message, attachments) {
+  if (!apikey_hybridanalysis) {
+      console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
+      return;
+  }
+
+  const results = await Promise.all(attachments.map(async (attachment) => {
+    return await process_single_attachment(message, attachment);
   }));
 
   const validResults = results.filter(r => r !== null);
@@ -938,7 +952,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
 
 async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
   try {
-    const db = await openDB("thunderbird_av", 3);
+    const db = await getSharedDB();
 
     if (message.headerMessageId) {
       const newAttachments = results.map(result => ({
@@ -992,7 +1006,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
 // Speicherung der Ergebnisse in IndexedDB
 async function indexedDB_save_links_objects_to_db(message, urlObjects) {
   try {
-    const db = await openDB("thunderbird_av", 3);
+    const db = await getSharedDB();
 
     if (message.headerMessageId) {
       const newLinks = urlObjects.map(obj => ({
@@ -1035,7 +1049,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
 
 async function indexedDB_save_links_to_db(message, urls) {
   try {
-    const db = await openDB("thunderbird_av", 3);
+    const db = await getSharedDB();
 
     if (message.headerMessageId) {
       const newLinks = urls.map(url => ({
@@ -1135,7 +1149,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
             return;
         }
 
-        const db = await openDB("thunderbird_av", 3);
+        const db = await getSharedDB();
         const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
 
         let linkObj = null;
@@ -1330,7 +1344,7 @@ async function handleUrlScan(url, headerMessageId) {
 
         // Update DB record
         try {
-            const db = await openDB("thunderbird_av", 3);
+            const db = await getSharedDB();
             await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
                 if (existingRecord && existingRecord.links) {
                     let linkIndex = existingRecord.links.findIndex(l => l.url === url);
@@ -1374,7 +1388,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
 
         // Update DB record
         try {
-            const db = await openDB("thunderbird_av", 3);
+            const db = await getSharedDB();
             await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
                 if (existingRecord && existingRecord.attachments) {
                     let attIndex = existingRecord.attachments.findIndex(a => a.partName === partName);
