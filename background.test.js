@@ -141,11 +141,17 @@ describe('background.js', () => {
             globalThis.evaluateBehavior = evaluateBehavior;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
+            globalThis.processAndUploadUrls = processAndUploadUrls;
+            globalThis.checkFirstCommunication = checkFirstCommunication;
             globalThis.checkURLhausDomains = checkURLhausDomains;
             globalThis.checkURLhaus = checkURLhaus;
             globalThis.evaluateUrlhaus = evaluateUrlhaus;
             globalThis.knownSendersCache = knownSendersCache;
+            globalThis.urlhausCache = urlhausCache;
+            globalThis.MAX_URLHAUS_CACHE_SIZE = MAX_URLHAUS_CACHE_SIZE;
             globalThis.checkLists = checkLists;
+            globalThis.handle_unknown_attachment = handle_unknown_attachment;
+            globalThis.getHybridAnalysisOptions = getHybridAnalysisOptions;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -153,6 +159,7 @@ describe('background.js', () => {
         vm.runInContext(wrappedCode, context);
 
         if (context.knownSendersCache) context.knownSendersCache.clear();
+        if (context.urlhausCache) context.urlhausCache.clear();
     });
 
     it('should initialize successfully', () => {
@@ -1728,6 +1735,30 @@ describe('background.js', () => {
             assert.strictEqual(result.length, 1);
             assert.strictEqual(result[0], 'bad.com');
         });
+
+        it('should use the cache for repeated domain checks', async () => {
+            let apiCallCount = 0;
+            context.checkURLhaus = async (domain, apikey) => {
+                apiCallCount++;
+                return domain === 'bad.com';
+            };
+
+            // First call should increment apiCallCount
+            let result1 = await context.checkURLhausDomains(['http://bad.com']);
+            assert.strictEqual(apiCallCount, 1);
+            assert.strictEqual(result1.length, 1);
+
+            // Second call with the same domain should use cache, apiCallCount should remain 1
+            let result2 = await context.checkURLhausDomains(['http://bad.com']);
+            assert.strictEqual(apiCallCount, 1);
+            assert.strictEqual(result2.length, 1);
+
+            // Ensure cache size is respected
+            for (let i = 0; i < context.MAX_URLHAUS_CACHE_SIZE + 10; i++) {
+                await context.checkURLhausDomains([`http://domain${i}.com`]);
+            }
+            assert.strictEqual(context.urlhausCache.size, context.MAX_URLHAUS_CACHE_SIZE);
+        });
     });
 
     describe('IndexedDB Catch Blocks', () => {
@@ -1844,6 +1875,233 @@ describe('background.js', () => {
             const result = context.evaluateAuthHeaders(headers, 0, reasons);
             assert.strictEqual(result.authStatus, 'fail');
             assert.strictEqual(result.score, 50);
+        });
+    });
+
+    describe('checkFirstCommunication', () => {
+        let originalQuery;
+
+        beforeEach(() => {
+            originalQuery = context.browser.messages.query;
+            context.knownSendersCache.clear();
+        });
+
+        afterEach(() => {
+            context.browser.messages.query = originalQuery;
+        });
+
+        it('returns false if browser.messages.query is not supported', async () => {
+            context.browser.messages.query = undefined;
+            const result = await context.checkFirstCommunication('test@example.com');
+            assert.strictEqual(result, false);
+        });
+
+        it('returns false and does not query if sender is in knownSendersCache', async () => {
+            context.knownSendersCache.add('known@example.com');
+            let queryCalled = false;
+            context.browser.messages.query = async () => {
+                queryCalled = true;
+                return { messages: [] };
+            };
+            const result = await context.checkFirstCommunication('known@example.com');
+            assert.strictEqual(result, false);
+            assert.strictEqual(queryCalled, false);
+        });
+
+        it('returns true if previousMsgs is empty and does not add to cache', async () => {
+            context.browser.messages.query = async ({ to }) => {
+                assert.strictEqual(to, 'new@example.com');
+                return { messages: [] };
+            };
+            const result = await context.checkFirstCommunication('new@example.com');
+            assert.strictEqual(result, true);
+            assert.strictEqual(context.knownSendersCache.has('new@example.com'), false);
+        });
+
+        it('returns false if previousMsgs is not empty and adds sender to cache', async () => {
+            context.browser.messages.query = async ({ to }) => {
+                assert.strictEqual(to, 'old@example.com');
+                return { messages: [{ id: 1 }] };
+            };
+            const result = await context.checkFirstCommunication('old@example.com');
+            assert.strictEqual(result, false);
+            assert.strictEqual(context.knownSendersCache.has('old@example.com'), true);
+        });
+
+        it('clears knownSendersCache if it exceeds MAX_KNOWN_SENDERS', async () => {
+            // Mock the knownSendersCache property 'size' so it pretends to be > 1000
+            // Since MAX_KNOWN_SENDERS is a const (1000) inside background.js
+            let originalSizeGetter = Object.getOwnPropertyDescriptor(Set.prototype, 'size').get;
+
+            Object.defineProperty(context.knownSendersCache, 'size', {
+                get: function() { return 1001; },
+                configurable: true
+            });
+
+            context.browser.messages.query = async () => {
+                return { messages: [{ id: 1 }] }; // Returning messages makes it a known sender
+            };
+
+            const result = await context.checkFirstCommunication('new_user@example.com');
+            assert.strictEqual(result, false);
+            // After clear is called, our getter might still return 1001 or we check if clear was called.
+            // But .add is also called after .clear. We can test if clear was called by overriding clear.
+            // Instead, let's restore the size getter right before checking real size.
+
+            // Revert back
+            delete context.knownSendersCache.size;
+
+            // Wait, if it cleared it and added 'new_user@example.com', the real size should be 1.
+            assert.strictEqual(context.knownSendersCache.size, 1);
+            assert.strictEqual(context.knownSendersCache.has('new_user@example.com'), true);
+        });
+
+        it('handles exceptions from browser.messages.query gracefully and returns false', async () => {
+            context.browser.messages.query = async () => {
+                throw new Error('Test Error');
+            };
+            // Stub console.log to avoid cluttering test output
+            const originalLog = context.console.log;
+            context.console.log = () => {};
+
+            const result = await context.checkFirstCommunication('error@example.com');
+
+            context.console.log = originalLog;
+            assert.strictEqual(result, false);
+        });
+    });
+
+    describe('getHybridAnalysisOptions', () => {
+        it('throws an error if apikey_hybridanalysis is not set', () => {
+            context.set_apikey(''); // Clear API key
+            assert.throws(() => {
+                context.getHybridAnalysisOptions('GET');
+            }, /API-Key fehlt/);
+        });
+
+        it('returns correct options for basic GET request (no body, isUrl=false)', () => {
+            context.set_apikey('test-key');
+            const options = context.getHybridAnalysisOptions('GET');
+            assert.strictEqual(options.method, 'GET');
+            assert.strictEqual(options.headers.accept, 'application/json');
+            assert.strictEqual(options.headers['api-key'], 'test-key');
+            assert.strictEqual(options.headers['user-agent'], 'Falcon');
+            assert.strictEqual(options.body, undefined);
+            assert.strictEqual(options.headers['scan_type'], undefined);
+            assert.strictEqual(options.headers['Content-Type'], undefined);
+        });
+
+        it('returns correct options when body is provided', () => {
+            context.set_apikey('test-key');
+            const body = 'test-body';
+            const options = context.getHybridAnalysisOptions('POST', body);
+            assert.strictEqual(options.method, 'POST');
+            assert.strictEqual(options.body, 'test-body');
+            assert.strictEqual(options.headers['scan_type'], 'all');
+            assert.strictEqual(options.headers['Content-Type'], undefined);
+        });
+
+        it('returns correct options when isUrl is true', () => {
+            context.set_apikey('test-key');
+            const options = context.getHybridAnalysisOptions('POST', null, true);
+            assert.strictEqual(options.method, 'POST');
+            assert.strictEqual(options.body, undefined);
+            assert.strictEqual(options.headers['scan_type'], undefined);
+            assert.strictEqual(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
+        });
+
+        it('returns correct options when both body and isUrl are provided', () => {
+            context.set_apikey('test-key');
+            const body = 'url=http://example.com';
+            const options = context.getHybridAnalysisOptions('POST', body, true);
+            assert.strictEqual(options.method, 'POST');
+            assert.strictEqual(options.body, 'url=http://example.com');
+            assert.strictEqual(options.headers['scan_type'], 'all');
+            assert.strictEqual(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
+        });
+    });
+
+    describe('handle_unknown_attachment', () => {
+        it('should auto-upload when privacyTier is balanced or max', async () => {
+            let fetchCalled = false;
+            let appendedData = null;
+            context.set_apikey('test-key');
+            context.fetch = async (url, options) => {
+                fetchCalled = true;
+                assert.strictEqual(url, 'https://hybrid-analysis.com/api/v2/quick-scan/file');
+                appendedData = options.body;
+                return {
+                    status: 200,
+                    json: async () => ({ submission_id: 'sub_123', job_id: 'job_456', sha256: 'hash_api' })
+                };
+            };
+
+            const attachment = { name: 'test.pdf', partName: 'part2' };
+            const content = new ArrayBuffer(8);
+
+            const res = await context.handle_unknown_attachment(attachment, content, 'local_hash_fallback', null, 'balanced', 'application/pdf');
+
+            assert.ok(fetchCalled);
+            assert.strictEqual(res.hybrid_data.submission_id, 'sub_123');
+            assert.strictEqual(res.hybrid_data.job_id, 'job_456');
+            assert.strictEqual(res.hybrid_data.sha256, 'hash_api');
+            assert.strictEqual(res.hybrid_data.state, 'UPLOADED');
+            assert.strictEqual(res.hybrid_data.partName, 'part2');
+            assert.strictEqual(res.attachmentName, 'test.pdf');
+        });
+
+        it('should fallback to manual if fetch returns non-200 status', async () => {
+            let errorLogged = false;
+            context.console.error = (msg) => { if(msg.includes('falle auf manuell zurück')) errorLogged = true; };
+            context.set_apikey('test-key');
+            context.fetch = async () => {
+                return { status: 500 };
+            };
+
+            const attachment = { name: 'fail.pdf', partName: 'part3' };
+            const content = new ArrayBuffer(8);
+
+            const res = await context.handle_unknown_attachment(attachment, content, 'local_hash', null, 'max', 'application/pdf');
+
+            assert.ok(errorLogged);
+            assert.strictEqual(res.hybrid_data.submission_id, 'PENDING_UPLOAD');
+            assert.strictEqual(res.hybrid_data.job_id, 'PENDING_UPLOAD');
+            assert.strictEqual(res.hybrid_data.sha256, 'local_hash');
+            assert.strictEqual(res.hybrid_data.state, 'UNKNOWN');
+            assert.strictEqual(res.hybrid_data.partName, 'part3');
+        });
+
+        it('should fallback to manual if fetch throws an error', async () => {
+            let errorLogged = false;
+            context.console.error = (msg) => { if(msg.includes('Ausnahme beim automatischen Upload')) errorLogged = true; };
+            context.set_apikey('test-key');
+            context.fetch = async () => {
+                throw new Error("Network error");
+            };
+
+            const attachment = { name: 'error.pdf', partName: 'part4' };
+            const content = new ArrayBuffer(8);
+
+            const res = await context.handle_unknown_attachment(attachment, content, 'local_hash', null, 'max', 'application/pdf');
+
+            assert.ok(errorLogged);
+            assert.strictEqual(res.hybrid_data.submission_id, 'PENDING_UPLOAD');
+            assert.strictEqual(res.hybrid_data.state, 'UNKNOWN');
+        });
+
+        it('should skip auto-upload and return manual fallback for low privacyTier', async () => {
+            let fetchCalled = false;
+            context.fetch = async () => { fetchCalled = true; return { status: 200, json: async () => ({}) }; };
+
+            const attachment = { name: 'skip.pdf', partName: 'part5' };
+            const content = new ArrayBuffer(8);
+
+            const res = await context.handle_unknown_attachment(attachment, content, 'local_hash', { malicious: 1 }, 'minimal', 'application/pdf');
+
+            assert.strictEqual(fetchCalled, false);
+            assert.strictEqual(res.hybrid_data.submission_id, 'PENDING_UPLOAD');
+            assert.strictEqual(res.hybrid_data.state, 'UNKNOWN');
+            assert.deepStrictEqual(res.virustotal_stats, { malicious: 1 });
         });
     });
 });

@@ -13,6 +13,9 @@ let ipReputationApiKey = "";
 const knownSendersCache = new Set();
 const MAX_KNOWN_SENDERS = 1000;
 
+const urlhausCache = new Map();
+const MAX_URLHAUS_CACHE_SIZE = 1000;
+
 function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
     const options = {
@@ -523,12 +526,22 @@ async function checkIPReputation(receivedHeaders) {
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
         let ipChecks = publicIps.map(async (ip) => {
+            if (ipReputationCache.has(ip)) {
+                return { ip, isMalicious: ipReputationCache.get(ip) };
+            }
+
             let isMalicious = false;
             if (ipReputationProvider === "abuseipdb") {
                 isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
             } else if (ipReputationProvider === "virustotal") {
                 isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
             }
+
+            if (ipReputationCache.size >= MAX_IP_CACHE) {
+                ipReputationCache.clear();
+            }
+            ipReputationCache.set(ip, isMalicious);
+
             return { ip, isMalicious };
         });
 
@@ -578,7 +591,18 @@ async function checkURLhausDomains(filteredUrls) {
         }
 
         const domainChecks = Array.from(linkDomains).map(async (domain) => {
+            if (urlhausCache.has(domain)) {
+                return urlhausCache.get(domain) ? domain : null;
+            }
+
             let isMalicious = await checkURLhaus(domain, urlhausApikey);
+
+            if (urlhausCache.size >= MAX_URLHAUS_CACHE_SIZE) {
+                const firstKey = urlhausCache.keys().next().value;
+                urlhausCache.delete(firstKey);
+            }
+            urlhausCache.set(domain, isMalicious);
+
             if (isMalicious) {
                 return domain;
             }
@@ -656,7 +680,6 @@ async function injectThreatBanner(tabId, threat) {
 
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
-  console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
 
   try {
     // Liste der Anhänge abrufen
@@ -773,6 +796,23 @@ async function get_sha256_hash(fileData) {
     return hashStr;
 }
 
+function createHybridDataObject(submissionId, jobId, sha256, state, attachment, virustotalStats = undefined) {
+    const result = {
+        hybrid_data: {
+            submission_id: submissionId,
+            job_id: jobId,
+            sha256: sha256,
+            state: state,
+            partName: attachment.partName
+        },
+        attachmentName: attachment.name
+    };
+    if (virustotalStats !== undefined) {
+        result.virustotal_stats = virustotalStats;
+    }
+    return result;
+}
+
 async function handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, fileType) {
     console.log('Datei ist der API unbekannt.');
     if (privacyTier === 'balanced' || privacyTier === 'max') {
@@ -788,16 +828,13 @@ async function handle_unknown_attachment(attachment, content_of_atachment, local
             const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
             if (uploadResponse.status === 200 || uploadResponse.status === 201) {
                 const uploadData = await uploadResponse.json();
-                return {
-                    hybrid_data: {
-                        submission_id: uploadData.submission_id,
-                        job_id: uploadData.job_id,
-                        sha256: uploadData.sha256 || local_hash,
-                        state: 'UPLOADED',
-                        partName: attachment.partName
-                    },
-                    attachmentName: attachment.name
-                };
+                return createHybridDataObject(
+                    uploadData.submission_id,
+                    uploadData.job_id,
+                    uploadData.sha256 || local_hash,
+                    'UPLOADED',
+                    attachment
+                );
             } else {
                 console.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
             }
@@ -807,17 +844,14 @@ async function handle_unknown_attachment(attachment, content_of_atachment, local
     }
 
     console.log('Speichere Metadaten für manuellen Upload.');
-    return {
-        hybrid_data: {
-            submission_id: 'PENDING_UPLOAD',
-            job_id: 'PENDING_UPLOAD',
-            sha256: local_hash,
-            state: 'UNKNOWN',
-            partName: attachment.partName
-        },
-        attachmentName: attachment.name,
-        virustotal_stats: virustotal_stats
-    };
+    return createHybridDataObject(
+        'PENDING_UPLOAD',
+        'PENDING_UPLOAD',
+        local_hash,
+        'UNKNOWN',
+        attachment,
+        virustotal_stats
+    );
 }
 
 async function sent_to_hybrid_by_attachment(message, attachments) {
@@ -859,17 +893,14 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
 
             if (alwaysManual) {
                 console.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
-                return {
-                    hybrid_data: {
-                        submission_id: 'MANUAL_CHECK',
-                        job_id: 'MANUAL_CHECK',
-                        sha256: local_hash,
-                        state: 'MANUAL_CHECK_PENDING',
-                        partName: attachment.partName
-                    },
-                    attachmentName: attachment.name,
-                    virustotal_stats: virustotal_stats
-                };
+                return createHybridDataObject(
+                    'MANUAL_CHECK',
+                    'MANUAL_CHECK',
+                    local_hash,
+                    'MANUAL_CHECK_PENDING',
+                    attachment,
+                    virustotal_stats
+                );
             }
 
             // First check if it exists using hash
@@ -881,17 +912,14 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             if (responseCheck.status === 200) {
                 const json_data = await responseCheck.json();
                 console.log('Datei ist der API bereits bekannt.');
-                return {
-                    hybrid_data: {
-                        submission_id: json_data.submission_id || 'N/A',
-                        job_id: json_data.job_id || 'N/A',
-                        sha256: local_hash,
-                        state: 'KNOWN',
-                        partName: attachment.partName
-                    },
-                    attachmentName: attachment.name,
-                    virustotal_stats: virustotal_stats
-                };
+                return createHybridDataObject(
+                    json_data.submission_id || 'N/A',
+                    json_data.job_id || 'N/A',
+                    local_hash,
+                    'KNOWN',
+                    attachment,
+                    virustotal_stats
+                );
             } else {
                 return await handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, file.type);
             }

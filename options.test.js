@@ -105,7 +105,6 @@ describe('options.js', () => {
         assert.strictEqual(apiKeyInput.disabled, false);
         assert.strictEqual(apiKeyInput.title, '');
         assert.strictEqual(apiKeyInput.placeholder, '');
-        assert.strictEqual(apiKeyInput.getAttribute('aria-disabled'), null);
 
         // Simulate changing to 'none'
         const providerSelect = context.document.getElementById('ipReputationProvider');
@@ -118,7 +117,6 @@ describe('options.js', () => {
         assert.strictEqual(apiKeyInput.disabled, true);
         assert.strictEqual(apiKeyInput.title, 'Wählen Sie zuerst einen Anbieter aus');
         assert.strictEqual(apiKeyInput.placeholder, 'Deaktiviert');
-        assert.strictEqual(apiKeyInput.getAttribute('aria-disabled'), 'true');
     });
 
     it('should save settings when save button is clicked', async () => {

@@ -43,7 +43,6 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
 // Informationen.
 let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
-console.log(message.headerMessageId);
 
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
@@ -143,11 +142,9 @@ try {
     };
 
     openRequest.onerror = function(e) {
-        console.log("Kein Hash/Anhang gefunden.");
         let p2 = document.createElement('p'); p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p2);
     }
 } catch (error) {
-    console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
 })();
 
@@ -364,7 +361,6 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     renderScannerResults(json_data.scanners, card);
     renderFileDetails(json_data, card);
     renderActionButtons(hybrid_sha, attachmentName, card);
-    }
     return card;
 }
 
@@ -391,7 +387,7 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 
         if (response.status === 200) {
             let container = document.getElementById('hybrid_analysis_api_content');
-            let reportNode = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats);
+            let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats });
             container.appendChild(reportNode);
 
             let rescanBtn = document.getElementById(`btn-rescan-${hybrid_sha}`);
