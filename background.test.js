@@ -35,6 +35,7 @@ describe('background.js', () => {
                     })
                 },
                 messageDisplay: {
+                    getDisplayedMessage: async () => ({ headerMessageId: 'test-msg-id' }),
                     onMessageDisplayed: {
                         addListener: (listener) => {
                             context.browser.messageDisplay.onMessageDisplayed.listeners.push(listener);
@@ -149,6 +150,11 @@ describe('background.js', () => {
             globalThis.urlhausCache = urlhausCache;
             globalThis.MAX_URLHAUS_CACHE_SIZE = MAX_URLHAUS_CACHE_SIZE;
             globalThis.checkLists = checkLists;
+            globalThis.handleCheckLinkState = handleCheckLinkState;
+            globalThis.checkUrlscanIo = checkUrlscanIo;
+            globalThis.getHybridAnalysisOptions = getHybridAnalysisOptions;
+            globalThis.set_urlscanApikey = (val) => { urlscanApikey = val; };
+            globalThis.set_apikey_hybridanalysis = (val) => { apikey_hybridanalysis = val; };
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -1965,6 +1971,137 @@ describe('background.js', () => {
 
             context.console.log = originalLog;
             assert.strictEqual(result, false);
+        });
+    });
+
+    describe('handleCheckLinkState', () => {
+        let originalFetch;
+        let originalConsoleLog;
+
+        beforeEach(() => {
+            originalFetch = context.fetch;
+            originalConsoleLog = context.console.log;
+            context.console.log = () => {};
+            context.set_urlscanApikey('');
+            context.set_apikey_hybridanalysis('test-key');
+        });
+
+        afterEach(() => {
+            context.fetch = originalFetch;
+            context.console.log = originalConsoleLog;
+        });
+
+        it('returns UNKNOWN if no active message or headerMessageId', async () => {
+            context.browser.messageDisplay.getDisplayedMessage = async () => null;
+
+            let response;
+            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.deepEqual(response, { status: 'UNKNOWN' });
+
+            context.browser.messageDisplay.getDisplayedMessage = async () => ({ id: 1 }); // Missing headerMessageId
+            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.deepEqual(response, { status: 'UNKNOWN' });
+        });
+
+        it('returns UNKNOWN if no link object is found and urlscan is disabled', async () => {
+            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+            context.getFromStore = async () => ({ links: [] });
+            context.openDB = async () => ({});
+
+            let response;
+            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.deepEqual(response, { status: 'UNKNOWN' });
+        });
+
+        it('checks urlscan.io if no link object is found and urlscan is active, returning MALICIOUS', async () => {
+            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+            context.set_urlscanApikey('test-urlscan');
+
+            // Mock checkUrlscanIo behaviour via fetch
+            let callCount = 0;
+            context.fetch = async (url) => {
+                callCount++;
+                if (callCount === 1) return { ok: true, status: 200, json: async () => ({ uuid: 'uuid-1' }) };
+                if (callCount === 2) return { status: 200, json: async () => ({ verdicts: { overall: { malicious: true } } }) };
+            };
+
+            context.getFromStore = async () => ({ links: [] });
+            context.openDB = async () => ({});
+
+            let response;
+            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.strictEqual(response.status, 'MALICIOUS_VISUAL');
+        });
+
+        it('returns linkObj state if urlscan is clean and hybrid_sha256 is missing', async () => {
+            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+            context.set_urlscanApikey('test-urlscan');
+
+            let callCount = 0;
+            context.fetch = async (url) => {
+                callCount++;
+                if (callCount === 1) return { ok: true, status: 200, json: async () => ({ uuid: 'uuid-2' }) };
+                if (callCount === 2) return { status: 200, json: async () => ({ verdicts: {} }) };
+            };
+
+            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'CUSTOM_STATE' }] });
+            context.openDB = async () => ({});
+
+            let response;
+            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.deepEqual(response, { status: 'CUSTOM_STATE' });
+        });
+
+        it('fetches overview from hybrid analysis if hybrid_sha256 exists, returning CLEAN for no specific threat', async () => {
+            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+            // Disable urlscan to simplify
+            context.set_urlscanApikey('');
+
+            context.fetch = async (url) => {
+                assert.ok(url.includes('api/v2/overview/hash123'));
+                return { status: 200, json: async () => ({ verdict: 'no specific threat' }) };
+            };
+
+            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UPLOADED', hybrid_sha256: 'hash123' }] });
+            context.openDB = async () => ({});
+
+            let response;
+            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.deepEqual(response, { status: 'CLEAN' });
+        });
+
+        it('fetches overview from hybrid analysis, returning UPPERCASE verdict for threats', async () => {
+            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+
+            context.fetch = async () => ({ status: 200, json: async () => ({ verdict: 'malicious' }) });
+
+            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UPLOADED', hybrid_sha256: 'hash123' }] });
+            context.openDB = async () => ({});
+
+            let response;
+            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.deepEqual(response, { status: 'MALICIOUS' });
+        });
+
+        it('falls back to link state if hybrid analysis fetch throws an error', async () => {
+            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+
+            context.fetch = async () => { throw new Error('Network error'); };
+
+            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'FALLBACK_STATE', hybrid_sha256: 'hash123' }] });
+            context.openDB = async () => ({});
+
+            let response;
+            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.deepEqual(response, { status: 'FALLBACK_STATE' });
+        });
+
+        it('returns ERROR on generic unexpected errors in the main flow', async () => {
+            context.browser.messageDisplay.getDisplayedMessage = async () => { throw new Error('API failure'); };
+
+            let response;
+            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.deepEqual(response, { status: 'ERROR' });
         });
     });
 });
