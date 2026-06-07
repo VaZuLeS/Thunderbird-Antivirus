@@ -141,6 +141,7 @@ describe('background.js', () => {
             globalThis.evaluateBehavior = evaluateBehavior;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
+            globalThis.checkFirstCommunication = checkFirstCommunication;
             globalThis.checkURLhausDomains = checkURLhausDomains;
             globalThis.checkURLhaus = checkURLhaus;
             globalThis.evaluateUrlhaus = evaluateUrlhaus;
@@ -1844,6 +1845,99 @@ describe('background.js', () => {
             const result = context.evaluateAuthHeaders(headers, 0, reasons);
             assert.strictEqual(result.authStatus, 'fail');
             assert.strictEqual(result.score, 50);
+        });
+    });
+
+    describe('checkFirstCommunication', () => {
+        let originalQuery;
+
+        beforeEach(() => {
+            originalQuery = context.browser.messages.query;
+            context.knownSendersCache.clear();
+        });
+
+        afterEach(() => {
+            context.browser.messages.query = originalQuery;
+        });
+
+        it('returns false if browser.messages.query is not supported', async () => {
+            context.browser.messages.query = undefined;
+            const result = await context.checkFirstCommunication('test@example.com');
+            assert.strictEqual(result, false);
+        });
+
+        it('returns false and does not query if sender is in knownSendersCache', async () => {
+            context.knownSendersCache.add('known@example.com');
+            let queryCalled = false;
+            context.browser.messages.query = async () => {
+                queryCalled = true;
+                return { messages: [] };
+            };
+            const result = await context.checkFirstCommunication('known@example.com');
+            assert.strictEqual(result, false);
+            assert.strictEqual(queryCalled, false);
+        });
+
+        it('returns true if previousMsgs is empty and does not add to cache', async () => {
+            context.browser.messages.query = async ({ to }) => {
+                assert.strictEqual(to, 'new@example.com');
+                return { messages: [] };
+            };
+            const result = await context.checkFirstCommunication('new@example.com');
+            assert.strictEqual(result, true);
+            assert.strictEqual(context.knownSendersCache.has('new@example.com'), false);
+        });
+
+        it('returns false if previousMsgs is not empty and adds sender to cache', async () => {
+            context.browser.messages.query = async ({ to }) => {
+                assert.strictEqual(to, 'old@example.com');
+                return { messages: [{ id: 1 }] };
+            };
+            const result = await context.checkFirstCommunication('old@example.com');
+            assert.strictEqual(result, false);
+            assert.strictEqual(context.knownSendersCache.has('old@example.com'), true);
+        });
+
+        it('clears knownSendersCache if it exceeds MAX_KNOWN_SENDERS', async () => {
+            // Mock the knownSendersCache property 'size' so it pretends to be > 1000
+            // Since MAX_KNOWN_SENDERS is a const (1000) inside background.js
+            let originalSizeGetter = Object.getOwnPropertyDescriptor(Set.prototype, 'size').get;
+
+            Object.defineProperty(context.knownSendersCache, 'size', {
+                get: function() { return 1001; },
+                configurable: true
+            });
+
+            context.browser.messages.query = async () => {
+                return { messages: [{ id: 1 }] }; // Returning messages makes it a known sender
+            };
+
+            const result = await context.checkFirstCommunication('new_user@example.com');
+            assert.strictEqual(result, false);
+            // After clear is called, our getter might still return 1001 or we check if clear was called.
+            // But .add is also called after .clear. We can test if clear was called by overriding clear.
+            // Instead, let's restore the size getter right before checking real size.
+
+            // Revert back
+            delete context.knownSendersCache.size;
+
+            // Wait, if it cleared it and added 'new_user@example.com', the real size should be 1.
+            assert.strictEqual(context.knownSendersCache.size, 1);
+            assert.strictEqual(context.knownSendersCache.has('new_user@example.com'), true);
+        });
+
+        it('handles exceptions from browser.messages.query gracefully and returns false', async () => {
+            context.browser.messages.query = async () => {
+                throw new Error('Test Error');
+            };
+            // Stub console.log to avoid cluttering test output
+            const originalLog = context.console.log;
+            context.console.log = () => {};
+
+            const result = await context.checkFirstCommunication('error@example.com');
+
+            context.console.log = originalLog;
+            assert.strictEqual(result, false);
         });
     });
 });
