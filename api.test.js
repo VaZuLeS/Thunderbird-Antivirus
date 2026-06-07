@@ -110,6 +110,7 @@ describe('renderInProgressStatus', () => {
         // Create mock environment
         context = {
             document: {
+                createTextNode: (text) => ({ textContent: text, nodeType: 3 }),
                 createElement: (tag) => {
                     let children = [];
                     let el = {
@@ -117,6 +118,7 @@ describe('renderInProgressStatus', () => {
                         className: '',
                         textContent: '',
                         _html: '',
+                        setAttribute: () => {},
                         get innerHTML() { return this._html; },
                         set innerHTML(val) {
                             this._html = val;
@@ -141,9 +143,10 @@ describe('renderInProgressStatus', () => {
 
         // Instead of parsing the brittle regex, extract the function by properly accounting for braces,
         // or just execute a cleaned up version of the whole file like other tests do.
-        // Other tests use: const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+
         // Let's emulate what get_hybrid_report_by_sha256 test does.
-        const wrappedCode = code.replace(/^\(async function \(\) {/m, 'async function initAPI() {');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         try {
             vm.runInContext(wrappedCode, context);
         } catch(e) {
@@ -692,5 +695,122 @@ describe('renderVirusTotalStats', () => {
         assert.ok(html.includes('Undetected: 0'), 'Should default undetected to 0');
         assert.ok(html.includes('Suspicious: 0'), 'Should default suspicious to 0');
         assert.ok(html.includes('Harmless: 0'), 'Should default harmless to 0');
+    });
+});
+
+
+describe('renderReport', () => {
+    let context;
+    let renderReport;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createTextNode: (text) => ({ textContent: text, nodeType: 3 }),
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tagName: tag.toUpperCase(),
+                        className: '',
+                        textContent: '',
+                        _html: '',
+                        setAttribute: () => {},
+                        removeAttribute: () => {},
+                        get innerHTML() { return this._html; },
+                        set innerHTML(val) {
+                            this._html = val;
+                            if (val === '') children.length = 0;
+                        },
+                        get childNodes() { return children; },
+                        appendChild: function(child) { children.push(child); }
+                    };
+                    return el;
+                }
+            },
+            browser: { tabs: { query: async () => [{ id: 1 }] }, storage: { local: { get: async () => ({ apikey: 'test' }) } }, runtime: { sendMessage: async () => ({ status: 'success' }) } },
+            // Mock functions called by renderReport. We mock them, but since they are inside the evaluated script, they might be shadowed.
+            // However, we can inject a mock if we want by replacing them in the code, or just let them run with mocked DOM.
+            // Wait, we can test that they are called if we mock them by overwriting them on context AND inside the script!
+            renderInProgressStatus: () => {},
+            renderThreatInfo: () => {},
+            renderVirusTotalStats: () => {},
+            renderScannerResults: () => {},
+            renderFileDetails: () => {},
+            renderActionButtons: () => {}
+        };
+        vm.createContext(context);
+
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        vm.runInContext(wrappedCode, context);
+        renderReport = context.renderReport;
+    });
+
+    it('renders correct heading with attachmentName', () => {
+        const json_data = { state: 'FINISHED', scanners: [] };
+        const el = renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
+        assert.strictEqual(el.childNodes[0].tagName, 'H2');
+        assert.strictEqual(el.childNodes[0].textContent, 'Geprüftes Element: test.txt');
+    });
+
+    it('renders correct heading falling back to Unbekannt if attachmentName is missing', () => {
+        const json_data = { state: 'FINISHED', scanners: [] };
+        const el = renderReport({ json_data, attachmentName: null, hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
+        assert.strictEqual(el.childNodes[0].tagName, 'H2');
+        assert.strictEqual(el.childNodes[0].textContent, 'Geprüftes Element: Unbekannt');
+    });
+
+    it('calls renderInProgressStatus when state is IN_PROGRESS', () => {
+        let called = false;
+        context.renderInProgressStatus = () => { called = true; };
+        const json_data = { state: 'IN_PROGRESS', scanners: [] };
+        renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
+        assert.strictEqual(called, true);
+    });
+
+    it('calls renderThreatInfo and renders tags when state is not IN_PROGRESS', () => {
+        let threatInfoCalled = false;
+        context.renderThreatInfo = () => { threatInfoCalled = true; };
+        const json_data = { state: 'FINISHED', tags: ['malicious', 'exe'], scanners: [] };
+        const el = renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
+        assert.strictEqual(threatInfoCalled, true);
+
+        const pTags = el.childNodes.find(child => child.tagName === 'P' && child.textContent && child.textContent.startsWith('Tags:'));
+        assert.ok(pTags);
+        assert.strictEqual(pTags.textContent, 'Tags: malicious, exe');
+    });
+
+    it('renders N/A for tags if missing', () => {
+        const json_data = { state: 'FINISHED', scanners: [] };
+        const el = renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
+        const pTags = el.childNodes.find(child => child.tagName === 'P' && child.textContent && child.textContent.startsWith('Tags:'));
+        assert.ok(pTags);
+        assert.strictEqual(pTags.textContent, 'Tags: N/A');
+    });
+
+    it('calls renderVirusTotalStats if virustotal_stats is provided', () => {
+        let vtCalled = false;
+        context.renderVirusTotalStats = () => { vtCalled = true; };
+        const json_data = { state: 'FINISHED', scanners: [] };
+        renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: { malicious: 1 } });
+        assert.strictEqual(vtCalled, true);
+    });
+
+    it('calls renderScannerResults, renderFileDetails, and renderActionButtons', () => {
+        let called = 0;
+        context.renderScannerResults = () => { called++; };
+        context.renderFileDetails = () => { called++; };
+        context.renderActionButtons = () => { called++; };
+
+        const json_data = { state: 'FINISHED', scanners: ['scanner1'] };
+        renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
+
+        assert.strictEqual(called, 3);
     });
 });
