@@ -805,21 +805,20 @@ async function get_sha256_hash(fileData) {
     return hashStr;
 }
 
-function createHybridDataObject(submissionId, jobId, sha256, state, attachment, virustotalStats = undefined) {
-    const result = {
-        hybrid_data: {
-            submission_id: submissionId,
-            job_id: jobId,
-            sha256: sha256,
-            state: state,
-            partName: attachment.partName
-        },
-        attachmentName: attachment.name
-    };
-    if (virustotalStats !== undefined) {
-        result.virustotal_stats = virustotalStats;
+class HybridDataBuilder {
+    static create(submissionId, jobId, sha256, state, attachment, virustotalStats = null) {
+        return {
+            hybrid_data: {
+                submission_id: submissionId,
+                job_id: jobId,
+                sha256,
+                state,
+                partName: attachment.partName
+            },
+            attachmentName: attachment.name,
+            ...(virustotalStats && { virustotal_stats: virustotalStats })
+        };
     }
-    return result;
 }
 
 async function handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, fileType) {
@@ -837,7 +836,7 @@ async function handle_unknown_attachment(attachment, content_of_atachment, local
             const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
             if (uploadResponse.status === 200 || uploadResponse.status === 201) {
                 const uploadData = await uploadResponse.json();
-                return createHybridDataObject(
+                return HybridDataBuilder.create(
                     uploadData.submission_id,
                     uploadData.job_id,
                     uploadData.sha256 || local_hash,
@@ -853,7 +852,7 @@ async function handle_unknown_attachment(attachment, content_of_atachment, local
     }
 
     console.log('Speichere Metadaten für manuellen Upload.');
-    return createHybridDataObject(
+    return HybridDataBuilder.create(
         'PENDING_UPLOAD',
         'PENDING_UPLOAD',
         local_hash,
@@ -896,7 +895,7 @@ async function process_single_attachment(message, attachment) {
 
             if (alwaysManual) {
                 console.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
-                return createHybridDataObject(
+                return HybridDataBuilder.create(
                     'MANUAL_CHECK',
                     'MANUAL_CHECK',
                     local_hash,
@@ -915,7 +914,7 @@ async function process_single_attachment(message, attachment) {
             if (responseCheck.status === 200) {
                 const json_data = await responseCheck.json();
                 console.log('Datei ist der API bereits bekannt.');
-                return createHybridDataObject(
+                return HybridDataBuilder.create(
                     json_data.submission_id || 'N/A',
                     json_data.job_id || 'N/A',
                     local_hash,
