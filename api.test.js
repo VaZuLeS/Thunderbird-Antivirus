@@ -1,7 +1,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
-const { describe, it, before } = require('node:test');
+const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert');
 
 describe('escapeHTML', () => {
@@ -109,8 +109,10 @@ describe('renderInProgressStatus', () => {
     before(async () => {
         // Create mock environment
         context = {
+            browser: { storage: { local: { get: async () => ({}) } } },
             document: {
-                createTextNode: (text) => ({ textContent: text, nodeType: 3 }),
+                getElementById: () => ({ textContent: '', appendChild: () => {} }),
+                createTextNode: (text) => ({ textContent: text }),
                 createElement: (tag) => {
                     let children = [];
                     let el = {
@@ -194,6 +196,109 @@ describe('renderInProgressStatus', () => {
     });
 });
 
+
+describe('renderThreatInfo', () => {
+    let context;
+    let renderThreatInfo;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createTextNode: (text) => ({ textContent: text, nodeType: 3 }),
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _html: '',
+                        setAttribute: () => {},
+                        get innerHTML() { return this._html; },
+                        set innerHTML(val) {
+                            this._html = val;
+                            if (val === '') children.length = 0; // Clear childNodes on innerHTML = ''
+                        },
+                        get childNodes() { return children; },
+                        appendChild: function(child) { children.push(child); }
+                    };
+                    return el;
+                }
+            }
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+
+        // Load db.js first just like in other suites, to define global functions
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        try {
+            vm.runInContext(wrappedCode, context);
+        } catch(e) {
+            // It might fail due to the async () => { ... })(); issue in the file,
+            // but the functions outside the IIFE are hoisted and available!
+        }
+
+        renderThreatInfo = context.renderThreatInfo;
+    });
+
+    it('renders low threat score with text-success class', () => {
+        const card = context.document.createElement('div');
+        const json_data = { threat_score: 10, verdict: 'clean' };
+        renderThreatInfo(json_data, card);
+        const pThreat = card.childNodes[0];
+        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-success');
+        assert.strictEqual(pThreat.childNodes[2].className, 'text-success');
+        assert.strictEqual(pThreat.childNodes[2].textContent, 10);
+    });
+
+    it('renders medium threat score with text-warning class', () => {
+        const card = context.document.createElement('div');
+        const json_data = { threat_score: 60, verdict: 'suspicious' };
+        renderThreatInfo(json_data, card);
+        const pThreat = card.childNodes[0];
+        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-warning');
+        assert.strictEqual(pThreat.childNodes[2].className, 'text-warning');
+        assert.strictEqual(pThreat.childNodes[2].textContent, 60);
+    });
+
+    it('renders high threat score with text-danger class', () => {
+        const card = context.document.createElement('div');
+        const json_data = { threat_score: 90, verdict: 'malicious' };
+        renderThreatInfo(json_data, card);
+        const pThreat = card.childNodes[0];
+        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-danger');
+        assert.strictEqual(pThreat.childNodes[2].className, 'text-danger');
+        assert.strictEqual(pThreat.childNodes[2].textContent, 90);
+    });
+
+    it('renders fallback N/A values for missing optional fields', () => {
+        const card = context.document.createElement('div');
+        const json_data = { threat_score: 10, verdict: 'clean' };
+        renderThreatInfo(json_data, card);
+        const pVxFamily = card.childNodes[2];
+        assert.strictEqual(pVxFamily.childNodes[1].textContent, ' N/A');
+        const pMulti = card.childNodes[3];
+        assert.strictEqual(pMulti.textContent, 'Multiscan-Ergebnis: N/A');
+        const pAnalysisTime = card.childNodes[5];
+        assert.strictEqual(pAnalysisTime.textContent, 'Analysis start time: N/A');
+        const pTags = card.childNodes[6];
+        assert.strictEqual(pTags.textContent, 'Tags: N/A');
+    });
+
+    it('renders tags correctly when provided as an array', () => {
+        const card = context.document.createElement('div');
+        const json_data = { threat_score: 10, verdict: 'clean', tags: ['pdf', 'phishing'] };
+        renderThreatInfo(json_data, card);
+        const pTags = card.childNodes[6];
+        assert.strictEqual(pTags.textContent, 'Tags: pdf, phishing');
+    });
+});
 
 describe('get_hybrid_report_by_sha256', () => {
     let context;
@@ -352,6 +457,125 @@ tag: tag,
 });
 
 
+
+describe('renderManualUploadUI', () => {
+    let context;
+    let renderManualUploadUI;
+
+    before(async () => {
+        context = {
+            document: {
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tag: tag,
+                        className: '',
+                        textContent: '',
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) { this._id = val; },
+                        appendChild: function(child) { children.push(child); },
+                        get children() { return children; },
+                        setAttribute: function() {},
+                        addEventListener: function() {}
+                    };
+                    return el;
+                },
+                createTextNode: (text) => ({ textContent: text, type: 'textNode' }),
+                getElementById: (id) => ({
+                    appendChild: function() {},
+                    insertAdjacentHTML: function() {},
+                    setAttribute: function() {}
+                })
+            },
+            escapeHTML: (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'),
+            createUploadButtonCalls: [],
+            createCdrButtonCalls: [],
+            appendElementHtmlCalls: [],
+            String: String,
+        };
+
+        const vm = require('vm');
+        const path = require('path');
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        vm.runInContext(wrappedCode, context);
+
+        renderManualUploadUI = context.renderManualUploadUI;
+
+        vm.runInContext(`
+            createUploadButton = function(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId) {
+                createUploadButtonCalls.push({card, hash, safeHash, attachmentName, messageId, partName, headerMessageId});
+            };
+            createCdrButton = function(card, safeHash, attachmentName, messageId, partName) {
+                createCdrButtonCalls.push({card, safeHash, attachmentName, messageId, partName});
+            };
+            appendElementHtml = function(id, node) {
+                appendElementHtmlCalls.push({id, node});
+            };
+        `, context);
+    });
+
+    it('renders correctly with attachmentName', () => {
+        context.createUploadButtonCalls.length = 0;
+        context.createCdrButtonCalls.length = 0;
+        context.appendElementHtmlCalls.length = 0;
+
+        renderManualUploadUI('hash123', 'test.txt', 'msg1', 'part1', 'hdr1');
+
+        assert.strictEqual(context.appendElementHtmlCalls.length, 1);
+        const appendCall = context.appendElementHtmlCalls[0];
+        assert.strictEqual(appendCall.id, 'hybrid_analysis_api_content');
+
+        const card = appendCall.node;
+        assert.strictEqual(card.tag, 'div');
+        assert.strictEqual(card.className, 'card card-info mb-3');
+        assert.strictEqual(card.id, 'upload-container-hash123');
+
+        // Check children
+        assert.strictEqual(card.children.length, 3);
+
+        // h2
+        assert.strictEqual(card.children[0].tag, 'h2');
+        assert.strictEqual(card.children[0].textContent, 'Anhang: test.txt');
+
+        // pHash
+        assert.strictEqual(card.children[1].tag, 'p');
+        assert.strictEqual(card.children[1].textContent, 'SHA-256: hash123');
+
+        // pInfo
+        assert.strictEqual(card.children[2].tag, 'p');
+        assert.strictEqual(card.children[2].className, 'text-info');
+
+        // helper function calls
+        assert.strictEqual(context.createUploadButtonCalls.length, 1);
+        assert.strictEqual(context.createUploadButtonCalls[0].hash, 'hash123');
+        assert.strictEqual(context.createUploadButtonCalls[0].attachmentName, 'test.txt');
+
+        assert.strictEqual(context.createCdrButtonCalls.length, 1);
+        assert.strictEqual(context.createCdrButtonCalls[0].safeHash, 'hash123');
+        assert.strictEqual(context.createCdrButtonCalls[0].attachmentName, 'test.txt');
+    });
+
+    it('renders correctly falling back to Unbekannt if attachmentName is missing', () => {
+        context.createUploadButtonCalls.length = 0;
+        context.createCdrButtonCalls.length = 0;
+        context.appendElementHtmlCalls.length = 0;
+
+        renderManualUploadUI('hash123', null, 'msg1', 'part1', 'hdr1');
+
+        assert.strictEqual(context.appendElementHtmlCalls.length, 1);
+        const card = context.appendElementHtmlCalls[0].node;
+        assert.strictEqual(card.children[0].tag, 'h2');
+        assert.strictEqual(card.children[0].textContent, 'Anhang: Unbekannt');
+    });
+});
+
+
 describe('renderManualUrlScanUI', () => {
     let context;
     let renderManualUrlScanUI;
@@ -366,6 +590,10 @@ describe('renderManualUrlScanUI', () => {
                 runtime: { sendMessage: async () => ({ status: 'success' }) }
             },
             document: {
+                createTextNode: () => ({}),
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : { textContent: '', insertAdjacentHTML: () => {}, appendChild: () => {}, _id: id };
+                },
                 createElement: (tag) => {
                     let children = [];
                     let el = {
@@ -699,118 +927,461 @@ describe('renderVirusTotalStats', () => {
 });
 
 
-describe('renderReport', () => {
+describe('renderScannerResults', () => {
     let context;
-    let renderReport;
+    let renderScannerResults;
 
     before(async () => {
         // Create mock environment
         context = {
             document: {
-                createTextNode: (text) => ({ textContent: text, nodeType: 3 }),
                 createElement: (tag) => {
-                    let children = [];
-                    let el = {
-                        tagName: tag.toUpperCase(),
+                    return {
+                        tag: tag,
                         className: '',
                         textContent: '',
-                        _html: '',
-                        setAttribute: () => {},
-                        removeAttribute: () => {},
-                        get innerHTML() { return this._html; },
-                        set innerHTML(val) {
-                            this._html = val;
-                            if (val === '') children.length = 0;
+                        children: [],
+                        _innerHTML: null,
+                        appendChild: function(node) {
+                            this.children.push(node);
                         },
-                        get childNodes() { return children; },
-                        appendChild: function(child) { children.push(child); }
+                        get innerHTML() {
+                            if (this._innerHTML !== null) return this._innerHTML;
+                            return this.children.map(c => {
+                                let cls = c.className ? ` class="${c.className}"` : '';
+                                let inner = c.innerHTML || c.textContent || '';
+                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
+                            }).join('');
+                        },
+                        set innerHTML(val) {
+                            this._innerHTML = val;
+                        }
                     };
-                    return el;
                 }
             },
-            browser: { tabs: { query: async () => [{ id: 1 }] }, storage: { local: { get: async () => ({ apikey: 'test' }) } }, runtime: { sendMessage: async () => ({ status: 'success' }) } },
-            // Mock functions called by renderReport. We mock them, but since they are inside the evaluated script, they might be shadowed.
-            // However, we can inject a mock if we want by replacing them in the code, or just let them run with mocked DOM.
-            // Wait, we can test that they are called if we mock them by overwriting them on context AND inside the script!
-            renderInProgressStatus: () => {},
-            renderThreatInfo: () => {},
-            renderVirusTotalStats: () => {},
-            renderScannerResults: () => {},
-            renderFileDetails: () => {},
-            renderActionButtons: () => {}
+            console: { log: () => {}, error: () => {} },
+            String: String,
+            Array: Array
         };
+
         vm.createContext(context);
 
-        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
-        vm.runInContext(dbCode, context);
+        // We load api.js and prevent the IIFE from executing
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+
+        vm.runInContext(wrappedCode, context);
+
+        renderScannerResults = context.renderScannerResults;
+    });
+
+    it('should render "Keine Scanner-Ergebnisse verfügbar." if scanners is null or empty', () => {
+        const card1 = context.document.createElement('div');
+        renderScannerResults(null, card1);
+        assert.ok(card1.innerHTML.includes('Keine Scanner-Ergebnisse verfügbar.'));
+
+        const card2 = context.document.createElement('div');
+        renderScannerResults([], card2);
+        assert.ok(card2.innerHTML.includes('Keine Scanner-Ergebnisse verfügbar.'));
+    });
+
+    it('should render scanner name and status when anti_virus_results is not present', () => {
+        const scanners = [{ name: 'TestScanner', status: 'clean' }];
+        const card = context.document.createElement('div');
+        renderScannerResults(scanners, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('Scanner: TestScanner'));
+        assert.ok(html.includes('Status: clean'));
+        assert.ok(!html.includes('AV-Ergebnisse:'));
+    });
+
+    it('should render scanner name, status, and anti_virus_results when present', () => {
+        const scanners = [{
+            name: 'AdvancedScanner',
+            status: 'malicious',
+            anti_virus_results: [
+                { product: 'AV-1', verdict: 'Threat found' },
+                { product: 'AV-2', verdict: 'Clean' }
+            ]
+        }];
+        const card = context.document.createElement('div');
+        renderScannerResults(scanners, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('Scanner: AdvancedScanner'));
+        assert.ok(html.includes('Status: malicious'));
+        assert.ok(html.includes('AV-Ergebnisse:'));
+        assert.ok(html.includes('AV: AV-1 - Urteil: Threat found'));
+        assert.ok(html.includes('AV: AV-2 - Urteil: Clean'));
+    });
+});
+
+
+describe('createUploadButton', () => {
+    let context;
+    let createUploadButton;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            browser: {
+                storage: { local: { get: async () => ({}) } },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
+            document: {
+                createTextNode: () => ({}),
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : { textContent: '', insertAdjacentHTML: () => {}, appendChild: () => {}, _id: id };
+                },
+                createElement: (tag) => {
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(v) { this._innerText = v; this.textContent = v; },
+                        disabled: false,
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) {
+                            this._id = val;
+                            context.mockElements[val] = this;
+                        },
+                        setAttribute: function(k, v) { this[k] = v; },
+                        removeAttribute: function(k) { delete this[k]; },
+                        appendChild: function(child) {
+                            if (!this.childNodes) this.childNodes = [];
+                            this.childNodes.push(child);
+                        },
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
+                        },
+                        remove: function() { this.removed = true; }
+                    };
+                    return el;
+                },
+                getElementById: (id) => {
+                    if (context.mockElements && context.mockElements[id]) {
+                        return context.mockElements[id];
+                    }
+                    if (!context.mockElements) context.mockElements = {};
+                    if (id.startsWith('upload-container-')) {
+                        context.mockElements[id] = { remove: function() { this.removed = true; } };
+                        return context.mockElements[id];
+                    }
+                    if (id.startsWith('upload-status-')) {
+                        context.mockElements[id] = {
+                            _innerText: "",
+                            get innerText() { return this._innerText; },
+                            set innerText(v) { this._innerText = v; this.textContent = v; },
+                            textContent: "",
+                            setAttribute: () => {}
+                        };
+                        return context.mockElements[id];
+                    }
+                    return null;
+                }
+            },
+            setElementText: (id, text) => {
+                let el = context.document.getElementById(id);
+                if (el) {
+                    el.innerText = text;
+                    el.textContent = text;
+                }
+            },
+            setTimeout: (cb, delay) => {
+                if (!context.timeouts) context.timeouts = [];
+                context.timeouts.push({cb, delay});
+            },
+            get_hybrid_report_by_sha256: function(...args) {
+                context.lastReportArgs = args;
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String, Array: Array
+        };
+
+        const vm = require('vm');
+        const fs = require('fs');
+        const path = require('path');
+        vm.createContext(context);
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
 
         vm.runInContext(wrappedCode, context);
-        renderReport = context.renderReport;
+        createUploadButton = context.createUploadButton;
     });
 
-    it('renders correct heading with attachmentName', () => {
-        const json_data = { state: 'FINISHED', scanners: [] };
-        const el = renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-        assert.strictEqual(el.childNodes[0].tagName, 'H2');
-        assert.strictEqual(el.childNodes[0].textContent, 'Geprüftes Element: test.txt');
+    it('renders the upload button and status element correctly', () => {
+        const card = context.document.createElement('div');
+        createUploadButton(card, 'hash1', 'safeHash1', 'test.txt', 'msg1', 'part1', 'header1');
+
+        const assert = require('assert');
+        assert.strictEqual(card.childNodes.length, 2);
+        const btn = card.childNodes[0];
+        const status = card.childNodes[1];
+
+        assert.strictEqual(btn.tagName, 'button');
+        assert.strictEqual(btn.id, 'btn-upload-hash1');
+        assert.strictEqual(btn.className, 'btn-primary mt-2');
+        assert.strictEqual(btn.textContent, 'Datei jetzt scannen (Upload)');
+
+        assert.strictEqual(status.tagName, 'p');
+        assert.strictEqual(status.id, 'upload-status-hash1');
+        assert.strictEqual(status.className, 'mt-2');
+        assert.strictEqual(status['aria-live'], 'polite');
+        assert.strictEqual(status['role'], 'status');
     });
 
-    it('renders correct heading falling back to Unbekannt if attachmentName is missing', () => {
-        const json_data = { state: 'FINISHED', scanners: [] };
-        const el = renderReport({ json_data, attachmentName: null, hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-        assert.strictEqual(el.childNodes[0].tagName, 'H2');
-        assert.strictEqual(el.childNodes[0].textContent, 'Geprüftes Element: Unbekannt');
+    it('disables button and updates UI on click, then handles success', async () => {
+        const assert = require('assert');
+        const card = context.document.createElement('div');
+        context.mockElements = {}; // reset
+        context.timeouts = []; // reset
+        context.lastReportArgs = null; // reset
+
+        // Mock successful sendMessage
+        context.browser.runtime.sendMessage = async (msg) => {
+            context.lastMsg = msg;
+            return { status: 'success' };
+        };
+
+        createUploadButton(card, 'hash2', 'safeHash2', 'test.txt', 'msg1', 'part1', 'header1');
+        const btn = context.mockElements['btn-upload-hash2'];
+        const status = context.mockElements['upload-status-hash2'];
+        context.mockElements['upload-status-safeHash2'] = status;
+
+        // Initially enabled
+        assert.strictEqual(btn.disabled, false);
+
+        // Click it
+        btn.click();
+
+        // Check intermediate state
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Lade hoch...');
+        assert.strictEqual(status.innerText, 'Datei wird an Hybrid Analysis übertragen...');
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(context.lastMsg.action, 'uploadAttachment');
+        assert.strictEqual(context.lastMsg.hash, 'hash2');
+
+        assert.strictEqual(status.innerText, 'Upload erfolgreich! Lade Analyseergebnisse...');
+        assert.strictEqual(btn['aria-busy'], undefined); // removed
+
+        // Check timeout
+        assert.strictEqual(context.timeouts.length, 1);
+        assert.strictEqual(context.timeouts[0].delay, 3000);
+
+        // Execute timeout callback
+        let originalGetElement = context.document.getElementById;
+        context.document.getElementById = (id) => {
+            if (id === 'upload-container-safeHash2') return { remove: function() { this.removed = true; } };
+            return originalGetElement(id);
+        };
+        // Mock get_hybrid_report_by_sha256 avoiding dom node operations
+        let prev = context.get_hybrid_report_by_sha256;
+        context.get_hybrid_report_by_sha256 = function(...args) { context.lastReportArgs = args; };
+
+        context.timeouts[0].cb();
+
+        context.document.getElementById = originalGetElement;
+        context.get_hybrid_report_by_sha256 = prev;
+
+        assert.strictEqual(context.lastReportArgs[0], 'hash2');
+        assert.strictEqual(context.lastReportArgs[1], 'test.txt');
     });
 
-    it('calls renderInProgressStatus when state is IN_PROGRESS', () => {
-        let called = false;
-        context.renderInProgressStatus = () => { called = true; };
-        const json_data = { state: 'IN_PROGRESS', scanners: [] };
-        renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-        assert.strictEqual(called, true);
+    it('handles upload failure response correctly', async () => {
+        const assert = require('assert');
+        const card = context.document.createElement('div');
+        context.mockElements = {};
+
+        context.browser.runtime.sendMessage = async () => {
+            return { status: 'error', message: 'Invalid API key' };
+        };
+
+        createUploadButton(card, 'hash3', 'safeHash3', 'test.txt', 'msg1', 'part1', 'header1');
+        const btn = context.mockElements['btn-upload-hash3'];
+        const status = context.mockElements['upload-status-hash3'];
+        context.mockElements['upload-status-safeHash3'] = status;
+
+        btn.click();
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(status.innerText, 'Fehler beim Upload: Invalid API key');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 
-    it('calls renderThreatInfo and renders tags when state is not IN_PROGRESS', () => {
-        let threatInfoCalled = false;
-        context.renderThreatInfo = () => { threatInfoCalled = true; };
-        const json_data = { state: 'FINISHED', tags: ['malicious', 'exe'], scanners: [] };
-        const el = renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-        assert.strictEqual(threatInfoCalled, true);
+    it('handles upload exception correctly', async () => {
+        const assert = require('assert');
+        const card = context.document.createElement('div');
+        context.mockElements = {};
 
-        const pTags = el.childNodes.find(child => child.tagName === 'P' && child.textContent && child.textContent.startsWith('Tags:'));
-        assert.ok(pTags);
-        assert.strictEqual(pTags.textContent, 'Tags: malicious, exe');
+        context.browser.runtime.sendMessage = async () => {
+            throw new Error('Network error');
+        };
+
+        createUploadButton(card, 'hash4', 'safeHash4', 'test.txt', 'msg1', 'part1', 'header1');
+        const btn = context.mockElements['btn-upload-hash4'];
+        const status = context.mockElements['upload-status-hash4'];
+        context.mockElements['upload-status-safeHash4'] = status;
+
+        btn.click();
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.ok(status.innerText.includes('Kommunikationsfehler: Error: Network error'));
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+});
+
+describe('renderActionButtons', () => {
+    let context;
+    let renderActionButtons;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            browser: {
+                storage: { local: { get: async () => ({}) } },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
+            document: {
+                createTextNode: () => ({}),
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : { textContent: '', insertAdjacentHTML: () => {}, appendChild: () => {}, _id: id };
+                },
+                createElement: (tag) => {
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(v) { this._innerText = v; this.textContent = v; },
+                        disabled: false,
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) {
+                            this._id = val;
+                            context.mockElements[val] = this;
+                        },
+                        setAttribute: function(k, v) { this[k] = v; },
+                        removeAttribute: function(k) { delete this[k]; },
+                        appendChild: function(child) {
+                            if (!this.childNodes) this.childNodes = [];
+                            this.childNodes.push(child);
+                        },
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
+                        }
+                    };
+                    return el;
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String,
+            Array: Array
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const modifiedCode = code + '\n; globalThis.renderActionButtons = renderActionButtons;';
+
+        vm.runInContext(modifiedCode, context);
     });
 
-    it('renders N/A for tags if missing', () => {
-        const json_data = { state: 'FINISHED', scanners: [] };
-        const el = renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
-        const pTags = el.childNodes.find(child => child.tagName === 'P' && child.textContent && child.textContent.startsWith('Tags:'));
-        assert.ok(pTags);
-        assert.strictEqual(pTags.textContent, 'Tags: N/A');
+    beforeEach(() => {
+        context.mockElements = {};
     });
 
-    it('calls renderVirusTotalStats if virustotal_stats is provided', () => {
-        let vtCalled = false;
-        context.renderVirusTotalStats = () => { vtCalled = true; };
-        const json_data = { state: 'FINISHED', scanners: [] };
-        renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: { malicious: 1 } });
-        assert.strictEqual(vtCalled, true);
+    it('renders a "Rescan" button and status element for standard attachments', () => {
+        renderActionButtons = context.renderActionButtons;
+        const card = context.document.createElement('div');
+        const hybrid_sha = 'abc123sha';
+
+        renderActionButtons(hybrid_sha, 'test.txt', card);
+
+        const btnRescan = context.mockElements[`btn-rescan-${hybrid_sha}`];
+        assert.ok(btnRescan);
+        assert.strictEqual(btnRescan.tagName, 'button');
+        assert.strictEqual(btnRescan.className, 'btn-success mt-2');
+        assert.strictEqual(btnRescan.textContent, 'Erneut scannen (Rescan)');
+
+        const pRescanStatus = context.mockElements[`rescan-status-${hybrid_sha}`];
+        assert.ok(pRescanStatus);
+        assert.strictEqual(pRescanStatus.tagName, 'p');
+        assert.strictEqual(pRescanStatus.className, 'mt-2');
+        assert.strictEqual(pRescanStatus['aria-live'], 'polite');
+        assert.strictEqual(pRescanStatus['role'], 'status');
+
+        const btnCdr = context.mockElements[`btn-cdr-${hybrid_sha}`];
+        assert.strictEqual(btnCdr, undefined);
     });
 
-    it('calls renderScannerResults, renderFileDetails, and renderActionButtons', () => {
-        let called = 0;
-        context.renderScannerResults = () => { called++; };
-        context.renderFileDetails = () => { called++; };
-        context.renderActionButtons = () => { called++; };
+    it('renders a "CDR" button and status element when attachment ends with .html', () => {
+        renderActionButtons = context.renderActionButtons;
+        const card = context.document.createElement('div');
+        const hybrid_sha = 'abc123sha';
 
-        const json_data = { state: 'FINISHED', scanners: ['scanner1'] };
-        renderReport({ json_data, attachmentName: 'test.txt', hybrid_sha: '12345', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1', virustotal_stats: null });
+        renderActionButtons(hybrid_sha, 'test.html', card);
 
-        assert.strictEqual(called, 3);
+        const btnCdr = context.mockElements[`btn-cdr-${hybrid_sha}`];
+        assert.ok(btnCdr);
+        assert.strictEqual(btnCdr.tagName, 'button');
+        assert.strictEqual(btnCdr.className, 'btn-primary mt-2 ml-2');
+        assert.strictEqual(btnCdr.textContent, 'Bereinigen & Herunterladen (Lokales CDR)');
+
+        const pCdrStatus = context.mockElements[`cdr-status-${hybrid_sha}`];
+        assert.ok(pCdrStatus);
+        assert.strictEqual(pCdrStatus.tagName, 'p');
+        assert.strictEqual(pCdrStatus.className, 'mt-2');
+        assert.strictEqual(pCdrStatus['aria-live'], 'polite');
+        assert.strictEqual(pCdrStatus['role'], 'status');
+    });
+
+    it('renders a "CDR" button and status element when attachment ends with .htm', () => {
+        renderActionButtons = context.renderActionButtons;
+        const card = context.document.createElement('div');
+        const hybrid_sha = 'abc123sha';
+
+        renderActionButtons(hybrid_sha, 'test.htm', card);
+
+        const btnCdr = context.mockElements[`btn-cdr-${hybrid_sha}`];
+        assert.ok(btnCdr);
     });
 });

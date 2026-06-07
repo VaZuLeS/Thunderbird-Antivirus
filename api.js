@@ -43,7 +43,6 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
 // Informationen.
 let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
-console.log(message.headerMessageId);
 
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
@@ -143,11 +142,9 @@ try {
     };
 
     openRequest.onerror = function(e) {
-        console.log("Kein Hash/Anhang gefunden.");
         let p2 = document.createElement('p'); p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p2);
     }
 } catch (error) {
-    console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
 })();
 

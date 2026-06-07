@@ -142,6 +142,7 @@ describe('background.js', () => {
             globalThis.evaluateBehavior = evaluateBehavior;
             globalThis.extractPublicIPs = extractPublicIPs;
             globalThis.getMainDomain = getMainDomain;
+            globalThis.processAndUploadUrls = processAndUploadUrls;
             globalThis.checkFirstCommunication = checkFirstCommunication;
             globalThis.checkURLhausDomains = checkURLhausDomains;
             globalThis.checkURLhaus = checkURLhaus;
@@ -1457,7 +1458,7 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            assert.strictEqual(executedWarningScripts.length, 0);
+            assert.ok(executedWarningScripts.length === 0);
         });
     });
 
@@ -1776,6 +1777,7 @@ describe('background.js', () => {
         afterEach(() => {
             context.console.error = originalConsoleError;
             context.openDB = originalOpenDB;
+            vm.runInContext('globalThis.sharedDBPromise = null;', context);
         });
 
         it('tests catch block in indexedDB_save_links_objects_to_db', async () => {
@@ -1785,6 +1787,7 @@ describe('background.js', () => {
             };
 
             // Mock openDB to throw
+            vm.runInContext('globalThis.sharedDBPromise = null;', context);
             vm.runInContext('globalThis.openDB = async () => { throw new Error("Mock DB Error"); };', context);
 
             await context.indexedDB_save_links_objects_to_db({ headerMessageId: '123' }, [{ url: 'http://test.com' }]);
@@ -1801,6 +1804,7 @@ describe('background.js', () => {
             };
 
             // Mock openDB to throw
+            vm.runInContext('globalThis.sharedDBPromise = null;', context);
             vm.runInContext('globalThis.openDB = async () => { throw new Error("Mock DB Error 2"); };', context);
 
             await context.indexedDB_save_links_to_db({ headerMessageId: '123' }, ['http://test.com']);

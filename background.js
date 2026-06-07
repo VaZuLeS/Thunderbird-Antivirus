@@ -10,6 +10,15 @@ let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 
+let sharedDBPromise = null;
+
+function getSharedDB() {
+    if (!sharedDBPromise) {
+        sharedDBPromise = openDB("thunderbird_av", 3);
+    }
+    return sharedDBPromise;
+}
+
 const knownSendersCache = new Set();
 const MAX_KNOWN_SENDERS = 1000;
 
@@ -616,8 +625,10 @@ async function checkURLhausDomains(filteredUrls) {
 }
 
 async function injectThreatBanner(tabId, threat) {
-    if (threat.score >= 50) {
-        console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
+    if (threat.score >= 50 || threat.authStatus === 'pass') {
+        if (threat.score >= 50) {
+            console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
+        }
         await browser.scripting.executeScript({
             target: { tabId: tabId },
             func: function(score, reasons, authStatus) {
@@ -678,7 +689,6 @@ async function injectThreatBanner(tabId, threat) {
 
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
-  console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
 
   try {
     // Liste der Anhänge abrufen
@@ -795,6 +805,23 @@ async function get_sha256_hash(fileData) {
     return hashStr;
 }
 
+function createHybridDataObject(submissionId, jobId, sha256, state, attachment, virustotalStats = undefined) {
+    const result = {
+        hybrid_data: {
+            submission_id: submissionId,
+            job_id: jobId,
+            sha256: sha256,
+            state: state,
+            partName: attachment.partName
+        },
+        attachmentName: attachment.name
+    };
+    if (virustotalStats !== undefined) {
+        result.virustotal_stats = virustotalStats;
+    }
+    return result;
+}
+
 async function handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, fileType) {
     console.log('Datei ist der API unbekannt.');
     if (privacyTier === 'balanced' || privacyTier === 'max') {
@@ -810,16 +837,13 @@ async function handle_unknown_attachment(attachment, content_of_atachment, local
             const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
             if (uploadResponse.status === 200 || uploadResponse.status === 201) {
                 const uploadData = await uploadResponse.json();
-                return {
-                    hybrid_data: {
-                        submission_id: uploadData.submission_id,
-                        job_id: uploadData.job_id,
-                        sha256: uploadData.sha256 || local_hash,
-                        state: 'UPLOADED',
-                        partName: attachment.partName
-                    },
-                    attachmentName: attachment.name
-                };
+                return createHybridDataObject(
+                    uploadData.submission_id,
+                    uploadData.job_id,
+                    uploadData.sha256 || local_hash,
+                    'UPLOADED',
+                    attachment
+                );
             } else {
                 console.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
             }
@@ -829,26 +853,17 @@ async function handle_unknown_attachment(attachment, content_of_atachment, local
     }
 
     console.log('Speichere Metadaten für manuellen Upload.');
-    return {
-        hybrid_data: {
-            submission_id: 'PENDING_UPLOAD',
-            job_id: 'PENDING_UPLOAD',
-            sha256: local_hash,
-            state: 'UNKNOWN',
-            partName: attachment.partName
-        },
-        attachmentName: attachment.name,
-        virustotal_stats: virustotal_stats
-    };
+    return createHybridDataObject(
+        'PENDING_UPLOAD',
+        'PENDING_UPLOAD',
+        local_hash,
+        'UNKNOWN',
+        attachment,
+        virustotal_stats
+    );
 }
 
-async function sent_to_hybrid_by_attachment(message, attachments) {
-  if (!apikey_hybridanalysis) {
-      console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
-      return;
-  }
-
-  const results = await Promise.all(attachments.map(async (attachment) => {
+async function process_single_attachment(message, attachment) {
     console.log(`Prüfe Anhang: ${attachment.name} (${attachment.contentType}, ${attachment.size} bytes)`);
 
     let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
@@ -881,17 +896,14 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
 
             if (alwaysManual) {
                 console.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
-                return {
-                    hybrid_data: {
-                        submission_id: 'MANUAL_CHECK',
-                        job_id: 'MANUAL_CHECK',
-                        sha256: local_hash,
-                        state: 'MANUAL_CHECK_PENDING',
-                        partName: attachment.partName
-                    },
-                    attachmentName: attachment.name,
-                    virustotal_stats: virustotal_stats
-                };
+                return createHybridDataObject(
+                    'MANUAL_CHECK',
+                    'MANUAL_CHECK',
+                    local_hash,
+                    'MANUAL_CHECK_PENDING',
+                    attachment,
+                    virustotal_stats
+                );
             }
 
             // First check if it exists using hash
@@ -903,17 +915,14 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             if (responseCheck.status === 200) {
                 const json_data = await responseCheck.json();
                 console.log('Datei ist der API bereits bekannt.');
-                return {
-                    hybrid_data: {
-                        submission_id: json_data.submission_id || 'N/A',
-                        job_id: json_data.job_id || 'N/A',
-                        sha256: local_hash,
-                        state: 'KNOWN',
-                        partName: attachment.partName
-                    },
-                    attachmentName: attachment.name,
-                    virustotal_stats: virustotal_stats
-                };
+                return createHybridDataObject(
+                    json_data.submission_id || 'N/A',
+                    json_data.job_id || 'N/A',
+                    local_hash,
+                    'KNOWN',
+                    attachment,
+                    virustotal_stats
+                );
             } else {
                 return await handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, file.type);
             }
@@ -923,6 +932,16 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
           return null;
         }
     }
+}
+
+async function sent_to_hybrid_by_attachment(message, attachments) {
+  if (!apikey_hybridanalysis) {
+      console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
+      return;
+  }
+
+  const results = await Promise.all(attachments.map(async (attachment) => {
+    return await process_single_attachment(message, attachment);
   }));
 
   const validResults = results.filter(r => r !== null);
@@ -933,7 +952,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
 
 async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
   try {
-    const db = await openDB("thunderbird_av", 3);
+    const db = await getSharedDB();
 
     if (message.headerMessageId) {
       const newAttachments = results.map(result => ({
@@ -987,7 +1006,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
 // Speicherung der Ergebnisse in IndexedDB
 async function indexedDB_save_links_objects_to_db(message, urlObjects) {
   try {
-    const db = await openDB("thunderbird_av", 3);
+    const db = await getSharedDB();
 
     if (message.headerMessageId) {
       const newLinks = urlObjects.map(obj => ({
@@ -1030,7 +1049,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
 
 async function indexedDB_save_links_to_db(message, urls) {
   try {
-    const db = await openDB("thunderbird_av", 3);
+    const db = await getSharedDB();
 
     if (message.headerMessageId) {
       const newLinks = urls.map(url => ({
@@ -1130,7 +1149,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
             return;
         }
 
-        const db = await openDB("thunderbird_av", 3);
+        const db = await getSharedDB();
         const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
 
         let linkObj = null;
@@ -1320,7 +1339,7 @@ async function handleUrlScan(url, headerMessageId) {
 
         // Update DB record
         try {
-            const db = await openDB("thunderbird_av", 3);
+            const db = await getSharedDB();
             await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
                 if (existingRecord && existingRecord.links) {
                     let linkIndex = existingRecord.links.findIndex(l => l.url === url);
@@ -1364,7 +1383,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
 
         // Update DB record
         try {
-            const db = await openDB("thunderbird_av", 3);
+            const db = await getSharedDB();
             await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
                 if (existingRecord && existingRecord.attachments) {
                     let attIndex = existingRecord.attachments.findIndex(a => a.partName === partName);
