@@ -149,6 +149,7 @@ describe('background.js', () => {
             globalThis.urlhausCache = urlhausCache;
             globalThis.MAX_URLHAUS_CACHE_SIZE = MAX_URLHAUS_CACHE_SIZE;
             globalThis.checkLists = checkLists;
+            globalThis.handle_unknown_attachment = handle_unknown_attachment;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -1965,6 +1966,90 @@ describe('background.js', () => {
 
             context.console.log = originalLog;
             assert.strictEqual(result, false);
+        });
+    });
+
+    describe('handle_unknown_attachment', () => {
+        it('should auto-upload when privacyTier is balanced or max', async () => {
+            let fetchCalled = false;
+            let appendedData = null;
+            context.set_apikey('test-key');
+            context.fetch = async (url, options) => {
+                fetchCalled = true;
+                assert.strictEqual(url, 'https://hybrid-analysis.com/api/v2/quick-scan/file');
+                appendedData = options.body;
+                return {
+                    status: 200,
+                    json: async () => ({ submission_id: 'sub_123', job_id: 'job_456', sha256: 'hash_api' })
+                };
+            };
+
+            const attachment = { name: 'test.pdf', partName: 'part2' };
+            const content = new ArrayBuffer(8);
+
+            const res = await context.handle_unknown_attachment(attachment, content, 'local_hash_fallback', null, 'balanced', 'application/pdf');
+
+            assert.ok(fetchCalled);
+            assert.strictEqual(res.hybrid_data.submission_id, 'sub_123');
+            assert.strictEqual(res.hybrid_data.job_id, 'job_456');
+            assert.strictEqual(res.hybrid_data.sha256, 'hash_api');
+            assert.strictEqual(res.hybrid_data.state, 'UPLOADED');
+            assert.strictEqual(res.hybrid_data.partName, 'part2');
+            assert.strictEqual(res.attachmentName, 'test.pdf');
+        });
+
+        it('should fallback to manual if fetch returns non-200 status', async () => {
+            let errorLogged = false;
+            context.console.error = (msg) => { if(msg.includes('falle auf manuell zurück')) errorLogged = true; };
+            context.set_apikey('test-key');
+            context.fetch = async () => {
+                return { status: 500 };
+            };
+
+            const attachment = { name: 'fail.pdf', partName: 'part3' };
+            const content = new ArrayBuffer(8);
+
+            const res = await context.handle_unknown_attachment(attachment, content, 'local_hash', null, 'max', 'application/pdf');
+
+            assert.ok(errorLogged);
+            assert.strictEqual(res.hybrid_data.submission_id, 'PENDING_UPLOAD');
+            assert.strictEqual(res.hybrid_data.job_id, 'PENDING_UPLOAD');
+            assert.strictEqual(res.hybrid_data.sha256, 'local_hash');
+            assert.strictEqual(res.hybrid_data.state, 'UNKNOWN');
+            assert.strictEqual(res.hybrid_data.partName, 'part3');
+        });
+
+        it('should fallback to manual if fetch throws an error', async () => {
+            let errorLogged = false;
+            context.console.error = (msg) => { if(msg.includes('Ausnahme beim automatischen Upload')) errorLogged = true; };
+            context.set_apikey('test-key');
+            context.fetch = async () => {
+                throw new Error("Network error");
+            };
+
+            const attachment = { name: 'error.pdf', partName: 'part4' };
+            const content = new ArrayBuffer(8);
+
+            const res = await context.handle_unknown_attachment(attachment, content, 'local_hash', null, 'max', 'application/pdf');
+
+            assert.ok(errorLogged);
+            assert.strictEqual(res.hybrid_data.submission_id, 'PENDING_UPLOAD');
+            assert.strictEqual(res.hybrid_data.state, 'UNKNOWN');
+        });
+
+        it('should skip auto-upload and return manual fallback for low privacyTier', async () => {
+            let fetchCalled = false;
+            context.fetch = async () => { fetchCalled = true; return { status: 200, json: async () => ({}) }; };
+
+            const attachment = { name: 'skip.pdf', partName: 'part5' };
+            const content = new ArrayBuffer(8);
+
+            const res = await context.handle_unknown_attachment(attachment, content, 'local_hash', { malicious: 1 }, 'minimal', 'application/pdf');
+
+            assert.strictEqual(fetchCalled, false);
+            assert.strictEqual(res.hybrid_data.submission_id, 'PENDING_UPLOAD');
+            assert.strictEqual(res.hybrid_data.state, 'UNKNOWN');
+            assert.deepStrictEqual(res.virustotal_stats, { malicious: 1 });
         });
     });
 });
