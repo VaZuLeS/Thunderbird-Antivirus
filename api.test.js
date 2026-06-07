@@ -923,6 +923,98 @@ describe('renderVirusTotalStats', () => {
 });
 
 
+describe('renderScannerResults', () => {
+    let context;
+    let renderScannerResults;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createElement: (tag) => {
+                    return {
+                        tag: tag,
+                        className: '',
+                        textContent: '',
+                        children: [],
+                        _innerHTML: null,
+                        appendChild: function(node) {
+                            this.children.push(node);
+                        },
+                        get innerHTML() {
+                            if (this._innerHTML !== null) return this._innerHTML;
+                            return this.children.map(c => {
+                                let cls = c.className ? ` class="${c.className}"` : '';
+                                let inner = c.innerHTML || c.textContent || '';
+                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
+                            }).join('');
+                        },
+                        set innerHTML(val) {
+                            this._innerHTML = val;
+                        }
+                    };
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String,
+            Array: Array
+        };
+
+        vm.createContext(context);
+
+        // We load api.js and prevent the IIFE from executing
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+
+        vm.runInContext(wrappedCode, context);
+
+        renderScannerResults = context.renderScannerResults;
+    });
+
+    it('should render "Keine Scanner-Ergebnisse verfügbar." if scanners is null or empty', () => {
+        const card1 = context.document.createElement('div');
+        renderScannerResults(null, card1);
+        assert.ok(card1.innerHTML.includes('Keine Scanner-Ergebnisse verfügbar.'));
+
+        const card2 = context.document.createElement('div');
+        renderScannerResults([], card2);
+        assert.ok(card2.innerHTML.includes('Keine Scanner-Ergebnisse verfügbar.'));
+    });
+
+    it('should render scanner name and status when anti_virus_results is not present', () => {
+        const scanners = [{ name: 'TestScanner', status: 'clean' }];
+        const card = context.document.createElement('div');
+        renderScannerResults(scanners, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('Scanner: TestScanner'));
+        assert.ok(html.includes('Status: clean'));
+        assert.ok(!html.includes('AV-Ergebnisse:'));
+    });
+
+    it('should render scanner name, status, and anti_virus_results when present', () => {
+        const scanners = [{
+            name: 'AdvancedScanner',
+            status: 'malicious',
+            anti_virus_results: [
+                { product: 'AV-1', verdict: 'Threat found' },
+                { product: 'AV-2', verdict: 'Clean' }
+            ]
+        }];
+        const card = context.document.createElement('div');
+        renderScannerResults(scanners, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('Scanner: AdvancedScanner'));
+        assert.ok(html.includes('Status: malicious'));
+        assert.ok(html.includes('AV-Ergebnisse:'));
+        assert.ok(html.includes('AV: AV-1 - Urteil: Threat found'));
+        assert.ok(html.includes('AV: AV-2 - Urteil: Clean'));
+    });
+});
+
+
 describe('createUploadButton', () => {
     let context;
     let createUploadButton;
