@@ -364,7 +364,6 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     renderScannerResults(json_data.scanners, card);
     renderFileDetails(json_data, card);
     renderActionButtons(hybrid_sha, attachmentName, card);
-    }
     return card;
 }
 

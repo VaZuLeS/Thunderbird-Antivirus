@@ -109,7 +109,10 @@ describe('renderInProgressStatus', () => {
     before(async () => {
         // Create mock environment
         context = {
+            browser: { storage: { local: { get: async () => ({}) } } },
             document: {
+                getElementById: () => ({ textContent: '', appendChild: () => {} }),
+                createTextNode: (text) => ({ textContent: text }),
                 createElement: (tag) => {
                     let children = [];
                     let el = {
@@ -117,6 +120,7 @@ describe('renderInProgressStatus', () => {
                         className: '',
                         textContent: '',
                         _html: '',
+                        setAttribute: () => {},
                         get innerHTML() { return this._html; },
                         set innerHTML(val) {
                             this._html = val;
@@ -692,5 +696,242 @@ describe('renderVirusTotalStats', () => {
         assert.ok(html.includes('Undetected: 0'), 'Should default undetected to 0');
         assert.ok(html.includes('Suspicious: 0'), 'Should default suspicious to 0');
         assert.ok(html.includes('Harmless: 0'), 'Should default harmless to 0');
+    });
+});
+
+
+describe('createUploadButton', () => {
+    let context;
+    let createUploadButton;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            browser: {
+                storage: { local: { get: async () => ({}) } },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
+            document: {
+                createElement: (tag) => {
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(v) { this._innerText = v; this.textContent = v; },
+                        disabled: false,
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) {
+                            this._id = val;
+                            context.mockElements[val] = this;
+                        },
+                        setAttribute: function(k, v) { this[k] = v; },
+                        removeAttribute: function(k) { delete this[k]; },
+                        appendChild: function(child) {
+                            if (!this.childNodes) this.childNodes = [];
+                            this.childNodes.push(child);
+                        },
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
+                        },
+                        remove: function() { this.removed = true; }
+                    };
+                    return el;
+                },
+                getElementById: (id) => {
+                    if (context.mockElements && context.mockElements[id]) {
+                        return context.mockElements[id];
+                    }
+                    if (!context.mockElements) context.mockElements = {};
+                    if (id.startsWith('upload-container-')) {
+                        context.mockElements[id] = { remove: function() { this.removed = true; } };
+                        return context.mockElements[id];
+                    }
+                    if (id.startsWith('upload-status-')) {
+                        context.mockElements[id] = {
+                            _innerText: "",
+                            get innerText() { return this._innerText; },
+                            set innerText(v) { this._innerText = v; this.textContent = v; },
+                            textContent: "",
+                            setAttribute: () => {}
+                        };
+                        return context.mockElements[id];
+                    }
+                    return null;
+                }
+            },
+            setElementText: (id, text) => {
+                let el = context.document.getElementById(id);
+                if (el) {
+                    el.innerText = text;
+                    el.textContent = text;
+                }
+            },
+            setTimeout: (cb, delay) => {
+                if (!context.timeouts) context.timeouts = [];
+                context.timeouts.push({cb, delay});
+            },
+            get_hybrid_report_by_sha256: function(...args) {
+                context.lastReportArgs = args;
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String, Array: Array
+        };
+
+        const vm = require('vm');
+        const fs = require('fs');
+        const path = require('path');
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        vm.runInContext(wrappedCode, context);
+        createUploadButton = context.createUploadButton;
+    });
+
+    it('renders the upload button and status element correctly', () => {
+        const card = context.document.createElement('div');
+        createUploadButton(card, 'hash1', 'safeHash1', 'test.txt', 'msg1', 'part1', 'header1');
+
+        const assert = require('assert');
+        assert.strictEqual(card.childNodes.length, 2);
+        const btn = card.childNodes[0];
+        const status = card.childNodes[1];
+
+        assert.strictEqual(btn.tagName, 'button');
+        assert.strictEqual(btn.id, 'btn-upload-hash1');
+        assert.strictEqual(btn.className, 'btn-primary mt-2');
+        assert.strictEqual(btn.textContent, 'Datei jetzt scannen (Upload)');
+
+        assert.strictEqual(status.tagName, 'p');
+        assert.strictEqual(status.id, 'upload-status-hash1');
+        assert.strictEqual(status.className, 'mt-2');
+        assert.strictEqual(status['aria-live'], 'polite');
+        assert.strictEqual(status['role'], 'status');
+    });
+
+    it('disables button and updates UI on click, then handles success', async () => {
+        const assert = require('assert');
+        const card = context.document.createElement('div');
+        context.mockElements = {}; // reset
+        context.timeouts = []; // reset
+        context.lastReportArgs = null; // reset
+
+        // Mock successful sendMessage
+        context.browser.runtime.sendMessage = async (msg) => {
+            context.lastMsg = msg;
+            return { status: 'success' };
+        };
+
+        createUploadButton(card, 'hash2', 'safeHash2', 'test.txt', 'msg1', 'part1', 'header1');
+        const btn = context.mockElements['btn-upload-hash2'];
+        const status = context.mockElements['upload-status-hash2'];
+        context.mockElements['upload-status-safeHash2'] = status;
+
+        // Initially enabled
+        assert.strictEqual(btn.disabled, false);
+
+        // Click it
+        btn.click();
+
+        // Check intermediate state
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Lade hoch...');
+        assert.strictEqual(status.innerText, 'Datei wird an Hybrid Analysis übertragen...');
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(context.lastMsg.action, 'uploadAttachment');
+        assert.strictEqual(context.lastMsg.hash, 'hash2');
+
+        assert.strictEqual(status.innerText, 'Upload erfolgreich! Lade Analyseergebnisse...');
+        assert.strictEqual(btn['aria-busy'], undefined); // removed
+
+        // Check timeout
+        assert.strictEqual(context.timeouts.length, 1);
+        assert.strictEqual(context.timeouts[0].delay, 3000);
+
+        // Execute timeout callback
+        let originalGetElement = context.document.getElementById;
+        context.document.getElementById = (id) => {
+            if (id === 'upload-container-safeHash2') return { remove: function() { this.removed = true; } };
+            return originalGetElement(id);
+        };
+        // Mock get_hybrid_report_by_sha256 avoiding dom node operations
+        let prev = context.get_hybrid_report_by_sha256;
+        context.get_hybrid_report_by_sha256 = function(...args) { context.lastReportArgs = args; };
+
+        context.timeouts[0].cb();
+
+        context.document.getElementById = originalGetElement;
+        context.get_hybrid_report_by_sha256 = prev;
+
+        assert.strictEqual(context.lastReportArgs[0], 'hash2');
+        assert.strictEqual(context.lastReportArgs[1], 'test.txt');
+    });
+
+    it('handles upload failure response correctly', async () => {
+        const assert = require('assert');
+        const card = context.document.createElement('div');
+        context.mockElements = {};
+
+        context.browser.runtime.sendMessage = async () => {
+            return { status: 'error', message: 'Invalid API key' };
+        };
+
+        createUploadButton(card, 'hash3', 'safeHash3', 'test.txt', 'msg1', 'part1', 'header1');
+        const btn = context.mockElements['btn-upload-hash3'];
+        const status = context.mockElements['upload-status-hash3'];
+        context.mockElements['upload-status-safeHash3'] = status;
+
+        btn.click();
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(status.innerText, 'Fehler beim Upload: Invalid API key');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles upload exception correctly', async () => {
+        const assert = require('assert');
+        const card = context.document.createElement('div');
+        context.mockElements = {};
+
+        context.browser.runtime.sendMessage = async () => {
+            throw new Error('Network error');
+        };
+
+        createUploadButton(card, 'hash4', 'safeHash4', 'test.txt', 'msg1', 'part1', 'header1');
+        const btn = context.mockElements['btn-upload-hash4'];
+        const status = context.mockElements['upload-status-hash4'];
+        context.mockElements['upload-status-safeHash4'] = status;
+
+        btn.click();
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.ok(status.innerText.includes('Kommunikationsfehler: Error: Network error'));
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 });
