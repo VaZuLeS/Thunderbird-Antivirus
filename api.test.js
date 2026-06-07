@@ -1039,3 +1039,90 @@ describe('createUploadButton', () => {
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 });
+
+describe('renderFileDetails', () => {
+    let context;
+    let renderFileDetails;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createElement: (tag) => {
+                    return {
+                        tag: tag,
+                        className: '',
+                        textContent: '',
+                        children: [],
+                        _innerHTML: null,
+                        appendChild: function(node) {
+                            this.children.push(node);
+                        },
+                        get innerHTML() {
+                            if (this._innerHTML !== null) return this._innerHTML;
+                            return this.children.map(c => {
+                                let cls = c.className ? ` class="${c.className}"` : '';
+                                let inner = c.innerHTML || c.textContent || '';
+                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
+                            }).join('');
+                        },
+                        set innerHTML(val) {
+                            this._innerHTML = val;
+                        }
+                    };
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String,
+            Array: Array
+        };
+
+        const vm = require('vm');
+        const fs = require('fs');
+        const path = require('path');
+        vm.createContext(context);
+
+        // We load api.js and prevent the IIFE from executing
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+
+        vm.runInContext(wrappedCode, context);
+
+        renderFileDetails = context.renderFileDetails;
+    });
+
+    it('should render correct details for a complete file payload', () => {
+        const jsonData = {
+            sha256: 'abcdef1234567890',
+            last_file_name: 'test_file.exe',
+            size: 1048576,
+            type: 'application/x-dosexec'
+        };
+        const card = context.document.createElement('div');
+        renderFileDetails(jsonData, card);
+
+        const html = card.innerHTML;
+        const assert = require('assert');
+        assert.ok(html.includes('SHA-256-Hashwert: abcdef1234567890'), 'Should render sha256 hash');
+        assert.ok(html.includes('Letzter Dateiname: test_file.exe'), 'Should render last file name');
+        assert.ok(html.includes('Größe: 1048576 Bytes'), 'Should render size');
+        assert.ok(html.includes('Typ: application/x-dosexec'), 'Should render type');
+    });
+
+    it('should fallback to N/A for missing optional fields', () => {
+        const jsonData = {
+            sha256: 'abcdef1234567890'
+            // Missing last_file_name, size, type
+        };
+        const card = context.document.createElement('div');
+        renderFileDetails(jsonData, card);
+
+        const html = card.innerHTML;
+        const assert = require('assert');
+        assert.ok(html.includes('SHA-256-Hashwert: abcdef1234567890'), 'Should render sha256 hash');
+        assert.ok(html.includes('Letzter Dateiname: N/A'), 'Should render N/A for missing file name');
+        assert.ok(html.includes('Größe: N/A Bytes'), 'Should render N/A for missing size');
+        assert.ok(html.includes('Typ: N/A'), 'Should render N/A for missing type');
+    });
+});
