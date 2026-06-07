@@ -677,7 +677,6 @@ async function injectThreatBanner(tabId, threat) {
 
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
-  console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
 
   try {
     // Liste der Anhänge abrufen
