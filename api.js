@@ -43,7 +43,6 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
 // Informationen.
 let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
-console.log(message.headerMessageId);
 
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
@@ -143,11 +142,9 @@ try {
     };
 
     openRequest.onerror = function(e) {
-        console.log("Kein Hash/Anhang gefunden.");
         let p2 = document.createElement('p'); p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p2);
     }
 } catch (error) {
-    console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
 })();
 
@@ -367,9 +364,7 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     return card;
 }
 
-async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
-
-    // Set the request options
+async function fetch_hybrid_report(hybrid_sha) {
     const options = {
         method: 'GET',
         url: 'https://hybrid-analysis.com/api/v2/overview/' + hybrid_sha,
@@ -378,102 +373,125 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
             'api-key': apikey_hybridanalysis,
             'user-agent': 'Falcon',
         },
-
     };
 
-    // Send the request and handle the response
+    const response = await fetch(options.url, options);
+    console.log(response);
+    const json_data = await response.json();
+    console.log(json_data);
+
+    return { response, json_data };
+}
+
+function render_hybrid_report_ui(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data) {
+    let container = document.getElementById('hybrid_analysis_api_content');
+    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats });
+    container.appendChild(reportNode);
+
+    let rescanBtn = document.getElementById(`btn-rescan-${hybrid_sha}`);
+    if (rescanBtn) {
+        rescanBtn.addEventListener('click', function() {
+            let btn = this;
+            let statusEl = document.getElementById(`rescan-status-${hybrid_sha}`);
+            btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
+            btn.innerText = "Sende Rescan...";
+            statusEl.innerText = "Datei wird für Rescan hochgeladen...";
+
+            browser.runtime.sendMessage({
+                action: "uploadAttachment",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName,
+                hash: hybrid_sha,
+                headerMessageId: headerMessageId
+            }).then(res => {
+                if (res && res.status === 'success') {
+                    statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
+                    btn.removeAttribute('aria-busy');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    statusEl.innerText = "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler");
+                    btn.disabled = false;
+                    btn.removeAttribute('aria-busy');
+                    btn.innerText = "Erneut versuchen";
+                }
+            }).catch(err => {
+                statusEl.innerText = "Kommunikationsfehler: " + err;
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
+                btn.innerText = "Erneut versuchen";
+            });
+        });
+    }
+
+    let cdrBtn = document.getElementById(`btn-cdr-${hybrid_sha}`);
+    if (cdrBtn) {
+        cdrBtn.addEventListener('click', function() {
+            let btn = this;
+            let statusEl = document.getElementById(`cdr-status-${hybrid_sha}`);
+            btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
+            btn.innerText = "Bereinige...";
+            statusEl.innerText = "Lokales CDR wird durchgeführt...";
+
+            browser.runtime.sendMessage({
+                action: "downloadDisarmed",
+                messageId: messageId,
+                partName: partName,
+                attachmentName: attachmentName
+            }).then(res => {
+                if (res && res.status === 'success') {
+                    statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                    btn.removeAttribute('aria-busy');
+                    btn.innerText = "Bereinigt";
+                } else {
+                    statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
+                    btn.disabled = false;
+                    btn.removeAttribute('aria-busy');
+                    btn.innerText = "Erneut versuchen";
+                }
+            }).catch(err => {
+                statusEl.innerText = "Kommunikationsfehler: " + err;
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
+                btn.innerText = "Erneut versuchen";
+            });
+        });
+    }
+}
+
+function handle_hybrid_report_error(response, attachmentName) {
+    console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
+    let errDiv1 = document.createElement('div');
+    errDiv1.className = 'text-danger';
+    errDiv1.setAttribute('role', 'alert');
+    errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+    document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
+}
+
+function handle_hybrid_report_fetch_error(error, attachmentName) {
+    console.error('Fetch error:', error);
+    let errDiv2 = document.createElement('div');
+    errDiv2.className = 'text-danger';
+    errDiv2.setAttribute('role', 'alert');
+    errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`;
+    document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);
+}
+
+async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
     try {
-        const response = await fetch(options.url, options);
-        console.log(response);
-        const json_data = await response.json();
-        console.log(json_data);
+        const { response, json_data } = await fetch_hybrid_report(hybrid_sha);
 
         if (response.status === 200) {
-            let container = document.getElementById('hybrid_analysis_api_content');
-            let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats });
-            container.appendChild(reportNode);
-
-            let rescanBtn = document.getElementById(`btn-rescan-${hybrid_sha}`);
-            if (rescanBtn) {
-                rescanBtn.addEventListener('click', function() {
-                    let btn = this;
-                    let statusEl = document.getElementById(`rescan-status-${hybrid_sha}`);
-                    btn.disabled = true;
-                    btn.setAttribute('aria-busy', 'true');
-                    btn.innerText = "Sende Rescan...";
-                    statusEl.innerText = "Datei wird für Rescan hochgeladen...";
-
-                    browser.runtime.sendMessage({
-                        action: "uploadAttachment",
-                        messageId: messageId,
-                        partName: partName,
-                        attachmentName: attachmentName,
-                        hash: hybrid_sha,
-                        headerMessageId: headerMessageId
-                    }).then(res => {
-                        if (res && res.status === 'success') {
-                            statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
-                            btn.removeAttribute('aria-busy');
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 2000);
-                        } else {
-                            statusEl.innerText = "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler");
-                            btn.disabled = false;
-                            btn.removeAttribute('aria-busy');
-                            btn.innerText = "Erneut versuchen";
-                        }
-                    }).catch(err => {
-                        statusEl.innerText = "Kommunikationsfehler: " + err;
-                        btn.disabled = false;
-                        btn.removeAttribute('aria-busy');
-                        btn.innerText = "Erneut versuchen";
-                    });
-                });
-            }
-
-            let cdrBtn = document.getElementById(`btn-cdr-${hybrid_sha}`);
-            if (cdrBtn) {
-                cdrBtn.addEventListener('click', function() {
-                    let btn = this;
-                    let statusEl = document.getElementById(`cdr-status-${hybrid_sha}`);
-                    btn.disabled = true;
-                    btn.setAttribute('aria-busy', 'true');
-                    btn.innerText = "Bereinige...";
-                    statusEl.innerText = "Lokales CDR wird durchgeführt...";
-
-                    browser.runtime.sendMessage({
-                        action: "downloadDisarmed",
-                        messageId: messageId,
-                        partName: partName,
-                        attachmentName: attachmentName
-                    }).then(res => {
-                        if (res && res.status === 'success') {
-                            statusEl.innerText = "Herunterladen erfolgreich initiiert.";
-                            btn.removeAttribute('aria-busy');
-                            btn.innerText = "Bereinigt";
-                        } else {
-                            statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
-                            btn.disabled = false;
-                            btn.removeAttribute('aria-busy');
-                            btn.innerText = "Erneut versuchen";
-                        }
-                    }).catch(err => {
-                        statusEl.innerText = "Kommunikationsfehler: " + err;
-                        btn.disabled = false;
-                        btn.removeAttribute('aria-busy');
-                        btn.innerText = "Erneut versuchen";
-                    });
-                });
-            }
-
+            render_hybrid_report_ui(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data);
         } else {
-            console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
-            let errDiv1 = document.createElement('div'); errDiv1.className = 'text-danger'; errDiv1.setAttribute('role', 'alert'); errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
+            handle_hybrid_report_error(response, attachmentName);
         }
     } catch (error) {
-        console.error('Fetch error:', error);
-        let errDiv2 = document.createElement('div'); errDiv2.className = 'text-danger'; errDiv2.setAttribute('role', 'alert'); errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`; document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);
+        handle_hybrid_report_fetch_error(error, attachmentName);
     }
 }
 
