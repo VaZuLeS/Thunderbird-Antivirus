@@ -150,6 +150,15 @@ describe('background.js', () => {
             globalThis.MAX_URLHAUS_CACHE_SIZE = MAX_URLHAUS_CACHE_SIZE;
             globalThis.checkLists = checkLists;
             globalThis.handle_unknown_attachment = handle_unknown_attachment;
+
+            // CheckIPReputation exposed variables
+            globalThis.checkIPReputation = checkIPReputation;
+            globalThis.checkAbuseIPDB = checkAbuseIPDB;
+            globalThis.checkVirusTotalIP = checkVirusTotalIP;
+            globalThis.ipReputationCache = ipReputationCache;
+            globalThis.MAX_IP_CACHE = MAX_IP_CACHE;
+            globalThis.set_ipReputationProvider = (val) => { ipReputationProvider = val; };
+            globalThis.set_ipReputationApiKey = (val) => { ipReputationApiKey = val; };
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -158,6 +167,7 @@ describe('background.js', () => {
 
         if (context.knownSendersCache) context.knownSendersCache.clear();
         if (context.urlhausCache) context.urlhausCache.clear();
+        if (context.ipReputationCache) context.ipReputationCache.clear();
     });
 
     it('should initialize successfully', () => {
@@ -1696,6 +1706,88 @@ describe('background.js', () => {
             const ips = context.extractPublicIPs(headers);
             assert.strictEqual(ips.length, 1);
             assert.strictEqual(ips[0], '9.9.9.9');
+        });
+    });
+
+
+    describe('checkIPReputation', () => {
+        let originalCheckAbuseIPDB;
+        let originalCheckVirusTotalIP;
+
+        beforeEach(() => {
+            originalCheckAbuseIPDB = context.checkAbuseIPDB;
+            originalCheckVirusTotalIP = context.checkVirusTotalIP;
+            context.set_ipReputationApiKey('test-key');
+        });
+
+        afterEach(() => {
+            context.checkAbuseIPDB = originalCheckAbuseIPDB;
+            context.checkVirusTotalIP = originalCheckVirusTotalIP;
+            context.set_ipReputationProvider('none');
+            context.set_ipReputationApiKey('');
+        });
+
+        it('should return empty array if provider is none', async () => {
+            context.set_ipReputationProvider('none');
+            const result = await context.checkIPReputation(['from mx.google.com (1.2.3.4)']);
+            assert.deepEqual(result, []);
+        });
+
+        it('should return empty array if api key is missing', async () => {
+            context.set_ipReputationProvider('abuseipdb');
+            context.set_ipReputationApiKey('');
+            const result = await context.checkIPReputation(['from mx.google.com (1.2.3.4)']);
+            assert.deepEqual(result, []);
+        });
+
+        it('should call checkAbuseIPDB when provider is abuseipdb', async () => {
+            context.set_ipReputationProvider('abuseipdb');
+            context.checkAbuseIPDB = async (ip) => {
+                return ip === '8.8.8.8';
+            };
+
+            const result = await context.checkIPReputation(['from a.com (8.8.8.8)', 'from b.com (1.1.1.1)']);
+            assert.deepEqual(result, ['8.8.8.8']);
+        });
+
+        it('should call checkVirusTotalIP when provider is virustotal', async () => {
+            context.set_ipReputationProvider('virustotal');
+            context.checkVirusTotalIP = async (ip) => {
+                return ip === '9.9.9.9';
+            };
+
+            const result = await context.checkIPReputation(['from a.com (8.8.8.8)', 'from c.com (9.9.9.9)']);
+            assert.deepEqual(result, ['9.9.9.9']);
+        });
+
+        it('should use the cache for repeated IP checks', async () => {
+            context.set_ipReputationProvider('abuseipdb');
+            let apiCallCount = 0;
+            context.checkAbuseIPDB = async (ip) => {
+                apiCallCount++;
+                return ip === '8.8.8.8';
+            };
+
+            // First call
+            let result1 = await context.checkIPReputation(['from a.com (8.8.8.8)']);
+            assert.strictEqual(apiCallCount, 1);
+            assert.deepEqual(result1, ['8.8.8.8']);
+
+            // Second call
+            let result2 = await context.checkIPReputation(['from a.com (8.8.8.8)']);
+            assert.strictEqual(apiCallCount, 1); // Should be cached
+            assert.deepEqual(result2, ['8.8.8.8']);
+
+            // Flood cache
+            for (let i = 0; i < context.MAX_IP_CACHE + 10; i++) {
+                let octet2 = Math.floor(i / (256 * 256));
+                let octet3 = Math.floor((i % (256 * 256)) / 256);
+                let octet4 = i % 256;
+                let ip = `100.${octet2}.${octet3}.${octet4}`;
+                await context.checkIPReputation([`from a.com (${ip})`]);
+            }
+            // Max cache should be respected
+            assert.ok(context.ipReputationCache.size <= context.MAX_IP_CACHE);
         });
     });
 
