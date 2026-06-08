@@ -687,63 +687,72 @@ async function injectThreatBanner(tabId, threat) {
     }
 }
 
+async function processAttachments(message) {
+  let attachments = await browser.messages.listAttachments(message.id);
+  console.log("Gefundene Anhänge:", attachments);
+
+  if (attachments.length > 0) {
+    await sent_to_hybrid_by_attachment(message, attachments);
+  }
+}
+
+async function processLinks(tab, message, fullMessage) {
+  let messageText = extractTextFromParts(fullMessage.parts || fullMessage);
+  let urls = extractUrls(messageText);
+  let filteredUrls = filterUrls(urls);
+
+  console.log("Gefundene URLs:", filteredUrls);
+  if (filteredUrls.length > 0) {
+    await processAndUploadUrls(message, filteredUrls);
+  }
+
+  // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
+  await injectTimeOfClickProtection(tab.id, filteredUrls);
+
+  return { messageText, urls, filteredUrls };
+}
+
+async function evaluateAndInjectThreats(tab, message, fullMessage, urls, filteredUrls, messageText) {
+  let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
+  let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
+
+  let maliciousIps = await checkIPReputation(receivedHeaders);
+
+  // BEC Protection Data Extraction
+  let emailMatch = message.author.match(/<([^>]+)>/);
+  let senderEmail = emailMatch ? emailMatch[1].toLowerCase() : message.author.toLowerCase();
+
+  let isFirstCommunication = await checkFirstCommunication(senderEmail);
+
+  let replyTo = "";
+  if (fullMessage.headers && fullMessage.headers['reply-to']) {
+      replyTo = fullMessage.headers['reply-to'][0];
+  }
+
+  let subject = message.subject || "";
+  let urlhausDomains = await checkURLhausDomains(filteredUrls);
+
+  let threat = calculateThreatScore(message.author, urls, {
+    authHeaders,
+    urlhausDomains,
+    isFirstCommunication,
+    messageText,
+    subject,
+    replyTo
+  });
+
+  await injectThreatBanner(tab.id, threat);
+}
+
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
-
   try {
-    // Liste der Anhänge abrufen
-    let attachments = await browser.messages.listAttachments(message.id);
+    await processAttachments(message);
 
-    console.log("Gefundene Anhänge:", attachments);
-
-    if (attachments.length > 0) {
-      await sent_to_hybrid_by_attachment(message, attachments);
-    }
-
-    // Vollständige Nachricht abrufen für Link-Extraktion
     let fullMessage = await browser.messages.getFull(message.id);
-    let messageText = extractTextFromParts(fullMessage);
-    let urls = extractUrls(messageText);
-    let filteredUrls = filterUrls(urls);
+    let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage);
 
-    console.log("Gefundene URLs:", filteredUrls);
-    if (filteredUrls.length > 0) {
-      await processAndUploadUrls(message, filteredUrls);
-    }
-
-    // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
-    await injectTimeOfClickProtection(tab.id, filteredUrls);
-
-    let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
-    let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
-
-    let maliciousIps = await checkIPReputation(receivedHeaders);
-
-    // BEC Protection Data Extraction
-    let emailMatch = message.author.match(/<([^>]+)>/);
-    let senderEmail = emailMatch ? emailMatch[1].toLowerCase() : message.author.toLowerCase();
-
-    let isFirstCommunication = await checkFirstCommunication(senderEmail);
-
-    let replyTo = "";
-    if (fullMessage.headers && fullMessage.headers['reply-to']) {
-        replyTo = fullMessage.headers['reply-to'][0];
-    }
-
-    let subject = message.subject || "";
-    let urlhausDomains = await checkURLhausDomains(filteredUrls);
-
-    let threat = calculateThreatScore(message.author, urls, {
-      authHeaders,
-      urlhausDomains,
-      isFirstCommunication,
-      messageText,
-      subject,
-      replyTo
-    });
-
-    await injectThreatBanner(tab.id, threat);
-
+    await evaluateAndInjectThreats(tab, message, fullMessage, urls, filteredUrls, messageText);
   } catch (error) {
     console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
   }
