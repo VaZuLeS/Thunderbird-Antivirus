@@ -25,6 +25,9 @@ const MAX_KNOWN_SENDERS = 1000;
 const urlhausCache = new Map();
 const MAX_URLHAUS_CACHE_SIZE = 1000;
 
+const ipReputationCache = new Map();
+const MAX_IP_CACHE = 1000;
+
 function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
     const options = {
