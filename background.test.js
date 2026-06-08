@@ -2073,6 +2073,8 @@ describe('background.js', () => {
                 };
             };
 
+        });
+
         it('returns UNKNOWN if no active message or headerMessageId', async () => {
             context.browser.messageDisplay.getDisplayedMessage = async () => null;
 
@@ -2186,4 +2188,5 @@ describe('background.js', () => {
             assert.deepEqual(response, { status: 'ERROR' });
         });
     });
+});
 });
