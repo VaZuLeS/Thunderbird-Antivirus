@@ -42,3 +42,6 @@
 ## 2026-06-07 - Redundant ARIA Disabled Attribute
 **Learning:** Adding `aria-disabled="true"` to standard HTML input elements (like text inputs) that already use the native `disabled` attribute is redundant and unnecessary. The native `disabled` attribute already conveys the disabled state to assistive technologies automatically.
 **Action:** Always rely solely on the native `disabled` attribute for standard HTML form elements to indicate disabled state, avoiding redundant ARIA attributes that clutter the DOM without providing additional accessibility value.
+## 2024-06-09 - ARIA Describedby for Helper Texts
+**Learning:** Textareas with placeholder text or `select` dropdowns with adjacent paragraph instructions often lack programmatic linkage. Relying on placeholders or adjacent text alone means screen reader users won't hear the instructions when they focus the input.
+**Action:** Always wrap detailed setup instructions or helper text in a `<small>` or `<p>` element with a unique `id`, and explicitly link it to the corresponding `<input>`, `<textarea>`, or `<select>` element using `aria-describedby` so screen readers announce the helper text upon focus.
