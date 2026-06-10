@@ -322,8 +322,9 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
     if (replyTo && senderDomain) {
         const replyMatch = replyTo.match(/<([^>]+)>/);
         const replyToEmail = replyMatch ? replyMatch[1].toLowerCase() : replyTo.toLowerCase();
-        const replyParts = replyToEmail.split('@');
-        const replyDomain = replyParts.length === 2 ? replyParts[1] : "";
+        // ⚡ Bolt Optimization: Use indexOf and substring instead of split for O(n) extraction without array allocation
+        const atIndex = replyToEmail.indexOf('@');
+        const replyDomain = atIndex !== -1 ? replyToEmail.substring(atIndex + 1) : "";
 
         if (replyDomain && replyDomain !== senderDomain) {
             score += 50;
@@ -464,8 +465,9 @@ function calculateThreatScore(author, urls, options = {}) {
 
     let emailMatch = author.match(/<([^>]+)>/);
     let email = emailMatch ? emailMatch[1].toLowerCase() : author.toLowerCase();
-    let parts = email.split('@');
-    let senderDomain = parts.length === 2 ? parts[1].toLowerCase() : "";
+    // ⚡ Bolt Optimization: Use indexOf and substring instead of split for O(n) extraction without array allocation
+    let atIndex = email.indexOf('@');
+    let senderDomain = atIndex !== -1 ? email.substring(atIndex + 1).toLowerCase() : "";
 
     const listCheck = checkLists(email, senderDomain);
     if (listCheck) {
