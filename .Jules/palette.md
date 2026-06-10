@@ -42,3 +42,7 @@
 ## 2026-06-07 - Redundant ARIA Disabled Attribute
 **Learning:** Adding `aria-disabled="true"` to standard HTML input elements (like text inputs) that already use the native `disabled` attribute is redundant and unnecessary. The native `disabled` attribute already conveys the disabled state to assistive technologies automatically.
 **Action:** Always rely solely on the native `disabled` attribute for standard HTML form elements to indicate disabled state, avoiding redundant ARIA attributes that clutter the DOM without providing additional accessibility value.
+
+## 2024-06-08 - Disabling Spellcheck on Technical Input Fields
+**Learning:** Textareas used for technical configurations (like domain or email whitelists/blacklists) often trigger browser spellcheckers, resulting in annoying red squiggly lines. Worse, these strings could potentially be sent to third-party spellcheck services, posing a privacy risk.
+**Action:** Always explicitly add `spellcheck="false"` to HTML inputs and textareas that are intended for technical data (e.g., custom blacklists, whitelists, API keys, or raw code) to improve visual clarity and prevent data leakage.
