@@ -64,21 +64,24 @@
 
     <div class="mb-3">
         <label for="privacyTier">Datenschutz-Stufe (Privacy Tier):</label>
-        <select id="privacyTier">
+        <select id="privacyTier" aria-describedby="privacyTierHelp">
             <option value="strict">Strikt (Nur Hashes senden, kein Upload)</option>
             <option value="balanced">Ausgewogen (Unbekannte Dateien hochladen, keine URLs)</option>
             <option value="max">Maximaler Schutz (Alles hochladen inkl. URLs)</option>
         </select>
+        <br><small id="privacyTierHelp">Bestimmt, wie viele Daten an Hybrid-Analysis gesendet werden.</small>
     </div>
 
     <div class="mb-3">
         <label for="customWhitelist">Whitelist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
-        <textarea id="customWhitelist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com" spellcheck="false"></textarea>
+        <textarea id="customWhitelist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com" aria-describedby="whitelistHelp"></textarea>
+        <br><small id="whitelistHelp">Tragen Sie hier vertrauenswürdige Domains oder E-Mail-Adressen ein, um diese vom Scan auszuschließen.</small>
     </div>
 
     <div class="mb-3">
         <label for="customBlacklist">Blacklist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
-        <textarea id="customBlacklist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com" spellcheck="false"></textarea>
+        <textarea id="customBlacklist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com" aria-describedby="blacklistHelp"></textarea>
+        <br><small id="blacklistHelp">Tragen Sie hier blockierte Domains oder E-Mail-Adressen ein.</small>
     </div>
 
     <div class="mb-3">
@@ -101,10 +104,10 @@
     <hr>
 
     <h3>IP-Reputation (Header-Analyse)</h3>
-    <p>Hier können Sie einen Anbieter auswählen, um die IPs der einliefernden Mailserver (Received-Header) auf Spam-Botnets oder andere Gefahren zu überprüfen.</p>
+    <p id="ipReputationProviderHelp">Hier können Sie einen Anbieter auswählen, um die IPs der einliefernden Mailserver (Received-Header) auf Spam-Botnets oder andere Gefahren zu überprüfen.</p>
     <div class="mb-3">
         <label for="ipReputationProvider">Anbieter:</label>
-        <select id="ipReputationProvider">
+        <select id="ipReputationProvider" aria-describedby="ipReputationProviderHelp">
             <option value="none">Deaktiviert</option>
             <option value="abuseipdb">AbuseIPDB</option>
             <option value="virustotal">VirusTotal</option>
