@@ -32,7 +32,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The API key configuration inputs in `options.html` were implemented as standard `<input type="password">` fields without bounding constraints or autocomplete directives. This could allow resource exhaustion (Denial of Service) via excessively large string injections and inadvertently permit browser password managers to cache and expose sensitive API tokens.
 **Learning:** Browser autofill and unbounded inputs pose secondary risks for high-privilege secrets that shouldn't be managed like standard passwords.
 **Prevention:** Always explicitly define `maxlength` bounds (e.g., `255`) and apply `autocomplete="off"` to sensitive configuration inputs (like API keys and tokens) to enforce limits and prevent unauthorized local caching.
-## 2026-06-09 - Unbounded Configuration List Inputs (DoS and Data Leakage)
-**Vulnerability:** The `customWhitelist` and `customBlacklist` textareas in `options.html` lacked length bounds and spellcheck disabling. This permitted resource exhaustion (DoS) via massive copy-paste inputs and potential data leakage of sensitive internal domains to third-party spellchecking services.
-**Learning:** Security configurations beyond simple API keys (like whitelists/blacklists) must also have bounding constraints and disable native browser features that might transmit their contents externally.
-**Prevention:** Apply `maxlength` bounds (e.g., 10000) and `spellcheck="false"` to all configuration textareas to enforce limits and prevent external dictionary lookups.
+
+## 2026-06-15 - Spelljacking Risk in Configuration Fields
+**Vulnerability:** The custom blacklist and whitelist configuration textareas in `options.html` were susceptible to spelljacking. Browser spellcheck mechanisms can send the contents of these fields to third-party servers, potentially leaking sensitive user data or internal network structures.
+**Learning:** Browser spellcheck poses a subtle data leakage vector for user-defined configuration fields containing sensitive PII or network information.
+**Prevention:** Explicitly add `spellcheck="false"` to textareas or inputs intended for sensitive configurations to prevent unauthorized data transmission to spellcheck dictionary providers.
