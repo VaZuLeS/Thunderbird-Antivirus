@@ -133,15 +133,22 @@ function extractPublicIPs(receivedHeaders) {
         let matches = header.match(GLOBAL_IPV4_REGEX);
         if (matches) {
             for (let ip of matches) {
-                // Filter private/local IPs
-                let parts = ip.split('.').map(Number);
+                // ⚡ Bolt Optimization: Use String.prototype.indexOf and string splitting without .map(Number)
+                // to avoid allocating multiple arrays and mapping over them for every IP address.
+                const dot1 = ip.indexOf('.');
+                const part1 = parseInt(ip.substring(0, dot1), 10);
+
+                if (part1 === 10 || part1 === 127 || part1 === 0) {
+                    continue;
+                }
+
+                const dot2 = ip.indexOf('.', dot1 + 1);
+                const part2 = parseInt(ip.substring(dot1 + 1, dot2), 10);
+
                 if (
-                    parts[0] === 10 ||
-                    (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
-                    (parts[0] === 192 && parts[1] === 168) ||
-                    parts[0] === 127 ||
-                    parts[0] === 0 ||
-                    (parts[0] === 169 && parts[1] === 254)
+                    (part1 === 172 && part2 >= 16 && part2 <= 31) ||
+                    (part1 === 192 && part2 === 168) ||
+                    (part1 === 169 && part2 === 254)
                 ) {
                     continue;
                 }
