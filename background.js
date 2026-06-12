@@ -369,9 +369,15 @@ function getMainDomain(domain) {
     if (match) {
         return match[1].toLowerCase();
     }
-    const dParts = domain.split('.');
-    if (dParts.length >= 2) {
-        return dParts.slice(-2).join('.');
+
+    // ⚡ Bolt Optimization: Use lastIndexOf and substring instead of split/slice/join
+    // to prevent intermediate array allocations in hot paths.
+    const lastDot = domain.lastIndexOf('.');
+    if (lastDot !== -1) {
+        const secondLastDot = domain.lastIndexOf('.', lastDot - 1);
+        if (secondLastDot !== -1) {
+            return domain.substring(secondLastDot + 1);
+        }
     }
     return domain;
 }
