@@ -45,3 +45,6 @@
 ## 2024-06-09 - ARIA Describedby for Helper Texts
 **Learning:** Textareas with placeholder text or `select` dropdowns with adjacent paragraph instructions often lack programmatic linkage. Relying on placeholders or adjacent text alone means screen reader users won't hear the instructions when they focus the input.
 **Action:** Always wrap detailed setup instructions or helper text in a `<small>` or `<p>` element with a unique `id`, and explicitly link it to the corresponding `<input>`, `<textarea>`, or `<select>` element using `aria-describedby` so screen readers announce the helper text upon focus.
+## 2024-06-12 - Disabling Spellcheck on Technical Inputs
+**Learning:** Textareas used for technical configuration, such as domain whitelists and blacklists, trigger distracting red squiggly lines for valid entries when browser spellchecking is enabled. Furthermore, leaving spellcheck enabled on these fields risks leaking sensitive internal domain data or user emails to third-party dictionaries used by the browser.
+**Action:** Always explicitly add `spellcheck="false"` to HTML inputs and textareas used for technical or security configurations to improve the visual experience and protect sensitive data.
