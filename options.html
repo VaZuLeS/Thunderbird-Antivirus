@@ -85,8 +85,9 @@
     </div>
 
     <div class="mb-3">
-        <input type="checkbox" id="alwaysManual">
+        <input type="checkbox" id="alwaysManual" aria-describedby="alwaysManualHelp">
         <label for="alwaysManual" style="display: inline; margin-bottom: 0;">Immer manuell scannen (Kein Auto-Upload)</label>
+        <br><small id="alwaysManualHelp">Verhindert den automatischen Upload von Anhängen, unabhängig von der gewählten Datenschutz-Stufe.</small>
     </div>
 
     <div class="mb-3">
@@ -96,8 +97,9 @@
     </div>
 
     <div class="mb-3">
-        <input type="checkbox" id="timeOfClickProtection" checked>
+        <input type="checkbox" id="timeOfClickProtection" checked aria-describedby="tocHelp">
         <label for="timeOfClickProtection" style="display: inline; margin-bottom: 0;">Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo bei Hover)</label>
+        <br><small id="tocHelp">Zeigt beim Überfahren von Links mit der Maus einen Hinweis an, dass die URL in Echtzeit geprüft wird.</small>
     </div>
 
     <br><br>
