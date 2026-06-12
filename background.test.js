@@ -161,6 +161,8 @@ describe('background.js', () => {
             globalThis.MAX_IP_CACHE = MAX_IP_CACHE;
             globalThis.set_ipReputationProvider = (val) => { ipReputationProvider = val; };
             globalThis.set_ipReputationApiKey = (val) => { ipReputationApiKey = val; };
+            globalThis.set_urlscanApikey = (val) => { urlscanApikey = val; };
+            globalThis.set_apikey_hybridanalysis = (val) => { apikey_hybridanalysis = val; };
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
