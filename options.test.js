@@ -117,6 +117,32 @@ describe('options.js', () => {
         assert.strictEqual(apiKeyInput.disabled, true);
         assert.strictEqual(apiKeyInput.title, 'Wählen Sie zuerst einen Anbieter aus');
         assert.strictEqual(apiKeyInput.placeholder, 'Deaktiviert');
+
+        // Check alwaysManual disables privacyTier
+        const alwaysManualCheckbox = context.document.getElementById('alwaysManual');
+        const privacyTierSelect = context.document.getElementById('privacyTier');
+
+        // Initial is checked (true) in mock setup
+        assert.strictEqual(privacyTierSelect.disabled, true);
+        assert.strictEqual(privacyTierSelect.title, 'Datenschutz-Stufe ist bei manuellem Scan irrelevant');
+
+        alwaysManualCheckbox.checked = false;
+        alwaysManualCheckbox.dispatchEvent(changeEvent);
+        assert.strictEqual(privacyTierSelect.disabled, false);
+        assert.strictEqual(privacyTierSelect.title, '');
+
+        // Check autoScanLinks disables timeOfClickProtection
+        const autoScanLinksCheckbox = context.document.getElementById('autoScanLinks');
+        const timeOfClickProtectionCheckbox = context.document.getElementById('timeOfClickProtection');
+
+        // Initial is checked (true) in mock setup
+        assert.strictEqual(timeOfClickProtectionCheckbox.disabled, true);
+        assert.strictEqual(timeOfClickProtectionCheckbox.title, 'Time-of-Click Protection ist irrelevant, wenn Auto-Scan aktiv ist');
+
+        autoScanLinksCheckbox.checked = false;
+        autoScanLinksCheckbox.dispatchEvent(changeEvent);
+        assert.strictEqual(timeOfClickProtectionCheckbox.disabled, false);
+        assert.strictEqual(timeOfClickProtectionCheckbox.title, '');
     });
 
     it('should save settings when save button is clicked', async () => {

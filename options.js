@@ -39,11 +39,41 @@ document.addEventListener('DOMContentLoaded', function() {
           }
       }
 
+      const alwaysManualCheckbox = document.getElementById('alwaysManual');
+      const privacyTierSelect = document.getElementById('privacyTier');
+
+      function updatePrivacyTierStatus() {
+          if (alwaysManualCheckbox.checked) {
+              privacyTierSelect.disabled = true;
+              privacyTierSelect.title = 'Datenschutz-Stufe ist bei manuellem Scan irrelevant';
+          } else {
+              privacyTierSelect.disabled = false;
+              privacyTierSelect.title = '';
+          }
+      }
+
+      const autoScanLinksCheckbox = document.getElementById('autoScanLinks');
+      const timeOfClickProtectionCheckbox = document.getElementById('timeOfClickProtection');
+
+      function updateTimeOfClickProtectionStatus() {
+          if (autoScanLinksCheckbox.checked) {
+              timeOfClickProtectionCheckbox.disabled = true;
+              timeOfClickProtectionCheckbox.title = 'Time-of-Click Protection ist irrelevant, wenn Auto-Scan aktiv ist';
+          } else {
+              timeOfClickProtectionCheckbox.disabled = false;
+              timeOfClickProtectionCheckbox.title = '';
+          }
+      }
+
       // Initiale Setzung
       updateIpReputationApiKeyStatus();
+      updatePrivacyTierStatus();
+      updateTimeOfClickProtectionStatus();
 
       // Event Listener für Änderungen
       providerSelect.addEventListener('change', updateIpReputationApiKeyStatus);
+      alwaysManualCheckbox.addEventListener('change', updatePrivacyTierStatus);
+      autoScanLinksCheckbox.addEventListener('change', updateTimeOfClickProtectionStatus);
     });
   });
   
