@@ -1699,6 +1699,31 @@ describe('background.js', () => {
             assert.ok(!result.includes('data:'), 'data URI should be removed from formaction');
             assert.ok(!result.includes('action="javascript'), 'action attribute should be removed/sanitized');
         });
+
+        it('prevents mXSS bypasses using template, math, svg, and noscript', () => {
+            const templateInput = '<html><body><template><script>alert(1)</script><a href="javascript:alert(1)">X</a></template></body></html>';
+            const templateResult = context.disarmHTML(templateInput);
+            assert.ok(!templateResult.includes('<script>'), 'script tag inside template should be removed');
+            assert.ok(!templateResult.includes('javascript:'), 'javascript URI inside template should be removed');
+
+            const nestedTemplateInput = '<template><template><script>alert(1)</script></template></template>';
+            const nestedTemplateResult = context.disarmHTML(nestedTemplateInput);
+            assert.ok(!nestedTemplateResult.includes('<script>'), 'script tag inside nested template should be removed');
+
+            const mathInput = '<math><script>alert(1)</script></math>';
+            const mathResult = context.disarmHTML(mathInput);
+            assert.ok(!mathResult.includes('math'), 'math tag should be removed');
+            assert.ok(!mathResult.includes('script'), 'script tag inside math should be removed');
+
+            const svgInput = '<svg><script>alert(1)</script></svg>';
+            const svgResult = context.disarmHTML(svgInput);
+            assert.ok(!svgResult.includes('svg'), 'svg tag should be removed');
+            assert.ok(!svgResult.includes('script'), 'script tag inside svg should be removed');
+
+            const noscriptInput = '<noscript><p title="</noscript><img src=x onerror=alert(1)>"></noscript>';
+            const noscriptResult = context.disarmHTML(noscriptInput);
+            assert.ok(!noscriptResult.includes('<noscript>'), 'noscript tag should be removed');
+        });
     });
 
     describe('checkLists', () => {
