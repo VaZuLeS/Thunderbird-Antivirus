@@ -1373,7 +1373,7 @@ const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xli
 // ⚡ Bolt Optimization: Precompiled Set for O(1) tag lookup.
 // Moved outside the function to avoid redundant memory allocations and garbage collection
 // overhead on every invocation, preserving the Set.has() performance benefit.
-const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link']);
+const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link', 'math', 'svg', 'noscript']);
 
 function disarmHTML(htmlString) {
     const parser = new DOMParser();
@@ -1384,30 +1384,42 @@ function disarmHTML(htmlString) {
     // ⚡ Bolt Optimization: Merge tag removal and attribute sanitization into a single TreeWalker pass.
     // This eliminates the redundant DOM traversal previously caused by calling querySelectorAll
     // before the TreeWalker loop, significantly reducing overhead on large HTML payloads.
-    const walker = doc.createTreeWalker(doc.documentElement, 1 /* NodeFilter.SHOW_ELEMENT */);
-    let el = walker.currentNode;
-    while (el) {
-        if (activeTags.has(el.tagName.toLowerCase())) {
-            nodesToRemove.push(el);
-        } else if (el.hasAttributes()) {
-            for (let j = el.attributes.length - 1; j >= 0; j--) {
-                const attrName = el.attributes[j].name.toLowerCase();
-                if (attrName.startsWith('on')) {
-                    el.removeAttribute(attrName);
-                    continue;
-                }
-                if (dangerousAttributes.has(attrName)) {
-                    let val = el.attributes[j].value;
-                    // Remove control characters (like tabs/newlines) that might evade the check
-                    let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
-                    if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                        el.removeAttribute(attrName);
+    function processRoot(root) {
+        const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
+        let el = walker.currentNode;
+        while (el) {
+            // For DocumentFragment, nodeType is 11, but SHOW_ELEMENT only shows elements (nodeType 1).
+            if (el.nodeType === 1) {
+                if (activeTags.has(el.tagName.toLowerCase())) {
+                    nodesToRemove.push(el);
+                } else {
+                    if (el.hasAttributes()) {
+                        for (let j = el.attributes.length - 1; j >= 0; j--) {
+                            const attrName = el.attributes[j].name.toLowerCase();
+                            if (attrName.startsWith('on')) {
+                                el.removeAttribute(attrName);
+                                continue;
+                            }
+                            if (dangerousAttributes.has(attrName)) {
+                                let val = el.attributes[j].value;
+                                // Remove control characters (like tabs/newlines) that might evade the check
+                                let cleanVal = val.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().toLowerCase();
+                                if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
+                                    el.removeAttribute(attrName);
+                                }
+                            }
+                        }
+                    }
+                    if (el.tagName.toLowerCase() === 'template' && el.content) {
+                        processRoot(el.content);
                     }
                 }
             }
+            el = walker.nextNode();
         }
-        el = walker.nextNode();
     }
+
+    processRoot(doc.documentElement);
 
     // Remove active tags collected during the pass
     for (let i = nodesToRemove.length - 1; i >= 0; i--) {
