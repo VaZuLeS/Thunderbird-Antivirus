@@ -105,6 +105,24 @@ describe('content_script.js', () => {
         assert.strictEqual(dataEvent.defaultPrevented, true);
     });
 
+    it('should ignore malformed URLs that fail parsing', async () => {
+        let messageSent = false;
+        sendMessageMock = async () => { messageSent = true; return { status: 'CLEAN' }; };
+
+        const invalidLink = context.document.createElement('a');
+        // URL with unescaped % will fail URL constructor
+        invalidLink.href = 'http://%';
+        context.document.body.appendChild(invalidLink);
+
+        const event = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+
+        // This shouldn't throw an error globally
+        invalidLink.dispatchEvent(event);
+
+        assert.strictEqual(messageSent, false);
+        assert.strictEqual(event.defaultPrevented, false);
+    });
+
     it('should allow the click when status is CLEAN', async () => {
         let messageSent = false;
         sendMessageMock = async (msg) => {
