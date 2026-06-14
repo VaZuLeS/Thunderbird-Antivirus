@@ -1273,35 +1273,31 @@ async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
 }
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "uploadAttachment") {
-        handleManualUpload(request.messageId, request.partName, request.attachmentName, request.hash, request.headerMessageId)
-            .then(res => sendResponse({status: 'success', data: res}))
-            .catch(err => sendResponse({status: 'error', message: err.message}));
-        return true;
-    } else if (request.action === "scanUrl") {
-        handleUrlScan(request.url, request.headerMessageId)
-            .then(res => sendResponse({status: 'success', data: res}))
-            .catch(err => sendResponse({status: 'error', message: err.message}));
-        return true;
-    }
+    switch (request.action) {
+        case "uploadAttachment":
+            handleManualUpload(request.messageId, request.partName, request.attachmentName, request.hash, request.headerMessageId)
+                .then(res => sendResponse({status: 'success', data: res}))
+                .catch(err => sendResponse({status: 'error', message: err.message}));
+            return true;
 
-    if (request.action === "checkLinkState") {
-        handleCheckLinkState(request, sender, sendResponse);
-        return true;
-    }
+        case "scanUrl":
+            handleUrlScan(request.url, request.headerMessageId)
+                .then(res => sendResponse({status: 'success', data: res}))
+                .catch(err => sendResponse({status: 'error', message: err.message}));
+            return true;
 
-    if (request.action === "checkHash") {
-        handleManualCheck(request.hash, request.headerMessageId, request.partName)
-            .then(res => sendResponse({status: 'success', data: res}))
-            .catch(err => sendResponse({status: 'error', message: err.message}));
-        return true;
-    }
+        case "checkLinkState":
+            handleCheckLinkState(request, sender, sendResponse);
+            return true;
 
-    if (request.action === "downloadDisarmed") {
-        handleDownloadDisarmed(request.messageId, request.partName, request.attachmentName)
-            .then(res => sendResponse({status: 'success', data: res}))
-            .catch(err => sendResponse({status: 'error', message: err.message}));
-        return true;
+        case "downloadDisarmed":
+            handleDownloadDisarmed(request.messageId, request.partName, request.attachmentName)
+                .then(res => sendResponse({status: 'success', data: res}))
+                .catch(err => sendResponse({status: 'error', message: err.message}));
+            return true;
+
+        default:
+            return false;
     }
 });
 
