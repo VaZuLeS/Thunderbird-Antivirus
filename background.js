@@ -888,12 +888,12 @@ class HybridDataBuilder {
     }
 }
 
-async function handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, fileType) {
+async function handle_unknown_attachment({ attachment, content_of_attachment, local_hash, virustotal_stats, privacyTier, fileType }) {
     console.log('Datei ist der API unbekannt.');
     if (privacyTier === 'balanced' || privacyTier === 'max') {
         console.log('Lade unbekannte Datei automatisch hoch...');
         try {
-            const file_to_submit = new File([content_of_atachment], attachment.name, { type: fileType || 'application/octet-stream' });
+            const file_to_submit = new File([content_of_attachment], attachment.name, { type: fileType || 'application/octet-stream' });
             const formData = new FormData();
             formData.append('scan_type', 'all');
             formData.append('file', file_to_submit);
@@ -990,7 +990,7 @@ async function process_single_attachment(message, attachment) {
                     virustotal_stats
                 );
             } else {
-                return await handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, file.type);
+                return await handle_unknown_attachment({ attachment, content_of_attachment: content_of_atachment, local_hash, virustotal_stats, privacyTier, fileType: file.type });
             }
 
         } catch (error) {
