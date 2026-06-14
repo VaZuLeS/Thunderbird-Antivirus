@@ -99,6 +99,15 @@ describe('escapeHTML', () => {
         assert.strictEqual(escapeHTML(123), '123');
         assert.strictEqual(escapeHTML(true), 'true');
     });
+
+    it('propagates errors thrown during stringification', () => {
+        const errorObject = {
+            toString: () => {
+                throw new Error('Stringification error');
+            }
+        };
+        assert.throws(() => escapeHTML(errorObject), /Stringification error/);
+    });
 });
 
 describe('createEl', () => {
