@@ -1,11 +1,8 @@
-// ⚡ Bolt Optimization: Precompiled Hexadecimal Look-Up Table (LUT) for O(1) byte-to-hex conversion
 const byteToHex = new Array(256);
 for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
 function escapeHTML(str) {
     if (!str) return '';
-    // ⚡ Bolt Optimization: Chained string replacement is faster than regex with a function callback
-    // that allocates a new dictionary object on every invocation.
     return String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -90,7 +87,6 @@ try {
             if (hasAttachments || hasLinks) {
                 document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
-                // ⚡ Bolt Optimization: Use Promise.all to fetch reports concurrently instead of sequentially
                 let fetchPromises = [];
 
                 if (hasAttachments) {
@@ -500,7 +496,6 @@ function renderManualUrlScanUI(url, headerMessageId) {
     // Erzeuge eine sichere, eindeutige ID für die URL
     const u8 = new TextEncoder().encode(url);
     let urlId = '';
-    // ⚡ Bolt Optimization: Use fast loop with LUT instead of Array.from().map().join('')
     for (let j = 0; j < u8.length; j++) urlId += byteToHex[u8[j]];
 
     let card = document.createElement('div');
