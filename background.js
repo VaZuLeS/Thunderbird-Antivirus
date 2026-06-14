@@ -1307,6 +1307,15 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
+/**
+ * Handles the "downloadDisarmed" message to sanitize and download an HTML attachment.
+ * Called dynamically via background messaging (e.g., from api.js).
+ *
+ * @param {number} messageId - The ID of the message containing the attachment.
+ * @param {string} partName - The part name of the attachment.
+ * @param {string} [attachmentName] - The optional name of the file to save as.
+ * @returns {Promise<{downloadId: number}>} Resolves with the download ID.
+ */
 async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     let file = await browser.messages.getAttachmentFile(messageId, partName);
     const contentBuffer = await file.arrayBuffer();
