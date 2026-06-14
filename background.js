@@ -583,11 +583,13 @@ async function checkIPReputation(receivedHeaders) {
             }
 
             let isMalicious = false;
-            if (ipReputationProvider === "abuseipdb") {
-                isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
-            } else if (ipReputationProvider === "virustotal") {
-                isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
-            }
+            try {
+                if (ipReputationProvider === "abuseipdb") {
+                    isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
+                } else if (ipReputationProvider === "virustotal") {
+                    isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
+                }
+            } catch(e) { console.error(e); }
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
                 ipReputationCache.clear();

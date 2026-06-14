@@ -1884,6 +1884,40 @@ describe('background.js', () => {
             // Max cache should be respected
             assert.ok(context.ipReputationCache.size <= context.MAX_IP_CACHE);
         });
+
+        it('should handle errors thrown by checkAbuseIPDB gracefully', async () => {
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
+            context.console.error = () => { errorLogged = true; };
+
+            context.set_ipReputationProvider('abuseipdb');
+            context.checkAbuseIPDB = async () => {
+                throw new Error("Mocked checkAbuseIPDB error");
+            };
+
+            const result = await context.checkIPReputation(['from a.com (8.8.8.8)']);
+            assert.deepEqual(result, []); // Should return empty array, ignoring the error
+            assert.strictEqual(errorLogged, true); // Error should be logged
+
+            context.console.error = originalConsoleError;
+        });
+
+        it('should handle errors thrown by checkVirusTotalIP gracefully', async () => {
+            const originalConsoleError = context.console.error;
+            let errorLogged = false;
+            context.console.error = () => { errorLogged = true; };
+
+            context.set_ipReputationProvider('virustotal');
+            context.checkVirusTotalIP = async () => {
+                throw new Error("Mocked checkVirusTotalIP error");
+            };
+
+            const result = await context.checkIPReputation(['from a.com (9.9.9.9)']);
+            assert.deepEqual(result, []); // Should return empty array, ignoring the error
+            assert.strictEqual(errorLogged, true); // Error should be logged
+
+            context.console.error = originalConsoleError;
+        });
     });
 
     describe('checkURLhausDomains', () => {
