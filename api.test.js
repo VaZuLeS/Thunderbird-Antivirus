@@ -496,7 +496,7 @@ tag: tag,
             throw new Error('Network timeout');
         };
 
-        await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
+        await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
         assert.ok(context.apiContentElement.innerHTML.includes('<div class="alert-error">Netzwerkfehler: Network timeout für Element test.txt</div>'));
     });
@@ -511,7 +511,7 @@ tag: tag,
             };
         };
 
-        await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
+        await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
         assert.ok(context.apiContentElement.innerHTML.includes('<div class="alert-error">API Error: 500 für Element test.txt</div>'));
     });
@@ -569,7 +569,7 @@ describe('renderManualUploadUI', () => {
         renderManualUploadUI = context.renderManualUploadUI;
 
         vm.runInContext(`
-            createUploadButton = function(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId) {
+            createUploadButton = function(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
                 createUploadButtonCalls.push({card, hash, safeHash, attachmentName, messageId, partName, headerMessageId});
             };
             createCdrButton = function(card, safeHash, attachmentName, messageId, partName) {
@@ -803,8 +803,8 @@ describe('renderManualUrlScanUI', () => {
 
         context.byteToHex = new Array(256);
         for (let i = 0; i < 256; i++) context.byteToHex[i] = i.toString(16).padStart(2, '0');
-        context.get_hybrid_report_by_sha256 = function(hash) {
-            context.lastReportOpts = { hybrid_sha: hash };
+        context.get_hybrid_report_by_sha256 = function(opts) {
+            context.lastReportOpts = opts;
         };
         renderManualUrlScanUI = context.renderManualUrlScanUI;
     });
@@ -1166,8 +1166,8 @@ describe('createUploadButton', () => {
                 if (!context.timeouts) context.timeouts = [];
                 context.timeouts.push({cb, delay});
             },
-            get_hybrid_report_by_sha256: function(...args) {
-                context.lastReportArgs = args;
+            get_hybrid_report_by_sha256: function(opts) {
+                context.lastReportArgs = [opts];
             },
             console: { log: () => {}, error: () => {} },
             String: String, Array: Array
@@ -1188,7 +1188,7 @@ describe('createUploadButton', () => {
 
     it('renders the upload button and status element correctly', () => {
         const card = context.document.createElement('div');
-        createUploadButton(card, 'hash1', 'safeHash1', 'test.txt', 'msg1', 'part1', 'header1');
+        createUploadButton(card, { hash: 'hash1', safeHash: 'safeHash1', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
 
         const assert = require('assert');
         assert.strictEqual(card.childNodes.length, 2);
@@ -1220,7 +1220,7 @@ describe('createUploadButton', () => {
             return { status: 'success' };
         };
 
-        createUploadButton(card, 'hash2', 'safeHash2', 'test.txt', 'msg1', 'part1', 'header1');
+        createUploadButton(card, { hash: 'hash2', safeHash: 'safeHash2', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
         const btn = context.mockElements['btn-upload-hash2'];
         const status = context.mockElements['upload-status-hash2'];
         context.mockElements['upload-status-safeHash2'] = status;
@@ -1258,15 +1258,15 @@ describe('createUploadButton', () => {
         };
         // Mock get_hybrid_report_by_sha256 avoiding dom node operations
         let prev = context.get_hybrid_report_by_sha256;
-        context.get_hybrid_report_by_sha256 = function(...args) { context.lastReportArgs = args; };
+        context.get_hybrid_report_by_sha256 = function(opts) { context.lastReportArgs = [opts]; };
 
         context.timeouts[0].cb();
 
         context.document.getElementById = originalGetElement;
         context.get_hybrid_report_by_sha256 = prev;
 
-        assert.strictEqual(context.lastReportArgs[0], 'hash2');
-        assert.strictEqual(context.lastReportArgs[1], 'test.txt');
+        assert.strictEqual(context.lastReportArgs[0].hybrid_sha, 'hash2');
+        assert.strictEqual(context.lastReportArgs[0].attachmentName, 'test.txt');
     });
 
     it('handles upload failure response correctly', async () => {
@@ -1278,7 +1278,7 @@ describe('createUploadButton', () => {
             return { status: 'error', message: 'Invalid API key' };
         };
 
-        createUploadButton(card, 'hash3', 'safeHash3', 'test.txt', 'msg1', 'part1', 'header1');
+        createUploadButton(card, { hash: 'hash3', safeHash: 'safeHash3', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
         const btn = context.mockElements['btn-upload-hash3'];
         const status = context.mockElements['upload-status-hash3'];
         context.mockElements['upload-status-safeHash3'] = status;
@@ -1303,7 +1303,7 @@ describe('createUploadButton', () => {
             throw new Error('Network error');
         };
 
-        createUploadButton(card, 'hash4', 'safeHash4', 'test.txt', 'msg1', 'part1', 'header1');
+        createUploadButton(card, { hash: 'hash4', safeHash: 'safeHash4', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
         const btn = context.mockElements['btn-upload-hash4'];
         const status = context.mockElements['upload-status-hash4'];
         context.mockElements['upload-status-safeHash4'] = status;

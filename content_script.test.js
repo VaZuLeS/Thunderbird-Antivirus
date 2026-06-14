@@ -52,6 +52,58 @@ describe('content_script.js', () => {
         vm.runInContext(code, context);
     });
 
+    it('should create warning modal with MALICIOUS_VISUAL state and reasons', () => {
+        const link = context.document.getElementById('unsafe-link');
+        context.createWarningModal('http://malicious.com', link, 'MALICIOUS_VISUAL', ['Fake Login', 'Suspicious Domain']);
+
+        const warningOverlay = context.document.querySelector('.thundy-overlay');
+        assert.ok(warningOverlay);
+
+        const title = warningOverlay.querySelector('#thundy-warning-title');
+        assert.strictEqual(title.textContent, 'Warnung: Visuelles Phishing erkannt!');
+        assert.strictEqual(title.style.color, 'red');
+
+        const message = warningOverlay.querySelector('#thundy-warning-message');
+        assert.strictEqual(message.textContent, 'Diese URL wurde von urlscan.io blockiert. Es könnte sich um eine gefälschte Login-Seite handeln.');
+        assert.strictEqual(message.style.color, 'red');
+
+        const urlInfo = Array.from(warningOverlay.querySelectorAll('p')).find(p => p.textContent.startsWith('Ziel: '));
+        assert.strictEqual(urlInfo.textContent, 'Ziel: http://malicious.com');
+
+        const stateInfo = Array.from(warningOverlay.querySelectorAll('p')).find(p => p.textContent.startsWith('Status: '));
+        assert.strictEqual(stateInfo.textContent, 'Status: MALICIOUS_VISUAL');
+
+        const lis = warningOverlay.querySelectorAll('li');
+        assert.strictEqual(lis.length, 2);
+        assert.strictEqual(lis[0].textContent, 'Fake Login');
+        assert.strictEqual(lis[1].textContent, 'Suspicious Domain');
+
+        warningOverlay.remove();
+    });
+
+    it('should create standard warning modal with UNKNOWN state', () => {
+        const link = context.document.getElementById('unsafe-link');
+        context.createWarningModal('http://unknown.com', link, 'UNKNOWN');
+
+        const warningOverlay = context.document.querySelector('.thundy-overlay');
+        assert.ok(warningOverlay);
+
+        const title = warningOverlay.querySelector('#thundy-warning-title');
+        assert.strictEqual(title.textContent, 'Achtung: Sie verlassen Thunderbird');
+        assert.strictEqual(title.className, 'text-warning');
+
+        const message = warningOverlay.querySelector('#thundy-warning-message');
+        assert.strictEqual(message.textContent, 'Dieser Link wurde noch nicht vollständig überprüft oder ist unbekannt.');
+
+        const stateInfo = Array.from(warningOverlay.querySelectorAll('p')).find(p => p.textContent.startsWith('Status: '));
+        assert.strictEqual(stateInfo.textContent, 'Status: UNKNOWN');
+
+        const lis = warningOverlay.querySelectorAll('li');
+        assert.strictEqual(lis.length, 0);
+
+        warningOverlay.remove();
+    });
+
     it('should ignore non-link clicks', async () => {
         let messageSent = false;
         sendMessageMock = async () => { messageSent = true; return { status: 'CLEAN' }; };

@@ -7,6 +7,72 @@ const vm = require('vm');
 describe('db.js module', () => {
     let context;
 
+    it('should create object store in onupgradeneeded if it does not exist', async () => {
+        let createObjectStoreCalled = false;
+        let dbMock = {
+            objectStoreNames: { contains: () => false },
+            createObjectStore: (name, options) => {
+                createObjectStoreCalled = true;
+            }
+        };
+        context = {
+            indexedDB: {
+                open: () => {
+                    let req = {};
+                    setTimeout(() => {
+                        req.result = dbMock;
+                        req.onupgradeneeded({ target: req });
+                        req.onsuccess({ target: req });
+                    }, 10);
+                    return req;
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            Promise: Promise
+        };
+
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        const openDB = context.openDB;
+        await openDB('test', 1);
+        assert.strictEqual(createObjectStoreCalled, true);
+    });
+
+    it('should not create object store in onupgradeneeded if it already exists', async () => {
+        let createObjectStoreCalled = false;
+        let dbMock = {
+            objectStoreNames: { contains: () => true },
+            createObjectStore: () => {
+                createObjectStoreCalled = true;
+            }
+        };
+        context = {
+            indexedDB: {
+                open: () => {
+                    let req = {};
+                    setTimeout(() => {
+                        req.result = dbMock;
+                        req.onupgradeneeded({ target: req });
+                        req.onsuccess({ target: req });
+                    }, 10);
+                    return req;
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            Promise: Promise
+        };
+
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        const openDB = context.openDB;
+        await openDB('test', 1);
+        assert.strictEqual(createObjectStoreCalled, false);
+    });
+
     it('should resolve openDB correctly on success', async () => {
         let dbMock = { name: 'test_db' };
         context = {

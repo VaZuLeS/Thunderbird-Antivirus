@@ -96,14 +96,14 @@ try {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                         } else {
                             fetchPromises.push(
-                                get_hybrid_report_by_sha256(
-                                    hash256,
-                                    att.attachment_name,
-                                    message.id,
-                                    att.partName,
-                                    message.headerMessageId,
-                                    att.virustotal_stats
-                                )
+                                get_hybrid_report_by_sha256({
+                                    hybrid_sha: hash256,
+                                    attachmentName: att.attachment_name,
+                                    messageId: message.id,
+                                    partName: att.partName,
+                                    headerMessageId: message.headerMessageId,
+                                    virustotal_stats: att.virustotal_stats
+                                })
                             );
                         }
                     }
@@ -115,10 +115,10 @@ try {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId);
                             return null;
                         } else if (linkObj.hybrid_sha256) {
-                            return get_hybrid_report_by_sha256(
-                                linkObj.hybrid_sha256,
-                                linkObj.url
-                            );
+                            return get_hybrid_report_by_sha256({
+                                hybrid_sha: linkObj.hybrid_sha256,
+                                attachmentName: linkObj.url
+                            });
                         }
                         return null;
                     }).filter(Boolean);
@@ -360,7 +360,13 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     return card;
 }
 
+const hybrid_report_cache = new Map();
+
 async function fetch_hybrid_report(hybrid_sha) {
+    if (hybrid_report_cache.has(hybrid_sha)) {
+        return hybrid_report_cache.get(hybrid_sha);
+    }
+
     const options = {
         method: 'GET',
         url: 'https://hybrid-analysis.com/api/v2/overview/' + hybrid_sha,
@@ -376,7 +382,12 @@ async function fetch_hybrid_report(hybrid_sha) {
     const json_data = await response.json();
     console.log(json_data);
 
-    return { response, json_data };
+    const result = { response, json_data };
+    if (response.status === 200) {
+        hybrid_report_cache.set(hybrid_sha, result);
+    }
+
+    return result;
 }
 
 function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }) {
@@ -477,7 +488,7 @@ function handle_hybrid_report_fetch_error(error, attachmentName) {
     document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);
 }
 
-async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
+async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }) {
     try {
         const { response, json_data } = await fetch_hybrid_report(hybrid_sha);
 
@@ -549,7 +560,10 @@ function renderManualUrlScanUI(url, headerMessageId) {
                 setTimeout(() => {
                     document.getElementById(`upload-container-${urlId}`).remove();
                     // response.data.sha256 enthält den sha256-Hash des URL-Scans
-                    get_hybrid_report_by_sha256(response.data.sha256, url);
+                    get_hybrid_report_by_sha256({
+                        hybrid_sha: response.data.sha256,
+                        attachmentName: url
+                    });
                 }, 3000);
             } else {
                 statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
@@ -566,7 +580,7 @@ function renderManualUrlScanUI(url, headerMessageId) {
     });
 }
 
-function createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId) {
+function createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
     let btnUpload = document.createElement('button');
     btnUpload.id = `btn-upload-${hash}`;
     btnUpload.className = "btn-primary mt-2";
@@ -603,13 +617,13 @@ function createUploadButton(card, hash, safeHash, attachmentName, messageId, par
                 setTimeout(() => {
                     let container = document.getElementById(`upload-container-${safeHash}`);
                     if (container) container.remove();
-                    get_hybrid_report_by_sha256(
-                        hash,
-                        attachmentName,
-                        messageId,
-                        partName,
-                        headerMessageId
-                    );
+                    get_hybrid_report_by_sha256({
+                        hybrid_sha: hash,
+                        attachmentName: attachmentName,
+                        messageId: messageId,
+                        partName: partName,
+                        headerMessageId: headerMessageId
+                    });
                 }, 3000);
             } else {
                 if (statusEl) statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
@@ -702,7 +716,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
 
-    createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
+    createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId });
     createCdrButton(card, safeHash, attachmentName, messageId, partName);
 
     appendElementHtml('hybrid_analysis_api_content', card);
