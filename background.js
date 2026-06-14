@@ -433,6 +433,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     if (linkDomains.size > 0 && senderDomain) {
         let matchFound = false;
         let typosquatLinkFound = false;
+        let checkedMainDomains = new Map();
 
         for (let ld of linkDomains) {
             if (ld === senderDomain || ld.endsWith('.' + senderDomain) || senderDomain.endsWith('.' + ld)) {
@@ -446,16 +447,35 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
             let isLinkKnownBrand = KNOWN_BRANDS_SET.has(linkMainDomain);
 
             if (!isLinkKnownBrand) {
+                let cachedBrandMatch = checkedMainDomains.get(linkMainDomain);
+                if (cachedBrandMatch !== undefined) {
+                    if (cachedBrandMatch !== null) {
+                        typosquatLinkFound = true;
+                        if (!reasons.some(r => r.includes(linkMainDomain))) {
+                            reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${cachedBrandMatch}.`);
+                        }
+                    }
+                    continue;
+                }
+
+                let foundTyposquat = false;
                 for (let brand of KNOWN_BRANDS) {
                     if (linkMainDomain.length < 4 || Math.abs(linkMainDomain.length - brand.length) > 2) continue;
 
                     let distance = levenshteinDistance(linkMainDomain, brand);
                     if (distance > 0 && distance <= 2) {
+                        foundTyposquat = true;
                         typosquatLinkFound = true;
+                        checkedMainDomains.set(linkMainDomain, brand);
                         if (!reasons.some(r => r.includes(linkMainDomain))) {
                             reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
                         }
+                        // Found a match, no need to check other brands for the same domain
+                        break;
                     }
+                }
+                if (!foundTyposquat) {
+                    checkedMainDomains.set(linkMainDomain, null);
                 }
             }
         }
