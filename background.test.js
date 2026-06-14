@@ -990,6 +990,31 @@ describe('background.js', () => {
         });
     });
 
+    describe('evaluateUrlhaus', () => {
+        it('returns unchanged score and reasons for empty array', () => {
+            const reasons = [];
+            const score = context.evaluateUrlhaus([], 10, reasons);
+            assert.strictEqual(score, 10);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('returns unchanged score and reasons for undefined urlhausDomains', () => {
+            const reasons = [];
+            const score = context.evaluateUrlhaus(undefined, 10, reasons);
+            assert.strictEqual(score, 10);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('increases score and adds reason for each domain in the array', () => {
+            const reasons = [];
+            const score = context.evaluateUrlhaus(['malicious.com', 'evil.org'], 0, reasons);
+            assert.strictEqual(score, 160);
+            assert.strictEqual(reasons.length, 2);
+            assert.ok(reasons[0].includes('malicious.com'));
+            assert.ok(reasons[1].includes('evil.org'));
+        });
+    });
+
     describe('evaluateReplyTo', () => {
         it('extracts email normally with matching brackets', () => {
             const reasons = [];
