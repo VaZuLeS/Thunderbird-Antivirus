@@ -1045,6 +1045,28 @@ describe('background.js', () => {
         });
     });
 
+    describe('evaluateLinks', () => {
+        it('ignores invalid URLs without throwing an error', () => {
+            const urls = ['not-a-valid-url', 'http://example.com'];
+            const reasons = [];
+            const score = context.evaluateLinks(urls, 'example.com', 'example.com', 0, reasons);
+
+            // Should not throw, and should find the match for example.com
+            assert.strictEqual(score, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('increases score if no link matches sender domain', () => {
+            const urls = ['http://other-domain.com'];
+            const reasons = [];
+            const score = context.evaluateLinks(urls, 'example.com', 'example.com', 0, reasons);
+
+            assert.strictEqual(score, 40);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Keiner der Links im Text verweist auf die Absender-Domain'));
+        });
+    });
+
     describe('evaluateSenderDomain', () => {
         it('returns initial score when senderDomain is empty', () => {
             const result = context.evaluateSenderDomain('', 10, []);
