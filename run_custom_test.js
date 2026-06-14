@@ -41,7 +41,6 @@ async function run() {
         },
         openDB: async () => ({}),
         timeOfClickProtection: false,
-        ipReputationProvider: 'none',
         urlhausApikey: '',
         knownSendersCache: new Set(),
         MAX_KNOWN_SENDERS: 1000,

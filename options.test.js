@@ -22,8 +22,6 @@ describe('options.js', () => {
                     <select id="privacyTier"><option value="balanced">Balanced</option><option value="high">High</option></select>
                     <input id="customWhitelist" value="">
                     <input id="customBlacklist" value="">
-                    <select id="ipReputationProvider"><option value="none">None</option><option value="provider1">Provider 1</option></select>
-                    <input id="ipReputationApiKey" value="">
                     <input type="checkbox" id="alwaysManual">
                     <input type="checkbox" id="autoScanLinks">
                     <input type="checkbox" id="timeOfClickProtection">
@@ -50,8 +48,6 @@ describe('options.js', () => {
                             privacyTier: 'high',
                             customWhitelist: ['example.com', 'test.com'],
                             customBlacklist: ['bad.com'],
-                            ipReputationProvider: 'provider1',
-                            ipReputationApiKey: 'test-ip-key',
                             alwaysManual: true,
                             autoScanLinks: true,
                             timeOfClickProtection: false
@@ -94,29 +90,12 @@ describe('options.js', () => {
         assert.strictEqual(context.document.getElementById('privacyTier').value, 'high');
         assert.strictEqual(context.document.getElementById('customWhitelist').value, 'example.com, test.com');
         assert.strictEqual(context.document.getElementById('customBlacklist').value, 'bad.com');
-        assert.strictEqual(context.document.getElementById('ipReputationProvider').value, 'provider1');
-        assert.strictEqual(context.document.getElementById('ipReputationApiKey').value, 'test-ip-key');
         assert.strictEqual(context.document.getElementById('alwaysManual').checked, true);
         assert.strictEqual(context.document.getElementById('autoScanLinks').checked, true);
         assert.strictEqual(context.document.getElementById('timeOfClickProtection').checked, false);
 
-        // Initial provider is 'provider1' so api key should be enabled
-        const apiKeyInput = context.document.getElementById('ipReputationApiKey');
-        assert.strictEqual(apiKeyInput.disabled, false);
-        assert.strictEqual(apiKeyInput.title, '');
-        assert.strictEqual(apiKeyInput.placeholder, '');
-
-        // Simulate changing to 'none'
-        const providerSelect = context.document.getElementById('ipReputationProvider');
-        providerSelect.value = 'none';
         const changeEvent = context.document.createEvent('Event');
         changeEvent.initEvent('change', true, true);
-        providerSelect.dispatchEvent(changeEvent);
-
-        // Check if disabled correctly
-        assert.strictEqual(apiKeyInput.disabled, true);
-        assert.strictEqual(apiKeyInput.title, 'Wählen Sie zuerst einen Anbieter aus');
-        assert.strictEqual(apiKeyInput.placeholder, 'Deaktiviert');
 
         // Check alwaysManual disables privacyTier
         const alwaysManualCheckbox = context.document.getElementById('alwaysManual');
@@ -154,8 +133,6 @@ describe('options.js', () => {
         context.document.getElementById('privacyTier').value = 'balanced';
         context.document.getElementById('customWhitelist').value = 'new.com, another.com';
         context.document.getElementById('customBlacklist').value = 'verybad.com';
-        context.document.getElementById('ipReputationProvider').value = 'none';
-        context.document.getElementById('ipReputationApiKey').value = 'new-ip-key';
         context.document.getElementById('alwaysManual').checked = false;
         context.document.getElementById('autoScanLinks').checked = false;
         context.document.getElementById('timeOfClickProtection').checked = true;
@@ -179,8 +156,6 @@ describe('options.js', () => {
         assert.strictEqual(savedData.customWhitelist[1], 'another.com');
         assert.strictEqual(savedData.customBlacklist.length, 1);
         assert.strictEqual(savedData.customBlacklist[0], 'verybad.com');
-        assert.strictEqual(savedData.ipReputationProvider, 'none');
-        assert.strictEqual(savedData.ipReputationApiKey, 'new-ip-key');
         assert.strictEqual(savedData.alwaysManual, false);
         assert.strictEqual(savedData.autoScanLinks, false);
         assert.strictEqual(savedData.timeOfClickProtection, true);
