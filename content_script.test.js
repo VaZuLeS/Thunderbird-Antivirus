@@ -44,7 +44,11 @@ describe('content_script.js', () => {
         };
 
         vm.createContext(context);
-        const code = fs.readFileSync(path.join(__dirname, 'content_script.js'), 'utf8');
+        let code = fs.readFileSync(path.join(__dirname, 'content_script.js'), 'utf8');
+        code = code.replace(
+            'function createWarningModal(url, linkElement, state, reasons) {',
+            'globalThis.createWarningModal = function createWarningModal(url, linkElement, state, reasons) {'
+        );
         vm.runInContext(code, context);
     });
 
@@ -297,5 +301,74 @@ describe('content_script.js', () => {
 
         assert.strictEqual(context.document.querySelector('.thundy-overlay'), null);
         assert.strictEqual(allowedClickSeen, true);
+    });
+
+    describe('createWarningModal', () => {
+        it('should create modal elements correctly with expected classes and ARIA attributes', () => {
+            const link = context.document.getElementById('unsafe-link');
+            context.createWarningModal('http://example.com/test', link, 'UNKNOWN');
+
+            const overlay = context.document.querySelector('.thundy-overlay');
+            assert.ok(overlay, 'Overlay should be created');
+
+            const modal = overlay.querySelector('.thundy-modal');
+            assert.ok(modal, 'Modal should be created');
+            assert.ok(modal.classList.contains('card'), 'Modal should have card class');
+            assert.ok(modal.classList.contains('card-info'), 'Modal should have card-info class');
+
+            assert.strictEqual(modal.getAttribute('role'), 'dialog');
+            assert.strictEqual(modal.getAttribute('aria-modal'), 'true');
+            assert.strictEqual(modal.getAttribute('aria-labelledby'), 'thundy-warning-title');
+            assert.strictEqual(modal.getAttribute('aria-describedby'), 'thundy-warning-message');
+
+            const title = modal.querySelector('#thundy-warning-title');
+            assert.ok(title, 'Title should be created');
+            assert.ok(title.classList.contains('text-warning'), 'Title should have text-warning class');
+
+            const message = modal.querySelector('#thundy-warning-message');
+            assert.ok(message, 'Message should be created');
+            assert.ok(message.classList.contains('text-info'), 'Message should have text-info class');
+        });
+
+        it('should render correct text and reasons list when status is MALICIOUS_VISUAL', () => {
+            const link = context.document.getElementById('unsafe-link');
+            context.createWarningModal('http://example.com/test', link, 'MALICIOUS_VISUAL', ['Fake Login', 'Suspicious URL']);
+
+            const overlay = context.document.querySelector('.thundy-overlay');
+            const title = overlay.querySelector('#thundy-warning-title');
+            const message = overlay.querySelector('#thundy-warning-message');
+
+            assert.strictEqual(title.textContent, 'Warnung: Visuelles Phishing erkannt!');
+            assert.strictEqual(title.style.color, 'red');
+            assert.strictEqual(message.textContent, 'Diese URL wurde von urlscan.io blockiert. Es könnte sich um eine gefälschte Login-Seite handeln.');
+            assert.strictEqual(message.style.color, 'red');
+            assert.strictEqual(message.style.fontWeight, 'bold');
+
+            const lis = overlay.querySelectorAll('ul > li');
+            assert.strictEqual(lis.length, 2, 'Should create 2 list items for reasons');
+            assert.strictEqual(lis[0].textContent, 'Fake Login');
+            assert.strictEqual(lis[1].textContent, 'Suspicious URL');
+
+            const ul = overlay.querySelector('ul');
+            assert.strictEqual(ul.style.color, 'red');
+        });
+
+        it('should create buttons with correct classes and functionality', () => {
+            const link = context.document.getElementById('unsafe-link');
+            context.createWarningModal('http://example.com/test', link, 'UNKNOWN');
+
+            const overlay = context.document.querySelector('.thundy-overlay');
+            const btnGroup = overlay.querySelector('.mt-3');
+            assert.ok(btnGroup, 'Button group should be created');
+
+            const cancelBtn = btnGroup.querySelector('.btn-success');
+            assert.ok(cancelBtn, 'Cancel button should be created');
+            assert.strictEqual(cancelBtn.textContent, 'Abbrechen');
+
+            const openBtn = btnGroup.querySelector('.btn-primary');
+            assert.ok(openBtn, 'Open Anyway button should be created');
+            assert.ok(openBtn.classList.contains('ml-2'), 'Open Anyway button should have ml-2 class');
+            assert.strictEqual(openBtn.textContent, 'Auf eigene Gefahr öffnen');
+        });
     });
 });
