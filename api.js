@@ -360,7 +360,13 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
     return card;
 }
 
+const hybrid_report_cache = new Map();
+
 async function fetch_hybrid_report(hybrid_sha) {
+    if (hybrid_report_cache.has(hybrid_sha)) {
+        return hybrid_report_cache.get(hybrid_sha);
+    }
+
     const options = {
         method: 'GET',
         url: 'https://hybrid-analysis.com/api/v2/overview/' + hybrid_sha,
@@ -376,7 +382,12 @@ async function fetch_hybrid_report(hybrid_sha) {
     const json_data = await response.json();
     console.log(json_data);
 
-    return { response, json_data };
+    const result = { response, json_data };
+    if (response.status === 200) {
+        hybrid_report_cache.set(hybrid_sha, result);
+    }
+
+    return result;
 }
 
 function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }) {
