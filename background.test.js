@@ -990,6 +990,75 @@ describe('background.js', () => {
         });
     });
 
+    describe('evaluateReplyTo', () => {
+        it('extracts email normally with matching brackets', () => {
+            const reasons = [];
+            const result = context.evaluateReplyTo('Name <reply@example.com>', 'example.com', 0, reasons);
+            assert.strictEqual(result, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('handles strings with no angle brackets', () => {
+            const reasons = [];
+            const result = context.evaluateReplyTo('reply@example.com', 'example.com', 0, reasons);
+            assert.strictEqual(result, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('detects domain discrepancy and increases score', () => {
+            const reasons = [];
+            const result = context.evaluateReplyTo('Name <reply@other.com>', 'example.com', 10, reasons);
+            assert.strictEqual(result, 60);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('Diskrepanz erkannt'));
+        });
+
+        it('handles missing closing bracket', () => {
+            const reasons = [];
+            // When closing bracket is missing, indexOf('>', start + 1) returns -1.
+            // substring is NOT called, so replyToEmail remains "Name <reply@other.com".
+            // Since there is an "@", the domain becomes "other.com".
+            const result = context.evaluateReplyTo('Name <reply@other.com', 'example.com', 0, reasons);
+            assert.strictEqual(result, 50);
+            assert.strictEqual(reasons.length, 1);
+        });
+
+        it('handles missing opening bracket', () => {
+            const reasons = [];
+            // When opening bracket is missing, start is -1.
+            // substring is NOT called, so replyToEmail remains "Name reply@other.com>".
+            // Since there is an "@", the domain becomes "other.com>".
+            const result = context.evaluateReplyTo('Name reply@other.com>', 'example.com', 0, reasons);
+            assert.strictEqual(result, 50);
+            assert.strictEqual(reasons.length, 1);
+        });
+
+        it('handles multiple and mismatched brackets', () => {
+            const reasons = [];
+            const result = context.evaluateReplyTo('<<Name> <reply@example.com>>', 'example.com', 0, reasons);
+            // First '<' is at index 0. First '>' after 0 is at index 6.
+            // Extracted: "<Name"
+            // "atIndex" = -1
+            // replyDomain = ""
+            // So no discrepancy because replyDomain is falsy.
+            assert.strictEqual(result, 0);
+            assert.strictEqual(reasons.length, 0);
+
+            const reasons2 = [];
+            const result2 = context.evaluateReplyTo('Name <reply@other.com> >', 'example.com', 0, reasons2);
+            assert.strictEqual(result2, 50);
+            assert.strictEqual(reasons2.length, 1);
+        });
+
+        it('handles empty brackets', () => {
+            const reasons = [];
+            const result = context.evaluateReplyTo('<>', 'example.com', 0, reasons);
+            // Extract is "". "atIndex" = -1. replyDomain = "".
+            assert.strictEqual(result, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+    });
+
     describe('evaluateBehavior', () => {
         it('returns initial score when no urgency words and not first communication', () => {
             const reasons = [];
