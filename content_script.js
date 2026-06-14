@@ -142,16 +142,9 @@
                 return;
             }
 
-            // Block execution of dangerous protocols immediately
-            if (protocol === 'javascript:' || protocol === 'data:' || protocol === 'vbscript:') {
-                event.preventDefault();
-                event.stopPropagation();
-                console.warn('Thundy AV: Blocked dangerous URI scheme:', protocol);
-                return;
-            }
-
-            // Block local and unhandled risky protocols
-            if (protocol !== 'http:' && protocol !== 'https:' && protocol !== 'mailto:' && protocol !== 'tel:' && protocol !== 'cid:' && protocol !== 'mid:') {
+            // Enforce explicit allowlist of safe protocols
+            const allowedProtocols = ['http:', 'https:', 'mailto:', 'tel:', 'cid:', 'mid:'];
+            if (!allowedProtocols.includes(protocol)) {
                 event.preventDefault();
                 event.stopPropagation();
                 console.warn('Thundy AV: Blocked unhandled URI scheme:', protocol);
