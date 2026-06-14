@@ -755,7 +755,7 @@ async function processLinks(tab, message, fullMessage) {
   return { messageText, urls, filteredUrls };
 }
 
-async function evaluateAndInjectThreats(tab, message, fullMessage, urls, filteredUrls, messageText) {
+async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText }) {
   let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
   let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
 
@@ -803,7 +803,7 @@ async function tab_mail_open_display(tab, message) {
     let fullMessage = await browser.messages.getFull(message.id);
     let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage);
 
-    await evaluateAndInjectThreats(tab, message, fullMessage, urls, filteredUrls, messageText);
+    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText });
   } catch (error) {
     console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
   }
