@@ -569,7 +569,7 @@ function renderManualUrlScanUI(url, headerMessageId) {
     });
 }
 
-function createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId) {
+function createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
     let btnUpload = document.createElement('button');
     btnUpload.id = `btn-upload-${hash}`;
     btnUpload.className = "btn-primary mt-2";
@@ -705,7 +705,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
 
-    createUploadButton(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId);
+    createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId });
     createCdrButton(card, safeHash, attachmentName, messageId, partName);
 
     appendElementHtml('hybrid_analysis_api_content', card);

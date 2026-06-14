@@ -569,7 +569,7 @@ describe('renderManualUploadUI', () => {
         renderManualUploadUI = context.renderManualUploadUI;
 
         vm.runInContext(`
-            createUploadButton = function(card, hash, safeHash, attachmentName, messageId, partName, headerMessageId) {
+            createUploadButton = function(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
                 createUploadButtonCalls.push({card, hash, safeHash, attachmentName, messageId, partName, headerMessageId});
             };
             createCdrButton = function(card, safeHash, attachmentName, messageId, partName) {
@@ -1188,7 +1188,7 @@ describe('createUploadButton', () => {
 
     it('renders the upload button and status element correctly', () => {
         const card = context.document.createElement('div');
-        createUploadButton(card, 'hash1', 'safeHash1', 'test.txt', 'msg1', 'part1', 'header1');
+        createUploadButton(card, { hash: 'hash1', safeHash: 'safeHash1', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
 
         const assert = require('assert');
         assert.strictEqual(card.childNodes.length, 2);
@@ -1220,7 +1220,7 @@ describe('createUploadButton', () => {
             return { status: 'success' };
         };
 
-        createUploadButton(card, 'hash2', 'safeHash2', 'test.txt', 'msg1', 'part1', 'header1');
+        createUploadButton(card, { hash: 'hash2', safeHash: 'safeHash2', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
         const btn = context.mockElements['btn-upload-hash2'];
         const status = context.mockElements['upload-status-hash2'];
         context.mockElements['upload-status-safeHash2'] = status;
@@ -1278,7 +1278,7 @@ describe('createUploadButton', () => {
             return { status: 'error', message: 'Invalid API key' };
         };
 
-        createUploadButton(card, 'hash3', 'safeHash3', 'test.txt', 'msg1', 'part1', 'header1');
+        createUploadButton(card, { hash: 'hash3', safeHash: 'safeHash3', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
         const btn = context.mockElements['btn-upload-hash3'];
         const status = context.mockElements['upload-status-hash3'];
         context.mockElements['upload-status-safeHash3'] = status;
@@ -1303,7 +1303,7 @@ describe('createUploadButton', () => {
             throw new Error('Network error');
         };
 
-        createUploadButton(card, 'hash4', 'safeHash4', 'test.txt', 'msg1', 'part1', 'header1');
+        createUploadButton(card, { hash: 'hash4', safeHash: 'safeHash4', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
         const btn = context.mockElements['btn-upload-hash4'];
         const status = context.mockElements['upload-status-hash4'];
         context.mockElements['upload-status-safeHash4'] = status;
