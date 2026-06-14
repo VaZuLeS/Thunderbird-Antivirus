@@ -28,6 +28,9 @@ const MAX_URLHAUS_CACHE_SIZE = 1000;
 const ipReputationCache = new Map();
 const MAX_IP_CACHE = 1000;
 
+const vtCache = new Map();
+const MAX_VT_CACHE_SIZE = 1000;
+
 function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
     const options = {
@@ -1467,6 +1470,9 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
 
 async function checkVirusTotal(hash, apikey) {
     if (!apikey) return null;
+    if (vtCache.has(hash)) {
+        return vtCache.get(hash);
+    }
     const url = `https://www.virustotal.com/api/v3/files/${hash}`;
     const options = {
         method: 'GET',
@@ -1480,7 +1486,13 @@ async function checkVirusTotal(hash, apikey) {
         if (response.status === 200) {
             const data = await response.json();
             if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
-                return data.data.attributes.last_analysis_stats;
+                const stats = data.data.attributes.last_analysis_stats;
+                if (vtCache.size >= MAX_VT_CACHE_SIZE) {
+                    const firstKey = vtCache.keys().next().value;
+                    vtCache.delete(firstKey);
+                }
+                vtCache.set(hash, stats);
+                return stats;
             }
         }
         return null;
