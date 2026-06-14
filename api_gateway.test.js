@@ -109,6 +109,43 @@ describe('ApiGateway module', () => {
         );
     });
 
+    it('should bubble up generic network errors', async () => {
+        let loggedError = null;
+        context = {
+            AbortController: class AbortController {
+                constructor() { this.signal = {}; }
+                abort() {}
+            },
+            setTimeout: setTimeout,
+            clearTimeout: clearTimeout,
+            fetch: async () => {
+                throw new Error('Network failure');
+            },
+            console: {
+                log: () => {},
+                warn: () => {},
+                error: (msg, err) => { loggedError = err; }
+            },
+            Error: Error
+        };
+
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        context.apiGateway = new context.ApiGateway();
+        const apiGateway = context.apiGateway;
+        await assert.rejects(
+            async () => {
+                await apiGateway.fetchJson('https://example.com/api');
+            },
+            (err) => {
+                assert.strictEqual(err.message, 'Network failure');
+                return true;
+            }
+        );
+    });
+
     it('should throw on invalid JSON', async () => {
         context = {
             AbortController: class AbortController {
