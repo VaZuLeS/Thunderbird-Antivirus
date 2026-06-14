@@ -809,19 +809,26 @@ async function tab_mail_open_display(tab, message) {
   }
 }
 
-function extractTextFromParts(part) {
-  let text = "";
+function extractTextFromParts(part, partsArray) {
+  const isRoot = partsArray === undefined;
+  if (isRoot) {
+      partsArray = [];
+  }
+
   if (part.contentType === "text/plain" || part.contentType === "text/html") {
       if (part.body) {
-         text += part.body + " ";
+         partsArray.push(part.body + " ");
       }
   }
   if (part.parts) {
       for (let subPart of part.parts) {
-          text += extractTextFromParts(subPart);
+          extractTextFromParts(subPart, partsArray);
       }
   }
-  return text;
+
+  if (isRoot) {
+      return partsArray.join("");
+  }
 }
 
 function extractUrls(text) {
