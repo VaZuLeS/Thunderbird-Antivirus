@@ -96,14 +96,14 @@ try {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                         } else {
                             fetchPromises.push(
-                                get_hybrid_report_by_sha256(
-                                    hash256,
-                                    att.attachment_name,
-                                    message.id,
-                                    att.partName,
-                                    message.headerMessageId,
-                                    att.virustotal_stats
-                                )
+                                get_hybrid_report_by_sha256({
+                                    hybrid_sha: hash256,
+                                    attachmentName: att.attachment_name,
+                                    messageId: message.id,
+                                    partName: att.partName,
+                                    headerMessageId: message.headerMessageId,
+                                    virustotal_stats: att.virustotal_stats
+                                })
                             );
                         }
                     }
@@ -115,10 +115,10 @@ try {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId);
                             return null;
                         } else if (linkObj.hybrid_sha256) {
-                            return get_hybrid_report_by_sha256(
-                                linkObj.hybrid_sha256,
-                                linkObj.url
-                            );
+                            return get_hybrid_report_by_sha256({
+                                hybrid_sha: linkObj.hybrid_sha256,
+                                attachmentName: linkObj.url
+                            });
                         }
                         return null;
                     }).filter(Boolean);
@@ -477,7 +477,7 @@ function handle_hybrid_report_fetch_error(error, attachmentName) {
     document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);
 }
 
-async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
+async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }) {
     try {
         const { response, json_data } = await fetch_hybrid_report(hybrid_sha);
 
@@ -549,7 +549,10 @@ function renderManualUrlScanUI(url, headerMessageId) {
                 setTimeout(() => {
                     document.getElementById(`upload-container-${urlId}`).remove();
                     // response.data.sha256 enthält den sha256-Hash des URL-Scans
-                    get_hybrid_report_by_sha256(response.data.sha256, url);
+                    get_hybrid_report_by_sha256({
+                        hybrid_sha: response.data.sha256,
+                        attachmentName: url
+                    });
                 }, 3000);
             } else {
                 statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
@@ -603,13 +606,13 @@ function createUploadButton(card, hash, safeHash, attachmentName, messageId, par
                 setTimeout(() => {
                     let container = document.getElementById(`upload-container-${safeHash}`);
                     if (container) container.remove();
-                    get_hybrid_report_by_sha256(
-                        hash,
-                        attachmentName,
-                        messageId,
-                        partName,
-                        headerMessageId
-                    );
+                    get_hybrid_report_by_sha256({
+                        hybrid_sha: hash,
+                        attachmentName: attachmentName,
+                        messageId: messageId,
+                        partName: partName,
+                        headerMessageId: headerMessageId
+                    });
                 }, 3000);
             } else {
                 if (statusEl) statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");

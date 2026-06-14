@@ -496,7 +496,7 @@ tag: tag,
             throw new Error('Network timeout');
         };
 
-        await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
+        await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
         assert.ok(context.apiContentElement.innerHTML.includes('<div class="alert-error">Netzwerkfehler: Network timeout für Element test.txt</div>'));
     });
@@ -511,7 +511,7 @@ tag: tag,
             };
         };
 
-        await get_hybrid_report_by_sha256('dummy_sha', 'test.txt');
+        await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
         assert.ok(context.apiContentElement.innerHTML.includes('<div class="alert-error">API Error: 500 für Element test.txt</div>'));
     });
@@ -803,8 +803,8 @@ describe('renderManualUrlScanUI', () => {
 
         context.byteToHex = new Array(256);
         for (let i = 0; i < 256; i++) context.byteToHex[i] = i.toString(16).padStart(2, '0');
-        context.get_hybrid_report_by_sha256 = function(hash) {
-            context.lastReportOpts = { hybrid_sha: hash };
+        context.get_hybrid_report_by_sha256 = function(opts) {
+            context.lastReportOpts = opts;
         };
         renderManualUrlScanUI = context.renderManualUrlScanUI;
     });
@@ -1166,8 +1166,8 @@ describe('createUploadButton', () => {
                 if (!context.timeouts) context.timeouts = [];
                 context.timeouts.push({cb, delay});
             },
-            get_hybrid_report_by_sha256: function(...args) {
-                context.lastReportArgs = args;
+            get_hybrid_report_by_sha256: function(opts) {
+                context.lastReportArgs = [opts];
             },
             console: { log: () => {}, error: () => {} },
             String: String, Array: Array
@@ -1258,15 +1258,15 @@ describe('createUploadButton', () => {
         };
         // Mock get_hybrid_report_by_sha256 avoiding dom node operations
         let prev = context.get_hybrid_report_by_sha256;
-        context.get_hybrid_report_by_sha256 = function(...args) { context.lastReportArgs = args; };
+        context.get_hybrid_report_by_sha256 = function(opts) { context.lastReportArgs = [opts]; };
 
         context.timeouts[0].cb();
 
         context.document.getElementById = originalGetElement;
         context.get_hybrid_report_by_sha256 = prev;
 
-        assert.strictEqual(context.lastReportArgs[0], 'hash2');
-        assert.strictEqual(context.lastReportArgs[1], 'test.txt');
+        assert.strictEqual(context.lastReportArgs[0].hybrid_sha, 'hash2');
+        assert.strictEqual(context.lastReportArgs[0].attachmentName, 'test.txt');
     });
 
     it('handles upload failure response correctly', async () => {
