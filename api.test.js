@@ -101,6 +101,58 @@ describe('escapeHTML', () => {
     });
 });
 
+describe('createEl', () => {
+    let context;
+    let createEl;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            document: {
+                createElement: (tag) => {
+                    let el = {
+                        tagName: tag.toUpperCase(),
+                        className: '',
+                        textContent: ''
+                    };
+                    return el;
+                }
+            }
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        // Prevent the IIFE from executing during test initialization
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        vm.runInContext(wrappedCode, context);
+
+        createEl = context.createEl;
+    });
+
+    it('creates an element with just a tag name', () => {
+        const el = createEl('div');
+        assert.strictEqual(el.tagName, 'DIV');
+        assert.strictEqual(el.className, '');
+        assert.strictEqual(el.textContent, '');
+    });
+
+    it('creates an element with a tag name and class name', () => {
+        const el = createEl('span', 'test-class');
+        assert.strictEqual(el.tagName, 'SPAN');
+        assert.strictEqual(el.className, 'test-class');
+        assert.strictEqual(el.textContent, '');
+    });
+
+    it('creates an element with a tag name, class name, and text content', () => {
+        const el = createEl('p', 'text-bold', 'Hello World');
+        assert.strictEqual(el.tagName, 'P');
+        assert.strictEqual(el.className, 'text-bold');
+        assert.strictEqual(el.textContent, 'Hello World');
+    });
+});
+
 
 describe('renderInProgressStatus', () => {
     let context;
