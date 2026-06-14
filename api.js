@@ -383,7 +383,7 @@ async function fetch_hybrid_report(hybrid_sha) {
     return { response, json_data };
 }
 
-function render_hybrid_report_ui(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data) {
+function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }) {
     let container = document.getElementById('hybrid_analysis_api_content');
     let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats });
     container.appendChild(reportNode);
@@ -486,7 +486,7 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
         const { response, json_data } = await fetch_hybrid_report(hybrid_sha);
 
         if (response.status === 200) {
-            render_hybrid_report_ui(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data);
+            render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data });
         } else {
             handle_hybrid_report_error(response, attachmentName);
         }
