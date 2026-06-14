@@ -57,7 +57,8 @@ const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?
 const GLOBAL_URL_REGEX = /(https?:\/\/[^\s"'<>]+)/g;
 
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
-const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_WORDS.join('|')})(?=[^\\wäöüßÄÖÜ]|$)`, 'gi');
+// ⚡ Bolt Optimization: Removed redundant 'i' flag since input text is pre-lowercased
+const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_WORDS.join('|')})(?=[^\\wäöüßÄÖÜ]|$)`, 'g');
 
 // Einstellungen laden
 async function loadSettings() {
@@ -349,13 +350,16 @@ function evaluateBehavior(subject, messageText, isFirstCommunication, score, rea
     // match group inside the hot loop, reducing memory allocations while keeping the extracted
     // terms normalized for deduplication.
     let textToAnalyze = (subject + " " + messageText).toLowerCase();
-    let foundUrgencyWords = new Set();
+    // ⚡ Bolt Optimization: Replace Set and Array.from with standard array and indexOf
+    // to reduce allocation overhead when parsing megabytes of message body.
+    let foundUrgencyWords = [];
     let match;
     URGENCY_REGEX_COMBINED.lastIndex = 0;
     while ((match = URGENCY_REGEX_COMBINED.exec(textToAnalyze)) !== null) {
-        foundUrgencyWords.add(match[1]);
+        if (foundUrgencyWords.indexOf(match[1]) === -1) {
+            foundUrgencyWords.push(match[1]);
+        }
     }
-    foundUrgencyWords = Array.from(foundUrgencyWords);
 
     if (foundUrgencyWords.length > 0) {
         if (isFirstCommunication) {

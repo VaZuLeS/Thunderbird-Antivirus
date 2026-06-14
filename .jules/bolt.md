@@ -43,3 +43,10 @@ When dealing with repeated I/O operations inside frequently invoked event hooks 
 ## 2024-06-10 - String indexOf instead of split/map for performance
 **Learning:** Using `.split('.').map(Number)` to parse IP addresses or other delimited strings inside a tight loop allocates multiple temporary arrays per execution, causing significant memory pressure and GC pauses.
 **Action:** Replace `.split('.').map()` with direct string operations like `indexOf()` and `substring()` combined with `parseInt()`. This avoids temporary array allocations and is much faster for simple delimited string parsing.
+## 2024-10-27 - Regex Engine vs. Manual string loops
+**Learning:** V8's regex engine (Irregexp) is highly optimized for multiple string searches using patterns like `(word1|word2)`. Attempting to manually reimplement this with an outer loop over words and an inner loop with `indexOf()` turns an `O(L)` operation into `O(L*W)`, heavily degrading performance and causing GC issues by forcing closure allocations in hot loops.
+**Action:** Do not attempt to manualize complex compiled regular expressions with native loops. Native string loops are only faster for very specific, single-operation micro-tasks (like stripping a few trailing characters). For compound searching, let the regex engine do its job.
+
+## 2024-10-27 - Micro-allocations in Hot Paths
+**Learning:** Creating temporary objects like `new Set()` and converting them back to arrays using `Array.from()` inside a function called in a hot loop (like parsing every megabyte of a message body) adds unnecessary allocation overhead and GC churn.
+**Action:** When deduplicating a very small, known upper-bound set of results (like 14 fixed urgency words), it is faster to use a plain Array and check `.indexOf(item) === -1` before pushing, avoiding the Set allocation entirely.
