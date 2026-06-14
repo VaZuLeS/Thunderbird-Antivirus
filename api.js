@@ -466,7 +466,7 @@ function render_hybrid_report_ui(hybrid_sha, attachmentName, messageId, partName
 function handle_hybrid_report_error(response, attachmentName) {
     console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
     let errDiv1 = document.createElement('div');
-    errDiv1.className = 'text-danger';
+    errDiv1.className = 'alert-error';
     errDiv1.setAttribute('role', 'alert');
     errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
     document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
@@ -475,7 +475,7 @@ function handle_hybrid_report_error(response, attachmentName) {
 function handle_hybrid_report_fetch_error(error, attachmentName) {
     console.error('Fetch error:', error);
     let errDiv2 = document.createElement('div');
-    errDiv2.className = 'text-danger';
+    errDiv2.className = 'alert-error';
     errDiv2.setAttribute('role', 'alert');
     errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`;
     document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);
