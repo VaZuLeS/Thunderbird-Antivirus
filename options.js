@@ -4,8 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     browser.storage.local.get([
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
         'alwaysManual', 'autoScanLinks', 'timeOfClickProtection',
-        'privacyTier', 'customWhitelist', 'customBlacklist',
-        'ipReputationProvider', 'ipReputationApiKey'
+        'privacyTier', 'customWhitelist', 'customBlacklist'
     ]).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
@@ -14,30 +13,10 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('privacyTier').value = result.privacyTier || "balanced";
       document.getElementById('customWhitelist').value = (result.customWhitelist || []).join(', ');
       document.getElementById('customBlacklist').value = (result.customBlacklist || []).join(', ');
-      document.getElementById('ipReputationProvider').value = result.ipReputationProvider || "none";
-      document.getElementById('ipReputationApiKey').value = result.ipReputationApiKey || "";
       document.getElementById('alwaysManual').checked = result.alwaysManual || false;
       document.getElementById('autoScanLinks').checked = result.autoScanLinks || false;
       // Default für timeOfClickProtection ist true
       document.getElementById('timeOfClickProtection').checked = result.timeOfClickProtection !== undefined ? result.timeOfClickProtection : true;
-
-      const providerSelect = document.getElementById('ipReputationProvider');
-      const apiKeyInput = document.getElementById('ipReputationApiKey');
-
-      providerSelect.value = result.ipReputationProvider || "none";
-      apiKeyInput.value = result.ipReputationApiKey || "";
-
-      function updateIpReputationApiKeyStatus() {
-          if (providerSelect.value === 'none') {
-              apiKeyInput.disabled = true;
-              apiKeyInput.title = 'Wählen Sie zuerst einen Anbieter aus';
-              apiKeyInput.placeholder = 'Deaktiviert';
-          } else {
-              apiKeyInput.disabled = false;
-              apiKeyInput.title = '';
-              apiKeyInput.placeholder = '';
-          }
-      }
 
       const alwaysManualCheckbox = document.getElementById('alwaysManual');
       const privacyTierSelect = document.getElementById('privacyTier');
@@ -66,12 +45,10 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       // Initiale Setzung
-      updateIpReputationApiKeyStatus();
       updatePrivacyTierStatus();
       updateTimeOfClickProtectionStatus();
 
       // Event Listener für Änderungen
-      providerSelect.addEventListener('change', updateIpReputationApiKeyStatus);
       alwaysManualCheckbox.addEventListener('change', updatePrivacyTierStatus);
       autoScanLinksCheckbox.addEventListener('change', updateTimeOfClickProtectionStatus);
     });
@@ -95,9 +72,6 @@ document.addEventListener('DOMContentLoaded', function() {
     let blacklistStr = document.getElementById('customBlacklist').value;
     let blacklistSetting = blacklistStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
 
-    let ipReputationProviderSetting = document.getElementById('ipReputationProvider').value;
-    let ipReputationApiKeySetting = document.getElementById('ipReputationApiKey').value.trim().replace(/\r|\n/g, '');
-
     let alwaysManualSetting = document.getElementById('alwaysManual').checked;
     let autoScanLinksSetting = document.getElementById('autoScanLinks').checked;
     let timeOfClickProtectionSetting = document.getElementById('timeOfClickProtection').checked;
@@ -111,9 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
         customBlacklist: blacklistSetting,
         alwaysManual: alwaysManualSetting,
         autoScanLinks: autoScanLinksSetting,
-        timeOfClickProtection: timeOfClickProtectionSetting,
-        ipReputationProvider: ipReputationProviderSetting,
-        ipReputationApiKey: ipReputationApiKeySetting
+        timeOfClickProtection: timeOfClickProtectionSetting
     }).then(() => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';

@@ -105,24 +105,6 @@
     <br><br>
     <hr>
 
-    <h3>IP-Reputation (Header-Analyse)</h3>
-    <p id="ipReputationProviderHelp">Hier können Sie einen Anbieter auswählen, um die IPs der einliefernden Mailserver (Received-Header) auf Spam-Botnets oder andere Gefahren zu überprüfen.</p>
-    <div class="mb-3">
-        <label for="ipReputationProvider">Anbieter:</label>
-        <select id="ipReputationProvider" aria-describedby="ipReputationProviderHelp">
-            <option value="none">Deaktiviert</option>
-            <option value="abuseipdb">AbuseIPDB</option>
-            <option value="virustotal">VirusTotal</option>
-        </select>
-    </div>
-
-    <div class="mb-3">
-        <label for="ipReputationApiKey">API Schlüssel (IP-Reputation):</label>
-        <input type="password" id="ipReputationApiKey" aria-describedby="ipReputationHelp" maxlength="255" autocomplete="off" spellcheck="false">
-        <br>
-        <small id="ipReputationHelp">Einen kostenlosen API-Schlüssel erhalten Sie unter <a href="https://www.abuseipdb.com/" target="_blank" rel="noopener noreferrer" aria-label="AbuseIPDB (öffnet in einem neuen Tab)">AbuseIPDB <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> (1.000 Abfragen/Tag) oder <a href="https://www.virustotal.com/gui/join-us" target="_blank" rel="noopener noreferrer" aria-label="VirusTotal (öffnet in einem neuen Tab)">VirusTotal <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> (500 Abfragen/Tag).</small>
-    </div>
-
     <br>
     <strong>Bitte nicht vergessen zu speichern.</strong>
     <button id="save" class="btn-primary mt-2">Speichern</button>
