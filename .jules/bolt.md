@@ -50,3 +50,7 @@ When dealing with repeated I/O operations inside frequently invoked event hooks 
 ## 2024-10-27 - Micro-allocations in Hot Paths
 **Learning:** Creating temporary objects like `new Set()` and converting them back to arrays using `Array.from()` inside a function called in a hot loop (like parsing every megabyte of a message body) adds unnecessary allocation overhead and GC churn.
 **Action:** When deduplicating a very small, known upper-bound set of results (like 14 fixed urgency words), it is faster to use a plain Array and check `.indexOf(item) === -1` before pushing, avoiding the Set allocation entirely.
+
+## 2024-11-20 - Custom URL Parsing Pitfalls
+**Learning:** Attempting to optimize `new URL(url).hostname` by manually slicing strings (e.g. using `indexOf('/')`, `indexOf('?')`) in a hot loop is highly error-prone. Simple implementations often break on valid URLs like `http://example.com?query/path` because they find the first slash regardless of whether it's in the path or query string.
+**Action:** When extracting hostnames for performance, prefer a simple, precompiled regex (like `/^(?:https?:\/\/)([^\/\?#]+)/i`) that correctly handles the basic syntax structure. Check the resulting match for edge cases (like `@` for auth, `:` for ports/IPv6) and fallback to the robust native `new URL()` parser only when necessary.
