@@ -854,23 +854,21 @@ function extractTextFromParts(part, partsArray) {
 }
 
 function extractUrls(text) {
-    // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set and Array.from
     const urls = [];
     let match;
     GLOBAL_URL_REGEX.lastIndex = 0; // Reset lastIndex for global regex
+    const punct = ".,;:!)]";
     while ((match = GLOBAL_URL_REGEX.exec(text)) !== null) {
         let url = match[1];
-        // ⚡ Bolt Optimization: Use manual reverse loop to trim punctuation instead of regex replace
-        let p = url.length - 1;
-        while (p >= 0) {
-            let c = url[p];
-            if (c === '.' || c === ',' || c === ';' || c === ':' || c === '!' || c === ')' || c === ']') {
-                p--;
-            } else {
-                break;
-            }
+        // ⚡ Bolt Optimization: Fast manual loop for stripping punctuation instead of regex
+        let len = url.length;
+        while(len > 0 && punct.indexOf(url[len - 1]) !== -1) {
+            len--;
         }
-        url = url.substring(0, p + 1);
+        if (len !== url.length) {
+            url = url.substring(0, len);
+        }
+        // ⚡ Bolt Optimization: Use Array indexOf instead of Set allocation for small arrays
         if (urls.indexOf(url) === -1) {
             urls.push(url);
         }
