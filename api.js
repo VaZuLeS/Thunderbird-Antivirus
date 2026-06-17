@@ -132,13 +132,25 @@ try {
                     await Promise.all(fetchPromises);
                 }
             } else {
-                 let p1 = document.createElement('p'); p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p1);
+                 let emptyCard = document.createElement('div');
+                emptyCard.className = 'card card-info mb-3';
+                let p1 = document.createElement('p');
+                p1.className = 'text-info';
+                p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.';
+                emptyCard.appendChild(p1);
+                document.getElementById('hybrid_analysis_api_content').appendChild(emptyCard);
             }
         };
     };
 
     openRequest.onerror = function(e) {
-        let p2 = document.createElement('p'); p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p2);
+        let emptyCard = document.createElement('div');
+        emptyCard.className = 'card card-info mb-3';
+        let p2 = document.createElement('p');
+        p2.className = 'text-info';
+        p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.';
+        emptyCard.appendChild(p2);
+        document.getElementById('hybrid_analysis_api_content').appendChild(emptyCard);
     }
 } catch (error) {
 }
