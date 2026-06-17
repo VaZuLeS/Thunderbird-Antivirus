@@ -854,15 +854,26 @@ function extractTextFromParts(part, partsArray) {
 }
 
 function extractUrls(text) {
-    const urls = new Set();
+    const urls = [];
     let match;
     GLOBAL_URL_REGEX.lastIndex = 0; // Reset lastIndex for global regex
+    const punct = ".,;:!)]";
     while ((match = GLOBAL_URL_REGEX.exec(text)) !== null) {
-        // Bereinige ggf. am Ende hängende Satzzeichen
-        let url = match[1].replace(/[.,;:!)\]]+$/, '');
-        urls.add(url);
+        let url = match[1];
+        // ⚡ Bolt Optimization: Fast manual loop for stripping punctuation instead of regex
+        let len = url.length;
+        while(len > 0 && punct.indexOf(url[len - 1]) !== -1) {
+            len--;
+        }
+        if (len !== url.length) {
+            url = url.substring(0, len);
+        }
+        // ⚡ Bolt Optimization: Use Array indexOf instead of Set allocation for small arrays
+        if (urls.indexOf(url) === -1) {
+            urls.push(url);
+        }
     }
-    return Array.from(urls);
+    return urls;
 }
 
 const IGNORED_DOMAINS = [
