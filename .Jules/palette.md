@@ -51,3 +51,6 @@
 ## 2024-06-13 - Dynamic Form Disabling Based on Checkboxes
 **Learning:** In configuration forms, displaying form inputs (like `select` options or related `checkboxes`) that are rendered functionally irrelevant by the activation of a primary setting (like "Immer manuell scannen" or "Auto-Scan") can cause user confusion regarding what settings are actively applying.
 **Action:** Always dynamically toggle the `disabled` state of irrelevant form inputs based on related checkbox toggles using `change` event listeners, and update their `title` attributes to explicitly explain their deactivated state.
+## 2026-06-15 - Styled Empty States
+**Learning:** Appending plain `<p>` tags for empty states (e.g., "Keine Anhänge gefunden") creates a visually disjointed experience compared to the rest of the application's data cards.
+**Action:** When creating empty states or generic informational messages, wrap them in `.card.card-info` containers (as defined in `theme.css`) to maintain visual consistency with the repository's design system.
