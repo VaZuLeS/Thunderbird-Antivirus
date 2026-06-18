@@ -27,6 +27,16 @@ if (!apikey_hybridanalysis) {
     strong.textContent = 'Warnung:';
     alertDiv.appendChild(strong);
     alertDiv.appendChild(document.createTextNode(' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.'));
+
+    let btnSettings = document.createElement('button');
+    btnSettings.className = 'btn-primary mt-2 ml-2';
+    btnSettings.textContent = 'Einstellungen öffnen';
+    btnSettings.addEventListener('click', () => {
+        browser.runtime.openOptionsPage();
+    });
+    alertDiv.appendChild(document.createElement('br'));
+    alertDiv.appendChild(btnSettings);
+
     container.appendChild(alertDiv);
     return;
 }

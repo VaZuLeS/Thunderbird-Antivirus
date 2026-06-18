@@ -55,3 +55,6 @@
 ## 2024-06-15 - Visual Cues for Disabled Form Inputs
 **Learning:** While buttons typically have obvious disabled states defined in CSS (`opacity`, `cursor: not-allowed`), other form inputs (`input`, `select`, `textarea`) that are dynamically disabled by JS logic (e.g. when an overriding checkbox is activated) lack these visual cues if omitted from the design system. This leads to user confusion as the inputs appear interactive but are unresponsive.
 **Action:** Always verify that the design system (`theme.css`) includes `:disabled` state styles for all standard form input types alongside buttons, ensuring users receive consistent visual feedback when interactive elements are disabled.
+## 2026-06-25 - Direct Action in Error States
+**Learning:** When displaying an error message about a missing configuration (like an API key), requiring the user to manually navigate menus to find the settings page adds unnecessary friction. Adding a direct action button to open the settings resolves this immediately.
+**Action:** When creating empty or error states related to missing configuration, always include a direct call-to-action button using `browser.runtime.openOptionsPage()` to guide the user straight to the solution.
