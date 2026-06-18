@@ -71,7 +71,7 @@ test('Test local disarmHTML function', async (t) => {
     });
 
     await t.test('disarmHTML should prevent javascript URI evasion', () => {
-        const input = '<html><body><a href="java\tscript:alert(1)">Link</a><a href="jav&#x09;ascript:alert(1)">Link2</a></body></html>';
+        const input = '<html><body><a href="java\tscript:alert(1)">Link</a><a href="jav&#x09;ascript:alert(1)">Link2</a><a href="java script:alert(1)">Link3</a><a href="jav&#xFFFD;ascript:alert(1)">Link4</a></body></html>';
         const result = sandbox.disarmHTML(input);
         assert.ok(!result.includes('javascript:'), 'evaded javascript URI should be removed');
     });
