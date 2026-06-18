@@ -1433,7 +1433,7 @@ function disarmHTML(htmlString) {
                             if (dangerousAttributes.has(attrName)) {
                                 let val = el.attributes[j].value;
                                 // Remove control characters (like tabs/newlines) that might evade the check
-                                let cleanVal = val.replace(/[\x00-\x20\x7F-\x9F\uFFFD]/g, '').trim().toLowerCase();
+                                let cleanVal = val.replace(/[\x00-\x20\x7F-\x9F\uFFFD]/g, '').toLowerCase();
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
                                     el.removeAttribute(attrName);
                                 }
