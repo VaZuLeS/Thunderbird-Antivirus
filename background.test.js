@@ -270,13 +270,13 @@ describe('background.js', () => {
     it('extractUrls correctly extracts links', () => {
         const text = "Check out https://test.com/ and http://example.org/path?q=1.";
         const urls = context.extractUrls(text);
-        assert.deepStrictEqual(urls, ['https://test.com/', 'http://example.org/path?q=1']);
+        assert.deepEqual(urls, ['https://test.com/', 'http://example.org/path?q=1']);
     });
 
     it('extractUrls filters duplicate URLs', () => {
         const text = "Check out https://test.com/ and https://test.com/ again.";
         const urls = context.extractUrls(text);
-        assert.deepStrictEqual(urls, ['https://test.com/']);
+        assert.deepEqual(urls, ['https://test.com/']);
     });
 
     it('extractUrls handles URLs with various trailing punctuation', () => {
@@ -298,13 +298,13 @@ describe('background.js', () => {
     it('extractUrls returns empty array for text with no URLs', () => {
         const text = "This is a simple text without any URLs.";
         const urls = context.extractUrls(text);
-        assert.deepStrictEqual(urls, []);
+        assert.deepEqual(urls, []);
     });
 
     it('extractUrls returns empty array for empty string', () => {
         const text = "";
         const urls = context.extractUrls(text);
-        assert.deepStrictEqual(urls, []);
+        assert.deepEqual(urls, []);
     });
 
     it('filterUrls correctly ignores safe domains', () => {

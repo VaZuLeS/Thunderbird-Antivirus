@@ -421,12 +421,29 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
     return { score, senderMainDomain };
 }
 
+// Precompiled regex for faster URL hostname extraction without new URL() overhead
+const HTTP_HOSTNAME_EXTRACTOR = /^(?:https?:\/\/)([^\/\?#\\]+)/i;
+
+function getHostnameOptimized(url) {
+    let match = HTTP_HOSTNAME_EXTRACTOR.exec(url);
+    if (match) {
+        let host = match[1];
+        // Fallback to new URL if complex parsing is needed (e.g. basic auth, ports, IPv6)
+        if (host.includes('@') || host.includes(':')) {
+             return new URL(url).hostname;
+        }
+        return host.toLowerCase();
+    }
+    return new URL(url).hostname.toLowerCase();
+}
+
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     let linkDomains = new Set();
     for (let url of urls) {
         try {
-            let parsed = new URL(url);
-            linkDomains.add(parsed.hostname.toLowerCase());
+            // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
+            let hostname = getHostnameOptimized(url);
+            linkDomains.add(hostname);
         } catch (e) { /* Ignore invalid URLs */ }
     }
 
@@ -659,8 +676,9 @@ async function checkURLhausDomains(filteredUrls) {
         let linkDomains = new Set();
         for (let url of filteredUrls) {
             try {
-                let parsed = new URL(url);
-                linkDomains.add(parsed.hostname.toLowerCase());
+                // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
+                let hostname = getHostnameOptimized(url);
+                linkDomains.add(hostname);
             } catch (e) { /* Ignore invalid URLs */ }
         }
 
@@ -854,15 +872,26 @@ function extractTextFromParts(part, partsArray) {
 }
 
 function extractUrls(text) {
-    const urls = new Set();
+    const urls = [];
     let match;
     GLOBAL_URL_REGEX.lastIndex = 0; // Reset lastIndex for global regex
+    const punct = ".,;:!)]";
     while ((match = GLOBAL_URL_REGEX.exec(text)) !== null) {
-        // Bereinige ggf. am Ende hängende Satzzeichen
-        let url = match[1].replace(/[.,;:!)\]]+$/, '');
-        urls.add(url);
+        let url = match[1];
+        // ⚡ Bolt Optimization: Fast manual loop for stripping punctuation instead of regex
+        let len = url.length;
+        while(len > 0 && punct.indexOf(url[len - 1]) !== -1) {
+            len--;
+        }
+        if (len !== url.length) {
+            url = url.substring(0, len);
+        }
+        // ⚡ Bolt Optimization: Use Array indexOf instead of Set allocation for small arrays
+        if (urls.indexOf(url) === -1) {
+            urls.push(url);
+        }
     }
-    return Array.from(urls);
+    return urls;
 }
 
 const IGNORED_DOMAINS = [
@@ -875,9 +904,10 @@ const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d
 function filterUrls(urls) {
     return urls.filter(url => {
         try {
-            let parsed = new URL(url);
+            // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
+            let hostname = getHostnameOptimized(url);
             // ⚡ Bolt Optimization: Use precompiled regex instead of iterating over ignoredDomains array
-            return !IGNORED_DOMAINS_REGEX.test(parsed.hostname);
+            return !IGNORED_DOMAINS_REGEX.test(hostname);
         } catch (e) {
             return false; // Ungültige URL
         }

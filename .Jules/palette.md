@@ -51,3 +51,7 @@
 ## 2024-06-13 - Dynamic Form Disabling Based on Checkboxes
 **Learning:** In configuration forms, displaying form inputs (like `select` options or related `checkboxes`) that are rendered functionally irrelevant by the activation of a primary setting (like "Immer manuell scannen" or "Auto-Scan") can cause user confusion regarding what settings are actively applying.
 **Action:** Always dynamically toggle the `disabled` state of irrelevant form inputs based on related checkbox toggles using `change` event listeners, and update their `title` attributes to explicitly explain their deactivated state.
+
+## 2024-06-15 - Visual Cues for Disabled Form Inputs
+**Learning:** While buttons typically have obvious disabled states defined in CSS (`opacity`, `cursor: not-allowed`), other form inputs (`input`, `select`, `textarea`) that are dynamically disabled by JS logic (e.g. when an overriding checkbox is activated) lack these visual cues if omitted from the design system. This leads to user confusion as the inputs appear interactive but are unresponsive.
+**Action:** Always verify that the design system (`theme.css`) includes `:disabled` state styles for all standard form input types alongside buttons, ensuring users receive consistent visual feedback when interactive elements are disabled.
