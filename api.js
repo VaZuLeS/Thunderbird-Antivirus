@@ -623,7 +623,7 @@ function createUploadButton(card, { hash, safeHash, attachmentName, messageId, p
         btn.disabled = true;
         btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Lade hoch...";
-        setElementText(statusId, "Datei wird an Hybrid Analysis übertragen...");
+        if (statusEl) statusEl.textContent = "Datei wird an Hybrid Analysis übertragen...";
 
         browser.runtime.sendMessage({
             action: "uploadAttachment",
@@ -687,7 +687,7 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
         btn.disabled = true;
         if (btn) btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Bereinige...";
-        setElementText(statusId, "Lokales CDR wird durchgeführt...");
+        if (statusEl) statusEl.textContent = "Lokales CDR wird durchgeführt...";
 
         browser.runtime.sendMessage({
             action: "downloadDisarmed",
