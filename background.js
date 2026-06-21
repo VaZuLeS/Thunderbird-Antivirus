@@ -1,5 +1,5 @@
-let customBlacklist = [];
-let customWhitelist = [];
+let customBlacklist = new Set();
+let customWhitelist = new Set();
 let authStatus = null;
 let apikey_hybridanalysis;
 let urlhausApikey = "";
@@ -69,10 +69,10 @@ async function loadSettings() {
     const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist']);
     apikey_hybridanalysis = result.apikey;
     if (result.customBlacklist !== undefined) {
-      customBlacklist = result.customBlacklist.map(s => s ? s.toLowerCase() : "");
+      customBlacklist = new Set(result.customBlacklist.map(s => s ? s.toLowerCase() : ""));
     }
     if (result.customWhitelist !== undefined) {
-      customWhitelist = result.customWhitelist.map(s => s ? s.toLowerCase() : "");
+      customWhitelist = new Set(result.customWhitelist.map(s => s ? s.toLowerCase() : ""));
     }
     if (result.urlhausApikey !== undefined) {
       urlhausApikey = result.urlhausApikey;
@@ -122,10 +122,10 @@ browser.storage.onChanged.addListener((changes, area) => {
     timeOfClickProtection = changes.timeOfClickProtection.newValue;
   }
   if (area === 'local' && changes.customBlacklist !== undefined) {
-    customBlacklist = (changes.customBlacklist.newValue || []).map(s => s ? s.toLowerCase() : "");
+    customBlacklist = new Set((changes.customBlacklist.newValue || []).map(s => s ? s.toLowerCase() : ""));
   }
   if (area === 'local' && changes.customWhitelist !== undefined) {
-    customWhitelist = (changes.customWhitelist.newValue || []).map(s => s ? s.toLowerCase() : "");
+    customWhitelist = new Set((changes.customWhitelist.newValue || []).map(s => s ? s.toLowerCase() : ""));
   }
 });
 
@@ -254,9 +254,9 @@ const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.repla
 
 function checkLists(email, senderDomain) {
     // Check Blacklist
-    if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.length > 0) {
-        // ⚡ Bolt Optimization: Use pre-lowercased list directly instead of mapping on every call
-        if (customBlacklist.includes(email)) {
+    if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.size > 0) {
+        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) Array includes
+        if (customBlacklist.has(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
         for (let b of customBlacklist) {
@@ -267,9 +267,9 @@ function checkLists(email, senderDomain) {
     }
 
     // Check Whitelist
-    if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.length > 0) {
-        // ⚡ Bolt Optimization: Use pre-lowercased list directly instead of mapping on every call
-        if (customWhitelist.includes(email)) {
+    if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.size > 0) {
+        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) Array includes
+        if (customWhitelist.has(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
         for (let w of customWhitelist) {
