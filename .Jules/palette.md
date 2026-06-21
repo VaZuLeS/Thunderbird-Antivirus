@@ -58,6 +58,6 @@
 ## 2026-06-25 - Direct Action in Error States
 **Learning:** When displaying an error message about a missing configuration (like an API key), requiring the user to manually navigate menus to find the settings page adds unnecessary friction. Adding a direct action button to open the settings resolves this immediately.
 **Action:** When creating empty or error states related to missing configuration, always include a direct call-to-action button using `browser.runtime.openOptionsPage()` to guide the user straight to the solution.
-## 2024-06-25 - Contextual Placeholders for Empty States
-**Learning:** Empty inputs (especially password fields for API keys) lack clear visual cues about the expected format when empty, even with labels.
-**Action:** Always include contextual `placeholder` attributes (e.g., `placeholder="z.B. abcdef123456..."`) on empty state inputs to guide the user on the expected data format.
+## 2026-06-25 - Contextual Placeholders in Configuration Inputs
+**Learning:** Empty password or configuration inputs with generic or no placeholders force users to consult documentation to understand the expected format (e.g., whether to enter a 16-character hex string or a UUID). Providing an explicit, contextual example in the placeholder (like `placeholder="z.B. abcdef123456..."`) significantly reduces friction and prevents formatting errors.
+**Action:** When adding or reviewing configuration inputs (especially API keys or domain lists), ensure they have contextual `placeholder` attributes that demonstrate the exact expected format.
