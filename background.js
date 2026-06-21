@@ -616,21 +616,27 @@ async function checkIPReputation(receivedHeaders) {
         let publicIps = extractPublicIPs(receivedHeaders);
         let ipChecks = publicIps.map(async (ip) => {
             if (ipReputationCache.has(ip)) {
-                return { ip, isMalicious: ipReputationCache.get(ip) };
+                return { ip, isMalicious: await ipReputationCache.get(ip) };
             }
 
-            let isMalicious = false;
-            try {
-                if (ipReputationProvider === "abuseipdb") {
-                    isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
-                } else if (ipReputationProvider === "virustotal") {
-                    isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
-                }
-            } catch(e) { console.error(e); }
+            let checkPromise = (async () => {
+                let isMalicious = false;
+                try {
+                    if (ipReputationProvider === "abuseipdb") {
+                        isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
+                    } else if (ipReputationProvider === "virustotal") {
+                        isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
+                    }
+                } catch(e) { console.error(e); }
+                return isMalicious;
+            })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
                 ipReputationCache.clear();
             }
+            ipReputationCache.set(ip, checkPromise);
+
+            let isMalicious = await checkPromise;
             ipReputationCache.set(ip, isMalicious);
 
             return { ip, isMalicious };
@@ -684,15 +690,18 @@ async function checkURLhausDomains(filteredUrls) {
 
         const domainChecks = Array.from(linkDomains).map(async (domain) => {
             if (urlhausCache.has(domain)) {
-                return urlhausCache.get(domain) ? domain : null;
+                return await urlhausCache.get(domain) ? domain : null;
             }
 
-            let isMalicious = await checkURLhaus(domain, urlhausApikey);
+            let checkPromise = checkURLhaus(domain, urlhausApikey);
 
             if (urlhausCache.size >= MAX_URLHAUS_CACHE_SIZE) {
                 const firstKey = urlhausCache.keys().next().value;
                 urlhausCache.delete(firstKey);
             }
+            urlhausCache.set(domain, checkPromise);
+
+            let isMalicious = await checkPromise;
             urlhausCache.set(domain, isMalicious);
 
             if (isMalicious) {
@@ -1547,35 +1556,47 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
 async function checkVirusTotal(hash, apikey) {
     if (!apikey) return null;
     if (vtCache.has(hash)) {
-        return vtCache.get(hash);
+        return await vtCache.get(hash);
     }
-    const url = `https://www.virustotal.com/api/v3/files/${hash}`;
-    const options = {
-        method: 'GET',
-        headers: {
-            'x-apikey': apikey,
-            'accept': 'application/json'
-        }
-    };
-    try {
-        const response = await fetch(url, options);
-        if (response.status === 200) {
-            const data = await response.json();
-            if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
-                const stats = data.data.attributes.last_analysis_stats;
-                if (vtCache.size >= MAX_VT_CACHE_SIZE) {
-                    const firstKey = vtCache.keys().next().value;
-                    vtCache.delete(firstKey);
-                }
-                vtCache.set(hash, stats);
-                return stats;
+
+    let checkPromise = (async () => {
+        const url = `https://www.virustotal.com/api/v3/files/${hash}`;
+        const options = {
+            method: 'GET',
+            headers: {
+                'x-apikey': apikey,
+                'accept': 'application/json'
             }
+        };
+        try {
+            const response = await fetch(url, options);
+            if (response.status === 200) {
+                const data = await response.json();
+                if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
+                    return data.data.attributes.last_analysis_stats;
+                }
+            }
+            return null;
+        } catch (e) {
+            console.error("Fehler bei VirusTotal Abfrage:", e);
+            return null;
         }
-        return null;
-    } catch (e) {
-        console.error("Fehler bei VirusTotal Abfrage:", e);
-        return null;
+    })();
+
+    if (vtCache.size >= MAX_VT_CACHE_SIZE) {
+        const firstKey = vtCache.keys().next().value;
+        vtCache.delete(firstKey);
     }
+    vtCache.set(hash, checkPromise);
+
+    let stats = await checkPromise;
+    if (stats === null) {
+        // Remove from cache on failure so it can be retried
+        vtCache.delete(hash);
+    } else {
+        vtCache.set(hash, stats);
+    }
+    return stats;
 }
 
 async function checkURLhaus(domain, apikey) {
