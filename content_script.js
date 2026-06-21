@@ -1,5 +1,6 @@
 (function() {
     const allowedLinks = new WeakSet();
+    const allowedProtocols = new Set(['http:', 'https:', 'mailto:', 'tel:', 'cid:', 'mid:']);
 
     function createWarningModal(url, linkElement, state, reasons) {
         // Create overlay
@@ -143,8 +144,7 @@
             }
 
             // Enforce explicit allowlist of safe protocols
-            const allowedProtocols = ['http:', 'https:', 'mailto:', 'tel:', 'cid:', 'mid:'];
-            if (!allowedProtocols.includes(protocol)) {
+            if (!allowedProtocols.has(protocol)) {
                 event.preventDefault();
                 event.stopPropagation();
                 console.warn('Thundy AV: Blocked unhandled URI scheme:', protocol);

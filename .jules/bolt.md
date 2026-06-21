@@ -1,3 +1,6 @@
 ## 2024-05-19 - Fast Path URL Hostname Extraction
 **Learning:** When attempting to avoid `new URL()` instantiation overhead by manually parsing standard `http://` and `https://` schemas, simply scanning for the first `/` is fundamentally flawed and breaks URL specifications. The "authority" (hostname) boundary can also be terminated by a query parameter `?` or a fragment `#` directly after the domain (e.g., `https://example.com?foo=1`).
 **Action:** When implementing fast-path string parsers for URLs, calculate the end of the authority section by finding the minimum valid index among `/`, `?`, and `#`, and gracefully fall back to the native `new URL()` implementation (within a `try/catch` block) if the input isn't a simple string or contains complex tokens like credentials (`@`), ports (`:`), IPv6 boundaries (`[`), or encoded sequences (`%`).
+## 2024-06-21 - Optimize Protocol Array Lookup to Set
+**Learning:** In highly repetitive event handlers like `document.addEventListener('click')`, initializing an array inside the handler and calling `.includes()` performs memory allocation and an O(N) check on every event.
+**Action:** Define a constant `Set` outside the event handler scope to perform an O(1) lookup (`.has()`) and avoid recreating the memory block, significantly reducing event handling latency.
