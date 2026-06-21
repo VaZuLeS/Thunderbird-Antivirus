@@ -1235,7 +1235,7 @@ describe('createUploadButton', () => {
         assert.strictEqual(btn.disabled, true);
         assert.strictEqual(btn['aria-busy'], 'true');
         assert.strictEqual(btn.innerText, 'Lade hoch...');
-        assert.strictEqual(status.innerText, 'Datei wird an Hybrid Analysis übertragen...');
+        assert.strictEqual(status.textContent || status.innerText, 'Datei wird an Hybrid Analysis übertragen...');
 
         // Wait for promise resolution
         await new Promise(process.nextTick);
