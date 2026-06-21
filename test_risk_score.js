@@ -118,8 +118,8 @@ function evaluateAuthHeaders(authHeaders, score, reasons) {
 
 function evaluateUrlhaus(urlhausDomains, score, reasons) {
     if (urlhausDomains && urlhausDomains.length > 0) {
+        score += urlhausDomains.length * 80;
         for (let domain of urlhausDomains) {
-            score += 80;
             reasons.push(`Domain (${domain}) ist auf URLhaus als bösartig gelistet.`);
         }
     }
