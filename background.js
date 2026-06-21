@@ -1011,7 +1011,6 @@ async function process_single_attachment(message, attachment) {
             }
 
             if (alwaysManual) {
-                console.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
                 return HybridDataBuilder.create(
                     'MANUAL_CHECK',
                     'MANUAL_CHECK',
