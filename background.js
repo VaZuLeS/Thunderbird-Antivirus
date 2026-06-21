@@ -131,7 +131,8 @@ browser.storage.onChanged.addListener((changes, area) => {
 
 function extractPublicIPs(receivedHeaders) {
     if (!receivedHeaders) return [];
-    let ips = new Set();
+    // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
+    let ips = [];
 
     for (let header of receivedHeaders) {
         let matches = header.match(GLOBAL_IPV4_REGEX);
@@ -156,11 +157,13 @@ function extractPublicIPs(receivedHeaders) {
                 ) {
                     continue;
                 }
-                ips.add(ip);
+                if (ips.indexOf(ip) === -1) {
+                    ips.push(ip);
+                }
             }
         }
     }
-    return Array.from(ips);
+    return ips;
 }
 
 async function checkAbuseIPDB(ip, apikey) {
@@ -438,16 +441,19 @@ function getHostnameOptimized(url) {
 }
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
-    let linkDomains = new Set();
+    // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
+    let linkDomains = [];
     for (let url of urls) {
         try {
             // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
             let hostname = getHostnameOptimized(url);
-            linkDomains.add(hostname);
+            if (linkDomains.indexOf(hostname) === -1) {
+                linkDomains.push(hostname);
+            }
         } catch (e) { /* Ignore invalid URLs */ }
     }
 
-    if (linkDomains.size > 0 && senderDomain) {
+    if (linkDomains.length > 0 && senderDomain) {
         let matchFound = false;
         let typosquatLinkFound = false;
         let checkedMainDomains = new Map();
@@ -673,16 +679,19 @@ async function checkFirstCommunication(senderEmail) {
 async function checkURLhausDomains(filteredUrls) {
     let urlhausDomains = [];
     if (urlhausApikey && filteredUrls.length > 0) {
-        let linkDomains = new Set();
+        // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
+        let linkDomains = [];
         for (let url of filteredUrls) {
             try {
                 // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
                 let hostname = getHostnameOptimized(url);
-                linkDomains.add(hostname);
+                if (linkDomains.indexOf(hostname) === -1) {
+                    linkDomains.push(hostname);
+                }
             } catch (e) { /* Ignore invalid URLs */ }
         }
 
-        const domainChecks = Array.from(linkDomains).map(async (domain) => {
+        const domainChecks = linkDomains.map(async (domain) => {
             if (urlhausCache.has(domain)) {
                 return urlhausCache.get(domain) ? domain : null;
             }

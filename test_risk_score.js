@@ -201,15 +201,19 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
 }
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
-    let linkDomains = new Set();
+    // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
+    let linkDomains = [];
     for (let url of urls) {
         try {
             let parsed = new URL(url);
-            linkDomains.add(parsed.hostname.toLowerCase());
+            let hostname = parsed.hostname.toLowerCase();
+            if (linkDomains.indexOf(hostname) === -1) {
+                linkDomains.push(hostname);
+            }
         } catch (e) { /* Ignore invalid URLs */ }
     }
 
-    if (linkDomains.size > 0 && senderDomain) {
+    if (linkDomains.length > 0 && senderDomain) {
         let matchFound = false;
         let typosquatLinkFound = false;
 
