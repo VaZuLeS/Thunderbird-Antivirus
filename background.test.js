@@ -148,6 +148,8 @@ describe('background.js', () => {
             globalThis.checkURLhaus = checkURLhaus;
             globalThis.evaluateUrlhaus = evaluateUrlhaus;
             globalThis.knownSendersCache = knownSendersCache;
+            globalThis.getHybridAnalysisOptions = getHybridAnalysisOptions;
+            globalThis.set_apikey_hybridanalysis = (val) => { apikey_hybridanalysis = val; };
             globalThis.urlhausCache = urlhausCache;
             globalThis.MAX_URLHAUS_CACHE_SIZE = MAX_URLHAUS_CACHE_SIZE;
             globalThis.checkLists = checkLists;
@@ -2451,6 +2453,59 @@ describe('background.js', () => {
             let response;
             await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'ERROR' });
+        });
+    });
+
+    describe('getHybridAnalysisOptions', () => {
+        let originalApiKey;
+
+        beforeEach(() => {
+            originalApiKey = context.get_apikey();
+            context.set_apikey_hybridanalysis('test-api-key');
+        });
+
+        afterEach(() => {
+            context.set_apikey_hybridanalysis(originalApiKey);
+        });
+
+        it('should throw Error if apikey_hybridanalysis is missing', () => {
+            context.set_apikey_hybridanalysis(null);
+            assert.throws(
+                () => context.getHybridAnalysisOptions('GET'),
+                /API-Key fehlt\./
+            );
+        });
+
+        it('should return basic options for GET request without body or isUrl', () => {
+            const options = context.getHybridAnalysisOptions('GET');
+            assert.equal(options.method, 'GET');
+            assert.equal(options.headers.accept, 'application/json');
+            assert.equal(options.headers['api-key'], 'test-api-key');
+            assert.match(options.headers['user-agent'], /Falcon/);
+            assert.ok(!options.body);
+        });
+
+        it('should add body and scan_type header for POST request with body', () => {
+            const body = { test: 'data' };
+            const options = context.getHybridAnalysisOptions('POST', body);
+            assert.equal(options.method, 'POST');
+            assert.equal(options.headers.accept, 'application/json');
+            assert.equal(options.headers['api-key'], 'test-api-key');
+            assert.match(options.headers['user-agent'], /Falcon/);
+            assert.equal(options.headers['scan_type'], 'all');
+            assert.deepEqual(options.body, body);
+        });
+
+        it('should add Content-Type header if isUrl is true', () => {
+            const body = 'url=http%3A%2F%2Fexample.com';
+            const options = context.getHybridAnalysisOptions('POST', body, true);
+            assert.equal(options.method, 'POST');
+            assert.equal(options.headers.accept, 'application/json');
+            assert.equal(options.headers['api-key'], 'test-api-key');
+            assert.match(options.headers['user-agent'], /Falcon/);
+            assert.equal(options.headers['scan_type'], 'all');
+            assert.equal(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
+            assert.deepEqual(options.body, body);
         });
     });
 });
