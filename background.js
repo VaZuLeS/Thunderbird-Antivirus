@@ -983,7 +983,6 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
         }
     }
 
-    console.log('Speichere Metadaten für manuellen Upload.');
     return HybridDataBuilder.create(
         'PENDING_UPLOAD',
         'PENDING_UPLOAD',
