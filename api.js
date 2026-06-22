@@ -753,5 +753,5 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId });
     createCdrButton(card, safeHash, attachmentName, messageId, partName);
 
-    appendElementHtml('hybrid_analysis_api_content', card);
+    document.getElementById('hybrid_analysis_api_content').appendChild(card);
 }
