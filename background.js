@@ -567,7 +567,6 @@ function calculateThreatScore(author, urls, options = {}) {
 
 async function processAndUploadUrls(message, filteredUrls) {
     if (privacyTier === 'max') {
-        console.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
         const urlResults = await Promise.all(filteredUrls.map(async (url) => {
             try {
                 const formBody = new URLSearchParams();
