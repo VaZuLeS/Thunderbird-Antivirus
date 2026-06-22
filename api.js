@@ -611,21 +611,8 @@ function renderManualUrlScanUI(url, headerMessageId) {
     });
 }
 
-function createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
-    let btnUpload = document.createElement('button');
-    btnUpload.id = `btn-upload-${hash}`;
-    btnUpload.className = "btn-primary mt-2";
-    btnUpload.textContent = `Datei jetzt scannen (Upload)`;
-    card.appendChild(btnUpload);
-
-    let pUploadStatus = document.createElement('p');
-    pUploadStatus.id = `upload-status-${hash}`;
-    pUploadStatus.className = "mt-2";
-    pUploadStatus.setAttribute('aria-live', 'polite');
-    pUploadStatus.setAttribute('role', 'status');
-    card.appendChild(pUploadStatus);
-
-    btnUpload.addEventListener('click', function() {
+function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
+    return function() {
         let btn = this;
         let statusId = `upload-status-${safeHash}`;
         let statusEl = document.getElementById(statusId);
@@ -668,7 +655,24 @@ function createUploadButton(card, { hash, safeHash, attachmentName, messageId, p
             btn.removeAttribute('aria-busy');
             btn.innerText = "Erneut versuchen";
         });
-    });
+    };
+}
+
+function createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
+    let btnUpload = document.createElement('button');
+    btnUpload.id = `btn-upload-${hash}`;
+    btnUpload.className = "btn-primary mt-2";
+    btnUpload.textContent = `Datei jetzt scannen (Upload)`;
+    card.appendChild(btnUpload);
+
+    let pUploadStatus = document.createElement('p');
+    pUploadStatus.id = `upload-status-${hash}`;
+    pUploadStatus.className = "mt-2";
+    pUploadStatus.setAttribute('aria-live', 'polite');
+    pUploadStatus.setAttribute('role', 'status');
+    card.appendChild(pUploadStatus);
+
+    btnUpload.addEventListener('click', handleUploadClick({ hash, safeHash, attachmentName, messageId, partName, headerMessageId }));
 }
 
 function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
