@@ -1592,8 +1592,6 @@ async function checkVirusTotal(hash, apikey) {
     if (stats === null) {
         // Remove from cache on failure so it can be retried
         vtCache.delete(hash);
-    } else {
-        vtCache.set(hash, stats);
     }
     return stats;
 }
