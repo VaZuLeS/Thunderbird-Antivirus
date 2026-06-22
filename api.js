@@ -120,18 +120,17 @@ try {
                 }
 
                 if (hasLinks) {
-                    const linkPromises = record.links.map(linkObj => {
+                    const linkPromises = [];
+                    for (const linkObj of record.links) {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId);
-                            return null;
                         } else if (linkObj.hybrid_sha256) {
-                            return get_hybrid_report_by_sha256({
+                            linkPromises.push(get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
                                 attachmentName: linkObj.url
-                            });
+                            }));
                         }
-                        return null;
-                    }).filter(Boolean);
+                    }
 
                     if (linkPromises.length > 0) {
                         fetchPromises.push(Promise.all(linkPromises));
