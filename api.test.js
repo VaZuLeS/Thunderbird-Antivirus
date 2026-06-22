@@ -422,6 +422,7 @@ tag: tag,
                         if (!context.apiContentElement) {
                             context.apiContentElement = {
                                 _html: '',
+                                children: [],
                                 get innerHTML() { return this._html; },
                                 set innerHTML(val) { this._html = val; },
                                 set textContent(val) { this._html = val; },
@@ -429,6 +430,8 @@ tag: tag,
                                     this._html += text;
                                 },
                                 appendChild: function(child) {
+                                    if (!this.children) this.children = [];
+                                    this.children.push(child);
                                     if (child.outerHTML) {
                                         this._html += child.outerHTML;
                                     } else {
@@ -543,11 +546,24 @@ describe('renderManualUploadUI', () => {
                     return el;
                 },
                 createTextNode: (text) => ({ textContent: text, type: 'textNode' }),
-                getElementById: (id) => ({
-                    appendChild: function() {},
-                    insertAdjacentHTML: function() {},
-                    setAttribute: function() {}
-                })
+                getElementById: (id) => {
+                    if (id === 'hybrid_analysis_api_content') {
+                        if (!context.apiContentElement) {
+                            context.apiContentElement = {
+                                children: [],
+                                appendChild: function(child) {
+                                    this.children.push(child);
+                                }
+                            };
+                        }
+                        return context.apiContentElement;
+                    }
+                    return {
+                        appendChild: function() {},
+                        insertAdjacentHTML: function() {},
+                        setAttribute: function() {}
+                    };
+                }
             },
             escapeHTML: (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'),
             createUploadButtonCalls: [],
@@ -588,27 +604,22 @@ describe('renderManualUploadUI', () => {
 
         renderManualUploadUI('hash123', 'test.txt', 'msg1', 'part1', 'hdr1');
 
-        assert.strictEqual(context.appendElementHtmlCalls.length, 1);
-        const appendCall = context.appendElementHtmlCalls[0];
-        assert.strictEqual(appendCall.id, 'hybrid_analysis_api_content');
-
-        const card = appendCall.node;
+        assert.strictEqual(context.apiContentElement.children.length, 1);
+        const card = context.apiContentElement.children[0];
         assert.strictEqual(card.tag, 'div');
         assert.strictEqual(card.className, 'card card-info mb-3');
         assert.strictEqual(card.id, 'upload-container-hash123');
 
         // Check children
-        assert.strictEqual(card.children.length, 3);
-
-        // h2
+        // 1. h2
+        // 2. pHash
+        // 3. pInfo
         assert.strictEqual(card.children[0].tag, 'h2');
         assert.strictEqual(card.children[0].textContent, 'Anhang: test.txt');
 
-        // pHash
         assert.strictEqual(card.children[1].tag, 'p');
         assert.strictEqual(card.children[1].textContent, 'SHA-256: hash123');
 
-        // pInfo
         assert.strictEqual(card.children[2].tag, 'p');
         assert.strictEqual(card.children[2].className, 'text-info');
 
@@ -627,10 +638,11 @@ describe('renderManualUploadUI', () => {
         context.createCdrButtonCalls.length = 0;
         context.appendElementHtmlCalls.length = 0;
 
+        context.apiContentElement.children = [];
         renderManualUploadUI('hash123', null, 'msg1', 'part1', 'hdr1');
 
-        assert.strictEqual(context.appendElementHtmlCalls.length, 1);
-        const card = context.appendElementHtmlCalls[0].node;
+        assert.strictEqual(context.apiContentElement.children.length, 1);
+        const card = context.apiContentElement.children[0];
         assert.strictEqual(card.children[0].tag, 'h2');
         assert.strictEqual(card.children[0].textContent, 'Anhang: Unbekannt');
     });
@@ -689,12 +701,15 @@ describe('renderManualUrlScanUI', () => {
                         if (!context.apiContentElement) {
                             context.apiContentElement = {
                                 _html: '',
+                                children: [],
                                 get innerHTML() { return this._html; },
                                 set innerHTML(val) { this._html = val; },
                                 insertAdjacentHTML: function(position, text) {
                                     this._html += text;
                                 },
                                 appendChild: function(node) {
+                                    if (!this.children) this.children = [];
+                                    this.children.push(node);
                                     if (node.id && node.id.startsWith('upload-container-')) {
                                         this._html += `<div id="${node.id}">`;
                                         if (node.childNodes) {

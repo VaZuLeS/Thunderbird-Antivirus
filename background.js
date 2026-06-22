@@ -440,6 +440,35 @@ function getHostnameOptimized(url) {
     return new URL(url).hostname.toLowerCase();
 }
 
+function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
+    let cachedBrandMatch = checkedMainDomains.get(linkMainDomain);
+    if (cachedBrandMatch !== undefined) {
+        if (cachedBrandMatch !== null) {
+            if (!reasons.some(r => r.includes(linkMainDomain))) {
+                reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${cachedBrandMatch}.`);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    for (let brand of KNOWN_BRANDS) {
+        if (linkMainDomain.length < 4 || Math.abs(linkMainDomain.length - brand.length) > 2) continue;
+
+        let distance = levenshteinDistance(linkMainDomain, brand);
+        if (distance > 0 && distance <= 2) {
+            checkedMainDomains.set(linkMainDomain, brand);
+            if (!reasons.some(r => r.includes(linkMainDomain))) {
+                reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
+            }
+            return true;
+        }
+    }
+
+    checkedMainDomains.set(linkMainDomain, null);
+    return false;
+}
+
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
     let linkDomains = [];
@@ -470,35 +499,8 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
             let isLinkKnownBrand = KNOWN_BRANDS_SET.has(linkMainDomain);
 
             if (!isLinkKnownBrand) {
-                let cachedBrandMatch = checkedMainDomains.get(linkMainDomain);
-                if (cachedBrandMatch !== undefined) {
-                    if (cachedBrandMatch !== null) {
-                        typosquatLinkFound = true;
-                        if (!reasons.some(r => r.includes(linkMainDomain))) {
-                            reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${cachedBrandMatch}.`);
-                        }
-                    }
-                    continue;
-                }
-
-                let foundTyposquat = false;
-                for (let brand of KNOWN_BRANDS) {
-                    if (linkMainDomain.length < 4 || Math.abs(linkMainDomain.length - brand.length) > 2) continue;
-
-                    let distance = levenshteinDistance(linkMainDomain, brand);
-                    if (distance > 0 && distance <= 2) {
-                        foundTyposquat = true;
-                        typosquatLinkFound = true;
-                        checkedMainDomains.set(linkMainDomain, brand);
-                        if (!reasons.some(r => r.includes(linkMainDomain))) {
-                            reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
-                        }
-                        // Found a match, no need to check other brands for the same domain
-                        break;
-                    }
-                }
-                if (!foundTyposquat) {
-                    checkedMainDomains.set(linkMainDomain, null);
+                if (checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons)) {
+                    typosquatLinkFound = true;
                 }
             }
         }
@@ -567,7 +569,6 @@ function calculateThreatScore(author, urls, options = {}) {
 
 async function processAndUploadUrls(message, filteredUrls) {
     if (privacyTier === 'max') {
-        console.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
         const urlResults = await Promise.all(filteredUrls.map(async (url) => {
             try {
                 const formBody = new URLSearchParams();
@@ -727,9 +728,6 @@ async function checkURLhausDomains(filteredUrls) {
 
 async function injectThreatBanner(tabId, threat) {
     if (threat.score >= 50 || threat.authStatus === 'pass') {
-        if (threat.score >= 50) {
-            console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
-        }
         await browser.scripting.executeScript({
             target: { tabId: tabId },
             func: function(score, reasons, authStatus) {
@@ -790,7 +788,6 @@ async function injectThreatBanner(tabId, threat) {
 
 async function processAttachments(message) {
   let attachments = await browser.messages.listAttachments(message.id);
-  console.log("Gefundene Anhänge:", attachments);
 
   if (attachments.length > 0) {
     await sent_to_hybrid_by_attachment(message, attachments);
@@ -959,7 +956,6 @@ class HybridDataBuilder {
 }
 
 async function handle_unknown_attachment({ attachment, content_of_attachment, local_hash, virustotal_stats, privacyTier, fileType }) {
-    console.log('Datei ist der API unbekannt.');
     if (privacyTier === 'balanced' || privacyTier === 'max') {
         console.log('Lade unbekannte Datei automatisch hoch...');
         try {
@@ -988,7 +984,6 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
         }
     }
 
-    console.log('Speichere Metadaten für manuellen Upload.');
     return HybridDataBuilder.create(
         'PENDING_UPLOAD',
         'PENDING_UPLOAD',
@@ -1021,7 +1016,6 @@ async function process_single_attachment(message, attachment) {
             const content_of_atachment = file.slice();
             const arrayBuffer = await content_of_atachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
-            console.log("Lokaler SHA-256:", local_hash);
 
             let virustotal_stats = null;
             if (apikey_virustotal) {
@@ -1599,8 +1593,6 @@ async function checkVirusTotal(hash, apikey) {
     if (stats === null) {
         // Remove from cache on failure so it can be retried
         vtCache.delete(hash);
-    } else {
-        vtCache.set(hash, stats);
     }
     return stats;
 }
@@ -1632,13 +1624,14 @@ async function checkUrlscanIo(url, apikey) {
     if (!apikey) return null;
     try {
         // Start Scan
+        // 🛡️ Sentinel: Prevent sensitive URL leakage by defaulting to 'unlisted' instead of 'public' visibility
         const scanRes = await fetch('https://urlscan.io/api/v1/scan/', {
             method: 'POST',
             headers: {
                 'API-Key': apikey,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ url: url, visibility: 'public' })
+            body: JSON.stringify({ url: url, visibility: 'unlisted' })
         });
 
         if (scanRes.status === 400) {

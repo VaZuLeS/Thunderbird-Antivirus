@@ -143,6 +143,7 @@ try {
             } else {
                  let emptyCard = document.createElement('div');
                 emptyCard.className = 'card card-info mb-3';
+                emptyCard.setAttribute('role', 'status');
                 let p1 = document.createElement('p');
                 p1.className = 'text-info';
                 p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.';
@@ -155,6 +156,7 @@ try {
     openRequest.onerror = function(e) {
         let emptyCard = document.createElement('div');
         emptyCard.className = 'card card-info mb-3';
+        emptyCard.setAttribute('role', 'status');
         let p2 = document.createElement('p');
         p2.className = 'text-info';
         p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.';
@@ -401,9 +403,7 @@ async function fetch_hybrid_report(hybrid_sha) {
     const fetchPromise = (async () => {
         try {
             const response = await fetch(options.url, options);
-            console.log(response);
             const json_data = await response.json();
-            console.log(json_data);
 
             const result = { response, json_data };
             if (response.status !== 200) {
@@ -533,6 +533,43 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
     }
 }
 
+function handleUrlScanClick(btn, url, urlId, headerMessageId) {
+    let statusEl = document.getElementById(`upload-status-${urlId}`);
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.innerText = "Sende URL...";
+    statusEl.innerText = "URL wird an Hybrid Analysis übertragen...";
+
+    browser.runtime.sendMessage({
+        action: "scanUrl",
+        url: url,
+        headerMessageId: headerMessageId
+    }).then(response => {
+        if (response && response.status === 'success') {
+            statusEl.innerText = "Scan erfolgreich beauftragt! Lade Analyseergebnisse...";
+            btn.removeAttribute('aria-busy');
+            setTimeout(() => {
+                document.getElementById(`upload-container-${urlId}`).remove();
+                // response.data.sha256 enthält den sha256-Hash des URL-Scans
+                get_hybrid_report_by_sha256({
+                    hybrid_sha: response.data.sha256,
+                    attachmentName: url
+                });
+            }, 3000);
+        } else {
+            statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
+            btn.disabled = false;
+            btn.removeAttribute('aria-busy');
+            btn.innerText = "Erneut versuchen";
+        }
+    }).catch(err => {
+        statusEl.innerText = "Kommunikationsfehler: " + err;
+        btn.disabled = false;
+        btn.removeAttribute('aria-busy');
+        btn.innerText = "Erneut versuchen";
+    });
+}
+
 function renderManualUrlScanUI(url, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
@@ -573,41 +610,7 @@ function renderManualUrlScanUI(url, headerMessageId) {
     container.appendChild(card);
 
     btnUpload.addEventListener('click', function() {
-        let btn = this;
-        let statusEl = document.getElementById(`upload-status-${urlId}`);
-        btn.disabled = true;
-        btn.setAttribute('aria-busy', 'true');
-        btn.innerText = "Sende URL...";
-        statusEl.innerText = "URL wird an Hybrid Analysis übertragen...";
-
-        browser.runtime.sendMessage({
-            action: "scanUrl",
-            url: url,
-            headerMessageId: headerMessageId
-        }).then(response => {
-            if (response && response.status === 'success') {
-                statusEl.innerText = "Scan erfolgreich beauftragt! Lade Analyseergebnisse...";
-                btn.removeAttribute('aria-busy');
-                setTimeout(() => {
-                    document.getElementById(`upload-container-${urlId}`).remove();
-                    // response.data.sha256 enthält den sha256-Hash des URL-Scans
-                    get_hybrid_report_by_sha256({
-                        hybrid_sha: response.data.sha256,
-                        attachmentName: url
-                    });
-                }, 3000);
-            } else {
-                statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
-                btn.disabled = false;
-                btn.removeAttribute('aria-busy');
-                btn.innerText = "Erneut versuchen";
-            }
-        }).catch(err => {
-            statusEl.innerText = "Kommunikationsfehler: " + err;
-            btn.disabled = false;
-            btn.removeAttribute('aria-busy');
-            btn.innerText = "Erneut versuchen";
-        });
+        handleUrlScanClick(this, url, urlId, headerMessageId);
     });
 }
 
@@ -750,5 +753,5 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId });
     createCdrButton(card, safeHash, attachmentName, messageId, partName);
 
-    appendElementHtml('hybrid_analysis_api_content', card);
+    document.getElementById('hybrid_analysis_api_content').appendChild(card);
 }

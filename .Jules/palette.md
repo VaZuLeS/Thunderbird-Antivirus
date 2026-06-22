@@ -61,3 +61,6 @@
 ## 2026-06-25 - Contextual Placeholders in Configuration Inputs
 **Learning:** Empty password or configuration inputs with generic or no placeholders force users to consult documentation to understand the expected format (e.g., whether to enter a 16-character hex string or a UUID). Providing an explicit, contextual example in the placeholder (like `placeholder="z.B. abcdef123456..."`) significantly reduces friction and prevents formatting errors.
 **Action:** When adding or reviewing configuration inputs (especially API keys or domain lists), ensure they have contextual `placeholder` attributes that demonstrate the exact expected format.
+## 2026-06-25 - ARIA Status Role on Empty State Cards
+**Learning:** Dynamically generated "empty state" cards (e.g. indicating no attachments or analysis results were found) injected into the DOM after an asynchronous operation are not automatically announced by screen readers. This leaves visually impaired users unaware that an operation has completed with no results.
+**Action:** When generating dynamic empty state cards or informational containers post-load, always add `role="status"` or `aria-live="polite"` so screen readers proactively announce these critical updates.
