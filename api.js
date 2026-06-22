@@ -120,18 +120,17 @@ try {
                 }
 
                 if (hasLinks) {
-                    const linkPromises = record.links.map(linkObj => {
+                    const linkPromises = [];
+                    for (const linkObj of record.links) {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId);
-                            return null;
                         } else if (linkObj.hybrid_sha256) {
-                            return get_hybrid_report_by_sha256({
+                            linkPromises.push(get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
                                 attachmentName: linkObj.url
-                            });
+                            }));
                         }
-                        return null;
-                    }).filter(Boolean);
+                    }
 
                     if (linkPromises.length > 0) {
                         fetchPromises.push(Promise.all(linkPromises));
@@ -399,17 +398,27 @@ async function fetch_hybrid_report(hybrid_sha) {
         },
     };
 
-    const response = await fetch(options.url, options);
-    console.log(response);
-    const json_data = await response.json();
-    console.log(json_data);
+    const fetchPromise = (async () => {
+        try {
+            const response = await fetch(options.url, options);
+            console.log(response);
+            const json_data = await response.json();
+            console.log(json_data);
 
-    const result = { response, json_data };
-    if (response.status === 200) {
-        hybrid_report_cache.set(hybrid_sha, result);
-    }
+            const result = { response, json_data };
+            if (response.status !== 200) {
+                hybrid_report_cache.delete(hybrid_sha);
+            }
 
-    return result;
+            return result;
+        } catch (error) {
+            hybrid_report_cache.delete(hybrid_sha);
+            throw error;
+        }
+    })();
+
+    hybrid_report_cache.set(hybrid_sha, fetchPromise);
+    return fetchPromise;
 }
 
 function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }) {
@@ -623,7 +632,7 @@ function createUploadButton(card, { hash, safeHash, attachmentName, messageId, p
         btn.disabled = true;
         btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Lade hoch...";
-        setElementText(statusId, "Datei wird an Hybrid Analysis übertragen...");
+        if (statusEl) statusEl.textContent = "Datei wird an Hybrid Analysis übertragen...";
 
         browser.runtime.sendMessage({
             action: "uploadAttachment",
@@ -687,7 +696,7 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
         btn.disabled = true;
         if (btn) btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Bereinige...";
-        setElementText(statusId, "Lokales CDR wird durchgeführt...");
+        if (statusEl) statusEl.textContent = "Lokales CDR wird durchgeführt...";
 
         browser.runtime.sendMessage({
             action: "downloadDisarmed",

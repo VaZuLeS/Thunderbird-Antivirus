@@ -108,14 +108,14 @@ describe('background.js', () => {
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'background.js'), 'utf8');
         const wrappedCode = `
-            globalThis.customBlacklist = [];
-            globalThis.customWhitelist = [];
+            globalThis.customBlacklist = new Set();
+            globalThis.customWhitelist = new Set();
             globalThis.knownSendersCache = new Set();
             globalThis.MAX_KNOWN_SENDERS = 1000;
             ${code}
             globalThis.loadSettings = loadSettings;
-            globalThis.set_customBlacklist = (list) => { customBlacklist = list.map(s => s ? s.toLowerCase() : ""); };
-            globalThis.set_customWhitelist = (list) => { customWhitelist = list.map(s => s ? s.toLowerCase() : ""); };
+            globalThis.set_customBlacklist = (list) => { customBlacklist = new Set(Array.from(list).map(s => s ? s.toLowerCase() : "")); };
+            globalThis.set_customWhitelist = (list) => { customWhitelist = new Set(Array.from(list).map(s => s ? s.toLowerCase() : "")); };
             globalThis.get_apikey = () => apikey_hybridanalysis;
             globalThis.set_apikey = (val) => { apikey_hybridanalysis = val; };
             globalThis.set_vt_apikey = (val) => { apikey_virustotal = val; };
@@ -1330,39 +1330,39 @@ describe('background.js', () => {
         });
 
         it('calculates threat score correctly for custom blacklist exact match', async () => {
-            context.set_customBlacklist(['hacker@evil.com']);
+            context.set_customBlacklist(new Set(['hacker@evil.com']));
             const result = context.calculateThreatScore("Hacker <hacker@evil.com>", []);
             assert.strictEqual(result.score, 100);
             assert.ok(result.reasons.some(r => r.includes("steht auf der Blacklist")));
-            context.set_customBlacklist([]);
+            context.set_customBlacklist(new Set());
         });
 
         it('calculates threat score correctly for custom blacklist domain match', async () => {
-            context.set_customBlacklist(['evil.com']);
+            context.set_customBlacklist(new Set(['evil.com']));
             const result = context.calculateThreatScore("Hacker <hacker@evil.com>", []);
             assert.strictEqual(result.score, 100);
             assert.ok(result.reasons.some(r => r.includes("steht auf der Blacklist")));
-            context.set_customBlacklist([]);
+            context.set_customBlacklist(new Set());
         });
 
         it('calculates threat score correctly for custom whitelist exact match', async () => {
-            context.set_customWhitelist(['good@guy.com']);
+            context.set_customWhitelist(new Set(['good@guy.com']));
             const result = context.calculateThreatScore("Good <good@guy.com>", [], {
                 urlhausDomains: ['malware.com'] // should be ignored due to whitelist return
             });
             assert.strictEqual(result.score, 0);
             assert.ok(result.reasons.some(r => r.includes("steht auf der Whitelist")));
-            context.set_customWhitelist([]);
+            context.set_customWhitelist(new Set());
         });
 
         it('calculates threat score correctly for custom whitelist domain match', async () => {
-            context.set_customWhitelist(['guy.com']);
+            context.set_customWhitelist(new Set(['guy.com']));
             const result = context.calculateThreatScore("Good <good@guy.com>", [], {
                 urlhausDomains: ['malware.com'] // should be ignored due to whitelist return
             });
             assert.strictEqual(result.score, 0);
             assert.ok(result.reasons.some(r => r.includes("steht auf der Whitelist")));
-            context.set_customWhitelist([]);
+            context.set_customWhitelist(new Set());
         });
     });
 
@@ -1728,7 +1728,7 @@ describe('background.js', () => {
 
     describe('checkLists', () => {
         beforeEach(() => {
-            vm.runInContext('customBlacklist = []; customWhitelist = [];', context);
+            vm.runInContext('customBlacklist = new Set(); customWhitelist = new Set();', context);
         });
 
         it('returns null if lists are empty or undefined', () => {
@@ -1738,7 +1738,7 @@ describe('background.js', () => {
         });
 
         it('matches exact email on blacklist', () => {
-            vm.runInContext('customBlacklist = ["attacker@bad.com"];', context);
+            vm.runInContext('customBlacklist = new Set(["attacker@bad.com"]);', context);
             const result = context.checkLists('attacker@bad.com', 'bad.com');
             assert.ok(result);
             assert.strictEqual(result.score, 100);
@@ -1747,7 +1747,7 @@ describe('background.js', () => {
         });
 
         it('matches exact domain on blacklist', () => {
-            vm.runInContext('customBlacklist = ["bad.com"];', context);
+            vm.runInContext('customBlacklist = new Set(["bad.com"]);', context);
             const result = context.checkLists('test@bad.com', 'bad.com');
             assert.ok(result);
             assert.strictEqual(result.score, 100);
@@ -1756,7 +1756,7 @@ describe('background.js', () => {
         });
 
         it('matches subdomain on blacklist', () => {
-            vm.runInContext('customBlacklist = ["bad.com"];', context);
+            vm.runInContext('customBlacklist = new Set(["bad.com"]);', context);
             const result = context.checkLists('test@sub.bad.com', 'sub.bad.com');
             assert.ok(result);
             assert.strictEqual(result.score, 100);
@@ -1765,7 +1765,7 @@ describe('background.js', () => {
         });
 
         it('matches exact email on whitelist', () => {
-            vm.runInContext('customWhitelist = ["friend@good.com"];', context);
+            vm.runInContext('customWhitelist = new Set(["friend@good.com"]);', context);
             const result = context.checkLists('friend@good.com', 'good.com');
             assert.ok(result);
             assert.strictEqual(result.score, 0);
@@ -1774,7 +1774,7 @@ describe('background.js', () => {
         });
 
         it('matches exact domain on whitelist', () => {
-            vm.runInContext('customWhitelist = ["good.com"];', context);
+            vm.runInContext('customWhitelist = new Set(["good.com"]);', context);
             const result = context.checkLists('test@good.com', 'good.com');
             assert.ok(result);
             assert.strictEqual(result.score, 0);
@@ -1783,7 +1783,7 @@ describe('background.js', () => {
         });
 
         it('matches subdomain on whitelist', () => {
-            vm.runInContext('customWhitelist = ["good.com"];', context);
+            vm.runInContext('customWhitelist = new Set(["good.com"]);', context);
             const result = context.checkLists('test@sub.good.com', 'sub.good.com');
             assert.ok(result);
             assert.strictEqual(result.score, 0);
@@ -1792,7 +1792,7 @@ describe('background.js', () => {
         });
 
         it('prioritizes blacklist over whitelist if both match', () => {
-            vm.runInContext('customBlacklist = ["example.com"]; customWhitelist = ["example.com"];', context);
+            vm.runInContext('customBlacklist = new Set(["example.com"]); customWhitelist = new Set(["example.com"]);', context);
             const result = context.checkLists('test@example.com', 'example.com');
             assert.ok(result);
             assert.strictEqual(result.score, 100);
@@ -1800,7 +1800,7 @@ describe('background.js', () => {
         });
 
         it('returns null if no matches in non-empty lists', () => {
-            vm.runInContext('customBlacklist = ["bad.com"]; customWhitelist = ["good.com"];', context);
+            vm.runInContext('customBlacklist = new Set(["bad.com"]); customWhitelist = new Set(["good.com"]);', context);
             assert.strictEqual(context.checkLists('test@example.com', 'example.com'), null);
         });
     });

@@ -1,5 +1,5 @@
-let customBlacklist = [];
-let customWhitelist = [];
+let customBlacklist = new Set();
+let customWhitelist = new Set();
 let authStatus = null;
 let apikey_hybridanalysis;
 let urlhausApikey = "";
@@ -69,10 +69,10 @@ async function loadSettings() {
     const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist']);
     apikey_hybridanalysis = result.apikey;
     if (result.customBlacklist !== undefined) {
-      customBlacklist = result.customBlacklist.map(s => s ? s.toLowerCase() : "");
+      customBlacklist = new Set(result.customBlacklist.map(s => s ? s.toLowerCase() : ""));
     }
     if (result.customWhitelist !== undefined) {
-      customWhitelist = result.customWhitelist.map(s => s ? s.toLowerCase() : "");
+      customWhitelist = new Set(result.customWhitelist.map(s => s ? s.toLowerCase() : ""));
     }
     if (result.urlhausApikey !== undefined) {
       urlhausApikey = result.urlhausApikey;
@@ -122,16 +122,17 @@ browser.storage.onChanged.addListener((changes, area) => {
     timeOfClickProtection = changes.timeOfClickProtection.newValue;
   }
   if (area === 'local' && changes.customBlacklist !== undefined) {
-    customBlacklist = (changes.customBlacklist.newValue || []).map(s => s ? s.toLowerCase() : "");
+    customBlacklist = new Set((changes.customBlacklist.newValue || []).map(s => s ? s.toLowerCase() : ""));
   }
   if (area === 'local' && changes.customWhitelist !== undefined) {
-    customWhitelist = (changes.customWhitelist.newValue || []).map(s => s ? s.toLowerCase() : "");
+    customWhitelist = new Set((changes.customWhitelist.newValue || []).map(s => s ? s.toLowerCase() : ""));
   }
 });
 
 function extractPublicIPs(receivedHeaders) {
     if (!receivedHeaders) return [];
-    let ips = new Set();
+    // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
+    let ips = [];
 
     for (let header of receivedHeaders) {
         let matches = header.match(GLOBAL_IPV4_REGEX);
@@ -156,11 +157,13 @@ function extractPublicIPs(receivedHeaders) {
                 ) {
                     continue;
                 }
-                ips.add(ip);
+                if (ips.indexOf(ip) === -1) {
+                    ips.push(ip);
+                }
             }
         }
     }
-    return Array.from(ips);
+    return ips;
 }
 
 async function checkAbuseIPDB(ip, apikey) {
@@ -254,9 +257,9 @@ const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.repla
 
 function checkLists(email, senderDomain) {
     // Check Blacklist
-    if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.length > 0) {
-        // ⚡ Bolt Optimization: Use pre-lowercased list directly instead of mapping on every call
-        if (customBlacklist.includes(email)) {
+    if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.size > 0) {
+        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) Array includes
+        if (customBlacklist.has(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
         for (let b of customBlacklist) {
@@ -267,9 +270,9 @@ function checkLists(email, senderDomain) {
     }
 
     // Check Whitelist
-    if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.length > 0) {
-        // ⚡ Bolt Optimization: Use pre-lowercased list directly instead of mapping on every call
-        if (customWhitelist.includes(email)) {
+    if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.size > 0) {
+        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) Array includes
+        if (customWhitelist.has(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
         for (let w of customWhitelist) {
@@ -438,16 +441,19 @@ function getHostnameOptimized(url) {
 }
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
-    let linkDomains = new Set();
+    // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
+    let linkDomains = [];
     for (let url of urls) {
         try {
             // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
             let hostname = getHostnameOptimized(url);
-            linkDomains.add(hostname);
+            if (linkDomains.indexOf(hostname) === -1) {
+                linkDomains.push(hostname);
+            }
         } catch (e) { /* Ignore invalid URLs */ }
     }
 
-    if (linkDomains.size > 0 && senderDomain) {
+    if (linkDomains.length > 0 && senderDomain) {
         let matchFound = false;
         let typosquatLinkFound = false;
         let checkedMainDomains = new Map();
@@ -616,21 +622,27 @@ async function checkIPReputation(receivedHeaders) {
         let publicIps = extractPublicIPs(receivedHeaders);
         let ipChecks = publicIps.map(async (ip) => {
             if (ipReputationCache.has(ip)) {
-                return { ip, isMalicious: ipReputationCache.get(ip) };
+                return { ip, isMalicious: await ipReputationCache.get(ip) };
             }
 
-            let isMalicious = false;
-            try {
-                if (ipReputationProvider === "abuseipdb") {
-                    isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
-                } else if (ipReputationProvider === "virustotal") {
-                    isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
-                }
-            } catch(e) { console.error(e); }
+            let promise = (async () => {
+                let isMalicious = false;
+                try {
+                    if (ipReputationProvider === "abuseipdb") {
+                        isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
+                    } else if (ipReputationProvider === "virustotal") {
+                        isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
+                    }
+                } catch(e) { console.error(e); }
+                return isMalicious;
+            })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
                 ipReputationCache.clear();
             }
+            ipReputationCache.set(ip, promise);
+
+            let isMalicious = await promise;
             ipReputationCache.set(ip, isMalicious);
 
             return { ip, isMalicious };
@@ -673,26 +685,32 @@ async function checkFirstCommunication(senderEmail) {
 async function checkURLhausDomains(filteredUrls) {
     let urlhausDomains = [];
     if (urlhausApikey && filteredUrls.length > 0) {
-        let linkDomains = new Set();
+        // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
+        let linkDomains = [];
         for (let url of filteredUrls) {
             try {
                 // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
                 let hostname = getHostnameOptimized(url);
-                linkDomains.add(hostname);
+                if (linkDomains.indexOf(hostname) === -1) {
+                    linkDomains.push(hostname);
+                }
             } catch (e) { /* Ignore invalid URLs */ }
         }
 
-        const domainChecks = Array.from(linkDomains).map(async (domain) => {
+        const domainChecks = linkDomains.map(async (domain) => {
             if (urlhausCache.has(domain)) {
-                return urlhausCache.get(domain) ? domain : null;
+                return await urlhausCache.get(domain) ? domain : null;
             }
 
-            let isMalicious = await checkURLhaus(domain, urlhausApikey);
+            let checkPromise = checkURLhaus(domain, urlhausApikey);
 
             if (urlhausCache.size >= MAX_URLHAUS_CACHE_SIZE) {
                 const firstKey = urlhausCache.keys().next().value;
                 urlhausCache.delete(firstKey);
             }
+            urlhausCache.set(domain, checkPromise);
+
+            let isMalicious = await checkPromise;
             urlhausCache.set(domain, isMalicious);
 
             if (isMalicious) {
@@ -982,8 +1000,6 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
 }
 
 async function process_single_attachment(message, attachment) {
-    console.log(`Prüfe Anhang: ${attachment.name} (${attachment.contentType}, ${attachment.size} bytes)`);
-
     let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
 
     switch (attachment.contentType) {
@@ -1013,7 +1029,6 @@ async function process_single_attachment(message, attachment) {
             }
 
             if (alwaysManual) {
-                console.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
                 return HybridDataBuilder.create(
                     'MANUAL_CHECK',
                     'MANUAL_CHECK',
@@ -1547,35 +1562,47 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
 async function checkVirusTotal(hash, apikey) {
     if (!apikey) return null;
     if (vtCache.has(hash)) {
-        return vtCache.get(hash);
+        return await vtCache.get(hash);
     }
-    const url = `https://www.virustotal.com/api/v3/files/${hash}`;
-    const options = {
-        method: 'GET',
-        headers: {
-            'x-apikey': apikey,
-            'accept': 'application/json'
-        }
-    };
-    try {
-        const response = await fetch(url, options);
-        if (response.status === 200) {
-            const data = await response.json();
-            if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
-                const stats = data.data.attributes.last_analysis_stats;
-                if (vtCache.size >= MAX_VT_CACHE_SIZE) {
-                    const firstKey = vtCache.keys().next().value;
-                    vtCache.delete(firstKey);
-                }
-                vtCache.set(hash, stats);
-                return stats;
+
+    let checkPromise = (async () => {
+        const url = `https://www.virustotal.com/api/v3/files/${hash}`;
+        const options = {
+            method: 'GET',
+            headers: {
+                'x-apikey': apikey,
+                'accept': 'application/json'
             }
+        };
+        try {
+            const response = await fetch(url, options);
+            if (response.status === 200) {
+                const data = await response.json();
+                if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
+                    return data.data.attributes.last_analysis_stats;
+                }
+            }
+            return null;
+        } catch (e) {
+            console.error("Fehler bei VirusTotal Abfrage:", e);
+            return null;
         }
-        return null;
-    } catch (e) {
-        console.error("Fehler bei VirusTotal Abfrage:", e);
-        return null;
+    })();
+
+    if (vtCache.size >= MAX_VT_CACHE_SIZE) {
+        const firstKey = vtCache.keys().next().value;
+        vtCache.delete(firstKey);
     }
+    vtCache.set(hash, checkPromise);
+
+    let stats = await checkPromise;
+    if (stats === null) {
+        // Remove from cache on failure so it can be retried
+        vtCache.delete(hash);
+    } else {
+        vtCache.set(hash, stats);
+    }
+    return stats;
 }
 
 async function checkURLhaus(domain, apikey) {
