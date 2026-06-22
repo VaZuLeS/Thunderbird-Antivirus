@@ -954,7 +954,6 @@ class HybridDataBuilder {
 }
 
 async function handle_unknown_attachment({ attachment, content_of_attachment, local_hash, virustotal_stats, privacyTier, fileType }) {
-    console.log('Datei ist der API unbekannt.');
     if (privacyTier === 'balanced' || privacyTier === 'max') {
         console.log('Lade unbekannte Datei automatisch hoch...');
         try {
