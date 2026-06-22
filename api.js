@@ -398,17 +398,27 @@ async function fetch_hybrid_report(hybrid_sha) {
         },
     };
 
-    const response = await fetch(options.url, options);
-    console.log(response);
-    const json_data = await response.json();
-    console.log(json_data);
+    const fetchPromise = (async () => {
+        try {
+            const response = await fetch(options.url, options);
+            console.log(response);
+            const json_data = await response.json();
+            console.log(json_data);
 
-    const result = { response, json_data };
-    if (response.status === 200) {
-        hybrid_report_cache.set(hybrid_sha, result);
-    }
+            const result = { response, json_data };
+            if (response.status !== 200) {
+                hybrid_report_cache.delete(hybrid_sha);
+            }
 
-    return result;
+            return result;
+        } catch (error) {
+            hybrid_report_cache.delete(hybrid_sha);
+            throw error;
+        }
+    })();
+
+    hybrid_report_cache.set(hybrid_sha, fetchPromise);
+    return fetchPromise;
 }
 
 function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }) {
