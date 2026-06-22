@@ -1622,13 +1622,14 @@ async function checkUrlscanIo(url, apikey) {
     if (!apikey) return null;
     try {
         // Start Scan
+        // 🛡️ Sentinel: Prevent sensitive URL leakage by defaulting to 'unlisted' instead of 'public' visibility
         const scanRes = await fetch('https://urlscan.io/api/v1/scan/', {
             method: 'POST',
             headers: {
                 'API-Key': apikey,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ url: url, visibility: 'public' })
+            body: JSON.stringify({ url: url, visibility: 'unlisted' })
         });
 
         if (scanRes.status === 400) {
