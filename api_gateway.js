@@ -11,36 +11,11 @@ class ApiGateway {
         let headers = options.headers || {};
         let hostname;
 
-        // ⚡ Bolt Optimization: Fast path for hostname extraction without URL object allocation
-        if (typeof url === 'string') {
-            let start = url.startsWith('https://') ? 8 : (url.startsWith('http://') ? 7 : 0);
-
-            if (start > 0) {
-                let end = url.length;
-                let slashIdx = url.indexOf('/', start);
-                let questionIdx = url.indexOf('?', start);
-                let hashIdx = url.indexOf('#', start);
-
-                if (slashIdx !== -1 && slashIdx < end) end = slashIdx;
-                if (questionIdx !== -1 && questionIdx < end) end = questionIdx;
-                if (hashIdx !== -1 && hashIdx < end) end = hashIdx;
-
-                let authority = url.substring(start, end);
-
-                // Fast path only if no complex components (credentials, ports, ipv6, encoded chars, spaces)
-                if (authority.indexOf('@') === -1 && authority.indexOf(':') === -1 && authority.indexOf('[') === -1 && authority.indexOf('%') === -1 && authority.indexOf(' ') === -1) {
-                    hostname = authority.toLowerCase();
-                }
-            }
-        }
-
-        if (!hostname) {
-            try {
-                hostname = new URL(url).hostname;
-            } catch (e) {
-                // Invalid URL, do not inject auth headers to be safe
-                return options;
-            }
+        try {
+            hostname = new URL(url).hostname;
+        } catch (e) {
+            // Invalid URL, do not inject auth headers to be safe
+            return options;
         }
 
         if ((hostname === 'virustotal.com' || hostname === 'www.virustotal.com') && this.apikeys['virustotal']) {
