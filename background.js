@@ -1643,51 +1643,54 @@ async function checkUrlscanIo(url, apikey) {
 
         if (!uuid) throw new Error("Keine UUID von urlscan.io erhalten.");
 
-        // Wait for result (Polling)
-        let waitTime = 2000;
-        let elapsed = 0;
-        const maxTime = 30000;
-
-        while (elapsed < maxTime) {
-            await new Promise(r => setTimeout(r, waitTime));
-            elapsed += waitTime;
-            waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
-
-            const resultRes = await fetch(`https://urlscan.io/api/v1/result/${uuid}/`);
-            if (resultRes.status === 200) {
-                const resultData = await resultRes.json();
-
-                let isMalicious = false;
-                let reasons = [];
-
-                if (resultData.verdicts && resultData.verdicts.overall && resultData.verdicts.overall.malicious) {
-                    isMalicious = true;
-                    reasons.push("Die URL wurde von urlscan.io generell als bösartig eingestuft.");
-                }
-
-                if (resultData.verdicts && resultData.verdicts.urlscan && resultData.verdicts.urlscan.brands && resultData.verdicts.urlscan.brands.length > 0) {
-                     // Check if it's visually trying to spoof a brand
-                     if (resultData.verdicts.urlscan.malicious) {
-                        isMalicious = true;
-                        reasons.push("Visuelle Erkennung: Die Seite gibt sich als " + resultData.verdicts.urlscan.brands.join(', ') + " aus (Phishing-Verdacht).");
-                     }
-                }
-
-                if (isMalicious) {
-                    return { status: 'MALICIOUS_VISUAL', reasons: reasons };
-                } else {
-                    return { status: 'CLEAN' };
-                }
-            } else if (resultRes.status === 404) {
-                // Not ready yet, continue polling
-            } else {
-                throw new Error("Fehler beim Abrufen der Ergebnisse (urlscan.io): " + resultRes.status);
-            }
-        }
-
-        return { status: 'TIMEOUT' }; // Took too long
+        return await pollUrlscanIoResult(uuid);
     } catch (e) {
         console.error("Fehler bei urlscan.io Abfrage", e);
         return { status: 'ERROR', details: e.message };
     }
+}
+
+async function pollUrlscanIoResult(uuid) {
+    let waitTime = 2000;
+    let elapsed = 0;
+    const maxTime = 30000;
+
+    while (elapsed < maxTime) {
+        await new Promise(r => setTimeout(r, waitTime));
+        elapsed += waitTime;
+        waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
+
+        const resultRes = await fetch(`https://urlscan.io/api/v1/result/${uuid}/`);
+        if (resultRes.status === 200) {
+            const resultData = await resultRes.json();
+
+            let isMalicious = false;
+            let reasons = [];
+
+            if (resultData.verdicts && resultData.verdicts.overall && resultData.verdicts.overall.malicious) {
+                isMalicious = true;
+                reasons.push("Die URL wurde von urlscan.io generell als bösartig eingestuft.");
+            }
+
+            if (resultData.verdicts && resultData.verdicts.urlscan && resultData.verdicts.urlscan.brands && resultData.verdicts.urlscan.brands.length > 0) {
+                 // Check if it's visually trying to spoof a brand
+                 if (resultData.verdicts.urlscan.malicious) {
+                    isMalicious = true;
+                    reasons.push("Visuelle Erkennung: Die Seite gibt sich als " + resultData.verdicts.urlscan.brands.join(', ') + " aus (Phishing-Verdacht).");
+                 }
+            }
+
+            if (isMalicious) {
+                return { status: 'MALICIOUS_VISUAL', reasons: reasons };
+            } else {
+                return { status: 'CLEAN' };
+            }
+        } else if (resultRes.status === 404) {
+            // Not ready yet, continue polling
+        } else {
+            throw new Error("Fehler beim Abrufen der Ergebnisse (urlscan.io): " + resultRes.status);
+        }
+    }
+
+    return { status: 'TIMEOUT' }; // Took too long
 }
