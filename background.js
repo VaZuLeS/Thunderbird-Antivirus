@@ -622,21 +622,27 @@ async function checkIPReputation(receivedHeaders) {
         let publicIps = extractPublicIPs(receivedHeaders);
         let ipChecks = publicIps.map(async (ip) => {
             if (ipReputationCache.has(ip)) {
-                return { ip, isMalicious: ipReputationCache.get(ip) };
+                return { ip, isMalicious: await ipReputationCache.get(ip) };
             }
 
-            let isMalicious = false;
-            try {
-                if (ipReputationProvider === "abuseipdb") {
-                    isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
-                } else if (ipReputationProvider === "virustotal") {
-                    isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
-                }
-            } catch(e) { console.error(e); }
+            let promise = (async () => {
+                let isMalicious = false;
+                try {
+                    if (ipReputationProvider === "abuseipdb") {
+                        isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
+                    } else if (ipReputationProvider === "virustotal") {
+                        isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
+                    }
+                } catch(e) { console.error(e); }
+                return isMalicious;
+            })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
                 ipReputationCache.clear();
             }
+            ipReputationCache.set(ip, promise);
+
+            let isMalicious = await promise;
             ipReputationCache.set(ip, isMalicious);
 
             return { ip, isMalicious };
