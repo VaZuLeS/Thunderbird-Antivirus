@@ -790,7 +790,6 @@ async function injectThreatBanner(tabId, threat) {
 
 async function processAttachments(message) {
   let attachments = await browser.messages.listAttachments(message.id);
-  console.log("Gefundene Anhänge:", attachments);
 
   if (attachments.length > 0) {
     await sent_to_hybrid_by_attachment(message, attachments);
