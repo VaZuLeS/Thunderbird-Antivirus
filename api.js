@@ -421,11 +421,7 @@ async function fetch_hybrid_report(hybrid_sha) {
     return fetchPromise;
 }
 
-function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }) {
-    let container = document.getElementById('hybrid_analysis_api_content');
-    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats });
-    container.appendChild(reportNode);
-
+function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, headerMessageId }) {
     let rescanBtn = document.getElementById(`btn-rescan-${hybrid_sha}`);
     if (rescanBtn) {
         rescanBtn.addEventListener('click', function() {
@@ -464,7 +460,9 @@ function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partNa
             });
         });
     }
+}
 
+function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
     let cdrBtn = document.getElementById(`btn-cdr-${hybrid_sha}`);
     if (cdrBtn) {
         cdrBtn.addEventListener('click', function() {
@@ -499,6 +497,15 @@ function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partNa
             });
         });
     }
+}
+
+function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }) {
+    let container = document.getElementById('hybrid_analysis_api_content');
+    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats });
+    container.appendChild(reportNode);
+
+    setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, headerMessageId });
+    setupCdrButton({ hybrid_sha, attachmentName, messageId, partName });
 }
 
 function handle_hybrid_report_error(response, attachmentName) {
