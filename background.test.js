@@ -180,6 +180,27 @@ describe('background.js', () => {
         assert.ok(context.get_apikey() === undefined || context.get_apikey() === 'test-api-key');
     });
 
+
+
+
+    it('loadSettings catches and logs storage errors', async () => {
+        const originalConsoleError = context.console.error;
+        let loggedError = null;
+        context.console.error = (msg, err) => { loggedError = { msg, err }; };
+        const originalGet = context.browser.storage.local.get;
+        const fakeError = new Error('Storage error');
+        context.browser.storage.local.get = async () => { throw fakeError; };
+
+        await context.loadSettings();
+
+        assert.ok(loggedError, 'Expected console.error to be called');
+        assert.strictEqual(loggedError.msg, 'Fehler beim Laden der Einstellungen:');
+        assert.strictEqual(loggedError.err, fakeError);
+
+        context.console.error = originalConsoleError;
+        context.browser.storage.local.get = originalGet;
+    });
+
     it('loadSettings retrieves API key from storage', async () => {
         context.set_apikey(undefined);
         await context.loadSettings();
