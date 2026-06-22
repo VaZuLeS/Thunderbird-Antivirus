@@ -143,6 +143,7 @@ try {
             } else {
                  let emptyCard = document.createElement('div');
                 emptyCard.className = 'card card-info mb-3';
+                emptyCard.setAttribute('role', 'status');
                 let p1 = document.createElement('p');
                 p1.className = 'text-info';
                 p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.';
@@ -155,6 +156,7 @@ try {
     openRequest.onerror = function(e) {
         let emptyCard = document.createElement('div');
         emptyCard.className = 'card card-info mb-3';
+        emptyCard.setAttribute('role', 'status');
         let p2 = document.createElement('p');
         p2.className = 'text-info';
         p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.';
