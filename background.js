@@ -440,6 +440,35 @@ function getHostnameOptimized(url) {
     return new URL(url).hostname.toLowerCase();
 }
 
+function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
+    let cachedBrandMatch = checkedMainDomains.get(linkMainDomain);
+    if (cachedBrandMatch !== undefined) {
+        if (cachedBrandMatch !== null) {
+            if (!reasons.some(r => r.includes(linkMainDomain))) {
+                reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${cachedBrandMatch}.`);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    for (let brand of KNOWN_BRANDS) {
+        if (linkMainDomain.length < 4 || Math.abs(linkMainDomain.length - brand.length) > 2) continue;
+
+        let distance = levenshteinDistance(linkMainDomain, brand);
+        if (distance > 0 && distance <= 2) {
+            checkedMainDomains.set(linkMainDomain, brand);
+            if (!reasons.some(r => r.includes(linkMainDomain))) {
+                reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
+            }
+            return true;
+        }
+    }
+
+    checkedMainDomains.set(linkMainDomain, null);
+    return false;
+}
+
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
     let linkDomains = [];
@@ -470,35 +499,8 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
             let isLinkKnownBrand = KNOWN_BRANDS_SET.has(linkMainDomain);
 
             if (!isLinkKnownBrand) {
-                let cachedBrandMatch = checkedMainDomains.get(linkMainDomain);
-                if (cachedBrandMatch !== undefined) {
-                    if (cachedBrandMatch !== null) {
-                        typosquatLinkFound = true;
-                        if (!reasons.some(r => r.includes(linkMainDomain))) {
-                            reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${cachedBrandMatch}.`);
-                        }
-                    }
-                    continue;
-                }
-
-                let foundTyposquat = false;
-                for (let brand of KNOWN_BRANDS) {
-                    if (linkMainDomain.length < 4 || Math.abs(linkMainDomain.length - brand.length) > 2) continue;
-
-                    let distance = levenshteinDistance(linkMainDomain, brand);
-                    if (distance > 0 && distance <= 2) {
-                        foundTyposquat = true;
-                        typosquatLinkFound = true;
-                        checkedMainDomains.set(linkMainDomain, brand);
-                        if (!reasons.some(r => r.includes(linkMainDomain))) {
-                            reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
-                        }
-                        // Found a match, no need to check other brands for the same domain
-                        break;
-                    }
-                }
-                if (!foundTyposquat) {
-                    checkedMainDomains.set(linkMainDomain, null);
+                if (checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons)) {
+                    typosquatLinkFound = true;
                 }
             }
         }
