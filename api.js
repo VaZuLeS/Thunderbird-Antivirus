@@ -403,9 +403,7 @@ async function fetch_hybrid_report(hybrid_sha) {
     const fetchPromise = (async () => {
         try {
             const response = await fetch(options.url, options);
-            console.log(response);
             const json_data = await response.json();
-            console.log(json_data);
 
             const result = { response, json_data };
             if (response.status !== 200) {
