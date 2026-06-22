@@ -1021,7 +1021,6 @@ async function process_single_attachment(message, attachment) {
             const content_of_atachment = file.slice();
             const arrayBuffer = await content_of_atachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
-            console.log("Lokaler SHA-256:", local_hash);
 
             let virustotal_stats = null;
             if (apikey_virustotal) {
