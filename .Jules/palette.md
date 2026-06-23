@@ -64,3 +64,6 @@
 ## 2026-06-25 - ARIA Status Role on Empty State Cards
 **Learning:** Dynamically generated "empty state" cards (e.g. indicating no attachments or analysis results were found) injected into the DOM after an asynchronous operation are not automatically announced by screen readers. This leaves visually impaired users unaware that an operation has completed with no results.
 **Action:** When generating dynamic empty state cards or informational containers post-load, always add `role="status"` or `aria-live="polite"` so screen readers proactively announce these critical updates.
+## 2024-06-25 - Mocking setAttribute in Test Environments
+**Learning:** When adding `setAttribute` calls to dynamic DOM elements (e.g. for ARIA attributes on empty states), test environments using mock DOMs will fail with `TypeError` if those methods are not implemented on the mock objects.
+**Action:** When modifying code that creates DOM elements to include new attribute manipulations, always update the corresponding mock element definitions in the test suite to provide stub functions for these methods to prevent `TypeError`s during test execution.
