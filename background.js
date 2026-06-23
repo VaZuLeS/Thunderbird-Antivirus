@@ -60,8 +60,15 @@ const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?
 const GLOBAL_URL_REGEX = /(https?:\/\/[^\s"'<>]+)/g;
 
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
-// ⚡ Bolt Optimization: Removed redundant 'i' flag since input text is pre-lowercased
-const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_WORDS.join('|')})(?=[^\\wäöüßÄÖÜ]|$)`, 'g');
+
+function isWordChar(code) {
+    if (code >= 97 && code <= 122) return true; // a-z
+    if (code >= 48 && code <= 57) return true; // 0-9
+    if (code >= 65 && code <= 90) return true; // A-Z
+    if (code === 95) return true; // _
+    if (code === 228 || code === 246 || code === 252 || code === 223 || code === 196 || code === 214 || code === 220) return true; // ä, ö, ü, ß, Ä, Ö, Ü
+    return false;
+}
 
 // Einstellungen laden
 async function loadSettings() {
@@ -356,14 +363,33 @@ function evaluateBehavior(subject, messageText, isFirstCommunication, score, rea
     // match group inside the hot loop, reducing memory allocations while keeping the extracted
     // terms normalized for deduplication.
     let textToAnalyze = (subject + " " + messageText).toLowerCase();
-    // ⚡ Bolt Optimization: Replace Set and Array.from with standard array and indexOf
-    // to reduce allocation overhead when parsing megabytes of message body.
+    // ⚡ Bolt Optimization: Replace regex loop with indexOf and manual boundary checks
+    // to avoid regex engine overhead and match group allocations for large text payloads.
     let foundUrgencyWords = [];
-    let match;
-    URGENCY_REGEX_COMBINED.lastIndex = 0;
-    while ((match = URGENCY_REGEX_COMBINED.exec(textToAnalyze)) !== null) {
-        if (foundUrgencyWords.indexOf(match[1]) === -1) {
-            foundUrgencyWords.push(match[1]);
+    let textLen = textToAnalyze.length;
+    for (let i = 0; i < URGENCY_WORDS.length; i++) {
+        let word = URGENCY_WORDS[i];
+        let pos = 0;
+        let wordLen = word.length;
+        while ((pos = textToAnalyze.indexOf(word, pos)) !== -1) {
+            let leftOk = true;
+            if (pos > 0) {
+                let code = textToAnalyze.charCodeAt(pos - 1);
+                if (isWordChar(code)) leftOk = false;
+            }
+            if (leftOk) {
+                let rightOk = true;
+                let rightPos = pos + wordLen;
+                if (rightPos < textLen) {
+                    let code = textToAnalyze.charCodeAt(rightPos);
+                    if (isWordChar(code)) rightOk = false;
+                }
+                if (rightOk) {
+                    foundUrgencyWords.push(word);
+                    break;
+                }
+            }
+            pos += 1;
         }
     }
 
