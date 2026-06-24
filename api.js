@@ -306,10 +306,14 @@ function renderScannerResults(scanners, card) {
             }
         }
     } else {
+        const emptyCard = document.createElement('div');
+        emptyCard.className = 'card card-info mt-2';
+        emptyCard.setAttribute('role', 'status');
         const pNoScanners = document.createElement('p');
-        pNoScanners.className = "ml-2";
+        pNoScanners.className = 'text-info';
         pNoScanners.textContent = `Keine Scanner-Ergebnisse verfügbar.`;
-        card.appendChild(pNoScanners);
+        emptyCard.appendChild(pNoScanners);
+        card.appendChild(emptyCard);
     }
 }
 

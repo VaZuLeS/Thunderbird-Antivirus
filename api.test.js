@@ -923,6 +923,7 @@ describe('renderVirusTotalStats', () => {
                         textContent: '',
                         children: [],
                         _innerHTML: null,
+                        setAttribute: () => {},
                         appendChild: function(node) {
                             this.children.push(node);
                         },
@@ -931,7 +932,7 @@ describe('renderVirusTotalStats', () => {
                             return this.children.map(c => {
                                 let cls = c.className ? ` class="${c.className}"` : '';
                                 let inner = c.innerHTML || c.textContent || '';
-                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
+                                return `<${c.tag || tag}${cls}>${inner}</${c.tag || tag}>`;
                             }).join('');
                         },
                         set innerHTML(val) {
@@ -1018,6 +1019,7 @@ describe('renderScannerResults', () => {
                         textContent: '',
                         children: [],
                         _innerHTML: null,
+                        setAttribute: () => {},
                         appendChild: function(node) {
                             this.children.push(node);
                         },
@@ -1026,7 +1028,7 @@ describe('renderScannerResults', () => {
                             return this.children.map(c => {
                                 let cls = c.className ? ` class="${c.className}"` : '';
                                 let inner = c.innerHTML || c.textContent || '';
-                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
+                                return `<${c.tag || tag}${cls}>${inner}</${c.tag || tag}>`;
                             }).join('');
                         },
                         set innerHTML(val) {
@@ -1055,10 +1057,12 @@ describe('renderScannerResults', () => {
     it('should render "Keine Scanner-Ergebnisse verfügbar." if scanners is null or empty', () => {
         const card1 = context.document.createElement('div');
         renderScannerResults(null, card1);
+        assert.ok(card1.innerHTML.includes('class="card card-info mt-2"'));
         assert.ok(card1.innerHTML.includes('Keine Scanner-Ergebnisse verfügbar.'));
 
         const card2 = context.document.createElement('div');
         renderScannerResults([], card2);
+        assert.ok(card2.innerHTML.includes('class="card card-info mt-2"'));
         assert.ok(card2.innerHTML.includes('Keine Scanner-Ergebnisse verfügbar.'));
     });
 
