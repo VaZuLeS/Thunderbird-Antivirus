@@ -64,3 +64,6 @@
 ## 2026-06-25 - ARIA Status Role on Empty State Cards
 **Learning:** Dynamically generated "empty state" cards (e.g. indicating no attachments or analysis results were found) injected into the DOM after an asynchronous operation are not automatically announced by screen readers. This leaves visually impaired users unaware that an operation has completed with no results.
 **Action:** When generating dynamic empty state cards or informational containers post-load, always add `role="status"` or `aria-live="polite"` so screen readers proactively announce these critical updates.
+## 2024-06-26 - Visual Consistency for Generic Messages
+**Learning:** Appending plain HTML `<p>` tags directly to main containers for empty states or generic loading messages breaks visual consistency.
+**Action:** Always wrap empty states or generic messages in `.card.card-info` containers (as defined in `theme.css`) to maintain visual consistency with the repository's design system.

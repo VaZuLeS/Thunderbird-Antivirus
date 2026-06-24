@@ -60,12 +60,18 @@ document.getElementById("MessageHeaderID").textContent = message.headerMessageId
 // Initialen Lade-Status für async Operationen setzen
 let apiContainer = document.getElementById('hybrid_analysis_api_content');
 if (apiContainer) {
+    let cardDiv = document.createElement('div');
+    cardDiv.id = 'thundy-initial-loading';
+    cardDiv.className = 'card card-info mb-3';
+
     let loadingP = document.createElement('p');
-    loadingP.id = 'thundy-initial-loading';
     loadingP.setAttribute('aria-live', 'polite');
     loadingP.setAttribute('role', 'status');
+    loadingP.className = 'text-info';
     loadingP.textContent = 'Lade Analyseergebnisse...';
-    apiContainer.appendChild(loadingP);
+
+    cardDiv.appendChild(loadingP);
+    apiContainer.appendChild(cardDiv);
 }
 
 try {
