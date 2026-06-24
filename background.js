@@ -4,6 +4,8 @@ let authStatus = null;
 let apikey_hybridanalysis;
 let urlhausApikey = "";
 let urlscanApikey = "";
+let apikey_virustotal;
+let privacyTier = "balanced";
 let alwaysManual = false;
 let autoScanLinks = false;
 let timeOfClickProtection = true;
@@ -66,7 +68,13 @@ const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist']);
+    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist']);
+    if (result.virustotalApikey !== undefined) {
+      apikey_virustotal = result.virustotalApikey;
+    }
+    if (result.privacyTier !== undefined) {
+      privacyTier = result.privacyTier;
+    }
     apikey_hybridanalysis = result.apikey;
     if (result.customBlacklist !== undefined) {
       customBlacklist = new Set(result.customBlacklist.map(s => s ? s.toLowerCase() : ""));
@@ -105,6 +113,12 @@ loadSettings();
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.apikey) {
     apikey_hybridanalysis = changes.apikey.newValue;
+  }
+  if (area === 'local' && changes.virustotalApikey !== undefined) {
+    apikey_virustotal = changes.virustotalApikey.newValue;
+  }
+  if (area === 'local' && changes.privacyTier !== undefined) {
+    privacyTier = changes.privacyTier.newValue;
   }
   if (area === 'local' && changes.urlhausApikey !== undefined) {
     urlhausApikey = changes.urlhausApikey.newValue;
@@ -994,6 +1008,54 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
     );
 }
 
+
+async function fetch_virustotal_stats(local_hash, apikey) {
+    if (apikey) {
+        return await checkVirusTotal(local_hash, apikey);
+    }
+    return null;
+}
+
+function create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats) {
+    return HybridDataBuilder.create(
+        'MANUAL_CHECK',
+        'MANUAL_CHECK',
+        local_hash,
+        'MANUAL_CHECK_PENDING',
+        attachment,
+        virustotal_stats
+    );
+}
+
+async function check_hybrid_analysis_for_attachment(local_hash, attachment, content_of_attachment, virustotal_stats, file_type) {
+    const optionsCheck = getHybridAnalysisOptions('GET');
+    optionsCheck.url = 'https://hybrid-analysis.com/api/v2/overview/' + local_hash;
+    const responseCheck = await fetch(optionsCheck.url, optionsCheck);
+
+    if (responseCheck.status === 200) {
+        const json_data = await responseCheck.json();
+        console.log('Datei ist der API bereits bekannt.');
+        return HybridDataBuilder.create(
+            json_data.submission_id || 'N/A',
+            json_data.job_id || 'N/A',
+            local_hash,
+            'KNOWN',
+            attachment,
+            virustotal_stats
+        );
+    } else {
+        return await handle_unknown_attachment({
+            attachment,
+            content_of_attachment,
+            local_hash,
+            virustotal_stats,
+            privacyTier,
+            fileType: file_type
+        });
+    }
+}
+
+
 async function process_single_attachment(message, attachment) {
     let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
 
@@ -1013,46 +1075,23 @@ async function process_single_attachment(message, attachment) {
         console.log(`Berechne lokalen Hash für Datei | Typ: ${attachment.contentType}`);
 
         try {
-            const content_of_atachment = file.slice();
-            const arrayBuffer = await content_of_atachment.arrayBuffer();
+            const content_of_attachment = file.slice();
+            const arrayBuffer = await content_of_attachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
 
-            let virustotal_stats = null;
-            if (apikey_virustotal) {
-                virustotal_stats = await checkVirusTotal(local_hash, apikey_virustotal);
-            }
+            const virustotal_stats = await fetch_virustotal_stats(local_hash, apikey_virustotal);
 
             if (alwaysManual) {
-                return HybridDataBuilder.create(
-                    'MANUAL_CHECK',
-                    'MANUAL_CHECK',
-                    local_hash,
-                    'MANUAL_CHECK_PENDING',
-                    attachment,
-                    virustotal_stats
-                );
+                return create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats);
             }
 
-            // First check if it exists using hash
-            const optionsCheck = getHybridAnalysisOptions('GET');
-            optionsCheck.url = 'https://hybrid-analysis.com/api/v2/overview/' + local_hash;
-
-            const responseCheck = await fetch(optionsCheck.url, optionsCheck);
-
-            if (responseCheck.status === 200) {
-                const json_data = await responseCheck.json();
-                console.log('Datei ist der API bereits bekannt.');
-                return HybridDataBuilder.create(
-                    json_data.submission_id || 'N/A',
-                    json_data.job_id || 'N/A',
-                    local_hash,
-                    'KNOWN',
-                    attachment,
-                    virustotal_stats
-                );
-            } else {
-                return await handle_unknown_attachment({ attachment, content_of_attachment: content_of_atachment, local_hash, virustotal_stats, privacyTier, fileType: file.type });
-            }
+            return await check_hybrid_analysis_for_attachment(
+                local_hash,
+                attachment,
+                content_of_attachment,
+                virustotal_stats,
+                file.type
+            );
 
         } catch (error) {
           console.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
@@ -1060,6 +1099,7 @@ async function process_single_attachment(message, attachment) {
         }
     }
 }
+
 
 async function sent_to_hybrid_by_attachment(message, attachments) {
   if (!apikey_hybridanalysis) {
