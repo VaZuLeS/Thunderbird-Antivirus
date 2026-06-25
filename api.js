@@ -524,6 +524,20 @@ function handle_hybrid_report_error(response, attachmentName) {
     errDiv1.className = 'alert-error';
     errDiv1.setAttribute('role', 'alert');
     errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+
+    if (response.status === 401 || response.status === 403) {
+        errDiv1.appendChild(document.createElement('br'));
+        errDiv1.appendChild(document.createTextNode('Möglicherweise ist der API-Schlüssel ungültig oder abgelaufen.'));
+        let btnSettings = document.createElement('button');
+        btnSettings.className = 'btn-primary mt-2';
+        btnSettings.textContent = 'Einstellungen überprüfen';
+        btnSettings.addEventListener('click', () => {
+            browser.runtime.openOptionsPage();
+        });
+        errDiv1.appendChild(document.createElement('br'));
+        errDiv1.appendChild(btnSettings);
+    }
+
     document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
 }
 

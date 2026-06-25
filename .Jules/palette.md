@@ -67,3 +67,6 @@
 ## 2024-06-26 - Visual Consistency for Generic Messages
 **Learning:** Appending plain HTML `<p>` tags directly to main containers for empty states or generic loading messages breaks visual consistency.
 **Action:** Always wrap empty states or generic messages in `.card.card-info` containers (as defined in `theme.css`) to maintain visual consistency with the repository's design system.
+## 2026-06-25 - Direct Action in Error States
+**Learning:** When displaying an error message about an authentication failure (like an invalid or expired API key, e.g. 401/403 status), requiring the user to manually navigate through menus to find the settings page adds unnecessary friction and degrades the user experience. Adding a direct action button to open the settings resolves this immediately and improves error recovery flow.
+**Action:** When handling authentication-related API errors in the UI, always include a direct call-to-action button using `browser.runtime.openOptionsPage()` to guide the user straight to the configuration settings.
