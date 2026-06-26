@@ -1347,7 +1347,12 @@ async function handleCheckLinkState(request, sender, sendResponse) {
 
         let linkObj = null;
         if (record && record.links) {
-            linkObj = record.links.find(l => l.url.replace(/\/$/, "") === request.url.replace(/\/$/, ""));
+            // ⚡ Bolt Optimization: Precalculate request URL trimming using fast string operations instead of regex
+            const reqUrlTrimmed = request.url.endsWith('/') ? request.url.substring(0, request.url.length - 1) : request.url;
+            linkObj = record.links.find(l => {
+                const lUrlTrimmed = l.url.endsWith('/') ? l.url.substring(0, l.url.length - 1) : l.url;
+                return lUrlTrimmed === reqUrlTrimmed;
+            });
         }
 
         // Time-of-Click Live Scan via urlscan.io
