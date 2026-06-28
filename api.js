@@ -523,7 +523,30 @@ function handle_hybrid_report_error(response, attachmentName) {
     let errDiv1 = document.createElement('div');
     errDiv1.className = 'alert-error';
     errDiv1.setAttribute('role', 'alert');
-    errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+
+    let errMsg = `API Error: ${response.status} für Element ${attachmentName}`;
+    if (response.status === 401 || response.status === 403) {
+        errMsg = `API Fehler ${response.status} (Zugriff verweigert) für Element ${attachmentName}. Bitte prüfen Sie Ihren API-Schlüssel.`;
+    } else if (response.status === 429) {
+        errMsg = `API Fehler 429 (Rate Limit erreicht) für Element ${attachmentName}. Bitte warten Sie einen Moment.`;
+    }
+
+    let strong = document.createElement('strong');
+    strong.textContent = 'Fehler: ';
+    errDiv1.appendChild(strong);
+    errDiv1.appendChild(document.createTextNode(errMsg));
+
+    if (response.status === 401 || response.status === 403) {
+        let btnSettings = document.createElement('button');
+        btnSettings.className = 'btn-primary mt-2 ml-2';
+        btnSettings.textContent = 'Einstellungen öffnen';
+        btnSettings.addEventListener('click', () => {
+            browser.runtime.openOptionsPage();
+        });
+        errDiv1.appendChild(document.createElement('br'));
+        errDiv1.appendChild(btnSettings);
+    }
+
     document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
 }
 
