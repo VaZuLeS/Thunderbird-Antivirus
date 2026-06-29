@@ -47,3 +47,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** A missing/undefined `setElementText` function was called within `api.js` (lines 626 and 690) when updating UI status during file uploads or local CDR operations. If triggered, this would cause a `ReferenceError`, crashing the UI event handlers and potentially causing a localized Denial-of-Service for that UI view.
 **Learning:** Functions removed during refactoring or global cleanup can leave trailing calls in event listeners that aren't evaluated until execution.
 **Prevention:** Use standard DOM assignments (e.g. `el.textContent`) instead of custom global helper functions where possible, or use strict linting to catch undefined function calls at build time.
+
+## 2026-07-28 - Unsafe URL parsing bypassing specification rules
+**Vulnerability:** A custom string extraction method `getHostnameOptimized` used a regular expression to parse URLs for performance reasons. This bypassed standard browser URL specification parsing, allowing attackers to spoof hostnames using backslashes or unexpected tokens, leading to potential security vulnerabilities.
+**Learning:** Implementing manual, non-compliant URL parsers for speed sacrifices critical security guarantees provided by native URL objects.
+**Prevention:** Always use the built-in `new URL(url).hostname` wrapped in a `try/catch` block for secure and compliant URL parsing, even in performance-sensitive paths.
