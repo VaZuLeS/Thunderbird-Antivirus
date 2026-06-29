@@ -679,7 +679,7 @@ async function checkIPReputation(receivedHeaders) {
             })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
-                ipReputationCache.clear();
+                ipReputationCache.delete(ipReputationCache.keys().next().value);
             }
             ipReputationCache.set(ip, promise);
 
@@ -710,8 +710,8 @@ async function checkFirstCommunication(senderEmail) {
                 if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
                     isFirstCommunication = true;
                 } else {
-                    if (knownSendersCache.size > MAX_KNOWN_SENDERS) {
-                        knownSendersCache.clear();
+                    if (knownSendersCache.size >= MAX_KNOWN_SENDERS) {
+                        knownSendersCache.delete(knownSendersCache.keys().next().value);
                     }
                     knownSendersCache.add(senderEmail);
                 }
