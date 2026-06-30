@@ -679,7 +679,8 @@ async function checkIPReputation(receivedHeaders) {
             })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
-                ipReputationCache.clear();
+                const firstKey = ipReputationCache.keys().next().value;
+                ipReputationCache.delete(firstKey);
             }
             ipReputationCache.set(ip, promise);
 
@@ -711,7 +712,8 @@ async function checkFirstCommunication(senderEmail) {
                     isFirstCommunication = true;
                 } else {
                     if (knownSendersCache.size > MAX_KNOWN_SENDERS) {
-                        knownSendersCache.clear();
+                        const firstKey = knownSendersCache.keys().next().value;
+                        knownSendersCache.delete(firstKey);
                     }
                     knownSendersCache.add(senderEmail);
                 }
