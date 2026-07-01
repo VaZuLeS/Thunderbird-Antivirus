@@ -67,3 +67,6 @@
 ## 2024-06-26 - Visual Consistency for Generic Messages
 **Learning:** Appending plain HTML `<p>` tags directly to main containers for empty states or generic loading messages breaks visual consistency.
 **Action:** Always wrap empty states or generic messages in `.card.card-info` containers (as defined in `theme.css`) to maintain visual consistency with the repository's design system.
+## 2024-07-01 - Visual Success States for Async Buttons
+**Learning:** During testing and observation of asynchronous UI actions (like file upload, rescans, or downloading sanitized files), buttons commonly removed their loading attributes (`aria-busy`) but failed to provide an immediate visual confirmation of success before the next application state triggered (e.g. a page reload or element removal). This left the user looking at a button that appeared stuck in a "Loading..." state.
+**Action:** Always ensure that upon the successful resolution of an asynchronous action, the interactive element (button) immediately transitions to an explicit success state (e.g., updating `className` to `btn-success` and changing text to "Erfolgreich") to provide clear visual feedback. Always use `grep` to find and update any affected assertions in the test suite to match the new behavior.
