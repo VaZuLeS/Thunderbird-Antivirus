@@ -679,7 +679,9 @@ async function checkIPReputation(receivedHeaders) {
             })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
-                ipReputationCache.clear();
+                // ⚡ Bolt Optimization: Use FIFO eviction instead of .clear() to prevent massive cache miss spikes
+                const firstKey = ipReputationCache.keys().next().value;
+                ipReputationCache.delete(firstKey);
             }
             ipReputationCache.set(ip, promise);
 
@@ -710,8 +712,10 @@ async function checkFirstCommunication(senderEmail) {
                 if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
                     isFirstCommunication = true;
                 } else {
-                    if (knownSendersCache.size > MAX_KNOWN_SENDERS) {
-                        knownSendersCache.clear();
+                    if (knownSendersCache.size >= MAX_KNOWN_SENDERS) {
+                        // ⚡ Bolt Optimization: Use FIFO eviction instead of .clear() to prevent massive cache miss spikes
+                        const firstItem = knownSendersCache.keys().next().value;
+                        knownSendersCache.delete(firstItem);
                     }
                     knownSendersCache.add(senderEmail);
                 }
