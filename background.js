@@ -679,7 +679,7 @@ async function checkIPReputation(receivedHeaders) {
             })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
-                ipReputationCache.clear();
+                ipReputationCache.delete(ipReputationCache.keys().next().value); // ⚡ Bolt Optimization: Use FIFO cache eviction instead of full clear to prevent mass cache misses
             }
             ipReputationCache.set(ip, promise);
 
@@ -711,7 +711,7 @@ async function checkFirstCommunication(senderEmail) {
                     isFirstCommunication = true;
                 } else {
                     if (knownSendersCache.size > MAX_KNOWN_SENDERS) {
-                        knownSendersCache.clear();
+                        knownSendersCache.delete(knownSendersCache.keys().next().value); // ⚡ Bolt Optimization: Use FIFO cache eviction instead of full clear to prevent mass cache misses
                     }
                     knownSendersCache.add(senderEmail);
                 }
