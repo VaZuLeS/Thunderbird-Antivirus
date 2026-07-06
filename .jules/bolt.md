@@ -10,7 +10,4 @@
 ## 2024-08-15 - Regex vs IndexOf for Large String Dictionary Scanning
 **Learning:** Using multi-term global Regular Expressions (like `(?:word1|word2)` with `.exec()`) inside a `while` loop to scan very large strings (e.g., multi-megabyte email bodies) causes significant performance degradation due to engine overhead and excessive garbage collection from match group allocations.
 **Action:** When scanning large texts for a predefined dictionary of words, iterate over an array of the words and use `String.prototype.indexOf()` combined with fast mathematical boundary checks via `charCodeAt()`. This approach avoids regex engine overhead and memory allocations, resulting in dramatically faster execution times.
-
-## 2024-06-28 - Cache Eviction Optimization
-**Learning:** Using .clear() on size-limited caches causes massive miss spikes upon overflow. Removing only the oldest entry preserves hot items.
-**Action:** Use .delete(cache.keys().next().value) instead of .clear() for capacity-limited maps and sets.
+## 2024-10-15 - Cache Eviction Strategy\n**Learning:** When caches like Map or Set reach max capacity, using `.clear()` drops everything, causing a thundering herd of cache misses. Using `.delete(cache.keys().next().value)` for FIFO eviction prevents this.\n**Action:** Use FIFO eviction instead of `.clear()` to maintain hit rates when managing fixed-size caches.
