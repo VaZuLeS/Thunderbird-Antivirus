@@ -464,20 +464,12 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
     return { score, senderMainDomain };
 }
 
-// Precompiled regex for faster URL hostname extraction without new URL() overhead
-const HTTP_HOSTNAME_EXTRACTOR = /^(?:https?:\/\/)([^\/\?#\\]+)/i;
-
 function getHostnameOptimized(url) {
-    let match = HTTP_HOSTNAME_EXTRACTOR.exec(url);
-    if (match) {
-        let host = match[1];
-        // Fallback to new URL if complex parsing is needed (e.g. basic auth, ports, IPv6)
-        if (host.includes('@') || host.includes(':')) {
-             return new URL(url).hostname;
-        }
-        return host.toLowerCase();
+    try {
+        return new URL(url).hostname.toLowerCase();
+    } catch (e) {
+        return null;
     }
-    return new URL(url).hostname.toLowerCase();
 }
 
 function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
@@ -516,6 +508,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
         try {
             // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
             let hostname = getHostnameOptimized(url);
+            if (!hostname) continue;
             if (linkDomains.indexOf(hostname) === -1) {
                 linkDomains.push(hostname);
             }
@@ -679,7 +672,8 @@ async function checkIPReputation(receivedHeaders) {
             })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
-                ipReputationCache.delete(ipReputationCache.keys().next().value); // ⚡ Bolt Optimization: Use FIFO cache eviction instead of full clear to prevent mass cache misses
+                // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
+                ipReputationCache.delete(ipReputationCache.keys().next().value);
             }
             ipReputationCache.set(ip, promise);
 
@@ -711,7 +705,8 @@ async function checkFirstCommunication(senderEmail) {
                     isFirstCommunication = true;
                 } else {
                     if (knownSendersCache.size > MAX_KNOWN_SENDERS) {
-                        knownSendersCache.delete(knownSendersCache.keys().next().value); // ⚡ Bolt Optimization: Use FIFO cache eviction instead of full clear to prevent mass cache misses
+                        // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
+                        knownSendersCache.delete(knownSendersCache.keys().next().value);
                     }
                     knownSendersCache.add(senderEmail);
                 }
@@ -732,6 +727,7 @@ async function checkURLhausDomains(filteredUrls) {
             try {
                 // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
                 let hostname = getHostnameOptimized(url);
+                if (!hostname) continue;
                 if (linkDomains.indexOf(hostname) === -1) {
                     linkDomains.push(hostname);
                 }
@@ -961,6 +957,7 @@ function filterUrls(urls) {
         try {
             // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
             let hostname = getHostnameOptimized(url);
+            if (!hostname) return false;
             // ⚡ Bolt Optimization: Use precompiled regex instead of iterating over ignoredDomains array
             return !IGNORED_DOMAINS_REGEX.test(hostname);
         } catch (e) {
