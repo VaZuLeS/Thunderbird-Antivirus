@@ -506,8 +506,10 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     let linkDomains = [];
     for (let url of urls) {
         try {
+            // 🛡️ Sentinel: Use standard URL parser safely
             let hostname = getHostnameOptimized(url);
-            if (hostname && linkDomains.indexOf(hostname) === -1) {
+            if (!hostname) continue;
+            if (linkDomains.indexOf(hostname) === -1) {
                 linkDomains.push(hostname);
             }
         } catch (e) { /* Ignore invalid URLs */ }
@@ -670,7 +672,8 @@ async function checkIPReputation(receivedHeaders) {
             })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
-                ipReputationCache.clear();
+                // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
+                ipReputationCache.delete(ipReputationCache.keys().next().value);
             }
             ipReputationCache.set(ip, promise);
 
@@ -702,7 +705,8 @@ async function checkFirstCommunication(senderEmail) {
                     isFirstCommunication = true;
                 } else {
                     if (knownSendersCache.size > MAX_KNOWN_SENDERS) {
-                        knownSendersCache.clear();
+                        // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
+                        knownSendersCache.delete(knownSendersCache.keys().next().value);
                     }
                     knownSendersCache.add(senderEmail);
                 }
@@ -721,8 +725,10 @@ async function checkURLhausDomains(filteredUrls) {
         let linkDomains = [];
         for (let url of filteredUrls) {
             try {
+                // 🛡️ Sentinel: Use standard URL parser safely
                 let hostname = getHostnameOptimized(url);
-                if (hostname && linkDomains.indexOf(hostname) === -1) {
+                if (!hostname) continue;
+                if (linkDomains.indexOf(hostname) === -1) {
                     linkDomains.push(hostname);
                 }
             } catch (e) { /* Ignore invalid URLs */ }
@@ -949,9 +955,11 @@ const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d
 function filterUrls(urls) {
     return urls.filter(url => {
         try {
+            // 🛡️ Sentinel: Use standard URL parser safely
             let hostname = getHostnameOptimized(url);
+            if (!hostname) return false;
             // ⚡ Bolt Optimization: Use precompiled regex instead of iterating over ignoredDomains array
-            return hostname && !IGNORED_DOMAINS_REGEX.test(hostname);
+            return hostname ? !IGNORED_DOMAINS_REGEX.test(hostname) : false;
         } catch (e) {
             return false; // Ungültige URL
         }
@@ -1336,7 +1344,12 @@ async function handleCheckLinkState(request, sender, sendResponse) {
 
         let linkObj = null;
         if (record && record.links) {
-            linkObj = record.links.find(l => l.url.replace(/\/$/, "") === request.url.replace(/\/$/, ""));
+            // ⚡ Optimize URL normalization: Move requestUrl processing out of loop and use fast string methods over Regex
+            const reqUrl = request.url.endsWith("/") ? request.url.slice(0, -1) : request.url;
+            linkObj = record.links.find(l => {
+                const lUrl = l.url.endsWith("/") ? l.url.slice(0, -1) : l.url;
+                return lUrl === reqUrl;
+            });
         }
 
         // Time-of-Click Live Scan via urlscan.io
