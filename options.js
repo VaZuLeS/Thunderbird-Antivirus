@@ -55,12 +55,17 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   document.getElementById('save').addEventListener('click', function() {
+    const apikeyInput = document.getElementById('apikey');
+    if (!apikeyInput.reportValidity()) {
+        return;
+    }
+
     const saveBtn = document.getElementById('save');
     saveBtn.disabled = true;
     saveBtn.setAttribute('aria-busy', 'true');
     saveBtn.textContent = 'Wird gespeichert...';
 
-    let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
+    let mySetting = apikeyInput.value.trim().replace(/\r|\n/g, '');
     let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
     let urlscanSetting = document.getElementById('urlscanApikey').value.trim().replace(/\r|\n/g, '');
     let virustotalSetting = document.getElementById('virustotalApikey').value.trim().replace(/\r|\n/g, '');
