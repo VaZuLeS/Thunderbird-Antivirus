@@ -67,6 +67,10 @@
 ## 2024-06-26 - Visual Consistency for Generic Messages
 **Learning:** Appending plain HTML `<p>` tags directly to main containers for empty states or generic loading messages breaks visual consistency.
 **Action:** Always wrap empty states or generic messages in `.card.card-info` containers (as defined in `theme.css`) to maintain visual consistency with the repository's design system.
-## 2024-07-01 - Visual Success States for Async Buttons
-**Learning:** During testing and observation of asynchronous UI actions (like file upload, rescans, or downloading sanitized files), buttons commonly removed their loading attributes (`aria-busy`) but failed to provide an immediate visual confirmation of success before the next application state triggered (e.g. a page reload or element removal). This left the user looking at a button that appeared stuck in a "Loading..." state.
-**Action:** Always ensure that upon the successful resolution of an asynchronous action, the interactive element (button) immediately transitions to an explicit success state (e.g., updating `className` to `btn-success` and changing text to "Erfolgreich") to provide clear visual feedback. Always use `grep` to find and update any affected assertions in the test suite to match the new behavior.
+## 2026-06-25 - Avoid Generic Classes in Content Scripts
+**Learning:** Injecting generic CSS class names (like `text-danger`) into third-party web pages via content scripts risks style collisions with the host page's CSS (e.g., Bootstrap).
+**Action:** When working in content scripts, prefer inline styles or strictly namespaced classes (e.g., `thundy-text-danger`) over generic classes to ensure styles render consistently without interfering with the host page.
+
+## 2026-06-25 - Actionable Error States
+**Learning:** Displaying a generic API error (e.g., HTTP 401) forces the user to manually navigate menus to find the settings to fix their API key, adding unnecessary friction.
+**Action:** When addressing API failures or configuration errors (e.g., 401/403), always provide a direct, actionable resolution path, such as appending a button that calls `browser.runtime.openOptionsPage()` to open the settings directly.

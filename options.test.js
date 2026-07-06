@@ -170,6 +170,7 @@ describe('options.js', () => {
     });
 
     it('should handle save error', async () => {
+        context.document.getElementById('apikey').value = 'dummy-key';
         context.browser.storage.local.set = async () => {
             throw new Error("mock error");
         };
