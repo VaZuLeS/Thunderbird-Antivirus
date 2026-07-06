@@ -51,6 +51,19 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Informationen.
 let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
 
+if (!message) {
+    let container = document.getElementById('hybrid_analysis_api_content');
+    container.textContent = '';
+    let emptyCard = document.createElement('div');
+    emptyCard.className = 'card card-info mt-3';
+    emptyCard.setAttribute('role', 'status');
+    let msg = document.createElement('p');
+    msg.className = 'text-info';
+    msg.textContent = "Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.";
+    emptyCard.appendChild(msg);
+    container.appendChild(emptyCard);
+    return;
+}
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
 document.getElementById("subject").textContent = message.subject;
