@@ -67,3 +67,6 @@
 ## 2024-06-26 - Visual Consistency for Generic Messages
 **Learning:** Appending plain HTML `<p>` tags directly to main containers for empty states or generic loading messages breaks visual consistency.
 **Action:** Always wrap empty states or generic messages in `.card.card-info` containers (as defined in `theme.css`) to maintain visual consistency with the repository's design system.
+## 2024-07-06 - Inline Form Validation with reportValidity()
+**Learning:** Preventing a form from submitting when required fields are empty using basic JavaScript checks does not trigger the browser's native accessibility validation warnings. Using the native `reportValidity()` function provides a localized tooltip directly on the offending input and triggers screen reader announcements automatically.
+**Action:** When intercepting save/submit actions for forms with required inputs, use `inputElement.reportValidity()` to halt the save process and provide standard, accessible validation feedback instead of silently failing or implementing custom alert logic.
