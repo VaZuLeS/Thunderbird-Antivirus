@@ -1344,7 +1344,12 @@ async function handleCheckLinkState(request, sender, sendResponse) {
 
         let linkObj = null;
         if (record && record.links) {
-            linkObj = record.links.find(l => l.url.replace(/\/$/, "") === request.url.replace(/\/$/, ""));
+            // ⚡ Optimize URL normalization: Move requestUrl processing out of loop and use fast string methods over Regex
+            const reqUrl = request.url.endsWith("/") ? request.url.slice(0, -1) : request.url;
+            linkObj = record.links.find(l => {
+                const lUrl = l.url.endsWith("/") ? l.url.slice(0, -1) : l.url;
+                return lUrl === reqUrl;
+            });
         }
 
         // Time-of-Click Live Scan via urlscan.io
