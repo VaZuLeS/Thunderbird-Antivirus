@@ -524,6 +524,19 @@ function handle_hybrid_report_error(response, attachmentName) {
     errDiv1.className = 'alert-error';
     errDiv1.setAttribute('role', 'alert');
     errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+
+    if (response.status === 401 || response.status === 403) {
+        errDiv1.textContent += ' (Möglicherweise ungültiger oder fehlender API-Schlüssel).';
+        let btnSettings = document.createElement('button');
+        btnSettings.className = 'btn-primary mt-2 ml-2';
+        btnSettings.textContent = 'Einstellungen öffnen';
+        btnSettings.addEventListener('click', () => {
+            browser.runtime.openOptionsPage();
+        });
+        errDiv1.appendChild(document.createElement('br'));
+        errDiv1.appendChild(btnSettings);
+    }
+
     document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
 }
 
