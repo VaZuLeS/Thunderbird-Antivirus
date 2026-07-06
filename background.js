@@ -506,7 +506,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     let linkDomains = [];
     for (let url of urls) {
         try {
-            // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
+            // 🛡️ Sentinel: Use standard URL parser safely
             let hostname = getHostnameOptimized(url);
             if (!hostname) continue;
             if (linkDomains.indexOf(hostname) === -1) {
@@ -725,7 +725,7 @@ async function checkURLhausDomains(filteredUrls) {
         let linkDomains = [];
         for (let url of filteredUrls) {
             try {
-                // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
+                // 🛡️ Sentinel: Use standard URL parser safely
                 let hostname = getHostnameOptimized(url);
                 if (!hostname) continue;
                 if (linkDomains.indexOf(hostname) === -1) {
@@ -955,11 +955,11 @@ const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d
 function filterUrls(urls) {
     return urls.filter(url => {
         try {
-            // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
+            // 🛡️ Sentinel: Use standard URL parser safely
             let hostname = getHostnameOptimized(url);
             if (!hostname) return false;
             // ⚡ Bolt Optimization: Use precompiled regex instead of iterating over ignoredDomains array
-            return !IGNORED_DOMAINS_REGEX.test(hostname);
+            return hostname ? !IGNORED_DOMAINS_REGEX.test(hostname) : false;
         } catch (e) {
             return false; // Ungültige URL
         }
