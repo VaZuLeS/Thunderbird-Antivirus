@@ -679,7 +679,8 @@ async function checkIPReputation(receivedHeaders) {
             })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
-                ipReputationCache.clear();
+                // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
+                ipReputationCache.delete(ipReputationCache.keys().next().value);
             }
             ipReputationCache.set(ip, promise);
 
@@ -711,7 +712,8 @@ async function checkFirstCommunication(senderEmail) {
                     isFirstCommunication = true;
                 } else {
                     if (knownSendersCache.size > MAX_KNOWN_SENDERS) {
-                        knownSendersCache.clear();
+                        // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
+                        knownSendersCache.delete(knownSendersCache.keys().next().value);
                     }
                     knownSendersCache.add(senderEmail);
                 }
