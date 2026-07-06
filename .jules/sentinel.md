@@ -47,8 +47,7 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** A missing/undefined `setElementText` function was called within `api.js` (lines 626 and 690) when updating UI status during file uploads or local CDR operations. If triggered, this would cause a `ReferenceError`, crashing the UI event handlers and potentially causing a localized Denial-of-Service for that UI view.
 **Learning:** Functions removed during refactoring or global cleanup can leave trailing calls in event listeners that aren't evaluated until execution.
 **Prevention:** Use standard DOM assignments (e.g. `el.textContent`) instead of custom global helper functions where possible, or use strict linting to catch undefined function calls at build time.
-
-## 2026-07-02 - Fast Path URL Hostname Extraction Bypass
-**Vulnerability:** The custom regex parsing for URL hostnames to optimize performance allowed attackers to bypass domain checks using backslashes (`http://example.com\@evil.com/`). This broke URL parsing specifications and allowed hostname spoofing.
-**Learning:** Custom string manipulation for URL parsing often introduces edge cases that deviate from standard browser logic.
-**Prevention:** Always use standard `new URL(url).hostname` wrapped in a `try/catch` block for secure and accurate URL parsing.
+## 2026-07-06 - Fix Hostname Spoofing via Manual Regex Parsing
+**Vulnerability:** The `getHostnameOptimized` function used unsafe manual Regex string manipulation to extract URL hostnames, enabling hostname spoofing and filter evasion.
+**Learning:** Manual string operations and regex applied to standard URIs can easily break URL specifications and miss complex evasion techniques (e.g. unexpected credentials, ports, slashes).
+**Prevention:** Always strictly use the built-in `new URL(url).hostname` wrapped in a `try/catch` block for safe, spec-compliant URL parsing.
