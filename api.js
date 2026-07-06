@@ -51,6 +51,19 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Informationen.
 let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
 
+if (!message) {
+    let container = document.getElementById('hybrid_analysis_api_content');
+    container.textContent = '';
+    let emptyCard = document.createElement('div');
+    emptyCard.className = 'card card-info mt-3';
+    emptyCard.setAttribute('role', 'status');
+    let msg = document.createElement('p');
+    msg.className = 'text-info';
+    msg.textContent = "Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.";
+    emptyCard.appendChild(msg);
+    container.appendChild(emptyCard);
+    return;
+}
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
 document.getElementById("subject").textContent = message.subject;
@@ -524,6 +537,19 @@ function handle_hybrid_report_error(response, attachmentName) {
     errDiv1.className = 'alert-error';
     errDiv1.setAttribute('role', 'alert');
     errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+
+    if (response.status === 401 || response.status === 403) {
+        errDiv1.textContent += ' (Möglicherweise ungültiger oder fehlender API-Schlüssel).';
+        let btnSettings = document.createElement('button');
+        btnSettings.className = 'btn-primary mt-2 ml-2';
+        btnSettings.textContent = 'Einstellungen öffnen';
+        btnSettings.addEventListener('click', () => {
+            browser.runtime.openOptionsPage();
+        });
+        errDiv1.appendChild(document.createElement('br'));
+        errDiv1.appendChild(btnSettings);
+    }
+
     document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
 }
 
