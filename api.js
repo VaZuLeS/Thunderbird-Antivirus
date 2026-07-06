@@ -51,6 +51,19 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Informationen.
 let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
 
+if (!message) {
+    let container = document.getElementById('hybrid_analysis_api_content');
+    container.textContent = '';
+    let emptyCard = document.createElement('div');
+    emptyCard.className = 'card card-info mt-3';
+    emptyCard.setAttribute('role', 'status');
+    let msg = document.createElement('p');
+    msg.className = 'text-info';
+    msg.textContent = "Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.";
+    emptyCard.appendChild(msg);
+    container.appendChild(emptyCard);
+    return;
+}
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
 document.getElementById("subject").textContent = message.subject;
@@ -453,6 +466,8 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
                 if (res && res.status === 'success') {
                     statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
                     btn.removeAttribute('aria-busy');
+                    btn.className = "btn-success mt-2";
+                    btn.innerText = "Erfolgreich";
                     setTimeout(() => {
                         window.location.reload();
                     }, 2000);
@@ -492,6 +507,7 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
                 if (res && res.status === 'success') {
                     statusEl.innerText = "Herunterladen erfolgreich initiiert.";
                     btn.removeAttribute('aria-busy');
+                    btn.className = "btn-success mt-2 ml-2";
                     btn.innerText = "Bereinigt";
                 } else {
                     statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
@@ -523,20 +539,10 @@ function handle_hybrid_report_error(response, attachmentName) {
     let errDiv1 = document.createElement('div');
     errDiv1.className = 'alert-error';
     errDiv1.setAttribute('role', 'alert');
-
-    let errMsg = `API Error: ${response.status} für Element ${attachmentName}`;
-    if (response.status === 401 || response.status === 403) {
-        errMsg = `API Fehler ${response.status} (Zugriff verweigert) für Element ${attachmentName}. Bitte prüfen Sie Ihren API-Schlüssel.`;
-    } else if (response.status === 429) {
-        errMsg = `API Fehler 429 (Rate Limit erreicht) für Element ${attachmentName}. Bitte warten Sie einen Moment.`;
-    }
-
-    let strong = document.createElement('strong');
-    strong.textContent = 'Fehler: ';
-    errDiv1.appendChild(strong);
-    errDiv1.appendChild(document.createTextNode(errMsg));
+    errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
 
     if (response.status === 401 || response.status === 403) {
+        errDiv1.textContent += ' (Möglicherweise ungültiger oder fehlender API-Schlüssel).';
         let btnSettings = document.createElement('button');
         btnSettings.className = 'btn-primary mt-2 ml-2';
         btnSettings.textContent = 'Einstellungen öffnen';
@@ -588,6 +594,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
         if (response && response.status === 'success') {
             statusEl.innerText = "Scan erfolgreich beauftragt! Lade Analyseergebnisse...";
             btn.removeAttribute('aria-busy');
+            btn.className = "btn-success mt-2";
+            btn.innerText = "Erfolgreich";
             setTimeout(() => {
                 document.getElementById(`upload-container-${urlId}`).remove();
                 // response.data.sha256 enthält den sha256-Hash des URL-Scans
@@ -675,6 +683,8 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
             if (response && response.status === 'success') {
                 if (statusEl) statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
                 btn.removeAttribute('aria-busy');
+                btn.className = "btn-success mt-2";
+                btn.innerText = "Erfolgreich";
                 setTimeout(() => {
                     let container = document.getElementById(`upload-container-${safeHash}`);
                     if (container) container.remove();
@@ -753,8 +763,11 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
         }).then(res => {
             if (res && res.status === 'success') {
                 if (statusEl) statusEl.innerText = "Herunterladen erfolgreich initiiert.";
-                if (btn) btn.removeAttribute('aria-busy');
-                btn.innerText = "Bereinigt";
+                if (btn) {
+                    btn.removeAttribute('aria-busy');
+                    btn.className = "btn-success mt-2 ml-2";
+                    btn.innerText = "Bereinigt";
+                }
             } else {
                 if (statusEl) statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
                 btn.disabled = false;

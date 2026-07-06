@@ -1265,6 +1265,8 @@ describe('createUploadButton', () => {
 
         assert.strictEqual(status.innerText, 'Upload erfolgreich! Lade Analyseergebnisse...');
         assert.strictEqual(btn['aria-busy'], undefined); // removed
+        assert.strictEqual(btn.className, 'btn-success mt-2');
+        assert.strictEqual(btn.innerText, 'Erfolgreich');
 
         // Check timeout
         assert.strictEqual(context.timeouts.length, 1);
