@@ -464,20 +464,12 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
     return { score, senderMainDomain };
 }
 
-// Precompiled regex for faster URL hostname extraction without new URL() overhead
-const HTTP_HOSTNAME_EXTRACTOR = /^(?:https?:\/\/)([^\/\?#\\]+)/i;
-
 function getHostnameOptimized(url) {
-    let match = HTTP_HOSTNAME_EXTRACTOR.exec(url);
-    if (match) {
-        let host = match[1];
-        // Fallback to new URL if complex parsing is needed (e.g. basic auth, ports, IPv6)
-        if (host.includes('@') || host.includes(':')) {
-             return new URL(url).hostname;
-        }
-        return host.toLowerCase();
+    try {
+        return new URL(url).hostname.toLowerCase();
+    } catch (e) {
+        return null;
     }
-    return new URL(url).hostname.toLowerCase();
 }
 
 function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
@@ -514,9 +506,8 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     let linkDomains = [];
     for (let url of urls) {
         try {
-            // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
             let hostname = getHostnameOptimized(url);
-            if (linkDomains.indexOf(hostname) === -1) {
+            if (hostname && linkDomains.indexOf(hostname) === -1) {
                 linkDomains.push(hostname);
             }
         } catch (e) { /* Ignore invalid URLs */ }
@@ -730,9 +721,8 @@ async function checkURLhausDomains(filteredUrls) {
         let linkDomains = [];
         for (let url of filteredUrls) {
             try {
-                // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
                 let hostname = getHostnameOptimized(url);
-                if (linkDomains.indexOf(hostname) === -1) {
+                if (hostname && linkDomains.indexOf(hostname) === -1) {
                     linkDomains.push(hostname);
                 }
             } catch (e) { /* Ignore invalid URLs */ }
@@ -959,8 +949,8 @@ const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d
 function filterUrls(urls) {
     return urls.filter(url => {
         try {
-            // ⚡ Bolt Optimization: Use fast regex parsing for standard HTTP URLs to avoid `new URL()` instantiation overhead
             let hostname = getHostnameOptimized(url);
+            if (!hostname) return false;
             // ⚡ Bolt Optimization: Use precompiled regex instead of iterating over ignoredDomains array
             return !IGNORED_DOMAINS_REGEX.test(hostname);
         } catch (e) {
