@@ -1955,7 +1955,7 @@ describe('background.js', () => {
                 await context.checkIPReputation([`from a.com (${ip})`]);
             }
             // Max cache should be respected
-            assert.ok(context.ipReputationCache.size <= context.MAX_IP_CACHE);
+            assert.strictEqual(context.ipReputationCache.size, context.MAX_IP_CACHE);
         });
 
         it('should handle errors thrown by checkAbuseIPDB gracefully', async () => {
@@ -2223,15 +2223,10 @@ describe('background.js', () => {
             assert.strictEqual(context.knownSendersCache.has('old@example.com'), true);
         });
 
-        it('clears knownSendersCache if it exceeds MAX_KNOWN_SENDERS', async () => {
-            // Mock the knownSendersCache property 'size' so it pretends to be > 1000
-            // Since MAX_KNOWN_SENDERS is a const (1000) inside background.js
-            let originalSizeGetter = Object.getOwnPropertyDescriptor(Set.prototype, 'size').get;
-
-            Object.defineProperty(context.knownSendersCache, 'size', {
-                get: function() { return 1001; },
-                configurable: true
-            });
+        it('evicts oldest knownSendersCache entry if it exceeds MAX_KNOWN_SENDERS', async () => {
+            for (let i = 0; i < context.MAX_KNOWN_SENDERS; i++) {
+                context.knownSendersCache.add(`user${i}@example.com`);
+            }
 
             context.browser.messages.query = async () => {
                 return { messages: [{ id: 1 }] }; // Returning messages makes it a known sender
@@ -2239,16 +2234,10 @@ describe('background.js', () => {
 
             const result = await context.checkFirstCommunication('new_user@example.com');
             assert.strictEqual(result, false);
-            // After clear is called, our getter might still return 1001 or we check if clear was called.
-            // But .add is also called after .clear. We can test if clear was called by overriding clear.
-            // Instead, let's restore the size getter right before checking real size.
 
-            // Revert back
-            delete context.knownSendersCache.size;
-
-            // Wait, if it cleared it and added 'new_user@example.com', the real size should be 1.
-            assert.strictEqual(context.knownSendersCache.size, 1);
+            assert.strictEqual(context.knownSendersCache.size, context.MAX_KNOWN_SENDERS);
             assert.strictEqual(context.knownSendersCache.has('new_user@example.com'), true);
+            assert.strictEqual(context.knownSendersCache.has('user0@example.com'), false);
         });
 
         it('handles exceptions from browser.messages.query gracefully and returns false', async () => {
