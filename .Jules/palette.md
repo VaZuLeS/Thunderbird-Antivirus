@@ -67,6 +67,10 @@
 ## 2024-06-26 - Visual Consistency for Generic Messages
 **Learning:** Appending plain HTML `<p>` tags directly to main containers for empty states or generic loading messages breaks visual consistency.
 **Action:** Always wrap empty states or generic messages in `.card.card-info` containers (as defined in `theme.css`) to maintain visual consistency with the repository's design system.
-## 2026-07-04 - Progress Cursors for Async Buttons
-**Learning:** In standard setups, disabling a button sets the cursor to `not-allowed`. However, for buttons disabled *because* an asynchronous task is loading (indicated by `aria-busy="true"`), a `not-allowed` cursor communicates to the user that they did something wrong or an action is forbidden, rather than communicating the system is working.
-**Action:** When styling interactive elements in `theme.css`, add a specific rule `button[aria-busy="true"]:disabled { cursor: progress; }` to override the default disabled cursor and provide proper mental model feedback during async operations.
+## 2026-06-25 - Avoid Generic Classes in Content Scripts
+**Learning:** Injecting generic CSS class names (like `text-danger`) into third-party web pages via content scripts risks style collisions with the host page's CSS (e.g., Bootstrap).
+**Action:** When working in content scripts, prefer inline styles or strictly namespaced classes (e.g., `thundy-text-danger`) over generic classes to ensure styles render consistently without interfering with the host page.
+
+## 2026-06-25 - Actionable Error States
+**Learning:** Displaying a generic API error (e.g., HTTP 401) forces the user to manually navigate menus to find the settings to fix their API key, adding unnecessary friction.
+**Action:** When addressing API failures or configuration errors (e.g., 401/403), always provide a direct, actionable resolution path, such as appending a button that calls `browser.runtime.openOptionsPage()` to open the settings directly.
