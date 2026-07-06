@@ -116,6 +116,10 @@ textarea:disabled {
     cursor: not-allowed;
 }
 
+button[aria-busy="true"]:disabled {
+    cursor: progress;
+}
+
 .btn-primary {
     background-color: var(--btn-primary-bg);
     color: var(--btn-primary-text);
