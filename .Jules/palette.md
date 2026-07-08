@@ -74,3 +74,6 @@
 ## 2026-06-25 - Actionable Error States
 **Learning:** Displaying a generic API error (e.g., HTTP 401) forces the user to manually navigate menus to find the settings to fix their API key, adding unnecessary friction.
 **Action:** When addressing API failures or configuration errors (e.g., 401/403), always provide a direct, actionable resolution path, such as appending a button that calls `browser.runtime.openOptionsPage()` to open the settings directly.
+## 2026-07-07 - Document Keyboard Shortcuts in UI
+**Learning:** The warning modal supported closing via the Escape key, but this wasn't visually communicated to the user, meaning power users wouldn't know they could use the keyboard to dismiss it. Furthermore, screen readers wouldn't announce the shortcut without `aria-keyshortcuts`.
+**Action:** When a modal supports a standard keyboard shortcut (like Escape to cancel), explicitly add the hint (e.g., '(Esc)') to the relevant button's `textContent` and include the `aria-keyshortcuts='Escape'` attribute to inform both visual and assistive technology users.
