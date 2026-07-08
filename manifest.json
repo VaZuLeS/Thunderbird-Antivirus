@@ -47,8 +47,6 @@
     "browser_style": true
   },
   "icons": {
-    "16": "img/icon-16px.png",
-    "32": "img/icon-32px.png",
     "64": "img/icon-64px.png"
   }
 
