@@ -20,7 +20,7 @@ jobs:
       - name: Pre-submit checks (manifest, privacy, permissions)
         run: node ./scripts/pre-submit-checks.js
       - name: Run unit tests
-        run: node --test background.test.js
+        run: npm test
       - name: web-ext lint (non-blocking)
         run: npx web-ext lint || true
 

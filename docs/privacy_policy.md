@@ -60,6 +60,24 @@ Annex: Details zur Datenweitergabe (Technischer Anhang)
 - File uploads: minimal notwendige Metadaten (SHA‑256, Name, MIME‑type) werden an die ausgewählten Analyse‑Dienste übermittelt. Vollständige Dateien nur nach ausdrücklicher Zustimmung.
 - URL scans / IP checks: URLs werden an urlscan.io/urlhaus zur Analyse gesendet; IPs zur AbuseIPDB Abfrage. Nur wenn Auto‑Scan oder manuelle Aktion ausgelöst ist.
 
+Drittanbieter‑Privacy‑Policies (Referenzen)
+- Hybrid‑Analysis: https://www.hybrid-analysis.com/privacy
+- VirusTotal: https://support.virustotal.com/hc/en-us/articles/115002273549-Privacy-Policy
+- urlscan.io: https://urlscan.io/about/privacy/
+- urlhaus: https://urlhaus.abuse.ch/about/
+- AbuseIPDB: https://www.abuseipdb.com/privacy-policy
+
+Reviewer‑Zusammenfassung (Kurz)
+- Features → deklarierte Daten (prüfbar):
+  - Attachment scan (file_uploads): Datei‑Hashes, Dateiname, MIME‑type, Message‑ID → destinations: Hybrid‑Analysis, VirusTotal
+  - URL scan (url_and_ip_scans): URL, Domain → destinations: urlscan.io, urlhaus
+  - IP reputation (url_and_ip_scans): IP addresses extracted from headers/links → destinations: AbuseIPDB
+- Test‑Anleitung für Reviewer:
+  1. Install extension from branch build.
+  2. Open Options, set an API key for Hybrid‑Analysis (dummy accepted for permission flow).
+  3. Open a message with an attachment; click "Für diese Nachricht scannen" → extension should request host permission for the selected provider and then send only the declared fields (hash/metadata).
+  4. For URL/IP scans enable Auto‑Scan Links or trigger a manual URL scan from the message UI.
+
 Stand: 2026-07-08 — Version: Draft 1
 
-Hinweis: Diese Richtlinie ist ein Entwurf. Vor der Veröffentlichung die Links zu den Drittanbieter‑Privacy‑Policies einfügen und die veröffentlichte GitHub Pages URL in manifest.json setzen.
+Hinweis: Diese Richtlinie ist ein Entwurf. Vor der Veröffentlichung die veröffentlichte GitHub Pages URL in manifest.json setzen.

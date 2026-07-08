@@ -63,5 +63,10 @@ gecko.data_collection_permissions (manifest explanation)
 
 Notes for the reviewer: the default behavior is to never upload files automatically. Reviewers can validate the opt‑in behavior by setting an API key in the options page and using the per‑message "Für diese Nachricht scannen" action; the extension will request host access at that moment.
 
+Reviewer Quick Test
+- Set an API key in Options (Hybrid‑Analysis / VirusTotal) and ensure browser.permissions.request prompts when triggering an upload.
+- Confirm uploads only include declared fields per category (hashes, filenames, URLs, domains, IPs) by reviewing outgoing requests in a proxy or network inspector.
+- Use automated tests: run `npm test` to include manifest schema validation.
+
 --
 Co-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>
