@@ -1204,6 +1204,19 @@ describe('renderScannerResults', () => {
         // Create mock environment
         context = {
             document: {
+                createDocumentFragment: () => ({
+                    children: [],
+                    appendChild: function(node) {
+                        this.children.push(node);
+                    },
+                    get innerHTML() {
+                        return this.children.map(c => {
+                            let cls = c.className ? ` class="${c.className}"` : '';
+                            let inner = c.innerHTML || c.textContent || '';
+                            return `<${c.tag || c.tagName || 'div'}${cls}>${inner}</${c.tag || c.tagName || 'div'}>`;
+                        }).join('');
+                    }
+                }),
                 createElement: (tag) => {
                     return {
                         tag: tag,
