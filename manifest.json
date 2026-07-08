@@ -26,7 +26,7 @@
           "email": "bludau.it.services@gmail.com",
           "name": "Jan Bludau (VaZuLeS)"
         },
-        "required": ["description","collection_mode","data_items","contact"]
+        "required": ["description","collection_mode"]
       }
     }
   },
