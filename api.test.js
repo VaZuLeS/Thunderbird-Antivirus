@@ -1344,6 +1344,182 @@ describe('createUploadButton', () => {
     });
 });
 
+describe('handleUrlScanClick', () => {
+    let context;
+    let handleUrlScanClick;
+
+    before(async () => {
+        context = {
+            browser: {
+                storage: { local: { get: async () => ({}) } },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
+            document: {
+                createTextNode: () => ({}),
+                createElement: (tag) => {
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(v) { this._innerText = v; this.textContent = v; },
+                        disabled: false,
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) {
+                            this._id = val;
+                            context.mockElements[val] = this;
+                        },
+                        setAttribute: function(k, v) { this[k] = v; },
+                        removeAttribute: function(k) { delete this[k]; },
+                        appendChild: function(child) {
+                            if (!this.childNodes) this.childNodes = [];
+                            this.childNodes.push(child);
+                        },
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
+                        },
+                        remove: function() { this.removed = true; }
+                    };
+                    return el;
+                },
+                getElementById: (id) => {
+                    if (context.mockElements && context.mockElements[id]) {
+                        return context.mockElements[id];
+                    }
+                    if (!context.mockElements) context.mockElements = {};
+                    if (id.startsWith('upload-container-')) {
+                        context.mockElements[id] = { remove: function() { this.removed = true; } };
+                        return context.mockElements[id];
+                    }
+                    if (id.startsWith('upload-status-')) {
+                        context.mockElements[id] = {
+                            _innerText: "",
+                            get innerText() { return this._innerText; },
+                            set innerText(v) { this._innerText = v; this.textContent = v; },
+                            textContent: "",
+                            setAttribute: () => {}
+                        };
+                        return context.mockElements[id];
+                    }
+                    return null;
+                }
+            },
+            setTimeout: (cb, delay) => {
+                if (!context.timeouts) context.timeouts = [];
+                context.timeouts.push({cb, delay});
+            },
+            get_hybrid_report_by_sha256: function(opts) {
+                context.lastReportArgs = context.lastReportArgs || [];
+                context.lastReportArgs.push(opts);
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String, Array: Array
+        };
+
+        const vm = require('vm');
+        const fs = require('fs');
+        const path = require('path');
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        vm.runInContext(wrappedCode, context);
+        handleUrlScanClick = context.handleUrlScanClick;
+    });
+
+    beforeEach(() => {
+        context.mockElements = {};
+        context.timeouts = [];
+        context.lastReportArgs = [];
+    });
+
+    it('handles success correctly', async () => {
+        const assert = require('assert');
+        context.browser.runtime.sendMessage = async (msg) => {
+            context.lastMsg = msg;
+            return { status: 'success', data: { sha256: 'test-sha' } };
+        };
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        status.id = 'upload-status-123';
+
+        handleUrlScanClick(btn, 'https://example.com', '123', 'header1');
+
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Sende URL...');
+        assert.strictEqual(status.innerText, 'URL wird an Hybrid Analysis übertragen...');
+
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(context.lastMsg.action, 'scanUrl');
+        assert.strictEqual(context.lastMsg.url, 'https://example.com');
+
+        assert.strictEqual(status.innerText, 'Scan erfolgreich beauftragt! Lade Analyseergebnisse...');
+        assert.strictEqual(btn.className, 'btn-success mt-2');
+        assert.strictEqual(btn.innerText, 'Erfolgreich');
+
+        assert.strictEqual(context.timeouts.length, 1);
+
+        let prev = context.get_hybrid_report_by_sha256;
+        context.get_hybrid_report_by_sha256 = function(opts) { context.lastReportArgs.push(opts); };
+
+        context.timeouts[0].cb();
+        context.get_hybrid_report_by_sha256 = prev;
+
+        assert.strictEqual(context.lastReportArgs.length, 1);
+        assert.strictEqual(context.lastReportArgs[0].hybrid_sha, 'test-sha');
+        assert.strictEqual(context.lastReportArgs[0].attachmentName, 'https://example.com');
+    });
+
+    it('handles error response correctly', async () => {
+        const assert = require('assert');
+        context.browser.runtime.sendMessage = async (msg) => {
+            return { status: 'error', message: 'API error' };
+        };
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        status.id = 'upload-status-124';
+
+        handleUrlScanClick(btn, 'https://example.com', '124', 'header1');
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(status.innerText, 'Fehler beim Upload: API error');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles exception correctly', async () => {
+        const assert = require('assert');
+        context.browser.runtime.sendMessage = async (msg) => {
+            throw new Error('Network error');
+        };
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        status.id = 'upload-status-125';
+
+        handleUrlScanClick(btn, 'https://example.com', '125', 'header1');
+        await new Promise(process.nextTick);
+
+        assert.ok(status.innerText.includes('Kommunikationsfehler: Error: Network error'));
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+});
+
 describe('renderActionButtons', () => {
     let context;
     let renderActionButtons;
