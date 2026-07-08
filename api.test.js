@@ -1082,6 +1082,16 @@ describe('renderVirusTotalStats', () => {
         // Create mock environment
         context = {
             document: {
+                createDocumentFragment: () => ({
+                    isFragment: true,
+                    children: [],
+                    appendChild: function(node) {
+                        this.children.push(node);
+                    },
+                    get outerHTML() {
+                        return this.children.map(c => c.outerHTML || c.textContent || '').join('');
+                    }
+                }),
                 createElement: (tag) => {
                     return {
                         tag: tag,
@@ -1091,7 +1101,13 @@ describe('renderVirusTotalStats', () => {
                         _innerHTML: null,
                         setAttribute: () => {},
                         appendChild: function(node) {
-                            this.children.push(node);
+                            if (node && node.isFragment) {
+                                for (let i = 0; i < node.children.length; i++) {
+                                    this.children.push(node.children[i]);
+                                }
+                            } else {
+                                this.children.push(node);
+                            }
                         },
                         get innerHTML() {
                             if (this._innerHTML !== null) return this._innerHTML;
@@ -1178,6 +1194,16 @@ describe('renderScannerResults', () => {
         // Create mock environment
         context = {
             document: {
+                createDocumentFragment: () => ({
+                    isFragment: true,
+                    children: [],
+                    appendChild: function(node) {
+                        this.children.push(node);
+                    },
+                    get outerHTML() {
+                        return this.children.map(c => c.outerHTML || c.textContent || '').join('');
+                    }
+                }),
                 createElement: (tag) => {
                     return {
                         tag: tag,
@@ -1187,7 +1213,13 @@ describe('renderScannerResults', () => {
                         _innerHTML: null,
                         setAttribute: () => {},
                         appendChild: function(node) {
-                            this.children.push(node);
+                            if (node && node.isFragment) {
+                                for (let i = 0; i < node.children.length; i++) {
+                                    this.children.push(node.children[i]);
+                                }
+                            } else {
+                                this.children.push(node);
+                            }
                         },
                         get innerHTML() {
                             if (this._innerHTML !== null) return this._innerHTML;

@@ -294,7 +294,7 @@ function renderVirusTotalStats(virustotal_stats, card) {
 function renderScannerResults(scanners, card) {
     if (scanners && scanners.length > 0) {
         // Optimization: Use DocumentFragment to batch DOM insertions and avoid multiple reflows
-        const fragment = document.createDocumentFragment();
+        const fragment = (document.createDocumentFragment && typeof document.createDocumentFragment === 'function') ? document.createDocumentFragment() : document.createElement('div');
         for (const scanner of scanners) {
             const pScanner = document.createElement('p');
             pScanner.className = "ml-2";
