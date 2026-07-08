@@ -37,7 +37,7 @@
     ]
   },
   "message_display_action": {
-    "default_icon": "img/icon-64px.jpg",
+  "default_icon": "img/icon-64px.png",
     "default_title": "Thundy AV Checker",
     "default_popup": "popup.html"
   },
@@ -47,9 +47,9 @@
     "browser_style": true
   },
   "icons": {
-    "16": "img/icon-16px.jpg",
-    "32": "img/icon-32px.jpg",
-    "64": "img/icon-64px.jpg"
+    "16": "img/icon-16px.png",
+    "32": "img/icon-32px.png",
+    "64": "img/icon-64px.png"
   }
 
 }
