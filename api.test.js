@@ -1344,6 +1344,152 @@ describe('createUploadButton', () => {
     });
 });
 
+describe('setupCdrButton', () => {
+    let context;
+    let setupCdrButton;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            browser: {
+                storage: { local: { get: async () => ({}) } },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
+            document: {
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : null;
+                },
+                createElement: (tag) => {
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(v) { this._innerText = v; this.textContent = v; },
+                        disabled: false,
+                        _id: '',
+                        get id() { return this._id; },
+                        set id(val) {
+                            this._id = val;
+                            context.mockElements[val] = this;
+                        },
+                        setAttribute: function(k, v) { this[k] = v; },
+                        removeAttribute: function(k) { delete this[k]; },
+                        addEventListener: function(event, cb) {
+                            this.clicks = this.clicks || [];
+                            this.clicks.push(cb);
+                        },
+                        click: function() {
+                            if (this.clicks) {
+                                this.clicks.forEach(cb => cb.call(this));
+                            }
+                        }
+                    };
+                    return el;
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            String: String, Array: Array
+        };
+
+        const vm = require('vm');
+        const path = require('path');
+        const fs = require('fs');
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        vm.runInContext(wrappedCode, context);
+        setupCdrButton = context.setupCdrButton;
+    });
+
+    it('does nothing if the button element is not found', () => {
+        context.mockElements = {};
+        // Should not throw
+        setupCdrButton({ hybrid_sha: 'nonexistent', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1' });
+    });
+
+    it('attaches click listener, disables button and updates UI on click, then handles success', async () => {
+        const assert = require('assert');
+        context.mockElements = {};
+        const btn = context.document.createElement('button');
+        btn.id = 'btn-cdr-hash1';
+
+        const status = context.document.createElement('p');
+        status.id = 'cdr-status-hash1';
+
+        setupCdrButton({ hybrid_sha: 'hash1', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1' });
+
+        btn.click();
+
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Bereinige...');
+        assert.strictEqual(status.innerText, 'Lokales CDR wird durchgeführt...');
+
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(status.innerText, 'Herunterladen erfolgreich initiiert.');
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.className, 'btn-success mt-2 ml-2');
+        assert.strictEqual(btn.innerText, 'Bereinigt');
+    });
+
+    it('handles download failure response correctly', async () => {
+        const assert = require('assert');
+        context.mockElements = {};
+
+        context.browser.runtime.sendMessage = async () => {
+            return { status: 'error', message: 'Invalid API key' };
+        };
+
+        const btn = context.document.createElement('button');
+        btn.id = 'btn-cdr-hash2';
+
+        const status = context.document.createElement('p');
+        status.id = 'cdr-status-hash2';
+
+        setupCdrButton({ hybrid_sha: 'hash2', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1' });
+
+        btn.click();
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(status.innerText, 'Fehler beim Herunterladen: Invalid API key');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles download exception correctly', async () => {
+        const assert = require('assert');
+        context.mockElements = {};
+
+        context.browser.runtime.sendMessage = async () => {
+            throw new Error('Network error');
+        };
+
+        const btn = context.document.createElement('button');
+        btn.id = 'btn-cdr-hash3';
+
+        const status = context.document.createElement('p');
+        status.id = 'cdr-status-hash3';
+
+        setupCdrButton({ hybrid_sha: 'hash3', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1' });
+
+        btn.click();
+        await new Promise(process.nextTick);
+
+        assert.ok(status.innerText.includes('Kommunikationsfehler: Error: Network error'));
+        assert.strictEqual(btn.disabled, false);
+    });
+});
+
 describe('renderActionButtons', () => {
     let context;
     let renderActionButtons;
