@@ -19,7 +19,13 @@
     "downloads"
   ],
   "optional_permissions": [
-    "https://hybrid-analysis.com/*"
+    "https://hybrid-analysis.com/*",
+    "https://*.hybrid-analysis.com/*",
+    "https://www.virustotal.com/*",
+    "https://virustotal.com/*",
+    "https://urlscan.io/*",
+    "https://www.urlscan.io/*",
+    "https://*urlhaus.abuse.ch/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none';"
