@@ -6,10 +6,10 @@ class DatabaseDAO {
 
     openDB(dbName = this.dbName, version = this.version) {
         return new Promise((resolve, reject) => {
-            let openRequest = indexedDB.open(dbName, version);
+            const openRequest = indexedDB.open(dbName, version);
 
             openRequest.onupgradeneeded = function (e) {
-                let db = e.target.result;
+                const db = e.target.result;
                 if (!db.objectStoreNames.contains('hybridanalysis')) {
                     db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
                 }
@@ -28,14 +28,14 @@ class DatabaseDAO {
 
     updateStore(db, storeName, key, updateFn) {
         return new Promise((resolve, reject) => {
-            let transaction = db.transaction([storeName], "readwrite");
-            let store = transaction.objectStore(storeName);
-            let request = store.get(key);
+            const transaction = db.transaction([storeName], "readwrite");
+            const store = transaction.objectStore(storeName);
+            const request = store.get(key);
 
             request.onsuccess = function () {
-                let record = request.result;
-                let updatedRecord = updateFn(record);
-                let putRequest = store.put(updatedRecord);
+                const record = request.result;
+                const updatedRecord = updateFn(record);
+                const putRequest = store.put(updatedRecord);
 
                 putRequest.onsuccess = function() {
                     resolve(putRequest.result);
@@ -54,9 +54,9 @@ class DatabaseDAO {
 
     getFromStore(db, storeName, key) {
         return new Promise((resolve, reject) => {
-            let transaction = db.transaction([storeName], "readonly");
-            let store = transaction.objectStore(storeName);
-            let request = store.get(key);
+            const transaction = db.transaction([storeName], "readonly");
+            const store = transaction.objectStore(storeName);
+            const request = store.get(key);
 
             request.onsuccess = function () {
                 resolve(request.result);
@@ -70,9 +70,9 @@ class DatabaseDAO {
 
     putToStore(db, storeName, item) {
         return new Promise((resolve, reject) => {
-            let transaction = db.transaction([storeName], "readwrite");
-            let store = transaction.objectStore(storeName);
-            let request = store.put(item);
+            const transaction = db.transaction([storeName], "readwrite");
+            const store = transaction.objectStore(storeName);
+            const request = store.put(item);
 
             request.onsuccess = function () {
                 resolve(request.result);
@@ -91,9 +91,9 @@ class DatabaseDAO {
                  return;
             }
 
-            let transaction = db.transaction([storeName], 'readwrite');
-            let store = transaction.objectStore(storeName);
-            let clearRequest = store.clear();
+            const transaction = db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const clearRequest = store.clear();
 
             clearRequest.onsuccess = function () {
                 resolve(true);
