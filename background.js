@@ -350,20 +350,8 @@ function evaluateUrlhaus(urlhausDomains, score, reasons) {
 
 function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
     if (replyTo && senderDomain) {
-        let replyToEmail = replyTo;
-        // ⚡ Bolt Optimization: Use indexOf and substring to avoid regex allocation overhead
-        const start = replyTo.indexOf('<');
-        if (start !== -1) {
-            const end = replyTo.indexOf('>', start + 1);
-            if (end !== -1) {
-                replyToEmail = replyTo.substring(start + 1, end);
-            }
-        }
-        replyToEmail = replyToEmail.toLowerCase();
-
-        // ⚡ Bolt Optimization: Use indexOf and substring instead of split for O(n) extraction without array allocation
-        const atIndex = replyToEmail.indexOf('@');
-        const replyDomain = atIndex !== -1 ? replyToEmail.substring(atIndex + 1) : "";
+        let replyToEmail = extractEmailAddress(replyTo);
+        const replyDomain = extractEmailDomain(replyToEmail);
 
         if (replyDomain && replyDomain !== senderDomain) {
             score += 50;
@@ -552,6 +540,25 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     return score;
 }
 
+function extractEmailAddress(rawAuthor) {
+    let email = rawAuthor;
+    // ⚡ Bolt Optimization: Use indexOf and substring to avoid regex allocation overhead
+    const start = rawAuthor.indexOf('<');
+    if (start !== -1) {
+        const end = rawAuthor.indexOf('>', start + 1);
+        if (end !== -1) {
+            email = rawAuthor.substring(start + 1, end);
+        }
+    }
+    return email.toLowerCase();
+}
+
+function extractEmailDomain(emailAddress) {
+    // ⚡ Bolt Optimization: Use indexOf and substring instead of split for O(n) extraction without array allocation
+    const atIndex = emailAddress.indexOf('@');
+    return atIndex !== -1 ? emailAddress.substring(atIndex + 1).toLowerCase() : "";
+}
+
 function calculateThreatScore(author, urls, options = {}) {
     const {
         authHeaders = [],
@@ -564,20 +571,8 @@ function calculateThreatScore(author, urls, options = {}) {
     let score = 0;
     let reasons = [];
 
-    let email = author;
-    // ⚡ Bolt Optimization: Use indexOf and substring to avoid regex allocation overhead
-    const start = author.indexOf('<');
-    if (start !== -1) {
-        const end = author.indexOf('>', start + 1);
-        if (end !== -1) {
-            email = author.substring(start + 1, end);
-        }
-    }
-    email = email.toLowerCase();
-
-    // ⚡ Bolt Optimization: Use indexOf and substring instead of split for O(n) extraction without array allocation
-    let atIndex = email.indexOf('@');
-    let senderDomain = atIndex !== -1 ? email.substring(atIndex + 1).toLowerCase() : "";
+    let email = extractEmailAddress(author);
+    let senderDomain = extractEmailDomain(email);
 
     const listCheck = checkLists(email, senderDomain);
     if (listCheck) {
@@ -853,16 +848,7 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
   let maliciousIps = await checkIPReputation(receivedHeaders);
 
   // BEC Protection Data Extraction
-  let senderEmail = message.author;
-  // ⚡ Bolt Optimization: Use indexOf and substring to avoid regex allocation overhead
-  const start = message.author.indexOf('<');
-  if (start !== -1) {
-      const end = message.author.indexOf('>', start + 1);
-      if (end !== -1) {
-          senderEmail = message.author.substring(start + 1, end);
-      }
-  }
-  senderEmail = senderEmail.toLowerCase();
+  let senderEmail = extractEmailAddress(message.author);
 
   let isFirstCommunication = await checkFirstCommunication(senderEmail);
 
