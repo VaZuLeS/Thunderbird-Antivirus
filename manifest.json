@@ -10,23 +10,40 @@
       "id": "bludau.it.services@gmail.com",
       "strict_min_version": "78.0",
       "data_collection_permissions": {
-        "storage": {
-          "description": "Stores opt-in flags, settings and cached metadata locally on the user's device. No data is sent to external services for storage.",
-          "required": false
+        "type": "object",
+        "description": "Schema describing what data the extension may collect; values indicate categories of data and the shape of each category.",
+        "properties": {
+          "storage": {
+            "type": "object",
+            "description": "Stores opt-in flags, settings and cached metadata locally on the user's device. No data is sent to external services for storage.",
+            "properties": {
+              "description": { "type": "string" }
+            }
+          },
+          "websiteContent": {
+            "type": "object",
+            "description": "Analyzes email content and attachments locally to detect candidates for scanning. Message content is not sent externally unless the user explicitly opts in to a one-off scan.",
+            "properties": {
+              "description": { "type": "string" }
+            }
+          },
+          "fileUploads": {
+            "type": "object",
+            "description": "One-off file uploads (attachments) triggered by the user are sent to external analyzer services only after explicit per-message or options opt-in.",
+            "properties": {
+              "dataTypes": { "type": "array", "items": { "type": "string" } },
+              "description": { "type": "string" }
+            }
+          },
+          "contact": {
+            "type": "object",
+            "properties": {
+              "email": { "type": "string" },
+              "name": { "type": "string" }
+            }
+          }
         },
-        "websiteContent": {
-          "description": "Analyzes email content and attachments locally to detect candidates for scanning. Message content is not sent externally unless the user explicitly opts in to a one-off scan.",
-          "required": false
-        },
-        "fileUploads": {
-          "description": "One-off file uploads (attachments) triggered by the user are sent to external analyzer services only after explicit per-message or options opt-in.",
-          "required": false,
-          "dataTypes": ["Files","Attachment metadata (filename, size, mimeType)"]
-        },
-        "contact": {
-          "email": "bludau.it.services@gmail.com",
-          "name": "Jan Bludau (VaZuLeS)"
-        }
+        "required": []
       }
     }
   },
