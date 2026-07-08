@@ -152,8 +152,9 @@ browser.storage.onChanged.addListener((changes, area) => {
 
 function extractPublicIPs(receivedHeaders) {
     if (!receivedHeaders) return [];
-    // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
+    // ⚡ Bolt Optimization: Use a Set for O(1) deduplication to improve performance on large header sets
     let ips = [];
+    let ipsSet = new Set();
 
     for (let header of receivedHeaders) {
         let matches = header.match(GLOBAL_IPV4_REGEX);
@@ -178,7 +179,8 @@ function extractPublicIPs(receivedHeaders) {
                 ) {
                     continue;
                 }
-                if (ips.indexOf(ip) === -1) {
+                if (!ipsSet.has(ip)) {
+                    ipsSet.add(ip);
                     ips.push(ip);
                 }
             }
