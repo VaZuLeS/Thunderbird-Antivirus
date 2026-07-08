@@ -3,6 +3,7 @@
   "name": "Thunderbird SECurity AntiVirus",
   "author": "Jan Bludau",
   "version": "1.5",
+  "default_locale": "en",
   "description": "Checking every Email Attachment at Hybrid-Analysis.com a service Provider that scanns with 70+ Antivirus Programs.",
   "homepage_url": "https://vazules.github.io/Thunderbird-Antivirus/",
   "browser_specific_settings": {
