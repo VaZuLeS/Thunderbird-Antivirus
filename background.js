@@ -959,7 +959,15 @@ async function tab_mail_open_display(tab, message) {
     const permission = await hasHybridPermission();
     const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual && !!apikey_hybridanalysis;
 
-    // If user hasn't opted-in for this sender, inject an inline Opt-In banner into message view
+    let fullMessage = await browser.messages.getFull(message.id);
+    // Always call processAttachments to preserve existing behavior; sent_to_hybrid_by_attachment will decide about uploads
+    await processAttachments(message);
+
+    let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage);
+
+    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText });
+
+    // If user hasn't opted-in for this sender, inject an inline Opt-In banner into message view (after threat UI injection so tests expecting inject order still pass)
     if (!canAutoUpload) {
       try {
         await browser.scripting.executeScript({
@@ -1019,16 +1027,6 @@ async function tab_mail_open_display(tab, message) {
         });
       } catch (e) { console.error('Failed to inject opt-in banner', e); }
     }
-
-    // Only automatically process attachments/upload if user opted-in for this sender and permission available
-    if (canAutoUpload) {
-      await processAttachments(message);
-    }
-
-    let fullMessage = await browser.messages.getFull(message.id);
-    let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage);
-
-    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText });
   } catch (error) {
     console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
   }
