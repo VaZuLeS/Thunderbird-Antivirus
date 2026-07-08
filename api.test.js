@@ -525,6 +525,84 @@ tag: tag,
 
 
 
+describe('handle_hybrid_report_fetch_error', () => {
+    let context;
+    let handle_hybrid_report_fetch_error;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            browser: {
+                storage: {
+                    local: {
+                        get: async () => ({})
+                    }
+                }
+            },
+            document: {
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tag: tag,
+                        className: '',
+                        textContent: '',
+                        appendChild: function(child) {
+                            children.push(child);
+                        },
+                        setAttribute: function(name, val) {
+                            this[name] = val;
+                        },
+                        addEventListener: function(evt, cb) {},
+                        get children() { return children; },
+                        get outerHTML() {
+                            let inner = children.map(c => c.outerHTML || c.textContent || '').join('') + this.textContent;
+                            return `<${this.tag}>${inner}</${this.tag}>`;
+                        }
+                    };
+                    return el;
+                },
+                getElementById: (id) => {
+                    if (id === 'hybrid_analysis_api_content') {
+                        if (!context.apiContentElement) {
+                            context.apiContentElement = {
+                                appendChild: function(child) {
+                                    this.child = child;
+                                }
+                            };
+                        }
+                        return context.apiContentElement;
+                    }
+                    return null;
+                }
+            },
+            console: { error: () => {}, log: () => {} },
+            String: String,
+            setTimeout: setTimeout
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        vm.runInContext(wrappedCode, context);
+
+        handle_hybrid_report_fetch_error = context.handle_hybrid_report_fetch_error;
+    });
+
+    it('injects Netzwerkfehler message for fetch error', async () => {
+        context.apiContentElement = null; // Reset
+        handle_hybrid_report_fetch_error(new Error('Network timeout'), 'test.txt');
+
+        const appended = context.apiContentElement.child;
+        assert.strictEqual(appended.className, 'alert-error');
+        assert.ok(appended.textContent.includes('Netzwerkfehler: Network timeout für Element test.txt'));
+        assert.strictEqual(appended.role, 'alert');
+    });
+});
+
+
+
 describe('renderManualUploadUI', () => {
     let context;
     let renderManualUploadUI;
