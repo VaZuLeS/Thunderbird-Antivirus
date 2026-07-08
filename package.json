@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "jsdom": "^29.1.1"
+  },
+  "scripts": {
+    "test": "NODE_PATH=node_modules node --test api.test.js api_gateway.test.js background.test.js content_script.test.js db.test.js form_test.js options.test.js vt_test.js"
   }
 }
