@@ -1628,8 +1628,10 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     });
 
     // Revoke object URL after a short delay to free memory, giving download time to start
-    setTimeout(() => {
-        URL.revokeObjectURL(url);
+    const revokeTimeoutId = setTimeout(() => {
+        if (typeof URL !== 'undefined' && typeof URL.revokeObjectURL === 'function') {
+            URL.revokeObjectURL(url);
+        }
     }, 10000);
 
     return { downloadId: downloadId };
