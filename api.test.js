@@ -521,6 +521,91 @@ tag: tag,
         assert.ok(context.apiContentElement.innerHTML.includes('API Error: 500 für Element test.txt'));
         assert.ok(context.apiContentElement.innerHTML.includes('alert-error'));
     });
+
+    it('calls render_hybrid_report_ui on successful fetch', async () => {
+        let originalFetch = context.fetch_hybrid_report;
+        let originalRender = context.render_hybrid_report_ui;
+
+        let renderArgs = null;
+        context.fetch_hybrid_report = async (sha) => {
+            return { response: { status: 200 }, json_data: { test: 'data' } };
+        };
+        context.render_hybrid_report_ui = (args) => {
+            renderArgs = args;
+        };
+
+        await get_hybrid_report_by_sha256({
+            hybrid_sha: 'dummy_sha',
+            attachmentName: 'test.txt',
+            messageId: 'msg1',
+            partName: 'part1',
+            headerMessageId: 'hdr1',
+            virustotal_stats: { malicious: 1 }
+        });
+
+        assert.ok(renderArgs, 'render_hybrid_report_ui should have been called');
+        assert.strictEqual(renderArgs.hybrid_sha, 'dummy_sha');
+        assert.strictEqual(renderArgs.attachmentName, 'test.txt');
+        assert.strictEqual(renderArgs.messageId, 'msg1');
+        assert.strictEqual(renderArgs.partName, 'part1');
+        assert.strictEqual(renderArgs.headerMessageId, 'hdr1');
+        assert.deepStrictEqual(renderArgs.virustotal_stats, { malicious: 1 });
+        assert.deepStrictEqual(renderArgs.json_data, { test: 'data' });
+
+        context.fetch_hybrid_report = originalFetch;
+        context.render_hybrid_report_ui = originalRender;
+    });
+
+    it('calls handle_hybrid_report_error on non-200 fetch status', async () => {
+        let originalFetch = context.fetch_hybrid_report;
+        let originalHandleError = context.handle_hybrid_report_error;
+
+        let handleErrorArgs = null;
+        context.fetch_hybrid_report = async (sha) => {
+            return { response: { status: 500, statusText: 'Internal Error' }, json_data: null };
+        };
+        context.handle_hybrid_report_error = (response, attachmentName) => {
+            handleErrorArgs = { response, attachmentName };
+        };
+
+        await get_hybrid_report_by_sha256({
+            hybrid_sha: 'dummy_sha',
+            attachmentName: 'test.txt'
+        });
+
+        assert.ok(handleErrorArgs, 'handle_hybrid_report_error should have been called');
+        assert.strictEqual(handleErrorArgs.response.status, 500);
+        assert.strictEqual(handleErrorArgs.attachmentName, 'test.txt');
+
+        context.fetch_hybrid_report = originalFetch;
+        context.handle_hybrid_report_error = originalHandleError;
+    });
+
+    it('calls handle_hybrid_report_fetch_error on fetch exception', async () => {
+        let originalFetch = context.fetch_hybrid_report;
+        let originalHandleFetchError = context.handle_hybrid_report_fetch_error;
+
+        let handleFetchErrorArgs = null;
+        let testError = new Error('Test Exception');
+        context.fetch_hybrid_report = async (sha) => {
+            throw testError;
+        };
+        context.handle_hybrid_report_fetch_error = (error, attachmentName) => {
+            handleFetchErrorArgs = { error, attachmentName };
+        };
+
+        await get_hybrid_report_by_sha256({
+            hybrid_sha: 'dummy_sha',
+            attachmentName: 'test.txt'
+        });
+
+        assert.ok(handleFetchErrorArgs, 'handle_hybrid_report_fetch_error should have been called');
+        assert.strictEqual(handleFetchErrorArgs.error, testError);
+        assert.strictEqual(handleFetchErrorArgs.attachmentName, 'test.txt');
+
+        context.fetch_hybrid_report = originalFetch;
+        context.handle_hybrid_report_fetch_error = originalHandleFetchError;
+    });
 });
 
 
