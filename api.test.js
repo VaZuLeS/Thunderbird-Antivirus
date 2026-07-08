@@ -1082,6 +1082,7 @@ describe('renderVirusTotalStats', () => {
         // Create mock environment
         context = {
             document: {
+                createDocumentFragment: () => context.document.createElement('fragment'),
                 createElement: (tag) => {
                     return {
                         tag: tag,
@@ -1178,6 +1179,7 @@ describe('renderScannerResults', () => {
         // Create mock environment
         context = {
             document: {
+                createDocumentFragment: () => context.document.createElement('fragment'),
                 createElement: (tag) => {
                     return {
                         tag: tag,
