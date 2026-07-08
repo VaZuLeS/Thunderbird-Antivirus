@@ -629,7 +629,8 @@ describe('background.js', () => {
                 keys.forEach(k => { out[k] = stored[k]; });
                 return out;
             }
-            return stored[keys];
+            // When requested with a single key, browser.storage.local.get returns an object
+            return { [keys]: stored[keys] };
         };
         context.browser.storage.local.set = async (obj) => { Object.assign(stored, obj); };
 

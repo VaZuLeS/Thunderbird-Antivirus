@@ -927,6 +927,12 @@ async function tab_mail_open_display(tab, message) {
     const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual && !!apikey_hybridanalysis;
 
     let fullMessage = await browser.messages.getFull(message.id);
+    // Determine attachments so we can decide whether to show the inline opt-in banner later
+    let attachments = [];
+    try {
+      attachments = await browser.messages.listAttachments(message.id);
+    } catch (e) { /* ignore */ }
+
     // Always call processAttachments to preserve existing behavior; sent_to_hybrid_by_attachment will decide about uploads
     await processAttachments(message);
 
@@ -934,8 +940,9 @@ async function tab_mail_open_display(tab, message) {
 
     await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText });
 
-    // If user hasn't opted-in for this sender, inject an inline Opt-In banner into message view (after threat UI injection so tests expecting inject order still pass)
-    if (!canAutoUpload) {
+    // If user hasn't opted-in for this sender, inject an inline Opt-In banner into message view
+    // Only show banner when there are attachments or links to scan to avoid clutter for trivial messages
+    if (!canAutoUpload && ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0))) {
       try {
         await browser.scripting.executeScript({
           target: { tabId: tab.id },
