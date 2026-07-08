@@ -52,7 +52,7 @@
                   "examples": ["URL extracted from message body", "Domain of a link", "IP address observed in headers or links"]
                 }
               ],
-              "policy_url": "https://vazules.github.io/Thunderbird-Antivirus/docs/privacy_policy.html"
+              "policy_url": "https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html"
             }
     }
   },
