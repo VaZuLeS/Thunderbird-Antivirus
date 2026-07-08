@@ -115,6 +115,107 @@ async function loadSettings() {
 }
 loadSettings();
 
+// Retry and upload queue helpers
+async function retryFetch(url, options, maxAttempts = 3, baseDelayMs = 500) {
+    let attempt = 0;
+    while (attempt < maxAttempts) {
+        try {
+            const res = await fetch(url, options);
+            if (res && (res.status === 200 || res.status === 201 || (res.status >= 200 && res.status < 300))) return res;
+            // Treat other statuses as transient for retry (e.g., 429, 5xx)
+        } catch (e) {
+            // network error — retry
+        }
+        attempt++;
+        const delay = Math.pow(2, attempt) * baseDelayMs + Math.floor(Math.random() * baseDelayMs);
+        await new Promise(r => setTimeout(r, delay));
+    }
+    throw new Error('retryFetch: max attempts reached');
+}
+
+// Scan IndexedDB for pending uploads and attempt to upload them with retry/backoff
+async function processPendingUploads() {
+    try {
+        const db = await getSharedDB();
+        // Read all records from 'hybridanalysis' store and look for attachments with state UNKNOWN or PENDING_UPLOAD
+        const tx = db.transaction('hybridanalysis', 'readonly');
+        const store = tx.objectStore('hybridanalysis');
+        const allKeysRequest = store.getAllKeys();
+        const allKeys = await new Promise((resolve, reject) => {
+            allKeysRequest.onsuccess = () => resolve(allKeysRequest.result);
+            allKeysRequest.onerror = () => reject(allKeysRequest.error);
+        });
+
+        for (const key of allKeys) {
+            const recRequest = store.get(key);
+            const record = await new Promise((resolve, reject) => {
+                recRequest.onsuccess = () => resolve(recRequest.result);
+                recRequest.onerror = () => reject(recRequest.error);
+            });
+            if (!record || !record.attachments) continue;
+            for (let i = 0; i < record.attachments.length; i++) {
+                const att = record.attachments[i];
+                if (att.state === 'UNKNOWN' || att.hybrid_submission_id === 'PENDING_UPLOAD') {
+                    try {
+                        // Try to re-fetch the attachment file from the message and upload
+                        if (!record.messageHeader) continue;
+                        // Attempt to get message from displayed messages — best-effort
+                        // Use browser.messages.query to find message by header (may not exist in some contexts)
+                        let msgs = [];
+                        try { msgs = await browser.messages.query({ headerMessageId: record.messageHeader }); } catch(e) { /* ignore */ }
+                        let messageId = msgs && msgs.length ? msgs[0].id : null;
+                        if (!messageId) {
+                            // As a fallback, try getDisplayedMessage for active tabs (best-effort)
+                            try {
+                                const displayed = await browser.messageDisplay.getDisplayedMessage();
+                                messageId = displayed ? displayed.id : null;
+                            } catch(e) {}
+                        }
+                        if (!messageId) continue;
+                        // Get the attachment file by partName
+                        const file = await browser.messages.getAttachmentFile(messageId, att.partName);
+                        const content = file.slice();
+                        const formData = new FormData();
+                        formData.append('scan_type', 'all');
+                        const fileObj = new File([content], att.attachment_name || 'upload.bin', { type: file.type || 'application/octet-stream' });
+                        formData.append('file', fileObj);
+
+                        const options = getHybridAnalysisOptions('POST', formData);
+                        const url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
+                        const res = await retryFetch(url, options, 3, 500);
+                        if (res && (res.status === 200 || res.status === 201)) {
+                            const uploadData = await res.json();
+                            // Update stored record for this attachment
+                            att.hybrid_submission_id = uploadData.submission_id || att.hybrid_submission_id;
+                            att.hybrid_job_id = uploadData.job_id || att.hybrid_job_id;
+                            att.hybrid_sha256 = uploadData.sha256 || att.hybrid_sha256;
+                            att.state = 'UPLOADED';
+
+                            // write back updated record
+                            const tx2 = db.transaction('hybridanalysis', 'readwrite');
+                            const store2 = tx2.objectStore('hybridanalysis');
+                            const putReq = store2.put(record);
+                            await new Promise((resolve, reject) => { putReq.onsuccess = resolve; putReq.onerror = () => reject(putReq.error); });
+                        }
+                    } catch (e) {
+                        // If upload fails, leave record as-is for future retries
+                        console.log('Retry upload failed for attachment, will retry later', e);
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.error('processPendingUploads failed', e);
+    }
+}
+
+// Schedule periodic processing of pending uploads (guarded for test environment)
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+      processPendingUploads().catch(e => console.error('processPendingUploads scheduled run failed', e));
+  }, 1000 * 60 * 5); // every 5 minutes
+}
+
 // Opt-In helpers
 async function hasHybridPermission() {
   try {
@@ -1314,6 +1415,8 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         return recordToSave;
       });
       console.log('Batch-Daten erfolgreich in DB gespeichert.');
+      // Trigger background processing to attempt pending uploads stored in the DB
+      try { await processPendingUploads(); } catch (e) { console.error('processPendingUploads after save failed', e); }
     }
   } catch (error) {
     console.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
