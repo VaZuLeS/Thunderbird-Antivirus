@@ -13,12 +13,13 @@
   },
   "permissions": [
     "messagesRead",
-    "https://hybrid-analysis.com/*",
-    "webRequest",
     "storage",
     "notifications",
     "scripting",
     "downloads"
+  ],
+  "optional_permissions": [
+    "https://hybrid-analysis.com/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none';"
