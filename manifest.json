@@ -11,7 +11,22 @@
       "strict_min_version": "78.0",
       "data_collection_permissions": {
         "description": "This extension does not collect personal data by default. One-off file uploads and metadata are sent to external analyzers only when the user explicitly opts in via the inline banner or options page. See the privacy policy for details: https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.md",
-        "collection_mode": "opt_in"
+        "collection_mode": "opt_in",
+        "data_items": [
+          {
+            "name": "file_uploads",
+            "description": "Files uploaded by the user for one-off scanning. Sent to external analyzers only after explicit per-message or options opt-in."
+          },
+          {
+            "name": "attachment_metadata",
+            "description": "Filename, size, MIME type and basic headers used to identify potentially malicious content for display in the UI."
+          }
+        ],
+        "contact": {
+          "email": "bludau.it.services@gmail.com",
+          "name": "Jan Bludau (VaZuLeS)"
+        },
+        "required": ["description","collection_mode","data_items","contact"]
       }
     }
   },
