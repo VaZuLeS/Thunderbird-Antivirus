@@ -21,7 +21,7 @@ jobs:
         run: node ./scripts/pre-submit-checks.js
       - name: Run unit tests
         run: node --test background.test.js
-      - name: web-ext lint (non-blocking)
-        run: npx web-ext lint || true
+      - name: web-ext lint
+        run: npx web-ext lint
 
 # Optional: add web-ext build and XPI packing steps in release workflows
