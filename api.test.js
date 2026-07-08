@@ -525,6 +525,84 @@ tag: tag,
 
 
 
+describe('handle_hybrid_report_fetch_error', () => {
+    let context;
+    let handle_hybrid_report_fetch_error;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            browser: {
+                storage: {
+                    local: {
+                        get: async () => ({})
+                    }
+                }
+            },
+            document: {
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tag: tag,
+                        className: '',
+                        textContent: '',
+                        appendChild: function(child) {
+                            children.push(child);
+                        },
+                        setAttribute: function(name, val) {
+                            this[name] = val;
+                        },
+                        addEventListener: function(evt, cb) {},
+                        get children() { return children; },
+                        get outerHTML() {
+                            let inner = children.map(c => c.outerHTML || c.textContent || '').join('') + this.textContent;
+                            return `<${this.tag}>${inner}</${this.tag}>`;
+                        }
+                    };
+                    return el;
+                },
+                getElementById: (id) => {
+                    if (id === 'hybrid_analysis_api_content') {
+                        if (!context.apiContentElement) {
+                            context.apiContentElement = {
+                                appendChild: function(child) {
+                                    this.child = child;
+                                }
+                            };
+                        }
+                        return context.apiContentElement;
+                    }
+                    return null;
+                }
+            },
+            console: { error: () => {}, log: () => {} },
+            String: String,
+            setTimeout: setTimeout
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        vm.runInContext(wrappedCode, context);
+
+        handle_hybrid_report_fetch_error = context.handle_hybrid_report_fetch_error;
+    });
+
+    it('injects Netzwerkfehler message for fetch error', async () => {
+        context.apiContentElement = null; // Reset
+        handle_hybrid_report_fetch_error(new Error('Network timeout'), 'test.txt');
+
+        const appended = context.apiContentElement.child;
+        assert.strictEqual(appended.className, 'alert-error');
+        assert.ok(appended.textContent.includes('Netzwerkfehler: Network timeout für Element test.txt'));
+        assert.strictEqual(appended.role, 'alert');
+    });
+});
+
+
+
 describe('renderManualUploadUI', () => {
     let context;
     let renderManualUploadUI;
@@ -1344,12 +1422,11 @@ describe('createUploadButton', () => {
     });
 });
 
-describe('setupCdrButton', () => {
+describe('handleUrlScanClick', () => {
     let context;
-    let setupCdrButton;
+    let handleUrlScanClick;
 
     before(async () => {
-        // Create mock environment
         context = {
             browser: {
                 storage: { local: { get: async () => ({}) } },
@@ -1358,9 +1435,7 @@ describe('setupCdrButton', () => {
                 }
             },
             document: {
-                getElementById: (id) => {
-                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : null;
-                },
+                createTextNode: () => ({}),
                 createElement: (tag) => {
                     if (!context.mockElements) context.mockElements = {};
                     let el = {
@@ -1379,6 +1454,10 @@ describe('setupCdrButton', () => {
                         },
                         setAttribute: function(k, v) { this[k] = v; },
                         removeAttribute: function(k) { delete this[k]; },
+                        appendChild: function(child) {
+                            if (!this.childNodes) this.childNodes = [];
+                            this.childNodes.push(child);
+                        },
                         addEventListener: function(event, cb) {
                             this.clicks = this.clicks || [];
                             this.clicks.push(cb);
@@ -1387,18 +1466,48 @@ describe('setupCdrButton', () => {
                             if (this.clicks) {
                                 this.clicks.forEach(cb => cb.call(this));
                             }
-                        }
+                        },
+                        remove: function() { this.removed = true; }
                     };
                     return el;
+                },
+                getElementById: (id) => {
+                    if (context.mockElements && context.mockElements[id]) {
+                        return context.mockElements[id];
+                    }
+                    if (!context.mockElements) context.mockElements = {};
+                    if (id.startsWith('upload-container-')) {
+                        context.mockElements[id] = { remove: function() { this.removed = true; } };
+                        return context.mockElements[id];
+                    }
+                    if (id.startsWith('upload-status-')) {
+                        context.mockElements[id] = {
+                            _innerText: "",
+                            get innerText() { return this._innerText; },
+                            set innerText(v) { this._innerText = v; this.textContent = v; },
+                            textContent: "",
+                            setAttribute: () => {}
+                        };
+                        return context.mockElements[id];
+                    }
+                    return null;
                 }
+            },
+            setTimeout: (cb, delay) => {
+                if (!context.timeouts) context.timeouts = [];
+                context.timeouts.push({cb, delay});
+            },
+            get_hybrid_report_by_sha256: function(opts) {
+                context.lastReportArgs = context.lastReportArgs || [];
+                context.lastReportArgs.push(opts);
             },
             console: { log: () => {}, error: () => {} },
             String: String, Array: Array
         };
 
         const vm = require('vm');
-        const path = require('path');
         const fs = require('fs');
+        const path = require('path');
         vm.createContext(context);
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
@@ -1406,87 +1515,86 @@ describe('setupCdrButton', () => {
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
 
         vm.runInContext(wrappedCode, context);
-        setupCdrButton = context.setupCdrButton;
+        handleUrlScanClick = context.handleUrlScanClick;
     });
 
-    it('does nothing if the button element is not found', () => {
+    beforeEach(() => {
         context.mockElements = {};
-        // Should not throw
-        setupCdrButton({ hybrid_sha: 'nonexistent', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1' });
+        context.timeouts = [];
+        context.lastReportArgs = [];
     });
 
-    it('attaches click listener, disables button and updates UI on click, then handles success', async () => {
+    it('handles success correctly', async () => {
         const assert = require('assert');
-        context.mockElements = {};
+        context.browser.runtime.sendMessage = async (msg) => {
+            context.lastMsg = msg;
+            return { status: 'success', data: { sha256: 'test-sha' } };
+        };
         const btn = context.document.createElement('button');
-        btn.id = 'btn-cdr-hash1';
+        const status = context.document.createElement('div');
+        status.id = 'upload-status-123';
 
-        const status = context.document.createElement('p');
-        status.id = 'cdr-status-hash1';
-
-        setupCdrButton({ hybrid_sha: 'hash1', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1' });
-
-        btn.click();
+        handleUrlScanClick(btn, 'https://example.com', '123', 'header1');
 
         assert.strictEqual(btn.disabled, true);
         assert.strictEqual(btn['aria-busy'], 'true');
-        assert.strictEqual(btn.innerText, 'Bereinige...');
-        assert.strictEqual(status.innerText, 'Lokales CDR wird durchgeführt...');
+        assert.strictEqual(btn.innerText, 'Sende URL...');
+        assert.strictEqual(status.innerText, 'URL wird an Hybrid Analysis übertragen...');
 
         await new Promise(process.nextTick);
 
-        assert.strictEqual(status.innerText, 'Herunterladen erfolgreich initiiert.');
-        assert.strictEqual(btn['aria-busy'], undefined);
-        assert.strictEqual(btn.className, 'btn-success mt-2 ml-2');
-        assert.strictEqual(btn.innerText, 'Bereinigt');
+        assert.strictEqual(context.lastMsg.action, 'scanUrl');
+        assert.strictEqual(context.lastMsg.url, 'https://example.com');
+
+        assert.strictEqual(status.innerText, 'Scan erfolgreich beauftragt! Lade Analyseergebnisse...');
+        assert.strictEqual(btn.className, 'btn-success mt-2');
+        assert.strictEqual(btn.innerText, 'Erfolgreich');
+
+        assert.strictEqual(context.timeouts.length, 1);
+
+        let prev = context.get_hybrid_report_by_sha256;
+        context.get_hybrid_report_by_sha256 = function(opts) { context.lastReportArgs.push(opts); };
+
+        context.timeouts[0].cb();
+        context.get_hybrid_report_by_sha256 = prev;
+
+        assert.strictEqual(context.lastReportArgs.length, 1);
+        assert.strictEqual(context.lastReportArgs[0].hybrid_sha, 'test-sha');
+        assert.strictEqual(context.lastReportArgs[0].attachmentName, 'https://example.com');
     });
 
-    it('handles download failure response correctly', async () => {
+    it('handles error response correctly', async () => {
         const assert = require('assert');
-        context.mockElements = {};
-
-        context.browser.runtime.sendMessage = async () => {
-            return { status: 'error', message: 'Invalid API key' };
+        context.browser.runtime.sendMessage = async (msg) => {
+            return { status: 'error', message: 'API error' };
         };
-
         const btn = context.document.createElement('button');
-        btn.id = 'btn-cdr-hash2';
+        const status = context.document.createElement('div');
+        status.id = 'upload-status-124';
 
-        const status = context.document.createElement('p');
-        status.id = 'cdr-status-hash2';
-
-        setupCdrButton({ hybrid_sha: 'hash2', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1' });
-
-        btn.click();
+        handleUrlScanClick(btn, 'https://example.com', '124', 'header1');
         await new Promise(process.nextTick);
 
-        assert.strictEqual(status.innerText, 'Fehler beim Herunterladen: Invalid API key');
+        assert.strictEqual(status.innerText, 'Fehler beim Upload: API error');
         assert.strictEqual(btn.disabled, false);
-        assert.strictEqual(btn['aria-busy'], undefined);
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 
-    it('handles download exception correctly', async () => {
+    it('handles exception correctly', async () => {
         const assert = require('assert');
-        context.mockElements = {};
-
-        context.browser.runtime.sendMessage = async () => {
+        context.browser.runtime.sendMessage = async (msg) => {
             throw new Error('Network error');
         };
-
         const btn = context.document.createElement('button');
-        btn.id = 'btn-cdr-hash3';
+        const status = context.document.createElement('div');
+        status.id = 'upload-status-125';
 
-        const status = context.document.createElement('p');
-        status.id = 'cdr-status-hash3';
-
-        setupCdrButton({ hybrid_sha: 'hash3', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1' });
-
-        btn.click();
+        handleUrlScanClick(btn, 'https://example.com', '125', 'header1');
         await new Promise(process.nextTick);
 
         assert.ok(status.innerText.includes('Kommunikationsfehler: Error: Network error'));
         assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 });
 
@@ -1614,5 +1722,162 @@ describe('renderActionButtons', () => {
 
         const btnCdr = context.mockElements[`btn-cdr-${hybrid_sha}`];
         assert.ok(btnCdr);
+    });
+});
+
+describe('setupRescanButton', () => {
+    let context;
+    let setupRescanButton;
+
+    before(async () => {
+        context = {
+            browser: {
+                storage: { local: { get: async () => ({}) } },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
+            document: {
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : null;
+                },
+                createElement: (tag) => {
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(val) { this._innerText = val; },
+                        attributes: {},
+                        setAttribute: function(k, v) { this.attributes[k] = v; },
+                        removeAttribute: function(k) { delete this.attributes[k]; },
+                        childNodes: [],
+                        appendChild: function(node) { this.childNodes.push(node); },
+                        listeners: {},
+                        addEventListener: function(evt, cb) { this.listeners[evt] = cb; },
+                        click: function() {
+                            if (this.listeners['click']) {
+                                this.listeners['click'].call(this);
+                            }
+                        }
+                    };
+                    return el;
+                }
+            },
+            window: {
+                location: {
+                    reload: () => { context.reloadCalled = true; }
+                }
+            },
+            setTimeout: (cb) => { cb(); },
+            String: String,
+            Array: Array
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        // Export setupRescanButton for testing
+        wrappedCode += '\n; globalThis.setupRescanButton = setupRescanButton;';
+
+        vm.runInContext(wrappedCode, context);
+        setupRescanButton = context.setupRescanButton;
+    });
+
+    beforeEach(() => {
+        context.mockElements = {};
+        context.reloadCalled = false;
+        context.lastMsg = null;
+    });
+
+    it('renders the rescan button and status element correctly', () => {
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        context.mockElements['btn-rescan-hash1'] = btn;
+        context.mockElements['rescan-status-hash1'] = status;
+
+        setupRescanButton({ hybrid_sha: 'hash1', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
+
+        // Ensure listener is added
+        assert.strictEqual(typeof btn.listeners['click'], 'function');
+    });
+
+    it('disables button and updates UI on click, then handles success', async () => {
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        context.mockElements['btn-rescan-hash2'] = btn;
+        context.mockElements['rescan-status-hash2'] = status;
+
+        context.browser.runtime.sendMessage = async (msg) => {
+            context.lastMsg = msg;
+            return { status: 'success' };
+        };
+
+        setupRescanButton({ hybrid_sha: 'hash2', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
+
+        btn.click();
+
+        // Immediate UI updates
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn.attributes['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Sende Rescan...');
+        assert.strictEqual(status.innerText, 'Datei wird für Rescan hochgeladen...');
+
+        // Wait for promise resolution (macro task)
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(context.lastMsg.action, 'uploadAttachment');
+        assert.strictEqual(status.innerText, 'Rescan erfolgreich initiiert. Lade Seite neu...');
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.className, 'btn-success mt-2');
+        assert.strictEqual(btn.innerText, 'Erfolgreich');
+        assert.strictEqual(context.reloadCalled, true);
+    });
+
+    it('handles upload failure response correctly', async () => {
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        context.mockElements['btn-rescan-hash3'] = btn;
+        context.mockElements['rescan-status-hash3'] = status;
+
+        context.browser.runtime.sendMessage = async () => {
+            return { status: 'error', message: 'test err' };
+        };
+
+        setupRescanButton({ hybrid_sha: 'hash3', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
+
+        btn.click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(status.innerText, 'Fehler beim Rescan: test err');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles upload exception correctly', async () => {
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        context.mockElements['btn-rescan-hash4'] = btn;
+        context.mockElements['rescan-status-hash4'] = status;
+
+        context.browser.runtime.sendMessage = async () => {
+            throw new Error('Network error');
+        };
+
+        setupRescanButton({ hybrid_sha: 'hash4', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
+
+        btn.click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(status.innerText, 'Kommunikationsfehler: Error: Network error');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 });

@@ -69,7 +69,8 @@
 
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'btn-success';
-        cancelBtn.textContent = 'Abbrechen';
+        cancelBtn.textContent = 'Abbrechen (Esc)';
+        cancelBtn.setAttribute('aria-keyshortcuts', 'Escape');
         cancelBtn.addEventListener('click', () => {
             overlay.remove();
             linkElement.focus();
