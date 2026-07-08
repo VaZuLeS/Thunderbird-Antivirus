@@ -1470,3 +1470,133 @@ describe('renderActionButtons', () => {
         assert.ok(btnCdr);
     });
 });
+
+describe('handle_hybrid_report_error', () => {
+    let context;
+    let handle_hybrid_report_error;
+
+    beforeEach(async () => {
+        // Create mock environment
+        context = {
+            browser: {
+                runtime: {
+                    openOptionsPage: () => {
+                        context.optionsPageOpened = true;
+                    }
+                }
+            },
+            document: {
+                createElement: (tag) => {
+                    let el = {
+                        tagName: tag.toUpperCase(),
+                        className: '',
+                        textContent: '',
+                        _attributes: {},
+                        setAttribute: function(k, v) { this._attributes[k] = v; },
+                        children: [],
+                        appendChild: function(child) {
+                            this.children.push(child);
+                        },
+                        listeners: {},
+                        addEventListener: function(event, cb) {
+                            if (!this.listeners[event]) {
+                                this.listeners[event] = [];
+                            }
+                            this.listeners[event].push(cb);
+                        },
+                        click: function() {
+                            if (this.listeners['click']) {
+                                this.listeners['click'].forEach(cb => cb());
+                            }
+                        }
+                    };
+                    return el;
+                },
+                getElementById: (id) => {
+                    if (id === 'hybrid_analysis_api_content') {
+                        if (!context.apiContentEl) {
+                            context.apiContentEl = {
+                                children: [],
+                                appendChild: function(child) {
+                                    this.children.push(child);
+                                }
+                            };
+                        }
+                        return context.apiContentEl;
+                    }
+                    return null;
+                }
+            },
+            console: { log: () => {}, error: () => {} }, // Mock console to avoid noisy logs
+            String: String,
+            Array: Array
+        };
+
+        context.optionsPageOpened = false;
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        // Prevent the IIFE from executing during test initialization
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        vm.runInContext(wrappedCode, context);
+
+        handle_hybrid_report_error = context.handle_hybrid_report_error;
+    });
+
+    it('appends an error message to the DOM for 500 status codes', () => {
+        const response = { status: 500, statusText: 'Internal Server Error' };
+        handle_hybrid_report_error(response, 'test_attachment.pdf');
+
+        const apiContentEl = context.apiContentEl;
+        assert.strictEqual(apiContentEl.children.length, 1);
+
+        const errDiv = apiContentEl.children[0];
+        assert.strictEqual(errDiv.tagName, 'DIV');
+        assert.strictEqual(errDiv.className, 'alert-error');
+        assert.strictEqual(errDiv._attributes['role'], 'alert');
+        assert.strictEqual(errDiv.textContent, 'API Error: 500 für Element test_attachment.pdf');
+    });
+
+    it('appends an error message with a settings button for 401 status codes', () => {
+        const response = { status: 401, statusText: 'Unauthorized' };
+        handle_hybrid_report_error(response, 'test_attachment.pdf');
+
+        const apiContentEl = context.apiContentEl;
+        assert.strictEqual(apiContentEl.children.length, 1);
+
+        const errDiv = apiContentEl.children[0];
+        assert.strictEqual(errDiv.tagName, 'DIV');
+        assert.strictEqual(errDiv.className, 'alert-error');
+        assert.strictEqual(errDiv._attributes['role'], 'alert');
+        assert.ok(errDiv.textContent.includes('API Error: 401 für Element test_attachment.pdf'));
+        assert.ok(errDiv.textContent.includes('(Möglicherweise ungültiger oder fehlender API-Schlüssel).'));
+
+        assert.strictEqual(errDiv.children.length, 2);
+        assert.strictEqual(errDiv.children[0].tagName, 'BR');
+
+        const btnSettings = errDiv.children[1];
+        assert.strictEqual(btnSettings.tagName, 'BUTTON');
+        assert.strictEqual(btnSettings.className, 'btn-primary mt-2 ml-2');
+        assert.strictEqual(btnSettings.textContent, 'Einstellungen öffnen');
+    });
+
+    it('settings button calls browser.runtime.openOptionsPage when clicked', () => {
+        const response = { status: 403, statusText: 'Forbidden' };
+        handle_hybrid_report_error(response, 'test_attachment.pdf');
+
+        const apiContentEl = context.apiContentEl;
+        const errDiv = apiContentEl.children[0];
+        const btnSettings = errDiv.children[1];
+
+        // Ensure button was created
+        assert.strictEqual(btnSettings.tagName, 'BUTTON');
+
+        // Simulate click
+        btnSettings.click();
+
+        // Verify that openOptionsPage was called
+        assert.strictEqual(context.optionsPageOpened, true);
+    });
+});
