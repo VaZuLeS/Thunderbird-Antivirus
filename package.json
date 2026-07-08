@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "test": "NODE_PATH=node_modules node --test"
+  },
   "dependencies": {
     "jsdom": "^29.1.1"
   }
