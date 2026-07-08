@@ -1096,6 +1096,15 @@ describe('renderVirusTotalStats', () => {
                         get innerHTML() {
                             if (this._innerHTML !== null) return this._innerHTML;
                             return this.children.map(c => {
+                                if (c.children && c.children.length > 0) { // DocumentFragment mock
+                                    let childrenHtml = c.children.map(fc => {
+                                        let cls = fc.className ? ` class="${fc.className}"` : '';
+                                        let inner = fc.innerHTML || fc.textContent || '';
+                                        return `<${fc.tag || fc.tagName || 'p'}${cls}>${inner}</${fc.tag || fc.tagName || 'p'}>`;
+                                    }).join('');
+                                    let cls = c.className ? ` class="${c.className}"` : '';
+                                    return `<${c.tag || tag}${cls}>${childrenHtml}</${c.tag || tag}>`;
+                                }
                                 let cls = c.className ? ` class="${c.className}"` : '';
                                 let inner = c.innerHTML || c.textContent || '';
                                 return `<${c.tag || tag}${cls}>${inner}</${c.tag || tag}>`;
@@ -1103,6 +1112,14 @@ describe('renderVirusTotalStats', () => {
                         },
                         set innerHTML(val) {
                             this._innerHTML = val;
+                        }
+                    };
+                },
+                createDocumentFragment: () => {
+                    return {
+                        children: [],
+                        appendChild: function(node) {
+                            this.children.push(node);
                         }
                     };
                 }
@@ -1192,6 +1209,15 @@ describe('renderScannerResults', () => {
                         get innerHTML() {
                             if (this._innerHTML !== null) return this._innerHTML;
                             return this.children.map(c => {
+                                if (c.children && c.children.length > 0) { // DocumentFragment mock
+                                    let childrenHtml = c.children.map(fc => {
+                                        let cls = fc.className ? ` class="${fc.className}"` : '';
+                                        let inner = fc.innerHTML || fc.textContent || '';
+                                        return `<${fc.tag || fc.tagName || 'p'}${cls}>${inner}</${fc.tag || fc.tagName || 'p'}>`;
+                                    }).join('');
+                                    let cls = c.className ? ` class="${c.className}"` : '';
+                                    return `<${c.tag || tag}${cls}>${childrenHtml}</${c.tag || tag}>`;
+                                }
                                 let cls = c.className ? ` class="${c.className}"` : '';
                                 let inner = c.innerHTML || c.textContent || '';
                                 return `<${c.tag || tag}${cls}>${inner}</${c.tag || tag}>`;
@@ -1199,6 +1225,14 @@ describe('renderScannerResults', () => {
                         },
                         set innerHTML(val) {
                             this._innerHTML = val;
+                        }
+                    };
+                },
+                createDocumentFragment: () => {
+                    return {
+                        children: [],
+                        appendChild: function(node) {
+                            this.children.push(node);
                         }
                     };
                 }
