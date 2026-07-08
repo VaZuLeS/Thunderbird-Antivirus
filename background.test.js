@@ -591,6 +591,68 @@ describe('background.js', () => {
         assert.strictEqual(sentResponse.status, 'success');
     });
 
+    it('runtime.onMessage requestScan returns permission_denied when request fails', async () => {
+        // Mock permissions to deny
+        context.browser.permissions = {
+            contains: async () => false,
+            request: async () => false
+        };
+
+        const listeners = context.browser.runtime.onMessage.listeners;
+        let found = false;
+        for (const listener of listeners) {
+            try {
+                const res = await listener({ action: 'requestScan', messageId: 42, senderEmail: 'user@example.com' }, { tab: { id: 1 } });
+                if (res && res.error === 'permission_denied') {
+                    found = true;
+                    break;
+                }
+            } catch (e) {
+                // Some listeners may use callback style; ignore
+            }
+        }
+        assert.ok(found, 'Expected at least one runtime listener to return permission_denied');
+    });
+
+    it('runtime.onMessage requestScan asks for permission and runs scan when granted', async () => {
+        let requested = false;
+        context.browser.permissions = {
+            contains: async () => false,
+            request: async () => { requested = true; return true; }
+        };
+
+        // Mock storage.get/set for scanningEnabledSenders
+        let stored = {};
+        context.browser.storage.local.get = async (keys) => {
+            if (Array.isArray(keys)) {
+                const out = {};
+                keys.forEach(k => { out[k] = stored[k]; });
+                return out;
+            }
+            return stored[keys];
+        };
+        context.browser.storage.local.set = async (obj) => { Object.assign(stored, obj); };
+
+        // Replace heavy functions with no-ops to observe they are called
+        let processed = false;
+        context.processAttachments = async (msg) => { processed = true; };
+        context.processLinks = async (tab, message, fullMessage) => ({ messageText: '', urls: [], filteredUrls: [] });
+        context.evaluateAndInjectThreats = async () => { processed = true; };
+
+        const listeners = context.browser.runtime.onMessage.listeners;
+        let gotSuccess = false;
+        for (const listener of listeners) {
+            try {
+                const res = await listener({ action: 'requestScan', messageId: 101, senderEmail: 'user@example.com', tabId: 1 }, { tab: { id: 1 } });
+                if (res && res.success) { gotSuccess = true; break; }
+            } catch (e) {}
+        }
+
+        assert.strictEqual(requested, true);
+        assert.ok(stored.scanningEnabledSenders && stored.scanningEnabledSenders.includes('user@example.com'));
+        assert.ok(gotSuccess, 'Expected requestScan handler to return success when permission granted');
+    });
+
 
     describe('checkVirusTotalIP', () => {
         it('returns true if malicious > 0', async () => {
