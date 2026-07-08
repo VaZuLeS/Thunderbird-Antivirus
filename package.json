@@ -1,5 +1,4 @@
 {
-  "type": "module",
   "scripts": {
     "test": "cross-env NODE_PATH=node_modules node --test"
   },
