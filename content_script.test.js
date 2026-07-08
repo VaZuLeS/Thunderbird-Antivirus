@@ -289,7 +289,7 @@ describe('content_script.js', () => {
         assert.ok(warningOverlay);
 
         const cancelBtn = warningOverlay.querySelector('.btn-success');
-        assert.strictEqual(cancelBtn.textContent, 'Abbrechen');
+        assert.strictEqual(cancelBtn.textContent, 'Abbrechen (Esc)');
 
         let focusCalled = false;
         link.focus = () => { focusCalled = true; };
@@ -415,7 +415,7 @@ describe('content_script.js', () => {
 
             const cancelBtn = btnGroup.querySelector('.btn-success');
             assert.ok(cancelBtn, 'Cancel button should be created');
-            assert.strictEqual(cancelBtn.textContent, 'Abbrechen');
+            assert.strictEqual(cancelBtn.textContent, 'Abbrechen (Esc)');
 
             const openBtn = btnGroup.querySelector('.btn-primary');
             assert.ok(openBtn, 'Open Anyway button should be created');
