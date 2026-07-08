@@ -704,7 +704,7 @@ async function checkFirstCommunication(senderEmail) {
                 if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
                     isFirstCommunication = true;
                 } else {
-                    if (knownSendersCache.size > MAX_KNOWN_SENDERS) {
+                    if (knownSendersCache.size >= MAX_KNOWN_SENDERS) {
                         // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
                         knownSendersCache.delete(knownSendersCache.keys().next().value);
                     }
