@@ -1054,8 +1054,14 @@ function extractUrls(text) {
             let url = text.substring(startIdx, endIdx);
 
             let len = url.length;
-            while(len > 0 && punct.indexOf(url[len - 1]) !== -1) {
-                len--;
+            while(len > 0) {
+                let c = url.charCodeAt(len - 1);
+                // Check for '.', ',', ';', ':', '!', ')', ']'
+                if (c === 46 || c === 44 || c === 59 || c === 58 || c === 33 || c === 41 || c === 93) {
+                    len--;
+                } else {
+                    break;
+                }
             }
             if (len !== url.length) {
                 url = url.substring(0, len);
