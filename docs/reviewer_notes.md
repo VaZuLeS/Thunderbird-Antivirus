@@ -43,12 +43,12 @@ gecko.data_collection_permissions (manifest explanation)
   - name: file_uploads
   - description: Uploads user-consented attachment hashes or files to third‑party malware analysis providers (Hybrid‑Analysis, VirusTotal, urlscan.io, urlhaus).
   - data_practices:
-    - data_types: ["file_hashes", "filenames", "attachment_metadata"]
+    - data_types: ["file_hashes", "filenames", "attachment_metadata", "urls", "domains", "ip_addresses", "message_metadata", "message_headers", "email_addresses", "timestamps"]
     - purpose: Malware analysis and threat classification to protect the user's mailbox
     - retention: Provider‑defined; the extension does not retain uploaded file contents unless explicitly requested by the user
     - destinations: ["https://hybrid-analysis.com", "https://virustotal.com", "https://urlscan.io", "https://urlhaus.abuse.ch"]
   - user_controls: Uploads only occur after explicit per‑message or per‑account opt‑in. Host permission is requested at runtime when an upload is initiated. Users can revoke opt‑in in the options UI.
-  - examples: ["SHA-256 hash of attachment and filename", "attachment MIME type and size"]
+  - examples: ["SHA-256 hash of attachment and filename", "attachment MIME type and size", "URLs extracted from message body", "Sender email and message header IDs"]
 - policy_url: https://vazules.github.io/Thunderbird-Antivirus/docs/privacy_policy.html — points to the published privacy policy (replace with the final hosted URL before publishing).
 
 Notes for the reviewer: the default behavior is to never upload files automatically. Reviewers can validate the opt‑in behavior by setting an API key in the options page and using the per‑message "Für diese Nachricht scannen" action; the extension will request host access at that moment.
