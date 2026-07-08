@@ -73,8 +73,14 @@
     "https://*urlhaus.abuse.ch/*"
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'none';"
+      "extension_pages": "default-src 'none'; script-src 'self'; connect-src 'self' https://hybrid-analysis.com https://*.hybrid-analysis.com https://virustotal.com https://*.virustotal.com https://urlscan.io https://www.urlscan.io https://urlhaus.abuse.ch https://api.abuseipdb.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; object-src 'none'; frame-src https://www.urlscan.io"
   },
+    "web_accessible_resources": [
+      {
+        "resources": ["img/*","styles/*"],
+        "matches": ["<all_urls>"]
+      }
+    ],
   "background": {
     "scripts": [
       "db.js",

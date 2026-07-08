@@ -63,6 +63,15 @@ gecko.data_collection_permissions (manifest explanation)
 
 Notes for the reviewer: the default behavior is to never upload files automatically. Reviewers can validate the opt‑in behavior by setting an API key in the options page and using the per‑message "Für diese Nachricht scannen" action; the extension will request host access at that moment.
 
+Security / CSP review
+- The extension enforces a strict Content Security Policy for extension pages:
+  - default-src 'none'; script-src 'self'; connect-src to only declared providers; img-src 'self' and data:; style-src 'self' and 'unsafe-inline' (styles use lightweight inline styles in options and injected UI); object-src 'none'.
+- web_accessible_resources limited to local images and styles to avoid exposing arbitrary files.
+- Background script review results:
+  - No uses of eval(), new Function(), or dynamic code construction found.
+  - DOM injection performed by injected functions uses createElement/textContent (no innerHTML) to prevent XSS.
+  - Network calls are routed through ApiGateway and use injected auth headers; requests are limited to declared destinations.
+
 Reviewer Quick Test
 - Set an API key in Options (Hybrid‑Analysis / VirusTotal) and ensure browser.permissions.request prompts when triggering an upload.
 - Confirm uploads only include declared fields per category (hashes, filenames, URLs, domains, IPs) by reviewing outgoing requests in a proxy or network inspector.
