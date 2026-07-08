@@ -1,8 +1,11 @@
 {
   "scripts": {
-    "test": "NODE_PATH=node_modules node --test --reporter=spec"
+    "test": "cross-env NODE_PATH=node_modules node --test --reporter=spec"
   },
   "dependencies": {
     "jsdom": "^29.1.1"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
   }
 }
