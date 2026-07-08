@@ -1265,6 +1265,198 @@ describe('renderScannerResults', () => {
 });
 
 
+describe('handleUploadClick', () => {
+    let context;
+    let handleUploadClick;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            browser: {
+                storage: { local: { get: async () => ({}) } },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
+            document: {
+                createTextNode: (text) => ({ textContent: text }),
+                createElement: (tag) => ({ tagName: tag, setAttribute: () => {}, removeAttribute: () => {}, appendChild: () => {}, addEventListener: () => {} }),
+                getElementById: (id) => {
+                    if (!context.mockElements) context.mockElements = {};
+                    if (context.mockElements[id]) return context.mockElements[id];
+                    let el = { textContent: '', insertAdjacentHTML: () => {}, appendChild: () => {}, setAttribute: () => {}, removeAttribute: () => {}, addEventListener: () => {}, remove: () => {}, _id: id };
+                    context.mockElements[id] = el;
+                    return el;
+                }
+            },
+            setTimeout: (cb, delay) => {
+                context.timeouts.push({cb, delay});
+            },
+            get_hybrid_report_by_sha256: () => {}
+        };
+
+        const vm = require('vm');
+        const fs = require('fs');
+        const code = fs.readFileSync('api.js', 'utf8');
+
+        // Wrap the code to extract handleUploadClick
+        let wrappedCode = `(function() {
+            let browser = context.browser;
+            let document = context.document;
+            let setTimeout = context.setTimeout;
+
+            ${code}
+
+            context.handleUploadClick = handleUploadClick;
+
+            get_hybrid_report_by_sha256 = function() {
+                if (context.get_hybrid_report_by_sha256) {
+                    return context.get_hybrid_report_by_sha256.apply(this, arguments);
+                }
+            };
+        })();`;
+
+        vm.runInContext(wrappedCode, vm.createContext({context, console}));
+        handleUploadClick = context.handleUploadClick;
+    });
+
+    it('disables button and updates UI, then handles success', async () => {
+        const assert = require('assert');
+        context.mockElements = {}; // reset
+        context.timeouts = []; // reset
+        context.lastReportArgs = null; // reset
+
+        // Mock successful sendMessage
+        context.browser.runtime.sendMessage = async (msg) => {
+            context.lastMsg = msg;
+            return { status: 'success' };
+        };
+
+        const btn = {
+            disabled: false,
+            setAttribute: function(k, v) { this[k] = v; },
+            removeAttribute: function(k) { delete this[k]; },
+            innerText: '',
+            className: ''
+        };
+        const statusEl = {
+            textContent: '',
+            innerText: ''
+        };
+        context.mockElements['upload-status-safeHash2'] = statusEl;
+
+        const args = { hash: 'hash2', safeHash: 'safeHash2', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' };
+        const handler = handleUploadClick(args);
+
+        // Call handler bound to btn
+        handler.call(btn);
+
+        // Check intermediate state
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Lade hoch...');
+        assert.strictEqual(statusEl.textContent, 'Datei wird an Hybrid Analysis übertragen...');
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(context.lastMsg.action, 'uploadAttachment');
+        assert.strictEqual(context.lastMsg.hash, 'hash2');
+
+        assert.strictEqual(statusEl.innerText, 'Upload erfolgreich! Lade Analyseergebnisse...');
+        assert.strictEqual(btn['aria-busy'], undefined); // removed
+        assert.strictEqual(btn.className, 'btn-success mt-2');
+        assert.strictEqual(btn.innerText, 'Erfolgreich');
+
+        // Check timeout
+        assert.strictEqual(context.timeouts.length, 1);
+        assert.strictEqual(context.timeouts[0].delay, 3000);
+
+        // Execute timeout callback
+        let removedContainer = false;
+        context.mockElements['upload-container-safeHash2'] = { remove: () => { removedContainer = true; } };
+
+        let prev = context.get_hybrid_report_by_sha256;
+        context.get_hybrid_report_by_sha256 = function(opts) { context.lastReportArgs = [opts]; };
+
+        context.timeouts[0].cb();
+
+        context.get_hybrid_report_by_sha256 = prev;
+
+        assert.strictEqual(removedContainer, true);
+        assert.strictEqual(context.lastReportArgs[0].hybrid_sha, 'hash2');
+        assert.strictEqual(context.lastReportArgs[0].attachmentName, 'test.txt');
+    });
+
+    it('handles upload failure response correctly', async () => {
+        const assert = require('assert');
+        context.mockElements = {};
+
+        context.browser.runtime.sendMessage = async () => {
+            return { status: 'error', message: 'Invalid API key' };
+        };
+
+        const btn = {
+            disabled: false,
+            setAttribute: function(k, v) { this[k] = v; },
+            removeAttribute: function(k) { delete this[k]; },
+            innerText: '',
+            className: ''
+        };
+        const statusEl = {
+            textContent: '',
+            innerText: ''
+        };
+        context.mockElements['upload-status-safeHash3'] = statusEl;
+
+        const args = { hash: 'hash3', safeHash: 'safeHash3', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' };
+        const handler = handleUploadClick(args);
+        handler.call(btn);
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.strictEqual(statusEl.innerText, 'Fehler beim Upload: Invalid API key');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles upload exception correctly', async () => {
+        const assert = require('assert');
+        context.mockElements = {};
+
+        context.browser.runtime.sendMessage = async () => {
+            throw new Error('Network error');
+        };
+
+        const btn = {
+            disabled: false,
+            setAttribute: function(k, v) { this[k] = v; },
+            removeAttribute: function(k) { delete this[k]; },
+            innerText: '',
+            className: ''
+        };
+        const statusEl = {
+            textContent: '',
+            innerText: ''
+        };
+        context.mockElements['upload-status-safeHash4'] = statusEl;
+
+        const args = { hash: 'hash4', safeHash: 'safeHash4', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' };
+        const handler = handleUploadClick(args);
+        handler.call(btn);
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.ok(statusEl.innerText.includes('Kommunikationsfehler: Error: Network error'));
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+});
+
 describe('createUploadButton', () => {
     let context;
     let createUploadButton;
