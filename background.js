@@ -1,3 +1,10 @@
+const Logger = {
+    error: (...args) => console.error(...args),
+    warn: (...args) => console.warn(...args),
+    info: (...args) => console.info(...args),
+    log: (...args) => console.log(...args)
+};
+
 let customBlacklist = new Set();
 let customWhitelist = new Set();
 let authStatus = null;
@@ -110,7 +117,7 @@ async function loadSettings() {
       ipReputationApiKey = result.ipReputationApiKey;
     }
   } catch (error) {
-    console.error("Fehler beim Laden der Einstellungen:", error);
+    Logger.error("Fehler beim Laden der Einstellungen:", error);
   }
 }
 loadSettings();
@@ -120,7 +127,7 @@ async function hasHybridPermission() {
   try {
     return await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] });
   } catch (e) {
-    console.error('permissions.contains failed', e);
+    Logger.error('permissions.contains failed', e);
     return false;
   }
 }
@@ -133,7 +140,7 @@ async function addSenderOptIn(senderEmail) {
       arr.push(senderEmail);
       await browser.storage.local.set({ scanningEnabledSenders: arr });
     }
-  } catch (e) { console.error('addSenderOptIn failed', e); }
+  } catch (e) { Logger.error('addSenderOptIn failed', e); }
 }
 
 
@@ -224,7 +231,7 @@ async function checkAbuseIPDB(ip, apikey) {
             return true;
         }
     } catch (e) {
-        console.error("Fehler bei AbuseIPDB Abfrage", e);
+        Logger.error("Fehler bei AbuseIPDB Abfrage", e);
     }
     return false;
 }
@@ -245,7 +252,7 @@ async function checkVirusTotalIP(ip, apikey) {
             }
         }
     } catch (e) {
-        console.error("Fehler bei VirusTotal IP Abfrage", e);
+        Logger.error("Fehler bei VirusTotal IP Abfrage", e);
     }
     return false;
 }
@@ -639,7 +646,7 @@ async function processAndUploadUrls(message, filteredUrls) {
                     };
                 }
             } catch (e) {
-                console.error('Fehler beim automatischen URL-Upload', e);
+                Logger.error('Fehler beim automatischen URL-Upload', e);
             }
             return { url: url, state: 'UNKNOWN' };
         }));
@@ -684,7 +691,7 @@ async function checkIPReputation(receivedHeaders) {
                     } else if (ipReputationProvider === "virustotal") {
                         isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
                     }
-                } catch(e) { console.error(e); }
+                } catch(e) { Logger.error(e); }
                 return isMalicious;
             })();
 
@@ -968,7 +975,7 @@ async function tab_mail_open_display(tab, message) {
                 }
               } catch (e) {
                 btn.textContent = 'Fehler beim Starten des Scans';
-                console.error(e);
+                Logger.error(e);
                 btn.disabled = false;
               }
             });
@@ -984,7 +991,7 @@ async function tab_mail_open_display(tab, message) {
           },
           args: [message.id, senderEmail]
         });
-      } catch (e) { console.error('Failed to inject opt-in banner', e); }
+      } catch (e) { Logger.error('Failed to inject opt-in banner', e); }
     }
   } catch (error) {
     console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
@@ -1141,10 +1148,10 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
                     attachment
                 );
             } else {
-                console.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
+                Logger.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
             }
         } catch (uploadError) {
-            console.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
+            Logger.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
         }
     }
 
@@ -1244,7 +1251,7 @@ async function process_single_attachment(message, attachment) {
             );
 
         } catch (error) {
-          console.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
+          Logger.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
           return null;
         }
     }
@@ -1253,7 +1260,7 @@ async function process_single_attachment(message, attachment) {
 
 async function sent_to_hybrid_by_attachment(message, attachments) {
   if (!apikey_hybridanalysis) {
-      console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
+      Logger.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
       return;
   }
 
@@ -1316,7 +1323,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
       console.log('Batch-Daten erfolgreich in DB gespeichert.');
     }
   } catch (error) {
-    console.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
+    Logger.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
   }
 }
 
@@ -1360,7 +1367,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
       });
     }
   } catch (error) {
-    console.error('IndexedDB (Links) Save Error:', error);
+    Logger.error('IndexedDB (Links) Save Error:', error);
   }
 }
 
@@ -1402,7 +1409,7 @@ async function indexedDB_save_links_to_db(message, urls) {
       console.log('URLs erfolgreich in DB gespeichert.');
     }
   } catch (error) {
-    console.error('Fehler bei der URL-Speicherung in der Datenbank:', error);
+    Logger.error('Fehler bei der URL-Speicherung in der Datenbank:', error);
   }
 }
 
@@ -1433,7 +1440,7 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             try {
                 activeMessage = await browser.messageDisplay.getDisplayedMessage(tab.id);
             } catch (e) {
-                console.error("Failed to get displayed message for context menu scan:", e);
+                Logger.error("Failed to get displayed message for context menu scan:", e);
             }
 
             let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
@@ -1585,7 +1592,7 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
           await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText });
           return { success: true };
         } catch (e) {
-          console.error('requestScan failed', e);
+          Logger.error('requestScan failed', e);
           return { success: false, error: e && e.message ? e.message : String(e) };
         }
   }
@@ -1731,7 +1738,7 @@ async function handleUrlScan(url, headerMessageId) {
                 return existingRecord;
             });
         } catch (dbError) {
-            console.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
+            Logger.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
         }
         return json_data;
     } else {
@@ -1774,7 +1781,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
                 return existingRecord;
             });
         } catch (dbError) {
-            console.error('Fehler beim Aktualisieren des DB Records:', dbError);
+            Logger.error('Fehler beim Aktualisieren des DB Records:', dbError);
         }
         return json_data;
     } else {
@@ -1807,7 +1814,7 @@ async function checkVirusTotal(hash, apikey) {
             }
             return null;
         } catch (e) {
-            console.error("Fehler bei VirusTotal Abfrage:", e);
+            Logger.error("Fehler bei VirusTotal Abfrage:", e);
             return null;
         }
     })();
@@ -1844,7 +1851,7 @@ async function checkURLhaus(domain, apikey) {
             return true;
         }
     } catch (e) {
-        console.error("Fehler bei URLhaus Abfrage", e);
+        Logger.error("Fehler bei URLhaus Abfrage", e);
     }
     return false;
 }
@@ -1877,7 +1884,7 @@ async function checkUrlscanIo(url, apikey) {
 
         return await pollUrlscanIoResult(uuid);
     } catch (e) {
-        console.error("Fehler bei urlscan.io Abfrage", e);
+        Logger.error("Fehler bei urlscan.io Abfrage", e);
         return { status: 'ERROR', details: e.message };
     }
 }
