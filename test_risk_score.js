@@ -207,7 +207,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
         try {
             let parsed = new URL(url);
             let hostname = parsed.hostname.toLowerCase();
-            if (linkDomains.indexOf(hostname) === -1) {
+            if (hostname && linkDomains.indexOf(hostname) === -1) {
                 linkDomains.push(hostname);
             }
         } catch (e) { /* Ignore invalid URLs */ }

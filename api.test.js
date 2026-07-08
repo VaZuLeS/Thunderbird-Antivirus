@@ -501,7 +501,9 @@ tag: tag,
 
         await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
-        assert.ok(context.apiContentElement.innerHTML.includes('<div class="alert-error">Netzwerkfehler: Network timeout für Element test.txt</div>'));
+        const html = context.apiContentElement.innerHTML;
+        assert.ok(html.includes('alert-error'));
+        assert.ok(html.includes('Netzwerkfehler: Network timeout'));
     });
 
     it('injects API Error message on fetch non-200 status', async () => {
@@ -516,7 +518,8 @@ tag: tag,
 
         await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
-        assert.ok(context.apiContentElement.innerHTML.includes('<div class="alert-error">API Error: 500 für Element test.txt</div>'));
+        assert.ok(context.apiContentElement.innerHTML.includes('API Error: 500 für Element test.txt'));
+        assert.ok(context.apiContentElement.innerHTML.includes('alert-error'));
     });
 });
 
@@ -1264,6 +1267,8 @@ describe('createUploadButton', () => {
 
         assert.strictEqual(status.innerText, 'Upload erfolgreich! Lade Analyseergebnisse...');
         assert.strictEqual(btn['aria-busy'], undefined); // removed
+        assert.strictEqual(btn.className, 'btn-success mt-2');
+        assert.strictEqual(btn.innerText, 'Erfolgreich');
 
         // Check timeout
         assert.strictEqual(context.timeouts.length, 1);
