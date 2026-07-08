@@ -137,39 +137,6 @@ async function addSenderOptIn(senderEmail) {
   } catch (e) { console.error('addSenderOptIn failed', e); }
 }
 
-// Handle runtime requests from injected content to perform a one-off scan
-browser.runtime.onMessage.addListener(async (msg, sender) => {
-  if (msg && msg.action === 'requestScan' && msg.messageId) {
-    // Ensure permission to contact hybrid-analysis
-    let granted = await hasHybridPermission();
-    if (!granted) {
-      try {
-        granted = await browser.permissions.request({ origins: ['https://hybrid-analysis.com/*'] });
-      } catch (e) { granted = false; }
-    }
-
-    if (!granted) {
-      return { success: false, error: 'permission_denied' };
-    }
-
-    if (msg.senderEmail) {
-      await addSenderOptIn(msg.senderEmail.toLowerCase());
-    }
-
-    try {
-      const messageObj = { id: msg.messageId };
-      await processAttachments(messageObj);
-      const fullMessage = await browser.messages.getFull(msg.messageId);
-      const tab = { id: sender.tab && sender.tab.id ? sender.tab.id : (msg.tabId || null) };
-      const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage);
-      await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText });
-      return { success: true };
-    } catch (e) {
-      console.error('requestScan failed', e);
-      return { success: false, error: e && e.message ? e.message : String(e) };
-    }
-  }
-});
 
 // Listener für Änderungen an den Einstellungen (API Key)
 browser.storage.onChanged.addListener((changes, area) => {
@@ -1560,6 +1527,40 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         default:
             return false;
     }
+});
+
+// Handle runtime requests from injected content to perform a one-off scan
+browser.runtime.onMessage.addListener(async (msg, sender) => {
+  if (msg && msg.action === 'requestScan' && msg.messageId) {
+        // Ensure permission to contact hybrid-analysis
+        let granted = await hasHybridPermission();
+        if (!granted) {
+          try {
+            granted = await browser.permissions.request({ origins: ['https://hybrid-analysis.com/*'] });
+          } catch (e) { granted = false; }
+        }
+
+        if (!granted) {
+          return { success: false, error: 'permission_denied' };
+        }
+
+        if (msg.senderEmail) {
+          await addSenderOptIn(msg.senderEmail.toLowerCase());
+        }
+
+        try {
+          const messageObj = { id: msg.messageId };
+          await processAttachments(messageObj);
+          const fullMessage = await browser.messages.getFull(msg.messageId);
+          const tab = { id: sender.tab && sender.tab.id ? sender.tab.id : (msg.tabId || null) };
+          const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage);
+          await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText });
+          return { success: true };
+        } catch (e) {
+          console.error('requestScan failed', e);
+          return { success: false, error: e && e.message ? e.message : String(e) };
+        }
+  }
 });
 
 /**
