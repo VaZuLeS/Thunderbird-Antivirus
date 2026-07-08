@@ -502,18 +502,17 @@ function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
 }
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
-    // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
-    let linkDomains = [];
+    // ⚡ Bolt Optimization: Use O(1) Set lookup instead of array indexOf
+    let linkDomainsSet = new Set();
     for (let url of urls) {
         try {
             // 🛡️ Sentinel: Use standard URL parser safely
             let hostname = getHostnameOptimized(url);
             if (!hostname) continue;
-            if (linkDomains.indexOf(hostname) === -1) {
-                linkDomains.push(hostname);
-            }
+            linkDomainsSet.add(hostname);
         } catch (e) { /* Ignore invalid URLs */ }
     }
+    let linkDomains = Array.from(linkDomainsSet);
 
     if (linkDomains.length > 0 && senderDomain) {
         let matchFound = false;
@@ -721,18 +720,17 @@ async function checkFirstCommunication(senderEmail) {
 async function checkURLhausDomains(filteredUrls) {
     let urlhausDomains = [];
     if (urlhausApikey && filteredUrls.length > 0) {
-        // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
-        let linkDomains = [];
+        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of array indexOf
+        let linkDomainsSet = new Set();
         for (let url of filteredUrls) {
             try {
                 // 🛡️ Sentinel: Use standard URL parser safely
                 let hostname = getHostnameOptimized(url);
                 if (!hostname) continue;
-                if (linkDomains.indexOf(hostname) === -1) {
-                    linkDomains.push(hostname);
-                }
+                linkDomainsSet.add(hostname);
             } catch (e) { /* Ignore invalid URLs */ }
         }
+        let linkDomains = Array.from(linkDomainsSet);
 
         const domainChecks = linkDomains.map(async (domain) => {
             if (urlhausCache.has(domain)) {
