@@ -20,9 +20,9 @@ Permissions rationale (for store reviewers):
 - optional host permissions: listed in manifest.json and requested at runtime; only requested when user triggers an upload.
 
 Screenshots (placeholders):
-- screenshot-1: inline opt‑in banner over a message with attachment (show button "Für diese Nachricht scannen")
-- screenshot-2: warning banner injected when a threat score >= threshold (show verdict labels)
-- screenshot-3: Options page showing per-account scanning toggle and provider choices
+- docs/screenshot-1-inline-optin.svg — Inline opt‑in banner over a message with attachment (shows button "Für diese Nachricht scannen")
+- docs/screenshot-2-warning.svg — Warning banner injected when a threat score >= threshold (shows verdict labels)
+- docs/screenshot-3-options.svg — Options page showing per-account scanning toggle and provider choices
 
 What's new / Release notes:
 - Prepare store assets & privacy policy
