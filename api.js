@@ -381,7 +381,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
     }
 }
 
-function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null }) {
+function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats = null }) {
     const card = document.createElement('div');
     card.className = "card mb-3";
 
@@ -530,7 +530,7 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
 
 function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }) {
     let container = document.getElementById('hybrid_analysis_api_content');
-    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats });
+    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats });
     container.appendChild(reportNode);
 
     setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, headerMessageId });
