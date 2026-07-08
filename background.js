@@ -62,13 +62,20 @@ const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?
 
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
 
+// ⚡ Bolt Optimization: Use a precomputed Uint8Array Look-Up Table (LUT) for O(1) character classification
+const IS_WORD_CHAR_LUT = new Uint8Array(256);
+for (let code = 0; code < 256; code++) {
+    let isWord = false;
+    if (code >= 97 && code <= 122) isWord = true; // a-z
+    else if (code >= 48 && code <= 57) isWord = true; // 0-9
+    else if (code >= 65 && code <= 90) isWord = true; // A-Z
+    else if (code === 95) isWord = true; // _
+    else if (code === 228 || code === 246 || code === 252 || code === 223 || code === 196 || code === 214 || code === 220) isWord = true; // ä, ö, ü, ß, Ä, Ö, Ü
+    IS_WORD_CHAR_LUT[code] = isWord ? 1 : 0;
+}
+
 function isWordChar(code) {
-    if (code >= 97 && code <= 122) return true; // a-z
-    if (code >= 48 && code <= 57) return true; // 0-9
-    if (code >= 65 && code <= 90) return true; // A-Z
-    if (code === 95) return true; // _
-    if (code === 228 || code === 246 || code === 252 || code === 223 || code === 196 || code === 214 || code === 220) return true; // ä, ö, ü, ß, Ä, Ö, Ü
-    return false;
+    return code < 256 && IS_WORD_CHAR_LUT[code] === 1;
 }
 
 // Einstellungen laden

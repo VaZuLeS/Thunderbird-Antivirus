@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300">
+  <rect width="100%" height="100%" fill="#fff8e1" stroke="#ffcc80" stroke-width="2" rx="8"/>
+  <text x="30" y="70" font-family="Arial, sans-serif" font-size="28" fill="#333">Thundy AV: Echtzeit-Scan ist für diese Nachricht nicht aktiviert.</text>
+  <rect x="30" y="90" width="260" height="44" rx="6" fill="#1976d2"/>
+  <text x="60" y="120" font-family="Arial, sans-serif" font-size="18" fill="#fff">Für diese Nachricht scannen</text>
+  <text x="30" y="170" font-family="Arial, sans-serif" font-size="14" fill="#666">Hinweis: Beim Scannen werden Hashes oder Anhänge (nach Zustimmung) an einen externen Service übermittelt.</text>
+</svg>
