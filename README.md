@@ -34,3 +34,8 @@ Contributing
 
 License: MIT
 
+## Maintainers & Support
+- Maintainer: Jan Bludau (VaZuLeS)
+- Support: bludau.it.services@gmail.com
+- For community discussion, open an issue or use Discussions on the GitHub repo.
+

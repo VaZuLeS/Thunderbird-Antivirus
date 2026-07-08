@@ -4,8 +4,8 @@ Kurzprofil
 Diese Thunderbird‑Extension prüft eingehende E‑Mails in Echtzeit auf sicherheitsrelevante Probleme (Malware‑Indikatoren, Phishing‑Anzeichen, gefährliche Anhänge) und nutzt dafür optional externe Analyse‑Dienste. Scanning ist standardmäßig deaktiviert; Nutzer muss ausdrücklich zustimmen (Opt‑In). Nur die vom Nutzer freigegebenen Konten werden gescannt.
 
 1. Verantwortlicher
-Name/Organisation: [EINTRAGEN]
-Kontakt: [E‑Mail/Support‑URL eintragen]
+Name/Organisation: VaZuLeS (Jan Bludau)
+Kontakt: bludau.it.services@gmail.com
 
 2. Welche Daten werden verarbeitet?
 - Metadaten der Nachricht: Absender, Empfänger, Betreff, Zeitstempel (zur Zuordnung und Anzeige). 
@@ -43,6 +43,6 @@ Kontakt: [E‑Mail/Support‑URL eintragen]
 10. Hosting / Veröffentlichung
 - Dieser Entwurf wurde in docs/privacy_policy.md eingefügt. Für eine öffentlich zugängliche URL kann GitHub Pages benutzt werden (homepage_url bereits gesetzt). Bitte ergänze Verantwortlichenname und Kontakt.
 
-Stand: [Datum eintragen]
+Stand: 2026-07-08
 
 Feedback/Anpassungen bitte hier angeben.

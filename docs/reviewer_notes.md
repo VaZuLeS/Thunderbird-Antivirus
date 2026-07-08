@@ -30,8 +30,8 @@ Security controls
 - Host permissions are optional and requested at runtime.
 
 Contact & placeholders
-- Responsible organization: VaZuLeS (placeholder)
-- Support: support@yourdomain.example (please replace before publishing)
+- Responsible organization: VaZuLeS (Jan Bludau)
+- Support: bludau.it.services@gmail.com
 
 Notes for reviewers
 - Privacy policy URL: docs/privacy_policy.md (include full hosted URL in store listing)
