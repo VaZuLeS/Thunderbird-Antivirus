@@ -17,6 +17,8 @@ jobs:
           node-version: '20'
       - name: Install dependencies
         run: npm ci
+      - name: Pre-submit checks (manifest, privacy, permissions)
+        run: node ./scripts/pre-submit-checks.js
       - name: Run unit tests
         run: node --test background.test.js --reporter=spec
       - name: web-ext lint (non-blocking)
