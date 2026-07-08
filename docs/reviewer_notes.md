@@ -39,16 +39,26 @@ Notes for reviewers
 
 gecko.data_collection_permissions (manifest explanation)
 - required: ["none"] — the extension does not require automatic data collection permissions by default.
-- optional: the extension declares a single optional data collection category "file_uploads" for reviewers' clarity:
-  - name: file_uploads
-  - description: Uploads user-consented attachment hashes or files to third‑party malware analysis providers (Hybrid‑Analysis, VirusTotal, urlscan.io, urlhaus).
-  - data_practices:
-    - data_types: ["file_hashes", "filenames", "attachment_metadata", "urls", "domains", "ip_addresses", "message_metadata", "message_headers", "email_addresses", "timestamps"]
-    - purpose: Malware analysis and threat classification to protect the user's mailbox
-    - retention: Provider‑defined; the extension does not retain uploaded file contents unless explicitly requested by the user
-    - destinations: ["https://hybrid-analysis.com", "https://virustotal.com", "https://urlscan.io", "https://urlhaus.abuse.ch"]
-  - user_controls: Uploads only occur after explicit per‑message or per‑account opt‑in. Host permission is requested at runtime when an upload is initiated. Users can revoke opt‑in in the options UI.
-  - examples: ["SHA-256 hash of attachment and filename", "attachment MIME type and size", "URLs extracted from message body", "Sender email and message header IDs"]
+- optional: the extension declares two optional data collection categories to help reviewers map features to data flows:
+  1) file_uploads
+    - description: Uploads user-consented attachment hashes or files to third‑party malware analysis providers (Hybrid‑Analysis, VirusTotal).
+    - data_practices:
+      - data_types: ["file_hashes", "filenames", "attachment_metadata", "message_headers", "message_metadata", "email_addresses", "timestamps"]
+      - purpose: Malware analysis of attachments to protect the user's mailbox
+      - retention: Provider‑defined; the extension does not retain uploaded file contents unless explicitly requested by the user
+      - destinations: ["https://hybrid-analysis.com", "https://virustotal.com"]
+    - user_controls: Uploads only occur after explicit per‑message or per‑account opt‑in. Host permission is requested at runtime when an upload is initiated. Users can revoke opt‑in in the options UI.
+    - examples: ["SHA-256 hash of attachment and filename", "attachment MIME type and size"]
+
+  2) url_and_ip_scans
+    - description: Scans URLs and domains (urlscan.io, urlhaus) and checks IP reputation (abuseipdb) from user‑visible message content or links for threat intelligence.
+    - data_practices:
+      - data_types: ["urls", "domains", "ip_addresses", "message_metadata", "timestamps"]
+      - purpose: Detect malicious URLs, phishing infrastructure and IP reputation checks to protect the user
+      - retention: Provider‑defined; only minimal metadata (scan id, verdict) stored locally by the extension
+      - destinations: ["https://urlscan.io", "https://urlhaus.abuse.ch", "https://api.abuseipdb.com"]
+    - user_controls: URL/IP scans are performed only when configured in settings (autoScanLinks) or when the user triggers a manual scan. Host permission is requested at runtime.
+    - examples: ["URL extracted from message body", "Domain of a link", "IP address observed in headers or links"]
 - policy_url: https://vazules.github.io/Thunderbird-Antivirus/docs/privacy_policy.html — points to the published privacy policy (replace with the final hosted URL before publishing).
 
 Notes for the reviewer: the default behavior is to never upload files automatically. Reviewers can validate the opt‑in behavior by setting an API key in the options page and using the per‑message "Für diese Nachricht scannen" action; the extension will request host access at that moment.
