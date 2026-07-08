@@ -1105,6 +1105,21 @@ describe('renderVirusTotalStats', () => {
                             this._innerHTML = val;
                         }
                     };
+                },
+                createDocumentFragment: function() {
+                    return {
+                        children: [],
+                        appendChild: function(node) {
+                            this.children.push(node);
+                        },
+                        get innerHTML() {
+                            return this.children.map(c => {
+                                let cls = c.className ? ` class="${c.className}"` : '';
+                                let inner = c.innerHTML || c.textContent || '';
+                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
+                            }).join('');
+                        }
+                    };
                 }
             },
             console: { log: () => {}, error: () => {} },
@@ -1199,6 +1214,21 @@ describe('renderScannerResults', () => {
                         },
                         set innerHTML(val) {
                             this._innerHTML = val;
+                        }
+                    };
+                },
+                createDocumentFragment: function() {
+                    return {
+                        children: [],
+                        appendChild: function(node) {
+                            this.children.push(node);
+                        },
+                        get innerHTML() {
+                            return this.children.map(c => {
+                                let cls = c.className ? ` class="${c.className}"` : '';
+                                let inner = c.innerHTML || c.textContent || '';
+                                return `<${c.tag}${cls}>${inner}</${c.tag}>`;
+                            }).join('');
                         }
                     };
                 }
