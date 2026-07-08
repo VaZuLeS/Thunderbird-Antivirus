@@ -115,12 +115,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (statusSpan.id === 'status') {
             if (_saveTimeoutId) clearTimeout(_saveTimeoutId);
             _saveTimeoutId = setTimeout(() => {
-                statusSpan.style.display = 'none';
+                if (statusSpan.style) statusSpan.style.display = 'none';
             }, 3000);
         } else {
             if (_clearTimeoutId) clearTimeout(_clearTimeoutId);
             _clearTimeoutId = setTimeout(() => {
-                statusSpan.style.display = 'none';
+                if (statusSpan.style) statusSpan.style.display = 'none';
             }, 3000);
         }
     }).catch(error => {
@@ -168,12 +168,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (statusSpan.id === 'status') {
             if (_saveTimeoutId) clearTimeout(_saveTimeoutId);
             _saveTimeoutId = setTimeout(() => {
-                statusSpan.style.display = 'none';
+                if (statusSpan.style) statusSpan.style.display = 'none';
             }, 3000);
         } else {
             if (_clearTimeoutId) clearTimeout(_clearTimeoutId);
             _clearTimeoutId = setTimeout(() => {
-                statusSpan.style.display = 'none';
+                if (statusSpan.style) statusSpan.style.display = 'none';
             }, 3000);
         }
   });
