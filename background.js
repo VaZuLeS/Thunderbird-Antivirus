@@ -115,6 +115,28 @@ async function loadSettings() {
 }
 loadSettings();
 
+// Opt-In helpers
+async function hasHybridPermission() {
+  try {
+    return await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] });
+  } catch (e) {
+    console.error('permissions.contains failed', e);
+    return false;
+  }
+}
+
+async function addSenderOptIn(senderEmail) {
+  try {
+    const res = await browser.storage.local.get('scanningEnabledSenders');
+    const arr = res.scanningEnabledSenders || [];
+    if (!arr.includes(senderEmail)) {
+      arr.push(senderEmail);
+      await browser.storage.local.set({ scanningEnabledSenders: arr });
+    }
+  } catch (e) { console.error('addSenderOptIn failed', e); }
+}
+
+
 // Listener für Änderungen an den Einstellungen (API Key)
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.apikey) {
@@ -874,12 +896,96 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
   try {
-    await processAttachments(message);
+    // Determine sender email for per-sender opt-in storage
+    let senderEmail = message.author || '';
+    const start = senderEmail.indexOf('<');
+    if (start !== -1) {
+      const end = senderEmail.indexOf('>', start + 1);
+      if (end !== -1) senderEmail = senderEmail.substring(start + 1, end);
+    }
+    senderEmail = senderEmail.toLowerCase();
+
+    const stored = await browser.storage.local.get('scanningEnabledSenders');
+    const enabledSenders = stored.scanningEnabledSenders || [];
+
+    const permission = await hasHybridPermission();
+    const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual && !!apikey_hybridanalysis;
 
     let fullMessage = await browser.messages.getFull(message.id);
+    // Determine attachments so we can decide whether to show the inline opt-in banner later
+    let attachments = [];
+    try {
+      attachments = await browser.messages.listAttachments(message.id);
+    } catch (e) { /* ignore */ }
+
+    // Always call processAttachments to preserve existing behavior; sent_to_hybrid_by_attachment will decide about uploads
+    await processAttachments(message);
+
     let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage);
 
     await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText });
+
+    // If user hasn't opted-in for this sender, inject an inline Opt-In banner into message view
+    // Only show banner when there are attachments or links to scan to avoid clutter for trivial messages
+    if (!canAutoUpload && ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0))) {
+      try {
+        await browser.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: function(messageId, senderEmail) {
+            const existing = document.getElementById('thundy-optin-banner');
+            if (existing) return;
+            const banner = document.createElement('div');
+            banner.id = 'thundy-optin-banner';
+            banner.style.backgroundColor = '#fff8e1';
+            banner.style.border = '1px solid #ffcc80';
+            banner.style.color = '#333';
+            banner.style.padding = '8px';
+            banner.style.margin = '8px';
+            banner.style.borderRadius = '4px';
+            banner.style.fontFamily = 'Arial, sans-serif';
+            banner.style.zIndex = '9999';
+
+            const text = document.createElement('span');
+            text.textContent = 'Thundy AV: Echtzeit‑Scan ist für diese Nachricht nicht aktiviert.';
+            banner.appendChild(text);
+
+            const btn = document.createElement('button');
+            btn.textContent = 'Für diese Nachricht scannen';
+            btn.style.marginLeft = '10px';
+            btn.addEventListener('click', async () => {
+              btn.disabled = true;
+              btn.textContent = 'Scannen...';
+              try {
+                const resp = await browser.runtime.sendMessage({ action: 'requestScan', messageId: messageId, senderEmail: senderEmail });
+                if (resp && resp.success) {
+                  btn.textContent = 'Scan abgeschlossen';
+                } else if (resp && resp.error === 'permission_denied') {
+                  btn.textContent = 'Erforderliche Berechtigung verweigert';
+                  btn.disabled = false;
+                } else {
+                  btn.textContent = 'Scan fehlgeschlagen';
+                  btn.disabled = false;
+                }
+              } catch (e) {
+                btn.textContent = 'Fehler beim Starten des Scans';
+                console.error(e);
+                btn.disabled = false;
+              }
+            });
+            banner.appendChild(btn);
+
+            const small = document.createElement('div');
+            small.style.fontSize = '12px';
+            small.style.marginTop = '6px';
+            small.textContent = 'Hinweis: Beim Scannen werden (je nach Einstellung) Dateien/Hashes an einen externen Service übertragen. Scanning kann in den Erweiterungs‑Einstellungen konfiguriert werden.';
+            banner.appendChild(small);
+
+            document.body.prepend(banner);
+          },
+          args: [message.id, senderEmail]
+        });
+      } catch (e) { console.error('Failed to inject opt-in banner', e); }
+    }
   } catch (error) {
     console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
   }
@@ -1449,6 +1555,40 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         default:
             return false;
     }
+});
+
+// Handle runtime requests from injected content to perform a one-off scan
+browser.runtime.onMessage.addListener(async (msg, sender) => {
+  if (msg && msg.action === 'requestScan' && msg.messageId) {
+        // Ensure permission to contact hybrid-analysis
+        let granted = await hasHybridPermission();
+        if (!granted) {
+          try {
+            granted = await browser.permissions.request({ origins: ['https://hybrid-analysis.com/*'] });
+          } catch (e) { granted = false; }
+        }
+
+        if (!granted) {
+          return { success: false, error: 'permission_denied' };
+        }
+
+        if (msg.senderEmail) {
+          await addSenderOptIn(msg.senderEmail.toLowerCase());
+        }
+
+        try {
+          const messageObj = { id: msg.messageId };
+          await processAttachments(messageObj);
+          const fullMessage = await browser.messages.getFull(msg.messageId);
+          const tab = { id: sender.tab && sender.tab.id ? sender.tab.id : (msg.tabId || null) };
+          const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage);
+          await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText });
+          return { success: true };
+        } catch (e) {
+          console.error('requestScan failed', e);
+          return { success: false, error: e && e.message ? e.message : String(e) };
+        }
+  }
 });
 
 /**

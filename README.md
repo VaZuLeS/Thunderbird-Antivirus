@@ -1,57 +1,41 @@
 # Thunderbird Antivirus
 
-[![CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/workflows/ci.yml/badge.svg)](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Releases](https://img.shields.io/github/v/release/VaZuLeS/Thunderbird-Antivirus)](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases)
+This repository contains a Thunderbird WebExtension (Thundy AV) that performs opt‑in, real‑time scans of incoming emails using local checks and optional external analysis services.
 
-A focused, open-source antivirus toolkit for Thunderbird-related workflows: fast local scans, configurable rules, and integration hooks for mail clients and automation.
+Badges: [CI] [License] [Releases]
 
-## Table of Contents
-- Quickstart
-- Key features
-- Installation
-- Usage
-- Development
-- Contributing
-- Security & License
+Key features
+- Thunderbird WebExtension with per-account and per-message Opt‑In scanning
+- Inline per-message banner to trigger one‑off scans and optionally opt a sender in
+- Optional runtime host permission requests for external analysis providers (e.g., Hybrid Analysis, VirusTotal, urlscan.io)
+- Minimal default permissions; host access requested only when user consents
+- Privacy‑first defaults and an editable privacy policy (docs/privacy_policy.md)
 
-## Quickstart (2 commands)
-```bash
-git clone https://github.com/VaZuLeS/Thunderbird-Antivirus.git
-cd Thunderbird-Antivirus && ./thunderbird-antivirus --scan sample-data/
-```
+Quickstart — extension development
+- Install dependencies: npm ci
+- Run unit tests: node --test background.test.js
+- For manual extension testing in Thunderbird: build XPI or load as temporary add-on via "about:debugging" (or use web-ext with Thunderbird target if configured).
 
-## Key features
-- Fast local scanning with configurable rule sets
-- Cross-platform support (Windows, Linux)
-- Integration hooks for Thunderbird / mail clients
-- Extensible rule engine for custom detections
+How to add/support another external service
+1. Add the service host origin (e.g. "https://www.virustotal.com/*") to `optional_permissions` in manifest.json.
+2. Add handling in options.js/background.js to request permission at runtime and to call the provider's API according to its docs.
+3. Update docs/reviewer_notes.md and docs/privacy_policy.md with the provider name and exact data sent.
 
-## Installation
-- Option A: Use prebuilt binary (releases)
-- Option B: Build from source — see docs/quickstart.md for details
+Developer notes
+- Tests: background.test.js covers main scanning/permission flows.
+- CI: .github/workflows/ci.yml runs unit tests and a non-blocking web-ext lint.
 
-## Usage example
-```bash
-# basic scan
-./thunderbird-antivirus --scan /path/to/maildir
+Privacy & Store
+- Scanning is disabled by default; users must opt in per account or per message.
+- Privacy policy: docs/privacy_policy.md — replace placeholders with responsible org/contact before publishing.
 
-# verbose with report
-./thunderbird-antivirus --scan /path/to/maildir --output report.json --verbose
-```
+Contributing
+- See CONTRIBUTING.md; open issues for feature requests and bugs.
 
-## Development
-- See docs/quickstart.md to build and run tests.
-- Run linters and unit tests before opening PRs.
-
-## Contributing
-Please read CONTRIBUTING.md before contributing. Short guide: create an issue, pick a labelled task (good-first-issue), open a branch, add tests, and open a PR.
-
-## Security
-Report security issues via the SECURITY.md process (private disclosure channel). Do not open public issues for potential vulnerabilities.
-
-## License
-This project is licensed under the MIT License. See LICENSE for details.
+License: MIT
 
 ## Maintainers & Support
-See CODEOWNERS for maintainer contacts. For community discussion, open an issue or use Discussions on the GitHub repo.
+- Maintainer: Jan Bludau (VaZuLeS)
+- Support: bludau.it.services@gmail.com
+- For community discussion, open an issue or use Discussions on the GitHub repo.
+
