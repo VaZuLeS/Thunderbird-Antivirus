@@ -11,8 +11,23 @@
       "id": "bludau.it.services@gmail.com",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
-        "required": ["none"]
-      }
+              "required": ["none"],
+              "optional": [
+                {
+                  "name": "file_uploads",
+                  "description": "Uploads user-consented attachment hashes or files to third‑party malware analysis providers for scanning (Hybrid‑Analysis, VirusTotal, urlscan.io, urlhaus).",
+                  "data_practices": {
+                    "data_types": ["file_hashes", "filenames", "attachment_metadata"],
+                    "purpose": "Malware analysis and threat classification to protect the user's mailbox",
+                    "retention": "Provider‑defined; the extension does not retain uploaded file contents unless explicitly requested by the user",
+                    "destinations": ["https://hybrid-analysis.com", "https://virustotal.com", "https://urlscan.io", "https://urlhaus.abuse.ch"]
+                  },
+                  "user_controls": "Uploads only occur after explicit per‑message or per‑account opt‑in. Host permission is requested at runtime when an upload is initiated. Users can revoke opt‑in in the options UI.",
+                  "examples": ["SHA-256 hash of attachment and filename", "attachment MIME type and size"]
+                }
+              ],
+              "policy_url": "https://vazules.github.io/Thunderbird-Antivirus/docs/privacy_policy.html"
+            }
     }
   },
   "permissions": [

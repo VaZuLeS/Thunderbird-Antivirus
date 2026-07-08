@@ -37,5 +37,21 @@ Notes for reviewers
 - Privacy policy URL: docs/privacy_policy.md (include full hosted URL in store listing)
 - Reviewer can test runtime permission flow by opening a message with attachments and clicking the inline "Für diese Nachricht scannen" button.
 
+gecko.data_collection_permissions (manifest explanation)
+- required: ["none"] — the extension does not require automatic data collection permissions by default.
+- optional: the extension declares a single optional data collection category "file_uploads" for reviewers' clarity:
+  - name: file_uploads
+  - description: Uploads user-consented attachment hashes or files to third‑party malware analysis providers (Hybrid‑Analysis, VirusTotal, urlscan.io, urlhaus).
+  - data_practices:
+    - data_types: ["file_hashes", "filenames", "attachment_metadata"]
+    - purpose: Malware analysis and threat classification to protect the user's mailbox
+    - retention: Provider‑defined; the extension does not retain uploaded file contents unless explicitly requested by the user
+    - destinations: ["https://hybrid-analysis.com", "https://virustotal.com", "https://urlscan.io", "https://urlhaus.abuse.ch"]
+  - user_controls: Uploads only occur after explicit per‑message or per‑account opt‑in. Host permission is requested at runtime when an upload is initiated. Users can revoke opt‑in in the options UI.
+  - examples: ["SHA-256 hash of attachment and filename", "attachment MIME type and size"]
+- policy_url: https://vazules.github.io/Thunderbird-Antivirus/docs/privacy_policy.html — points to the published privacy policy (replace with the final hosted URL before publishing).
+
+Notes for the reviewer: the default behavior is to never upload files automatically. Reviewers can validate the opt‑in behavior by setting an API key in the options page and using the per‑message "Für diese Nachricht scannen" action; the extension will request host access at that moment.
+
 --
 Co-authored-by: Copilot App <223556219+Copilot@users.noreply.github.com>
