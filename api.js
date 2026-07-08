@@ -293,31 +293,34 @@ function renderVirusTotalStats(virustotal_stats, card) {
 
 function renderScannerResults(scanners, card) {
     if (scanners && scanners.length > 0) {
+        // Optimization: Use DocumentFragment to batch DOM insertions and avoid multiple reflows
+        const fragment = document.createDocumentFragment();
         for (const scanner of scanners) {
             const pScanner = document.createElement('p');
             pScanner.className = "ml-2";
             pScanner.textContent = `Scanner: ${scanner.name}`;
-            card.appendChild(pScanner);
+            fragment.appendChild(pScanner);
 
             const pStatus = document.createElement('p');
             pStatus.className = "ml-4";
             pStatus.textContent = `Status: ${scanner.status}`;
-            card.appendChild(pStatus);
+            fragment.appendChild(pStatus);
 
             if (scanner.anti_virus_results) {
                 const pAvRes = document.createElement('p');
                 pAvRes.className = "ml-4";
                 pAvRes.textContent = `AV-Ergebnisse:`;
-                card.appendChild(pAvRes);
+                fragment.appendChild(pAvRes);
 
                 for (const avResult of scanner.anti_virus_results) {
                     const pAv = document.createElement('p');
                     pAv.className = "ml-6";
                     pAv.textContent = `AV: ${avResult.product} - Urteil: ${avResult.verdict}`;
-                    card.appendChild(pAv);
+                    fragment.appendChild(pAv);
                 }
             }
         }
+        card.appendChild(fragment);
     } else {
         const emptyCard = document.createElement('div');
         emptyCard.className = 'card card-info mt-2';
