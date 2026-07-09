@@ -91,7 +91,8 @@
             }
         });
 
-        cancelBtn.focus();
+        modal.tabIndex = -1;
+        modal.focus();
     }
 
     function createLoadingModal(url) {

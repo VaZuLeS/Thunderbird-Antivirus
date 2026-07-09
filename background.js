@@ -1,3 +1,10 @@
+const Logger = {
+    error: (...args) => console.error(...args),
+    warn: (...args) => console.warn(...args),
+    info: (...args) => console.info(...args),
+    log: (...args) => console.log(...args)
+};
+
 let customBlacklist = new Set();
 let customWhitelist = new Set();
 let authStatus = null;
@@ -53,7 +60,6 @@ function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     return options;
 }
 
-// ⚡ Bolt Optimization: Precompiled Hexadecimal Look-Up Table (LUT) for O(1) byte-to-hex conversion
 const byteToHex = new Array(256);
 for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
@@ -62,13 +68,20 @@ const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?
 
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
 
+// ⚡ Bolt Optimization: Use a precomputed Uint8Array Look-Up Table (LUT) for O(1) character classification
+const IS_WORD_CHAR_LUT = new Uint8Array(256);
+for (let code = 0; code < 256; code++) {
+    let isWord = false;
+    if (code >= 97 && code <= 122) isWord = true; // a-z
+    else if (code >= 48 && code <= 57) isWord = true; // 0-9
+    else if (code >= 65 && code <= 90) isWord = true; // A-Z
+    else if (code === 95) isWord = true; // _
+    else if (code === 228 || code === 246 || code === 252 || code === 223 || code === 196 || code === 214 || code === 220) isWord = true; // ä, ö, ü, ß, Ä, Ö, Ü
+    IS_WORD_CHAR_LUT[code] = isWord ? 1 : 0;
+}
+
 function isWordChar(code) {
-    if (code >= 97 && code <= 122) return true; // a-z
-    if (code >= 48 && code <= 57) return true; // 0-9
-    if (code >= 65 && code <= 90) return true; // A-Z
-    if (code === 95) return true; // _
-    if (code === 228 || code === 246 || code === 252 || code === 223 || code === 196 || code === 214 || code === 220) return true; // ä, ö, ü, ß, Ä, Ö, Ü
-    return false;
+    return code < 256 && IS_WORD_CHAR_LUT[code] === 1;
 }
 
 // Einstellungen laden
@@ -110,7 +123,7 @@ async function loadSettings() {
       ipReputationApiKey = result.ipReputationApiKey;
     }
   } catch (error) {
-    console.error("Fehler beim Laden der Einstellungen:", error);
+    Logger.error("Fehler beim Laden der Einstellungen:", error);
   }
 }
 loadSettings();
@@ -120,7 +133,7 @@ async function hasHybridPermission() {
   try {
     return await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] });
   } catch (e) {
-    console.error('permissions.contains failed', e);
+    Logger.error('permissions.contains failed', e);
     return false;
   }
 }
@@ -133,7 +146,7 @@ async function addSenderOptIn(senderEmail) {
       arr.push(senderEmail);
       await browser.storage.local.set({ scanningEnabledSenders: arr });
     }
-  } catch (e) { console.error('addSenderOptIn failed', e); }
+  } catch (e) { Logger.error('addSenderOptIn failed', e); }
 }
 
 
@@ -173,7 +186,6 @@ browser.storage.onChanged.addListener((changes, area) => {
 
 function extractPublicIPs(receivedHeaders) {
     if (!receivedHeaders) return [];
-    // ⚡ Bolt Optimization: Use a Set for O(1) deduplication to improve performance on large header sets
     let ips = [];
     let ipsSet = new Set();
 
@@ -181,8 +193,6 @@ function extractPublicIPs(receivedHeaders) {
         let matches = header.match(GLOBAL_IPV4_REGEX);
         if (matches) {
             for (let ip of matches) {
-                // ⚡ Bolt Optimization: Use String.prototype.indexOf and string splitting without .map(Number)
-                // to avoid allocating multiple arrays and mapping over them for every IP address.
                 const dot1 = ip.indexOf('.');
                 const part1 = parseInt(ip.substring(0, dot1), 10);
 
@@ -224,7 +234,7 @@ async function checkAbuseIPDB(ip, apikey) {
             return true;
         }
     } catch (e) {
-        console.error("Fehler bei AbuseIPDB Abfrage", e);
+        Logger.error("Fehler bei AbuseIPDB Abfrage", e);
     }
     return false;
 }
@@ -245,7 +255,7 @@ async function checkVirusTotalIP(ip, apikey) {
             }
         }
     } catch (e) {
-        console.error("Fehler bei VirusTotal IP Abfrage", e);
+        Logger.error("Fehler bei VirusTotal IP Abfrage", e);
     }
     return false;
 }
@@ -261,9 +271,6 @@ function levenshteinDistance(a, b) {
         let tmp = a; a = b; b = tmp;
     }
 
-    // ⚡ Bolt Optimization: Use typed arrays (Uint16Array) and array pooling
-    // to avoid garbage collection overhead in the hot loop.
-    // charCodeAt is also faster than charAt.
     if (a.length + 1 > lev_prevRow.length) {
         lev_prevRow = new Uint16Array(a.length + 1);
         lev_currRow = new Uint16Array(a.length + 1);
@@ -294,15 +301,12 @@ function levenshteinDistance(a, b) {
 }
 
 const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
-// ⚡ Bolt Optimization: Precompiled Set for O(1) existence checks instead of O(N) array loops
 const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
-// ⚡ Bolt Optimization: Precompiled Regex for O(1) .endsWith() checks instead of O(N) array loops
 const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`, 'i');
 
 function checkLists(email, senderDomain) {
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.size > 0) {
-        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) Array includes
         if (customBlacklist.has(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
@@ -315,7 +319,6 @@ function checkLists(email, senderDomain) {
 
     // Check Whitelist
     if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.size > 0) {
-        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) Array includes
         if (customWhitelist.has(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
@@ -383,13 +386,7 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
 }
 
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
-    // ⚡ Bolt Optimization: Call .toLowerCase() exactly once on the large combined text string
-    // *before* regex execution. This avoids redundantly calling .toLowerCase() on every captured
-    // match group inside the hot loop, reducing memory allocations while keeping the extracted
-    // terms normalized for deduplication.
     let textToAnalyze = (subject + " " + messageText).toLowerCase();
-    // ⚡ Bolt Optimization: Replace regex loop with indexOf and manual boundary checks
-    // to avoid regex engine overhead and match group allocations for large text payloads.
     let foundUrgencyWords = [];
     let textLen = textToAnalyze.length;
     for (let i = 0; i < URGENCY_WORDS.length; i++) {
@@ -434,14 +431,11 @@ function evaluateBehavior(subject, messageText, isFirstCommunication, score, rea
 }
 
 function getMainDomain(domain) {
-    // ⚡ Bolt Optimization: Use precompiled regex instead of O(N) loop with .endsWith()
     const match = domain.match(KNOWN_BRANDS_REGEX);
     if (match) {
         return match[1].toLowerCase();
     }
 
-    // ⚡ Bolt Optimization: Use lastIndexOf and substring instead of split/slice/join
-    // to prevent intermediate array allocations in hot paths.
     const lastDot = domain.lastIndexOf('.');
     if (lastDot !== -1) {
         const secondLastDot = domain.lastIndexOf('.', lastDot - 1);
@@ -456,7 +450,6 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
     let senderMainDomain = "";
     if (senderDomain) {
         senderMainDomain = getMainDomain(senderDomain);
-        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) array includes
         let isSenderKnownBrand = KNOWN_BRANDS_SET.has(senderMainDomain);
 
         if (!isSenderKnownBrand) {
@@ -513,7 +506,6 @@ function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
 }
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
-    // ⚡ Bolt Optimization: Use O(1) Set lookup instead of array indexOf
     let linkDomainsSet = new Set();
     for (let url of urls) {
         try {
@@ -538,7 +530,6 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
             }
 
             let linkMainDomain = getMainDomain(ld);
-            // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) array includes
             let isLinkKnownBrand = KNOWN_BRANDS_SET.has(linkMainDomain);
 
             if (!isLinkKnownBrand) {
@@ -639,7 +630,7 @@ async function processAndUploadUrls(message, filteredUrls) {
                     };
                 }
             } catch (e) {
-                console.error('Fehler beim automatischen URL-Upload', e);
+                Logger.error('Fehler beim automatischen URL-Upload', e);
             }
             return { url: url, state: 'UNKNOWN' };
         }));
@@ -684,12 +675,11 @@ async function checkIPReputation(receivedHeaders) {
                     } else if (ipReputationProvider === "virustotal") {
                         isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
                     }
-                } catch(e) { console.error(e); }
+                } catch(e) { Logger.error(e); }
                 return isMalicious;
             })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
-                // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
                 ipReputationCache.delete(ipReputationCache.keys().next().value);
             }
             ipReputationCache.set(ip, promise);
@@ -722,7 +712,6 @@ async function checkFirstCommunication(senderEmail) {
                     isFirstCommunication = true;
                 } else {
                     if (knownSendersCache.size >= MAX_KNOWN_SENDERS) {
-                        // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
                         knownSendersCache.delete(knownSendersCache.keys().next().value);
                     }
                     knownSendersCache.add(senderEmail);
@@ -738,7 +727,6 @@ async function checkFirstCommunication(senderEmail) {
 async function checkURLhausDomains(filteredUrls) {
     let urlhausDomains = [];
     if (urlhausApikey && filteredUrls.length > 0) {
-        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of array indexOf
         let linkDomainsSet = new Set();
         for (let url of filteredUrls) {
             try {
@@ -968,7 +956,7 @@ async function tab_mail_open_display(tab, message) {
                 }
               } catch (e) {
                 btn.textContent = 'Fehler beim Starten des Scans';
-                console.error(e);
+                Logger.error(e);
                 btn.disabled = false;
               }
             });
@@ -984,7 +972,7 @@ async function tab_mail_open_display(tab, message) {
           },
           args: [message.id, senderEmail]
         });
-      } catch (e) { console.error('Failed to inject opt-in banner', e); }
+      } catch (e) { Logger.error('Failed to inject opt-in banner', e); }
     }
   } catch (error) {
     console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
@@ -1054,8 +1042,14 @@ function extractUrls(text) {
             let url = text.substring(startIdx, endIdx);
 
             let len = url.length;
-            while(len > 0 && punct.indexOf(url[len - 1]) !== -1) {
-                len--;
+            while(len > 0) {
+                let c = url.charCodeAt(len - 1);
+                // Check for '.', ',', ';', ':', '!', ')', ']'
+                if (c === 46 || c === 44 || c === 59 || c === 58 || c === 33 || c === 41 || c === 93) {
+                    len--;
+                } else {
+                    break;
+                }
             }
             if (len !== url.length) {
                 url = url.substring(0, len);
@@ -1085,7 +1079,6 @@ function filterUrls(urls) {
             // 🛡️ Sentinel: Use standard URL parser safely
             let hostname = getHostnameOptimized(url);
             if (!hostname) return false;
-            // ⚡ Bolt Optimization: Use precompiled regex instead of iterating over ignoredDomains array
             return hostname ? !IGNORED_DOMAINS_REGEX.test(hostname) : false;
         } catch (e) {
             return false; // Ungültige URL
@@ -1098,7 +1091,6 @@ async function get_sha256_hash(fileData) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', fileData);
     const u8 = new Uint8Array(hashBuffer);
     let hashStr = '';
-    // ⚡ Bolt Optimization: Use fast loop with LUT instead of Array.from().map().join('')
     for (let j = 0; j < u8.length; j++) hashStr += byteToHex[u8[j]];
     return hashStr;
 }
@@ -1141,10 +1133,10 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
                     attachment
                 );
             } else {
-                console.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
+                Logger.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
             }
         } catch (uploadError) {
-            console.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
+            Logger.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
         }
     }
 
@@ -1244,7 +1236,7 @@ async function process_single_attachment(message, attachment) {
             );
 
         } catch (error) {
-          console.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
+          Logger.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
           return null;
         }
     }
@@ -1253,7 +1245,7 @@ async function process_single_attachment(message, attachment) {
 
 async function sent_to_hybrid_by_attachment(message, attachments) {
   if (!apikey_hybridanalysis) {
-      console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
+      Logger.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
       return;
   }
 
@@ -1316,7 +1308,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
       console.log('Batch-Daten erfolgreich in DB gespeichert.');
     }
   } catch (error) {
-    console.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
+    Logger.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
   }
 }
 
@@ -1360,7 +1352,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
       });
     }
   } catch (error) {
-    console.error('IndexedDB (Links) Save Error:', error);
+    Logger.error('IndexedDB (Links) Save Error:', error);
   }
 }
 
@@ -1402,7 +1394,7 @@ async function indexedDB_save_links_to_db(message, urls) {
       console.log('URLs erfolgreich in DB gespeichert.');
     }
   } catch (error) {
-    console.error('Fehler bei der URL-Speicherung in der Datenbank:', error);
+    Logger.error('Fehler bei der URL-Speicherung in der Datenbank:', error);
   }
 }
 
@@ -1433,7 +1425,7 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             try {
                 activeMessage = await browser.messageDisplay.getDisplayedMessage(tab.id);
             } catch (e) {
-                console.error("Failed to get displayed message for context menu scan:", e);
+                Logger.error("Failed to get displayed message for context menu scan:", e);
             }
 
             let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
@@ -1585,7 +1577,7 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
           await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText });
           return { success: true };
         } catch (e) {
-          console.error('requestScan failed', e);
+          Logger.error('requestScan failed', e);
           return { success: false, error: e && e.message ? e.message : String(e) };
         }
   }
@@ -1637,12 +1629,8 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     return { downloadId: downloadId };
 }
 
-// ⚡ Bolt Optimization: Precompiled Set for O(1) attribute lookup
 const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xlink:href']);
 
-// ⚡ Bolt Optimization: Precompiled Set for O(1) tag lookup.
-// Moved outside the function to avoid redundant memory allocations and garbage collection
-// overhead on every invocation, preserving the Set.has() performance benefit.
 const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link', 'math', 'svg', 'noscript']);
 
 function disarmHTML(htmlString) {
@@ -1651,9 +1639,6 @@ function disarmHTML(htmlString) {
 
     const nodesToRemove = [];
 
-    // ⚡ Bolt Optimization: Merge tag removal and attribute sanitization into a single TreeWalker pass.
-    // This eliminates the redundant DOM traversal previously caused by calling querySelectorAll
-    // before the TreeWalker loop, significantly reducing overhead on large HTML payloads.
     function processRoot(root) {
         const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
         let el = walker.currentNode;
@@ -1733,7 +1718,7 @@ async function handleUrlScan(url, headerMessageId) {
                 return existingRecord;
             });
         } catch (dbError) {
-            console.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
+            Logger.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
         }
         return json_data;
     } else {
@@ -1776,7 +1761,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
                 return existingRecord;
             });
         } catch (dbError) {
-            console.error('Fehler beim Aktualisieren des DB Records:', dbError);
+            Logger.error('Fehler beim Aktualisieren des DB Records:', dbError);
         }
         return json_data;
     } else {
@@ -1809,7 +1794,7 @@ async function checkVirusTotal(hash, apikey) {
             }
             return null;
         } catch (e) {
-            console.error("Fehler bei VirusTotal Abfrage:", e);
+            Logger.error("Fehler bei VirusTotal Abfrage:", e);
             return null;
         }
     })();
@@ -1846,7 +1831,7 @@ async function checkURLhaus(domain, apikey) {
             return true;
         }
     } catch (e) {
-        console.error("Fehler bei URLhaus Abfrage", e);
+        Logger.error("Fehler bei URLhaus Abfrage", e);
     }
     return false;
 }
@@ -1879,7 +1864,7 @@ async function checkUrlscanIo(url, apikey) {
 
         return await pollUrlscanIoResult(uuid);
     } catch (e) {
-        console.error("Fehler bei urlscan.io Abfrage", e);
+        Logger.error("Fehler bei urlscan.io Abfrage", e);
         return { status: 'ERROR', details: e.message };
     }
 }
