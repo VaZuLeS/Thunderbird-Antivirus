@@ -1033,21 +1033,23 @@ function extractUrls(text) {
     let searchStart = 0;
 
     while (true) {
-        const httpIdx = text.indexOf("http://", searchStart);
-        const httpsIdx = text.indexOf("https://", searchStart);
+        // ⚡ Bolt Optimization: Find 'http' once instead of searching for 'http://' and 'https://' separately.
+        const startIdx = text.indexOf("http", searchStart);
+        if (startIdx === -1) break;
 
-        let startIdx = -1;
-        if (httpIdx !== -1 && httpsIdx !== -1) {
-            startIdx = Math.min(httpIdx, httpsIdx);
-        } else if (httpIdx !== -1) {
-            startIdx = httpIdx;
-        } else if (httpsIdx !== -1) {
-            startIdx = httpsIdx;
-        } else {
-            break;
+        let isHttp = text.startsWith("http://", startIdx);
+        let isHttps = false;
+        let prefixLen = 7;
+
+        if (!isHttp) {
+            isHttps = text.startsWith("https://", startIdx);
+            if (isHttps) prefixLen = 8;
         }
 
-        const prefixLen = text.charCodeAt(startIdx + 4) === 115 ? 8 : 7; // 's' is 115
+        if (!isHttp && !isHttps) {
+            searchStart = startIdx + 1;
+            continue;
+        }
 
         let endIdx = startIdx + prefixLen;
         while (endIdx < text.length) {
