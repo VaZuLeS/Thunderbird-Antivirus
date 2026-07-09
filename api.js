@@ -381,7 +381,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
     }
 }
 
-function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats = null }) {
+function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats = null }) {
     const card = document.createElement('div');
     card.className = "card mb-3";
 
@@ -530,7 +530,7 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
 
 function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }) {
     let container = document.getElementById('hybrid_analysis_api_content');
-    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats });
+    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats });
     container.appendChild(reportNode);
 
     setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, headerMessageId });
@@ -625,8 +625,9 @@ function renderManualUrlScanUI(url, headerMessageId) {
     let container = document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
     const u8 = new TextEncoder().encode(url);
-    let urlId = '';
-    for (let j = 0; j < u8.length; j++) urlId += byteToHex[u8[j]];
+    // Optimization (Bolt): Replaced byte-by-byte string concatenation loop
+    // with Array map and join which might be slightly faster depending on JS engine.
+    let urlId = Array.from(u8).map(b => byteToHex[b]).join('');
 
     let card = document.createElement('div');
     card.className = "card card-info mb-3";

@@ -1,3 +1,10 @@
+const Logger = {
+    error: (...args) => console.error(...args),
+    warn: (...args) => console.warn(...args),
+    info: (...args) => console.info(...args),
+    log: (...args) => console.log(...args)
+};
+
 let customBlacklist = new Set();
 let customWhitelist = new Set();
 let authStatus = null;
@@ -58,17 +65,23 @@ for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
 // Precompiled Regexes for Performance
 const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
-const GLOBAL_URL_REGEX = /(https?:\/\/[^\s"'<>]+)/g;
 
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
 
+// ⚡ Bolt Optimization: Use a precomputed Uint8Array Look-Up Table (LUT) for O(1) character classification
+const IS_WORD_CHAR_LUT = new Uint8Array(256);
+for (let code = 0; code < 256; code++) {
+    let isWord = false;
+    if (code >= 97 && code <= 122) isWord = true; // a-z
+    else if (code >= 48 && code <= 57) isWord = true; // 0-9
+    else if (code >= 65 && code <= 90) isWord = true; // A-Z
+    else if (code === 95) isWord = true; // _
+    else if (code === 228 || code === 246 || code === 252 || code === 223 || code === 196 || code === 214 || code === 220) isWord = true; // ä, ö, ü, ß, Ä, Ö, Ü
+    IS_WORD_CHAR_LUT[code] = isWord ? 1 : 0;
+}
+
 function isWordChar(code) {
-    if (code >= 97 && code <= 122) return true; // a-z
-    if (code >= 48 && code <= 57) return true; // 0-9
-    if (code >= 65 && code <= 90) return true; // A-Z
-    if (code === 95) return true; // _
-    if (code === 228 || code === 246 || code === 252 || code === 223 || code === 196 || code === 214 || code === 220) return true; // ä, ö, ü, ß, Ä, Ö, Ü
-    return false;
+    return code < 256 && IS_WORD_CHAR_LUT[code] === 1;
 }
 
 // Einstellungen laden
@@ -110,10 +123,32 @@ async function loadSettings() {
       ipReputationApiKey = result.ipReputationApiKey;
     }
   } catch (error) {
-    console.error("Fehler beim Laden der Einstellungen:", error);
+    Logger.error("Fehler beim Laden der Einstellungen:", error);
   }
 }
 loadSettings();
+
+// Opt-In helpers
+async function hasHybridPermission() {
+  try {
+    return await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] });
+  } catch (e) {
+    Logger.error('permissions.contains failed', e);
+    return false;
+  }
+}
+
+async function addSenderOptIn(senderEmail) {
+  try {
+    const res = await browser.storage.local.get('scanningEnabledSenders');
+    const arr = res.scanningEnabledSenders || [];
+    if (!arr.includes(senderEmail)) {
+      arr.push(senderEmail);
+      await browser.storage.local.set({ scanningEnabledSenders: arr });
+    }
+  } catch (e) { Logger.error('addSenderOptIn failed', e); }
+}
+
 
 // Listener für Änderungen an den Einstellungen (API Key)
 browser.storage.onChanged.addListener((changes, area) => {
@@ -199,7 +234,7 @@ async function checkAbuseIPDB(ip, apikey) {
             return true;
         }
     } catch (e) {
-        console.error("Fehler bei AbuseIPDB Abfrage", e);
+        Logger.error("Fehler bei AbuseIPDB Abfrage", e);
     }
     return false;
 }
@@ -220,7 +255,7 @@ async function checkVirusTotalIP(ip, apikey) {
             }
         }
     } catch (e) {
-        console.error("Fehler bei VirusTotal IP Abfrage", e);
+        Logger.error("Fehler bei VirusTotal IP Abfrage", e);
     }
     return false;
 }
@@ -339,18 +374,8 @@ function evaluateUrlhaus(urlhausDomains, score, reasons) {
 
 function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
     if (replyTo && senderDomain) {
-        let replyToEmail = replyTo;
-        const start = replyTo.indexOf('<');
-        if (start !== -1) {
-            const end = replyTo.indexOf('>', start + 1);
-            if (end !== -1) {
-                replyToEmail = replyTo.substring(start + 1, end);
-            }
-        }
-        replyToEmail = replyToEmail.toLowerCase();
-
-        const atIndex = replyToEmail.indexOf('@');
-        const replyDomain = atIndex !== -1 ? replyToEmail.substring(atIndex + 1) : "";
+        let replyToEmail = extractEmailAddress(replyTo);
+        const replyDomain = extractEmailDomain(replyToEmail);
 
         if (replyDomain && replyDomain !== senderDomain) {
             score += 50;
@@ -527,6 +552,25 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     return score;
 }
 
+function extractEmailAddress(rawAuthor) {
+    let email = rawAuthor;
+    // ⚡ Bolt Optimization: Use indexOf and substring to avoid regex allocation overhead
+    const start = rawAuthor.indexOf('<');
+    if (start !== -1) {
+        const end = rawAuthor.indexOf('>', start + 1);
+        if (end !== -1) {
+            email = rawAuthor.substring(start + 1, end);
+        }
+    }
+    return email.toLowerCase();
+}
+
+function extractEmailDomain(emailAddress) {
+    // ⚡ Bolt Optimization: Use indexOf and substring instead of split for O(n) extraction without array allocation
+    const atIndex = emailAddress.indexOf('@');
+    return atIndex !== -1 ? emailAddress.substring(atIndex + 1).toLowerCase() : "";
+}
+
 function calculateThreatScore(author, urls, options = {}) {
     const {
         authHeaders = [],
@@ -539,18 +583,8 @@ function calculateThreatScore(author, urls, options = {}) {
     let score = 0;
     let reasons = [];
 
-    let email = author;
-    const start = author.indexOf('<');
-    if (start !== -1) {
-        const end = author.indexOf('>', start + 1);
-        if (end !== -1) {
-            email = author.substring(start + 1, end);
-        }
-    }
-    email = email.toLowerCase();
-
-    let atIndex = email.indexOf('@');
-    let senderDomain = atIndex !== -1 ? email.substring(atIndex + 1).toLowerCase() : "";
+    let email = extractEmailAddress(author);
+    let senderDomain = extractEmailDomain(email);
 
     const listCheck = checkLists(email, senderDomain);
     if (listCheck) {
@@ -596,7 +630,7 @@ async function processAndUploadUrls(message, filteredUrls) {
                     };
                 }
             } catch (e) {
-                console.error('Fehler beim automatischen URL-Upload', e);
+                Logger.error('Fehler beim automatischen URL-Upload', e);
             }
             return { url: url, state: 'UNKNOWN' };
         }));
@@ -641,7 +675,7 @@ async function checkIPReputation(receivedHeaders) {
                     } else if (ipReputationProvider === "virustotal") {
                         isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
                     }
-                } catch(e) { console.error(e); }
+                } catch(e) { Logger.error(e); }
                 return isMalicious;
             })();
 
@@ -823,15 +857,7 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
   let maliciousIps = await checkIPReputation(receivedHeaders);
 
   // BEC Protection Data Extraction
-  let senderEmail = message.author;
-  const start = message.author.indexOf('<');
-  if (start !== -1) {
-      const end = message.author.indexOf('>', start + 1);
-      if (end !== -1) {
-          senderEmail = message.author.substring(start + 1, end);
-      }
-  }
-  senderEmail = senderEmail.toLowerCase();
+  let senderEmail = extractEmailAddress(message.author);
 
   let isFirstCommunication = await checkFirstCommunication(senderEmail);
 
@@ -858,12 +884,96 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
   try {
-    await processAttachments(message);
+    // Determine sender email for per-sender opt-in storage
+    let senderEmail = message.author || '';
+    const start = senderEmail.indexOf('<');
+    if (start !== -1) {
+      const end = senderEmail.indexOf('>', start + 1);
+      if (end !== -1) senderEmail = senderEmail.substring(start + 1, end);
+    }
+    senderEmail = senderEmail.toLowerCase();
+
+    const stored = await browser.storage.local.get('scanningEnabledSenders');
+    const enabledSenders = stored.scanningEnabledSenders || [];
+
+    const permission = await hasHybridPermission();
+    const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual && !!apikey_hybridanalysis;
 
     let fullMessage = await browser.messages.getFull(message.id);
+    // Determine attachments so we can decide whether to show the inline opt-in banner later
+    let attachments = [];
+    try {
+      attachments = await browser.messages.listAttachments(message.id);
+    } catch (e) { /* ignore */ }
+
+    // Always call processAttachments to preserve existing behavior; sent_to_hybrid_by_attachment will decide about uploads
+    await processAttachments(message);
+
     let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage);
 
     await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText });
+
+    // If user hasn't opted-in for this sender, inject an inline Opt-In banner into message view
+    // Only show banner when there are attachments or links to scan to avoid clutter for trivial messages
+    if (!canAutoUpload && ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0))) {
+      try {
+        await browser.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: function(messageId, senderEmail) {
+            const existing = document.getElementById('thundy-optin-banner');
+            if (existing) return;
+            const banner = document.createElement('div');
+            banner.id = 'thundy-optin-banner';
+            banner.style.backgroundColor = '#fff8e1';
+            banner.style.border = '1px solid #ffcc80';
+            banner.style.color = '#333';
+            banner.style.padding = '8px';
+            banner.style.margin = '8px';
+            banner.style.borderRadius = '4px';
+            banner.style.fontFamily = 'Arial, sans-serif';
+            banner.style.zIndex = '9999';
+
+            const text = document.createElement('span');
+            text.textContent = 'Thundy AV: Echtzeit‑Scan ist für diese Nachricht nicht aktiviert.';
+            banner.appendChild(text);
+
+            const btn = document.createElement('button');
+            btn.textContent = 'Für diese Nachricht scannen';
+            btn.style.marginLeft = '10px';
+            btn.addEventListener('click', async () => {
+              btn.disabled = true;
+              btn.textContent = 'Scannen...';
+              try {
+                const resp = await browser.runtime.sendMessage({ action: 'requestScan', messageId: messageId, senderEmail: senderEmail });
+                if (resp && resp.success) {
+                  btn.textContent = 'Scan abgeschlossen';
+                } else if (resp && resp.error === 'permission_denied') {
+                  btn.textContent = 'Erforderliche Berechtigung verweigert';
+                  btn.disabled = false;
+                } else {
+                  btn.textContent = 'Scan fehlgeschlagen';
+                  btn.disabled = false;
+                }
+              } catch (e) {
+                btn.textContent = 'Fehler beim Starten des Scans';
+                Logger.error(e);
+                btn.disabled = false;
+              }
+            });
+            banner.appendChild(btn);
+
+            const small = document.createElement('div');
+            small.style.fontSize = '12px';
+            small.style.marginTop = '6px';
+            small.textContent = 'Hinweis: Beim Scannen werden (je nach Einstellung) Dateien/Hashes an einen externen Service übertragen. Scanning kann in den Erweiterungs‑Einstellungen konfiguriert werden.';
+            banner.appendChild(small);
+
+            document.body.prepend(banner);
+          },
+          args: [message.id, senderEmail]
+        });
+      } catch (e) { Logger.error('Failed to inject opt-in banner', e); }
+    }
   } catch (error) {
     console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
   }
@@ -893,21 +1003,65 @@ function extractTextFromParts(part, partsArray) {
 
 function extractUrls(text) {
     const urls = [];
-    let match;
-    GLOBAL_URL_REGEX.lastIndex = 0; // Reset lastIndex for global regex
     const punct = ".,;:!)]";
-    while ((match = GLOBAL_URL_REGEX.exec(text)) !== null) {
-        let url = match[1];
-        let len = url.length;
-        while(len > 0 && punct.indexOf(url[len - 1]) !== -1) {
-            len--;
+    let searchStart = 0;
+
+    while (true) {
+        const httpIdx = text.indexOf("http://", searchStart);
+        const httpsIdx = text.indexOf("https://", searchStart);
+
+        let startIdx = -1;
+        if (httpIdx !== -1 && httpsIdx !== -1) {
+            startIdx = Math.min(httpIdx, httpsIdx);
+        } else if (httpIdx !== -1) {
+            startIdx = httpIdx;
+        } else if (httpsIdx !== -1) {
+            startIdx = httpsIdx;
+        } else {
+            break;
         }
-        if (len !== url.length) {
-            url = url.substring(0, len);
+
+        const prefixLen = text.charCodeAt(startIdx + 4) === 115 ? 8 : 7; // 's' is 115
+
+        let endIdx = startIdx + prefixLen;
+        while (endIdx < text.length) {
+            const charCode = text.charCodeAt(endIdx);
+
+            if (charCode <= 32 || charCode === 34 || charCode === 39 || charCode === 60 || charCode === 62) {
+                if (charCode === 32 || charCode === 9 || charCode === 10 || charCode === 13 ||
+                    charCode === 34 || charCode === 39 || charCode === 60 || charCode === 62) {
+                    break;
+                }
+            } else if (charCode > 127 && /\s/.test(text[endIdx])) {
+                break;
+            }
+            endIdx++;
         }
-        if (urls.indexOf(url) === -1) {
-            urls.push(url);
+
+        if (endIdx > startIdx + prefixLen) {
+            let url = text.substring(startIdx, endIdx);
+
+            let len = url.length;
+            while(len > 0) {
+                let c = url.charCodeAt(len - 1);
+                // Check for '.', ',', ';', ':', '!', ')', ']'
+                if (c === 46 || c === 44 || c === 59 || c === 58 || c === 33 || c === 41 || c === 93) {
+                    len--;
+                } else {
+                    break;
+                }
+            }
+            if (len !== url.length) {
+                url = url.substring(0, len);
+            }
+
+            // ⚡ Bolt Optimization: Use Array indexOf instead of Set allocation for small arrays
+            if (urls.indexOf(url) === -1) {
+                urls.push(url);
+            }
         }
+
+        searchStart = endIdx === startIdx ? startIdx + 1 : endIdx;
     }
     return urls;
 }
@@ -979,10 +1133,10 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
                     attachment
                 );
             } else {
-                console.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
+                Logger.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
             }
         } catch (uploadError) {
-            console.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
+            Logger.error('Ausnahme beim automatischen Upload, falle auf manuell zurück.', uploadError);
         }
     }
 
@@ -1082,7 +1236,7 @@ async function process_single_attachment(message, attachment) {
             );
 
         } catch (error) {
-          console.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
+          Logger.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
           return null;
         }
     }
@@ -1091,7 +1245,7 @@ async function process_single_attachment(message, attachment) {
 
 async function sent_to_hybrid_by_attachment(message, attachments) {
   if (!apikey_hybridanalysis) {
-      console.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
+      Logger.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
       return;
   }
 
@@ -1154,7 +1308,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
       console.log('Batch-Daten erfolgreich in DB gespeichert.');
     }
   } catch (error) {
-    console.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
+    Logger.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
   }
 }
 
@@ -1198,7 +1352,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
       });
     }
   } catch (error) {
-    console.error('IndexedDB (Links) Save Error:', error);
+    Logger.error('IndexedDB (Links) Save Error:', error);
   }
 }
 
@@ -1240,7 +1394,7 @@ async function indexedDB_save_links_to_db(message, urls) {
       console.log('URLs erfolgreich in DB gespeichert.');
     }
   } catch (error) {
-    console.error('Fehler bei der URL-Speicherung in der Datenbank:', error);
+    Logger.error('Fehler bei der URL-Speicherung in der Datenbank:', error);
   }
 }
 
@@ -1271,7 +1425,7 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             try {
                 activeMessage = await browser.messageDisplay.getDisplayedMessage(tab.id);
             } catch (e) {
-                console.error("Failed to get displayed message for context menu scan:", e);
+                Logger.error("Failed to get displayed message for context menu scan:", e);
             }
 
             let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
@@ -1393,6 +1547,40 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         default:
             return false;
     }
+});
+
+// Handle runtime requests from injected content to perform a one-off scan
+browser.runtime.onMessage.addListener(async (msg, sender) => {
+  if (msg && msg.action === 'requestScan' && msg.messageId) {
+        // Ensure permission to contact hybrid-analysis
+        let granted = await hasHybridPermission();
+        if (!granted) {
+          try {
+            granted = await browser.permissions.request({ origins: ['https://hybrid-analysis.com/*'] });
+          } catch (e) { granted = false; }
+        }
+
+        if (!granted) {
+          return { success: false, error: 'permission_denied' };
+        }
+
+        if (msg.senderEmail) {
+          await addSenderOptIn(msg.senderEmail.toLowerCase());
+        }
+
+        try {
+          const messageObj = { id: msg.messageId };
+          await processAttachments(messageObj);
+          const fullMessage = await browser.messages.getFull(msg.messageId);
+          const tab = { id: sender.tab && sender.tab.id ? sender.tab.id : (msg.tabId || null) };
+          const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage);
+          await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText });
+          return { success: true };
+        } catch (e) {
+          Logger.error('requestScan failed', e);
+          return { success: false, error: e && e.message ? e.message : String(e) };
+        }
+  }
 });
 
 /**
@@ -1528,7 +1716,7 @@ async function handleUrlScan(url, headerMessageId) {
                 return existingRecord;
             });
         } catch (dbError) {
-            console.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
+            Logger.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
         }
         return json_data;
     } else {
@@ -1571,7 +1759,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
                 return existingRecord;
             });
         } catch (dbError) {
-            console.error('Fehler beim Aktualisieren des DB Records:', dbError);
+            Logger.error('Fehler beim Aktualisieren des DB Records:', dbError);
         }
         return json_data;
     } else {
@@ -1604,7 +1792,7 @@ async function checkVirusTotal(hash, apikey) {
             }
             return null;
         } catch (e) {
-            console.error("Fehler bei VirusTotal Abfrage:", e);
+            Logger.error("Fehler bei VirusTotal Abfrage:", e);
             return null;
         }
     })();
@@ -1641,7 +1829,7 @@ async function checkURLhaus(domain, apikey) {
             return true;
         }
     } catch (e) {
-        console.error("Fehler bei URLhaus Abfrage", e);
+        Logger.error("Fehler bei URLhaus Abfrage", e);
     }
     return false;
 }
@@ -1674,7 +1862,7 @@ async function checkUrlscanIo(url, apikey) {
 
         return await pollUrlscanIoResult(uuid);
     } catch (e) {
-        console.error("Fehler bei urlscan.io Abfrage", e);
+        Logger.error("Fehler bei urlscan.io Abfrage", e);
         return { status: 'ERROR', details: e.message };
     }
 }

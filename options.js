@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
   
-  document.getElementById('save').addEventListener('click', function() {
+  document.getElementById('save').addEventListener('click', async function() {
     const apikeyInput = document.getElementById('apikey');
     if (!apikeyInput.reportValidity()) {
         return;
@@ -91,12 +91,25 @@ document.addEventListener('DOMContentLoaded', function() {
         alwaysManual: alwaysManualSetting,
         autoScanLinks: autoScanLinksSetting,
         timeOfClickProtection: timeOfClickProtectionSetting
-    }).then(() => {
+    }).then(async () => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
         saveBtn.textContent = 'Speichern';
+
+        // Wenn ein API-Key gesetzt ist und nicht 'alwaysManual', fordere optional die Host‑Berechtigung an
+        if (mySetting && !alwaysManualSetting) {
+            try {
+                const granted = await browser.permissions.request({ origins: ['https://hybrid-analysis.com/*'] });
+                if (!granted) {
+                    alert('Host‑Berechtigung für hybrid-analysis.com wurde nicht erteilt. Automatische Cloud‑Scans sind deaktiviert.');
+                }
+            } catch (e) {
+                console.error('Permission request failed', e);
+            }
+        }
+
         setTimeout(() => {
             statusSpan.style.display = 'none';
         }, 3000);
