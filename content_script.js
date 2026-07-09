@@ -207,6 +207,7 @@ if (!document.getElementById('thundy-av-styles')) {
             color: black;
             padding: 20px;
             border-radius: 8px;
+            outline: none;
             max-width: 500px;
             width: 90%;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
