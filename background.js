@@ -60,7 +60,6 @@ function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     return options;
 }
 
-// ⚡ Bolt Optimization: Precompiled Hexadecimal Look-Up Table (LUT) for O(1) byte-to-hex conversion
 const byteToHex = new Array(256);
 for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
@@ -187,7 +186,6 @@ browser.storage.onChanged.addListener((changes, area) => {
 
 function extractPublicIPs(receivedHeaders) {
     if (!receivedHeaders) return [];
-    // ⚡ Bolt Optimization: Use a Set for O(1) deduplication to improve performance on large header sets
     let ips = [];
     let ipsSet = new Set();
 
@@ -195,8 +193,6 @@ function extractPublicIPs(receivedHeaders) {
         let matches = header.match(GLOBAL_IPV4_REGEX);
         if (matches) {
             for (let ip of matches) {
-                // ⚡ Bolt Optimization: Use String.prototype.indexOf and string splitting without .map(Number)
-                // to avoid allocating multiple arrays and mapping over them for every IP address.
                 const dot1 = ip.indexOf('.');
                 const part1 = parseInt(ip.substring(0, dot1), 10);
 
@@ -275,9 +271,6 @@ function levenshteinDistance(a, b) {
         let tmp = a; a = b; b = tmp;
     }
 
-    // ⚡ Bolt Optimization: Use typed arrays (Uint16Array) and array pooling
-    // to avoid garbage collection overhead in the hot loop.
-    // charCodeAt is also faster than charAt.
     if (a.length + 1 > lev_prevRow.length) {
         lev_prevRow = new Uint16Array(a.length + 1);
         lev_currRow = new Uint16Array(a.length + 1);
@@ -308,15 +301,12 @@ function levenshteinDistance(a, b) {
 }
 
 const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
-// ⚡ Bolt Optimization: Precompiled Set for O(1) existence checks instead of O(N) array loops
 const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
-// ⚡ Bolt Optimization: Precompiled Regex for O(1) .endsWith() checks instead of O(N) array loops
 const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`, 'i');
 
 function checkLists(email, senderDomain) {
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.size > 0) {
-        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) Array includes
         if (customBlacklist.has(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
@@ -329,7 +319,6 @@ function checkLists(email, senderDomain) {
 
     // Check Whitelist
     if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.size > 0) {
-        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) Array includes
         if (customWhitelist.has(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
@@ -397,13 +386,7 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
 }
 
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
-    // ⚡ Bolt Optimization: Call .toLowerCase() exactly once on the large combined text string
-    // *before* regex execution. This avoids redundantly calling .toLowerCase() on every captured
-    // match group inside the hot loop, reducing memory allocations while keeping the extracted
-    // terms normalized for deduplication.
     let textToAnalyze = (subject + " " + messageText).toLowerCase();
-    // ⚡ Bolt Optimization: Replace regex loop with indexOf and manual boundary checks
-    // to avoid regex engine overhead and match group allocations for large text payloads.
     let foundUrgencyWords = [];
     let textLen = textToAnalyze.length;
     for (let i = 0; i < URGENCY_WORDS.length; i++) {
@@ -448,14 +431,11 @@ function evaluateBehavior(subject, messageText, isFirstCommunication, score, rea
 }
 
 function getMainDomain(domain) {
-    // ⚡ Bolt Optimization: Use precompiled regex instead of O(N) loop with .endsWith()
     const match = domain.match(KNOWN_BRANDS_REGEX);
     if (match) {
         return match[1].toLowerCase();
     }
 
-    // ⚡ Bolt Optimization: Use lastIndexOf and substring instead of split/slice/join
-    // to prevent intermediate array allocations in hot paths.
     const lastDot = domain.lastIndexOf('.');
     if (lastDot !== -1) {
         const secondLastDot = domain.lastIndexOf('.', lastDot - 1);
@@ -470,7 +450,6 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
     let senderMainDomain = "";
     if (senderDomain) {
         senderMainDomain = getMainDomain(senderDomain);
-        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) array includes
         let isSenderKnownBrand = KNOWN_BRANDS_SET.has(senderMainDomain);
 
         if (!isSenderKnownBrand) {
@@ -527,7 +506,6 @@ function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
 }
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
-    // ⚡ Bolt Optimization: Use O(1) Set lookup instead of array indexOf
     let linkDomainsSet = new Set();
     for (let url of urls) {
         try {
@@ -552,7 +530,6 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
             }
 
             let linkMainDomain = getMainDomain(ld);
-            // ⚡ Bolt Optimization: Use O(1) Set lookup instead of O(N) array includes
             let isLinkKnownBrand = KNOWN_BRANDS_SET.has(linkMainDomain);
 
             if (!isLinkKnownBrand) {
@@ -703,7 +680,6 @@ async function checkIPReputation(receivedHeaders) {
             })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
-                // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
                 ipReputationCache.delete(ipReputationCache.keys().next().value);
             }
             ipReputationCache.set(ip, promise);
@@ -736,7 +712,6 @@ async function checkFirstCommunication(senderEmail) {
                     isFirstCommunication = true;
                 } else {
                     if (knownSendersCache.size >= MAX_KNOWN_SENDERS) {
-                        // ⚡ Bolt Optimization: Use FIFO cache eviction via .delete() to prevent massive cache miss spikes that occur when clearing the entire cache.
                         knownSendersCache.delete(knownSendersCache.keys().next().value);
                     }
                     knownSendersCache.add(senderEmail);
@@ -752,7 +727,6 @@ async function checkFirstCommunication(senderEmail) {
 async function checkURLhausDomains(filteredUrls) {
     let urlhausDomains = [];
     if (urlhausApikey && filteredUrls.length > 0) {
-        // ⚡ Bolt Optimization: Use O(1) Set lookup instead of array indexOf
         let linkDomainsSet = new Set();
         for (let url of filteredUrls) {
             try {
@@ -1105,7 +1079,6 @@ function filterUrls(urls) {
             // 🛡️ Sentinel: Use standard URL parser safely
             let hostname = getHostnameOptimized(url);
             if (!hostname) return false;
-            // ⚡ Bolt Optimization: Use precompiled regex instead of iterating over ignoredDomains array
             return hostname ? !IGNORED_DOMAINS_REGEX.test(hostname) : false;
         } catch (e) {
             return false; // Ungültige URL
@@ -1118,7 +1091,6 @@ async function get_sha256_hash(fileData) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', fileData);
     const u8 = new Uint8Array(hashBuffer);
     let hashStr = '';
-    // ⚡ Bolt Optimization: Use fast loop with LUT instead of Array.from().map().join('')
     for (let j = 0; j < u8.length; j++) hashStr += byteToHex[u8[j]];
     return hashStr;
 }
@@ -1655,12 +1627,8 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     return { downloadId: downloadId };
 }
 
-// ⚡ Bolt Optimization: Precompiled Set for O(1) attribute lookup
 const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xlink:href']);
 
-// ⚡ Bolt Optimization: Precompiled Set for O(1) tag lookup.
-// Moved outside the function to avoid redundant memory allocations and garbage collection
-// overhead on every invocation, preserving the Set.has() performance benefit.
 const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link', 'math', 'svg', 'noscript']);
 
 function disarmHTML(htmlString) {
@@ -1669,9 +1637,6 @@ function disarmHTML(htmlString) {
 
     const nodesToRemove = [];
 
-    // ⚡ Bolt Optimization: Merge tag removal and attribute sanitization into a single TreeWalker pass.
-    // This eliminates the redundant DOM traversal previously caused by calling querySelectorAll
-    // before the TreeWalker loop, significantly reducing overhead on large HTML payloads.
     function processRoot(root) {
         const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
         let el = walker.currentNode;

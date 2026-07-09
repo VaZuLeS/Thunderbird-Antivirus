@@ -53,13 +53,11 @@ const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
 function escapeRegExp(str) {
     return String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-// ⚡ Bolt Optimization: Use precompiled regex for O(1) checks instead of O(N) array loops
 const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(b => escapeRegExp(b)).join('|')})$`, 'i');
 
 function checkLists(email, senderDomain) {
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.length > 0) {
-        // ⚡ Bolt Optimization: Use pre-lowercased list directly instead of mapping on every call
         if (customBlacklist.includes(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
@@ -72,7 +70,6 @@ function checkLists(email, senderDomain) {
 
     // Check Whitelist
     if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.length > 0) {
-        // ⚡ Bolt Optimization: Use pre-lowercased list directly instead of mapping on every call
         if (customWhitelist.includes(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
@@ -201,7 +198,6 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
 }
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
-    // ⚡ Bolt Optimization: Use standard array and indexOf instead of Set allocation for small unique collections
     let linkDomains = [];
     for (let url of urls) {
         try {
