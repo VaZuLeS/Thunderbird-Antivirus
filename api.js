@@ -471,7 +471,8 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2";
                     btn.innerText = "Erfolgreich";
-                    setTimeout(() => {
+                    if (btn.rescanTimeoutId) clearTimeout(btn.rescanTimeoutId);
+                    btn.rescanTimeoutId = setTimeout(() => {
                         window.location.reload();
                     }, 2000);
                 } else {
@@ -599,8 +600,10 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
             btn.removeAttribute('aria-busy');
             btn.className = "btn-success mt-2";
             btn.innerText = "Erfolgreich";
-            setTimeout(() => {
-                document.getElementById(`upload-container-${urlId}`).remove();
+            if (btn.urlScanTimeoutId) clearTimeout(btn.urlScanTimeoutId);
+            btn.urlScanTimeoutId = setTimeout(() => {
+                const el = document.getElementById(`upload-container-${urlId}`);
+                if (el) el.remove();
                 // response.data.sha256 enthält den sha256-Hash des URL-Scans
                 get_hybrid_report_by_sha256({
                     hybrid_sha: response.data.sha256,
@@ -689,7 +692,8 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                 btn.removeAttribute('aria-busy');
                 btn.className = "btn-success mt-2";
                 btn.innerText = "Erfolgreich";
-                setTimeout(() => {
+                if (btn.uploadTimeoutId) clearTimeout(btn.uploadTimeoutId);
+                btn.uploadTimeoutId = setTimeout(() => {
                     let container = document.getElementById(`upload-container-${safeHash}`);
                     if (container) container.remove();
                     get_hybrid_report_by_sha256({

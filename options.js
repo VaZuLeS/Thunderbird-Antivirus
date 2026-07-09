@@ -1,4 +1,6 @@
 // Event-Listener für das Laden der Seite
+let _saveTimeoutId = null;
+let _clearTimeoutId = null;
 document.addEventListener('DOMContentLoaded', function() {
     // Abrufen der gespeicherten Einstellung
     browser.storage.local.get([
@@ -110,9 +112,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        setTimeout(() => {
-            statusSpan.style.display = 'none';
-        }, 3000);
+        if (statusSpan.id === 'status') {
+            if (_saveTimeoutId) clearTimeout(_saveTimeoutId);
+            _saveTimeoutId = setTimeout(() => {
+                if (statusSpan.style) statusSpan.style.display = 'none';
+            }, 3000);
+        } else {
+            if (_clearTimeoutId) clearTimeout(_clearTimeoutId);
+            _clearTimeoutId = setTimeout(() => {
+                if (statusSpan.style) statusSpan.style.display = 'none';
+            }, 3000);
+        }
     }).catch(error => {
         console.error("Speichern fehlgeschlagen", error);
         saveBtn.disabled = false;
@@ -155,7 +165,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     statusSpan.style.display = 'inline';
-    setTimeout(() => {
-        statusSpan.style.display = 'none';
-    }, 3000);
+    if (statusSpan.id === 'status') {
+            if (_saveTimeoutId) clearTimeout(_saveTimeoutId);
+            _saveTimeoutId = setTimeout(() => {
+                if (statusSpan.style) statusSpan.style.display = 'none';
+            }, 3000);
+        } else {
+            if (_clearTimeoutId) clearTimeout(_clearTimeoutId);
+            _clearTimeoutId = setTimeout(() => {
+                if (statusSpan.style) statusSpan.style.display = 'none';
+            }, 3000);
+        }
   });
