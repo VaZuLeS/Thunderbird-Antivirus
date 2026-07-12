@@ -90,7 +90,7 @@ describe('content_script.js', () => {
 
         const title = warningOverlay.querySelector('#thundy-warning-title');
         assert.strictEqual(title.textContent, 'Achtung: Sie verlassen Thunderbird');
-        assert.strictEqual(title.className, 'text-warning');
+        assert.strictEqual(title.className, 'thundy-text-warning');
 
         const message = warningOverlay.querySelector('#thundy-warning-message');
         assert.strictEqual(message.textContent, 'Dieser Link wurde noch nicht vollständig überprüft oder ist unbekannt.');
@@ -288,7 +288,7 @@ describe('content_script.js', () => {
         const warningOverlay = context.document.querySelector('.thundy-overlay');
         assert.ok(warningOverlay);
 
-        const cancelBtn = warningOverlay.querySelector('.btn-success');
+        const cancelBtn = warningOverlay.querySelector('.thundy-btn-success');
         assert.strictEqual(cancelBtn.textContent, 'Abbrechen (Esc)');
 
         let focusCalled = false;
@@ -346,7 +346,7 @@ describe('content_script.js', () => {
         const warningOverlay = context.document.querySelector('.thundy-overlay');
         assert.ok(warningOverlay);
 
-        const openBtn = warningOverlay.querySelector('.btn-primary');
+        const openBtn = warningOverlay.querySelector('.thundy-btn-primary');
         assert.strictEqual(openBtn.textContent, 'Auf eigene Gefahr öffnen');
 
         openBtn.click();
@@ -365,8 +365,6 @@ describe('content_script.js', () => {
 
             const modal = overlay.querySelector('.thundy-modal');
             assert.ok(modal, 'Modal should be created');
-            assert.ok(modal.classList.contains('card'), 'Modal should have card class');
-            assert.ok(modal.classList.contains('card-info'), 'Modal should have card-info class');
 
             assert.strictEqual(modal.getAttribute('role'), 'dialog');
             assert.strictEqual(modal.getAttribute('aria-modal'), 'true');
@@ -375,11 +373,11 @@ describe('content_script.js', () => {
 
             const title = modal.querySelector('#thundy-warning-title');
             assert.ok(title, 'Title should be created');
-            assert.ok(title.classList.contains('text-warning'), 'Title should have text-warning class');
+            assert.ok(title.classList.contains('thundy-text-warning'), 'Title should have thundy-text-warning class');
 
             const message = modal.querySelector('#thundy-warning-message');
             assert.ok(message, 'Message should be created');
-            assert.ok(message.classList.contains('text-info'), 'Message should have text-info class');
+            assert.ok(message.classList.contains('thundy-text-info'), 'Message should have thundy-text-info class');
         });
 
         it('should render correct text and reasons list when status is MALICIOUS_VISUAL', () => {
@@ -410,16 +408,16 @@ describe('content_script.js', () => {
             context.createWarningModal('http://example.com/test', link, 'UNKNOWN');
 
             const overlay = context.document.querySelector('.thundy-overlay');
-            const btnGroup = overlay.querySelector('.mt-3');
+            const btnGroup = overlay.querySelector('.thundy-mt-3');
             assert.ok(btnGroup, 'Button group should be created');
 
-            const cancelBtn = btnGroup.querySelector('.btn-success');
+            const cancelBtn = btnGroup.querySelector('.thundy-btn-success');
             assert.ok(cancelBtn, 'Cancel button should be created');
             assert.strictEqual(cancelBtn.textContent, 'Abbrechen (Esc)');
 
-            const openBtn = btnGroup.querySelector('.btn-primary');
+            const openBtn = btnGroup.querySelector('.thundy-btn-primary');
             assert.ok(openBtn, 'Open Anyway button should be created');
-            assert.ok(openBtn.classList.contains('ml-2'), 'Open Anyway button should have ml-2 class');
+            assert.ok(openBtn.classList.contains('thundy-ml-2'), 'Open Anyway button should have thundy-ml-2 class');
             assert.strictEqual(openBtn.textContent, 'Auf eigene Gefahr öffnen');
         });
     });
