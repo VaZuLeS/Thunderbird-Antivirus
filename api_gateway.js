@@ -12,7 +12,11 @@ class ApiGateway {
         let hostname;
 
         try {
-            hostname = new URL(url).hostname;
+            const parsedUrl = new URL(url);
+            if (parsedUrl.protocol !== 'https:') {
+                return options;
+            }
+            hostname = parsedUrl.hostname;
         } catch (e) {
             // Invalid URL, do not inject auth headers to be safe
             return options;
