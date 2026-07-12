@@ -220,6 +220,10 @@ if (!document.getElementById('thundy-av-styles')) {
             border-radius: 4px;
             cursor: pointer;
         }
+        .thundy-modal button:focus-visible {
+            outline: 2px solid #005a9e;
+            outline-offset: 2px;
+        }
         .thundy-modal .btn-primary { background: #005a9e; color: white; }
         .thundy-modal .btn-success { background: #008000; color: white; }
     `;
