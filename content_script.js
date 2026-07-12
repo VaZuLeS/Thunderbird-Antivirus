@@ -8,7 +8,7 @@
         overlay.className = 'thundy-overlay';
 
         const modal = document.createElement('div');
-        modal.className = 'card card-info thundy-modal';
+        modal.className = 'thundy-modal';
         modal.setAttribute('role', 'dialog');
         modal.setAttribute('aria-modal', 'true');
         modal.setAttribute('aria-labelledby', 'thundy-warning-title');
@@ -16,12 +16,12 @@
 
         const title = document.createElement('h2');
         title.id = 'thundy-warning-title';
-        title.className = 'text-warning';
+        title.className = 'thundy-text-warning';
         title.textContent = 'Achtung: Sie verlassen Thunderbird';
 
         const message = document.createElement('p');
         message.id = 'thundy-warning-message';
-        message.className = 'text-info';
+        message.className = 'thundy-text-info';
 
         if (state === 'MALICIOUS_VISUAL') {
             title.textContent = 'Warnung: Visuelles Phishing erkannt!';
@@ -56,10 +56,10 @@
         }
 
         const buttonGroup = document.createElement('div');
-        buttonGroup.className = 'mt-3';
+        buttonGroup.className = 'thundy-mt-3';
 
         const openBtn = document.createElement('button');
-        openBtn.className = 'btn-primary ml-2';
+        openBtn.className = 'thundy-btn-primary thundy-ml-2';
         openBtn.textContent = 'Auf eigene Gefahr öffnen';
         openBtn.addEventListener('click', () => {
             allowedLinks.add(linkElement);
@@ -68,7 +68,7 @@
         });
 
         const cancelBtn = document.createElement('button');
-        cancelBtn.className = 'btn-success';
+        cancelBtn.className = 'thundy-btn-success';
         cancelBtn.textContent = 'Abbrechen (Esc)';
         cancelBtn.setAttribute('aria-keyshortcuts', 'Escape');
         cancelBtn.addEventListener('click', () => {
@@ -101,7 +101,7 @@
         overlay.id = 'thundy-loading-modal';
 
         const modal = document.createElement('div');
-        modal.className = 'card card-info thundy-modal';
+        modal.className = 'thundy-modal';
         modal.setAttribute('role', 'dialog');
         modal.setAttribute('aria-modal', 'true');
         modal.setAttribute('aria-labelledby', 'thundy-loading-title');
@@ -109,7 +109,7 @@
 
         const title = document.createElement('h2');
         title.id = 'thundy-loading-title';
-        title.className = 'text-info';
+        title.className = 'thundy-text-info';
         title.textContent = 'Time-of-Click Protection aktiv...';
 
         const message = document.createElement('p');
@@ -224,8 +224,12 @@ if (!document.getElementById('thundy-av-styles')) {
             outline: 2px solid #005a9e;
             outline-offset: 2px;
         }
-        .thundy-modal .btn-primary { background: #005a9e; color: white; }
-        .thundy-modal .btn-success { background: #008000; color: white; }
+        .thundy-modal .thundy-btn-primary { background: #005a9e; color: white; }
+        .thundy-modal .thundy-btn-success { background: #008000; color: white; }
+        .thundy-text-warning { color: #ff8c00 !important; }
+        .thundy-text-info { color: #0000ff !important; }
+        .thundy-mt-3 { margin-top: 15px; }
+        .thundy-ml-2 { margin-left: 10px; }
     `;
     document.head.appendChild(style);
 }
