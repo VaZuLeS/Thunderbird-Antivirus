@@ -979,25 +979,27 @@ async function tab_mail_open_display(tab, message) {
   }
 }
 
-function extractTextFromParts(part, partsArray) {
-  const isRoot = partsArray === undefined;
+// ⚡ Bolt Optimization: Avoided intermediate array allocations and map/join overhead
+// by using string concatenation in an accumulator object for faster recursive text extraction.
+function extractTextFromParts(part, outObj) {
+  const isRoot = outObj === undefined;
   if (isRoot) {
-      partsArray = [];
+      outObj = { text: "" };
   }
 
   if (part.contentType === "text/plain" || part.contentType === "text/html") {
       if (part.body) {
-         partsArray.push(part.body + " ");
+         outObj.text += part.body + " ";
       }
   }
   if (part.parts) {
       for (let subPart of part.parts) {
-          extractTextFromParts(subPart, partsArray);
+          extractTextFromParts(subPart, outObj);
       }
   }
 
   if (isRoot) {
-      return partsArray.join("");
+      return outObj.text;
   }
 }
 
