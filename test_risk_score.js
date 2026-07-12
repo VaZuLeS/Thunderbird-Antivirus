@@ -36,11 +36,14 @@ function levenshteinDistance(a, b) {
             if (b.charCodeAt(i - 1) === a.charCodeAt(j - 1)) {
                 currRow[j] = prevRow[j - 1];
             } else {
-                currRow[j] = 1 + Math.min(
-                    prevRow[j - 1], // substitution
-                    prevRow[j],     // deletion
-                    currRow[j - 1]  // insertion
-                );
+                // ⚡ Bolt Optimization: Use manual comparison instead of Math.min to avoid function call overhead
+                let sub = prevRow[j - 1];
+                let del = prevRow[j];
+                let ins = currRow[j - 1];
+                let min = sub < del ? sub : del;
+                if (ins < min) min = ins;
+
+                currRow[j] = 1 + min;
             }
         }
         let tmp = prevRow; prevRow = currRow; currRow = tmp;
