@@ -74,10 +74,24 @@ document.addEventListener('DOMContentLoaded', function() {
     let privacyTierSetting = document.getElementById('privacyTier').value;
 
     let whitelistStr = document.getElementById('customWhitelist').value;
-    let whitelistSetting = whitelistStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    let whitelistSetting = [];
+    for (let start = 0; start < whitelistStr.length; ) {
+        let end = whitelistStr.indexOf(',', start);
+        if (end === -1) end = whitelistStr.length;
+        let item = whitelistStr.substring(start, end).trim();
+        if (item.length > 0) whitelistSetting.push(item);
+        start = end + 1;
+    }
 
     let blacklistStr = document.getElementById('customBlacklist').value;
-    let blacklistSetting = blacklistStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    let blacklistSetting = [];
+    for (let start = 0; start < blacklistStr.length; ) {
+        let end = blacklistStr.indexOf(',', start);
+        if (end === -1) end = blacklistStr.length;
+        let item = blacklistStr.substring(start, end).trim();
+        if (item.length > 0) blacklistSetting.push(item);
+        start = end + 1;
+    }
 
     let alwaysManualSetting = document.getElementById('alwaysManual').checked;
     let autoScanLinksSetting = document.getElementById('autoScanLinks').checked;
