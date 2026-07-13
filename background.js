@@ -838,7 +838,6 @@ async function processLinks(tab, message, fullMessage) {
   let urls = extractUrls(messageText);
   let filteredUrls = filterUrls(urls);
 
-  console.log("Gefundene URLs:", filteredUrls);
   if (filteredUrls.length > 0) {
     await processAndUploadUrls(message, filteredUrls);
   }
@@ -1116,7 +1115,6 @@ class HybridDataBuilder {
 
 async function handle_unknown_attachment({ attachment, content_of_attachment, local_hash, virustotal_stats, privacyTier, fileType }) {
     if (privacyTier === 'balanced' || privacyTier === 'max') {
-        console.log('Lade unbekannte Datei automatisch hoch...');
         try {
             const file_to_submit = new File([content_of_attachment], attachment.name, { type: fileType || 'application/octet-stream' });
             const formData = new FormData();
@@ -1179,7 +1177,6 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
 
     if (responseCheck.status === 200) {
         const json_data = await responseCheck.json();
-        console.log('Datei ist der API bereits bekannt.');
         return HybridDataBuilder.create(
             json_data.submission_id || 'N/A',
             json_data.job_id || 'N/A',
@@ -1305,7 +1302,6 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         }
         return recordToSave;
       });
-      console.log('Batch-Daten erfolgreich in DB gespeichert.');
     }
   } catch (error) {
     Logger.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
@@ -1391,7 +1387,6 @@ async function indexedDB_save_links_to_db(message, urls) {
         }
         return recordToSave;
       });
-      console.log('URLs erfolgreich in DB gespeichert.');
     }
   } catch (error) {
     Logger.error('Fehler bei der URL-Speicherung in der Datenbank:', error);
@@ -1698,8 +1693,6 @@ async function handleUrlScan(url, headerMessageId) {
     const json_data = await response.json();
 
     if (response.status === 200 || response.status === 201) {
-        console.log('URL manuell an Hybrid Analysis gesendet.');
-
         // Update DB record
         try {
             const db = await getSharedDB();
@@ -1742,8 +1735,6 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
     const json_data = await response.json();
 
     if (response.status === 200 || response.status === 201) {
-        console.log('Datei manuell an Hybrid Analysis gesendet.');
-
         // Update DB record
         try {
             const db = await getSharedDB();
