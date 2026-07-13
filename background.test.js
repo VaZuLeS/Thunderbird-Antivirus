@@ -1591,8 +1591,8 @@ describe('background.js', () => {
             };
 
             let errorLogged = false;
-            const originalConsoleLog = context.console.log;
-            context.console.log = (msg, e) => {
+            const originalConsoleError = context.console.error;
+            context.console.error = (msg, ...args) => {
                 if (msg.includes("Fehler beim Injecten von Time-of-Click Styles")) {
                     errorLogged = true;
                 }
@@ -1600,9 +1600,11 @@ describe('background.js', () => {
 
             try {
                 await context.injectTimeOfClickProtection(10, filteredUrls);
+                // Ensure promises resolve before checking
+                await new Promise(process.nextTick);
                 assert.strictEqual(errorLogged, true);
             } finally {
-                context.console.log = originalConsoleLog;
+                context.console.error = originalConsoleError;
             }
         });
     });

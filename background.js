@@ -657,7 +657,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls) {
                     }
                 });
             }
-        }).catch(e => console.log("Fehler beim Injecten von Time-of-Click Styles:", e));
+        }).catch(e => Logger.error("Fehler beim Injecten von Time-of-Click Styles:", e));
     }
 }
 
@@ -722,7 +722,7 @@ async function checkFirstCommunication(senderEmail) {
             }
         }
     } catch (e) {
-        console.log("Fehler bei messages.query (Möglicherweise nicht unterstützt):", e);
+        Logger.error("Fehler bei messages.query (Möglicherweise nicht unterstützt):", e);
     }
     return isFirstCommunication;
 }
@@ -978,7 +978,7 @@ async function tab_mail_open_display(tab, message) {
       } catch (e) { Logger.error('Failed to inject opt-in banner', e); }
     }
   } catch (error) {
-    console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
+    Logger.error(`Fehler beim Laden der Anhänge oder Links: ${error}`);
   }
 }
 
@@ -1488,7 +1488,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                     return;
                 }
             } catch (e) {
-                console.log("Fehler bei Time-of-Click Live-Scan:", e);
+                Logger.error("Fehler bei Time-of-Click Live-Scan:", e);
             }
         }
 
@@ -1858,7 +1858,7 @@ async function checkUrlscanIo(url, apikey) {
         });
 
         if (scanRes.status === 400) {
-           console.log("urlscan.io API Error 400 (e.g. Domain not resolvable)", await scanRes.json());
+           Logger.error("urlscan.io API Error 400 (e.g. Domain not resolvable)", await scanRes.json());
            return { status: 'ERROR', details: 'Domain not resolvable' };
         }
 
