@@ -82,4 +82,3 @@ for (let i = 0; i < numRuns; i++) {
     const end = performance.now();
     setTotal += (end - start);
 }
-console.log(`Set approach: ${setTotal / numRuns} ms (average)`);

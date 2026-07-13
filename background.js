@@ -67,6 +67,7 @@ for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
 
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
+const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join('|') + ')(?![a-z0-9_äöüß])', 'g');
 
 // ⚡ Bolt Optimization: Use a precomputed Uint8Array Look-Up Table (LUT) for O(1) character classification
 const IS_WORD_CHAR_LUT = new Uint8Array(256);
@@ -391,30 +392,12 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
     let textToAnalyze = (subject + " " + messageText).toLowerCase();
     let foundUrgencyWords = [];
-    let textLen = textToAnalyze.length;
-    for (let i = 0; i < URGENCY_WORDS.length; i++) {
-        let word = URGENCY_WORDS[i];
-        let pos = 0;
-        let wordLen = word.length;
-        while ((pos = textToAnalyze.indexOf(word, pos)) !== -1) {
-            let leftOk = true;
-            if (pos > 0) {
-                let code = textToAnalyze.charCodeAt(pos - 1);
-                if (isWordChar(code)) leftOk = false;
-            }
-            if (leftOk) {
-                let rightOk = true;
-                let rightPos = pos + wordLen;
-                if (rightPos < textLen) {
-                    let code = textToAnalyze.charCodeAt(rightPos);
-                    if (isWordChar(code)) rightOk = false;
-                }
-                if (rightOk) {
-                    foundUrgencyWords.push(word);
-                    break;
-                }
-            }
-            pos += 1;
+
+    let match;
+    URGENCY_REGEX.lastIndex = 0;
+    while ((match = URGENCY_REGEX.exec(textToAnalyze)) !== null) {
+        if (foundUrgencyWords.indexOf(match[2]) === -1) {
+            foundUrgencyWords.push(match[2]);
         }
     }
 
@@ -741,9 +724,19 @@ async function checkURLhausDomains(filteredUrls) {
         }
         let linkDomains = Array.from(linkDomainsSet);
 
-        const domainChecks = linkDomains.map(async (domain) => {
+        const domainChecks = [];
+
+        for (let i = 0; i < linkDomains.length; i++) {
+            const domain = linkDomains[i];
+
             if (urlhausCache.has(domain)) {
-                return await urlhausCache.get(domain) ? domain : null;
+                const cached = urlhausCache.get(domain);
+                if (cached instanceof Promise) {
+                    domainChecks.push(cached.then(isMal => isMal ? domain : null));
+                } else if (cached) {
+                    urlhausDomains.push(domain);
+                }
+                continue;
             }
 
             let checkPromise = checkURLhaus(domain, urlhausApikey);
@@ -754,17 +747,20 @@ async function checkURLhausDomains(filteredUrls) {
             }
             urlhausCache.set(domain, checkPromise);
 
-            let isMalicious = await checkPromise;
-            urlhausCache.set(domain, isMalicious);
+            domainChecks.push(checkPromise.then(isMalicious => {
+                urlhausCache.set(domain, isMalicious);
+                return isMalicious ? domain : null;
+            }));
+        }
 
-            if (isMalicious) {
-                return domain;
+        if (domainChecks.length > 0) {
+            const checkResults = await Promise.all(domainChecks);
+            for (let i = 0; i < checkResults.length; i++) {
+                if (checkResults[i] !== null) {
+                    urlhausDomains.push(checkResults[i]);
+                }
             }
-            return null;
-        });
-
-        const checkResults = await Promise.all(domainChecks);
-        urlhausDomains = checkResults.filter(d => d !== null);
+        }
     }
     return urlhausDomains;
 }
@@ -1472,10 +1468,8 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         if (record && record.links) {
             // ⚡ Optimize URL normalization: Move requestUrl processing out of loop and use fast string methods over Regex
             const reqUrl = request.url.endsWith("/") ? request.url.slice(0, -1) : request.url;
-            linkObj = record.links.find(l => {
-                const lUrl = l.url.endsWith("/") ? l.url.slice(0, -1) : l.url;
-                return lUrl === reqUrl;
-            });
+            const reqUrlSlash = reqUrl + "/";
+            linkObj = record.links.find(l => l.url === reqUrl || l.url === reqUrlSlash);
         }
 
         // Time-of-Click Live Scan via urlscan.io
