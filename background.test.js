@@ -1286,6 +1286,33 @@ describe('background.js', () => {
         });
     });
 
+    describe('getHostnameOptimized', () => {
+        it('extracts hostname from http URL', () => {
+            assert.strictEqual(context.getHostnameOptimized('http://example.com/path'), 'example.com');
+        });
+
+        it('extracts hostname from https URL', () => {
+            assert.strictEqual(context.getHostnameOptimized('https://www.google.com/search?q=test'), 'www.google.com');
+        });
+
+        it('converts hostname to lowercase', () => {
+            assert.strictEqual(context.getHostnameOptimized('https://EXAMPLE.COM/path'), 'example.com');
+        });
+
+        it('returns null for invalid URLs', () => {
+            assert.strictEqual(context.getHostnameOptimized('not-a-url'), null);
+        });
+
+        it('returns null for empty string', () => {
+            assert.strictEqual(context.getHostnameOptimized(''), null);
+        });
+
+        it('returns null for null/undefined input', () => {
+            assert.strictEqual(context.getHostnameOptimized(null), null);
+            assert.strictEqual(context.getHostnameOptimized(undefined), null);
+        });
+    });
+
     describe('calculateThreatScore', () => {
         it('calculates threat score correctly for spf=fail', async () => {
             const author = 'Service <service@paypal.com>';
