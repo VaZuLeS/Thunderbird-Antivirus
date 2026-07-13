@@ -127,6 +127,7 @@ describe('background.js', () => {
             globalThis.get_sha256_hash = get_sha256_hash;
             globalThis.indexedDB_save_batch_hybrid_data_to_db = indexedDB_save_batch_hybrid_data_to_db;
             globalThis.handleManualUpload = handleManualUpload;
+            globalThis.extractEmailAddress = extractEmailAddress;
             globalThis.extractUrls = extractUrls;
             globalThis.filterUrls = filterUrls;
             globalThis.extractTextFromParts = extractTextFromParts;
@@ -2555,6 +2556,28 @@ describe('background.js', () => {
             let response;
             await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'ERROR' });
+        });
+    });
+
+    describe('extractEmailAddress', () => {
+        it('returns plain email unchanged', () => {
+            assert.strictEqual(context.extractEmailAddress('test@example.com'), 'test@example.com');
+        });
+        it('extracts email from brackets', () => {
+            assert.strictEqual(context.extractEmailAddress('John Doe <john@example.com>'), 'john@example.com');
+        });
+        it('converts to lowercase', () => {
+            assert.strictEqual(context.extractEmailAddress('TEST@EXAMPLE.COM'), 'test@example.com');
+            assert.strictEqual(context.extractEmailAddress('User <USER@EXAMPLE.COM>'), 'user@example.com');
+        });
+        it('handles missing ending bracket', () => {
+            assert.strictEqual(context.extractEmailAddress('John <john@example.com'), 'john <john@example.com');
+        });
+        it('handles empty string', () => {
+            assert.strictEqual(context.extractEmailAddress(''), '');
+        });
+        it('handles string with only brackets', () => {
+            assert.strictEqual(context.extractEmailAddress('<>'), '');
         });
     });
 
