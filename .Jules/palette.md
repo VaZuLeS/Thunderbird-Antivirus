@@ -77,3 +77,6 @@
 ## 2026-07-07 - Document Keyboard Shortcuts in UI
 **Learning:** The warning modal supported closing via the Escape key, but this wasn't visually communicated to the user, meaning power users wouldn't know they could use the keyboard to dismiss it. Furthermore, screen readers wouldn't announce the shortcut without `aria-keyshortcuts`.
 **Action:** When a modal supports a standard keyboard shortcut (like Escape to cancel), explicitly add the hint (e.g., '(Esc)') to the relevant button's `textContent` and include the `aria-keyshortcuts='Escape'` attribute to inform both visual and assistive technology users.
+## 2024-07-28 - Lingering Loading Indicators with Empty States
+**Learning:** When dynamically injecting empty state or error cards into a container after an asynchronous loading phase (e.g., retrieving from IndexedDB or fetching from an API), appending the new elements without first clearing the parent container causes the initial loading indicator to remain indefinitely stacked above the new content, confusing users.
+**Action:** Always explicitly clear the parent container (e.g., `container.textContent = ''`) before appending a final empty state or error card to ensure the temporary loading indicator is removed.
