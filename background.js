@@ -838,7 +838,7 @@ async function processLinks(tab, message, fullMessage) {
   let urls = extractUrls(messageText);
   let filteredUrls = filterUrls(urls);
 
-  console.log("Gefundene URLs:", filteredUrls);
+
   if (filteredUrls.length > 0) {
     await processAndUploadUrls(message, filteredUrls);
   }
