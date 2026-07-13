@@ -1007,7 +1007,7 @@ function extractTextFromParts(part, outObj) {
 }
 
 function extractUrls(text) {
-    const urls = [];
+    const urlSet = new Set();
     const punct = ".,;:!)]";
     let searchStart = 0;
 
@@ -1062,14 +1062,14 @@ function extractUrls(text) {
                 url = url.substring(0, len);
             }
 
-            // ⚡ Bolt Optimization: Use Array indexOf instead of Set allocation for small arrays
-            if (urls.indexOf(url) === -1) {
-                urls.push(url);
-            }
+            // ⚡ Bolt Optimization: Use Set for O(1) deduplication, which significantly outperforms Array indexOf for large numbers of links
+            urlSet.add(url);
         }
 
         searchStart = endIdx === startIdx ? startIdx + 1 : endIdx;
     }
+    const urls = [];
+    urlSet.forEach(u => urls.push(u));
     return urls;
 }
 
