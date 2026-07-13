@@ -1213,12 +1213,9 @@ async function process_single_attachment(message, attachment) {
       case 'application/json':
       case 'application/xml':
       case 'application/xhtml+xml':
-        console.log(`Überspringe Datei vom Typ ${attachment.contentType}`);
         return null;
 
       default:
-        console.log(`Berechne lokalen Hash für Datei | Typ: ${attachment.contentType}`);
-
         try {
             const content_of_attachment = file.slice();
             const arrayBuffer = await content_of_attachment.arrayBuffer();
