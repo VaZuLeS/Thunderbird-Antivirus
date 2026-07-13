@@ -62,8 +62,6 @@ for (let i = 0; i < 10; i++) {
     testSet();
 }
 
-console.log("Starting benchmark...");
-
 const numRuns = 10;
 
 let arrayTotal = 0;
