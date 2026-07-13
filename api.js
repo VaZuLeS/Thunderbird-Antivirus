@@ -160,19 +160,23 @@ try {
                     await Promise.all(fetchPromises);
                 }
             } else {
-                 let emptyCard = document.createElement('div');
+                let container = document.getElementById('hybrid_analysis_api_content');
+                if (container) container.textContent = '';
+                let emptyCard = document.createElement('div');
                 emptyCard.className = 'card card-info mb-3';
                 emptyCard.setAttribute('role', 'status');
                 let p1 = document.createElement('p');
                 p1.className = 'text-info';
                 p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.';
                 emptyCard.appendChild(p1);
-                document.getElementById('hybrid_analysis_api_content').appendChild(emptyCard);
+                container.appendChild(emptyCard);
             }
         };
     };
 
     openRequest.onerror = function(e) {
+        let container = document.getElementById('hybrid_analysis_api_content');
+        if (container) container.textContent = '';
         let emptyCard = document.createElement('div');
         emptyCard.className = 'card card-info mb-3';
         emptyCard.setAttribute('role', 'status');
@@ -180,9 +184,18 @@ try {
         p2.className = 'text-info';
         p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.';
         emptyCard.appendChild(p2);
-        document.getElementById('hybrid_analysis_api_content').appendChild(emptyCard);
+        container.appendChild(emptyCard);
     }
 } catch (error) {
+    let container = document.getElementById('hybrid_analysis_api_content');
+    if (container) {
+        container.textContent = '';
+        let errDiv = document.createElement('div');
+        errDiv.className = 'alert-error';
+        errDiv.setAttribute('role', 'alert');
+        errDiv.textContent = 'Unerwarteter Fehler beim Laden der Analyseergebnisse.';
+        container.appendChild(errDiv);
+    }
 }
 })();
 

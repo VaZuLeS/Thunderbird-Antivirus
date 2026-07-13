@@ -724,9 +724,19 @@ async function checkURLhausDomains(filteredUrls) {
         }
         let linkDomains = Array.from(linkDomainsSet);
 
-        const domainChecks = linkDomains.map(async (domain) => {
+        const domainChecks = [];
+
+        for (let i = 0; i < linkDomains.length; i++) {
+            const domain = linkDomains[i];
+
             if (urlhausCache.has(domain)) {
-                return await urlhausCache.get(domain) ? domain : null;
+                const cached = urlhausCache.get(domain);
+                if (cached instanceof Promise) {
+                    domainChecks.push(cached.then(isMal => isMal ? domain : null));
+                } else if (cached) {
+                    urlhausDomains.push(domain);
+                }
+                continue;
             }
 
             let checkPromise = checkURLhaus(domain, urlhausApikey);
@@ -737,17 +747,20 @@ async function checkURLhausDomains(filteredUrls) {
             }
             urlhausCache.set(domain, checkPromise);
 
-            let isMalicious = await checkPromise;
-            urlhausCache.set(domain, isMalicious);
+            domainChecks.push(checkPromise.then(isMalicious => {
+                urlhausCache.set(domain, isMalicious);
+                return isMalicious ? domain : null;
+            }));
+        }
 
-            if (isMalicious) {
-                return domain;
+        if (domainChecks.length > 0) {
+            const checkResults = await Promise.all(domainChecks);
+            for (let i = 0; i < checkResults.length; i++) {
+                if (checkResults[i] !== null) {
+                    urlhausDomains.push(checkResults[i]);
+                }
             }
-            return null;
-        });
-
-        const checkResults = await Promise.all(domainChecks);
-        urlhausDomains = checkResults.filter(d => d !== null);
+        }
     }
     return urlhausDomains;
 }
@@ -1455,10 +1468,8 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         if (record && record.links) {
             // ⚡ Optimize URL normalization: Move requestUrl processing out of loop and use fast string methods over Regex
             const reqUrl = request.url.endsWith("/") ? request.url.slice(0, -1) : request.url;
-            linkObj = record.links.find(l => {
-                const lUrl = l.url.endsWith("/") ? l.url.slice(0, -1) : l.url;
-                return lUrl === reqUrl;
-            });
+            const reqUrlSlash = reqUrl + "/";
+            linkObj = record.links.find(l => l.url === reqUrl || l.url === reqUrlSlash);
         }
 
         // Time-of-Click Live Scan via urlscan.io
