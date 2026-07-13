@@ -741,9 +741,19 @@ async function checkURLhausDomains(filteredUrls) {
         }
         let linkDomains = Array.from(linkDomainsSet);
 
-        const domainChecks = linkDomains.map(async (domain) => {
+        const domainChecks = [];
+
+        for (let i = 0; i < linkDomains.length; i++) {
+            const domain = linkDomains[i];
+
             if (urlhausCache.has(domain)) {
-                return await urlhausCache.get(domain) ? domain : null;
+                const cached = urlhausCache.get(domain);
+                if (cached instanceof Promise) {
+                    domainChecks.push(cached.then(isMal => isMal ? domain : null));
+                } else if (cached) {
+                    urlhausDomains.push(domain);
+                }
+                continue;
             }
 
             let checkPromise = checkURLhaus(domain, urlhausApikey);
@@ -754,17 +764,20 @@ async function checkURLhausDomains(filteredUrls) {
             }
             urlhausCache.set(domain, checkPromise);
 
-            let isMalicious = await checkPromise;
-            urlhausCache.set(domain, isMalicious);
+            domainChecks.push(checkPromise.then(isMalicious => {
+                urlhausCache.set(domain, isMalicious);
+                return isMalicious ? domain : null;
+            }));
+        }
 
-            if (isMalicious) {
-                return domain;
+        if (domainChecks.length > 0) {
+            const checkResults = await Promise.all(domainChecks);
+            for (let i = 0; i < checkResults.length; i++) {
+                if (checkResults[i] !== null) {
+                    urlhausDomains.push(checkResults[i]);
+                }
             }
-            return null;
-        });
-
-        const checkResults = await Promise.all(domainChecks);
-        urlhausDomains = checkResults.filter(d => d !== null);
+        }
     }
     return urlhausDomains;
 }
