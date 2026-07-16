@@ -648,9 +648,17 @@ async function checkIPReputation(receivedHeaders) {
     let maliciousIps = [];
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
-        let ipChecks = publicIps.map(async (ip) => {
+        let ipChecks = [];
+        for (let i = 0; i < publicIps.length; i++) {
+            const ip = publicIps[i];
             if (ipReputationCache.has(ip)) {
-                return { ip, isMalicious: await ipReputationCache.get(ip) };
+                const cached = ipReputationCache.get(ip);
+                if (cached instanceof Promise) {
+                     ipChecks.push(cached.then(isMalicious => ({ ip, isMalicious })));
+                } else {
+                     if (cached) maliciousIps.push(ip);
+                }
+                continue;
             }
 
             let promise = (async () => {
@@ -670,16 +678,18 @@ async function checkIPReputation(receivedHeaders) {
             }
             ipReputationCache.set(ip, promise);
 
-            let isMalicious = await promise;
-            ipReputationCache.set(ip, isMalicious);
+            ipChecks.push(promise.then(isMalicious => {
+                ipReputationCache.set(ip, isMalicious);
+                return { ip, isMalicious };
+            }));
+        }
 
-            return { ip, isMalicious };
-        });
-
-        let results = await Promise.all(ipChecks);
-        for (let result of results) {
-            if (result.isMalicious) {
-                maliciousIps.push(result.ip);
+        if (ipChecks.length > 0) {
+            let results = await Promise.all(ipChecks);
+            for (let i = 0; i < results.length; i++) {
+                if (results[i].isMalicious) {
+                    maliciousIps.push(results[i].ip);
+                }
             }
         }
     }
