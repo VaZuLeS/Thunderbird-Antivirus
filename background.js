@@ -272,20 +272,25 @@ function levenshteinDistance(a, b) {
         let tmp = a; a = b; b = tmp;
     }
 
-    if (a.length + 1 > lev_prevRow.length) {
-        lev_prevRow = new Uint16Array(a.length + 1);
-        lev_currRow = new Uint16Array(a.length + 1);
+    // ⚡ Bolt Optimization: Cached string lengths and hoisted charCodeAt evaluation for the outer loop to eliminate repeated property lookups in the hot nested loop.
+    const aLen = a.length;
+    const bLen = b.length;
+
+    if (aLen + 1 > lev_prevRow.length) {
+        lev_prevRow = new Uint16Array(aLen + 1);
+        lev_currRow = new Uint16Array(aLen + 1);
     }
 
     let prevRow = lev_prevRow;
     let currRow = lev_currRow;
 
-    for (let j = 0; j <= a.length; j++) prevRow[j] = j;
+    for (let j = 0; j <= aLen; j++) prevRow[j] = j;
 
-    for (let i = 1; i <= b.length; i++) {
+    for (let i = 1; i <= bLen; i++) {
         currRow[0] = i;
-        for (let j = 1; j <= a.length; j++) {
-            if (b.charCodeAt(i - 1) === a.charCodeAt(j - 1)) {
+        const bChar = b.charCodeAt(i - 1);
+        for (let j = 1; j <= aLen; j++) {
+            if (bChar === a.charCodeAt(j - 1)) {
                 currRow[j] = prevRow[j - 1];
             } else {
                 // ⚡ Bolt Optimization: Use manual comparison instead of Math.min to avoid function call overhead
@@ -301,7 +306,7 @@ function levenshteinDistance(a, b) {
         // Swap arrays to avoid allocating a new one next iteration
         let tmp = prevRow; prevRow = currRow; currRow = tmp;
     }
-    return prevRow[a.length];
+    return prevRow[aLen];
 }
 
 const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
