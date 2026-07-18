@@ -501,14 +501,13 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
             linkDomainsSet.add(hostname);
         } catch (e) { /* Ignore invalid URLs */ }
     }
-    let linkDomains = Array.from(linkDomainsSet);
-
-    if (linkDomains.length > 0 && senderDomain) {
+    if (linkDomainsSet.size > 0 && senderDomain) {
         let matchFound = false;
         let typosquatLinkFound = false;
         let checkedMainDomains = new Map();
 
-        for (let ld of linkDomains) {
+        // ⚡ Bolt Optimization: Iterate directly over the Set to avoid Array.from() allocation overhead
+        for (let ld of linkDomainsSet) {
             if (ld === senderDomain || ld.endsWith('.' + senderDomain) || senderDomain.endsWith('.' + ld)) {
                 matchFound = true;
             } else if (senderMainDomain && (ld === senderMainDomain || ld.endsWith('.' + senderMainDomain))) {
@@ -722,12 +721,10 @@ async function checkURLhausDomains(filteredUrls) {
                 linkDomainsSet.add(hostname);
             } catch (e) { /* Ignore invalid URLs */ }
         }
-        let linkDomains = Array.from(linkDomainsSet);
-
         const domainChecks = [];
 
-        for (let i = 0; i < linkDomains.length; i++) {
-            const domain = linkDomains[i];
+        // ⚡ Bolt Optimization: Iterate directly over the Set to avoid Array.from() allocation overhead
+        for (const domain of linkDomainsSet) {
 
             if (urlhausCache.has(domain)) {
                 const cached = urlhausCache.get(domain);
