@@ -116,8 +116,30 @@ textarea:disabled {
     cursor: not-allowed;
 }
 
+@keyframes thundy-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 button[aria-busy="true"]:disabled {
     cursor: progress;
+    position: relative;
+    padding-left: 36px;
+    transition: padding 0.2s ease;
+}
+
+button[aria-busy="true"]:disabled::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    margin-top: -8px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: thundy-spin 1s linear infinite;
 }
 
 .btn-primary {
