@@ -201,16 +201,18 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
 }
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
-    let linkDomains = [];
+    // ⚡ Bolt Optimization: Use Set for O(1) deduplication to prevent O(N²) bottleneck with linkDomains.indexOf
+    let linkDomainsSet = new Set();
     for (let url of urls) {
         try {
             let parsed = new URL(url);
             let hostname = parsed.hostname.toLowerCase();
-            if (hostname && linkDomains.indexOf(hostname) === -1) {
-                linkDomains.push(hostname);
+            if (hostname) {
+                linkDomainsSet.add(hostname);
             }
         } catch (e) { /* Ignore invalid URLs */ }
     }
+    let linkDomains = Array.from(linkDomainsSet);
 
     if (linkDomains.length > 0 && senderDomain) {
         let matchFound = false;
