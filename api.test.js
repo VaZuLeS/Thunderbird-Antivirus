@@ -1658,6 +1658,113 @@ describe('handleUploadClick', () => {
     });
 });
 
+describe('fetch_hybrid_report', () => {
+    let context;
+    let fetch_hybrid_report;
+    let hybrid_report_cache;
+
+    beforeEach(async () => {
+        context = {
+            browser: {
+                tabs: { query: async () => [{ id: 1 }] },
+                storage: { local: { get: async () => ({ apikey: 'test' }) } }
+            },
+            console: { log: () => {}, error: () => {} },
+            fetch: async () => ({ status: 200, json: async () => ({}) }),
+            setTimeout: setTimeout,
+            String: String,
+            Array: Array,
+            TextEncoder: TextEncoder,
+            Map: Map,
+            Promise: Promise,
+            Error: Error
+        };
+        context.messenger = context.browser;
+
+        vm.createContext(context);
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        wrappedCode += '\n; globalThis.fetch_hybrid_report = fetch_hybrid_report;\n';
+        wrappedCode += '\n; globalThis.hybrid_report_cache = hybrid_report_cache;\n';
+
+        // Setup API key directly in context since we are stripping the IIFE that normally sets it
+        wrappedCode += '\n; apikey_hybridanalysis = "mock_api_key";\n';
+
+        vm.runInContext(wrappedCode, context);
+
+        fetch_hybrid_report = context.fetch_hybrid_report;
+        hybrid_report_cache = context.hybrid_report_cache;
+        hybrid_report_cache.clear();
+    });
+
+    it('returns cached promise if sha is in cache', async () => {
+        const mockPromise = Promise.resolve('cached result');
+        hybrid_report_cache.set('test_sha', mockPromise);
+        const result = await fetch_hybrid_report('test_sha');
+        assert.strictEqual(result, 'cached result');
+    });
+
+    it('fetches successfully and updates cache', async () => {
+        let fetchedUrl, fetchedOptions;
+        context.fetch = async (url, options) => {
+            fetchedUrl = url;
+            fetchedOptions = options;
+            return {
+                status: 200,
+                json: async () => ({ result: 'success data' })
+            };
+        };
+
+        const resultPromise = fetch_hybrid_report('test_sha_2');
+        assert.ok(hybrid_report_cache.has('test_sha_2'));
+
+        const result = await resultPromise;
+
+        assert.strictEqual(fetchedUrl, 'https://hybrid-analysis.com/api/v2/overview/test_sha_2');
+        assert.strictEqual(fetchedOptions.method, 'GET');
+        assert.strictEqual(fetchedOptions.headers['api-key'], 'mock_api_key');
+        assert.strictEqual(fetchedOptions.headers['user-agent'], 'Falcon');
+
+        assert.strictEqual(result.response.status, 200);
+        assert.deepStrictEqual(result.json_data, { result: 'success data' });
+    });
+
+    it('deletes from cache on non-200 response', async () => {
+        context.fetch = async (url, options) => {
+            return {
+                status: 404,
+                json: async () => ({ error: 'not found' })
+            };
+        };
+
+        const resultPromise = fetch_hybrid_report('test_sha_3');
+        assert.ok(hybrid_report_cache.has('test_sha_3'));
+
+        const result = await resultPromise;
+
+        assert.strictEqual(result.response.status, 404);
+        assert.ok(!hybrid_report_cache.has('test_sha_3'), 'Cache should be deleted');
+    });
+
+    it('deletes from cache and throws on network error', async () => {
+        const testError = new Error('Network error');
+        context.fetch = async () => {
+            throw testError;
+        };
+
+        const resultPromise = fetch_hybrid_report('test_sha_4');
+        assert.ok(hybrid_report_cache.has('test_sha_4'));
+
+        await assert.rejects(resultPromise, testError);
+        assert.ok(!hybrid_report_cache.has('test_sha_4'), 'Cache should be deleted on error');
+    });
+});
+
 
 describe('createCdrButton', () => {
     let context;
