@@ -1134,7 +1134,7 @@ const IGNORED_DOMAINS = [
 const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d.replace(/\./g, '\\.')).join('|')})$`, 'i');
 
 function filterUrls(urls) {
-    return urls.filter(url => {
+    const filtered = urls.filter(url => {
         try {
             // 🛡️ Sentinel: Use standard URL parser safely
             let hostname = getHostnameOptimized(url);
@@ -1144,6 +1144,7 @@ function filterUrls(urls) {
             return false; // Ungültige URL
         }
     });
+    return filtered;
 }
 
 // Funktion zum Senden der Anhänge an Hybrid Analysis
