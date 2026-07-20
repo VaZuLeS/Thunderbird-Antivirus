@@ -117,12 +117,13 @@ try {
                 document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
                 let fetchPromises = [];
+                let syncFragment = document.createDocumentFragment();
 
                 if (hasAttachments) {
                     for (const att of record.attachments) {
                         const hash256 = att.hybrid_sha256;
                         if (att.state === 'UNKNOWN') {
-                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
+                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, syncFragment);
                         } else {
                             fetchPromises.push(
                                 get_hybrid_report_by_sha256({
@@ -142,7 +143,7 @@ try {
                     const linkPromises = [];
                     for (const linkObj of record.links) {
                         if (linkObj.state === 'UNKNOWN') {
-                            renderManualUrlScanUI(linkObj.url, message.headerMessageId);
+                            renderManualUrlScanUI(linkObj.url, message.headerMessageId, syncFragment);
                         } else if (linkObj.hybrid_sha256) {
                             linkPromises.push(get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
@@ -154,6 +155,10 @@ try {
                     if (linkPromises.length > 0) {
                         fetchPromises.push(Promise.all(linkPromises));
                     }
+                }
+
+                if (syncFragment.hasChildNodes()) {
+                    document.getElementById('hybrid_analysis_api_content').appendChild(syncFragment);
                 }
 
                 if (fetchPromises.length > 0) {
@@ -637,8 +642,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
     });
 }
 
-function renderManualUrlScanUI(url, headerMessageId) {
-    let container = document.getElementById('hybrid_analysis_api_content');
+function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
+    let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
     const u8 = new TextEncoder().encode(url);
     // ⚡ Bolt Optimization: Use a traditional for-loop instead of Array.from().map().join()
@@ -805,7 +810,7 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
     });
 }
 
-function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
+function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId, targetContainer) {
     let safeHash = escapeHTML(hash);
 
     let card = document.createElement('div');
@@ -832,5 +837,9 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId });
     createCdrButton(card, safeHash, attachmentName, messageId, partName);
 
-    document.getElementById('hybrid_analysis_api_content').appendChild(card);
+    if (targetContainer) {
+        targetContainer.appendChild(card);
+    } else {
+        document.getElementById('hybrid_analysis_api_content').appendChild(card);
+    }
 }
