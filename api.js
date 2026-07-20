@@ -117,8 +117,7 @@ try {
             if (hasAttachments || hasLinks) {
                 document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
-                let fetchPromises = [];
-                let syncFragment = document.createDocumentFragment();
+                let fetchTasks = [];
 
                 if (hasAttachments) {
                     for (const att of record.attachments) {
@@ -153,12 +152,12 @@ try {
                     }
                 }
 
-                if (syncFragment.hasChildNodes()) {
-                    document.getElementById('hybrid_analysis_api_content').appendChild(syncFragment);
-                }
-
-                if (fetchPromises.length > 0) {
-                    await Promise.all(fetchPromises);
+                if (fetchTasks.length > 0) {
+                    const CONCURRENCY_LIMIT = 5;
+                    for (let i = 0; i < fetchTasks.length; i += CONCURRENCY_LIMIT) {
+                        const batch = fetchTasks.slice(i, i + CONCURRENCY_LIMIT);
+                        await Promise.all(batch.map(task => task()));
+                    }
                 }
             } else {
                 let container = document.getElementById('hybrid_analysis_api_content');
