@@ -27,7 +27,7 @@ class DatabaseDAO {
     }
 
     updateStore(db, storeName, key, updateFn) {
-        return new Promise((resolve, reject) => {
+        const storePromise = new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], "readwrite");
             const store = transaction.objectStore(storeName);
             const request = store.get(key);
@@ -50,6 +50,7 @@ class DatabaseDAO {
                 reject(e.target.error || new Error('Fehler beim Abrufen aus Store für Update: ' + storeName));
             };
         });
+        return storePromise;
     }
 
     getFromStore(db, storeName, key) {
