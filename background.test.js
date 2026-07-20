@@ -1248,6 +1248,33 @@ describe('background.js', () => {
         });
     });
 
+    describe('getMainDomain', () => {
+        it('extracts known brand from subdomain', () => {
+            assert.strictEqual(context.getMainDomain('www.paypal.com'), 'paypal.com');
+            assert.strictEqual(context.getMainDomain('sub.amazon.de'), 'amazon.de');
+        });
+
+        it('returns known brand when just the brand is provided', () => {
+            assert.strictEqual(context.getMainDomain('paypal.com'), 'paypal.com');
+        });
+
+        it('extracts regular domain from subdomain', () => {
+            assert.strictEqual(context.getMainDomain('sub.example.com'), 'example.com');
+        });
+
+        it('extracts regular domain from multi-level subdomain', () => {
+            assert.strictEqual(context.getMainDomain('a.b.example.com'), 'example.com');
+        });
+
+        it('returns domain when it has only one part', () => {
+            assert.strictEqual(context.getMainDomain('localhost'), 'localhost');
+        });
+
+        it('returns domain when it has two parts', () => {
+            assert.strictEqual(context.getMainDomain('example.com'), 'example.com');
+        });
+    });
+
     describe('evaluateSenderDomain', () => {
         it('returns initial score when senderDomain is empty', () => {
             const result = context.evaluateSenderDomain('', 10, []);
