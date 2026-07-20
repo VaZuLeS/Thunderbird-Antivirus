@@ -117,13 +117,14 @@ try {
             if (hasAttachments || hasLinks) {
                 document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
-                let fetchTasks = [];
+                let fetchPromises = [];
+                let syncFragment = document.createDocumentFragment();
 
                 if (hasAttachments) {
                     for (const att of record.attachments) {
                         const hash256 = att.hybrid_sha256;
                         if (att.state === 'UNKNOWN') {
-                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
+                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, syncFragment);
                         } else {
                             fetchTasks.push(() =>
                                 get_hybrid_report_by_sha256({
@@ -142,7 +143,7 @@ try {
                 if (hasLinks) {
                     for (const linkObj of record.links) {
                         if (linkObj.state === 'UNKNOWN') {
-                            renderManualUrlScanUI(linkObj.url, message.headerMessageId, fragment);
+                            renderManualUrlScanUI(linkObj.url, message.headerMessageId, syncFragment);
                         } else if (linkObj.hybrid_sha256) {
                             fetchTasks.push(() => get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
@@ -152,12 +153,12 @@ try {
                     }
                 }
 
-                if (fetchTasks.length > 0) {
-                    const BATCH_SIZE = 5;
-                    for (let i = 0; i < fetchTasks.length; i += BATCH_SIZE) {
-                        const batch = fetchTasks.slice(i, i + BATCH_SIZE).map(task => task());
-                        await Promise.all(batch);
-                    }
+                if (syncFragment.hasChildNodes()) {
+                    document.getElementById('hybrid_analysis_api_content').appendChild(syncFragment);
+                }
+
+                if (fetchPromises.length > 0) {
+                    await Promise.all(fetchPromises);
                 }
             } else {
                 let container = document.getElementById('hybrid_analysis_api_content');
@@ -805,7 +806,7 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
     });
 }
 
-function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
+function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId, targetContainer) {
     let safeHash = escapeHTML(hash);
 
     let card = document.createElement('div');
@@ -832,5 +833,9 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId });
     createCdrButton(card, safeHash, attachmentName, messageId, partName);
 
-    document.getElementById('hybrid_analysis_api_content').appendChild(card);
+    if (targetContainer) {
+        targetContainer.appendChild(card);
+    } else {
+        document.getElementById('hybrid_analysis_api_content').appendChild(card);
+    }
 }
