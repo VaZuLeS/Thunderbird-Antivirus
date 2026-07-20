@@ -648,17 +648,15 @@ async function checkIPReputation(receivedHeaders) {
     let maliciousIps = [];
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
-        let pendingChecks = [];
+        let ipChecks = [];
         for (let i = 0; i < publicIps.length; i++) {
-            let ip = publicIps[i];
+            const ip = publicIps[i];
             if (ipReputationCache.has(ip)) {
-                let cachedValue = ipReputationCache.get(ip);
-                if (cachedValue instanceof Promise) {
-                    pendingChecks.push(cachedValue.then(isMalicious => ({ ip, isMalicious })));
+                const cached = ipReputationCache.get(ip);
+                if (cached instanceof Promise) {
+                     ipChecks.push(cached.then(isMalicious => ({ ip, isMalicious })));
                 } else {
-                    if (cachedValue) {
-                        maliciousIps.push(ip);
-                    }
+                     if (cached) maliciousIps.push(ip);
                 }
                 continue;
             }
@@ -680,17 +678,17 @@ async function checkIPReputation(receivedHeaders) {
             }
             ipReputationCache.set(ip, promise);
 
-            pendingChecks.push(promise.then(isMalicious => {
+            ipChecks.push(promise.then(isMalicious => {
                 ipReputationCache.set(ip, isMalicious);
                 return { ip, isMalicious };
             }));
         }
 
-        if (pendingChecks.length > 0) {
-            let results = await Promise.all(pendingChecks);
-            for (let result of results) {
-                if (result.isMalicious) {
-                    maliciousIps.push(result.ip);
+        if (ipChecks.length > 0) {
+            let results = await Promise.all(ipChecks);
+            for (let i = 0; i < results.length; i++) {
+                if (results[i].isMalicious) {
+                    maliciousIps.push(results[i].ip);
                 }
             }
         }
