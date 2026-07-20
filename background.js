@@ -1243,16 +1243,16 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
             attachment,
             virustotal_stats
         );
-    } else {
-        return await handle_unknown_attachment({
-            attachment,
-            content_of_attachment,
-            local_hash,
-            virustotal_stats,
-            privacyTier,
-            fileType: file_type
-        });
     }
+
+    return await handle_unknown_attachment({
+        attachment,
+        content_of_attachment,
+        local_hash,
+        virustotal_stats,
+        privacyTier,
+        fileType: file_type
+    });
 }
 
 
