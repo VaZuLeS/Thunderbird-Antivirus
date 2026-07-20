@@ -54,7 +54,7 @@ class DatabaseDAO {
     }
 
     getFromStore(db, storeName, key) {
-        return new Promise((resolve, reject) => {
+        const storePromise = new Promise((resolve, reject) => {
             const transaction = db.transaction([storeName], "readonly");
             const store = transaction.objectStore(storeName);
             const request = store.get(key);
@@ -67,6 +67,7 @@ class DatabaseDAO {
                 reject(e.target.error || new Error('Fehler beim Abrufen aus Store: ' + storeName));
             };
         });
+        return storePromise;
     }
 
     putToStore(db, storeName, item) {
@@ -88,8 +89,7 @@ class DatabaseDAO {
     clearStore(db, storeName) {
         return new Promise((resolve, reject) => {
             if (!db.objectStoreNames.contains(storeName)) {
-                 resolve(false); // store doesn't exist
-                 return;
+                 return resolve(false); // store doesn't exist
             }
 
             const transaction = db.transaction([storeName], 'readwrite');

@@ -1218,7 +1218,7 @@ async function fetch_virustotal_stats(local_hash, apikey) {
 }
 
 function create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats) {
-    return HybridDataBuilder.create(
+    const data = HybridDataBuilder.create(
         'MANUAL_CHECK',
         'MANUAL_CHECK',
         local_hash,
@@ -1226,6 +1226,7 @@ function create_manual_check_hybrid_data(local_hash, attachment, virustotal_stat
         attachment,
         virustotal_stats
     );
+    return data;
 }
 
 async function check_hybrid_analysis_for_attachment(local_hash, attachment, content_of_attachment, virustotal_stats, file_type) {
@@ -1235,7 +1236,7 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
 
     if (responseCheck.status === 200) {
         const json_data = await responseCheck.json();
-        return HybridDataBuilder.create(
+        const hybridData = HybridDataBuilder.create(
             json_data.submission_id || 'N/A',
             json_data.job_id || 'N/A',
             local_hash,
