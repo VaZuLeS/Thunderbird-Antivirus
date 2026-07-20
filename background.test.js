@@ -128,6 +128,7 @@ describe('background.js', () => {
             globalThis.indexedDB_save_batch_hybrid_data_to_db = indexedDB_save_batch_hybrid_data_to_db;
             globalThis.handleManualUpload = handleManualUpload;
             globalThis.extractEmailAddress = extractEmailAddress;
+            globalThis.extractEmailDomain = extractEmailDomain;
             globalThis.extractUrls = extractUrls;
             globalThis.isWordChar = isWordChar;
             globalThis.filterUrls = filterUrls;
@@ -2672,6 +2673,27 @@ describe('background.js', () => {
             let response;
             await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'ERROR' });
+        });
+    });
+
+    describe('extractEmailDomain', () => {
+        it('returns the domain for a standard email', () => {
+            assert.strictEqual(context.extractEmailDomain('user@example.com'), 'example.com');
+        });
+        it('returns the domain including subdomains', () => {
+            assert.strictEqual(context.extractEmailDomain('user@mail.example.com'), 'mail.example.com');
+        });
+        it('returns an empty string if there is no @ symbol', () => {
+            assert.strictEqual(context.extractEmailDomain('invalidemail'), '');
+        });
+        it('extracts correctly if there are multiple @ symbols', () => {
+            assert.strictEqual(context.extractEmailDomain('user@name@example.com'), 'name@example.com');
+        });
+        it('converts uppercase domains to lowercase', () => {
+            assert.strictEqual(context.extractEmailDomain('user@EXAMPLE.COM'), 'example.com');
+        });
+        it('returns empty string for empty input', () => {
+            assert.strictEqual(context.extractEmailDomain(''), '');
         });
     });
 
