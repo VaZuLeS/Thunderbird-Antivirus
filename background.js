@@ -612,30 +612,46 @@ function calculateThreatScore(author, urls, options = {}) {
 
 async function processAndUploadUrls(message, filteredUrls) {
     if (privacyTier === 'max') {
-        const urlResults = await Promise.all(filteredUrls.map(async (url) => {
-            try {
-                const formBody = new URLSearchParams();
-                formBody.append('scan_type', 'all');
-                formBody.append('url', url);
+        const urlResults = [];
+        const concurrencyLimit = 5;
+        let i = 0;
 
-                const options = getHybridAnalysisOptions('POST', formBody, true);
-                options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url';
-                const response = await fetch(options.url, options);
-                if (response.status === 200 || response.status === 201) {
-                    const json_data = await response.json();
-                    return {
-                        url: url,
-                        state: 'UPLOADED',
-                        hybrid_submission_id: json_data.submission_id,
-                        hybrid_job_id: json_data.job_id,
-                        hybrid_sha256: json_data.sha256
-                    };
+        async function worker() {
+            while (i < filteredUrls.length) {
+                const index = i++;
+                const url = filteredUrls[index];
+
+                let result = { url: url, state: 'UNKNOWN' };
+                try {
+                    const formBody = new URLSearchParams();
+                    formBody.append('scan_type', 'all');
+                    formBody.append('url', url);
+
+                    const options = getHybridAnalysisOptions('POST', formBody, true);
+                    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url';
+                    const response = await fetch(options.url, options);
+                    if (response.status === 200 || response.status === 201) {
+                        const json_data = await response.json();
+                        result = {
+                            url: url,
+                            state: 'UPLOADED',
+                            hybrid_submission_id: json_data.submission_id,
+                            hybrid_job_id: json_data.job_id,
+                            hybrid_sha256: json_data.sha256
+                        };
+                    }
+                } catch (e) {
+                    Logger.error('Fehler beim automatischen URL-Upload', e);
                 }
-            } catch (e) {
-                Logger.error('Fehler beim automatischen URL-Upload', e);
+                urlResults[index] = result;
             }
-            return { url: url, state: 'UNKNOWN' };
-        }));
+        }
+
+        const workers = [];
+        for (let j = 0; j < Math.min(concurrencyLimit, filteredUrls.length); j++) {
+            workers.push(worker());
+        }
+        await Promise.all(workers);
 
         await indexedDB_save_links_objects_to_db(message, urlResults);
     } else {
