@@ -1663,6 +1663,9 @@ const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xli
 
 const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link', 'math', 'svg', 'noscript']);
 
+// ⚡ Bolt: Use a direct precompiled regex with bounds and no capturing groups for peak performance
+const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\uFFFD]/g;
+
 function disarmHTML(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
@@ -1686,9 +1689,9 @@ function disarmHTML(htmlString) {
                                 continue;
                             }
                             if (dangerousAttributes.has(attrName)) {
-                                let val = el.attributes[j].value;
+                                let val = el.attributes[j].value.toLowerCase();
                                 // Remove control characters (like tabs/newlines) that might evade the check
-                                let cleanVal = val.replace(/[\x00-\x20\x7F-\x9F\uFFFD]/g, '').toLowerCase();
+                                let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
                                     el.removeAttribute(attrName);
                                 }
