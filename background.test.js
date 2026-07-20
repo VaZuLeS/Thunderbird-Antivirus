@@ -2468,13 +2468,22 @@ describe('background.js', () => {
     describe('handleCheckLinkState', () => {
         let originalFetch;
         let originalConsoleLog;
+        let originalSetTimeout;
 
         beforeEach(() => {
             originalFetch = context.fetch;
             originalConsoleLog = context.console.log;
+            originalSetTimeout = context.setTimeout;
+            context.setTimeout = (cb) => cb();
             context.console.log = () => {};
             context.set_urlscanApikey('');
             context.set_apikey_hybridanalysis('test-key');
+        });
+
+        afterEach(() => {
+            context.fetch = originalFetch;
+            context.console.log = originalConsoleLog;
+            context.setTimeout = originalSetTimeout;
         });
 
     describe('checkHybridAnalysisVerdict', () => {
