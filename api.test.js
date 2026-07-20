@@ -1658,6 +1658,185 @@ describe('handleUploadClick', () => {
     });
 });
 
+
+describe('createCdrButton', () => {
+    let context;
+    let createCdrButton;
+
+    before(async () => {
+        context = {
+            browser: {
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
+            document: {
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : null;
+                },
+                createElement: (tag) => {
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(val) { this._innerText = val; },
+                        attributes: {},
+                        setAttribute: function(k, v) { this.attributes[k] = v; },
+                        removeAttribute: function(k) { delete this.attributes[k]; },
+                        childNodes: [],
+                        appendChild: function(node) { this.childNodes.push(node); },
+                        listeners: {},
+                        addEventListener: function(evt, cb) { this.listeners[evt] = cb; },
+                        click: function() {
+                            if (this.listeners['click']) {
+                                this.listeners['click'].call(this);
+                            }
+                        }
+                    };
+                    return el;
+                }
+            },
+            setTimeout: (cb) => { cb(); },
+            String: String,
+            Array: Array
+        };
+
+        const vm = require('vm');
+        const path = require('path');
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        // Export createCdrButton for testing
+        wrappedCode += '\n; globalThis.createCdrButton = createCdrButton;';
+
+        vm.runInContext(wrappedCode, context);
+        createCdrButton = context.createCdrButton;
+    });
+
+    beforeEach(() => {
+        context.mockElements = {};
+        context.lastMsg = null;
+    });
+
+    it('returns early if attachment is not .html or .htm', () => {
+        const card = { appendChild: () => { throw new Error('Should not be called'); } };
+        createCdrButton(card, 'hash1', 'test.txt', 'msg1', 'part1');
+        createCdrButton(card, 'hash2', null, 'msg1', 'part1');
+        // If it returns early, no error is thrown
+        assert.ok(true);
+    });
+
+    it('renders the CDR button and status element correctly for .html files', () => {
+        const card = context.document.createElement('div');
+
+        createCdrButton(card, 'hash1', 'test.html', 'msg1', 'part1');
+
+        assert.strictEqual(card.childNodes.length, 2);
+
+        const btn = card.childNodes[0];
+        assert.strictEqual(btn.tagName, 'button');
+        assert.strictEqual(btn.id, 'btn-cdr-hash1');
+        assert.strictEqual(btn.className, 'btn-primary mt-2 ml-2');
+        assert.strictEqual(btn.textContent, 'Bereinigen & Herunterladen (Lokales CDR)');
+
+        const status = card.childNodes[1];
+        assert.strictEqual(status.tagName, 'p');
+        assert.strictEqual(status.id, 'cdr-status-hash1');
+        assert.strictEqual(status.className, 'mt-2');
+        assert.strictEqual(status.attributes['aria-live'], 'polite');
+        assert.strictEqual(status.attributes['role'], 'status');
+    });
+
+    it('renders the CDR button and status element correctly for .htm files', () => {
+        const card = context.document.createElement('div');
+        createCdrButton(card, 'hash2', 'test.htm', 'msg2', 'part2');
+        assert.strictEqual(card.childNodes.length, 2);
+    });
+
+    it('handles button click and successful download', async () => {
+        const card = context.document.createElement('div');
+        createCdrButton(card, 'hash3', 'test.html', 'msg3', 'part3');
+
+        const btn = card.childNodes[0];
+        const status = card.childNodes[1];
+        context.mockElements['cdr-status-hash3'] = status;
+
+        context.browser.runtime.sendMessage = async (msg) => {
+            context.lastMsg = msg;
+            return { status: 'success' };
+        };
+
+        btn.click();
+
+        // Immediate UI updates
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn.attributes['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Bereinige...');
+        assert.strictEqual(status.textContent, 'Lokales CDR wird durchgeführt...');
+
+        // Wait for promise resolution (macro task)
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(context.lastMsg.action, 'downloadDisarmed');
+        assert.strictEqual(context.lastMsg.messageId, 'msg3');
+        assert.strictEqual(context.lastMsg.partName, 'part3');
+        assert.strictEqual(context.lastMsg.attachmentName, 'test.html');
+
+        assert.strictEqual(status.innerText, 'Herunterladen erfolgreich initiiert.');
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.className, 'btn-success mt-2 ml-2');
+        assert.strictEqual(btn.innerText, 'Bereinigt');
+    });
+
+    it('handles error response during download', async () => {
+        const card = context.document.createElement('div');
+        createCdrButton(card, 'hash4', 'test.html', 'msg4', 'part4');
+
+        const btn = card.childNodes[0];
+        const status = card.childNodes[1];
+        context.mockElements['cdr-status-hash4'] = status;
+
+        context.browser.runtime.sendMessage = async () => {
+            return { status: 'error', message: 'Download failed' };
+        };
+
+        btn.click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(status.innerText, 'Fehler beim Herunterladen: Download failed');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles exception during download', async () => {
+        const card = context.document.createElement('div');
+        createCdrButton(card, 'hash5', 'test.html', 'msg5', 'part5');
+
+        const btn = card.childNodes[0];
+        const status = card.childNodes[1];
+        context.mockElements['cdr-status-hash5'] = status;
+
+        context.browser.runtime.sendMessage = async () => {
+            throw new Error('Network timeout');
+        };
+
+        btn.click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(status.innerText, 'Kommunikationsfehler: Error: Network timeout');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+});
+
 describe('createUploadButton', () => {
     let context;
     let createUploadButton;
@@ -2354,6 +2533,187 @@ describe('setupRescanButton', () => {
         await new Promise(resolve => setTimeout(resolve, 0));
 
         assert.strictEqual(status.innerText, 'Kommunikationsfehler: Error: Network error');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+});
+
+
+
+
+describe('createCdrButton', () => {
+    let context;
+    let createCdrButton;
+
+    before(async () => {
+        context = {
+            browser: {
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
+            document: {
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : null;
+                },
+                createElement: (tag) => {
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(val) { this._innerText = val; },
+                        attributes: {},
+                        setAttribute: function(k, v) { this.attributes[k] = v; },
+                        removeAttribute: function(k) { delete this.attributes[k]; },
+                        childNodes: [],
+                        appendChild: function(node) { this.childNodes.push(node); },
+                        listeners: {},
+                        addEventListener: function(evt, cb) { this.listeners[evt] = cb; },
+                        click: function() {
+                            if (this.listeners['click']) {
+                                this.listeners['click'].call(this);
+                            }
+                        }
+                    };
+                    return el;
+                }
+            },
+            setTimeout: (cb) => { cb(); },
+            String: String,
+            Array: Array
+        };
+
+        const vm = require('vm');
+        const path = require('path');
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        // Export createCdrButton for testing
+        wrappedCode += '\n; globalThis.createCdrButton = createCdrButton;';
+
+        vm.runInContext(wrappedCode, context);
+        createCdrButton = context.createCdrButton;
+    });
+
+    beforeEach(() => {
+        context.mockElements = {};
+        context.lastMsg = null;
+    });
+
+    it('returns early if attachment is not .html or .htm', () => {
+        const card = { appendChild: () => { throw new Error('Should not be called'); } };
+        createCdrButton(card, 'hash1', 'test.txt', 'msg1', 'part1');
+        createCdrButton(card, 'hash2', null, 'msg1', 'part1');
+        // If it returns early, no error is thrown
+        assert.ok(true);
+    });
+
+    it('renders the CDR button and status element correctly for .html files', () => {
+        const card = context.document.createElement('div');
+
+        createCdrButton(card, 'hash1', 'test.html', 'msg1', 'part1');
+
+        assert.strictEqual(card.childNodes.length, 2);
+
+        const btn = card.childNodes[0];
+        assert.strictEqual(btn.tagName, 'button');
+        assert.strictEqual(btn.id, 'btn-cdr-hash1');
+        assert.strictEqual(btn.className, 'btn-primary mt-2 ml-2');
+        assert.strictEqual(btn.textContent, 'Bereinigen & Herunterladen (Lokales CDR)');
+
+        const status = card.childNodes[1];
+        assert.strictEqual(status.tagName, 'p');
+        assert.strictEqual(status.id, 'cdr-status-hash1');
+        assert.strictEqual(status.className, 'mt-2');
+        assert.strictEqual(status.attributes['aria-live'], 'polite');
+        assert.strictEqual(status.attributes['role'], 'status');
+    });
+
+    it('renders the CDR button and status element correctly for .htm files', () => {
+        const card = context.document.createElement('div');
+        createCdrButton(card, 'hash2', 'test.htm', 'msg2', 'part2');
+        assert.strictEqual(card.childNodes.length, 2);
+    });
+
+    it('handles button click and successful download', async () => {
+        const card = context.document.createElement('div');
+        createCdrButton(card, 'hash3', 'test.html', 'msg3', 'part3');
+
+        const btn = card.childNodes[0];
+        const status = card.childNodes[1];
+        context.mockElements['cdr-status-hash3'] = status;
+
+        context.browser.runtime.sendMessage = async (msg) => {
+            context.lastMsg = msg;
+            return { status: 'success' };
+        };
+
+        btn.click();
+
+        // Immediate UI updates
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn.attributes['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Bereinige...');
+        assert.strictEqual(status.textContent, 'Lokales CDR wird durchgeführt...');
+
+        // Wait for promise resolution (macro task)
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(context.lastMsg.action, 'downloadDisarmed');
+        assert.strictEqual(context.lastMsg.messageId, 'msg3');
+        assert.strictEqual(context.lastMsg.partName, 'part3');
+        assert.strictEqual(context.lastMsg.attachmentName, 'test.html');
+
+        assert.strictEqual(status.innerText, 'Herunterladen erfolgreich initiiert.');
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.className, 'btn-success mt-2 ml-2');
+        assert.strictEqual(btn.innerText, 'Bereinigt');
+    });
+
+    it('handles error response during download', async () => {
+        const card = context.document.createElement('div');
+        createCdrButton(card, 'hash4', 'test.html', 'msg4', 'part4');
+
+        const btn = card.childNodes[0];
+        const status = card.childNodes[1];
+        context.mockElements['cdr-status-hash4'] = status;
+
+        context.browser.runtime.sendMessage = async () => {
+            return { status: 'error', message: 'Download failed' };
+        };
+
+        btn.click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(status.innerText, 'Fehler beim Herunterladen: Download failed');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles exception during download', async () => {
+        const card = context.document.createElement('div');
+        createCdrButton(card, 'hash5', 'test.html', 'msg5', 'part5');
+
+        const btn = card.childNodes[0];
+        const status = card.childNodes[1];
+        context.mockElements['cdr-status-hash5'] = status;
+
+        context.browser.runtime.sendMessage = async () => {
+            throw new Error('Network timeout');
+        };
+
+        btn.click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(status.innerText, 'Kommunikationsfehler: Error: Network timeout');
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn.attributes['aria-busy'], undefined);
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
