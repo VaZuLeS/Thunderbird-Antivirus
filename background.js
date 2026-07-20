@@ -190,23 +190,32 @@ function extractPublicIPs(receivedHeaders) {
     let ips = [];
     let ipsSet = new Set();
 
-    for (let header of receivedHeaders) {
+    // ⚡ Bolt Optimization: Use a traditional for loop instead of for-of for better iteration performance
+    for (let i = 0, len = receivedHeaders.length; i < len; i++) {
+        const header = receivedHeaders[i];
         let matches = header.match(GLOBAL_IPV4_REGEX);
         if (matches) {
-            for (let ip of matches) {
-                const dot1 = ip.indexOf('.');
-                const part1 = parseInt(ip.substring(0, dot1), 10);
+            for (let j = 0, mlen = matches.length; j < mlen; j++) {
+                const ip = matches[j];
+
+                // ⚡ Bolt Optimization: Fast path out common loopbacks early before any parsing
+                if (ip === "127.0.0.1" || ip === "0.0.0.0") continue;
+
+                // ⚡ Bolt Optimization: parseInt ignores trailing non-digits (like '.'), avoiding the need to allocate a substring for the first block
+                const part1 = parseInt(ip, 10);
 
                 if (part1 === 10 || part1 === 127 || part1 === 0) {
                     continue;
                 }
 
+                // ⚡ Bolt Optimization: Use indexOf and substring instead of split to avoid allocating intermediate arrays for string parts
+                const dot1 = ip.indexOf('.');
                 const dot2 = ip.indexOf('.', dot1 + 1);
                 const part2 = parseInt(ip.substring(dot1 + 1, dot2), 10);
 
                 if (
-                    (part1 === 172 && part2 >= 16 && part2 <= 31) ||
                     (part1 === 192 && part2 === 168) ||
+                    (part1 === 172 && part2 >= 16 && part2 <= 31) ||
                     (part1 === 169 && part2 === 254)
                 ) {
                     continue;
@@ -272,20 +281,25 @@ function levenshteinDistance(a, b) {
         let tmp = a; a = b; b = tmp;
     }
 
-    if (a.length + 1 > lev_prevRow.length) {
-        lev_prevRow = new Uint16Array(a.length + 1);
-        lev_currRow = new Uint16Array(a.length + 1);
+    // ⚡ Bolt Optimization: Cached string lengths and hoisted charCodeAt evaluation for the outer loop to eliminate repeated property lookups in the hot nested loop.
+    const aLen = a.length;
+    const bLen = b.length;
+
+    if (aLen + 1 > lev_prevRow.length) {
+        lev_prevRow = new Uint16Array(aLen + 1);
+        lev_currRow = new Uint16Array(aLen + 1);
     }
 
     let prevRow = lev_prevRow;
     let currRow = lev_currRow;
 
-    for (let j = 0; j <= a.length; j++) prevRow[j] = j;
+    for (let j = 0; j <= aLen; j++) prevRow[j] = j;
 
-    for (let i = 1; i <= b.length; i++) {
+    for (let i = 1; i <= bLen; i++) {
         currRow[0] = i;
-        for (let j = 1; j <= a.length; j++) {
-            if (b.charCodeAt(i - 1) === a.charCodeAt(j - 1)) {
+        const bChar = b.charCodeAt(i - 1);
+        for (let j = 1; j <= aLen; j++) {
+            if (bChar === a.charCodeAt(j - 1)) {
                 currRow[j] = prevRow[j - 1];
             } else {
                 // ⚡ Bolt Optimization: Use manual comparison instead of Math.min to avoid function call overhead
@@ -301,7 +315,7 @@ function levenshteinDistance(a, b) {
         // Swap arrays to avoid allocating a new one next iteration
         let tmp = prevRow; prevRow = currRow; currRow = tmp;
     }
-    return prevRow[a.length];
+    return prevRow[aLen];
 }
 
 const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
@@ -501,14 +515,13 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
             linkDomainsSet.add(hostname);
         } catch (e) { /* Ignore invalid URLs */ }
     }
-    let linkDomains = Array.from(linkDomainsSet);
-
-    if (linkDomains.length > 0 && senderDomain) {
+    if (linkDomainsSet.size > 0 && senderDomain) {
         let matchFound = false;
         let typosquatLinkFound = false;
         let checkedMainDomains = new Map();
 
-        for (let ld of linkDomains) {
+        // ⚡ Bolt Optimization: Iterate directly over the Set to avoid Array.from() allocation overhead
+        for (let ld of linkDomainsSet) {
             if (ld === senderDomain || ld.endsWith('.' + senderDomain) || senderDomain.endsWith('.' + ld)) {
                 matchFound = true;
             } else if (senderMainDomain && (ld === senderMainDomain || ld.endsWith('.' + senderMainDomain))) {
@@ -648,9 +661,17 @@ async function checkIPReputation(receivedHeaders) {
     let maliciousIps = [];
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
-        let ipChecks = publicIps.map(async (ip) => {
+        let ipChecks = [];
+        for (let i = 0; i < publicIps.length; i++) {
+            const ip = publicIps[i];
             if (ipReputationCache.has(ip)) {
-                return { ip, isMalicious: await ipReputationCache.get(ip) };
+                const cached = ipReputationCache.get(ip);
+                if (cached instanceof Promise) {
+                     ipChecks.push(cached.then(isMalicious => ({ ip, isMalicious })));
+                } else {
+                     if (cached) maliciousIps.push(ip);
+                }
+                continue;
             }
 
             let promise = (async () => {
@@ -670,16 +691,18 @@ async function checkIPReputation(receivedHeaders) {
             }
             ipReputationCache.set(ip, promise);
 
-            let isMalicious = await promise;
-            ipReputationCache.set(ip, isMalicious);
+            ipChecks.push(promise.then(isMalicious => {
+                ipReputationCache.set(ip, isMalicious);
+                return { ip, isMalicious };
+            }));
+        }
 
-            return { ip, isMalicious };
-        });
-
-        let results = await Promise.all(ipChecks);
-        for (let result of results) {
-            if (result.isMalicious) {
-                maliciousIps.push(result.ip);
+        if (ipChecks.length > 0) {
+            let results = await Promise.all(ipChecks);
+            for (let i = 0; i < results.length; i++) {
+                if (results[i].isMalicious) {
+                    maliciousIps.push(results[i].ip);
+                }
             }
         }
     }
@@ -722,12 +745,10 @@ async function checkURLhausDomains(filteredUrls) {
                 linkDomainsSet.add(hostname);
             } catch (e) { /* Ignore invalid URLs */ }
         }
-        let linkDomains = Array.from(linkDomainsSet);
-
         const domainChecks = [];
 
-        for (let i = 0; i < linkDomains.length; i++) {
-            const domain = linkDomains[i];
+        // ⚡ Bolt Optimization: Iterate directly over the Set to avoid Array.from() allocation overhead
+        for (const domain of linkDomainsSet) {
 
             if (urlhausCache.has(domain)) {
                 const cached = urlhausCache.get(domain);
