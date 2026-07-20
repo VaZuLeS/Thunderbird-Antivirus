@@ -3,12 +3,13 @@ for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
 function escapeHTML(str) {
     if (!str) return '';
-    return String(str)
+    const safeStr = String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    return safeStr;
 }
 
 let apikey_hybridanalysis;
@@ -141,7 +142,7 @@ try {
                 if (hasLinks) {
                     for (const linkObj of record.links) {
                         if (linkObj.state === 'UNKNOWN') {
-                            renderManualUrlScanUI(linkObj.url, message.headerMessageId);
+                            renderManualUrlScanUI(linkObj.url, message.headerMessageId, fragment);
                         } else if (linkObj.hybrid_sha256) {
                             fetchTasks.push(() => get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
@@ -636,8 +637,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
     });
 }
 
-function renderManualUrlScanUI(url, headerMessageId) {
-    let container = document.getElementById('hybrid_analysis_api_content');
+function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
+    let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
     const u8 = new TextEncoder().encode(url);
     // ⚡ Bolt Optimization: Use a traditional for-loop instead of Array.from().map().join()
