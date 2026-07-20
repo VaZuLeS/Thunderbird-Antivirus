@@ -476,12 +476,13 @@ function getHostnameOptimized(url) {
     }
 }
 
-function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
+function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, reasonsDomainsSet) {
     let cachedBrandMatch = checkedMainDomains.get(linkMainDomain);
     if (cachedBrandMatch !== undefined) {
         if (cachedBrandMatch !== null) {
-            if (!reasons.some(r => r.includes(linkMainDomain))) {
+            if (!reasonsDomainsSet.has(linkMainDomain)) {
                 reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${cachedBrandMatch}.`);
+                reasonsDomainsSet.add(linkMainDomain);
             }
             return true;
         }
@@ -494,8 +495,9 @@ function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
         let distance = levenshteinDistance(linkMainDomain, brand);
         if (distance > 0 && distance <= 2) {
             checkedMainDomains.set(linkMainDomain, brand);
-            if (!reasons.some(r => r.includes(linkMainDomain))) {
+            if (!reasonsDomainsSet.has(linkMainDomain)) {
                 reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
+                reasonsDomainsSet.add(linkMainDomain);
             }
             return true;
         }
@@ -519,6 +521,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
         let matchFound = false;
         let typosquatLinkFound = false;
         let checkedMainDomains = new Map();
+        let reasonsDomainsSet = new Set();
 
         // ⚡ Bolt Optimization: Iterate directly over the Set to avoid Array.from() allocation overhead
         for (let ld of linkDomainsSet) {
@@ -532,7 +535,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
             let isLinkKnownBrand = KNOWN_BRANDS_SET.has(linkMainDomain);
 
             if (!isLinkKnownBrand) {
-                if (checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons)) {
+                if (checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, reasonsDomainsSet)) {
                     typosquatLinkFound = true;
                 }
             }
