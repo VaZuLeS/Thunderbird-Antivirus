@@ -117,7 +117,7 @@ try {
             if (hasAttachments || hasLinks) {
                 document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
-                let fetchPromises = [];
+                let fetchTasks = [];
 
                 if (hasAttachments) {
                     for (const att of record.attachments) {
@@ -125,7 +125,7 @@ try {
                         if (att.state === 'UNKNOWN') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
                         } else {
-                            fetchPromises.push(
+                            fetchTasks.push(() =>
                                 get_hybrid_report_by_sha256({
                                     hybrid_sha: hash256,
                                     attachmentName: att.attachment_name,
@@ -140,29 +140,24 @@ try {
                 }
 
                 if (hasLinks) {
-                    const linkPromises = [];
-                    const fragment = document.createDocumentFragment();
                     for (const linkObj of record.links) {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId, fragment);
                         } else if (linkObj.hybrid_sha256) {
-                            linkPromises.push(get_hybrid_report_by_sha256({
+                            fetchTasks.push(() => get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
                                 attachmentName: linkObj.url
                             }));
                         }
                     }
-                    if (fragment.hasChildNodes()) {
-                        document.getElementById('hybrid_analysis_api_content').appendChild(fragment);
-                    }
-
-                    if (linkPromises.length > 0) {
-                        fetchPromises.push(Promise.all(linkPromises));
-                    }
                 }
 
-                if (fetchPromises.length > 0) {
-                    await Promise.all(fetchPromises);
+                if (fetchTasks.length > 0) {
+                    const BATCH_SIZE = 5;
+                    for (let i = 0; i < fetchTasks.length; i += BATCH_SIZE) {
+                        const batch = fetchTasks.slice(i, i + BATCH_SIZE).map(task => task());
+                        await Promise.all(batch);
+                    }
                 }
             } else {
                 let container = document.getElementById('hybrid_analysis_api_content');
