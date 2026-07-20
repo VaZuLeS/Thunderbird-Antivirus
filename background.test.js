@@ -1283,6 +1283,32 @@ describe('background.js', () => {
             assert.strictEqual(reasons.length, 0);
         });
 
+        it('catches and ignores errors thrown by getHostnameOptimized', () => {
+            const originalGetHostnameOptimized = context.getHostnameOptimized;
+
+            // Mock getHostnameOptimized to throw an error
+            context.getHostnameOptimized = () => {
+                throw new Error('Mocked URL parsing error');
+            };
+
+            const urls = ['http://example.com'];
+            const reasons = [];
+            let score;
+
+            try {
+                // This should catch the error internally and not throw
+                score = context.evaluateLinks(urls, 'example.com', 'example.com', 0, reasons);
+            } finally {
+                // Restore original function
+                context.getHostnameOptimized = originalGetHostnameOptimized;
+            }
+
+            // If getHostnameOptimized throws, the link is ignored.
+            // If no valid links are found, evaluateLinks returns the original score.
+            assert.strictEqual(score, 0);
+            assert.strictEqual(reasons.length, 0);
+        });
+
         it('increases score if no link matches sender domain', () => {
             const urls = ['http://other-domain.com'];
             const reasons = [];
