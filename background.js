@@ -1184,13 +1184,14 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
             const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
             if (uploadResponse.status === 200 || uploadResponse.status === 201) {
                 const uploadData = await uploadResponse.json();
-                return HybridDataBuilder.create(
+                const hybridData = HybridDataBuilder.create(
                     uploadData.submission_id,
                     uploadData.job_id,
                     uploadData.sha256 || local_hash,
                     'UPLOADED',
                     attachment
                 );
+                return hybridData;
             } else {
                 Logger.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
             }
@@ -1199,7 +1200,7 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
         }
     }
 
-    return HybridDataBuilder.create(
+    const pendingData = HybridDataBuilder.create(
         'PENDING_UPLOAD',
         'PENDING_UPLOAD',
         local_hash,
@@ -1207,6 +1208,7 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
         attachment,
         virustotal_stats
     );
+    return pendingData;
 }
 
 
