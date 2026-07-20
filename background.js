@@ -1246,7 +1246,7 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
 
     if (responseCheck.status === 200) {
         const json_data = await responseCheck.json();
-        const hybridData = HybridDataBuilder.create(
+        return HybridDataBuilder.create(
             json_data.submission_id || 'N/A',
             json_data.job_id || 'N/A',
             local_hash,
