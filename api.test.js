@@ -701,6 +701,134 @@ describe('handle_hybrid_report_fetch_error', () => {
 
 
 
+describe('handle_hybrid_report_error', () => {
+    let context;
+    let handle_hybrid_report_error;
+
+    before(async () => {
+        // Create mock environment
+        context = {
+            browser: {
+                storage: {
+                    local: {
+                        get: async () => ({})
+                    }
+                },
+                runtime: {
+                    openOptionsPage: () => {
+                        context.optionsPageOpened = true;
+                    }
+                }
+            },
+            document: {
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tag: tag,
+                        className: '',
+                        textContent: '',
+                        appendChild: function(child) {
+                            children.push(child);
+                        },
+                        setAttribute: function(name, val) {
+                            this[name] = val;
+                        },
+                        addEventListener: function(evt, cb) {
+                            if (evt === 'click') {
+                                this.click = cb;
+                            }
+                        },
+                        get children() { return children; },
+                        get outerHTML() {
+                            let inner = children.map(c => c.outerHTML || c.textContent || '').join('') + this.textContent;
+                            return `<${this.tag}>${inner}</${this.tag}>`;
+                        }
+                    };
+                    return el;
+                },
+                getElementById: (id) => {
+                    if (id === 'hybrid_analysis_api_content') {
+                        if (!context.apiContentElement) {
+                            context.apiContentElement = {
+                                appendChild: function(child) {
+                                    this.child = child;
+                                }
+                            };
+                        }
+                        return context.apiContentElement;
+                    }
+                    return null;
+                }
+            },
+            console: { error: () => {}, log: () => {} },
+            String: String,
+            setTimeout: setTimeout
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        vm.runInContext(wrappedCode, context);
+
+        handle_hybrid_report_error = context.handle_hybrid_report_error;
+    });
+
+    it('injects standard error message on generic non-200 status', async () => {
+        context.apiContentElement = null; // Reset
+        handle_hybrid_report_error({ status: 500, statusText: 'Internal Server Error' }, 'test.txt');
+
+        const appended = context.apiContentElement.child;
+        assert.strictEqual(appended.className, 'alert-error');
+        assert.ok(appended.textContent.includes('API Error: 500 für Element test.txt'));
+        assert.ok(!appended.textContent.includes('Möglicherweise ungültiger oder fehlender API-Schlüssel'));
+        assert.strictEqual(appended.role, 'alert');
+    });
+
+    it('injects standard error message and settings button on 401 status', async () => {
+        context.apiContentElement = null; // Reset
+        context.optionsPageOpened = false;
+        handle_hybrid_report_error({ status: 401, statusText: 'Unauthorized' }, 'test.txt');
+
+        const appended = context.apiContentElement.child;
+        assert.strictEqual(appended.className, 'alert-error');
+        assert.ok(appended.textContent.includes('API Error: 401 für Element test.txt'));
+        assert.ok(appended.textContent.includes('Möglicherweise ungültiger oder fehlender API-Schlüssel'));
+        assert.strictEqual(appended.role, 'alert');
+
+        const settingsBtn = appended.children.find(c => c.tag === 'button');
+        assert.ok(settingsBtn);
+        assert.strictEqual(settingsBtn.textContent, 'Einstellungen öffnen');
+        assert.strictEqual(settingsBtn.className, 'btn-primary mt-2 ml-2');
+
+        settingsBtn.click();
+        assert.strictEqual(context.optionsPageOpened, true);
+    });
+
+    it('injects standard error message and settings button on 403 status', async () => {
+        context.apiContentElement = null; // Reset
+        context.optionsPageOpened = false;
+        handle_hybrid_report_error({ status: 403, statusText: 'Forbidden' }, 'test.txt');
+
+        const appended = context.apiContentElement.child;
+        assert.strictEqual(appended.className, 'alert-error');
+        assert.ok(appended.textContent.includes('API Error: 403 für Element test.txt'));
+        assert.ok(appended.textContent.includes('Möglicherweise ungültiger oder fehlender API-Schlüssel'));
+        assert.strictEqual(appended.role, 'alert');
+
+        const settingsBtn = appended.children.find(c => c.tag === 'button');
+        assert.ok(settingsBtn);
+        assert.strictEqual(settingsBtn.textContent, 'Einstellungen öffnen');
+        assert.strictEqual(settingsBtn.className, 'btn-primary mt-2 ml-2');
+
+        settingsBtn.click();
+        assert.strictEqual(context.optionsPageOpened, true);
+    });
+});
+
+
+
 describe('renderManualUploadUI', () => {
     let context;
     let renderManualUploadUI;
