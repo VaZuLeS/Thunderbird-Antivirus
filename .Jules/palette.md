@@ -80,3 +80,6 @@
 ## 2024-07-28 - Lingering Loading Indicators with Empty States
 **Learning:** When dynamically injecting empty state or error cards into a container after an asynchronous loading phase (e.g., retrieving from IndexedDB or fetching from an API), appending the new elements without first clearing the parent container causes the initial loading indicator to remain indefinitely stacked above the new content, confusing users.
 **Action:** Always explicitly clear the parent container (e.g., `container.textContent = ''`) before appending a final empty state or error card to ensure the temporary loading indicator is removed.
+## 2024-05-14 - Add loading spinner using CSS pseudo-elements
+**Learning:** Using `aria-busy="true"` combined with CSS `::before` pseudo-elements is a highly effective, accessible, and reusable pattern for adding loading states to existing buttons without needing to modify DOM structures or add extra markup.
+**Action:** Default to using CSS-based pseudo-element spinners tied to `aria-busy` states for simple async buttons in extensions where we want to minimize DOM manipulation.
