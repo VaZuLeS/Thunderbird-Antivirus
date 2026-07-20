@@ -1763,6 +1763,47 @@ describe('fetch_hybrid_report', () => {
         await assert.rejects(resultPromise, testError);
         assert.ok(!hybrid_report_cache.has('test_sha_4'), 'Cache should be deleted on error');
     });
+
+    it('handles concurrent calls by returning the same promise and fetching once', async () => {
+        let fetchCount = 0;
+        let resolveFetch;
+        const fetchPromise = new Promise(resolve => {
+            resolveFetch = resolve;
+        });
+
+        context.fetch = async () => {
+            fetchCount++;
+            return fetchPromise;
+        };
+
+        const resultPromise1 = fetch_hybrid_report('test_sha_5');
+        const resultPromise2 = fetch_hybrid_report('test_sha_5');
+
+        resolveFetch({
+            status: 200,
+            json: async () => ({ result: 'concurrent success' })
+        });
+
+        const [result1, result2] = await Promise.all([resultPromise1, resultPromise2]);
+
+        assert.strictEqual(fetchCount, 1);
+        assert.deepStrictEqual(result1.json_data, { result: 'concurrent success' });
+        assert.deepStrictEqual(result2.json_data, { result: 'concurrent success' });
+    });
+
+    it('deletes from cache and throws on invalid JSON', async () => {
+        const jsonError = new Error('Invalid JSON');
+        context.fetch = async () => ({
+            status: 200,
+            json: async () => { throw jsonError; }
+        });
+
+        const resultPromise = fetch_hybrid_report('test_sha_6');
+        assert.ok(hybrid_report_cache.has('test_sha_6'));
+
+        await assert.rejects(resultPromise, jsonError);
+        assert.ok(!hybrid_report_cache.has('test_sha_6'), 'Cache should be deleted on JSON error');
+    });
 });
 
 
