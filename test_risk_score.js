@@ -201,7 +201,7 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
 }
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
-    // ⚡ Bolt Optimization: Replace Array.indexOf with a Set for O(1) link domain deduplication
+    // ⚡ Bolt Optimization: Use Set for O(1) deduplication to prevent O(N²) bottleneck with linkDomains.indexOf
     let linkDomainsSet = new Set();
     for (let url of urls) {
         try {
