@@ -80,3 +80,6 @@
 ## 2024-07-28 - Lingering Loading Indicators with Empty States
 **Learning:** When dynamically injecting empty state or error cards into a container after an asynchronous loading phase (e.g., retrieving from IndexedDB or fetching from an API), appending the new elements without first clearing the parent container causes the initial loading indicator to remain indefinitely stacked above the new content, confusing users.
 **Action:** Always explicitly clear the parent container (e.g., `container.textContent = ''`) before appending a final empty state or error card to ensure the temporary loading indicator is removed.
+## 2026-07-29 - Focus Safe Default Action in Modals
+**Learning:** When a warning modal opens, focusing the entire modal container requires users to explicitly tab to find the actionable buttons. If the user accidentally presses Space or Enter, no action is taken, or worse, focus might be lost. By automatically focusing the safe, non-destructive default action (e.g., "Cancel"), we protect users from accidental destructive actions and provide immediate keyboard interactivity.
+**Action:** Always programmatically focus the safest default action button (e.g., `cancelBtn.focus()`) instead of the generic modal container when opening warning dialogs.
