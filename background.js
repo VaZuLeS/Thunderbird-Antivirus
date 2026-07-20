@@ -772,6 +772,18 @@ async function checkURLhausDomains(filteredUrls) {
                 urlhausCache.set(domain, isMalicious);
                 return isMalicious ? domain : null;
             }));
+
+            // ⚡ Bolt Optimization: Batch requests to limit concurrent network connections
+            const BATCH_SIZE = 5;
+            if (domainChecks.length >= BATCH_SIZE) {
+                const checkResults = await Promise.all(domainChecks);
+                for (let i = 0; i < checkResults.length; i++) {
+                    if (checkResults[i] !== null) {
+                        urlhausDomains.push(checkResults[i]);
+                    }
+                }
+                domainChecks.length = 0; // Clear the array for the next batch
+            }
         }
 
         if (domainChecks.length > 0) {
