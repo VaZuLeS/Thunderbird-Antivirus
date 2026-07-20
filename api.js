@@ -684,7 +684,7 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
 }
 
 function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
-    return function() {
+    const handler = function() {
         let btn = this;
         let statusId = `upload-status-${safeHash}`;
         let statusEl = document.getElementById(statusId);
@@ -731,6 +731,8 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
             btn.innerText = "Erneut versuchen";
         });
     };
+
+    return handler;
 }
 
 function createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
