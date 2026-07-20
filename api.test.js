@@ -1766,6 +1766,170 @@ describe('fetch_hybrid_report', () => {
 });
 
 
+describe('setupCdrButton', () => {
+    let context;
+    let setupCdrButton;
+
+    before(async () => {
+        context = {
+            browser: {
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' })
+                }
+            },
+            document: {
+                getElementById: (id) => {
+                    return context.mockElements && context.mockElements[id] ? context.mockElements[id] : null;
+                },
+                createElement: (tag) => {
+                    if (!context.mockElements) context.mockElements = {};
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(val) { this._innerText = val; },
+                        attributes: {},
+                        setAttribute: function(k, v) { this.attributes[k] = v; },
+                        removeAttribute: function(k) { delete this.attributes[k]; },
+                        childNodes: [],
+                        appendChild: function(node) { this.childNodes.push(node); },
+                        listeners: {},
+                        addEventListener: function(evt, cb) { this.listeners[evt] = cb; },
+                        click: function() {
+                            if (this.listeners['click']) {
+                                this.listeners['click'].call(this);
+                            }
+                        }
+                    };
+                    return el;
+                }
+            },
+            setTimeout: (cb) => { cb(); },
+            String: String,
+            Array: Array
+        };
+
+        const vm = require('vm');
+        const path = require('path');
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+
+        wrappedCode += '\n; globalThis.setupCdrButton = setupCdrButton;';
+
+        vm.runInContext(wrappedCode, context);
+        setupCdrButton = context.setupCdrButton;
+    });
+
+    beforeEach(() => {
+        context.mockElements = {};
+        context.lastMsg = null;
+    });
+
+    it('attaches listener and handles successful download', async () => {
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        context.mockElements['btn-cdr-hash1'] = btn;
+        context.mockElements['cdr-status-hash1'] = status;
+
+        context.browser.runtime.sendMessage = async (msg) => {
+            context.lastMsg = msg;
+            return { status: 'success' };
+        };
+
+        setupCdrButton({ hybrid_sha: 'hash1', attachmentName: 'test.html', messageId: 'msg1', partName: 'part1' });
+
+        btn.click();
+
+        assert.strictEqual(btn.disabled, true);
+        assert.strictEqual(btn.attributes['aria-busy'], 'true');
+        assert.strictEqual(btn.innerText, 'Bereinige...');
+        assert.strictEqual(status.innerText, 'Lokales CDR wird durchgeführt...');
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(context.lastMsg.action, 'downloadDisarmed');
+        assert.strictEqual(context.lastMsg.messageId, 'msg1');
+        assert.strictEqual(context.lastMsg.partName, 'part1');
+        assert.strictEqual(context.lastMsg.attachmentName, 'test.html');
+
+        assert.strictEqual(status.innerText, 'Herunterladen erfolgreich initiiert.');
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.className, 'btn-success mt-2 ml-2');
+        assert.strictEqual(btn.innerText, 'Bereinigt');
+    });
+
+    it('handles download error response correctly', async () => {
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        context.mockElements['btn-cdr-hash2'] = btn;
+        context.mockElements['cdr-status-hash2'] = status;
+
+        context.browser.runtime.sendMessage = async () => {
+            return { status: 'error', message: 'Download error' };
+        };
+
+        setupCdrButton({ hybrid_sha: 'hash2', attachmentName: 'test.html', messageId: 'msg2', partName: 'part2' });
+
+        btn.click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(status.innerText, 'Fehler beim Herunterladen: Download error');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles null response correctly', async () => {
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        context.mockElements['btn-cdr-hash2b'] = btn;
+        context.mockElements['cdr-status-hash2b'] = status;
+
+        context.browser.runtime.sendMessage = async () => null;
+
+        setupCdrButton({ hybrid_sha: 'hash2b', attachmentName: 'test.html', messageId: 'msg2', partName: 'part2' });
+
+        btn.click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(status.innerText, 'Fehler beim Herunterladen: Unbekannter Fehler');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles download exception correctly', async () => {
+        const btn = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        context.mockElements['btn-cdr-hash3'] = btn;
+        context.mockElements['cdr-status-hash3'] = status;
+
+        context.browser.runtime.sendMessage = async () => {
+            throw new Error('Network offline');
+        };
+
+        setupCdrButton({ hybrid_sha: 'hash3', attachmentName: 'test.html', messageId: 'msg3', partName: 'part3' });
+
+        btn.click();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        assert.strictEqual(status.innerText, 'Kommunikationsfehler: Error: Network offline');
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn.attributes['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('does nothing if button is not found', () => {
+        setupCdrButton({ hybrid_sha: 'nonexistent', attachmentName: 'test.html', messageId: 'msg3', partName: 'part3' });
+        assert.ok(true);
+    });
+});
+
 describe('createCdrButton', () => {
     let context;
     let createCdrButton;
