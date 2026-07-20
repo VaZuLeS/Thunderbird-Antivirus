@@ -128,6 +128,7 @@ describe('background.js', () => {
             globalThis.indexedDB_save_batch_hybrid_data_to_db = indexedDB_save_batch_hybrid_data_to_db;
             globalThis.handleManualUpload = handleManualUpload;
             globalThis.extractEmailAddress = extractEmailAddress;
+            globalThis.extractEmailDomain = extractEmailDomain;
             globalThis.extractUrls = extractUrls;
             globalThis.isWordChar = isWordChar;
             globalThis.filterUrls = filterUrls;
@@ -1317,6 +1318,50 @@ describe('background.js', () => {
 
         it('returns domain when it has two parts', () => {
             assert.strictEqual(context.getMainDomain('example.com'), 'example.com');
+        });
+    });
+
+    describe('levenshteinDistance', () => {
+        it('returns 0 for identical strings', () => {
+            assert.strictEqual(context.levenshteinDistance('test', 'test'), 0);
+        });
+
+        it('returns 1 for a single character difference (substitution)', () => {
+            assert.strictEqual(context.levenshteinDistance('test', 'tent'), 1);
+        });
+
+        it('returns 1 for a single character addition (insertion)', () => {
+            assert.strictEqual(context.levenshteinDistance('test', 'tests'), 1);
+        });
+
+        it('returns 1 for a single character deletion', () => {
+            assert.strictEqual(context.levenshteinDistance('test', 'tes'), 1);
+        });
+
+        it('handles completely different strings', () => {
+            assert.strictEqual(context.levenshteinDistance('abc', 'xyz'), 3);
+        });
+
+        it('returns string length when comparing with empty string', () => {
+            assert.strictEqual(context.levenshteinDistance('test', ''), 4);
+            assert.strictEqual(context.levenshteinDistance('', 'test'), 4);
+        });
+
+        it('returns 0 for both empty strings', () => {
+            assert.strictEqual(context.levenshteinDistance('', ''), 0);
+        });
+
+        it('is symmetric', () => {
+            const dist1 = context.levenshteinDistance('hello', 'world');
+            const dist2 = context.levenshteinDistance('world', 'hello');
+            assert.strictEqual(dist1, dist2);
+            assert.strictEqual(dist1, 4);
+        });
+
+        it('handles long strings reallocating Uint16Array', () => {
+            const str1 = 'a'.repeat(70);
+            const str2 = 'b'.repeat(70);
+            assert.strictEqual(context.levenshteinDistance(str1, str2), 70);
         });
     });
 
@@ -2628,6 +2673,27 @@ describe('background.js', () => {
             let response;
             await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'ERROR' });
+        });
+    });
+
+    describe('extractEmailDomain', () => {
+        it('returns the domain for a standard email', () => {
+            assert.strictEqual(context.extractEmailDomain('user@example.com'), 'example.com');
+        });
+        it('returns the domain including subdomains', () => {
+            assert.strictEqual(context.extractEmailDomain('user@mail.example.com'), 'mail.example.com');
+        });
+        it('returns an empty string if there is no @ symbol', () => {
+            assert.strictEqual(context.extractEmailDomain('invalidemail'), '');
+        });
+        it('extracts correctly if there are multiple @ symbols', () => {
+            assert.strictEqual(context.extractEmailDomain('user@name@example.com'), 'name@example.com');
+        });
+        it('converts uppercase domains to lowercase', () => {
+            assert.strictEqual(context.extractEmailDomain('user@EXAMPLE.COM'), 'example.com');
+        });
+        it('returns empty string for empty input', () => {
+            assert.strictEqual(context.extractEmailDomain(''), '');
         });
     });
 

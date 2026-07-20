@@ -476,12 +476,13 @@ function getHostnameOptimized(url) {
     }
 }
 
-function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
+function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, reasonsDomainsSet) {
     let cachedBrandMatch = checkedMainDomains.get(linkMainDomain);
     if (cachedBrandMatch !== undefined) {
         if (cachedBrandMatch !== null) {
-            if (!reasons.some(r => r.includes(linkMainDomain))) {
+            if (!reasonsDomainsSet.has(linkMainDomain)) {
                 reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${cachedBrandMatch}.`);
+                reasonsDomainsSet.add(linkMainDomain);
             }
             return true;
         }
@@ -494,8 +495,9 @@ function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons) {
         let distance = levenshteinDistance(linkMainDomain, brand);
         if (distance > 0 && distance <= 2) {
             checkedMainDomains.set(linkMainDomain, brand);
-            if (!reasons.some(r => r.includes(linkMainDomain))) {
+            if (!reasonsDomainsSet.has(linkMainDomain)) {
                 reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
+                reasonsDomainsSet.add(linkMainDomain);
             }
             return true;
         }
@@ -519,6 +521,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
         let matchFound = false;
         let typosquatLinkFound = false;
         let checkedMainDomains = new Map();
+        let reasonsDomainsSet = new Set();
 
         // ⚡ Bolt Optimization: Iterate directly over the Set to avoid Array.from() allocation overhead
         for (let ld of linkDomainsSet) {
@@ -532,7 +535,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
             let isLinkKnownBrand = KNOWN_BRANDS_SET.has(linkMainDomain);
 
             if (!isLinkKnownBrand) {
-                if (checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons)) {
+                if (checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, reasonsDomainsSet)) {
                     typosquatLinkFound = true;
                 }
             }
@@ -661,47 +664,53 @@ async function checkIPReputation(receivedHeaders) {
     let maliciousIps = [];
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
-        let ipChecks = [];
-        for (let i = 0; i < publicIps.length; i++) {
-            const ip = publicIps[i];
-            if (ipReputationCache.has(ip)) {
-                const cached = ipReputationCache.get(ip);
-                if (cached instanceof Promise) {
-                     ipChecks.push(cached.then(isMalicious => ({ ip, isMalicious })));
-                } else {
-                     if (cached) maliciousIps.push(ip);
-                }
-                continue;
-            }
 
-            let promise = (async () => {
-                let isMalicious = false;
-                try {
-                    if (ipReputationProvider === "abuseipdb") {
-                        isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
-                    } else if (ipReputationProvider === "virustotal") {
-                        isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
+        const CONCURRENCY_LIMIT = 5;
+        for (let i = 0; i < publicIps.length; i += CONCURRENCY_LIMIT) {
+            let chunk = publicIps.slice(i, i + CONCURRENCY_LIMIT);
+            let ipChecks = [];
+
+            for (let j = 0; j < chunk.length; j++) {
+                const ip = chunk[j];
+                if (ipReputationCache.has(ip)) {
+                    const cached = ipReputationCache.get(ip);
+                    if (cached instanceof Promise) {
+                         ipChecks.push(cached.then(isMalicious => ({ ip, isMalicious })));
+                    } else {
+                         if (cached) maliciousIps.push(ip);
                     }
-                } catch(e) { Logger.error(e); }
-                return isMalicious;
-            })();
+                    continue;
+                }
 
-            if (ipReputationCache.size >= MAX_IP_CACHE) {
-                ipReputationCache.delete(ipReputationCache.keys().next().value);
+                let promise = (async () => {
+                    let isMalicious = false;
+                    try {
+                        if (ipReputationProvider === "abuseipdb") {
+                            isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
+                        } else if (ipReputationProvider === "virustotal") {
+                            isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
+                        }
+                    } catch(e) { Logger.error(e); }
+                    return isMalicious;
+                })();
+
+                if (ipReputationCache.size >= MAX_IP_CACHE) {
+                    ipReputationCache.delete(ipReputationCache.keys().next().value);
+                }
+                ipReputationCache.set(ip, promise);
+
+                ipChecks.push(promise.then(isMalicious => {
+                    ipReputationCache.set(ip, isMalicious);
+                    return { ip, isMalicious };
+                }));
             }
-            ipReputationCache.set(ip, promise);
 
-            ipChecks.push(promise.then(isMalicious => {
-                ipReputationCache.set(ip, isMalicious);
-                return { ip, isMalicious };
-            }));
-        }
-
-        if (ipChecks.length > 0) {
-            let results = await Promise.all(ipChecks);
-            for (let i = 0; i < results.length; i++) {
-                if (results[i].isMalicious) {
-                    maliciousIps.push(results[i].ip);
+            if (ipChecks.length > 0) {
+                let results = await Promise.all(ipChecks);
+                for (let k = 0; k < results.length; k++) {
+                    if (results[k].isMalicious) {
+                        maliciousIps.push(results[k].ip);
+                    }
                 }
             }
         }
@@ -772,6 +781,18 @@ async function checkURLhausDomains(filteredUrls) {
                 urlhausCache.set(domain, isMalicious);
                 return isMalicious ? domain : null;
             }));
+
+            // ⚡ Bolt Optimization: Batch requests to limit concurrent network connections
+            const BATCH_SIZE = 5;
+            if (domainChecks.length >= BATCH_SIZE) {
+                const checkResults = await Promise.all(domainChecks);
+                for (let i = 0; i < checkResults.length; i++) {
+                    if (checkResults[i] !== null) {
+                        urlhausDomains.push(checkResults[i]);
+                    }
+                }
+                domainChecks.length = 0; // Clear the array for the next batch
+            }
         }
 
         if (domainChecks.length > 0) {
@@ -1648,6 +1669,9 @@ const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xli
 
 const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link', 'math', 'svg', 'noscript']);
 
+// ⚡ Bolt: Use a direct precompiled regex with bounds and no capturing groups for peak performance
+const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\uFFFD]/g;
+
 function disarmHTML(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
@@ -1671,9 +1695,9 @@ function disarmHTML(htmlString) {
                                 continue;
                             }
                             if (dangerousAttributes.has(attrName)) {
-                                let val = el.attributes[j].value;
+                                let val = el.attributes[j].value.toLowerCase();
                                 // Remove control characters (like tabs/newlines) that might evade the check
-                                let cleanVal = val.replace(/[\x00-\x20\x7F-\x9F\uFFFD]/g, '').toLowerCase();
+                                let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
                                     el.removeAttribute(attrName);
                                 }

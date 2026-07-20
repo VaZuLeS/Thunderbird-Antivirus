@@ -3,12 +3,13 @@ for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
 function escapeHTML(str) {
     if (!str) return '';
-    return String(str)
+    const safeStr = String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    return safeStr;
 }
 
 let apikey_hybridanalysis;
@@ -125,7 +126,7 @@ try {
                         if (att.state === 'UNKNOWN') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, syncFragment);
                         } else {
-                            fetchPromises.push(
+                            fetchTasks.push(() =>
                                 get_hybrid_report_by_sha256({
                                     hybrid_sha: hash256,
                                     attachmentName: att.attachment_name,
@@ -140,20 +141,15 @@ try {
                 }
 
                 if (hasLinks) {
-                    const linkPromises = [];
                     for (const linkObj of record.links) {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId, syncFragment);
                         } else if (linkObj.hybrid_sha256) {
-                            linkPromises.push(get_hybrid_report_by_sha256({
+                            fetchTasks.push(() => get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
                                 attachmentName: linkObj.url
                             }));
                         }
-                    }
-
-                    if (linkPromises.length > 0) {
-                        fetchPromises.push(Promise.all(linkPromises));
                     }
                 }
 
