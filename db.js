@@ -88,8 +88,7 @@ class DatabaseDAO {
     clearStore(db, storeName) {
         return new Promise((resolve, reject) => {
             if (!db.objectStoreNames.contains(storeName)) {
-                 resolve(false); // store doesn't exist
-                 return;
+                 return resolve(false); // store doesn't exist
             }
 
             const transaction = db.transaction([storeName], 'readwrite');
