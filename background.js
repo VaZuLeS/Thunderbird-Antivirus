@@ -190,23 +190,32 @@ function extractPublicIPs(receivedHeaders) {
     let ips = [];
     let ipsSet = new Set();
 
-    for (let header of receivedHeaders) {
+    // ⚡ Bolt Optimization: Use a traditional for loop instead of for-of for better iteration performance
+    for (let i = 0, len = receivedHeaders.length; i < len; i++) {
+        const header = receivedHeaders[i];
         let matches = header.match(GLOBAL_IPV4_REGEX);
         if (matches) {
-            for (let ip of matches) {
-                const dot1 = ip.indexOf('.');
-                const part1 = parseInt(ip.substring(0, dot1), 10);
+            for (let j = 0, mlen = matches.length; j < mlen; j++) {
+                const ip = matches[j];
+
+                // ⚡ Bolt Optimization: Fast path out common loopbacks early before any parsing
+                if (ip === "127.0.0.1" || ip === "0.0.0.0") continue;
+
+                // ⚡ Bolt Optimization: parseInt ignores trailing non-digits (like '.'), avoiding the need to allocate a substring for the first block
+                const part1 = parseInt(ip, 10);
 
                 if (part1 === 10 || part1 === 127 || part1 === 0) {
                     continue;
                 }
 
+                // ⚡ Bolt Optimization: Use indexOf and substring instead of split to avoid allocating intermediate arrays for string parts
+                const dot1 = ip.indexOf('.');
                 const dot2 = ip.indexOf('.', dot1 + 1);
                 const part2 = parseInt(ip.substring(dot1 + 1, dot2), 10);
 
                 if (
-                    (part1 === 172 && part2 >= 16 && part2 <= 31) ||
                     (part1 === 192 && part2 === 168) ||
+                    (part1 === 172 && part2 >= 16 && part2 <= 31) ||
                     (part1 === 169 && part2 === 254)
                 ) {
                     continue;
