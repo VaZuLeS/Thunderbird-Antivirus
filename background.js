@@ -468,10 +468,14 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
     return { score, senderMainDomain };
 }
 
-function getHostnameOptimized(url) {
+function getHostnameOptimized(url, cache = null) {
+    if (cache && cache.has(url)) return cache.get(url);
     try {
-        return new URL(url).hostname.toLowerCase();
+        let hostname = new URL(url).hostname.toLowerCase();
+        if (cache) cache.set(url, hostname);
+        return hostname;
     } catch (e) {
+        if (cache) cache.set(url, null);
         return null;
     }
 }
@@ -507,12 +511,12 @@ function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, rea
     return false;
 }
 
-function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
+function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons, parsedUrlCache = null) {
     let linkDomainsSet = new Set();
     for (let url of urls) {
         try {
             // 🛡️ Sentinel: Use standard URL parser safely
-            let hostname = getHostnameOptimized(url);
+            let hostname = getHostnameOptimized(url, parsedUrlCache);
             if (!hostname) continue;
             linkDomainsSet.add(hostname);
         } catch (e) { /* Ignore invalid URLs */ }
@@ -580,7 +584,8 @@ function calculateThreatScore(author, urls, options = {}) {
         isFirstCommunication = false,
         messageText = "",
         subject = "",
-        replyTo = ""
+        replyTo = "",
+        parsedUrlCache = null
     } = options;
     let score = 0;
     let reasons = [];
@@ -605,7 +610,7 @@ function calculateThreatScore(author, urls, options = {}) {
     score = senderEval.score;
     let senderMainDomain = senderEval.senderMainDomain;
 
-    score = evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons);
+    score = evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons, parsedUrlCache);
 
     return { score: Math.min(score, 100), reasons: reasons, authStatus: authStatus };
 }
@@ -758,14 +763,14 @@ async function checkFirstCommunication(senderEmail) {
     return isFirstCommunication;
 }
 
-async function checkURLhausDomains(filteredUrls) {
+async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
     let urlhausDomains = [];
     if (urlhausApikey && filteredUrls.length > 0) {
         let linkDomainsSet = new Set();
         for (let url of filteredUrls) {
             try {
                 // 🛡️ Sentinel: Use standard URL parser safely
-                let hostname = getHostnameOptimized(url);
+                let hostname = getHostnameOptimized(url, parsedUrlCache);
                 if (!hostname) continue;
                 linkDomainsSet.add(hostname);
             } catch (e) { /* Ignore invalid URLs */ }
@@ -891,10 +896,10 @@ async function processAttachments(message) {
   }
 }
 
-async function processLinks(tab, message, fullMessage) {
+async function processLinks(tab, message, fullMessage, parsedUrlCache = null) {
   let messageText = extractTextFromParts(fullMessage.parts || fullMessage);
   let urls = extractUrls(messageText);
-  let filteredUrls = filterUrls(urls);
+  let filteredUrls = filterUrls(urls, parsedUrlCache);
 
   if (filteredUrls.length > 0) {
     await processAndUploadUrls(message, filteredUrls);
@@ -906,7 +911,7 @@ async function processLinks(tab, message, fullMessage) {
   return { messageText, urls, filteredUrls };
 }
 
-async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText }) {
+async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
   let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
   let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
 
@@ -923,7 +928,7 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
   }
 
   let subject = message.subject || "";
-  let urlhausDomains = await checkURLhausDomains(filteredUrls);
+  let urlhausDomains = await checkURLhausDomains(filteredUrls, parsedUrlCache);
 
   let threat = calculateThreatScore(message.author, urls, {
     authHeaders,
@@ -931,7 +936,8 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
     isFirstCommunication,
     messageText,
     subject,
-    replyTo
+    replyTo,
+    parsedUrlCache
   });
 
   await injectThreatBanner(tab.id, threat);
@@ -965,9 +971,10 @@ async function tab_mail_open_display(tab, message) {
     // Always call processAttachments to preserve existing behavior; sent_to_hybrid_by_attachment will decide about uploads
     await processAttachments(message);
 
-    let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage);
+    let parsedUrlCache = new Map();
+    let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage, parsedUrlCache);
 
-    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText });
+    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
 
     // If user hasn't opted-in for this sender, inject an inline Opt-In banner into message view
     // Only show banner when there are attachments or links to scan to avoid clutter for trivial messages
@@ -1133,11 +1140,11 @@ const IGNORED_DOMAINS = [
 // Precompiled regex for faster O(1) checks instead of O(N) array loops
 const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d.replace(/\./g, '\\.')).join('|')})$`, 'i');
 
-function filterUrls(urls) {
+function filterUrls(urls, parsedUrlCache = null) {
     return urls.filter(url => {
         try {
             // 🛡️ Sentinel: Use standard URL parser safely
-            let hostname = getHostnameOptimized(url);
+            let hostname = getHostnameOptimized(url, parsedUrlCache);
             if (!hostname) return false;
             return !IGNORED_DOMAINS_REGEX.test(hostname);
         } catch (e) {
@@ -1627,8 +1634,9 @@ browser.runtime.onMessage.addListener(async (msg, sender) => {
           await processAttachments(messageObj);
           const fullMessage = await browser.messages.getFull(msg.messageId);
           const tab = { id: sender.tab && sender.tab.id ? sender.tab.id : (msg.tabId || null) };
-          const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage);
-          await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText });
+          let parsedUrlCache = new Map();
+          const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache);
+          await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
           return { success: true };
         } catch (e) {
           Logger.error('requestScan failed', e);
