@@ -1235,7 +1235,7 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
 
     if (responseCheck.status === 200) {
         const json_data = await responseCheck.json();
-        return HybridDataBuilder.create(
+        const hybridData = HybridDataBuilder.create(
             json_data.submission_id || 'N/A',
             json_data.job_id || 'N/A',
             local_hash,
@@ -1243,6 +1243,7 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
             attachment,
             virustotal_stats
         );
+        return hybridData;
     } else {
         return await handle_unknown_attachment({
             attachment,
