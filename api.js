@@ -3,12 +3,13 @@ for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
 function escapeHTML(str) {
     if (!str) return '';
-    return String(str)
+    const safeStr = String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    return safeStr;
 }
 
 let apikey_hybridanalysis;
