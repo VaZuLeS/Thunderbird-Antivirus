@@ -1139,7 +1139,7 @@ function filterUrls(urls) {
             // 🛡️ Sentinel: Use standard URL parser safely
             let hostname = getHostnameOptimized(url);
             if (!hostname) return false;
-            return hostname ? !IGNORED_DOMAINS_REGEX.test(hostname) : false;
+            return !IGNORED_DOMAINS_REGEX.test(hostname);
         } catch (e) {
             return false; // Ungültige URL
         }
