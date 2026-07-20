@@ -1320,6 +1320,50 @@ describe('background.js', () => {
         });
     });
 
+    describe('levenshteinDistance', () => {
+        it('returns 0 for identical strings', () => {
+            assert.strictEqual(context.levenshteinDistance('test', 'test'), 0);
+        });
+
+        it('returns 1 for a single character difference (substitution)', () => {
+            assert.strictEqual(context.levenshteinDistance('test', 'tent'), 1);
+        });
+
+        it('returns 1 for a single character addition (insertion)', () => {
+            assert.strictEqual(context.levenshteinDistance('test', 'tests'), 1);
+        });
+
+        it('returns 1 for a single character deletion', () => {
+            assert.strictEqual(context.levenshteinDistance('test', 'tes'), 1);
+        });
+
+        it('handles completely different strings', () => {
+            assert.strictEqual(context.levenshteinDistance('abc', 'xyz'), 3);
+        });
+
+        it('returns string length when comparing with empty string', () => {
+            assert.strictEqual(context.levenshteinDistance('test', ''), 4);
+            assert.strictEqual(context.levenshteinDistance('', 'test'), 4);
+        });
+
+        it('returns 0 for both empty strings', () => {
+            assert.strictEqual(context.levenshteinDistance('', ''), 0);
+        });
+
+        it('is symmetric', () => {
+            const dist1 = context.levenshteinDistance('hello', 'world');
+            const dist2 = context.levenshteinDistance('world', 'hello');
+            assert.strictEqual(dist1, dist2);
+            assert.strictEqual(dist1, 4);
+        });
+
+        it('handles long strings reallocating Uint16Array', () => {
+            const str1 = 'a'.repeat(70);
+            const str2 = 'b'.repeat(70);
+            assert.strictEqual(context.levenshteinDistance(str1, str2), 70);
+        });
+    });
+
     describe('evaluateSenderDomain', () => {
         it('returns initial score when senderDomain is empty', () => {
             const result = context.evaluateSenderDomain('', 10, []);
