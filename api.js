@@ -3,12 +3,13 @@ for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
 function escapeHTML(str) {
     if (!str) return '';
-    return String(str)
+    const safeStr = String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    return safeStr;
 }
 
 let apikey_hybridanalysis;
@@ -116,15 +117,15 @@ try {
             if (hasAttachments || hasLinks) {
                 document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
-                let fetchPromises = [];
+                let fetchTasks = [];
 
                 if (hasAttachments) {
                     for (const att of record.attachments) {
                         const hash256 = att.hybrid_sha256;
                         if (att.state === 'UNKNOWN') {
-                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId);
+                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, syncFragment);
                         } else {
-                            fetchPromises.push(
+                            fetchTasks.push(() =>
                                 get_hybrid_report_by_sha256({
                                     hybrid_sha: hash256,
                                     attachmentName: att.attachment_name,
@@ -139,25 +140,24 @@ try {
                 }
 
                 if (hasLinks) {
-                    const linkPromises = [];
                     for (const linkObj of record.links) {
                         if (linkObj.state === 'UNKNOWN') {
-                            renderManualUrlScanUI(linkObj.url, message.headerMessageId);
+                            renderManualUrlScanUI(linkObj.url, message.headerMessageId, syncFragment);
                         } else if (linkObj.hybrid_sha256) {
-                            linkPromises.push(get_hybrid_report_by_sha256({
+                            fetchTasks.push(() => get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
                                 attachmentName: linkObj.url
                             }));
                         }
                     }
-
-                    if (linkPromises.length > 0) {
-                        fetchPromises.push(Promise.all(linkPromises));
-                    }
                 }
 
-                if (fetchPromises.length > 0) {
-                    await Promise.all(fetchPromises);
+                if (fetchTasks.length > 0) {
+                    const CONCURRENCY_LIMIT = 5;
+                    for (let i = 0; i < fetchTasks.length; i += CONCURRENCY_LIMIT) {
+                        const batch = fetchTasks.slice(i, i + CONCURRENCY_LIMIT);
+                        await Promise.all(batch.map(task => task()));
+                    }
                 }
             } else {
                 let container = document.getElementById('hybrid_analysis_api_content');
@@ -637,8 +637,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
     });
 }
 
-function renderManualUrlScanUI(url, headerMessageId) {
-    let container = document.getElementById('hybrid_analysis_api_content');
+function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
+    let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
     const u8 = new TextEncoder().encode(url);
     // ⚡ Bolt Optimization: Use a traditional for-loop instead of Array.from().map().join()
@@ -805,7 +805,7 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
     });
 }
 
-function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId) {
+function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId, targetContainer) {
     let safeHash = escapeHTML(hash);
 
     let card = document.createElement('div');
@@ -832,5 +832,9 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId });
     createCdrButton(card, safeHash, attachmentName, messageId, partName);
 
-    document.getElementById('hybrid_analysis_api_content').appendChild(card);
+    if (targetContainer) {
+        targetContainer.appendChild(card);
+    } else {
+        document.getElementById('hybrid_analysis_api_content').appendChild(card);
+    }
 }

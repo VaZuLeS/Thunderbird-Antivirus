@@ -34,10 +34,12 @@ class ApiGateway {
             headers['Key'] = this.apikeys['abuseipdb'];
         }
 
-        return {
+        const requestOptions = {
             ...options,
             headers: headers
         };
+
+        return requestOptions;
     }
 
     async fetchWithTimeout(url, options = {}, timeout = 15000) {
