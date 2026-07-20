@@ -140,15 +140,19 @@ try {
 
                 if (hasLinks) {
                     const linkPromises = [];
+                    const fragment = document.createDocumentFragment();
                     for (const linkObj of record.links) {
                         if (linkObj.state === 'UNKNOWN') {
-                            renderManualUrlScanUI(linkObj.url, message.headerMessageId);
+                            renderManualUrlScanUI(linkObj.url, message.headerMessageId, fragment);
                         } else if (linkObj.hybrid_sha256) {
                             linkPromises.push(get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
                                 attachmentName: linkObj.url
                             }));
                         }
+                    }
+                    if (fragment.hasChildNodes()) {
+                        document.getElementById('hybrid_analysis_api_content').appendChild(fragment);
                     }
 
                     if (linkPromises.length > 0) {
@@ -637,8 +641,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
     });
 }
 
-function renderManualUrlScanUI(url, headerMessageId) {
-    let container = document.getElementById('hybrid_analysis_api_content');
+function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
+    let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
     const u8 = new TextEncoder().encode(url);
     // ⚡ Bolt Optimization: Use a traditional for-loop instead of Array.from().map().join()
