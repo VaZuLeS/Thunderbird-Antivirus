@@ -613,10 +613,15 @@ function calculateThreatScore(author, urls, options = {}) {
 async function processAndUploadUrls(message, filteredUrls) {
     if (privacyTier === 'max') {
         const urlResults = [];
-        const limit = 5;
-        for (let i = 0; i < filteredUrls.length; i += limit) {
-            const batch = filteredUrls.slice(i, i + limit);
-            const batchResults = await Promise.all(batch.map(async (url) => {
+        const concurrencyLimit = 5;
+        let i = 0;
+
+        async function worker() {
+            while (i < filteredUrls.length) {
+                const index = i++;
+                const url = filteredUrls[index];
+
+                let result = { url: url, state: 'UNKNOWN' };
                 try {
                     const formBody = new URLSearchParams();
                     formBody.append('scan_type', 'all');
@@ -627,7 +632,7 @@ async function processAndUploadUrls(message, filteredUrls) {
                     const response = await fetch(options.url, options);
                     if (response.status === 200 || response.status === 201) {
                         const json_data = await response.json();
-                        return {
+                        result = {
                             url: url,
                             state: 'UPLOADED',
                             hybrid_submission_id: json_data.submission_id,
@@ -638,10 +643,15 @@ async function processAndUploadUrls(message, filteredUrls) {
                 } catch (e) {
                     Logger.error('Fehler beim automatischen URL-Upload', e);
                 }
-                return { url: url, state: 'UNKNOWN' };
-            }));
-            urlResults.push(...batchResults);
+                urlResults[index] = result;
+            }
         }
+
+        const workers = [];
+        for (let j = 0; j < Math.min(concurrencyLimit, filteredUrls.length); j++) {
+            workers.push(worker());
+        }
+        await Promise.all(workers);
 
         await indexedDB_save_links_objects_to_db(message, urlResults);
     } else {
