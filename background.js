@@ -1246,9 +1246,10 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
       return;
   }
 
-  const results = await Promise.all(attachments.map(async (attachment) => {
-    return await process_single_attachment(message, attachment);
-  }));
+  const results = [];
+  for (const attachment of attachments) {
+    results.push(await process_single_attachment(message, attachment));
+  }
 
   const validResults = results.filter(r => r !== null);
   if (validResults.length > 0) {
