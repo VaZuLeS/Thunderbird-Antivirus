@@ -83,3 +83,7 @@
 ## 2026-07-29 - Focus Safe Default Action in Modals
 **Learning:** When a warning modal opens, focusing the entire modal container requires users to explicitly tab to find the actionable buttons. If the user accidentally presses Space or Enter, no action is taken, or worse, focus might be lost. By automatically focusing the safe, non-destructive default action (e.g., "Cancel"), we protect users from accidental destructive actions and provide immediate keyboard interactivity.
 **Action:** Always programmatically focus the safest default action button (e.g., `cancelBtn.focus()`) instead of the generic modal container when opening warning dialogs.
+
+## 2024-07-21 - Duplicate visual feedback on aria-busy
+**Learning:** Multiple pseudo-elements (`::before` and `::after`) were used to show a loading spinner on `aria-busy` elements, resulting in a confusing visual experience.
+**Action:** When adding loading spinners via CSS pseudo-elements to elements like buttons, ensure only one spinner is applied to avoid duplicate visuals. Use the `::after` element or an explicit HTML element.
