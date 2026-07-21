@@ -125,7 +125,7 @@ try {
                         if (att.state === 'UNKNOWN') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, syncFragment);
                         } else {
-                            fetchTasks.push(() =>
+                            fetchTasks.push((frag) =>
                                 get_hybrid_report_by_sha256({
                                     hybrid_sha: hash256,
                                     attachmentName: att.attachment_name,
@@ -133,7 +133,7 @@ try {
                                     partName: att.partName,
                                     headerMessageId: message.headerMessageId,
                                     virustotal_stats: att.virustotal_stats
-                                })
+                                }, frag)
                             );
                         }
                     }
@@ -144,10 +144,10 @@ try {
                         if (linkObj.state === 'UNKNOWN') {
                             renderManualUrlScanUI(linkObj.url, message.headerMessageId, syncFragment);
                         } else if (linkObj.hybrid_sha256) {
-                            fetchTasks.push(() => get_hybrid_report_by_sha256({
+                            fetchTasks.push((frag) => get_hybrid_report_by_sha256({
                                 hybrid_sha: linkObj.hybrid_sha256,
                                 attachmentName: linkObj.url
-                            }));
+                            }, frag));
                         }
                     }
                 }
@@ -156,7 +156,11 @@ try {
                     const CONCURRENCY_LIMIT = 5;
                     for (let i = 0; i < fetchTasks.length; i += CONCURRENCY_LIMIT) {
                         const batch = fetchTasks.slice(i, i + CONCURRENCY_LIMIT);
-                        await Promise.all(batch.map(task => task()));
+                        let batchFragment = document.createDocumentFragment();
+                        await Promise.all(batch.map(task => task(batchFragment)));
+                        if (batchFragment.hasChildNodes()) {
+                            container.appendChild(batchFragment);
+                        }
                     }
                 }
             } else {
@@ -542,8 +546,8 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
     }
 }
 
-function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }) {
-    let container = document.getElementById('hybrid_analysis_api_content');
+function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }, targetContainer) {
+    let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats });
     container.appendChild(reportNode);
 
@@ -551,7 +555,7 @@ function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partNa
     setupCdrButton({ hybrid_sha, attachmentName, messageId, partName });
 }
 
-function handle_hybrid_report_error(response, attachmentName) {
+function handle_hybrid_report_error(response, attachmentName, targetContainer) {
     console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
     let errDiv1 = document.createElement('div');
     errDiv1.className = 'alert-error';
@@ -570,29 +574,31 @@ function handle_hybrid_report_error(response, attachmentName) {
         errDiv1.appendChild(btnSettings);
     }
 
-    document.getElementById('hybrid_analysis_api_content').appendChild(errDiv1);
+    let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
+    container.appendChild(errDiv1);
 }
 
-function handle_hybrid_report_fetch_error(error, attachmentName) {
+function handle_hybrid_report_fetch_error(error, attachmentName, targetContainer) {
     console.error('Fetch error:', error);
     let errDiv2 = document.createElement('div');
     errDiv2.className = 'alert-error';
     errDiv2.setAttribute('role', 'alert');
     errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`;
-    document.getElementById('hybrid_analysis_api_content').appendChild(errDiv2);
+    let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
+    container.appendChild(errDiv2);
 }
 
-async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }) {
+async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }, targetContainer) {
     try {
         const { response, json_data } = await fetch_hybrid_report(hybrid_sha);
 
         if (response.status === 200) {
-            render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data });
+            render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }, targetContainer);
         } else {
-            handle_hybrid_report_error(response, attachmentName);
+            handle_hybrid_report_error(response, attachmentName, targetContainer);
         }
     } catch (error) {
-        handle_hybrid_report_fetch_error(error, attachmentName);
+        handle_hybrid_report_fetch_error(error, attachmentName, targetContainer);
     }
 }
 
