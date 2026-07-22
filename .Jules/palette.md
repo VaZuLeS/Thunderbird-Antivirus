@@ -87,3 +87,6 @@
 ## 2024-07-21 - Duplicate visual feedback on aria-busy
 **Learning:** Multiple pseudo-elements (`::before` and `::after`) were used to show a loading spinner on `aria-busy` elements, resulting in a confusing visual experience.
 **Action:** When adding loading spinners via CSS pseudo-elements to elements like buttons, ensure only one spinner is applied to avoid duplicate visuals. Use the `::after` element or an explicit HTML element.
+## 2024-07-30 - ARIA Status Role on Informational Cards
+**Learning:** When dynamically generating informational cards post-load (e.g., explaining why a file or URL wasn't automatically scanned) and injecting them into the DOM, screen readers will not announce the new content.
+**Action:** Always add `role="status"` to dynamically injected informational cards to ensure assistive technologies proactively read them upon generation.
