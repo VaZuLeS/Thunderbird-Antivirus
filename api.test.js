@@ -872,7 +872,7 @@ describe('renderManualUploadUI', () => {
                     };
                 }
             },
-            escapeHTML: (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'),
+            escapeHTML: (str) => String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[s])),
             createUploadButtonCalls: [],
             createCdrButtonCalls: [],
             appendElementHtmlCalls: [],
