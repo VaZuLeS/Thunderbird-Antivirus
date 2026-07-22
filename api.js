@@ -649,6 +649,7 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
     let card = document.createElement('div');
     card.className = "card card-info mb-3";
     card.id = `upload-container-${urlId}`;
+    card.setAttribute('role', 'status');
 
     let h2 = document.createElement('h2');
     h2.textContent = `URL: ${url}`;
@@ -813,6 +814,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     let card = document.createElement('div');
     card.className = "card card-info mb-3";
     card.id = `upload-container-${safeHash}`;
+    card.setAttribute('role', 'status');
 
     let h2 = document.createElement('h2');
     h2.textContent = `Anhang: ${attachmentName || 'Unbekannt'}`;
