@@ -51,3 +51,7 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The `getHostnameOptimized` function used unsafe manual Regex string manipulation to extract URL hostnames, enabling hostname spoofing and filter evasion.
 **Learning:** Manual string operations and regex applied to standard URIs can easily break URL specifications and miss complex evasion techniques (e.g. unexpected credentials, ports, slashes).
 **Prevention:** Always strictly use the built-in `new URL(url).hostname` wrapped in a `try/catch` block for safe, spec-compliant URL parsing.
+## 2026-07-06 - Fix Blacklist Case Sensitivity Bypass
+**Vulnerability:** The custom blacklist and whitelist allowed malicious domains to bypass protection if the attacker used uppercase characters, because the configuration strictly checked the exact provided domains/emails without applying case normalization (like `.toLowerCase()`) directly inside the checkLists function.
+**Learning:** Security controls based on string matching (like blacklists) must normalize case for all comparisons to prevent trivial evasion, especially when inputs originate from different sources (UI config vs incoming email headers).
+**Prevention:** Always normalize security configuration data and evaluation inputs to a consistent case (e.g., lowercase) during ingestion or comparison.
