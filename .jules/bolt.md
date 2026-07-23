@@ -4,3 +4,6 @@
 ## 2024-05-24 - Hoisting Invariants in Tight Loops
 **Learning:** In algorithms with O(N*M) nested loops like `levenshteinDistance` in `background.js`, repeating property lookups (`.length`) and function calls (`charCodeAt` for invariant outer-loop data) inside the inner loop creates substantial overhead.
 **Action:** When optimizing tight nested loops, always cache lengths locally outside the loops, and hoist any evaluation that is invariant for the inner loop (e.g., `const bChar = b.charCodeAt(i - 1);`) into the outer loop block.
+## 2024-05-24 - String Allocation Bottleneck
+**Learning:** In `getMainDomain`, using `.split('.')`, `.slice()`, and `.join('.')` to extract domain parts creates unnecessary intermediate arrays, leading to increased memory allocation overhead and garbage collection pauses.
+**Action:** Always prefer `lastIndexOf` and `substring` for extracting parts of strings when the structure is known, as it avoids creating intermediate arrays and operates directly on the string.
