@@ -51,3 +51,7 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The `getHostnameOptimized` function used unsafe manual Regex string manipulation to extract URL hostnames, enabling hostname spoofing and filter evasion.
 **Learning:** Manual string operations and regex applied to standard URIs can easily break URL specifications and miss complex evasion techniques (e.g. unexpected credentials, ports, slashes).
 **Prevention:** Always strictly use the built-in `new URL(url).hostname` wrapped in a `try/catch` block for safe, spec-compliant URL parsing.
+## 2026-06-09 - Case Sensitivity Evasion in Configurations
+**Vulnerability:** The `options.js` script did not normalize custom blacklist and whitelist inputs before storing them, maintaining their original casing.
+**Learning:** This oversight allowed trivial circumvention of security evaluations in other scripts by changing the case of malicious domains or email addresses.
+**Prevention:** Apply `.toLowerCase()` directly during configuration ingestion before data is stored to enforce case-insensitive security checks uniformly.
