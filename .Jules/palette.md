@@ -87,3 +87,6 @@
 ## 2024-07-21 - Duplicate visual feedback on aria-busy
 **Learning:** Multiple pseudo-elements (`::before` and `::after`) were used to show a loading spinner on `aria-busy` elements, resulting in a confusing visual experience.
 **Action:** When adding loading spinners via CSS pseudo-elements to elements like buttons, ensure only one spinner is applied to avoid duplicate visuals. Use the `::after` element or an explicit HTML element.
+## 2024-07-22 - Visual Feedback for Disabled Form Groups
+**Learning:** While `input:disabled` effectively dims the input field, the associated `<label>` and `<small>` helper text remain fully opaque, creating visual inconsistency and leaving users unsure if the entire group is disabled.
+**Action:** Use the CSS `:has()` pseudo-class (e.g., `.mb-3:has(:disabled) label`) to style the parent container and dynamically dim the associated label and helper text alongside the input to provide clear, unified visual feedback.
