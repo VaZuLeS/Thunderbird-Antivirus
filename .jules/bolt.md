@@ -4,3 +4,6 @@
 ## 2024-05-24 - Hoisting Invariants in Tight Loops
 **Learning:** In algorithms with O(N*M) nested loops like `levenshteinDistance` in `background.js`, repeating property lookups (`.length`) and function calls (`charCodeAt` for invariant outer-loop data) inside the inner loop creates substantial overhead.
 **Action:** When optimizing tight nested loops, always cache lengths locally outside the loops, and hoist any evaluation that is invariant for the inner loop (e.g., `const bChar = b.charCodeAt(i - 1);`) into the outer loop block.
+## 2024-05-24 - O(1) Domain List Lookups
+**Learning:** Iterating over large domain lists (Blacklist/Whitelist) using `.endsWith` reduces performance to O(n). We can avoid this by iteratively checking parent domains using `Set.has()` for O(1) lookups.
+**Action:** Use string splitting and `Set.has()` for checking if a subdomain belongs to a domain in a large set.
