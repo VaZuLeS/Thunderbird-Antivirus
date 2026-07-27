@@ -153,11 +153,7 @@ try {
                 }
 
                 if (fetchTasks.length > 0) {
-                    const CONCURRENCY_LIMIT = 5;
-                    for (let i = 0; i < fetchTasks.length; i += CONCURRENCY_LIMIT) {
-                        const batch = fetchTasks.slice(i, i + CONCURRENCY_LIMIT);
-                        await Promise.all(batch.map(task => task()));
-                    }
+                    await Promise.all(fetchTasks.map(task => task()));
                 }
             } else {
                 let container = document.getElementById('hybrid_analysis_api_content');
