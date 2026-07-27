@@ -70,9 +70,22 @@ if (!message) {
 }
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
-document.getElementById("subject").textContent = message.subject;
-document.getElementById("from").textContent = message.author;
-document.getElementById("MessageHeaderID").textContent = message.headerMessageId;
+const updateGridField = (id, value, fallbackText) => {
+    const el = document.getElementById(id);
+    if (value && String(value).trim() !== '') {
+        el.textContent = value;
+        el.style.color = "";
+        el.style.fontStyle = "normal";
+    } else {
+        el.textContent = fallbackText;
+        el.style.color = "var(--text-muted)";
+        el.style.fontStyle = "italic";
+    }
+};
+
+updateGridField("subject", message.subject, "(Kein Betreff)");
+updateGridField("from", message.author, "(Unbekannter Absender)");
+updateGridField("MessageHeaderID", message.headerMessageId, "(Keine ID)");
 
 // Initialen Lade-Status für async Operationen setzen
 let apiContainer = document.getElementById('hybrid_analysis_api_content');

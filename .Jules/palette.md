@@ -90,3 +90,6 @@
 ## 2024-07-30 - ARIA Status Role on Informational Cards
 **Learning:** When dynamically generating informational cards post-load (e.g., explaining why a file or URL wasn't automatically scanned) and injecting them into the DOM, screen readers will not announce the new content.
 **Action:** Always add `role="status"` to dynamically injected informational cards to ensure assistive technologies proactively read them upon generation.
+## 2024-05-31 - Graceful Empty States for Dynamic Content
+**Learning:** When dynamically populating UI fields (like email subjects or headers), empty or missing data can cause layout collapse or leave users confused about whether the data is loading or truly missing. Adding explicitly styled fallback text (e.g., "(Kein Betreff)") with muted styling removes ambiguity.
+**Action:** Always implement graceful fallbacks with distinct visual styling (like italics/muted colors) when rendering potentially empty dynamic user content.
