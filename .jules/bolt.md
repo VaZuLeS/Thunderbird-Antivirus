@@ -7,3 +7,6 @@
 ## 2024-05-18 - Batching Async DOM Updates with DocumentFragments
 **Learning:** DocumentFragments can be used to batch not just synchronous DOM insertions, but also asynchronous ones by passing the fragment reference through the async task chain. However, you must await the resolution of the asynchronous tasks (e.g., using `Promise.all`) *before* appending the fragment to the DOM. If the fragment is appended before the promises resolve, the DOM will not update when the promises finally mutate the detached fragment.
 **Action:** When batching async appends, explicitly create the `DocumentFragment` immediately before the `Promise.all` block, ensure the fragment reference is correctly passed down to the async rendering functions, await the batch's completion, and only then call `container.appendChild(fragment)`.
+## 2024-07-27 - Replace Array.prototype.find/findIndex with for loops
+**Learning:** In hot paths (like webRequest interceptors `handleCheckLinkState`), replacing `Array.prototype.find()` and `findIndex()` with a traditional `for` loop avoids callback overhead and results in a ~50% speedup according to microbenchmarks.
+**Action:** Avoid high-level array methods with callbacks in critical paths and prefer traditional `for` loops.
