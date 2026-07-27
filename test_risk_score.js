@@ -64,9 +64,16 @@ function checkLists(email, senderDomain) {
         if (customBlacklist.includes(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
-        for (let b of customBlacklist) {
-            if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
-                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`], listType: 'blacklist' };
+        let currentDomain = senderDomain;
+        while (currentDomain) {
+            if (customBlacklist.includes(currentDomain)) {
+                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${currentDomain}).`], listType: 'blacklist' };
+            }
+            const dotIndex = currentDomain.indexOf('.');
+            if (dotIndex !== -1) {
+                currentDomain = currentDomain.substring(dotIndex + 1);
+            } else {
+                break;
             }
         }
     }
@@ -76,9 +83,16 @@ function checkLists(email, senderDomain) {
         if (customWhitelist.includes(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
-        for (let w of customWhitelist) {
-            if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
-                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`], listType: 'whitelist' };
+        let currentDomain = senderDomain;
+        while (currentDomain) {
+            if (customWhitelist.includes(currentDomain)) {
+                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${currentDomain}).`], listType: 'whitelist' };
+            }
+            const dotIndex = currentDomain.indexOf('.');
+            if (dotIndex !== -1) {
+                currentDomain = currentDomain.substring(dotIndex + 1);
+            } else {
+                break;
             }
         }
     }
