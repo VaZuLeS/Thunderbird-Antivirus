@@ -1,94 +1,48 @@
 const { performance } = require('perf_hooks');
 
-// Mock data
-const record = {
-    attachments: Array.from({ length: 50 }, (_, i) => ({
-        hybrid_sha256: `hash${i}`,
-        state: 'KNOWN',
-        attachment_name: `att${i}.txt`,
-        partName: `part${i}`
-    })),
-    links: Array.from({ length: 50 }, (_, i) => ({
-        hybrid_sha256: `linkhash${i}`,
-        state: 'KNOWN',
-        url: `http://example.com/${i}`
-    }))
-};
+const NUM_DOMAINS = 10000;
+let customBlacklist = new Set();
+for (let i = 0; i < NUM_DOMAINS; i++) {
+    customBlacklist.add(`bad-domain-${i}.com`);
+}
+customBlacklist.add('malicious.com');
 
-let activeFetches = 0;
-let maxActiveFetches = 0;
+const email = "user@test.com";
+const senderDomain = "sub.malicious.com";
 
-async function mock_get_hybrid_report_by_sha256() {
-    activeFetches++;
-    if (activeFetches > maxActiveFetches) {
-        maxActiveFetches = activeFetches;
+function checkLists_old(email, senderDomain) {
+    if (customBlacklist.has(email)) return true;
+    for (let b of customBlacklist) {
+        if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
+            return true;
+        }
     }
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 50));
-    activeFetches--;
+    return false;
 }
 
-async function runUnbounded() {
-    activeFetches = 0;
-    maxActiveFetches = 0;
-    const start = performance.now();
+function checkLists_new(email, senderDomain) {
+    if (customBlacklist.has(email)) return true;
 
-    let fetchPromises = [];
-    if (record.attachments) {
-        for (const att of record.attachments) {
-            fetchPromises.push(mock_get_hybrid_report_by_sha256());
-        }
+    let currentDomain = senderDomain;
+    while (currentDomain) {
+        if (customBlacklist.has(currentDomain)) return true;
+        const dotIndex = currentDomain.indexOf('.');
+        if (dotIndex === -1) break;
+        currentDomain = currentDomain.substring(dotIndex + 1);
     }
-    if (record.links) {
-        const linkPromises = [];
-        for (const linkObj of record.links) {
-            linkPromises.push(mock_get_hybrid_report_by_sha256());
-        }
-        if (linkPromises.length > 0) {
-            fetchPromises.push(Promise.all(linkPromises));
-        }
-    }
-    if (fetchPromises.length > 0) {
-        await Promise.all(fetchPromises);
-    }
-
-    const end = performance.now();
-    return { time: end - start, maxActive: maxActiveFetches };
+    return false;
 }
 
-async function runBatched() {
-    activeFetches = 0;
-    maxActiveFetches = 0;
-    const start = performance.now();
+const ITERATIONS = 1000;
 
-    let fetchTasks = [];
-    if (record.attachments) {
-        for (const att of record.attachments) {
-            fetchTasks.push(() => mock_get_hybrid_report_by_sha256());
-        }
-    }
-    if (record.links) {
-        for (const linkObj of record.links) {
-            fetchTasks.push(() => mock_get_hybrid_report_by_sha256());
-        }
-    }
-    if (fetchTasks.length > 0) {
-        const BATCH_SIZE = 5;
-        for (let i = 0; i < fetchTasks.length; i += BATCH_SIZE) {
-            const batch = fetchTasks.slice(i, i + BATCH_SIZE).map(task => task());
-            await Promise.all(batch);
-        }
-    }
-
-    const end = performance.now();
-    return { time: end - start, maxActive: maxActiveFetches };
+let start = performance.now();
+for (let i = 0; i < ITERATIONS; i++) {
+    checkLists_old(email, senderDomain);
 }
+console.log('Old implementation:', performance.now() - start, 'ms');
 
-async function run() {
-    const unb = await runUnbounded();
-    const batch = await runBatched();
-    console.log(`Unbounded: Time = ${unb.time.toFixed(2)}ms, Max Active Fetches = ${unb.maxActive}`);
-    console.log(`Batched (size 5): Time = ${batch.time.toFixed(2)}ms, Max Active Fetches = ${batch.maxActive}`);
+start = performance.now();
+for (let i = 0; i < ITERATIONS; i++) {
+    checkLists_new(email, senderDomain);
 }
-
-run();
+console.log('New implementation:', performance.now() - start, 'ms');
