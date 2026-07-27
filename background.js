@@ -1315,10 +1315,11 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
       return;
   }
 
-  const results = [];
+  const promises = [];
   for (const attachment of attachments) {
-    results.push(await process_single_attachment(message, attachment));
+    promises.push(process_single_attachment(message, attachment));
   }
+  const results = await Promise.all(promises);
 
   const validResults = results.filter(r => r !== null);
   if (validResults.length > 0) {
