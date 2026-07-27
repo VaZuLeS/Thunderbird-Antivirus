@@ -1,15 +1,18 @@
 const byteToHex = new Array(256);
 for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
+const HTML_ESCAPE_MAP = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+};
+const HTML_ESCAPE_REGEX = /[&<>"']/g;
+
 function escapeHTML(str) {
     if (!str) return '';
-    const safeStr = String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    return safeStr;
+    return String(str).replace(HTML_ESCAPE_REGEX, s => HTML_ESCAPE_MAP[s]);
 }
 
 let apikey_hybridanalysis;
