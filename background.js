@@ -1414,15 +1414,14 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
           if (!recordToSave.links) recordToSave.links = [];
 
           // Pre-compute map for O(1) lookups, changing complexity from O(N*M) to O(N+M)
-          const existingUrlMap = new Map(recordToSave.links.map((l, idx) => [l.url, idx]));
-          for (const newLink of newLinks) {
-            if (existingUrlMap.has(newLink.url)) {
-                recordToSave.links[existingUrlMap.get(newLink.url)] = newLink;
-            } else {
-                recordToSave.links.push(newLink);
-                existingUrlMap.set(newLink.url, recordToSave.links.length - 1);
-            }
+          const urlMap = new Map();
+          for (let i = 0; i < recordToSave.links.length; i++) {
+            urlMap.set(recordToSave.links[i].url, recordToSave.links[i]);
           }
+          for (let i = 0; i < newLinks.length; i++) {
+            urlMap.set(newLinks[i].url, newLinks[i]);
+          }
+          recordToSave.links = [...urlMap.values()];
 
         } else {
           recordToSave = {
