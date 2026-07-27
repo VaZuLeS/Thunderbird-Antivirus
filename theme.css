@@ -111,7 +111,9 @@ a:focus-visible {
 button:disabled,
 input:disabled,
 select:disabled,
-textarea:disabled {
+textarea:disabled,
+.mb-3:has(:disabled) label,
+.mb-3:has(:disabled) small {
     opacity: 0.6;
     cursor: not-allowed;
 }
