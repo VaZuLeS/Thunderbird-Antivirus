@@ -1548,7 +1548,17 @@ async function handleCheckLinkState(request, sender, sendResponse) {
             // ⚡ Optimize URL normalization: Move requestUrl processing out of loop and use fast string methods over Regex
             const reqUrl = request.url.endsWith("/") ? request.url.slice(0, -1) : request.url;
             const reqUrlSlash = reqUrl + "/";
-            linkObj = record.links.find(l => l.url === reqUrl || l.url === reqUrlSlash);
+            // ⚡ Bolt Optimization: Replace .find() with for loop to avoid callback overhead
+            linkObj = undefined; // Reset to match .find() semantics
+            const links = record.links;
+            const len = links.length;
+            for (let i = 0; i < len; i++) {
+                const u = links[i].url;
+                if (u === reqUrl || u === reqUrlSlash) {
+                    linkObj = links[i];
+                    break;
+                }
+            }
         }
 
         // Time-of-Click Live Scan via urlscan.io
@@ -1789,7 +1799,16 @@ async function handleUrlScan(url, headerMessageId) {
             const db = await getSharedDB();
             await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
                 if (existingRecord && existingRecord.links) {
-                    let linkIndex = existingRecord.links.findIndex(l => l.url === url);
+                    // ⚡ Bolt Optimization: Replace .findIndex() with for loop to avoid callback overhead
+                    let linkIndex = -1;
+                    const links = existingRecord.links;
+                    const len = links.length;
+                    for (let i = 0; i < len; i++) {
+                        if (links[i].url === url) {
+                            linkIndex = i;
+                            break;
+                        }
+                    }
                     if (linkIndex > -1) {
                         existingRecord.links[linkIndex].hybrid_submission_id = json_data.submission_id;
                         existingRecord.links[linkIndex].hybrid_job_id = json_data.job_id;
@@ -1831,7 +1850,16 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
             const db = await getSharedDB();
             await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
                 if (existingRecord && existingRecord.attachments) {
-                    let attIndex = existingRecord.attachments.findIndex(a => a.partName === partName);
+                    // ⚡ Bolt Optimization: Replace .findIndex() with for loop to avoid callback overhead
+                    let attIndex = -1;
+                    const attachments = existingRecord.attachments;
+                    const len = attachments.length;
+                    for (let i = 0; i < len; i++) {
+                        if (attachments[i].partName === partName) {
+                            attIndex = i;
+                            break;
+                        }
+                    }
                     if (attIndex > -1) {
                         existingRecord.attachments[attIndex].hybrid_submission_id = json_data.submission_id;
                         existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id;
