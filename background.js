@@ -323,15 +323,25 @@ const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
 const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`, 'i');
 
 function checkLists(email, senderDomain) {
+    if (email) email = email.toLowerCase();
+    if (senderDomain) senderDomain = senderDomain.toLowerCase();
+
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.size > 0) {
         if (customBlacklist.has(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
-        for (let b of customBlacklist) {
-            if (b && (senderDomain === b || senderDomain.endsWith('.' + b))) {
-                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${b}).`], listType: 'blacklist' };
+        // ⚡ Bolt Optimization: Replace O(n) array iteration with O(1) set lookups for domain checking
+        if (customBlacklist.has(senderDomain)) {
+            return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${senderDomain}).`], listType: 'blacklist' };
+        }
+        let dotIdx = senderDomain.indexOf('.');
+        while (dotIdx !== -1) {
+            let parentDomain = senderDomain.substring(dotIdx + 1);
+            if (customBlacklist.has(parentDomain)) {
+                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${parentDomain}).`], listType: 'blacklist' };
             }
+            dotIdx = senderDomain.indexOf('.', dotIdx + 1);
         }
     }
 
@@ -340,10 +350,17 @@ function checkLists(email, senderDomain) {
         if (customWhitelist.has(email)) {
             return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
         }
-        for (let w of customWhitelist) {
-            if (w && (senderDomain === w || senderDomain.endsWith('.' + w))) {
-                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${w}).`], listType: 'whitelist' };
+        // ⚡ Bolt Optimization: Replace O(n) array iteration with O(1) set lookups for domain checking
+        if (customWhitelist.has(senderDomain)) {
+            return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${senderDomain}).`], listType: 'whitelist' };
+        }
+        let dotIdx = senderDomain.indexOf('.');
+        while (dotIdx !== -1) {
+            let parentDomain = senderDomain.substring(dotIdx + 1);
+            if (customWhitelist.has(parentDomain)) {
+                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${parentDomain}).`], listType: 'whitelist' };
             }
+            dotIdx = senderDomain.indexOf('.', dotIdx + 1);
         }
     }
     return null;
@@ -1315,10 +1332,11 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
       return;
   }
 
-  const results = [];
+  const promises = [];
   for (const attachment of attachments) {
-    results.push(await process_single_attachment(message, attachment));
+    promises.push(process_single_attachment(message, attachment));
   }
+  const results = await Promise.all(promises);
 
   const validResults = results.filter(r => r !== null);
   if (validResults.length > 0) {
@@ -1396,15 +1414,14 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
           if (!recordToSave.links) recordToSave.links = [];
 
           // Pre-compute map for O(1) lookups, changing complexity from O(N*M) to O(N+M)
-          const existingUrlMap = new Map(recordToSave.links.map((l, idx) => [l.url, idx]));
-          for (const newLink of newLinks) {
-            if (existingUrlMap.has(newLink.url)) {
-                recordToSave.links[existingUrlMap.get(newLink.url)] = newLink;
-            } else {
-                recordToSave.links.push(newLink);
-                existingUrlMap.set(newLink.url, recordToSave.links.length - 1);
-            }
+          const urlMap = new Map();
+          for (let i = 0; i < recordToSave.links.length; i++) {
+            urlMap.set(recordToSave.links[i].url, recordToSave.links[i]);
           }
+          for (let i = 0; i < newLinks.length; i++) {
+            urlMap.set(newLinks[i].url, newLinks[i]);
+          }
+          recordToSave.links = [...urlMap.values()];
 
         } else {
           recordToSave = {
