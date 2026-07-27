@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
     for (let start = 0; start < whitelistStr.length; ) {
         let end = whitelistStr.indexOf(',', start);
         if (end === -1) end = whitelistStr.length;
-        let item = whitelistStr.substring(start, end).trim();
+        let item = whitelistStr.substring(start, end).trim().toLowerCase();
         if (item.length > 0) whitelistSetting.push(item);
         start = end + 1;
     }
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
     for (let start = 0; start < blacklistStr.length; ) {
         let end = blacklistStr.indexOf(',', start);
         if (end === -1) end = blacklistStr.length;
-        let item = blacklistStr.substring(start, end).trim();
+        let item = blacklistStr.substring(start, end).trim().toLowerCase();
         if (item.length > 0) blacklistSetting.push(item);
         start = end + 1;
     }
