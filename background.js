@@ -545,11 +545,15 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons, par
         let reasonsDomainsSet = new Set();
 
         // ⚡ Bolt Optimization: Iterate directly over the Set to avoid Array.from() allocation overhead
+        const dotSenderDomain = '.' + senderDomain;
+        const dotSenderMainDomain = senderMainDomain ? '.' + senderMainDomain : '';
         for (let ld of linkDomainsSet) {
-            if (ld === senderDomain || ld.endsWith('.' + senderDomain) || senderDomain.endsWith('.' + ld)) {
-                matchFound = true;
-            } else if (senderMainDomain && (ld === senderMainDomain || ld.endsWith('.' + senderMainDomain))) {
-                 matchFound = true;
+            if (!matchFound) {
+                if (ld === senderDomain || ld.endsWith(dotSenderDomain) || senderDomain.endsWith('.' + ld)) {
+                    matchFound = true;
+                } else if (senderMainDomain && (ld === senderMainDomain || ld.endsWith(dotSenderMainDomain))) {
+                     matchFound = true;
+                }
             }
 
             let linkMainDomain = getMainDomain(ld);

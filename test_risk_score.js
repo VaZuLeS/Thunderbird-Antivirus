@@ -236,11 +236,16 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
         let matchFound = false;
         let typosquatLinkFound = false;
 
+        // ⚡ Bolt Optimization: Cache dot-prefixed domains to avoid string concatenation in loop and skip redundant checks
+        const dotSenderDomain = '.' + senderDomain;
+        const dotSenderMainDomain = senderMainDomain ? '.' + senderMainDomain : '';
         for (let ld of linkDomains) {
-            if (ld === senderDomain || ld.endsWith('.' + senderDomain) || senderDomain.endsWith('.' + ld)) {
-                matchFound = true;
-            } else if (senderMainDomain && (ld === senderMainDomain || ld.endsWith('.' + senderMainDomain))) {
-                 matchFound = true;
+            if (!matchFound) {
+                if (ld === senderDomain || ld.endsWith(dotSenderDomain) || senderDomain.endsWith('.' + ld)) {
+                    matchFound = true;
+                } else if (senderMainDomain && (ld === senderMainDomain || ld.endsWith(dotSenderMainDomain))) {
+                     matchFound = true;
+                }
             }
 
             let linkMainDomain = getMainDomain(ld);
