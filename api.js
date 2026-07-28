@@ -214,6 +214,16 @@ try {
         errDiv.className = 'alert-error';
         errDiv.setAttribute('role', 'alert');
         errDiv.textContent = 'Unerwarteter Fehler beim Laden der Analyseergebnisse.';
+
+        let btnSettings = document.createElement('button');
+        btnSettings.className = 'btn-primary mt-2 ml-2';
+        btnSettings.textContent = 'Einstellungen öffnen';
+        btnSettings.addEventListener('click', () => {
+            browser.runtime.openOptionsPage();
+        });
+        errDiv.appendChild(document.createElement('br'));
+        errDiv.appendChild(btnSettings);
+
         container.appendChild(errDiv);
     }
 }
