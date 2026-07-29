@@ -1,18 +1,27 @@
 const byteToHex = new Array(256);
 for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
 
-const HTML_ESCAPE_MAP = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-};
-const HTML_ESCAPE_REGEX = /[&<>"']/g;
+const HTML_ESCAPE_FAST_REGEX = /[&<>"']/;
 
 function escapeHTML(str) {
     if (!str) return '';
-    return String(str).replace(HTML_ESCAPE_REGEX, s => HTML_ESCAPE_MAP[s]);
+    const s = String(str);
+
+    // ⚡ Bolt Optimization: Use non-global regex to fast-path clean strings
+    if (!HTML_ESCAPE_FAST_REGEX.test(s)) return s;
+
+    // ⚡ Bolt Optimization: Use manual loop and substring instead of regex dictionary callback for faster escaping
+    let res = '';
+    let last = 0;
+    for (let i = 0; i < s.length; i++) {
+        const c = s[i];
+        if (c === '&') { res += s.substring(last, i) + '&amp;'; last = i + 1; }
+        else if (c === '<') { res += s.substring(last, i) + '&lt;'; last = i + 1; }
+        else if (c === '>') { res += s.substring(last, i) + '&gt;'; last = i + 1; }
+        else if (c === '"') { res += s.substring(last, i) + '&quot;'; last = i + 1; }
+        else if (c === "'") { res += s.substring(last, i) + '&#39;'; last = i + 1; }
+    }
+    return res + s.substring(last);
 }
 
 let apikey_hybridanalysis;
