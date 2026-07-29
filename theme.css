@@ -11,12 +11,12 @@
     --btn-success-bg: #008000;
     --btn-success-text: #ffffff;
     --alert-error-bg: #ffeeee;
-    --alert-error-border: #ff0000;
+    --alert-error-border: #cc0000;
     --alert-info-border: #0000ff;
 
     --color-success: #008000;
-    --color-warning: #ff8c00;
-    --color-danger: #ff0000;
+    --color-warning: #b26000;
+    --color-danger: #cc0000;
     --color-info: #0000ff;
 }
 
@@ -162,7 +162,8 @@ button[aria-busy="true"]:disabled {
 }
 
 .grid-content {
-    word-break: break-all;
+    overflow-wrap: anywhere;
+    word-break: normal;
 }
 
 /* Alerts */
