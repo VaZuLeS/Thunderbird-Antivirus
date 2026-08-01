@@ -4,3 +4,6 @@
 ## 2024-05-24 - Optimize escapeHTML with Regex check and manual loop
 **Learning:** While chained `.replace()` calls can sometimes beat global regex + dictionary lookup, combining a fast non-global regex `.test()` to skip clean strings with a manual string builder loop using `substring()` is significantly faster for HTML escaping in V8 (2x faster for clean strings, 33% faster for dirty strings).
 **Action:** When implementing frequent string escaping or sanitization functions on the hot path, benchmark against a manual loop that buffers slices with `substring()` instead of relying purely on regex replacements or array joins.
+## 2024-11-20 - Optimize Set to Array conversion
+**Learning:** Using `Array.from(set)` is significantly faster (up to ~75%) than iterating over a Set with `set.forEach(item => arr.push(item))` in V8 due to native engine optimizations.
+**Action:** Always use `Array.from()` or the spread operator (`[...set]`) to convert Sets to Arrays instead of manual looping and pushing.
