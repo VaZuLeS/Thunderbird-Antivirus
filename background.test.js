@@ -2743,6 +2743,9 @@ describe('background.js', () => {
         it('handles string with only brackets', () => {
             assert.strictEqual(context.extractEmailAddress('<>'), '');
         });
+        it('handles spoofed email headers correctly', () => {
+            assert.strictEqual(context.extractEmailAddress('"Safe Sender <decoy@safe.com>" <hacker@evil.com>'), 'hacker@evil.com');
+        });
     });
 
     describe('getHybridAnalysisOptions', () => {
