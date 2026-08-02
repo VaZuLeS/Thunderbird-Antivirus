@@ -96,3 +96,6 @@
 ## 2024-05-24 - Improve Typography and Color Contrast
 **Learning:** `word-break: break-all` splits words arbitrarily, harming readability and screen reader flow; `#ff8c00` and `#ff0000` fail WCAG AA contrast on white backgrounds.
 **Action:** Use `overflow-wrap: anywhere` with `word-break: normal` for wrapping, and darken warning/danger colors to ensure WCAG AA compliance.
+## 2024-08-02 - Missing Interactive States in Injected UI
+**Learning:** When injecting isolated UI components (like warning modals) via content scripts, relying on inline styles or a self-contained `<style>` block often leads to omitting standard interactive states (like `:hover` and `:active` on buttons). This creates a disjointed, unresponsive UX compared to the main extension UI which relies on a comprehensive `theme.css`.
+**Action:** Always verify that injected CSS in content scripts explicitly defines `:hover`, `:active`, and `transition` properties for interactive elements, ensuring they feel responsive and consistent with the broader design system.
