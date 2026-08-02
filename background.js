@@ -1729,7 +1729,8 @@ const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xli
 const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link', 'math', 'svg', 'noscript']);
 
 // ⚡ Bolt: Use a direct precompiled regex with bounds and no capturing groups for peak performance
-const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\uFFFD]/g;
+// Removing global flag to optimize early-exit .test() in loops
+const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\uFFFD]/;
 
 function disarmHTML(htmlString) {
     const parser = new DOMParser();
@@ -1756,7 +1757,21 @@ function disarmHTML(htmlString) {
                             if (dangerousAttributes.has(attrName)) {
                                 let val = el.attributes[j].value.toLowerCase();
                                 // Remove control characters (like tabs/newlines) that might evade the check
-                                let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
+                                let cleanVal = val;
+                                // ⚡ Bolt Optimization: Use early-exit .test() and fast manual substring loop instead of global .replace()
+                                if (DANGEROUS_URI_CHARS_REGEX.test(val)) {
+                                    cleanVal = '';
+                                    let lastIndex = 0;
+                                    for (let k = 0; k < val.length; k++) {
+                                        const c = val.charCodeAt(k);
+                                        if (c <= 0x20 || (c >= 0x7F && c <= 0x9F) || c === 0xFFFD) {
+                                            cleanVal += val.substring(lastIndex, k);
+                                            lastIndex = k + 1;
+                                        }
+                                    }
+                                    cleanVal += val.substring(lastIndex);
+                                }
+
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
                                     el.removeAttribute(attrName);
                                 }
