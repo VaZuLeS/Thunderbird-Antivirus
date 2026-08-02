@@ -219,6 +219,13 @@ if (!document.getElementById('thundy-av-styles')) {
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            transition: filter 0.2s ease;
+        }
+        .thundy-modal button:hover {
+            filter: brightness(0.9);
+        }
+        .thundy-modal button:active {
+            filter: brightness(0.8);
         }
         .thundy-modal button:focus-visible {
             outline: 2px solid #005a9e;
