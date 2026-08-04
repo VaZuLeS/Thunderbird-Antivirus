@@ -96,3 +96,6 @@
 ## 2024-05-24 - Improve Typography and Color Contrast
 **Learning:** `word-break: break-all` splits words arbitrarily, harming readability and screen reader flow; `#ff8c00` and `#ff0000` fail WCAG AA contrast on white backgrounds.
 **Action:** Use `overflow-wrap: anywhere` with `word-break: normal` for wrapping, and darken warning/danger colors to ensure WCAG AA compliance.
+## 2024-10-24 - Improve color contrast for better readability
+**Learning:** Standard CSS colors like `red` (`#ff0000`) and orange (`#ff8c00`) fail to meet WCAG AA contrast guidelines for standard text on white backgrounds, reducing readability for visually impaired users.
+**Action:** Use darker shades like `#cc0000` (red) and `#b26000` (orange) for warning and error text on light backgrounds to ensure accessible contrast ratios.

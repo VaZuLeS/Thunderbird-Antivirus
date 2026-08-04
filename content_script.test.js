@@ -61,11 +61,11 @@ describe('content_script.js', () => {
 
         const title = warningOverlay.querySelector('#thundy-warning-title');
         assert.strictEqual(title.textContent, 'Warnung: Visuelles Phishing erkannt!');
-        assert.strictEqual(title.style.color, 'red');
+        assert.strictEqual(title.style.color, 'rgb(204, 0, 0)');
 
         const message = warningOverlay.querySelector('#thundy-warning-message');
         assert.strictEqual(message.textContent, 'Diese URL wurde von urlscan.io blockiert. Es könnte sich um eine gefälschte Login-Seite handeln.');
-        assert.strictEqual(message.style.color, 'red');
+        assert.strictEqual(message.style.color, 'rgb(204, 0, 0)');
 
         const urlInfo = Array.from(warningOverlay.querySelectorAll('p')).find(p => p.textContent.startsWith('Ziel: '));
         assert.strictEqual(urlInfo.textContent, 'Ziel: http://malicious.com');
@@ -251,7 +251,7 @@ describe('content_script.js', () => {
         const warningOverlay = context.document.querySelector('.thundy-overlay');
         assert.ok(warningOverlay);
         assert.strictEqual(warningOverlay.querySelector('h2').textContent, 'Warnung: Visuelles Phishing erkannt!');
-        assert.strictEqual(warningOverlay.querySelector('h2').style.color, 'red');
+        assert.strictEqual(warningOverlay.querySelector('h2').style.color, 'rgb(204, 0, 0)');
 
         const lis = warningOverlay.querySelectorAll('li');
         assert.strictEqual(lis.length, 2);
@@ -389,9 +389,9 @@ describe('content_script.js', () => {
             const message = overlay.querySelector('#thundy-warning-message');
 
             assert.strictEqual(title.textContent, 'Warnung: Visuelles Phishing erkannt!');
-            assert.strictEqual(title.style.color, 'red');
+            assert.strictEqual(title.style.color, 'rgb(204, 0, 0)');
             assert.strictEqual(message.textContent, 'Diese URL wurde von urlscan.io blockiert. Es könnte sich um eine gefälschte Login-Seite handeln.');
-            assert.strictEqual(message.style.color, 'red');
+            assert.strictEqual(message.style.color, 'rgb(204, 0, 0)');
             assert.strictEqual(message.style.fontWeight, 'bold');
 
             const lis = overlay.querySelectorAll('ul > li');
@@ -400,7 +400,7 @@ describe('content_script.js', () => {
             assert.strictEqual(lis[1].textContent, 'Suspicious URL');
 
             const ul = overlay.querySelector('ul');
-            assert.strictEqual(ul.style.color, 'red');
+            assert.strictEqual(ul.style.color, 'rgb(204, 0, 0)');
         });
 
         it('should create buttons with correct classes and functionality', () => {
