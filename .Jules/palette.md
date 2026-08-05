@@ -96,3 +96,6 @@
 ## 2024-05-24 - Improve Typography and Color Contrast
 **Learning:** `word-break: break-all` splits words arbitrarily, harming readability and screen reader flow; `#ff8c00` and `#ff0000` fail WCAG AA contrast on white backgrounds.
 **Action:** Use `overflow-wrap: anywhere` with `word-break: normal` for wrapping, and darken warning/danger colors to ensure WCAG AA compliance.
+## 2024-08-05 - Avoid layout breaks from long URLs in Modals
+**Learning:** When displaying dynamic content like URLs inside confined containers (like modals), standard wrapping often fails for long, unbroken strings, causing layout breakage or horizontal scrolling.
+**Action:** Always apply `overflow-wrap: anywhere; word-break: normal;` to containers (like `.thundy-modal`) that might display raw URLs to ensure they wrap gracefully without breaking standard words.
