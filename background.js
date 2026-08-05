@@ -582,7 +582,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons, par
 function extractEmailAddress(rawAuthor) {
     let email = rawAuthor;
     // ⚡ Bolt Optimization: Use indexOf and substring to avoid regex allocation overhead
-    const start = rawAuthor.indexOf('<');
+    const start = rawAuthor.lastIndexOf('<');
     if (start !== -1) {
         const end = rawAuthor.indexOf('>', start + 1);
         if (end !== -1) {
@@ -969,7 +969,7 @@ async function tab_mail_open_display(tab, message) {
   try {
     // Determine sender email for per-sender opt-in storage
     let senderEmail = message.author || '';
-    const start = senderEmail.indexOf('<');
+    const start = senderEmail.lastIndexOf('<');
     if (start !== -1) {
       const end = senderEmail.indexOf('>', start + 1);
       if (end !== -1) senderEmail = senderEmail.substring(start + 1, end);

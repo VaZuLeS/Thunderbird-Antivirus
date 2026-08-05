@@ -55,3 +55,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The custom blacklist and whitelist allowed malicious domains to bypass protection if the attacker used uppercase characters, because the configuration strictly checked the exact provided domains/emails without applying case normalization (like `.toLowerCase()`) directly inside the checkLists function.
 **Learning:** Security controls based on string matching (like blacklists) must normalize case for all comparisons to prevent trivial evasion, especially when inputs originate from different sources (UI config vs incoming email headers).
 **Prevention:** Always normalize security configuration data and evaluation inputs to a consistent case (e.g., lowercase) during ingestion or comparison.
+
+## 2026-07-06 - Fix Email Spoofing via First-Match Bracket Parsing
+**Vulnerability:** Email extraction from raw header strings used `indexOf('<')`, allowing an attacker to inject a decoy email address in the sender name (e.g., `"Safe Sender <decoy@safe.com>" <hacker@evil.com>`) to bypass security filters and SPF/DKIM checks based on the visible sender.
+**Learning:** Extracting data from structured strings that may contain user-controlled arbitrary text before the delimiter must parse from the end or use strict format validation to avoid spoofing.
+**Prevention:** Always use `lastIndexOf('<')` when parsing routing addresses from raw email headers to ensure extraction of the true routing address at the end of the string.
