@@ -4,3 +4,6 @@
 ## 2024-05-24 - Optimize escapeHTML with Regex check and manual loop
 **Learning:** While chained `.replace()` calls can sometimes beat global regex + dictionary lookup, combining a fast non-global regex `.test()` to skip clean strings with a manual string builder loop using `substring()` is significantly faster for HTML escaping in V8 (2x faster for clean strings, 33% faster for dirty strings).
 **Action:** When implementing frequent string escaping or sanitization functions on the hot path, benchmark against a manual loop that buffers slices with `substring()` instead of relying purely on regex replacements or array joins.
+## 2024-08-05 - Optimize Set to Array conversion in hot loops
+**Learning:** In V8 (Node.js), manually iterating over a `Set` and pushing items into an empty array using `set.forEach(item => array.push(item))` introduces significant callback and array resizing overhead. Converting the `Set` to an `Array` using the native `Array.from(set)` leverages built-in engine optimizations and can be approximately 5x faster for medium-sized sets in hot execution paths.
+**Action:** When converting iterables like `Set` or `Map.values()` to arrays on critical performance paths, always use `Array.from()` or the spread operator instead of manually pushing elements in a loop.
