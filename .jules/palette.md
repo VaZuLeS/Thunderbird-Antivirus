@@ -10,3 +10,7 @@
 ## 2024-05-30 - Form Helper Text and Modal Focus Accessibility
 **Learning:** For optimal form accessibility, always link inputs to their associated helper text using `aria-describedby` pointing to the helper text `id`. When creating dynamic modals in vanilla JS, it is critical to set `modal.tabIndex = -1` and explicitly call `modal.focus()` upon insertion to ensure screen readers immediately transition focus to the modal rather than getting stuck on the body behind the overlay.
 **Action:** When evaluating forms, check for orphaned `<small>` helper texts. When building vanilla JS modals, always implement native `.focus()` management.
+
+## 2024-06-03 - Contrast guidelines for text
+**Learning:** `word-break: break-all` splits words arbitrarily, harming readability and screen reader flow; `#ff8c00` and `#ff0000` fail WCAG AA contrast on white backgrounds.
+**Action:** Always use darker shades like `#cc0000` for red and `#b26000` for orange to ensure accessibility standards are met for normal text on light backgrounds.
