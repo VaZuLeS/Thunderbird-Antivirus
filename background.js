@@ -1149,9 +1149,8 @@ function extractUrls(text) {
 
         searchStart = endIdx === startIdx ? startIdx + 1 : endIdx;
     }
-    const urls = [];
-    urlSet.forEach(u => urls.push(u));
-    return urls;
+    // ⚡ Bolt Optimization: Use Array.from() for native, fast conversion of Set to Array instead of manual forEach pushing
+    return Array.from(urlSet);
 }
 
 const IGNORED_DOMAINS = [
