@@ -1705,7 +1705,7 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     let safeName = attachmentName || 'disarmed.html';
     safeName = safeName.split(/[\/\\]/).pop().replace(/[^a-zA-Z0-9_\-\.]/g, '_');
 
-    if (!safeName.toLowerCase().endsWith('.html') && !safeName.toLowerCase().endsWith('.htm')) {
+    if (!/\.html?$/i.test(safeName)) {
         safeName += '.html';
     }
     const downloadId = await browser.downloads.download({
