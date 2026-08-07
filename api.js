@@ -417,7 +417,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
     pRescanStatus.setAttribute('role', 'status');
     card.appendChild(pRescanStatus);
 
-    if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
+    if (attachmentName && /\.html?$/i.test(attachmentName)) {
         const btnCdr = document.createElement('button');
         btnCdr.id = `btn-cdr-${hybrid_sha}`;
         btnCdr.className = "btn-primary mt-2 ml-2";
@@ -795,7 +795,7 @@ function createUploadButton(card, { hash, safeHash, attachmentName, messageId, p
 }
 
 function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
-    if (!attachmentName || (!attachmentName.toLowerCase().endsWith('.html') && !attachmentName.toLowerCase().endsWith('.htm'))) {
+    if (!attachmentName || !/\.html?$/i.test(attachmentName)) {
         return;
     }
 
