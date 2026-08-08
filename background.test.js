@@ -2730,6 +2730,9 @@ describe('background.js', () => {
         it('extracts email from brackets', () => {
             assert.strictEqual(context.extractEmailAddress('John Doe <john@example.com>'), 'john@example.com');
         });
+        it('prevents email spoofing from decoy display names', () => {
+            assert.strictEqual(context.extractEmailAddress('"Safe Sender <decoy@safe.com>" <hacker@evil.com>'), 'hacker@evil.com');
+        });
         it('converts to lowercase', () => {
             assert.strictEqual(context.extractEmailAddress('TEST@EXAMPLE.COM'), 'test@example.com');
             assert.strictEqual(context.extractEmailAddress('User <USER@EXAMPLE.COM>'), 'user@example.com');
