@@ -4,3 +4,6 @@
 ## 2024-05-24 - Optimize escapeHTML with Regex check and manual loop
 **Learning:** While chained `.replace()` calls can sometimes beat global regex + dictionary lookup, combining a fast non-global regex `.test()` to skip clean strings with a manual string builder loop using `substring()` is significantly faster for HTML escaping in V8 (2x faster for clean strings, 33% faster for dirty strings).
 **Action:** When implementing frequent string escaping or sanitization functions on the hot path, benchmark against a manual loop that buffers slices with `substring()` instead of relying purely on regex replacements or array joins.
+## 2024-08-08 - Optimize file extension checking using Regex
+**Learning:** In V8, checking for file extensions (like `.html` and `.htm`) by chaining `.toLowerCase()` and `.endsWith()` causes unnecessary string allocations and is slower than a simple case-insensitive Regex test (`/\.html?$/i.test(string)`), which reduces operations and memory usage.
+**Action:** Always prefer precompiled or literal case-insensitive Regex tests (e.g. `/\.ext$/i.test(str)`) over chaining `.toLowerCase()` and multiple `.endsWith()` checks in hot paths.
