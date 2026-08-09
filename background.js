@@ -60,9 +60,6 @@ function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     return options;
 }
 
-const byteToHex = new Array(256);
-for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
-
 // Precompiled Regexes for Performance
 const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
 
@@ -1180,7 +1177,7 @@ async function get_sha256_hash(fileData) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', fileData);
     const u8 = new Uint8Array(hashBuffer);
     let hashStr = '';
-    for (let j = 0; j < u8.length; j++) hashStr += byteToHex[u8[j]];
+    for (let j = 0; j < u8.length; j++) hashStr += u8[j].toString(16).padStart(2, '0');
     return hashStr;
 }
 
