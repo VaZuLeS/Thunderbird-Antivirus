@@ -1176,13 +1176,20 @@ function filterUrls(urls, parsedUrlCache = null) {
     return filtered;
 }
 
+// ⚡ Bolt Optimization: Precompute hex table to avoid expensive .toString(16).padStart(2, '0') calls in loop
+const byteToHex = new Array(256);
+for (let n = 0; n <= 255; n++) {
+    byteToHex[n] = n.toString(16).padStart(2, '0');
+}
+
 // Funktion zum Senden der Anhänge an Hybrid Analysis
 async function get_sha256_hash(fileData) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', fileData);
     const u8 = new Uint8Array(hashBuffer);
-    let hashStr = '';
-    for (let j = 0; j < u8.length; j++) hashStr += u8[j].toString(16).padStart(2, '0');
-    return hashStr;
+    // ⚡ Bolt Optimization: Use pre-allocated array and .join() instead of string concatenation or Array.from
+    const hex = new Array(u8.length);
+    for (let j = 0; j < u8.length; j++) hex[j] = byteToHex[u8[j]];
+    return hex.join('');
 }
 
 class HybridDataBuilder {
