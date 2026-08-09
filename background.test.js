@@ -1928,7 +1928,7 @@ describe('background.js', () => {
         });
 
         it('prevents javascript URI evasion', () => {
-            const input = '<html><body><a href="java\tscript:alert(1)">Link</a><a href="jav&#x09;ascript:alert(1)">Link2</a><a href=" java&#x00;script:alert(1)">Link3</a><a href="javascript&#x3A;alert(1)">Link4</a></body></html>';
+            const input = '<html><body><a href="java\tscript:alert(1)">Link</a><a href="jav&#x09;ascript:alert(1)">Link2</a><a href=" java&#x00;script:alert(1)">Link3</a><a href="javascript&#x3A;alert(1)">Link4</a><a href="java&#x200B;script:alert(1)">Link5</a><a href="java&#xA0;script:alert(1)">Link6</a></body></html>';
             const result = context.disarmHTML(input);
             assert.ok(!result.includes('javascript:'), 'evaded javascript URI should be removed');
         });
@@ -2730,6 +2730,9 @@ describe('background.js', () => {
         it('extracts email from brackets', () => {
             assert.strictEqual(context.extractEmailAddress('John Doe <john@example.com>'), 'john@example.com');
         });
+        it('prevents email spoofing from decoy display names', () => {
+            assert.strictEqual(context.extractEmailAddress('"Safe Sender <decoy@safe.com>" <hacker@evil.com>'), 'hacker@evil.com');
+        });
         it('converts to lowercase', () => {
             assert.strictEqual(context.extractEmailAddress('TEST@EXAMPLE.COM'), 'test@example.com');
             assert.strictEqual(context.extractEmailAddress('User <USER@EXAMPLE.COM>'), 'user@example.com');
@@ -2742,6 +2745,9 @@ describe('background.js', () => {
         });
         it('handles string with only brackets', () => {
             assert.strictEqual(context.extractEmailAddress('<>'), '');
+        });
+        it('extracts correct email when spoofed with multiple brackets', () => {
+            assert.strictEqual(context.extractEmailAddress('"Safe Sender <decoy@safe.com>" <hacker@evil.com>'), 'hacker@evil.com');
         });
     });
 
