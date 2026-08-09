@@ -582,7 +582,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons, par
 function extractEmailAddress(rawAuthor) {
     let email = rawAuthor;
     // ⚡ Bolt Optimization: Use indexOf and substring to avoid regex allocation overhead
-    const start = rawAuthor.indexOf('<');
+    const start = rawAuthor.lastIndexOf('<');
     if (start !== -1) {
         const end = rawAuthor.indexOf('>', start + 1);
         if (end !== -1) {
@@ -1026,22 +1026,27 @@ async function tab_mail_open_display(tab, message) {
             btn.style.marginLeft = '10px';
             btn.addEventListener('click', async () => {
               btn.disabled = true;
+              btn.setAttribute('aria-busy', 'true');
               btn.textContent = 'Scannen...';
               try {
                 const resp = await browser.runtime.sendMessage({ action: 'requestScan', messageId: messageId, senderEmail: senderEmail });
                 if (resp && resp.success) {
                   btn.textContent = 'Scan abgeschlossen';
+                  btn.removeAttribute('aria-busy');
                 } else if (resp && resp.error === 'permission_denied') {
                   btn.textContent = 'Erforderliche Berechtigung verweigert';
                   btn.disabled = false;
+                  btn.removeAttribute('aria-busy');
                 } else {
                   btn.textContent = 'Scan fehlgeschlagen';
                   btn.disabled = false;
+                  btn.removeAttribute('aria-busy');
                 }
               } catch (e) {
                 btn.textContent = 'Fehler beim Starten des Scans';
                 Logger.error(e);
                 btn.disabled = false;
+                btn.removeAttribute('aria-busy');
               }
             });
             banner.appendChild(btn);
@@ -1370,17 +1375,18 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
           if (!recordToSave.attachments) recordToSave.attachments = [];
 
           const existingAttMap = new Map();
-          recordToSave.attachments.forEach((a, i) => existingAttMap.set(a.attachment_name, i));
-
-          for (const newAtt of newAttachments) {
-              const existingAttIndex = existingAttMap.get(newAtt.attachment_name);
-              if (existingAttIndex !== undefined) {
-                  recordToSave.attachments[existingAttIndex] = newAtt;
-              } else {
-                  existingAttMap.set(newAtt.attachment_name, recordToSave.attachments.length);
-                  recordToSave.attachments.push(newAtt);
-              }
+          for (let i = 0; i < recordToSave.attachments.length; i++) {
+              const a = recordToSave.attachments[i];
+              existingAttMap.set(a.attachment_name, a);
           }
+
+          for (let i = 0; i < newAttachments.length; i++) {
+              const newAtt = newAttachments[i];
+              existingAttMap.set(newAtt.attachment_name, newAtt);
+          }
+
+          // ⚡ Bolt Optimization: Replace intermediate array tuples mapping indices with direct object mapping to avoid extra lookups and mutations
+          recordToSave.attachments = Array.from(existingAttMap.values());
         } else {
           // Create new record
           recordToSave = {
