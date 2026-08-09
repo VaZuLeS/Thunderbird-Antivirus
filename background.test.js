@@ -1320,6 +1320,69 @@ describe('background.js', () => {
         });
     });
 
+    describe('checkTyposquattingLink', () => {
+        let reasons;
+        let reasonsDomainsSet;
+        let checkedMainDomains;
+
+        beforeEach(() => {
+            reasons = [];
+            reasonsDomainsSet = new Set();
+            checkedMainDomains = new Map();
+        });
+
+        it('identifies typosquatting on known brands', () => {
+            const isTyposquatting = context.checkTyposquattingLink('paypa1.com', checkedMainDomains, reasons, reasonsDomainsSet);
+            assert.strictEqual(isTyposquatting, true);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('ähnelt verdächtig der bekannten Marke paypal.com'));
+            assert.ok(reasonsDomainsSet.has('paypa1.com'));
+            assert.strictEqual(checkedMainDomains.get('paypa1.com'), 'paypal.com');
+        });
+
+        it('returns false for domain length < 4', () => {
+            const isTyposquatting = context.checkTyposquattingLink('abc', checkedMainDomains, reasons, reasonsDomainsSet);
+            assert.strictEqual(isTyposquatting, false);
+            assert.strictEqual(checkedMainDomains.get('abc'), null);
+        });
+
+        it('returns false when length difference is > 2', () => {
+            const isTyposquatting = context.checkTyposquattingLink('paypal-is-great.com', checkedMainDomains, reasons, reasonsDomainsSet);
+            assert.strictEqual(isTyposquatting, false);
+            assert.strictEqual(checkedMainDomains.get('paypal-is-great.com'), null);
+        });
+
+        it('returns false for completely different domains', () => {
+            const isTyposquatting = context.checkTyposquattingLink('example.com', checkedMainDomains, reasons, reasonsDomainsSet);
+            assert.strictEqual(isTyposquatting, false);
+            assert.strictEqual(checkedMainDomains.get('example.com'), null);
+        });
+
+        it('uses cached brand match', () => {
+            checkedMainDomains.set('paypa1.com', 'paypal.com');
+            const isTyposquatting = context.checkTyposquattingLink('paypa1.com', checkedMainDomains, reasons, reasonsDomainsSet);
+            assert.strictEqual(isTyposquatting, true);
+            assert.strictEqual(reasons.length, 1);
+            assert.ok(reasons[0].includes('ähnelt verdächtig der bekannten Marke paypal.com'));
+            assert.ok(reasonsDomainsSet.has('paypa1.com'));
+        });
+
+        it('uses cached brand match but does not duplicate reasons if already in set', () => {
+            checkedMainDomains.set('paypa1.com', 'paypal.com');
+            reasonsDomainsSet.add('paypa1.com');
+            const isTyposquatting = context.checkTyposquattingLink('paypa1.com', checkedMainDomains, reasons, reasonsDomainsSet);
+            assert.strictEqual(isTyposquatting, true);
+            assert.strictEqual(reasons.length, 0);
+        });
+
+        it('uses cached null match', () => {
+            checkedMainDomains.set('example.com', null);
+            const isTyposquatting = context.checkTyposquattingLink('example.com', checkedMainDomains, reasons, reasonsDomainsSet);
+            assert.strictEqual(isTyposquatting, false);
+            assert.strictEqual(reasons.length, 0);
+        });
+    });
+
     describe('getMainDomain', () => {
         it('extracts known brand from subdomain', () => {
             assert.strictEqual(context.getMainDomain('www.paypal.com'), 'paypal.com');
