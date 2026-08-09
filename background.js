@@ -1026,22 +1026,27 @@ async function tab_mail_open_display(tab, message) {
             btn.style.marginLeft = '10px';
             btn.addEventListener('click', async () => {
               btn.disabled = true;
+              btn.setAttribute('aria-busy', 'true');
               btn.textContent = 'Scannen...';
               try {
                 const resp = await browser.runtime.sendMessage({ action: 'requestScan', messageId: messageId, senderEmail: senderEmail });
                 if (resp && resp.success) {
                   btn.textContent = 'Scan abgeschlossen';
+                  btn.removeAttribute('aria-busy');
                 } else if (resp && resp.error === 'permission_denied') {
                   btn.textContent = 'Erforderliche Berechtigung verweigert';
                   btn.disabled = false;
+                  btn.removeAttribute('aria-busy');
                 } else {
                   btn.textContent = 'Scan fehlgeschlagen';
                   btn.disabled = false;
+                  btn.removeAttribute('aria-busy');
                 }
               } catch (e) {
                 btn.textContent = 'Fehler beim Starten des Scans';
                 Logger.error(e);
                 btn.disabled = false;
+                btn.removeAttribute('aria-busy');
               }
             });
             banner.appendChild(btn);
