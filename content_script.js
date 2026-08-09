@@ -25,9 +25,9 @@
 
         if (state === 'MALICIOUS_VISUAL') {
             title.textContent = 'Warnung: Visuelles Phishing erkannt!';
-            title.style.color = 'red';
+            title.style.color = '#cc0000';
             message.textContent = 'Diese URL wurde von urlscan.io blockiert. Es könnte sich um eine gefälschte Login-Seite handeln.';
-            message.style.color = 'red';
+            message.style.color = '#cc0000';
             message.style.fontWeight = 'bold';
         } else {
             message.textContent = 'Dieser Link wurde noch nicht vollständig überprüft oder ist unbekannt.';
@@ -46,7 +46,7 @@
 
         if (reasons && reasons.length > 0) {
             const reasonList = document.createElement('ul');
-            reasonList.style.color = 'red';
+            reasonList.style.color = '#cc0000';
             reasons.forEach(r => {
                 const li = document.createElement('li');
                 li.textContent = r;
@@ -212,13 +212,20 @@ if (!document.getElementById('thundy-av-styles')) {
             width: 90%;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        .thundy-modal h2 { margin-top: 0; color: #ff8c00; }
+        .thundy-modal h2 { margin-top: 0; color: #b26000; }
         .thundy-modal button {
             padding: 8px 16px;
             margin-right: 10px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            transition: filter 0.2s ease, opacity 0.2s ease;
+        }
+        .thundy-modal button:hover {
+            filter: brightness(0.9);
+        }
+        .thundy-modal button:active {
+            filter: brightness(0.8);
         }
         .thundy-modal button:focus-visible {
             outline: 2px solid #005a9e;
@@ -226,7 +233,7 @@ if (!document.getElementById('thundy-av-styles')) {
         }
         .thundy-modal .thundy-btn-primary { background: #005a9e; color: white; }
         .thundy-modal .thundy-btn-success { background: #008000; color: white; }
-        .thundy-text-warning { color: #ff8c00 !important; }
+        .thundy-text-warning { color: #b26000 !important; }
         .thundy-text-info { color: #0000ff !important; }
         .thundy-mt-3 { margin-top: 15px; }
         .thundy-ml-2 { margin-left: 10px; }
