@@ -49,6 +49,10 @@ describe('content_script.js', () => {
             'function createWarningModal(url, linkElement, state, reasons) {',
             'globalThis.createWarningModal = function createWarningModal(url, linkElement, state, reasons) {'
         );
+        code = code.replace(
+            'function createLoadingModal(url) {',
+            'globalThis.createLoadingModal = function createLoadingModal(url) {'
+        );
         vm.runInContext(code, context);
     });
 
@@ -419,6 +423,36 @@ describe('content_script.js', () => {
             assert.ok(openBtn, 'Open Anyway button should be created');
             assert.ok(openBtn.classList.contains('thundy-ml-2'), 'Open Anyway button should have thundy-ml-2 class');
             assert.strictEqual(openBtn.textContent, 'Auf eigene Gefahr öffnen');
+        });
+    });
+
+    describe('createLoadingModal', () => {
+        it('should create modal elements correctly with expected classes and ARIA attributes', () => {
+            context.createLoadingModal('http://example.com/test');
+
+            const overlay = context.document.querySelector('.thundy-loading-overlay');
+            assert.ok(overlay, 'Overlay should be created');
+            assert.strictEqual(overlay.id, 'thundy-loading-modal');
+
+            const modal = overlay.querySelector('.thundy-modal');
+            assert.ok(modal, 'Modal should be created');
+
+            assert.strictEqual(modal.getAttribute('role'), 'dialog');
+            assert.strictEqual(modal.getAttribute('aria-modal'), 'true');
+            assert.strictEqual(modal.getAttribute('aria-labelledby'), 'thundy-loading-title');
+            assert.strictEqual(modal.getAttribute('aria-describedby'), 'thundy-loading-message');
+
+            const title = modal.querySelector('#thundy-loading-title');
+            assert.ok(title, 'Title should be created');
+            assert.ok(title.classList.contains('thundy-text-info'), 'Title should have thundy-text-info class');
+            assert.strictEqual(title.textContent, 'Time-of-Click Protection aktiv...');
+
+            const message = modal.querySelector('#thundy-loading-message');
+            assert.ok(message, 'Message should be created');
+            assert.strictEqual(message.textContent, 'URL wird in Echtzeit auf Bedrohungen analysiert (Computer Vision & Reputations-Check). Bitte haben Sie einen Moment Geduld.');
+
+            // Clean up for next tests if necessary
+            overlay.remove();
         });
     });
 });
