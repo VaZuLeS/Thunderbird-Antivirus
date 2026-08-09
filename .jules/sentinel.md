@@ -55,3 +55,7 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The custom blacklist and whitelist allowed malicious domains to bypass protection if the attacker used uppercase characters, because the configuration strictly checked the exact provided domains/emails without applying case normalization (like `.toLowerCase()`) directly inside the checkLists function.
 **Learning:** Security controls based on string matching (like blacklists) must normalize case for all comparisons to prevent trivial evasion, especially when inputs originate from different sources (UI config vs incoming email headers).
 **Prevention:** Always normalize security configuration data and evaluation inputs to a consistent case (e.g., lowercase) during ingestion or comparison.
+## 2026-08-09 - XSS Filter Evasion via Unicode Space Characters
+**Vulnerability:** The XSS filter failed to strip unicode space characters like `\u200B` (zero-width space) or `\u00A0` (non-breaking space) which are often ignored by browsers, allowing a bypass of the javascript: URI filter.
+**Learning:** Attackers can use exotic unicode whitespace characters to bypass filters that only look for standard ASCII whitespace.
+**Prevention:** Use comprehensive regex character classes for whitespace and control characters when sanitizing HTML attributes that may be interpreted as URIs.

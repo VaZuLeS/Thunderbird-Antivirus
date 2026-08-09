@@ -1729,7 +1729,7 @@ const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xli
 const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link', 'math', 'svg', 'noscript']);
 
 // ⚡ Bolt: Use a direct precompiled regex with bounds and no capturing groups for peak performance
-const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\uFFFD]/g;
+const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\xA0\u1680\u180E\u2000-\u2029\u202F\u205F\u3000\u200B-\u200D\uFEFF\uFFFD]/g;
 
 function disarmHTML(htmlString) {
     const parser = new DOMParser();
