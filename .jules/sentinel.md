@@ -59,3 +59,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The XSS filter failed to strip unicode space characters like `\u200B` (zero-width space) or `\u00A0` (non-breaking space) which are often ignored by browsers, allowing a bypass of the javascript: URI filter.
 **Learning:** Attackers can use exotic unicode whitespace characters to bypass filters that only look for standard ASCII whitespace.
 **Prevention:** Use comprehensive regex character classes for whitespace and control characters when sanitizing HTML attributes that may be interpreted as URIs.
+
+## 2026-08-09 - Insecure migration script removing safe DOMParser logic
+**Vulnerability:** Unused migration scripts (`replace_api_calls.js` and `replace_inner_html.js`) were committed to the repository that incorrectly replaced safe `DOMParser().parseFromString()` parsing of HTML nodes with an unsafe `container.appendChild(resultHtml)` string evaluation.
+**Learning:** Migration or scratchpad scripts that contain fundamentally broken or unsafe logic can be executed accidentally by developers, re-introducing previously fixed vulnerabilities. They also generate noise in security scanning tools.
+**Prevention:** Completely remove scratchpad and one-off migration scripts from the repository once they are no longer necessary, rather than allowing them to linger as dead code.
