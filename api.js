@@ -1,6 +1,3 @@
-const byteToHex = new Array(256);
-for (let i = 0; i < 256; i++) byteToHex[i] = i.toString(16).padStart(2, '0');
-
 const HTML_ESCAPE_FAST_REGEX = /[&<>"']/;
 
 function escapeHTML(str) {
@@ -417,7 +414,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
     pRescanStatus.setAttribute('role', 'status');
     card.appendChild(pRescanStatus);
 
-    if (attachmentName && (attachmentName.toLowerCase().endsWith('.html') || attachmentName.toLowerCase().endsWith('.htm'))) {
+    if (attachmentName && /\.html?$/i.test(attachmentName)) {
         const btnCdr = document.createElement('button');
         btnCdr.id = `btn-cdr-${hybrid_sha}`;
         btnCdr.className = "btn-primary mt-2 ml-2";
@@ -685,7 +682,7 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
     // ⚡ Bolt Optimization: Use a traditional for-loop instead of Array.from().map().join()
     // to avoid intermediate array allocation and function call overhead, which is ~5x faster.
     let urlId = '';
-    for (let j = 0; j < u8.length; j++) urlId += byteToHex[u8[j]];
+    for (let j = 0; j < u8.length; j++) urlId += u8[j].toString(16).padStart(2, '0');
 
     let card = document.createElement('div');
     card.className = "card card-info mb-3";
@@ -795,7 +792,7 @@ function createUploadButton(card, { hash, safeHash, attachmentName, messageId, p
 }
 
 function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
-    if (!attachmentName || (!attachmentName.toLowerCase().endsWith('.html') && !attachmentName.toLowerCase().endsWith('.htm'))) {
+    if (!attachmentName || !/\.html?$/i.test(attachmentName)) {
         return;
     }
 
