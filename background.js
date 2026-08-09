@@ -582,6 +582,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons, par
 function extractEmailAddress(rawAuthor) {
     let email = rawAuthor;
     // ⚡ Bolt Optimization: Use indexOf and substring to avoid regex allocation overhead
+    // 🛡️ Sentinel: Use lastIndexOf to prevent email spoofing via decoy display names
     const start = rawAuthor.lastIndexOf('<');
     if (start !== -1) {
         const end = rawAuthor.indexOf('>', start + 1);
