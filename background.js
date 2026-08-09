@@ -747,9 +747,11 @@ async function checkIPReputation(receivedHeaders) {
 
             if (ipChecks.length > 0) {
                 let results = await Promise.all(ipChecks);
-                for (let k = 0; k < results.length; k++) {
-                    if (results[k].isMalicious) {
-                        maliciousIps.push(results[k].ip);
+                for (const result of results) {
+                    // ⚡ Bolt Optimization: Replace traditional for-loop with for...of to improve readability
+                    // and allow JS engines to optimize iterator traversal over arrays without repeated index lookups.
+                    if (result.isMalicious) {
+                        maliciousIps.push(result.ip);
                     }
                 }
             }
