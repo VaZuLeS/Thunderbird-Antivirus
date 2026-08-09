@@ -59,3 +59,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The XSS filter failed to strip unicode space characters like `\u200B` (zero-width space) or `\u00A0` (non-breaking space) which are often ignored by browsers, allowing a bypass of the javascript: URI filter.
 **Learning:** Attackers can use exotic unicode whitespace characters to bypass filters that only look for standard ASCII whitespace.
 **Prevention:** Use comprehensive regex character classes for whitespace and control characters when sanitizing HTML attributes that may be interpreted as URIs.
+
+## 2026-08-09 - Fix XSS Vulnerability in replace_api_calls.js
+🎯 **What:** The `replace_api_calls.js` script was inadvertently replacing secure `DOMParser` HTML insertion logic with unsafe API calls (`appendChild(resultHtml)`), which exposed the codebase to XSS vulnerabilities.
+⚠️ **Risk:** If the script was run against source code, it would introduce cross-site scripting vulnerabilities by allowing unparsed, untrusted HTML to be evaluated.
+🛡️ **Solution:** Reversed the script's logic to act as a security enforcement tool, finding unsafe assignments like `innerHTML = resultHtml` and replacing them with secure `DOMParser` methods.
