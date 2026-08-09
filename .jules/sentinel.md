@@ -60,7 +60,7 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Learning:** Attackers can use exotic unicode whitespace characters to bypass filters that only look for standard ASCII whitespace.
 **Prevention:** Use comprehensive regex character classes for whitespace and control characters when sanitizing HTML attributes that may be interpreted as URIs.
 
-## 2026-08-10: False Positive XSS Alert from Migration Scripts
-**Vulnerability:** A one-off migration script (`replace_inner_html.js`) used a regular expression that literally contained the string `.innerHTML +=`. Even though this script was not part of the runtime code, security scanners (SAST) flagged the repository for XSS vulnerabilities because they detect the presence of the unsafe string.
-**Learning:** Security scanners often perform naive string matching on all files in the repository, including dead code, build artifacts, or one-off codemods. This can lead to false positives and noise in security dashboards.
-**Prevention:** Remove unused, one-off migration scripts or codemods immediately after they have been executed and their changes committed. Do not keep dead code in the repository.
+## 2026-08-09 - Insecure migration script removing safe DOMParser logic
+**Vulnerability:** Unused migration scripts (`replace_api_calls.js` and `replace_inner_html.js`) were committed to the repository that incorrectly replaced safe `DOMParser().parseFromString()` parsing of HTML nodes with an unsafe `container.appendChild(resultHtml)` string evaluation.
+**Learning:** Migration or scratchpad scripts that contain fundamentally broken or unsafe logic can be executed accidentally by developers, re-introducing previously fixed vulnerabilities. They also generate noise in security scanning tools.
+**Prevention:** Completely remove scratchpad and one-off migration scripts from the repository once they are no longer necessary, rather than allowing them to linger as dead code.
