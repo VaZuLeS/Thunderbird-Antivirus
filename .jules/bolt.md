@@ -4,3 +4,6 @@
 ## 2024-05-24 - Optimize escapeHTML with Regex check and manual loop
 **Learning:** While chained `.replace()` calls can sometimes beat global regex + dictionary lookup, combining a fast non-global regex `.test()` to skip clean strings with a manual string builder loop using `substring()` is significantly faster for HTML escaping in V8 (2x faster for clean strings, 33% faster for dirty strings).
 **Action:** When implementing frequent string escaping or sanitization functions on the hot path, benchmark against a manual loop that buffers slices with `substring()` instead of relying purely on regex replacements or array joins.
+## 2024-05-24 - Array.from for Sets
+**Learning:** Native engine optimizations make `Array.from()` or spread syntax significantly faster for Set-to-Array conversion than manual `.forEach` pushes, taking advantage of internal C++ bindings in V8.
+**Action:** Always prefer native conversion methods over manual iteration loops for Set manipulations in hot paths like URL extraction.
