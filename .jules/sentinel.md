@@ -56,7 +56,7 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Learning:** Security controls based on string matching (like blacklists) must normalize case for all comparisons to prevent trivial evasion, especially when inputs originate from different sources (UI config vs incoming email headers).
 **Prevention:** Always normalize security configuration data and evaluation inputs to a consistent case (e.g., lowercase) during ingestion or comparison.
 
-## 2024-08-09 - Fix Email Spoofing Vulnerability
-**Vulnerability:** The `extractEmailAddress` function used `indexOf('<')` to find the email address. An attacker could spoof the sender by sending `"Safe Sender <decoy@safe.com>" <hacker@evil.com>`, tricking the system into extracting the decoy address and bypassing filters.
-**Learning:** Parsing raw email headers requires finding the *last* valid address block to prevent spoofing via display names containing `< >`.
-**Prevention:** Use `lastIndexOf('<')` when parsing standard format `"Name" <email>` headers to ensure the actual routing address is parsed.
+## 2026-07-07 - Fix Email Extraction Evasion
+**Vulnerability:** The `extractEmailAddress` function parsed email addresses by locating the first `<` character. Attackers could evade email-based reputation checks and spoof addresses by placing a decoy like `<safe@domain.com>` before the actual `<hacker@evil.com>` in the author string.
+**Learning:** Naive string parsing (e.g., using `indexOf`) for complex, attacker-controlled structures like email headers is prone to injection or evasion attacks where attackers introduce decoy delimiters.
+**Prevention:** Use `lastIndexOf` or robust regex patterns (with `$` boundaries) to extract the *last* structured entity from user input when attempting to determine the final, actionable value.
