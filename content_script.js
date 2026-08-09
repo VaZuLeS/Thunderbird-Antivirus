@@ -141,7 +141,10 @@
             try {
                 protocol = new URL(url).protocol.toLowerCase();
             } catch (e) {
-                /* Ignore invalid URLs */
+                /* Block invalid URLs to avoid fail open */
+                event.preventDefault();
+                event.stopPropagation();
+                console.warn('Thundy AV: Blocked unparsable URL');
                 return;
             }
 

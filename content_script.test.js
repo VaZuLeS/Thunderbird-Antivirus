@@ -161,7 +161,7 @@ describe('content_script.js', () => {
         assert.strictEqual(dataEvent.defaultPrevented, true);
     });
 
-    it('should ignore malformed URLs that fail parsing', async () => {
+    it('should block malformed URLs that fail parsing', async () => {
         let messageSent = false;
         sendMessageMock = async () => { messageSent = true; return { status: 'CLEAN' }; };
 
@@ -176,7 +176,7 @@ describe('content_script.js', () => {
         invalidLink.dispatchEvent(event);
 
         assert.strictEqual(messageSent, false);
-        assert.strictEqual(event.defaultPrevented, false);
+        assert.strictEqual(event.defaultPrevented, true);
     });
 
     it('should allow the click when status is CLEAN', async () => {
