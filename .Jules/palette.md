@@ -96,3 +96,6 @@
 ## 2024-05-24 - Improve Typography and Color Contrast
 **Learning:** `word-break: break-all` splits words arbitrarily, harming readability and screen reader flow; `#ff8c00` and `#ff0000` fail WCAG AA contrast on white backgrounds.
 **Action:** Use `overflow-wrap: anywhere` with `word-break: normal` for wrapping, and darken warning/danger colors to ensure WCAG AA compliance.
+## 2024-05-24 - Content script interactive CSS states and contrast
+**Learning:** Isolated WebExtension content scripts do not naturally inherit interactive CSS states (`:hover`, `:active`) from the main UI stylesheets. Also, standard `red` and `#ff8c00` fail WCAG AA contrast guidelines on white backgrounds.
+**Action:** When injecting isolated UI components via content scripts, explicitly define interactive CSS states for interactive elements and use darker accessible shades like `#cc0000` (red) and `#b26000` (orange).
