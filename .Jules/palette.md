@@ -99,3 +99,6 @@
 ## 2024-10-24 - Improve color contrast for better readability
 **Learning:** Standard CSS colors like `red` (`#ff0000`) and orange (`#ff8c00`) fail to meet WCAG AA contrast guidelines for standard text on white backgrounds, reducing readability for visually impaired users.
 **Action:** Use darker shades like `#cc0000` (red) and `#b26000` (orange) for warning and error text on light backgrounds to ensure accessible contrast ratios.
+## 2024-10-25 - Semantic Textual Loading States
+**Learning:** Relying purely on static text like "(Bitte warten)" for loading states lacks immediate visual feedback. By extending the existing `aria-busy` CSS pattern to `[role="status"][aria-busy="true"]`, we can instantly attach consistent CSS loading spinners to any semantic loading text (like `<p role="status">`) across the extension without polluting the DOM with extra generic spinner `<div>`s.
+**Action:** When adding textual loading states, apply `role="status"` and `aria-busy="true"` to the text element to automatically inherit the design system's visual spinner, ensuring both sighted and screen reader users receive clear, consistent feedback.
