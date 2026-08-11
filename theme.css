@@ -194,7 +194,8 @@ button[aria-busy="true"]:disabled {
     to { transform: rotate(360deg); }
 }
 
-button[aria-busy="true"]::after {
+button[aria-busy="true"]::after,
+[role="status"][aria-busy="true"]::after {
     content: "";
     display: inline-block;
     width: 12px;

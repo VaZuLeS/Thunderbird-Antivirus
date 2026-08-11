@@ -103,6 +103,7 @@ if (apiContainer) {
     let loadingP = document.createElement('p');
     loadingP.setAttribute('aria-live', 'polite');
     loadingP.setAttribute('role', 'status');
+        loadingP.setAttribute('aria-busy', 'true');
     loadingP.className = 'text-info';
     loadingP.textContent = 'Lade Analyseergebnisse...';
 

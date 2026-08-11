@@ -114,6 +114,8 @@
 
         const message = document.createElement('p');
         message.id = 'thundy-loading-message';
+        message.setAttribute('role', 'status');
+        message.setAttribute('aria-busy', 'true');
         message.textContent = 'URL wird in Echtzeit auf Bedrohungen analysiert (Computer Vision & Reputations-Check). Bitte haben Sie einen Moment Geduld.';
 
         modal.appendChild(title);
@@ -240,6 +242,20 @@ if (!document.getElementById('thundy-av-styles')) {
         .thundy-text-info { color: #0000ff !important; }
         .thundy-mt-3 { margin-top: 15px; }
         .thundy-ml-2 { margin-left: 10px; }
+
+        @keyframes thundy-spin { to { transform: rotate(360deg); } }
+        .thundy-modal [role="status"][aria-busy="true"]::after {
+            content: "";
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-left: 8px;
+            vertical-align: middle;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: thundy-spin 0.8s linear infinite;
+        }
     `;
     document.head.appendChild(style);
 }
