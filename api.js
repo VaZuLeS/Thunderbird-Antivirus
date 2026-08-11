@@ -1,3 +1,8 @@
+const byteToHex = new Array(256);
+for (let n = 0; n <= 255; n++) {
+    byteToHex[n] = n.toString(16).padStart(2, '0');
+}
+
 const HTML_ESCAPE_FAST_REGEX = /[&<>"']/;
 
 function escapeHTML(str) {
@@ -680,10 +685,10 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
     let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
     const u8 = new TextEncoder().encode(url);
-    // ⚡ Bolt Optimization: Use a traditional for-loop instead of Array.from().map().join()
-    // to avoid intermediate array allocation and function call overhead, which is ~5x faster.
-    let urlId = '';
-    for (let j = 0; j < u8.length; j++) urlId += u8[j].toString(16).padStart(2, '0');
+    // ⚡ Bolt Optimization: Use a pre-allocated array and .join() to avoid string concatenation overhead.
+    const hex = new Array(u8.length);
+    for (let j = 0; j < u8.length; j++) hex[j] = byteToHex[u8[j]];
+    let urlId = hex.join('');
 
     let card = document.createElement('div');
     card.className = "card card-info mb-3";

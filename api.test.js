@@ -1137,8 +1137,11 @@ describe('renderManualUrlScanUI', () => {
         renderManualUrlScanUI(url, 'msg-123');
 
         const u8 = new TextEncoder().encode(url);
-        let urlId = '';
-        for (let j = 0; j < u8.length; j++) urlId += u8[j].toString(16).padStart(2, '0');
+        const byteToHexLocal = new Array(256);
+        for (let n = 0; n <= 255; n++) byteToHexLocal[n] = n.toString(16).padStart(2, '0');
+        const hex = new Array(u8.length);
+        for (let j = 0; j < u8.length; j++) hex[j] = byteToHexLocal[u8[j]];
+        let urlId = hex.join('');
 
         assert.ok(context.apiContentElement.innerHTML.includes(`upload-container-${urlId}`));
         assert.ok(context.apiContentElement.innerHTML.includes('http://example.com/test?a=1&amp;b=2'));
