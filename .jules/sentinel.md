@@ -64,3 +64,7 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** Unused migration scripts (`replace_api_calls.js` and `replace_inner_html.js`) were committed to the repository that incorrectly replaced safe `DOMParser().parseFromString()` parsing of HTML nodes with an unsafe `container.appendChild(resultHtml)` string evaluation.
 **Learning:** Migration or scratchpad scripts that contain fundamentally broken or unsafe logic can be executed accidentally by developers, re-introducing previously fixed vulnerabilities. They also generate noise in security scanning tools.
 **Prevention:** Completely remove scratchpad and one-off migration scripts from the repository once they are no longer necessary, rather than allowing them to linger as dead code.
+## 2024-05-15 - Delete Vulnerable Scratchpad Scripts
+**Vulnerability:** Email spoofing vulnerability using `match(/<([^>]+)>/)` to parse emails was found in `test_risk_score.js`.
+**Learning:** The vulnerability is located in a standalone scratchpad/debugging script that is not part of the application runtime.
+**Prevention:** When a security vulnerability is reported in a standalone scratchpad, debugging, or incomplete migration script, the correct remediation is to completely delete the script rather than attempting to patch it, preventing accidental execution and false positive security alerts.
