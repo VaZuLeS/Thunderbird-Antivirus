@@ -10,3 +10,6 @@
 ## 2024-08-09 - SHA-256 Hash String Concatenation Optimization
 **Learning:** Converting a `Uint8Array` to a hex string using `Array.from(u8).map(...)` is significantly slower (by about 40%) in V8 than naive string concatenation (`+=`) because of callback overhead and array creation. However, both can be beaten by a wide margin (2x faster) by using a pre-allocated array (`const hex = new Array(u8.length)`), a standard `for` loop to look up pre-computed hex values, and finally calling `.join('')`. Always benchmark proposed "modern" JS array method alternatives against basic loops when on hot paths.
 **Action:** When converting byte arrays to strings in hot paths, avoid `Array.from` and `.map`. Instead, use pre-allocated arrays, simple `for` loops, precomputed lookup tables, and `.join('')`.
+## 2024-05-24 - Optimizing URL Extraction
+**Learning:** Using a well-crafted global regular expression (`/https?:\/\/[^\s"'<>]+/g`) to extract URLs from large text blocks is significantly faster in Node.js/V8 than a complex manual string scanning loop with `indexOf` and `charCodeAt`. The built-in regex engine handles character classes and boundaries with highly optimized C++ code, outperforming manual loops by ~40% in benchmarks.
+**Action:** Replace the manual string scanning implementation in `extractUrls` with a regular expression based approach.
