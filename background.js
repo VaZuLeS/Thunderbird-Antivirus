@@ -1092,67 +1092,31 @@ function extractTextFromParts(part, outObj) {
   }
 }
 
+// ⚡ Bolt Optimization: Use a precompiled global regular expression to extract URLs.
+// This delegates the scanning to the highly optimized C++ regex engine in V8,
+// avoiding the overhead of manual JS character iteration and substring allocations.
+const EXTRACT_URL_REGEX = /https?:\/\/[^\s"'<>\x00-\x20\x7F]+/g;
+
 function extractUrls(text) {
     const urlSet = new Set();
-    const punct = ".,;:!)]";
-    let searchStart = 0;
-
-    while (true) {
-        // ⚡ Bolt Optimization: Find 'http' once instead of searching for 'http://' and 'https://' separately.
-        const startIdx = text.indexOf("http", searchStart);
-        if (startIdx === -1) break;
-
-        let isHttp = text.startsWith("http://", startIdx);
-        let isHttps = false;
-        let prefixLen = 7;
-
-        if (!isHttp) {
-            isHttps = text.startsWith("https://", startIdx);
-            if (isHttps) prefixLen = 8;
-        }
-
-        if (!isHttp && !isHttps) {
-            searchStart = startIdx + 1;
-            continue;
-        }
-
-        let endIdx = startIdx + prefixLen;
-        while (endIdx < text.length) {
-            const charCode = text.charCodeAt(endIdx);
-
-            if (charCode <= 32 || charCode === 34 || charCode === 39 || charCode === 60 || charCode === 62) {
-                if (charCode === 32 || charCode === 9 || charCode === 10 || charCode === 13 ||
-                    charCode === 34 || charCode === 39 || charCode === 60 || charCode === 62) {
-                    break;
-                }
-            } else if (charCode > 127 && /\s/.test(text[endIdx])) {
+    let match;
+    EXTRACT_URL_REGEX.lastIndex = 0;
+    while ((match = EXTRACT_URL_REGEX.exec(text)) !== null) {
+        let url = match[0];
+        let len = url.length;
+        while (len > 0) {
+            let c = url.charCodeAt(len - 1);
+            // Check for trailing punctuation: '.', ',', ';', ':', '!', ')', ']'
+            if (c === 46 || c === 44 || c === 59 || c === 58 || c === 33 || c === 41 || c === 93) {
+                len--;
+            } else {
                 break;
             }
-            endIdx++;
         }
-
-        if (endIdx > startIdx + prefixLen) {
-            let url = text.substring(startIdx, endIdx);
-
-            let len = url.length;
-            while(len > 0) {
-                let c = url.charCodeAt(len - 1);
-                // Check for '.', ',', ';', ':', '!', ')', ']'
-                if (c === 46 || c === 44 || c === 59 || c === 58 || c === 33 || c === 41 || c === 93) {
-                    len--;
-                } else {
-                    break;
-                }
-            }
-            if (len !== url.length) {
-                url = url.substring(0, len);
-            }
-
-            // ⚡ Bolt Optimization: Use Set for O(1) deduplication, which significantly outperforms Array indexOf for large numbers of links
-            urlSet.add(url);
+        if (len !== url.length) {
+            url = url.substring(0, len);
         }
-
-        searchStart = endIdx === startIdx ? startIdx + 1 : endIdx;
+        urlSet.add(url);
     }
     return Array.from(urlSet);
 }
