@@ -323,44 +323,56 @@ function checkLists(email, senderDomain) {
     if (email) email = email.toLowerCase();
     if (senderDomain) senderDomain = senderDomain.toLowerCase();
 
-    // Check Blacklist
-    if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.size > 0) {
+    const hasBlacklist = typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.size > 0;
+    const hasWhitelist = typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.size > 0;
+
+    if (!hasBlacklist && !hasWhitelist) return null;
+
+    let isWhitelisted = null;
+
+    // ⚡ Bolt Optimization: Combine blacklist and whitelist checks to avoid repeating expensive indexOf and substring allocations twice
+    if (hasBlacklist) {
         if (customBlacklist.has(email)) {
             return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
-        // ⚡ Bolt Optimization: Replace O(n) array iteration with O(1) set lookups for domain checking
         if (customBlacklist.has(senderDomain)) {
             return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${senderDomain}).`], listType: 'blacklist' };
         }
+    }
+
+    if (hasWhitelist) {
+        if (customWhitelist.has(email)) {
+            isWhitelisted = { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
+        } else if (customWhitelist.has(senderDomain)) {
+            isWhitelisted = { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${senderDomain}).`], listType: 'whitelist' };
+        }
+
+        // ⚡ Bolt Optimization: Early return if no blacklist exists and we found a whitelist match
+        if (!hasBlacklist && isWhitelisted !== null) {
+            return isWhitelisted;
+        }
+    }
+
+    if (senderDomain) {
         let dotIdx = senderDomain.indexOf('.');
         while (dotIdx !== -1) {
             let parentDomain = senderDomain.substring(dotIdx + 1);
-            if (customBlacklist.has(parentDomain)) {
+
+            if (hasBlacklist && customBlacklist.has(parentDomain)) {
                 return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${parentDomain}).`], listType: 'blacklist' };
             }
+            if (hasWhitelist && isWhitelisted === null && customWhitelist.has(parentDomain)) {
+                isWhitelisted = { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${parentDomain}).`], listType: 'whitelist' };
+                if (!hasBlacklist) {
+                     return isWhitelisted;
+                }
+            }
+
             dotIdx = senderDomain.indexOf('.', dotIdx + 1);
         }
     }
 
-    // Check Whitelist
-    if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.size > 0) {
-        if (customWhitelist.has(email)) {
-            return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
-        }
-        // ⚡ Bolt Optimization: Replace O(n) array iteration with O(1) set lookups for domain checking
-        if (customWhitelist.has(senderDomain)) {
-            return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${senderDomain}).`], listType: 'whitelist' };
-        }
-        let dotIdx = senderDomain.indexOf('.');
-        while (dotIdx !== -1) {
-            let parentDomain = senderDomain.substring(dotIdx + 1);
-            if (customWhitelist.has(parentDomain)) {
-                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${parentDomain}).`], listType: 'whitelist' };
-            }
-            dotIdx = senderDomain.indexOf('.', dotIdx + 1);
-        }
-    }
-    return null;
+    return isWhitelisted;
 }
 
 function evaluateAuthHeaders(authHeaders, score, reasons) {
