@@ -139,6 +139,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }).catch(error => {
         console.error("Speichern fehlgeschlagen", error);
+        let statusSpan = document.getElementById('saveStatus');
+        statusSpan.textContent = 'Fehler beim Speichern!';
+        statusSpan.className = 'text-danger ml-2';
+        statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
         saveBtn.textContent = 'Speichern';
