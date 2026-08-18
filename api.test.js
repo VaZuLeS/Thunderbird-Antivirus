@@ -1543,7 +1543,9 @@ describe('handleUploadClick', () => {
         };
         const statusEl = {
             textContent: '',
-            innerText: ''
+            innerText: '',
+            setAttribute: function(k, v) { this[k] = v; },
+            removeAttribute: function(k) { delete this[k]; }
         };
         context.mockElements['upload-status-safeHash2'] = statusEl;
 
@@ -1607,7 +1609,9 @@ describe('handleUploadClick', () => {
         };
         const statusEl = {
             textContent: '',
-            innerText: ''
+            innerText: '',
+            setAttribute: function(k, v) { this[k] = v; },
+            removeAttribute: function(k) { delete this[k]; }
         };
         context.mockElements['upload-status-safeHash3'] = statusEl;
 
@@ -1641,7 +1645,9 @@ describe('handleUploadClick', () => {
         };
         const statusEl = {
             textContent: '',
-            innerText: ''
+            innerText: '',
+            setAttribute: function(k, v) { this[k] = v; },
+            removeAttribute: function(k) { delete this[k]; }
         };
         context.mockElements['upload-status-safeHash4'] = statusEl;
 
