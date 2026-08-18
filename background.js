@@ -968,13 +968,7 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
 async function tab_mail_open_display(tab, message) {
   try {
     // Determine sender email for per-sender opt-in storage
-    let senderEmail = message.author || '';
-    const start = senderEmail.indexOf('<');
-    if (start !== -1) {
-      const end = senderEmail.indexOf('>', start + 1);
-      if (end !== -1) senderEmail = senderEmail.substring(start + 1, end);
-    }
-    senderEmail = senderEmail.toLowerCase();
+    let senderEmail = extractEmailAddress(message.author || '');
 
     const stored = await browser.storage.local.get('scanningEnabledSenders');
     const enabledSenders = stored.scanningEnabledSenders || [];
