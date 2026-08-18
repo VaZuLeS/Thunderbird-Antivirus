@@ -512,6 +512,8 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
             btn.setAttribute('aria-busy', 'true');
             btn.innerText = "Sende Rescan...";
             statusEl.innerText = "Datei wird für Rescan hochgeladen...";
+            statusEl.setAttribute('role', 'status');
+            statusEl.setAttribute('aria-busy', 'true');
 
             browser.runtime.sendMessage({
                 action: "uploadAttachment",
@@ -523,6 +525,7 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
             }).then(res => {
                 if (res && res.status === 'success') {
                     statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
+                    statusEl.removeAttribute('aria-busy');
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2";
                     btn.innerText = "Erfolgreich";
@@ -532,12 +535,14 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
                     }, 2000);
                 } else {
                     statusEl.innerText = "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler");
+                    statusEl.removeAttribute('aria-busy');
                     btn.disabled = false;
                     btn.removeAttribute('aria-busy');
                     btn.innerText = "Erneut versuchen";
                 }
             }).catch(err => {
                 statusEl.innerText = "Kommunikationsfehler: " + err;
+                statusEl.removeAttribute('aria-busy');
                 btn.disabled = false;
                 btn.removeAttribute('aria-busy');
                 btn.innerText = "Erneut versuchen";
@@ -556,6 +561,8 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
             btn.setAttribute('aria-busy', 'true');
             btn.innerText = "Bereinige...";
             statusEl.innerText = "Lokales CDR wird durchgeführt...";
+            statusEl.setAttribute('role', 'status');
+            statusEl.setAttribute('aria-busy', 'true');
 
             browser.runtime.sendMessage({
                 action: "downloadDisarmed",
@@ -565,17 +572,20 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
             }).then(res => {
                 if (res && res.status === 'success') {
                     statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                    statusEl.removeAttribute('aria-busy');
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2 ml-2";
                     btn.innerText = "Bereinigt";
                 } else {
                     statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
+                    statusEl.removeAttribute('aria-busy');
                     btn.disabled = false;
                     btn.removeAttribute('aria-busy');
                     btn.innerText = "Erneut versuchen";
                 }
             }).catch(err => {
                 statusEl.innerText = "Kommunikationsfehler: " + err;
+                statusEl.removeAttribute('aria-busy');
                 btn.disabled = false;
                 btn.removeAttribute('aria-busy');
                 btn.innerText = "Erneut versuchen";
@@ -646,6 +656,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
     btn.setAttribute('aria-busy', 'true');
     btn.innerText = "Sende URL...";
     statusEl.innerText = "URL wird an Hybrid Analysis übertragen...";
+    statusEl.setAttribute('role', 'status');
+    statusEl.setAttribute('aria-busy', 'true');
 
     browser.runtime.sendMessage({
         action: "scanUrl",
@@ -654,6 +666,7 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
     }).then(response => {
         if (response && response.status === 'success') {
             statusEl.innerText = "Scan erfolgreich beauftragt! Lade Analyseergebnisse...";
+            statusEl.removeAttribute('aria-busy');
             btn.removeAttribute('aria-busy');
             btn.className = "btn-success mt-2";
             btn.innerText = "Erfolgreich";
@@ -669,12 +682,14 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
             }, 3000);
         } else {
             statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
+            statusEl.removeAttribute('aria-busy');
             btn.disabled = false;
             btn.removeAttribute('aria-busy');
             btn.innerText = "Erneut versuchen";
         }
     }).catch(err => {
         statusEl.innerText = "Kommunikationsfehler: " + err;
+        statusEl.removeAttribute('aria-busy');
         btn.disabled = false;
         btn.removeAttribute('aria-busy');
         btn.innerText = "Erneut versuchen";
@@ -736,7 +751,11 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
         btn.disabled = true;
         btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Lade hoch...";
-        if (statusEl) statusEl.textContent = "Datei wird an Hybrid Analysis übertragen...";
+        if (statusEl) {
+            statusEl.textContent = "Datei wird an Hybrid Analysis übertragen...";
+            statusEl.setAttribute('role', 'status');
+            statusEl.setAttribute('aria-busy', 'true');
+        }
 
         browser.runtime.sendMessage({
             action: "uploadAttachment",
@@ -748,6 +767,7 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
         }).then(response => {
             if (response && response.status === 'success') {
                 if (statusEl) statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
+                if (statusEl) statusEl.removeAttribute('aria-busy');
                 btn.removeAttribute('aria-busy');
                 btn.className = "btn-success mt-2";
                 btn.innerText = "Erfolgreich";
@@ -765,12 +785,14 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                 }, 3000);
             } else {
                 if (statusEl) statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
+                if (statusEl) statusEl.removeAttribute('aria-busy');
                 btn.disabled = false;
                 btn.removeAttribute('aria-busy');
                 btn.innerText = "Erneut versuchen";
             }
         }).catch(err => {
             if (statusEl) statusEl.innerText = "Kommunikationsfehler: " + err;
+            if (statusEl) statusEl.removeAttribute('aria-busy');
             btn.disabled = false;
             btn.removeAttribute('aria-busy');
             btn.innerText = "Erneut versuchen";
@@ -822,7 +844,11 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
         btn.disabled = true;
         if (btn) btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Bereinige...";
-        if (statusEl) statusEl.textContent = "Lokales CDR wird durchgeführt...";
+        if (statusEl) {
+            statusEl.textContent = "Lokales CDR wird durchgeführt...";
+            statusEl.setAttribute('role', 'status');
+            statusEl.setAttribute('aria-busy', 'true');
+        }
 
         browser.runtime.sendMessage({
             action: "downloadDisarmed",
@@ -832,6 +858,7 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
         }).then(res => {
             if (res && res.status === 'success') {
                 if (statusEl) statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                if (statusEl) statusEl.removeAttribute('aria-busy');
                 if (btn) {
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2 ml-2";
@@ -839,12 +866,14 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
                 }
             } else {
                 if (statusEl) statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
+                if (statusEl) statusEl.removeAttribute('aria-busy');
                 btn.disabled = false;
                 if (btn) btn.removeAttribute('aria-busy');
                 btn.innerText = "Erneut versuchen";
             }
         }).catch(err => {
             if (statusEl) statusEl.innerText = "Kommunikationsfehler: " + err;
+            if (statusEl) statusEl.removeAttribute('aria-busy');
             btn.disabled = false;
             if (btn) btn.removeAttribute('aria-busy');
             btn.innerText = "Erneut versuchen";
