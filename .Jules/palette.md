@@ -102,3 +102,6 @@
 ## 2024-10-25 - Semantic Textual Loading States
 **Learning:** Relying purely on static text like "(Bitte warten)" for loading states lacks immediate visual feedback. By extending the existing `aria-busy` CSS pattern to `[role="status"][aria-busy="true"]`, we can instantly attach consistent CSS loading spinners to any semantic loading text (like `<p role="status">`) across the extension without polluting the DOM with extra generic spinner `<div>`s.
 **Action:** When adding textual loading states, apply `role="status"` and `aria-busy="true"` to the text element to automatically inherit the design system's visual spinner, ensuring both sighted and screen reader users receive clear, consistent feedback.
+## 2024-11-20 - Explicit Feedback on Async Form Saves
+**Learning:** During asynchronous form submissions (like saving configuration settings to `browser.storage.local`), failing silently or logging errors only to the console leaves users unaware if their settings actually saved.
+**Action:** Always implement explicit, visual UI feedback for both success and error states on async forms (e.g., updating a status span with appropriate classes like `text-success` and `text-danger`). Ensure success states properly overwrite previous error states to prevent stale error messages from lingering after a subsequent successful action.

@@ -109,6 +109,8 @@ document.addEventListener('DOMContentLoaded', function() {
         timeOfClickProtection: timeOfClickProtectionSetting
     }).then(async () => {
         let statusSpan = document.getElementById('saveStatus');
+        statusSpan.textContent = 'Erfolgreich gespeichert!';
+        statusSpan.className = 'text-success ml-2';
         statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
@@ -142,6 +144,11 @@ document.addEventListener('DOMContentLoaded', function() {
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
         saveBtn.textContent = 'Speichern';
+
+        let statusSpan = document.getElementById('saveStatus');
+        statusSpan.textContent = 'Fehler beim Speichern!';
+        statusSpan.className = 'text-danger ml-2';
+        statusSpan.style.display = 'inline';
     });
   });
 
