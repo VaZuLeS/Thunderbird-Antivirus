@@ -182,6 +182,11 @@ describe('options.js', () => {
 
         assert.strictEqual(saveBtn.disabled, false);
         assert.strictEqual(saveBtn.textContent, 'Speichern');
+
+        const statusSpan = context.document.getElementById('saveStatus');
+        assert.strictEqual(statusSpan.style.display, 'inline');
+        assert.strictEqual(statusSpan.textContent, 'Fehler beim Speichern!');
+        assert.strictEqual(statusSpan.className, 'text-danger ml-2');
     });
 
     it('should clear cache when clearCache button is clicked (success)', async () => {
