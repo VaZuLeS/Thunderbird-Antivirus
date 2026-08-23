@@ -969,7 +969,7 @@ async function tab_mail_open_display(tab, message) {
   try {
     // Determine sender email for per-sender opt-in storage
     let senderEmail = message.author || '';
-    const start = senderEmail.indexOf('<');
+    const start = senderEmail.lastIndexOf('<');
     if (start !== -1) {
       const end = senderEmail.indexOf('>', start + 1);
       if (end !== -1) senderEmail = senderEmail.substring(start + 1, end);
