@@ -109,6 +109,8 @@ document.addEventListener('DOMContentLoaded', function() {
         timeOfClickProtection: timeOfClickProtectionSetting
     }).then(async () => {
         let statusSpan = document.getElementById('saveStatus');
+        statusSpan.textContent = 'Erfolgreich gespeichert!';
+        statusSpan.className = 'text-success ml-2';
         statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
@@ -126,19 +128,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        if (statusSpan.id === 'status') {
-            if (_saveTimeoutId) clearTimeout(_saveTimeoutId);
-            _saveTimeoutId = setTimeout(() => {
-                if (statusSpan.style) statusSpan.style.display = 'none';
-            }, 3000);
-        } else {
-            if (_clearTimeoutId) clearTimeout(_clearTimeoutId);
-            _clearTimeoutId = setTimeout(() => {
-                if (statusSpan.style) statusSpan.style.display = 'none';
-            }, 3000);
-        }
+        if (_saveTimeoutId) clearTimeout(_saveTimeoutId);
+        _saveTimeoutId = setTimeout(() => {
+            if (statusSpan.style) statusSpan.style.display = 'none';
+        }, 3000);
     }).catch(error => {
         console.error("Speichern fehlgeschlagen", error);
+        let statusSpan = document.getElementById('saveStatus');
+        statusSpan.textContent = 'Fehler beim Speichern!';
+        statusSpan.className = 'text-danger ml-2';
+        statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
         saveBtn.textContent = 'Speichern';
@@ -179,15 +178,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     statusSpan.style.display = 'inline';
-    if (statusSpan.id === 'status') {
-            if (_saveTimeoutId) clearTimeout(_saveTimeoutId);
-            _saveTimeoutId = setTimeout(() => {
-                if (statusSpan.style) statusSpan.style.display = 'none';
-            }, 3000);
-        } else {
-            if (_clearTimeoutId) clearTimeout(_clearTimeoutId);
-            _clearTimeoutId = setTimeout(() => {
-                if (statusSpan.style) statusSpan.style.display = 'none';
-            }, 3000);
-        }
+    if (_clearTimeoutId) clearTimeout(_clearTimeoutId);
+    _clearTimeoutId = setTimeout(() => {
+        if (statusSpan.style) statusSpan.style.display = 'none';
+    }, 3000);
   });
