@@ -1996,6 +1996,13 @@ describe('background.js', () => {
             assert.ok(!result.includes('javascript:'), 'evaded javascript URI should be removed');
         });
 
+        it('prevents DOM clobbering bypasses', () => {
+            const input = '<form action="javascript:alert(1)"><input id="attributes"><input id="hasAttributes"></form>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('javascript:'), 'action attribute should be removed even with DOM clobbering');
+            assert.ok(result.includes('<form'), 'form element should remain');
+        });
+
         it('removes data and vbscript URIs', () => {
             const input = '<html><body><a href="data:text/html,<script>alert(1)</script>">Data Link</a><img src="vbscript:msgbox(\'hello\')"></body></html>';
             const result = context.disarmHTML(input);
