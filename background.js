@@ -1757,19 +1757,70 @@ function disarmHTML(htmlString) {
                 if (activeTags.has(el.tagName.toLowerCase())) {
                     nodesToRemove.push(el);
                 } else {
-                    if (el.hasAttributes()) {
-                        for (let j = el.attributes.length - 1; j >= 0; j--) {
-                            const attrName = el.attributes[j].name.toLowerCase();
-                            if (attrName.startsWith('on')) {
-                                el.removeAttribute(attrName);
-                                continue;
+                    // 🛡️ Sentinel Optimization: Prevent DOM clobbering of el.hasAttributes and el.attributes
+                    const getAttributeNames = typeof Element !== 'undefined' ? Element.prototype.getAttributeNames : null;
+                    const getAttribute = typeof Element !== 'undefined' ? Element.prototype.getAttribute : null;
+                    const removeAttribute = typeof Element !== 'undefined' ? Element.prototype.removeAttribute : null;
+
+                    if (getAttributeNames && getAttribute && removeAttribute) {
+                        const attrNames = getAttributeNames.call(el);
+                        if (attrNames.length > 0) {
+                            for (let j = attrNames.length - 1; j >= 0; j--) {
+                                const attrName = attrNames[j].toLowerCase();
+                                if (attrName.startsWith('on')) {
+                                    removeAttribute.call(el, attrName);
+                                    continue;
+                                }
+                                if (dangerousAttributes.has(attrName)) {
+                                    let val = getAttribute.call(el, attrName).toLowerCase();
+                                    // Remove control characters (like tabs/newlines) that might evade the check
+                                    let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
+                                    if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
+                                        removeAttribute.call(el, attrName);
+                                    }
+                                }
                             }
-                            if (dangerousAttributes.has(attrName)) {
-                                let val = el.attributes[j].value.toLowerCase();
-                                // Remove control characters (like tabs/newlines) that might evade the check
-                                let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
-                                if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
+                        }
+                    } else {
+                        // Fallback for environments where Element might not be defined globally (like some test VMs)
+                        // but where el still has methods.
+                        if (typeof el.getAttributeNames === 'function') {
+                            const attrNames = el.getAttributeNames();
+                            for (let j = attrNames.length - 1; j >= 0; j--) {
+                                const attrName = attrNames[j].toLowerCase();
+                                if (attrName.startsWith('on')) {
                                     el.removeAttribute(attrName);
+                                    continue;
+                                }
+                                if (dangerousAttributes.has(attrName)) {
+                                    let val = el.getAttribute(attrName).toLowerCase();
+                                    let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
+                                    if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
+                                        el.removeAttribute(attrName);
+                                    }
+                                }
+                            }
+                        } else if (el.attributes) {
+                            // Fallback if getAttributeNames is missing, though vulnerable if in browser
+                            // In test VM without `Element`, this might be necessary.
+                            const attrs = el.attributes;
+                            if (typeof attrs.length === 'number') {
+                                for (let j = attrs.length - 1; j >= 0; j--) {
+                                    const attr = attrs[j];
+                                    if (attr && attr.name) {
+                                        const attrName = attr.name.toLowerCase();
+                                        if (attrName.startsWith('on')) {
+                                            el.removeAttribute(attrName);
+                                            continue;
+                                        }
+                                        if (dangerousAttributes.has(attrName)) {
+                                            let val = attr.value.toLowerCase();
+                                            let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
+                                            if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
+                                                el.removeAttribute(attrName);
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
