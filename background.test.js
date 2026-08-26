@@ -172,6 +172,8 @@ describe('background.js', () => {
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
         context.URLSearchParams = URLSearchParams;
+        context.Element = (new (require("jsdom").JSDOM)()).window.Element;
+        context.Element = (new (require("jsdom").JSDOM)()).window.Element;
         vm.runInContext(wrappedCode, context);
 
         if (context.knownSendersCache) context.knownSendersCache.clear();
