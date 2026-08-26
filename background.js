@@ -1757,19 +1757,20 @@ function disarmHTML(htmlString) {
                 if (activeTags.has(el.tagName.toLowerCase())) {
                     nodesToRemove.push(el);
                 } else {
-                    if (el.hasAttributes()) {
-                        for (let j = el.attributes.length - 1; j >= 0; j--) {
-                            const attrName = el.attributes[j].name.toLowerCase();
+                    if (Element.prototype.hasAttributes.call(el)) {
+                        const attrNames = Element.prototype.getAttributeNames.call(el);
+                        for (let j = attrNames.length - 1; j >= 0; j--) {
+                            const attrName = attrNames[j].toLowerCase();
                             if (attrName.startsWith('on')) {
-                                el.removeAttribute(attrName);
+                                Element.prototype.removeAttribute.call(el, attrName);
                                 continue;
                             }
                             if (dangerousAttributes.has(attrName)) {
-                                let val = el.attributes[j].value.toLowerCase();
+                                let val = Element.prototype.getAttribute.call(el, attrName).toLowerCase();
                                 // Remove control characters (like tabs/newlines) that might evade the check
                                 let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                                    el.removeAttribute(attrName);
+                                    Element.prototype.removeAttribute.call(el, attrName);
                                 }
                             }
                         }
