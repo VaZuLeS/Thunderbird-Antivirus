@@ -102,3 +102,6 @@
 ## 2024-10-25 - Semantic Textual Loading States
 **Learning:** Relying purely on static text like "(Bitte warten)" for loading states lacks immediate visual feedback. By extending the existing `aria-busy` CSS pattern to `[role="status"][aria-busy="true"]`, we can instantly attach consistent CSS loading spinners to any semantic loading text (like `<p role="status">`) across the extension without polluting the DOM with extra generic spinner `<div>`s.
 **Action:** When adding textual loading states, apply `role="status"` and `aria-busy="true"` to the text element to automatically inherit the design system's visual spinner, ensuring both sighted and screen reader users receive clear, consistent feedback.
+## 2024-05-18 - Avoid copy-pasting status hiding logic
+**Learning:** The logic to hide status messages after 3 seconds was using `if (statusSpan.id === 'status')` but the status span ID was `saveStatus` or `clearCacheStatus`. The `else` branch triggered `_clearTimeoutId` incorrectly for the save button.
+**Action:** Use specific timeout variables for each button (`_saveTimeoutId`, `_clearTimeoutId`) instead of relying on a broken ID check.
