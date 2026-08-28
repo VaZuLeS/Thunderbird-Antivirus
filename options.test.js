@@ -166,7 +166,10 @@ describe('options.js', () => {
         // saveStatus block
         // It sets display to 'inline' then after timeout to 'none'.
         // Since we mock setTimeout to fire immediately, it will be 'none' again.
-        assert.strictEqual(context.document.getElementById('saveStatus').style.display, 'none');
+        const saveStatus = context.document.getElementById('saveStatus');
+        assert.strictEqual(saveStatus.style.display, 'none');
+        assert.strictEqual(saveStatus.textContent, 'Erfolgreich gespeichert!');
+        assert.strictEqual(saveStatus.className, 'text-success ml-2');
     });
 
     it('should handle save error', async () => {
@@ -182,6 +185,11 @@ describe('options.js', () => {
 
         assert.strictEqual(saveBtn.disabled, false);
         assert.strictEqual(saveBtn.textContent, 'Speichern');
+
+        const saveStatus = context.document.getElementById('saveStatus');
+        assert.strictEqual(saveStatus.textContent, 'Fehler beim Speichern!');
+        assert.strictEqual(saveStatus.className, 'text-danger ml-2');
+        assert.strictEqual(saveStatus.style.display, 'none');
     });
 
     it('should clear cache when clearCache button is clicked (success)', async () => {
