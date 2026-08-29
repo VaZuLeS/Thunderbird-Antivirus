@@ -180,6 +180,11 @@ describe('options.js', () => {
 
         await new Promise(resolve => setTimeout(resolve, 10));
 
+        const statusSpan = context.document.getElementById('saveStatus');
+        assert.strictEqual(statusSpan.textContent, 'Speichern fehlgeschlagen.');
+        assert.strictEqual(statusSpan.className, 'text-danger ml-2');
+        assert.strictEqual(statusSpan.style.display, 'inline');
+
         assert.strictEqual(saveBtn.disabled, false);
         assert.strictEqual(saveBtn.textContent, 'Speichern');
     });
