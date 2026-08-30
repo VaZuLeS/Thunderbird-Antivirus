@@ -88,6 +88,21 @@
                 e.preventDefault();
                 overlay.remove();
                 linkElement.focus();
+            } else if (e.key === 'Tab') {
+                const focusable = modal.querySelectorAll('button');
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+                if (e.shiftKey) {
+                    if (document.activeElement === first) {
+                        e.preventDefault();
+                        last.focus();
+                    }
+                } else {
+                    if (document.activeElement === last) {
+                        e.preventDefault();
+                        first.focus();
+                    }
+                }
             }
         });
 
@@ -124,6 +139,12 @@
         document.body.appendChild(overlay);
         modal.tabIndex = -1;
         modal.focus();
+
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+            }
+        });
 
         return overlay;
     }
