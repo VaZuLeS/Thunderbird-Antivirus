@@ -88,6 +88,18 @@
                 e.preventDefault();
                 overlay.remove();
                 linkElement.focus();
+            } else if (e.key === 'Tab') {
+                if (e.shiftKey) {
+                    if (document.activeElement === cancelBtn) {
+                        e.preventDefault();
+                        openBtn.focus();
+                    }
+                } else {
+                    if (document.activeElement === openBtn) {
+                        e.preventDefault();
+                        cancelBtn.focus();
+                    }
+                }
             }
         });
 
@@ -124,6 +136,12 @@
         document.body.appendChild(overlay);
         modal.tabIndex = -1;
         modal.focus();
+
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+            }
+        });
 
         return overlay;
     }
