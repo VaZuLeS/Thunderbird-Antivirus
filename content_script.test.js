@@ -424,6 +424,28 @@ describe('content_script.js', () => {
             assert.ok(openBtn.classList.contains('thundy-ml-2'), 'Open Anyway button should have thundy-ml-2 class');
             assert.strictEqual(openBtn.textContent, 'Auf eigene Gefahr öffnen');
         });
+
+        it('should trap focus within the modal for Tab and Shift+Tab', () => {
+            const link = context.document.getElementById('unsafe-link');
+            context.createWarningModal('http://example.com/test', link, 'UNKNOWN');
+
+            const overlay = context.document.querySelector('.thundy-overlay');
+            const modal = overlay.querySelector('.thundy-modal');
+            const cancelBtn = overlay.querySelector('.thundy-btn-success');
+            const openBtn = overlay.querySelector('.thundy-btn-primary');
+
+            assert.strictEqual(context.document.activeElement, cancelBtn);
+
+            let shiftTabEvent = new dom.window.KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+            modal.dispatchEvent(shiftTabEvent);
+            assert.strictEqual(shiftTabEvent.defaultPrevented, true);
+            assert.strictEqual(context.document.activeElement, openBtn);
+
+            let tabEvent = new dom.window.KeyboardEvent('keydown', { key: 'Tab', shiftKey: false, bubbles: true, cancelable: true });
+            modal.dispatchEvent(tabEvent);
+            assert.strictEqual(tabEvent.defaultPrevented, true);
+            assert.strictEqual(context.document.activeElement, cancelBtn);
+        });
     });
 
     describe('createLoadingModal', () => {
@@ -452,6 +474,18 @@ describe('content_script.js', () => {
             assert.strictEqual(message.textContent, 'URL wird in Echtzeit auf Bedrohungen analysiert (Computer Vision & Reputations-Check). Bitte haben Sie einen Moment Geduld.');
 
             // Clean up for next tests if necessary
+            overlay.remove();
+        });
+
+        it('should prevent Tab focus changes', () => {
+            const overlay = context.createLoadingModal('http://example.com/test');
+            const modal = overlay.querySelector('.thundy-modal');
+
+            const tabEvent = new dom.window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+            modal.dispatchEvent(tabEvent);
+
+            assert.strictEqual(tabEvent.defaultPrevented, true);
+
             overlay.remove();
         });
     });
