@@ -1748,33 +1748,37 @@ function disarmHTML(htmlString) {
 
     const nodesToRemove = [];
 
+    const safeEl = doc.createElement('div');
+
     function processRoot(root) {
         const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
         let el = walker.currentNode;
         while (el) {
             // For DocumentFragment, nodeType is 11, but SHOW_ELEMENT only shows elements (nodeType 1).
             if (el.nodeType === 1) {
-                if (activeTags.has(el.tagName.toLowerCase())) {
+                const tagName = el.nodeName.toLowerCase();
+                if (activeTags.has(tagName)) {
                     nodesToRemove.push(el);
                 } else {
-                    if (el.hasAttributes()) {
-                        for (let j = el.attributes.length - 1; j >= 0; j--) {
-                            const attrName = el.attributes[j].name.toLowerCase();
+                    if (safeEl.hasAttributes.call(el)) {
+                        const attrNames = safeEl.getAttributeNames.call(el);
+                        for (let j = attrNames.length - 1; j >= 0; j--) {
+                            const attrName = attrNames[j].toLowerCase();
                             if (attrName.startsWith('on')) {
-                                el.removeAttribute(attrName);
+                                safeEl.removeAttribute.call(el, attrName);
                                 continue;
                             }
                             if (dangerousAttributes.has(attrName)) {
-                                let val = el.attributes[j].value.toLowerCase();
+                                let val = safeEl.getAttribute.call(el, attrName).toLowerCase();
                                 // Remove control characters (like tabs/newlines) that might evade the check
                                 let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                                    el.removeAttribute(attrName);
+                                    safeEl.removeAttribute.call(el, attrName);
                                 }
                             }
                         }
                     }
-                    if (el.tagName.toLowerCase() === 'template' && el.content) {
+                    if (tagName === 'template' && el.content) {
                         processRoot(el.content);
                     }
                 }
