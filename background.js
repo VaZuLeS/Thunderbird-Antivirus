@@ -1092,48 +1092,15 @@ function extractTextFromParts(part, outObj) {
   }
 }
 
+// ⚡ Bolt Optimization: Use regex for significantly faster and simpler URL extraction
+const URL_EXTRACT_REGEX = /https?:\/\/[^\s"'<>\x00-\x20\x7F-\x9F\xA0\u1680\u180E\u2000-\u2029\u202F\u205F\u3000\u200B-\u200D\uFEFF\uFFFD]+/g;
+
 function extractUrls(text) {
     const urlSet = new Set();
-    const punct = ".,;:!)]";
-    let searchStart = 0;
-
-    while (true) {
-        // ⚡ Bolt Optimization: Find 'http' once instead of searching for 'http://' and 'https://' separately.
-        const startIdx = text.indexOf("http", searchStart);
-        if (startIdx === -1) break;
-
-        let isHttp = text.startsWith("http://", startIdx);
-        let isHttps = false;
-        let prefixLen = 7;
-
-        if (!isHttp) {
-            isHttps = text.startsWith("https://", startIdx);
-            if (isHttps) prefixLen = 8;
-        }
-
-        if (!isHttp && !isHttps) {
-            searchStart = startIdx + 1;
-            continue;
-        }
-
-        let endIdx = startIdx + prefixLen;
-        while (endIdx < text.length) {
-            const charCode = text.charCodeAt(endIdx);
-
-            if (charCode <= 32 || charCode === 34 || charCode === 39 || charCode === 60 || charCode === 62) {
-                if (charCode === 32 || charCode === 9 || charCode === 10 || charCode === 13 ||
-                    charCode === 34 || charCode === 39 || charCode === 60 || charCode === 62) {
-                    break;
-                }
-            } else if (charCode > 127 && /\s/.test(text[endIdx])) {
-                break;
-            }
-            endIdx++;
-        }
-
-        if (endIdx > startIdx + prefixLen) {
-            let url = text.substring(startIdx, endIdx);
-
+    const matches = text.match(URL_EXTRACT_REGEX);
+    if (matches) {
+        for (let j = 0; j < matches.length; j++) {
+            let url = matches[j];
             let len = url.length;
             while(len > 0) {
                 let c = url.charCodeAt(len - 1);
@@ -1147,12 +1114,8 @@ function extractUrls(text) {
             if (len !== url.length) {
                 url = url.substring(0, len);
             }
-
-            // ⚡ Bolt Optimization: Use Set for O(1) deduplication, which significantly outperforms Array indexOf for large numbers of links
             urlSet.add(url);
         }
-
-        searchStart = endIdx === startIdx ? startIdx + 1 : endIdx;
     }
     return Array.from(urlSet);
 }
