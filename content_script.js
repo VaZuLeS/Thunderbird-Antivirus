@@ -88,6 +88,33 @@
                 e.preventDefault();
                 overlay.remove();
                 linkElement.focus();
+            } else if (e.key === 'Tab') {
+                const focusableElements = Array.from(modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'));
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+
+                if (focusableElements.length === 0) {
+                    e.preventDefault();
+                    return;
+                }
+
+                if (e.shiftKey) {
+                    if (document.activeElement === firstElement) {
+                        e.preventDefault();
+                        lastElement.focus();
+                    } else if (!focusableElements.includes(document.activeElement)) {
+                        e.preventDefault();
+                        lastElement.focus();
+                    }
+                } else {
+                    if (document.activeElement === lastElement) {
+                        e.preventDefault();
+                        firstElement.focus();
+                    } else if (!focusableElements.includes(document.activeElement)) {
+                        e.preventDefault();
+                        firstElement.focus();
+                    }
+                }
             }
         });
 
@@ -122,6 +149,13 @@
         modal.appendChild(message);
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
+
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+            }
+        });
+
         modal.tabIndex = -1;
         modal.focus();
 
