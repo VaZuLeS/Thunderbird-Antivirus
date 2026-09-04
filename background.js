@@ -1748,33 +1748,55 @@ function disarmHTML(htmlString) {
 
     const nodesToRemove = [];
 
+    // 🛡️ Sentinel: Safe DOM API invocation to prevent DOM Clobbering
+    const safeEl = doc.createElement('div');
+    const safeHasAttributes = safeEl.hasAttributes;
+    const safeRemoveAttribute = safeEl.removeAttribute;
+    const safeGetAttributeNames = safeEl.getAttributeNames;
+    const safeGetAttributeNode = safeEl.getAttributeNode;
+
+    // Walk the prototype chain of safeEl to reliably extract the un-clobbered tagName getter
+    let getTagName;
+    let proto = Object.getPrototypeOf(safeEl);
+    while (proto) {
+        const desc = Object.getOwnPropertyDescriptor(proto, 'tagName');
+        if (desc && desc.get) {
+            getTagName = desc.get;
+            break;
+        }
+        proto = Object.getPrototypeOf(proto);
+    }
+
     function processRoot(root) {
         const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
         let el = walker.currentNode;
         while (el) {
             // For DocumentFragment, nodeType is 11, but SHOW_ELEMENT only shows elements (nodeType 1).
             if (el.nodeType === 1) {
-                if (activeTags.has(el.tagName.toLowerCase())) {
+                const tagName = (getTagName ? getTagName.call(el) : el.nodeName).toLowerCase();
+                if (activeTags.has(tagName)) {
                     nodesToRemove.push(el);
                 } else {
-                    if (el.hasAttributes()) {
-                        for (let j = el.attributes.length - 1; j >= 0; j--) {
-                            const attrName = el.attributes[j].name.toLowerCase();
+                    if (safeHasAttributes.call(el)) {
+                        const attrNames = safeGetAttributeNames.call(el);
+                        for (let j = attrNames.length - 1; j >= 0; j--) {
+                            const attrName = attrNames[j].toLowerCase();
                             if (attrName.startsWith('on')) {
-                                el.removeAttribute(attrName);
+                                safeRemoveAttribute.call(el, attrName);
                                 continue;
                             }
                             if (dangerousAttributes.has(attrName)) {
-                                let val = el.attributes[j].value.toLowerCase();
+                                const attrNode = safeGetAttributeNode.call(el, attrNames[j]);
+                                let val = attrNode.value.toLowerCase();
                                 // Remove control characters (like tabs/newlines) that might evade the check
                                 let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                                    el.removeAttribute(attrName);
+                                    safeRemoveAttribute.call(el, attrName);
                                 }
                             }
                         }
                     }
-                    if (el.tagName.toLowerCase() === 'template' && el.content) {
+                    if (tagName === 'template' && el.content) {
                         processRoot(el.content);
                     }
                 }
