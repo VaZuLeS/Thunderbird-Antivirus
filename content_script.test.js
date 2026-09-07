@@ -359,6 +359,34 @@ describe('content_script.js', () => {
         assert.strictEqual(allowedClickSeen, true);
     });
 
+    it('should trap focus within the warning modal on Tab', async () => {
+        sendMessageMock = async () => ({ status: 'UNKNOWN' });
+
+        const link = context.document.getElementById('unsafe-link');
+        const event = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+        link.dispatchEvent(event);
+
+        await new Promise(resolve => setImmediate(resolve));
+
+        const warningOverlay = context.document.querySelector('.thundy-overlay');
+        const modal = warningOverlay.querySelector('.thundy-modal');
+        const cancelBtn = warningOverlay.querySelector('.thundy-btn-success');
+        const openBtn = warningOverlay.querySelector('.thundy-btn-primary');
+
+        cancelBtn.focus();
+        assert.strictEqual(context.document.activeElement, cancelBtn);
+
+        const shiftTabEvent = new dom.window.KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true });
+        modal.dispatchEvent(shiftTabEvent);
+        if (shiftTabEvent.defaultPrevented) openBtn.focus();
+        assert.strictEqual(context.document.activeElement, openBtn);
+
+        const tabEvent = new dom.window.KeyboardEvent('keydown', { key: 'Tab', shiftKey: false, bubbles: true, cancelable: true });
+        modal.dispatchEvent(tabEvent);
+        if (tabEvent.defaultPrevented) cancelBtn.focus();
+        assert.strictEqual(context.document.activeElement, cancelBtn);
+    });
+
     describe('createWarningModal', () => {
         it('should create modal elements correctly with expected classes and ARIA attributes', () => {
             const link = context.document.getElementById('unsafe-link');
@@ -452,6 +480,18 @@ describe('content_script.js', () => {
             assert.strictEqual(message.textContent, 'URL wird in Echtzeit auf Bedrohungen analysiert (Computer Vision & Reputations-Check). Bitte haben Sie einen Moment Geduld.');
 
             // Clean up for next tests if necessary
+            overlay.remove();
+        });
+
+        it('should prevent default on Tab to trap focus in loading modal', () => {
+            context.createLoadingModal('http://example.com/test');
+            const overlay = context.document.querySelector('.thundy-loading-overlay');
+            const modal = overlay.querySelector('.thundy-modal');
+
+            const tabEvent = new dom.window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+            modal.dispatchEvent(tabEvent);
+
+            assert.strictEqual(tabEvent.defaultPrevented, true);
             overlay.remove();
         });
     });
