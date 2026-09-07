@@ -102,3 +102,6 @@
 ## 2024-10-25 - Semantic Textual Loading States
 **Learning:** Relying purely on static text like "(Bitte warten)" for loading states lacks immediate visual feedback. By extending the existing `aria-busy` CSS pattern to `[role="status"][aria-busy="true"]`, we can instantly attach consistent CSS loading spinners to any semantic loading text (like `<p role="status">`) across the extension without polluting the DOM with extra generic spinner `<div>`s.
 **Action:** When adding textual loading states, apply `role="status"` and `aria-busy="true"` to the text element to automatically inherit the design system's visual spinner, ensuring both sighted and screen reader users receive clear, consistent feedback.
+## 2024-11-20 - Focus Trap in Vanilla JS Modals
+**Learning:** Modals implemented in vanilla JS lack built-in focus trapping, which allows keyboard navigation to escape into the background content, violating WCAG 2.4.3.
+**Action:** Always implement a keyboard focus trap inside custom vanilla JS modals. For interactive modals, handle `Tab` and `Shift+Tab` to cycle focus. For inert modals, prevent the default `Tab` action.
