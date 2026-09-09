@@ -622,6 +622,16 @@ function handle_hybrid_report_fetch_error(error, attachmentName, targetContainer
     errDiv2.className = 'alert-error';
     errDiv2.setAttribute('role', 'alert');
     errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`;
+
+    let btnSettings = document.createElement('button');
+    btnSettings.className = 'btn-primary mt-2 ml-2';
+    btnSettings.textContent = 'Einstellungen öffnen';
+    btnSettings.addEventListener('click', () => {
+        browser.runtime.openOptionsPage();
+    });
+    errDiv2.appendChild(document.createElement('br'));
+    errDiv2.appendChild(btnSettings);
+
     let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     container.appendChild(errDiv2);
 }

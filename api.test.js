@@ -419,6 +419,7 @@ tag: tag,
                         this.children.push(node);
                     },
                     setAttribute: function() {},
+                    addEventListener: function() {},
                     removeAttribute: function() {}
                 }),
                 createDocumentFragment: () => ({
