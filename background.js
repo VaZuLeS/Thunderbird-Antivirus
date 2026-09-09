@@ -64,7 +64,7 @@ function getHybridAnalysisOptions(method, body = null, isUrl = false) {
 const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
 
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
-const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join('|') + ')(?![a-z0-9_äöüß])', 'g');
+const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join('|') + ')(?![a-z0-9_äöüß])', 'gi');
 
 // ⚡ Bolt Optimization: Use a precomputed Uint8Array Look-Up Table (LUT) for O(1) character classification
 const IS_WORD_CHAR_LUT = new Uint8Array(256);
@@ -418,14 +418,28 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
 }
 
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
-    let textToAnalyze = (subject + " " + messageText).toLowerCase();
+    // ⚡ Bolt Optimization: Avoided large string allocation (.toLowerCase() and concatenation)
+    // by evaluating subject and messageText independently with a case-insensitive RegExp,
+    // and used a Set to replace O(N) Array.indexOf lookups with O(1) checks.
+    let foundUrgencyWordsSet = new Set();
     let foundUrgencyWords = [];
 
     let match;
     URGENCY_REGEX.lastIndex = 0;
-    while ((match = URGENCY_REGEX.exec(textToAnalyze)) !== null) {
-        if (foundUrgencyWords.indexOf(match[2]) === -1) {
-            foundUrgencyWords.push(match[2]);
+    while ((match = URGENCY_REGEX.exec(subject)) !== null) {
+        let word = match[2].toLowerCase();
+        if (!foundUrgencyWordsSet.has(word)) {
+            foundUrgencyWordsSet.add(word);
+            foundUrgencyWords.push(word);
+        }
+    }
+
+    URGENCY_REGEX.lastIndex = 0;
+    while ((match = URGENCY_REGEX.exec(messageText)) !== null) {
+        let word = match[2].toLowerCase();
+        if (!foundUrgencyWordsSet.has(word)) {
+            foundUrgencyWordsSet.add(word);
+            foundUrgencyWords.push(word);
         }
     }
 
