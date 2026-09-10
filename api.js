@@ -185,7 +185,13 @@ try {
                     for (let i = 0; i < fetchTasks.length; i += CONCURRENCY_LIMIT) {
                         const batch = fetchTasks.slice(i, i + CONCURRENCY_LIMIT);
                         let batchFragment = document.createDocumentFragment();
-                        await Promise.all(batch.map(task => task(batchFragment)));
+                        // ⚡ Bolt Optimization: Use a pre-allocated array and a standard for loop
+                        // instead of batch.map() to avoid callback overhead in hot Promise.all paths
+                        const promises = new Array(batch.length);
+                        for (let j = 0; j < batch.length; j++) {
+                            promises[j] = batch[j](batchFragment);
+                        }
+                        await Promise.all(promises);
                         if (batchFragment.hasChildNodes()) {
                             container.appendChild(batchFragment);
                         }
