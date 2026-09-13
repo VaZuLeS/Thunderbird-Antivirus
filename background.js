@@ -1746,6 +1746,30 @@ function disarmHTML(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
 
+    const safeEl = doc.createElement('div');
+    let getTagName, getAttributes, getNodeType;
+
+    let proto = Object.getPrototypeOf(safeEl);
+    while (proto) {
+        let desc = Object.getOwnPropertyDescriptor(proto, 'tagName');
+        if (desc) { getTagName = desc.get; break; }
+        proto = Object.getPrototypeOf(proto);
+    }
+
+    proto = Object.getPrototypeOf(safeEl);
+    while (proto) {
+        let desc = Object.getOwnPropertyDescriptor(proto, 'attributes');
+        if (desc) { getAttributes = desc.get; break; }
+        proto = Object.getPrototypeOf(proto);
+    }
+
+    proto = Object.getPrototypeOf(safeEl);
+    while (proto) {
+        let desc = Object.getOwnPropertyDescriptor(proto, 'nodeType');
+        if (desc) { getNodeType = desc.get; break; }
+        proto = Object.getPrototypeOf(proto);
+    }
+
     const nodesToRemove = [];
 
     function processRoot(root) {
@@ -1753,28 +1777,30 @@ function disarmHTML(htmlString) {
         let el = walker.currentNode;
         while (el) {
             // For DocumentFragment, nodeType is 11, but SHOW_ELEMENT only shows elements (nodeType 1).
-            if (el.nodeType === 1) {
-                if (activeTags.has(el.tagName.toLowerCase())) {
+            if (getNodeType.call(el) === 1) {
+                const tagName = getTagName.call(el).toLowerCase();
+                if (activeTags.has(tagName)) {
                     nodesToRemove.push(el);
                 } else {
-                    if (el.hasAttributes()) {
-                        for (let j = el.attributes.length - 1; j >= 0; j--) {
-                            const attrName = el.attributes[j].name.toLowerCase();
+                    if (safeEl.hasAttributes.call(el)) {
+                        const attributes = getAttributes.call(el);
+                        for (let j = attributes.length - 1; j >= 0; j--) {
+                            const attrName = attributes[j].name.toLowerCase();
                             if (attrName.startsWith('on')) {
-                                el.removeAttribute(attrName);
+                                safeEl.removeAttribute.call(el, attrName);
                                 continue;
                             }
                             if (dangerousAttributes.has(attrName)) {
-                                let val = el.attributes[j].value.toLowerCase();
+                                let val = attributes[j].value.toLowerCase();
                                 // Remove control characters (like tabs/newlines) that might evade the check
                                 let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                                    el.removeAttribute(attrName);
+                                    safeEl.removeAttribute.call(el, attrName);
                                 }
                             }
                         }
                     }
-                    if (el.tagName.toLowerCase() === 'template' && el.content) {
+                    if (tagName === 'template' && el.content) {
                         processRoot(el.content);
                     }
                 }
