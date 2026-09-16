@@ -64,3 +64,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** Unused migration scripts (`replace_api_calls.js` and `replace_inner_html.js`) were committed to the repository that incorrectly replaced safe `DOMParser().parseFromString()` parsing of HTML nodes with an unsafe `container.appendChild(resultHtml)` string evaluation.
 **Learning:** Migration or scratchpad scripts that contain fundamentally broken or unsafe logic can be executed accidentally by developers, re-introducing previously fixed vulnerabilities. They also generate noise in security scanning tools.
 **Prevention:** Completely remove scratchpad and one-off migration scripts from the repository once they are no longer necessary, rather than allowing them to linger as dead code.
+
+## 2026-09-01 - DOM Clobbering in HTML Sanitizer
+**Vulnerability:** The HTML sanitization filter (`disarmHTML`) was vulnerable to DOM Clobbering. By injecting elements with `name="tagName"` or `name="hasAttributes"`, attackers could override the built-in DOM properties/methods used by the filter, potentially causing exceptions and bypassing the sanitization entirely.
+**Learning:** When writing HTML sanitizers or interacting with untrusted DOM elements, avoid dot-notation property accesses (e.g., `el.attributes`, `el.hasAttributes()`, `el.tagName`) as they are vulnerable to DOM Clobbering.
+**Prevention:** Extract methods and getters from an unclobbered safe element (`document.createElement('div')`) and apply them using `.call(el)` (e.g. `safeEl.hasAttributes.call(el)` and `Object.getOwnPropertyDescriptor(..., 'tagName').get.call(el)`).
