@@ -1948,6 +1948,12 @@ describe('background.js', () => {
     });
 
     describe('disarmHTML', () => {
+        it('prevents evasion via property shadowing', () => {
+            const input = '<form action="javascript:alert(1)"><input name="tagName" value="div"><input name="hasAttributes"><input name="attributes"><input name="nodeType" value="2"><input name="removeAttribute"><input name="parentNode"><input name="removeChild"></form>';
+            const result = context.disarmHTML(input);
+            assert.ok(!result.includes('javascript:alert(1)'), 'javascript URI should be removed even if properties are shadowed');
+        });
+
         it('removes script tags and their content', () => {
             const input = '<html><body><h1>Test</h1><script>alert(1);</script></body></html>';
             const result = context.disarmHTML(input);
