@@ -1745,36 +1745,101 @@ const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\xA0\u1680\u180E\u2000-\u2
 function disarmHTML(htmlString) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(htmlString, 'text/html');
-
     const nodesToRemove = [];
+
+    const safeEl = doc.createElement('div');
+    const safeHasAttributes = safeEl.hasAttributes;
+    const safeRemoveAttribute = safeEl.removeAttribute;
+    const safeRemoveChild = doc.body ? doc.body.removeChild : Node.prototype.removeChild;
+
+    let ElementProto = Object.getPrototypeOf(safeEl);
+    let safeTagNameGet;
+    let safeAttributesGet;
+
+    while (ElementProto) {
+        const tagDesc = Object.getOwnPropertyDescriptor(ElementProto, 'tagName');
+        if (tagDesc && tagDesc.get) safeTagNameGet = tagDesc.get;
+
+        const attrDesc = Object.getOwnPropertyDescriptor(ElementProto, 'attributes');
+        if (attrDesc && attrDesc.get) safeAttributesGet = attrDesc.get;
+
+        if (safeTagNameGet && safeAttributesGet) break;
+        ElementProto = Object.getPrototypeOf(ElementProto);
+    }
+
+    let NodeProto = Object.getPrototypeOf(doc.createTextNode(''));
+    let safeNodeTypeGet;
+    while (NodeProto) {
+         const nodeTypeDesc = Object.getOwnPropertyDescriptor(NodeProto, 'nodeType');
+         if (nodeTypeDesc && nodeTypeDesc.get) {
+             safeNodeTypeGet = nodeTypeDesc.get;
+             break;
+         }
+         NodeProto = Object.getPrototypeOf(NodeProto);
+    }
+
+    let safeParentNodeGet;
+    NodeProto = Object.getPrototypeOf(doc.createTextNode(''));
+    while (NodeProto) {
+         const parentNodeDesc = Object.getOwnPropertyDescriptor(NodeProto, 'parentNode');
+         if (parentNodeDesc && parentNodeDesc.get) {
+             safeParentNodeGet = parentNodeDesc.get;
+             break;
+         }
+         NodeProto = Object.getPrototypeOf(NodeProto);
+    }
+
+    function getTagName(el) {
+        if (safeTagNameGet) return safeTagNameGet.call(el);
+        return el.nodeName;
+    }
+
+    function hasAttributes(el) {
+        return safeHasAttributes.call(el);
+    }
+
+    function getAttributes(el) {
+        if (safeAttributesGet) return safeAttributesGet.call(el);
+        return el.attributes;
+    }
+
+    function getNodeType(el) {
+        if (safeNodeTypeGet) return safeNodeTypeGet.call(el);
+        return 1;
+    }
+
+    function getParentNode(el) {
+        if (safeParentNodeGet) return safeParentNodeGet.call(el);
+        return el.parentNode;
+    }
 
     function processRoot(root) {
         const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
         let el = walker.currentNode;
         while (el) {
-            // For DocumentFragment, nodeType is 11, but SHOW_ELEMENT only shows elements (nodeType 1).
-            if (el.nodeType === 1) {
-                if (activeTags.has(el.tagName.toLowerCase())) {
+            if (getNodeType(el) === 1) {
+                let tagName = getTagName(el).toLowerCase();
+                if (activeTags.has(tagName)) {
                     nodesToRemove.push(el);
                 } else {
-                    if (el.hasAttributes()) {
-                        for (let j = el.attributes.length - 1; j >= 0; j--) {
-                            const attrName = el.attributes[j].name.toLowerCase();
+                    if (hasAttributes(el)) {
+                        const attrs = getAttributes(el);
+                        for (let j = attrs.length - 1; j >= 0; j--) {
+                            const attrName = attrs[j].name.toLowerCase();
                             if (attrName.startsWith('on')) {
-                                el.removeAttribute(attrName);
+                                safeRemoveAttribute.call(el, attrName);
                                 continue;
                             }
                             if (dangerousAttributes.has(attrName)) {
-                                let val = el.attributes[j].value.toLowerCase();
-                                // Remove control characters (like tabs/newlines) that might evade the check
+                                let val = attrs[j].value.toLowerCase();
                                 let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                                    el.removeAttribute(attrName);
+                                    safeRemoveAttribute.call(el, attrName);
                                 }
                             }
                         }
                     }
-                    if (el.tagName.toLowerCase() === 'template' && el.content) {
+                    if (tagName === 'template' && el.content) {
                         processRoot(el.content);
                     }
                 }
@@ -1782,13 +1847,12 @@ function disarmHTML(htmlString) {
             el = walker.nextNode();
         }
     }
-
     processRoot(doc.documentElement);
 
-    // Remove active tags collected during the pass
     for (let i = nodesToRemove.length - 1; i >= 0; i--) {
-        if (nodesToRemove[i].parentNode) {
-            nodesToRemove[i].parentNode.removeChild(nodesToRemove[i]);
+        const parent = getParentNode(nodesToRemove[i]);
+        if (parent) {
+            safeRemoveChild.call(parent, nodesToRemove[i]);
         }
     }
 

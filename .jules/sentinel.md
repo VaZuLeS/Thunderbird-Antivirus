@@ -64,3 +64,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** Unused migration scripts (`replace_api_calls.js` and `replace_inner_html.js`) were committed to the repository that incorrectly replaced safe `DOMParser().parseFromString()` parsing of HTML nodes with an unsafe `container.appendChild(resultHtml)` string evaluation.
 **Learning:** Migration or scratchpad scripts that contain fundamentally broken or unsafe logic can be executed accidentally by developers, re-introducing previously fixed vulnerabilities. They also generate noise in security scanning tools.
 **Prevention:** Completely remove scratchpad and one-off migration scripts from the repository once they are no longer necessary, rather than allowing them to linger as dead code.
+
+## 2026-08-15 - DOM Property Shadowing in Sanitization
+**Vulnerability:** The `disarmHTML` sanitization function accessed `el.tagName`, `el.hasAttributes()`, and `el.attributes` directly, which could be overridden by an attacker injecting `<input name="tagName">` and similar payloads inside a `<form>`, leading to exceptions that bypass the sanitizer logic.
+**Learning:** Never trust properties on DOM elements sourced from untrusted HTML directly, as attackers can shadow prototype getters and methods with matching ID or Name attributes.
+**Prevention:** Extract safe getters (`Object.getOwnPropertyDescriptor(Element.prototype, 'tagName').get`) and methods from a known-safe, dynamically created element, and apply them using `.call(el)` when analyzing untrusted DOM nodes.
