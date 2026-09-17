@@ -410,6 +410,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
     const btnRescan = document.createElement('button');
     btnRescan.id = `btn-rescan-${hybrid_sha}`;
     btnRescan.className = "btn-success mt-2";
+    btnRescan.setAttribute('aria-describedby', `rescan-status-${hybrid_sha}`);
     btnRescan.textContent = `Erneut scannen (Rescan)`;
     card.appendChild(btnRescan);
 
@@ -424,6 +425,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
         const btnCdr = document.createElement('button');
         btnCdr.id = `btn-cdr-${hybrid_sha}`;
         btnCdr.className = "btn-primary mt-2 ml-2";
+        btnCdr.setAttribute('aria-describedby', `cdr-status-${hybrid_sha}`);
         btnCdr.textContent = `Bereinigen & Herunterladen (Lokales CDR)`;
         card.appendChild(btnCdr);
 
@@ -711,6 +713,7 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
     let btnUpload = document.createElement('button');
     btnUpload.id = `btn-upload-${urlId}`;
     btnUpload.className = "btn-primary mt-2";
+    btnUpload.setAttribute('aria-describedby', `upload-status-${urlId}`);
     btnUpload.textContent = "URL jetzt scannen";
     card.appendChild(btnUpload);
 
@@ -784,6 +787,7 @@ function createUploadButton(card, { hash, safeHash, attachmentName, messageId, p
     let btnUpload = document.createElement('button');
     btnUpload.id = `btn-upload-${hash}`;
     btnUpload.className = "btn-primary mt-2";
+    btnUpload.setAttribute('aria-describedby', `upload-status-${hash}`);
     btnUpload.textContent = `Datei jetzt scannen (Upload)`;
     card.appendChild(btnUpload);
 
@@ -805,6 +809,7 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
     let cdrBtn = document.createElement('button');
     cdrBtn.id = `btn-cdr-${safeHash}`;
     cdrBtn.className = "btn-primary mt-2 ml-2";
+    cdrBtn.setAttribute('aria-describedby', `cdr-status-${safeHash}`);
     cdrBtn.textContent = "Bereinigen & Herunterladen (Lokales CDR)";
     card.appendChild(cdrBtn);
 
