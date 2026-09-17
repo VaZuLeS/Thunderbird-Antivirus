@@ -485,7 +485,8 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
 function getHostnameOptimized(url, cache = null) {
     if (cache && cache.has(url)) return cache.get(url);
     try {
-        let hostname = new URL(url).hostname.toLowerCase();
+        // ⚡ Bolt Optimization: URL.hostname natively returns lower-cased ASCII, so .toLowerCase() is redundant.
+        let hostname = new URL(url).hostname;
         if (cache) cache.set(url, hostname);
         return hostname;
     } catch (e) {
