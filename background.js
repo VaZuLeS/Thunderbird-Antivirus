@@ -485,7 +485,7 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
 function getHostnameOptimized(url, cache = null) {
     if (cache && cache.has(url)) return cache.get(url);
     try {
-        let hostname = new URL(url).hostname.toLowerCase();
+        let hostname = new URL(url).hostname;
         if (cache) cache.set(url, hostname);
         return hostname;
     } catch (e) {

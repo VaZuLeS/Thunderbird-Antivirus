@@ -224,7 +224,7 @@ function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
     for (let url of urls) {
         try {
             let parsed = new URL(url);
-            let hostname = parsed.hostname.toLowerCase();
+            let hostname = parsed.hostname;
             if (hostname) {
                 linkDomainsSet.add(hostname);
             }
