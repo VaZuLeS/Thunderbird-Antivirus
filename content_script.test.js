@@ -424,6 +424,31 @@ describe('content_script.js', () => {
             assert.ok(openBtn.classList.contains('thundy-ml-2'), 'Open Anyway button should have thundy-ml-2 class');
             assert.strictEqual(openBtn.textContent, 'Auf eigene Gefahr öffnen');
         });
+
+        it('should trap keyboard focus within the modal', () => {
+            const link = context.document.getElementById('unsafe-link');
+            context.createWarningModal('http://example.com/test', link, 'UNKNOWN');
+
+            const overlay = context.document.querySelector('.thundy-overlay');
+            const modal = overlay.querySelector('.thundy-modal');
+            const cancelBtn = modal.querySelector('.thundy-btn-success');
+            const openBtn = modal.querySelector('.thundy-btn-primary');
+
+            // Tab on last element should wrap to first element
+            openBtn.focus();
+            let event = new dom.window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true });
+            modal.dispatchEvent(event);
+            assert.strictEqual(context.document.activeElement, cancelBtn);
+
+            // Shift+Tab on first element should wrap to last element
+            cancelBtn.focus();
+            event = new dom.window.KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true });
+            modal.dispatchEvent(event);
+            assert.strictEqual(context.document.activeElement, openBtn);
+
+            // Cleanup
+            overlay.remove();
+        });
     });
 
     describe('createLoadingModal', () => {
