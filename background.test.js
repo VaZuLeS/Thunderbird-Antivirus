@@ -130,7 +130,6 @@ describe('background.js', () => {
             globalThis.extractEmailAddress = extractEmailAddress;
             globalThis.extractEmailDomain = extractEmailDomain;
             globalThis.extractUrls = extractUrls;
-            globalThis.isWordChar = isWordChar;
             globalThis.filterUrls = filterUrls;
             globalThis.extractTextFromParts = extractTextFromParts;
             globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
@@ -1079,49 +1078,6 @@ describe('background.js', () => {
         });
     });
 
-    describe('isWordChar', () => {
-        it('returns true for lowercase letters a-z', () => {
-            assert.strictEqual(context.isWordChar('a'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('m'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('z'.charCodeAt(0)), true);
-        });
-
-        it('returns true for uppercase letters A-Z', () => {
-            assert.strictEqual(context.isWordChar('A'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('M'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('Z'.charCodeAt(0)), true);
-        });
-
-        it('returns true for digits 0-9', () => {
-            assert.strictEqual(context.isWordChar('0'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('5'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('9'.charCodeAt(0)), true);
-        });
-
-        it('returns true for underscore _', () => {
-            assert.strictEqual(context.isWordChar('_'.charCodeAt(0)), true);
-        });
-
-        it('returns true for specific German umlauts', () => {
-            const umlauts = ['ä', 'ö', 'ü', 'ß', 'Ä', 'Ö', 'Ü'];
-            for (const char of umlauts) {
-                assert.strictEqual(context.isWordChar(char.charCodeAt(0)), true, `Failed for ${char}`);
-            }
-        });
-
-        it('returns false for punctuation and spaces', () => {
-            assert.strictEqual(context.isWordChar(' '.charCodeAt(0)), false);
-            assert.strictEqual(context.isWordChar('!'.charCodeAt(0)), false);
-            assert.strictEqual(context.isWordChar('.'.charCodeAt(0)), false);
-            assert.strictEqual(context.isWordChar('-'.charCodeAt(0)), false);
-        });
-
-        it('returns false for out of bounds characters (>= 256)', () => {
-            assert.strictEqual(context.isWordChar(256), false);
-            assert.strictEqual(context.isWordChar('€'.charCodeAt(0)), false);
-            assert.strictEqual(context.isWordChar('🚀'.codePointAt(0)), false);
-        });
-    });
 
     describe('evaluateUrlhaus', () => {
         it('returns unchanged score and reasons for empty array', () => {
