@@ -847,7 +847,9 @@ describe('renderManualUploadUI', () => {
                         set id(val) { this._id = val; },
                         appendChild: function(child) { children.push(child); },
                         get children() { return children; },
-                        setAttribute: function() {},
+                        attributes: {},
+                        setAttribute: function(k, v) { this.attributes[k] = v; },
+                        getAttribute: function(k) { return this.attributes[k]; },
                         addEventListener: function() {}
                     };
                     return el;
@@ -952,6 +954,55 @@ describe('renderManualUploadUI', () => {
         const card = context.apiContentElement.children[0];
         assert.strictEqual(card.children[0].tag, 'h2');
         assert.strictEqual(card.children[0].textContent, 'Anhang: Unbekannt');
+    });
+
+    it('sets role=status attribute and appends to custom targetContainer when provided', () => {
+        context.createUploadButtonCalls.length = 0;
+        context.createCdrButtonCalls.length = 0;
+
+        const customContainer = {
+            children: [],
+            appendChild: function(child) { this.children.push(child); }
+        };
+
+        renderManualUploadUI('hash123', 'doc.pdf', 'msg1', 'part1', 'hdr1', customContainer);
+
+        assert.strictEqual(customContainer.children.length, 1);
+        const card = customContainer.children[0];
+        assert.strictEqual(card.getAttribute('role'), 'status');
+    });
+
+    it('escapes hash for safeHash in container id and button helper calls', () => {
+        context.createUploadButtonCalls.length = 0;
+        context.createCdrButtonCalls.length = 0;
+
+        const unsafeHash = '<script>alert(1)</script>';
+        const expectedSafeHash = '&lt;script&gt;alert(1)&lt;/script&gt;';
+
+        context.apiContentElement.children = [];
+        renderManualUploadUI(unsafeHash, 'file.bin', 'msg1', 'part1', 'hdr1');
+
+        const card = context.apiContentElement.children[0];
+        assert.strictEqual(card.id, `upload-container-${expectedSafeHash}`);
+        assert.strictEqual(context.createUploadButtonCalls[0].safeHash, expectedSafeHash);
+        assert.strictEqual(context.createUploadButtonCalls[0].hash, unsafeHash);
+        assert.strictEqual(context.createCdrButtonCalls[0].safeHash, expectedSafeHash);
+    });
+
+    it('renders full pInfo DOM structure with text nodes and strong tag', () => {
+        context.apiContentElement.children = [];
+        renderManualUploadUI('hash123', 'file.txt', 'msg1', 'part1', 'hdr1');
+
+        const card = context.apiContentElement.children[0];
+        const pInfo = card.children[2];
+
+        assert.strictEqual(pInfo.tag, 'p');
+        assert.strictEqual(pInfo.className, 'text-info');
+        assert.strictEqual(pInfo.children.length, 3);
+        assert.strictEqual(pInfo.children[0].textContent, 'Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie ');
+        assert.strictEqual(pInfo.children[1].tag, 'strong');
+        assert.strictEqual(pInfo.children[1].textContent, 'nicht automatisch hochgeladen');
+        assert.strictEqual(pInfo.children[2].textContent, '.');
     });
 });
 
