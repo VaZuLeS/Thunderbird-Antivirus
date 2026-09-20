@@ -1466,6 +1466,85 @@ describe('renderScannerResults', () => {
     });
 });
 
+describe('renderFileDetails', () => {
+    let context;
+    let renderFileDetails;
+
+    before(async () => {
+        context = {
+            document: {
+                createElement: (tag) => {
+                    return {
+                        tag: tag,
+                        textContent: '',
+                        children: [],
+                        appendChild: function(node) {
+                            this.children.push(node);
+                        },
+                        get innerHTML() {
+                            return this.children.map(c => '<' + (c.tag || 'p') + '>' + c.textContent + '</' + (c.tag || 'p') + '>').join('');
+                        }
+                    };
+                }
+            },
+            console: { log: () => {}, error: () => {} }
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+
+        vm.runInContext(wrappedCode, context);
+
+        renderFileDetails = context.renderFileDetails;
+    });
+
+    it('should render all file details correctly when complete json_data is provided', () => {
+        const jsonData = {
+            sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+            last_file_name: 'sample.exe',
+            size: 2048,
+            type: 'PE32 executable'
+        };
+        const card = context.document.createElement('div');
+        renderFileDetails(jsonData, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('SHA-256-Hashwert: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'));
+        assert.ok(html.includes('Letzter Dateiname: sample.exe'));
+        assert.ok(html.includes('Größe: 2048 Bytes'));
+        assert.ok(html.includes('Typ: PE32 executable'));
+    });
+
+    it('should fall back to N/A for missing optional file detail properties', () => {
+        const jsonData = {
+            sha256: 'abc123hash'
+        };
+        const card = context.document.createElement('div');
+        renderFileDetails(jsonData, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('SHA-256-Hashwert: abc123hash'));
+        assert.ok(html.includes('Letzter Dateiname: N/A'));
+        assert.ok(html.includes('Größe: N/A Bytes'));
+        assert.ok(html.includes('Typ: N/A'));
+    });
+
+    it('should handle undefined sha256 property gracefully', () => {
+        const jsonData = {};
+        const card = context.document.createElement('div');
+        renderFileDetails(jsonData, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('SHA-256-Hashwert: undefined'));
+        assert.ok(html.includes('Letzter Dateiname: N/A'));
+        assert.ok(html.includes('Größe: N/A Bytes'));
+        assert.ok(html.includes('Typ: N/A'));
+    });
+});
+
 
 describe('handleUploadClick', () => {
     let context;
