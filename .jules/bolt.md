@@ -10,3 +10,6 @@
 ## 2024-08-09 - SHA-256 Hash String Concatenation Optimization
 **Learning:** Converting a `Uint8Array` to a hex string using `Array.from(u8).map(...)` is significantly slower (by about 40%) in V8 than naive string concatenation (`+=`) because of callback overhead and array creation. However, both can be beaten by a wide margin (2x faster) by using a pre-allocated array (`const hex = new Array(u8.length)`), a standard `for` loop to look up pre-computed hex values, and finally calling `.join('')`. Always benchmark proposed "modern" JS array method alternatives against basic loops when on hot paths.
 **Action:** When converting byte arrays to strings in hot paths, avoid `Array.from` and `.map`. Instead, use pre-allocated arrays, simple `for` loops, precomputed lookup tables, and `.join('')`.
+## 2025-05-18 - Parallelize Hybrid Analysis Report Fetch Tasks
+**Learning:** Sequential batching with `await` inside loops creates artificial bottlenecks for network requests; executing fetch tasks concurrently with `Promise.all` allows full I/O parallelism.
+**Action:** Always prefer `Promise.all` over sequential await loops for independent async tasks.
