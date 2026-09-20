@@ -181,15 +181,13 @@ try {
                 }
 
                 if (fetchTasks.length > 0) {
-                    const CONCURRENCY_LIMIT = 5;
-                    for (let i = 0; i < fetchTasks.length; i += CONCURRENCY_LIMIT) {
-                        const batch = fetchTasks.slice(i, i + CONCURRENCY_LIMIT);
-                        let batchFragment = document.createDocumentFragment();
-                        await Promise.all(batch.map(task => task(batchFragment)));
-                        if (batchFragment.hasChildNodes()) {
-                            container.appendChild(batchFragment);
+                    await Promise.all(fetchTasks.map(async task => {
+                        let taskFragment = document.createDocumentFragment();
+                        await task(taskFragment);
+                        if (taskFragment.hasChildNodes()) {
+                            container.appendChild(taskFragment);
                         }
-                    }
+                    }));
                 }
             } else {
                 let container = document.getElementById('hybrid_analysis_api_content');
