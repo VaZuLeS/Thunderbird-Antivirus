@@ -218,7 +218,14 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
     return { score, senderMainDomain };
 }
 
-function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons) {
+function evaluateLinks(options = {}) {
+    let {
+        urls = [],
+        senderDomain = '',
+        senderMainDomain = '',
+        score = 0,
+        reasons = []
+    } = options;
     // ⚡ Bolt Optimization: Use Set for O(1) deduplication to prevent O(N²) bottleneck with linkDomains.indexOf
     let linkDomainsSet = new Set();
     for (let url of urls) {
@@ -313,7 +320,7 @@ function calculateThreatScore(author, urls, options = {}) {
     score = senderEval.score;
     let senderMainDomain = senderEval.senderMainDomain;
 
-    score = evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons);
+    score = evaluateLinks({ urls, senderDomain, senderMainDomain, score, reasons });
 
     return { score: Math.min(score, 100), reasons: reasons };
 }

@@ -513,7 +513,15 @@ function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, rea
     return false;
 }
 
-function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons, parsedUrlCache = null) {
+function evaluateLinks(options = {}) {
+    let {
+        urls = [],
+        senderDomain = '',
+        senderMainDomain = '',
+        score = 0,
+        reasons = [],
+        parsedUrlCache = null
+    } = options;
     let linkDomainsSet = new Set();
     // ⚡ Bolt Optimization: Use indexed loop and inline cache check to reduce function call overhead
     for (let i = 0; i < urls.length; i++) {
@@ -625,7 +633,14 @@ function calculateThreatScore(author, urls, options = {}) {
     score = senderEval.score;
     let senderMainDomain = senderEval.senderMainDomain;
 
-    score = evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons, parsedUrlCache);
+    score = evaluateLinks({
+        urls,
+        senderDomain,
+        senderMainDomain,
+        score,
+        reasons,
+        parsedUrlCache
+    });
 
     return { score: Math.min(score, 100), reasons: reasons, authStatus: authStatus };
 }
