@@ -1754,6 +1754,7 @@ describe('handleUploadClick', () => {
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 
+
     it('handles upload exception correctly', async () => {
         const assert = require('assert');
         context.mockElements = {};
@@ -1783,6 +1784,38 @@ describe('handleUploadClick', () => {
         await new Promise(process.nextTick);
 
         assert.ok(statusEl.innerText.includes('Kommunikationsfehler: Error: Network error'));
+        assert.strictEqual(btn.disabled, false);
+        assert.strictEqual(btn['aria-busy'], undefined);
+        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+
+    it('handles upload rejection correctly', async () => {
+        const assert = require('assert');
+        context.mockElements = {};
+
+        context.browser.runtime.sendMessage = () => Promise.reject(new Error('Connection rejected'));
+
+        const btn = {
+            disabled: false,
+            setAttribute: function(k, v) { this[k] = v; },
+            removeAttribute: function(k) { delete this[k]; },
+            innerText: '',
+            className: ''
+        };
+        const statusEl = {
+            textContent: '',
+            innerText: ''
+        };
+        context.mockElements['upload-status-safeHash5'] = statusEl;
+
+        const args = { hash: 'hash5', safeHash: 'safeHash5', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' };
+        const handler = handleUploadClick(args);
+        handler.call(btn);
+
+        // Wait for promise resolution
+        await new Promise(process.nextTick);
+
+        assert.ok(statusEl.innerText.includes('Kommunikationsfehler: Error: Connection rejected'));
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn['aria-busy'], undefined);
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
