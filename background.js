@@ -483,9 +483,12 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
 }
 
 function getHostnameOptimized(url, cache = null) {
-    if (cache && cache.has(url)) return cache.get(url);
+    if (cache) {
+        let cached = cache.get(url);
+        if (cached !== undefined) return cached;
+    }
     try {
-        let hostname = new URL(url).hostname.toLowerCase();
+        let hostname = new URL(url).hostname;
         if (cache) cache.set(url, hostname);
         return hostname;
     } catch (e) {
@@ -527,12 +530,20 @@ function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, rea
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons, parsedUrlCache = null) {
     let linkDomainsSet = new Set();
-    for (let url of urls) {
+    // ⚡ Bolt Optimization: Use indexed loop and inline cache check to reduce function call overhead
+    for (let i = 0; i < urls.length; i++) {
         try {
-            // 🛡️ Sentinel: Use standard URL parser safely
-            let hostname = getHostnameOptimized(url, parsedUrlCache);
-            if (!hostname) continue;
-            linkDomainsSet.add(hostname);
+            let url = urls[i];
+            let hostname;
+            if (parsedUrlCache) {
+                hostname = parsedUrlCache.get(url);
+                if (hostname === undefined) {
+                    hostname = getHostnameOptimized(url, parsedUrlCache);
+                }
+            } else {
+                hostname = getHostnameOptimized(url, parsedUrlCache);
+            }
+            if (hostname) linkDomainsSet.add(hostname);
         } catch (e) { /* Ignore invalid URLs */ }
     }
     if (linkDomainsSet.size > 0 && senderDomain) {
@@ -788,12 +799,20 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
     let urlhausDomains = [];
     if (urlhausApikey && filteredUrls.length > 0) {
         let linkDomainsSet = new Set();
-        for (let url of filteredUrls) {
+        // ⚡ Bolt Optimization: Use indexed loop and inline cache check to reduce function call overhead
+        for (let i = 0; i < filteredUrls.length; i++) {
             try {
-                // 🛡️ Sentinel: Use standard URL parser safely
-                let hostname = getHostnameOptimized(url, parsedUrlCache);
-                if (!hostname) continue;
-                linkDomainsSet.add(hostname);
+                let url = filteredUrls[i];
+                let hostname;
+                if (parsedUrlCache) {
+                    hostname = parsedUrlCache.get(url);
+                    if (hostname === undefined) {
+                        hostname = getHostnameOptimized(url, parsedUrlCache);
+                    }
+                } else {
+                    hostname = getHostnameOptimized(url, parsedUrlCache);
+                }
+                if (hostname) linkDomainsSet.add(hostname);
             } catch (e) { /* Ignore invalid URLs */ }
         }
         const domainChecks = [];
