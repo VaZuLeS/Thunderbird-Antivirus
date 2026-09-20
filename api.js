@@ -510,8 +510,8 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
             let statusEl = document.getElementById(`rescan-status-${hybrid_sha}`);
             btn.disabled = true;
             btn.setAttribute('aria-busy', 'true');
-            btn.innerText = "Sende Rescan...";
-            statusEl.innerText = "Datei wird für Rescan hochgeladen...";
+            btn.textContent = "Sende Rescan...";
+            statusEl.textContent = "Datei wird für Rescan hochgeladen...";
 
             browser.runtime.sendMessage({
                 action: "uploadAttachment",
