@@ -2264,6 +2264,7 @@ describe('createUploadButton', () => {
                             context.mockElements[val] = this;
                         },
                         setAttribute: function(k, v) { this[k] = v; },
+                        getAttribute: function(k) { return this[k]; },
                         removeAttribute: function(k) { delete this[k]; },
                         appendChild: function(child) {
                             if (!this.childNodes) this.childNodes = [];
@@ -2502,6 +2503,7 @@ describe('handleUrlScanClick', () => {
                             context.mockElements[val] = this;
                         },
                         setAttribute: function(k, v) { this[k] = v; },
+                        getAttribute: function(k) { return this[k]; },
                         removeAttribute: function(k) { delete this[k]; },
                         appendChild: function(child) {
                             if (!this.childNodes) this.childNodes = [];
@@ -2682,6 +2684,7 @@ describe('renderActionButtons', () => {
                             context.mockElements[val] = this;
                         },
                         setAttribute: function(k, v) { this[k] = v; },
+                        getAttribute: function(k) { return this[k]; },
                         removeAttribute: function(k) { delete this[k]; },
                         appendChild: function(child) {
                             if (!this.childNodes) this.childNodes = [];
@@ -2729,6 +2732,7 @@ describe('renderActionButtons', () => {
         assert.strictEqual(btnRescan.tagName, 'button');
         assert.strictEqual(btnRescan.className, 'btn-success mt-2');
         assert.strictEqual(btnRescan.textContent, 'Erneut scannen (Rescan)');
+        assert.strictEqual(btnRescan.getAttribute('aria-describedby'), `rescan-status-${hybrid_sha}`);
 
         const pRescanStatus = context.mockElements[`rescan-status-${hybrid_sha}`];
         assert.ok(pRescanStatus);
