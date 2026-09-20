@@ -1276,7 +1276,13 @@ describe('background.js', () => {
         it('ignores invalid URLs without throwing an error', () => {
             const urls = ['not-a-valid-url', 'http://example.com'];
             const reasons = [];
-            const score = context.evaluateLinks(urls, 'example.com', 'example.com', 0, reasons);
+            const score = context.evaluateLinks({
+                urls,
+                senderDomain: 'example.com',
+                senderMainDomain: 'example.com',
+                score: 0,
+                reasons
+            });
 
             // Should not throw, and should find the match for example.com
             assert.strictEqual(score, 0);
@@ -1297,7 +1303,13 @@ describe('background.js', () => {
 
             try {
                 // This should catch the error internally and not throw
-                score = context.evaluateLinks(urls, 'example.com', 'example.com', 0, reasons);
+                score = context.evaluateLinks({
+                    urls,
+                    senderDomain: 'example.com',
+                    senderMainDomain: 'example.com',
+                    score: 0,
+                    reasons
+                });
             } finally {
                 // Restore original function
                 context.getHostnameOptimized = originalGetHostnameOptimized;
@@ -1312,7 +1324,13 @@ describe('background.js', () => {
         it('increases score if no link matches sender domain', () => {
             const urls = ['http://other-domain.com'];
             const reasons = [];
-            const score = context.evaluateLinks(urls, 'example.com', 'example.com', 0, reasons);
+            const score = context.evaluateLinks({
+                urls,
+                senderDomain: 'example.com',
+                senderMainDomain: 'example.com',
+                score: 0,
+                reasons
+            });
 
             assert.strictEqual(score, 40);
             assert.strictEqual(reasons.length, 1);
