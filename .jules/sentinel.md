@@ -64,3 +64,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** Unused migration scripts (`replace_api_calls.js` and `replace_inner_html.js`) were committed to the repository that incorrectly replaced safe `DOMParser().parseFromString()` parsing of HTML nodes with an unsafe `container.appendChild(resultHtml)` string evaluation.
 **Learning:** Migration or scratchpad scripts that contain fundamentally broken or unsafe logic can be executed accidentally by developers, re-introducing previously fixed vulnerabilities. They also generate noise in security scanning tools.
 **Prevention:** Completely remove scratchpad and one-off migration scripts from the repository once they are no longer necessary, rather than allowing them to linger as dead code.
+
+## 2026-09-20 - Security Hardening for Sensitive API Key Inputs
+**Vulnerability:** API key input fields in `options.html` must enforce confidential masking (`type="password"`), disable autofill caching (`autocomplete="off"`), restrict maximum character length (`maxlength="255"`), and prevent browser spellchecking (`spellcheck="false"`) to mitigate local token exposure, resource exhaustion, and spelljacking leaks.
+**Learning:** Automated unit tests validating HTML form attributes help prevent accidental regressions when HTML templates are modified.
+**Prevention:** Include structural tests that parse HTML templates using `JSDOM` and explicitly check key security attributes on sensitive inputs.

@@ -273,4 +273,19 @@ describe('options.js', () => {
         assert.strictEqual(statusSpan.className, 'text-danger ml-2');
         assert.strictEqual(statusSpan.style.display, 'none');
     });
+
+    it('should enforce security attributes on all API key input fields in options.html', () => {
+        const html = fs.readFileSync(path.join(__dirname, 'options.html'), 'utf8');
+        const optionsDom = new JSDOM(html);
+        const apiKeyIds = ['apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey'];
+
+        for (const id of apiKeyIds) {
+            const inputEl = optionsDom.window.document.getElementById(id);
+            assert.ok(inputEl, `Input element #${id} should exist`);
+            assert.strictEqual(inputEl.getAttribute('type'), 'password', `#${id} must have type="password"`);
+            assert.strictEqual(inputEl.getAttribute('autocomplete'), 'off', `#${id} must have autocomplete="off"`);
+            assert.strictEqual(inputEl.getAttribute('maxlength'), '255', `#${id} must have maxlength="255"`);
+            assert.strictEqual(inputEl.getAttribute('spellcheck'), 'false', `#${id} must have spellcheck="false"`);
+        }
+    });
 });
