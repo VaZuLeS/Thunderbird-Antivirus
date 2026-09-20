@@ -138,6 +138,9 @@ describe('background.js', () => {
             globalThis.handleUrlScan = handleUrlScan;
             globalThis.checkVirusTotal = checkVirusTotal;
             globalThis.calculateThreatScore = calculateThreatScore;
+            globalThis.extractBecProtectionData = extractBecProtectionData;
+            globalThis.evaluateMessageThreat = evaluateMessageThreat;
+            globalThis.evaluateAndInjectThreats = evaluateAndInjectThreats;
             globalThis.evaluateReplyTo = evaluateReplyTo;
             globalThis.levenshteinDistance = levenshteinDistance;
             globalThis.evaluateLinks = evaluateLinks;
@@ -2864,6 +2867,55 @@ describe('background.js', () => {
             assert.equal(options.headers['scan_type'], 'all');
             assert.equal(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
             assert.deepEqual(options.body, body);
+        });
+    });
+
+    describe('evaluateAndInjectThreats & threat evaluation helpers', () => {
+        it('extractBecProtectionData should extract email, reply-to, subject, and check first comms', async () => {
+            const message = { author: 'Alice <alice@example.com>', subject: 'Test Subject' };
+            const fullMessage = { headers: { 'reply-to': ['reply@example.com'] } };
+            const becData = await context.extractBecProtectionData(message, fullMessage);
+            assert.equal(becData.senderEmail, 'alice@example.com');
+            assert.equal(becData.subject, 'Test Subject');
+            assert.equal(becData.replyTo, 'reply@example.com');
+            assert.strictEqual(typeof becData.isFirstCommunication, 'boolean');
+        });
+
+        it('evaluateMessageThreat should gather threat context and compute threat score', async () => {
+            const message = { author: 'Bob <bob@example.com>', subject: 'Notice' };
+            const fullMessage = { headers: {} };
+            const result = await context.evaluateMessageThreat({
+                message,
+                fullMessage,
+                urls: [],
+                filteredUrls: [],
+                messageText: 'Hello Bob'
+            });
+            assert.ok(result.threat);
+            assert.strictEqual(typeof result.threat.score, 'number');
+            assert.ok(Array.isArray(result.threat.reasons));
+            assert.ok(Array.isArray(result.maliciousIps));
+        });
+
+        it('evaluateAndInjectThreats should evaluate threats and inject threat banner into tab', async () => {
+            let injectedTabId = null;
+            let injectedThreat = null;
+            context.injectThreatBanner = async (tabId, threat) => {
+                injectedTabId = tabId;
+                injectedThreat = threat;
+            };
+            const message = { author: 'Carol <carol@example.com>', subject: 'Test' };
+            const fullMessage = { headers: {} };
+            await context.evaluateAndInjectThreats({
+                tab: { id: 42 },
+                message,
+                fullMessage,
+                urls: [],
+                filteredUrls: [],
+                messageText: 'Test body'
+            });
+            assert.equal(injectedTabId, 42);
+            assert.ok(injectedThreat);
         });
     });
 });

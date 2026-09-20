@@ -951,35 +951,40 @@ async function processLinks(tab, message, fullMessage, parsedUrlCache = null) {
   return { messageText, urls, filteredUrls };
 }
 
-async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
+async function extractBecProtectionData(message, fullMessage) {
+  let senderEmail = extractEmailAddress(message.author);
+  let isFirstCommunication = await checkFirstCommunication(senderEmail);
+  let replyTo = (fullMessage.headers && fullMessage.headers['reply-to']) ? fullMessage.headers['reply-to'][0] : "";
+  let subject = message.subject || "";
+
+  return { senderEmail, isFirstCommunication, replyTo, subject };
+}
+
+async function evaluateMessageThreat({ message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
   let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
   let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
 
-  let maliciousIps = await checkIPReputation(receivedHeaders);
-
-  // BEC Protection Data Extraction
-  let senderEmail = extractEmailAddress(message.author);
-
-  let isFirstCommunication = await checkFirstCommunication(senderEmail);
-
-  let replyTo = "";
-  if (fullMessage.headers && fullMessage.headers['reply-to']) {
-      replyTo = fullMessage.headers['reply-to'][0];
-  }
-
-  let subject = message.subject || "";
-  let urlhausDomains = await checkURLhausDomains(filteredUrls, parsedUrlCache);
+  let [maliciousIps, becData, urlhausDomains] = await Promise.all([
+    checkIPReputation(receivedHeaders),
+    extractBecProtectionData(message, fullMessage),
+    checkURLhausDomains(filteredUrls, parsedUrlCache)
+  ]);
 
   let threat = calculateThreatScore(message.author, urls, {
     authHeaders,
     urlhausDomains,
-    isFirstCommunication,
+    isFirstCommunication: becData.isFirstCommunication,
     messageText,
-    subject,
-    replyTo,
+    subject: becData.subject,
+    replyTo: becData.replyTo,
     parsedUrlCache
   });
 
+  return { threat, maliciousIps };
+}
+
+async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
+  let { threat } = await evaluateMessageThreat({ message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
   await injectThreatBanner(tab.id, threat);
 }
 
