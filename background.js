@@ -1381,19 +1381,20 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
           recordToSave = existingRecord;
           if (!recordToSave.attachments) recordToSave.attachments = [];
 
-          const existingAttMap = new Map();
-          for (let i = 0; i < recordToSave.attachments.length; i++) {
-              const a = recordToSave.attachments[i];
-              existingAttMap.set(a.attachment_name, a);
-          }
-
           for (let i = 0; i < newAttachments.length; i++) {
               const newAtt = newAttachments[i];
-              existingAttMap.set(newAtt.attachment_name, newAtt);
+              let found = false;
+              for (let j = 0; j < recordToSave.attachments.length; j++) {
+                  if (recordToSave.attachments[j].attachment_name === newAtt.attachment_name) {
+                      recordToSave.attachments[j] = newAtt;
+                      found = true;
+                      break;
+                  }
+              }
+              if (!found) {
+                  recordToSave.attachments.push(newAtt);
+              }
           }
-
-          // ⚡ Bolt Optimization: Replace intermediate array tuples mapping indices with direct object mapping to avoid extra lookups and mutations
-          recordToSave.attachments = Array.from(existingAttMap.values());
         } else {
           // Create new record
           recordToSave = {
