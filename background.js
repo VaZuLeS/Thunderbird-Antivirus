@@ -788,10 +788,11 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
     let urlhausDomains = [];
     if (urlhausApikey && filteredUrls.length > 0) {
         let linkDomainsSet = new Set();
+        let cache = parsedUrlCache || new Map();
         for (let url of filteredUrls) {
             try {
                 // 🛡️ Sentinel: Use standard URL parser safely
-                let hostname = getHostnameOptimized(url, parsedUrlCache);
+                let hostname = getHostnameOptimized(url, cache);
                 if (!hostname) continue;
                 linkDomainsSet.add(hostname);
             } catch (e) { /* Ignore invalid URLs */ }
