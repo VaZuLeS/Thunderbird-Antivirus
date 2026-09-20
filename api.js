@@ -181,15 +181,13 @@ try {
                 }
 
                 if (fetchTasks.length > 0) {
-                    const CONCURRENCY_LIMIT = 5;
-                    for (let i = 0; i < fetchTasks.length; i += CONCURRENCY_LIMIT) {
-                        const batch = fetchTasks.slice(i, i + CONCURRENCY_LIMIT);
-                        let batchFragment = document.createDocumentFragment();
-                        await Promise.all(batch.map(task => task(batchFragment)));
-                        if (batchFragment.hasChildNodes()) {
-                            container.appendChild(batchFragment);
+                    await Promise.all(fetchTasks.map(async task => {
+                        let taskFragment = document.createDocumentFragment();
+                        await task(taskFragment);
+                        if (taskFragment.hasChildNodes()) {
+                            container.appendChild(taskFragment);
                         }
-                    }
+                    }));
                 }
             } else {
                 let container = document.getElementById('hybrid_analysis_api_content');
@@ -411,6 +409,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
     btnRescan.id = `btn-rescan-${hybrid_sha}`;
     btnRescan.className = "btn-success mt-2";
     btnRescan.textContent = `Erneut scannen (Rescan)`;
+    btnRescan.setAttribute('aria-describedby', `rescan-status-${hybrid_sha}`);
     card.appendChild(btnRescan);
 
     const pRescanStatus = document.createElement('p');
@@ -425,6 +424,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
         btnCdr.id = `btn-cdr-${hybrid_sha}`;
         btnCdr.className = "btn-primary mt-2 ml-2";
         btnCdr.textContent = `Bereinigen & Herunterladen (Lokales CDR)`;
+        btnCdr.setAttribute('aria-describedby', `cdr-status-${hybrid_sha}`);
         card.appendChild(btnCdr);
 
         const pCdrStatus = document.createElement('p');
@@ -712,6 +712,7 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
     btnUpload.id = `btn-upload-${urlId}`;
     btnUpload.className = "btn-primary mt-2";
     btnUpload.textContent = "URL jetzt scannen";
+    btnUpload.setAttribute('aria-describedby', `upload-status-${urlId}`);
     card.appendChild(btnUpload);
 
     let pStatus = document.createElement('p');
@@ -785,6 +786,7 @@ function createUploadButton(card, { hash, safeHash, attachmentName, messageId, p
     btnUpload.id = `btn-upload-${hash}`;
     btnUpload.className = "btn-primary mt-2";
     btnUpload.textContent = `Datei jetzt scannen (Upload)`;
+    btnUpload.setAttribute('aria-describedby', `upload-status-${hash}`);
     card.appendChild(btnUpload);
 
     let pUploadStatus = document.createElement('p');
@@ -806,6 +808,7 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
     cdrBtn.id = `btn-cdr-${safeHash}`;
     cdrBtn.className = "btn-primary mt-2 ml-2";
     cdrBtn.textContent = "Bereinigen & Herunterladen (Lokales CDR)";
+    cdrBtn.setAttribute('aria-describedby', `cdr-status-${safeHash}`);
     card.appendChild(cdrBtn);
 
     let pCdrStatus = document.createElement('p');

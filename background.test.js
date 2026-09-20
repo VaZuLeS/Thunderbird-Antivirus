@@ -130,7 +130,6 @@ describe('background.js', () => {
             globalThis.extractEmailAddress = extractEmailAddress;
             globalThis.extractEmailDomain = extractEmailDomain;
             globalThis.extractUrls = extractUrls;
-            globalThis.isWordChar = isWordChar;
             globalThis.filterUrls = filterUrls;
             globalThis.extractTextFromParts = extractTextFromParts;
             globalThis.indexedDB_save_links_to_db = indexedDB_save_links_to_db;
@@ -1079,49 +1078,6 @@ describe('background.js', () => {
         });
     });
 
-    describe('isWordChar', () => {
-        it('returns true for lowercase letters a-z', () => {
-            assert.strictEqual(context.isWordChar('a'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('m'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('z'.charCodeAt(0)), true);
-        });
-
-        it('returns true for uppercase letters A-Z', () => {
-            assert.strictEqual(context.isWordChar('A'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('M'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('Z'.charCodeAt(0)), true);
-        });
-
-        it('returns true for digits 0-9', () => {
-            assert.strictEqual(context.isWordChar('0'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('5'.charCodeAt(0)), true);
-            assert.strictEqual(context.isWordChar('9'.charCodeAt(0)), true);
-        });
-
-        it('returns true for underscore _', () => {
-            assert.strictEqual(context.isWordChar('_'.charCodeAt(0)), true);
-        });
-
-        it('returns true for specific German umlauts', () => {
-            const umlauts = ['ä', 'ö', 'ü', 'ß', 'Ä', 'Ö', 'Ü'];
-            for (const char of umlauts) {
-                assert.strictEqual(context.isWordChar(char.charCodeAt(0)), true, `Failed for ${char}`);
-            }
-        });
-
-        it('returns false for punctuation and spaces', () => {
-            assert.strictEqual(context.isWordChar(' '.charCodeAt(0)), false);
-            assert.strictEqual(context.isWordChar('!'.charCodeAt(0)), false);
-            assert.strictEqual(context.isWordChar('.'.charCodeAt(0)), false);
-            assert.strictEqual(context.isWordChar('-'.charCodeAt(0)), false);
-        });
-
-        it('returns false for out of bounds characters (>= 256)', () => {
-            assert.strictEqual(context.isWordChar(256), false);
-            assert.strictEqual(context.isWordChar('€'.charCodeAt(0)), false);
-            assert.strictEqual(context.isWordChar('🚀'.codePointAt(0)), false);
-        });
-    });
 
     describe('evaluateUrlhaus', () => {
         it('returns unchanged score and reasons for empty array', () => {
@@ -2864,6 +2820,47 @@ describe('background.js', () => {
             assert.equal(options.headers['scan_type'], 'all');
             assert.equal(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
             assert.deepEqual(options.body, body);
+        });
+    });
+
+    describe('create_manual_check_hybrid_data', () => {
+        it('should construct hybrid data object with MANUAL_CHECK defaults and virustotal_stats when provided', () => {
+            const localHash = 'abc123sha256hash';
+            const attachment = { name: 'test.pdf', partName: 'part1.2' };
+            const vtStats = { harmless: 10, malicious: 0, suspicious: 0, undetected: 2 };
+
+            const result = context.create_manual_check_hybrid_data(localHash, attachment, vtStats);
+
+            assert.deepEqual(result, {
+                hybrid_data: {
+                    submission_id: 'MANUAL_CHECK',
+                    job_id: 'MANUAL_CHECK',
+                    sha256: localHash,
+                    state: 'MANUAL_CHECK_PENDING',
+                    partName: 'part1.2'
+                },
+                attachmentName: 'test.pdf',
+                virustotal_stats: vtStats
+            });
+        });
+
+        it('should construct hybrid data object without virustotal_stats when virustotalStats is null or omitted', () => {
+            const localHash = 'xyz987sha256hash';
+            const attachment = { name: 'invoice.docx', partName: 'part2.1' };
+
+            const result = context.create_manual_check_hybrid_data(localHash, attachment, null);
+
+            assert.deepEqual(result, {
+                hybrid_data: {
+                    submission_id: 'MANUAL_CHECK',
+                    job_id: 'MANUAL_CHECK',
+                    sha256: localHash,
+                    state: 'MANUAL_CHECK_PENDING',
+                    partName: 'part2.1'
+                },
+                attachmentName: 'invoice.docx'
+            });
+            assert.strictEqual('virustotal_stats' in result, false);
         });
     });
 });

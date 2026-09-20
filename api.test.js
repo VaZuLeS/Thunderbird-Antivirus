@@ -847,7 +847,9 @@ describe('renderManualUploadUI', () => {
                         set id(val) { this._id = val; },
                         appendChild: function(child) { children.push(child); },
                         get children() { return children; },
-                        setAttribute: function() {},
+                        attributes: {},
+                        setAttribute: function(k, v) { this.attributes[k] = v; },
+                        getAttribute: function(k) { return this.attributes[k]; },
                         addEventListener: function() {}
                     };
                     return el;
@@ -952,6 +954,55 @@ describe('renderManualUploadUI', () => {
         const card = context.apiContentElement.children[0];
         assert.strictEqual(card.children[0].tag, 'h2');
         assert.strictEqual(card.children[0].textContent, 'Anhang: Unbekannt');
+    });
+
+    it('sets role=status attribute and appends to custom targetContainer when provided', () => {
+        context.createUploadButtonCalls.length = 0;
+        context.createCdrButtonCalls.length = 0;
+
+        const customContainer = {
+            children: [],
+            appendChild: function(child) { this.children.push(child); }
+        };
+
+        renderManualUploadUI('hash123', 'doc.pdf', 'msg1', 'part1', 'hdr1', customContainer);
+
+        assert.strictEqual(customContainer.children.length, 1);
+        const card = customContainer.children[0];
+        assert.strictEqual(card.getAttribute('role'), 'status');
+    });
+
+    it('escapes hash for safeHash in container id and button helper calls', () => {
+        context.createUploadButtonCalls.length = 0;
+        context.createCdrButtonCalls.length = 0;
+
+        const unsafeHash = '<script>alert(1)</script>';
+        const expectedSafeHash = '&lt;script&gt;alert(1)&lt;/script&gt;';
+
+        context.apiContentElement.children = [];
+        renderManualUploadUI(unsafeHash, 'file.bin', 'msg1', 'part1', 'hdr1');
+
+        const card = context.apiContentElement.children[0];
+        assert.strictEqual(card.id, `upload-container-${expectedSafeHash}`);
+        assert.strictEqual(context.createUploadButtonCalls[0].safeHash, expectedSafeHash);
+        assert.strictEqual(context.createUploadButtonCalls[0].hash, unsafeHash);
+        assert.strictEqual(context.createCdrButtonCalls[0].safeHash, expectedSafeHash);
+    });
+
+    it('renders full pInfo DOM structure with text nodes and strong tag', () => {
+        context.apiContentElement.children = [];
+        renderManualUploadUI('hash123', 'file.txt', 'msg1', 'part1', 'hdr1');
+
+        const card = context.apiContentElement.children[0];
+        const pInfo = card.children[2];
+
+        assert.strictEqual(pInfo.tag, 'p');
+        assert.strictEqual(pInfo.className, 'text-info');
+        assert.strictEqual(pInfo.children.length, 3);
+        assert.strictEqual(pInfo.children[0].textContent, 'Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie ');
+        assert.strictEqual(pInfo.children[1].tag, 'strong');
+        assert.strictEqual(pInfo.children[1].textContent, 'nicht automatisch hochgeladen');
+        assert.strictEqual(pInfo.children[2].textContent, '.');
     });
 });
 
@@ -1463,6 +1514,85 @@ describe('renderScannerResults', () => {
         assert.ok(html.includes('AV-Ergebnisse:'));
         assert.ok(html.includes('AV: AV-1 - Urteil: Threat found'));
         assert.ok(html.includes('AV: AV-2 - Urteil: Clean'));
+    });
+});
+
+describe('renderFileDetails', () => {
+    let context;
+    let renderFileDetails;
+
+    before(async () => {
+        context = {
+            document: {
+                createElement: (tag) => {
+                    return {
+                        tag: tag,
+                        textContent: '',
+                        children: [],
+                        appendChild: function(node) {
+                            this.children.push(node);
+                        },
+                        get innerHTML() {
+                            return this.children.map(c => '<' + (c.tag || 'p') + '>' + c.textContent + '</' + (c.tag || 'p') + '>').join('');
+                        }
+                    };
+                }
+            },
+            console: { log: () => {}, error: () => {} }
+        };
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+
+        vm.runInContext(wrappedCode, context);
+
+        renderFileDetails = context.renderFileDetails;
+    });
+
+    it('should render all file details correctly when complete json_data is provided', () => {
+        const jsonData = {
+            sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+            last_file_name: 'sample.exe',
+            size: 2048,
+            type: 'PE32 executable'
+        };
+        const card = context.document.createElement('div');
+        renderFileDetails(jsonData, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('SHA-256-Hashwert: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'));
+        assert.ok(html.includes('Letzter Dateiname: sample.exe'));
+        assert.ok(html.includes('Größe: 2048 Bytes'));
+        assert.ok(html.includes('Typ: PE32 executable'));
+    });
+
+    it('should fall back to N/A for missing optional file detail properties', () => {
+        const jsonData = {
+            sha256: 'abc123hash'
+        };
+        const card = context.document.createElement('div');
+        renderFileDetails(jsonData, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('SHA-256-Hashwert: abc123hash'));
+        assert.ok(html.includes('Letzter Dateiname: N/A'));
+        assert.ok(html.includes('Größe: N/A Bytes'));
+        assert.ok(html.includes('Typ: N/A'));
+    });
+
+    it('should handle undefined sha256 property gracefully', () => {
+        const jsonData = {};
+        const card = context.document.createElement('div');
+        renderFileDetails(jsonData, card);
+
+        const html = card.innerHTML;
+        assert.ok(html.includes('SHA-256-Hashwert: undefined'));
+        assert.ok(html.includes('Letzter Dateiname: N/A'));
+        assert.ok(html.includes('Größe: N/A Bytes'));
+        assert.ok(html.includes('Typ: N/A'));
     });
 });
 
@@ -2185,6 +2315,7 @@ describe('createUploadButton', () => {
                             context.mockElements[val] = this;
                         },
                         setAttribute: function(k, v) { this[k] = v; },
+                        getAttribute: function(k) { return this[k]; },
                         removeAttribute: function(k) { delete this[k]; },
                         appendChild: function(child) {
                             if (!this.childNodes) this.childNodes = [];
@@ -2423,6 +2554,7 @@ describe('handleUrlScanClick', () => {
                             context.mockElements[val] = this;
                         },
                         setAttribute: function(k, v) { this[k] = v; },
+                        getAttribute: function(k) { return this[k]; },
                         removeAttribute: function(k) { delete this[k]; },
                         appendChild: function(child) {
                             if (!this.childNodes) this.childNodes = [];
@@ -2603,6 +2735,7 @@ describe('renderActionButtons', () => {
                             context.mockElements[val] = this;
                         },
                         setAttribute: function(k, v) { this[k] = v; },
+                        getAttribute: function(k) { return this[k]; },
                         removeAttribute: function(k) { delete this[k]; },
                         appendChild: function(child) {
                             if (!this.childNodes) this.childNodes = [];
@@ -2650,6 +2783,7 @@ describe('renderActionButtons', () => {
         assert.strictEqual(btnRescan.tagName, 'button');
         assert.strictEqual(btnRescan.className, 'btn-success mt-2');
         assert.strictEqual(btnRescan.textContent, 'Erneut scannen (Rescan)');
+        assert.strictEqual(btnRescan.getAttribute('aria-describedby'), `rescan-status-${hybrid_sha}`);
 
         const pRescanStatus = context.mockElements[`rescan-status-${hybrid_sha}`];
         assert.ok(pRescanStatus);

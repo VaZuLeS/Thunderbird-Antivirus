@@ -88,6 +88,17 @@
                 e.preventDefault();
                 overlay.remove();
                 linkElement.focus();
+            } else if (e.key === 'Tab') {
+                const isShift = e.shiftKey;
+                const activeElement = document.activeElement;
+
+                if (isShift && activeElement === cancelBtn) {
+                    e.preventDefault();
+                    openBtn.focus();
+                } else if (!isShift && activeElement === openBtn) {
+                    e.preventDefault();
+                    cancelBtn.focus();
+                }
             }
         });
 

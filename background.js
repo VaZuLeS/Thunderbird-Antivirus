@@ -66,21 +66,6 @@ const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
 const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join('|') + ')(?![a-z0-9_äöüß])', 'g');
 
-// ⚡ Bolt Optimization: Use a precomputed Uint8Array Look-Up Table (LUT) for O(1) character classification
-const IS_WORD_CHAR_LUT = new Uint8Array(256);
-for (let code = 0; code < 256; code++) {
-    let isWord = false;
-    if (code >= 97 && code <= 122) isWord = true; // a-z
-    else if (code >= 48 && code <= 57) isWord = true; // 0-9
-    else if (code >= 65 && code <= 90) isWord = true; // A-Z
-    else if (code === 95) isWord = true; // _
-    else if (code === 228 || code === 246 || code === 252 || code === 223 || code === 196 || code === 214 || code === 220) isWord = true; // ä, ö, ü, ß, Ä, Ö, Ü
-    IS_WORD_CHAR_LUT[code] = isWord ? 1 : 0;
-}
-
-function isWordChar(code) {
-    return code < 256 && IS_WORD_CHAR_LUT[code] === 1;
-}
 
 // Einstellungen laden
 async function loadSettings() {
@@ -483,9 +468,12 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
 }
 
 function getHostnameOptimized(url, cache = null) {
-    if (cache && cache.has(url)) return cache.get(url);
+    if (cache) {
+        let cached = cache.get(url);
+        if (cached !== undefined) return cached;
+    }
     try {
-        let hostname = new URL(url).hostname.toLowerCase();
+        let hostname = new URL(url).hostname;
         if (cache) cache.set(url, hostname);
         return hostname;
     } catch (e) {
@@ -527,12 +515,20 @@ function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, rea
 
 function evaluateLinks(urls, senderDomain, senderMainDomain, score, reasons, parsedUrlCache = null) {
     let linkDomainsSet = new Set();
-    for (let url of urls) {
+    // ⚡ Bolt Optimization: Use indexed loop and inline cache check to reduce function call overhead
+    for (let i = 0; i < urls.length; i++) {
         try {
-            // 🛡️ Sentinel: Use standard URL parser safely
-            let hostname = getHostnameOptimized(url, parsedUrlCache);
-            if (!hostname) continue;
-            linkDomainsSet.add(hostname);
+            let url = urls[i];
+            let hostname;
+            if (parsedUrlCache) {
+                hostname = parsedUrlCache.get(url);
+                if (hostname === undefined) {
+                    hostname = getHostnameOptimized(url, parsedUrlCache);
+                }
+            } else {
+                hostname = getHostnameOptimized(url, parsedUrlCache);
+            }
+            if (hostname) linkDomainsSet.add(hostname);
         } catch (e) { /* Ignore invalid URLs */ }
     }
     if (linkDomainsSet.size > 0 && senderDomain) {
@@ -788,12 +784,20 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
     let urlhausDomains = [];
     if (urlhausApikey && filteredUrls.length > 0) {
         let linkDomainsSet = new Set();
-        for (let url of filteredUrls) {
+        // ⚡ Bolt Optimization: Use indexed loop and inline cache check to reduce function call overhead
+        for (let i = 0; i < filteredUrls.length; i++) {
             try {
-                // 🛡️ Sentinel: Use standard URL parser safely
-                let hostname = getHostnameOptimized(url, parsedUrlCache);
-                if (!hostname) continue;
-                linkDomainsSet.add(hostname);
+                let url = filteredUrls[i];
+                let hostname;
+                if (parsedUrlCache) {
+                    hostname = parsedUrlCache.get(url);
+                    if (hostname === undefined) {
+                        hostname = getHostnameOptimized(url, parsedUrlCache);
+                    }
+                } else {
+                    hostname = getHostnameOptimized(url, parsedUrlCache);
+                }
+                if (hostname) linkDomainsSet.add(hostname);
             } catch (e) { /* Ignore invalid URLs */ }
         }
         const domainChecks = [];
@@ -823,18 +827,6 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
                 urlhausCache.set(domain, isMalicious);
                 return isMalicious ? domain : null;
             }));
-
-            // ⚡ Bolt Optimization: Batch requests to limit concurrent network connections
-            const BATCH_SIZE = 5;
-            if (domainChecks.length >= BATCH_SIZE) {
-                const checkResults = await Promise.all(domainChecks);
-                for (let i = 0; i < checkResults.length; i++) {
-                    if (checkResults[i] !== null) {
-                        urlhausDomains.push(checkResults[i]);
-                    }
-                }
-                domainChecks.length = 0; // Clear the array for the next batch
-            }
         }
 
         if (domainChecks.length > 0) {
@@ -1184,14 +1176,24 @@ for (let n = 0; n <= 255; n++) {
     byteToHex[n] = n.toString(16).padStart(2, '0');
 }
 
+const sha256Cache = new WeakMap();
+
 // Funktion zum Senden der Anhänge an Hybrid Analysis
 async function get_sha256_hash(fileData) {
-    const hashBuffer = await crypto.subtle.digest('SHA-256', fileData);
+    // ⚡ Bolt Optimization: Cache SHA-256 hash calculation per file buffer reference using WeakMap
+    if (typeof fileData === "object" && fileData !== null && sha256Cache.has(fileData)) {
+        return sha256Cache.get(fileData);
+    }
+    const hashBuffer = await crypto.subtle.digest("SHA-256", fileData);
     const u8 = new Uint8Array(hashBuffer);
     // ⚡ Bolt Optimization: Use pre-allocated array and .join() instead of string concatenation or Array.from
     const hex = new Array(u8.length);
     for (let j = 0; j < u8.length; j++) hex[j] = byteToHex[u8[j]];
-    return hex.join('');
+    const result = hex.join("");
+    if (typeof fileData === "object" && fileData !== null) {
+        sha256Cache.set(fileData, result);
+    }
+    return result;
 }
 
 class HybridDataBuilder {
@@ -1381,19 +1383,22 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
           recordToSave = existingRecord;
           if (!recordToSave.attachments) recordToSave.attachments = [];
 
-          const existingAttMap = new Map();
-          for (let i = 0; i < recordToSave.attachments.length; i++) {
-              const a = recordToSave.attachments[i];
-              existingAttMap.set(a.attachment_name, a);
-          }
-
+          // ⚡ Bolt Optimization: Replace Map and Array.from allocations with direct in-place array search to eliminate Map overhead and extra lookups
+          const atts = recordToSave.attachments;
           for (let i = 0; i < newAttachments.length; i++) {
-              const newAtt = newAttachments[i];
-              existingAttMap.set(newAtt.attachment_name, newAtt);
+            const newAtt = newAttachments[i];
+            let found = false;
+            for (let j = 0; j < atts.length; j++) {
+              if (atts[j].attachment_name === newAtt.attachment_name) {
+                atts[j] = newAtt;
+                found = true;
+                break;
+              }
+            }
+            if (!found) {
+              atts.push(newAtt);
+            }
           }
-
-          // ⚡ Bolt Optimization: Replace intermediate array tuples mapping indices with direct object mapping to avoid extra lookups and mutations
-          recordToSave.attachments = Array.from(existingAttMap.values());
         } else {
           // Create new record
           recordToSave = {
@@ -1748,33 +1753,57 @@ function disarmHTML(htmlString) {
 
     const nodesToRemove = [];
 
+    const safeEl = doc.createElement('div');
+    const safeHasAttributes = safeEl.hasAttributes;
+    const safeRemoveAttribute = safeEl.removeAttribute;
+
+    let protoForTagName = Object.getPrototypeOf(safeEl);
+    while (protoForTagName && !Object.getOwnPropertyDescriptor(protoForTagName, 'tagName')) {
+        protoForTagName = Object.getPrototypeOf(protoForTagName);
+    }
+    const safeGetTagName = Object.getOwnPropertyDescriptor(protoForTagName, 'tagName').get;
+
+    let protoForAttributes = Object.getPrototypeOf(safeEl);
+    while (protoForAttributes && !Object.getOwnPropertyDescriptor(protoForAttributes, 'attributes')) {
+        protoForAttributes = Object.getPrototypeOf(protoForAttributes);
+    }
+    const safeGetAttributes = Object.getOwnPropertyDescriptor(protoForAttributes, 'attributes').get;
+
+    let protoForNodeType = Object.getPrototypeOf(safeEl);
+    while (protoForNodeType && !Object.getOwnPropertyDescriptor(protoForNodeType, 'nodeType')) {
+        protoForNodeType = Object.getPrototypeOf(protoForNodeType);
+    }
+    const safeGetNodeType = Object.getOwnPropertyDescriptor(protoForNodeType, 'nodeType').get;
+
     function processRoot(root) {
         const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
         let el = walker.currentNode;
         while (el) {
             // For DocumentFragment, nodeType is 11, but SHOW_ELEMENT only shows elements (nodeType 1).
-            if (el.nodeType === 1) {
-                if (activeTags.has(el.tagName.toLowerCase())) {
+            if (safeGetNodeType.call(el) === 1) {
+                const tagName = safeGetTagName.call(el).toLowerCase();
+                if (activeTags.has(tagName)) {
                     nodesToRemove.push(el);
                 } else {
-                    if (el.hasAttributes()) {
-                        for (let j = el.attributes.length - 1; j >= 0; j--) {
-                            const attrName = el.attributes[j].name.toLowerCase();
+                    if (safeHasAttributes.call(el)) {
+                        const attrs = safeGetAttributes.call(el);
+                        for (let j = attrs.length - 1; j >= 0; j--) {
+                            const attrName = attrs[j].name.toLowerCase();
                             if (attrName.startsWith('on')) {
-                                el.removeAttribute(attrName);
+                                safeRemoveAttribute.call(el, attrName);
                                 continue;
                             }
                             if (dangerousAttributes.has(attrName)) {
-                                let val = el.attributes[j].value.toLowerCase();
+                                let val = attrs[j].value.toLowerCase();
                                 // Remove control characters (like tabs/newlines) that might evade the check
                                 let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                                    el.removeAttribute(attrName);
+                                    safeRemoveAttribute.call(el, attrName);
                                 }
                             }
                         }
                     }
-                    if (el.tagName.toLowerCase() === 'template' && el.content) {
+                    if (tagName === 'template' && el.content) {
                         processRoot(el.content);
                     }
                 }
