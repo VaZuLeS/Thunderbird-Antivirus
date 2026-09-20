@@ -1789,6 +1789,150 @@ describe('handleUploadClick', () => {
     });
 });
 
+describe('renderReport', () => {
+    let context;
+    let renderReport;
+
+    before(async () => {
+        context = {
+            browser: {
+                storage: { local: { get: async () => ({}) } },
+                runtime: { sendMessage: async () => ({ status: 'success' }) }
+            },
+            document: {
+                createDocumentFragment: () => ({
+                    children: [],
+                    appendChild: function(node) {
+                        this.children.push(node);
+                    }
+                }),
+                createTextNode: (text) => ({ textContent: text, nodeType: 3 }),
+                createElement: (tag) => {
+                    let children = [];
+                    let el = {
+                        tagName: tag,
+                        className: '',
+                        textContent: '',
+                        _innerText: '',
+                        get innerText() { return this._innerText; },
+                        set innerText(v) { this._innerText = v; this.textContent = v; },
+                        disabled: false,
+                        attributes: {},
+                        setAttribute: function(k, v) { this.attributes[k] = v; },
+                        removeAttribute: function(k) { delete this.attributes[k]; },
+                        listeners: {},
+                        addEventListener: function(evt, cb) { this.listeners[evt] = cb; },
+                        appendChild: function(child) { children.push(child); },
+                        get childNodes() { return children; }
+                    };
+                    return el;
+                }
+            },
+            setTimeout: (cb) => { cb(); },
+            String: String,
+            Array: Array
+        };
+
+        vm.createContext(context);
+
+        const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(dbCode, context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        try {
+            vm.runInContext(wrappedCode, context);
+        } catch(e) {}
+
+        renderReport = context.renderReport;
+    });
+
+    it('renders report for in progress scan state', () => {
+        const json_data = {
+            state: 'IN_PROGRESS',
+            sha256: 'abc123sha256'
+        };
+        const card = renderReport({
+            json_data: json_data,
+            attachmentName: 'invoice.pdf',
+            hybrid_sha: 'abc123sha256'
+        });
+
+        assert.strictEqual(card.tagName, 'div');
+        assert.strictEqual(card.className, 'card mb-3');
+        const h2 = card.childNodes[0];
+        assert.strictEqual(h2.tagName, 'h2');
+        assert.strictEqual(h2.textContent, 'Geprüftes Element: invoice.pdf');
+    });
+
+    it('renders report for completed scan state without virustotal_stats', () => {
+        const json_data = {
+            state: 'SUCCESS',
+            verdict: 'CLEAN',
+            threat_level: 0,
+            threat_score: 0,
+            tags: ['pdf', 'clean'],
+            scanners: [],
+            sha256: 'abc123sha256'
+        };
+        const card = renderReport({
+            json_data: json_data,
+            attachmentName: 'test.pdf',
+            hybrid_sha: 'abc123sha256'
+        });
+
+        assert.strictEqual(card.tagName, 'div');
+        assert.strictEqual(card.className, 'card mb-3');
+        const h2 = card.childNodes[0];
+        assert.strictEqual(h2.textContent, 'Geprüftes Element: test.pdf');
+    });
+
+    it('renders report for completed scan state with virustotal_stats', () => {
+        const json_data = {
+            state: 'SUCCESS',
+            verdict: 'MALICIOUS',
+            threat_level: 2,
+            threat_score: 100,
+            tags: ['exe', 'malware'],
+            scanners: [{ name: 'AV1', status: 'MALICIOUS' }],
+            sha256: 'def456sha256'
+        };
+        const vtStats = {
+            malicious: 15,
+            suspicious: 2,
+            harmless: 50,
+            undetected: 5
+        };
+        const card = renderReport({
+            json_data: json_data,
+            attachmentName: 'malicious.exe',
+            hybrid_sha: 'def456sha256',
+            virustotal_stats: vtStats
+        });
+
+        assert.strictEqual(card.tagName, 'div');
+        assert.strictEqual(card.className, 'card mb-3');
+        const h2 = card.childNodes[0];
+        assert.strictEqual(h2.textContent, 'Geprüftes Element: malicious.exe');
+    });
+
+    it('renders fallback title when attachmentName is undefined or empty', () => {
+        const json_data = {
+            state: 'SUCCESS',
+            verdict: 'CLEAN',
+            sha256: '789sha256'
+        };
+        const card = renderReport({
+            json_data: json_data,
+            hybrid_sha: '789sha256'
+        });
+
+        const h2 = card.childNodes[0];
+        assert.strictEqual(h2.textContent, 'Geprüftes Element: Unbekannt');
+    });
+});
+
 describe('fetch_hybrid_report', () => {
     let context;
     let fetch_hybrid_report;
