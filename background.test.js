@@ -156,6 +156,9 @@ describe('background.js', () => {
             globalThis.MAX_URLHAUS_CACHE_SIZE = MAX_URLHAUS_CACHE_SIZE;
             globalThis.checkLists = checkLists;
             globalThis.handle_unknown_attachment = handle_unknown_attachment;
+            globalThis.extractBecProtectionData = extractBecProtectionData;
+            globalThis.collectThreatEvaluationOptions = collectThreatEvaluationOptions;
+            globalThis.evaluateAndInjectThreats = evaluateAndInjectThreats;
 
             // CheckIPReputation exposed variables
             globalThis.checkIPReputation = checkIPReputation;
@@ -1861,6 +1864,39 @@ describe('background.js', () => {
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
             assert.ok(executedWarningScripts.length === 0);
+        });
+    });
+
+    describe('evaluateAndInjectThreats and helpers', () => {
+        it('extractBecProtectionData extracts senderEmail, firstComm, replyTo, and subject', async () => {
+            const originalQuery = context.browser.messages.query;
+            context.browser.messages.query = async () => ({ messages: [] });
+            try {
+                const message = { author: 'Alice <alice@example.com>', subject: 'Test Subject' };
+                const fullMessage = { headers: { 'reply-to': ['reply@example.com'] } };
+                const res = await context.extractBecProtectionData(message, fullMessage);
+                assert.strictEqual(res.senderEmail, 'alice@example.com');
+                assert.strictEqual(res.subject, 'Test Subject');
+                assert.strictEqual(res.replyTo, 'reply@example.com');
+                assert.strictEqual(res.isFirstCommunication, true);
+            } finally {
+                context.browser.messages.query = originalQuery;
+            }
+        });
+
+        it('collectThreatEvaluationOptions aggregates options correctly', async () => {
+            const message = { author: 'Bob <bob@example.com>', subject: 'Urgent' };
+            const fullMessage = { headers: { 'authentication-results': ['spf=pass'], 'received': [] } };
+            const options = await context.collectThreatEvaluationOptions({
+                message,
+                fullMessage,
+                filteredUrls: [],
+                messageText: 'Hello',
+                parsedUrlCache: new Map()
+            });
+            assert.deepStrictEqual(options.authHeaders, ['spf=pass']);
+            assert.strictEqual(options.subject, 'Urgent');
+            assert.strictEqual(options.messageText, 'Hello');
         });
     });
 

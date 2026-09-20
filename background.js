@@ -924,35 +924,40 @@ async function processLinks(tab, message, fullMessage, parsedUrlCache = null) {
   return { messageText, urls, filteredUrls };
 }
 
-async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
-  let authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
-  let receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
+async function extractBecProtectionData(message, fullMessage) {
+  const senderEmail = extractEmailAddress(message.author);
+  const isFirstCommunication = await checkFirstCommunication(senderEmail);
+  const replyTo = (fullMessage.headers && fullMessage.headers['reply-to']) ? fullMessage.headers['reply-to'][0] : "";
+  const subject = message.subject || "";
 
-  let maliciousIps = await checkIPReputation(receivedHeaders);
+  return { senderEmail, isFirstCommunication, replyTo, subject };
+}
 
-  // BEC Protection Data Extraction
-  let senderEmail = extractEmailAddress(message.author);
+async function collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache }) {
+  const authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
+  const receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
 
-  let isFirstCommunication = await checkFirstCommunication(senderEmail);
+  const [maliciousIps, urlhausDomains, becData] = await Promise.all([
+    checkIPReputation(receivedHeaders),
+    checkURLhausDomains(filteredUrls, parsedUrlCache),
+    extractBecProtectionData(message, fullMessage)
+  ]);
 
-  let replyTo = "";
-  if (fullMessage.headers && fullMessage.headers['reply-to']) {
-      replyTo = fullMessage.headers['reply-to'][0];
-  }
-
-  let subject = message.subject || "";
-  let urlhausDomains = await checkURLhausDomains(filteredUrls, parsedUrlCache);
-
-  let threat = calculateThreatScore(message.author, urls, {
+  return {
     authHeaders,
     urlhausDomains,
-    isFirstCommunication,
+    isFirstCommunication: becData.isFirstCommunication,
     messageText,
-    subject,
-    replyTo,
-    parsedUrlCache
-  });
+    subject: becData.subject,
+    replyTo: becData.replyTo,
+    parsedUrlCache,
+    maliciousIps
+  };
+}
 
+async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
+  const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache });
+  const threat = calculateThreatScore(message.author, urls, options);
   await injectThreatBanner(tab.id, threat);
 }
 
