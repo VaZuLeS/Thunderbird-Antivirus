@@ -181,14 +181,10 @@ try {
                 }
 
                 if (fetchTasks.length > 0) {
-                    const CONCURRENCY_LIMIT = 5;
-                    for (let i = 0; i < fetchTasks.length; i += CONCURRENCY_LIMIT) {
-                        const batch = fetchTasks.slice(i, i + CONCURRENCY_LIMIT);
-                        let batchFragment = document.createDocumentFragment();
-                        await Promise.all(batch.map(task => task(batchFragment)));
-                        if (batchFragment.hasChildNodes()) {
-                            container.appendChild(batchFragment);
-                        }
+                    let mainFragment = document.createDocumentFragment();
+                    await Promise.all(fetchTasks.map(task => task(mainFragment)));
+                    if (mainFragment.hasChildNodes()) {
+                        container.appendChild(mainFragment);
                     }
                 }
             } else {
