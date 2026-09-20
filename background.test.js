@@ -235,6 +235,18 @@ describe('background.js', () => {
         const buffer = new TextEncoder().encode('test data').buffer;
         const hash = await context.get_sha256_hash(buffer);
         assert.strictEqual(hash, '916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9');
+
+        // Verify cache returns same result without invoking crypto
+        const originalDigest = context.crypto.subtle.digest;
+        let digestCalled = false;
+        context.crypto.subtle.digest = async () => {
+            digestCalled = true;
+            return originalDigest('SHA-256', buffer);
+        };
+        const hash2 = await context.get_sha256_hash(buffer);
+        assert.strictEqual(hash2, '916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9');
+        assert.strictEqual(digestCalled, false);
+        context.crypto.subtle.digest = originalDigest;
     });
 
     it('get_sha256_hash throws error if crypto.subtle.digest fails', async () => {
