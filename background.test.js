@@ -2866,5 +2866,46 @@ describe('background.js', () => {
             assert.deepEqual(options.body, body);
         });
     });
+
+    describe('create_manual_check_hybrid_data', () => {
+        it('should construct hybrid data object with MANUAL_CHECK defaults and virustotal_stats when provided', () => {
+            const localHash = 'abc123sha256hash';
+            const attachment = { name: 'test.pdf', partName: 'part1.2' };
+            const vtStats = { harmless: 10, malicious: 0, suspicious: 0, undetected: 2 };
+
+            const result = context.create_manual_check_hybrid_data(localHash, attachment, vtStats);
+
+            assert.deepEqual(result, {
+                hybrid_data: {
+                    submission_id: 'MANUAL_CHECK',
+                    job_id: 'MANUAL_CHECK',
+                    sha256: localHash,
+                    state: 'MANUAL_CHECK_PENDING',
+                    partName: 'part1.2'
+                },
+                attachmentName: 'test.pdf',
+                virustotal_stats: vtStats
+            });
+        });
+
+        it('should construct hybrid data object without virustotal_stats when virustotalStats is null or omitted', () => {
+            const localHash = 'xyz987sha256hash';
+            const attachment = { name: 'invoice.docx', partName: 'part2.1' };
+
+            const result = context.create_manual_check_hybrid_data(localHash, attachment, null);
+
+            assert.deepEqual(result, {
+                hybrid_data: {
+                    submission_id: 'MANUAL_CHECK',
+                    job_id: 'MANUAL_CHECK',
+                    sha256: localHash,
+                    state: 'MANUAL_CHECK_PENDING',
+                    partName: 'part2.1'
+                },
+                attachmentName: 'invoice.docx'
+            });
+            assert.strictEqual('virustotal_stats' in result, false);
+        });
+    });
 });
 });
