@@ -10,6 +10,6 @@
 ## 2024-08-09 - SHA-256 Hash String Concatenation Optimization
 **Learning:** Converting a `Uint8Array` to a hex string using `Array.from(u8).map(...)` is significantly slower (by about 40%) in V8 than naive string concatenation (`+=`) because of callback overhead and array creation. However, both can be beaten by a wide margin (2x faster) by using a pre-allocated array (`const hex = new Array(u8.length)`), a standard `for` loop to look up pre-computed hex values, and finally calling `.join('')`. Always benchmark proposed "modern" JS array method alternatives against basic loops when on hot paths.
 **Action:** When converting byte arrays to strings in hot paths, avoid `Array.from` and `.map`. Instead, use pre-allocated arrays, simple `for` loops, precomputed lookup tables, and `.join('')`.
-## 2024-05-24 - Remove N+1 query in URLhaus domain checking
-**Learning:** Found an N+1 query pattern where promises were batched and awaited sequentially (waiting for a batch of 5 to resolve before starting the next batch), which unnecessarily blocks concurrent network requests and increases latency.
-**Action:** Changed the logic to push all domain check promises into a single array and `await Promise.all()` once at the end, allowing true concurrency and improving processing time for large domain lists from ~402ms to ~100ms.
+## 2026-03-30 - Eliminate N+1 Promise.all batching in async request loops
+**Learning:** Sequential batching within loops (e.g. `await Promise.all(chunk)` every N items) forces network requests to pause until each chunk resolves, introducing unnecessary latency serialization (N+1 queries).
+**Action:** Fire promises synchronously in the collection loop and perform a single `await Promise.all()` on all gathered promises afterwards.
