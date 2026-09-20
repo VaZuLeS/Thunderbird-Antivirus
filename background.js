@@ -1184,14 +1184,21 @@ for (let n = 0; n <= 255; n++) {
     byteToHex[n] = n.toString(16).padStart(2, '0');
 }
 
+const _sha256Cache = new WeakMap();
+
 // Funktion zum Senden der Anhänge an Hybrid Analysis
 async function get_sha256_hash(fileData) {
+    if (_sha256Cache.has(fileData)) {
+        return _sha256Cache.get(fileData);
+    }
     const hashBuffer = await crypto.subtle.digest('SHA-256', fileData);
     const u8 = new Uint8Array(hashBuffer);
     // ⚡ Bolt Optimization: Use pre-allocated array and .join() instead of string concatenation or Array.from
     const hex = new Array(u8.length);
     for (let j = 0; j < u8.length; j++) hex[j] = byteToHex[u8[j]];
-    return hex.join('');
+    const hashHex = hex.join('');
+    _sha256Cache.set(fileData, hashHex);
+    return hashHex;
 }
 
 class HybridDataBuilder {
