@@ -13,3 +13,9 @@
 ## 2026-03-30 - Eliminate N+1 Promise.all batching in async request loops
 **Learning:** Sequential batching within loops (e.g. `await Promise.all(chunk)` every N items) forces network requests to pause until each chunk resolves, introducing unnecessary latency serialization (N+1 queries).
 **Action:** Fire promises synchronously in the collection loop and perform a single `await Promise.all()` on all gathered promises afterwards.
+## 2024-10-24 - Optimize evaluateBehavior by avoiding full string lowercasing
+**Learning:** In Node.js/V8, when performing regular expression searches on massive strings, it is significantly faster and more memory-efficient to compile the RegExp with the case-insensitive (`i`) flag rather than allocating a huge new string via `.toLowerCase()` prior to matching.
+**Action:** Always prefer compiling RegExp with the `i` flag over calling `.toLowerCase()` on the entire string when doing case-insensitive regex matching.
+## 2024-10-24 - Remove redundant lowercasing on WHATWG URL properties
+**Learning:** The `hostname` and `protocol` properties of a `URL` object natively return ASCII-lowercased strings according to the WHATWG standard. Calling `.toLowerCase()` on them is an anti-pattern that incurs unnecessary method invocation and string allocation overhead on hot paths.
+**Action:** Never append `.toLowerCase()` to `URL.hostname` or `URL.protocol` when parsing URLs.
