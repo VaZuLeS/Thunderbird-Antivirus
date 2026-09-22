@@ -1036,32 +1036,41 @@ async function tab_mail_open_display(tab, message) {
             const btn = document.createElement('button');
             btn.textContent = 'Für diese Nachricht scannen';
             btn.style.marginLeft = '10px';
+            btn.setAttribute('aria-describedby', 'thundy-optin-status');
+
+            const status = document.createElement('div');
+            status.id = 'thundy-optin-status';
+            status.setAttribute('role', 'status');
+            status.setAttribute('aria-live', 'polite');
+            status.style.marginTop = '4px';
+
             btn.addEventListener('click', async () => {
               btn.disabled = true;
               btn.setAttribute('aria-busy', 'true');
-              btn.textContent = 'Scannen...';
+              status.textContent = 'Scannen...';
               try {
                 const resp = await browser.runtime.sendMessage({ action: 'requestScan', messageId: messageId, senderEmail: senderEmail });
                 if (resp && resp.success) {
-                  btn.textContent = 'Scan abgeschlossen';
+                  status.textContent = 'Scan abgeschlossen';
                   btn.removeAttribute('aria-busy');
                 } else if (resp && resp.error === 'permission_denied') {
-                  btn.textContent = 'Erforderliche Berechtigung verweigert';
+                  status.textContent = 'Erforderliche Berechtigung verweigert';
                   btn.disabled = false;
                   btn.removeAttribute('aria-busy');
                 } else {
-                  btn.textContent = 'Scan fehlgeschlagen';
+                  status.textContent = 'Scan fehlgeschlagen';
                   btn.disabled = false;
                   btn.removeAttribute('aria-busy');
                 }
               } catch (e) {
-                btn.textContent = 'Fehler beim Starten des Scans';
+                status.textContent = 'Fehler beim Starten des Scans';
                 Logger.error(e);
                 btn.disabled = false;
                 btn.removeAttribute('aria-busy');
               }
             });
             banner.appendChild(btn);
+            banner.appendChild(status);
 
             const small = document.createElement('div');
             small.style.fontSize = '12px';
