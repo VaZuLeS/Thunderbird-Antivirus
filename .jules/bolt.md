@@ -13,3 +13,6 @@
 ## 2026-03-30 - Eliminate N+1 Promise.all batching in async request loops
 **Learning:** Sequential batching within loops (e.g. `await Promise.all(chunk)` every N items) forces network requests to pause until each chunk resolves, introducing unnecessary latency serialization (N+1 queries).
 **Action:** Fire promises synchronously in the collection loop and perform a single `await Promise.all()` on all gathered promises afterwards.
+## 2024-09-22 - Remove redundant toLowerCase() on URL.protocol
+**Learning:** The `protocol` property of a `URL` object natively returns an ASCII-lowercased string according to the WHATWG URL standard. Calling `.toLowerCase()` on it is redundant and incurs unnecessary method invocation and string allocation overhead in hot paths.
+**Action:** When working with the `URL` object's `protocol` (or `hostname`) property, do not call `.toLowerCase()`. Rely on the native lowercasing provided by the URL spec.
