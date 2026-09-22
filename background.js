@@ -64,7 +64,8 @@ function getHybridAnalysisOptions(method, body = null, isUrl = false) {
 const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
 
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
-const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join('|') + ')(?![a-z0-9_äöüß])', 'g');
+// ⚡ Bolt Optimization: Use case-insensitive RegExp flag instead of allocating a massive string with .toLowerCase()
+const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join('|') + ')(?![a-z0-9_äöüß])', 'gi');
 
 
 // Einstellungen laden
@@ -403,14 +404,17 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
 }
 
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
-    let textToAnalyze = (subject + " " + messageText).toLowerCase();
+    // ⚡ Bolt Optimization: Removed expensive .toLowerCase() allocation on potentially massive email strings
+    // Used 'mixedCaseText' variable name to clarify that downstream consumers should expect mixed-case (though none exist in this fn)
+    let mixedCaseText = (subject + " " + messageText);
     let foundUrgencyWords = [];
 
     let match;
     URGENCY_REGEX.lastIndex = 0;
-    while ((match = URGENCY_REGEX.exec(textToAnalyze)) !== null) {
-        if (foundUrgencyWords.indexOf(match[2]) === -1) {
-            foundUrgencyWords.push(match[2]);
+    while ((match = URGENCY_REGEX.exec(mixedCaseText)) !== null) {
+        let word = match[2].toLowerCase();
+        if (foundUrgencyWords.indexOf(word) === -1) {
+            foundUrgencyWords.push(word);
         }
     }
 
