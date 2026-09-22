@@ -152,7 +152,8 @@
 
             let protocol;
             try {
-                protocol = new URL(url).protocol.toLowerCase();
+                // protocol is natively lowercased by the URL spec
+                protocol = new URL(url).protocol;
             } catch (e) {
                 /* Block invalid URLs to avoid fail open */
                 event.preventDefault();
