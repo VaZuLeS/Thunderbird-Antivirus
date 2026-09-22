@@ -1795,6 +1795,18 @@ function disarmHTML(htmlString) {
     }
     const safeGetNodeType = Object.getOwnPropertyDescriptor(protoForNodeType, 'nodeType').get;
 
+    let protoForParentNode = Object.getPrototypeOf(safeEl);
+    while (protoForParentNode && !Object.getOwnPropertyDescriptor(protoForParentNode, 'parentNode')) {
+        protoForParentNode = Object.getPrototypeOf(protoForParentNode);
+    }
+    const safeGetParentNode = Object.getOwnPropertyDescriptor(protoForParentNode, 'parentNode').get;
+
+    let protoForRemoveChild = Object.getPrototypeOf(safeEl);
+    while (protoForRemoveChild && !Object.getOwnPropertyDescriptor(protoForRemoveChild, 'removeChild')) {
+        protoForRemoveChild = Object.getPrototypeOf(protoForRemoveChild);
+    }
+    const safeRemoveChild = Object.getOwnPropertyDescriptor(protoForRemoveChild, 'removeChild').value;
+
     function processRoot(root) {
         const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
         let el = walker.currentNode;
@@ -1836,8 +1848,9 @@ function disarmHTML(htmlString) {
 
     // Remove active tags collected during the pass
     for (let i = nodesToRemove.length - 1; i >= 0; i--) {
-        if (nodesToRemove[i].parentNode) {
-            nodesToRemove[i].parentNode.removeChild(nodesToRemove[i]);
+        const pNode = safeGetParentNode.call(nodesToRemove[i]);
+        if (pNode) {
+            safeRemoveChild.call(pNode, nodesToRemove[i]);
         }
     }
 
