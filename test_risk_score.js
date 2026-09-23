@@ -1,3 +1,6 @@
+const { describe, it } = require('node:test');
+const assert = require('node:assert');
+
 let customBlacklist = [];
 let customWhitelist = [];
 
@@ -325,17 +328,80 @@ function calculateThreatScore(author, urls, options = {}) {
     return { score: Math.min(score, 100), reasons: reasons };
 }
 
-console.log("Test 0: Legit subdomain sender, root link", calculateThreatScore("Service <service@service.paypal.com>", ["http://paypal.com/login"]));
-console.log("Test 1: Typosquatting sender", calculateThreatScore("Service <service@paypa1.com>", []));
-console.log("Test 2: Domain mismatch", calculateThreatScore("Service <service@paypal.com>", ["http://login.hacker.com/123"]));
-console.log("Test 3: Both", calculateThreatScore("Service <service@paypal-support.com>", ["http://login.paypa1.com"]));
-console.log("Test 4: Legitimate", calculateThreatScore("Service <service@paypal.com>", ["http://paypal.com/login", "http://info.paypal.com/test"]));
+describe('test_risk_score', () => {
+    it('Test 0: Legit subdomain sender, root link', () => {
+        const res = calculateThreatScore("Service <service@service.paypal.com>", ["http://paypal.com/login"]);
+        assert.strictEqual(res.score, 0);
+        assert.deepStrictEqual(res.reasons, []);
+    });
 
-console.log("Test 5: SPF fail", calculateThreatScore("Service <service@paypal.com>", [], { authHeaders: ["spf=fail"] }));
-console.log("Test 6: DKIM fail", calculateThreatScore("Service <service@paypal.com>", [], { authHeaders: ["dkim=fail"] }));
-console.log("Test 7: URLhaus listing", calculateThreatScore("Service <service@paypal.com>", ["http://malware.example.com"], { urlhausDomains: ["malware.example.com"] }));
-console.log("Test 8: Multiple fails", calculateThreatScore("Hacker <hacker@evil.com>", ["http://evil.com/bad"], { authHeaders: ["spf=fail dkim=fail"], urlhausDomains: ["evil.com"] }));
+    it('Test 1: Typosquatting sender', () => {
+        const res = calculateThreatScore("Service <service@paypa1.com>", []);
+        assert.strictEqual(res.score, 60);
+        assert.ok(res.reasons.some(r => r.includes("paypa1.com")));
+    });
 
-console.log("Test 9: Reply-To discrepancy", calculateThreatScore("CEO <ceo@company.com>", [], { messageText: "Hello", subject: "Hi", replyTo: "Hacker <hacker@evil.com>" }));
-console.log("Test 10: BEC (First comm + urgency)", calculateThreatScore("CEO <ceo@company.com>", [], { isFirstCommunication: true, messageText: "Bitte schnell überweisung tätigen.", subject: "Wichtig!" }));
-console.log("Test 11: First comm, no urgency", calculateThreatScore("Bob <bob@example.com>", [], { isFirstCommunication: true, messageText: "Hi there", subject: "Hello" }));
+    it('Test 2: Domain mismatch', () => {
+        const res = calculateThreatScore("Service <service@paypal.com>", ["http://login.hacker.com/123"]);
+        assert.strictEqual(res.score, 40);
+        assert.ok(res.reasons.some(r => r.includes("Keiner der Links")));
+    });
+
+    it('Test 3: Both', () => {
+        const res = calculateThreatScore("Service <service@paypal-support.com>", ["http://login.paypa1.com"]);
+        assert.strictEqual(res.score, 100);
+        assert.ok(res.reasons.some(r => r.includes("paypa1.com")));
+        assert.ok(res.reasons.some(r => r.includes("Keiner der Links")));
+    });
+
+    it('Test 4: Legitimate', () => {
+        const res = calculateThreatScore("Service <service@paypal.com>", ["http://paypal.com/login", "http://info.paypal.com/test"]);
+        assert.strictEqual(res.score, 0);
+        assert.deepStrictEqual(res.reasons, []);
+    });
+
+    it('Test 5: SPF fail', () => {
+        const res = calculateThreatScore("Service <service@paypal.com>", [], { authHeaders: ["spf=fail"] });
+        assert.strictEqual(res.score, 50);
+        assert.ok(res.reasons.some(r => r.includes("SPF-Prüfung fehlgeschlagen")));
+    });
+
+    it('Test 6: DKIM fail', () => {
+        const res = calculateThreatScore("Service <service@paypal.com>", [], { authHeaders: ["dkim=fail"] });
+        assert.strictEqual(res.score, 50);
+        assert.ok(res.reasons.some(r => r.includes("DKIM-Signatur ungültig")));
+    });
+
+    it('Test 7: URLhaus listing', () => {
+        const res = calculateThreatScore("Service <service@paypal.com>", ["http://malware.example.com"], { urlhausDomains: ["malware.example.com"] });
+        assert.strictEqual(res.score, 100);
+        assert.ok(res.reasons.some(r => r.includes("URLhaus")));
+        assert.ok(res.reasons.some(r => r.includes("Keiner der Links")));
+    });
+
+    it('Test 8: Multiple fails', () => {
+        const res = calculateThreatScore("Hacker <hacker@evil.com>", ["http://evil.com/bad"], { authHeaders: ["spf=fail dkim=fail"], urlhausDomains: ["evil.com"] });
+        assert.strictEqual(res.score, 100);
+        assert.ok(res.reasons.some(r => r.includes("SPF-Prüfung fehlgeschlagen")));
+        assert.ok(res.reasons.some(r => r.includes("DKIM-Signatur ungültig")));
+        assert.ok(res.reasons.some(r => r.includes("URLhaus")));
+    });
+
+    it('Test 9: Reply-To discrepancy', () => {
+        const res = calculateThreatScore("CEO <ceo@company.com>", [], { messageText: "Hello", subject: "Hi", replyTo: "Hacker <hacker@evil.com>" });
+        assert.strictEqual(res.score, 50);
+        assert.ok(res.reasons.some(r => r.includes("Diskrepanz erkannt")));
+    });
+
+    it('Test 10: BEC (First comm + urgency)', () => {
+        const res = calculateThreatScore("CEO <ceo@company.com>", [], { isFirstCommunication: true, messageText: "Bitte schnell überweisung tätigen.", subject: "Wichtig!" });
+        assert.strictEqual(res.score, 50);
+        assert.ok(res.reasons.some(r => r.includes("Mögliches BEC")));
+    });
+
+    it('Test 11: First comm, no urgency', () => {
+        const res = calculateThreatScore("Bob <bob@example.com>", [], { isFirstCommunication: true, messageText: "Hi there", subject: "Hello" });
+        assert.strictEqual(res.score, 10);
+        assert.ok(res.reasons.some(r => r.includes("erste Mal")));
+    });
+});
