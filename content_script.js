@@ -152,7 +152,8 @@
 
             let protocol;
             try {
-                protocol = new URL(url).protocol.toLowerCase();
+                // ⚡ Bolt Optimization: The protocol property is already natively ASCII-lowercased by the URL standard.
+                protocol = new URL(url).protocol;
             } catch (e) {
                 /* Block invalid URLs to avoid fail open */
                 event.preventDefault();
