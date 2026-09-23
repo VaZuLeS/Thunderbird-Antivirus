@@ -1562,6 +1562,24 @@ describe('background.js', () => {
             assert.ok(result.reasons.some(r => r.includes('Keiner der Links')));
         });
 
+        it('calculates threat score correctly for domain mismatch with parsedUrlCache and options', async () => {
+            const author = 'Service <service@paypal.com>';
+            const urls = ['http://login.hacker.com/123'];
+            const cache = new Map();
+            const result = context.calculateThreatScore(author, urls, { parsedUrlCache: cache });
+            assert.strictEqual(result.score, 40);
+            assert.ok(result.reasons.some(r => r.includes('Keiner der Links')));
+            assert.strictEqual(cache.get('http://login.hacker.com/123'), 'login.hacker.com');
+        });
+
+        it('calculates threat score correctly when at least one link matches sender domain', async () => {
+            const author = 'Service <service@paypal.com>';
+            const urls = ['http://paypal.com/login', 'http://login.hacker.com/123'];
+            const result = context.calculateThreatScore(author, urls);
+            assert.strictEqual(result.score, 0);
+            assert.strictEqual(result.reasons.length, 0);
+        });
+
         it('calculates threat score correctly for typosquatting link and mismatch', async () => {
             const author = 'Service <service@paypal-support.com>';
             const urls = ['https://login.amaz0n.de'];
