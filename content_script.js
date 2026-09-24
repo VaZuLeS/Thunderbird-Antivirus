@@ -133,6 +133,13 @@
         modal.appendChild(message);
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
+
+        modal.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+            }
+        });
+
         modal.tabIndex = -1;
         modal.focus();
 
