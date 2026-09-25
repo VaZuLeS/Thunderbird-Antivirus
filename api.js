@@ -41,11 +41,16 @@ if (!apikey_hybridanalysis) {
     let strong = document.createElement('strong');
     strong.textContent = 'Warnung:';
     alertDiv.appendChild(strong);
-    alertDiv.appendChild(document.createTextNode(' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.'));
+
+    let messageSpan = document.createElement('span');
+    messageSpan.id = 'api-key-error-msg';
+    messageSpan.textContent = ' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.';
+    alertDiv.appendChild(messageSpan);
 
     let btnSettings = document.createElement('button');
     btnSettings.className = 'btn-primary mt-2 ml-2';
     btnSettings.textContent = 'Einstellungen öffnen';
+    btnSettings.setAttribute('aria-describedby', 'api-key-error-msg');
     btnSettings.addEventListener('click', () => {
         browser.runtime.openOptionsPage();
     });
