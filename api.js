@@ -262,8 +262,15 @@ function renderInProgressStatus(json_data, hybrid_sha, card) {
 
 function renderThreatInfo(json_data, card) {
     let threatClass = "text-success";
-    if (json_data.threat_score > 50) threatClass = "text-warning";
-    if (json_data.threat_score > 80) threatClass = "text-danger";
+    let semanticLabel = " (Normal)";
+    if (json_data.threat_score > 50) {
+        threatClass = "text-warning";
+        semanticLabel = " (Suspicious)";
+    }
+    if (json_data.threat_score > 80) {
+        threatClass = "text-danger";
+        semanticLabel = " (Critical)";
+    }
 
     const pThreat = document.createElement('p');
     const threatStrong = document.createElement('strong');
@@ -273,7 +280,7 @@ function renderThreatInfo(json_data, card) {
     pThreat.appendChild(document.createTextNode(" "));
     const threatSpan = document.createElement('span');
     threatSpan.className = threatClass;
-    threatSpan.textContent = json_data.threat_score;
+    threatSpan.textContent = json_data.threat_score + semanticLabel;
     pThreat.appendChild(threatSpan);
     card.appendChild(pThreat);
 
@@ -324,8 +331,9 @@ function renderVirusTotalStats(virustotal_stats, card) {
     card.appendChild(pVtHead);
 
     const pVtMal = document.createElement('p');
-    pVtMal.className = "ml-4 text-warning";
-    pVtMal.textContent = `Malicious: ${virustotal_stats.malicious || 0}`;
+    const malCount = virustotal_stats.malicious || 0;
+    pVtMal.className = `ml-4 ${malCount > 0 ? "text-danger" : ""}`;
+    pVtMal.textContent = `Malicious: ${malCount}`;
     card.appendChild(pVtMal);
 
     const pVtUnd = document.createElement('p');
@@ -334,8 +342,9 @@ function renderVirusTotalStats(virustotal_stats, card) {
     card.appendChild(pVtUnd);
 
     const pVtSus = document.createElement('p');
-    pVtSus.className = "ml-4";
-    pVtSus.textContent = `Suspicious: ${virustotal_stats.suspicious || 0}`;
+    const susCount = virustotal_stats.suspicious || 0;
+    pVtSus.className = `ml-4 ${susCount > 0 ? "text-warning" : ""}`;
+    pVtSus.textContent = `Suspicious: ${susCount}`;
     card.appendChild(pVtSus);
 
     const pVtHarm = document.createElement('p');
