@@ -256,6 +256,8 @@ let lev_prevRow = new Uint16Array(64);
 let lev_currRow = new Uint16Array(64);
 
 function levenshteinDistance(a, b) {
+    // ⚡ Bolt Optimization: Fast-path for identical strings early
+    if (a === b) return 0;
     if (a.length === 0) return b.length;
     if (b.length === 0) return a.length;
 
