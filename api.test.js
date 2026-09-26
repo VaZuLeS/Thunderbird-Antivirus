@@ -328,7 +328,7 @@ describe('renderThreatInfo', () => {
         const pThreat = card.childNodes[0];
         assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-success');
         assert.strictEqual(pThreat.childNodes[2].className, 'text-success');
-        assert.strictEqual(pThreat.childNodes[2].textContent, 10);
+        assert.strictEqual(pThreat.childNodes[2].textContent, '10 (Normal)');
     });
 
     it('renders medium threat score with text-warning class', () => {
@@ -338,7 +338,7 @@ describe('renderThreatInfo', () => {
         const pThreat = card.childNodes[0];
         assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-warning');
         assert.strictEqual(pThreat.childNodes[2].className, 'text-warning');
-        assert.strictEqual(pThreat.childNodes[2].textContent, 60);
+        assert.strictEqual(pThreat.childNodes[2].textContent, '60 (Suspicious)');
     });
 
     it('renders high threat score with text-danger class', () => {
@@ -348,7 +348,7 @@ describe('renderThreatInfo', () => {
         const pThreat = card.childNodes[0];
         assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-danger');
         assert.strictEqual(pThreat.childNodes[2].className, 'text-danger');
-        assert.strictEqual(pThreat.childNodes[2].textContent, 90);
+        assert.strictEqual(pThreat.childNodes[2].textContent, '90 (Critical)');
     });
 
     it('renders fallback N/A values for missing optional fields', () => {

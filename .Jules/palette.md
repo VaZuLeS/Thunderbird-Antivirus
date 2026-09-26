@@ -105,3 +105,6 @@
 ## 2024-10-25 - ARIA Link for Asynchronous Buttons
 **Learning:** Asynchronous action buttons (e.g., save or upload) that output results to nearby dynamic status elements lack immediate context for screen reader users when focused. Users are unaware that their action will update a specific text area until they manually navigate the DOM after clicking.
 **Action:** To improve accessibility for asynchronous action buttons that output results to a nearby status element, always explicitly link the button to its corresponding status/feedback container using the `aria-describedby` attribute (e.g., `aria-describedby="status-id"`). This provides immediate context to screen reader users upon focusing the button.
+## 2024-10-25 - Contextual Colors and Semantic Labels for Numbers
+**Learning:** Hardcoding alert colors (e.g., `text-warning`) on metrics like "Malicious: 0" causes false alarms. Additionally, abstract numbers like a "Threat Score of 60" lack immediate context, even when colored, forcing users to guess the severity. Screen readers also only read the number and not the CSS color.
+**Action:** Always apply semantic color classes dynamically based on the actual value (e.g., only red if > 0). Furthermore, append explicit textual labels (e.g., "(Verdächtig)") alongside colored numbers to ensure the meaning is clear to both sighted and screen reader users.
