@@ -372,6 +372,45 @@ describe('renderThreatInfo', () => {
         const pTags = card.childNodes[6];
         assert.strictEqual(pTags.textContent, 'Tags: pdf, phishing');
     });
+
+    it('renders all threat info fields correctly when complete json_data is provided', () => {
+        const card = context.document.createElement('div');
+        const json_data = {
+            threat_score: 25,
+            verdict: 'no specific threat',
+            vx_family: 'Trojan.Win32',
+            multiscan_result: 'clean',
+            analysis_start_time: '2023-10-27 10:00:00',
+            tags: ['exe', 'signed']
+        };
+        renderThreatInfo(json_data, card);
+
+        assert.strictEqual(card.childNodes.length, 7);
+
+        const pThreat = card.childNodes[0];
+        assert.strictEqual(pThreat.childNodes[0].textContent, 'Bedrohungsscore:');
+        assert.strictEqual(pThreat.childNodes[2].textContent, '25 (Normal)');
+
+        const pVerdict = card.childNodes[1];
+        assert.strictEqual(pVerdict.childNodes[0].textContent, 'Urteil:');
+        assert.strictEqual(pVerdict.childNodes[2].textContent, 'no specific threat');
+
+        const pVxFamily = card.childNodes[2];
+        assert.strictEqual(pVxFamily.childNodes[0].textContent, 'Vx-Familie:');
+        assert.strictEqual(pVxFamily.childNodes[1].textContent, ' Trojan.Win32');
+
+        const pMulti = card.childNodes[3];
+        assert.strictEqual(pMulti.textContent, 'Multiscan-Ergebnis: clean');
+
+        const pAddInfo = card.childNodes[4];
+        assert.strictEqual(pAddInfo.childNodes[0].textContent, 'Additional Information:');
+
+        const pAnalysisTime = card.childNodes[5];
+        assert.strictEqual(pAnalysisTime.textContent, 'Analysis start time: 2023-10-27 10:00:00');
+
+        const pTags = card.childNodes[6];
+        assert.strictEqual(pTags.textContent, 'Tags: exe, signed');
+    });
 });
 
 describe('get_hybrid_report_by_sha256', () => {
