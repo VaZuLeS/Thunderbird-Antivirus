@@ -98,6 +98,14 @@ describe('escapeHTML', () => {
     it('handles non-string types gracefully by converting them to string', () => {
         assert.strictEqual(escapeHTML(123), '123');
         assert.strictEqual(escapeHTML(true), 'true');
+        assert.strictEqual(escapeHTML(0), '');
+        assert.strictEqual(escapeHTML(false), '');
+    });
+
+    it('handles consecutive special characters and boundary positions', () => {
+        assert.strictEqual(escapeHTML('&&<<>>""\'\''), '&amp;&amp;&lt;&lt;&gt;&gt;&quot;&quot;&#39;&#39;');
+        assert.strictEqual(escapeHTML('&start'), '&amp;start');
+        assert.strictEqual(escapeHTML('end&'), 'end&amp;');
     });
 
     it('propagates errors thrown during stringification', () => {
