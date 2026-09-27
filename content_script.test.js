@@ -452,6 +452,19 @@ describe('content_script.js', () => {
     });
 
     describe('createLoadingModal', () => {
+        it('should trap keyboard focus within the loading modal', () => {
+            context.createLoadingModal('http://example.com/test');
+            const overlay = context.document.querySelector('.thundy-loading-overlay');
+            const modal = overlay.querySelector('.thundy-modal');
+
+            let event = new dom.window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+            modal.dispatchEvent(event);
+            assert.strictEqual(event.defaultPrevented, true);
+
+            // Cleanup
+            overlay.remove();
+        });
+
         it('should create modal elements correctly with expected classes and ARIA attributes', () => {
             context.createLoadingModal('http://example.com/test');
 
