@@ -268,6 +268,16 @@ describe('renderInProgressStatus', () => {
         assert.strictEqual(pHash.tagName, 'p');
         assert.strictEqual(pHash.textContent, 'SHA-256: fallback-sha-256');
     });
+
+    it('renders correctly falling back to hybrid_sha when json_data.sha256 is null or empty string', () => {
+        const card1 = context.document.createElement('div');
+        renderInProgressStatus({ sha256: null }, 'fallback-sha-null', card1);
+        assert.strictEqual(card1.childNodes[1].textContent, 'SHA-256: fallback-sha-null');
+
+        const card2 = context.document.createElement('div');
+        renderInProgressStatus({ sha256: '' }, 'fallback-sha-empty', card2);
+        assert.strictEqual(card2.childNodes[1].textContent, 'SHA-256: fallback-sha-empty');
+    });
 });
 
 
