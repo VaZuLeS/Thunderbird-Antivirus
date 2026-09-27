@@ -99,6 +99,65 @@ describe('db.js module', () => {
         assert.strictEqual(result, dbMock);
     });
 
+    it('should reject openDB correctly on error when e.target.error is provided', async () => {
+        let testError = new Error('Database opening failed');
+        context = {
+            indexedDB: {
+                open: () => {
+                    let req = {};
+                    setTimeout(() => {
+                        req.error = testError;
+                        req.onerror({ target: req });
+                    }, 10);
+                    return req;
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            Promise: Promise
+        };
+
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        const openDB = context.openDB;
+        await assert.rejects(async () => {
+            await openDB('test', 1);
+        }, (err) => {
+            assert.strictEqual(err, testError);
+            return true;
+        });
+    });
+
+    it('should reject openDB correctly on error with fallback error message when e.target.error is falsy', async () => {
+        context = {
+            indexedDB: {
+                open: () => {
+                    let req = {};
+                    setTimeout(() => {
+                        req.error = null;
+                        req.onerror({ target: req });
+                    }, 10);
+                    return req;
+                }
+            },
+            console: { log: () => {}, error: () => {} },
+            Promise: Promise
+        };
+
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
+        vm.runInContext(code, context);
+
+        const openDB = context.openDB;
+        await assert.rejects(async () => {
+            await openDB('test', 1);
+        }, (err) => {
+            assert.strictEqual(err.message, 'Fehler beim Öffnen der Datenbank');
+            return true;
+        });
+    });
+
     it('should clearStore correctly', async () => {
         let dbMock = {
             objectStoreNames: { contains: () => true },
