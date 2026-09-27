@@ -173,16 +173,7 @@ try {
                 }
 
                 if (hasLinks) {
-                    for (const linkObj of record.links) {
-                        if (linkObj.state === 'UNKNOWN') {
-                            renderManualUrlScanUI(linkObj.url, message.headerMessageId, syncFragment);
-                        } else if (linkObj.hybrid_sha256) {
-                            fetchTasks.push((frag) => get_hybrid_report_by_sha256({
-                                hybrid_sha: linkObj.hybrid_sha256,
-                                attachmentName: linkObj.url
-                            }, frag));
-                        }
-                    }
+                    processRecordLinks(record.links, message.headerMessageId, syncFragment, fetchTasks);
                 }
 
                 if (fetchTasks.length > 0) {
@@ -693,6 +684,19 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
         btn.removeAttribute('aria-busy');
         btn.innerText = "Erneut versuchen";
     });
+}
+
+function processRecordLinks(links, headerMessageId, syncFragment, fetchTasks) {
+    for (const linkObj of links) {
+        if (linkObj.state === 'UNKNOWN') {
+            renderManualUrlScanUI(linkObj.url, headerMessageId, syncFragment);
+        } else if (linkObj.hybrid_sha256) {
+            fetchTasks.push((frag) => get_hybrid_report_by_sha256({
+                hybrid_sha: linkObj.hybrid_sha256,
+                attachmentName: linkObj.url
+            }, frag));
+        }
+    }
 }
 
 function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
