@@ -158,6 +158,7 @@ describe('background.js', () => {
             globalThis.handle_unknown_attachment = handle_unknown_attachment;
             globalThis.extractBecProtectionData = extractBecProtectionData;
             globalThis.collectThreatEvaluationOptions = collectThreatEvaluationOptions;
+            globalThis.addSenderOptIn = addSenderOptIn;
             globalThis.evaluateAndInjectThreats = evaluateAndInjectThreats;
 
             // CheckIPReputation exposed variables
@@ -2915,6 +2916,46 @@ describe('background.js', () => {
                 attachmentName: 'invoice.docx'
             });
             assert.strictEqual('virustotal_stats' in result, false);
+        });
+    });
+
+    describe('addSenderOptIn', () => {
+        it('should add new sender to scanningEnabledSenders when empty or undefined', async () => {
+            let savedData = null;
+            context.browser.storage.local.get = async (key) => ({ scanningEnabledSenders: [] });
+            context.browser.storage.local.set = async (obj) => { savedData = obj; };
+
+            await context.addSenderOptIn('new@example.com');
+
+            assert.deepEqual(savedData, { scanningEnabledSenders: ['new@example.com'] });
+        });
+
+        it('should not duplicate sender if already in scanningEnabledSenders', async () => {
+            let setCalled = false;
+            context.browser.storage.local.get = async (key) => ({ scanningEnabledSenders: ['existing@example.com'] });
+            context.browser.storage.local.set = async (obj) => { setCalled = true; };
+
+            await context.addSenderOptIn('existing@example.com');
+
+            assert.strictEqual(setCalled, false);
+        });
+
+        it('should append sender to existing list of senders', async () => {
+            let savedData = null;
+            context.browser.storage.local.get = async (key) => ({ scanningEnabledSenders: ['user1@example.com'] });
+            context.browser.storage.local.set = async (obj) => { savedData = obj; };
+
+            await context.addSenderOptIn('user2@example.com');
+
+            assert.deepEqual(savedData, { scanningEnabledSenders: ['user1@example.com', 'user2@example.com'] });
+        });
+
+        it('should handle storage errors gracefully without throwing', async () => {
+            context.browser.storage.local.get = async () => { throw new Error('Storage failure'); };
+
+            await assert.doesNotReject(async () => {
+                await context.addSenderOptIn('error@example.com');
+            });
         });
     });
 });
