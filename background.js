@@ -820,7 +820,7 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
             if (urlhausCache.has(domain)) {
                 const cached = urlhausCache.get(domain);
                 if (cached instanceof Promise) {
-                    domainChecks.push(cached.then(isMal => isMal ? domain : null));
+                    domainChecks.push(cached.then(isMal => { if (isMal) urlhausDomains.push(domain); }));
                 } else if (cached) {
                     urlhausDomains.push(domain);
                 }
@@ -837,17 +837,12 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
 
             domainChecks.push(checkPromise.then(isMalicious => {
                 urlhausCache.set(domain, isMalicious);
-                return isMalicious ? domain : null;
+                if (isMalicious) urlhausDomains.push(domain);
             }));
         }
 
         if (domainChecks.length > 0) {
-            const checkResults = await Promise.all(domainChecks);
-            for (let i = 0; i < checkResults.length; i++) {
-                if (checkResults[i] !== null) {
-                    urlhausDomains.push(checkResults[i]);
-                }
-            }
+            await Promise.all(domainChecks);
         }
     }
     return urlhausDomains;
