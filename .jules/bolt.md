@@ -13,3 +13,6 @@
 ## 2026-03-30 - Eliminate N+1 Promise.all batching in async request loops
 **Learning:** Sequential batching within loops (e.g. `await Promise.all(chunk)` every N items) forces network requests to pause until each chunk resolves, introducing unnecessary latency serialization (N+1 queries).
 **Action:** Fire promises synchronously in the collection loop and perform a single `await Promise.all()` on all gathered promises afterwards.
+## 2026-03-31 - Add fast-path to levenshtein distance algorithm
+**Learning:** The Levenshtein distance algorithm performs an expensive O(M*N) nested loop calculation. In use cases like domain typosquatting detection, many strings might be identical, forcing the algorithm to calculate the full matrix just to return 0. String equality checks (`a === b`) are highly optimized in V8 (often O(1) for identical string references or interned strings).
+**Action:** Always add an early O(1) equality check (`if (a === b) return 0;`) before entering expensive distance calculation loops, as it eliminates unnecessary work on happy paths.
