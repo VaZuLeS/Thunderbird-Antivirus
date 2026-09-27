@@ -968,17 +968,75 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
   await injectThreatBanner(tab.id, threat);
 }
 
+async function injectOptInBanner(tabId, messageId, senderEmail) {
+  try {
+    await browser.scripting.executeScript({
+      target: { tabId },
+      func: function(messageId, senderEmail) {
+        const existing = document.getElementById('thundy-optin-banner');
+        if (existing) return;
+        const banner = document.createElement('div');
+        banner.id = 'thundy-optin-banner';
+        banner.style.backgroundColor = '#fff8e1';
+        banner.style.border = '1px solid #ffcc80';
+        banner.style.color = '#333';
+        banner.style.padding = '8px';
+        banner.style.margin = '8px';
+        banner.style.borderRadius = '4px';
+        banner.style.fontFamily = 'Arial, sans-serif';
+        banner.style.zIndex = '9999';
+
+        const text = document.createElement('span');
+        text.textContent = 'Thundy AV: Echtzeit‑Scan ist für diese Nachricht nicht aktiviert.';
+        banner.appendChild(text);
+
+        const btn = document.createElement('button');
+        btn.textContent = 'Für diese Nachricht scannen';
+        btn.style.marginLeft = '10px';
+        btn.addEventListener('click', async () => {
+          btn.disabled = true;
+          btn.setAttribute('aria-busy', 'true');
+          btn.textContent = 'Scannen...';
+          try {
+            const resp = await browser.runtime.sendMessage({ action: 'requestScan', messageId: messageId, senderEmail: senderEmail });
+            if (resp && resp.success) {
+              btn.textContent = 'Scan abgeschlossen';
+              btn.removeAttribute('aria-busy');
+            } else if (resp && resp.error === 'permission_denied') {
+              btn.textContent = 'Erforderliche Berechtigung verweigert';
+              btn.disabled = false;
+              btn.removeAttribute('aria-busy');
+            } else {
+              btn.textContent = 'Scan fehlgeschlagen';
+              btn.disabled = false;
+              btn.removeAttribute('aria-busy');
+            }
+          } catch (e) {
+            btn.textContent = 'Fehler beim Starten des Scans';
+            Logger.error(e);
+            btn.disabled = false;
+            btn.removeAttribute('aria-busy');
+          }
+        });
+        banner.appendChild(btn);
+
+        const small = document.createElement('div');
+        small.style.fontSize = '12px';
+        small.style.marginTop = '6px';
+        small.textContent = 'Hinweis: Beim Scannen werden (je nach Einstellung) Dateien/Hashes an einen externen Service übertragen. Scanning kann in den Erweiterungs‑Einstellungen konfiguriert werden.';
+        banner.appendChild(small);
+
+        document.body.prepend(banner);
+      },
+      args: [messageId, senderEmail]
+    });
+  } catch (e) { Logger.error('Failed to inject opt-in banner', e); }
+}
+
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
   try {
-    // Determine sender email for per-sender opt-in storage
-    let senderEmail = message.author || '';
-    const start = senderEmail.indexOf('<');
-    if (start !== -1) {
-      const end = senderEmail.indexOf('>', start + 1);
-      if (end !== -1) senderEmail = senderEmail.substring(start + 1, end);
-    }
-    senderEmail = senderEmail.toLowerCase();
+    const senderEmail = extractEmailAddress(message.author || '');
 
     const stored = await browser.storage.local.get('scanningEnabledSenders');
     const enabledSenders = stored.scanningEnabledSenders || [];
@@ -987,13 +1045,11 @@ async function tab_mail_open_display(tab, message) {
     const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual && !!apikey_hybridanalysis;
 
     let fullMessage = await browser.messages.getFull(message.id);
-    // Determine attachments so we can decide whether to show the inline opt-in banner later
     let attachments = [];
     try {
       attachments = await browser.messages.listAttachments(message.id);
     } catch (e) { /* ignore */ }
 
-    // Always call processAttachments to preserve existing behavior; sent_to_hybrid_by_attachment will decide about uploads
     await processAttachments(message);
 
     let parsedUrlCache = new Map();
@@ -1001,71 +1057,8 @@ async function tab_mail_open_display(tab, message) {
 
     await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
 
-    // If user hasn't opted-in for this sender, inject an inline Opt-In banner into message view
-    // Only show banner when there are attachments or links to scan to avoid clutter for trivial messages
     if (!canAutoUpload && ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0))) {
-      try {
-        await browser.scripting.executeScript({
-          target: { tabId: tab.id },
-          func: function(messageId, senderEmail) {
-            const existing = document.getElementById('thundy-optin-banner');
-            if (existing) return;
-            const banner = document.createElement('div');
-            banner.id = 'thundy-optin-banner';
-            banner.style.backgroundColor = '#fff8e1';
-            banner.style.border = '1px solid #ffcc80';
-            banner.style.color = '#333';
-            banner.style.padding = '8px';
-            banner.style.margin = '8px';
-            banner.style.borderRadius = '4px';
-            banner.style.fontFamily = 'Arial, sans-serif';
-            banner.style.zIndex = '9999';
-
-            const text = document.createElement('span');
-            text.textContent = 'Thundy AV: Echtzeit‑Scan ist für diese Nachricht nicht aktiviert.';
-            banner.appendChild(text);
-
-            const btn = document.createElement('button');
-            btn.textContent = 'Für diese Nachricht scannen';
-            btn.style.marginLeft = '10px';
-            btn.addEventListener('click', async () => {
-              btn.disabled = true;
-              btn.setAttribute('aria-busy', 'true');
-              btn.textContent = 'Scannen...';
-              try {
-                const resp = await browser.runtime.sendMessage({ action: 'requestScan', messageId: messageId, senderEmail: senderEmail });
-                if (resp && resp.success) {
-                  btn.textContent = 'Scan abgeschlossen';
-                  btn.removeAttribute('aria-busy');
-                } else if (resp && resp.error === 'permission_denied') {
-                  btn.textContent = 'Erforderliche Berechtigung verweigert';
-                  btn.disabled = false;
-                  btn.removeAttribute('aria-busy');
-                } else {
-                  btn.textContent = 'Scan fehlgeschlagen';
-                  btn.disabled = false;
-                  btn.removeAttribute('aria-busy');
-                }
-              } catch (e) {
-                btn.textContent = 'Fehler beim Starten des Scans';
-                Logger.error(e);
-                btn.disabled = false;
-                btn.removeAttribute('aria-busy');
-              }
-            });
-            banner.appendChild(btn);
-
-            const small = document.createElement('div');
-            small.style.fontSize = '12px';
-            small.style.marginTop = '6px';
-            small.textContent = 'Hinweis: Beim Scannen werden (je nach Einstellung) Dateien/Hashes an einen externen Service übertragen. Scanning kann in den Erweiterungs‑Einstellungen konfiguriert werden.';
-            banner.appendChild(small);
-
-            document.body.prepend(banner);
-          },
-          args: [message.id, senderEmail]
-        });
-      } catch (e) { Logger.error('Failed to inject opt-in banner', e); }
+      await injectOptInBanner(tab.id, message.id, senderEmail);
     }
   } catch (error) {
     Logger.error(`Fehler beim Laden der Anhänge oder Links: ${error}`);
