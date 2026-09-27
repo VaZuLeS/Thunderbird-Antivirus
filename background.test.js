@@ -159,6 +159,7 @@ describe('background.js', () => {
             globalThis.extractBecProtectionData = extractBecProtectionData;
             globalThis.collectThreatEvaluationOptions = collectThreatEvaluationOptions;
             globalThis.evaluateAndInjectThreats = evaluateAndInjectThreats;
+            globalThis.hasHybridPermission = hasHybridPermission;
 
             // CheckIPReputation exposed variables
             globalThis.checkIPReputation = checkIPReputation;
@@ -2915,6 +2916,70 @@ describe('background.js', () => {
                 attachmentName: 'invoice.docx'
             });
             assert.strictEqual('virustotal_stats' in result, false);
+        });
+    });
+
+    describe('hasHybridPermission', () => {
+        let originalPermissions;
+
+        beforeEach(() => {
+            originalPermissions = context.browser.permissions;
+        });
+
+        afterEach(() => {
+            context.browser.permissions = originalPermissions;
+        });
+
+        it('returns true when browser.permissions.contains returns true', async () => {
+            let capturedQuery = null;
+            context.browser.permissions = {
+                contains: async (query) => {
+                    capturedQuery = query;
+                    return true;
+                }
+            };
+            const result = await context.hasHybridPermission();
+            assert.deepEqual(capturedQuery, { origins: ['https://hybrid-analysis.com/*'] });
+            assert.strictEqual(result, true);
+        });
+
+        it('returns false when browser.permissions.contains returns false', async () => {
+            let capturedQuery = null;
+            context.browser.permissions = {
+                contains: async (query) => {
+                    capturedQuery = query;
+                    return false;
+                }
+            };
+            const result = await context.hasHybridPermission();
+            assert.deepEqual(capturedQuery, { origins: ['https://hybrid-analysis.com/*'] });
+            assert.strictEqual(result, false);
+        });
+
+        it('logs error and returns false when browser.permissions.contains throws an error', async () => {
+            const originalConsoleError = context.console.error;
+            let loggedErrorMsg = null;
+            let loggedErrorObj = null;
+            context.console.error = (msg, err) => {
+                loggedErrorMsg = msg;
+                loggedErrorObj = err;
+            };
+
+            const permError = new Error('Permission API error');
+            context.browser.permissions = {
+                contains: async () => {
+                    throw permError;
+                }
+            };
+
+            try {
+                const result = await context.hasHybridPermission();
+                assert.strictEqual(result, false);
+                assert.strictEqual(loggedErrorMsg, 'permissions.contains failed');
+                assert.strictEqual(loggedErrorObj, permError);
+            } finally {
+                context.console.error = originalConsoleError;
+            }
         });
     });
 });
