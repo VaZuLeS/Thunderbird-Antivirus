@@ -1799,6 +1799,13 @@ function disarmHTML(htmlString) {
     }
     const safeRemoveChild = Object.getOwnPropertyDescriptor(protoForRemoveChild, 'removeChild').value;
 
+    const safeTemplate = doc.createElement('template');
+    let protoForContent = Object.getPrototypeOf(safeTemplate);
+    while (protoForContent && !Object.getOwnPropertyDescriptor(protoForContent, 'content')) {
+        protoForContent = Object.getPrototypeOf(protoForContent);
+    }
+    const safeGetContent = Object.getOwnPropertyDescriptor(protoForContent, 'content').get;
+
     function processRoot(root) {
         const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
         let el = walker.currentNode;
@@ -1827,8 +1834,11 @@ function disarmHTML(htmlString) {
                             }
                         }
                     }
-                    if (tagName === 'template' && el.content) {
-                        processRoot(el.content);
+                    if (tagName === 'template') {
+                        const content = safeGetContent.call(el);
+                        if (content) {
+                            processRoot(content);
+                        }
                     }
                 }
             }

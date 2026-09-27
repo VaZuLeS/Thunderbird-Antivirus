@@ -72,3 +72,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The HTML sanitizer (`disarmHTML`) was vulnerable to DOM Clobbering because it accessed `parentNode` and `removeChild` directly using dot-notation. Attackers could inject elements that override these properties, causing the sanitizer to crash when attempting to remove dangerous elements, thus bypassing the filter.
 **Learning:** Even removal operations in sanitizers must be protected from DOM Clobbering. If a removal operation crashes, the loop may terminate early, leaving dangerous elements intact.
 **Prevention:** Extract the unforgeable native getter for `parentNode` and the `removeChild` method from a newly created, un-clobbered element's prototype chain and apply them using `.call()` to safely navigate and modify the DOM structure of untrusted nodes.
+
+## 2026-09-01 - DOM Clobbering in HTML Sanitizer (template content)
+**Vulnerability:** The HTML sanitizer (`disarmHTML`) was vulnerable to DOM Clobbering because it accessed the `content` property of `<template>` elements directly using dot-notation. Attackers could inject elements (e.g., `<template><img name="content"></template>`) that override this property, causing the sanitizer to bypass sanitizing the template's inner fragment, leaving malicious elements intact.
+**Learning:** All properties accessed on untrusted elements, including `content` on `<template>` tags, are susceptible to DOM Clobbering and must be accessed via unclobbered prototype getters.
+**Prevention:** Extract the unforgeable native getter for `content` from a newly created, un-clobbered `<template>` element's prototype chain and apply it using `.call()` to safely retrieve the DocumentFragment.
