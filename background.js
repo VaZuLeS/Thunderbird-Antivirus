@@ -718,54 +718,50 @@ async function checkIPReputation(receivedHeaders) {
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
         let publicIps = extractPublicIPs(receivedHeaders);
 
-        const CONCURRENCY_LIMIT = 5;
-        for (let i = 0; i < publicIps.length; i += CONCURRENCY_LIMIT) {
-            let chunk = publicIps.slice(i, i + CONCURRENCY_LIMIT);
-            let ipChecks = [];
+        let ipChecks = [];
 
-            for (let j = 0; j < chunk.length; j++) {
-                const ip = chunk[j];
-                if (ipReputationCache.has(ip)) {
-                    const cached = ipReputationCache.get(ip);
-                    if (cached instanceof Promise) {
-                         ipChecks.push(cached.then(isMalicious => ({ ip, isMalicious })));
-                    } else {
-                         if (cached) maliciousIps.push(ip);
-                    }
-                    continue;
+        for (let i = 0; i < publicIps.length; i++) {
+            const ip = publicIps[i];
+            if (ipReputationCache.has(ip)) {
+                const cached = ipReputationCache.get(ip);
+                if (cached instanceof Promise) {
+                     ipChecks.push(cached.then(isMalicious => ({ ip, isMalicious })));
+                } else {
+                     if (cached) maliciousIps.push(ip);
                 }
-
-                let promise = (async () => {
-                    let isMalicious = false;
-                    try {
-                        if (ipReputationProvider === "abuseipdb") {
-                            isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
-                        } else if (ipReputationProvider === "virustotal") {
-                            isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
-                        }
-                    } catch(e) { Logger.error(e); }
-                    return isMalicious;
-                })();
-
-                if (ipReputationCache.size >= MAX_IP_CACHE) {
-                    ipReputationCache.delete(ipReputationCache.keys().next().value);
-                }
-                ipReputationCache.set(ip, promise);
-
-                ipChecks.push(promise.then(isMalicious => {
-                    ipReputationCache.set(ip, isMalicious);
-                    return { ip, isMalicious };
-                }));
+                continue;
             }
 
-            if (ipChecks.length > 0) {
-                let results = await Promise.all(ipChecks);
-                for (const result of results) {
-                    // ⚡ Bolt Optimization: Replace traditional for-loop with for...of to improve readability
-                    // and allow JS engines to optimize iterator traversal over arrays without repeated index lookups.
-                    if (result.isMalicious) {
-                        maliciousIps.push(result.ip);
+            let promise = (async () => {
+                let isMalicious = false;
+                try {
+                    if (ipReputationProvider === "abuseipdb") {
+                        isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
+                    } else if (ipReputationProvider === "virustotal") {
+                        isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
                     }
+                } catch(e) { Logger.error(e); }
+                return isMalicious;
+            })();
+
+            if (ipReputationCache.size >= MAX_IP_CACHE) {
+                ipReputationCache.delete(ipReputationCache.keys().next().value);
+            }
+            ipReputationCache.set(ip, promise);
+
+            ipChecks.push(promise.then(isMalicious => {
+                ipReputationCache.set(ip, isMalicious);
+                return { ip, isMalicious };
+            }));
+        }
+
+        if (ipChecks.length > 0) {
+            let results = await Promise.all(ipChecks);
+            for (const result of results) {
+                // ⚡ Bolt Optimization: Replace traditional for-loop with for...of to improve readability
+                // and allow JS engines to optimize iterator traversal over arrays without repeated index lookups.
+                if (result.isMalicious) {
+                    maliciousIps.push(result.ip);
                 }
             }
         }
