@@ -373,16 +373,18 @@ function renderScannerResults(scanners, card) {
             pStatus.textContent = `Status: ${scanner.status}`;
             fragment.appendChild(pStatus);
 
-            if (scanner.anti_virus_results) {
+            const avResults = scanner.anti_virus_results;
+            if (avResults) {
                 const pAvRes = document.createElement('p');
                 pAvRes.className = "ml-4";
                 pAvRes.textContent = `AV-Ergebnisse:`;
                 fragment.appendChild(pAvRes);
 
-                for (const avResult of scanner.anti_virus_results) {
+                for (const avResult of avResults) {
+                    const { product, verdict } = avResult;
                     const pAv = document.createElement('p');
                     pAv.className = "ml-6";
-                    pAv.textContent = `AV: ${avResult.product} - Urteil: ${avResult.verdict}`;
+                    pAv.textContent = `AV: ${product} - Urteil: ${verdict}`;
                     fragment.appendChild(pAv);
                 }
             }
