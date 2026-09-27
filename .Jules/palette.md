@@ -108,3 +108,7 @@
 ## 2024-10-25 - Contextual Colors and Semantic Labels for Numbers
 **Learning:** Hardcoding alert colors (e.g., `text-warning`) on metrics like "Malicious: 0" causes false alarms. Additionally, abstract numbers like a "Threat Score of 60" lack immediate context, even when colored, forcing users to guess the severity. Screen readers also only read the number and not the CSS color.
 **Action:** Always apply semantic color classes dynamically based on the actual value (e.g., only red if > 0). Furthermore, append explicit textual labels (e.g., "(Verdächtig)") alongside colored numbers to ensure the meaning is clear to both sighted and screen reader users.
+
+## 2024-10-25 - Contextual aria-describedby for dynamic fallback buttons
+**Learning:** When dynamic error states inject generic resolution buttons (like "Einstellungen öffnen"), screen reader users who navigate directly to the button via tab focus lack context on why they need to open the settings. The surrounding generic `div.alert-error` text is not naturally linked.
+**Action:** When injecting fallback resolution buttons next to dynamically generated error messages, always explicitly link the button to the corresponding error message using `aria-describedby` and an explicit ID (e.g., `aria-describedby="unexpected-error-msg"`). This ensures the full context of the error is announced immediately when the button is focused.

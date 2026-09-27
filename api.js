@@ -228,11 +228,16 @@ try {
         let errDiv = document.createElement('div');
         errDiv.className = 'alert-error';
         errDiv.setAttribute('role', 'alert');
-        errDiv.textContent = 'Unerwarteter Fehler beim Laden der Analyseergebnisse.';
+
+        let errMsg = document.createElement('span');
+        errMsg.id = 'unexpected-error-msg';
+        errMsg.textContent = 'Unerwarteter Fehler beim Laden der Analyseergebnisse.';
+        errDiv.appendChild(errMsg);
 
         let btnSettings = document.createElement('button');
         btnSettings.className = 'btn-primary mt-2 ml-2';
         btnSettings.textContent = 'Einstellungen öffnen';
+        btnSettings.setAttribute('aria-describedby', 'unexpected-error-msg');
         btnSettings.addEventListener('click', () => {
             browser.runtime.openOptionsPage();
         });
@@ -612,13 +617,18 @@ function handle_hybrid_report_error(response, attachmentName, targetContainer) {
     let errDiv1 = document.createElement('div');
     errDiv1.className = 'alert-error';
     errDiv1.setAttribute('role', 'alert');
-    errDiv1.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+
+    let errMsg = document.createElement('span');
+    errMsg.id = 'api-error-msg-key';
+    errMsg.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+    errDiv1.appendChild(errMsg);
 
     if (response.status === 401 || response.status === 403) {
-        errDiv1.textContent += ' (Möglicherweise ungültiger oder fehlender API-Schlüssel).';
+        errMsg.textContent += ' (Möglicherweise ungültiger oder fehlender API-Schlüssel).';
         let btnSettings = document.createElement('button');
         btnSettings.className = 'btn-primary mt-2 ml-2';
         btnSettings.textContent = 'Einstellungen öffnen';
+        btnSettings.setAttribute('aria-describedby', 'api-error-msg-key');
         btnSettings.addEventListener('click', () => {
             browser.runtime.openOptionsPage();
         });
