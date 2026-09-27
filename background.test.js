@@ -119,6 +119,8 @@ describe('background.js', () => {
             globalThis.get_apikey = () => apikey_hybridanalysis;
             globalThis.set_apikey = (val) => { apikey_hybridanalysis = val; };
             globalThis.set_vt_apikey = (val) => { apikey_virustotal = val; };
+            globalThis.getSharedDB = getSharedDB;
+            globalThis.reset_sharedDBPromise = () => { sharedDBPromise = null; };
             globalThis.tab_mail_open_display = tab_mail_open_display;
             globalThis.sent_to_hybrid_by_attachment = sent_to_hybrid_by_attachment;
             globalThis.injectTimeOfClickProtection = injectTimeOfClickProtection;
@@ -2359,6 +2361,57 @@ describe('background.js', () => {
                 await context.checkURLhausDomains([`http://domain${i}.com`]);
             }
             assert.strictEqual(context.urlhausCache.size, context.MAX_URLHAUS_CACHE_SIZE);
+        });
+    });
+
+    describe('getSharedDB', () => {
+        let originalOpenDB;
+
+        beforeEach(() => {
+            originalOpenDB = context.openDB;
+            if (context.reset_sharedDBPromise) context.reset_sharedDBPromise();
+        });
+
+        afterEach(() => {
+            context.openDB = originalOpenDB;
+            if (context.reset_sharedDBPromise) context.reset_sharedDBPromise();
+        });
+
+        it('initializes and caches sharedDBPromise singleton', async () => {
+            let openDBCalls = 0;
+            const fakeDB = { name: 'fakeDB' };
+            context.openDB = (name, version) => {
+                openDBCalls++;
+                assert.strictEqual(name, 'thunderbird_av');
+                assert.strictEqual(version, 3);
+                return Promise.resolve(fakeDB);
+            };
+
+            const p1 = context.getSharedDB();
+            const p2 = context.getSharedDB();
+
+            assert.strictEqual(p1, p2, 'Expected getSharedDB to return the exact same promise instance');
+            assert.strictEqual(openDBCalls, 1, 'Expected openDB to be called exactly once');
+
+            const db = await p1;
+            assert.strictEqual(db, fakeDB);
+        });
+
+        it('calls openDB again if sharedDBPromise is reset', async () => {
+            let openDBCalls = 0;
+            context.openDB = () => {
+                openDBCalls++;
+                return Promise.resolve({});
+            };
+
+            const p1 = context.getSharedDB();
+            assert.strictEqual(openDBCalls, 1);
+
+            context.reset_sharedDBPromise();
+
+            const p2 = context.getSharedDB();
+            assert.strictEqual(openDBCalls, 2);
+            assert.notStrictEqual(p1, p2);
         });
     });
 
