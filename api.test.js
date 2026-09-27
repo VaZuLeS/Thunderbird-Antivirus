@@ -789,6 +789,11 @@ describe('handle_hybrid_report_error', () => {
                         },
                         setAttribute: function(name, val) {
                             this[name] = val;
+                            if (!this.attributes) this.attributes = {};
+                            this.attributes[name] = val;
+                        },
+                        getAttribute: function(name) {
+                            return this.attributes ? this.attributes[name] : undefined;
                         },
                         addEventListener: function(evt, cb) {
                             if (evt === 'click') {
@@ -838,8 +843,9 @@ describe('handle_hybrid_report_error', () => {
 
         const appended = context.apiContentElement.child;
         assert.strictEqual(appended.className, 'alert-error');
-        assert.ok(appended.textContent.includes('API Error: 500 für Element test.txt'));
-        assert.ok(!appended.textContent.includes('Möglicherweise ungültiger oder fehlender API-Schlüssel'));
+        const errMsgSpan = appended.children.find(c => c.tag === 'span');
+        assert.ok(errMsgSpan.textContent.includes('API Error: 500 für Element test.txt'));
+        assert.ok(!errMsgSpan.textContent.includes('Möglicherweise ungültiger oder fehlender API-Schlüssel'));
         assert.strictEqual(appended.role, 'alert');
     });
 
@@ -850,14 +856,16 @@ describe('handle_hybrid_report_error', () => {
 
         const appended = context.apiContentElement.child;
         assert.strictEqual(appended.className, 'alert-error');
-        assert.ok(appended.textContent.includes('API Error: 401 für Element test.txt'));
-        assert.ok(appended.textContent.includes('Möglicherweise ungültiger oder fehlender API-Schlüssel'));
+        const errMsgSpan = appended.children.find(c => c.tag === 'span');
+        assert.ok(errMsgSpan.textContent.includes('API Error: 401 für Element test.txt'));
+        assert.ok(errMsgSpan.textContent.includes('Möglicherweise ungültiger oder fehlender API-Schlüssel'));
         assert.strictEqual(appended.role, 'alert');
 
         const settingsBtn = appended.children.find(c => c.tag === 'button');
         assert.ok(settingsBtn);
         assert.strictEqual(settingsBtn.textContent, 'Einstellungen öffnen');
         assert.strictEqual(settingsBtn.className, 'btn-primary mt-2 ml-2');
+        assert.strictEqual(settingsBtn.getAttribute('aria-describedby'), 'api-error-msg-key');
 
         settingsBtn.click();
         assert.strictEqual(context.optionsPageOpened, true);
@@ -870,14 +878,16 @@ describe('handle_hybrid_report_error', () => {
 
         const appended = context.apiContentElement.child;
         assert.strictEqual(appended.className, 'alert-error');
-        assert.ok(appended.textContent.includes('API Error: 403 für Element test.txt'));
-        assert.ok(appended.textContent.includes('Möglicherweise ungültiger oder fehlender API-Schlüssel'));
+        const errMsgSpan = appended.children.find(c => c.tag === 'span');
+        assert.ok(errMsgSpan.textContent.includes('API Error: 403 für Element test.txt'));
+        assert.ok(errMsgSpan.textContent.includes('Möglicherweise ungültiger oder fehlender API-Schlüssel'));
         assert.strictEqual(appended.role, 'alert');
 
         const settingsBtn = appended.children.find(c => c.tag === 'button');
         assert.ok(settingsBtn);
         assert.strictEqual(settingsBtn.textContent, 'Einstellungen öffnen');
         assert.strictEqual(settingsBtn.className, 'btn-primary mt-2 ml-2');
+        assert.strictEqual(settingsBtn.getAttribute('aria-describedby'), 'api-error-msg-key');
 
         settingsBtn.click();
         assert.strictEqual(context.optionsPageOpened, true);
