@@ -2160,9 +2160,9 @@ describe('background.js', () => {
 
     describe('extractPublicIPs', () => {
         it('should return empty array for null/undefined/empty headers', () => {
-            assert.strictEqual(context.extractPublicIPs(null).length, 0);
-            assert.strictEqual(context.extractPublicIPs(undefined).length, 0);
-            assert.strictEqual(context.extractPublicIPs([]).length, 0);
+            assert.deepEqual(context.extractPublicIPs(null), []);
+            assert.deepEqual(context.extractPublicIPs(undefined), []);
+            assert.deepEqual(context.extractPublicIPs([]), []);
         });
 
         it('should filter out private and local IPs', () => {
