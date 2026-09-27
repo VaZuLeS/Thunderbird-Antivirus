@@ -2731,6 +2731,96 @@ describe('background.js', () => {
                 };
             };
 
+            const result = await context.handle_unknown_attachment({
+                attachment: { name: 'test.pdf', partName: 'part1' },
+                content_of_attachment: new ArrayBuffer(8),
+                local_hash: 'hash123',
+                virustotal_stats: null,
+                privacyTier: 'balanced',
+                fileType: 'application/pdf'
+            });
+
+            assert.strictEqual(fetchCalled, true);
+            assert.ok(appendedData);
+            assert.deepEqual(result, {
+                hybrid_data: {
+                    submission_id: 'sub_123',
+                    job_id: 'job_456',
+                    sha256: 'hash_api',
+                    state: 'UPLOADED',
+                    partName: 'part1'
+                },
+                attachmentName: 'test.pdf'
+            });
+        });
+
+        it('falls back to PENDING_UPLOAD when privacyTier is off or default', async () => {
+            const result = await context.handle_unknown_attachment({
+                attachment: { name: 'test.pdf', partName: 'part1' },
+                content_of_attachment: new ArrayBuffer(8),
+                local_hash: 'hash123',
+                virustotal_stats: { malicious: 0 },
+                privacyTier: 'off'
+            });
+
+            assert.deepEqual(result, {
+                hybrid_data: {
+                    submission_id: 'PENDING_UPLOAD',
+                    job_id: 'PENDING_UPLOAD',
+                    sha256: 'hash123',
+                    state: 'UNKNOWN',
+                    partName: 'part1'
+                },
+                attachmentName: 'test.pdf',
+                virustotal_stats: { malicious: 0 }
+            });
+        });
+
+        it('falls back to PENDING_UPLOAD when API key is missing during auto-upload', async () => {
+            context.set_apikey_hybridanalysis(null);
+            const result = await context.handle_unknown_attachment({
+                attachment: { name: 'test.pdf', partName: 'part1' },
+                content_of_attachment: new ArrayBuffer(8),
+                local_hash: 'hash123',
+                virustotal_stats: { malicious: 1 },
+                privacyTier: 'balanced'
+            });
+
+            assert.deepEqual(result, {
+                hybrid_data: {
+                    submission_id: 'PENDING_UPLOAD',
+                    job_id: 'PENDING_UPLOAD',
+                    sha256: 'hash123',
+                    state: 'UNKNOWN',
+                    partName: 'part1'
+                },
+                attachmentName: 'test.pdf',
+                virustotal_stats: { malicious: 1 }
+            });
+        });
+
+        it('falls back to PENDING_UPLOAD when auto-upload fetch fails or throws', async () => {
+            context.set_apikey('test-key');
+            context.fetch = async () => ({ status: 500 });
+
+            const result = await context.handle_unknown_attachment({
+                attachment: { name: 'test.pdf', partName: 'part1' },
+                content_of_attachment: new ArrayBuffer(8),
+                local_hash: 'hash123',
+                virustotal_stats: null,
+                privacyTier: 'max'
+            });
+
+            assert.deepEqual(result, {
+                hybrid_data: {
+                    submission_id: 'PENDING_UPLOAD',
+                    job_id: 'PENDING_UPLOAD',
+                    sha256: 'hash123',
+                    state: 'UNKNOWN',
+                    partName: 'part1'
+                },
+                attachmentName: 'test.pdf'
+            });
         });
 
         it('returns UNKNOWN if no active message or headerMessageId', async () => {
