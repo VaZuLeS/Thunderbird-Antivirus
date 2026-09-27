@@ -2,18 +2,7 @@
     const allowedLinks = new WeakSet();
     const allowedProtocols = new Set(['http:', 'https:', 'mailto:', 'tel:', 'cid:', 'mid:']);
 
-    function createWarningModal(url, linkElement, state, reasons) {
-        // Create overlay
-        const overlay = document.createElement('div');
-        overlay.className = 'thundy-overlay';
-
-        const modal = document.createElement('div');
-        modal.className = 'thundy-modal';
-        modal.setAttribute('role', 'dialog');
-        modal.setAttribute('aria-modal', 'true');
-        modal.setAttribute('aria-labelledby', 'thundy-warning-title');
-        modal.setAttribute('aria-describedby', 'thundy-warning-message');
-
+    function createWarningHeader(state) {
         const title = document.createElement('h2');
         title.id = 'thundy-warning-title';
         title.className = 'thundy-text-warning';
@@ -33,28 +22,22 @@
             message.textContent = 'Dieser Link wurde noch nicht vollständig überprüft oder ist unbekannt.';
         }
 
-        const urlInfo = document.createElement('p');
-        urlInfo.textContent = 'Ziel: ' + url;
+        return { title, message };
+    }
 
-        const stateInfo = document.createElement('p');
-        stateInfo.textContent = 'Status: ' + state;
+    function createWarningReasons(reasons) {
+        if (!reasons || reasons.length === 0) return null;
+        const reasonList = document.createElement('ul');
+        reasonList.style.color = '#cc0000';
+        reasons.forEach(r => {
+            const li = document.createElement('li');
+            li.textContent = r;
+            reasonList.appendChild(li);
+        });
+        return reasonList;
+    }
 
-        modal.appendChild(title);
-        modal.appendChild(message);
-        modal.appendChild(urlInfo);
-        modal.appendChild(stateInfo);
-
-        if (reasons && reasons.length > 0) {
-            const reasonList = document.createElement('ul');
-            reasonList.style.color = '#cc0000';
-            reasons.forEach(r => {
-                const li = document.createElement('li');
-                li.textContent = r;
-                reasonList.appendChild(li);
-            });
-            modal.appendChild(reasonList);
-        }
-
+    function createWarningButtons(overlay, linkElement) {
         const buttonGroup = document.createElement('div');
         buttonGroup.className = 'thundy-mt-3';
 
@@ -78,11 +61,10 @@
 
         buttonGroup.appendChild(cancelBtn);
         buttonGroup.appendChild(openBtn);
-        modal.appendChild(buttonGroup);
+        return { buttonGroup, cancelBtn, openBtn };
+    }
 
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-
+    function setupWarningKeyboardTrap(modal, overlay, linkElement, cancelBtn, openBtn) {
         modal.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 e.preventDefault();
@@ -101,6 +83,44 @@
                 }
             }
         });
+    }
+
+    function createWarningModal(url, linkElement, state, reasons) {
+        const overlay = document.createElement('div');
+        overlay.className = 'thundy-overlay';
+
+        const modal = document.createElement('div');
+        modal.className = 'thundy-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'thundy-warning-title');
+        modal.setAttribute('aria-describedby', 'thundy-warning-message');
+
+        const { title, message } = createWarningHeader(state);
+
+        const urlInfo = document.createElement('p');
+        urlInfo.textContent = 'Ziel: ' + url;
+
+        const stateInfo = document.createElement('p');
+        stateInfo.textContent = 'Status: ' + state;
+
+        modal.appendChild(title);
+        modal.appendChild(message);
+        modal.appendChild(urlInfo);
+        modal.appendChild(stateInfo);
+
+        const reasonList = createWarningReasons(reasons);
+        if (reasonList) {
+            modal.appendChild(reasonList);
+        }
+
+        const { buttonGroup, cancelBtn, openBtn } = createWarningButtons(overlay, linkElement);
+        modal.appendChild(buttonGroup);
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        setupWarningKeyboardTrap(modal, overlay, linkElement, cancelBtn, openBtn);
 
         modal.tabIndex = -1;
         cancelBtn.focus();
