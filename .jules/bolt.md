@@ -16,3 +16,7 @@
 ## 2026-03-31 - Add fast-path to levenshtein distance algorithm
 **Learning:** The Levenshtein distance algorithm performs an expensive O(M*N) nested loop calculation. In use cases like domain typosquatting detection, many strings might be identical, forcing the algorithm to calculate the full matrix just to return 0. String equality checks (`a === b`) are highly optimized in V8 (often O(1) for identical string references or interned strings).
 **Action:** Always add an early O(1) equality check (`if (a === b) return 0;`) before entering expensive distance calculation loops, as it eliminates unnecessary work on happy paths.
+
+## 2026-04-01 - Align IP reputation lookup concurrency with URLhaus domain checks
+**Learning:** While `checkURLhausDomains` executed all API lookup promises concurrently in a single `Promise.all()`, `checkIPReputation` artificially chunked requests in batches of 5. This created an asynchronous pipeline bottleneck, multiplying response latency by the number of chunks.
+**Action:** Avoid artificial request chunking loops in extension background scripts when fetching endpoint reputations; collect all promises in a single array and resolve concurrently via `Promise.all()`.
