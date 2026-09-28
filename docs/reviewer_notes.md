@@ -176,6 +176,16 @@ The researcher panel adds locally computed forensics:
   Nothing is transmitted automatically; the panel states explicitly that clicking a link sends that single
   indicator to the chosen provider (a normal user-initiated navigation).
 
+### 3.10 Pivot, sandbox, bulk scan, bursts
+
+- **Local IOC pivot** (`pivotIndicator`): searches the local history and the local IndexedDB cache only; no network.
+- **Rule/score sandbox** (`evaluateSample`): runs the local scoring pipeline on user-provided sample text and returns
+  the breakdown; it performs no network request at all (asserted by a unit test).
+- **Bulk link check** (`scanAllLinks`): requires the global consent *and* an API key; it submits up to 20 links of the
+  opened message to Hybrid Analysis and is only reachable through an explicit button that is hidden without consent.
+  Each submission is logged in the local history (including a batch summary).
+- **Burst detection** is computed from the local history when the statistics are opened.
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,

@@ -149,6 +149,19 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.9 Release notes 1.14.0
+
+- **Local IOC pivot:** for a hash, IP, domain or URL the add-on now shows where that indicator already appeared in
+  your own history and stored scan results (counts, affected messages, states).
+- **Rule/score sandbox** in the options: paste sender, subject, body and links and run them through the complete
+  local evaluation (score contributions per step, reasons, matching custom rules, forensic findings) - nothing is
+  transmitted.
+- **Bulk link check (opt-in):** submit every link of a message with one click - only with active consent and an API
+  key; the button is hidden otherwise.
+- **Findings CSV export** and **burst detection** (many messages from the same sender within ten minutes).
+- **Fix:** link extraction now works for multipart messages (previously an array was passed instead of the root part,
+  so text and links stayed empty for most real-world messages).
+
 ## 5.8 Release notes 1.13.0
 
 - **Header forensics** with severity levels and MITRE ATT&CK mapping (brand impersonation in the display name,

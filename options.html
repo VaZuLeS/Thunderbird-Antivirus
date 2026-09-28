@@ -234,6 +234,28 @@
         <br><small id="rulesStatus"></small>
     </div>
 
+    <hr>
+    <h3 data-i18n="opt.h3.sandbox">Regel-/Score-Sandbox (lokal)</h3>
+    <p><small data-i18n="opt.sandbox.help">Beispiel lokal durch die Bewertung schicken – ohne jede Übertragung. Ideal zum Justieren eigener Regeln.</small></p>
+    <div class="mb-3">
+        <label for="sandboxAuthor" data-i18n="opt.sandbox.author">Absender (z. B. Service &lt;service@example.com&gt;):</label>
+        <input type="text" id="sandboxAuthor" placeholder="Service <service@example.com>" spellcheck="false">
+    </div>
+    <div class="mb-3">
+        <label for="sandboxSubject" data-i18n="opt.sandbox.subject">Betreff:</label>
+        <input type="text" id="sandboxSubject" spellcheck="false">
+    </div>
+    <div class="mb-3">
+        <label for="sandboxText" data-i18n="opt.sandbox.text">Nachrichtentext:</label>
+        <textarea id="sandboxText" rows="3" style="width: 100%;" spellcheck="false"></textarea>
+    </div>
+    <div class="mb-3">
+        <label for="sandboxUrls" data-i18n="opt.sandbox.urls">Links (eine pro Zeile):</label>
+        <textarea id="sandboxUrls" rows="3" style="width: 100%;" spellcheck="false"></textarea>
+    </div>
+    <button id="sandboxRun" type="button" data-i18n="opt.sandbox.run">Lokal auswerten</button>
+    <div id="sandboxResult" class="card card-info"><small data-i18n="opt.sandbox.idle">Noch nicht ausgewertet.</small></div>
+
     <br><br>
     <hr>
 

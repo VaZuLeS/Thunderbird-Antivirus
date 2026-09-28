@@ -308,6 +308,9 @@
   "opt.h3.rules": {
     "message": "Eigene Regeln (lokale IOC-Listen)"
   },
+  "opt.h3.sandbox": {
+    "message": "Regel-/Score-Sandbox (lokal)"
+  },
   "opt.h3.statistics": {
     "message": "Statistik"
   },
@@ -361,6 +364,30 @@
   },
   "opt.rules.label": {
     "message": "Regeln als JSON (Liste):"
+  },
+  "opt.sandbox.author": {
+    "message": "Absender (z. B. Service <service@example.com>):"
+  },
+  "opt.sandbox.help": {
+    "message": "Beispiel lokal durch die Bewertung schicken - ohne jede Uebertragung. Ideal zum Justieren eigener Regeln."
+  },
+  "opt.sandbox.idle": {
+    "message": "Noch nicht ausgewertet."
+  },
+  "opt.sandbox.run": {
+    "message": "Lokal auswerten"
+  },
+  "opt.sandbox.subject": {
+    "message": "Betreff:"
+  },
+  "opt.sandbox.text": {
+    "message": "Nachrichtentext:"
+  },
+  "opt.sandbox.urls": {
+    "message": "Links (eine pro Zeile):"
+  },
+  "opt.statistics.bursts": {
+    "message": "Haeufungen (Bursts):"
   },
   "opt.statistics.idle": {
     "message": "Noch nicht geladen."
@@ -467,11 +494,48 @@
   "research.exportCsv": {
     "message": "IOCs als CSV"
   },
+  "research.exportFindingsCsv": {
+    "message": "Befunde als CSV"
+  },
   "research.exportJson": {
     "message": "IOCs als JSON"
   },
   "research.exportStix": {
     "message": "IOCs als STIX 2.1"
+  },
+  "research.pivot": {
+    "message": "Vorkommen suchen"
+  },
+  "research.pivotFound": {
+    "message": "Treffer: $COUNT$ Eintraege in $MESSAGES$ Nachricht(en).",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "messages": {
+        "content": "$2"
+      }
+    }
+  },
+  "research.pivotNone": {
+    "message": "Bisher kein weiteres Vorkommen im lokalen Verlauf."
+  },
+  "research.scanAllLinks": {
+    "message": "Alle Links pruefen"
+  },
+  "research.scanAllLinksResult": {
+    "message": "Ergebnis: $SUBMITTED$ von $TOTAL$ Links uebermittelt.",
+    "placeholders": {
+      "submitted": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "research.scanAllLinksRunning": {
+    "message": "Uebermittle Links..."
   },
   "research.title": {
     "message": "Forscher-Analyse (lokal erhoben)"

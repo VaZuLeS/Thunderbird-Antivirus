@@ -308,6 +308,9 @@
   "opt.h3.rules": {
     "message": "Custom rules (local IOC lists)"
   },
+  "opt.h3.sandbox": {
+    "message": "Rule/score sandbox (local)"
+  },
   "opt.h3.statistics": {
     "message": "Statistics"
   },
@@ -361,6 +364,30 @@
   },
   "opt.rules.label": {
     "message": "Rules as JSON (list):"
+  },
+  "opt.sandbox.author": {
+    "message": "Sender (e.g. Service <service@example.com>):"
+  },
+  "opt.sandbox.help": {
+    "message": "Run a sample through the local evaluation - without any transmission. Ideal for tuning your own rules."
+  },
+  "opt.sandbox.idle": {
+    "message": "Not evaluated yet."
+  },
+  "opt.sandbox.run": {
+    "message": "Evaluate locally"
+  },
+  "opt.sandbox.subject": {
+    "message": "Subject:"
+  },
+  "opt.sandbox.text": {
+    "message": "Message text:"
+  },
+  "opt.sandbox.urls": {
+    "message": "Links (one per line):"
+  },
+  "opt.statistics.bursts": {
+    "message": "Bursts:"
   },
   "opt.statistics.idle": {
     "message": "Not loaded yet."
@@ -467,11 +494,48 @@
   "research.exportCsv": {
     "message": "IOCs as CSV"
   },
+  "research.exportFindingsCsv": {
+    "message": "Findings as CSV"
+  },
   "research.exportJson": {
     "message": "IOCs as JSON"
   },
   "research.exportStix": {
     "message": "IOCs as STIX 2.1"
+  },
+  "research.pivot": {
+    "message": "Find occurrences"
+  },
+  "research.pivotFound": {
+    "message": "Matches: $COUNT$ entries in $MESSAGES$ message(s).",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "messages": {
+        "content": "$2"
+      }
+    }
+  },
+  "research.pivotNone": {
+    "message": "No other occurrence in the local history so far."
+  },
+  "research.scanAllLinks": {
+    "message": "Check all links"
+  },
+  "research.scanAllLinksResult": {
+    "message": "Result: $SUBMITTED$ of $TOTAL$ links submitted.",
+    "placeholders": {
+      "submitted": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "research.scanAllLinksRunning": {
+    "message": "Submitting links..."
   },
   "research.title": {
     "message": "Researcher analysis (collected locally)"

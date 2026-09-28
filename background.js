@@ -1751,7 +1751,7 @@ async function processAttachments(message) {
 }
 
 async function processLinks(tab, message, fullMessage, parsedUrlCache = null) {
-  let messageText = extractTextFromParts(fullMessage.parts || fullMessage);
+  let messageText = extractTextFromParts(fullMessage);
   let urls = extractUrls(messageText);
   let filteredUrls = filterUrls(urls, parsedUrlCache);
 
@@ -2552,7 +2552,7 @@ async function scanLinksOfDisplayedMessage(tabId) {
     try {
         assertExternalAnalysisAllowed();
         const fullMessage = await browser.messages.getFull(message.id);
-        const text = extractTextFromParts(fullMessage.parts || fullMessage);
+        const text = extractTextFromParts(fullMessage);
         const urls = filterUrls(extractUrls(text));
         if (urls.length === 0) {
             notify('notificationTitle', 'notificationNoLinks', []);
@@ -3301,6 +3301,190 @@ function analyzeHeaderForensics(input = {}) {
 }
 
 /**
+ * Sucht einen Indikator in den eigenen Daten wieder: im lokalen Verlauf und in
+ * den gespeicherten Scan-Ergebnissen. So laesst sich beantworten, ob derselbe
+ * Hash oder dieselbe Domain schon einmal aufgetreten ist.
+ */
+async function pivotIndicator({ type = 'sha256', value = '', limit = 25 } = {}) {
+    const needle = String(value || '').trim().toLowerCase();
+    if (!needle) return { type, value, count: 0, historyMatches: [], resultMatches: [] };
+
+    const history = await getScanHistory();
+    const historyMatches = history.filter(entry => {
+        if (type === 'sha256') return (entry.sha256 || '').toLowerCase() === needle;
+        if (type === 'domain') return (entry.domain || '').toLowerCase() === needle;
+        if (type === 'ip') return (entry.ip || '').toLowerCase() === needle;
+        if (type === 'url') return (entry.url || '').toLowerCase() === needle;
+        return false;
+    }).slice(-limit).map(entry => ({
+        timestamp: entry.timestamp,
+        action: entry.action,
+        messageHeaderId: entry.messageHeaderId || null,
+        subject: entry.subject || null,
+        sender: entry.sender || null,
+        attachmentName: entry.attachmentName || null,
+        verdict: entry.verdict || null
+    }));
+
+    const resultMatches = [];
+    try {
+        const db = await getSharedDB();
+        const records = await getAllFromStore(db, 'hybridanalysis');
+        for (const record of records || []) {
+            const attachments = Array.isArray(record.attachments) ? record.attachments : [];
+            for (const attachment of attachments) {
+                if (type !== 'sha256') continue;
+                if (String(attachment.hybrid_sha256 || '').toLowerCase() !== needle) continue;
+                resultMatches.push({
+                    messageHeaderId: record.messageHeader || null,
+                    subject: record.subject || null,
+                    sender: record.author || null,
+                    attachmentName: attachment.attachment_name || attachment.attachmentName || null,
+                    state: attachment.state || null,
+                    verdict: attachment.verdict || null,
+                    checkedAt: attachment.checked_at || null
+                });
+            }
+            const links = Array.isArray(record.links) ? record.links : [];
+            for (const link of links) {
+                const matchesUrl = type === 'url' && String(link.url || '').toLowerCase() === needle;
+                const matchesHash = type === 'sha256' && String(link.hybrid_sha256 || '').toLowerCase() === needle;
+                if (!matchesUrl && !matchesHash) continue;
+                resultMatches.push({
+                    messageHeaderId: record.messageHeader || null,
+                    subject: record.subject || null,
+                    sender: record.author || null,
+                    url: link.url || null,
+                    state: link.state || null,
+                    checkedAt: link.checked_at || null
+                });
+            }
+            if (resultMatches.length >= limit) break;
+        }
+    } catch (e) {
+        Logger.warn('Pivot im Ergebnisspeicher fehlgeschlagen:', e);
+    }
+
+    const messages = new Set();
+    for (const match of historyMatches.concat(resultMatches)) {
+        if (match.messageHeaderId) messages.add(match.messageHeaderId);
+        else if (match.subject) messages.add(match.subject);
+    }
+
+    return {
+        type,
+        value,
+        count: historyMatches.length + resultMatches.length,
+        messageCount: messages.size,
+        messages: Array.from(messages).slice(0, limit),
+        historyMatches,
+        resultMatches
+    };
+}
+
+/** Wertet einen Beispielsatz lokal aus (Sandbox fuer Regeln und Gewichte). */
+function evaluateSample({ author = '', subject = '', messageText = '', urls = [], headers = {} } = {}) {
+    const urlList = Array.isArray(urls) ? urls : String(urls || '').split(/[\s,]+/).filter(Boolean);
+    const authResults = parseAuthenticationResults(headers['authentication-results'] || []);
+    const receivedChain = analyzeReceivedChain(headers['received'] || []);
+    const forensics = analyzeHeaderForensics({ headers, author, subject, authResults, receivedChain });
+
+    const threat = calculateThreatScore(author, urlList, {
+        authHeaders: headers['authentication-results'] || [],
+        subject,
+        messageText,
+        replyTo: (headers['reply-to'] || [])[0] || '',
+        forensics,
+        parsedUrlCache: new Map()
+    });
+
+    const ruleEvaluation = evaluateCustomRules({
+        senderEmail: extractEmailAddress(author),
+        author,
+        senderDomain: extractEmailDomain(extractEmailAddress(author)),
+        urls: urlList,
+        subject
+    });
+
+    return {
+        score: threat.score,
+        authStatus: threat.authStatus,
+        breakdown: threat.breakdown || [],
+        reasons: threat.reasons,
+        matchedRules: ruleEvaluation.matches.map(match => ({
+            type: match.rule.type,
+            pattern: match.rule.pattern,
+            action: match.rule.action,
+            matched: match.matched
+        })),
+        forensics,
+        urlAnalyses: urlList.map(url => analyzeUrl(url))
+    };
+}
+
+/** Exportiert Forensik-Befunde und Anhang-Auffaelligkeiten als CSV. */
+function buildFindingsCsv(forensics, attachments) {
+    const rows = [['art', 'schwere', 'befund', 'technik']];
+    for (const finding of (forensics && forensics.findings) || []) {
+        rows.push(['forensik', finding.severity, finding.detail, (finding.techniques || []).join(' ')]);
+    }
+    for (const attachment of attachments || []) {
+        for (const flag of attachment.flags || []) {
+            rows.push(['anhang', attachment.typeMismatch ? 'hoch' : 'mittel', attachment.name + ': ' + flag, '']);
+        }
+        for (const flag of (attachment.archive && attachment.archive.flags) || []) {
+            rows.push(['archiv', 'hoch', attachment.name + ': ' + flag, '']);
+        }
+    }
+    return rows.map(row => row.map(cell => {
+        const text = String(cell === undefined || cell === null ? '' : cell);
+        return text.includes(';') || text.includes('"') || text.includes('\n')
+            ? '"' + text.split('"').join('""') + '"'
+            : text;
+    }).join(';')).join('\n');
+}
+
+/** Erkennt Haeufungen (Bursts): viele Eintraege desselben Absenders in kurzer Zeit. */
+function detectBursts(history, options = {}) {
+    const windowMinutes = options.windowMinutes || 10;
+    const minCount = options.minCount || 3;
+    const entries = (history || []).filter(entry => entry.timestamp);
+    const byKey = new Map();
+
+    for (const entry of entries) {
+        const key = String(entry.sender || entry.domain || entry.mailServer || '').toLowerCase();
+        if (!key) continue;
+        if (!byKey.has(key)) byKey.set(key, []);
+        byKey.get(key).push(entry);
+    }
+
+    const bursts = [];
+    for (const [key, list] of byKey) {
+        const sorted = list.slice().sort((left, right) => new Date(left.timestamp) - new Date(right.timestamp));
+        let windowStart = 0;
+        for (let i = 0; i < sorted.length; i++) {
+            while (new Date(sorted[i].timestamp) - new Date(sorted[windowStart].timestamp) > windowMinutes * 60000) {
+                windowStart++;
+            }
+            const count = i - windowStart + 1;
+            if (count >= minCount) {
+                bursts.push({
+                    key,
+                    count,
+                    windowMinutes,
+                    firstAt: sorted[windowStart].timestamp,
+                    lastAt: sorted[i].timestamp,
+                    transmissions: sorted.slice(windowStart, i + 1).filter(entry => entry.transmitted === true).length
+                });
+                break;
+            }
+        }
+    }
+
+    return bursts.sort((left, right) => right.count - left.count);
+}
+
+/**
  * Liest das Inhaltsverzeichnis eines ZIP-Archivs, ohne es zu entpacken.
  * So lassen sich verschachtelte Archive und riskante Eintraege erkennen, ohne
  * dass Dateiinhalte ausgefuehrt oder entpackt werden.
@@ -3913,6 +4097,89 @@ function buildMessageReportMarkdown(report) {
 }
 
 /**
+ * Reicht alle Links einer Nachricht zur Analyse ein (nur mit Zustimmung und
+ * API-Schluessel). Gibt zurueck, wie viele Links uebermittelt wurden und
+ * welche fehlschlugen.
+ */
+async function scanAllLinksOfMessage(messageId, limit = 20) {
+    assertExternalAnalysisAllowed();
+    if (!apikey_hybridanalysis) {
+        const error = new Error('Kein Hybrid-Analysis-API-Schluessel hinterlegt.');
+        error.code = 'NO_API_KEY';
+        throw error;
+    }
+
+    const fullMessage = await browser.messages.getFull(messageId);
+    const text = extractTextFromParts(fullMessage);
+    const urls = filterUrls(extractUrls(text)).slice(0, Math.max(1, Math.min(limit, 50)));
+    if (urls.length === 0) {
+        return { submitted: 0, failed: 0, total: 0, urls: [] };
+    }
+
+    const message = await browser.messages.get(messageId).catch(() => null);
+    const headerMessageId = (message && message.headerMessageId) || null;
+
+    let submitted = 0;
+    let failed = 0;
+    const errors = [];
+    for (const url of urls) {
+        try {
+            await handleUrlScan(url, headerMessageId);
+            submitted++;
+        } catch (e) {
+            failed++;
+            errors.push({ url, message: e && e.message ? e.message : String(e) });
+        }
+    }
+
+    await recordScanHistory({
+        action: 'url-scan-batch',
+        transmitted: submitted > 0,
+        provider: submitted > 0 ? 'hybrid-analysis' : null,
+        dataType: 'url',
+        timing: 'delayed',
+        messageId,
+        messageHeaderId: headerMessageId,
+        outcome: failed === 0 ? 'pending' : 'error',
+        detail: 'Sammelpruefung: ' + submitted + ' von ' + urls.length + ' Links uebermittelt, ' + failed + ' fehlgeschlagen.'
+    });
+
+    return { submitted, failed, total: urls.length, urls, errors };
+}
+
+/** Liefert die Daten fuer den Befund-Export (Forensik + Anhaenge). */
+async function getMessageInsightsForExport(messageId) {
+    const message = await browser.messages.get(messageId);
+    if (!message) throw new Error('Nachricht nicht gefunden.');
+    const fullMessage = await browser.messages.getFull(messageId);
+    const text = extractTextFromParts(fullMessage);
+    const headers = fullMessage.headers || {};
+    const authResults = parseAuthenticationResults(headers['authentication-results'] || []);
+    const receivedChain = analyzeReceivedChain(headers['received'] || []);
+    const forensics = analyzeHeaderForensics({
+        headers,
+        author: message.author,
+        subject: message.subject,
+        authResults,
+        receivedChain
+    });
+
+    let attachments = [];
+    try { attachments = await browser.messages.listAttachments(messageId); } catch (e) { /* optional */ }
+    const analyses = [];
+    for (const attachment of attachments.slice(0, 20)) {
+        let buffer = null;
+        try {
+            const file = await browser.messages.getAttachmentFile(messageId, attachment.partName);
+            buffer = await file.slice().arrayBuffer();
+        } catch (e) { buffer = null; }
+        analyses.push(analyzeAttachmentMeta(attachment, buffer));
+    }
+
+    return { message, fullMessage, text, forensics, attachments: analyses };
+}
+
+/**
  * Handles a scan request coming from the injected per-message banner.
  * persist === true adds the sender to the persistent opt-in list, otherwise
  * the scan stays a one-off action (no hidden opt-in).
@@ -4218,13 +4485,43 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
         }
 
+        case "pivotIndicator":
+            pivotIndicator({
+                type: request.indicatorType,
+                value: request.value,
+                limit: request.limit
+            })
+                .then(result => sendResponse({ status: 'success', pivot: result }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
+        case "evaluateSample":
+            try {
+                sendResponse({ status: 'success', result: evaluateSample(request.sample || {}) });
+            } catch (err) {
+                sendResponse({ status: 'error', message: err.message });
+            }
+            return true;
+
+        case "scanAllLinks":
+            scanAllLinksOfMessage(request.messageId, request.limit)
+                .then(result => sendResponse({ status: 'success', ...result }))
+                .catch(err => sendResponse({ status: 'error', message: err.message, code: err.code || null }));
+            return true;
+
+        case "getFindingsCsv":
+            getMessageInsightsForExport(request.messageId)
+                .then(data => sendResponse({ status: 'success', csv: buildFindingsCsv(data.forensics, data.attachments) }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
         case "getMessageInsights": {
             const messageId = request.messageId;
             browser.messages.get(messageId)
                 .then(async (message) => {
                     if (!message) throw new Error('Nachricht nicht gefunden.');
                     const fullMessage = await browser.messages.getFull(messageId);
-                    const text = extractTextFromParts(fullMessage.parts || fullMessage);
+                    const text = extractTextFromParts(fullMessage);
                     const urls = filterUrls(extractUrls(text));
                     const headers = fullMessage.headers || {};
 
@@ -4322,6 +4619,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 .then(history => sendResponse({
                     status: 'success',
                     statistics: computeHistoryStatistics(history, { days }),
+                    bursts: detectBursts(history, { windowMinutes: 10, minCount: 3 }),
                     managed: hasManagedPolicy(),
                     managedKeys: Object.keys(managedSettings)
                 }))

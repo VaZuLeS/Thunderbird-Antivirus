@@ -253,6 +253,12 @@ describe('background.js', () => {
             globalThis.listZipEntries = listZipEntries;
             globalThis.buildStixBundle = buildStixBundle;
             globalThis.providerPivotLinks = providerPivotLinks;
+            globalThis.pivotIndicator = pivotIndicator;
+            globalThis.evaluateSample = evaluateSample;
+            globalThis.buildFindingsCsv = buildFindingsCsv;
+            globalThis.detectBursts = detectBursts;
+            globalThis.scanAllLinksOfMessage = scanAllLinksOfMessage;
+            globalThis.getAllFromStore = typeof getAllFromStore === 'function' ? getAllFromStore : undefined;
             globalThis.validateRule = validateRule;
             globalThis.normalizeRules = normalizeRules;
             globalThis.evaluateCustomRules = evaluateCustomRules;
@@ -4973,6 +4979,188 @@ describe('background.js', () => {
             const analysis = context.analyzeUrl('https://xn--80ak6aa92e.com/login');
             assert.ok(analysis.decodedHost.includes('.com'));
             assert.ok(analysis.flags.some(flag => flag.includes('liest sich als')));
+        });
+    });
+
+    describe('pivot, sandbox, bulk scan and burst detection', () => {
+        function stubStorage() {
+            let store = {};
+            context.browser.storage.local.get = async (keys) => {
+                if (typeof keys === 'string') return { [keys]: store[keys] };
+                if (Array.isArray(keys)) { const out = {}; keys.forEach(k => { out[k] = store[k]; }); return out; }
+                return store;
+            };
+            context.browser.storage.local.set = async (data) => { Object.assign(store, data); };
+            return { get: () => store };
+        }
+
+        it('pivots an indicator across history and stored results', async () => {
+            stubStorage();
+            await context.recordScanHistory({
+                action: 'attachment-upload', transmitted: true, provider: 'hybrid-analysis',
+                sha256: 'a'.repeat(64), messageHeaderId: 'hdr-1', subject: 'Rechnung', attachmentName: 'x.exe'
+            });
+            await context.recordScanHistory({
+                action: 'hash-lookup', transmitted: true, provider: 'virustotal',
+                sha256: 'b'.repeat(64), messageHeaderId: 'hdr-2', subject: 'Angebot'
+            });
+
+            context.getSharedDB = async () => ({});
+            context.getAllFromStore = async () => ([
+                {
+                    messageHeader: 'hdr-3', subject: 'Mahnung', author: 'buchhaltung@kunde.example',
+                    attachments: [{ hybrid_sha256: 'a'.repeat(64), attachment_name: 'x.exe', state: 'KNOWN' }],
+                    links: [{ url: 'https://evil.example/a', state: 'UNKNOWN' }]
+                }
+            ]);
+
+            const hashPivot = await context.pivotIndicator({ type: 'sha256', value: 'a'.repeat(64) });
+            assert.strictEqual(hashPivot.count, 2, 'one history entry plus one stored result');
+            assert.strictEqual(hashPivot.historyMatches.length, 1);
+            assert.strictEqual(hashPivot.resultMatches.length, 1);
+            assert.ok(hashPivot.messages.includes('hdr-1'));
+            assert.ok(hashPivot.messages.includes('hdr-3'));
+
+            const urlPivot = await context.pivotIndicator({ type: 'url', value: 'https://evil.example/a' });
+            assert.strictEqual(urlPivot.count, 1);
+
+            const empty = await context.pivotIndicator({ type: 'sha256', value: '' });
+            assert.strictEqual(empty.count, 0);
+        });
+
+        it('survives a database error while pivoting', async () => {
+            stubStorage();
+            context.getSharedDB = async () => { throw new Error('db weg'); };
+            const pivot = await context.pivotIndicator({ type: 'sha256', value: 'c'.repeat(64) });
+            assert.strictEqual(pivot.count, 0);
+        });
+
+        it('evaluates a sample locally without transmitting anything', () => {
+            context.set_customRules([{ type: 'subject', pattern: 'rechnung', action: 'score', score: 20 }]);
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+
+            const result = context.evaluateSample({
+                author: 'Service <service@paypal-support.com>',
+                subject: 'Ihre Rechnung',
+                messageText: 'Bitte dringend ueberweisen',
+                urls: ['https://login.amaz0n.de/x'],
+                headers: { 'authentication-results': ['mx.example; spf=fail dkim=fail dmarc=fail'] }
+            });
+            context.set_customRules([]);
+
+            assert.strictEqual(fetchCalls, 0, 'the sandbox never transmits');
+            assert.ok(result.score >= 60, 'expected a high score for the spoofed sample, got ' + result.score);
+            assert.ok(result.breakdown.some(entry => entry.source === 'eigene-regeln'));
+            assert.ok(result.breakdown.some(entry => entry.source === 'authentifizierung'));
+            assert.ok(result.matchedRules.some(rule => rule.pattern === 'rechnung'));
+            assert.ok(result.forensics.findings.length > 0);
+            assert.strictEqual(result.urlAnalyses.length, 1);
+        });
+    });
+
+    describe('finding export, burst detection and bulk link scan', () => {
+        function stubStorage() {
+            let store = {};
+            context.browser.storage.local.get = async (keys) => {
+                if (typeof keys === 'string') return { [keys]: store[keys] };
+                if (Array.isArray(keys)) { const out = {}; keys.forEach(k => { out[k] = store[k]; }); return out; }
+                return store;
+            };
+            context.browser.storage.local.set = async (data) => { Object.assign(store, data); };
+            return { get: () => store };
+        }
+
+        it('builds a findings CSV for forensics and attachments', () => {
+            const csv = context.buildFindingsCsv(
+                { findings: [
+                    { severity: 'hoch', detail: 'Anzeigename nennt PayPal, Domain fremd.', techniques: ['masquerading', 'phishing'] },
+                    { severity: 'niedrig', detail: 'Message-ID weicht ab.', techniques: [] }
+                ] },
+                [
+                    { name: 'x.pdf', typeMismatch: true, flags: ['Dateityp weicht vom Inhalt ab'] },
+                    { name: 'archiv.zip', flags: [], archive: { flags: ['doppelte Dateiendung im Archiv: x.pdf.exe'] } }
+                ]
+            );
+            const lines = csv.split('\n');
+            assert.strictEqual(lines[0], 'art;schwere;befund;technik');
+            assert.strictEqual(lines.length, 5);
+            assert.ok(lines.some(line => line.startsWith('forensik;hoch;Anzeigename nennt PayPal')));
+            assert.ok(lines.some(line => line.includes('masquerading phishing')));
+            assert.ok(lines.some(line => line.startsWith('anhang;hoch;x.pdf')));
+            assert.ok(lines.some(line => line.startsWith('archiv;hoch;archiv.zip')));
+
+            const escaped = context.buildFindingsCsv({ findings: [{ severity: 'mittel', detail: 'a;b', techniques: [] }] }, []);
+            assert.ok(escaped.includes('"a;b"'), 'semicolons must be escaped');
+        });
+
+        it('detects bursts of messages from the same sender', () => {
+            const base = Date.parse('2026-09-28T10:00:00Z');
+            const history = [
+                { sender: 'spam@example.net', timestamp: new Date(base).toISOString() },
+                { sender: 'spam@example.net', timestamp: new Date(base + 60000).toISOString() },
+                { sender: 'spam@example.net', timestamp: new Date(base + 120000).toISOString(), transmitted: true },
+                { sender: 'serioes@example.org', timestamp: new Date(base + 180000).toISOString() }
+            ];
+
+            const bursts = context.detectBursts(history, { windowMinutes: 10, minCount: 3 });
+
+            assert.strictEqual(bursts.length, 1);
+            assert.strictEqual(bursts[0].key, 'spam@example.net');
+            assert.strictEqual(bursts[0].count, 3);
+            assert.strictEqual(bursts[0].transmissions, 1);
+            assert.strictEqual(bursts[0].windowMinutes, 10);
+            assert.strictEqual(context.detectBursts(history, { windowMinutes: 10, minCount: 5 }).length, 0);
+        });
+
+        it('submits all links of a message only with consent and API key', async () => {
+            stubStorage();
+            context.browser.messages.getFull = async () => ({
+                headers: {},
+                parts: [{ contentType: 'text/plain', body: 'Siehe https://evil.example/a und https://evil.example/b' }]
+            });
+            context.browser.messages.get = async () => ({ id: 9, headerMessageId: 'hdr-9' });
+
+            context.set_externalAnalysisConsent(false);
+            await assert.rejects(() => context.scanAllLinksOfMessage(9));
+            context.set_externalAnalysisConsent(true);
+
+            context.set_apikey_hybridanalysis('');
+            await assert.rejects(() => context.scanAllLinksOfMessage(9), (error) => error.code === 'NO_API_KEY');
+
+            context.set_apikey_hybridanalysis('test-key');
+            let calls = 0;
+            context.handleUrlScan = async () => { calls++; return { job_id: 'j' + calls }; };
+
+            const result = await context.scanAllLinksOfMessage(9, 10);
+
+            assert.strictEqual(result.total, 2);
+            assert.strictEqual(result.submitted, 2);
+            assert.strictEqual(result.failed, 0);
+            assert.strictEqual(calls, 2);
+            const history = await context.getScanHistory();
+            assert.ok(history.some(entry => entry.action === 'url-scan-batch' && entry.transmitted === true));
+        });
+    });
+
+    describe('message text extraction for multipart messages', () => {
+        it('collects text and links from nested parts', () => {
+            const fullMessage = {
+                contentType: 'multipart/mixed',
+                parts: [
+                    { contentType: 'text/plain', body: 'Erster Text https://one.example/a' },
+                    { contentType: 'multipart/alternative', parts: [
+                        { contentType: 'text/html', body: '<a href="https://two.example/b">Zwei</a>' }
+                    ] }
+                ]
+            };
+
+            const text = context.extractTextFromParts(fullMessage);
+            const urls = context.extractUrls(text);
+
+            assert.ok(text.includes('Erster Text'), 'plain text part expected');
+            assert.ok(text.includes('two.example'), 'nested html part expected');
+            assert.strictEqual(urls.length, 2, 'both links must be found, got: ' + urls.join(', '));
         });
     });
 

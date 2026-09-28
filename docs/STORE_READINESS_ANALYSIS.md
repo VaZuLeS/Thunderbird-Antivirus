@@ -904,3 +904,40 @@ web-ext lint + Filter           # 0 Fehler
 1. Live-Test in Thunderbird 140 ESR (Selbsttest + Forscher-Panel in beiden Sprachen/hell+dunkel).
 2. Echte Store-Screenshots.
 3. Signierung/Einreichung bei addons.thunderbird.net.
+
+---
+
+## 18. Pivot, Sandbox, Bulk-Scan und Bursts (v1.14.0)
+
+Fortsetzung der Forscher-Roadmap mit den drei zuvor vorgeschlagenen Punkten plus zwei kleinen Ergaenzungen.
+
+| Funktion | Arbeitsweise | Transmission | Tests |
+|---|---|---|---|
+| **Lokale IOC-Pivot-Suche** | Sucht einen Indikator in `scanHistory` (storage.local) und im IndexedDB-Cache (`getAllFromStore`, neu in `db.js`) und liefert Trefferzahl, betroffene Nachrichten und Zustaende | keine | 2 |
+| **Regel-/Score-Sandbox** | `evaluateSample()` schickt Beispielabsender/-betreff/-text/-links durch `calculateThreatScore` inkl. Forensik und eigenen Regeln | keine (per Test belegt: kein Fetch) | 1 + 1 (UI) |
+| **Bulk-Link-Pruefung** | `scanAllLinks()` reicht bis zu 20 Links der Nachricht ein; Voraussetzungen: globale Zustimmung **und** API-Schluessel; Button nur bei Zustimmung sichtbar; Verlaufseintrag `url-scan-batch` | ja (bewusst, Opt-in) | 1 + 2 (UI) |
+| **Befund-Export (CSV)** | Forensik-, Anhang- und Archivbefunde als CSV mit Escaping | keine | 1 |
+| **Burst-Erkennung** | Haeufungen desselben Absenders innerhalb von 10 Minuten aus dem lokalen Verlauf, inkl. Zahl der Uebertragungen | keine | 1 + 1 (UI) |
+
+### 18.1 Nebenbei gefundener, echter Bug (behoben)
+
+`extractTextFromParts()` erwartet ein **MessagePart-Objekt**, wurde an fuenf Stellen aber mit `fullMessage.parts`
+(also einem **Array**) aufgerufen. Folge: Bei mehrteiligen Nachrichten - dem Normalfall - blieben Text und Links leer, die
+Link-Analyse (Link-Anatomie, URLhaus-Domains, Time-of-Click, URL-Uploads) lief ins Leere. Jetzt wird das Wurzelteil
+uebergeben; ein Regressionstest deckt verschachtelte `parts` ab.
+
+### 18.2 Verifikation v1.14.0
+
+```bash
+node scripts/check-locales.js   # vollstaendig (en/de, 146 Schluessel)
+npm test                        # 575 Tests, 0 Fehler
+npm run pre-submit-checks       # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm run build                   # build/thundy-av-1.14.0.xpi inkl. Paketpruefung
+web-ext lint + Filter           # 0 Fehler
+```
+
+### 18.3 Verbleibend offen
+
+1. Live-Test in Thunderbird 140 ESR (Selbsttest, Forscher-Panel, Sandbox, Bulk-Scan in beiden Sprachen).
+2. Echte Store-Screenshots.
+3. Signierung/Einreichung bei addons.thunderbird.net.

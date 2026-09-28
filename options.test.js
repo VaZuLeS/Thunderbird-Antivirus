@@ -60,6 +60,12 @@ describe('options.js', () => {
                     <select id="statisticsDays"><option value="7">7</option></select>
                     <button id="statisticsRefresh">Statistik</button>
                     <div id="statisticsPanel"></div>
+                    <input id="sandboxAuthor" value="">
+                    <input id="sandboxSubject" value="">
+                    <textarea id="sandboxText"></textarea>
+                    <textarea id="sandboxUrls"></textarea>
+                    <button id="sandboxRun">Auswerten</button>
+                    <div id="sandboxResult"></div>
                     <button id="diagnosticsRun">Diagnose</button>
                     <div id="diagnosticsPanel"></div>
                     <p id="historySummary"></p>
@@ -113,6 +119,9 @@ describe('options.js', () => {
                         if (message.action === 'getHistory') {
                             return context.historyResponse;
                         }
+                        if (message.action === 'evaluateSample') {
+                            return context.sampleResponse;
+                        }
                         if (message.action === 'getStatistics') {
                             return context.statisticsResponse;
                         }
@@ -134,6 +143,7 @@ describe('options.js', () => {
             },
             confirm: () => true, // default confirm behavior for tests
             sentMessages: [],
+            sampleResponse: { status: 'success', result: { score: 0, authStatus: 'neutral', breakdown: [], reasons: [], matchedRules: [], forensics: { findings: [] } } },
             statisticsResponse: { status: 'success', statistics: { total: 0, transmissions: 0, localOnly: 0, windowDays: 7, recent: 0, byAction: {}, byProvider: {}, byDay: {}, recentTransmissions: [] }, managed: false, managedKeys: [] },
             diagnosticsResponse: { status: 'success', report: { generatedAt: '2026-09-28T10:00:00.000Z', summary: { ok: 0, warn: 0, fail: 0 }, checks: [] } },
             historyResponse: { status: 'success', entries: [], summary: { total: 0, transmissions: 0, local: 0, providers: {}, lastTransmissionAt: null } },
@@ -144,6 +154,7 @@ describe('options.js', () => {
 
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8');
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'ui_i18n.js'), 'utf8'), context);
         vm.runInContext(code, context);
 
         // Trigger DOMContentLoaded for all tests so listeners are attached
@@ -383,6 +394,56 @@ describe('options.js', () => {
         assert.match(panel.textContent, /1 ok, 1 Hinweis\(e\), 0 Fehler/);
         assert.match(panel.textContent, /⚠️ Zustimmung: Inaktiv/);
         assert.match(panel.textContent, /✅ Ergebnisspeicher: Erreichbar/);
+    });
+
+    it('evaluates a sample in the local sandbox and shows the breakdown', async () => {
+        context.sampleResponse = {
+            status: 'success',
+            result: {
+                score: 85,
+                authStatus: 'fail',
+                breakdown: [{ source: 'authentifizierung', points: 60 }, { source: 'header-forensik', points: 25 }],
+                reasons: ['SPF-Prüfung fehlgeschlagen.', 'Header-Forensik: Anzeigename nennt PayPal, Domain ist fremd.'],
+                matchedRules: [{ type: 'subject', pattern: 'rechnung', action: 'score', matched: 'Ihre Rechnung' }],
+                forensics: { findings: [{ severity: 'hoch', detail: 'Anzeigename nennt PayPal, Domain ist fremd.' }] }
+            }
+        };
+        context.document.getElementById('sandboxAuthor').value = 'Service <service@fremd.example>';
+        context.document.getElementById('sandboxSubject').value = 'Ihre Rechnung';
+        context.document.getElementById('sandboxUrls').value = 'https://evil.example/a\n\nhttps://evil.example/b';
+        context.document.getElementById('sandboxRun').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const panel = context.document.getElementById('sandboxResult');
+        assert.match(panel.textContent, /Bewertung: 85 von 100/);
+        assert.match(panel.textContent, /authentifizierung \+60/);
+        assert.match(panel.textContent, /SPF-Prüfung fehlgeschlagen\./);
+        assert.match(panel.textContent, /Greifende Regeln: subject "rechnung" \(score auf Ihre Rechnung\)/);
+        assert.match(panel.textContent, /\[hoch\] Anzeigename nennt PayPal/);
+
+        const sampleMessage = context.sentMessages.find(message => message.action === 'evaluateSample');
+        assert.ok(sampleMessage, 'the sandbox must call the background evaluation');
+        assert.strictEqual(sampleMessage.sample.urls.length, 2, 'empty lines are dropped');
+        assert.strictEqual(sampleMessage.sample.subject, 'Ihre Rechnung');
+    });
+
+    it('renders detected bursts in the statistics panel', async () => {
+        context.statisticsResponse = {
+            status: 'success',
+            statistics: {
+                total: 4, transmissions: 1, localOnly: 3, windowDays: 7, recent: 4,
+                byAction: {}, byProvider: {}, byDay: {}, recentTransmissions: []
+            },
+            bursts: [{ key: 'spam@example.net', count: 3, windowMinutes: 10, transmissions: 1 }],
+            managed: false,
+            managedKeys: []
+        };
+        context.document.getElementById('statisticsRefresh').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const panel = context.document.getElementById('statisticsPanel');
+        assert.match(panel.textContent, /Häufungen \(Bursts\):/);
+        assert.match(panel.textContent, /spam@example\.net: 3 Einträge in 10 Minuten \(1 Übertragungen\)/);
     });
 
     it('should clear cache when clearCache button is clicked (success)', async () => {

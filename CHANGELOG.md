@@ -39,6 +39,30 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.14.0] – 2026-09-28
+
+### Added
+
+- **Lokale IOC-Pivot-Suche:** Zu einem Hash, einer IP, Domain oder URL zeigt Thundy AV, wo dieser Indikator in den
+  eigenen Daten schon vorkam - im lokalen Verlauf und in den gespeicherten Scan-Ergebnissen (Anzahl, betroffene
+  Nachrichten, Zustaende). Buttons sitzen direkt am jeweiligen Indikator im Forscher-Panel.
+- **Regel-/Score-Sandbox in den Einstellungen:** Absender, Betreff, Nachrichtentext und Links eingeben und lokal durch
+  die vollstaendige Bewertung schicken - Ergebnis mit Punktbeitraegen je Pruefschritt, Begruendungen, greifenden eigenen
+  Regeln und Forensik-Befunden. Es wird dabei **nichts** uebertragen.
+- **Bulk-Link-Pruefung (Opt-in):** Im Forscher-Panel koennen alle Links einer Nachricht mit einem Klick eingereicht
+  werden - nur mit aktiver Zustimmung und API-Schluessel, mit Ergebnisanzeige (uebermittelt/fehlgeschlagen) und
+  Verlaufseintrag `url-scan-batch`. Ohne Zustimmung erscheint der Button nicht.
+- **Befund-Export als CSV** (Forensik-Befunde, Anhang- und Archivauffaelligkeiten) im Forscher-Panel.
+- **Burst-Erkennung:** Die Statistikansicht meldet Haeufungen - viele Eintraege desselben Absenders innerhalb von
+  10 Minuten (inkl. Anzahl der Uebertragungen).
+
+### Fixed
+
+- **Link-Extraktion aus mehrteiligen Nachrichten:** `extractTextFromParts` wurde an fuenf Stellen mit einem Array
+  (`fullMessage.parts`) statt mit dem Wurzelteil aufgerufen. Dadurch blieben Text und Links bei mehrteiligen Nachrichten
+  (Normalfall im Postfach) leer - die Link-Analyse lief ins Leere. Jetzt wird das Wurzelteil uebergeben; ein
+  Regressionstest deckt verschachtelte Parts ab.
+
 ## [1.13.0] – 2026-09-28
 
 ### Added (Forscher-Sicht, ausschliesslich lokal)

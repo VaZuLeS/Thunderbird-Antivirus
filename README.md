@@ -166,6 +166,13 @@ All of it is computed locally; nothing is transmitted.
 - **STIX 2.1 export** and **provider pivots** (VirusTotal, Hybrid Analysis, urlscan.io, URLhaus, AbuseIPDB) as plain
   user-clicked links.
 
+#### Pivot, sandbox, bulk scan and bursts
+
+- **Local IOC pivot:** check whether a hash/IP/domain/URL already appeared in your own history and stored results.
+- **Rule/score sandbox** (options): run a sample through the full local evaluation - ideal for tuning custom rules.
+- **Bulk link check** (opt-in, require consent + API key; hidden otherwise) and **findings CSV export**.
+- **Burst detection:** many entries for the same sender within ten minutes are flagged in the statistics.
+
 ### Localization and branding
 
 - **Localization:** the add-on ships German and English (125 keys each) in `_locales/`. Thunderbird picks the

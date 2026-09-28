@@ -716,6 +716,16 @@ async function renderScanStatusPanel(headerMessageId, container) {
 //   research - volle Details (Hashes, Job-IDs, Versuche)
 //   audit    - Nachweis-Sicht mit Verlauf und Export
 // ---------------------------------------------------------------------------
+/** Liest die Zustimmung zur externen Analyse jederzeit neu (Popup kann offen bleiben). */
+async function currentConsent() {
+    try {
+        const stored = await browser.storage.local.get('externalAnalysisConsent');
+        return stored.externalAnalysisConsent === true;
+    } catch (error) {
+        return false;
+    }
+}
+
 /** Liest die Ansichtsrolle jederzeit neu aus dem Speicher (Popup kann offen bleiben). */
 async function currentViewMode() {
     try {
@@ -997,6 +1007,89 @@ async function renderResearcherPanel(message, container, viewMode) {
         pivotNote.className = 'thundy-muted';
         pivotNote.textContent = ' Hinweis: Ein Klick auf einen Anbieter-Link uebermittelt den jeweiligen Indikator an diesen Dienst.';
         card.appendChild(pivotNote);
+    }
+
+    const findingsCsvButton = document.createElement('button');
+    findingsCsvButton.type = 'button';
+    findingsCsvButton.textContent = thundyT('research.exportFindingsCsv', 'Befunde als CSV');
+    findingsCsvButton.addEventListener('click', async () => {
+        try {
+            const response = await browser.runtime.sendMessage({ action: 'getFindingsCsv', messageId: message.id });
+            if (response && response.status === 'success') {
+                downloadHistoryFile('thundy-av-befunde.csv', response.csv, 'text/csv;charset=utf-8');
+            }
+        } catch (error) {
+            console.error('Befundexport fehlgeschlagen:', error);
+        }
+    });
+    card.appendChild(findingsCsvButton);
+
+    // Sammelpruefung aller Links (nur mit Zustimmung; ausdruecklicher Klick)
+    const linkCount = (insights.indicators.urls || []).length;
+    if (linkCount > 0 && await currentConsent()) {
+        const bulkButton = document.createElement('button');
+        bulkButton.type = 'button';
+        bulkButton.className = 'btn-accent';
+        bulkButton.textContent = thundyT('research.scanAllLinks', 'Alle Links pruefen') + ' (' + linkCount + ')';
+        bulkButton.addEventListener('click', async () => {
+            const status = document.createElement('small');
+            bulkButton.disabled = true;
+            bulkButton.textContent = thundyT('research.scanAllLinksRunning', 'Uebermittle Links...');
+            try {
+                const response = await browser.runtime.sendMessage({ action: 'scanAllLinks', messageId: message.id, limit: 20 });
+                if (response && response.status === 'success') {
+                    status.textContent = ' ' + thundyT('research.scanAllLinksResult',
+                        'Ergebnis: $SUBMITTED$ von $TOTAL$ Links uebermittelt.',
+                        [String(response.submitted), String(response.total)]);
+                } else {
+                    status.textContent = ' ' + ((response && response.message) || 'Fehlgeschlagen.');
+                }
+            } catch (error) {
+                status.textContent = ' ' + error.message;
+            } finally {
+                bulkButton.disabled = false;
+                bulkButton.textContent = thundyT('research.scanAllLinks', 'Alle Links pruefen') + ' (' + linkCount + ')';
+                card.appendChild(status);
+            }
+        });
+        card.appendChild(bulkButton);
+    }
+
+    // Lokale Pivot-Suche: kam dieser Indikator schon einmal vor?
+    const pivotTargets = [
+        ...(insights.indicators.hashes || []).slice(0, 3).map(value => ({ type: 'sha256', value })),
+        ...(insights.indicators.ips || []).slice(0, 3).map(value => ({ type: 'ip', value }))
+    ];
+    for (const target of pivotTargets) {
+        const row = document.createElement('div');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = thundyT('research.pivot', 'Vorkommen suchen') + ': ' + shorten(target.value, 20);
+        const result = document.createElement('small');
+        result.className = 'thundy-attachment-status';
+        button.addEventListener('click', async () => {
+            button.disabled = true;
+            try {
+                const response = await browser.runtime.sendMessage({
+                    action: 'pivotIndicator', indicatorType: target.type, value: target.value
+                });
+                if (response && response.status === 'success') {
+                    const pivot = response.pivot;
+                    result.textContent = pivot.count === 0
+                        ? thundyT('research.pivotNone', 'Bisher kein weiteres Vorkommen im lokalen Verlauf.')
+                        : thundyT('research.pivotFound',
+                            'Treffer: $COUNT$ Eintraege in $MESSAGES$ Nachricht(en).',
+                            [String(pivot.count), String(pivot.messageCount)]);
+                }
+            } catch (error) {
+                result.textContent = 'Fehler: ' + error.message;
+            } finally {
+                button.disabled = false;
+            }
+        });
+        row.appendChild(button);
+        row.appendChild(result);
+        card.appendChild(row);
     }
 
     const stixButton = document.createElement('button');

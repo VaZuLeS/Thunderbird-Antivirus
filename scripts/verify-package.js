@@ -35,7 +35,10 @@ const FORBIDDEN = [
   /^pnpm-lock\.yaml$/,
   /\.sh$/
 ];
-const MAX_UNCOMPRESSED_BYTES = 400 * 1024;
+// Schutzgrenze gegen versehentlich mitgepackte Entwicklungsdateien: Tests und
+// Dokumentation wuerden das Paket um mehrere hundert Kilobyte vergroessern.
+// Der reine Laufzeitcode liegt aktuell bei ~420 KB.
+const MAX_UNCOMPRESSED_BYTES = 600 * 1024;
 
 function listPackage(artifactPath) {
   const output = execFileSync('python3', ['-c', `

@@ -85,6 +85,26 @@ class DatabaseDAO {
         });
     }
 
+    getAllFromStore(db, storeName) {
+        return new Promise((resolve, reject) => {
+            if (!db.objectStoreNames.contains(storeName)) {
+                resolve([]);
+                return;
+            }
+            const transaction = db.transaction([storeName], "readonly");
+            const store = transaction.objectStore(storeName);
+            const request = store.getAll();
+
+            request.onsuccess = function () {
+                resolve(request.result || []);
+            };
+
+            request.onerror = function (e) {
+                reject(e.target.error || new Error('Fehler beim Abrufen aller Einträge aus Store: ' + storeName));
+            };
+        });
+    }
+
     clearStore(db, storeName) {
         return new Promise((resolve, reject) => {
             if (!db.objectStoreNames.contains(storeName)) {
@@ -126,6 +146,10 @@ function getFromStore(db, storeName, key) {
 
 function putToStore(db, storeName, item) {
     return defaultDAO.putToStore(db, storeName, item);
+}
+
+function getAllFromStore(db, storeName) {
+    return defaultDAO.getAllFromStore(db, storeName);
 }
 
 function clearStore(db, storeName) {

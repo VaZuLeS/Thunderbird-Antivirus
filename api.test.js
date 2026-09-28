@@ -3477,7 +3477,7 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         const context = {
             browser: {
                 i18n: { getMessage: () => '' },
-                storage: { local: { get: async () => ({ apikey: 'test', externalAnalysisConsent: true, viewMode: options.viewMode || 'private', historyEnabled: true }) } },
+                storage: { local: { get: async (keys) => ({ apikey: 'test', externalAnalysisConsent: options.consent === false ? false : true, viewMode: options.viewMode || 'private', historyEnabled: true }) } },
                 permissions: { contains: async () => true },
                 tabs: { query: async () => [{ id: 3 }] },
                 messageDisplay: { getDisplayedMessages: async () => ({ messages: [{ id: 1, headerMessageId: 'h1', subject: 's', author: 'a@b.de' }] }) },
@@ -3888,6 +3888,80 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         assert.ok(anchors.some(href => href.includes('virustotal.com/gui/file/')));
         assert.ok(anchors.some(href => href.includes('abuseipdb.com/check/203.0.113.9')));
         assert.match(panel.textContent, /Ein Klick auf einen Anbieter-Link uebermittelt den jeweiligen Indikator/);
+    });
+
+    it('offers pivot, findings CSV and the consent-gated bulk link scan', async () => {
+        const insights = {
+            generatedAt: '2026-09-28T10:00:00.000Z', score: 40, authStatus: 'neutral',
+            scoreBreakdown: [], authResults: [], receivedChain: { hops: [] },
+            forensics: { findings: [], techniques: [] },
+            stix: { type: 'bundle', objects: [] },
+            pivots: { hashes: [], ips: [], domains: [] },
+            indicators: {
+                urls: ['https://evil.example/a', 'https://evil.example/b'],
+                urlAnalyses: [], domains: ['evil.example'], registrableDomains: ['example.com'],
+                ips: ['203.0.113.9'], emails: [], hashes: ['a'.repeat(64)], messageIds: [], mailServers: [],
+                counts: { urls: 2, domains: 1, ips: 1, emails: 0, hashes: 1 }
+            },
+            attachments: []
+        };
+        const { context, sent } = createHarness({
+            viewMode: 'research',
+            onMessage: (message) => {
+                if (message.action === 'getMessageInsights') return { status: 'success', insights };
+                if (message.action === 'pivotIndicator') {
+                    return { status: 'success', pivot: { count: 3, messageCount: 2, messages: ['hdr-1', 'hdr-2'] } };
+                }
+                if (message.action === 'getFindingsCsv') return { status: 'success', csv: 'art;schwere;befund;technik' };
+                if (message.action === 'scanAllLinks') return { status: 'success', submitted: 1, failed: 1, total: 2 };
+                return undefined;
+            }
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        await context.renderResearcherPanel({ id: 1 }, container, 'research');
+        const panel = context.document.getElementById('thundy-researcher-panel');
+        const labels = Array.from(panel.querySelectorAll('button')).map(button => button.textContent);
+        assert.ok(labels.some(label => /Befunde als CSV/.test(label)));
+        assert.ok(labels.some(label => /Alle Links pruefen \(2\)/.test(label)), 'bulk scan needs consent: ' + labels.join(' | '));
+        assert.ok(labels.some(label => /Vorkommen suchen/.test(label)));
+
+        const pivotButton = Array.from(panel.querySelectorAll('button')).find(button => /Vorkommen suchen/.test(button.textContent));
+        pivotButton.click();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.ok(sent.some(message => message.action === 'pivotIndicator' && message.indicatorType === 'sha256'));
+        assert.match(panel.textContent, /Treffer: 3 Eintraege in 2 Nachricht\(en\)/);
+
+        const bulkButton = Array.from(panel.querySelectorAll('button')).find(button => /Alle Links pruefen/.test(button.textContent));
+        bulkButton.click();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.ok(sent.some(message => message.action === 'scanAllLinks' && message.messageId === 1));
+        assert.match(panel.textContent, /Ergebnis: 1 von 2 Links uebermittelt/);
+    });
+
+    it('hides the bulk scan without consent', async () => {
+        const insights = {
+            generatedAt: '2026-09-28T10:00:00.000Z', score: 10, authStatus: 'neutral',
+            scoreBreakdown: [], authResults: [], receivedChain: { hops: [] },
+            forensics: { findings: [], techniques: [] }, stix: {}, pivots: { hashes: [], ips: [], domains: [] },
+            indicators: {
+                urls: ['https://evil.example/a'], urlAnalyses: [], domains: [], registrableDomains: [],
+                ips: [], emails: [], hashes: [], messageIds: [], mailServers: [],
+                counts: { urls: 1, domains: 0, ips: 0, emails: 0, hashes: 0 }
+            },
+            attachments: []
+        };
+        const { context } = createHarness({
+            viewMode: 'research',
+            consent: false,
+            onMessage: (message) => message.action === 'getMessageInsights' ? { status: 'success', insights } : undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+        await context.renderResearcherPanel({ id: 1 }, container, 'research');
+
+        const labels = Array.from(context.document.getElementById('thundy-researcher-panel').querySelectorAll('button'))
+            .map(button => button.textContent);
+        assert.ok(!labels.some(label => /Alle Links pruefen/.test(label)), 'no bulk scan without consent');
     });
 
     it('renders the local score together with its reasons', async () => {

@@ -467,6 +467,92 @@ document.addEventListener('DOMContentLoaded', function() {
     loadRulesIntoEditor();
 });
 
+// ---------------------------------------------------------------------------
+// Regel-/Score-Sandbox (lokal) und Burst-Anzeige
+// ---------------------------------------------------------------------------
+function renderSandboxResult(container, result) {
+    if (!container) return;
+    container.textContent = '';
+
+    const headline = document.createElement('p');
+    headline.textContent = 'Bewertung: ' + result.score + ' von 100 | Authentifizierung: ' + (result.authStatus || 'unbekannt');
+    container.appendChild(headline);
+
+    const breakdown = document.createElement('small');
+    breakdown.textContent = 'Beiträge: ' + (result.breakdown || [])
+        .map(entry => entry.source + ' +' + entry.points).join(', ');
+    container.appendChild(breakdown);
+
+    const list = document.createElement('ul');
+    list.className = 'thundy-reasons';
+    for (const reason of (result.reasons || []).slice(0, 20)) {
+        const item = document.createElement('li');
+        item.textContent = reason;
+        list.appendChild(item);
+    }
+    container.appendChild(list);
+
+    if ((result.matchedRules || []).length > 0) {
+        const rules = document.createElement('small');
+        rules.textContent = 'Greifende Regeln: ' + result.matchedRules
+            .map(rule => rule.type + ' "' + rule.pattern + '" (' + rule.action + ' auf ' + rule.matched + ')').join(' | ');
+        container.appendChild(rules);
+    }
+
+    if (result.forensics && (result.forensics.findings || []).length > 0) {
+        const forensics = document.createElement('small');
+        forensics.textContent = 'Forensik: ' + result.forensics.findings
+            .map(finding => '[' + finding.severity + '] ' + finding.detail).join(' | ');
+        container.appendChild(forensics);
+    }
+}
+
+function renderBursts(container, bursts) {
+    if (!container || !bursts || bursts.length === 0) return;
+    const headline = document.createElement('p');
+    headline.textContent = thundyT('opt.statistics.bursts', 'Häufungen (Bursts):');
+    container.appendChild(headline);
+
+    const list = document.createElement('ul');
+    for (const burst of bursts.slice(0, 10)) {
+        const item = document.createElement('li');
+        item.textContent = burst.key + ': ' + burst.count + ' Einträge in ' + burst.windowMinutes +
+            ' Minuten (' + burst.transmissions + ' Übertragungen)';
+        list.appendChild(item);
+    }
+    container.appendChild(list);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const sandboxRun = document.getElementById('sandboxRun');
+    if (sandboxRun) {
+        sandboxRun.addEventListener('click', async function() {
+            const panel = document.getElementById('sandboxResult');
+            const urls = (document.getElementById('sandboxUrls').value || '')
+                .split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            try {
+                const response = await browser.runtime.sendMessage({
+                    action: 'evaluateSample',
+                    sample: {
+                        author: document.getElementById('sandboxAuthor').value,
+                        subject: document.getElementById('sandboxSubject').value,
+                        messageText: document.getElementById('sandboxText').value,
+                        urls
+                    }
+                });
+                if (response && response.status === 'success') {
+                    renderSandboxResult(panel, response.result);
+                } else {
+                    panel.textContent = 'Auswertung fehlgeschlagen: ' + ((response && response.message) || 'unbekannt');
+                }
+            } catch (error) {
+                console.error('Sandbox fehlgeschlagen:', error);
+                panel.textContent = 'Auswertung fehlgeschlagen: ' + error.message;
+            }
+        });
+    }
+});
+
 function contextWhitelist() {
     const field = document.getElementById('customWhitelist');
     return field && field.value ? field.value.split(',').map(value => value.trim().toLowerCase()).filter(Boolean) : [];
@@ -488,6 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const response = await browser.runtime.sendMessage({ action: 'getStatistics', days });
                 if (response && response.status === 'success') {
                     renderStatistics(panel, response.statistics, { managed: response.managed, managedKeys: response.managedKeys });
+                    renderBursts(panel, response.bursts);
                 } else {
                     panel.textContent = 'Statistik konnte nicht geladen werden.';
                 }
