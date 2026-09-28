@@ -16,7 +16,6 @@ als vorhanden bezeichnet, die es nicht gibt.
 | Icon 48 px | `img/icon-48px.png` | vorhanden — generiert (PNG, 48 × 48 px) |
 | Icon 64 px | `img/icon-64px.png` | vorhanden — generiert (PNG, 64 × 64 px) |
 | Icon 128 px | `img/icon-128px.png` | vorhanden — generiert (PNG, 128 × 128 px), für Listing/Promo nutzbar |
-| Screenshot-Platzhalter | `docs/screenshot-1-inline-optin.svg`, `docs/screenshot-2-warning.svg`, `docs/screenshot-3-options.svg` | SVG-Platzhalter, keine echten Aufnahmen |
 | Screenshot-Platzhalter | `docs/screenshots/inline_optin_banner.svg`, `docs/screenshots/warning_banner.svg`, `docs/screenshots/options_page.svg` | SVG-Platzhalter, keine echten Aufnahmen |
 
 Die Icons werden von `scripts/generate-icons.js` reproduzierbar erzeugt (Schild-Motiv mit
@@ -24,8 +23,8 @@ Ausrufezeichen, 4-fache Supersampling-Kantenglättung, keine externen Abhängigk
 Pre-Submit-Checks prüfen zusätzlich, dass jede in `manifest.json` deklarierte Icon-Größe als PNG
 mit exakt dieser Kantenlänge vorliegt.
 
-Die drei SVG-Dateien in `docs/` und die drei SVG-Dateien in `docs/screenshots/` zeigen dieselben
-drei Motive in zwei Ablageorten (Dublette). Vor der Einreichung ist ein Satz zu löschen.
+Die drei SVG-Dateien in `docs/screenshots/` zeigen die drei Motive als grobe Skizze. Die früheren Dubletten
+(`docs/screenshot-*.svg`) wurden entfernt, damit es genau einen Ablageort gibt.
 
 ## 2. Was fehlt
 
