@@ -155,6 +155,9 @@
             <option value="all">Alle Eintraege</option>
             <option value="transmissions">Nur Uebertragungen an Anbieter</option>
         </select>
+        <input type="search" id="historySearch" placeholder="Suche (Absender, Datei, Hash, Anbieter...)" style="width: 240px;">
+        <input type="date" id="historyFrom" aria-label="Verlauf ab">
+        <input type="date" id="historyTo" aria-label="Verlauf bis">
         <button id="historyRefresh" type="button">Aktualisieren</button>
         <button id="historyExportCsv" type="button">CSV exportieren</button>
         <button id="historyExportJson" type="button">JSON exportieren</button>
@@ -162,6 +165,28 @@
     </div>
     <p id="historySummary"><small>Verlauf wird geladen...</small></p>
     <ul id="historyList" class="thundy-history-list"></ul>
+
+    <hr>
+    <h3>SIEM-/Webhook-Export</h3>
+    <p><small>Optionaler Export der Verlaufseinträge an einen eigenen SIEM-/Ticket-Endpunkt. Standardmäßig aus und
+        nur über HTTPS; zusätzlich muss die externe Analyse freigegeben sein. Es werden ausschließlich Verlaufsdaten
+        (Aktion, Anbieter, Datentyp, Dateiname, SHA-256, Job-ID, Verdikt) gesendet - keine Dateiinhalte.</small></p>
+    <div class="mb-3">
+        <input type="checkbox" id="webhookEnabled" aria-describedby="webhookHelp">
+        <label for="webhookEnabled" style="display: inline; margin-bottom: 0;">Webhook-Export aktivieren</label>
+        <br><small id="webhookHelp">Wird vom Administrator zentral vorgegeben, wenn eine verwaltete Policy gesetzt ist.</small>
+    </div>
+    <div class="mb-3">
+        <label for="webhookUrl">Endpunkt (HTTPS):</label>
+        <input type="url" id="webhookUrl" maxlength="500" placeholder="https://siem.example/api/thundy" style="width: 100%;">
+    </div>
+    <div class="mb-3">
+        <label for="webhookSecret">Shared Secret (optional, wird als Header X-Thundy-Secret gesendet):</label>
+        <input type="password" id="webhookSecret" maxlength="200" autocomplete="off" spellcheck="false">
+        <br>
+        <button id="webhookTest" type="button">Testsendung</button>
+        <small id="webhookStatus"></small>
+    </div>
 
     <hr>
     <h3>Statistik</h3>
@@ -183,6 +208,25 @@
         übertragen.</small></p>
     <button id="diagnosticsRun" type="button">Diagnose starten</button>
     <div id="diagnosticsPanel" class="card card-info"><small>Noch nicht ausgeführt.</small></div>
+
+    <hr>
+    <h3>Eigene Regeln (lokale IOC-Listen)</h3>
+    <p><small>Regeln wirken ausschließlich lokal. Sie ergänzen die Risikobewertung, können Absender freistellen oder
+        blockieren und verhindern Uploads, wenn eine Datei lokal schon als unbedenklich oder bösartig bekannt ist.
+        Typen: <code>sender</code>, <code>domain</code>, <code>url</code>, <code>subject</code>,
+        <code>attachment-name</code>, <code>sha256</code> — Aktionen: <code>whitelist</code>, <code>blacklist</code>,
+        <code>score</code> — Vergleich: <code>contains</code>, <code>exact</code>, <code>regex</code>.</small></p>
+    <div class="mb-3">
+        <label for="rulesJson">Regeln als JSON (Liste):</label>
+        <textarea id="rulesJson" rows="8" style="width: 100%; font-family: monospace;" spellcheck="false"
+            placeholder='[{"type":"sender","pattern":"rechnung@kunde-gmbh.de","action":"whitelist","note":"bekannter Absender"}]'></textarea>
+        <br>
+        <button id="rulesValidate" type="button">Regeln prüfen &amp; anwenden</button>
+        <button id="rulesExport" type="button">Profil exportieren</button>
+        <button id="rulesImportFile" type="button">Profil aus Datei importieren</button>
+        <input type="file" id="rulesImportInput" accept="application/json,.json" style="display:none">
+        <br><small id="rulesStatus"></small>
+    </div>
 
     <br><br>
     <hr>

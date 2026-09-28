@@ -718,3 +718,50 @@ Berichts-Export lassen sich Befunde direkt als Markdown/JSON an den Maintainer g
 **Nicht umgesetzt (bewusst):** PDF-Export (Markdown/JSON genügen und bleiben abhängigkeitsfrei), SIEM-Webhook
 (Prio 5 – würde eine neue Datenübermittlung einführen und braucht zuerst Policy-/Consent-Änderungen), Umsetzung der
 Punkte 4, 6, 8, 10.
+
+---
+
+## 14. Abschluss der Roadmap: Regeln, SIEM, Suche, CDR (v1.10.0)
+
+Damit sind alle Roadmap-Punkte abgearbeitet, die ohne externe Infrastruktur und ohne fremde Zugangsdaten umsetzbar sind.
+
+| Roadmap | Stand | Belege |
+|---|---|---|
+| 1 Enterprise-Policy | ✅ (1.9.0, erweitert um Regeln und Webhook) | 4 Policy-Tests; `docs/enterprise/` |
+| 2 Berichtsexport | ✅ (1.9.0, Markdown/JSON) | 3 Tests + Popup-Panel |
+| 3 SPF/DKIM/DMARC + Statistik | ✅ (Auth-Status im Bericht, Verlaufsstatistik; ein dediziertes Auth-Dashboard bleibt optional) | 1 Test + Options-Panel |
+| 4 Attachment-Disarming | ✅ ausgebaut (Remote-Content-Blockade, Hinweisbanner, Protokoll) | Tests für Blockade, Marker, Banner und Bericht |
+| 5 SIEM/Webhook | ✅ als ausdrückliches Opt-in (nur HTTPS, globale Zustimmung nötig, Shared Secret, Testsendung, zentral vorgebbar) | 5 Tests inkl. Negativfällen |
+| 6 Regel-/IOC-Engine | ✅ (6 Typen, 3 Aktionen, 3 Vergleiche, Profil-Export/-Import, Upload-Vermeidung) | 7 Tests |
+| 8 Lokalisierung | ⏳ offen (Popup/Optionen weiterhin deutsch; Banner und Manifest DE/EN) — bewusst nicht in dieser Runde, weil reine Übersetzungsarbeit mit hohem Änderungsvolumen und ohne funktionalen Mehrwert | — |
+| 9 Executive-Reporting | ✅ teilweise (Statistikansicht + Bericht) | s. o. |
+| 10 Team-Profile | ✅ über Regel-Profil-Export/-Import ohne Datenabfluss | 1 Test |
+
+Zusätzlich abgeschlossen: **Verlaufssuche mit Datumsfilter** (Punkt 12.5) und die Entfernung eines doppelten,
+veralteten `disarmHTML`-Testblocks (Aufräumen der Testsuite).
+
+### Datenschutz-Bewertung der neuen Funktionen
+
+- **Regeln, Suche, Statistik, Bericht, CDR:** ausschließlich lokal — keine neuen Übertragungen, keine neuen
+  Berechtigungen, kein Policy-Update nötig.
+- **Webhook/SIEM:** neue Datenübermittlung, daher mit Opt-in (Standard aus), HTTPS-Pflicht, Bindung an die globale
+  Zustimmung, Protokollierung jeder Sendung im Verlauf, Shared Secret optional, zentral steuerbar. Payload enthält
+  ausschließlich Audit-Metadaten (Aktion, Anbieter, Datentyp, Dateiname, SHA-256, Job-ID, Verdikt, Zeitstempel) — keine
+  Dateiinhalte, kein Nachrichtentext. Privacy Policy und Reviewer Notes wurden entsprechend erweitert; die Deklaration
+  `data_collection_permissions.required = ["personalCommunications"]` deckt die übermittelten E-Mail-bezogenen Daten ab.
+
+### Verifikation v1.10.0
+
+```bash
+npm test                    # 534 Tests, 0 Fehler
+npm run pre-submit-checks   # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm run build               # build/thundy-av-1.10.0.xpi inkl. Paketprüfung
+web-ext lint + Filter       # 0 Fehler
+```
+
+### Was ausschließlich manuell bleibt
+
+1. Live-Test in Thunderbird 140 ESR (der Selbsttest verkürzt ihn erheblich).
+2. Echte Store-Screenshots.
+3. Signierung/Einreichung bei addons.thunderbird.net.
+4. Vollständige Lokalisierung (Punkt 8) — reine Übersetzungsarbeit.

@@ -136,6 +136,21 @@ store, the history and any managed policy - useful to verify the add-on on a tes
 A per-message **report export** (`getMessageReport`) writes a Markdown/JSON summary of local findings, attachments
 and transmissions; it is generated locally and downloaded by the user.
 
+### 3.7 Local rules, SIEM export, history search, CDR
+
+- **Local rule engine:** user-defined rules (sender/domain/URL/subject/file name/SHA-256, actions whitelist/blacklist/
+  score) are stored locally and applied locally. A matching whitelist/blacklist rule short-circuits the score;
+  file-name/hash rules prevent an upload altogether, which *reduces* data transmission. Profiles can be exported and
+  imported as JSON (`getRuleProfile`, `importRuleProfile`) - no network involved.
+- **SIEM/webhook export (opt-in):** with `webhookEnabled` + an `https://` URL + global consent, history events are
+  POSTed to that endpoint (`thundy-av-webhook/1` payload: event, action, provider, data type, file name, SHA-256,
+  job id, verdict, timestamp). Default off; only HTTPS; failures are logged and never block scanning; a test button
+  exists in the options. Administrators can pin it through managed policy.
+- **History search:** full-text and date-range filters are evaluated locally against the local history.
+- **Attachment disarming (CDR):** active tags, event handlers and dangerous URIs are removed (as before); in addition
+  external media sources are dropped and documented as `data-thundy-blocked-remote`, the disarmed document gets an
+  explanatory banner, and the action is written to the local history.
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,

@@ -175,6 +175,13 @@ Zugriffsrechte des Betriebssystem-Benutzerkontos und die Zugriffskontrolle des T
 - Zuordnungen zu Nachrichten über die Message-ID bzw. Header-ID,
 - Nachrichten-Metadaten, die zur Anzeige im Popup gespeichert werden (Absenderadresse, Betreff,
   Dateiname und SHA-256-Hash der geprüften Anhänge sowie der Teilename innerhalb der Nachricht),
+- Eigene Regeln/IOC-Listen: Regeln (Absender, Domain, URL, Betreff, Dateiname, SHA-256) und die
+  Whitelist/Blacklist werden ausschließlich lokal ausgewertet und gespeichert,
+- SIEM-/Webhook-Export: Nur wenn ausdrücklich aktiviert (Standard: aus), eine HTTPS-Adresse hinterlegt ist und
+  die externe Analyse freigegeben wurde, sendet die Erweiterung Verlaufsdaten (Aktion, Anbieter, Datentyp,
+  Dateiname, SHA-256, Submission-/Job-ID, Verdikt, Zeitstempel) an die vom Nutzer bzw. Administrator bestimmte
+  Adresse. Es werden **keine** Dateiinhalte und **kein** Nachrichtentext übertragen. Ein optionales Shared Secret
+  wird als Header `X-Thundy-Secret` mitgesendet,
 - Enterprise-Vorgaben: Auf verwalteten Geräten liest die Erweiterung Vorgaben aus der Geräte-Policy
   (`browser.storage.managed`). Diese Steuerdaten bleiben lokal, werden nicht übertragen und erscheinen nicht im
   Verlauf,
@@ -441,7 +448,13 @@ account and by the Thunderbird profile's access control.
 - mappings to messages via Message-ID or header ID,
 - message metadata stored for the popup (sender address, subject, file name and SHA-256 hash of the
   checked attachments, and the MIME part name inside the message),
-- enterprise policy: on managed devices the add-on reads settings from the device policy
+- local rules/IOC lists: rules (sender, domain, URL, subject, file name, SHA-256) and the whitelist/blacklist
+  are evaluated and stored locally only,
+- SIEM/webhook export: only if explicitly enabled (default: off), an HTTPS address is configured and external
+  analysis has been allowed, the add-on sends history data (action, provider, data type, file name, SHA-256,
+  submission/job id, verdict, timestamp) to the address chosen by the user or administrator. No file contents and
+  no message body are transmitted. An optional shared secret is sent as the `X-Thundy-Secret` header,
+  - enterprise policy: on managed devices the add-on reads settings from the device policy
   (`browser.storage.managed`). These control values stay local, are never transmitted and never appear in the
   history,
 - history (`scanHistory`): time, action, provider, data type, file name, SHA-256, submission/job id, verdict and

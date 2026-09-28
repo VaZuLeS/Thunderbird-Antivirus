@@ -45,6 +45,14 @@ describe('options.js', () => {
                         <option value="all">all</option>
                         <option value="transmissions">transmissions</option>
                     </select>
+                    <input id="historySearch" value="">
+                    <input type="date" id="historyFrom">
+                    <input type="date" id="historyTo">
+                    <input type="checkbox" id="webhookEnabled">
+                    <input id="webhookUrl" value="">
+                    <input id="webhookSecret" value="">
+                    <button id="webhookTest">Test</button>
+                    <small id="webhookStatus"></small>
                     <button id="historyRefresh">Aktualisieren</button>
                     <button id="historyExportCsv">CSV</button>
                     <button id="historyExportJson">JSON</button>
@@ -83,6 +91,9 @@ describe('options.js', () => {
                             ipReputationProvider: 'abuseipdb',
                             ipReputationApiKey: 'ip-key',
                             viewMode: 'research',
+                            webhookEnabled: true,
+                            webhookUrl: 'https://siem.example/hook',
+                            webhookSecret: 'secret',
                             historyEnabled: true,
                             historyLimit: 250
                         }),

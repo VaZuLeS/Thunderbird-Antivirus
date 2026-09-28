@@ -141,6 +141,18 @@ The popup lists every attachment of the displayed message with type and size:
   popup. Without consent, API key or host permission the popup explains what is missing and links to the
   options page.
 
+### Local rules, SIEM export, search and CDR
+
+- **Local rule engine:** rules for sender/domain/URL/subject/file name/SHA-256 with whitelist, blacklist or score
+  actions. They are evaluated locally, can short-circuit the rating and prevent uploads of files that are already
+  known locally. Profiles can be exported and imported as JSON (team knowledge without any data flow).
+- **SIEM/webhook export (opt-in):** forwards history events to your own HTTPS endpoint (payload: audit metadata
+  only). Off by default, requires global consent, supports a shared secret header, and can be pinned by
+  administrators.
+- **History search:** full-text search plus from/to date filters in the options page.
+- **Attachment disarming:** active content, event handlers, dangerous URIs *and* external media sources are removed;
+  the sanitised document explains what was blocked and the action is logged locally.
+
 ### Enterprise, self test, statistics and reports
 
 - **Managed policy:** administrators can pin consent, privacy tier, view role, history behaviour and

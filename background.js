@@ -183,7 +183,7 @@ async function ensureMessageDisplayScript(tabId) {
 // Geraete-Policy und werden nie an Dritte uebertragen.
 // ---------------------------------------------------------------------------
 const MANAGED_SETTING_KEYS = ['externalAnalysisConsent', 'privacyTier', 'viewMode', 'historyEnabled',
-    'historyLimit', 'customWhitelist', 'customBlacklist', 'alwaysManual', 'ipReputationProvider',
+    'historyLimit', 'customWhitelist', 'customBlacklist', 'customRules', 'alwaysManual', 'ipReputationProvider', 'webhookEnabled', 'webhookUrl',
     'timeOfClickProtection'];
 
 let managedSettings = {};
@@ -225,6 +225,11 @@ function applyManagedSettings() {
     if (isManaged('alwaysManual')) alwaysManual = managedSettings.alwaysManual === true;
     if (isManaged('timeOfClickProtection')) timeOfClickProtection = managedSettings.timeOfClickProtection === true;
     if (isManaged('ipReputationProvider')) ipReputationProvider = String(managedSettings.ipReputationProvider);
+    if (isManaged('webhookEnabled')) webhookEnabled = managedSettings.webhookEnabled === true;
+    if (isManaged('webhookUrl')) webhookUrl = String(managedSettings.webhookUrl || '');
+    if (isManaged('customRules') && Array.isArray(managedSettings.customRules)) {
+        customRules = normalizeRules(managedSettings.customRules);
+    }
     if (isManaged('customWhitelist') && Array.isArray(managedSettings.customWhitelist)) {
         customWhitelist = new Set(managedSettings.customWhitelist.map(value => String(value).toLowerCase()));
     }
@@ -237,7 +242,7 @@ function applyManagedSettings() {
 async function getEffectiveSettings() {
     const stored = await browser.storage.local.get(['externalAnalysisConsent', 'privacyTier', 'viewMode',
         'historyEnabled', 'historyLimit', 'alwaysManual', 'timeOfClickProtection', 'ipReputationProvider',
-        'customWhitelist', 'customBlacklist']).catch(() => ({}));
+        'customWhitelist', 'customBlacklist', 'customRules']).catch(() => ({}));
     const effective = Object.assign({
         externalAnalysisConsent: false, privacyTier: 'strict', viewMode: 'private', historyEnabled: true,
         historyLimit: 500, alwaysManual: false, timeOfClickProtection: true, ipReputationProvider: 'none'
@@ -290,6 +295,10 @@ async function recordScanHistory(entry) {
         history.push(record);
         const capped = history.slice(-historyLimit);
         await browser.storage.local.set({ [HISTORY_KEY]: capped });
+        if (record.transmitted === true && record.provider !== 'webhook' && isWebhookConfigured()) {
+            // Fire-and-forget: der Scan darf nicht auf den Webhook warten.
+            sendToWebhook(record.action, record).catch(() => {});
+        }
         return record;
     } catch (e) {
         Logger.warn('Verlaufseintrag konnte nicht gespeichert werden:', e);
@@ -308,11 +317,30 @@ async function clearScanHistory() {
 }
 
 function filterScanHistory(history, options = {}) {
+    const search = options.search ? String(options.search).toLowerCase() : null;
+    const from = options.from ? new Date(options.from).getTime() : null;
+    const to = options.to ? new Date(options.to).getTime() : null;
+
     return (history || []).filter(entry => {
         if (!entry) return false;
         if (options.messageHeaderId && entry.messageHeaderId !== options.messageHeaderId) return false;
         if (options.onlyTransmissions && entry.transmitted !== true) return false;
         if (options.action && entry.action !== options.action) return false;
+
+        if (from !== null || to !== null) {
+            const timestamp = entry.timestamp ? new Date(entry.timestamp).getTime() : null;
+            if (!timestamp) return false;
+            if (from !== null && timestamp < from) return false;
+            if (to !== null && timestamp > to) return false;
+        }
+
+        if (search) {
+            const haystack = [entry.action, entry.provider, entry.dataType, entry.subject, entry.sender,
+                entry.attachmentName, entry.domain, entry.ip, entry.sha256, entry.verdict, entry.detail]
+                .filter(Boolean).join(' ').toLowerCase();
+            if (!haystack.includes(search)) return false;
+        }
+
         return true;
     });
 }
@@ -643,6 +671,10 @@ let externalAnalysisConsent = false;
 //   audit    - Nachweis-Sicht: Verlauf/Export im Vordergrund
 let viewMode = 'private';
 let historyEnabled = true;
+let customRules = [];
+let webhookEnabled = false;
+let webhookUrl = '';
+let webhookSecret = '';
 let historyLimit = 500;
 
 let sharedDBPromise = null;
@@ -696,7 +728,7 @@ const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join(
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent', 'viewMode', 'historyEnabled', 'historyLimit']);
+    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent', 'viewMode', 'historyEnabled', 'historyLimit', 'customRules', 'webhookEnabled', 'webhookUrl', 'webhookSecret']);
     if (result.virustotalApikey !== undefined) {
       apikey_virustotal = result.virustotalApikey;
     }
@@ -715,6 +747,18 @@ async function loadSettings() {
     }
     if (result.historyLimit !== undefined) {
       historyLimit = Math.max(50, Math.min(5000, parseInt(result.historyLimit, 10) || 500));
+    }
+    if (result.customRules !== undefined) {
+      customRules = normalizeRules(result.customRules);
+    }
+    if (result.webhookEnabled !== undefined) {
+      webhookEnabled = result.webhookEnabled === true;
+    }
+    if (result.webhookUrl !== undefined) {
+      webhookUrl = String(result.webhookUrl || '');
+    }
+    if (result.webhookSecret !== undefined) {
+      webhookSecret = String(result.webhookSecret || '');
     }
     if (result.customBlacklist !== undefined) {
       customBlacklist = new Set(result.customBlacklist.map(s => s ? s.toLowerCase() : ""));
@@ -820,6 +864,18 @@ browser.storage.onChanged.addListener(async (changes, area) => {
   }
   if (area === 'local' && changes.historyLimit !== undefined) {
     historyLimit = Math.max(50, Math.min(5000, parseInt(changes.historyLimit.newValue, 10) || 500));
+  }
+  if (area === 'local' && changes.customRules !== undefined) {
+    customRules = normalizeRules(changes.customRules.newValue);
+  }
+  if (area === 'local' && changes.webhookEnabled !== undefined) {
+    webhookEnabled = changes.webhookEnabled.newValue === true;
+  }
+  if (area === 'local' && changes.webhookUrl !== undefined) {
+    webhookUrl = String(changes.webhookUrl.newValue || '');
+  }
+  if (area === 'local' && changes.webhookSecret !== undefined) {
+    webhookSecret = String(changes.webhookSecret.newValue || '');
   }
 });
 
@@ -1330,6 +1386,23 @@ function calculateThreatScore(author, urls, options = {}) {
     if (listCheck) {
         return { score: listCheck.score, reasons: listCheck.reasons, authStatus: 'neutral' };
     }
+
+    // Eigene Regeln (lokal) ergaenzen die Bewertung und koennen kurzschliessen.
+    const ruleResult = evaluateCustomRules({
+        senderEmail: email,
+        author,
+        senderDomain,
+        urls,
+        subject
+    });
+    if (ruleResult.blacklisted) {
+        return { score: SCORE_WEIGHTS.blacklist, reasons: ruleResult.reasons, authStatus: 'neutral', ruleMatches: ruleResult.matches };
+    }
+    if (ruleResult.whitelisted) {
+        return { score: 0, reasons: ruleResult.reasons, authStatus: 'neutral', ruleMatches: ruleResult.matches };
+    }
+    score += ruleResult.scoreDelta;
+    reasons.push(...ruleResult.reasons);
 
     const authEval = evaluateAuthHeaders(authHeaders, score, reasons);
     score = authEval.score;
@@ -2111,6 +2184,30 @@ async function process_single_attachment(message, attachment) {
             const arrayBuffer = await content_of_attachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
 
+            // Eigene Regeln fuer Dateiname/Hash: lokal bekannt = keine Uebertragung.
+            const attachmentRules = evaluateCustomRules({
+                attachmentNames: [attachment.name],
+                hashes: [local_hash]
+            });
+            if (attachmentRules.blacklisted) {
+                await recordScanHistory({
+                    action: 'local-rule',
+                    transmitted: false,
+                    timing: 'realtime',
+                    messageId: message.id,
+                    messageHeaderId: message.headerMessageId || null,
+                    attachmentName: attachment.name,
+                    partName: attachment.partName,
+                    sha256: local_hash,
+                    outcome: 'ok',
+                    detail: 'Eigene Regel greift - kein Upload noetig.'
+                });
+                return HybridDataBuilder.create('LOCAL_RULE', 'LOCAL_RULE', local_hash, 'BLACKLISTED_LOCALLY', attachment);
+            }
+            if (attachmentRules.whitelisted) {
+                return HybridDataBuilder.create('LOCAL_RULE', 'LOCAL_RULE', local_hash, 'WHITELISTED_LOCALLY', attachment);
+            }
+
             const virustotal_stats = await fetch_virustotal_stats(local_hash, apikey_virustotal);
 
             if (alwaysManual || !mayTransmitExternally()) {
@@ -2510,13 +2607,241 @@ async function computeAttachmentHash(messageId, partName) {
 }
 
 // ---------------------------------------------------------------------------
-// Diagnose, Statistik und Berichts-Export (alles lokal)
+// Webhook-/SIEM-Export (ausdrueckliches Opt-in, nur HTTPS)
+//
+// Uebertraegt Verlaufsereignisse an eine vom Nutzer (oder Administrator)
+// bestimmte Adresse - z. B. einen eigenen SIEM-Endpunkt. Standardmaessig aus,
+// verlangt zusaetzlich die globale Zustimmung und laeuft ausschliesslich ueber
+// HTTPS. Fehler duerfen den Scan nie stoeren.
 // ---------------------------------------------------------------------------
+function isWebhookConfigured() {
+    return webhookEnabled === true &&
+        typeof webhookUrl === 'string' &&
+        webhookUrl.trim().toLowerCase().startsWith('https://') &&
+        mayTransmitExternally();
+}
+
+function buildWebhookPayload(event, entry) {
+    return {
+        source: 'thundy-av',
+        schema: 'thundy-av-webhook/1',
+        sentAt: new Date().toISOString(),
+        event,
+        entry: entry || null,
+        viewMode,
+        managed: hasManagedPolicy()
+    };
+}
+
+async function sendToWebhook(event, entry) {
+    if (!isWebhookConfigured()) return { sent: false, reason: 'disabled' };
+    const payload = buildWebhookPayload(event, entry);
+    const headers = { 'Content-Type': 'application/json' };
+    if (webhookSecret) headers['X-Thundy-Secret'] = webhookSecret;
+
+    try {
+        const response = await apiGateway.fetchWithTimeout(webhookUrl, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+        }, 10000);
+        const ok = response.status >= 200 && response.status < 300;
+        await recordScanHistory({
+            action: 'webhook',
+            transmitted: true,
+            provider: 'webhook',
+            dataType: 'event',
+            timing: 'realtime',
+            outcome: ok ? 'ok' : 'error',
+            detail: 'Webhook ' + event + ' gesendet (HTTP ' + response.status + ').'
+        });
+        return { sent: ok, status: response.status };
+    } catch (e) {
+        Logger.warn('Webhook-Versand fehlgeschlagen:', e);
+        await recordScanHistory({
+            action: 'webhook',
+            transmitted: true,
+            provider: 'webhook',
+            dataType: 'event',
+            timing: 'realtime',
+            outcome: 'error',
+            detail: 'Webhook ' + event + ' fehlgeschlagen: ' + (e && e.message)
+        });
+        return { sent: false, reason: 'error', message: e && e.message };
+    }
+}
+
+/** Sendet einen Testdatensatz und meldet das Ergebnis zurueck. */
+async function testWebhook() {
+    if (!webhookEnabled) return { status: 'error', message: 'Webhook ist nicht aktiviert.' };
+    if (!webhookUrl || !webhookUrl.trim().toLowerCase().startsWith('https://')) {
+        return { status: 'error', message: 'Bitte eine HTTPS-Adresse angeben.' };
+    }
+    if (!mayTransmitExternally()) {
+        return { status: 'error', message: 'Externe Analyse ist nicht freigegeben - es wurde nichts gesendet.' };
+    }
+    const result = await sendToWebhook('test', {
+        timestamp: new Date().toISOString(),
+        action: 'test',
+        transmitted: false,
+        detail: 'Testnachricht aus den Einstellungen.'
+    });
+    if (result.sent) return { status: 'success', httpStatus: result.status };
+    return { status: 'error', message: result.message || result.reason || 'Versand fehlgeschlagen.' };
+}
+
+// ---------------------------------------------------------------------------
+// Lokale Regel-/IOC-Engine
+//
+// Eigene Regeln (Absender, Domain, URL, Betreff, Dateiname, SHA-256) wirken
+// ausschliesslich lokal: sie ergaenzen die Bewertung, koennen Absender
+// freistellen/blockieren und verhindern Uploads, wenn eine Datei lokal bereits
+// als unbedenklich oder boese bekannt ist.
+// ---------------------------------------------------------------------------
+const RULE_TYPES = ['sender', 'domain', 'url', 'subject', 'attachment-name', 'sha256'];
+const RULE_ACTIONS = ['whitelist', 'blacklist', 'score'];
+const RULE_MATCH_MODES = ['contains', 'exact', 'regex'];
+
+function validateRule(rule) {
+    const problems = [];
+    if (!rule || typeof rule !== 'object') return ['Regel ist kein Objekt.'];
+    if (!RULE_TYPES.includes(rule.type)) problems.push('unbekannter Typ: ' + rule.type);
+    if (!RULE_ACTIONS.includes(rule.action)) problems.push('unbekannte Aktion: ' + rule.action);
+    if (typeof rule.pattern !== 'string' || rule.pattern.trim() === '') problems.push('Muster fehlt.');
+    const mode = rule.mode || 'contains';
+    if (!RULE_MATCH_MODES.includes(mode)) problems.push('unbekannter Vergleich: ' + mode);
+    if (mode === 'regex' && rule.pattern) {
+        try { new RegExp(rule.pattern); } catch (e) { problems.push('ungueltiger regulaerer Ausdruck: ' + e.message); }
+    }
+    if (rule.action === 'score' && (typeof rule.score !== 'number' || rule.score < 0 || rule.score > 100)) {
+        problems.push('Punktewert muss zwischen 0 und 100 liegen.');
+    }
+    return problems;
+}
+
+function normalizeRules(value) {
+    if (!Array.isArray(value)) return [];
+    const rules = [];
+    for (const entry of value) {
+        if (!entry || validateRule(entry).length > 0) continue;
+        rules.push({
+            id: entry.id || ('r' + rules.length),
+            enabled: entry.enabled !== false,
+            type: entry.type,
+            mode: entry.mode || 'contains',
+            pattern: String(entry.pattern),
+            action: entry.action,
+            score: entry.action === 'score' ? Math.round(entry.score) : null,
+            note: entry.note ? String(entry.note) : null
+        });
+    }
+    return rules;
+}
+
+function ruleMatches(rule, value) {
+    if (value === undefined || value === null) return false;
+    const haystack = String(value);
+    const needle = String(rule.pattern);
+    switch (rule.mode) {
+        case 'exact': return haystack.toLowerCase() === needle.toLowerCase();
+        case 'regex':
+            try { return new RegExp(needle, 'i').test(haystack); } catch (e) { return false; }
+        default: return haystack.toLowerCase().includes(needle.toLowerCase());
+    }
+}
+
+function collectRuleTargets(rule, input) {
+    switch (rule.type) {
+        case 'sender': return [input.senderEmail, input.author].filter(Boolean);
+        case 'domain': return [input.senderDomain].concat(input.linkDomains || []).filter(Boolean);
+        case 'url': return (input.urls || []);
+        case 'subject': return [input.subject].filter(Boolean);
+        case 'attachment-name': return (input.attachmentNames || []);
+        case 'sha256': return (input.hashes || []);
+        default: return [];
+    }
+}
+
+/**
+ * Wendet alle aktiven Regeln an. Rueckgabe:
+ *   { scoreDelta, reasons, whitelisted, blacklisted, matches }
+ */
+function evaluateCustomRules(input = {}) {
+    const result = { scoreDelta: 0, reasons: [], whitelisted: false, blacklisted: false, matches: [] };
+    const rules = normalizeRules(customRules);
+
+    for (const rule of rules) {
+        if (!rule.enabled) continue;
+        const targets = collectRuleTargets(rule, input);
+        const matched = targets.find(target => ruleMatches(rule, target));
+        if (!matched) continue;
+
+        result.matches.push({ rule, matched });
+        const label = rule.type + ' "' + rule.pattern + '"';
+        if (rule.action === 'whitelist') {
+            result.whitelisted = true;
+            result.reasons.push('Eigene Regel: ' + label + ' ist als vertrauenswuerdig eingestuft' +
+                (rule.note ? ' (' + rule.note + ')' : '') + '.');
+        } else if (rule.action === 'blacklist') {
+            result.blacklisted = true;
+            result.reasons.push('Eigene Regel: ' + label + ' ist als unerwuenscht eingestuft' +
+                (rule.note ? ' (' + rule.note + ')' : '') + '.');
+        } else {
+            result.scoreDelta += Math.round(rule.score || 0);
+            result.reasons.push('Eigene Regel: ' + label + ' erhoeht die Bewertung um ' + Math.round(rule.score || 0) +
+                ' Punkte' + (rule.note ? ' (' + rule.note + ')' : '') + '.');
+        }
+    }
+
+    return result;
+}
+
+
 
 /**
  * Sammelt Prüfergebnisse für die Selbstauskunft im Optionsdialog. Jede Prüfung
  * ist einzeln abgesichert, damit die Diagnose nie selbst fehlschlägt.
  */
+/** Export/Import eines Regelprofils (Team-Profile ohne Datenabfluss). */
+function exportRuleProfile() {
+    return JSON.stringify({
+        schema: 'thundy-av-rules/1',
+        exportedAt: new Date().toISOString(),
+        rules: normalizeRules(customRules),
+        whitelist: Array.from(customWhitelist || []),
+        blacklist: Array.from(customBlacklist || [])
+    }, null, 2);
+}
+
+function importRuleProfile(jsonText) {
+    let parsed;
+    try {
+        parsed = JSON.parse(jsonText);
+    } catch (e) {
+        return { ok: false, errors: ['JSON konnte nicht gelesen werden: ' + e.message] };
+    }
+    if (!parsed || typeof parsed !== 'object') return { ok: false, errors: ['Unerwartetes Format.'] };
+
+    const rawRules = Array.isArray(parsed.rules) ? parsed.rules : [];
+    const errors = [];
+    rawRules.forEach((rule, index) => {
+        validateRule(rule).forEach(message => errors.push('Regel ' + (index + 1) + ': ' + message));
+    });
+    if (errors.length > 0) return { ok: false, errors };
+
+    return {
+        ok: true,
+        errors: [],
+        rules: normalizeRules(rawRules),
+        whitelist: Array.isArray(parsed.whitelist) ? parsed.whitelist.map(value => String(value).toLowerCase()) : [],
+        blacklist: Array.isArray(parsed.blacklist) ? parsed.blacklist.map(value => String(value).toLowerCase()) : []
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Diagnose, Statistik und Berichts-Export (alles lokal)
+// ---------------------------------------------------------------------------
+
 async function collectDiagnostics() {
     const checks = [];
     const add = (id, label, status, detail) => checks.push({ id, label, status, detail });
@@ -2992,6 +3317,64 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             handleRequestScan(request, sender).then(res => sendResponse(res));
             return true;
 
+        case "testWebhook":
+            testWebhook()
+                .then(result => sendResponse(result))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
+        case "getWebhookStatus":
+            sendResponse({
+                status: 'success',
+                enabled: webhookEnabled,
+                configured: isWebhookConfigured(),
+                urlHost: (function () {
+                    try { return new URL(webhookUrl).host; } catch (e) { return null; }
+                })(),
+                hasSecret: !!webhookSecret
+            });
+            return true;
+
+        case "getRuleProfile":
+            sendResponse({
+                status: 'success',
+                profile: exportRuleProfile(),
+                rules: normalizeRules(customRules),
+                whitelist: Array.from(customWhitelist || []),
+                blacklist: Array.from(customBlacklist || [])
+            });
+            return true;
+
+        case "importRuleProfile": {
+            const imported = importRuleProfile(request.profile || '');
+            if (!imported.ok) {
+                sendResponse({ status: 'error', errors: imported.errors });
+                return true;
+            }
+            customRules = imported.rules;
+            if (request.replaceLists !== false) {
+                customWhitelist = new Set(imported.whitelist);
+                customBlacklist = new Set(imported.blacklist);
+            }
+            browser.storage.local.set({
+                customRules,
+                customWhitelist: Array.from(customWhitelist),
+                customBlacklist: Array.from(customBlacklist)
+            }).then(() => sendResponse({
+                status: 'success',
+                rules: normalizeRules(customRules),
+                whitelistSize: customWhitelist.size,
+                blacklistSize: customBlacklist.size
+            })).catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+        }
+
+        case "evaluateRules": {
+            const evaluation = evaluateCustomRules(request.input || {});
+            sendResponse({ status: 'success', evaluation });
+            return true;
+        }
+
         case "getDiagnostics":
             collectDiagnostics()
                 .then(report => sendResponse({ status: 'success', report }))
@@ -3044,7 +3427,10 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 .then(history => {
                     const filtered = filterScanHistory(history, {
                         messageHeaderId: request.messageHeaderId,
-                        onlyTransmissions: request.onlyTransmissions === true
+                        onlyTransmissions: request.onlyTransmissions === true,
+                        search: request.search,
+                        from: request.from,
+                        to: request.to
                     });
                     const limit = request.limit ? parseInt(request.limit, 10) : filtered.length;
                     sendResponse({
@@ -3137,7 +3523,21 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     const htmlString = decoder.decode(contentBuffer);
 
     // Disarm the HTML locally
-    const safeHtml = disarmHTML(htmlString);
+    const disarmResult = disarmHTML(htmlString);
+    const safeHtml = disarmResult.html;
+
+    // Entschaerfung im Verlauf dokumentieren (rein lokal)
+    await recordScanHistory({
+        action: 'disarm',
+        transmitted: false,
+        timing: 'realtime',
+        messageId: messageId,
+        attachmentName: attachmentName || null,
+        partName: partName || null,
+        outcome: 'ok',
+        detail: 'HTML-Anhang lokal entschaerft: ' + disarmResult.report.totalRemoved + ' aktive Element(e) entfernt, ' +
+            disarmResult.report.removedRemoteContent + ' externe(s) Medium/Medien blockiert.'
+    });
 
     // Create a blob from the safe HTML
     const blob = new Blob([safeHtml], { type: 'text/html;charset=utf-8' });
@@ -3164,7 +3564,7 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
         }
     }, 10000);
 
-    return { downloadId: downloadId };
+    return { downloadId: downloadId, report: disarmResult.report };
 }
 
 const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xlink:href']);
@@ -3180,6 +3580,8 @@ function disarmHTML(htmlString) {
     const doc = parser.parseFromString(htmlString, 'text/html');
 
     const nodesToRemove = [];
+    const removedCounts = {};
+    let removedRemote = 0;
 
     const safeEl = doc.createElement('div');
     const safeHasAttributes = safeEl.hasAttributes;
@@ -3270,10 +3672,56 @@ function disarmHTML(htmlString) {
         const pNode = safeGetParentNode.call(nodesToRemove[i]);
         if (pNode) {
             safeRemoveChild.call(pNode, nodesToRemove[i]);
+            removedCounts[tagNameOf(nodesToRemove[i])] = (removedCounts[tagNameOf(nodesToRemove[i])] || 0) + 1;
         }
     }
 
-    return doc.documentElement.outerHTML;
+    // Remote-Inhalte (Tracking-Pixel, externe Bilder/Skripte) entfernen und zaehlen.
+    doc.querySelectorAll('img, iframe, video, audio, source, track').forEach(element => {
+        const source = element.getAttribute('src') || element.getAttribute('poster');
+        if (source && /^https?:/i.test(source.trim())) {
+            element.removeAttribute('src');
+            element.removeAttribute('poster');
+            element.setAttribute('data-thundy-blocked-remote', source);
+            removedRemote++;
+        }
+    });
+
+    const result = doc.documentElement.outerHTML;
+    const totalRemoved = Object.values(removedCounts).reduce((sum, count) => sum + count, 0);
+    const report = { removedTags: removedCounts, removedRemoteContent: removedRemote, totalRemoved };
+
+    return { html: withDisarmNotice(result, report), report };
+}
+
+function tagNameOf(element) {
+    try {
+        return String(element.tagName || '').toLowerCase() || 'unbekannt';
+    } catch (e) {
+        return 'unbekannt';
+    }
+}
+
+/** Stellt dem entschaerften Dokument einen Hinweis voran. */
+function withDisarmNotice(html, report) {
+    const details = [
+        report.totalRemoved > 0 ? report.totalRemoved + ' aktive Element(e) entfernt' : null,
+        report.removedRemoteContent > 0 ? report.removedRemoteContent + ' externe(s) Medium/Medien blockiert' : null
+    ].filter(Boolean).join(', ') || 'keine aktiven Inhalte gefunden';
+
+    const banner = '<div id="thundy-disarm-notice" style="font-family:Arial,sans-serif;background:#fff8e1;' +
+        'border:1px solid #ffcc80;color:#333;padding:10px;margin:0 0 12px 0;border-radius:4px;">' +
+        '<strong>Thundy AV:</strong> Diese Datei wurde lokal entsch&auml;rft (' + details +
+        '). Externe Inhalte wurden entfernt, damit keine Verbindungen mehr aufgebaut werden.</div>';
+
+    const marker = '<body';
+    const markerIndex = html.toLowerCase().indexOf(marker);
+    if (markerIndex === -1) return banner + html;
+
+    const bodyEnd = html.indexOf('>', markerIndex);
+    if (bodyEnd === -1) return banner + html;
+
+    return html.slice(0, bodyEnd + 1) + banner + html.slice(bodyEnd + 1);
 }
 
 async function handleUrlScan(url, headerMessageId) {

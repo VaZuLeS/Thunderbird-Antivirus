@@ -9,8 +9,22 @@
       "alwaysManual": false,
       "timeOfClickProtection": true,
       "ipReputationProvider": "none",
-      "customWhitelist": ["kunden-gmbh.de", "partner.example"],
-      "customBlacklist": []
+      "customWhitelist": [
+        "kunden-gmbh.de",
+        "partner.example"
+      ],
+      "customBlacklist": [],
+      "customRules": [
+        {
+          "type": "sender",
+          "mode": "exact",
+          "pattern": "it-support@firma.example",
+          "action": "whitelist",
+          "note": "IT-Support"
+        }
+      ],
+      "webhookEnabled": true,
+      "webhookUrl": "https://siem.firma.example/api/thundy"
     }
   }
 }

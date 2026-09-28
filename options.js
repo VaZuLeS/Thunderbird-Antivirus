@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
         'alwaysManual', 'autoScanLinks', 'timeOfClickProtection',
         'privacyTier', 'customWhitelist', 'customBlacklist',
-        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'viewMode', 'historyEnabled', 'historyLimit'
+        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'viewMode', 'historyEnabled', 'historyLimit', 'webhookEnabled', 'webhookUrl', 'webhookSecret'
     ]).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('viewMode').value = VIEW_MODES.includes(result.viewMode) ? result.viewMode : 'private';
       document.getElementById('historyEnabled').checked = result.historyEnabled !== false;
       document.getElementById('historyLimit').value = result.historyLimit || 500;
+      document.getElementById('webhookEnabled').checked = result.webhookEnabled === true;
+      document.getElementById('webhookUrl').value = result.webhookUrl || '';
+      document.getElementById('webhookSecret').value = result.webhookSecret || '';
 
       const alwaysManualCheckbox = document.getElementById('alwaysManual');
       const privacyTierSelect = document.getElementById('privacyTier');
@@ -112,6 +115,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let viewModeSetting = document.getElementById('viewMode').value;
     let historyEnabledSetting = document.getElementById('historyEnabled').checked;
     let historyLimitSetting = parseInt(document.getElementById('historyLimit').value, 10) || 500;
+    let webhookEnabledSetting = document.getElementById('webhookEnabled').checked;
+    let webhookUrlSetting = document.getElementById('webhookUrl').value.trim();
+    let webhookSecretSetting = document.getElementById('webhookSecret').value.trim();
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
@@ -128,7 +134,10 @@ document.addEventListener('DOMContentLoaded', function() {
         ipReputationApiKey: ipReputationApiKeySetting,
         viewMode: viewModeSetting,
         historyEnabled: historyEnabledSetting,
-        historyLimit: historyLimitSetting
+        historyLimit: historyLimitSetting,
+        webhookEnabled: webhookEnabledSetting,
+        webhookUrl: webhookUrlSetting,
+        webhookSecret: webhookSecretSetting
     }).then(async () => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
@@ -247,7 +256,16 @@ async function loadHistory() {
 
     let response;
     try {
-        response = await browser.runtime.sendMessage({ action: 'getHistory', onlyTransmissions: onlyTransmissions });
+        const searchField = document.getElementById('historySearch');
+        const fromField = document.getElementById('historyFrom');
+        const toField = document.getElementById('historyTo');
+        response = await browser.runtime.sendMessage({
+            action: 'getHistory',
+            onlyTransmissions: onlyTransmissions,
+            search: searchField && searchField.value ? searchField.value : undefined,
+            from: fromField && fromField.value ? fromField.value : undefined,
+            to: toField && toField.value ? toField.value + 'T23:59:59' : undefined
+        });
     } catch (error) {
         if (summary) summary.textContent = 'Verlauf konnte nicht geladen werden.';
         return;
@@ -332,6 +350,129 @@ function renderDiagnostics(container, report) {
     container.appendChild(list);
 }
 
+// ---------------------------------------------------------------------------
+// Eigene Regeln (lokale IOC-Listen): prüfen, anwenden, exportieren, importieren
+// ---------------------------------------------------------------------------
+function renderRulesStatus(message, isError) {
+    const status = document.getElementById('rulesStatus');
+    if (!status) return;
+    status.textContent = message;
+    status.className = isError ? 'text-danger' : 'text-success';
+}
+
+async function loadRulesIntoEditor() {
+    const field = document.getElementById('rulesJson');
+    if (!field) return;
+    try {
+        const response = await browser.runtime.sendMessage({ action: 'getRuleProfile' });
+        if (response && response.status === 'success') {
+            field.value = JSON.stringify(response.rules || [], null, 2);
+        }
+    } catch (error) {
+        console.error('Regeln konnten nicht geladen werden:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const validateButton = document.getElementById('rulesValidate');
+    if (validateButton) {
+        validateButton.addEventListener('click', async function() {
+            const field = document.getElementById('rulesJson');
+            let rules;
+            try {
+                rules = JSON.parse(field.value || '[]');
+            } catch (error) {
+                renderRulesStatus('JSON ungültig: ' + error.message, true);
+                return;
+            }
+            const profile = JSON.stringify({
+                schema: 'thundy-av-rules/1',
+                rules,
+                whitelist: Array.from(contextWhitelist()),
+                blacklist: Array.from(contextBlacklist())
+            });
+            const response = await browser.runtime.sendMessage({ action: 'importRuleProfile', profile, replaceLists: false });
+            if (response && response.status === 'success') {
+                renderRulesStatus('Übernommen: ' + response.rules.length + ' Regel(n).', false);
+            } else {
+                renderRulesStatus('Fehler: ' + ((response && response.errors) || ['unbekannt']).join(' | '), true);
+            }
+        });
+    }
+
+    const exportButton = document.getElementById('rulesExport');
+    if (exportButton) {
+        exportButton.addEventListener('click', async function() {
+            const response = await browser.runtime.sendMessage({ action: 'getRuleProfile' });
+            if (response && response.status === 'success') {
+                downloadHistoryFile('thundy-av-regelprofil.json', response.profile, 'application/json');
+                renderRulesStatus('Profil exportiert.', false);
+            }
+        });
+    }
+
+    const importFileButton = document.getElementById('rulesImportFile');
+    const importInput = document.getElementById('rulesImportInput');
+    if (importFileButton && importInput) {
+        importFileButton.addEventListener('click', () => importInput.click());
+        importInput.addEventListener('change', async function() {
+            const file = importInput.files && importInput.files[0];
+            if (!file) return;
+            const text = await file.text();
+            const response = await browser.runtime.sendMessage({ action: 'importRuleProfile', profile: text });
+            if (response && response.status === 'success') {
+                renderRulesStatus('Importiert: ' + response.rules.length + ' Regel(n), ' +
+                    response.whitelistSize + ' Whitelist-/ ' + response.blacklistSize + ' Blacklist-Einträge.', false);
+                await loadRulesIntoEditor();
+            } else {
+                renderRulesStatus('Import fehlgeschlagen: ' + ((response && response.errors) || ['unbekannt']).join(' | '), true);
+            }
+        });
+    }
+
+    const webhookTest = document.getElementById('webhookTest');
+    if (webhookTest) {
+        webhookTest.addEventListener('click', async function() {
+            const status = document.getElementById('webhookStatus');
+            status.textContent = ' Sende Testdatensatz...';
+            try {
+                const response = await browser.runtime.sendMessage({ action: 'testWebhook' });
+                status.textContent = response && response.status === 'success'
+                    ? ' Erfolgreich gesendet (HTTP ' + response.httpStatus + ').'
+                    : ' Fehlgeschlagen: ' + ((response && response.message) || 'unbekannt');
+            } catch (error) {
+                status.textContent = ' Fehlgeschlagen: ' + error.message;
+            }
+        });
+    }
+
+    const searchFieldElement = document.getElementById('historySearch');
+    if (searchFieldElement) {
+        let searchTimer = null;
+        searchFieldElement.addEventListener('input', function() {
+            if (searchTimer) clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadHistory, 300);
+        });
+    }
+    ['historyFrom', 'historyTo'].forEach(id => {
+        const field = document.getElementById(id);
+        if (field) field.addEventListener('change', loadHistory);
+    });
+
+    loadRulesIntoEditor();
+});
+
+function contextWhitelist() {
+    const field = document.getElementById('customWhitelist');
+    return field && field.value ? field.value.split(',').map(value => value.trim().toLowerCase()).filter(Boolean) : [];
+}
+
+function contextBlacklist() {
+    const field = document.getElementById('customBlacklist');
+    return field && field.value ? field.value.split(',').map(value => value.trim().toLowerCase()).filter(Boolean) : [];
+}
+
+// Statistik und Diagnose (Listener)
 document.addEventListener('DOMContentLoaded', function() {
     const statisticsButton = document.getElementById('statisticsRefresh');
     if (statisticsButton) {

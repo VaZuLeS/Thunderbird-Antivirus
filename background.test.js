@@ -238,6 +238,18 @@ describe('background.js', () => {
             globalThis.get_externalAnalysisConsent = () => externalAnalysisConsent;
             globalThis.get_managed_keys = () => Object.keys(managedSettings);
             globalThis.get_customBlacklist = () => customBlacklist;
+            globalThis.set_customRules = (rules) => { customRules = rules || []; };
+            globalThis.get_customRules = () => customRules;
+            globalThis.validateRule = validateRule;
+            globalThis.normalizeRules = normalizeRules;
+            globalThis.evaluateCustomRules = evaluateCustomRules;
+            globalThis.exportRuleProfile = exportRuleProfile;
+            globalThis.importRuleProfile = importRuleProfile;
+            globalThis.process_single_attachment = process_single_attachment;
+            globalThis.isWebhookConfigured = isWebhookConfigured;
+            globalThis.sendToWebhook = sendToWebhook;
+            globalThis.testWebhook = testWebhook;
+            globalThis.set_webhook = (enabled, url, secret) => { webhookEnabled = enabled === true; webhookUrl = url || ''; webhookSecret = secret || ''; };
             globalThis.get_history_enabled = () => historyEnabled;
             globalThis.get_history_limit = () => historyLimit;
             globalThis.get_view_mode = () => viewMode;
@@ -2115,7 +2127,7 @@ describe('background.js', () => {
     describe('disarmHTML', () => {
         it('removes script tags and their content', () => {
             const input = '<html><body><h1>Test</h1><script>alert(1);</script></body></html>';
-            const result = context.disarmHTML(input);
+            const { html: result } = context.disarmHTML(input);
             assert.ok(!result.includes('<script>'), 'Script tag should be removed');
             assert.ok(!result.includes('alert(1)'), 'Script content should be removed');
             assert.ok(result.includes('Test'), 'Safe content should remain');
@@ -2123,7 +2135,7 @@ describe('background.js', () => {
 
         it('removes inline event handlers', () => {
             const input = '<html><body><button onclick="evil()">Click</button></body></html>';
-            const result = context.disarmHTML(input);
+            const { html: result } = context.disarmHTML(input);
             assert.ok(!result.includes('onclick'), 'onclick attribute should be removed');
             assert.ok(!result.includes('evil()'), 'Event handler content should be removed');
             assert.ok(result.includes('<button>Click</button>'), 'Button element should remain');
@@ -2131,7 +2143,7 @@ describe('background.js', () => {
 
         it('removes javascript URIs', () => {
             const input = '<html><body><a href="javascript:alert(1)">Link</a><a href="http://safe.com">Safe</a></body></html>';
-            const result = context.disarmHTML(input);
+            const { html: result } = context.disarmHTML(input);
             assert.ok(!result.includes('javascript:'), 'javascript URI should be removed');
             const sanitizedDom = new (new JSDOM()).window.DOMParser().parseFromString(result, 'text/html');
             const hrefs = Array.from(sanitizedDom.querySelectorAll('a'))
@@ -2149,28 +2161,56 @@ describe('background.js', () => {
 
         it('removes object, embed, iframe', () => {
             const input = '<html><body><object data="evil.swf"></object><embed src="evil.swf"></embed><iframe src="evil.html"></iframe></body></html>';
-            const result = context.disarmHTML(input);
+            const { html: result } = context.disarmHTML(input);
             assert.ok(!result.includes('object'), 'object should be removed');
             assert.ok(!result.includes('embed'), 'embed should be removed');
             assert.ok(!result.includes('iframe'), 'iframe should be removed');
         });
 
+
+        it('blocks remote content and reports it', () => {
+            const input = '<html><body><img src="https://tracker.example/pixel.gif"><p>Text</p></body></html>';
+            const { html, report } = context.disarmHTML(input);
+
+            assert.ok(!/<img[^>]*src=/.test(html), 'the src attribute must be removed');
+            assert.ok(/data-thundy-blocked-remote="https:\/\/tracker\.example\/pixel\.gif"/.test(html),
+                'the blocked source is only documented in the marker attribute');
+            assert.ok(html.includes('data-thundy-blocked-remote'), 'blocked source is documented in the markup');
+            assert.strictEqual(report.removedRemoteContent, 1);
+        });
+
+        it('keeps local images' , () => {
+            const input = '<html><body><img src="cid:logo@example"></body></html>';
+            const { report } = context.disarmHTML(input);
+            assert.strictEqual(report.removedRemoteContent, 0);
+        });
+
+        it('prepends a notice that explains what was removed', () => {
+            const input = '<html><body><script>evil()</script><img src="http://x.example/y.png"></body></html>';
+            const { html, report } = context.disarmHTML(input);
+
+            assert.ok(html.includes('thundy-disarm-notice'), 'notice expected');
+            assert.match(html, /entsch&auml;rft/);
+            assert.strictEqual(report.totalRemoved >= 1, true);
+            assert.ok(report.removedTags.script >= 1);
+        });
+
         it('prevents javascript URI evasion', () => {
             const input = '<html><body><a href="java\tscript:alert(1)">Link</a><a href="jav&#x09;ascript:alert(1)">Link2</a><a href=" java&#x00;script:alert(1)">Link3</a><a href="javascript&#x3A;alert(1)">Link4</a><a href="java&#x200B;script:alert(1)">Link5</a><a href="java&#xA0;script:alert(1)">Link6</a></body></html>';
-            const result = context.disarmHTML(input);
+            const { html: result } = context.disarmHTML(input);
             assert.ok(!result.includes('javascript:'), 'evaded javascript URI should be removed');
         });
 
         it('removes data and vbscript URIs', () => {
             const input = '<html><body><a href="data:text/html,<script>alert(1)</script>">Data Link</a><img src="vbscript:msgbox(\'hello\')"></body></html>';
-            const result = context.disarmHTML(input);
+            const { html: result } = context.disarmHTML(input);
             assert.ok(!result.includes('data:'), 'data URI should be removed');
             assert.ok(!result.includes('vbscript:'), 'vbscript URI should be removed');
         });
 
         it('removes base and meta tags', () => {
             const input = '<html><head><base href="http://evil.com"><meta http-equiv="refresh" content="0;url=javascript:alert(1)"></head><body></body></html>';
-            const result = context.disarmHTML(input);
+            const { html: result } = context.disarmHTML(input);
             assert.ok(!result.includes('<base'), 'base tag should be removed');
             assert.ok(!result.includes('<meta'), 'meta tag should be removed');
         });
@@ -2181,7 +2221,7 @@ describe('background.js', () => {
                 <button formaction="data:text/html,<script>alert(1)</script>">Click</button>
                 <svg><use xlink:href="javascript:alert(1)"></use></svg>
             </body></html>`;
-            const result = context.disarmHTML(input);
+            const { html: result } = context.disarmHTML(input);
             assert.ok(!result.includes('javascript:'), 'javascript URI should be removed from action/xlink:href');
             assert.ok(!result.includes('data:'), 'data URI should be removed from formaction');
             assert.ok(!result.includes('action="javascript'), 'action attribute should be removed/sanitized');
@@ -2189,26 +2229,26 @@ describe('background.js', () => {
 
         it('prevents mXSS bypasses using template, math, svg, and noscript', () => {
             const templateInput = '<html><body><template><script>alert(1)</script><a href="javascript:alert(1)">X</a></template></body></html>';
-            const templateResult = context.disarmHTML(templateInput);
+            const { html: templateResult } = context.disarmHTML(templateInput);
             assert.ok(!templateResult.includes('<script>'), 'script tag inside template should be removed');
             assert.ok(!templateResult.includes('javascript:'), 'javascript URI inside template should be removed');
 
             const nestedTemplateInput = '<template><template><script>alert(1)</script></template></template>';
-            const nestedTemplateResult = context.disarmHTML(nestedTemplateInput);
+            const { html: nestedTemplateResult } = context.disarmHTML(nestedTemplateInput);
             assert.ok(!nestedTemplateResult.includes('<script>'), 'script tag inside nested template should be removed');
 
             const mathInput = '<math><script>alert(1)</script></math>';
-            const mathResult = context.disarmHTML(mathInput);
+            const { html: mathResult } = context.disarmHTML(mathInput);
             assert.ok(!mathResult.includes('math'), 'math tag should be removed');
             assert.ok(!mathResult.includes('script'), 'script tag inside math should be removed');
 
             const svgInput = '<svg><script>alert(1)</script></svg>';
-            const svgResult = context.disarmHTML(svgInput);
+            const { html: svgResult } = context.disarmHTML(svgInput);
             assert.ok(!svgResult.includes('svg'), 'svg tag should be removed');
             assert.ok(!svgResult.includes('script'), 'script tag inside svg should be removed');
 
             const noscriptInput = '<noscript><p title="</noscript><img src=x onerror=alert(1)>"></noscript>';
-            const noscriptResult = context.disarmHTML(noscriptInput);
+            const { html: noscriptResult } = context.disarmHTML(noscriptInput);
             assert.ok(!noscriptResult.includes('<noscript>'), 'noscript tag should be removed');
         });
     });
@@ -2844,106 +2884,6 @@ describe('background.js', () => {
         });
     });
 
-    describe('disarmHTML', () => {
-        it('removes script tags and their content', () => {
-            const input = '<html><body><h1>Test</h1><script>alert(1);</script></body></html>';
-            const result = context.disarmHTML(input);
-            assert.ok(!result.includes('<script>'), 'Script tag should be removed');
-            assert.ok(!result.includes('alert(1)'), 'Script content should be removed');
-            assert.ok(result.includes('Test'), 'Safe content should remain');
-        });
-
-        it('removes inline event handlers', () => {
-            const input = '<html><body><button onclick="evil()">Click</button></body></html>';
-            const result = context.disarmHTML(input);
-            assert.ok(!result.includes('onclick'), 'onclick attribute should be removed');
-            assert.ok(!result.includes('evil()'), 'Event handler content should be removed');
-            assert.ok(result.includes('<button>Click</button>'), 'Button element should remain');
-        });
-
-        it('removes javascript URIs', () => {
-            const input = '<html><body><a href="javascript:alert(1)">Link</a><a href="http://safe.com">Safe</a></body></html>';
-            const result = context.disarmHTML(input);
-            assert.ok(!result.includes('javascript:'), 'javascript URI should be removed');
-            const sanitizedDom = new (new JSDOM()).window.DOMParser().parseFromString(result, 'text/html');
-            const hrefs = Array.from(sanitizedDom.querySelectorAll('a'))
-                .map((a) => a.getAttribute('href'))
-                .filter(Boolean);
-            const hasSafeHost = hrefs.some((href) => {
-                try {
-                    return new URL(href).hostname === 'safe.com';
-                } catch {
-                    return false;
-                }
-            });
-            assert.ok(hasSafeHost, 'Safe URI host should remain');
-        });
-
-        it('removes object, embed, iframe', () => {
-            const input = '<html><body><object data="evil.swf"></object><embed src="evil.swf"></embed><iframe src="evil.html"></iframe></body></html>';
-            const result = context.disarmHTML(input);
-            assert.ok(!result.includes('object'), 'object should be removed');
-            assert.ok(!result.includes('embed'), 'embed should be removed');
-            assert.ok(!result.includes('iframe'), 'iframe should be removed');
-        });
-
-        it('prevents javascript URI evasion', () => {
-            const input = '<html><body><a href="java\tscript:alert(1)">Link</a><a href="jav&#x09;ascript:alert(1)">Link2</a><a href=" java&#x00;script:alert(1)">Link3</a><a href="javascript&#x3A;alert(1)">Link4</a><a href="java&#x200B;script:alert(1)">Link5</a><a href="java&#xA0;script:alert(1)">Link6</a></body></html>';
-            const result = context.disarmHTML(input);
-            assert.ok(!result.includes('javascript:'), 'evaded javascript URI should be removed');
-        });
-
-        it('removes data and vbscript URIs', () => {
-            const input = '<html><body><a href="data:text/html,<script>alert(1)</script>">Data Link</a><img src="vbscript:msgbox(\'hello\')"></body></html>';
-            const result = context.disarmHTML(input);
-            assert.ok(!result.includes('data:'), 'data URI should be removed');
-            assert.ok(!result.includes('vbscript:'), 'vbscript URI should be removed');
-        });
-
-        it('removes base and meta tags', () => {
-            const input = '<html><head><base href="http://evil.com"><meta http-equiv="refresh" content="0;url=javascript:alert(1)"></head><body></body></html>';
-            const result = context.disarmHTML(input);
-            assert.ok(!result.includes('<base'), 'base tag should be removed');
-            assert.ok(!result.includes('<meta'), 'meta tag should be removed');
-        });
-
-        it('sanitizes action, formaction, and xlink:href attributes', () => {
-            const input = `<html><body>
-                <form action="javascript:alert(1)"><input type="submit"></form>
-                <button formaction="data:text/html,<script>alert(1)</script>">Click</button>
-                <svg><use xlink:href="javascript:alert(1)"></use></svg>
-            </body></html>`;
-            const result = context.disarmHTML(input);
-            assert.ok(!result.includes('javascript:'), 'javascript URI should be removed from action/xlink:href');
-            assert.ok(!result.includes('data:'), 'data URI should be removed from formaction');
-            assert.ok(!result.includes('action="javascript'), 'action attribute should be removed/sanitized');
-        });
-
-        it('prevents mXSS bypasses using template, math, svg, and noscript', () => {
-            const templateInput = '<html><body><template><script>alert(1)</script><a href="javascript:alert(1)">X</a></template></body></html>';
-            const templateResult = context.disarmHTML(templateInput);
-            assert.ok(!templateResult.includes('<script>'), 'script tag inside template should be removed');
-            assert.ok(!templateResult.includes('javascript:'), 'javascript URI inside template should be removed');
-
-            const nestedTemplateInput = '<template><template><script>alert(1)</script></template></template>';
-            const nestedTemplateResult = context.disarmHTML(nestedTemplateInput);
-            assert.ok(!nestedTemplateResult.includes('<script>'), 'script tag inside nested template should be removed');
-
-            const mathInput = '<math><script>alert(1)</script></math>';
-            const mathResult = context.disarmHTML(mathInput);
-            assert.ok(!mathResult.includes('math'), 'math tag should be removed');
-            assert.ok(!mathResult.includes('script'), 'script tag inside math should be removed');
-
-            const svgInput = '<svg><script>alert(1)</script></svg>';
-            const svgResult = context.disarmHTML(svgInput);
-            assert.ok(!svgResult.includes('svg'), 'svg tag should be removed');
-            assert.ok(!svgResult.includes('script'), 'script tag inside svg should be removed');
-
-            const noscriptInput = '<noscript><p title="</noscript><img src=x onerror=alert(1)>"></noscript>';
-            const noscriptResult = context.disarmHTML(noscriptInput);
-            assert.ok(!noscriptResult.includes('<noscript>'), 'noscript tag should be removed');
-        });
-    });
 
     describe('checkLists', () => {
         beforeEach(() => {
@@ -4547,6 +4487,207 @@ describe('background.js', () => {
             const settings = await ask({ action: 'getEffectiveSettings' });
             assert.strictEqual(settings.status, 'success');
             assert.ok(settings.settings);
+        });
+    });
+
+    describe('local rule engine (IOC lists)', () => {
+        beforeEach(() => {
+            context.set_customRules([]);
+        });
+
+        it('validates rule definitions', () => {
+            assert.strictEqual(context.validateRule({ type: 'sender', pattern: 'a@b.de', action: 'score', score: 40 }).length, 0);
+            assert.ok(context.validateRule({ type: 'quatsch', pattern: 'x', action: 'score', score: 10 }).length > 0);
+            assert.ok(context.validateRule({ type: 'sender', pattern: '', action: 'score', score: 10 }).length > 0);
+            assert.ok(context.validateRule({ type: 'sender', pattern: 'x', action: 'score', score: 200 }).length > 0);
+            assert.ok(context.validateRule({ type: 'sender', pattern: '(', action: 'score', score: 10, mode: 'regex' }).length > 0);
+        });
+
+        it('normalizes and deduplicates invalid rules away', () => {
+            const rules = context.normalizeRules([
+                { type: 'sender', pattern: 'a@b.de', action: 'whitelist' },
+                { type: 'bogus', pattern: 'x', action: 'whitelist' },
+                { type: 'sha256', pattern: 'a'.repeat(64), action: 'blacklist', mode: 'exact' }
+            ]);
+            assert.strictEqual(rules.length, 2);
+            assert.strictEqual(rules[0].mode, 'contains');
+            assert.strictEqual(rules[1].mode, 'exact');
+        });
+
+        it('scores matching senders, domains, urls and subjects', () => {
+            context.set_customRules([
+                { type: 'sender', pattern: 'ceo@firma.de', action: 'score', score: 25 },
+                { type: 'url', pattern: 'bit.ly', action: 'score', score: 20 },
+                { type: 'subject', pattern: 'zahlung', action: 'score', score: 15, mode: 'contains' }
+            ]);
+
+            const evaluation = context.evaluateCustomRules({
+                senderEmail: 'ceo@firma.de', senderDomain: 'firma.de',
+                urls: ['https://bit.ly/abc'], subject: 'Zahlung offen'
+            });
+
+            assert.strictEqual(evaluation.scoreDelta, 60);
+            assert.strictEqual(evaluation.matches.length, 3);
+            assert.strictEqual(evaluation.reasons.length, 3);
+        });
+
+        it('short-circuits on whitelist and blacklist rules', () => {
+            context.set_customRules([{ type: 'sender', pattern: 'chef@firma.de', action: 'whitelist' }]);
+            const whitelisted = context.calculateThreatScore('Chef <chef@firma.de>', ['https://evil.example'], {
+                authHeaders: ['spf=fail dkim=fail dmarc=fail'], messageText: 'dringend', subject: 'Zahlung'
+            });
+            assert.strictEqual(whitelisted.score, 0);
+
+            context.set_customRules([{ type: 'sender', pattern: 'boese@firma.de', action: 'blacklist' }]);
+            const blacklisted = context.calculateThreatScore('Boese <boese@firma.de>', [], {});
+            assert.strictEqual(blacklisted.score, 100);
+        });
+
+        it('adds rule points to the score without short-circuiting', () => {
+            context.set_customRules([{ type: 'domain', pattern: 'dubiose-domain.example', action: 'score', score: 40 }]);
+            const result = context.calculateThreatScore('Info <info@dubiose-domain.example>', [], {});
+            assert.strictEqual(result.score, 40);
+            assert.ok(result.reasons.some(reason => reason.includes('Eigene Regel')));
+        });
+
+        it('never uploads attachments that local rules already classify', async () => {
+            context.set_customRules([{ type: 'attachment-name', pattern: 'rechnung.pdf', action: 'blacklist' }]);
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+
+            const result = await context.process_single_attachment(
+                { id: 5, headerMessageId: 'h5', author: 'a@b.de' },
+                { name: 'rechnung.pdf', contentType: 'application/pdf', partName: '1.2', size: 100 }
+            );
+
+            assert.strictEqual(fetchCalls, 0, 'a locally known file must not be uploaded');
+            assert.strictEqual(result.hybrid_data.state, 'BLACKLISTED_LOCALLY');
+        });
+
+        it('exports and re-imports a rule profile', () => {
+            context.set_customRules([{ type: 'sender', pattern: 'a@b.de', action: 'score', score: 20 }]);
+            const profile = context.exportRuleProfile();
+            assert.match(profile, /thundy-av-rules\/1/);
+
+            context.set_customRules([]);
+            const imported = context.importRuleProfile(profile);
+            assert.strictEqual(imported.ok, true);
+            assert.strictEqual(imported.rules.length, 1);
+            assert.strictEqual(context.normalizeRules(context.get_customRules()).length, 0, 'import does not apply automatically');
+
+            const broken = context.importRuleProfile('{not json');
+            assert.strictEqual(broken.ok, false);
+            assert.ok(broken.errors[0].includes('JSON'));
+
+            const invalid = context.importRuleProfile(JSON.stringify({ rules: [{ type: 'sender', action: 'score', score: 5 }] }));
+            assert.strictEqual(invalid.ok, false);
+        });
+    });
+
+    describe('webhook/SIEM export and history search', () => {
+        function stubStorage() {
+            let store = {};
+            context.browser.storage.local.get = async (keys) => {
+                if (typeof keys === 'string') return { [keys]: store[keys] };
+                if (Array.isArray(keys)) { const out = {}; keys.forEach(k => { out[k] = store[k]; }); return out; }
+                return store;
+            };
+            context.browser.storage.local.set = async (data) => { Object.assign(store, data); };
+            return { get: () => store };
+        }
+
+        it('never sends anything while the webhook is disabled or not https', async () => {
+            let calls = 0;
+            context.fetch = async () => { calls++; return { status: 200, json: async () => ({}) }; };
+            context.set_webhook(false, 'https://siem.example/hook', '');
+
+            assert.strictEqual(context.isWebhookConfigured(), false);
+            let result = await context.sendToWebhook('test', {});
+            assert.strictEqual(result.sent, false);
+            assert.strictEqual(result.reason, 'disabled');
+
+            context.set_webhook(true, 'http://unsicher.example/hook', '');
+            assert.strictEqual(context.isWebhookConfigured(), false);
+            result = await context.sendToWebhook('test', {});
+            assert.strictEqual(result.sent, false);
+
+            assert.strictEqual(calls, 0);
+        });
+
+        it('requires the global consent as well', async () => {
+            context.set_webhook(true, 'https://siem.example/hook', 'secret');
+            context.set_externalAnalysisConsent(false);
+            try {
+                assert.strictEqual(context.isWebhookConfigured(), false);
+                const result = await context.sendToWebhook('test', {});
+                assert.strictEqual(result.sent, false);
+            } finally {
+                context.set_externalAnalysisConsent(true);
+            }
+        });
+
+        it('posts the payload with the shared secret and records it', async () => {
+            stubStorage();
+            context.set_webhook(true, 'https://siem.example/hook', 'secret-1');
+            let captured = null;
+            context.fetch = async (url, options) => {
+                captured = { url, options };
+                return { status: 202, json: async () => ({}) };
+            };
+
+            const result = await context.sendToWebhook('attachment-upload', { action: 'attachment-upload', sha256: 'a'.repeat(64) });
+
+            assert.strictEqual(result.sent, true);
+            assert.strictEqual(result.status, 202);
+            assert.strictEqual(captured.url, 'https://siem.example/hook');
+            assert.strictEqual(captured.options.method, 'POST');
+            assert.strictEqual(captured.options.headers['X-Thundy-Secret'], 'secret-1');
+            const payload = JSON.parse(captured.options.body);
+            assert.strictEqual(payload.source, 'thundy-av');
+            assert.strictEqual(payload.event, 'attachment-upload');
+            assert.strictEqual(payload.entry.sha256, 'a'.repeat(64));
+
+            const history = await context.getScanHistory();
+            assert.ok(history.some(entry => entry.action === 'webhook' && entry.transmitted === true));
+            context.set_webhook(false, '', '');
+        });
+
+        it('reports webhook failures without breaking the flow', async () => {
+            stubStorage();
+            context.set_webhook(true, 'https://siem.example/hook', '');
+            context.fetch = async () => { throw new Error('offline'); };
+
+            const result = await context.sendToWebhook('test', {});
+
+            assert.strictEqual(result.sent, false);
+            assert.strictEqual(result.reason, 'error');
+            const history = await context.getScanHistory();
+            assert.ok(history.some(entry => entry.action === 'webhook' && entry.outcome === 'error'));
+            context.set_webhook(false, '', '');
+        });
+
+        it('validates the test endpoint before sending', async () => {
+            context.set_webhook(false, '', '');
+            assert.strictEqual((await context.testWebhook()).status, 'error');
+            context.set_webhook(true, 'ftp://x.example', '');
+            assert.match((await context.testWebhook()).message, /HTTPS/);
+            context.set_webhook(false, '', '');
+        });
+
+        it('filters the history by search text and date range', () => {
+            const history = [
+                { action: 'local-check', subject: 'Rechnung Mai', transmitted: false, timestamp: '2026-05-01T10:00:00.000Z' },
+                { action: 'attachment-upload', attachmentName: 'virus.exe', provider: 'hybrid-analysis', transmitted: true, timestamp: '2026-06-10T10:00:00.000Z' },
+                { action: 'hash-lookup', sha256: 'b'.repeat(64), provider: 'virustotal', transmitted: true, timestamp: '2026-07-20T10:00:00.000Z' }
+            ];
+
+            assert.strictEqual(context.filterScanHistory(history, { search: 'virus.exe' }).length, 1);
+            assert.strictEqual(context.filterScanHistory(history, { search: 'VIRUSTOTAL' }).length, 1);
+            assert.strictEqual(context.filterScanHistory(history, { search: 'rechnung' }).length, 1);
+            assert.strictEqual(context.filterScanHistory(history, { from: '2026-06-01' }).length, 2);
+            assert.strictEqual(context.filterScanHistory(history, { to: '2026-06-30T23:59:59' }).length, 2);
+            assert.strictEqual(context.filterScanHistory(history, { from: '2026-06-01', to: '2026-06-30' }).length, 1);
+            assert.strictEqual(context.filterScanHistory(history, { search: 'gibtesnicht' }).length, 0);
         });
     });
 

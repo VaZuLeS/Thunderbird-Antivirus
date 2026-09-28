@@ -39,6 +39,29 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.10.0] – 2026-09-28
+
+### Added
+
+- **Lokale Regel-/IOC-Engine:** eigene Regeln fuer Absender, Domain, URL, Betreff, Dateiname und SHA-256 mit den
+  Aktionen `whitelist`, `blacklist` und `score` (plus Vergleich `contains`/`exact`/`regex`). Regeln ergaenzen die
+  Bewertung, koennen kurzschliessen und verhindern Uploads, wenn eine Datei lokal bereits bekannt ist
+  (`BLACKLISTED_LOCALLY`/`WHITELISTED_LOCALLY`). Verwaltung im Optionsdialog, inklusive **Profil-Export/-Import**
+  (Team-Wissen ohne Datenabfluss) und Unterstuetzung in der Enterprise-Policy.
+- **SIEM-/Webhook-Export:** optionaler Export der Verlaufsereignisse an einen eigenen HTTPS-Endpunkt (z. B. SIEM oder
+  Ticketsystem). Standardmaessig **aus**, verlangt zusaetzlich die globale Zustimmung, optional mit Shared Secret
+  (`X-Thundy-Secret`), inklusive Testsendung und zentraler Vorgabe ueber die Enterprise-Policy.
+- **Verlaufssuche und Datumsfilter:** Volltextsuche ueber Aktion, Anbieter, Absender, Datei, Domain, IP, Hash,
+  Verdikt und Details sowie Zeitraumfilter (von/bis) in der Verlaufsansicht.
+- **Attachment-Disarming ausgebaut:** externe Medien (Bilder/Video/Audio/iframe) werden blockiert und die Quelle nur
+  als Marker vermerkt, das entschaerfte Dokument erhaelt einen Hinweisbanner mit Zusammenfassung, und die
+  Entschaerfung wird im Verlauf protokolliert (Aktion `disarm`).
+
+### Changed
+
+- Neue Hintergrund-Aktionen `getRuleProfile`, `importRuleProfile`, `evaluateRules`, `testWebhook`, `getWebhookStatus`.
+- Diagnose meldet zusaetzlich den Zustand des Webhook-Exports.
+
 ## [1.9.0] – 2026-09-28
 
 ### Added

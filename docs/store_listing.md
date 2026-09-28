@@ -149,6 +149,17 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.5 Release notes 1.10.0
+
+- **Local rules / IOC lists:** define rules for sender, domain, URL, subject, file name or SHA-256 (whitelist,
+  blacklist or score). Rules run locally, can short-circuit the score and prevent uploads for files that are already
+  known locally. Profiles can be exported/imported as JSON.
+- **Optional SIEM/webhook export:** with explicit consent and an HTTPS endpoint, history events can be forwarded to
+  your own SIEM or ticket system (payload contains audit metadata only, never file contents). Off by default.
+- **History search:** full-text and date-range filters for the local audit trail.
+- **Improved attachment disarming:** external media are blocked, the sanitised file carries an explanatory banner and
+  the action is logged.
+
 ## 5.4 Release notes 1.9.0
 
 - **Central management for organisations:** administrators can pin consent, privacy tier, view role, history settings
