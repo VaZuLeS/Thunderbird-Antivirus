@@ -765,3 +765,55 @@ web-ext lint + Filter       # 0 Fehler
 2. Echte Store-Screenshots.
 3. Signierung/Einreichung bei addons.thunderbird.net.
 4. Vollständige Lokalisierung (Punkt 8) — reine Übersetzungsarbeit.
+
+---
+
+## 15. Lokalisierung und Branding (v1.11.0)
+
+### 15.1 Vollständige Lokalisierung
+
+| Baustein | Umsetzung |
+|---|---|
+| Kataloge | `_locales/de/messages.json`, `_locales/en/messages.json` — je **125 Schlüssel** (Manifest, Banner, Benachrichtigungen, Popup, Optionen) |
+| Helfer | `ui_i18n.js` mit `thundyT()` (Katalog → deutscher Fallback), `thundyApplyTranslations()` (`data-i18n`, `-placeholder`, `-aria`, `-title`), `thundyUiLanguage()` |
+| Markup | Popup und Optionen tragen `data-i18n`-Attribute; der deutsche Text bleibt als Fallback im Element |
+| Sprachaustausch | automatisch über Thunderbirds Oberflächensprache (`browser.i18n`, `default_locale: en`) — keine eigene Einstellung nötig |
+| Qualitätssicherung | `scripts/check-locales.js` prüft Katalogparität **und** ob jeder im Markup/Code verwendete Schlüssel existiert; läuft in den Pre-Submit-Checks und in der CI |
+| Tests | 5 Tests für den Helper, 5 für den Prüfer (inkl. „fehlende Sprache“, „verwendeter Schlüssel ohne Katalog“, „Repository ist vollständig“) |
+
+Bewusste Grenze: Diagnose-Details, Verlaufszeilen und Berichte bleiben in der deutschsprachigen Fachsprache (sie sind
+Rohdaten für Betreuung/Audit). Die Struktur ist vorbereitet — jeder Text könnte mit einem Schlüssel versehen werden,
+ohne Codeumbau.
+
+### 15.2 Branding / Designsystem
+
+- **Markenkern:** Schild-mit-Ausrufezeichen (bestehendes Icon), Wortmarke „Thundy AV“ plus Tagline „E-Mail-Anhänge und
+  Links prüfen – lokal zuerst.“
+- **Farbwelt:** Marke `#0b5fa5` / dunkel `#073d6b`, Signal `#ff8c00`, OK `#1b7f3b`, Hinweis `#b26a00`, Fehler `#b3261e` —
+  jeweils mit Dark-Mode-Variante und Fallback auf Thunderbird-Variablen (`--toolbar-bgcolor`, `--text-color`, …).
+- **Komponenten:** Markenkopf, Abschnittskarten mit Akzentkante, Statuskarten, Badges (ok/warn/fail/info), farblich
+  gestufte Score-Anzeige, konsistente Buttons (primär/sekundär/gefährlich/Akzent), Fokusringe in Signalorange.
+- **Nachrichtenansicht:** `banner.css` liefert alle Bannerstile über CSS-Variablen (keine Inline-Farben mehr) inklusive
+  Dark-Mode-Varianten für Warn-, Opt-in-, verifiziert- und Statusbanner.
+- **Barrierefreiheit:** `:focus-visible`-Ringe, `role="status"`/`aria-live` für Zustandstexte, Farbe nie als einziges
+  Signal (Symbol/Text zusätzlich), dokumentierte Kontrastwerte.
+- **Dokumentation:** `docs/branding.md` (Farben, Komponenten, Nutzungsregeln), `docs/localization.md` (Aufbau, neue
+  Sprache hinzufügen, Prüfmechanik).
+
+### 15.3 Verifikation
+
+```bash
+node scripts/check-locales.js  # Lokalisierung vollstaendig (en/de, 29+ verwendete Schluessel)
+npm test                       # 544 Tests, 0 Fehler
+npm run pre-submit-checks      # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm run build                  # build/thundy-av-1.11.0.xpi inkl. Paketpruefung
+web-ext lint + Filter          # 0 Fehler
+```
+
+### 15.4 Restliche offene Punkte
+
+1. Live-Test in Thunderbird 140 ESR (Selbsttest verkürzt ihn; die Lokalisierung sollte dabei in beiden Sprachen geprüft
+   werden — Thunderbird-Sprache umstellen und Optionen/Popup erneut öffnen).
+2. Echte Store-Screenshots (jetzt sinnvoll: helle und dunkle Variante, Rolle `research` für Detailansicht).
+3. Signierung/Einreichung bei addons.thunderbird.net.
+4. Optional: Übersetzung der Rohdaten-Ansichten (Diagnose/Verlauf/Bericht) — reine Fleißarbeit.

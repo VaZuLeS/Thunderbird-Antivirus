@@ -20,8 +20,14 @@
 </head>
 
 <body>
-    <h1>Thundy AV Einstellungen</h1>
-    <h3>Was ist Hybrid-Analysis.com?</h3>
+    <header class="thundy-brand">
+        <span class="thundy-brand__mark" aria-hidden="true"></span>
+        <span class="thundy-brand__text">
+            <h1 class="thundy-wordmark" data-i18n="opt.title">Thundy AV Einstellungen</h1>
+            <p class="thundy-tagline" data-i18n="brand.tagline">E-Mail-Anhänge und Links prüfen – lokal zuerst.</p>
+        </span>
+    </header>
+    <h3 data-i18n="opt.h3.about">Was ist Hybrid-Analysis.com?</h3>
     Hybrid-Analysis.com ist ein kostenloser Malware-Analyse-Service für die Community. Mit diesem Service können Sie
     Dateien zur detaillierten statischen und dynamischen Analyse einreichen.<br />
     <br />
@@ -32,7 +38,7 @@
     derzeit von SOCs, CERTs, DFIR-Teams, IT-Sicherheitsforensiklabors, Forschern und Anbietern von Bedrohungsdaten
     auf der ganzen Welt genutzt.<br />
     <div id="apiKeyInstructions">
-        <h3>Installationshinweise zum API Schlüssel</h3>
+        <h3 data-i18n="opt.h3.apikeyHelp">Installationshinweise zum API Schlüssel</h3>
         Sie benötigen einen kostenlosen API Schlüssel von <a
             href="https://www.hybrid-analysis.com/" target="_blank" rel="noopener noreferrer" aria-label="hybrid-analysis.com (öffnet in einem neuen Tab)">hybrid-analysis.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a><br />
         Nach der Anmeldung finden Sie diesen API Schlüssel unter "Nickname" -> "Profil" -> "API KEY".<br />
@@ -52,85 +58,85 @@
     </div>
 
     <div class="mb-3">
-        <label for="urlhausApikey">URLhaus API Schlüssel (Optional für Echtzeit-Domain-Checks):</label>
+        <label for="urlhausApikey" data-i18n="opt.urlhaus.label">URLhaus API Schlüssel (Optional für Echtzeit-Domain-Checks):</label>
         <input type="password" id="urlhausApikey" aria-describedby="urlhausHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
         <br><small id="urlhausHelp">Sie können einen kostenlosen API Schlüssel unter <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer" aria-label="urlhaus.abuse.ch (öffnet in einem neuen Tab)">urlhaus.abuse.ch <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
     </div>
 
     <div class="mb-3">
-        <label for="urlscanApikey">urlscan.io API Schlüssel (Computer Vision Erkennung von z.B. gefälschten Logins):</label>
+        <label for="urlscanApikey" data-i18n="opt.urlscan.label">urlscan.io API Schlüssel (Computer Vision Erkennung von z.B. gefälschten Logins):</label>
         <input type="password" id="urlscanApikey" aria-describedby="urlscanHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
         <br><small id="urlscanHelp">Einen kostenlosen API Schlüssel erhalten Sie unter <a href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer" aria-label="urlscan.io (öffnet in einem neuen Tab)">urlscan.io <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>.</small>
     </div>
 
     <div class="mb-3">
-        <label for="virustotalApikey">VirusTotal API Schlüssel (Optional für Datei-Scanner-Engines):</label>
+        <label for="virustotalApikey" data-i18n="opt.virustotal.label">VirusTotal API Schlüssel (Optional für Datei-Scanner-Engines):</label>
         <input type="password" id="virustotalApikey" aria-describedby="virustotalHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
         <br><small id="virustotalHelp">Sie können einen kostenlosen API Schlüssel unter <a href="https://www.virustotal.com/" target="_blank" rel="noopener noreferrer" aria-label="virustotal.com (öffnet in einem neuen Tab)">virustotal.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
     </div>
 
     <div class="mb-3">
-        <label for="privacyTier">Datenschutz-Stufe (Privacy Tier):</label>
+        <label for="privacyTier" data-i18n="opt.tier.label">Datenschutz-Stufe (Privacy Tier):</label>
         <select id="privacyTier" aria-describedby="privacyTierHelp">
-            <option value="strict">Strikt (Standard: nur Hashes senden, kein Upload)</option>
-            <option value="balanced">Ausgewogen (Unbekannte Dateien hochladen, keine URLs)</option>
-            <option value="max">Maximaler Schutz (Alles hochladen inkl. URLs)</option>
+            <option value="strict" data-i18n="opt.tier.strict">Strikt (Standard: nur Hashes senden, kein Upload)</option>
+            <option value="balanced" data-i18n="opt.tier.balanced">Ausgewogen (Unbekannte Dateien hochladen, keine URLs)</option>
+            <option value="max" data-i18n="opt.tier.max">Maximaler Schutz (Alles hochladen inkl. URLs)</option>
         </select>
         <br><small id="privacyTierHelp">Bestimmt, wie viele Daten an Hybrid Analysis gesendet werden. Wirkt nur, wenn „Externe Analyse erlauben“ aktiviert ist.</small>
     </div>
 
     <div class="mb-3">
-        <label for="ipReputationProvider">IP-Reputation (Received-Header prüfen):</label>
+        <label for="ipReputationProvider" data-i18n="opt.iprep.label">IP-Reputation (Received-Header prüfen):</label>
         <select id="ipReputationProvider" aria-describedby="ipReputationHelp">
-            <option value="none">Deaktiviert</option>
-            <option value="virustotal">VirusTotal (benötigt VirusTotal-API-Schlüssel)</option>
-            <option value="abuseipdb">AbuseIPDB (benötigt AbuseIPDB-API-Schlüssel)</option>
+            <option value="none" data-i18n="opt.iprep.none">Deaktiviert</option>
+            <option value="virustotal" data-i18n="opt.iprep.virustotal">VirusTotal (benötigt VirusTotal-API-Schlüssel)</option>
+            <option value="abuseipdb" data-i18n="opt.iprep.abuseipdb">AbuseIPDB (benötigt AbuseIPDB-API-Schlüssel)</option>
         </select>
-        <label for="ipReputationApiKey">API-Schlüssel für IP-Reputation:</label>
+        <label for="ipReputationApiKey" data-i18n="opt.iprepKey.label">API-Schlüssel für IP-Reputation:</label>
         <input type="password" id="ipReputationApiKey" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
         <br><small id="ipReputationHelp">Sendet öffentliche IP-Adressen aus den „Received“-Kopfzeilen der Nachricht an den gewählten Dienst. Nur aktiv, wenn „Externe Analyse erlauben“ aktiviert ist.</small>
     </div>
 
     <div class="mb-3">
-        <label for="customWhitelist">Whitelist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
+        <label for="customWhitelist" data-i18n="opt.whitelist.label">Whitelist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
         <textarea id="customWhitelist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com" aria-describedby="whitelistHelp" spellcheck="false"></textarea>
         <br><small id="whitelistHelp">Tragen Sie hier vertrauenswürdige Domains oder E-Mail-Adressen ein, um diese vom Scan auszuschließen.</small>
     </div>
 
     <div class="mb-3">
-        <label for="customBlacklist">Blacklist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
+        <label for="customBlacklist" data-i18n="opt.blacklist.label">Blacklist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
         <textarea id="customBlacklist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com" aria-describedby="blacklistHelp" spellcheck="false"></textarea>
         <br><small id="blacklistHelp">Tragen Sie hier blockierte Domains oder E-Mail-Adressen ein.</small>
     </div>
 
     <div class="mb-3">
         <input type="checkbox" id="alwaysManual" aria-describedby="alwaysManualHelp">
-        <label for="alwaysManual" style="display: inline; margin-bottom: 0;">Immer manuell scannen (Kein Auto-Upload)</label>
+        <label for="alwaysManual" style="display: inline; margin-bottom: 0;" data-i18n="opt.alwaysManual.label">Immer manuell scannen (Kein Auto-Upload)</label>
         <br><small id="alwaysManualHelp">Verhindert den automatischen Upload von Anhängen, unabhängig von der gewählten Datenschutz-Stufe.</small>
     </div>
 
     <div class="mb-3">
         <input type="checkbox" id="autoScanLinks" aria-describedby="autoScanHelp">
-        <label for="autoScanLinks" style="display: inline; margin-bottom: 0;">Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)</label>
+        <label for="autoScanLinks" style="display: inline; margin-bottom: 0;" data-i18n="opt.autoScanLinks.label">Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)</label>
         <br><small id="autoScanHelp">Wenn deaktiviert, werden Links erst im Moment des Klickens gescannt (Time-of-Click Protection).</small>
     </div>
 
     <div class="mb-3">
         <input type="checkbox" id="timeOfClickProtection" checked aria-describedby="tocHelp">
-        <label for="timeOfClickProtection" style="display: inline; margin-bottom: 0;">Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo bei Hover)</label>
+        <label for="timeOfClickProtection" style="display: inline; margin-bottom: 0;" data-i18n="opt.toc.label">Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo bei Hover)</label>
         <br><small id="tocHelp">Zeigt beim Überfahren von Links mit der Maus einen Hinweis an, dass die URL in Echtzeit geprüft wird.</small>
     </div>
 
     <hr>
-    <h3>Ansicht (Rolle)</h3>
+    <h3 data-i18n="opt.h3.view">Ansicht (Rolle)</h3>
     <div class="mb-3">
-        <label for="viewMode">Darstellung und Informationsmenge:</label>
+        <label for="viewMode" data-i18n="opt.view.label">Darstellung und Informationsmenge:</label>
         <select id="viewMode" aria-describedby="viewModeHelp">
-            <option value="quiet">Nur Warnungen (minimal, keine Hinweisbanner)</option>
-            <option value="private">Privat (Standard: klare Sprache, keine technischen Kennungen)</option>
+            <option value="quiet" data-i18n="opt.view.quiet">Nur Warnungen (minimal, keine Hinweisbanner)</option>
+            <option value="private" data-i18n="opt.view.private">Privat (Standard: klare Sprache, keine technischen Kennungen)</option>
             <option value="business">Geschaeftlich (zusaetzlich Zeitstempel, Uebertragungsuebersicht, Verlauf)</option>
-            <option value="research">IT-Security-Forscher (volle Details: Hashes, Job-IDs, Versuche, Netzwerkziele)</option>
-            <option value="audit">Nachweis / Compliance (Verlauf und Export im Vordergrund)</option>
+            <option value="research" data-i18n="opt.view.research">IT-Security-Forscher (volle Details: Hashes, Job-IDs, Versuche, Netzwerkziele)</option>
+            <option value="audit" data-i18n="opt.view.audit">Nachweis / Compliance (Verlauf und Export im Vordergrund)</option>
         </select>
         <br><small id="viewModeHelp">Die Rolle steuert, wie viele technische Details Banner und Popup zeigen und wie oft das Add-on von
         selbst auf sich aufmerksam macht. Sie aendert keine Sicherheitsfunktion, nur die Darstellung. Die Rolle wird sofort
@@ -138,10 +144,10 @@
     </div>
 
     <hr>
-    <h3>Verlauf</h3>
+    <h3 data-i18n="opt.h3.history">Verlauf</h3>
     <div class="mb-3">
         <input type="checkbox" id="historyEnabled" aria-describedby="historyHelp">
-        <label for="historyEnabled" style="display: inline; margin-bottom: 0;">Verlauf aufzeichnen (lokal)</label>
+        <label for="historyEnabled" style="display: inline; margin-bottom: 0;" data-i18n="opt.history.enabled.label">Verlauf aufzeichnen (lokal)</label>
         <br><small id="historyHelp">Haelt lokal fest, welche Nachrichten geprueft und welche Daten an welchen Anbieter uebertragen wurden
         (Dateiname, SHA-256, Anbieter, Zeitpunkt, Ergebnis). Der Verlauf verlaesst das Geraet nicht und ist im Popup sowie hier sichtbar.</small>
     </div>
@@ -150,80 +156,80 @@
         <input type="number" id="historyLimit" min="50" max="5000" step="50" value="500">
     </div>
     <div class="mb-3">
-        <label for="historyFilter">Anzeigen:</label>
+        <label for="historyFilter" data-i18n="opt.history.filter.label">Anzeigen:</label>
         <select id="historyFilter">
             <option value="all">Alle Eintraege</option>
             <option value="transmissions">Nur Uebertragungen an Anbieter</option>
         </select>
-        <input type="search" id="historySearch" placeholder="Suche (Absender, Datei, Hash, Anbieter...)" style="width: 240px;">
-        <input type="date" id="historyFrom" aria-label="Verlauf ab">
-        <input type="date" id="historyTo" aria-label="Verlauf bis">
-        <button id="historyRefresh" type="button">Aktualisieren</button>
-        <button id="historyExportCsv" type="button">CSV exportieren</button>
-        <button id="historyExportJson" type="button">JSON exportieren</button>
+        <input type="search" id="historySearch" placeholder="Suche (Absender, Datei, Hash, Anbieter...)" data-i18n-placeholder="opt.history.search.placeholder" style="width: 240px;">
+        <input type="date" id="historyFrom" aria-label="Verlauf ab" data-i18n-aria="opt.history.from.aria">
+        <input type="date" id="historyTo" aria-label="Verlauf bis" data-i18n-aria="opt.history.to.aria">
+        <button id="historyRefresh" type="button" data-i18n="opt.btn.refresh">Aktualisieren</button>
+        <button id="historyExportCsv" type="button" data-i18n="opt.btn.exportCsv">CSV exportieren</button>
+        <button id="historyExportJson" type="button" data-i18n="opt.btn.exportJson">JSON exportieren</button>
         <button id="historyClear" type="button">Verlauf loeschen</button>
     </div>
     <p id="historySummary"><small>Verlauf wird geladen...</small></p>
     <ul id="historyList" class="thundy-history-list"></ul>
 
     <hr>
-    <h3>SIEM-/Webhook-Export</h3>
+    <h3 data-i18n="opt.h3.webhook">SIEM-/Webhook-Export</h3>
     <p><small>Optionaler Export der Verlaufseinträge an einen eigenen SIEM-/Ticket-Endpunkt. Standardmäßig aus und
         nur über HTTPS; zusätzlich muss die externe Analyse freigegeben sein. Es werden ausschließlich Verlaufsdaten
         (Aktion, Anbieter, Datentyp, Dateiname, SHA-256, Job-ID, Verdikt) gesendet - keine Dateiinhalte.</small></p>
     <div class="mb-3">
         <input type="checkbox" id="webhookEnabled" aria-describedby="webhookHelp">
-        <label for="webhookEnabled" style="display: inline; margin-bottom: 0;">Webhook-Export aktivieren</label>
+        <label for="webhookEnabled" style="display: inline; margin-bottom: 0;" data-i18n="opt.webhook.enabled.label">Webhook-Export aktivieren</label>
         <br><small id="webhookHelp">Wird vom Administrator zentral vorgegeben, wenn eine verwaltete Policy gesetzt ist.</small>
     </div>
     <div class="mb-3">
-        <label for="webhookUrl">Endpunkt (HTTPS):</label>
+        <label for="webhookUrl" data-i18n="opt.webhook.url.label">Endpunkt (HTTPS):</label>
         <input type="url" id="webhookUrl" maxlength="500" placeholder="https://siem.example/api/thundy" style="width: 100%;">
     </div>
     <div class="mb-3">
-        <label for="webhookSecret">Shared Secret (optional, wird als Header X-Thundy-Secret gesendet):</label>
+        <label for="webhookSecret" data-i18n="opt.webhook.secret.label">Shared Secret (optional, wird als Header X-Thundy-Secret gesendet):</label>
         <input type="password" id="webhookSecret" maxlength="200" autocomplete="off" spellcheck="false">
         <br>
-        <button id="webhookTest" type="button">Testsendung</button>
+        <button id="webhookTest" type="button" data-i18n="opt.btn.webhookTest">Testsendung</button>
         <small id="webhookStatus"></small>
     </div>
 
     <hr>
-    <h3>Statistik</h3>
+    <h3 data-i18n="opt.h3.statistics">Statistik</h3>
     <p><small>Aggregierte Auswertung des Verlaufs (rein lokal). Zeitraum:
         <select id="statisticsDays">
-            <option value="1">1 Tag</option>
-            <option value="7" selected>7 Tage</option>
-            <option value="30">30 Tage</option>
-            <option value="90">90 Tage</option>
+            <option value="1" data-i18n="opt.days.1">1 Tag</option>
+            <option value="7" selected data-i18n="opt.days.7">7 Tage</option>
+            <option value="30" data-i18n="opt.days.30">30 Tage</option>
+            <option value="90" data-i18n="opt.days.90">90 Tage</option>
         </select>
-        <button id="statisticsRefresh" type="button">Statistik laden</button>
+        <button id="statisticsRefresh" type="button" data-i18n="opt.btn.statistics">Statistik laden</button>
     </small></p>
     <div id="statisticsPanel" class="card card-info"><small>Noch nicht geladen.</small></div>
 
     <hr>
-    <h3>Diagnose / Selbsttest</h3>
+    <h3 data-i18n="opt.h3.diagnostics">Diagnose / Selbsttest</h3>
     <p><small>Prüft die Voraussetzungen des Add-ons auf diesem Gerät (Zustimmung, Schlüssel, Host-Berechtigungen,
         Ergebnisabfrage, Ergebnisspeicher, Verlauf, verwaltete Vorgaben). Es werden dabei <strong>keine</strong> Daten
         übertragen.</small></p>
-    <button id="diagnosticsRun" type="button">Diagnose starten</button>
+    <button id="diagnosticsRun" type="button" data-i18n="opt.btn.diagnostics">Diagnose starten</button>
     <div id="diagnosticsPanel" class="card card-info"><small>Noch nicht ausgeführt.</small></div>
 
     <hr>
-    <h3>Eigene Regeln (lokale IOC-Listen)</h3>
+    <h3 data-i18n="opt.h3.rules">Eigene Regeln (lokale IOC-Listen)</h3>
     <p><small>Regeln wirken ausschließlich lokal. Sie ergänzen die Risikobewertung, können Absender freistellen oder
         blockieren und verhindern Uploads, wenn eine Datei lokal schon als unbedenklich oder bösartig bekannt ist.
         Typen: <code>sender</code>, <code>domain</code>, <code>url</code>, <code>subject</code>,
         <code>attachment-name</code>, <code>sha256</code> — Aktionen: <code>whitelist</code>, <code>blacklist</code>,
         <code>score</code> — Vergleich: <code>contains</code>, <code>exact</code>, <code>regex</code>.</small></p>
     <div class="mb-3">
-        <label for="rulesJson">Regeln als JSON (Liste):</label>
+        <label for="rulesJson" data-i18n="opt.rules.label">Regeln als JSON (Liste):</label>
         <textarea id="rulesJson" rows="8" style="width: 100%; font-family: monospace;" spellcheck="false"
             placeholder='[{"type":"sender","pattern":"rechnung@kunde-gmbh.de","action":"whitelist","note":"bekannter Absender"}]'></textarea>
         <br>
         <button id="rulesValidate" type="button">Regeln prüfen &amp; anwenden</button>
-        <button id="rulesExport" type="button">Profil exportieren</button>
-        <button id="rulesImportFile" type="button">Profil aus Datei importieren</button>
+        <button id="rulesExport" type="button" data-i18n="opt.btn.rulesExport">Profil exportieren</button>
+        <button id="rulesImportFile" type="button" data-i18n="opt.btn.rulesImport">Profil aus Datei importieren</button>
         <input type="file" id="rulesImportInput" accept="application/json,.json" style="display:none">
         <br><small id="rulesStatus"></small>
     </div>
@@ -233,17 +239,18 @@
 
     <br>
     <strong>Bitte nicht vergessen zu speichern.</strong>
-    <button id="save" class="btn-primary mt-2" aria-describedby="saveStatus">Speichern</button>
+    <button id="save" class="btn-primary mt-2" aria-describedby="saveStatus" data-i18n="opt.btn.save">Speichern</button>
     <span id="saveStatus" class="text-success ml-2" style="display: none;" aria-live="polite" role="status">Erfolgreich gespeichert!</span>
 
     <br><br>
     <hr>
 
-    <h3>Datenmanagement</h3>
+    <h3 data-i18n="opt.h3.data">Datenmanagement</h3>
     <p>Hier können Sie den lokalen Cache leeren, um Speicherplatz freizugeben und alte Metadaten zu löschen.</p>
-    <button id="clearCache" class="btn-primary mt-2" aria-describedby="clearCacheStatus">Cache leeren</button>
+    <button id="clearCache" class="btn-primary mt-2" aria-describedby="clearCacheStatus" data-i18n="opt.btn.clearCache">Cache leeren</button>
     <span id="clearCacheStatus" class="text-success ml-2" style="display: none;" aria-live="polite" role="status"></span>
 
+    <script src="ui_i18n.js"></script>
     <script src="db.js"></script>
     <script src="options.js"></script>
 </body>

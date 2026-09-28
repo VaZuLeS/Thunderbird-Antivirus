@@ -39,6 +39,25 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.11.0] – 2026-09-28
+
+### Added
+
+- **Vollstaendige Lokalisierung (Deutsch/Englisch):** 125 Schluessel je Sprache in `_locales/`, ein Helfer
+  (`ui_i18n.js`) fuer die Erweiterungsseiten und `data-i18n`-Attribute im Markup. Die Sprache folgt automatisch der
+  Thunderbird-Oberflaeche; der deutsche Text im Markup dient als Fallback, die Oberflaeche ist nie leer.
+  Neue Pruefung `scripts/check-locales.js` (Katalogparitaet + verwendete Schluessel) laeuft in den
+  Pre-Submit-Checks und schlaegt fehl, sobald eine Uebersetzung fehlt.
+- **Branding/Designsystem:** `theme.css` und `messageDisplay/banner.css` in einer gemeinsamen Farbwelt (Schild-Blau,
+  Signal-Orange, klare OK/Warnung/Fehler-Toene), mit Markenkopf (Logo + Wortmarke + Tagline), Karten, Badges,
+  Score-Stufen, Fokusringen und Dark-Mode-Varianten. Dokumentation: `docs/branding.md`.
+
+### Changed
+
+- Popup und Optionen nutzen den Markenkopf; Banner in der Nachrichtenansicht beziehen ihre Farben aus themebaren
+  CSS-Variablen statt fester Werte.
+- Skripte: `ui_i18n.js` wird mit ausgeliefert; `scripts/verify-package.js` erlaubt es explizit.
+
 ## [1.10.0] – 2026-09-28
 
 ### Added

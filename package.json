@@ -1,6 +1,6 @@
 {
   "name": "thundy-av",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Thundy AV - opt-in email attachment and link scanner for Thunderbird (WebExtension, Manifest V3).",
   "license": "MIT",
   "private": true,

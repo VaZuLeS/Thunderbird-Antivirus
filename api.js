@@ -725,6 +725,9 @@ async function currentViewMode() {
     }
 }
 
+// Oberflaeche lokalisieren (Thunderbird-Sprache; deutscher Text bleibt Fallback).
+if (typeof thundyApplyTranslations === 'function') thundyApplyTranslations(document);
+
 const VIEW_MODE_LABELS = {
     quiet: 'Nur Warnungen',
     private: 'Privat',

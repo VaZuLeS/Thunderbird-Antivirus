@@ -1,64 +1,158 @@
-/* Thundy AV banners inside the message display view */
+/* ==========================================================================
+   Thundy AV - Banner in der Nachrichtenansicht
+   Farbwelt identisch zu theme.css; funktioniert hell und dunkel.
+   ========================================================================== */
+
 #thundy-threat-banner,
 #thundy-optin-banner,
-#thundy-auth-badge {
-  font-family: Arial, sans-serif;
-  z-index: 9999;
-  box-sizing: border-box;
+#thundy-auth-badge,
+#thundy-scan-status {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    box-sizing: border-box;
+    line-height: 1.45;
+    z-index: 9999;
 }
 
+/* Gefahr: Warnbanner ------------------------------------------------ */
 #thundy-threat-banner {
-  background-color: #ffeeee;
-  border: 1px solid #ff0000;
-  color: #b30000;
-  padding: 10px;
-  margin: 10px;
-  border-radius: 4px;
-  font-weight: bold;
+    background-color: #fdeceb;
+    border: 1px solid #b3261e;
+    border-left: 4px solid #b3261e;
+    color: #7a1a15;
+    padding: 10px 12px;
+    margin: 10px;
+    border-radius: 6px;
+    font-weight: 700;
 }
 
+#thundy-threat-banner .thundy-banner-title {
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+#thundy-threat-banner .thundy-banner-reasons {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* Hinweis zum Opt-in ------------------------------------------------ */
 #thundy-optin-banner {
-  background-color: #fff8e1;
-  border: 1px solid #ffcc80;
-  color: #333;
-  padding: 8px;
-  margin: 8px;
-  border-radius: 4px;
+    background-color: #fff8e1;
+    border: 1px solid #b26a00;
+    border-left: 4px solid #ff8c00;
+    color: #3d2c00;
+    padding: 10px 12px;
+    margin: 8px 10px;
+    border-radius: 6px;
 }
 
+#thundy-optin-banner .thundy-banner-title,
+#thundy-optin-banner > span:first-child {
+    font-weight: 700;
+    color: #7a4b00;
+}
+
+#thundy-optin-banner .thundy-banner-actions { display: inline-block; }
+
+/* Absender verifiziert ---------------------------------------------- */
 #thundy-auth-badge {
-  display: inline-block;
-  background-color: #e6ffe6;
-  border: 1px solid #008000;
-  color: #006400;
-  padding: 5px 10px;
-  margin: 10px;
-  border-radius: 20px;
-  font-weight: bold;
-  font-size: 12px;
+    display: inline-block;
+    background-color: #e7f6ec;
+    border: 1px solid #1b7f3b;
+    color: #12602c;
+    padding: 4px 10px;
+    margin: 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 12px;
 }
 
-.thundy-banner-title {
-  font-size: 16px;
-  margin-bottom: 5px;
+/* Statuszeile (Echtzeit / zeitverzoegert) --------------------------- */
+#thundy-scan-status {
+    background-color: #e8f1fa;
+    border: 1px solid #0b5fa5;
+    color: #073d6b;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin: 6px 10px;
+    font-size: 12px;
 }
 
-.thundy-banner-reasons {
-  margin: 0;
-  padding-left: 20px;
-  font-size: 14px;
-  font-weight: normal;
-}
+.thundy-banner-title { font-size: 15px; }
 
 .thundy-banner-actions button {
-  margin-left: 10px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 6px 6px 0 0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #0b5fa5;
+    background: #0b5fa5;
+    color: #ffffff;
+    cursor: pointer;
 }
 
+.thundy-banner-actions button + button {
+    background: #ffffff;
+    color: #0b5fa5;
+}
+
+.thundy-banner-actions button:hover:not(:disabled) { filter: brightness(0.94); }
+.thundy-banner-actions button:disabled { opacity: 0.6; cursor: default; }
+
 .thundy-banner-note {
-  font-size: 12px;
-  margin-top: 6px;
+    font-size: 12px;
+    margin-top: 6px;
+    opacity: 0.92;
 }
 
 .thundy-toc-link {
-  border-bottom: 1px dashed #ff8c00;
+    border-bottom: 1px dashed #ff8c00;
+}
+
+/* Dunkles Theme ------------------------------------------------------ */
+@media (prefers-color-scheme: dark) {
+    #thundy-threat-banner {
+        background-color: #3a1b19;
+        border-color: #ef6f68;
+        border-left-color: #ef6f68;
+        color: #ffd9d6;
+    }
+
+    #thundy-optin-banner {
+        background-color: #33270f;
+        border-color: #e0a33a;
+        border-left-color: #ffab40;
+        color: #ffe9c7;
+    }
+
+    #thundy-optin-banner .thundy-banner-title,
+    #thundy-optin-banner > span:first-child { color: #ffd08a; }
+
+    #thundy-auth-badge {
+        background-color: #12291b;
+        border-color: #4caf70;
+        color: #b8f0c9;
+    }
+
+    #thundy-scan-status {
+        background-color: #10283d;
+        border-color: #4c9be0;
+        color: #cfe6fa;
+    }
+
+    .thundy-banner-actions button {
+        background: #4c9be0;
+        border-color: #4c9be0;
+        color: #06202f;
+    }
+
+    .thundy-banner-actions button + button {
+        background: transparent;
+        color: #cfe6fa;
+        border-color: #4c9be0;
+    }
 }

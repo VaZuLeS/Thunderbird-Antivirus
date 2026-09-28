@@ -1,237 +1,325 @@
-:root {
-    --bg-color: #ffffff;
-    --text-color: #333333;
-    --text-muted: #555555;
-    --link-color: #005a9e;
-    --link-hover-color: #003e6e;
-    --card-bg: #f9f9f9;
-    --card-border: #dddddd;
-    --btn-primary-bg: #005a9e;
-    --btn-primary-text: #ffffff;
-    --btn-success-bg: #008000;
-    --btn-success-text: #ffffff;
-    --alert-error-bg: #ffeeee;
-    --alert-error-border: #cc0000;
-    --alert-info-border: #0000ff;
+/* ==========================================================================
+   Thundy AV - Branding und Designsystem
+   --------------------------------------------------------------------------
+   Farbwelt: Schild-Blau (Logo), Signal-Orange fuer Aufmerksamkeit, klare
+   Statusfarben fuer ok / Hinweis / Fehler. Helles und dunkles Theme werden
+   ueber prefers-color-scheme bedient; Thunderbird-Variablen dienen als
+   Fallback, damit sich das Add-on in jede Umgebung einfuegt.
+   ========================================================================== */
 
-    --color-success: #008000;
-    --color-warning: #b26000;
-    --color-danger: #cc0000;
-    --color-info: #0000ff;
+:root {
+    /* Marke */
+    --thundy-blue: #0b5fa5;
+    --thundy-blue-dark: #073d6b;
+    --thundy-blue-light: #e8f1fa;
+    --thundy-accent: #ff8c00;
+    --thundy-accent-dark: #b26000;
+    --thundy-accent-light: #fff4e0;
+
+    /* Statusfarben */
+    --thundy-ok: #1b7f3b;
+    --thundy-ok-light: #e7f6ec;
+    --thundy-warn: #b26a00;
+    --thundy-warn-light: #fff8e1;
+    --thundy-fail: #b3261e;
+    --thundy-fail-light: #fdeceb;
+
+    /* Neutrale Flaechen (Fallback, falls Thunderbird nichts liefert) */
+    --thundy-bg: var(--toolbar-bgcolor, #f6f8fa);
+    --thundy-surface: var(--layout-background-Color, #ffffff);
+    --thundy-border: var(--border-color, #d7dbe0);
+    --thundy-text: var(--text-color, #1b1f23);
+    --thundy-text-muted: var(--text-muted, #5c6670);
+
+    --thundy-radius: 6px;
+    --thundy-radius-lg: 10px;
+    --thundy-gap: 12px;
+    --thundy-shadow: 0 1px 2px rgba(11, 95, 165, 0.12);
+
+    /* Bestehende Variablennamen weiter bedienen */
+    --btn-primary-bg: var(--thundy-blue);
+    --btn-primary-text: #ffffff;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg-color: #1e1e1e;
-        --text-color: #f0f0f0;
-        --text-muted: #aaaaaa;
-        --link-color: #66b3ff;
-        --link-hover-color: #99ccff;
-        --card-bg: #2d2d2d;
-        --card-border: #444444;
-        --btn-primary-bg: #005a9e;
-        --btn-primary-text: #ffffff;
-        --btn-success-bg: #28a745;
-        --btn-success-text: #ffffff;
-        --alert-error-bg: #4a1c1c;
-        --alert-error-border: #ff6b6b;
-        --alert-info-border: #3399ff;
-
-        --color-success: #28a745;
-        --color-warning: #ffb84d;
-        --color-danger: #ff6b6b;
-        --color-info: #66b3ff;
+        --thundy-blue: #4c9be0;
+        --thundy-blue-dark: #0b5fa5;
+        --thundy-blue-light: #10283d;
+        --thundy-accent: #ffab40;
+        --thundy-accent-dark: #ff8c00;
+        --thundy-accent-light: #3a2c14;
+        --thundy-ok: #4caf70;
+        --thundy-ok-light: #12291b;
+        --thundy-warn: #e0a33a;
+        --thundy-warn-light: #33270f;
+        --thundy-fail: #ef6f68;
+        --thundy-fail-light: #3a1b19;
+        --thundy-bg: var(--toolbar-bgcolor, #1c1f23);
+        --thundy-surface: var(--layout-background-Color, #24282d);
+        --thundy-border: var(--border-color, #3a4046);
+        --thundy-text: var(--text-color, #e8eaed);
+        --thundy-text-muted: var(--text-muted, #a3adb8);
+        --btn-primary-text: #06202f;
     }
 }
 
 body {
-    font-family: Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    background: var(--thundy-bg);
+    color: var(--thundy-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.5;
+    margin: 0;
+    padding: var(--thundy-gap);
 }
 
-/* Base styles for popup and options */
-a {
-    color: var(--link-color);
-    text-decoration: none;
+/* ---------------------------------------------------------------- Marke -- */
+.thundy-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin: calc(-1 * var(--thundy-gap)) calc(-1 * var(--thundy-gap)) var(--thundy-gap);
+    background: linear-gradient(135deg, var(--thundy-blue-dark), var(--thundy-blue));
+    color: #ffffff;
 }
 
-a:hover {
-    color: var(--link-hover-color);
-    text-decoration: underline;
+.thundy-brand__mark {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 auto;
+    background-image: url("img/icon-64px.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
 }
 
-h1, h2, h3 {
-    color: var(--text-color);
+.thundy-brand__text { min-width: 0; }
+
+.thundy-wordmark {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: inherit;
 }
 
-.head_line {
-    font-size: 16px;
-    font-weight: bold;
+.thundy-brand .thundy-wordmark { color: #ffffff; }
+
+.thundy-tagline {
+    margin: 0;
+    font-size: 12px;
+    opacity: 0.85;
 }
 
-button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+.thundy-mark-inline { display: inline-flex; }
+
+/* ------------------------------------------------------------ Struktur -- */
+.thundy-section {
+    background: var(--thundy-surface);
+    border: 1px solid var(--thundy-border);
+    border-left: 3px solid var(--thundy-blue);
+    border-radius: var(--thundy-radius);
+    padding: 10px 12px;
+    margin-bottom: var(--thundy-gap);
+    box-shadow: var(--thundy-shadow);
+}
+
+.thundy-section > h3,
+.thundy-section > h2 {
+    margin: 0 0 8px;
     font-size: 14px;
-    transition: opacity 0.2s ease, filter 0.2s ease;
-}
-
-button:hover:not(:disabled) {
-    filter: brightness(0.9);
-}
-
-@media (prefers-color-scheme: dark) {
-    button:hover:not(:disabled) {
-        filter: brightness(1.1);
-    }
-}
-
-button:active:not(:disabled) {
-    filter: brightness(0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--thundy-blue-dark);
 }
 
 @media (prefers-color-scheme: dark) {
-    button:active:not(:disabled) {
-        filter: brightness(1.2);
-    }
+    .thundy-section > h3,
+    .thundy-section > h2 { color: var(--thundy-blue); }
 }
 
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-a:focus-visible {
-    outline: 2px solid var(--link-color);
-    outline-offset: 2px;
+.thundy-section--accent { border-left-color: var(--thundy-accent); }
+
+.card {
+    background: var(--thundy-surface);
+    border: 1px solid var(--thundy-border);
+    border-radius: var(--thundy-radius);
+    padding: 10px;
+    margin-bottom: var(--thundy-gap);
 }
 
-button:disabled,
-input:disabled,
-select:disabled,
-textarea:disabled,
-.mb-3:has(:disabled) label,
-.mb-3:has(:disabled) small {
-    opacity: 0.6;
-    cursor: not-allowed;
+.card-info { border-left: 3px solid var(--thundy-blue); }
+.card-warn { border-left: 3px solid var(--thundy-warn); background: var(--thundy-warn-light); }
+.card-error { border-left: 3px solid var(--thundy-fail); background: var(--thundy-fail-light); }
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--thundy-border);
+    margin: 16px 0;
 }
 
-button[aria-busy="true"]:disabled {
-    cursor: progress;
+/* ------------------------------------------------------------ Typografie -- */
+h1, h2, h3 { color: var(--thundy-text); }
+
+small, .thundy-muted { color: var(--thundy-text-muted); }
+
+code, pre, textarea, input[type="text"], input[type="url"], input[type="password"],
+input[type="number"], input[type="search"], input[type="date"], select {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
 }
+
+input[type="text"], input[type="url"], input[type="password"], input[type="number"],
+input[type="search"], input[type="date"], select, textarea {
+    background: var(--thundy-surface);
+    color: var(--thundy-text);
+    border: 1px solid var(--thundy-border);
+    border-radius: var(--thundy-radius);
+    padding: 5px 7px;
+    max-width: 100%;
+}
+
+input:focus-visible, select:focus-visible, textarea:focus-visible,
+button:focus-visible, a:focus-visible {
+    outline: 2px solid var(--thundy-accent);
+    outline-offset: 1px;
+}
+
+/* -------------------------------------------------------------- Buttons -- */
+button, .thundy-btn {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: var(--thundy-radius);
+    border: 1px solid var(--thundy-border);
+    background: var(--thundy-surface);
+    color: var(--thundy-text);
+    padding: 5px 10px;
+    cursor: pointer;
+    margin: 2px 4px 2px 0;
+    transition: background-color 0.12s ease-in-out, border-color 0.12s ease-in-out;
+}
+
+button:hover:not(:disabled) { border-color: var(--thundy-blue); }
+button:disabled { opacity: 0.55; cursor: default; }
 
 .btn-primary {
-    background-color: var(--btn-primary-bg);
-    color: var(--btn-primary-text);
+    background: var(--thundy-blue);
+    border-color: var(--thundy-blue);
+    color: var(--btn-primary-text, #ffffff);
 }
 
-.btn-success {
-    background-color: var(--btn-success-bg);
-    color: var(--btn-success-text);
+.btn-primary:hover:not(:disabled) { background: var(--thundy-blue-dark); }
+
+.btn-danger {
+    background: var(--thundy-fail-light);
+    border-color: var(--thundy-fail);
+    color: var(--thundy-fail);
 }
 
-/* Card and grid layouts */
-.card {
-    background-color: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 20px;
+.btn-accent {
+    background: var(--thundy-accent);
+    border-color: var(--thundy-accent-dark);
+    color: #24160a;
 }
 
-.card-info {
-    border-left: 5px solid var(--alert-info-border);
+.btn-ghost { background: transparent; }
+
+/* ---------------------------------------------------------------- Badges -- */
+.thundy-badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    background: transparent;
 }
 
+.thundy-badge--ok { color: var(--thundy-ok); background: var(--thundy-ok-light); }
+.thundy-badge--warn { color: var(--thundy-warn); background: var(--thundy-warn-light); }
+.thundy-badge--fail { color: var(--thundy-fail); background: var(--thundy-fail-light); }
+.thundy-badge--info { color: var(--thundy-blue); background: var(--thundy-blue-light); }
+
+.thundy-score {
+    display: inline-block;
+    min-width: 44px;
+    text-align: center;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--thundy-radius);
+    background: var(--thundy-blue-light);
+    color: var(--thundy-blue-dark);
+}
+
+.thundy-score--high { background: var(--thundy-fail-light); color: var(--thundy-fail); }
+.thundy-score--medium { background: var(--thundy-warn-light); color: var(--thundy-warn); }
+.thundy-score--low { background: var(--thundy-ok-light); color: var(--thundy-ok); }
+
+/* ----------------------------------------------------------- Popup-Layout -- */
 .grid-container {
     display: grid;
-    grid-template-columns: 150px 1fr;
-    gap: 10px;
-    margin-top: 15px;
-    background-color: var(--card-bg);
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid var(--card-border);
+    grid-template-columns: max-content 1fr;
+    gap: 4px 10px;
+    margin-bottom: var(--thundy-gap);
 }
 
-.grid-header {
-    font-weight: bold;
-    color: var(--text-muted);
+.grid-header { font-weight: 600; color: var(--thundy-text-muted); }
+.grid-content { word-break: break-word; }
+
+.thundy-link {
+    color: var(--thundy-blue);
+    text-decoration: none;
+    font-size: 13px;
 }
 
-.grid-content {
-    overflow-wrap: anywhere;
-    word-break: normal;
-}
+.thundy-link:hover { text-decoration: underline; }
 
-/* Alerts */
-.alert-error {
-    color: var(--color-danger);
-    padding: 10px;
-    border: 1px solid var(--alert-error-border);
-    background-color: var(--alert-error-bg);
-    border-radius: 4px;
-    margin-bottom: 15px;
-}
-
-/* Text Utilities */
-.text-success { color: var(--color-success) !important; }
-.text-warning { color: var(--color-warning) !important; }
-.text-danger { color: var(--color-danger) !important; }
-.text-info { color: var(--color-info) !important; }
-
-/* Margins */
-.mt-2 { margin-top: 10px; }
-.mt-3 { margin-top: 15px; }
-.mb-3 { margin-bottom: 15px; }
-.ml-2 { margin-left: 10px; }
-.ml-4 { margin-left: 20px; }
-.ml-6 { margin-left: 30px; }
-
-@keyframes thundy-spin {
-    to { transform: rotate(360deg); }
-}
-
-button[aria-busy="true"]::after,
-[role="status"][aria-busy="true"]::after {
-    content: "";
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    margin-left: 8px;
-    vertical-align: middle;
-    border: 2px solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: thundy-spin 0.8s linear infinite;
-}
-
-/* Manuelle Anhang-Analyse im Popup */
 .thundy-attachment-row {
-    border-top: 1px solid var(--border-color, #ddd);
+    border-top: 1px solid var(--thundy-border);
     padding: 8px 0;
 }
 
-.thundy-attachment-row button {
-    margin: 4px 4px 0 0;
-}
+.thundy-attachment-row:first-of-type { border-top: 0; }
 
 .thundy-attachment-status {
     display: block;
-    color: var(--text-muted, #666);
+    color: var(--thundy-text-muted);
     word-break: break-all;
 }
 
+.thundy-history-list,
 .thundy-reasons {
-    margin: 4px 0 8px 0;
+    margin: 4px 0 8px;
     padding-left: 20px;
 }
 
-.card-warn {
-    background-color: #fff8e1;
-    border: 1px solid #ffcc80;
+.thundy-history-list li { margin-bottom: 2px; }
+
+/* ---------------------------------------------------- Statusmeldungen -- */
+.text-success { color: var(--thundy-ok); }
+.text-danger { color: var(--thundy-fail); }
+.text-warning { color: var(--thundy-warn); }
+.text-info, .text-muted { color: var(--thundy-text-muted); }
+
+.text-muted { font-style: italic; }
+
+.alert-error {
+    background: var(--thundy-fail-light);
+    border: 1px solid var(--thundy-fail);
+    color: var(--thundy-fail);
+    border-radius: var(--thundy-radius);
     padding: 8px;
-    border-radius: 4px;
+    margin-bottom: var(--thundy-gap);
 }
+
+/* ------------------------------------------------------------- Abstaende -- */
+.mb-3, .mt-3, .ml-2, .mt-2 { display: block; }
+.mb-3 { margin-bottom: var(--thundy-gap); }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: var(--thundy-gap); }
+.ml-2 { margin-left: 8px; display: inline-block; }
+.mb-3:has(:disabled) label,
+.mb-3:has(:disabled) small { opacity: 0.6; }

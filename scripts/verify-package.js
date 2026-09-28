@@ -18,6 +18,7 @@ const ALLOWED_FILES = [
   'options.js',
   'popup.html',
   'theme.css',
+  'ui_i18n.js',
   'LICENSE'
 ];
 const ALLOWED_PREFIXES = ['img/', '_locales/', 'messageDisplay/'];

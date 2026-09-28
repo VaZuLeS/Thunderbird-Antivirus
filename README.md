@@ -141,6 +141,16 @@ The popup lists every attachment of the displayed message with type and size:
   popup. Without consent, API key or host permission the popup explains what is missing and links to the
   options page.
 
+### Localization and branding
+
+- **Localization:** the add-on ships German and English (125 keys each) in `_locales/`. Thunderbird picks the
+  language automatically; the German markup text acts as fallback so the UI is never empty.
+  `scripts/check-locales.js` (part of the pre-submit checks) fails as soon as a key is missing - see
+  [docs/localization.md](docs/localization.md).
+- **Branding:** a small design system (shield blue, signal orange, clear ok/warning/error colours, brand header,
+  cards, badges, score levels, focus rings, dark mode) lives in `theme.css` and `messageDisplay/banner.css`; see
+  [docs/branding.md](docs/branding.md).
+
 ### Local rules, SIEM export, search and CDR
 
 - **Local rule engine:** rules for sender/domain/URL/subject/file name/SHA-256 with whitelist, blacklist or score

@@ -1,30 +1,28 @@
 {
-  "extensionName": {
-    "message": "Thundy AV – Email Scanner for Thunderbird",
-    "description": "Name of the add-on as shown in the add-on manager and on the store listing."
-  },
-  "extensionDescription": {
-    "message": "Optional, opt-in scanner for email attachments and links. Nothing leaves your computer without your explicit consent.",
-    "description": "Short description of the add-on (max. 132 characters)."
-  },
   "actionTitle": {
     "message": "Thundy AV – scan status for this message",
     "description": "Tooltip of the message display action button."
   },
-  "bannerScanOnce": {
-    "message": "Scan this message once"
+  "bannerAuthPass": {
+    "message": "Sender verified (SPF/DKIM/DMARC passed)"
   },
-  "bannerScanSender": {
-    "message": "Always scan this sender"
+  "bannerConsentMissing": {
+    "message": "External analysis is disabled in the options – nothing was transmitted."
   },
-  "bannerTitleOptIn": {
-    "message": "Thundy AV: real-time scanning is not enabled for this message."
+  "bannerHistoryHint": {
+    "message": "Full history and CSV/JSON export: add-on options, section \"History\"."
+  },
+  "bannerNoApiKey": {
+    "message": "No Hybrid Analysis API key configured - please add it in the options."
   },
   "bannerNoteOptIn": {
     "message": "Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you give your consent. See the add-on options."
   },
-  "bannerScanRunning": {
-    "message": "Scanning…"
+  "bannerOpenOptions": {
+    "message": "Open options"
+  },
+  "bannerPermissionDenied": {
+    "message": "Required host permission was denied"
   },
   "bannerScanDone": {
     "message": "Scan finished"
@@ -32,14 +30,99 @@
   "bannerScanFailed": {
     "message": "Scan failed"
   },
-  "bannerPermissionDenied": {
-    "message": "Required host permission was denied"
+  "bannerScanFailedWithReason": {
+    "message": "Scan failed: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
   },
-  "bannerConsentMissing": {
-    "message": "External analysis is disabled in the options – nothing was transmitted."
+  "bannerScanOnce": {
+    "message": "Scan this message once"
   },
-  "bannerThreatTitle": {
-    "message": "Thundy AV warning"
+  "bannerScanRunning": {
+    "message": "Scanning…"
+  },
+  "bannerScanSender": {
+    "message": "Always scan this sender"
+  },
+  "bannerSenderOptIn": {
+    "message": "This sender is now scanned automatically."
+  },
+  "bannerStatusBusiness": {
+    "message": "Local check: score $SCORE$ of 100$TRANSMISSIONS$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "transmissions": {
+        "content": "$2"
+      }
+    }
+  },
+  "bannerStatusDone": {
+    "message": "Analysis finished - the result is shown in the popup (Thundy AV button)."
+  },
+  "bannerStatusExternalStarted": {
+    "message": "External analysis started - the result is delayed and will be fetched automatically."
+  },
+  "bannerStatusFailed": {
+    "message": "Analysis failed: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerStatusFinished": {
+    "message": "External analysis finished (delayed): verdict $VERDICT$.",
+    "placeholders": {
+      "verdict": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerStatusPendingDetail": {
+    "message": " (checked every $MIN$ minute(s), attempt $ATTEMPT$)",
+    "placeholders": {
+      "min": {
+        "content": "$1"
+      },
+      "attempt": {
+        "content": "$2"
+      }
+    }
+  },
+  "bannerStatusRealtime": {
+    "message": "Local checks finished (real time): risk score $SCORE$ of 100.",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerStatusResearch": {
+    "message": "Local check finished (real time), score $SCORE$ of 100. Hashes: $HASHES$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "hashes": {
+        "content": "$2"
+      }
+    }
+  },
+  "bannerStatusRunning": {
+    "message": "Analysis running at the provider$DETAIL$. The result is fetched automatically.",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerStatusTimeout": {
+    "message": "No result within the time window - you can trigger the check again later."
   },
   "bannerThreatScore": {
     "message": "Risk score: $SCORE$ of 100",
@@ -49,44 +132,36 @@
       }
     }
   },
-  "bannerSenderOptIn": {
-    "message": "This sender is now scanned automatically."
+  "bannerThreatTitle": {
+    "message": "Thundy AV warning"
   },
-  "notificationScanStarted": {
-    "message": "Scan started for: $URL$",
+  "bannerTitleOptIn": {
+    "message": "Thundy AV: real-time scanning is not enabled for this message."
+  },
+  "bannerTransmissionSummary": {
+    "message": " | transmitted: $COUNT$ item(s) to $PROVIDERS$ (last: $TIME$)",
     "placeholders": {
-      "url": {
+      "count": {
         "content": "$1"
+      },
+      "providers": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
       }
     }
   },
-  "notificationScanSubmitted": {
-    "message": "Scan submitted successfully. Job ID: $JOBID$",
-    "placeholders": {
-      "jobid": {
-        "content": "$1"
-      }
-    }
+  "brand.tagline": {
+    "message": "Check email attachments and links - local first."
   },
-  "notificationScanError": {
-    "message": "Scan error: $ERROR$",
-    "placeholders": {
-      "error": {
-        "content": "$1"
-      }
-    }
+  "extensionDescription": {
+    "message": "Optional, opt-in scanner for email attachments and links. Nothing leaves your computer without your explicit consent.",
+    "description": "Short description of the add-on (max. 132 characters)."
   },
-  "notificationTitle": {
-    "message": "Thundy AV Scanner"
-  },
-  "notificationTitleError": {
-    "message": "Thundy AV Scanner error"
-  },
-  "bannerAuthPass": {
-    "message": "Sender verified (SPF/DKIM/DMARC passed)"
-  },
-  "bannerOpenOptions": {
-    "message": "Open options"
+  "extensionName": {
+    "message": "Thundy AV – Email Scanner for Thunderbird",
+    "description": "Name of the add-on as shown in the add-on manager and on the store listing."
   },
   "menuScanMessageLinks": {
     "message": "Scan all links of this message"
@@ -94,11 +169,8 @@
   "notificationNoLinks": {
     "message": "No links found in this message."
   },
-  "bannerNoApiKey": {
-    "message": "No Hybrid Analysis API key configured - please add it in the options."
-  },
-  "bannerScanFailedWithReason": {
-    "message": "Scan failed: $ERROR$",
+  "notificationScanError": {
+    "message": "Scan error: $ERROR$",
     "placeholders": {
       "error": {
         "content": "$1"
@@ -116,110 +188,286 @@
       }
     }
   },
+  "notificationScanStarted": {
+    "message": "Scan started for: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Scan submitted successfully. Job ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
   "notificationScanTimeout": {
     "message": "No analysis result received in time for: $NAME$",
     "placeholders": {
       "name": {
         "content": "$1"
-      },
-      "verdict": {
-        "content": "$2"
       }
     }
   },
-  "bannerStatusDone": {
-    "message": "Analysis finished - the result is shown in the popup (Thundy AV button)."
+  "notificationTitle": {
+    "message": "Thundy AV Scanner"
   },
-  "bannerStatusBusiness": {
-    "message": "Local check: score $SCORE$ of 100$TRANSMISSIONS$",
-    "placeholders": {
-      "score": {
-        "content": "$1"
-      },
-      "transmissions": {
-        "content": "$2"
-      },
-      "count": {
-        "content": "$3"
-      },
-      "providers": {
-        "content": "$4"
-      },
-      "time": {
-        "content": "$5"
-      },
-      "hashes": {
-        "content": "$6"
-      }
-    }
+  "notificationTitleError": {
+    "message": "Thundy AV Scanner error"
   },
-  "bannerTransmissionSummary": {
-    "message": " | transmitted: $COUNT$ item(s) to $PROVIDERS$ (last: $TIME$)",
-    "placeholders": {
-      "score": {
-        "content": "$1"
-      },
-      "transmissions": {
-        "content": "$2"
-      },
-      "count": {
-        "content": "$3"
-      },
-      "providers": {
-        "content": "$4"
-      },
-      "time": {
-        "content": "$5"
-      },
-      "hashes": {
-        "content": "$6"
-      }
-    }
+  "opt.alwaysManual.label": {
+    "message": "Always scan manually (no automatic upload)"
   },
-  "bannerStatusResearch": {
-    "message": "Local check finished (real time), score $SCORE$ of 100. Hashes: $HASHES$",
-    "placeholders": {
-      "score": {
-        "content": "$1"
-      },
-      "transmissions": {
-        "content": "$2"
-      },
-      "count": {
-        "content": "$3"
-      },
-      "providers": {
-        "content": "$4"
-      },
-      "time": {
-        "content": "$5"
-      },
-      "hashes": {
-        "content": "$6"
-      }
-    }
+  "opt.apikey.label": {
+    "message": "API key (Hybrid Analysis):"
   },
-  "bannerHistoryHint": {
-    "message": "Full history and CSV/JSON export: add-on options, section \"History\".",
-    "placeholders": {
-      "score": {
-        "content": "$1"
-      },
-      "transmissions": {
-        "content": "$2"
-      },
-      "count": {
-        "content": "$3"
-      },
-      "providers": {
-        "content": "$4"
-      },
-      "time": {
-        "content": "$5"
-      },
-      "hashes": {
-        "content": "$6"
-      }
-    }
+  "opt.autoScanLinks.label": {
+    "message": "Check links immediately when opening the message (auto scan)"
+  },
+  "opt.blacklist.label": {
+    "message": "Blacklist (domains or email addresses, comma separated):"
+  },
+  "opt.btn.clearCache": {
+    "message": "Clear cache"
+  },
+  "opt.btn.clearHistory": {
+    "message": "Delete history"
+  },
+  "opt.btn.diagnostics": {
+    "message": "Run diagnostics"
+  },
+  "opt.btn.exportCsv": {
+    "message": "Export CSV"
+  },
+  "opt.btn.exportJson": {
+    "message": "Export JSON"
+  },
+  "opt.btn.refresh": {
+    "message": "Refresh"
+  },
+  "opt.btn.rulesApply": {
+    "message": "Validate & apply rules"
+  },
+  "opt.btn.rulesExport": {
+    "message": "Export profile"
+  },
+  "opt.btn.rulesImport": {
+    "message": "Import profile from file"
+  },
+  "opt.btn.save": {
+    "message": "Save"
+  },
+  "opt.btn.statistics": {
+    "message": "Load statistics"
+  },
+  "opt.btn.webhookTest": {
+    "message": "Send test"
+  },
+  "opt.consent.label": {
+    "message": "Allow external analysis (transmission to third parties)"
+  },
+  "opt.days.1": {
+    "message": "1 day"
+  },
+  "opt.days.30": {
+    "message": "30 days"
+  },
+  "opt.days.7": {
+    "message": "7 days"
+  },
+  "opt.days.90": {
+    "message": "90 days"
+  },
+  "opt.diagnostics.idle": {
+    "message": "Not run yet."
+  },
+  "opt.h3.about": {
+    "message": "What is Hybrid-Analysis.com?"
+  },
+  "opt.h3.apikeyHelp": {
+    "message": "How to obtain an API key"
+  },
+  "opt.h3.consent": {
+    "message": "Consent and privacy"
+  },
+  "opt.h3.data": {
+    "message": "Data management"
+  },
+  "opt.h3.diagnostics": {
+    "message": "Diagnostics / self test"
+  },
+  "opt.h3.history": {
+    "message": "History"
+  },
+  "opt.h3.providers": {
+    "message": "Analysis providers"
+  },
+  "opt.h3.rules": {
+    "message": "Custom rules (local IOC lists)"
+  },
+  "opt.h3.statistics": {
+    "message": "Statistics"
+  },
+  "opt.h3.view": {
+    "message": "View (role)"
+  },
+  "opt.h3.webhook": {
+    "message": "SIEM/webhook export"
+  },
+  "opt.history.enabled.label": {
+    "message": "Record history (locally)"
+  },
+  "opt.history.filter.all": {
+    "message": "All entries"
+  },
+  "opt.history.filter.label": {
+    "message": "Show:"
+  },
+  "opt.history.filter.transmissions": {
+    "message": "Transmissions only"
+  },
+  "opt.history.from.aria": {
+    "message": "History from"
+  },
+  "opt.history.limit.label": {
+    "message": "Maximum entries (50-5000):"
+  },
+  "opt.history.loading": {
+    "message": "Loading history..."
+  },
+  "opt.history.search.placeholder": {
+    "message": "Search (sender, file, hash, provider...)"
+  },
+  "opt.history.to.aria": {
+    "message": "History to"
+  },
+  "opt.iprep.abuseipdb": {
+    "message": "AbuseIPDB (requires an AbuseIPDB API key)"
+  },
+  "opt.iprep.label": {
+    "message": "IP reputation (checking Received headers):"
+  },
+  "opt.iprep.none": {
+    "message": "Disabled"
+  },
+  "opt.iprep.virustotal": {
+    "message": "VirusTotal (requires a VirusTotal API key)"
+  },
+  "opt.iprepKey.label": {
+    "message": "API key for IP reputation:"
+  },
+  "opt.rules.label": {
+    "message": "Rules as JSON (list):"
+  },
+  "opt.statistics.idle": {
+    "message": "Not loaded yet."
+  },
+  "opt.tier.balanced": {
+    "message": "Balanced (upload unknown files, no URLs)"
+  },
+  "opt.tier.label": {
+    "message": "Privacy tier:"
+  },
+  "opt.tier.max": {
+    "message": "Maximum protection (upload everything incl. URLs)"
+  },
+  "opt.tier.strict": {
+    "message": "Strict (default: hashes only, no upload)"
+  },
+  "opt.title": {
+    "message": "Thundy AV settings"
+  },
+  "opt.toc.label": {
+    "message": "Show Time-of-Click Protection in the message (hint on hover)"
+  },
+  "opt.urlhaus.label": {
+    "message": "URLhaus API key (optional, real-time domain checks):"
+  },
+  "opt.urlscan.label": {
+    "message": "urlscan.io API key (computer-vision detection of fake logins):"
+  },
+  "opt.view.audit": {
+    "message": "Evidence / compliance (history and export first)"
+  },
+  "opt.view.business": {
+    "message": "Business (plus timestamps, transmission overview, history)"
+  },
+  "opt.view.label": {
+    "message": "Presentation and detail level:"
+  },
+  "opt.view.private": {
+    "message": "Private (default: plain language, no technical ids)"
+  },
+  "opt.view.quiet": {
+    "message": "Warnings only (minimal, no hint banners)"
+  },
+  "opt.view.research": {
+    "message": "IT security researcher (full detail: hashes, job ids, attempts, network targets)"
+  },
+  "opt.virustotal.label": {
+    "message": "VirusTotal API key (optional, file scanner engines):"
+  },
+  "opt.webhook.enabled.label": {
+    "message": "Enable webhook export"
+  },
+  "opt.webhook.secret.label": {
+    "message": "Shared secret (optional, sent as X-Thundy-Secret header):"
+  },
+  "opt.webhook.url.label": {
+    "message": "Endpoint (HTTPS):"
+  },
+  "opt.whitelist.label": {
+    "message": "Whitelist (domains or email addresses, comma separated):"
+  },
+  "popup.from": {
+    "message": "From:"
+  },
+  "popup.heading": {
+    "message": "Thundy AV - security check"
+  },
+  "popup.loading": {
+    "message": "Loading analysis results..."
+  },
+  "popup.messageId": {
+    "message": "Message header ID:"
+  },
+  "popup.noApiKey": {
+    "message": "No Hybrid Analysis API key found. Please add it in the add-on options."
+  },
+  "popup.noId": {
+    "message": "(no id)"
+  },
+  "popup.noMessage": {
+    "message": "Please select an email to analyse it."
+  },
+  "popup.noSubject": {
+    "message": "(no subject)"
+  },
+  "popup.openOptions": {
+    "message": "Open options"
+  },
+  "popup.subject": {
+    "message": "Subject:"
+  },
+  "popup.submissions": {
+    "message": "Open all submissions at Hybrid Analysis"
+  },
+  "popup.unknownSender": {
+    "message": "(unknown sender)"
+  },
+  "popup.warning": {
+    "message": "Warning:"
+  },
+  "ui.save": {
+    "message": "Save"
+  },
+  "ui.saved": {
+    "message": "Saved successfully!"
+  },
+  "ui.saving": {
+    "message": "Saving..."
   }
 }

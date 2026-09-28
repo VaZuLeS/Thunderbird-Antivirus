@@ -1,30 +1,28 @@
 {
-  "extensionName": {
-    "message": "Thundy AV – E-Mail-Scanner für Thunderbird",
-    "description": "Name des Add-ons im Add-on-Manager und im Store-Listing."
-  },
-  "extensionDescription": {
-    "message": "Optionales, zustimmungspflichtiges Scannen von E-Mail-Anhängen und Links. Ohne ausdrückliche Zustimmung verlässt nichts Ihren Computer.",
-    "description": "Kurzbeschreibung des Add-ons."
-  },
   "actionTitle": {
     "message": "Thundy AV – Scan-Status für diese Nachricht",
     "description": "Tooltip des Buttons in der Nachrichtenansicht."
   },
-  "bannerScanOnce": {
-    "message": "Nur diese Nachricht scannen"
+  "bannerAuthPass": {
+    "message": "Absender verifiziert (SPF/DKIM/DMARC bestanden)"
   },
-  "bannerScanSender": {
-    "message": "Absender dauerhaft scannen"
+  "bannerConsentMissing": {
+    "message": "Externe Analyse ist in den Einstellungen deaktiviert – es wurden keine Daten übertragen."
   },
-  "bannerTitleOptIn": {
-    "message": "Thundy AV: Echtzeit-Scan ist für diese Nachricht nicht aktiviert."
+  "bannerHistoryHint": {
+    "message": "Vollständiger Verlauf inkl. CSV/JSON-Export: Einstellungen, Abschnitt „Verlauf“."
+  },
+  "bannerNoApiKey": {
+    "message": "Kein Hybrid-Analysis-API-Schlüssel hinterlegt – bitte in den Einstellungen eintragen."
   },
   "bannerNoteOptIn": {
     "message": "Beim Scannen werden Daten an externe Analysedienste übertragen – aber nur, wenn Sie dies in den Einstellungen aktiviert und zugestimmt haben. Details in den Einstellungen der Erweiterung."
   },
-  "bannerScanRunning": {
-    "message": "Scannen…"
+  "bannerOpenOptions": {
+    "message": "Einstellungen öffnen"
+  },
+  "bannerPermissionDenied": {
+    "message": "Erforderliche Host-Berechtigung wurde verweigert"
   },
   "bannerScanDone": {
     "message": "Scan abgeschlossen"
@@ -32,14 +30,99 @@
   "bannerScanFailed": {
     "message": "Scan fehlgeschlagen"
   },
-  "bannerPermissionDenied": {
-    "message": "Erforderliche Host-Berechtigung wurde verweigert"
+  "bannerScanFailedWithReason": {
+    "message": "Scan fehlgeschlagen: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
   },
-  "bannerConsentMissing": {
-    "message": "Externe Analyse ist in den Einstellungen deaktiviert – es wurden keine Daten übertragen."
+  "bannerScanOnce": {
+    "message": "Nur diese Nachricht scannen"
   },
-  "bannerThreatTitle": {
-    "message": "Thundy AV Warnung"
+  "bannerScanRunning": {
+    "message": "Scannen…"
+  },
+  "bannerScanSender": {
+    "message": "Absender dauerhaft scannen"
+  },
+  "bannerSenderOptIn": {
+    "message": "Dieser Absender wird jetzt automatisch gescannt."
+  },
+  "bannerStatusBusiness": {
+    "message": "Lokale Prüfung: Bewertung $SCORE$ von 100$TRANSMISSIONS$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "transmissions": {
+        "content": "$2"
+      }
+    }
+  },
+  "bannerStatusDone": {
+    "message": "Analyse abgeschlossen – das Ergebnis wird im Popup angezeigt (Thundy-AV-Button)."
+  },
+  "bannerStatusExternalStarted": {
+    "message": "Externe Analyse gestartet – das Ergebnis liegt zeitverzögert vor und wird automatisch abgerufen."
+  },
+  "bannerStatusFailed": {
+    "message": "Analyse fehlgeschlagen: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerStatusFinished": {
+    "message": "Externe Analyse abgeschlossen (zeitverzögert): Verdikt $VERDICT$.",
+    "placeholders": {
+      "verdict": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerStatusPendingDetail": {
+    "message": " (Prüfung alle $MIN$ Minute(n), Versuch $ATTEMPT$)",
+    "placeholders": {
+      "min": {
+        "content": "$1"
+      },
+      "attempt": {
+        "content": "$2"
+      }
+    }
+  },
+  "bannerStatusRealtime": {
+    "message": "Lokale Prüfung abgeschlossen (Echtzeit): Risikobewertung $SCORE$ von 100.",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerStatusResearch": {
+    "message": "Lokale Prüfung abgeschlossen (Echtzeit), Bewertung $SCORE$ von 100. Hashes: $HASHES$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "hashes": {
+        "content": "$2"
+      }
+    }
+  },
+  "bannerStatusRunning": {
+    "message": "Analyse läuft beim Anbieter$DETAIL$. Das Ergebnis wird automatisch abgerufen.",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerStatusTimeout": {
+    "message": "Kein Ergebnis innerhalb des Zeitfensters – später erneut prüfen."
   },
   "bannerThreatScore": {
     "message": "Risikobewertung: $SCORE$ von 100",
@@ -49,44 +132,36 @@
       }
     }
   },
-  "bannerSenderOptIn": {
-    "message": "Dieser Absender wird jetzt automatisch gescannt."
+  "bannerThreatTitle": {
+    "message": "Thundy AV Warnung"
   },
-  "notificationScanStarted": {
-    "message": "Scan gestartet für: $URL$",
+  "bannerTitleOptIn": {
+    "message": "Thundy AV: Echtzeit-Scan ist für diese Nachricht nicht aktiviert."
+  },
+  "bannerTransmissionSummary": {
+    "message": " | $COUNT$ Übertragung(en) an $PROVIDERS$ (zuletzt: $TIME$)",
     "placeholders": {
-      "url": {
+      "count": {
         "content": "$1"
+      },
+      "providers": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
       }
     }
   },
-  "notificationScanSubmitted": {
-    "message": "Scan erfolgreich eingereicht. Job ID: $JOBID$",
-    "placeholders": {
-      "jobid": {
-        "content": "$1"
-      }
-    }
+  "brand.tagline": {
+    "message": "E-Mail-Anhänge und Links prüfen – lokal zuerst."
   },
-  "notificationScanError": {
-    "message": "Fehler beim Scan: $ERROR$",
-    "placeholders": {
-      "error": {
-        "content": "$1"
-      }
-    }
+  "extensionDescription": {
+    "message": "Optionales, zustimmungspflichtiges Scannen von E-Mail-Anhängen und Links. Ohne ausdrückliche Zustimmung verlässt nichts Ihren Computer.",
+    "description": "Kurzbeschreibung des Add-ons."
   },
-  "notificationTitle": {
-    "message": "Thundy AV Scanner"
-  },
-  "notificationTitleError": {
-    "message": "Thundy AV Scanner Fehler"
-  },
-  "bannerAuthPass": {
-    "message": "Absender verifiziert (SPF/DKIM/DMARC bestanden)"
-  },
-  "bannerOpenOptions": {
-    "message": "Einstellungen öffnen"
+  "extensionName": {
+    "message": "Thundy AV – E-Mail-Scanner für Thunderbird",
+    "description": "Name des Add-ons im Add-on-Manager und im Store-Listing."
   },
   "menuScanMessageLinks": {
     "message": "Alle Links dieser Nachricht scannen"
@@ -94,11 +169,8 @@
   "notificationNoLinks": {
     "message": "In dieser Nachricht wurden keine Links gefunden."
   },
-  "bannerNoApiKey": {
-    "message": "Kein Hybrid-Analysis-API-Schlüssel hinterlegt – bitte in den Einstellungen eintragen."
-  },
-  "bannerScanFailedWithReason": {
-    "message": "Scan fehlgeschlagen: $ERROR$",
+  "notificationScanError": {
+    "message": "Fehler beim Scan: $ERROR$",
     "placeholders": {
       "error": {
         "content": "$1"
@@ -116,110 +188,286 @@
       }
     }
   },
+  "notificationScanStarted": {
+    "message": "Scan gestartet für: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Scan erfolgreich eingereicht. Job ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
   "notificationScanTimeout": {
     "message": "Kein Analyseergebnis innerhalb des Zeitfensters erhalten für: $NAME$",
     "placeholders": {
       "name": {
         "content": "$1"
-      },
-      "verdict": {
-        "content": "$2"
       }
     }
   },
-  "bannerStatusDone": {
-    "message": "Analyse abgeschlossen – das Ergebnis wird im Popup angezeigt (Thundy-AV-Button)."
+  "notificationTitle": {
+    "message": "Thundy AV Scanner"
   },
-  "bannerStatusBusiness": {
-    "message": "Lokale Prüfung: Bewertung $SCORE$ von 100$TRANSMISSIONS$",
-    "placeholders": {
-      "score": {
-        "content": "$1"
-      },
-      "transmissions": {
-        "content": "$2"
-      },
-      "count": {
-        "content": "$3"
-      },
-      "providers": {
-        "content": "$4"
-      },
-      "time": {
-        "content": "$5"
-      },
-      "hashes": {
-        "content": "$6"
-      }
-    }
+  "notificationTitleError": {
+    "message": "Thundy AV Scanner Fehler"
   },
-  "bannerTransmissionSummary": {
-    "message": " | $COUNT$ Übertragung(en) an $PROVIDERS$ (zuletzt: $TIME$)",
-    "placeholders": {
-      "score": {
-        "content": "$1"
-      },
-      "transmissions": {
-        "content": "$2"
-      },
-      "count": {
-        "content": "$3"
-      },
-      "providers": {
-        "content": "$4"
-      },
-      "time": {
-        "content": "$5"
-      },
-      "hashes": {
-        "content": "$6"
-      }
-    }
+  "opt.alwaysManual.label": {
+    "message": "Immer manuell scannen (Kein Auto-Upload)"
   },
-  "bannerStatusResearch": {
-    "message": "Lokale Prüfung abgeschlossen (Echtzeit), Bewertung $SCORE$ von 100. Hashes: $HASHES$",
-    "placeholders": {
-      "score": {
-        "content": "$1"
-      },
-      "transmissions": {
-        "content": "$2"
-      },
-      "count": {
-        "content": "$3"
-      },
-      "providers": {
-        "content": "$4"
-      },
-      "time": {
-        "content": "$5"
-      },
-      "hashes": {
-        "content": "$6"
-      }
-    }
+  "opt.apikey.label": {
+    "message": "API Schlüssel (Hybrid-Analysis):"
   },
-  "bannerHistoryHint": {
-    "message": "Vollständiger Verlauf inkl. CSV/JSON-Export: Einstellungen, Abschnitt \"Verlauf\".",
-    "placeholders": {
-      "score": {
-        "content": "$1"
-      },
-      "transmissions": {
-        "content": "$2"
-      },
-      "count": {
-        "content": "$3"
-      },
-      "providers": {
-        "content": "$4"
-      },
-      "time": {
-        "content": "$5"
-      },
-      "hashes": {
-        "content": "$6"
-      }
-    }
+  "opt.autoScanLinks.label": {
+    "message": "Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)"
+  },
+  "opt.blacklist.label": {
+    "message": "Blacklist (Domains oder E-Mail-Adressen, kommagetrennt):"
+  },
+  "opt.btn.clearCache": {
+    "message": "Cache leeren"
+  },
+  "opt.btn.clearHistory": {
+    "message": "Verlauf löschen"
+  },
+  "opt.btn.diagnostics": {
+    "message": "Diagnose starten"
+  },
+  "opt.btn.exportCsv": {
+    "message": "CSV exportieren"
+  },
+  "opt.btn.exportJson": {
+    "message": "JSON exportieren"
+  },
+  "opt.btn.refresh": {
+    "message": "Aktualisieren"
+  },
+  "opt.btn.rulesApply": {
+    "message": "Regeln prüfen & anwenden"
+  },
+  "opt.btn.rulesExport": {
+    "message": "Profil exportieren"
+  },
+  "opt.btn.rulesImport": {
+    "message": "Profil aus Datei importieren"
+  },
+  "opt.btn.save": {
+    "message": "Speichern"
+  },
+  "opt.btn.statistics": {
+    "message": "Statistik laden"
+  },
+  "opt.btn.webhookTest": {
+    "message": "Testsendung"
+  },
+  "opt.consent.label": {
+    "message": "Externe Analyse erlauben (Datenübermittlung an Drittanbieter)"
+  },
+  "opt.days.1": {
+    "message": "1 Tag"
+  },
+  "opt.days.30": {
+    "message": "30 Tage"
+  },
+  "opt.days.7": {
+    "message": "7 Tage"
+  },
+  "opt.days.90": {
+    "message": "90 Tage"
+  },
+  "opt.diagnostics.idle": {
+    "message": "Noch nicht ausgeführt."
+  },
+  "opt.h3.about": {
+    "message": "Was ist Hybrid-Analysis.com?"
+  },
+  "opt.h3.apikeyHelp": {
+    "message": "Installationshinweise zum API Schlüssel"
+  },
+  "opt.h3.consent": {
+    "message": "Zustimmung und Datenschutz"
+  },
+  "opt.h3.data": {
+    "message": "Datenmanagement"
+  },
+  "opt.h3.diagnostics": {
+    "message": "Diagnose / Selbsttest"
+  },
+  "opt.h3.history": {
+    "message": "Verlauf"
+  },
+  "opt.h3.providers": {
+    "message": "Analyse-Dienste"
+  },
+  "opt.h3.rules": {
+    "message": "Eigene Regeln (lokale IOC-Listen)"
+  },
+  "opt.h3.statistics": {
+    "message": "Statistik"
+  },
+  "opt.h3.view": {
+    "message": "Ansicht (Rolle)"
+  },
+  "opt.h3.webhook": {
+    "message": "SIEM-/Webhook-Export"
+  },
+  "opt.history.enabled.label": {
+    "message": "Verlauf aufzeichnen (lokal)"
+  },
+  "opt.history.filter.all": {
+    "message": "Alle Einträge"
+  },
+  "opt.history.filter.label": {
+    "message": "Anzeigen:"
+  },
+  "opt.history.filter.transmissions": {
+    "message": "Nur Übertragungen an Anbieter"
+  },
+  "opt.history.from.aria": {
+    "message": "Verlauf ab"
+  },
+  "opt.history.limit.label": {
+    "message": "Maximale Einträge (50-5000):"
+  },
+  "opt.history.loading": {
+    "message": "Verlauf wird geladen..."
+  },
+  "opt.history.search.placeholder": {
+    "message": "Suche (Absender, Datei, Hash, Anbieter...)"
+  },
+  "opt.history.to.aria": {
+    "message": "Verlauf bis"
+  },
+  "opt.iprep.abuseipdb": {
+    "message": "AbuseIPDB (benötigt AbuseIPDB-API-Schlüssel)"
+  },
+  "opt.iprep.label": {
+    "message": "IP-Reputation (Received-Header prüfen):"
+  },
+  "opt.iprep.none": {
+    "message": "Deaktiviert"
+  },
+  "opt.iprep.virustotal": {
+    "message": "VirusTotal (benötigt VirusTotal-API-Schlüssel)"
+  },
+  "opt.iprepKey.label": {
+    "message": "API-Schlüssel für IP-Reputation:"
+  },
+  "opt.rules.label": {
+    "message": "Regeln als JSON (Liste):"
+  },
+  "opt.statistics.idle": {
+    "message": "Noch nicht geladen."
+  },
+  "opt.tier.balanced": {
+    "message": "Ausgewogen (Unbekannte Dateien hochladen, keine URLs)"
+  },
+  "opt.tier.label": {
+    "message": "Datenschutz-Stufe (Privacy Tier):"
+  },
+  "opt.tier.max": {
+    "message": "Maximaler Schutz (Alles hochladen inkl. URLs)"
+  },
+  "opt.tier.strict": {
+    "message": "Strikt (Standard: nur Hashes senden, kein Upload)"
+  },
+  "opt.title": {
+    "message": "Thundy AV Einstellungen"
+  },
+  "opt.toc.label": {
+    "message": "Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo bei Hover)"
+  },
+  "opt.urlhaus.label": {
+    "message": "URLhaus API Schlüssel (Optional für Echtzeit-Domain-Checks):"
+  },
+  "opt.urlscan.label": {
+    "message": "urlscan.io API Schlüssel (Computer Vision Erkennung von z.B. gefälschten Logins):"
+  },
+  "opt.view.audit": {
+    "message": "Nachweis / Compliance (Verlauf und Export im Vordergrund)"
+  },
+  "opt.view.business": {
+    "message": "Geschäftlich (zusätzlich Zeitstempel, Übertragungsübersicht, Verlauf)"
+  },
+  "opt.view.label": {
+    "message": "Darstellung und Informationsmenge:"
+  },
+  "opt.view.private": {
+    "message": "Privat (Standard: klare Sprache, keine technischen Kennungen)"
+  },
+  "opt.view.quiet": {
+    "message": "Nur Warnungen (minimal, keine Hinweisbanner)"
+  },
+  "opt.view.research": {
+    "message": "IT-Security-Forscher (volle Details: Hashes, Job-IDs, Versuche, Netzwerkziele)"
+  },
+  "opt.virustotal.label": {
+    "message": "VirusTotal API Schlüssel (Optional für Datei-Scanner-Engines):"
+  },
+  "opt.webhook.enabled.label": {
+    "message": "Webhook-Export aktivieren"
+  },
+  "opt.webhook.secret.label": {
+    "message": "Shared Secret (optional, wird als Header X-Thundy-Secret gesendet):"
+  },
+  "opt.webhook.url.label": {
+    "message": "Endpunkt (HTTPS):"
+  },
+  "opt.whitelist.label": {
+    "message": "Whitelist (Domains oder E-Mail-Adressen, kommagetrennt):"
+  },
+  "popup.from": {
+    "message": "Von:"
+  },
+  "popup.heading": {
+    "message": "Thundy AV – Sicherheitsprüfung"
+  },
+  "popup.loading": {
+    "message": "Lade Analyseergebnisse..."
+  },
+  "popup.messageId": {
+    "message": "MessageHeaderID:"
+  },
+  "popup.noApiKey": {
+    "message": "Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung."
+  },
+  "popup.noId": {
+    "message": "(Keine ID)"
+  },
+  "popup.noMessage": {
+    "message": "Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen."
+  },
+  "popup.noSubject": {
+    "message": "(Kein Betreff)"
+  },
+  "popup.openOptions": {
+    "message": "Einstellungen öffnen"
+  },
+  "popup.subject": {
+    "message": "Betreff:"
+  },
+  "popup.submissions": {
+    "message": "Alle Übertragungen zu Hybrid Analysis aufrufen"
+  },
+  "popup.unknownSender": {
+    "message": "(Unbekannter Absender)"
+  },
+  "popup.warning": {
+    "message": "Warnung:"
+  },
+  "ui.save": {
+    "message": "Speichern"
+  },
+  "ui.saved": {
+    "message": "Erfolgreich gespeichert!"
+  },
+  "ui.saving": {
+    "message": "Wird gespeichert..."
   }
 }

@@ -149,6 +149,14 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.6 Release notes 1.11.0
+
+- **German and English user interface**, chosen automatically from Thunderbird’s language; missing translations fall
+  back to German so no label stays empty. Translation completeness is enforced by an automated check.
+- **Brand design system:** consistent colours (shield blue, signal orange, ok/warning/error), brand header, cards,
+  badges, graded risk scores, focus rings and a proper dark-mode variant - in the options page, the popup and the
+  in-message banners.
+
 ## 5.5 Release notes 1.10.0
 
 - **Local rules / IOC lists:** define rules for sender, domain, URL, subject, file name or SHA-256 (whitelist,

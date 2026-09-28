@@ -244,6 +244,18 @@ function runChecks(rootDir) {
     }
   }
 
+  // Lokalisierung: Katalogparitaet und verwendete Schluessel pruefen
+  try {
+    const { runLocaleCheck } = require('./check-locales.js');
+    const localeResult = runLocaleCheck(rootDir);
+    for (const problem of localeResult.problems) fail('Lokalisierung: ' + problem);
+    if (localeResult.problems.length === 0) {
+      ok('Lokalisierung vollstaendig (' + localeResult.locales.join('/') + ', ' + localeResult.usedKeys.length + ' Schluessel verwendet)');
+    }
+  } catch (e) {
+    warn('Lokalisierungspruefung konnte nicht ausgefuehrt werden: ' + e.message);
+  }
+
   return { errors, warnings, passes };
 }
 

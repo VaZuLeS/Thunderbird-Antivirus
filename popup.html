@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="script-src 'self';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thunderbird Security Antivirus aka Thundy AV</title>
+    <title>Thundy AV</title>
     <link rel="stylesheet" href="theme.css">
     <style>
         body {
@@ -24,23 +24,30 @@
 </head>
 
 <body>
-    <h1>Thunderbird Security Antivirus aka Thundy AV</h1>
-    <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer" aria-label="Alle Übertragungen zu Hybrid Analysis aufrufen (öffnet in einem neuen Tab)">Alle Übertragungen zu Hybrid Analysis aufrufen <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>
+    <header class="thundy-brand">
+        <span class="thundy-brand__mark" aria-hidden="true"></span>
+        <span class="thundy-brand__text">
+            <h1 class="thundy-wordmark" data-i18n="popup.heading">Thundy AV – Sicherheitsprüfung</h1>
+            <p class="thundy-tagline" data-i18n="brand.tagline">E-Mail-Anhänge und Links prüfen – lokal zuerst.</p>
+        </span>
+    </header>
+    <a class="thundy-link" href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer"><span data-i18n="popup.submissions">Alle Übertragungen zu Hybrid Analysis aufrufen</span> <span aria-hidden="true">↗</span></a>
 
     <div class="grid-container">
-        <div class="grid-header">Betreff:</div>
+        <div class="grid-header" data-i18n="popup.subject">Betreff:</div>
         <div id="subject" class="grid-content"></div>
 
-        <div class="grid-header">Von:</div>
+        <div class="grid-header" data-i18n="popup.from">Von:</div>
         <div id="from" class="grid-content"></div>
 
-        <div class="grid-header">MessageHeaderID:</div>
+        <div class="grid-header" data-i18n="popup.messageId">MessageHeaderID:</div>
         <div id="MessageHeaderID" class="grid-content"></div>
     </div>
 
     <div id="status_message" class="grid-content mt-2" style="font-weight: bold;" aria-live="polite" role="status"></div>
     <div id="hybrid_analysis_api_content" class="grid-content mt-3"></div>
 
+    <script src="ui_i18n.js"></script>
     <script src="db.js"></script>
     <script type="module" src="api.js"></script>
 </body>

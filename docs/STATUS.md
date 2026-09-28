@@ -37,7 +37,7 @@ abgearbeitet:
 - **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung und Rechte und
   liefert einen echten Exit-Code; der Schritt läuft in der CI.
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission- und MV3-Portierungs-Tests
-  enthalten) und ist grün (534 Tests, 0 Fehler). Der im Repository aktive Workflow
+  enthalten) und ist grün (544 Tests, 0 Fehler). Der im Repository aktive Workflow
   (`.github/workflows/ci.yml`, Node 22) läuft `npm ci`, die Pre-Submit-Checks (jetzt mit echtem Exit-Code),
   `node --test background.test.js` und `npx web-ext lint`. Die erweiterten Definitionen — vollständiger
   `npm test`, Lint-Filter für bekannte Thunderbird-False-Positives
@@ -85,6 +85,10 @@ abgearbeitet:
 - **Regeln, SIEM, Suche, CDR (1.10.0):** lokale Regel-/IOC-Engine mit Profil-Export/-Import, optionaler
   SIEM-/Webhook-Export (Opt-in, nur HTTPS, Shared Secret), Verlaufssuche mit Datumsfilter und ausgebautes
   Attachment-Disarming (Remote-Content-Blockade, Hinweisbanner, Protokollierung).
+- **Lokalisierung und Branding (1.11.0):** vollstaendige DE/EN-Lokalisierung (125 Schluessel je Sprache) mit
+  automatischer Sprachanpassung und Fallback auf den deutschen Markup-Text, abgesichert durch
+  `scripts/check-locales.js` in den Pre-Submit-Checks; eigenes Designsystem (Markenfarben, Markenkopf, Karten,
+  Badges, Dark-Mode) in `theme.css` und `messageDisplay/banner.css`, dokumentiert in `docs/branding.md`.
 - **XPI-Artefakt:** `npm run build` erzeugt `build/thundy-av-1.6.xpi` und prüft das Paket inklusive Manifest-
   Referenzen und registrierten Nachrichten-Skripten (`scripts/build-xpi.js`, `scripts/verify-package.js`).
 - **Tests (aktuell):** 404 Tests, 0 Fehler (u. a. 10 Tests für das Banner-Script in jsdom).

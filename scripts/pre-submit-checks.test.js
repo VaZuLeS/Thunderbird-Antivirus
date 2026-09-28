@@ -60,6 +60,7 @@ describe('pre-submit-checks', () => {
       'img/icon-32px.png': 'png',
       'img/icon-64px.png': 'png',
       '_locales/en/messages.json': JSON.stringify({ extensionName: { message: 'Demo' } }),
+      '_locales/de/messages.json': JSON.stringify({ extensionName: { message: 'Demo' } }),
       'docs/privacy_policy.md': '# Privacy\n',
       'docs/index.html': '<a href="privacy_policy.html">Privacy</a>'
     }, files));
@@ -144,7 +145,8 @@ describe('pre-submit-checks', () => {
 
   it('fails when a localized manifest string has no catalogue entry', () => {
     const result = runChecks(createExtension({
-      '_locales/en/messages.json': JSON.stringify({ somethingElse: { message: 'x' } })
+      '_locales/en/messages.json': JSON.stringify({ somethingElse: { message: 'x' } }),
+      '_locales/de/messages.json': JSON.stringify({ somethingElse: { message: 'x' } })
     }, { name: '__MSG_extensionName__' }));
     assert.ok(result.errors.some((e) => e.includes('__MSG_extensionName__')));
   });

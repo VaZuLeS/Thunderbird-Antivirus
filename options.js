@@ -1,5 +1,10 @@
 const VIEW_MODES = ['quiet', 'private', 'business', 'research', 'audit'];
 
+// Oberflaeche lokalisieren (Thunderbird-Sprache; deutscher Text bleibt Fallback).
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof thundyApplyTranslations === 'function') thundyApplyTranslations(document);
+});
+
 // Event-Listener für das Laden der Seite
 let _saveTimeoutId = null;
 let _clearTimeoutId = null;
