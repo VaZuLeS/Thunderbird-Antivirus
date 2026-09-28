@@ -25,6 +25,9 @@ describe('options.js', () => {
                     <input type="checkbox" id="alwaysManual">
                     <input type="checkbox" id="autoScanLinks">
                     <input type="checkbox" id="timeOfClickProtection">
+                    <input type="checkbox" id="externalAnalysisConsent">
+                    <select id="ipReputationProvider"><option value="none">none</option><option value="abuseipdb">abuseipdb</option><option value="virustotal">virustotal</option></select>
+                    <input id="ipReputationApiKey" value="">
 
                     <button id="save">Speichern</button>
                     <span id="saveStatus" style="display: none;">Erfolgreich gespeichert.</span>
@@ -50,13 +53,20 @@ describe('options.js', () => {
                             customBlacklist: ['bad.com'],
                             alwaysManual: true,
                             autoScanLinks: true,
-                            timeOfClickProtection: false
+                            timeOfClickProtection: false,
+                            externalAnalysisConsent: true,
+                            ipReputationProvider: 'abuseipdb',
+                            ipReputationApiKey: 'ip-key'
                         }),
                         set: async (data) => {
                             context.browser.storage.local.lastSetData = data;
                         },
                         lastSetData: null
                     }
+                },
+                permissions: {
+                    contains: async () => true,
+                    request: async () => true
                 }
             },
             openDB: async (name, version) => ({ name, version }),
@@ -93,6 +103,9 @@ describe('options.js', () => {
         assert.strictEqual(context.document.getElementById('alwaysManual').checked, true);
         assert.strictEqual(context.document.getElementById('autoScanLinks').checked, true);
         assert.strictEqual(context.document.getElementById('timeOfClickProtection').checked, false);
+        assert.strictEqual(context.document.getElementById('externalAnalysisConsent').checked, true);
+        assert.strictEqual(context.document.getElementById('ipReputationProvider').value, 'abuseipdb');
+        assert.strictEqual(context.document.getElementById('ipReputationApiKey').value, 'ip-key');
 
         const changeEvent = context.document.createEvent('Event');
         changeEvent.initEvent('change', true, true);
@@ -136,6 +149,9 @@ describe('options.js', () => {
         context.document.getElementById('alwaysManual').checked = false;
         context.document.getElementById('autoScanLinks').checked = false;
         context.document.getElementById('timeOfClickProtection').checked = true;
+        context.document.getElementById('externalAnalysisConsent').checked = true;
+        context.document.getElementById('ipReputationProvider').value = 'virustotal';
+        context.document.getElementById('ipReputationApiKey').value = 'ip-key-new\n';
 
         const saveBtn = context.document.getElementById('save');
         saveBtn.click();
@@ -159,6 +175,9 @@ describe('options.js', () => {
         assert.strictEqual(savedData.alwaysManual, false);
         assert.strictEqual(savedData.autoScanLinks, false);
         assert.strictEqual(savedData.timeOfClickProtection, true);
+        assert.strictEqual(savedData.externalAnalysisConsent, true);
+        assert.strictEqual(savedData.ipReputationProvider, 'virustotal');
+        assert.strictEqual(savedData.ipReputationApiKey, 'ip-key-new');
 
         assert.strictEqual(saveBtn.disabled, false);
         assert.strictEqual(saveBtn.textContent, 'Speichern');

@@ -1,37 +1,223 @@
-# Manuelle Installation einer heruntergeladenen Thunderbird-Erweiterung
+# Thundy AV – E-Mail-Scanner für Thunderbird
 
-## 1. Thunderbird Add-on-Manager aufrufen
+**Thundy AV** ist ein Opt-in-Sicherheits-Add-on für Mozilla Thunderbird. Es prüft die Nachricht, die Sie gerade
+lesen, auf schädliche Anhänge und verdächtige Links und überträgt – nur nach Ihrer ausdrücklichen Zustimmung – die
+minimal notwendigen Daten an externe Analysedienste.
 
-- **Thunderbird öffnen**: Starte deine Thunderbird-Anwendung.  
-- **Anwendungsmenü öffnen**: Klicke auf das Menü-Symbol (drei horizontale Linien) in der oberen rechten Ecke.  
-- **"Add-ons und Themes" auswählen**: Wähle diese Option im erscheinenden Menü aus.  
+> **Status:** Das Add-on ist **noch nicht im Thunderbird-Add-ons-Store (addons.thunderbird.net) gelistet**, es gibt
+> daher keine Store-URL. Bau- und Ladehinweise finden Sie unten. Was fertig ist und was noch offen ist, steht in
+> [docs/STATUS.md](docs/STATUS.md).
 
-## 2. Installation vorbereiten
+| Feld | Wert |
+| --- | --- |
+| Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
+| Kurzname | Thundy AV |
+| Add-on-ID | `thundy-av@bludau-it-services.de` |
+| Version | 1.6 – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Lizenz | MIT – siehe [LICENSE](LICENSE) |
+| Maintainer | Jan Bludau (VaZuLeS) |
+| Support | bludau.it.services@gmail.com |
+| Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
+| Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
+| Sprachen | Manifest-Strings und Banner lokalisiert (Englisch, Deutsch – `_locales/`); Options- und Popup-Oberfläche derzeit nur auf Deutsch |
 
-- **Auf das Zahnrad-/Einstellungen-Symbol klicken**: Dies befindet sich oben rechts im Add-on-Manager-Tab.  
-- **"Add-on aus Datei installieren..." wählen**: Ein Dateibrowser-Fenster öffnet sich.  
+## Was das Add-on macht
 
-## 3. Die Erweiterung auswählen und installieren
+- **Zuerst lokale Prüfungen.** Beim Anzeigen einer Nachricht werden Anhänge gehasht (SHA-256) und Betreff/Body,
+  Absenderdomain, Typosquatting-Ähnlichkeiten, Reply-To-Domain, Erstkontakt, Authentifizierungs-Header
+  (SPF/DKIM/DMARC) und Ihre eigene Weiße/Schwarze Liste ausgewertet; daraus entsteht ein lokaler Risiko-Score (0–100).
+- **Banner in der Nachrichtenansicht.** Über der Nachricht erscheint ein Banner mit dem Hinweis, ob der Absender
+  gescannt wird, und zwei Schaltflächen: **„Nur diese Nachricht scannen“** und **„Absender dauerhaft scannen“**.
+- **Warnbanner.** Überschreitet der Risiko-Score die Schwelle, wird ein Warnbanner mit den Gründen in die
+  Nachrichtenansicht eingefügt.
+- **Links.** Links können beim Öffnen der Nachricht oder erst im Moment des Klickens geprüft werden
+  (Time-of-Click-Schutz mit Hinweis beim Überfahren). Ein Kontextmenü-Eintrag scannt einen Link mit Thundy AV.
+- **Popup** (Button in der Nachrichtenansicht): Nachrichten-Metadaten, gespeicherte Scan-Ergebnisse, manueller
+  Upload eines Anhangs, URL-Scan und **„HTML entschärfen“** (ein HTML-Anhang wird lokal bereinigt und über den
+  Download-Manager gespeichert).
+- **Benachrichtigungen** melden Scan-Start, Einreichung und Fehler.
+- **IP-Reputation (optional):** Die aus den `Received`-Headern extrahierten Mailserver-IPs können über VirusTotal
+  oder AbuseIPDB geprüft werden.
 
-- **Die `*.xpi`-Datei finden**: Navigiere zu dem Speicherort, an dem du die Erweiterungsdatei gespeichert hast.  
-- **Datei auswählen**: Klicke auf die `*.xpi`-Datei, um sie auszuwählen.  
-- **Auf "Öffnen" klicken**: Dadurch wird der Installationsprozess gestartet.  
+## Zustimmungsmodell (neu in 1.6)
 
-## 4. Installation bestätigen
+1. **Globale Zustimmung – Voraussetzung für jede Übermittlung.** In den Einstellungen muss
+   *„Externe Analyse erlauben“* aktiviert werden; Standard ist **aus**. Das Hintergrundskript erzwingt den Schalter
+   für jeden Codepfad, der mit Dritten kommuniziert: ohne Zustimmung wird nichts übertragen, das Banner weist darauf
+   hin.
+2. **Datenschutz-Stufe – wie viel übertragen werden darf.** Standard ist `strict`.
+3. **Host-Berechtigungen sind optional.** Alle Anbieter-Origins stehen in `optional_host_permissions` in der
+   `manifest.json` und werden zur Laufzeit über `browser.permissions.request()` nur für den tatsächlich genutzten
+   Anbieter angefragt. Vorab wird nichts gewährt.
+4. **Pro Nachricht oder pro Absender.** Ein Scan ist entweder eine einmalige Aktion (Banner, Popup, Kontextmenü)
+   oder eine dauerhafte Zustimmung für einen einzelnen Absender.
 
-- **Berechtigungen überprüfen**: Thunderbird zeigt die benötigten Berechtigungen der Erweiterung an. Prüfe diese sorgfältig.  
-- **Auf "Hinzufügen" (oder "Installieren") klicken**: Bestätige die Installation mit dem entsprechenden Button.  
+| Datenschutz-Stufe | Anhänge | Links/URLs |
+| --- | --- | --- |
+| `strict` (Standard) | Nur SHA-256-Hashes und Metadaten | Nur Hashes/Domains an Reputationsdienste |
+| `balanced` | Zusätzlich Upload von Anhängen, die keinem Anbieter bekannt sind | Weiterhin keine vollständigen URLs |
+| `max` | Upload unbekannter Anhänge | Zusätzlich Upload von URLs zur Analyse |
 
-## 5. Thunderbird neu starten
+## Daten und Datenschutz
 
-- **Neustart erforderlich**: Thunderbird fordert dich möglicherweise auf, das Programm neu zu starten.  
-- **Auf "Jetzt neu starten" klicken oder manuell neu starten**: Dadurch werden die Änderungen übernommen.  
+- Keine Übertragung ohne **globale Zustimmung** und eine Nutzeraktion (Banner-Button, Popup, Kontextmenü oder eine
+  ausdrückliche Absender-Zustimmung).
+- **Keine Telemetrie und kein Entwickler-Server.** Alle Anfragen gehen direkt von Ihrem Thunderbird an den
+  Anbieter, den Sie konfiguriert und freigegeben haben.
+- Lokal gespeichert werden: Einstellungen, Zustimmungs-Flags, API-Schlüssel und ein Scan-Metadaten-Cache
+  (IndexedDB, `db.js`). Der Cache lässt sich in den Einstellungen über „Cache leeren“ entfernen.
+- API-Schlüssel liegen **unverschlüsselt** in `browser.storage.local` im Thunderbird-Profil – Grenzen und
+  Empfehlungen dazu: [docs/external_service_hardening.md](docs/external_service_hardening.md).
+- Datenschutzerklärung (live): https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
+- Quellen im Repository: [docs/privacy_policy.md](docs/privacy_policy.md) (Erklärung),
+  [docs/reviewer_notes.md](docs/reviewer_notes.md) (Reviewer-Hinweise),
+  [docs/store_listing.md](docs/store_listing.md) (Listing-Entwurf).
 
-## Fehlerbehebung
+## Externe Analysedienste
 
-- **Kompatibilität prüfen**: Stelle sicher, dass die Erweiterung mit deiner Thunderbird-Version kompatibel ist. Die Informationen dazu findest du in der Beschreibung der Erweiterung oder auf der entsprechenden Website.  
-- **Dateibeschädigung ausschließen**: Falls Fehler auftreten, lade die `*.xpi`-Datei erneut herunter, um eine beschädigte Datei auszuschließen.  
+Die Host-Origins stehen in der `manifest.json` (`optional_host_permissions`) und werden zur Laufzeit angefragt –
+nur für den Anbieter, der gerade verwendet wird.
 
----
+| Anbieter | Verwendung | Eigener API-Schlüssel |
+| --- | --- | --- |
+| [Hybrid Analysis](https://www.hybrid-analysis.com/) | Upload und Bewertung von Dateien/Anhängen | erforderlich |
+| [VirusTotal](https://www.virustotal.com/) | Abgleich von Anhang-Hashes; optional IP-Reputation | erforderlich |
+| [urlscan.io](https://urlscan.io/) | Live-Scan von URLs (Time-of-Click) | optional (kostenloser Schlüssel möglich) |
+| [URLhaus / abuse.ch](https://urlhaus.abuse.ch/) | Abgleich von URLs/Domains gegen eine Malware-URL-Datenbank | optional |
+| [AbuseIPDB](https://www.abuseipdb.com/) | Optional: IP-Reputation der sendenden Mailserver | erforderlich (für dieses Feature) |
 
-Falls du noch Fragen hast, lass es mich wissen!
+Beachten Sie die Nutzungsbedingungen und Datenschutzhinweise der Anbieter, die Sie aktivieren; sie verarbeiten die
+übermittelten Daten auf ihrer eigenen Infrastruktur.
+
+## Voraussetzungen
+
+- **Thunderbird 140.0 oder neuer** (das Add-on nutzt Manifest V3 und `data_collection_permissions`).
+- Nur für die Entwicklung: **Node.js ≥ 20** (CI nutzt Node 22) und npm.
+- API-Schlüssel der Anbieter, die Sie verwenden möchten (siehe Tabelle oben).
+
+## Installation
+
+### Quellcode als temporäres Add-on laden (Entwicklung)
+
+```text
+Thunderbird → ☰ → Add-ons und Themes → Zahnrad-Symbol → "Add-ons debuggen"
+(öffnet about:debugging#/runtime/this-thunderbird)
+→ "Temporäres Add-on laden…" → /pfad/zu/Thunderbird-Antivirus/manifest.json auswählen
+```
+
+Alternativ Thunderbird über web-ext starten:
+
+```bash
+npx web-ext run --firefox=/pfad/zu/thunderbird
+```
+
+`web-ext` hat **keine** Option `--target thunderbird` (gültige Targets: `firefox-desktop`, `firefox-android`,
+`chromium`). Verwenden Sie `--firefox` mit dem Pfad zur Thunderbird-Binärdatei, alternativ einen Alias wie
+`--firefox nightly`.
+
+Temporäre Add-ons werden beim Beenden von Thunderbird entfernt – gut zum Testen, nicht für den Dauerbetrieb.
+
+### Manuelle Installation einer gebauten XPI
+
+1. Paket bauen (siehe unten): `npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest`
+2. In Thunderbird **Add-ons und Themes** öffnen (`Strg+Shift+A`), auf das Zahnrad-Symbol klicken und
+   **„Add-on aus Datei installieren…“** wählen, dann die ZIP/XPI aus `./build` auswählen.
+3. Installation bestätigen und – falls Thunderbird danach fragt – neu starten.
+4. Host-Berechtigungen werden bei der Installation nicht erteilt; das Add-on fragt sie später an, wenn Sie einen
+   Anbieter tatsächlich nutzen.
+
+Hinweis: Eine lokal gebaute XPI ist unsigniert. Release-Versionen von Thunderbird lehnen unsignierte Add-ons ab,
+sofern die Signaturprüfung nicht deaktiviert ist (`about:config` → `xpinstall.signatures.required = false`, nicht in
+allen Builds verfügbar); für die Verteilung `npx web-ext sign --channel listed`/`--channel unlisted` oder die
+Store-Signierung nutzen. Release-Pakete entstehen mit `web-ext build --source-dir .` und werden über die
+`ignoreFiles`-Regeln aus `web-ext-config.mjs` (ergänzt durch `.webextignore`) bereinigt, sodass Testdateien,
+`docs/`, `scripts/`, `examples/` und Lockfiles nicht
+mitgeliefert werden.
+
+## Bauen, Lint und Tests
+
+```bash
+npm ci                                                # Dev-Abhängigkeiten installieren (jsdom, web-ext)
+npm test                                              # alle node:test-Dateien ausführen
+node ./scripts/pre-submit-checks.js                   # Manifest-, Datenschutz- und Rechte-Checks
+npx web-ext lint                                      # addons-linter
+npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
+```
+
+- `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** Testdateien des
+  Repositorys aus, nicht nur `background.test.js`.
+- `web-ext lint` meldet derzeit **0 Fehler**. Die verbleibenden Warnungen sind fast ausschließlich
+  `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-spezifische APIs wie
+  `messages.*` oder `messageDisplay.*` nicht kennt. Vor einem Release die Liste durchsehen.
+- Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
+  `node ./scripts/pre-submit-checks.js`, Unit-Tests und `npx web-ext lint`.
+- Ausführlicher: [docs/quickstart.md](docs/quickstart.md).
+
+## Berechtigungen im Überblick
+
+| Berechtigung | Wofür sie benötigt wird |
+| --- | --- |
+| `messagesRead` | Angezeigte Nachricht (Betreff, Absender, Text, Anhänge) lesen, damit sie analysiert werden kann; nur für geöffnete Nachrichten und wenn ein Scan ausgelöst wird. |
+| `storage` | Einstellungen, Zustimmungs-Flag, Absender-Opt-ins, Anbieter-API-Schlüssel und der lokale Scan-Cache. |
+| `notifications` | Systembenachrichtigungen zu Scan-Start, Einreichung und Fehlern. |
+| `scripting` | Banner, Warnhinweis und Time-of-Click-Hinweis in die Nachrichtenansicht einfügen (nur mitgelieferter Code, kein Remote-Code). |
+| `downloads` | Einen lokal bereinigten („entschärften“) HTML-Anhang über den Download-Manager speichern. |
+
+Optionale Host-Berechtigungen (`optional_host_permissions` in der `manifest.json`) – jede wird erst zur Laufzeit
+angefragt, wenn der passende Anbieter genutzt wird:
+
+| Origin | Anbieter |
+| --- | --- |
+| `https://hybrid-analysis.com/*`, `https://*.hybrid-analysis.com/*` | Hybrid Analysis |
+| `https://*.virustotal.com/*` | VirusTotal |
+| `https://urlscan.io/*`, `https://*.urlscan.io/*` | urlscan.io |
+| `https://urlhaus-api.abuse.ch/*` | URLhaus (abuse.ch) |
+| `https://api.abuseipdb.com/*` | AbuseIPDB |
+
+Zusätzlich deklariert die `manifest.json` unter `browser_specific_settings.gecko.data_collection_permissions` die
+**verpflichtende** Kategorie `personalCommunications`. Sie dokumentiert, dass das Add-on Nachrichteninhalte
+verarbeiten kann; übertragen wird nur nach globaler Zustimmung und einer Nutzeraktion und nur an Anbieter, denen Sie
+den Zugriff gewährt haben.
+
+## Einen weiteren Analysedienst ergänzen
+
+1. Die Origin(s) des Anbieters in `optional_host_permissions` der `manifest.json` eintragen.
+2. Den Host in `PROVIDER_ORIGINS` in `background.js` ergänzen und die Berechtigung zur Laufzeit über
+   `browser.permissions.request()` unmittelbar vor der ersten Anfrage anfragen.
+3. Jeden neuen Netzwerkaufruf über `mayTransmitExternally()` / `assertExternalAnalysisAllowed()` absichern, damit die
+   globale Zustimmung greift.
+4. Unit-Tests für den neuen Pfad ergänzen und [docs/privacy_policy.md](docs/privacy_policy.md),
+   [docs/reviewer_notes.md](docs/reviewer_notes.md) sowie den Listing-Text um Anbietername und die exakt
+   übertragenen Daten erweitern.
+
+## Bekannte Einschränkungen
+
+- **Manuelle Verifikation steht aus.** Die Banner-Injektion in die Thunderbird-Nachrichtenansicht ist durch
+  Unit-Tests (mit gemockten Thunderbird-APIs) abgedeckt, aber noch nicht manuell in Thunderbird 140 ESR geprüft.
+  Bitte melden Sie unerwartetes Verhalten mit Ihrer Thunderbird-Version; schlägt eine Injektion fehl, protokolliert
+  der Code einen Hinweis über `Logger.warn`.
+- **Noch keine echten Store-Screenshots.** In `docs/screenshots/` liegen nur SVG-Platzhalter; für das Store-Listing
+  müssen echte Screenshots erstellt werden.
+- **Noch nicht im Add-ons-Store eingereicht** – es gibt kein öffentliches Listing und keine Store-URL.
+- Options- und Popup-Oberfläche gibt es derzeit nur auf Deutsch; Manifest-Strings und Banner sind lokalisiert.
+- In der Standard-Stufe `strict` werden unbekannte Anhänge nicht automatisch hochgeladen; dafür auf `balanced`/`max`
+  umstellen oder einen manuellen Upload im Popup starten.
+- Erkennungsqualität und Ratenlimits hängen von den konfigurierten Anbietern und Ihren eigenen API-Schlüsseln ab.
+- API-Schlüssel liegen unverschlüsselt im Thunderbird-Profil (`browser.storage.local`) – wer Zugriff auf das Profil
+  hat, kann sie lesen.
+
+## Support
+
+- E-Mail: [bludau.it.services@gmail.com](mailto:bludau.it.services@gmail.com)
+- Issues und Feature-Wünsche: https://github.com/VaZuLeS/Thunderbird-Antivirus/issues
+- Sicherheitsmeldungen: siehe [SECURITY.md](SECURITY.md) (bitte keine öffentlichen Issues für Schwachstellen).
+
+## Mitwirken
+
+Hinweise und Pull Requests sind willkommen – siehe [CONTRIBUTING.md](CONTRIBUTING.md),
+[COMMUNITY.md](COMMUNITY.md) und [FIRST_TIMERS.md](FIRST_TIMERS.md). Alle Aussagen in der Dokumentation sollen am
+Code überprüfbar sein; bitte vor einem Pull Request `npm test` und `npx web-ext lint` ausführen.
+
+## Lizenz
+
+MIT – siehe [LICENSE](LICENSE).

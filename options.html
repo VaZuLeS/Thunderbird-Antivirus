@@ -40,6 +40,12 @@
     </div>
 
     <div class="mb-3 mt-3">
+        <input type="checkbox" id="externalAnalysisConsent" aria-describedby="externalAnalysisConsentHelp">
+        <label for="externalAnalysisConsent" style="display: inline; margin-bottom: 0;"><strong>Externe Analyse erlauben (Datenübermittlung an Drittanbieter)</strong></label>
+        <br><small id="externalAnalysisConsentHelp">Ohne diese Zustimmung werden <strong>keine</strong> Hashes, Dateien, Links oder IP-Adressen an externe Dienste übertragen. Erst nach der Zustimmung können Anhänge, Links und Metadaten zur Analyse an Hybrid Analysis, VirusTotal, urlscan.io, URLhaus oder AbuseIPDB gesendet werden – abhängig von der Datenschutz-Stufe. Die Zustimmung kann jederzeit durch Deaktivieren dieser Option widerrufen werden. Details: <a href="https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html" target="_blank" rel="noopener noreferrer">Datenschutzerklärung <span aria-hidden="true" style="margin-left: 4px;">↗</span></a></small>
+    </div>
+
+    <div class="mb-3 mt-3">
         <label for="apikey">API Schlüssel (Hybrid-Analysis): <span aria-hidden="true" class="text-danger">*</span></label>
         <!-- Security: type="password", autocomplete="off", maxlength="255", spellcheck="false" enforce confidential masking, disable autofill caching, limit input length, and disable spellcheck data leakage -->
         <input type="password" id="apikey" required aria-describedby="apiKeyInstructions" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
@@ -66,11 +72,23 @@
     <div class="mb-3">
         <label for="privacyTier">Datenschutz-Stufe (Privacy Tier):</label>
         <select id="privacyTier" aria-describedby="privacyTierHelp">
-            <option value="strict">Strikt (Nur Hashes senden, kein Upload)</option>
+            <option value="strict">Strikt (Standard: nur Hashes senden, kein Upload)</option>
             <option value="balanced">Ausgewogen (Unbekannte Dateien hochladen, keine URLs)</option>
             <option value="max">Maximaler Schutz (Alles hochladen inkl. URLs)</option>
         </select>
-        <br><small id="privacyTierHelp">Bestimmt, wie viele Daten an Hybrid-Analysis gesendet werden.</small>
+        <br><small id="privacyTierHelp">Bestimmt, wie viele Daten an Hybrid Analysis gesendet werden. Wirkt nur, wenn „Externe Analyse erlauben“ aktiviert ist.</small>
+    </div>
+
+    <div class="mb-3">
+        <label for="ipReputationProvider">IP-Reputation (Received-Header prüfen):</label>
+        <select id="ipReputationProvider" aria-describedby="ipReputationHelp">
+            <option value="none">Deaktiviert</option>
+            <option value="virustotal">VirusTotal (benötigt VirusTotal-API-Schlüssel)</option>
+            <option value="abuseipdb">AbuseIPDB (benötigt AbuseIPDB-API-Schlüssel)</option>
+        </select>
+        <label for="ipReputationApiKey">API-Schlüssel für IP-Reputation:</label>
+        <input type="password" id="ipReputationApiKey" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
+        <br><small id="ipReputationHelp">Sendet öffentliche IP-Adressen aus den „Received“-Kopfzeilen der Nachricht an den gewählten Dienst. Nur aktiv, wenn „Externe Analyse erlauben“ aktiviert ist.</small>
     </div>
 
     <div class="mb-3">

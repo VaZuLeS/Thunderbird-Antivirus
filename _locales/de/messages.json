@@ -1,0 +1,100 @@
+{
+  "extensionName": {
+    "message": "Thundy AV – E-Mail-Scanner für Thunderbird",
+    "description": "Name des Add-ons im Add-on-Manager und im Store-Listing."
+  },
+  "extensionDescription": {
+    "message": "Optionales, zustimmungspflichtiges Scannen von E-Mail-Anhängen und Links. Ohne ausdrückliche Zustimmung verlässt nichts Ihren Computer.",
+    "description": "Kurzbeschreibung des Add-ons."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – Scan-Status für diese Nachricht",
+    "description": "Tooltip des Buttons in der Nachrichtenansicht."
+  },
+  "bannerScanOnce": {
+    "message": "Nur diese Nachricht scannen"
+  },
+  "bannerScanSender": {
+    "message": "Absender dauerhaft scannen"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV: Echtzeit-Scan ist für diese Nachricht nicht aktiviert."
+  },
+  "bannerNoteOptIn": {
+    "message": "Beim Scannen werden Daten an externe Analysedienste übertragen – aber nur, wenn Sie dies in den Einstellungen aktiviert und zugestimmt haben. Details in den Einstellungen der Erweiterung."
+  },
+  "bannerScanRunning": {
+    "message": "Scannen…"
+  },
+  "bannerScanDone": {
+    "message": "Scan abgeschlossen"
+  },
+  "bannerScanFailed": {
+    "message": "Scan fehlgeschlagen"
+  },
+  "bannerPermissionDenied": {
+    "message": "Erforderliche Host-Berechtigung wurde verweigert"
+  },
+  "bannerConsentMissing": {
+    "message": "Externe Analyse ist in den Einstellungen deaktiviert – es wurden keine Daten übertragen."
+  },
+  "bannerThreatTitle": {
+    "message": "Thundy AV Warnung"
+  },
+  "bannerThreatScore": {
+    "message": "Risikobewertung: $SCORE$ von 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Dieser Absender wird jetzt automatisch gescannt."
+  },
+  "notificationScanStarted": {
+    "message": "Scan gestartet für: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Scan erfolgreich eingereicht. Job ID: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Fehler beim Scan: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Thundy AV Scanner"
+  },
+  "notificationTitleError": {
+    "message": "Thundy AV Scanner Fehler"
+  },
+  "bannerAuthPass": {
+    "message": "Absender verifiziert (SPF/DKIM/DMARC bestanden)"
+  },
+  "bannerOpenOptions": {
+    "message": "Einstellungen öffnen"
+  },
+  "menuScanLink": {
+    "message": "Link mit Thundy AV scannen"
+  },
+  "menuScanMessageLinks": {
+    "message": "Alle Links dieser Nachricht scannen"
+  },
+  "notificationNoLinks": {
+    "message": "In dieser Nachricht wurden keine Links gefunden."
+  }
+}

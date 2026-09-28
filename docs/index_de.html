@@ -3,65 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thunderbird Security Antivirus</title>
+    <title>Thundy AV – Email Scanner for Thunderbird</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
         header { text-align: center; padding: 40px 0; border-bottom: 1px solid #eee; }
         h1 { margin-bottom: 10px; color: #0a66c2; }
-        .btn { display: inline-block; background: #009688; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .btn { display: inline-block; background: #009688; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 4px; }
         .btn:hover { background: #00796b; }
         section { margin: 40px 0; }
         code { background: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
         .step { background: #f9f9f9; padding: 15px; border-left: 4px solid #009688; margin-bottom: 10px; }
+        .note { background: #fff8e1; border-left: 4px solid #ffcc80; padding: 15px; }
         footer { text-align: center; font-size: 0.8em; color: #777; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; }
+        footer a { margin: 0 6px; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>Thunderbird Security Antivirus</h1>
-    <p>Erweiterter E-Mail-Schutz durch Hybrid Analysis (CrowdStrike Falcon Sandbox)</p>
-    <br>
-    <a href="https://addons.thunderbird.net/de/thunderbird/" class="btn">Add-on herunterladen (Bald verfügbar)</a>
+    <h1>Thundy AV – Email Scanner for Thunderbird</h1>
+    <p>Lokale Prüfung verdächtiger Anhänge, Links und Absender in Thunderbird, mit optionaler externer Analyse erst nach Ihrer ausdrücklichen Zustimmung.</p>
+    <p><a href="index_en.html">English version</a></p>
+    <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus" class="btn">Quellcode auf GitHub</a>
+    <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases" class="btn">Releases</a>
 </header>
 
 <section id="about">
     <h2>Über das Projekt</h2>
-    <p>Thunderbird Security Antivirus ("Thundy AV") prüft E-Mail-Anhänge automatisch gegen über 70 Virenscanner und Sandbox-Systeme. Es nutzt die kostenlose API von <strong>Hybrid Analysis</strong>, um Bedrohungen zu erkennen, die herkömmliche Virenscanner oft übersehen.</p>
+    <p>Thundy AV ist ein Open-Source-Add-on für Thunderbird (MIT-Lizenz). Es analysiert die von Ihnen
+    geöffnete Nachricht innerhalb von Thunderbird: Kopfzeilen, Nachrichtentext, Links und Anhänge.
+    Bewertung und Heuristiken laufen lokal. Nur wenn Sie die externe Analyse aktivieren und einen Scan
+    auslösen, kann das Add-on Analyse-Dienste wie <strong>Hybrid Analysis</strong>, VirusTotal,
+    urlscan.io, URLhaus (abuse.ch) und AbuseIPDB abfragen.</p>
 </section>
 
 <section id="setup">
-    <h2>Einrichtung & API Key</h2>
-    <p>Um die Erweiterung nutzen zu können, benötigen Sie einen kostenlosen API-Schlüssel. Da dies ein Community-Projekt ist, nutzt jeder Benutzer seinen eigenen Zugang (Fair Use).</p>
+    <h2>Einrichtung &amp; API-Schlüssel</h2>
+    <p>Für die externe Analyse benötigen Sie einen eigenen kostenlosen API-Schlüssel. Jeder Nutzer
+    arbeitet mit seinem eigenen Zugang (Fair Use).</p>
 
     <div class="step">
         <strong>Schritt 1:</strong> Registrieren Sie sich kostenlos auf <a href="https://www.hybrid-analysis.com/signup" target="_blank" rel="noopener noreferrer">hybrid-analysis.com</a>.
     </div>
     <div class="step">
-        <strong>Schritt 2:</strong> Gehen Sie nach der Anmeldung auf Ihr Profil (oben rechts) -> "Profile".
+        <strong>Schritt 2:</strong> Öffnen Sie nach der Anmeldung Ihr Profilmenü (oben rechts) → „Profile“ und kopieren Sie den API-Schlüssel aus den API-Einstellungen.
     </div>
     <div class="step">
-        <strong>Schritt 3:</strong> Kopieren Sie den "API Key" unter API Settings.
+        <strong>Schritt 3:</strong> Öffnen Sie in Thunderbird den Optionsdialog des Add-ons und fügen Sie den Schlüssel ein.
     </div>
     <div class="step">
-        <strong>Schritt 4:</strong> Öffnen Sie in Thunderbird den Add-on Manager, klicken Sie auf das Zahnrad bei "Thundy AV" und fügen Sie den Schlüssel ein.
+        <strong>Schritt 4:</strong> Aktivieren Sie die Checkbox <em>„Externe Analyse erlauben“</em> (Standard: aus) und wählen Sie eine Datenschutz-Stufe: <em>strict</em> sendet nur SHA-256-Hashes, <em>balanced</em> lädt zusätzlich unbekannte Dateien hoch, <em>max</em> übermittelt zusätzlich URLs aus der Nachricht. Beim Speichern eines Schlüssels fragt Thunderbird die optionale Host-Berechtigung für den jeweiligen Anbieter an.
     </div>
 </section>
 
 <section id="privacy">
-    <h2>Datenschutz & Sicherheit</h2>
-    <p>Transparenz ist uns wichtig:</p>
+    <h2>Datenschutz &amp; Sicherheit</h2>
     <ul>
-        <li>Die Erweiterung liest <strong>keine</strong> E-Mail-Inhalte, nur Anhänge.</li>
-        <li>Dateien werden direkt von Ihrem Computer an <code>hybrid-analysis.com</code> gesendet.</li>
-        <li>Der Entwickler dieses Add-ons hat <strong>keinen Zugriff</strong> auf Ihre Dateien oder Ihren API-Schlüssel.</li>
-        <li>Der Quellcode ist offen (Open Source) und kann hier auf GitHub überprüft werden.</li>
+        <li>Das Add-on <strong>liest die von Ihnen geöffnete Nachricht</strong> in Thunderbird — Kopfzeilen, Text, Links und Anhänge. Das geschieht lokal auf Ihrem Rechner und wird nicht übermittelt.</li>
+        <li><strong>Nichts</strong> wird an Dritte übermittelt, bevor Sie <em>„Externe Analyse erlauben“</em> aktivieren <strong>und</strong> einen Scan auslösen (für eine einzelne Nachricht oder mit dauerhaftem Opt-in für diesen Absender). Solange die Zustimmung aus ist, gibt es keinen Upload, keine Hash-Abfrage, keine URL-/Domain-Abfrage und keine IP-Abfrage.</li>
+        <li>Abhängig von der Datenschutz-Stufe und den konfigurierten Schlüsseln können SHA-256-Hashes von Anhängen (Hybrid Analysis, VirusTotal), vollständige Anhänge unbekannter Dateien (Hybrid Analysis, Stufe balanced/max), URLs aus der Nachricht (Hybrid Analysis in Stufe max, urlscan.io) und Domains (URLhaus) übermittelt werden; IP-Adressen aus Received-Headern werden nur geprüft, wenn Sie dafür einen Anbieter konfigurieren.</li>
+        <li>Der Nachrichtentext als solcher, die Betreffzeile sowie Absender- und Empfängeradressen werden nicht übermittelt. Übermittelt werden können ausschließlich die einzelnen Links aus der Nachricht (siehe oben) – und das erst nach Ihrer Zustimmung. Es gibt <strong>keine Telemetrie</strong>, kein Analytics und keinen Server des Entwicklers; der Entwickler hat keinen Zugriff auf Ihre Daten.</li>
+        <li>Einstellungen, Zustimmungen und API-Schlüssel werden lokal in Thunderbird gespeichert (<code>browser.storage.local</code>, unverschlüsselt). Scan-Ergebnisse liegen in einer lokalen IndexedDB-Datenbank, die Sie über „Cache leeren“ in den Optionen entleeren können.</li>
+        <li>Host-Berechtigungen für die Analyse-Anbieter sind optional und werden erst angefragt, wenn Sie einen Schlüssel für den jeweiligen Anbieter speichern.</li>
     </ul>
+    <p>Details: <a href="privacy_policy.html">Datenschutzerklärung</a> ·
+    <a href="reviewer_notes.html">Reviewer Notes</a></p>
+</section>
+
+<section id="status">
+    <h2>Projektstatus</h2>
+    <div class="note">
+        <p>Thundy AV ist <strong>noch nicht</strong> im Thunderbird Add-ons Store gelistet; es gibt
+        daher keinen Store-Download-Link. Das aktuelle XPI und die Quellen stehen in den
+        <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases">GitHub-Releases</a>
+        bereit. <strong>Screenshots existieren noch nicht</strong> (nur Platzhaltergrafiken), und die
+        manuelle Verifikation in Thunderbird 140 ESR steht noch aus.</p>
+    </div>
 </section>
 
 <footer>
-    <p>&copy; 2025 Jan Bludau. Veröffentlicht unter der MIT Lizenz.</p>
-    <p><a href="https://github.com/vazules/thunderbird-antivirus">Zum GitHub Repository</a></p>
+    <p>&copy; 2026 Jan Bludau. Veröffentlicht unter der MIT-Lizenz.</p>
+    <p>
+        <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus">Repository</a>
+        <a href="privacy_policy.html">Datenschutzerklärung</a>
+        <a href="reviewer_notes.html">Reviewer Notes</a>
+        <a href="index_en.html">English</a>
+    </p>
 </footer>
 
 </body>
