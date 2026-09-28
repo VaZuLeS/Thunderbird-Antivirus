@@ -88,9 +88,6 @@
   "bannerOpenOptions": {
     "message": "Open options"
   },
-  "menuScanLink": {
-    "message": "Scan link with Thundy AV"
-  },
   "menuScanMessageLinks": {
     "message": "Scan all links of this message"
   },

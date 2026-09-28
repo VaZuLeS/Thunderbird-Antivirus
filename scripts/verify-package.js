@@ -20,7 +20,7 @@ const ALLOWED_FILES = [
   'theme.css',
   'LICENSE'
 ];
-const ALLOWED_PREFIXES = ['img/', '_locales/'];
+const ALLOWED_PREFIXES = ['img/', '_locales/', 'messageDisplay/'];
 const FORBIDDEN = [
   /install\.rdf$/,
   /\.test\.js$/,
@@ -47,7 +47,7 @@ print(json.dumps([{"name": i.filename, "size": i.file_size} for i in z.infolist(
 
 function main() {
   const artifactsDir = process.argv[2] || './build';
-  const candidates = fs.readdirSync(artifactsDir).filter((name) => name.endsWith('.zip'));
+  const candidates = fs.readdirSync(artifactsDir).filter((name) => /\.(zip|xpi)$/i.test(name));
   if (candidates.length === 0) {
     console.error('No XPI/ZIP artifact found in ' + artifactsDir);
     process.exitCode = 1;
@@ -68,6 +68,39 @@ function main() {
     if (FORBIDDEN.some((pattern) => pattern.test(file.name))) {
       problems.push('forbidden file in package: ' + file.name);
     }
+  }
+
+  // Funktionaler Smoke-Test: Alle im gepackten Manifest referenzierten Dateien
+  // muessen im Archiv liegen, ebenso die Skripte, die background.js registriert.
+  const names = new Set(entries.map((entry) => entry.name));
+  const readEntry = (name) => {
+    const output = execFileSync('python3', ['-c', `
+import sys, zipfile
+sys.stdout.write(zipfile.ZipFile(sys.argv[1]).read(sys.argv[2]).decode('utf-8', 'ignore'))
+`, artifact, name], { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+    return output;
+  };
+
+  try {
+    const manifest = JSON.parse(readEntry('manifest.json'));
+    const referenced = [];
+    for (const icon of Object.values(manifest.icons || {})) referenced.push(icon);
+    for (const script of (manifest.background && manifest.background.scripts) || []) referenced.push(script);
+    if (manifest.options_ui && manifest.options_ui.page) referenced.push(manifest.options_ui.page);
+    const action = manifest.message_display_action || {};
+    if (action.default_popup) referenced.push(action.default_popup);
+    if (action.default_icon) referenced.push(action.default_icon);
+    for (const file of referenced) {
+      if (!names.has(file)) problems.push('manifest.json references a file that is missing in the package: ' + file);
+    }
+
+    const background = readEntry('background.js');
+    const scriptFiles = Array.from(background.matchAll(/'(messageDisplay\/[A-Za-z0-9_.-]+)'/g)).map((m) => m[1]);
+    for (const file of new Set(scriptFiles)) {
+      if (!names.has(file)) problems.push('background.js registers a message display script that is missing in the package: ' + file);
+    }
+  } catch (e) {
+    problems.push('package smoke test failed: ' + e.message);
   }
 
   const totalBytes = entries.reduce((sum, entry) => sum + entry.size, 0);

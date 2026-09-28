@@ -26,6 +26,4 @@ jobs:
           npx web-ext lint --source-dir . --output json > /tmp/lint.json
           node scripts/filter-lint-warnings.js /tmp/lint.json
       - name: Build XPI and verify package contents
-        run: |
-          npx web-ext build --source-dir . --artifacts-dir ./build
-          node scripts/verify-package.js ./build
+        run: npm run build

@@ -188,6 +188,21 @@ function runChecks(rootDir) {
   const popup = manifest.message_display_action && manifest.message_display_action.default_popup;
   if (popup && !fs.existsSync(path.join(rootDir, popup))) fail('message_display_action popup is missing on disk: ' + popup);
 
+  // message display scripts registered by background.js must exist on disk
+  const backgroundPath = path.join(rootDir, ((manifest.background || {}).scripts || [])[0] || 'background.js');
+  const backgroundSource = fs.existsSync(path.join(rootDir, 'background.js'))
+    ? fs.readFileSync(path.join(rootDir, 'background.js'), 'utf8')
+    : '';
+  const displayScripts = Array.from(backgroundSource.matchAll(/'(messageDisplay\/[A-Za-z0-9_.-]+)'/g)).map((m) => m[1]);
+  for (const script of new Set(displayScripts)) {
+    if (!fs.existsSync(path.join(rootDir, script))) fail('message display script is missing on disk: ' + script);
+  }
+  if (displayScripts.length > 0) ok('message display scripts are present (' + new Set(displayScripts).size + ')');
+  if (backgroundSource && !/registerMessageDisplayScript/.test(backgroundSource)) {
+    warn('background.js does not register a message display script');
+  }
+  if (backgroundPath && !fs.existsSync(backgroundPath)) fail('background script is missing on disk: ' + backgroundPath);
+
   // --- repository / store assets ------------------------------------------
   if (fs.existsSync(path.join(rootDir, 'install.rdf'))) fail('install.rdf is a legacy Manifest V2 leftover and must be removed');
   else ok('no legacy install.rdf present');

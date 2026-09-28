@@ -139,7 +139,7 @@ npm ci                                                # install dev dependencies
 npm test                                              # run all node:test files
 node ./scripts/pre-submit-checks.js                   # manifest / privacy policy / permission checks
 npx web-ext lint                                      # addons-linter
-npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
+npm run build                                         # -> build/thundy-av-<version>.xpi (verified)
 ```
 
 - `npm test` uses the script from `package.json` (`node --test`) and therefore executes **all** test files of the
@@ -153,6 +153,11 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
   XPI build with package verification and a manual signing job) are ready in [docs/ci/](docs/ci/README.md);
   they could not be committed under `.github/workflows/` in this environment because the token lacks the
   required `workflows` permission. See [docs/ci/README.md](docs/ci/README.md) for how to apply them.
+- `npm run build` produces the installable `build/thundy-av-<version>.xpi` and immediately verifies it: the file
+  list must contain runtime files only, every file referenced by the packaged `manifest.json` must exist inside the
+  archive, and the message display script registered in `background.js` must be present (functional smoke test).
+  The artifact is unsigned - load it via *Add-ons and Themes -> gear icon -> Debug Add-ons -> Load Temporary
+  Add-on*, or sign it with `web-ext sign` before distributing it.
 - More details: [docs/quickstart.md](docs/quickstart.md).
 
 ## Permissions overview

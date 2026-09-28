@@ -489,3 +489,75 @@ web-ext build + verify      # 17 Dateien, ~179 KB, Inhalt valide
    `permissions.request()` aus dem Banner, `contexts: ["link"]`).
 2. Echte PNG-Screenshots für das Listing.
 3. Signierung und Einreichung bei addons.thunderbird.net.
+
+---
+
+## 10. Fix-Runde: verbleibende Code-Befunde (H12) und Artefakt-Bereitstellung
+
+Mit dieser Runde sind auch die zuvor als „nur manuell verifizierbar“ markierten Code-Pfade beseitigt worden.
+
+### F-1 — Banner-UI über den dokumentierten MV3-Weg (vorher: Injektion anonymer Funktionen)
+
+**Vorher:** `scripting.executeScript({ target: { tabId }, func })` mit im Hintergrundskript definierten DOM-Funktionen.
+Das war nicht der von Thunderbird dokumentierte Weg (dort ist `scripting.messageDisplay.registerScripts` vorgesehen)
+und ließ sich ohne Thunderbird nicht verifizieren.
+
+**Jetzt:** Die komplette In-Message-UI liegt in `messageDisplay/banner.js` (+ `banner.css`) und wird beim Start einmal
+registriert:
+
+```js
+await browser.scripting.messageDisplay.registerScripts([{
+  id: 'thundy-av-banner',
+  js: [{ file: 'messageDisplay/banner.js' }],
+  css: [{ file: 'messageDisplay/banner.css' }],
+  runAt: 'document_idle'
+}]);
+```
+
+Für bereits geöffnete Nachrichten injiziert `ensureMessageDisplayScript()` dieselben gebündelten Dateien
+(`files`, ohne String-Code). Das Script **rendert nur**: es fragt den Zustand über `getDisplayState` ab und bekommt
+Änderungen per `updateDisplayState`-Push (`browser.tabs.sendMessage`). Es enthält keinerlei Netzwerkcode, kann also
+selbst nichts übertragen. Die drei Banner-Typen (Threat, Absender verifiziert, Opt-in mit zwei Aktionen),
+die Consent-/Permission-Hinweise und die Time-of-Click-Markierungen werden im jsdom getestet (10 Tests).
+
+### F-2 — Nicht erreichbares Kontextmenü entfernt
+
+`contexts: ["link"]` ist für Thunderbird-Nachrichtentexte nicht dokumentiert und wäre nie ausgelöst worden.
+Entfernt; geblieben ist der dokumentierte `message_display_action`-Eintrag („Alle Links dieser Nachricht scannen“),
+dessen Handler die Links der angezeigten Nachricht ermittelt und gated an den Anbieter sendet.
+
+### F-3 — Permission-Geste deterministisch gemacht
+
+`handleRequestScan()` rief `browser.permissions.request()` aus dem Hintergrund auf — eine Nutzer-Geste überlebt den
+`runtime.sendMessage`-Sprung in Gecko nicht zuverlässig. Jetzt liefert der Hintergrund `permission_required`
+(Code `PERMISSION_REQUIRED`), und das Banner zeigt den Hinweis plus „Einstellungen öffnen“. Die Host-Berechtigung wird
+ausschließlich in der Optionsseite im echten Klick-Kontext angefragt (ein Test stellt sicher, dass aus dem Hintergrund
+**kein** `permissions.request()` mehr ausgelöst wird).
+
+### F-4 — Auslieferbares Artefakt mit Funktionsprüfung
+
+`npm run build` erzeugt `build/thundy-av-<version>.xpi` (`scripts/build-xpi.js`) und prüft es anschließend:
+
+- `scripts/verify-package.js` kontrolliert Dateiliste (nur Laufzeitdateien) und Größe, prüft jetzt zusätzlich, dass
+  **alle im gepackten `manifest.json` referenzierten Dateien im Archiv liegen** und dass die in `background.js`
+  registrierten Nachrichten-Skripte enthalten sind (funktionaler Smoke-Test gegen Auslieferungsfehler),
+- `scripts/pre-submit-checks.js` prüft zusätzlich die Existenz der Nachrichten-Skripte und die Registrierung.
+
+Das XPI ist unsigniert (Signierung erfordert ATN-Zugangsdaten): Installation zum Test über
+ *Add-ons and Themes → Zahnrad → Debug Add-ons → Temporäres Add-on laden*; für eine reguläre Installation in
+Release-Builds ist eine Signierung nötig (`web-ext sign --channel listed`, Vorlage in `docs/ci/release.yml`).
+
+### Verifikation dieser Runde
+
+```bash
+npm test                    # 404 Tests, 0 Fehler
+npm run pre-submit-checks   # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm run build               # build/thundy-av-1.6.xpi (19 Dateien, ~52 KB) + Paketprüfung inkl. Smoke-Test
+web-ext lint + Filter       # 0 Fehler, 29 bekannte TB-False-Positives
+```
+
+### Offen bleibt (nur manuell)
+
+1. Test des XPI in Thunderbird 140 ESR (Funktionsnachweis auf echter Installation).
+2. Echte PNG-Screenshots für das Listing.
+3. Signierung/Einreichung bei addons.thunderbird.net.

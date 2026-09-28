@@ -37,7 +37,7 @@ abgearbeitet:
 - **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung und Rechte und
   liefert einen echten Exit-Code; der Schritt läuft in der CI.
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission- und MV3-Portierungs-Tests
-  enthalten) und ist grün (392 Tests, 0 Fehler). Der im Repository aktive Workflow
+  enthalten) und ist grün (404 Tests, 0 Fehler). Der im Repository aktive Workflow
   (`.github/workflows/ci.yml`, Node 22) läuft `npm ci`, die Pre-Submit-Checks (jetzt mit echtem Exit-Code),
   `node --test background.test.js` und `npx web-ext lint`. Die erweiterten Definitionen — vollständiger
   `npm test`, Lint-Filter für bekannte Thunderbird-False-Positives
@@ -51,6 +51,19 @@ abgearbeitet:
   (2) der Datei-Upload in `background.js` lief am `ApiGateway` vorbei (kein Zeitlimit) und nutzt jetzt ebenfalls
   `apiGateway.fetchWithTimeout(..., 60000)`. Die Nachaudit-Befunde stehen in
   [docs/STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md), Abschnitt 9.
+- **Banner-Injektion (H12, behoben):** Die In-Message-UI liegt jetzt in einem eigenen, beim Start registrierten
+  Nachrichten-Script (`messageDisplay/banner.js` + `banner.css`), registriert über den dokumentierten MV3-Weg
+  `scripting.messageDisplay.registerScripts` (Fallback: Datei-Injektion in bereits geöffnete Tabs). Das Script
+  rendert ausschließlich und fragt den Zustand im Hintergrundskript ab (`getDisplayState`),
+  per `updateDisplayState`-Push bei Statusänderungen. Dadurch kann der injizierte Code selbst keine Daten übertragen.
+- **Kontextmenü (H12, behoben):** Der nicht dokumentierte Kontext `contexts: ["link"]` wurde entfernt; es bleibt der
+  dokumentierte `message_display_action`-Eintrag („Alle Links dieser Nachricht scannen“).
+- **Permission-Geste (H12, behoben):** `handleRequestScan` ruft kein `permissions.request()` mehr aus dem Hintergrund
+  auf (Nutzer-Geste geht über Messaging verloren), sondern meldet `permission_required`; das Banner verweist auf die
+  Optionsseite, die die Host-Berechtigung im Klick-Kontext anfragt.
+- **XPI-Artefakt:** `npm run build` erzeugt `build/thundy-av-1.6.xpi` und prüft das Paket inklusive Manifest-
+  Referenzen und registrierten Nachrichten-Skripten (`scripts/build-xpi.js`, `scripts/verify-package.js`).
+- **Tests (aktuell):** 404 Tests, 0 Fehler (u. a. 10 Tests für das Banner-Script in jsdom).
 - **Dokumente/Policy:** Datenschutzerklärung (`docs/privacy_policy.md`), Reviewer-Hinweise
   (`docs/reviewer_notes.md`), Listing-Entwurf (`docs/store_listing.md`); Live-Policy unter
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html.

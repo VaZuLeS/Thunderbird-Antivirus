@@ -29,9 +29,7 @@ jobs:
       - name: Run unit tests
         run: npm test
       - name: Build XPI and verify package content
-        run: |
-          npx web-ext build --source-dir . --artifacts-dir ./build
-          node scripts/verify-package.js ./build
+        run: npm run build
       - name: Sign the add-on
         env:
           WEB_EXT_API_KEY: ${{ secrets.ATN_API_KEY }}

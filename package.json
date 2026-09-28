@@ -18,9 +18,10 @@
   "scripts": {
     "test": "NODE_PATH=node_modules node --test --test-reporter=spec",
     "lint": "web-ext lint --source-dir .",
-    "build": "web-ext build --source-dir . --artifacts-dir ./build",
+    "build": "node scripts/build-xpi.js",
     "pre-submit-checks": "node ./scripts/pre-submit-checks.js",
-    "check": "npm run pre-submit-checks && npm test"
+    "check": "npm run pre-submit-checks && npm test",
+    "build:web-ext": "web-ext build --source-dir . --artifacts-dir ./build"
   },
   "devDependencies": {
     "web-ext": "^10.7.0"

@@ -141,7 +141,7 @@ npm ci                                                # Dev-Abhängigkeiten inst
 npm test                                              # alle node:test-Dateien ausführen
 node ./scripts/pre-submit-checks.js                   # Manifest-, Datenschutz- und Rechte-Checks
 npx web-ext lint                                      # addons-linter
-npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
+npm run build                                         # -> build/thundy-av-<version>.xpi (geprüft)
 ```
 
 - `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** Testdateien des

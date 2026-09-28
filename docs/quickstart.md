@@ -52,16 +52,17 @@ Hinweis: Solange echte Screenshots fehlen, erscheint genau eine Warnung (kein Fe
 
 ```bash
 npx web-ext lint
-npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
+npm run build            # erzeugt build/thundy-av-<version>.xpi und prüft das Paket
 ```
 
 - `npx web-ext lint` (addons-linter) muss **0 Fehler** melden. Die verbleibenden Warnungen sind überwiegend
   `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-APIs wie `messages.*`
   oder `messageDisplay.*` nicht kennt.
-- `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.zip` (Dateiname aus dem
-  Add-on-Namen). Die Ausschlüsse für Testdateien, `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und
-  Build-Artefakte stehen in `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`);
-  `node scripts/verify-package.js ./build` prüft anschließend Dateiliste und Größe des Pakets.
+- `npm run build` (siehe `scripts/build-xpi.js`) ruft `web-ext build` auf, benennt das Ergebnis in
+  `build/thundy-av-<version>.xpi` um und verifiziert es mit `scripts/verify-package.js`: erlaubte Dateiliste,
+  Größenlimit, **alle im gepackten `manifest.json` referenzierten Dateien** und die in `background.js` registrierten
+  Nachrichten-Skripte. Die Ausschlüsse für Testdateien, `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf`
+  und Build-Artefakte stehen in `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`).
 - Signieren für eine Verteilung: `npx web-ext sign --channel unlisted` (selbst verteilen) oder
   `npx web-ext sign --channel listed` (Einreichung im Add-ons Store, benötigt API-Zugangsdaten von
   addons.thunderbird.net).

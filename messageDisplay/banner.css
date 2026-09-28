@@ -1,0 +1,64 @@
+/* Thundy AV banners inside the message display view */
+#thundy-threat-banner,
+#thundy-optin-banner,
+#thundy-auth-badge {
+  font-family: Arial, sans-serif;
+  z-index: 9999;
+  box-sizing: border-box;
+}
+
+#thundy-threat-banner {
+  background-color: #ffeeee;
+  border: 1px solid #ff0000;
+  color: #b30000;
+  padding: 10px;
+  margin: 10px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+#thundy-optin-banner {
+  background-color: #fff8e1;
+  border: 1px solid #ffcc80;
+  color: #333;
+  padding: 8px;
+  margin: 8px;
+  border-radius: 4px;
+}
+
+#thundy-auth-badge {
+  display: inline-block;
+  background-color: #e6ffe6;
+  border: 1px solid #008000;
+  color: #006400;
+  padding: 5px 10px;
+  margin: 10px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.thundy-banner-title {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+
+.thundy-banner-reasons {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  font-weight: normal;
+}
+
+.thundy-banner-actions button {
+  margin-left: 10px;
+}
+
+.thundy-banner-note {
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.thundy-toc-link {
+  border-bottom: 1px dashed #ff8c00;
+}

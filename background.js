@@ -106,22 +106,92 @@ async function hasHostPermissionFor(url) {
 }
 
 /**
- * Injects a function into the message display document of a tab.
- * Thunderbird's generic scripting API is used; if a future Thunderbird
- * release exposes scripting.messageDisplay.executeScript, it is preferred.
+ * Injects content into the message display of a tab.
+ *
+ * Thunderbird's documented Manifest V3 way to place UI into displayed messages
+ * is a registered message display script (`scripting.messageDisplay.registerScripts`).
+ * This helper is the fallback for already open messages: it injects the same
+ * bundled script file (and its stylesheet) into the message display document.
  */
-async function injectIntoMessageDisplay(tabId, func, args = []) {
+async function injectIntoMessageDisplay(tabId, injection) {
     if (tabId === undefined || tabId === null) return null;
-    const injection = { target: { tabId }, func, args };
+    const details = Object.assign({ target: { tabId } }, injection || {});
     try {
         if (browser.scripting && browser.scripting.messageDisplay &&
             typeof browser.scripting.messageDisplay.executeScript === 'function') {
-            return await browser.scripting.messageDisplay.executeScript(injection);
+            return await browser.scripting.messageDisplay.executeScript(details);
         }
-        return await browser.scripting.executeScript(injection);
+        return await browser.scripting.executeScript(details);
     } catch (e) {
         Logger.warn('Injecting into the message display failed (please report with your Thunderbird version):', e);
         return null;
+    }
+}
+
+const MESSAGE_DISPLAY_SCRIPT_ID = 'thundy-av-banner';
+const MESSAGE_DISPLAY_SCRIPT_FILES = ['messageDisplay/banner.js'];
+const MESSAGE_DISPLAY_SCRIPT_CSS = ['messageDisplay/banner.css'];
+
+let messageDisplayScriptRegistered = false;
+
+/**
+ * Registers the message display script once per background start. Registered
+ * scripts are automatically injected into newly opened messages.
+ */
+async function registerMessageDisplayScript() {
+    try {
+        if (!browser.scripting || !browser.scripting.messageDisplay ||
+            typeof browser.scripting.messageDisplay.registerScripts !== 'function') {
+            Logger.warn('scripting.messageDisplay.registerScripts is not available - falling back to per-message injection');
+            return false;
+        }
+        await browser.scripting.messageDisplay.registerScripts([{
+            id: MESSAGE_DISPLAY_SCRIPT_ID,
+            js: MESSAGE_DISPLAY_SCRIPT_FILES.map(file => ({ file })),
+            css: MESSAGE_DISPLAY_SCRIPT_CSS.map(file => ({ file })),
+            runAt: 'document_idle'
+        }]);
+        messageDisplayScriptRegistered = true;
+        return true;
+    } catch (e) {
+        Logger.warn('Registering the message display script failed - falling back to per-message injection:', e);
+        return false;
+    }
+}
+
+/** Makes sure the banner script runs in the given message display tab. */
+async function ensureMessageDisplayScript(tabId) {
+    if (messageDisplayScriptRegistered) return true;
+    await injectIntoMessageDisplay(tabId, { files: MESSAGE_DISPLAY_SCRIPT_FILES });
+    try {
+        if (browser.scripting && typeof browser.scripting.insertCSS === 'function') {
+            await browser.scripting.insertCSS({ target: { tabId }, files: MESSAGE_DISPLAY_SCRIPT_CSS });
+        }
+    } catch (e) { /* styles are cosmetic */ }
+    return false;
+}
+
+// ---------------------------------------------------------------------------
+// Display state
+// The background script owns the state (threat score, consent, opt-in need);
+// the message display script only renders it. That keeps every provider request
+// in the background and makes the injected code unable to transmit anything.
+// ---------------------------------------------------------------------------
+const displayStates = new Map();
+
+function updateDisplayState(tabId, state) {
+    if (tabId === undefined || tabId === null) return;
+    displayStates.set(tabId, state);
+    pushDisplayState(tabId, state);
+}
+
+async function pushDisplayState(tabId, state) {
+    try {
+        if (browser.tabs && typeof browser.tabs.sendMessage === 'function') {
+            await browser.tabs.sendMessage(tabId, { action: 'updateDisplayState', state });
+        }
+    } catch (e) {
+        // The banner script may not be injected yet; it will ask for the state.
     }
 }
 
@@ -820,18 +890,15 @@ async function processAndUploadUrls(message, filteredUrls) {
     }
 }
 
-async function injectTimeOfClickProtection(tabId, filteredUrls) {
-    if (timeOfClickProtection && filteredUrls.length > 0) {
-        await injectIntoMessageDisplay(tabId, function() {
-            const links = document.querySelectorAll('a');
-            links.forEach(link => {
-                if (link.href && link.href.startsWith('http')) {
-                    link.title = "Protected by Thundy Time-of-Click";
-                    link.style.borderBottom = "1px dashed #ff8c00";
-                }
-            });
-        });
-    }
+/** Time-of-Click hints are rendered by the message display script. */
+function injectTimeOfClickProtection(tabId, filteredUrls) {
+    const state = displayStates.get(tabId);
+    const urls = timeOfClickProtection ? (filteredUrls || []) : [];
+    updateDisplayState(tabId, Object.assign({
+        mode: (state && state.mode) || 'pending',
+        timeOfClickProtection,
+        urls
+    }, state || {}));
 }
 
 async function checkIPReputation(receivedHeaders) {
@@ -970,70 +1037,10 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
     return urlhausDomains;
 }
 
-async function injectThreatBanner(tabId, threat) {
-    if (threat.score >= 50 || threat.authStatus === 'pass') {
-        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus) {
-                const t = (key, fallback, subs) => {
-                    try {
-                        return browser.i18n.getMessage(key, subs) || fallback;
-                    } catch (e) {
-                        return fallback;
-                    }
-                };
-                if (score >= 50) {
-                    // Sichere DOM-Manipulation ohne innerHTML
-                    const banner = document.createElement('div');
-                    banner.id = 'thundy-threat-banner';
-                    banner.style.backgroundColor = '#ffeeee';
-                    banner.style.border = '1px solid #ff0000';
-                    banner.style.color = '#ff0000';
-                    banner.style.padding = '10px';
-                    banner.style.margin = '10px';
-                    banner.style.borderRadius = '4px';
-                    banner.style.fontWeight = 'bold';
-                    banner.style.fontFamily = 'Arial, sans-serif';
-                    banner.style.zIndex = '9999';
-
-                    const title = document.createElement('div');
-                    title.textContent = '🔴 ⚠️ ' + t('bannerThreatTitle', 'Thundy AV warning') +
-                        ' (' + t('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
-                    title.style.fontSize = '16px';
-                    title.style.marginBottom = '5px';
-                    banner.appendChild(title);
-
-                    const reasonList = document.createElement('ul');
-                    reasonList.style.margin = '0';
-                    reasonList.style.paddingLeft = '20px';
-                    reasonList.style.fontSize = '14px';
-
-                    for (const reason of reasons) {
-                        const li = document.createElement('li');
-                        li.textContent = reason;
-                        reasonList.appendChild(li);
-                    }
-                    banner.appendChild(reasonList);
-
-                    document.body.prepend(banner);
-                } else if (authStatus === 'pass') {
-                    const badge = document.createElement('div');
-                    badge.id = 'thundy-auth-badge';
-                    badge.style.display = 'inline-block';
-                    badge.style.backgroundColor = '#e6ffe6';
-                    badge.style.border = '1px solid #008000';
-                    badge.style.color = '#008000';
-                    badge.style.padding = '5px 10px';
-                    badge.style.margin = '10px';
-                    badge.style.borderRadius = '20px';
-                    badge.style.fontWeight = 'bold';
-                    badge.style.fontFamily = 'Arial, sans-serif';
-                    badge.style.fontSize = '12px';
-                    badge.style.zIndex = '9999';
-                    badge.textContent = '🟢 🛡️ ' + t('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
-
-                    document.body.prepend(badge);
-                }
-        }, [threat.score, threat.reasons, threat.authStatus]);
-    }
+/** Threat banner/badge is rendered by the message display script. */
+function injectThreatBanner(tabId, threat) {
+    const state = displayStates.get(tabId) || { mode: 'pending' };
+    updateDisplayState(tabId, Object.assign({}, state, { threat }));
 }
 
 async function processAttachments(message) {
@@ -1093,119 +1100,25 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
 async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
   const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache });
   const threat = calculateThreatScore(message.author, urls, options);
-  await injectThreatBanner(tab.id, threat);
+  const previous = displayStates.get(tab.id) || {};
+  updateDisplayState(tab.id, Object.assign({}, previous, {
+    mode: 'ready',
+    messageId: message && message.id,
+    threat,
+    timeOfClickProtection,
+    urls: timeOfClickProtection ? (filteredUrls || []) : []
+  }));
 }
 
-/**
- * Injects the per-message opt-in banner.
- * Two explicit actions: scan this message once (no persistent opt-in) or
- * enable scanning for this sender permanently.
- */
-async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
-  await injectIntoMessageDisplay(tabId, function(messageId, senderEmail, consentGiven) {
-        const t = (key, fallback, subs) => {
-          try {
-            return browser.i18n.getMessage(key, subs) || fallback;
-          } catch (e) {
-            return fallback;
-          }
-        };
-
-        const existing = document.getElementById('thundy-optin-banner');
-        if (existing) return;
-
-        const banner = document.createElement('div');
-        banner.id = 'thundy-optin-banner';
-        banner.style.backgroundColor = '#fff8e1';
-        banner.style.border = '1px solid #ffcc80';
-        banner.style.color = '#333';
-        banner.style.padding = '8px';
-        banner.style.margin = '8px';
-        banner.style.borderRadius = '4px';
-        banner.style.fontFamily = 'Arial, sans-serif';
-        banner.style.zIndex = '9999';
-
-        const text = document.createElement('span');
-        text.textContent = t('bannerTitleOptIn', 'Thundy AV: real-time scanning is not enabled for this message.');
-        banner.appendChild(text);
-
-        const createButton = (label, persist) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.textContent = label;
-          btn.style.marginLeft = '10px';
-          btn.addEventListener('click', async () => {
-            const buttons = banner.querySelectorAll('button');
-            buttons.forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
-            btn.textContent = t('bannerScanRunning', 'Scanning…');
-            try {
-              const resp = await browser.runtime.sendMessage({
-                action: 'requestScan',
-                messageId: messageId,
-                senderEmail: senderEmail,
-                persist: persist
-              });
-              if (resp && resp.success) {
-                btn.textContent = t('bannerScanDone', 'Scan finished');
-                btn.removeAttribute('aria-busy');
-                buttons.forEach(b => { b.disabled = false; });
-                if (persist) {
-                  setNote(t('bannerSenderOptIn', 'This sender is now scanned automatically.'));
-                }
-              } else if (resp && resp.error === 'permission_denied') {
-                btn.textContent = t('bannerPermissionDenied', 'Required host permission was denied');
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-              } else if (resp && (resp.error === 'EXTERNAL_ANALYSIS_DISABLED' || resp.code === 'EXTERNAL_ANALYSIS_DISABLED')) {
-                setNote(t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.'));
-                addOptionsButton();
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); btn.textContent = label; });
-              } else {
-                btn.textContent = t('bannerScanFailed', 'Scan failed');
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-              }
-            } catch (e) {
-              btn.textContent = t('bannerScanFailed', 'Scan failed');
-              buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-            }
-          });
-          banner.appendChild(btn);
-        };
-
-        const note = document.createElement('div');
-        note.id = 'thundy-optin-note';
-        note.style.fontSize = '12px';
-        note.style.marginTop = '6px';
-        note.textContent = t('bannerNoteOptIn', 'Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you gave your consent. See the add-on options.');
-        if (!consentGiven) {
-          note.textContent = t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.');
-        }
-
-        function setNote(value) {
-          note.textContent = value;
-        }
-
-        function addOptionsButton() {
-          if (banner.querySelector('#thundy-open-options')) return;
-          const optionsButton = document.createElement('button');
-          optionsButton.id = 'thundy-open-options';
-          optionsButton.type = 'button';
-          optionsButton.textContent = t('bannerOpenOptions', 'Open options');
-          optionsButton.style.marginLeft = '10px';
-          optionsButton.addEventListener('click', () => browser.runtime.openOptionsPage());
-          note.appendChild(optionsButton);
-        }
-
-        createButton(t('bannerScanOnce', 'Scan this message once'), false);
-        createButton(t('bannerScanSender', 'Always scan this sender'), true);
-
-        banner.appendChild(note);
-
-        if (!consentGiven) {
-          addOptionsButton();
-        }
-
-        document.body.prepend(banner);
-  }, [messageId, senderEmail, consentGiven === true]);
+/** The per-message opt-in banner is rendered by the message display script. */
+function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
+    const state = displayStates.get(tabId) || { mode: 'pending' };
+    updateDisplayState(tabId, Object.assign({}, state, {
+        messageId,
+        senderEmail,
+        showOptIn: true,
+        consent: consentGiven === true
+    }));
 }
 
 /**
@@ -1254,6 +1167,15 @@ async function handleDisplayedMessage(tab, message) {
   try {
     const senderEmail = extractEmailAddress(message.author || '');
 
+    // Zustand zuerst setzen: das Nachrichten-Script fragt ihn ab und rendert
+    // anschließend die Banner, sobald der Scan abgeschlossen ist.
+    updateDisplayState(tab.id, {
+      mode: 'pending',
+      messageId: message.id,
+      senderEmail,
+      consent: mayTransmitExternally()
+    });
+
     const stored = await browser.storage.local.get('scanningEnabledSenders');
     const enabledSenders = stored.scanningEnabledSenders || [];
 
@@ -1272,11 +1194,28 @@ async function handleDisplayedMessage(tab, message) {
     let parsedUrlCache = new Map();
     let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage, parsedUrlCache);
 
-    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
+    const evaluationOptions = await collectThreatEvaluationOptions({
+      message, fullMessage, filteredUrls, messageText, parsedUrlCache
+    });
+    const threat = calculateThreatScore(message.author, urls, evaluationOptions);
 
-    if (!canAutoUpload && ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0))) {
-      await injectOptInBanner(tab.id, message.id, senderEmail, mayTransmitExternally());
-    }
+    const showOptIn = !canAutoUpload &&
+      ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0));
+
+    updateDisplayState(tab.id, {
+      mode: 'ready',
+      messageId: message.id,
+      senderEmail,
+      permission,
+      consent: mayTransmitExternally(),
+      canAutoUpload,
+      showOptIn,
+      threat,
+      timeOfClickProtection,
+      urls: timeOfClickProtection ? (filteredUrls || []) : []
+    });
+
+    await ensureMessageDisplayScript(tab.id);
   } catch (error) {
     Logger.error(`Fehler beim Laden der Anhänge oder Links: ${error}`);
   }
@@ -1737,14 +1676,16 @@ if (browser.messageDisplay) {
     }
 }
 
+// Das Banner-Script wird einmal registriert (dokumentierter MV3-Weg) und greift
+// damit automatisch in allen neu geöffneten Nachrichten.
+registerMessageDisplayScript();
+
 function createContextMenus() {
     if (!browser.menus || typeof browser.menus.create !== 'function') return;
+    // "message_display_action" is a documented Thunderbird context for the
+    // message display area. The former "link" context is not documented for
+    // Thunderbird message bodies and could never be triggered, so it is gone.
     const menus = [
-        {
-            id: "scan-link-thundy",
-            title: msg('menuScanLink', 'Scan link with Thundy AV'),
-            contexts: ["link"]
-        },
         {
             id: "scan-message-links-thundy",
             title: msg('menuScanMessageLinks', 'Scan all links of this message'),
@@ -1811,30 +1752,6 @@ createContextMenus();
 if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === "scan-message-links-thundy") {
         await scanLinksOfDisplayedMessage(tab && tab.id);
-        return;
-    }
-
-    if (info.menuItemId === "scan-link-thundy") {
-        let url = info.linkUrl;
-        if (!url) {
-            Logger.warn('No link URL available in the context menu data');
-            return;
-        }
-
-        notify('notificationTitle', 'notificationScanStarted', [url]);
-
-        try {
-            // Need a dummy headerMessageId as context menu might be clicked outside standard flow
-            // or we just fetch the active message
-            const activeMessage = await getFirstDisplayedMessage(tab && tab.id);
-            let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
-
-            let result = await handleUrlScan(url, msgId);
-
-            notify('notificationTitle', 'notificationScanSubmitted', [String(result.job_id)]);
-        } catch (error) {
-            notify('notificationTitleError', 'notificationScanError', [error.message]);
-        }
     }
 });
 
@@ -1931,16 +1848,12 @@ async function handleRequestScan(request, sender) {
         return { success: false, error: EXTERNAL_ANALYSIS_DISABLED, code: EXTERNAL_ANALYSIS_DISABLED };
     }
 
-    // Ensure permission to contact the analysis service
-    let granted = await hasHybridPermission();
-    if (!granted) {
-        try {
-            granted = await browser.permissions.request({ origins: [PROVIDER_ORIGINS.hybridanalysis] });
-        } catch (e) { granted = false; }
-    }
-
-    if (!granted) {
-        return { success: false, error: 'permission_denied' };
+    // Host permissions are requested from the options page, where the user's
+    // click is a real user gesture. Calling permissions.request() here would be
+    // unreliable: Gecko requires a user input handler, and that context is lost
+    // when the request travels from the injected banner script to the background.
+    if (!(await hasHybridPermission())) {
+        return { success: false, error: 'permission_required', code: 'PERMISSION_REQUIRED' };
     }
 
     if (request.persist === true && request.senderEmail) {
@@ -1956,6 +1869,14 @@ async function handleRequestScan(request, sender) {
         const parsedUrlCache = new Map();
         const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache);
         await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
+        const previous = displayStates.get(tabId) || {};
+        updateDisplayState(tabId, Object.assign({}, previous, {
+            mode: 'ready',
+            canAutoUpload: true,
+            showOptIn: false,
+            consent: mayTransmitExternally()
+        }));
+        await ensureMessageDisplayScript(tabId);
         return { success: true, persisted: request.persist === true };
     } catch (e) {
         Logger.error('requestScan failed', e);
@@ -1990,6 +1911,13 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case "requestScan":
             handleRequestScan(request, sender).then(res => sendResponse(res));
             return true;
+
+        case "getDisplayState": {
+            const tabId = sender && sender.tab ? sender.tab.id : null;
+            const state = tabId !== null ? displayStates.get(tabId) : null;
+            sendResponse(state || { mode: 'pending' });
+            return true;
+        }
 
         default:
             return false;

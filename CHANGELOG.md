@@ -8,7 +8,36 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 ## [Unreleased]
 
-- Nothing yet.
+**Work in progress:** the manual verification in Thunderbird 140 ESR, real store screenshots and the store submission are
+still open (see `docs/STATUS.md`). The build artifact `build/thundy-av-1.6.xpi` is unsigned; for a release build of
+Thunderbird either load it as a temporary add-on via `about:debugging` or sign it with `web-ext sign`.
+
+### Fixed
+
+- **Message view rendering rewritten for Manifest V3.** The banners are now rendered by a dedicated message display
+  script (`messageDisplay/banner.js`), registered through `scripting.messageDisplay.registerScripts`. It only renders the
+  state that the background script provides (`getDisplayState` / `updateDisplayState`), so injected code cannot transmit
+  data itself. Previously the banners were injected as anonymous functions per message.
+- **Consent is now enforced in the popup too.** `api.js` loaded analysis reports directly from the provider and
+  transmitted the attachment hash even if the user had revoked consent; report lookups now require the global consent and
+  the host permission and are re-checked at call time.
+- **Attachment upload uses the shared HTTP gateway** (`apiGateway.fetchWithTimeout`, 60 s) instead of a direct `fetch`
+  without a timeout.
+- **Host permission flow is deterministic.** `permissions.request()` is no longer called from the background (a user
+  gesture does not survive the message hop); scanning without the permission now reports `permission_required` and the
+  banner links to the options page, which requests the permission on save.
+- **Removed the undocumented link context menu** (`contexts: ["link"]`); the documented `message_display_action` entry
+  remains.
+- Privacy policy and reviewer notes now list the locally stored message metadata (sender, subject, attachment name/hash)
+  and document where the consent checks are enforced.
+
+### Added
+
+- `npm run build` produces the installable `build/thundy-av-<version>.xpi` and verifies the package content, including the
+  files referenced by the packaged manifest and the registered message display scripts.
+- 10 unit tests for the message display script (banner rendering, both scan actions, consent/permission hints,
+  Time-of-Click markers, “never transmits anything itself”).
+
 
 ## [1.6.0] – 2026-09-28
 

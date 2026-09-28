@@ -29,7 +29,7 @@ disabled by default.
 |---|---|
 | `messagesRead` | The core function is to inspect the message the user has opened: headers (sender, recipients, subject, date, Received), the text and HTML body, links, and the list of attachments including their content (which is hashed locally). Without this permission the add-on cannot perform any check. |
 | `storage` | Stores the user's settings (privacy tier, whitelist/blacklist, scan options), the consent flags (`externalAnalysisConsent`, `scanningEnabledSenders`) and the API keys the user enters, in `browser.storage.local`. No remote storage. |
-| `scripting` | Injects the UI banners into the message view: the per-message opt-in banner with its two buttons, the threat/warning banner, and the Time-of-Click marker on links. All injected code is bundled with the add-on (`scripting.executeScript({ func })` / `files`); no remote code is fetched or evaluated. |
+| `scripting` | Required for the message display script that renders the in-message UI (opt-in banner with its two buttons, threat banner, sender-verified badge, Time-of-Click markers). It is registered once with the documented Manifest V3 API `scripting.messageDisplay.registerScripts` (`messageDisplay/banner.js` + `banner.css`); for already open messages the same bundled files are injected with `scripting.executeScript({ files })`. All code is bundled with the add-on, no remote code is fetched or evaluated. |
 | `notifications` | Shows short system notifications for actions that are not visible in the message pane, e.g. "scan started", "scan submitted (job ID …)" and error messages for the context-menu link scan. This gives feedback when the scan is triggered from an entry point without its own result area. |
 | `downloads` | Used for the "disarm HTML attachment" action: when the user asks for it, the add-on saves a sanitized copy of an HTML attachment through `browser.downloads.download()`. The user triggers this explicitly; nothing is downloaded automatically in the background. |
 
@@ -88,6 +88,11 @@ Enforcement is centralised and can be verified in two places:
 
 Both checks are covered by unit tests (see `npm test`, suites "Manifest V3 port (B1) and consent
 enforcement (B2)" and "get_hybrid_report_by_sha256").
+
+The injected message display script (`messageDisplay/banner.js`) contains **no** network code at all: it asks the
+background script for the display state (`getDisplayState`), receives updates (`updateDisplayState`) and sends the two
+scan actions (`requestScan` with `persist: false|true`). Host permissions are requested in the options dialog only,
+where the user's click is a real user gesture.
 
 ## 4. Data flows per provider and tier
 
