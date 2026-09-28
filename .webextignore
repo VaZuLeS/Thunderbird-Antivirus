@@ -1,0 +1,16 @@
+# Additional ignore patterns for packaging tools that understand .webextignore.
+# web-ext itself is configured through web-ext-config.mjs.
+*.test.js
+*_test.js
+test/
+scripts/
+docs/
+examples/
+*.md
+install.rdf
+package-lock.json
+pnpm-lock.yaml
+benchmark_compare.js
+form_test.js
+vt_test.js
+build/

@@ -1,0 +1,46 @@
+name: Release (sign and attach XPI)
+
+# Manual trigger only. Requires the ATN API credentials as repository secrets:
+#   ATN_API_KEY / ATN_API_SECRET  (see https://addons.thunderbird.net/en-US/developers/addon/api/key/)
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Signing channel (listed = publish to addons.thunderbird.net, unlisted = self distribution)'
+        required: true
+        default: unlisted
+        type: choice
+        options:
+          - unlisted
+          - listed
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm ci
+      - name: Pre-submit checks
+        run: npm run pre-submit-checks
+      - name: Run unit tests
+        run: npm test
+      - name: Build XPI and verify package content
+        run: |
+          npx web-ext build --source-dir . --artifacts-dir ./build
+          node scripts/verify-package.js ./build
+      - name: Sign the add-on
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.ATN_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.ATN_API_SECRET }}
+        run: |
+          npx web-ext sign --source-dir . --artifacts-dir ./build --channel "${{ inputs.channel }}"
+      - name: Upload signed artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-xpi
+          path: build/*.xpi
+          if-no-files-found: error
