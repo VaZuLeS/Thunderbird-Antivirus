@@ -209,6 +209,7 @@ if (apiContainer) {
     renderScanStatusPanel(message.headerMessageId, apiContainer);
     renderHistoryPanel(message, apiContainer, viewMode);
     renderReportExport(message, apiContainer, viewMode);
+    renderResearcherPanel(message, apiContainer, viewMode);
     browser.runtime.sendMessage({ action: 'getDisplayState', tabId: activeTabId, messageId: message.id })
         .then(state => renderThreatSummary(apiContainer, state, viewMode))
         .catch(error => console.error('Bewertung konnte nicht geladen werden:', error));
@@ -820,6 +821,140 @@ function describeReportSummary(report, viewMode) {
         text += ', Auth: ' + (report.authStatus || 'unbekannt');
     }
     return text;
+}
+
+
+// ---------------------------------------------------------------------------
+// Forscher-Panel: IOCs, Auth-Kette, Received-Hops, Link-Anatomie, Anhang-Typen
+// Nur in den technischen Rollen; alle Daten sind lokal erhoben.
+// ---------------------------------------------------------------------------
+function buildIndicatorsCsv(insights) {
+    const rows = [['type', 'value']];
+    for (const url of insights.indicators.urls) rows.push(['url', url]);
+    for (const domain of insights.indicators.domains) rows.push(['domain', domain]);
+    for (const target of insights.indicators.registrableDomains) rows.push(['registrable-domain', target]);
+    for (const ip of insights.indicators.ips) rows.push(['ip', ip]);
+    for (const mail of insights.indicators.emails) rows.push(['email', mail]);
+    for (const hash of insights.indicators.hashes) rows.push(['sha256', hash]);
+    for (const id of insights.indicators.messageIds) rows.push(['message-id', id]);
+    return rows.map(row => row.join(';')).join('\n');
+}
+
+function describeIndicatorCounts(insights) {
+    const counts = insights.indicators.counts || {};
+    return 'URLs: ' + (counts.urls || 0) + ', Domains: ' + (counts.domains || 0) +
+        ', IPs: ' + (counts.ips || 0) + ', Adressen: ' + (counts.emails || 0) +
+        ', Hashes: ' + (counts.hashes || 0);
+}
+
+async function renderResearcherPanel(message, container, viewMode) {
+    if (!isTechnicalView(viewMode)) return null;
+
+    let insights = null;
+    try {
+        const response = await browser.runtime.sendMessage({
+            action: 'getMessageInsights',
+            messageId: message.id,
+            includeAttachmentBytes: true
+        });
+        if (!response || response.status !== 'success') return null;
+        insights = response.insights;
+    } catch (error) {
+        console.error('Forscher-Analyse fehlgeschlagen:', error);
+        return null;
+    }
+
+    const card = document.createElement('div');
+    card.id = 'thundy-researcher-panel';
+    card.className = 'card card-info mb-3';
+
+    const title = document.createElement('p');
+    title.textContent = thundyT('research.title', 'Forscher-Analyse (lokal erhoben)') + ' - ' +
+        (insights.authStatus || 'Auth unbekannt');
+    card.appendChild(title);
+
+    // Bewertung nach Bestandteilen
+    const breakdownTitle = document.createElement('small');
+    breakdownTitle.textContent = thundyT('research.breakdown', 'Bewertung nach Bestandteilen:') + ' ' +
+        (insights.scoreBreakdown || []).map(entry => entry.source + ' +' + entry.points).join(', ');
+    card.appendChild(breakdownTitle);
+
+    // Indikatoren
+    const indicators = document.createElement('ul');
+    indicators.className = 'thundy-history-list';
+    const indicatorLines = [describeIndicatorCounts(insights)];
+    if (insights.indicators.ips.length) indicatorLines.push('IPs: ' + insights.indicators.ips.slice(0, 10).join(', '));
+    if (insights.indicators.hashes.length) indicatorLines.push('SHA-256: ' + insights.indicators.hashes.slice(0, 5).join(', '));
+    if (insights.indicators.registrableDomains.length) indicatorLines.push('Domains: ' + insights.indicators.registrableDomains.slice(0, 10).join(', '));
+    for (const line of indicatorLines) {
+        const item = document.createElement('li');
+        item.textContent = line;
+        indicators.appendChild(item);
+    }
+    card.appendChild(indicators);
+
+    // Authentifizierung + Received-Kette
+    const authList = document.createElement('ul');
+    authList.className = 'thundy-history-list';
+    for (const result of insights.authResults) {
+        const item = document.createElement('li');
+        item.textContent = 'Auth: ' + result.mechanism.toUpperCase() + ' = ' + result.result +
+            (result.domain ? ' (' + result.domain + ')' : '') + (result.authservId ? ' via ' + result.authservId : '');
+        authList.appendChild(item);
+    }
+    for (const hop of insights.receivedChain.hops) {
+        const item = document.createElement('li');
+        item.textContent = 'Hop: ' + (hop.from || '?') + (hop.ip ? ' [' + hop.ip + ']' : '') +
+            ' -> ' + (hop.by || '?') + (hop.delaySeconds !== null && hop.delaySeconds !== undefined ? ' (+' + hop.delaySeconds + ' s)' : '');
+        authList.appendChild(item);
+    }
+    card.appendChild(authList);
+
+    // Link-Anatomie (nur auffaellige oder getrackte Links)
+    const flagged = insights.indicators.urlAnalyses.filter(entry => entry.flags.length > 0).slice(0, 10);
+    if (flagged.length > 0) {
+        const linkList = document.createElement('ul');
+        linkList.className = 'thundy-history-list';
+        for (const entry of flagged) {
+            const item = document.createElement('li');
+            item.textContent = shorten(entry.url, 90) + ' | ' + entry.registrableDomain + ' | ' + entry.flags.join('; ');
+            linkList.appendChild(item);
+        }
+        card.appendChild(linkList);
+    }
+
+    // Anhang-Typanalyse
+    const suspicious = insights.attachments.filter(entry => entry.flags.length > 0);
+    if (suspicious.length > 0) {
+        const attachmentList = document.createElement('ul');
+        attachmentList.className = 'thundy-history-list';
+        for (const entry of suspicious) {
+            const item = document.createElement('li');
+            item.textContent = entry.name + ' | deklariert: ' + entry.declaredType +
+                (entry.detectedType ? ' | erkannt: ' + entry.detectedType : '') + ' | ' + entry.flags.join('; ');
+            attachmentList.appendChild(item);
+        }
+        card.appendChild(attachmentList);
+    }
+
+    const jsonButton = document.createElement('button');
+    jsonButton.type = 'button';
+    jsonButton.textContent = thundyT('research.exportJson', 'IOCs als JSON');
+    jsonButton.addEventListener('click', () => {
+        downloadHistoryFile('thundy-av-iocs.json', JSON.stringify(insights, null, 2), 'application/json');
+    });
+    card.appendChild(jsonButton);
+
+    const csvButton = document.createElement('button');
+    csvButton.type = 'button';
+    csvButton.textContent = thundyT('research.exportCsv', 'IOCs als CSV');
+    csvButton.addEventListener('click', () => {
+        downloadHistoryFile('thundy-av-iocs.csv', buildIndicatorsCsv(insights), 'text/csv;charset=utf-8');
+    });
+    card.appendChild(csvButton);
+
+    container.appendChild(card);
+    return { card, insights };
 }
 
 async function renderHistoryPanel(message, container, viewMode) {

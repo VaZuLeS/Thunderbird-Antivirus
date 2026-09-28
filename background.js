@@ -136,6 +136,13 @@ const MESSAGE_DISPLAY_SCRIPT_FILES = ['messageDisplay/banner.js'];
 const MESSAGE_DISPLAY_SCRIPT_CSS = ['messageDisplay/banner.css'];
 
 let messageDisplayScriptRegistered = false;
+// Welcher Weg funktioniert auf diesem Geraet? Wird in der Diagnose gemeldet.
+//   registered - scripting.messageDisplay.registerScripts (empfohlen, ab TB 128)
+//   files      - Registrierung nicht verfuegbar, Banner wird je Nachricht injiziert
+//   failed     - beides fehlgeschlagen (Details in displayScriptError)
+//   unknown    - seit dem Start wurde noch keine Nachricht geoeffnet
+let displayScriptMode = 'unknown';
+let displayScriptError = null;
 
 /**
  * Registers the message display script once per background start. Registered
@@ -145,7 +152,9 @@ async function registerMessageDisplayScript() {
     try {
         if (!browser.scripting || !browser.scripting.messageDisplay ||
             typeof browser.scripting.messageDisplay.registerScripts !== 'function') {
-            Logger.warn('scripting.messageDisplay.registerScripts is not available - falling back to per-message injection');
+            displayScriptMode = 'files';
+            displayScriptError = 'scripting.messageDisplay.registerScripts ist in dieser Thunderbird-Version nicht vorhanden.';
+            Logger.info('Nachrichten-Script: Registrierung nicht verfuegbar - Banner werden pro Nachricht injiziert.');
             return false;
         }
         await browser.scripting.messageDisplay.registerScripts([{
@@ -155,9 +164,13 @@ async function registerMessageDisplayScript() {
             runAt: 'document_idle'
         }]);
         messageDisplayScriptRegistered = true;
+        displayScriptMode = 'registered';
+        displayScriptError = null;
         return true;
     } catch (e) {
-        Logger.warn('Registering the message display script failed - falling back to per-message injection:', e);
+        displayScriptMode = 'files';
+        displayScriptError = 'Registrierung fehlgeschlagen: ' + (e && e.message ? e.message : String(e));
+        Logger.warn('Nachrichten-Script: Registrierung fehlgeschlagen - Banner werden pro Nachricht injiziert:', e);
         return false;
     }
 }
@@ -165,7 +178,17 @@ async function registerMessageDisplayScript() {
 /** Makes sure the banner script runs in the given message display tab. */
 async function ensureMessageDisplayScript(tabId) {
     if (messageDisplayScriptRegistered) return true;
-    await injectIntoMessageDisplay(tabId, { files: MESSAGE_DISPLAY_SCRIPT_FILES });
+
+    const result = await injectIntoMessageDisplay(tabId, { files: MESSAGE_DISPLAY_SCRIPT_FILES });
+    // Ein leeres Ergebnis bedeutet: die Injektion wurde nicht ausgefuehrt.
+    const injected = Array.isArray(result) ? result.length > 0 : !!result;
+    if (injected) {
+        displayScriptMode = 'files';
+    } else if (displayScriptMode === 'unknown' || displayScriptMode === 'files') {
+        displayScriptMode = 'failed';
+        displayScriptError = displayScriptError || 'Injektion in die Nachrichtenansicht lieferte kein Ergebnis.';
+    }
+
     try {
         if (browser.scripting && typeof browser.scripting.insertCSS === 'function') {
             await browser.scripting.insertCSS({ target: { tabId }, files: MESSAGE_DISPLAY_SCRIPT_CSS });
@@ -1403,20 +1426,45 @@ function calculateThreatScore(author, urls, options = {}) {
     }
     score += ruleResult.scoreDelta;
     reasons.push(...ruleResult.reasons);
+    // Eigene Regeln werden weiter unten im Breakdown gesondert ausgewiesen.
 
+    // Jeden Schritt einzeln nachvollziehbar machen (Forscher-Sicht).
+    const breakdown = [];
+    const step = (source, before) => {
+        if (score !== before) breakdown.push({ source, points: score - before });
+    };
+
+    if (ruleResult.scoreDelta > 0) breakdown.push({ source: 'eigene-regeln', points: ruleResult.scoreDelta });
+
+    let before = score;
     const authEval = evaluateAuthHeaders(authHeaders, score, reasons);
     score = authEval.score;
     let authStatus = authEval.authStatus;
+    step('authentifizierung', before);
 
+    before = score;
     score = evaluateUrlhaus(urlhausDomains, score, reasons);
-    score = evaluateMaliciousIps(maliciousIps, score, reasons);
-    score = evaluateReplyTo(replyTo, senderDomain, score, reasons);
-    score = evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons);
+    step('urlhaus', before);
 
+    before = score;
+    score = evaluateMaliciousIps(maliciousIps, score, reasons);
+    step('ip-reputation', before);
+
+    before = score;
+    score = evaluateReplyTo(replyTo, senderDomain, score, reasons);
+    step('reply-to', before);
+
+    before = score;
+    score = evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons);
+    step('verhalten', before);
+
+    before = score;
     const senderEval = evaluateSenderDomain(senderDomain, score, reasons);
     score = senderEval.score;
     let senderMainDomain = senderEval.senderMainDomain;
+    step('absender-domain', before);
 
+    before = score;
     score = evaluateLinks({
         urls,
         senderDomain,
@@ -1425,8 +1473,9 @@ function calculateThreatScore(author, urls, options = {}) {
         reasons,
         parsedUrlCache
     });
+    step('links', before);
 
-    return { score: Math.min(score, 100), reasons: reasons, authStatus: authStatus };
+    return { score: Math.min(score, 100), reasons: reasons, authStatus: authStatus, breakdown };
 }
 
 async function processAndUploadUrls(message, filteredUrls) {
@@ -2607,7 +2656,86 @@ async function computeAttachmentHash(messageId, partName) {
 }
 
 // ---------------------------------------------------------------------------
-// Webhook-/SIEM-Export (ausdrueckliches Opt-in, nur HTTPS)
+// Forscher-Analyse (alles lokal, keine Uebertragung)
+//
+// Zerlegt die geoeffnete Nachricht in pruefbare Bestandteile: Indikatoren
+// (IOCs), Authentifizierungskette, Received-Hops mit Laufzeiten, Link-Anatomie
+// und Anhang-Typanalyse. Grundlage fuer die Rolle "IT-Security-Forscher".
+// ---------------------------------------------------------------------------
+const DOUBLE_EXTENSION_REGEX = /\.(pdf|docx?|xlsx?|pptx?|txt|jpg|jpeg|png|gif|zip|rar|7z|exe|js|html?)\.(exe|scr|com|bat|cmd|js|vbs|jar|ps1|msi|lnk|hta|iso|img)$/i;
+const MACRO_CAPABLE_REGEX = /\.(docm|dotm|xlsm|xltm|pptm|potm|ppsm|xlam|sldm)$/i;
+const RISKY_EXTENSION_REGEX = /\.(exe|scr|com|bat|cmd|js|jse|vbs|vbe|wsf|wsh|ps1|psm1|jar|msi|lnk|hta|iso|img|dll|cpl|reg)$/i;
+
+/** Liest die Authentication-Results-Kopfzeilen aus. */
+function parseAuthenticationResults(headers) {
+    const results = [];
+    const list = Array.isArray(headers) ? headers : (headers ? [headers] : []);
+    for (const raw of list) {
+        const text = String(raw);
+        const authserv = (text.match(/^\s*([^\s;]+)/) || [])[1] || null;
+        for (const match of text.matchAll(/(spf|dkim|dmarc|arc)\s*=\s*([a-z]+)/gi)) {
+            const mechanism = match[1].toLowerCase();
+            const domainMatch = text.match(new RegExp(mechanism + '=[a-z]+[^;]*?(?:header\\.(?:i|d)=@?|smtp\\.mailfrom=@?)([^;\\s]+)', 'i'));
+            results.push({
+                mechanism,
+                result: match[2].toLowerCase(),
+                authservId: authserv,
+                domain: domainMatch ? domainMatch[1].toLowerCase() : null,
+                raw: text.length > 300 ? text.slice(0, 300) + '\u2026' : text
+            });
+        }
+    }
+    return results;
+}
+
+/** Zerlegt die Received-Kette in Hops inklusive Zeitversatz. */
+function analyzeReceivedChain(headers) {
+    const list = Array.isArray(headers) ? headers : (headers ? [headers] : []);
+    const hops = [];
+
+    for (const raw of list) {
+        const text = String(raw);
+        const fromHost = (text.match(/from\s+([^\s(]+)/i) || [])[1] || null;
+        const byHost = (text.match(/by\s+([^\s(]+)/i) || [])[1] || null;
+        const ipMatch = text.match(/\[?(\d{1,3}(?:\.\d{1,3}){3})\]?/);
+        const dateMatch = text.match(/;\s*(.+)$/);
+        let date = null;
+        if (dateMatch) {
+            const parsed = new Date(dateMatch[1].trim().replace(/\s*\([^)]*\)\s*$/, ''));
+            if (!isNaN(parsed.getTime())) date = parsed.toISOString();
+        }
+        hops.push({
+            from: fromHost,
+            by: byHost,
+            ip: ipMatch ? ipMatch[1] : null,
+            date,
+            raw: text.length > 240 ? text.slice(0, 240) + '\u2026' : text
+        });
+    }
+
+    // Received-Header stehen neueste zuoberst: chronologisch drehen.
+    const chronological = hops.slice().reverse();
+    for (let i = 0; i < chronological.length; i++) {
+        const current = chronological[i];
+        const previous = chronological[i - 1];
+        if (current.date && previous && previous.date) {
+            const delta = (new Date(current.date).getTime() - new Date(previous.date).getTime()) / 1000;
+            current.delaySeconds = delta >= 0 ? delta : null;
+        } else {
+            current.delaySeconds = null;
+        }
+    }
+
+    const first = chronological[0];
+    const last = chronological[chronological.length - 1];
+    const totalSeconds = (chronological.length > 1 && first && last && first.date && last.date)
+        ? (new Date(last.date).getTime() - new Date(first.date).getTime()) / 1000
+        : null;
+
+    return { hops: chronological, totalSeconds };
+}
+
+
 //
 // Uebertraegt Verlaufsereignisse an eine vom Nutzer (oder Administrator)
 // bestimmte Adresse - z. B. einen eigenen SIEM-Endpunkt. Standardmaessig aus,
@@ -2690,13 +2818,245 @@ async function testWebhook() {
     return { status: 'error', message: result.message || result.reason || 'Versand fehlgeschlagen.' };
 }
 
-// ---------------------------------------------------------------------------
-// Lokale Regel-/IOC-Engine
+/** Zaehlt die Labels einer Domain und liefert die registrierbare Domain. */
+const MULTI_LEVEL_SUFFIXES = ['co.uk', 'org.uk', 'com.au', 'co.jp', 'com.br', 'co.nz'];
+function getRegistrableDomain(host) {
+    if (!host) return '';
+    const labels = String(host).toLowerCase().split('.').filter(Boolean);
+    if (labels.length <= 2) return labels.join('.');
+    const lastTwo = labels.slice(-2).join('.');
+    if (MULTI_LEVEL_SUFFIXES.includes(lastTwo) && labels.length >= 3) return labels.slice(-3).join('.');
+    return lastTwo;
+}
+
+/** Zerlegt eine URL in pruefbare Bestandteile (Punycode, Obfuskation, Tracking). */
+function analyzeUrl(url) {
+    const analysis = {
+        url: String(url),
+        valid: false,
+        scheme: null,
+        host: null,
+        registrableDomain: null,
+        ipHost: false,
+        punycode: false,
+        hasUserInfo: false,
+        subdomainCount: 0,
+        pathDepth: 0,
+        trackingParams: [],
+        sanitized: null,
+        flags: []
+    };
+
+    let parsed;
+    try {
+        parsed = new URL(String(url));
+    } catch (e) {
+        analysis.flags.push('ungueltige URL');
+        return analysis;
+    }
+
+    const trackingKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid', 'mc_eid', 'ref'];
+
+    analysis.valid = true;
+    analysis.scheme = parsed.protocol.replace(':', '');
+    analysis.host = parsed.hostname;
+    analysis.registrableDomain = getRegistrableDomain(parsed.hostname);
+    analysis.port = parsed.port || null;
+    analysis.pathDepth = parsed.pathname.split('/').filter(Boolean).length;
+    analysis.ipHost = /^\d{1,3}(\.\d{1,3}){3}$/.test(parsed.hostname) || parsed.hostname.includes(':');
+    analysis.punycode = parsed.hostname.includes('xn--');
+    analysis.hasUserInfo = !!parsed.username || !!parsed.password;
+    analysis.subdomainCount = Math.max(0,
+        parsed.hostname.split('.').filter(Boolean).length - analysis.registrableDomain.split('.').length);
+
+    for (const key of parsed.searchParams.keys()) {
+        if (trackingKeys.includes(key.toLowerCase())) analysis.trackingParams.push(key);
+    }
+
+    if (analysis.hasUserInfo) analysis.flags.push('Zugangsdaten in der URL (user@host) - klassische Taeuschung');
+    if (analysis.punycode) analysis.flags.push('Punycode-Host - optisch aehnliche Zeichen moeglich');
+    if (analysis.ipHost) analysis.flags.push('IP-Adresse statt Domain');
+    if (analysis.subdomainCount >= 4) analysis.flags.push('sehr viele Subdomains (' + analysis.subdomainCount + ')');
+    if (analysis.trackingParams.length > 0) analysis.flags.push('Tracking-Parameter: ' + analysis.trackingParams.join(', '));
+
+    if (analysis.trackingParams.length > 0) {
+        const clean = new URL(parsed.toString());
+        for (const key of Array.from(clean.searchParams.keys())) {
+            if (trackingKeys.includes(key.toLowerCase())) clean.searchParams.delete(key);
+        }
+        analysis.sanitized = clean.toString();
+    }
+
+    return analysis;
+}
+
+/**
+ * Prueft, ob der deklarierte MIME-Typ zum erkannten Inhalt passt.
+ * Bewusst streng: eine reine Familien-Gleichheit ("application/..." vs
+ * "application/...") genuegt nicht, sonst bliebe eine als PDF deklarierte
+ * Windows-EXE unbemerkt.
+ */
+function isPlausibleDeclaredType(declaredType, detectedType) {
+    if (!detectedType) return true;
+    const declared = String(declaredType || '').toLowerCase();
+    const detected = String(detectedType).toLowerCase();
+    if (declared === detected) return true;
+
+    const [detectedFamily, detectedSubtype] = detected.split('/');
+    const [declaredFamily, declaredSubtype] = declared.split('/');
+    const subtype = declaredSubtype || '';
+    const full = declared;
+
+    if (detectedSubtype === 'zip') {
+        return declaredFamily === 'application' &&
+            /zip|document|sheet|presentation|opendocument|octet-stream|msoffice|epub/.test(full);
+    }
+    if (detectedSubtype === 'x-ole-storage') {
+        return declaredFamily === 'application' &&
+            /msword|ms-excel|ms-powerpoint|msoffice|vnd\.ms|octet-stream/.test(full);
+    }
+    if (detectedSubtype === 'x-dosexec') {
+        return declaredFamily === 'application' &&
+            /x-dosexec|x-msdownload|octet-stream|x-msdos/.test(subtype);
+    }
+    if (detectedSubtype === 'x-elf') {
+        return declaredFamily === 'application' && /x-executable|x-sharedlib|octet-stream/.test(subtype);
+    }
+    if (detectedSubtype === 'x-rar' || detectedSubtype === 'x-7z') {
+        return declaredFamily === 'application' && /rar|7z|octet-stream|x-compressed/.test(subtype);
+    }
+    if (detectedFamily === 'image') {
+        return declaredFamily === 'image' || (declaredFamily === 'application' && subtype === 'octet-stream');
+    }
+    if (detectedFamily === 'application' && detectedSubtype === 'pdf') {
+        return /pdf/.test(full);
+    }
+    return declaredFamily === detectedFamily && subtype.includes(detectedSubtype);
+}
+
+
+function analyzeAttachmentMeta(attachment, buffer) {
+    const name = String((attachment && attachment.name) || '');
+    const declaredType = String((attachment && attachment.contentType) || 'unbekannt');
+    const meta = {
+        name,
+        declaredType,
+        detectedType: null,
+        typeMismatch: false,
+        doubleExtension: DOUBLE_EXTENSION_REGEX.test(name),
+        riskyExtension: RISKY_EXTENSION_REGEX.test(name),
+        macroCapable: MACRO_CAPABLE_REGEX.test(name),
+        flags: []
+    };
+
+    if (buffer) {
+        const bytes = new Uint8Array(buffer.slice ? buffer.slice(0, 4) : buffer);
+        const hex = Array.from(bytes).map(byte => byte.toString(16).padStart(2, '0')).join('');
+        const signatures = {
+            '25504446': 'application/pdf',
+            '504b0304': 'application/zip',
+            '4d5a0000': 'application/x-dosexec',
+            '4d5a9000': 'application/x-dosexec',
+            '7f454c46': 'application/x-elf',
+            'd0cf11e0': 'application/x-ole-storage',
+            '89504e47': 'image/png',
+            'ffd8ff': 'image/jpeg',
+            '47494638': 'image/gif',
+            '52617221': 'application/x-rar',
+            '377abcaf': 'application/x-7z'
+        };
+        meta.detectedType = signatures[hex] || null;
+        meta.typeMismatch = meta.detectedType ? !isPlausibleDeclaredType(declaredType, meta.detectedType) : false;
+    }
+
+    if (meta.doubleExtension) meta.flags.push('doppelte Dateiendung');
+    if (meta.riskyExtension) meta.flags.push('ausfuehrbare/riskante Dateiendung');
+    if (meta.macroCapable) meta.flags.push('makrofaehiges Dokument');
+    if (meta.typeMismatch) meta.flags.push('Dateityp weicht vom Inhalt ab (' + declaredType + ' vs. ' + meta.detectedType + ')');
+
+    return meta;
+}
+
+
 //
 // Eigene Regeln (Absender, Domain, URL, Betreff, Dateiname, SHA-256) wirken
 // ausschliesslich lokal: sie ergaenzen die Bewertung, koennen Absender
 // freistellen/blockieren und verhindern Uploads, wenn eine Datei lokal bereits
 // als unbedenklich oder boese bekannt ist.
+// ---------------------------------------------------------------------------
+/** Sammelt Indikatoren (IOCs) aus Nachricht, Links und Anhaengen. */
+function extractIndicators({ urls = [], fullMessage = null, attachments = [], extraText = '' } = {}) {
+    const domains = new Set();
+    const registrableDomains = new Set();
+    const ips = new Set();
+    const emails = new Set();
+    const hashes = new Set();
+    const messageIds = new Set();
+    const mailServers = new Set();
+    const urlAnalyses = [];
+
+    for (const url of urls) {
+        const analysis = analyzeUrl(url);
+        urlAnalyses.push(analysis);
+        if (analysis.host) {
+            domains.add(analysis.host);
+            registrableDomains.add(analysis.registrableDomain);
+        }
+    }
+
+    const headers = (fullMessage && fullMessage.headers) || {};
+    const headerValues = [];
+    for (const key of Object.keys(headers)) {
+        const value = headers[key];
+        for (const entry of (Array.isArray(value) ? value : [value])) {
+            if (entry) headerValues.push(String(entry));
+        }
+    }
+    const headerText = headerValues.join('\n');
+
+    for (const match of headerText.matchAll(/(\d{1,3}(?:\.\d{1,3}){3})/g)) ips.add(match[1]);
+    for (const match of headerText.matchAll(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g)) emails.add(match[0].toLowerCase());
+    for (const match of headerText.matchAll(/<([^<>@\s]+@[^<>\s]+)>/g)) messageIds.add(match[1].toLowerCase());
+    for (const match of headerText.matchAll(/([a-f0-9]{64})/gi)) hashes.add(match[1].toLowerCase());
+    for (const match of headerText.matchAll(/from\s+([a-z0-9.-]+\.[a-z]{2,})/gi)) mailServers.add(match[1].toLowerCase());
+
+    for (const attachment of attachments) {
+        if (attachment && attachment.hybrid_sha256) hashes.add(String(attachment.hybrid_sha256).toLowerCase());
+    }
+
+    if (extraText) {
+        for (const match of String(extraText).matchAll(/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/g)) emails.add(match[0].toLowerCase());
+    }
+
+    return {
+        urls: urlAnalyses.map(entry => entry.url),
+        urlAnalyses,
+        domains: Array.from(domains),
+        registrableDomains: Array.from(registrableDomains),
+        ips: Array.from(ips),
+        emails: Array.from(emails),
+        hashes: Array.from(hashes),
+        messageIds: Array.from(messageIds),
+        mailServers: Array.from(mailServers),
+        counts: {
+            urls: urlAnalyses.length,
+            domains: domains.size,
+            ips: ips.size,
+            emails: emails.size,
+            hashes: hashes.size
+        }
+    };
+}
+
+
+//
+// Eigene Regeln (Absender, Domain, URL, Betreff, Dateiname, SHA-256) wirken
+// ausschliesslich lokal: sie ergaenzen die Bewertung, koennen Absender
+// freistellen/blockieren und verhindern Uploads, wenn eine Datei lokal bereits
+// als unbedenklich oder boese bekannt ist.
+// ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Lokale Regel-/IOC-Engine (Regeln wirken ausschliesslich lokal)
 // ---------------------------------------------------------------------------
 const RULE_TYPES = ['sender', 'domain', 'url', 'subject', 'attachment-name', 'sha256'];
 const RULE_ACTIONS = ['whitelist', 'blacklist', 'score'];
@@ -2887,11 +3247,28 @@ async function collectDiagnostics() {
     } catch (e) { alarmDetail = 'Prüfung fehlgeschlagen: ' + (e && e.message); }
     add('alarms', 'Zeitverzögerte Ergebnisabfrage', alarmReady ? 'ok' : 'warn', alarmDetail);
 
-    add('display-script', 'Banner in der Nachrichtenansicht',
-        messageDisplayScriptRegistered ? 'ok' : 'warn',
-        messageDisplayScriptRegistered
-            ? 'Nachrichten-Script registriert.'
-            : 'Registrierung nicht verfügbar - Banner werden pro Nachricht injiziert.');
+    let displayStatus;
+    let displayDetail;
+    if (messageDisplayScriptRegistered) {
+        displayStatus = 'ok';
+        displayDetail = 'Registriert (empfohlener Weg): Banner erscheinen automatisch in jeder Nachricht.';
+    } else if (displayScriptMode === 'files') {
+        displayStatus = 'ok';
+        displayDetail = 'Registrierung nicht verfuegbar (Thunderbird-Version ohne scripting.messageDisplay.registerScripts, ' +
+            'seit Thunderbird 128 enthalten). Die Banner werden stattdessen bei jeder geoeffneten Nachricht direkt in die ' +
+            'Nachrichtenansicht injiziert - die Funktion ist vollstaendig gegeben.';
+    } else if (displayScriptMode === 'failed') {
+        displayStatus = 'fail';
+        displayDetail = 'Weder Registrierung noch Injektion moeglich' +
+            (displayScriptError ? ': ' + displayScriptError : '.') +
+            ' Bitte die Konsole des Hintergrundskripts pruefen.';
+    } else {
+        displayStatus = 'warn';
+        displayDetail = 'Noch nicht ermittelt - seit dem Start wurde noch keine Nachricht geoeffnet. ' +
+            'Nach dem Oeffnen einer Nachricht erneut pruefen.' +
+            (displayScriptError ? ' (' + displayScriptError + ')' : '');
+    }
+    add('display-script', 'Banner in der Nachrichtenansicht', displayStatus, displayDetail);
 
     let dbWritable = false;
     let dbDetail = 'IndexedDB nicht verfügbar.';
@@ -2928,6 +3305,8 @@ async function collectDiagnostics() {
         checks,
         summary: { ok: counts.ok || 0, warn: counts.warn || 0, fail: counts.fail || 0 },
         viewMode,
+        displayScriptMode,
+        displayScriptError,
         managed: hasManagedPolicy(),
         managedKeys: Object.keys(managedSettings)
     };
@@ -3372,6 +3751,72 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case "evaluateRules": {
             const evaluation = evaluateCustomRules(request.input || {});
             sendResponse({ status: 'success', evaluation });
+            return true;
+        }
+
+        case "getMessageInsights": {
+            const messageId = request.messageId;
+            browser.messages.get(messageId)
+                .then(async (message) => {
+                    if (!message) throw new Error('Nachricht nicht gefunden.');
+                    const fullMessage = await browser.messages.getFull(messageId);
+                    const text = extractTextFromParts(fullMessage.parts || fullMessage);
+                    const urls = filterUrls(extractUrls(text));
+                    const headers = fullMessage.headers || {};
+
+                    let attachments = [];
+                    try { attachments = await browser.messages.listAttachments(messageId); } catch (e) { /* optional */ }
+
+                    const storage = await browser.storage.local.get('scanningEnabledSenders');
+                    const senderEmail = extractEmailAddress(message.author || '');
+                    const senderDomain = extractEmailDomain(senderEmail);
+
+                    const reviewTier = request.includeAttachmentBytes === true ? privacyTier : privacyTier;
+                    const analyses = [];
+                    for (const attachment of attachments.slice(0, 20)) {
+                        let buffer = null;
+                        if (request.includeAttachmentBytes === true) {
+                            try {
+                                const file = await browser.messages.getAttachmentFile(messageId, attachment.partName);
+                                buffer = await file.slice().arrayBuffer();
+                            } catch (e) { buffer = null; }
+                        }
+                        analyses.push(analyzeAttachmentMeta(attachment, buffer));
+                    }
+
+                    const evaluationOptions = await collectThreatEvaluationOptions({
+                        message, fullMessage, filteredUrls: urls, messageText: text, parsedUrlCache: new Map()
+                    });
+                    const threat = calculateThreatScore(message.author, extractUrls(text), evaluationOptions);
+                    const indicators = extractIndicators({ urls, fullMessage, attachments, extraText: text });
+
+                    sendResponse({
+                        status: 'success',
+                        insights: {
+                            generatedAt: new Date().toISOString(),
+                            subject: message.subject || null,
+                            sender: message.author || null,
+                            senderDomain,
+                            senderKnown: (storage.scanningEnabledSenders || []).includes(senderEmail),
+                            tier: reviewTier,
+                            score: threat.score,
+                            scoreBreakdown: threat.breakdown || [],
+                            reasons: threat.reasons,
+                            authStatus: threat.authStatus,
+                            authResults: parseAuthenticationResults(headers['authentication-results']),
+                            receivedChain: analyzeReceivedChain(headers['received']),
+                            headers: {
+                                'return-path': headers['return-path'] || null,
+                                'reply-to': headers['reply-to'] || null,
+                                'message-id': headers['message-id'] || null,
+                                'x-mailer': headers['x-mailer'] || null
+                            },
+                            indicators,
+                            attachments: analyses
+                        }
+                    });
+                })
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
             return true;
         }
 

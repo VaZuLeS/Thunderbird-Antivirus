@@ -461,6 +461,18 @@
   "popup.warning": {
     "message": "Warnung:"
   },
+  "research.breakdown": {
+    "message": "Bewertung nach Bestandteilen:"
+  },
+  "research.exportCsv": {
+    "message": "IOCs als CSV"
+  },
+  "research.exportJson": {
+    "message": "IOCs als JSON"
+  },
+  "research.title": {
+    "message": "Forscher-Analyse (lokal erhoben)"
+  },
   "ui.save": {
     "message": "Speichern"
   },

@@ -39,6 +39,26 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.12.0] – 2026-09-28
+
+### Added
+
+- **Forscher-Analyse im Popup (Rollen `research`/`audit`):**
+  - **Indikatoren (IOCs)** aus der Nachricht: URLs, Hosts, registrierbare Domains, IP-Adressen, Adressen,
+    SHA-256-Werte, Message-IDs, Mailserver - mit Export als **JSON und CSV**.
+  - **Authentifizierungskette:** SPF/DKIM/DMARC-Verdikte inklusive Domain und pruefendem Server.
+  - **Received-Hops** in chronologischer Reihenfolge mit Absender-/Empfaengerhost, IP und **Laufzeit je Hop**.
+  - **Link-Anatomie:** Schema, Host, registrierbare Domain, Subdomain-Tiefe, IP-/Punycode-Hosts, Zugangsdaten in der
+    URL, Tracking-Parameter sowie eine bereinigte URL ohne Tracker.
+  - **Anhang-Typanalyse ohne Ausfuehrung:** Magic-Byte-Erkennung, Abgleich mit dem deklarierten MIME-Typ,
+    doppelte Dateiendungen, ausfuehrbare Endungen und makrofaehige Dokumente.
+  - **Bewertung nach Bestandteilen:** der Score wird jetzt je Pruefschritt (Authentifizierung, URLhaus,
+    IP-Reputation, Reply-To, Verhalten, Absender-Domain, Links, eigene Regeln) mit Punktebeitrag ausgewiesen.
+- **Praeziere Injektionsdiagnose:** Der Selbsttest unterscheidet nun sauber zwischen dem empfohlenen Weg
+  (`scripting.messageDisplay.registerScripts`, ab Thunderbird 128) und dem Fallback, bei dem die Banner je Nachricht in
+  die Ansicht injiziert werden. Der Fallback wird als **ok** mit Erklaerung gemeldet (er funktioniert vollstaendig),
+  echte Fehler als **fail** samt Ursache; zusaetzlich wird die Injektion verifiziert (leeres Ergebnis = Fehler).
+
 ## [1.11.0] – 2026-09-28
 
 ### Added

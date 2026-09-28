@@ -141,6 +141,19 @@ The popup lists every attachment of the displayed message with type and size:
   popup. Without consent, API key or host permission the popup explains what is missing and links to the
   options page.
 
+### Researcher features (roles `research` / `audit`)
+
+- **IOC extraction** (URLs, hosts, registrable domains, IPs, addresses, SHA-256, Message-IDs, mail servers) with
+  JSON/CSV export.
+- **Authentication chain** (SPF/DKIM/DMARC incl. domain and verifying server) and **Received hops** in chronological
+  order with per-hop delay.
+- **URL anatomy:** scheme, host, registrable domain, subdomain depth, IP/punycode hosts, credentials in the URL,
+  tracking parameters and a tracker-free variant.
+- **Attachment type analysis** via magic bytes (declared vs. detected type, double extensions, macro-capable
+  documents) and **score breakdown** per evaluation step.
+
+All of it is computed locally; nothing is transmitted.
+
 ### Localization and branding
 
 - **Localization:** the add-on ships German and English (125 keys each) in `_locales/`. Thunderbird picks the

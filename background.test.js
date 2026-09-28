@@ -240,6 +240,12 @@ describe('background.js', () => {
             globalThis.get_customBlacklist = () => customBlacklist;
             globalThis.set_customRules = (rules) => { customRules = rules || []; };
             globalThis.get_customRules = () => customRules;
+            globalThis.parseAuthenticationResults = parseAuthenticationResults;
+            globalThis.analyzeReceivedChain = analyzeReceivedChain;
+            globalThis.getRegistrableDomain = getRegistrableDomain;
+            globalThis.analyzeUrl = analyzeUrl;
+            globalThis.extractIndicators = extractIndicators;
+            globalThis.analyzeAttachmentMeta = analyzeAttachmentMeta;
             globalThis.validateRule = validateRule;
             globalThis.normalizeRules = normalizeRules;
             globalThis.evaluateCustomRules = evaluateCustomRules;
@@ -4688,6 +4694,119 @@ describe('background.js', () => {
             assert.strictEqual(context.filterScanHistory(history, { to: '2026-06-30T23:59:59' }).length, 2);
             assert.strictEqual(context.filterScanHistory(history, { from: '2026-06-01', to: '2026-06-30' }).length, 1);
             assert.strictEqual(context.filterScanHistory(history, { search: 'gibtesnicht' }).length, 0);
+        });
+    });
+
+    describe('researcher analysis (IOC, headers, links, attachments)', () => {
+        it('parses SPF, DKIM and DMARC verdicts with their domains', () => {
+            const results = context.parseAuthenticationResults([
+                'mx.example.com; spf=pass smtp.mailfrom=@sender.example; dkim=fail header.i=@sender.example; dmarc=fail header.d=sender.example'
+            ]);
+            const mechanisms = results.map(entry => entry.mechanism + '=' + entry.result);
+            assert.strictEqual(mechanisms.length, 3);
+            assert.strictEqual(mechanisms.join(','), 'spf=pass,dkim=fail,dmarc=fail');
+            assert.strictEqual(results[0].authservId, 'mx.example.com');
+            assert.ok(results.some(entry => entry.domain === 'sender.example'));
+        });
+
+        it('builds the received chain chronologically with per-hop delays', () => {
+            const chain = context.analyzeReceivedChain([
+                'from mx2.example by inbox.example with ESMTPS; Mon, 28 Sep 2026 12:00:10 +0000',
+                'from mx1.example (mx1.example [203.0.113.9]) by mx2.example; Mon, 28 Sep 2026 12:00:00 +0000'
+            ]);
+
+            assert.strictEqual(chain.hops.length, 2);
+            assert.strictEqual(chain.hops[0].from, 'mx1.example');
+            assert.strictEqual(chain.hops[0].ip, '203.0.113.9');
+            assert.strictEqual(chain.hops[1].delaySeconds, 10);
+            assert.strictEqual(chain.hops[0].delaySeconds, null);
+            assert.strictEqual(chain.totalSeconds, 10);
+        });
+
+        it('computes registrable domains including multi-level suffixes', () => {
+            assert.strictEqual(context.getRegistrableDomain('login.secure.example.co.uk'), 'example.co.uk');
+            assert.strictEqual(context.getRegistrableDomain('a.b.example.com'), 'example.com');
+            assert.strictEqual(context.getRegistrableDomain('example.com'), 'example.com');
+        });
+
+        it('flags URL obfuscation and strips tracking parameters', () => {
+            const tricky = context.analyzeUrl('https://user:pass@xn--80ak6aa92e.com:8443/a/b/c?utm_source=x&gclid=y&keep=1');
+            assert.strictEqual(tricky.punycode, true);
+            assert.strictEqual(tricky.hasUserInfo, true);
+            assert.strictEqual(tricky.port, '8443');
+            assert.strictEqual(tricky.pathDepth, 3);
+            assert.strictEqual(tricky.trackingParams.length, 2);
+            assert.ok(tricky.flags.some(flag => flag.includes('Zugangsdaten')));
+            assert.ok(!tricky.sanitized.includes('utm_source'));
+            assert.ok(tricky.sanitized.includes('keep=1'));
+
+            const manySubdomains = context.analyzeUrl('https://a.b.c.d.example.com/x');
+            assert.strictEqual(manySubdomains.subdomainCount, 4);
+            assert.ok(manySubdomains.flags.some(flag => flag.includes('Subdomains')));
+
+            const ipUrl = context.analyzeUrl('http://203.0.113.7/payload');
+            assert.strictEqual(ipUrl.ipHost, true);
+            assert.strictEqual(ipUrl.flags.includes('IP-Adresse statt Domain'), true);
+
+            const broken = context.analyzeUrl('nicht mal eine url');
+            assert.strictEqual(broken.valid, false);
+        });
+
+        it('extracts indicators from message headers, links and attachments', () => {
+            const indicators = context.extractIndicators({
+                urls: ['https://login.example.com/a', 'http://203.0.113.5/b'],
+                fullMessage: { headers: {
+                    'received': ['from mx.example (mx.example [198.51.100.4]) by inbox.example'],
+                    'message-id': ['<abc123@mx.example>'],
+                    'reply-to': ['Chef <chef@firma.example>']
+                } },
+                attachments: [{ hybrid_sha256: 'c'.repeat(64) }],
+                extraText: 'Kontakt: support@firma.example'
+            });
+
+            assert.strictEqual(indicators.counts.urls, 2);
+            assert.strictEqual(indicators.counts.domains, 2);
+            assert.ok(indicators.registrableDomains.includes('example.com'));
+            assert.ok(indicators.ips.includes('198.51.100.4'));
+            assert.ok(indicators.emails.includes('chef@firma.example'));
+            assert.ok(indicators.emails.includes('support@firma.example'));
+            assert.ok(indicators.hashes.includes('c'.repeat(64)));
+            assert.ok(indicators.messageIds.includes('abc123@mx.example'));
+        });
+
+        it('detects attachment type mismatches and risky names', () => {
+            const executable = new Uint8Array([0x4d, 0x5a, 0x90, 0x00]).buffer;
+            const mismatch = context.analyzeAttachmentMeta({ name: 'rechnung.pdf', contentType: 'application/pdf' }, executable);
+            assert.strictEqual(mismatch.detectedType, 'application/x-dosexec');
+            assert.strictEqual(mismatch.typeMismatch, true);
+            assert.ok(mismatch.flags.some(flag => flag.includes('weicht vom Inhalt ab')));
+
+            const doubleExt = context.analyzeAttachmentMeta({ name: 'rechnung.pdf.exe', contentType: 'application/octet-stream' }, null);
+            assert.strictEqual(doubleExt.doubleExtension, true);
+            assert.strictEqual(doubleExt.riskyExtension, true);
+
+            const macro = context.analyzeAttachmentMeta({ name: 'angebot.xlsm', contentType: 'application/vnd.ms-excel.sheet.macroEnabled.12' }, null);
+            assert.strictEqual(macro.macroCapable, true);
+
+            const pdf = new Uint8Array([0x25, 0x50, 0x44, 0x46]).buffer;
+            const clean = context.analyzeAttachmentMeta({ name: 'rechnung.pdf', contentType: 'application/pdf' }, pdf);
+            assert.strictEqual(clean.typeMismatch, false);
+            assert.strictEqual(clean.flags.length, 0);
+        });
+
+        it('provides a weighted score breakdown', () => {
+            const result = context.calculateThreatScore('Service <service@paypal-support.com>', ['https://login.amaz0n.de/x'], {
+                authHeaders: ['spf=fail dkim=fail dmarc=fail'],
+                isFirstCommunication: false,
+                messageText: 'Konto gesperrt'
+            });
+
+            assert.ok(Array.isArray(result.breakdown));
+            const sources = result.breakdown.map(entry => entry.source);
+            assert.ok(sources.includes('authentifizierung'));
+            assert.ok(sources.includes('links'));
+            const sum = result.breakdown.reduce((total, entry) => total + entry.points, 0);
+            assert.ok(sum >= result.score - 1, 'breakdown must explain the score');
         });
     });
 

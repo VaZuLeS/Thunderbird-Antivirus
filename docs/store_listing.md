@@ -149,6 +149,12 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.7 Release notes 1.12.0
+
+- **Researcher panel (roles `research` / `audit`):** IOC extraction (URLs, hosts, registrable domains, IPs, addresses, SHA-256, Message-IDs, mail servers) with JSON/CSV export, the SPF/DKIM/DMARC chain, chronological `Received` hops including per-hop delays, URL anatomy (punycode, user@host, tracking parameters, sanitised URL) and attachment type analysis based on magic bytes (type mismatch, double extensions, macro-capable documents). Everything is computed locally.
+- **Score breakdown per evaluation step** (authentication, URLhaus, IP reputation, Reply-To, behaviour, sender domain, links, custom rules) so every rating is traceable.
+- **Clearer injection diagnostics:** the self test now distinguishes the recommended registration path from the per-message injection fallback (used by Thunderbird versions without `scripting.messageDisplay.registerScripts`), reports the fallback as working and shows the real cause for failures.
+
 ## 5.6 Release notes 1.11.0
 
 - **German and English user interface**, chosen automatically from Thunderbird’s language; missing translations fall

@@ -817,3 +817,52 @@ web-ext lint + Filter          # 0 Fehler
 2. Echte Store-Screenshots (jetzt sinnvoll: helle und dunkle Variante, Rolle `research` für Detailansicht).
 3. Signierung/Einreichung bei addons.thunderbird.net.
 4. Optional: Übersetzung der Rohdaten-Ansichten (Diagnose/Verlauf/Bericht) — reine Fleißarbeit.
+
+---
+
+## 16. Forscher-Funktionen und praezisierte Injektionsdiagnose (v1.12.0)
+
+Ausgangspunkt war die Rueckmeldung aus dem Selbsttest:
+*„Banner in der Nachrichtenansicht: Registrierung nicht verfuegbar - Banner werden pro Nachricht injiziert.“*
+
+### 16.1 Einordnung der Meldung
+
+Der Befund ist **kein Fehler**: `scripting.messageDisplay.registerScripts` gibt es erst ab Thunderbird 128. Auf aelteren
+Versionen (oder wenn die Registrierung fehlschlaegt) injiziert Thundy AV das Banner-Script bei **jeder** geoeffneten
+Nachricht über `scripting.executeScript({ files })` - mit demselben Script und Stylesheet. Die Funktion ist damit
+vollstaendig gegeben; die Meldung war vorher nur als pauschale Warnung formuliert und erklaerte weder Ursache noch
+Modus.
+
+**Was geaendert wurde:**
+
+| Vorher | Jetzt |
+|---|---|
+| „Registrierung nicht verfuegbar - Banner werden pro Nachricht injiziert.“ als **Warnung** | Klare Unterscheidung: `registered` (empfohlen) vs. `files` (Fallback, als **ok** mit Erklaerung, inkl. Hinweis „seit Thunderbird 128“) vs. `failed` (**fail** mit Ursache) vs. `unknown` (noch keine Nachricht geoeffnet, Hinweis) |
+| Fehlerursache nur in der Konsole | `displayScriptError` wird in der Diagnose zusaetzlich ausgewiesen |
+| Kein Nachweis, ob die Injektion wirkte | `ensureMessageDisplayScript()` prueft das Ergebnis (leeres Resultat = Fehler) und setzt den Modus entsprechend |
+
+### 16.2 Neue Forscher-Funktionen (alle lokal, keine neuen Berechtigungen/Übertragungen)
+
+| Funktion | Umsetzung | Tests |
+|---|---|---|
+| IOC-Extraktion | URLs, Hosts, registrierbare Domains (inkl. Mehrfach-Suffixen wie `co.uk`), IP-Adressen, Adressen, SHA-256, Message-IDs, Mailserver; Export als JSON/CSV im Popup | 2 |
+| Authentifizierungskette | SPF/DKIM/DMARC-Verdikte mit Domain und pruefendem Server | 1 |
+| Received-Analyse | chronologische Hops mit `from`/`by`/IP und **Laufzeit je Hop** plus Gesamtlaufzeit | 1 |
+| Link-Anatomie | Schema, Host, registrierbare Domain, Subdomain-Tiefe, IP-/Punycode-Hosts, Zugangsdaten in der URL, Tracking-Parameter, bereinigte URL, Flags | 1 |
+| Anhang-Typanalyse | Magic-Byte-Erkennung, strenger Abgleich mit dem deklarierten MIME-Typ (Familie allein genuegt nicht), doppelte Endungen, ausfuehrbare Endungen, makrofaehige Dokumente | 1 |
+| Score-Breakdown | Punktebeitrag je Pruefschritt inkl. eigener Regeln | 1 (Hintergrund) + 1 (Popup) |
+| Popup-Panel | nur in `research`/`audit`; verbirgt sich in `private`/`quiet` | 2 |
+
+**Datenschutz:** Die Anhang-Typanalyse liest die ersten Bytes lokal (`messages.getAttachmentFile()`), die Ergebnisse
+bleiben im Popup und im Export des Nutzers. Es gibt keine neue Berechtigung, keine automatische Uebertragung und keine
+Aenderung an `data_collection_permissions`. Reviewer Notes wurden um Abschnitt 3.8 ergaenzt.
+
+### 16.3 Verifikation
+
+```bash
+node scripts/check-locales.js   # vollstaendig (en/de, 129 Schluessel)
+npm test                        # 554 Tests, 0 Fehler
+npm run pre-submit-checks       # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm run build                   # build/thundy-av-1.12.0.xpi inkl. Paketpruefung
+web-ext lint + Filter           # 0 Fehler
+```

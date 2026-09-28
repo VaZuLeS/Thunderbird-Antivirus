@@ -3511,6 +3511,7 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
             String, Array, Map, Error, Promise, TextEncoder, JSON
         };
         vm.createContext(context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'ui_i18n.js'), 'utf8'), context);
         vm.runInContext(fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8'), context);
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8')
             .replace(/^\(async \(\) => \{/m, 'async function initAPI() {')
@@ -3750,6 +3751,83 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         assert.ok(!context.describeReportSummary(report, 'private').includes('Auth:'),
             'the private view hides authentication details');
         assert.match(context.describeReportSummary(report, 'research'), /Auth: fail/);
+    });
+
+    it('renders the researcher panel with indicators and export buttons', async () => {
+        const insights = {
+            generatedAt: '2026-09-28T10:00:00.000Z',
+            score: 60,
+            authStatus: 'fail',
+            scoreBreakdown: [{ source: 'authentifizierung', points: 60 }, { source: 'links', points: 25 }],
+            authResults: [{ mechanism: 'spf', result: 'fail', domain: 'sender.example', authservId: 'mx.example' }],
+            receivedChain: { hops: [{ from: 'mx1.example', by: 'mx2.example', ip: '203.0.113.9', delaySeconds: 10 }], totalSeconds: 10 },
+            indicators: {
+                urls: ['https://login.example.com/a'],
+                urlAnalyses: [
+                    { url: 'https://user:pw@login.example.com/a', registrableDomain: 'example.com', flags: ['Zugangsdaten in der URL (user@host) - klassische Taeuschung'] }
+                ],
+                domains: ['login.example.com'],
+                registrableDomains: ['example.com'],
+                ips: ['203.0.113.9'],
+                emails: ['chef@firma.example'],
+                hashes: ['c'.repeat(64)],
+                messageIds: ['abc@mx.example'],
+                mailServers: ['mx1.example'],
+                counts: { urls: 1, domains: 1, ips: 1, emails: 1, hashes: 1 }
+            },
+            attachments: [
+                { name: 'rechnung.pdf', declaredType: 'application/pdf', detectedType: 'application/x-dosexec', flags: ['Dateityp weicht vom Inhalt ab (application/pdf vs. application/x-dosexec)'] }
+            ]
+        };
+        const { context, sent } = createHarness({
+            viewMode: 'research',
+            onMessage: (message) => message.action === 'getMessageInsights'
+                ? { status: 'success', insights }
+                : undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        const result = await context.renderResearcherPanel({ id: 1 }, container, 'research');
+
+        const panel = context.document.getElementById('thundy-researcher-panel');
+        assert.ok(panel, 'researcher panel expected');
+        assert.strictEqual(result.insights.score, 60);
+        assert.match(panel.textContent, /Bewertung nach Bestandteilen/);
+        assert.match(panel.textContent, /authentifizierung \+60/);
+        assert.match(panel.textContent, /Auth: SPF = fail/);
+        assert.match(panel.textContent, /Hop: mx1\.example \[203\.0\.113\.9\]/);
+        assert.match(panel.textContent, /Zugangsdaten in der URL/);
+        assert.match(panel.textContent, /weicht vom Inhalt ab/);
+        assert.ok(sent.some(m => m.action === 'getMessageInsights' && m.includeAttachmentBytes === true));
+
+        const buttons = Array.from(panel.querySelectorAll('button')).map(button => button.textContent);
+        assert.ok(buttons.some(label => /IOCs als JSON/.test(label)));
+        assert.ok(buttons.some(label => /IOCs als CSV/.test(label)));
+    });
+
+    it('keeps the researcher panel hidden for the private role', async () => {
+        const { context } = createHarness({ viewMode: 'private' });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        const result = await context.renderResearcherPanel({ id: 1 }, container, 'private');
+
+        assert.strictEqual(result, null);
+        assert.strictEqual(context.document.getElementById('thundy-researcher-panel'), null);
+    });
+
+    it('builds an IOC CSV export', () => {
+        const { context } = createHarness();
+        const csv = context.buildIndicatorsCsv({
+            indicators: {
+                urls: ['https://a.example/x'], domains: ['a.example'], registrableDomains: ['example.com'],
+                ips: ['203.0.113.9'], emails: ['a@b.example'], hashes: ['d'.repeat(64)], messageIds: ['id@example']
+            }
+        });
+        const lines = csv.split('\n');
+        assert.strictEqual(lines[0], 'type;value');
+        assert.ok(lines.some(line => line === 'url;https://a.example/x'));
+        assert.ok(lines.some(line => line === 'ip;203.0.113.9'));
+        assert.strictEqual(lines.length, 8);
     });
 
     it('renders the local score together with its reasons', async () => {

@@ -151,6 +151,10 @@ and transmissions; it is generated locally and downloaded by the user.
   external media sources are dropped and documented as `data-thundy-blocked-remote`, the disarmed document gets an
   explanatory banner, and the action is written to the local history.
 
+### 3.8 Researcher features (research/audit roles)
+
+The popup offers a researcher panel in the `research` and `audit` roles. Everything in it is derived locally from the opened message: IOC extraction (URLs, hosts, registrable domains, IPs, email addresses, SHA-256 values, Message-IDs, mail servers) with JSON/CSV export, the SPF/DKIM/DMARC chain, the chronological `Received` hops including per-hop delays, URL anatomy (punycode, user@host, tracking parameters, sanitised URL) and attachment type analysis based on magic bytes (type mismatch, double extensions, macro-capable documents). No network request is made for any of these; the attachment bytes are read locally through `messages.getAttachmentFile()` and never transmitted.
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,
