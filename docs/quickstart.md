@@ -1,37 +1,111 @@
-# Quickstart — Thunderbird Antivirus
+# Quickstart – Thundy AV (Thunderbird WebExtension)
 
-This quickstart shows how to build and run a minimal scan locally.
+Kurzanleitung zum Bauen, Testen und Laden des Add-ons **Thundy AV – Email Scanner for Thunderbird**
+(Vertiefung: [README.de.md](../README.de.md) bzw. [README.md](../README.md)). Das Add-on ist ein
+WebExtension-Add-on (Manifest V3) für Thunderbird 140+; es gibt keine Server-Komponente und keinen Build-Schritt
+für Quellcode – `web-ext` packt die Dateien des Repositorys direkt.
 
-Prerequisites
-- Git
-- A C/C++ or Rust toolchain (depending on project language) or Node/Python runtime if applicable
+## 1. Voraussetzungen
 
-Clone
+- **Thunderbird 140.0 oder neuer** (Manifest V3, `data_collection_permissions`).
+- **Node.js ≥ 20** und npm (CI nutzt Node 22); nötig für Tests, Lint und Paketbau.
+- Optional: API-Schlüssel der Analysedienste, die du nutzen willst (Hybrid Analysis, VirusTotal, urlscan.io, URLhaus,
+  AbuseIPDB).
+
+## 2. Repository holen und Abhängigkeiten installieren
+
 ```bash
 git clone https://github.com/VaZuLeS/Thunderbird-Antivirus.git
 cd Thunderbird-Antivirus
+npm ci
 ```
 
-Build (example — adjust for repo language)
+`npm ci` installiert nur die Dev-Abhängigkeiten (`jsdom` für die Unit-Tests, `web-ext`/`addons-linter` für Lint und
+Build). Zum Laden des Add-ons in Thunderbird sind sie nicht erforderlich.
+
+## 3. Unit-Tests ausführen
+
 ```bash
-# Example for a typical build; replace with the project's build command
-make build
-# or
-cargo build --release
+npm test
 ```
 
-Run a minimal scan
+`npm test` entspricht dem Skript aus `package.json` (`node --test --test-reporter=spec`) und führt damit **alle**
+`node:test`-Dateien des Repositorys aus (`background.test.js`, `api.test.js`, `db.test.js`, `options.test.js`,
+`content_script.test.js`, `api_gateway.test.js`, `form_test.js`, `vt_test.js`). Die Thunderbird-APIs werden in den
+Tests gemockt, es ist kein Netzwerkzugriff nötig.
+
+## 4. Pre-Submit-Checks
+
 ```bash
-# Scan current directory
-./thunderbird-antivirus --scan .
+node ./scripts/pre-submit-checks.js
 ```
 
-Example output
-```
-Scanning: 42 files
-Detections: 0
-Scan time: 1.2s
-Report: report.json
+Prüft unter anderem: `manifest.json` vorhanden und `homepage_url` gesetzt, `docs/privacy_policy.md` vorhanden,
+keine verbotenen Permissions (`webRequest`, `<all_urls>`), Host-Origins in HTTPS-Form. Das Skript setzt bei Fehlern
+einen Exit-Code ≠ 0 und lässt damit die CI fehlschlagen.
+
+## 5. Lint und Paket bauen
+
+```bash
+npx web-ext lint
+npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
-If build instructions differ, follow the language-specific docs in the repo.
+- `npx web-ext lint` (addons-linter) muss **0 Fehler** melden. Die verbleibenden Warnungen sind überwiegend
+  `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-APIs wie `messages.*`
+  oder `messageDisplay.*` nicht kennt.
+- `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.zip` (Dateiname aus dem
+  Add-on-Namen). Über `.webextignore` bleiben Testdateien, `docs/`, `scripts/`, `examples/` und Lockfiles außen vor.
+- Signieren für eine Verteilung: `npx web-ext sign --channel unlisted` (selbst verteilen) oder
+  `npx web-ext sign --channel listed` (Einreichung im Add-ons Store, benötigt API-Zugangsdaten von
+  addons.thunderbird.net).
+
+## 6. In Thunderbird laden
+
+**Variante A – temporäres Add-on (für die Entwicklung empfohlen):**
+
+```text
+Thunderbird → ☰ → Add-ons und Themes → Zahnrad-Symbol → "Add-ons debuggen"
+(öffnet about:debugging#/runtime/this-thunderbird)
+→ "Temporäres Add-on laden…" → manifest.json im Repository auswählen
+```
+
+Temporäre Add-ons werden beim Beenden von Thunderbird entfernt und müssen danach neu geladen werden.
+
+**Variante B – Thunderbird über web-ext starten:**
+
+```bash
+npx web-ext run --firefox=/pfad/zu/thunderbird
+```
+
+`web-ext` kennt **kein** `--target thunderbird` (gültige Targets: `firefox-desktop`, `firefox-android`, `chromium`).
+Der Pfad zur Thunderbird-Binärdatei wird über `--firefox` übergeben, optional mit einem separaten Profil über
+`--firefox-profile`.
+
+**Variante C – gebaute XPI installieren:** siehe Abschnitt „Manuelle Installation einer gebauten XPI“ in
+[README.md](../README.md). Eine lokal gebaute XPI ist unsigniert; Thunderbird-Release-Builds installieren sie nur mit
+deaktivierter Signaturprüfung (`about:config` → `xpinstall.signatures.required = false`).
+
+### Testablauf (Kurzfassung)
+
+1. Add-on laden und die **Einstellungen** öffnen.
+2. **Ohne Zustimmung testen:** „Externe Analyse erlauben“ bleibt aus. Ein Scan (Banner, Popup oder Kontextmenü) darf
+   nichts an Dritte übertragen; das Banner meldet, dass keine Daten übertragen wurden.
+3. **Zustimmung erteilen** und anschließend die Host-Berechtigung für einen Anbieter anfragen lassen (erscheint beim
+   ersten Zugriff). Danach die Banner-Schaltflächen „Nur diese Nachricht scannen“ und „Absender dauerhaft scannen“
+   prüfen.
+4. **Ohne API-Schlüssel** bleiben externe Abfragen ergebnislos; die lokalen Prüfungen (Hashes, Heuristiken,
+   Score) laufen trotzdem.
+5. **Konsole mitlesen:** in `about:debugging#/runtime/this-thunderbird` beim Add-on auf „Inspect“ klicken und die
+   Ausgabe des Hintergrundskripts beobachten (u. a. Warnhinweis, wenn eine Injektion in die Nachrichtenansicht
+   fehlschlägt).
+
+## 7. Dokumentation im Repository
+
+- [docs/privacy_policy.md](privacy_policy.md) – Datenschutzerklärung (live:
+  https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html)
+- [docs/reviewer_notes.md](reviewer_notes.md) – Berechtigungen, Datenflüsse und Testablauf für Store-Reviewer
+- [docs/store_listing.md](store_listing.md) – Listing-Entwurf · [docs/STATUS.md](STATUS.md) – offene Punkte
+- [docs/external_service_hardening.md](external_service_hardening.md) – Hinweise zu externen Aufrufen und
+  API-Schlüsseln
+- [CHANGELOG.md](../CHANGELOG.md) – Änderungen je Version

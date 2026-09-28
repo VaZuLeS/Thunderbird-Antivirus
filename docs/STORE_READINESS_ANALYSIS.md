@@ -362,3 +362,58 @@ Live-Verhalten der Injektionen, `permissions.request` aus einer Nutzer-Geste üb
 ### Empfohlene Einreichungsreihenfolge
 `Phase 0` → `Phase 1` → (manueller TB-Test) → `Phase 2` → `Phase 3` → XPI bauen, `npx web-ext sign --channel listed`, Listing ausfüllen, Privacy-Policy-URL + Screenshots hochladen, Releasenotes schreiben.
 
+
+---
+
+## 8. Umsetzungsstatus (Version 1.6)
+
+Alle Blocker und die Phase-1/2-Maßnahmen wurden umgesetzt; die verbleibenden Punkte sind bewusst
+als manuelle Schritte dokumentiert (siehe `docs/STATUS.md`).
+
+| Befund | Status in 1.6 | Umsetzung |
+|---|---|---|
+| B1 entfernte `messageDisplay`-APIs | **behoben** | `onMessagesDisplayed` + `getDisplayedMessages()` über `messageListToArray()`/`getFirstDisplayedMessage()`; Injektionen zentral über `injectIntoMessageDisplay()`; 12 neue Unit-Tests |
+| B2 falsche Daten-Deklaration | **behoben** | `data_collection_permissions.required: ["personalCommunications"]` (kein `"none"` mehr); Pre-Submit-Check erzwingt Konsistenz |
+| B3 Widersprüche Code/Policy/Website | **behoben** | Globale Zustimmung `externalAnalysisConsent` (Default AUS) erzwingt "keine Übermittlung ohne Zustimmung" (`mayTransmitExternally()`/`assertExternalAnalysisAllowed()`); Default-Tier `strict`; Website-Texte korrigiert; Policy neu geschrieben |
+| B4 Host-Berechtigungen | **behoben** | `optional_host_permissions` mit 7 validen Patterns inkl. `urlhaus-api.abuse.ch` und `api.abuseipdb.com`; Runtime-Anfrage nur für konfigurierte Anbieter (`options.js`); `hasHostPermissionFor()` vor jedem Provider-Aufruf |
+| B5 Listing-Assets | **teilweise** | Icons 16/32/48/64/128 generiert und in `manifest.json` verdrahtet (dimensionsgeprüft); Listing-Texte, Kategorien, Checkliste und Screenshot-Anleitung vollständig; **echte PNG-Screenshots fehlen weiterhin** (erfordert eine Thunderbird-Instanz) |
+| B6 Privacy-Policy-URL | **behoben** | Policy live unter `https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html`, aus `index.html`/`index_en.html`/`index_de.html` verlinkt, Pre-Submit-Check prüft die Verlinkung |
+| H1 wirkungsloses CI-Gate | **behoben** | `scripts/pre-submit-checks.js` als testbares Modul mit echtem `process.exitCode` (21 Unit-Tests inkl. Nachweis, dass Fehler fehlschlagen) |
+| H2 Paketinhalt | **behoben** | `web-ext-config.mjs`/`.webextignore`; XPI: 15 Dateien, ≈176 KB entpackt statt 62 Dateien/605 KB; `scripts/verify-package.js` als CI-Gate |
+| H3 `install.rdf` | **behoben** | Datei entfernt, neue ID `thundy-av@bludau-it-services.de` |
+| H4 Trademark-Name | **behoben** | „Thundy AV – Email Scanner for Thunderbird“ (+ `short_name`), Pre-Submit-Check lehnt `Thunderbird*` als Namenspräfix ab |
+| H5 stilles Dauer-Opt-in | **behoben** | Banner mit zwei Buttons („Nur diese Nachricht scannen“ / „Absender dauerhaft scannen“); `requestScan` persistiert nur mit `persist: true` (durch Tests abgedeckt) |
+| H6 Reviewer-Testbarkeit | **behoben** | `docs/reviewer_notes.md` mit Permission-Begründungen (inkl. `notifications`, `downloads`), Datenfluss-Matrix, Netzwerkzielen und Schritt-für-Schritt-Testweg |
+| H7 Beschreibung/Positionierung | **behoben** | Manifest-Beschreibung lokalisiert (`_locales/en|de`), Feature-Umfang an die tatsächlich funktionierenden Funktionen angepasst |
+| H8 Icon-Pfade | **behoben** | `notify()` nutzt `runtime.getURL('img/icon-64px.png')`; Icons 16/32/48/64/128 deklariert und vorhanden |
+| H9 MV3-inkonforme Keys | **behoben** | `browser_style` entfernt, `open_in_tab: true`, `optional_permissions`/`content_scripts` werden vom Pre-Submit-Check verboten |
+| H10 CI | **behoben (Spiegel)** | Workflow: `npm ci` → Pre-Submit-Checks → `npm test` (alle Testdateien) → Lint mit Filter unerwarteter Warnungen → Build + Paketprüfung, zusätzlich Signier-Job (`web-ext sign --channel`). Die Definitionen liegen unter `docs/ci/` (Push nach `.github/workflows/` scheitert an der fehlenden `workflows`-Berechtigung des Tokens, siehe `docs/ci/README.md`); alle referenzierten Skripte sind aktiv im Repository |
+| H11 Privacy-Policy | **behoben** | Vollständige, zweisprachige Policy (Provider namentlich, Datenarten je Stufe, Retention, unverschlüsselte Schlüsselablage, Rechte, Kontakt) |
+| H12 Injektion/Kontextmenü | **teilweise** | Injektion über Helper mit Logging bei Fehlschlag; zusätzlicher, dokumentierter Kontext `message_display_action` („Alle Links dieser Nachricht scannen“); der `contexts: ["link"]`-Eintrag bleibt bestehen, ist aber weiterhin nur im Live-Test verifizierbar |
+| M1–M12 | **überwiegend behoben** | Versions-/Metadaten-Konsistenz (1.6), `_locales`, README/Quickstart/SECURITY/CHANGELOG/STATUS neu, `.gitignore` erweitert, Toter Code (`content_script.js`) entfernt, doppelte `onMessage`-Listener zusammengeführt, IP-Reputation hat jetzt UI-Felder, Kontextmenü-Erstellung gegen Doppel-IDs abgesichert |
+
+### Vor der Einreichung noch zu tun (nicht automatisierbar)
+
+1. **Live-Test in Thunderbird 140 ESR** (Pflicht): Banner-Injektion, `message_display_action`-Kontextmenü,
+   Time-of-Click-Hinweis, `permissions.request()` aus dem Banner heraus und das Verhalten des
+   `contexts: ["link"]`-Eintrags.
+2. **Echte Screenshots** (PNG, ≥ 1280 × 800) gemäß `docs/screenshot_capture.md` aufnehmen und im Listing hinterlegen.
+3. **Signieren und einreichen**: `web-ext sign --channel listed` (bzw. `release.yml`) und Listing in ATN ausfüllen
+   (`docs/store_listing.md`).
+
+### Verifikationskommandos (Stand 1.6)
+
+```bash
+npm ci
+npm run pre-submit-checks      # 0 Fehler, 1 Warnung (fehlende Screenshots)
+npm test                       # alle Unit-Tests grün (386 inkl. Check-Skripte)
+npx web-ext lint --source-dir . --output json > /tmp/lint.json
+node scripts/filter-lint-warnings.js /tmp/lint.json   # 0 Fehler, 26 bekannte TB-Warnungen
+npx web-ext build --source-dir . --artifacts-dir ./build
+node scripts/verify-package.js ./build                # 15 Dateien, ≈176 KB
+
+# Workflow-Definitionen (Spiegel) nach .github/workflows/ übernehmen:
+cp docs/ci/ci.yml .github/workflows/ci.yml
+cp docs/ci/release.yml .github/workflows/release.yml
+
+```
