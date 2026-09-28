@@ -20,3 +20,6 @@
 ## 2026-04-01 - Align IP reputation lookup concurrency with URLhaus domain checks
 **Learning:** While `checkURLhausDomains` executed all API lookup promises concurrently in a single `Promise.all()`, `checkIPReputation` artificially chunked requests in batches of 5. This created an asynchronous pipeline bottleneck, multiplying response latency by the number of chunks.
 **Action:** Avoid artificial request chunking loops in extension background scripts when fetching endpoint reputations; collect all promises in a single array and resolve concurrently via `Promise.all()`.
+## 2024-08-11 - Optimize RegExp by leveraging URL parser lowercase standard
+**Learning:** The URL parser natively lowercases hostnames, meaning `getHostnameOptimized` always returns lowercased strings. Using the case-insensitive `i` flag on `IGNORED_DOMAINS_REGEX` is redundant and incurs per-character case-folding overhead at runtime in V8.
+**Action:** Remove the redundant `i` flag from the regex when matching against standard URL hostnames.

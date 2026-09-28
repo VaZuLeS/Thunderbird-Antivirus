@@ -1159,7 +1159,7 @@ const IGNORED_DOMAINS = [
     'mozilla.org', 'schemas.microsoft.com', 'yahoo.com', 'github.com'
 ];
 // Precompiled regex for faster O(1) checks instead of O(N) array loops
-const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d.replace(/\./g, '\\.')).join('|')})$`, 'i');
+const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d.replace(/\./g, '\\.')).join('|')})$`);
 
 function filterUrls(urls, parsedUrlCache = null) {
     return urls.filter(url => {
