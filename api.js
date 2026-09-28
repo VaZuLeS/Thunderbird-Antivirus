@@ -334,7 +334,7 @@ function renderVirusTotalStats(virustotal_stats, card) {
     const pVtMal = document.createElement('p');
     const malCount = virustotal_stats.malicious || 0;
     pVtMal.className = `ml-4 ${malCount > 0 ? "text-danger" : ""}`;
-    pVtMal.textContent = `Malicious: ${malCount}`;
+    pVtMal.textContent = `Malicious: ${malCount}${malCount > 0 ? " (Gefährlich)" : ""}`;
     card.appendChild(pVtMal);
 
     const pVtUnd = document.createElement('p');
@@ -345,7 +345,7 @@ function renderVirusTotalStats(virustotal_stats, card) {
     const pVtSus = document.createElement('p');
     const susCount = virustotal_stats.suspicious || 0;
     pVtSus.className = `ml-4 ${susCount > 0 ? "text-warning" : ""}`;
-    pVtSus.textContent = `Suspicious: ${susCount}`;
+    pVtSus.textContent = `Suspicious: ${susCount}${susCount > 0 ? " (Verdächtig)" : ""}`;
     card.appendChild(pVtSus);
 
     const pVtHarm = document.createElement('p');
