@@ -149,7 +149,23 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
-## 6. Release notes 1.6
+## 6. Release notes 1.6.1
+
+- **Fixed a misleading risk score:** three different weak signals each scored exactly 50 and the banner
+  threshold was 50 as well, so almost every message (e.g. a newsletter with `spf=softfail` or an ordinary
+  invoice containing one urgency word) reported "50 of 100". The weights are now staggered, no single weak
+  signal crosses the threshold, and malicious IP addresses from the `Received` headers are taken into account.
+- **Fixed the "first contact" detection:** it queried messages addressed *to* the sender instead of messages
+  *from* the sender, and the known-sender list lived in memory only (Manifest V3 backgrounds are unloaded),
+  so nearly every sender counted as first contact. It now queries `from`, persists known senders locally and
+  stays neutral when the information cannot be determined.
+- **Scan failures now name the cause** (`NO_API_KEY`, `PERMISSION_REQUIRED`, `EXTERNAL_ANALYSIS_DISABLED`,
+  `SCAN_FAILED` with the failing stage) instead of a generic "scan failed".
+- **New: manual attachment analysis in the popup.** Every attachment is listed with type and size; the hash
+  can be computed locally and a single attachment can be uploaded for analysis, with the result rendered in
+  the popup. The popup also explains the local risk score and every reason behind it.
+
+## 5.1 Release notes 1.6
 
 - Ported the background/code paths to the Manifest V3 APIs (`scripting`,
   `optional_host_permissions`, message APIs) and removed code that relied on MV2-only entries.

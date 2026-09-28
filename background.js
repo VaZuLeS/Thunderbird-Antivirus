@@ -507,17 +507,17 @@ function checkLists(email, senderDomain) {
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.size > 0) {
         if (customBlacklist.has(email)) {
-            return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
+            return { score: SCORE_WEIGHTS.blacklist, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
         }
         // ⚡ Bolt Optimization: Replace O(n) array iteration with O(1) set lookups for domain checking
         if (customBlacklist.has(senderDomain)) {
-            return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${senderDomain}).`], listType: 'blacklist' };
+            return { score: SCORE_WEIGHTS.blacklist, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${senderDomain}).`], listType: 'blacklist' };
         }
         let dotIdx = senderDomain.indexOf('.');
         while (dotIdx !== -1) {
             let parentDomain = senderDomain.substring(dotIdx + 1);
             if (customBlacklist.has(parentDomain)) {
-                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${parentDomain}).`], listType: 'blacklist' };
+                return { score: SCORE_WEIGHTS.blacklist, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${parentDomain}).`], listType: 'blacklist' };
             }
             dotIdx = senderDomain.indexOf('.', dotIdx + 1);
         }
@@ -544,27 +544,51 @@ function checkLists(email, senderDomain) {
     return null;
 }
 
+// Gewichte der Einzelsignale. Kein einzelnes schwaches Signal erreicht allein
+// die Banner-Schwelle von 50 Punkten - sonst zeigt jedes Newsletter-/Weiterleitungs-
+// Postfach dauerhaft "50 von 100" an.
+const SCORE_WEIGHTS = {
+    spfFail: 25,
+    dkimFail: 25,
+    dmarcFail: 30,
+    authTotalCap: 60,
+    replyToMismatch: 25,
+    firstContactWithUrgency: 25,
+    urgencyOnly: 10,
+    firstContactOnly: 5,
+    linkDomainMismatch: 25,
+    linkTyposquatting: 45,
+    senderTyposquatting: 60,
+    urlhausDomain: 80,
+    maliciousIp: 50,
+    maliciousIpCap: 70,
+    blacklist: 100
+};
+
 function evaluateAuthHeaders(authHeaders, score, reasons) {
     let authStatus = 'neutral';
     if (authHeaders && authHeaders.length > 0) {
         const headerStr = authHeaders.join(' ').toLowerCase();
         let fail = false;
+        let authScore = 0;
 
         if (headerStr.includes("spf=fail") || headerStr.includes("spf=softfail")) {
-            score += 50;
+            authScore += SCORE_WEIGHTS.spfFail;
             reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
             fail = true;
         }
         if (headerStr.includes("dkim=fail")) {
-            score += 50;
+            authScore += SCORE_WEIGHTS.dkimFail;
             reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
             fail = true;
         }
         if (headerStr.includes("dmarc=fail")) {
-            score += 50;
+            authScore += SCORE_WEIGHTS.dmarcFail;
             reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
             fail = true;
         }
+
+        score += Math.min(authScore, SCORE_WEIGHTS.authTotalCap);
 
         if (fail) {
             authStatus = 'fail';
@@ -578,7 +602,7 @@ function evaluateAuthHeaders(authHeaders, score, reasons) {
 function evaluateUrlhaus(urlhausDomains, score, reasons) {
     if (urlhausDomains && urlhausDomains.length > 0) {
         for (let domain of urlhausDomains) {
-            score += 80;
+            score += SCORE_WEIGHTS.urlhausDomain;
             reasons.push(`Domain (${domain}) ist auf URLhaus als bösartig gelistet.`);
         }
     }
@@ -591,13 +615,18 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
         const replyDomain = extractEmailDomain(replyToEmail);
 
         if (replyDomain && replyDomain !== senderDomain) {
-            score += 50;
+            score += SCORE_WEIGHTS.replyToMismatch;
             reasons.push(`Diskrepanz erkannt: "Reply-To" Domain (${replyDomain}) weicht von der Absender-Domain (${senderDomain}) ab.`);
         }
     }
     return score;
 }
 
+/**
+ * Bewertet Dringlichkeits-Sprache und (optional) den Erstkontakt.
+ * `isFirstCommunication` ist dreiwertig: true = Erstkontakt, false = bekannter
+ * Absender, null = unbekannt/nicht ermittelbar (keine Punkte, kein Raten).
+ */
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
     let textToAnalyze = (subject + " " + messageText).toLowerCase();
     let foundUrgencyWords = [];
@@ -611,15 +640,15 @@ function evaluateBehavior(subject, messageText, isFirstCommunication, score, rea
     }
 
     if (foundUrgencyWords.length > 0) {
-        if (isFirstCommunication) {
-            score += 50;
-            reasons.push(`Mögliches BEC (Business Email Compromise): Erste Kommunikation mit diesem Absender und Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}).`);
+        if (isFirstCommunication === true) {
+            score += SCORE_WEIGHTS.firstContactWithUrgency;
+            reasons.push(`Mögliches BEC: Erste Kommunikation mit diesem Absender kombiniert mit Dringlichkeits-Signalwörtern (${foundUrgencyWords.join(', ')}).`);
         } else {
-            score += 20;
+            score += SCORE_WEIGHTS.urgencyOnly;
             reasons.push(`Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}). Bitte prüfen Sie die Anfrage sorgfältig.`);
         }
-    } else if (isFirstCommunication) {
-        score += 10;
+    } else if (isFirstCommunication === true) {
+        score += SCORE_WEIGHTS.firstContactOnly;
         reasons.push("Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.");
     }
     return score;
@@ -653,7 +682,7 @@ function evaluateSenderDomain(senderDomain, score, reasons) {
 
                 let distance = levenshteinDistance(senderMainDomain, brand);
                 if (distance > 0 && distance <= 2) {
-                    score += 60;
+                    score += SCORE_WEIGHTS.senderTyposquatting;
                     reasons.push(`Absender-Domain (${senderMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
                     break;
                 }
@@ -764,13 +793,13 @@ function evaluateLinks(options = {}) {
         }
 
         if (!matchFound) {
-            score += 40;
+            score += SCORE_WEIGHTS.linkDomainMismatch;
             if (!reasons.some(r => r.includes('Keiner der Links'))) {
                  reasons.push(`Keiner der Links im Text verweist auf die Absender-Domain (${senderDomain}).`);
             }
         }
         if (typosquatLinkFound) {
-            score += 60;
+            score += SCORE_WEIGHTS.linkTyposquatting;
         }
     }
     return score;
@@ -796,14 +825,25 @@ function extractEmailDomain(emailAddress) {
     return atIndex !== -1 ? emailAddress.substring(atIndex + 1).toLowerCase() : "";
 }
 
+function evaluateMaliciousIps(maliciousIps, score, reasons) {
+    if (!maliciousIps || maliciousIps.length === 0) return score;
+    let ipScore = 0;
+    for (const ip of maliciousIps) {
+        ipScore += SCORE_WEIGHTS.maliciousIp;
+        reasons.push(`IP-Adresse (${ip}) aus den Received-Headern ist als bösartig gemeldet.`);
+    }
+    return score + Math.min(ipScore, SCORE_WEIGHTS.maliciousIpCap);
+}
+
 function calculateThreatScore(author, urls, options = {}) {
     const {
         authHeaders = [],
         urlhausDomains = [],
-        isFirstCommunication = false,
+        isFirstCommunication = null,
         messageText = "",
         subject = "",
         replyTo = "",
+        maliciousIps = [],
         parsedUrlCache = null
     } = options;
     let score = 0;
@@ -822,6 +862,7 @@ function calculateThreatScore(author, urls, options = {}) {
     let authStatus = authEval.authStatus;
 
     score = evaluateUrlhaus(urlhausDomains, score, reasons);
+    score = evaluateMaliciousIps(maliciousIps, score, reasons);
     score = evaluateReplyTo(replyTo, senderDomain, score, reasons);
     score = evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons);
 
@@ -957,28 +998,72 @@ async function checkIPReputation(receivedHeaders) {
     return maliciousIps;
 }
 
+/**
+ * Ermittelt, ob es die erste Kommunikation mit diesem Absender ist.
+ *
+ * Rueckgabe: true = Erstkontakt, false = bekannter Absender, null = unbekannt
+ * (Nachrichtenabfrage nicht verfuegbar oder fehlgeschlagen). "Unbekannt" gibt
+ * bewusst keine Punkte, sonst wuerde jede Nachricht als Erstkontakt gelten und
+ * die Bewertung dauerhaft dieselbe Punktzahl liefern.
+ */
 async function checkFirstCommunication(senderEmail) {
-    let isFirstCommunication = false;
+    if (!senderEmail) return null;
+
+    const normalized = senderEmail.toLowerCase();
+    if (knownSendersCache.has(normalized) || await isKnownSenderStored(normalized)) {
+        knownSendersCache.add(normalized);
+        return false;
+    }
+
+    if (!browser.messages || typeof browser.messages.query !== 'function') {
+        return null;
+    }
+
     try {
-        if (browser.messages.query) {
-            if (knownSendersCache.has(senderEmail)) {
-                isFirstCommunication = false;
-            } else {
-                let previousMsgs = await browser.messages.query({ to: senderEmail });
-                if (previousMsgs && previousMsgs.messages && previousMsgs.messages.length === 0) {
-                    isFirstCommunication = true;
-                } else {
-                    if (knownSendersCache.size >= MAX_KNOWN_SENDERS) {
-                        knownSendersCache.delete(knownSendersCache.keys().next().value);
-                    }
-                    knownSendersCache.add(senderEmail);
-                }
-            }
+        // Nachrichten VON diesem Absender suchen (nicht an ihn).
+        const previousMsgs = await browser.messages.query({ from: senderEmail });
+        if (!previousMsgs || !Array.isArray(previousMsgs.messages)) {
+            return null;
+        }
+        if (previousMsgs.messages.length === 0) {
+            await rememberSender(normalized);
+            return true;
+        }
+        await rememberSender(normalized);
+        return false;
+    } catch (e) {
+        Logger.warn('messages.query ist nicht verfuegbar; Erstkontakt bleibt unbekannt:', e);
+        return null;
+    }
+}
+
+async function isKnownSenderStored(senderEmail) {
+    try {
+        const stored = await browser.storage.local.get('knownSenders');
+        return Array.isArray(stored.knownSenders) && stored.knownSenders.includes(senderEmail);
+    } catch (e) {
+        return false;
+    }
+}
+
+/** Merkt sich einen Absender dauerhaft (MV3-Eventpages verlieren den Speicher). */
+async function rememberSender(senderEmail) {
+    if (knownSendersCache.size >= MAX_KNOWN_SENDERS) {
+        knownSendersCache.delete(knownSendersCache.keys().next().value);
+    }
+    knownSendersCache.add(senderEmail);
+
+    try {
+        const stored = await browser.storage.local.get('knownSenders');
+        const list = Array.isArray(stored.knownSenders) ? stored.knownSenders.slice() : [];
+        if (!list.includes(senderEmail)) {
+            list.push(senderEmail);
+            while (list.length > MAX_KNOWN_SENDERS) list.shift();
+            await browser.storage.local.set({ knownSenders: list });
         }
     } catch (e) {
-        Logger.error("Fehler bei messages.query (Möglicherweise nicht unterstützt):", e);
+        Logger.warn('Absender konnte nicht gespeichert werden:', e);
     }
-    return isFirstCommunication;
 }
 
 async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
@@ -1835,13 +1920,37 @@ async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
 }
 
 /**
+ * Listet die Anhaenge einer Nachricht auf (rein lokal, keine Uebertragung).
+ * Die Anzeige von Dateiname, Typ und Groesse benoetigt keine Zustimmung.
+ */
+async function listMessageAttachments(messageId) {
+    if (!messageId) throw new Error('Keine Nachricht angegeben.');
+    const attachments = await browser.messages.listAttachments(messageId);
+    return (attachments || []).map(attachment => ({
+        name: attachment.name || '(ohne Namen)',
+        contentType: attachment.contentType || 'application/octet-stream',
+        size: typeof attachment.size === 'number' ? attachment.size : null,
+        partName: attachment.partName
+    }));
+}
+
+/** Berechnet den SHA-256-Hash eines Anhangs lokal (keine Uebertragung). */
+async function computeAttachmentHash(messageId, partName) {
+    if (!messageId || !partName) throw new Error('Nachricht oder Anhang fehlt.');
+    const file = await browser.messages.getAttachmentFile(messageId, partName);
+    const buffer = await file.slice().arrayBuffer();
+    const sha256 = await get_sha256_hash(buffer);
+    return { sha256, size: buffer.byteLength };
+}
+
+/**
  * Handles a scan request coming from the injected per-message banner.
  * persist === true adds the sender to the persistent opt-in list, otherwise
  * the scan stays a one-off action (no hidden opt-in).
  */
 async function handleRequestScan(request, sender) {
     if (!request || !request.messageId) {
-        return { success: false, error: 'invalid_request' };
+        return { success: false, error: 'invalid_request', code: 'INVALID_REQUEST' };
     }
 
     if (!mayTransmitExternally()) {
@@ -1856,32 +1965,71 @@ async function handleRequestScan(request, sender) {
         return { success: false, error: 'permission_required', code: 'PERMISSION_REQUIRED' };
     }
 
+    // Ohne API-Schluessel ist kein externer Scan moeglich. Diese Ursache wurde
+    // vorher verschluckt - der Nutzer sah nur "Scan fehlgeschlagen".
+    if (!apikey_hybridanalysis) {
+        return {
+            success: false,
+            code: 'NO_API_KEY',
+            error: 'Kein API-Schluessel fuer Hybrid Analysis hinterlegt - bitte in den Einstellungen eintragen.'
+        };
+    }
+
     if (request.persist === true && request.senderEmail) {
         await addSenderOptIn(request.senderEmail.toLowerCase());
     }
 
-    try {
-        const messageObj = { id: request.messageId };
-        await processAttachments(messageObj);
-        const fullMessage = await browser.messages.getFull(request.messageId);
-        const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (request.tabId || null);
-        const tab = { id: tabId };
-        const parsedUrlCache = new Map();
-        const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache);
-        await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
-        const previous = displayStates.get(tabId) || {};
-        updateDisplayState(tabId, Object.assign({}, previous, {
-            mode: 'ready',
-            canAutoUpload: true,
-            showOptIn: false,
-            consent: mayTransmitExternally()
-        }));
-        await ensureMessageDisplayScript(tabId);
-        return { success: true, persisted: request.persist === true };
-    } catch (e) {
-        Logger.error('requestScan failed', e);
-        return { success: false, error: e && e.message ? e.message : String(e) };
+    const messageObj = { id: request.messageId };
+    const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (request.tabId || null);
+    const tab = { id: tabId };
+
+    // Jede Stufe einzeln absichern, damit Fehler eine konkrete Ursache melden.
+    const stages = [
+        ['attachments', () => processAttachments(messageObj)],
+        ['links', async () => {
+            const fullMessage = await browser.messages.getFull(request.messageId);
+            const parsedUrlCache = new Map();
+            const result = await processLinks(tab, messageObj, fullMessage, parsedUrlCache);
+            return { fullMessage, parsedUrlCache, ...result };
+        }],
+        ['score', async (previousStage) => {
+            await evaluateAndInjectThreats({
+                tab,
+                message: messageObj,
+                fullMessage: previousStage.fullMessage,
+                urls: previousStage.urls,
+                filteredUrls: previousStage.filteredUrls,
+                messageText: previousStage.messageText,
+                parsedUrlCache: previousStage.parsedUrlCache
+            });
+            return previousStage;
+        }]
+    ];
+
+    let stageResult = null;
+    for (const [stageName, run] of stages) {
+        try {
+            stageResult = await run(stageResult);
+        } catch (error) {
+            Logger.error(`requestScan failed in stage "${stageName}":`, error);
+            return {
+                success: false,
+                code: 'SCAN_FAILED',
+                stage: stageName,
+                error: (error && error.message) ? error.message : String(error)
+            };
+        }
     }
+
+    const previous = displayStates.get(tabId) || {};
+    updateDisplayState(tabId, Object.assign({}, previous, {
+        mode: 'ready',
+        canAutoUpload: true,
+        showOptIn: false,
+        consent: mayTransmitExternally()
+    }));
+    await ensureMessageDisplayScript(tabId);
+    return { success: true, persisted: request.persist === true };
 }
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -1889,7 +2037,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case "uploadAttachment":
             handleManualUpload(request.messageId, request.partName, request.attachmentName, request.hash, request.headerMessageId)
                 .then(res => sendResponse({status: 'success', data: res}))
-                .catch(err => sendResponse({status: 'error', message: err.message}));
+                .catch(err => sendResponse({status: 'error', message: err.message, code: err.code || null}));
             return true;
 
         case "scanUrl":
@@ -1912,8 +2060,20 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             handleRequestScan(request, sender).then(res => sendResponse(res));
             return true;
 
+        case "listAttachments":
+            listMessageAttachments(request.messageId)
+                .then(attachments => sendResponse({ status: 'success', attachments }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
+        case "attachmentHash":
+            computeAttachmentHash(request.messageId, request.partName)
+                .then(result => sendResponse({ status: 'success', ...result }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
         case "getDisplayState": {
-            const tabId = sender && sender.tab ? sender.tab.id : null;
+            const tabId = (sender && sender.tab) ? sender.tab.id : (request.tabId !== undefined ? request.tabId : null);
             const state = tabId !== null ? displayStates.get(tabId) : null;
             sendResponse(state || { mode: 'pending' });
             return true;
@@ -2128,8 +2288,17 @@ async function handleUrlScan(url, headerMessageId) {
 }
 
 async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
-    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+    if (!apikey_hybridanalysis) {
+        const error = new Error('Kein Hybrid-Analysis-API-Schluessel hinterlegt - bitte in den Einstellungen eintragen.');
+        error.code = 'NO_API_KEY';
+        throw error;
+    }
     assertExternalAnalysisAllowed();
+    if (!await hasHostPermissionFor('https://hybrid-analysis.com/api/v2/overview/x')) {
+        const error = new Error('Host-Berechtigung fuer hybrid-analysis.com fehlt - bitte die Einstellungen speichern und die Berechtigung erteilen.');
+        error.code = 'PERMISSION_REQUIRED';
+        throw error;
+    }
 
     let file = await browser.messages.getAttachmentFile(messageId, partName);
     const content_of_atachment = file.slice();

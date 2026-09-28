@@ -93,5 +93,16 @@
   },
   "notificationNoLinks": {
     "message": "No links found in this message."
+  },
+  "bannerNoApiKey": {
+    "message": "No Hybrid Analysis API key configured - please add it in the options."
+  },
+  "bannerScanFailedWithReason": {
+    "message": "Scan failed: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
   }
 }

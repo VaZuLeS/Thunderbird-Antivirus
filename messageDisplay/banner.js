@@ -25,7 +25,9 @@ const THUNDY_FALLBACKS = {
   bannerThreatScore: 'Risk score: $SCORE$ of 100',
   bannerAuthPass: 'Sender verified (SPF/DKIM/DMARC passed)',
   bannerOpenOptions: 'Open options',
-  bannerSenderOptIn: 'This sender is now scanned automatically.'
+  bannerSenderOptIn: 'This sender is now scanned automatically.',
+  bannerNoApiKey: 'No Hybrid Analysis API key configured - please add it in the options.',
+  bannerScanFailedWithReason: 'Scan failed: $ERROR$'
 };
 
 function thundyText(key, fallback, subs) {
@@ -159,8 +161,20 @@ function thundyRenderOptIn(state, actions) {
           showOptionsButton();
           all.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
           button.textContent = label;
+        } else if (response && response.code === 'NO_API_KEY') {
+          // Haeufigste Ursache: kein API-Schluessel hinterlegt.
+          note.textContent = thundyText('bannerNoApiKey', THUNDY_FALLBACKS.bannerNoApiKey);
+          showOptionsButton();
+          all.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
+          button.textContent = label;
         } else {
+          // Die konkrete Ursache anzeigen statt eines nichtssagenden "fehlgeschlagen".
+          const detail = response && response.error ? String(response.error) : '';
+          const stage = response && response.stage ? ' (' + response.stage + ')' : '';
           button.textContent = thundyText('bannerScanFailed', THUNDY_FALLBACKS.bannerScanFailed);
+          note.textContent = detail
+            ? thundyText('bannerScanFailedWithReason', THUNDY_FALLBACKS.bannerScanFailedWithReason, [(stage + ' ' + detail).trim()])
+            : thundyText('bannerScanFailed', THUNDY_FALLBACKS.bannerScanFailed);
           all.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
         }
       } catch (e) {

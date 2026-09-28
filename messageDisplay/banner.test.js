@@ -142,6 +142,40 @@ describe('messageDisplay/banner.js', () => {
         assert.ok(banner.querySelector('#thundy-open-options'));
     });
 
+    it('shows the concrete reason when a scan fails', async () => {
+        const failing = createContext();
+        failing.context.browser.runtime.sendMessage = async (message) => {
+            failing.sent.push(message);
+            if (message.action === 'getDisplayState') return { mode: 'pending' };
+            return { success: false, code: 'SCAN_FAILED', stage: 'links', error: 'folderId is required' };
+        };
+        failing.context.thundyRenderDisplayState(readyState());
+
+        const banner = failing.dom.window.document.getElementById('thundy-optin-banner');
+        banner.querySelectorAll('button')[0].click();
+        await new Promise(resolve => setImmediate(resolve));
+
+        assert.match(banner.textContent, /folderId is required/);
+        assert.match(banner.textContent, /links/);
+    });
+
+    it('points to the options page when no API key is configured', async () => {
+        const noKey = createContext();
+        noKey.context.browser.runtime.sendMessage = async (message) => {
+            noKey.sent.push(message);
+            if (message.action === 'getDisplayState') return { mode: 'pending' };
+            return { success: false, code: 'NO_API_KEY', error: 'Kein API-Schluessel' };
+        };
+        noKey.context.thundyRenderDisplayState(readyState());
+
+        const banner = noKey.dom.window.document.getElementById('thundy-optin-banner');
+        banner.querySelectorAll('button')[0].click();
+        await new Promise(resolve => setImmediate(resolve));
+
+        assert.match(banner.textContent, /API key/);
+        assert.ok(banner.querySelector('#thundy-open-options'));
+    });
+
     it('marks links when Time-of-Click Protection is enabled', () => {
         ctx.context.thundyRenderDisplayState(readyState({
             showOptIn: false,

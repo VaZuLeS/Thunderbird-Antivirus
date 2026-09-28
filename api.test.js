@@ -3,6 +3,7 @@ const vm = require('vm');
 const path = require('path');
 const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert');
+const { JSDOM } = require('jsdom');
 
 describe('escapeHTML', () => {
     let context;
@@ -3463,5 +3464,148 @@ describe('createCdrButton', () => {
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn.attributes['aria-busy'], undefined);
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
+    });
+});
+
+describe('manuelle Anhang-Analyse (api.js)', () => {
+    let context;
+    let dom;
+
+    function createHarness(options = {}) {
+        dom = new JSDOM('<!doctype html><html><body><div id="hybrid_analysis_api_content"></div></body></html>');
+        const sent = [];
+        const context = {
+            browser: {
+                i18n: { getMessage: () => '' },
+                storage: { local: { get: async () => ({ apikey: 'test', externalAnalysisConsent: true }) } },
+                permissions: { contains: async () => true },
+                tabs: { query: async () => [{ id: 3 }] },
+                messageDisplay: { getDisplayedMessages: async () => ({ messages: [{ id: 1, headerMessageId: 'h1', subject: 's', author: 'a@b.de' }] }) },
+                runtime: {
+                    sendMessage: async (message) => {
+                        sent.push(message);
+                        if (options.onMessage) {
+                            const custom = options.onMessage(message);
+                            if (custom !== undefined) return custom;
+                        }
+                        if (message.action === 'listAttachments') {
+                            return { status: 'success', attachments: [
+                                { name: 'rechnung.pdf', contentType: 'application/pdf', size: 2048, partName: '1.2' },
+                                { name: 'bild.png', contentType: 'image/png', size: 512, partName: '1.3' }
+                            ] };
+                        }
+                        if (message.action === 'attachmentHash') return { status: 'success', sha256: 'a'.repeat(64), size: 2048 };
+                        if (message.action === 'getDisplayState') return options.displayState || { mode: 'pending' };
+                        return { status: 'success', data: { sha256: 'b'.repeat(64) } };
+                    },
+                    openOptionsPage: () => { context.optionsOpened = true; }
+                }
+            },
+            document: dom.window.document,
+            console: { log: () => {}, error: () => {}, warn: () => {}, info: () => {} },
+            indexedDB: { open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null }) },
+            fetch: async () => ({ status: 200, json: async () => ({}) }),
+            AbortController: globalThis.AbortController,
+            clearTimeout: globalThis.clearTimeout,
+            setTimeout: globalThis.setTimeout,
+            String, Array, Map, Error, Promise, TextEncoder, JSON
+        };
+        vm.createContext(context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8'), context);
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8')
+            .replace(/^\(async \(\) => \{/m, 'async function initAPI() {')
+            .replace(/\}\)\(\);/m, '}');
+        vm.runInContext(code, context);
+        return { context, sent };
+    }
+
+    it('formats file sizes for the attachment list', () => {
+        const { context } = createHarness();
+        assert.strictEqual(context.formatFileSize(512), '512 B');
+        assert.strictEqual(context.formatFileSize(2048), '2.0 KB');
+        assert.strictEqual(context.formatFileSize(3 * 1024 * 1024), '3.00 MB');
+        assert.strictEqual(context.formatFileSize(null), 'unbekannte Groesse');
+    });
+
+    it('explains the error codes that block a manual analysis', () => {
+        const { context } = createHarness();
+        assert.match(context.describeErrorCode('NO_API_KEY'), /API-Schluessel/);
+        assert.match(context.describeErrorCode('EXTERNAL_ANALYSIS_DISABLED'), /nicht freigegeben/);
+        assert.match(context.describeErrorCode('PERMISSION_REQUIRED'), /Host-Berechtigung/);
+        assert.strictEqual(context.describeErrorCode(undefined, 'kaputt'), 'kaputt');
+    });
+
+    it('renders one row per attachment with a local hash and an upload action', async () => {
+        const { context, sent } = createHarness();
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        await context.renderAttachmentPanel({ id: 1 }, 'h1', container);
+
+        const rows = container.querySelectorAll('.thundy-attachment-row');
+        assert.strictEqual(rows.length, 2);
+        assert.match(rows[0].textContent, /rechnung\.pdf/);
+        assert.match(rows[0].textContent, /application\/pdf/);
+        assert.match(rows[0].textContent, /2\.0 KB/);
+        assert.strictEqual(rows[0].querySelectorAll('button').length, 2);
+        assert.ok(sent.some(m => m.action === 'listAttachments' && m.messageId === 1));
+    });
+
+    it('shows the locally computed SHA-256 hash', async () => {
+        const { context } = createHarness();
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+        await context.renderAttachmentPanel({ id: 1 }, 'h1', container);
+
+        const row = container.querySelectorAll('.thundy-attachment-row')[0];
+        row.querySelectorAll('button')[0].click();
+        await new Promise(resolve => setImmediate(resolve));
+
+        assert.match(row.textContent, /SHA-256: a{64}/);
+    });
+
+    it('uploads on demand and renders the analysis result', async () => {
+        const { context, sent } = createHarness();
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+        await context.renderAttachmentPanel({ id: 1 }, 'h1', container);
+
+        const row = container.querySelectorAll('.thundy-attachment-row')[0];
+        row.querySelectorAll('button')[1].click();
+        await new Promise(resolve => setImmediate(resolve));
+
+        assert.ok(sent.some(m => m.action === 'uploadAttachment' && m.partName === '1.2'));
+        assert.match(row.textContent, /Analyse angefordert/);
+    });
+
+    it('explains why a manual upload is not possible and offers the options page', async () => {
+        const { context } = createHarness({
+            onMessage: (message) => message.action === 'uploadAttachment'
+                ? { status: 'error', code: 'NO_API_KEY', message: 'Kein API-Schluessel' }
+                : undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+        await context.renderAttachmentPanel({ id: 1 }, 'h1', container);
+
+        const row = container.querySelectorAll('.thundy-attachment-row')[0];
+        row.querySelectorAll('button')[1].click();
+        await new Promise(resolve => setImmediate(resolve));
+
+        assert.match(row.textContent, /API-Schluessel/);
+        const optionsButton = Array.from(row.querySelectorAll('button')).find(b => /Einstellungen oeffnen/.test(b.textContent));
+        assert.ok(optionsButton, 'options shortcut expected');
+        optionsButton.click();
+        assert.strictEqual(context.optionsOpened, true);
+    });
+
+    it('renders the local score together with its reasons', async () => {
+        const { context } = createHarness({
+            displayState: { mode: 'ready', threat: { score: 70, reasons: ['Link-Domain weicht ab.', 'SPF fehlgeschlagen.'], authStatus: 'fail' } },
+            onMessage: () => undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        context.renderThreatSummary(container, { mode: 'ready', threat: { score: 70, reasons: ['Link-Domain weicht ab.', 'SPF fehlgeschlagen.'], authStatus: 'fail' } });
+
+        assert.match(container.textContent, /70 von 100/);
+        assert.match(container.textContent, /Link-Domain weicht ab\./);
+        assert.match(container.textContent, /SPF fehlgeschlagen\./);
     });
 });

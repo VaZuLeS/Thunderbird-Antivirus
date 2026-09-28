@@ -39,6 +39,42 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.6.1] – 2026-09-28
+
+Bugfix-Release auf Basis der Rückmeldungen aus dem ersten Test in Thunderbird.
+
+### Fixed
+
+- **Falsche, praktisch konstante Risikobewertung ("immer 50 von 100").** Drei verschiedene schwache
+  Einzelsignale gaben jeweils exakt 50 Punkte, und die Banner-Schwelle lag ebenfalls bei 50 - dadurch meldete
+  praktisch jede Nachricht (z. B. Newsletter mit `spf=softfail` oder eine gewöhnliche Rechnung mit einem
+  Dringlichkeitswort) exakt "50 von 100". Die Gewichte sind jetzt abgestuft und zentral in `SCORE_WEIGHTS`
+  dokumentiert; kein einzelnes schwaches Signal erreicht allein die Schwelle. Zusätzlich fließen bösartige
+  IP-Adressen aus den Received-Headern erstmals in die Bewertung ein (bisher wurden sie berechnet, aber
+  ignoriert).
+- **Erstkontakt-Erkennung war unbrauchbar.** Es wurde nach Nachrichten *an* den Absender gesucht statt nach
+  Nachrichten *von* ihm, und die Liste bekannter Absender lag nur im Arbeitsspeicher (MV3-Hintergrundskripte
+  werden entladen) - daher galt fast jeder Absender als "Erstkontakt". Jetzt wird `from` abgefragt, die
+  Absender werden dauerhaft in `browser.storage.local` gespeichert, und wenn die Abfrage nicht möglich ist,
+  bleibt der Erstkontakt *unbekannt* (keine Punkte statt Raten).
+- **"Scan fehlgeschlagen" ohne Begründung.** Der Banner zeigt jetzt die konkrete Ursache an, und der
+  Hintergrund meldet strukturierte Codes (`NO_API_KEY`, `PERMISSION_REQUIRED`, `EXTERNAL_ANALYSIS_DISABLED`,
+  `SCAN_FAILED` mit Angabe der fehlgeschlagenen Stufe). Der zuvor verschluckte Fall "kein API-Schlüssel
+  hinterlegt" ist jetzt sichtbar und verlinkt direkt in die Einstellungen.
+- Fehler im Banner-Handler (`[...].trim()` auf einem Array-Literal) und die fehlende
+  `console.info`-Unterstützung in älteren Testumgebungen behoben.
+
+### Added
+
+- **Manuelle Anhang-Analyse im Popup:** Alle Anhänge der geöffneten Nachricht werden mit Typ und Größe
+  aufgelistet. Pro Anhang gibt es "Hash lokal berechnen" (SHA-256, keine Übertragung) und
+  "Hochladen & analysieren" (Übertragung an den konfigurierten Dienst, Ergebnis wird direkt im Popup
+  angezeigt). Ohne Zustimmung, API-Schlüssel oder Host-Berechtigung erklärt das Popup, was fehlt, und bietet
+  den direkten Weg in die Einstellungen.
+- **Transparente Bewertung im Popup:** Die lokale Bewertung inklusive aller Begründungen wird angezeigt, damit
+  nachvollziehbar ist, wie der Score zustande kommt ("Warnbanner ab 50 von 100 Punkten").
+- Neue Hintergrund-Aktionen `listAttachments` und `attachmentHash` (beide rein lokal).
+
 ## [1.6.0] – 2026-09-28
 
 ### Added

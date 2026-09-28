@@ -176,6 +176,11 @@ Zugriffsrechte des Betriebssystem-Benutzerkontos und die Zugriffskontrolle des T
 - Nachrichten-Metadaten, die zur Anzeige im Popup gespeichert werden (Absenderadresse, Betreff,
   Dateiname und SHA-256-Hash der geprüften Anhänge sowie der Teilename innerhalb der Nachricht).
 
+Das Popup listet die Anhänge der geöffneten Nachricht mit Dateityp und Größe auf und kann auf Wunsch den
+SHA-256-Hash eines Anhangs berechnen. Beides geschieht ausschließlich lokal und ohne Übertragung. Nur die
+Schaltfläche „Hochladen & analysieren“ überträgt den betreffenden Anhang - und auch nur, wenn die
+Zustimmung (Abschnitt 3.1) aktiv ist und die Host-Berechtigung erteilt wurde.
+
 Diese Nachrichten-Metadaten verbleiben ausschließlich lokal und werden nicht an die Analyse-Anbieter
 übermittelt; übertragen werden nur die in Abschnitt 3 genannten Datensätze (Hashes, Anhänge, URLs,
 Domains, IP-Adressen) - und nur bei aktiver Zustimmung.
@@ -417,6 +422,11 @@ account and by the Thunderbird profile's access control.
 - mappings to messages via Message-ID or header ID,
 - message metadata stored for the popup (sender address, subject, file name and SHA-256 hash of the
   checked attachments, and the MIME part name inside the message).
+
+The popup lists the attachments of the opened message with type and size and can compute the SHA-256 hash
+of a single attachment on request. Both happen purely locally without any transmission. Only the
+button "Upload & analyse" transmits that attachment - and only while the consent (section 3.1) is active
+and the host permission has been granted.
 
 This message metadata stays local and is not transmitted to the analysis providers; only the data
 listed in section 3 (hashes, attachments, URLs, domains, IP addresses) is transmitted - and only

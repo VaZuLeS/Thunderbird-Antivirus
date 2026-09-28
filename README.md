@@ -132,6 +132,20 @@ packages are produced with `web-ext build --source-dir .` and cleaned up by the 
 `web-ext-config.mjs` (supplemented by `.webextignore`), so that test
 files, `docs/`, `scripts/`, `examples/` and lockfiles are not shipped.
 
+### Manual attachment analysis (popup)
+
+The popup lists every attachment of the displayed message with type and size:
+
+- **Hash locally** computes the SHA-256 hash without transmitting anything.
+- **Upload & analyse** submits that single attachment to the configured provider and renders the report in the
+  popup. Without consent, API key or host permission the popup explains what is missing and links to the
+  options page.
+
+The popup also shows the local risk score together with every reason behind it, so the rating is
+understandable. The threat banner appears from 50 of 100 points; the weights are defined in `SCORE_WEIGHTS`
+in `background.js` and are deliberately staggered, so no single weak signal (for example `spf=softfail` on a
+newsletter) reaches the threshold on its own.
+
 ## Build, lint and test
 
 ```bash

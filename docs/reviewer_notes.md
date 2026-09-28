@@ -94,6 +94,15 @@ background script for the display state (`getDisplayState`), receives updates (`
 scan actions (`requestScan` with `persist: false|true`). Host permissions are requested in the options dialog only,
 where the user's click is a real user gesture.
 
+### 3.3 Manual attachment analysis (popup)
+
+The popup lists the attachments of the displayed message (`listAttachments`) and can compute their SHA-256
+hash locally (`attachmentHash`). Both actions are purely local - they transmit nothing. The explicit
+"Upload & analyse" button forwards the single attachment through the background script (`uploadAttachment`),
+which enforces the global consent, the host permission and the API key and answers with a structured error
+code (`NO_API_KEY`, `PERMISSION_REQUIRED`, `EXTERNAL_ANALYSIS_DISABLED`, `SCAN_FAILED` plus stage) that the
+popup translates into a user-visible explanation.
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,

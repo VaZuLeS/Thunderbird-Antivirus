@@ -207,3 +207,31 @@ button[aria-busy="true"]::after,
     border-radius: 50%;
     animation: thundy-spin 0.8s linear infinite;
 }
+
+/* Manuelle Anhang-Analyse im Popup */
+.thundy-attachment-row {
+    border-top: 1px solid var(--border-color, #ddd);
+    padding: 8px 0;
+}
+
+.thundy-attachment-row button {
+    margin: 4px 4px 0 0;
+}
+
+.thundy-attachment-status {
+    display: block;
+    color: var(--text-muted, #666);
+    word-break: break-all;
+}
+
+.thundy-reasons {
+    margin: 4px 0 8px 0;
+    padding-left: 20px;
+}
+
+.card-warn {
+    background-color: #fff8e1;
+    border: 1px solid #ffcc80;
+    padding: 8px;
+    border-radius: 4px;
+}

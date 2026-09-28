@@ -195,6 +195,15 @@ if (!externalAnalysisConsent && apiContainer) {
     apiContainer.appendChild(consentCard);
 }
 
+// Lokale Bewertung transparent machen und die manuelle Anhang-Analyse anbieten.
+if (apiContainer) {
+    const activeTabId = tabs[0] ? tabs[0].id : null;
+    renderAttachmentPanel(message, message.headerMessageId, apiContainer);
+    browser.runtime.sendMessage({ action: 'getDisplayState', tabId: activeTabId })
+        .then(state => renderThreatSummary(apiContainer, state))
+        .catch(error => console.error('Bewertung konnte nicht geladen werden:', error));
+}
+
 try {
 
     // Öffnen Sie die Datenbank
@@ -548,6 +557,186 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
     renderFileDetails(json_data, card);
     renderActionButtons(hybrid_sha, attachmentName, card);
     return card;
+}
+
+// ---------------------------------------------------------------------------
+// Manuelle Anhang-Analyse
+// Der Nutzer kann jeden Anhang explizit pruefen lassen: erst den SHA-256-Hash
+// lokal berechnen, dann auf Wunsch an den konfigurierten Dienst uebertragen.
+// Jede Uebertragung laeuft ueber das Hintergrundskript und bleibt damit an die
+// Zustimmung gebunden.
+// ---------------------------------------------------------------------------
+function formatFileSize(bytes) {
+    if (typeof bytes !== 'number' || bytes < 0) return 'unbekannte Groesse';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+function describeErrorCode(code, fallbackMessage) {
+    switch (code) {
+        case 'NO_API_KEY':
+            return 'Kein Hybrid-Analysis-API-Schluessel hinterlegt - bitte in den Einstellungen eintragen.';
+        case 'EXTERNAL_ANALYSIS_DISABLED':
+            return 'Externe Analyse ist nicht freigegeben - bitte in den Einstellungen aktivieren.';
+        case 'PERMISSION_REQUIRED':
+            return 'Host-Berechtigung fuer hybrid-analysis.com fehlt - bitte die Einstellungen speichern und die Berechtigung erteilen.';
+        default:
+            return fallbackMessage || 'Unbekannter Fehler.';
+    }
+}
+
+async function requestAttachmentHash(messageId, partName) {
+    const response = await browser.runtime.sendMessage({
+        action: 'attachmentHash',
+        messageId: messageId,
+        partName: partName
+    });
+    if (response && response.status === 'success') return response;
+    throw new Error(response && response.message ? response.message : 'Hash konnte nicht berechnet werden.');
+}
+
+async function uploadAttachmentForAnalysis({ messageId, partName, attachmentName, headerMessageId }) {
+    const response = await browser.runtime.sendMessage({
+        action: 'uploadAttachment',
+        messageId: messageId,
+        partName: partName,
+        attachmentName: attachmentName,
+        headerMessageId: headerMessageId
+    });
+    if (response && response.status === 'success') return response.data || {};
+    const error = new Error(describeErrorCode(response && response.code, response && response.message));
+    error.code = response && response.code;
+    throw error;
+}
+
+function renderThreatSummary(container, state) {
+    if (!state || state.mode !== 'ready' || !state.threat) return;
+    const threat = state.threat;
+    const card = document.createElement('div');
+    card.id = 'thundy-score-summary';
+    card.className = 'card card-info mb-3';
+
+    const heading = document.createElement('p');
+    heading.textContent = 'Lokale Bewertung dieser Nachricht: ' + threat.score + ' von 100';
+    card.appendChild(heading);
+
+    const reasons = Array.isArray(threat.reasons) ? threat.reasons : [];
+    if (reasons.length > 0) {
+        const list = document.createElement('ul');
+        list.className = 'thundy-reasons';
+        for (const reason of reasons) {
+            const item = document.createElement('li');
+            item.textContent = String(reason);
+            list.appendChild(item);
+        }
+        card.appendChild(list);
+    } else {
+        const none = document.createElement('p');
+        none.textContent = 'Keine Auffaelligkeiten gefunden.';
+        card.appendChild(none);
+    }
+
+    const note = document.createElement('small');
+    note.textContent = 'Die Bewertung entsteht ausschliesslich lokal. Warnbanner erscheinen ab 50 von 100 Punkten.';
+    card.appendChild(note);
+
+    container.appendChild(card);
+}
+
+async function renderAttachmentPanel(message, headerMessageId, container) {
+    let response;
+    try {
+        response = await browser.runtime.sendMessage({ action: 'listAttachments', messageId: message.id });
+    } catch (error) {
+        console.error('Anhaenge konnten nicht geladen werden:', error);
+        return;
+    }
+    if (!response || response.status !== 'success' || !Array.isArray(response.attachments) || response.attachments.length === 0) {
+        return;
+    }
+
+    const card = document.createElement('div');
+    card.id = 'thundy-attachment-panel';
+    card.className = 'card card-info mb-3';
+
+    const title = document.createElement('p');
+    title.textContent = 'Anhaenge dieser Nachricht (' + response.attachments.length + ')';
+    card.appendChild(title);
+    container.appendChild(card);
+
+    for (const attachment of response.attachments) {
+        const row = document.createElement('div');
+        row.className = 'thundy-attachment-row';
+
+        const label = document.createElement('div');
+        label.textContent = attachment.name + ' (' + attachment.contentType + ', ' + formatFileSize(attachment.size) + ')';
+        row.appendChild(label);
+
+        const status = document.createElement('small');
+        status.className = 'thundy-attachment-status';
+        row.appendChild(status);
+
+        const hashButton = document.createElement('button');
+        hashButton.type = 'button';
+        hashButton.textContent = 'Hash lokal berechnen';
+        hashButton.addEventListener('click', async () => {
+            hashButton.disabled = true;
+            try {
+                const result = await requestAttachmentHash(message.id, attachment.partName);
+                status.textContent = 'SHA-256: ' + result.sha256;
+            } catch (error) {
+                status.textContent = 'Fehler: ' + error.message;
+            } finally {
+                hashButton.disabled = false;
+            }
+        });
+        row.appendChild(hashButton);
+
+        const uploadButton = document.createElement('button');
+        uploadButton.type = 'button';
+        uploadButton.textContent = 'Hochladen & analysieren';
+        uploadButton.addEventListener('click', async () => {
+            uploadButton.disabled = true;
+            status.textContent = 'Datei wird uebertragen...';
+            try {
+                const data = await uploadAttachmentForAnalysis({
+                    messageId: message.id,
+                    partName: attachment.partName,
+                    attachmentName: attachment.name,
+                    headerMessageId: headerMessageId
+                });
+                let sha256 = data && data.sha256 ? data.sha256 : null;
+                if (!sha256) {
+                    const local = await requestAttachmentHash(message.id, attachment.partName);
+                    sha256 = local.sha256;
+                }
+                status.textContent = 'Hochgeladen - Analyse wird geladen...';
+                await get_hybrid_report_by_sha256({
+                    hybrid_sha: sha256,
+                    attachmentName: attachment.name,
+                    messageId: message.id,
+                    partName: attachment.partName,
+                    headerMessageId: headerMessageId
+                });
+                status.textContent = 'Analyse angefordert (SHA-256: ' + sha256 + ')';
+            } catch (error) {
+                status.textContent = 'Fehler: ' + error.message;
+                if (error.code === 'NO_API_KEY' || error.code === 'EXTERNAL_ANALYSIS_DISABLED' || error.code === 'PERMISSION_REQUIRED') {
+                    const optionsButton = document.createElement('button');
+                    optionsButton.type = 'button';
+                    optionsButton.textContent = 'Einstellungen oeffnen';
+                    optionsButton.addEventListener('click', () => browser.runtime.openOptionsPage());
+                    row.appendChild(optionsButton);
+                }
+            } finally {
+                uploadButton.disabled = false;
+            }
+        });
+        row.appendChild(uploadButton);
+
+        card.appendChild(row);
+    }
 }
 
 const hybrid_report_cache = new Map();

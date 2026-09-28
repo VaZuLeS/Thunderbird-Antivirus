@@ -93,5 +93,16 @@
   },
   "notificationNoLinks": {
     "message": "In dieser Nachricht wurden keine Links gefunden."
+  },
+  "bannerNoApiKey": {
+    "message": "Kein Hybrid-Analysis-API-Schlüssel hinterlegt – bitte in den Einstellungen eintragen."
+  },
+  "bannerScanFailedWithReason": {
+    "message": "Scan fehlgeschlagen: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
   }
 }
