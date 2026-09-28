@@ -154,6 +154,18 @@ The popup lists every attachment of the displayed message with type and size:
 
 All of it is computed locally; nothing is transmitted.
 
+#### Header forensics, Unicode, archives and STIX
+
+- **Header forensics** with severity and MITRE ATT&CK mapping: display-name brand impersonation, envelope
+  mismatches, authentication failures, missing TLS markers, unusual hop order, bulk-mailer hints, date divergences.
+  The score contribution is capped at 35 points.
+- **Unicode forensics:** bidirectional overrides, zero-width characters, mixed scripts; **punycode hosts are
+  decoded** so the real IDN is visible.
+- **Archive inspection without extraction:** ZIP entry names/sizes are read from the local buffer and checked for
+  risky/double extensions, nested archives and path traversal.
+- **STIX 2.1 export** and **provider pivots** (VirusTotal, Hybrid Analysis, urlscan.io, URLhaus, AbuseIPDB) as plain
+  user-clicked links.
+
 ### Localization and branding
 
 - **Localization:** the add-on ships German and English (125 keys each) in `_locales/`. Thunderbird picks the

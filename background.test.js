@@ -246,6 +246,13 @@ describe('background.js', () => {
             globalThis.analyzeUrl = analyzeUrl;
             globalThis.extractIndicators = extractIndicators;
             globalThis.analyzeAttachmentMeta = analyzeAttachmentMeta;
+            globalThis.decodePunycodeHost = decodePunycodeHost;
+            globalThis.findUnicodeTricks = findUnicodeTricks;
+            globalThis.analyzeHeaderForensics = analyzeHeaderForensics;
+            globalThis.mapFindingsToTechniques = mapFindingsToTechniques;
+            globalThis.listZipEntries = listZipEntries;
+            globalThis.buildStixBundle = buildStixBundle;
+            globalThis.providerPivotLinks = providerPivotLinks;
             globalThis.validateRule = validateRule;
             globalThis.normalizeRules = normalizeRules;
             globalThis.evaluateCustomRules = evaluateCustomRules;
@@ -4807,6 +4814,165 @@ describe('background.js', () => {
             assert.ok(sources.includes('links'));
             const sum = result.breakdown.reduce((total, entry) => total + entry.points, 0);
             assert.ok(sum >= result.score - 1, 'breakdown must explain the score');
+        });
+    });
+
+    describe('forensic analysis (headers, unicode, archives, STIX)', () => {
+        it('decodes punycode hosts correctly (cross-checked with Node)', () => {
+            const { domainToUnicode } = require('node:url');
+            const hosts = ['xn--80ak6aa92e.com', 'xn--bcher-kva.example', 'www.xn--mnchen-3ya.de', 'example.com'];
+            for (const host of hosts) {
+                assert.strictEqual(context.decodePunycodeHost(host), domainToUnicode(host), 'mismatch for ' + host);
+            }
+        });
+
+        it('flags bidi overrides, zero width characters and mixed scripts', () => {
+            const bidi = context.findUnicodeTricks('paypal\u202Egnp.exe');
+            assert.strictEqual(bidi.some(finding => finding.kind === 'bidi-override'), true);
+
+            const zeroWidth = context.findUnicodeTricks('Micro\u200Bsoft');
+            assert.strictEqual(zeroWidth.some(finding => finding.kind === 'zero-width'), true);
+
+            const mixed = context.findUnicodeTricks('google.\u0440\u0443');
+            assert.strictEqual(mixed.some(finding => finding.kind === 'mixed-script'), true);
+
+            assert.strictEqual(context.findUnicodeTricks('normaler Text').length, 0);
+        });
+
+        it('detects display name impersonation, envelope mismatch and auth failures', () => {
+            const forensics = context.analyzeHeaderForensics({
+                headers: {
+                    'return-path': ['<bounce@versand-dienst.example>'],
+                    'reply-to': ['Chef <chef-antwort@fremd.example>'],
+                    'message-id': ['<abc123@mail-relay.example>'],
+                    'x-mailer': ['PHPMailer 6.8'],
+                    'received': ['from mx1.example by mx2.example with ESMTPS; Mon, 28 Sep 2026 12:00:30 +0000']
+                },
+                author: 'PayPal Service <service@werbe-versand.example>',
+                subject: 'Ihr Konto',
+                authResults: [
+                    { mechanism: 'spf', result: 'fail', domain: 'werbe-versand.example' },
+                    { mechanism: 'dkim', result: 'fail', domain: 'werbe-versand.example' },
+                    { mechanism: 'dmarc', result: 'fail', domain: 'werbe-versand.example' }
+                ],
+                receivedChain: { hops: [{ from: 'mx1.example', by: 'mx2.example', ip: '203.0.113.9', date: '2026-09-28T12:00:30.000Z', delaySeconds: null }] }
+            });
+
+            const kinds = forensics.findings.map(finding => finding.kind);
+            assert.ok(kinds.includes('display-name-impersonation'), 'brand impersonation expected: ' + kinds.join(','));
+            assert.ok(kinds.includes('envelope-mismatch'));
+            assert.ok(kinds.includes('reply-to-mismatch'));
+            assert.ok(kinds.includes('message-id-mismatch'));
+            assert.ok(kinds.includes('auth-failed'));
+            assert.ok(kinds.includes('bulk-mailer'));
+            assert.ok(forensics.severityCounts.hoch >= 2, 'auth failures plus impersonation are high severity');
+            assert.ok(forensics.techniques.some(technique => technique.id === 'T1036.005'));
+            assert.ok(forensics.techniques.some(technique => technique.id === 'T1566'));
+        });
+
+        it('leaves a clean message without high severity findings', () => {
+            const forensics = context.analyzeHeaderForensics({
+                headers: {
+                    'return-path': ['<service@paypal.com>'],
+                    'message-id': ['<id@paypal.com>'],
+                    'received': ['from mx.example by inbox.example with ESMTPS; Mon, 28 Sep 2026 12:00:00 +0000']
+                },
+                author: 'PayPal Service <service@paypal.com>',
+                subject: 'Ihre Rechnung',
+                authResults: [
+                    { mechanism: 'spf', result: 'pass', domain: 'paypal.com' },
+                    { mechanism: 'dkim', result: 'pass', domain: 'paypal.com' },
+                    { mechanism: 'dmarc', result: 'pass', domain: 'paypal.com' }
+                ],
+                receivedChain: { hops: [{ from: 'mx.example', by: 'inbox.example', ip: '203.0.113.9', date: '2026-09-28T12:00:00.000Z', delaySeconds: null }] }
+            });
+
+            assert.strictEqual(forensics.findings.filter(finding => finding.severity !== 'niedrig').length, 0);
+        });
+
+        it('weights forensic findings but keeps them capped', () => {
+            const manyFindings = {
+                findings: [
+                    { kind: 'a', severity: 'hoch', detail: 'A' },
+                    { kind: 'b', severity: 'hoch', detail: 'B' },
+                    { kind: 'c', severity: 'mittel', detail: 'C' },
+                    { kind: 'd', severity: 'mittel', detail: 'D' }
+                ]
+            };
+
+            const result = context.calculateThreatScore('Info <info@example.org>', [], { forensics: manyFindings });
+
+            const forensicsEntry = result.breakdown.find(entry => entry.source === 'header-forensik');
+            assert.ok(forensicsEntry, 'breakdown must name the forensic contribution');
+            assert.strictEqual(forensicsEntry.points, 35, 'contribution is capped');
+            assert.ok(result.score >= 35 && result.score < 50, 'a weak combination stays below the banner threshold');
+            assert.ok(result.reasons.some(reason => reason.includes('Header-Forensik')));
+        });
+    });
+
+    describe('archive inspection, STIX export and provider pivots', () => {
+        it('lists archive entries without extracting them', () => {
+            const zipBase64 = 'UEsDBBQAAAAAAJ2aPF2bRiFqDQAAAA0AAAAMAAAAcmVjaG51bmcucGRmJVBERi0xLjQgdGVzdFBLAwQUAAAAAACdmjxdQm5fLQcAAAAHAAAAEAAAAHJlY2hudW5nLnBkZi5leGVNWiB0ZXN0UEsDBBQAAAAAAJ2aPF0AUOPyCgAAAAoAAAAKAAAAbmVzdGVkLnppcFBLAwQgZHVtbXlQSwECFAMUAAAAAACdmjxdm0Yhag0AAAANAAAADAAAAAAAAAAAAAAAgAEAAAAAcmVjaG51bmcucGRmUEsBAhQDFAAAAAAAnZo8XUJuXy0HAAAABwAAABAAAAAAAAAAAAAAAIABNwAAAHJlY2hudW5nLnBkZi5leGVQSwECFAMUAAAAAACdmjxdAFDj8goAAAAKAAAACgAAAAAAAAAAAAAAgAFsAAAAbmVzdGVkLnppcFBLBQYAAAAAAwADALAAAACeAAAAAAA=';
+            const buffer = Buffer.from(zipBase64, 'base64');
+            const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+
+            const listing = context.listZipEntries(arrayBuffer);
+
+            assert.strictEqual(listing.entries.length, 3);
+            const names = listing.entries.map(entry => entry.name);
+            assert.ok(names.includes('rechnung.pdf'));
+            assert.ok(names.includes('rechnung.pdf.exe'));
+            assert.ok(listing.entries.find(entry => entry.name === 'rechnung.pdf.exe').doubleExtension);
+            assert.ok(listing.entries.find(entry => entry.name === 'nested.zip').nestedArchive);
+            assert.ok(listing.flags.some(flag => flag.includes('doppelte Dateiendung')));
+            assert.ok(listing.flags.some(flag => flag.includes('verschachteltes Archiv')));
+
+            const broken = context.listZipEntries(new Uint8Array([1, 2, 3, 4, 5]).buffer);
+            assert.strictEqual(broken.entries.length, 0);
+            assert.ok(broken.flags.length > 0);
+        });
+
+        it('builds a STIX 2.1 bundle from the indicators', () => {
+            const bundle = context.buildStixBundle({
+                ips: ['203.0.113.9'],
+                domains: ['evil.example'],
+                urls: ['https://evil.example/payload'],
+                hashes: ['a'.repeat(64)],
+                emails: ['chef@firma.example']
+            });
+
+            assert.strictEqual(bundle.type, 'bundle');
+            assert.strictEqual(bundle.spec_version, '2.1');
+            assert.ok(bundle.objects.some(object => object.type === 'identity'));
+
+            const indicators = bundle.objects.filter(object => object.type === 'indicator');
+            assert.strictEqual(indicators.length, 5);
+            assert.ok(indicators.some(indicator => indicator.pattern === "ipv4-addr:value = '203.0.113.9'"));
+            assert.ok(indicators.some(indicator => indicator.pattern === "domain-name:value = 'evil.example'"));
+            assert.ok(indicators.some(indicator => indicator.pattern === "file:hashes.'SHA-256' = '" + 'a'.repeat(64) + "'"));
+            for (const indicator of indicators) {
+                assert.strictEqual(indicator.pattern_type, 'stix');
+                assert.ok(indicator.id.startsWith('indicator--'));
+            }
+        });
+
+        it('offers provider pivot links per indicator type', () => {
+            assert.strictEqual(context.providerPivotLinks({ type: 'sha256', value: 'a'.repeat(64) }).length, 2);
+            assert.ok(context.providerPivotLinks({ type: 'sha256', value: 'a'.repeat(64) })
+                .some(link => link.url.includes('virustotal.com/gui/file/')));
+            assert.ok(context.providerPivotLinks({ type: 'domain', value: 'evil.example' })
+                .some(link => link.url === 'https://urlscan.io/domain/evil.example'));
+            assert.ok(context.providerPivotLinks({ type: 'ip', value: '203.0.113.9' })
+                .some(link => link.url.includes('abuseipdb.com/check/203.0.113.9')));
+            assert.ok(context.providerPivotLinks({ type: 'url', value: 'https://evil.example/a b' })
+                .every(link => !link.url.includes(' ')), 'URLs must be encoded');
+            assert.strictEqual(context.providerPivotLinks({ type: 'unbekannt', value: 'x' }).length, 0);
+        });
+
+        it('reports the decoded host for punycode URLs', () => {
+            const analysis = context.analyzeUrl('https://xn--80ak6aa92e.com/login');
+            assert.ok(analysis.decodedHost.includes('.com'));
+            assert.ok(analysis.flags.some(flag => flag.includes('liest sich als')));
         });
     });
 

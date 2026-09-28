@@ -37,7 +37,7 @@ abgearbeitet:
 - **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung und Rechte und
   liefert einen echten Exit-Code; der Schritt läuft in der CI.
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission- und MV3-Portierungs-Tests
-  enthalten) und ist grün (554 Tests, 0 Fehler). Der im Repository aktive Workflow
+  enthalten) und ist grün (564 Tests, 0 Fehler). Der im Repository aktive Workflow
   (`.github/workflows/ci.yml`, Node 22) läuft `npm ci`, die Pre-Submit-Checks (jetzt mit echtem Exit-Code),
   `node --test background.test.js` und `npx web-ext lint`. Die erweiterten Definitionen — vollständiger
   `npm test`, Lint-Filter für bekannte Thunderbird-False-Positives
@@ -93,6 +93,9 @@ abgearbeitet:
   Link-Anatomie (Punycode, user@host, Tracking), Anhang-Typanalyse per Magic Bytes sowie Score-Breakdown je
   Pruefschritt - ausschliesslich lokal. Zusaetzlich praezisierte Injektionsdiagnose (Registrierung vs. Fallback
   je Nachricht, mit Ursache und Verifikation).
+- **Forensik-Ausbau (1.13.0):** Header-Forensik mit Schweregrad und MITRE-Zuordnung (gedeckelt in der Bewertung),
+  Unicode-/Bidi-Erkennung, Punycode-Dekodierung, Archiv-Inspektion ohne Entpacken, STIX-2.1-Export und
+  Provider-Pivots als reine Links - alles lokal.
 - **XPI-Artefakt:** `npm run build` erzeugt `build/thundy-av-1.6.xpi` und prüft das Paket inklusive Manifest-
   Referenzen und registrierten Nachrichten-Skripten (`scripts/build-xpi.js`, `scripts/verify-package.js`).
 - **Tests (aktuell):** 404 Tests, 0 Fehler (u. a. 10 Tests für das Banner-Script in jsdom).

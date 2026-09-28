@@ -39,6 +39,33 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.13.0] – 2026-09-28
+
+### Added (Forscher-Sicht, ausschliesslich lokal)
+
+- **Header-Forensik** mit Schweregrad und MITRE-Zuordnung: Anzeigename-Markenimitation, Envelope-Abweichungen
+  (Return-Path/Reply-To/Message-ID), fehlgeschlagene oder fehlende Authentifizierung, `dmarc=none`, fehlende
+  TLS-Angabe in der Zustellkette, ungewoehnliche Hop-Reihenfolge (öffentlich nach intern), lange Hop-Verzoegerungen,
+  Massenmailer-Kennungen und Datumsabweichungen. Die Beitraege fliessen **gedeckelt** (max. 35 Punkte) in die
+  Bewertung ein, damit schwache Einzelsignale die Warnschwelle nicht allein erreichen.
+- **Unicode-Forensik:** Bidi-Steuerzeichen (Right-to-Left-Override), nullbreite Zeichen und gemischte Schriftsysteme
+  in Anzeigename, Betreff und URLs; Treffer werden als Befund mit Schwere und Technik ausgewiesen.
+- **Punycode-Dekodierung:** `xn--`-Hosts werden in lesbare Zeichen uebersetzt und in der Link-Anatomie angezeigt
+  ("liest sich als ...").
+- **Archiv-Inspektion ohne Entpacken:** Das ZIP-Inhaltsverzeichnis wird gelesen und auf ausfuehrbare Eintraege,
+  doppelte Dateiendungen, verschachtelte Archive und Pfadwechsel geprueft - ohne dass Inhalte entpackt oder
+  ausgefuehrt werden.
+- **STIX-2.1-Export** der Indikatoren ueber einen Button im Forscher-Panel (Bundle mit Identity + Indicators).
+- **Provider-Pivots:** Pro Indikator (Hash, IP, Domain, URL) werden Links zu VirusTotal, Hybrid Analysis, urlscan.io,
+  URLhaus und AbuseIPDB angeboten - **nur als Link**, der Aufruf erfolgt durch den Nutzer (Hinweis im Panel).
+
+### Changed
+
+- `getMessageInsights` liefert zusaetzlich Forensik-Befunde, MITRE-Techniken, Archivinhalte, STIX-Bundle, Pivots und
+  den dekodierten Punycode-Host; das Forscher-Panel zeigt all das rollenabhaengig (nur `research`/`audit`).
+- Bugfix: gemischte Schriftsysteme wurden nicht erkannt, weil lateinische Zeichen nicht als Schriftsystem erfasst
+  wurden.
+
 ## [1.12.0] – 2026-09-28
 
 ### Added

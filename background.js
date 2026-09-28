@@ -1115,6 +1115,7 @@ const SCORE_WEIGHTS = {
     urlhausDomain: 80,
     maliciousIp: 50,
     maliciousIpCap: 70,
+    headerForensicsCap: 35,
     blacklist: 100
 };
 
@@ -1397,6 +1398,7 @@ function calculateThreatScore(author, urls, options = {}) {
         subject = "",
         replyTo = "",
         maliciousIps = [],
+        forensics = null,
         parsedUrlCache = null
     } = options;
     let score = 0;
@@ -1435,6 +1437,22 @@ function calculateThreatScore(author, urls, options = {}) {
     };
 
     if (ruleResult.scoreDelta > 0) breakdown.push({ source: 'eigene-regeln', points: ruleResult.scoreDelta });
+
+    // Header-Forensik: kleine, gedeckelte Beitraege, damit schwache Einzelsignale
+    // die Banner-Schwelle nicht allein erreichen.
+    if (forensics) {
+        const severityPoints = { hoch: 25, mittel: 10, niedrig: 0 };
+        const forensicsScore = Math.min(
+            (forensics.findings || []).reduce((total, finding) => total + (severityPoints[finding.severity] || 0), 0),
+            SCORE_WEIGHTS.headerForensicsCap);
+        if (forensicsScore > 0) {
+            score += forensicsScore;
+            breakdown.push({ source: 'header-forensik', points: forensicsScore });
+            for (const finding of forensics.findings) {
+                if (finding.severity !== 'niedrig') reasons.push('Header-Forensik: ' + finding.detail);
+            }
+        }
+    }
 
     let before = score;
     const authEval = evaluateAuthHeaders(authHeaders, score, reasons);
@@ -1766,8 +1784,19 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
     extractBecProtectionData(message, fullMessage)
   ]);
 
+  const authResults = parseAuthenticationResults(authHeaders);
+  const receivedChain = analyzeReceivedChain(receivedHeaders);
+  const forensics = analyzeHeaderForensics({
+    headers: fullMessage.headers || {},
+    author: message.author,
+    subject: becData.subject || message.subject,
+    authResults,
+    receivedChain
+  });
+
   return {
     authHeaders,
+    forensics,
     urlhausDomains,
     isFirstCommunication: becData.isFirstCommunication,
     messageText,
@@ -2865,6 +2894,8 @@ function analyzeUrl(url) {
     analysis.pathDepth = parsed.pathname.split('/').filter(Boolean).length;
     analysis.ipHost = /^\d{1,3}(\.\d{1,3}){3}$/.test(parsed.hostname) || parsed.hostname.includes(':');
     analysis.punycode = parsed.hostname.includes('xn--');
+    analysis.decodedHost = decodePunycodeHost(parsed.hostname);
+    if (analysis.punycode) analysis.flags.push('Punycode-Host - liest sich als: ' + analysis.decodedHost);
     analysis.hasUserInfo = !!parsed.username || !!parsed.password;
     analysis.subdomainCount = Math.max(0,
         parsed.hostname.split('.').filter(Boolean).length - analysis.registrableDomain.split('.').length);
@@ -2984,7 +3015,440 @@ function analyzeAttachmentMeta(attachment, buffer) {
 // freistellen/blockieren und verhindern Uploads, wenn eine Datei lokal bereits
 // als unbedenklich oder boese bekannt ist.
 // ---------------------------------------------------------------------------
-/** Sammelt Indikatoren (IOCs) aus Nachricht, Links und Anhaengen. */
+// ---------------------------------------------------------------------------
+// Forensische Analyseverfahren (lokal, ohne Ausfuehrung von Inhalten)
+//   - Punycode-Dekodierung zur Anzeige des echten IDN-Hosts
+//   - Unicode-Tricks (Bidi-Override, Zero-Width, gemischte Schriftsysteme)
+// ---------------------------------------------------------------------------
+
+/** Dekodiert ein Punycode-Label ohne die "xn--"-Praefix (RFC 3492). */
+function decodePunycodeLabel(label) {
+    const base = 36, tmin = 1, tmax = 26, skew = 38, damp = 700, initialBias = 72, initialN = 128;
+    const adapt = (delta, numPoints, firstTime) => {
+        delta = firstTime ? Math.floor(delta / damp) : delta >> 1;
+        delta += Math.floor(delta / numPoints);
+        let k = 0;
+        while (delta > ((base - tmin) * tmax) >> 1) {
+            delta = Math.floor(delta / (base - tmin));
+            k += base;
+        }
+        return k + Math.floor(((base - tmin + 1) * delta) / (delta + skew));
+    };
+    const digitOf = (code) => {
+        if (code >= 48 && code <= 57) return code - 22;
+        if (code >= 65 && code <= 90) return code - 65;
+        if (code >= 97 && code <= 122) return code - 97;
+        return base;
+    };
+
+    const delimiterIndex = label.lastIndexOf('-');
+    let output = '';
+    for (let i = 0; i < (delimiterIndex >= 0 ? delimiterIndex : 0); i++) output += label[i];
+
+    let n = initialN, i = 0, bias = initialBias, index = delimiterIndex >= 0 ? delimiterIndex + 1 : 0;
+    while (index < label.length) {
+        const oldi = i;
+        let w = 1, k = base;
+        for (;;) {
+            if (index >= label.length) throw new Error('Punycode unvollstaendig');
+            const digit = digitOf(label.charCodeAt(index++));
+            if (digit >= base) throw new Error('Punycode-Zeichen ungueltig');
+            i += digit * w;
+            const t = k <= bias ? tmin : (k >= bias + tmax ? tmax : k - bias);
+            if (digit < t) break;
+            w *= base - t;
+            k += base;
+        }
+        bias = adapt(i - oldi, output.length + 1, oldi === 0);
+        n += Math.floor(i / (output.length + 1));
+        i = i % (output.length + 1);
+        output = output.slice(0, i) + String.fromCodePoint(n) + output.slice(i);
+        i++;
+    }
+    return output;
+}
+
+/** Wandelt alle "xn--"-Labels eines Hosts in lesbare Zeichen um. */
+function decodePunycodeHost(host) {
+    return String(host || '').split('.').map(label => {
+        const lower = label.toLowerCase();
+        if (!lower.startsWith('xn--')) return label;
+        try {
+            return decodePunycodeLabel(lower.slice(4));
+        } catch (e) {
+            return label + ' (nicht dekodierbar)';
+        }
+    }).join('.');
+}
+
+const BIDI_OVERRIDE_CHARS = ['\u202A', '\u202B', '\u202C', '\u202D', '\u202E', '\u2066', '\u2067', '\u2068', '\u2069'];
+const ZERO_WIDTH_CHARS = ['\u200B', '\u200C', '\u200D', '\u2060', '\uFEFF'];
+
+function scriptOfCodePoint(codePoint) {
+    if (codePoint < 128) return 'latin';
+    if (codePoint >= 0x0400 && codePoint <= 0x04FF) return 'kyrillisch';
+    if (codePoint >= 0x0370 && codePoint <= 0x03FF) return 'griechisch';
+    if (codePoint >= 0x0590 && codePoint <= 0x05FF) return 'hebraeisch';
+    if (codePoint >= 0x0600 && codePoint <= 0x06FF) return 'arabisch';
+    if (codePoint >= 0x0530 && codePoint <= 0x058F) return 'armenisch';
+    if (codePoint >= 0x0100 && codePoint <= 0x024F) return 'latin-erweitert';
+    return 'sonstige';
+}
+
+/** Sucht Unicode-Tricks in einem Text (Anzeigename, Betreff, URL). */
+function findUnicodeTricks(text) {
+    const value = String(text || '');
+    const findings = [];
+    const scripts = new Set();
+    let hasLatinLetters = false;
+
+    for (const char of value) {
+        const codePoint = char.codePointAt(0);
+        if (codePoint < 128) {
+            if ((codePoint >= 65 && codePoint <= 90) || (codePoint >= 97 && codePoint <= 122)) hasLatinLetters = true;
+            continue;
+        }
+        if (BIDI_OVERRIDE_CHARS.includes(char)) {
+            findings.push({ kind: 'bidi-override', detail: 'Bidi-Steuerzeichen (U+' + codePoint.toString(16).toUpperCase() + ') veraendert die angezeigte Reihenfolge.' });
+        } else if (ZERO_WIDTH_CHARS.includes(char)) {
+            findings.push({ kind: 'zero-width', detail: 'Nullbreites Zeichen (U+' + codePoint.toString(16).toUpperCase() + ') ist unsichtbar und kann Namen verfaelschen.' });
+        }
+        if (codePoint > 127) scripts.add(scriptOfCodePoint(codePoint));
+    }
+
+    const significant = Array.from(scripts).filter(script => script !== 'latin-erweitert' && script !== 'sonstige');
+    if (hasLatinLetters && significant.length > 0) {
+        findings.push({ kind: 'mixed-script', detail: 'Gemischte Schriftsysteme: ' + significant.join(', ') + ' neben lateinischen Zeichen.' });
+    } else if (significant.length > 1) {
+        findings.push({ kind: 'mixed-script', detail: 'Mehrere Schriftsysteme gemischt: ' + significant.join(', ') + '.' });
+    }
+
+    return findings;
+}
+
+
+const MITRE_TECHNIQUES = {
+    phishing: { id: 'T1566', name: 'Phishing' },
+    spearphishingAttachment: { id: 'T1566.001', name: 'Spearphishing Attachment' },
+    spearphishingLink: { id: 'T1566.002', name: 'Spearphishing Link' },
+    userExecution: { id: 'T1204.002', name: 'User Execution: Malicious File' },
+    masquerading: { id: 'T1036.005', name: 'Masquerading: Match Legitimate Name or Location' },
+    rtlOverride: { id: 'T1036.002', name: 'Masquerading: Right-to-Left Override' },
+    obfuscation: { id: 'T1027', name: 'Obfuscated Files or Information' },
+    emailAccounts: { id: 'T1585.002', name: 'Establish Accounts: Email Accounts' },
+    acquireDomains: { id: 'T1583.001', name: 'Acquire Infrastructure: Domains' }
+};
+
+function mapFindingsToTechniques(findings) {
+    const techniques = new Map();
+    for (const finding of findings || []) {
+        for (const key of (finding.techniques || [])) {
+            const technique = MITRE_TECHNIQUES[key];
+            if (technique) techniques.set(technique.id, technique);
+        }
+    }
+    return Array.from(techniques.values()).sort((left, right) => left.id.localeCompare(right.id));
+}
+
+function isPrivateIp(ip) {
+    const parts = String(ip).split('.').map(Number);
+    if (parts.length !== 4 || parts.some(part => isNaN(part))) return false;
+    return parts[0] === 10 ||
+        (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+        (parts[0] === 192 && parts[1] === 168) ||
+        parts[0] === 127;
+}
+
+/**
+ * Header-Forensik: prueft Anzeigename, Envelope, Message-ID, Hops, Mailer,
+ * Datum und Unicode auf typische Faelschungs- und Zustellmuster.
+ * Rueckgabe: Befunde mit Schwere, Begruendung und MITRE-Zuordnung.
+ */
+function analyzeHeaderForensics(input = {}) {
+    const headers = input.headers || {};
+    const first = (name) => {
+        const value = headers[name];
+        if (Array.isArray(value)) return value.length ? String(value[0]) : null;
+        return value ? String(value) : null;
+    };
+    const author = String(input.author || '');
+    const senderEmail = extractEmailAddress(author);
+    const senderDomain = extractEmailDomain(senderEmail);
+    const returnPath = first('return-path');
+    const replyTo = first('reply-to');
+    const messageId = first('message-id');
+    const mailer = first('x-mailer') || first('user-agent');
+    const dateHeader = first('date');
+    const findings = [];
+    const add = (kind, severity, detail, techniques) => findings.push({ kind, severity, detail, techniques: techniques || [] });
+
+    // 1) Anzeigename gibt eine Marke vor, die Domain passt nicht dazu.
+    const displayName = author.replace(/<[^>]*>/, '').trim().replace(/^"|"$/g, '');
+    if (displayName && senderDomain) {
+        const lowerName = displayName.toLowerCase();
+        for (const brand of KNOWN_BRANDS) {
+            const brandLabel = brand.split('.')[0];
+            if (brandLabel.length < 4 || !lowerName.includes(brandLabel)) continue;
+            if (!KNOWN_BRANDS_SET.has(getMainDomain(senderDomain))) {
+                add('display-name-impersonation', 'hoch',
+                    'Anzeigename "' + displayName + '" nennt die Marke ' + brandLabel +
+                    ', die Absender-Domain ist jedoch ' + senderDomain + '.', ['masquerading', 'phishing']);
+            }
+            break;
+        }
+    }
+
+    // 2) Envelope-Abweichungen (Return-Path, Reply-To, Message-ID).
+    if (returnPath) {
+        const envelopeDomain = extractEmailDomain(extractEmailAddress(returnPath));
+        if (envelopeDomain && senderDomain && envelopeDomain !== senderDomain) {
+            add('envelope-mismatch', 'mittel',
+                'Return-Path (' + envelopeDomain + ') weicht von der Absender-Domain (' + senderDomain + ') ab.',
+                ['phishing', 'emailAccounts']);
+        }
+    }
+    if (replyTo) {
+        const replyDomain = extractEmailDomain(extractEmailAddress(replyTo));
+        if (replyDomain && senderDomain && replyDomain !== senderDomain) {
+            add('reply-to-mismatch', 'mittel',
+                'Antworten gehen an ' + replyDomain + ' statt an ' + senderDomain + '.', ['phishing']);
+        }
+    }
+    if (messageId) {
+        const messageIdDomain = (messageId.match(/@([^>\s]+)/) || [])[1];
+        if (messageIdDomain && senderDomain && messageIdDomain.toLowerCase() !== senderDomain) {
+            add('message-id-mismatch', 'niedrig',
+                'Message-ID stammt von ' + messageIdDomain + ', Absender-Domain ist ' + senderDomain + '.', ['phishing']);
+        }
+    }
+
+    // 3) Authentifizierung.
+    const authResults = input.authResults || [];
+    if (authResults.length === 0) {
+        add('no-auth-results', 'niedrig',
+            'Keine Authentication-Results-Kopfzeile - SPF/DKIM/DMARC sind lokal nicht beurteilbar.', ['phishing']);
+    } else {
+        const failed = authResults.filter(entry => ['fail', 'softfail', 'permerror', 'temperror'].includes(entry.result));
+        if (failed.length > 0) {
+            add('auth-failed', failed.length >= 2 ? 'hoch' : 'mittel',
+                'Fehlgeschlagene Authentifizierung: ' +
+                failed.map(entry => entry.mechanism.toUpperCase() + '=' + entry.result).join(', ') + '.',
+                ['phishing', 'emailAccounts']);
+        }
+        if (authResults.some(entry => entry.mechanism === 'dmarc' && entry.result === 'none')) {
+            add('dmarc-none', 'niedrig',
+                'DMARC ist fuer diese Domain nicht durchgesetzt (dmarc=none) - Spoofing bleibt moeglich.', ['phishing']);
+        }
+    }
+
+    // 4) Zustellkette: TLS-Angabe, Reihenfolge, Verzoegerung.
+    const hops = (input.receivedChain && input.receivedChain.hops) || [];
+    const rawReceived = Array.isArray(headers['received'])
+        ? headers['received'].map(String)
+        : (headers['received'] ? [String(headers['received'])] : []);
+    const withoutTls = rawReceived.filter(raw => !/with\s+(e?smtps?|e?smtpa|https?|local)/i.test(raw)).length;
+    if (rawReceived.length > 0 && withoutTls > 0) {
+        add('hop-without-tls-marker', 'niedrig',
+            withoutTls + ' von ' + rawReceived.length + ' Received-Zeilen nennen kein "with"-Protokoll (TLS-Status unklar).',
+            ['obfuscation']);
+    }
+    const firstPrivate = hops.findIndex(hop => hop.ip && isPrivateIp(hop.ip));
+    if (firstPrivate >= 0 && hops.slice(firstPrivate + 1).some(hop => hop.ip && !isPrivateIp(hop.ip))) {
+        add('hop-order-suspicious', 'mittel',
+            'Nach einer internen Adresse folgt wieder eine oeffentliche - die Zustellkette ist ungewoehnlich.', ['obfuscation']);
+    }
+    const slowHop = hops.find(hop => typeof hop.delaySeconds === 'number' && hop.delaySeconds > 3600);
+    if (slowHop) {
+        add('hop-delay-large', 'niedrig',
+            'Verzoegerung von ' + Math.round(slowHop.delaySeconds / 60) + ' Minuten zwischen zwei Hops (' + (slowHop.from || '?') + ').',
+            ['obfuscation']);
+    }
+
+    // 5) Mailer und Datum.
+    if (mailer && /phpmailer|mailer|bulk|massen|smtp\.js|python-requests/i.test(mailer)) {
+        add('bulk-mailer', 'niedrig', 'Versandprogramm laut Kopfzeile: ' + mailer + '.', ['phishing']);
+    }
+    if (dateHeader && hops.length > 0 && hops[0].date) {
+        const headerDate = new Date(dateHeader.replace(/\s*\([^)]*\)\s*$/, ''));
+        if (!isNaN(headerDate.getTime())) {
+            const deltaMinutes = Math.abs((headerDate.getTime() - new Date(hops[0].date).getTime()) / 60000);
+            if (deltaMinutes > 60) {
+                add('date-divergence', 'niedrig',
+                    'Date-Kopfzeile und erste Zustellung weichen um ' + Math.round(deltaMinutes) + ' Minuten ab.', ['obfuscation']);
+            }
+        }
+    }
+
+    // 6) Unicode-Tricks in Anzeigename und Betreff.
+    for (const trick of findUnicodeTricks(displayName)) {
+        add('unicode-' + trick.kind, trick.kind === 'bidi-override' ? 'hoch' : 'mittel', trick.detail,
+            trick.kind === 'bidi-override' ? ['rtlOverride', 'masquerading'] : ['obfuscation', 'masquerading']);
+    }
+    for (const trick of findUnicodeTricks(input.subject)) {
+        if (trick.kind === 'bidi-override') {
+            add('unicode-subject-' + trick.kind, 'mittel', 'Im Betreff: ' + trick.detail, ['rtlOverride']);
+        }
+    }
+
+    return {
+        findings,
+        techniques: mapFindingsToTechniques(findings),
+        severityCounts: findings.reduce((acc, finding) => {
+            acc[finding.severity] = (acc[finding.severity] || 0) + 1;
+            return acc;
+        }, {})
+    };
+}
+
+/**
+ * Liest das Inhaltsverzeichnis eines ZIP-Archivs, ohne es zu entpacken.
+ * So lassen sich verschachtelte Archive und riskante Eintraege erkennen, ohne
+ * dass Dateiinhalte ausgefuehrt oder entpackt werden.
+ */
+function listZipEntries(buffer) {
+    const bytes = new Uint8Array(buffer);
+    const view = new DataView(buffer);
+    const decoder = new TextDecoder('utf-8');
+    const entries = [];
+
+    let eocd = -1;
+    for (let i = bytes.length - 22; i >= 0; i--) {
+        if (bytes[i] === 0x50 && bytes[i + 1] === 0x4b && bytes[i + 2] === 0x05 && bytes[i + 3] === 0x06) {
+            eocd = i;
+            break;
+        }
+    }
+    if (eocd < 0) return { entries: [], flags: ['kein gueltiges ZIP-Inhaltsverzeichnis gefunden'] };
+
+    const totalEntries = view.getUint16(eocd + 10, true);
+    let offset = view.getUint32(eocd + 16, true);
+    const flags = [];
+
+    for (let index = 0; index < totalEntries && offset > 0 && offset + 46 <= bytes.length; index++) {
+        if (view.getUint32(offset, true) !== 0x02014b50) break;
+        const compressedSize = view.getUint32(offset + 20, true);
+        const size = view.getUint32(offset + 24, true);
+        const nameLength = view.getUint16(offset + 28, true);
+        const extraLength = view.getUint16(offset + 30, true);
+        const commentLength = view.getUint16(offset + 32, true);
+        const localOffset = view.getUint32(offset + 42, true);
+        const name = decoder.decode(bytes.slice(offset + 46, offset + 46 + nameLength));
+
+        let method = 0;
+        if (localOffset + 10 <= bytes.length && view.getUint32(localOffset, true) === 0x04034b50) {
+            method = view.getUint16(localOffset + 8, true);
+        }
+
+        const entry = {
+            name,
+            size,
+            compressedSize,
+            ratio: size > 0 ? Math.round((1 - compressedSize / size) * 100) : 0,
+            compression: method === 0 ? 'gespeichert' : (method === 8 ? 'deflate' : 'Methode ' + method),
+            directory: name.endsWith('/'),
+            riskyExtension: RISKY_EXTENSION_REGEX.test(name),
+            doubleExtension: DOUBLE_EXTENSION_REGEX.test(name),
+            nestedArchive: /\.(zip|7z|rar|gz|tar|iso|img)$/i.test(name),
+            pathTraversal: name.includes('../')
+        };
+        entries.push(entry);
+
+        if (entry.riskyExtension) flags.push('ausfuehrbare Datei im Archiv: ' + name);
+        if (entry.doubleExtension) flags.push('doppelte Dateiendung im Archiv: ' + name);
+        if (entry.nestedArchive) flags.push('verschachteltes Archiv: ' + name);
+        if (entry.pathTraversal) flags.push('Pfadwechsel im Archiv: ' + name);
+
+        offset += 46 + nameLength + extraLength + commentLength;
+    }
+
+    return { entries, flags };
+}
+
+
+/** Baut ein STIX-2.1-Bundle aus den lokal ermittelten Indikatoren. */
+function buildStixBundle(indicators, options = {}) {
+    const objects = [];
+    const created = new Date().toISOString();
+    const suffix = created.replace(/[^0-9]/g, '').slice(0, 10);
+    const identityId = 'identity--thundy-av-' + suffix;
+    objects.push({
+        type: 'identity',
+        spec_version: '2.1',
+        id: identityId,
+        created,
+        modified: created,
+        name: options.organization || 'Thundy AV (local analysis)',
+        identity_class: 'system'
+    });
+
+    let counter = 0;
+    const pushIndicator = (pattern, name, description) => {
+        counter++;
+        objects.push({
+            type: 'indicator',
+            spec_version: '2.1',
+            id: 'indicator--thundy-' + suffix + '-' + counter,
+            created,
+            modified: created,
+            created_by_ref: identityId,
+            name,
+            description,
+            indicator_types: ['malicious-activity'],
+            pattern,
+            pattern_type: 'stix',
+            valid_from: created
+        });
+    };
+
+    for (const ip of indicators.ips || []) {
+        pushIndicator("ipv4-addr:value = '" + ip + "'", 'IP ' + ip, 'Adresse aus den Kopfzeilen der Nachricht.');
+    }
+    for (const domain of indicators.domains || []) {
+        pushIndicator("domain-name:value = '" + domain + "'", 'Domain ' + domain, 'Domain aus Links der Nachricht.');
+    }
+    for (const url of indicators.urls || []) {
+        pushIndicator("url:value = '" + url + "'", 'URL', 'URL aus dem Nachrichtentext.');
+    }
+    for (const hash of indicators.hashes || []) {
+        pushIndicator("file:hashes.'SHA-256' = '" + hash + "'", 'SHA-256 ' + hash.slice(0, 16), 'Hash eines Anhangs.');
+    }
+    for (const mail of indicators.emails || []) {
+        pushIndicator("email-addr:value = '" + mail + "'", 'Adresse ' + mail, 'Adresse aus den Kopfzeilen.');
+    }
+
+    return {
+        type: 'bundle',
+        id: 'bundle--thundy-' + suffix,
+        spec_version: '2.1',
+        objects
+    };
+}
+
+/** Erzeugt Pivot-Links zu oeffentlichen Analyse-Diensten (Aufruf durch den Nutzer). */
+function providerPivotLinks(indicator = {}) {
+    const links = [];
+    const value = indicator.value ? String(indicator.value) : '';
+    if (!value) return links;
+
+    if (indicator.type === 'sha256') {
+        links.push({ provider: 'virustotal', url: 'https://www.virustotal.com/gui/file/' + value });
+        links.push({ provider: 'hybrid-analysis', url: 'https://www.hybrid-analysis.com/search?query=' + value });
+    }
+    if (indicator.type === 'url') {
+        links.push({ provider: 'urlscan', url: 'https://urlscan.io/livescan/?url=' + encodeURIComponent(value) });
+        links.push({ provider: 'virustotal', url: 'https://www.virustotal.com/gui/url/' + encodeURIComponent(value) });
+    }
+    if (indicator.type === 'domain') {
+        links.push({ provider: 'urlscan', url: 'https://urlscan.io/domain/' + value });
+        links.push({ provider: 'urlhaus', url: 'https://urlhaus.abuse.ch/browse.php?search=' + value });
+    }
+    if (indicator.type === 'ip') {
+        links.push({ provider: 'virustotal', url: 'https://www.virustotal.com/gui/ip-address/' + value });
+        links.push({ provider: 'abuseipdb', url: 'https://www.abuseipdb.com/check/' + value });
+    }
+    return links;
+}
+
 function extractIndicators({ urls = [], fullMessage = null, attachments = [], extraText = '' } = {}) {
     const domains = new Set();
     const registrableDomains = new Set();
@@ -3781,7 +4245,14 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                                 buffer = await file.slice().arrayBuffer();
                             } catch (e) { buffer = null; }
                         }
-                        analyses.push(analyzeAttachmentMeta(attachment, buffer));
+                        const meta = analyzeAttachmentMeta(attachment, buffer);
+                        if (buffer && /zip|msdownload|octet-stream|x-7z|x-rar/i.test(String(attachment.contentType || '')) &&
+                            /\.(zip|docx|xlsx|pptx|jar|docm|xlsm)$/i.test(String(attachment.name || ''))) {
+                            try {
+                                meta.archive = listZipEntries(buffer);
+                            } catch (e) { meta.archive = { entries: [], flags: ['Archiv konnte nicht gelesen werden.'] }; }
+                        }
+                        analyses.push(meta);
                     }
 
                     const evaluationOptions = await collectThreatEvaluationOptions({
@@ -3789,6 +4260,22 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     });
                     const threat = calculateThreatScore(message.author, extractUrls(text), evaluationOptions);
                     const indicators = extractIndicators({ urls, fullMessage, attachments, extraText: text });
+                    const receivedHeadersForAnalysis = (fullMessage.headers && fullMessage.headers['received']) || [];
+                    const authResults = parseAuthenticationResults((fullMessage.headers && fullMessage.headers['authentication-results']) || []);
+                    const receivedChain = analyzeReceivedChain(receivedHeadersForAnalysis);
+                    const forensics = analyzeHeaderForensics({
+                        headers: fullMessage.headers || {},
+                        author: message.author,
+                        subject: message.subject,
+                        authResults,
+                        receivedChain
+                    });
+                    const stixBundle = buildStixBundle(indicators);
+                    const pivots = {
+                        hashes: indicators.hashes.map(value => ({ value, links: providerPivotLinks({ type: 'sha256', value }) })),
+                        domains: indicators.domains.map(value => ({ value, links: providerPivotLinks({ type: 'domain', value }) })),
+                        ips: indicators.ips.map(value => ({ value, links: providerPivotLinks({ type: 'ip', value }) }))
+                    };
 
                     sendResponse({
                         status: 'success',
@@ -3803,8 +4290,11 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                             scoreBreakdown: threat.breakdown || [],
                             reasons: threat.reasons,
                             authStatus: threat.authStatus,
-                            authResults: parseAuthenticationResults(headers['authentication-results']),
-                            receivedChain: analyzeReceivedChain(headers['received']),
+                            authResults,
+                            forensics,
+                            stix: stixBundle,
+                            pivots,
+                            receivedChain,
                             headers: {
                                 'return-path': headers['return-path'] || null,
                                 'reply-to': headers['reply-to'] || null,

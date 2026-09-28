@@ -155,6 +155,27 @@ and transmissions; it is generated locally and downloaded by the user.
 
 The popup offers a researcher panel in the `research` and `audit` roles. Everything in it is derived locally from the opened message: IOC extraction (URLs, hosts, registrable domains, IPs, email addresses, SHA-256 values, Message-IDs, mail servers) with JSON/CSV export, the SPF/DKIM/DMARC chain, the chronological `Received` hops including per-hop delays, URL anatomy (punycode, user@host, tracking parameters, sanitised URL) and attachment type analysis based on magic bytes (type mismatch, double extensions, macro-capable documents). No network request is made for any of these; the attachment bytes are read locally through `messages.getAttachmentFile()` and never transmitted.
 
+### 3.9 Forensic analysis (local only)
+
+The researcher panel adds locally computed forensics:
+
+- **Header forensics:** display-name brand impersonation, envelope mismatches (Return-Path/Reply-To/Message-ID),
+  authentication failures or missing Authentication-Results, `dmarc=none`, missing TLS markers in the `Received`
+  chain, unusual hop order, long hop delays, bulk-mailer hints and date divergences. Findings carry a severity and
+  a MITRE ATT&CK mapping; their contribution to the score is **capped at 35 points** so single weak signals cannot
+  cross the banner threshold.
+- **Unicode forensics:** bidirectional overrides, zero-width characters and mixed-script strings in display names,
+  subjects and URLs.
+- **Punycode decoding:** `xn--` hosts are decoded for display (RFC 3492 implementation, cross-checked against Node
+  in the unit tests).
+- **Archive inspection without extraction:** only the ZIP central directory (names, sizes, compression method) is
+  read from the local attachment buffer; entries are flagged for risky extensions, double extensions, nested
+  archives and path traversal. Nothing is decompressed or executed.
+- **STIX 2.1 export** of the indicators, generated locally.
+- **Provider pivots:** VirusTotal/Hybrid Analysis/urlscan.io/URLhaus/AbuseIPDB links are rendered as plain links.
+  Nothing is transmitted automatically; the panel states explicitly that clicking a link sends that single
+  indicator to the chosen provider (a normal user-initiated navigation).
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,

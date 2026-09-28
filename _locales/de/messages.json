@@ -470,6 +470,9 @@
   "research.exportJson": {
     "message": "IOCs als JSON"
   },
+  "research.exportStix": {
+    "message": "IOCs als STIX 2.1"
+  },
   "research.title": {
     "message": "Forscher-Analyse (lokal erhoben)"
   },

@@ -866,3 +866,41 @@ npm run pre-submit-checks       # 0 Fehler, 1 Warnung (fehlende echte Screenshot
 npm run build                   # build/thundy-av-1.12.0.xpi inkl. Paketpruefung
 web-ext lint + Filter           # 0 Fehler
 ```
+
+---
+
+## 17. Forensik-Ausbau fuer IT-Security-Forscher (v1.13.0)
+
+Weitere Forscher-Elemente, ausgewaehlt nach „intelligent und machbar“: alles **lokal berechenbar** aus der geoeffneten
+Nachricht, ohne neue Berechtigung, ohne automatische Uebertragung und ohne Fremdbibliotheken.
+
+| Funktion | Wie es arbeitet | Nutzen fuer Forscher | Tests |
+|---|---|---|---|
+| **Header-Forensik** | Prueft Anzeigename (Markenimitation), Return-Path/Reply-To/Message-ID (Envelope), Authentifizierung, TLS-Angaben und Reihenfolge der Received-Kette, Hop-Verzoegerungen, Massenmailer-Kennungen, Datumsabweichung, Unicode-Tricks | Bewertung wird nachvollziehbar statt nur „Score 62“; Befunde tragen Schweregrad und MITRE-Technik | 4 |
+| **MITRE ATT&CK-Zuordnung** | Kleine Mapping-Tabelle (T1566, T1566.001/.002, T1204.002, T1036.002/.005, T1027, T1585.002, T1583.001) | Befunde sind in gewohnte Sprache uebersetzbar | 1 |
+| **Unicode-Forensik** | Bidi-Steuerzeichen, nullbreite Zeichen, gemischte Schriftsysteme (inkl. Fix: lateinische Zeichen wurden vorher nicht als Schriftsystem erfasst) | Erkennt „verschleierte“ Anzeigenamen und Dateiendungen | 2 |
+| **Punycode-Dekodierung** | Eigene RFC-3492-Implementierung, in Tests gegen Nodes `domainToUnicode` kreuzvalidiert | Lookalike-Domains werden lesbar; Flag direkt in der Link-Anatomie | 2 |
+| **Archiv-Inspektion** | Liest nur das ZIP-Inhaltsverzeichnis (Namen, Groesse, Methode, Lokalheader) aus dem lokalen Puffer | Verschachtelte Archive, doppelte Endungen, Executables und Pfadwechsel sichtbar **ohne Entpacken/Ausfuehren** | 1 |
+| **STIX-2.1-Export** | Bundle mit Identity + Indicators (ipv4-addr, domain-name, url, file:hashes, email-addr) | Direkte Weiterverwendung in Threat-Intel-Tools | 1 |
+| **Provider-Pivots** | Erzeugt Links (VirusTotal, Hybrid Analysis, urlscan.io, URLhaus, AbuseIPDB) je Indikator | Schneller Pivot; **kein** automatischer Aufruf - Panel weist auf den Nutzer-ausgeloesten Aufruf hin | 1 |
+| **Score-Breakdown erweitert** | Forensik-Beitrag als eigener Posten, **gedeckelt auf 35 Punkte** | Schwache Einzelsignale bleiben unter der Warnschwelle (keine „50 von 100“-Regression) | 1 |
+
+**Datenschutz-Bewertung:** keine neue Berechtigung, keine zusaetzliche automatische Uebertragung. Neu ist allein, dass
+der Nutzer per Klick einen Indikator bei einem oeffentlichen Dienst nachschlagen **kann**; das Panel benennt diesen
+Effekt ausdruecklich, und die Reviewer Notes (3.9) dokumentieren ihn.
+
+### Verifikation v1.13.0
+
+```bash
+node scripts/check-locales.js   # vollstaendig (en/de, 130 Schluessel)
+npm test                        # 564 Tests, 0 Fehler
+npm run pre-submit-checks       # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm run build                   # build/thundy-av-1.13.0.xpi inkl. Paketpruefung
+web-ext lint + Filter           # 0 Fehler
+```
+
+### Verbleibend offen
+
+1. Live-Test in Thunderbird 140 ESR (Selbsttest + Forscher-Panel in beiden Sprachen/hell+dunkel).
+2. Echte Store-Screenshots.
+3. Signierung/Einreichung bei addons.thunderbird.net.

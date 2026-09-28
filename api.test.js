@@ -3830,6 +3830,66 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         assert.strictEqual(lines.length, 8);
     });
 
+    it('shows forensic findings, archive contents, pivots and the STIX export', async () => {
+        const insights = {
+            generatedAt: '2026-09-28T10:00:00.000Z',
+            score: 60,
+            authStatus: 'fail',
+            scoreBreakdown: [{ source: 'header-forensik', points: 35 }],
+            authResults: [],
+            receivedChain: { hops: [], totalSeconds: null },
+            forensics: {
+                findings: [
+                    { kind: 'display-name-impersonation', severity: 'hoch', detail: 'Anzeigename nennt PayPal, Domain ist fremd.', techniques: ['masquerading', 'phishing'] },
+                    { kind: 'envelope-mismatch', severity: 'mittel', detail: 'Return-Path weicht ab.', techniques: ['phishing'] }
+                ],
+                techniques: [
+                    { id: 'T1036.005', name: 'Masquerading: Match Legitimate Name or Location' },
+                    { id: 'T1566', name: 'Phishing' }
+                ]
+            },
+            stix: { type: 'bundle', spec_version: '2.1', objects: [{ type: 'identity' }] },
+            pivots: {
+                hashes: [{ value: 'a'.repeat(64), links: [{ provider: 'virustotal', url: 'https://www.virustotal.com/gui/file/' + 'a'.repeat(64) }] }],
+                ips: [{ value: '203.0.113.9', links: [{ provider: 'abuseipdb', url: 'https://www.abuseipdb.com/check/203.0.113.9' }] }],
+                domains: []
+            },
+            indicators: {
+                urls: [], urlAnalyses: [], domains: [], registrableDomains: [], ips: [], emails: [], hashes: [], messageIds: [], mailServers: [],
+                counts: { urls: 0, domains: 0, ips: 0, emails: 0, hashes: 0 }
+            },
+            attachments: [
+                { name: 'archiv.zip', declaredType: 'application/zip', detectedType: 'application/zip', flags: [],
+                  archive: { entries: [{ name: 'rechnung.pdf.exe' }, { name: 'nested.zip' }], flags: ['doppelte Dateiendung im Archiv: rechnung.pdf.exe'] } }
+            ]
+        };
+        const { context } = createHarness({
+            viewMode: 'research',
+            onMessage: (message) => message.action === 'getMessageInsights' ? { status: 'success', insights } : undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        await context.renderResearcherPanel({ id: 1 }, container, 'research');
+
+        const panel = context.document.getElementById('thundy-researcher-panel');
+        assert.ok(panel);
+        assert.match(panel.textContent, /\[HOCH\] Anzeigename nennt PayPal/);
+        assert.match(panel.textContent, /\[MITTEL\] Return-Path weicht ab/);
+        assert.match(panel.textContent, /MITRE ATT&CK: T1036\.005/);
+        assert.match(panel.textContent, /Archiv archiv\.zip: rechnung\.pdf\.exe, nested\.zip/);
+        assert.match(panel.textContent, /doppelte Dateiendung im Archiv/);
+
+        const labels = Array.from(panel.querySelectorAll('button')).map(button => button.textContent);
+        assert.ok(labels.some(label => /IOCs als STIX 2\.1/.test(label)));
+        assert.ok(labels.some(label => /IOCs als JSON/.test(label)));
+        assert.ok(labels.some(label => /IOCs als CSV/.test(label)));
+
+        const anchors = Array.from(panel.querySelectorAll('a')).map(anchor => anchor.getAttribute('href'));
+        assert.ok(anchors.some(href => href.includes('virustotal.com/gui/file/')));
+        assert.ok(anchors.some(href => href.includes('abuseipdb.com/check/203.0.113.9')));
+        assert.match(panel.textContent, /Ein Klick auf einen Anbieter-Link uebermittelt den jeweiligen Indikator/);
+    });
+
     it('renders the local score together with its reasons', async () => {
         const { context } = createHarness({
             displayState: { mode: 'ready', threat: { score: 70, reasons: ['Link-Domain weicht ab.', 'SPF fehlgeschlagen.'], authStatus: 'fail' } },

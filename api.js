@@ -937,6 +937,76 @@ async function renderResearcherPanel(message, container, viewMode) {
         card.appendChild(attachmentList);
     }
 
+    // Header-Forensik mit Schweregrad und MITRE-Zuordnung
+    const forensics = insights.forensics || { findings: [], techniques: [] };
+    if (forensics.findings.length > 0) {
+        const forensicsList = document.createElement('ul');
+        forensicsList.className = 'thundy-history-list';
+        for (const finding of forensics.findings.slice(0, 15)) {
+            const item = document.createElement('li');
+            const badge = finding.severity === 'hoch' ? '[HOCH]' : (finding.severity === 'mittel' ? '[MITTEL]' : '[INFO]');
+            item.textContent = badge + ' ' + finding.detail +
+                (finding.techniques && finding.techniques.length ? ' (' + finding.techniques.join(', ') + ')' : '');
+            forensicsList.appendChild(item);
+        }
+        card.appendChild(forensicsList);
+    }
+    if (forensics.techniques && forensics.techniques.length > 0) {
+        const techniqueLine = document.createElement('small');
+        techniqueLine.textContent = 'MITRE ATT&CK: ' +
+            forensics.techniques.map(technique => technique.id + ' ' + technique.name).join(' | ');
+        card.appendChild(techniqueLine);
+    }
+
+    // Archivinhalte (nur Metadaten, kein Entpacken)
+    for (const attachment of insights.attachments.filter(entry => entry.archive)) {
+        const archiveLine = document.createElement('small');
+        const entries = (attachment.archive.entries || []).slice(0, 10).map(entry => entry.name).join(', ');
+        const flags = (attachment.archive.flags || []).length ? ' - ' + attachment.archive.flags.join('; ') : '';
+        archiveLine.textContent = 'Archiv ' + attachment.name + ': ' + entries + flags;
+        card.appendChild(archiveLine);
+    }
+
+    // Pivot-Links zu oeffentlichen Diensten (Aufruf durch den Nutzer)
+    const pivotLines = [];
+    for (const pivot of (insights.pivots && insights.pivots.hashes) || []) {
+        pivotLines.push({ label: 'SHA-256 ' + pivot.value.slice(0, 16) + '...', links: pivot.links });
+    }
+    for (const pivot of (insights.pivots && insights.pivots.ips) || []) {
+        pivotLines.push({ label: 'IP ' + pivot.value, links: pivot.links });
+    }
+    for (const pivot of pivotLines.slice(0, 10)) {
+        const pivotRow = document.createElement('div');
+        const label = document.createElement('small');
+        label.textContent = pivot.label + ': ';
+        pivotRow.appendChild(label);
+        for (const link of pivot.links) {
+            const anchor = document.createElement('a');
+            anchor.className = 'thundy-link';
+            anchor.href = link.url;
+            anchor.target = '_blank';
+            anchor.rel = 'noopener noreferrer';
+            anchor.textContent = link.provider;
+            anchor.style.marginRight = '8px';
+            pivotRow.appendChild(anchor);
+        }
+        card.appendChild(pivotRow);
+    }
+    if (pivotLines.length > 0) {
+        const pivotNote = document.createElement('small');
+        pivotNote.className = 'thundy-muted';
+        pivotNote.textContent = ' Hinweis: Ein Klick auf einen Anbieter-Link uebermittelt den jeweiligen Indikator an diesen Dienst.';
+        card.appendChild(pivotNote);
+    }
+
+    const stixButton = document.createElement('button');
+    stixButton.type = 'button';
+    stixButton.textContent = thundyT('research.exportStix', 'IOCs als STIX 2.1');
+    stixButton.addEventListener('click', () => {
+        downloadHistoryFile('thundy-av-iocs-stix.json', JSON.stringify(insights.stix || {}, null, 2), 'application/json');
+    });
+    card.appendChild(stixButton);
+
     const jsonButton = document.createElement('button');
     jsonButton.type = 'button';
     jsonButton.textContent = thundyT('research.exportJson', 'IOCs als JSON');

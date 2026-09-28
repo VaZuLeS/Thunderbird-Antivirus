@@ -149,6 +149,18 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.8 Release notes 1.13.0
+
+- **Header forensics** with severity levels and MITRE ATT&CK mapping (brand impersonation in the display name,
+  envelope mismatches, authentication failures, missing TLS markers, unusual hop order, bulk-mailer hints, date
+  divergences); the contribution is capped so weak signals cannot trigger warnings alone.
+- **Unicode forensics** (bidirectional overrides, zero-width characters, mixed scripts) and **decoded punycode**
+  hosts, so lookalike domains become visible.
+- **Archive inspection without extraction:** ZIP contents are listed and checked for executables, double
+  extensions, nested archives and path traversal.
+- **STIX 2.1 export** of the indicators and **provider pivot links** (VirusTotal, Hybrid Analysis, urlscan.io,
+  URLhaus, AbuseIPDB) that you click yourself - nothing is transmitted automatically.
+
 ## 5.7 Release notes 1.12.0
 
 - **Researcher panel (roles `research` / `audit`):** IOC extraction (URLs, hosts, registrable domains, IPs, addresses, SHA-256, Message-IDs, mail servers) with JSON/CSV export, the SPF/DKIM/DMARC chain, chronological `Received` hops including per-hop delays, URL anatomy (punycode, user@host, tracking parameters, sanitised URL) and attachment type analysis based on magic bytes (type mismatch, double extensions, macro-capable documents). Everything is computed locally.
