@@ -104,5 +104,27 @@
         "content": "$1"
       }
     }
+  },
+  "notificationScanFinished": {
+    "message": "Analysis finished: $NAME$ - verdict: $VERDICT$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "verdict": {
+        "content": "$2"
+      }
+    }
+  },
+  "notificationScanTimeout": {
+    "message": "No analysis result received in time for: $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "verdict": {
+        "content": "$2"
+      }
+    }
   }
 }

@@ -54,6 +54,13 @@ describe('background.js', () => {
                     contains: async () => true,
                     request: async () => true
                 },
+                alarms: {
+                    create: async (name, info) => { context.alarmCalls.push({ name, info }); },
+                    clear: async (name) => { context.alarmCleared.push(name); return true; },
+                    onAlarm: {
+                        addListener: (listener) => { context.alarmListeners.push(listener); }
+                    }
+                },
                 runtime: {
                     onMessage: {
                         addListener: (listener) => {
@@ -72,7 +79,7 @@ describe('background.js', () => {
                     }
                 },
                 notifications: {
-                    create: () => {}
+                    create: (options) => { context.notifications.push(options); }
                 },
                 downloads: {
                     download: async () => {}
@@ -102,7 +109,11 @@ describe('background.js', () => {
                     }
                 })
             },
-            console: { log: () => {}, error: () => {}, warn: () => {} },
+            alarmCalls: [],
+            alarmCleared: [],
+            alarmListeners: [],
+            notifications: [],
+            console: { log: () => {}, error: () => {}, warn: () => {}, info: () => {} },
             fetch: async () => ({ status: 200, json: async () => ({}) }),
             AbortController: globalThis.AbortController,
             clearTimeout: globalThis.clearTimeout,
@@ -205,6 +216,15 @@ describe('background.js', () => {
             globalThis.PROVIDER_ORIGINS = PROVIDER_ORIGINS;
             globalThis.handleDisplayedMessage = handleDisplayedMessage;
             globalThis.listMessageAttachments = listMessageAttachments;
+            globalThis.getPendingScans = getPendingScans;
+            globalThis.upsertPendingScan = upsertPendingScan;
+            globalThis.pollPendingScans = pollPendingScans;
+            globalThis.describeScanJob = describeScanJob;
+            globalThis.scheduleScanPolling = scheduleScanPolling;
+            globalThis.storeJobResult = storeJobResult;
+            globalThis.PENDING_SCANS_KEY = PENDING_SCANS_KEY;
+            globalThis.SCAN_ALARM_NAME = SCAN_ALARM_NAME;
+            globalThis.SCAN_MAX_ATTEMPTS = SCAN_MAX_ATTEMPTS;
             globalThis.computeAttachmentHash = computeAttachmentHash;
             globalThis.SCORE_WEIGHTS = SCORE_WEIGHTS;
             globalThis.notify = notify;
@@ -3989,6 +4009,147 @@ describe('background.js', () => {
                 () => context.handleManualUpload(1, '1.2', 'x.exe', 'hash', 'header'),
                 (error) => error.code === 'NO_API_KEY'
             );
+        });
+    });
+
+    describe('time-delayed analyses: queue, polling and status (user request)', () => {
+        function stubStorage() {
+            let store = {};
+            context.browser.storage.local.get = async (keys) => {
+                if (typeof keys === 'string') return { [keys]: store[keys] };
+                if (Array.isArray(keys)) {
+                    const out = {};
+                    keys.forEach(k => { out[k] = store[k]; });
+                    return out;
+                }
+                return store;
+            };
+            context.browser.storage.local.set = async (data) => { Object.assign(store, data); };
+            return { get: () => store };
+        }
+
+        it('stores a job and schedules the periodic result check', async () => {
+            const storage = stubStorage();
+            context.alarmCalls.length = 0;
+
+            await context.upsertPendingScan({
+                sha256: 'a'.repeat(64),
+                partName: '1.2',
+                attachmentName: 'rechnung.pdf',
+                messageId: 7,
+                messageHeaderId: 'hdr-7',
+                state: 'running',
+                attempts: 0,
+                startedAt: Date.now()
+            });
+
+            const jobs = storage.get()[context.PENDING_SCANS_KEY];
+            assert.strictEqual(jobs.length, 1);
+            assert.strictEqual(jobs[0].attachmentName, 'rechnung.pdf');
+            assert.ok(context.alarmCalls.some(call => call.name === context.SCAN_ALARM_NAME));
+        });
+
+        it('describes a job as delayed and pollable', async () => {
+            const described = context.describeScanJob({ sha256: 'b'.repeat(64), state: 'running', attempts: 2, startedAt: Date.now() });
+            assert.strictEqual(described.timing, 'delayed');
+            assert.strictEqual(described.state, 'running');
+            assert.strictEqual(described.canPollNow, true);
+            assert.strictEqual(described.attempts, 2);
+        });
+
+        it('picks up a finished analysis, stores the verdict and notifies the user', async () => {
+            const storage = stubStorage();
+            context.notifications.length = 0;
+            await context.upsertPendingScan({
+                sha256: 'c'.repeat(64), partName: '1.2', attachmentName: 'x.exe',
+                messageId: 8, messageHeaderId: 'hdr-8', state: 'running', attempts: 0, startedAt: Date.now()
+            });
+
+            let storedRecord = null;
+            context.getSharedDB = async () => ({});
+            context.updateStore = async (db, store, key, updateFn) => { storedRecord = updateFn(null); };
+            context.fetch = async () => ({ status: 200, json: async () => ({ verdict: 'malicious', submission_id: 's1', job_id: 'j1' }) });
+
+            const summary = await context.pollPendingScans();
+
+            assert.strictEqual(summary.finished, 1);
+            assert.strictEqual(storage.get()[context.PENDING_SCANS_KEY].length, 0);
+            assert.ok(storedRecord, 'the verdict must be written to the local cache');
+            assert.strictEqual(storedRecord.attachments[0].verdict, 'MALICIOUS');
+            assert.strictEqual(storedRecord.attachments[0].timing, 'delayed');
+            assert.ok(context.notifications.some(n => /Analyse|Analysis/.test(n.message)));
+        });
+
+        it('keeps polling while the provider has no result yet', async () => {
+            const storage = stubStorage();
+            await context.upsertPendingScan({
+                sha256: 'd'.repeat(64), partName: '1.2', attachmentName: 'y.exe',
+                messageId: 9, messageHeaderId: 'hdr-9', state: 'running', attempts: 0, startedAt: Date.now()
+            });
+            context.fetch = async () => ({ status: 404, json: async () => ({}) });
+
+            const summary = await context.pollPendingScans();
+
+            assert.strictEqual(summary.pending, 1);
+            const job = storage.get()[context.PENDING_SCANS_KEY][0];
+            assert.strictEqual(job.state, 'running');
+            assert.strictEqual(job.attempts, 1);
+            assert.ok(job.lastCheckAt > 0);
+        });
+
+        it('does not query the provider without consent and marks the job', async () => {
+            const storage = stubStorage();
+            await context.upsertPendingScan({
+                sha256: 'e'.repeat(64), partName: '1.2', attachmentName: 'z.exe',
+                messageId: 10, messageHeaderId: 'hdr-10', state: 'running', attempts: 0, startedAt: Date.now()
+            });
+            context.set_externalAnalysisConsent(false);
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({ verdict: 'clean' }) }; };
+
+            try {
+                await context.pollPendingScans();
+            } finally {
+                context.set_externalAnalysisConsent(true);
+            }
+
+            assert.strictEqual(fetchCalls, 0);
+            assert.strictEqual(storage.get()[context.PENDING_SCANS_KEY][0].state, 'failed');
+        });
+
+        it('gives up after the maximum number of attempts and informs the user', async () => {
+            const storage = stubStorage();
+            context.notifications.length = 0;
+            await context.upsertPendingScan({
+                sha256: 'f'.repeat(64), partName: '1.2', attachmentName: 'late.exe',
+                messageId: 11, messageHeaderId: 'hdr-11', state: 'running',
+                attempts: context.SCAN_MAX_ATTEMPTS, startedAt: Date.now()
+            });
+            context.fetch = async () => ({ status: 404, json: async () => ({}) });
+
+            await context.pollPendingScans();
+
+            const job = storage.get()[context.PENDING_SCANS_KEY][0];
+            assert.strictEqual(job.state, 'timeout');
+            assert.match(job.error, /Zeitfenster/);
+            assert.ok(context.notifications.some(n => /Zeitfenster|result/i.test(n.message)));
+        });
+
+        it('manual upload registers a delayed job and reports it to the caller', async () => {
+            const storage = stubStorage();
+            context.set_apikey_hybridanalysis('test-key');
+            context.fetch = async () => ({ status: 200, json: async () => ({ sha256: '0'.repeat(64), submission_id: 'sub', job_id: 'job' }) });
+            context.getSharedDB = async () => ({});
+            context.updateStore = async () => {};
+
+            const result = await context.handleManualUpload(12, '1.2', 'doku.pdf', null, 'hdr-12');
+
+            assert.strictEqual(result.timing, 'delayed');
+            assert.strictEqual(result.state, 'running');
+            assert.match(result.message, /zeitverzoegert/);
+            const jobs = storage.get()[context.PENDING_SCANS_KEY];
+            assert.strictEqual(jobs.length, 1);
+            assert.strictEqual(jobs[0].messageHeaderId, 'hdr-12');
         });
     });
 

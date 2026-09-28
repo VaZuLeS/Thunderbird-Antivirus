@@ -104,5 +104,27 @@
         "content": "$1"
       }
     }
+  },
+  "notificationScanFinished": {
+    "message": "Analyse abgeschlossen: $NAME$ – Verdikt: $VERDICT$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "verdict": {
+        "content": "$2"
+      }
+    }
+  },
+  "notificationScanTimeout": {
+    "message": "Kein Analyseergebnis innerhalb des Zeitfensters erhalten für: $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "verdict": {
+        "content": "$2"
+      }
+    }
   }
 }

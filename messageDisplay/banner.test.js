@@ -176,6 +176,41 @@ describe('messageDisplay/banner.js', () => {
         assert.ok(banner.querySelector('#thundy-open-options'));
     });
 
+    it('communicates that local checks are finished in real time', () => {
+        ctx.context.thundyRenderDisplayState(readyState({
+            showOptIn: true,
+            localChecks: { timing: 'realtime', finished: true }
+        }));
+
+        const banner = ctx.dom.window.document.getElementById('thundy-optin-banner');
+        assert.ok(banner);
+        assert.ok(banner.querySelector('#thundy-scan-status'));
+    });
+
+    it('announces the delayed external analysis and keeps watching it', async () => {
+        const delayed = createContext();
+        delayed.context.browser.runtime.sendMessage = async (message) => {
+            delayed.sent.push(message);
+            if (message.action === 'getDisplayState') return { mode: 'pending' };
+            if (message.action === 'scanStatus') {
+                return { status: 'success', pollIntervalMinutes: 1, jobs: [
+                    { sha256: 'd'.repeat(64), attachmentName: 'x.exe', state: 'running', attempts: 1, canPollNow: true }
+                ] };
+            }
+            return { success: true, timing: 'delayed', pendingScans: 1, pollIntervalMinutes: 1 };
+        };
+        delayed.context.thundyRenderDisplayState(readyState());
+
+        const banner = delayed.dom.window.document.getElementById('thundy-optin-banner');
+        banner.querySelectorAll('button')[0].click();
+        await new Promise(resolve => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        const status = banner.querySelector('#thundy-scan-status');
+        assert.ok(status, 'status line expected');
+        assert.ok(delayed.sent.some(m => m.action === 'scanStatus'));
+    });
+
     it('marks links when Time-of-Click Protection is enabled', () => {
         ctx.context.thundyRenderDisplayState(readyState({
             showOptIn: false,

@@ -141,6 +141,15 @@ The popup lists every attachment of the displayed message with type and size:
   popup. Without consent, API key or host permission the popup explains what is missing and links to the
   options page.
 
+### Scan status: real time vs. delayed
+
+Local checks (attachment hashes, heuristics, header and link analysis) finish immediately - the UI labels them as
+*real time*. Uploads to Hybrid Analysis are processed asynchronously, so the verdict arrives later: the add-on
+stores every job locally (`pendingScans`), polls it through `browser.alarms` (once per minute, up to 30 attempts or
+90 minutes), writes the verdict into the local cache and raises a notification. Both the banner and the popup show
+the state of every job (queued, running with attempt count and elapsed time, finished with the verdict, timeout) and
+offer a manual "fetch result now" action. Jobs survive a restart of the background script.
+
 The popup also shows the local risk score together with every reason behind it, so the rating is
 understandable. The threat banner appears from 50 of 100 points; the weights are defined in `SCORE_WEIGHTS`
 in `background.js` and are deliberately staggered, so no single weak signal (for example `spf=softfail` on a

@@ -3595,6 +3595,53 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         assert.strictEqual(context.optionsOpened, true);
     });
 
+    it('shows the delayed analysis status with a manual poll button', async () => {
+        const { context, sent } = createHarness({
+            onMessage: (message) => message.action === 'scanStatus'
+                ? { status: 'success', pollIntervalMinutes: 1, jobs: [
+                    { sha256: 'c'.repeat(64), attachmentName: 'rechnung.pdf', state: 'running', attempts: 2, canPollNow: true, elapsedMinutes: 3 }
+                ] }
+                : undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        await context.renderScanStatusPanel('h1', container);
+
+        const panel = context.document.getElementById('thundy-scan-status-panel');
+        assert.ok(panel, 'status panel expected');
+        assert.match(panel.textContent, /zeitverzoegert/);
+        assert.match(panel.textContent, /rechnung\.pdf/);
+        assert.match(panel.textContent, /Abfrage Nr\. 2/);
+        assert.match(panel.textContent, /Echtzeit/);
+
+        const pollButton = Array.from(panel.querySelectorAll('button')).find(b => /Ergebnis jetzt abrufen/.test(b.textContent));
+        assert.ok(pollButton);
+        pollButton.click();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.ok(sent.some(m => m.action === 'pollScansNow'));
+    });
+
+    it('explains every job state in plain language', () => {
+        const { context } = createHarness();
+        assert.match(context.describeJobState({ state: 'finished', verdict: 'MALICIOUS' }), /Abgeschlossen - Verdikt: MALICIOUS/);
+        assert.match(context.describeJobState({ state: 'timeout' }), /Zeitfensters/);
+        assert.match(context.describeJobState({ state: 'failed', error: 'kaputt' }), /kaputt/);
+        assert.match(context.describeJobState({ state: 'queued' }), /Warteschlange/);
+        assert.match(context.describeJobState({ state: 'running', attempts: 1, elapsedMinutes: 5 }), /zeitverzoegert/);
+    });
+
+    it('does not render a status panel when nothing is pending', async () => {
+        const { context } = createHarness({
+            onMessage: (message) => message.action === 'scanStatus' ? { status: 'success', jobs: [] } : undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        const panel = await context.renderScanStatusPanel('h1', container);
+
+        assert.strictEqual(panel, null);
+        assert.strictEqual(context.document.getElementById('thundy-scan-status-panel'), null);
+    });
+
     it('renders the local score together with its reasons', async () => {
         const { context } = createHarness({
             displayState: { mode: 'ready', threat: { score: 70, reasons: ['Link-Domain weicht ab.', 'SPF fehlgeschlagen.'], authStatus: 'fail' } },

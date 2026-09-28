@@ -5,7 +5,7 @@
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "author": "Jan Bludau",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "homepage_url": "https://vazules.github.io/Thunderbird-Antivirus/",
   "browser_specific_settings": {
     "gecko": {
@@ -23,7 +23,8 @@
     "storage",
     "notifications",
     "scripting",
-    "downloads"
+    "downloads",
+    "alarms"
   ],
   "optional_host_permissions": [
     "https://hybrid-analysis.com/*",

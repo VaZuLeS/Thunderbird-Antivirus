@@ -28,6 +28,7 @@ disabled by default.
 | Permission | Why it is required |
 |---|---|
 | `messagesRead` | The core function is to inspect the message the user has opened: headers (sender, recipients, subject, date, Received), the text and HTML body, links, and the list of attachments including their content (which is hashed locally). Without this permission the add-on cannot perform any check. |
+| `alarms` | Schedules the periodic check for time-delayed analyses (Hybrid Analysis processes uploaded files asynchronously). One alarm named `thundy-pending-scan-check` runs at most once per minute, only while jobs are pending, and is cleared as soon as the queue is empty (`browser.alarms.clear`). No alarm is created while no analysis is running. |
 | `storage` | Stores the user's settings (privacy tier, whitelist/blacklist, scan options), the consent flags (`externalAnalysisConsent`, `scanningEnabledSenders`) and the API keys the user enters, in `browser.storage.local`. No remote storage. |
 | `scripting` | Required for the message display script that renders the in-message UI (opt-in banner with its two buttons, threat banner, sender-verified badge, Time-of-Click markers). It is registered once with the documented Manifest V3 API `scripting.messageDisplay.registerScripts` (`messageDisplay/banner.js` + `banner.css`); for already open messages the same bundled files are injected with `scripting.executeScript({ files })`. All code is bundled with the add-on, no remote code is fetched or evaluated. |
 | `notifications` | Shows short system notifications for actions that are not visible in the message pane, e.g. "scan started", "scan submitted (job ID …)" and error messages for the context-menu link scan. This gives feedback when the scan is triggered from an entry point without its own result area. |
@@ -102,6 +103,12 @@ hash locally (`attachmentHash`). Both actions are purely local - they transmit n
 which enforces the global consent, the host permission and the API key and answers with a structured error
 code (`NO_API_KEY`, `PERMISSION_REQUIRED`, `EXTERNAL_ANALYSIS_DISABLED`, `SCAN_FAILED` plus stage) that the
 popup translates into a user-visible explanation.
+
+### 3.4 Real-time vs. delayed checks
+
+- **Real time (local):** message headers, body text, links, attachment hashes and the heuristics run instantly and never leave the device.
+- **Delayed (provider):** `POST /api/v2/quick-scan/file` and `/quick-scan/url` only **enqueue** an analysis at Hybrid Analysis. The verdict is fetched later via `GET /api/v2/overview/{sha256}`. Every job is stored locally (`pendingScans` in `browser.storage.local`, containing SHA-256, submission/job id, attachment name, message id, start time and attempt counter) and polled by the `alarms` handler until the verdict arrives, the attempt limit (30) or the age limit (90 minutes) is reached. Finished verdicts are written into the local IndexedDB cache and reported with a notification.
+- VirusTotal hash lookups and URLhaus/AbuseIPDB checks are synchronous (result within the same request) and are therefore labelled as real time in the UI.
 
 ## 4. Data flows per provider and tier
 

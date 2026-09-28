@@ -27,7 +27,14 @@ const THUNDY_FALLBACKS = {
   bannerOpenOptions: 'Open options',
   bannerSenderOptIn: 'This sender is now scanned automatically.',
   bannerNoApiKey: 'No Hybrid Analysis API key configured - please add it in the options.',
-  bannerScanFailedWithReason: 'Scan failed: $ERROR$'
+  bannerScanFailedWithReason: 'Scan failed: $ERROR$',
+  bannerStatusRealtime: 'Local checks finished (real time): risk score $SCORE$ of 100.',
+  bannerStatusExternalStarted: 'External analysis started - the result is delayed and will be fetched automatically.',
+  bannerStatusRunning: 'Analysis running at the provider$DETAIL$. The result is fetched automatically.',
+  bannerStatusPendingDetail: ' (checked every $MIN$ minute(s), attempt $ATTEMPT$)',
+  bannerStatusFinished: 'External analysis finished (delayed): verdict $VERDICT$.',
+  bannerStatusTimeout: 'No result within the time window - you can trigger the check again later.',
+  bannerStatusFailed: 'Analysis failed: $ERROR$'
 };
 
 function thundyText(key, fallback, subs) {
@@ -151,6 +158,13 @@ function thundyRenderOptIn(state, actions) {
           button.removeAttribute('aria-busy');
           all.forEach(b => { b.disabled = false; });
           if (persist) note.textContent = thundyText('bannerSenderOptIn', THUNDY_FALLBACKS.bannerSenderOptIn);
+          // Klar kommunizieren: lokal sofort, extern zeitverzoegert.
+          if (response.timing === 'delayed' || response.pendingScans) {
+            thundyRenderScanStatus(banner, thundyText('bannerStatusExternalStarted', THUNDY_FALLBACKS.bannerStatusExternalStarted));
+            thundyWatchScanStatus(banner, { messageId: state.messageId, headerMessageId: state.headerMessageId, intervalMs: 30000 });
+          } else {
+            thundyRenderScanStatus(banner, thundyText('bannerStatusFinished', THUNDY_FALLBACKS.bannerStatusFinished, [(response.verdict || '-')]));
+          }
         } else if (response && response.error === 'permission_required') {
           note.textContent = thundyText('bannerPermissionDenied', THUNDY_FALLBACKS.bannerPermissionDenied);
           showOptionsButton();
@@ -207,6 +221,72 @@ function thundyRenderTimeOfClick(state) {
   });
 }
 
+/**
+ * Statuszeile: kommuniziert klar, was sofort (Echtzeit) geprueft wurde und was
+ * erst zeitverzoegert beim Anbieter vorliegt.
+ */
+function thundyRenderScanStatus(container, statusText) {
+  let status = container.querySelector('#thundy-scan-status');
+  if (!status) {
+    status = document.createElement('div');
+    status.id = 'thundy-scan-status';
+    status.className = 'thundy-banner-note';
+    status.setAttribute('role', 'status');
+    container.appendChild(status);
+  }
+  status.textContent = statusText;
+}
+
+function thundyDescribeJob(job, texts) {
+  if (job.state === 'finished') return texts.finished(job.verdict || '?');
+  if (job.state === 'timeout') return texts.timeout;
+  if (job.state === 'failed') return texts.failed(job.error || '');
+  return texts.running(job.attempts || 0);
+}
+
+/**
+ * Beobachtet die zeitverzoegerten Auftraege der Nachricht und aktualisiert die
+ * Statuszeile, bis ein Ergebnis vorliegt oder das Zeitfenster abgelaufen ist.
+ */
+function thundyWatchScanStatus(container, options) {
+  const texts = {
+    running: (attempt) => thundyText('bannerStatusRunning', THUNDY_FALLBACKS.bannerStatusRunning, [
+      thundyText('bannerStatusPendingDetail', THUNDY_FALLBACKS.bannerStatusPendingDetail, [
+        String(options.intervalMinutes || 1), String(attempt)
+      ])
+    ]),
+    finished: (verdict) => thundyText('bannerStatusFinished', THUNDY_FALLBACKS.bannerStatusFinished, [verdict]),
+    timeout: thundyText('bannerStatusTimeout', THUNDY_FALLBACKS.bannerStatusTimeout),
+    failed: (error) => thundyText('bannerStatusFailed', THUNDY_FALLBACKS.bannerStatusFailed, [error])
+  };
+
+  let rounds = 0;
+  const maxRounds = options.maxRounds || 40;
+
+  async function tick() {
+    rounds++;
+    try {
+      const response = await browser.runtime.sendMessage({ action: 'scanStatus', headerMessageId: options.headerMessageId, messageId: options.messageId });
+      const jobs = response && Array.isArray(response.jobs) ? response.jobs : [];
+      if (jobs.length === 0) {
+        thundyRenderScanStatus(container, thundyText('bannerStatusFinished', THUNDY_FALLBACKS.bannerStatusFinished, ['-']));
+        return;
+      }
+      thundyRenderScanStatus(container, jobs.map(job => thundyDescribeJob(job, texts)).join(' '));
+      const open = jobs.some(job => job.canPollNow);
+      if (open && rounds < maxRounds) {
+        setTimeout(tick, options.intervalMs || 30000);
+      }
+    } catch (e) {
+      /* Statusanzeige ist optional */
+    }
+  }
+
+  thundyRenderScanStatus(container, thundyText('bannerStatusExternalStarted', THUNDY_FALLBACKS.bannerStatusExternalStarted));
+  // Sofort einmal fragen, danach im Intervall weitermachen.
+  tick();
+}
+
 /** Renders the complete banner state. Exposed for unit tests. */
 function thundyRenderDisplayState(state) {
   if (!state || state.mode !== 'ready' || !document.body) return;
@@ -220,6 +300,21 @@ function thundyRenderDisplayState(state) {
     })
   });
   thundyRenderTimeOfClick(state);
+
+  // Immer klarstellen, was sofort geprueft wurde und was noch aussteht.
+  const pending = Array.isArray(state.pendingJobs) ? state.pendingJobs : [];
+  const statusContainer = document.getElementById('thundy-optin-banner') || document.body;
+  if (pending.some(job => job.canPollNow)) {
+    thundyWatchScanStatus(statusContainer, {
+      messageId: state.messageId,
+      headerMessageId: state.headerMessageId,
+      intervalMs: 30000,
+      intervalMinutes: state.pollIntervalMinutes || 1
+    });
+  } else if (state.localChecks && state.localChecks.finished) {
+    const score = state.threat && typeof state.threat.score === 'number' ? state.threat.score : 0;
+    thundyRenderScanStatus(statusContainer, thundyText('bannerStatusRealtime', THUNDY_FALLBACKS.bannerStatusRealtime, [String(score)]));
+  }
 }
 
 (async function thundyBannerMain() {

@@ -149,6 +149,17 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.2 Release notes 1.7.0
+
+- **Status tracking for delayed analyses:** uploaded files are analysed asynchronously by the provider. Each job
+  (hash, submission/job id, file, message, start time, attempt counter) is stored locally, polled automatically via
+  `browser.alarms` (once per minute, max. 30 attempts / 90 minutes), written into the local cache and reported with
+  a notification. Jobs survive a restart of the background script.
+- **Clear real-time vs. delayed wording:** banner and popup state explicitly that local checks are finished in real
+  time while the external analysis is still running at the provider; both show the job state (queued, running with
+  attempt count and elapsed time, finished with the verdict, timeout with the reason).
+- Manual "fetch result now" button for open jobs (new `alarms` permission).
+
 ## 6. Release notes 1.6.1
 
 - **Fixed a misleading risk score:** three different weak signals each scored exactly 50 and the banner

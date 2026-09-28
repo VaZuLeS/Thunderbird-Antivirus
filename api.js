@@ -199,6 +199,7 @@ if (!externalAnalysisConsent && apiContainer) {
 if (apiContainer) {
     const activeTabId = tabs[0] ? tabs[0].id : null;
     renderAttachmentPanel(message, message.headerMessageId, apiContainer);
+    renderScanStatusPanel(message.headerMessageId, apiContainer);
     browser.runtime.sendMessage({ action: 'getDisplayState', tabId: activeTabId })
         .then(state => renderThreatSummary(apiContainer, state))
         .catch(error => console.error('Bewertung konnte nicht geladen werden:', error));
@@ -608,6 +609,93 @@ async function uploadAttachmentForAnalysis({ messageId, partName, attachmentName
     const error = new Error(describeErrorCode(response && response.code, response && response.message));
     error.code = response && response.code;
     throw error;
+}
+
+/**
+ * Status der zeitverzoegerten Analyse: klar unterscheiden zwischen der sofortigen
+ * lokalen Pruefung und der externen Analyse, deren Ergebnis spaeter eintrifft.
+ */
+function describeJobState(job) {
+    switch (job.state) {
+        case 'finished':
+            return 'Abgeschlossen - Verdikt: ' + (job.verdict || 'unbekannt');
+        case 'timeout':
+            return 'Kein Ergebnis innerhalb des Zeitfensters erhalten.';
+        case 'failed':
+            return 'Fehlgeschlagen: ' + (job.error || 'unbekannter Fehler');
+        case 'queued':
+            return 'In der Warteschlange - Analyse startet gleich.';
+        default:
+            return 'Analyse laeuft beim Anbieter (zeitverzoegert), Abfrage Nr. ' + (job.attempts || 0) +
+                (job.elapsedMinutes !== null && job.elapsedMinutes !== undefined ? ' - laeuft seit ' + job.elapsedMinutes + ' Minute(n)' : '');
+    }
+}
+
+async function renderScanStatusPanel(headerMessageId, container) {
+    let response;
+    try {
+        response = await browser.runtime.sendMessage({ action: 'scanStatus', headerMessageId: headerMessageId });
+    } catch (error) {
+        console.error('Scan-Status konnte nicht geladen werden:', error);
+        return;
+    }
+    if (!response || response.status !== 'success' || !Array.isArray(response.jobs) || response.jobs.length === 0) {
+        return null;
+    }
+
+    let card = document.getElementById('thundy-scan-status-panel');
+    if (!card) {
+        card = document.createElement('div');
+        card.id = 'thundy-scan-status-panel';
+        card.className = 'card card-info mb-3';
+        container.appendChild(card);
+    }
+    card.textContent = '';
+
+    const title = document.createElement('p');
+    title.textContent = 'Externe Analyse (zeitverzoegert) - ' + response.jobs.length + ' offene(r) Auftrag/Auftraege';
+    card.appendChild(title);
+
+    const hint = document.createElement('small');
+    hint.textContent = 'Lokale Pruefungen (Hash, Heuristik, Kopfzeilen, Links) sind bereits in Echtzeit abgeschlossen. ' +
+        'Der Anbieter analysiert die Datei asynchron; das Ergebnis wird automatisch abgefragt' +
+        (response.pollIntervalMinutes ? ' (alle ' + response.pollIntervalMinutes + ' Minute(n))' : '') + '.';
+    card.appendChild(hint);
+
+    for (const job of response.jobs) {
+        const row = document.createElement('div');
+        row.className = 'thundy-attachment-row';
+        const label = document.createElement('div');
+        label.textContent = (job.attachmentName || job.sha256) + ' - ' + describeJobState(job);
+        row.appendChild(label);
+        const sha = document.createElement('small');
+        sha.className = 'thundy-attachment-status';
+        sha.textContent = 'SHA-256: ' + job.sha256;
+        row.appendChild(sha);
+        card.appendChild(row);
+    }
+
+    const pollButton = document.createElement('button');
+    pollButton.type = 'button';
+    pollButton.textContent = 'Ergebnis jetzt abrufen';
+    pollButton.addEventListener('click', async () => {
+        pollButton.disabled = true;
+        pollButton.textContent = 'Frage Ergebnis ab...';
+        try {
+            const polled = await browser.runtime.sendMessage({ action: 'pollScansNow', headerMessageId: headerMessageId });
+            if (polled && polled.status === 'success') {
+                await renderScanStatusPanel(headerMessageId, container);
+            }
+        } catch (error) {
+            console.error('Manuelle Abfrage fehlgeschlagen:', error);
+        } finally {
+            pollButton.disabled = false;
+            pollButton.textContent = 'Ergebnis jetzt abrufen';
+        }
+    });
+    card.appendChild(pollButton);
+
+    return card;
 }
 
 function renderThreatSummary(container, state) {

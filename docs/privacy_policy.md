@@ -174,7 +174,15 @@ Zugriffsrechte des Betriebssystem-Benutzerkontos und die Zugriffskontrolle des T
 - Link-Metadaten (geprüfte URLs und deren Status),
 - Zuordnungen zu Nachrichten über die Message-ID bzw. Header-ID,
 - Nachrichten-Metadaten, die zur Anzeige im Popup gespeichert werden (Absenderadresse, Betreff,
-  Dateiname und SHA-256-Hash der geprüften Anhänge sowie der Teilename innerhalb der Nachricht).
+  Dateiname und SHA-256-Hash der geprüften Anhänge sowie der Teilename innerhalb der Nachricht),
+- offene Analyse-Aufträge (`pendingScans`): SHA-256-Hash, Submission-/Job-ID des Anbieters, Dateiname,
+  Nachrichten-Kennung, Startzeit und Anzahl der Abfrageversuche. Diese Liste dient ausschließlich dazu, das
+  zeitverzögert eintreffende Ergebnis nachzuladen; sie wird nach Abschluss oder Ablauf des Auftrags geleert.
+
+Die externe Analyse ist asynchron: Nach dem Hochladen liegt das Ergebnis erst nach einigen Minuten vor. Die
+Erweiterung fragt es automatisch im Hintergrund ab (über die Alarme-Funktion von Thunderbird, höchstens einmal
+pro Minute und nur solange ein Auftrag offen ist) und benachrichtigt anschließend. Lokale Prüfungen sind
+davon nicht betroffen und immer sofort abgeschlossen.
 
 Das Popup listet die Anhänge der geöffneten Nachricht mit Dateityp und Größe auf und kann auf Wunsch den
 SHA-256-Hash eines Anhangs berechnen. Beides geschieht ausschließlich lokal und ohne Übertragung. Nur die
@@ -421,7 +429,10 @@ account and by the Thunderbird profile's access control.
 - link metadata (checked URLs and their status),
 - mappings to messages via Message-ID or header ID,
 - message metadata stored for the popup (sender address, subject, file name and SHA-256 hash of the
-  checked attachments, and the MIME part name inside the message).
+  checked attachments, and the MIME part name inside the message),
+- pending analysis jobs (`pendingScans`): SHA-256 hash, provider submission/job id, file name, message id,
+  start time and number of polling attempts. This list only exists to fetch the delayed verdict and is
+  cleared once the job is finished or expired.
 
 The popup lists the attachments of the opened message with type and size and can compute the SHA-256 hash
 of a single attachment on request. Both happen purely locally without any transmission. Only the

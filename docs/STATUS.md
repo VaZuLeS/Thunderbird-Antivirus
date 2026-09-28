@@ -37,7 +37,7 @@ abgearbeitet:
 - **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung und Rechte und
   liefert einen echten Exit-Code; der Schritt läuft in der CI.
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission- und MV3-Portierungs-Tests
-  enthalten) und ist grün (475 Tests, 0 Fehler). Der im Repository aktive Workflow
+  enthalten) und ist grün (487 Tests, 0 Fehler). Der im Repository aktive Workflow
   (`.github/workflows/ci.yml`, Node 22) läuft `npm ci`, die Pre-Submit-Checks (jetzt mit echtem Exit-Code),
   `node --test background.test.js` und `npx web-ext lint`. Die erweiterten Definitionen — vollständiger
   `npm test`, Lint-Filter für bekannte Thunderbird-False-Positives
@@ -67,6 +67,10 @@ abgearbeitet:
   nennt nun die Ursache (`NO_API_KEY`, `PERMISSION_REQUIRED`, `SCAN_FAILED` mit Stufe). Neu ist die manuelle
   Anhang-Analyse im Popup (Anhänge auflisten, Hash lokal berechnen, Upload mit Ergebnisanzeige) inklusive
   transparenter Score-Begründung.
+- **Statusverfolgung (1.7.0):** Zeitverzögerte Anbieter-Analysen werden als Aufträge dauerhaft gespeichert und per
+  `browser.alarms` (max. 1×/Minute, 30 Versuche, 90 Minuten) nachgefragt; das Verdikt landet im lokalen Cache und
+  wird per Benachrichtigung gemeldet. Banner und Popup unterscheiden ausdrücklich „Echtzeit“ (lokale Prüfung) und
+  „zeitverzögert“ (externe Analyse) und zeigen den Auftragsstatus inklusive Versuchszahl und Laufzeit.
 - **XPI-Artefakt:** `npm run build` erzeugt `build/thundy-av-1.6.xpi` und prüft das Paket inklusive Manifest-
   Referenzen und registrierten Nachrichten-Skripten (`scripts/build-xpi.js`, `scripts/verify-package.js`).
 - **Tests (aktuell):** 404 Tests, 0 Fehler (u. a. 10 Tests für das Banner-Script in jsdom).

@@ -39,6 +39,29 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.7.0] – 2026-09-28
+
+### Added
+
+- **Statusverfolgung zeitverzoegerter Analysen.** Die Schnellanalyse von Hybrid Analysis ist asynchron. Der Add-on
+  merkt sich jeden Auftrag (SHA-256, Submission-/Job-ID, Anhang, Nachricht, Startzeit, Versuchszähler) dauerhaft in
+  `browser.storage.local`, fragt das Ergebnis über `browser.alarms` regelmaessig ab (Standard: jede Minute, maximal
+  30 Versuche bzw. 90 Minuten) und schreibt das Verdikt anschliessend in den lokalen Nachrichten-Cache. Auftraege
+  ueberleben damit einen Neustart des Hintergrundskripts.
+- **Klare Kommunikation „Echtzeit“ vs. „zeitverzoegert“.** Banner und Popup benennen jetzt ausdruecklich, dass die
+  lokalen Pruefungen (Hash, Heuristik, Kopfzeilen, Links) sofort abgeschlossen sind, waehrend die externe Analyse
+  beim Anbieter laeuft und das Ergebnis spaeter eintrifft. Beide zeigen den Auftragsstatus (Warteschlange, laufend
+  mit Versuchszahl und Laufzeit, abgeschlossen mit Verdikt, Timeout mit Begruendung).
+- **Benachrichtigung bei Fertigstellung** („Analyse abgeschlossen: <Datei> – Verdikt: <...>“) bzw. bei Timeout.
+- **Manuelle Abfrage:** Die Schaltflaeche „Ergebnis jetzt abrufen“ im Popup fragt alle offenen Auftraege sofort ab;
+  der Banner aktualisiert sich waehrenddessen selbst.
+- Neue Hintergrund-Aktionen `scanStatus` und `pollScansNow`; neue Berechtigung `alarms`.
+
+### Fixed
+
+- Aufraeumarbeiten an `handleUrlScan`/`handleManualUpload`: beide registrieren jetzt Auftraege, melden `timing: 'delayed'`
+  zurueck und liefern bei fehlendem API-Schluessel den Code `NO_API_KEY` statt einer generischen Fehlermeldung.
+
 ## [1.6.1] – 2026-09-28
 
 Bugfix-Release auf Basis der Rückmeldungen aus dem ersten Test in Thunderbird.

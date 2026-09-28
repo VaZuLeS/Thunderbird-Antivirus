@@ -28,7 +28,10 @@ const I18N_FALLBACKS = {
     notificationScanSubmitted: 'Scan submitted successfully. Job ID: $JOBID$',
     notificationScanError: 'Scan error: $ERROR$',
     notificationTitle: 'Thundy AV Scanner',
-    notificationTitleError: 'Thundy AV Scanner error'
+    notificationTitleError: 'Thundy AV Scanner error',
+    notificationScanFinished: 'Analysis finished: $NAME$ - verdict: $VERDICT$',
+    notificationScanTimeout: 'No analysis result received in time for: $NAME$',
+    notificationNoLinks: 'No links found in this message.'
 };
 
 function msg(key, subs) {
@@ -169,6 +172,217 @@ async function ensureMessageDisplayScript(tabId) {
         }
     } catch (e) { /* styles are cosmetic */ }
     return false;
+}
+
+// ---------------------------------------------------------------------------
+// Auftragswarteschlange fuer zeitverzoegerte Analysen
+//
+// Die Schnellanalyse von Hybrid Analysis ist asynchron: Nach dem Upload liegt das
+// Ergebnis erst nach einigen Minuten vor. Auftraege werden deshalb lokal gespeichert
+// (sie ueberleben einen Neustart des Hintergrundskripts), per browser.alarms
+// regelmaessig nachgefragt und danach in den Nachrichten-Cache geschrieben.
+// Lokale Pruefungen (Heuristik, Auth-Header, Links, Hash) laufen dagegen sofort.
+// ---------------------------------------------------------------------------
+const PENDING_SCANS_KEY = 'pendingScans';
+const SCAN_ALARM_NAME = 'thundy-pending-scan-check';
+const SCAN_POLL_INTERVAL_MINUTES = 1;
+const SCAN_MAX_ATTEMPTS = 30;
+const SCAN_MAX_AGE_MS = 90 * 60 * 1000; // nach 90 Minuten aufgeben
+
+// Anzeige-Zustaende eines Auftrags:
+//   queued    - Upload gestartet, noch keine Antwort des Anbieters
+//   running   - Anbieter hat den Auftrag angenommen, Analyse laeuft (zeitverzoegert)
+//   finished  - Ergebnis liegt vor (Verdikt wurde uebernommen)
+//   timeout   - Anbieter hat innerhalb des Zeitfensters kein Ergebnis geliefert
+//   failed    - Fehler beim Upload oder bei der Abfrage
+const SCAN_STATES = ['queued', 'running', 'finished', 'timeout', 'failed'];
+
+async function getPendingScans() {
+    try {
+        const stored = await browser.storage.local.get(PENDING_SCANS_KEY);
+        return Array.isArray(stored[PENDING_SCANS_KEY]) ? stored[PENDING_SCANS_KEY] : [];
+    } catch (e) {
+        Logger.warn('Auftragsliste konnte nicht gelesen werden:', e);
+        return [];
+    }
+}
+
+async function savePendingScans(jobs) {
+    const cleaned = (jobs || []).filter(job => job && job.sha256 && job.state !== 'finished');
+    try {
+        await browser.storage.local.set({ [PENDING_SCANS_KEY]: cleaned });
+    } catch (e) {
+        Logger.warn('Auftragsliste konnte nicht gespeichert werden:', e);
+    }
+    return cleaned;
+}
+
+async function upsertPendingScan(job) {
+    const jobs = await getPendingScans();
+    const index = jobs.findIndex(existing => existing.sha256 === job.sha256 && existing.partName === job.partName);
+    if (index >= 0) {
+        jobs[index] = Object.assign({}, jobs[index], job);
+    } else {
+        jobs.push(job);
+    }
+    const saved = await savePendingScans(jobs);
+    await scheduleScanPolling(saved.length > 0);
+    return job;
+}
+
+async function removePendingScan(sha256, partName) {
+    const jobs = await getPendingScans();
+    const remaining = jobs.filter(job => !(job.sha256 === sha256 && (partName === undefined || job.partName === partName)));
+    const saved = await savePendingScans(remaining);
+    await scheduleScanPolling(saved.length > 0);
+    return saved;
+}
+
+/** Plant (oder beendet) die regelmaessige Nachfrage beim Anbieter. */
+async function scheduleScanPolling(active) {
+    if (!browser.alarms || typeof browser.alarms.create !== 'function') {
+        Logger.warn('browser.alarms ist nicht verfuegbar - zeitverzoegerte Ergebnisse werden nur bei manueller Abfrage geholt.');
+        return false;
+    }
+    try {
+        if (!active) {
+            if (typeof browser.alarms.clear === 'function') await browser.alarms.clear(SCAN_ALARM_NAME);
+            return false;
+        }
+        await browser.alarms.create(SCAN_ALARM_NAME, {
+            delayInMinutes: SCAN_POLL_INTERVAL_MINUTES,
+            periodInMinutes: SCAN_POLL_INTERVAL_MINUTES
+        });
+        return true;
+    } catch (e) {
+        Logger.error('Alarm konnte nicht eingerichtet werden:', e);
+        return false;
+    }
+}
+
+/** Beschreibt einen Auftrag fuer die Anzeige in Banner und Popup. */
+function describeScanJob(job) {
+    const started = job.startedAt ? new Date(job.startedAt) : null;
+    const elapsedMinutes = started ? Math.round((Date.now() - started.getTime()) / 60000) : null;
+    return {
+        sha256: job.sha256,
+        partName: job.partName || null,
+        attachmentName: job.attachmentName || null,
+        state: job.state,
+        timing: 'delayed',
+        submissionId: job.submissionId || null,
+        jobId: job.jobId || null,
+        startedAt: job.startedAt || null,
+        lastCheckAt: job.lastCheckAt || null,
+        attempts: typeof job.attempts === 'number' ? job.attempts : 0,
+        elapsedMinutes,
+        verdict: job.verdict || null,
+        error: job.error || null,
+        canPollNow: job.state === 'queued' || job.state === 'running'
+    };
+}
+
+/**
+ * Fragt fuer alle offenen Auftraege das Ergebnis ab.
+ * Wird sowohl vom Alarm als auch manuell (Popup) aufgerufen.
+ */
+async function pollPendingScans() {
+    const jobs = await getPendingScans();
+    if (jobs.length === 0) {
+        await scheduleScanPolling(false);
+        return { checked: 0, finished: 0, pending: 0 };
+    }
+
+    let finished = 0;
+    const updated = [];
+
+    for (const job of jobs) {
+        if (job.state === 'finished') continue;
+        if (!mayTransmitExternally() || !apikey_hybridanalysis) {
+            // Ohne Zustimmung/Schluessel darf nicht nachgefragt werden.
+            updated.push(Object.assign({}, job, { state: 'failed', error: 'Zustimmung oder API-Schluessel fehlt.' }));
+            continue;
+        }
+
+        const startedAt = job.startedAt ? new Date(job.startedAt).getTime() : Date.now();
+        if (Date.now() - startedAt > SCAN_MAX_AGE_MS || (job.attempts || 0) >= SCAN_MAX_ATTEMPTS) {
+            updated.push(Object.assign({}, job, { state: 'timeout', error: 'Der Anbieter hat innerhalb des Zeitfensters kein Ergebnis geliefert.' }));
+            notify('notificationTitle', 'notificationScanTimeout', [job.attachmentName || job.sha256]);
+            continue;
+        }
+
+        const result = await fetchHybridVerdictForJob(job);
+        if (result && result.verdict) {
+            await storeJobResult(job, result);
+            await removePendingScan(job.sha256, job.partName);
+            finished++;
+            notify('notificationTitle', 'notificationScanFinished', [job.attachmentName || job.sha256, result.verdict]);
+            continue;
+        }
+
+        updated.push(Object.assign({}, job, {
+            state: 'running',
+            attempts: (job.attempts || 0) + 1,
+            lastCheckAt: Date.now(),
+            error: null
+        }));
+    }
+
+    const saved = await savePendingScans(updated);
+    await scheduleScanPolling(saved.length > 0);
+    return { checked: jobs.length, finished, pending: saved.length };
+}
+
+/** Holt das Verdikt zu einem Auftrag (null, solange kein Ergebnis vorliegt). */
+async function fetchHybridVerdictForJob(job) {
+    if (!job || !job.sha256) return null;
+    const options = getHybridAnalysisOptions('GET');
+    options.url = 'https://hybrid-analysis.com/api/v2/overview/' + job.sha256;
+    try {
+        const response = await apiGateway.fetchWithTimeout(options.url, options);
+        if (response.status !== 200) return null;
+        const data = await response.json();
+        const verdict = data && data.verdict ? String(data.verdict) : null;
+        if (!verdict) return null;
+        return {
+            verdict: verdict === 'no specific threat' ? 'CLEAN' : verdict.toUpperCase(),
+            rawVerdict: verdict,
+            submissionId: (data && data.submission_id) || job.submissionId || null,
+            jobId: (data && data.job_id) || job.jobId || null
+        };
+    } catch (e) {
+        Logger.warn('Ergebnisabfrage fehlgeschlagen:', e);
+        return null;
+    }
+}
+
+/** Schreibt das eingetroffene Ergebnis in den lokalen Nachrichten-Cache. */
+async function storeJobResult(job, result) {
+    try {
+        const db = await getSharedDB();
+        if (!job.messageHeaderId) return;
+        await updateStore(db, 'hybridanalysis', job.messageHeaderId, (existingRecord) => {
+            const record = existingRecord || { messageHeader: job.messageHeaderId, attachments: [], links: [] };
+            if (!Array.isArray(record.attachments)) record.attachments = [];
+            const index = record.attachments.findIndex(a => a.partName === job.partName);
+            const entry = {
+                hybrid_submission_id: result.submissionId || 'N/A',
+                hybrid_job_id: result.jobId || 'N/A',
+                hybrid_sha256: job.sha256,
+                attachment_name: job.attachmentName || '',
+                partName: job.partName,
+                state: 'KNOWN',
+                verdict: result.verdict,
+                checked_at: new Date().toISOString(),
+                timing: 'delayed'
+            };
+            if (index >= 0) record.attachments[index] = Object.assign({}, record.attachments[index], entry);
+            else record.attachments.push(entry);
+            return record;
+        });
+    } catch (e) {
+        Logger.error('Ergebnis konnte nicht gespeichert werden:', e);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -1458,7 +1672,7 @@ class HybridDataBuilder {
     }
 }
 
-async function handle_unknown_attachment({ attachment, content_of_attachment, local_hash, virustotal_stats, privacyTier, fileType }) {
+async function handle_unknown_attachment({ attachment, content_of_attachment, local_hash, virustotal_stats, privacyTier, fileType, messageHeaderId, messageId }) {
     if ((privacyTier === 'balanced' || privacyTier === 'max') && mayTransmitExternally()) {
         try {
             const file_to_submit = new File([content_of_attachment], attachment.name, { type: fileType || 'application/octet-stream' });
@@ -1478,6 +1692,22 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
                     'UPLOADED',
                     attachment
                 );
+
+                // Auch automatische Uploads laufen asynchron beim Anbieter.
+                await upsertPendingScan({
+                    sha256: uploadData.sha256 || local_hash,
+                    partName: attachment.partName,
+                    attachmentName: attachment.name,
+                    messageId: messageId || null,
+                    messageHeaderId: messageHeaderId || null,
+                    submissionId: uploadData.submission_id || null,
+                    jobId: uploadData.job_id || null,
+                    state: 'running',
+                    attempts: 0,
+                    startedAt: Date.now(),
+                    lastCheckAt: Date.now()
+                });
+
                 return hybridData;
             } else {
                 Logger.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
@@ -1518,7 +1748,7 @@ function create_manual_check_hybrid_data(local_hash, attachment, virustotal_stat
     return data;
 }
 
-async function check_hybrid_analysis_for_attachment(local_hash, attachment, content_of_attachment, virustotal_stats, file_type) {
+async function check_hybrid_analysis_for_attachment(local_hash, attachment, content_of_attachment, virustotal_stats, file_type, context = {}) {
     if (!mayTransmitExternally()) {
         return create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats);
     }
@@ -1544,7 +1774,9 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
         local_hash,
         virustotal_stats,
         privacyTier,
-        fileType: file_type
+        fileType: file_type,
+        messageHeaderId: context.messageHeaderId || null,
+        messageId: context.messageId || null
     });
 }
 
@@ -1580,7 +1812,8 @@ async function process_single_attachment(message, attachment) {
                 attachment,
                 content_of_attachment,
                 virustotal_stats,
-                file.type
+                file.type,
+                { messageId: message.id, messageHeaderId: message.headerMessageId }
             );
 
         } catch (error) {
@@ -1764,6 +1997,29 @@ if (browser.messageDisplay) {
 // Das Banner-Script wird einmal registriert (dokumentierter MV3-Weg) und greift
 // damit automatisch in allen neu geöffneten Nachrichten.
 registerMessageDisplayScript();
+
+// Zeitverzoegerte Ergebnisse: Alarm einrichten/abholen und beim Start offene Auftraege pruefen.
+if (browser.alarms) {
+    if (browser.alarms.onAlarm && typeof browser.alarms.onAlarm.addListener === 'function') {
+        browser.alarms.onAlarm.addListener(async (alarm) => {
+            if (!alarm || alarm.name !== SCAN_ALARM_NAME) return;
+            try {
+                const summary = await pollPendingScans();
+                Logger.info('Zeitverzoegerte Analyse-Abfrage:', summary);
+            } catch (e) {
+                Logger.error('Abfrage zeitverzoegerter Ergebnisse fehlgeschlagen:', e);
+            }
+        });
+    }
+    // Nach einem Neustart des Hintergrundskripts: offene Auftraege weiter verfolgen.
+    getPendingScans().then(jobs => {
+        if (jobs.length > 0) {
+            return scheduleScanPolling(true).then(() => pollPendingScans());
+        }
+        return undefined;
+    }).catch(e => Logger.warn('Offene Auftraege konnten nicht wieder aufgenommen werden:', e));
+}
+
 
 function createContextMenus() {
     if (!browser.menus || typeof browser.menus.create !== 'function') return;
@@ -2022,16 +2278,113 @@ async function handleRequestScan(request, sender) {
     }
 
     const previous = displayStates.get(tabId) || {};
+    const pendingForMessage = (await getPendingScans())
+        .filter(job => job.messageId === request.messageId)
+        .map(describeScanJob);
+
     updateDisplayState(tabId, Object.assign({}, previous, {
         mode: 'ready',
+        messageId: request.messageId,
         canAutoUpload: true,
         showOptIn: false,
-        consent: mayTransmitExternally()
+        consent: mayTransmitExternally(),
+        pendingJobs: pendingForMessage,
+        pollIntervalMinutes: SCAN_POLL_INTERVAL_MINUTES,
+        localChecks: { timing: 'realtime', finished: true }
     }));
     await ensureMessageDisplayScript(tabId);
-    return { success: true, persisted: request.persist === true };
+
+    // Klar kommunizieren: lokal sofort, extern zeitverzoegert.
+    return {
+        success: true,
+        persisted: request.persist === true,
+        localChecks: 'finished',
+        timing: pendingForMessage.length > 0 ? 'delayed' : 'realtime',
+        pendingScans: pendingForMessage.length,
+        pollIntervalMinutes: SCAN_POLL_INTERVAL_MINUTES
+    };
 }
 
+async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
+    if (!apikey_hybridanalysis) {
+        const error = new Error('Kein Hybrid-Analysis-API-Schluessel hinterlegt - bitte in den Einstellungen eintragen.');
+        error.code = 'NO_API_KEY';
+        throw error;
+    }
+    assertExternalAnalysisAllowed();
+    if (!await hasHostPermissionFor('https://hybrid-analysis.com/api/v2/overview/x')) {
+        const error = new Error('Host-Berechtigung fuer hybrid-analysis.com fehlt - bitte die Einstellungen speichern und die Berechtigung erteilen.');
+        error.code = 'PERMISSION_REQUIRED';
+        throw error;
+    }
+
+    let file = await browser.messages.getAttachmentFile(messageId, partName);
+    const content_of_atachment = file.slice();
+    const file_to_submit = new File([content_of_atachment], attachmentName, { type: file.type || 'application/octet-stream' });
+
+    const formData = new FormData();
+    formData.append('scan_type', 'all');
+    formData.append('file', file_to_submit);
+
+    const options = getHybridAnalysisOptions('POST', formData);
+    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
+
+    const response = await apiGateway.fetchWithTimeout(options.url, options, 60000);
+    const json_data = await response.json();
+
+    if (response.status === 200 || response.status === 201) {
+        const sha256 = json_data.sha256 || hash;
+
+        // Der Anbieter analysiert asynchron: Auftrag merken und regelmaessig nachfragen.
+        await upsertPendingScan({
+            sha256,
+            partName,
+            attachmentName,
+            messageId,
+            messageHeaderId: headerMessageId,
+            submissionId: json_data.submission_id || null,
+            jobId: json_data.job_id || null,
+            state: 'running',
+            attempts: 0,
+            startedAt: Date.now(),
+            lastCheckAt: Date.now()
+        });
+
+        try {
+            const db = await getSharedDB();
+            await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
+                const record = existingRecord || { messageHeader: headerMessageId, attachments: [], links: [] };
+                if (!Array.isArray(record.attachments)) record.attachments = [];
+                const index = record.attachments.findIndex(a => a.partName === partName);
+                const entry = {
+                    hybrid_submission_id: json_data.submission_id,
+                    hybrid_job_id: json_data.job_id,
+                    hybrid_sha256: sha256,
+                    attachment_name: attachmentName,
+                    partName: partName,
+                    state: 'UPLOADED',
+                    timing: 'delayed',
+                    started_at: new Date().toISOString()
+                };
+                if (index >= 0) record.attachments[index] = Object.assign({}, record.attachments[index], entry);
+                else record.attachments.push(entry);
+                return record;
+            });
+        } catch (dbError) {
+            Logger.error('Fehler beim Aktualisieren des DB Records:', dbError);
+        }
+
+        return Object.assign({}, json_data, {
+            sha256,
+            timing: 'delayed',
+            state: 'running',
+            pollIntervalMinutes: SCAN_POLL_INTERVAL_MINUTES,
+            message: 'Analyse laeuft beim Anbieter (zeitverzoegert) - das Ergebnis wird automatisch abgerufen.'
+        });
+    } else {
+        throw new Error("Fehler beim Upload: " + JSON.stringify(json_data));
+    }
+}
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     switch (request && request.action) {
         case "uploadAttachment":
@@ -2058,6 +2411,33 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case "requestScan":
             handleRequestScan(request, sender).then(res => sendResponse(res));
+            return true;
+
+        case "scanStatus": {
+            getPendingScans().then(jobs => {
+                const filtered = request.headerMessageId
+                    ? jobs.filter(job => job.messageHeaderId === request.headerMessageId)
+                    : jobs;
+                sendResponse({
+                    status: 'success',
+                    jobs: filtered.map(describeScanJob),
+                    pending: filtered.length,
+                    pollIntervalMinutes: SCAN_POLL_INTERVAL_MINUTES
+                });
+            }).catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+        }
+
+        case "pollScansNow":
+            pollPendingScans()
+                .then(async (summary) => {
+                    const jobs = await getPendingScans();
+                    const filtered = request.headerMessageId
+                        ? jobs.filter(job => job.messageHeaderId === request.headerMessageId)
+                        : jobs;
+                    sendResponse({ status: 'success', summary, jobs: filtered.map(describeScanJob) });
+                })
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
             return true;
 
         case "listAttachments":
@@ -2253,98 +2633,56 @@ async function handleUrlScan(url, headerMessageId) {
     const response = await apiGateway.fetchWithTimeout(options.url, options);
     const json_data = await response.json();
 
-    if (response.status === 200 || response.status === 201) {
-        // Update DB record
-        try {
-            const db = await getSharedDB();
-            await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
-                if (existingRecord && existingRecord.links) {
-                    // ⚡ Bolt Optimization: Replace .findIndex() with for loop to avoid callback overhead
-                    let linkIndex = -1;
-                    const links = existingRecord.links;
-                    const len = links.length;
-                    for (let i = 0; i < len; i++) {
-                        if (links[i].url === url) {
-                            linkIndex = i;
-                            break;
-                        }
-                    }
-                    if (linkIndex > -1) {
-                        existingRecord.links[linkIndex].hybrid_submission_id = json_data.submission_id;
-                        existingRecord.links[linkIndex].hybrid_job_id = json_data.job_id;
-                        existingRecord.links[linkIndex].hybrid_sha256 = json_data.sha256;
-                        existingRecord.links[linkIndex].state = 'UPLOADED';
-                    }
-                }
-                return existingRecord;
-            });
-        } catch (dbError) {
-            Logger.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
-        }
-        return json_data;
-    } else {
-        throw new Error("Fehler beim URL-Scan: " + JSON.stringify(json_data));
-    }
-}
-
-async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
-    if (!apikey_hybridanalysis) {
-        const error = new Error('Kein Hybrid-Analysis-API-Schluessel hinterlegt - bitte in den Einstellungen eintragen.');
-        error.code = 'NO_API_KEY';
-        throw error;
-    }
-    assertExternalAnalysisAllowed();
-    if (!await hasHostPermissionFor('https://hybrid-analysis.com/api/v2/overview/x')) {
-        const error = new Error('Host-Berechtigung fuer hybrid-analysis.com fehlt - bitte die Einstellungen speichern und die Berechtigung erteilen.');
-        error.code = 'PERMISSION_REQUIRED';
-        throw error;
-    }
-
-    let file = await browser.messages.getAttachmentFile(messageId, partName);
-    const content_of_atachment = file.slice();
-    const file_to_submit = new File([content_of_atachment], attachmentName, { type: file.type || 'application/octet-stream' });
-
-    const formData = new FormData();
-    formData.append('scan_type', 'all');
-    formData.append('file', file_to_submit);
-
-    const options = getHybridAnalysisOptions('POST', formData);
-    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
-
-    const response = await apiGateway.fetchWithTimeout(options.url, options, 60000);
-    const json_data = await response.json();
-
-    if (response.status === 200 || response.status === 201) {
-        // Update DB record
-        try {
-            const db = await getSharedDB();
-            await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
-                if (existingRecord && existingRecord.attachments) {
-                    // ⚡ Bolt Optimization: Replace .findIndex() with for loop to avoid callback overhead
-                    let attIndex = -1;
-                    const attachments = existingRecord.attachments;
-                    const len = attachments.length;
-                    for (let i = 0; i < len; i++) {
-                        if (attachments[i].partName === partName) {
-                            attIndex = i;
-                            break;
-                        }
-                    }
-                    if (attIndex > -1) {
-                        existingRecord.attachments[attIndex].hybrid_submission_id = json_data.submission_id;
-                        existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id;
-                        existingRecord.attachments[attIndex].state = 'UPLOADED';
-                    }
-                }
-                return existingRecord;
-            });
-        } catch (dbError) {
-            Logger.error('Fehler beim Aktualisieren des DB Records:', dbError);
-        }
-        return json_data;
-    } else {
+    if (response.status !== 200 && response.status !== 201) {
         throw new Error("Fehler beim Upload: " + JSON.stringify(json_data));
     }
+
+    const sha256 = json_data.sha256 || null;
+
+    // Auch URL-Scans laufen beim Anbieter asynchron.
+    if (sha256) {
+        await upsertPendingScan({
+            sha256,
+            partName: 'url:' + url,
+            attachmentName: url,
+            messageId: null,
+            messageHeaderId: headerMessageId || null,
+            submissionId: json_data.submission_id || null,
+            jobId: json_data.job_id || null,
+            state: 'running',
+            attempts: 0,
+            startedAt: Date.now(),
+            lastCheckAt: Date.now()
+        });
+    }
+
+    try {
+        const db = await getSharedDB();
+        await updateStore(db, 'hybridanalysis', headerMessageId, (existingRecord) => {
+            if (existingRecord && existingRecord.links) {
+                const links = existingRecord.links;
+                for (let i = 0; i < links.length; i++) {
+                    if (links[i].url === url) {
+                        links[i].hybrid_submission_id = json_data.submission_id;
+                        links[i].hybrid_job_id = json_data.job_id;
+                        links[i].hybrid_sha256 = json_data.sha256;
+                        links[i].state = 'UPLOADED';
+                        links[i].timing = 'delayed';
+                        break;
+                    }
+                }
+            }
+            return existingRecord;
+        });
+    } catch (dbError) {
+        Logger.error('Fehler beim Aktualisieren des DB Records fuer URL:', dbError);
+    }
+
+    return Object.assign({}, json_data, {
+        timing: 'delayed',
+        state: 'running',
+        pollIntervalMinutes: SCAN_POLL_INTERVAL_MINUTES
+    });
 }
 
 async function checkVirusTotal(hash, apikey) {
