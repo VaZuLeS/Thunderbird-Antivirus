@@ -69,6 +69,10 @@ npm run build            # erzeugt build/thundy-av-<version>.xpi und prüft das 
 
 ## 6. In Thunderbird laden
 
+> Fertiges Paket ohne eigenen Build: In den [Releases](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases)
+> liegt `thundy-av-1.6.xpi` (Vorabversion, unsigniert) mit SHA-256-Prüfsumme in den Releasenotes.
+> `npm run build` erzeugt dasselbe Paket lokal als `build/thundy-av-1.6.xpi`.
+
 **Variante A – temporäres Add-on (für die Entwicklung empfohlen):**
 
 ```text

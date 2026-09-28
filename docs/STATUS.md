@@ -68,6 +68,15 @@ abgearbeitet:
   (`docs/reviewer_notes.md`), Listing-Entwurf (`docs/store_listing.md`); Live-Policy unter
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html.
 
+## Artefakt
+
+- **Lokaler Build:** `npm run build` -> `build/thundy-av-1.6.xpi` (unsigniert, 19 Laufzeitdateien) inklusive
+  automatischer Paketprüfung (Dateiliste, Manifest-Referenzen, registrierte Nachrichten-Skripte).
+- **Veröffentlichte Vorabversion:** https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6
+  (Asset `thundy-av-1.6.xpi`, SHA-256 siehe Releasenotes).
+- **Installation:** *Add-ons und Themes -> Zahnrad -> Debug Add-ons -> Temporäres Add-on laden* und die `.xpi` auswählen;
+  für eine reguläre Installation ist eine Signatur nötig (`web-ext sign --channel listed`, Vorlage `docs/ci/release.yml`).
+
 ## Remaining
 
 - **Manuelle Verifikation in Thunderbird 140 ESR (Pflicht vor der Einreichung):** Banner-Injektion, der

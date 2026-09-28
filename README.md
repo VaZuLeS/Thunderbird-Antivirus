@@ -158,6 +158,9 @@ npm run build                                         # -> build/thundy-av-<vers
   archive, and the message display script registered in `background.js` must be present (functional smoke test).
   The artifact is unsigned - load it via *Add-ons and Themes -> gear icon -> Debug Add-ons -> Load Temporary
   Add-on*, or sign it with `web-ext sign` before distributing it.
+- Prebuilt packages (prereleases, unsigned) are attached to the
+  [GitHub releases](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases); each release notes block lists the
+  SHA-256 checksum of the XPI.
 - More details: [docs/quickstart.md](docs/quickstart.md).
 
 ## Permissions overview
