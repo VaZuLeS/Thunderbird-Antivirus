@@ -200,7 +200,7 @@ if (apiContainer) {
     const activeTabId = tabs[0] ? tabs[0].id : null;
     renderAttachmentPanel(message, message.headerMessageId, apiContainer);
     renderScanStatusPanel(message.headerMessageId, apiContainer);
-    browser.runtime.sendMessage({ action: 'getDisplayState', tabId: activeTabId })
+    browser.runtime.sendMessage({ action: 'getDisplayState', tabId: activeTabId, messageId: message.id })
         .then(state => renderThreatSummary(apiContainer, state))
         .catch(error => console.error('Bewertung konnte nicht geladen werden:', error));
 }

@@ -34,7 +34,8 @@ const THUNDY_FALLBACKS = {
   bannerStatusPendingDetail: ' (checked every $MIN$ minute(s), attempt $ATTEMPT$)',
   bannerStatusFinished: 'External analysis finished (delayed): verdict $VERDICT$.',
   bannerStatusTimeout: 'No result within the time window - you can trigger the check again later.',
-  bannerStatusFailed: 'Analysis failed: $ERROR$'
+  bannerStatusFailed: 'Analysis failed: $ERROR$',
+  bannerStatusDone: 'Analysis finished - the result is shown in the popup (Thundy AV button).'
 };
 
 function thundyText(key, fallback, subs) {
@@ -48,7 +49,7 @@ function thundyText(key, fallback, subs) {
 
 function spinPlaceholders(text, subs) {
   const values = Array.isArray(subs) ? subs.slice() : (subs === undefined ? [] : [subs]);
-  return text.replace(/\$(SCORE|URL|JOBID|ERROR)\$/g, () => (values.length ? String(values.shift()) : ''));
+  return text.replace(/\$(SCORE|URL|JOBID|ERROR|NAME|VERDICT|DETAIL|MIN|ATTEMPT)\$/g, () => (values.length ? String(values.shift()) : ''));
 }
 
 function thundyRemove(id) {
@@ -269,7 +270,8 @@ function thundyWatchScanStatus(container, options) {
       const response = await browser.runtime.sendMessage({ action: 'scanStatus', headerMessageId: options.headerMessageId, messageId: options.messageId });
       const jobs = response && Array.isArray(response.jobs) ? response.jobs : [];
       if (jobs.length === 0) {
-        thundyRenderScanStatus(container, thundyText('bannerStatusFinished', THUNDY_FALLBACKS.bannerStatusFinished, ['-']));
+        // Alle Auftraege sind abgeschlossen: kein Platzhalter-Verdikt anzeigen.
+        thundyRenderScanStatus(container, thundyText('bannerStatusDone', THUNDY_FALLBACKS.bannerStatusDone));
         return;
       }
       thundyRenderScanStatus(container, jobs.map(job => thundyDescribeJob(job, texts)).join(' '));

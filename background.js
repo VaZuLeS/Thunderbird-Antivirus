@@ -43,7 +43,7 @@ function msg(key, subs) {
     } catch (e) { /* fall through to the fallback string */ }
     let text = I18N_FALLBACKS[key] || key;
     const values = Array.isArray(subs) ? subs.slice() : (subs === undefined ? [] : [subs]);
-    text = text.replace(/\$(SCORE|URL|JOBID|ERROR)\$/g, () => (values.length ? String(values.shift()) : ''));
+    text = text.replace(/\$(SCORE|URL|JOBID|ERROR|NAME|VERDICT|DETAIL|MIN|ATTEMPT)\$/g, () => (values.length ? String(values.shift()) : ''));
     return text;
 }
 
@@ -195,7 +195,18 @@ const SCAN_MAX_AGE_MS = 90 * 60 * 1000; // nach 90 Minuten aufgeben
 //   finished  - Ergebnis liegt vor (Verdikt wurde uebernommen)
 //   timeout   - Anbieter hat innerhalb des Zeitfensters kein Ergebnis geliefert
 //   failed    - Fehler beim Upload oder bei der Abfrage
-const SCAN_STATES = ['queued', 'running', 'finished', 'timeout', 'failed'];
+// Terminale Zustaende werden nicht erneut abgefragt und loesen keine weitere
+// Benachrichtigung aus.
+const TERMINAL_SCAN_STATES = ['finished', 'timeout', 'failed'];
+const SCAN_TERMINAL_RETENTION_MS = 24 * 60 * 60 * 1000;
+
+function isOpenScanJob(job) {
+    return !!job && !TERMINAL_SCAN_STATES.includes(job.state);
+}
+
+function hasOpenScanJobs(jobs) {
+    return (jobs || []).some(isOpenScanJob);
+}
 
 async function getPendingScans() {
     try {
@@ -208,7 +219,18 @@ async function getPendingScans() {
 }
 
 async function savePendingScans(jobs) {
-    const cleaned = (jobs || []).filter(job => job && job.sha256 && job.state !== 'finished');
+    const now = Date.now();
+    const cleaned = (jobs || []).filter(job => {
+        if (!job || !job.sha256) return false;
+        if (job.state === 'finished') return false;
+        // Abgeschlossene/abgelaufene Auftraege werden nach einer Weile aufgeraeumt,
+        // damit sie im Popup noch sichtbar sind, aber nicht ewig gespeichert bleiben.
+        if (TERMINAL_SCAN_STATES.includes(job.state)) {
+            const reference = job.finishedAt || job.lastCheckAt || job.startedAt || 0;
+            return (now - reference) < SCAN_TERMINAL_RETENTION_MS;
+        }
+        return true;
+    });
     try {
         await browser.storage.local.set({ [PENDING_SCANS_KEY]: cleaned });
     } catch (e) {
@@ -226,7 +248,7 @@ async function upsertPendingScan(job) {
         jobs.push(job);
     }
     const saved = await savePendingScans(jobs);
-    await scheduleScanPolling(saved.length > 0);
+    await scheduleScanPolling(hasOpenScanJobs(saved));
     return job;
 }
 
@@ -234,7 +256,7 @@ async function removePendingScan(sha256, partName) {
     const jobs = await getPendingScans();
     const remaining = jobs.filter(job => !(job.sha256 === sha256 && (partName === undefined || job.partName === partName)));
     const saved = await savePendingScans(remaining);
-    await scheduleScanPolling(saved.length > 0);
+    await scheduleScanPolling(hasOpenScanJobs(saved));
     return saved;
 }
 
@@ -297,16 +319,28 @@ async function pollPendingScans() {
     const updated = [];
 
     for (const job of jobs) {
-        if (job.state === 'finished') continue;
+        if (TERMINAL_SCAN_STATES.includes(job.state)) {
+            // Bereits abgeschlossen/abgelaufen: nur behalten, nicht erneut melden.
+            updated.push(job);
+            continue;
+        }
         if (!mayTransmitExternally() || !apikey_hybridanalysis) {
             // Ohne Zustimmung/Schluessel darf nicht nachgefragt werden.
-            updated.push(Object.assign({}, job, { state: 'failed', error: 'Zustimmung oder API-Schluessel fehlt.' }));
+            updated.push(Object.assign({}, job, {
+                state: 'failed',
+                finishedAt: Date.now(),
+                error: 'Zustimmung oder API-Schluessel fehlt.'
+            }));
             continue;
         }
 
         const startedAt = job.startedAt ? new Date(job.startedAt).getTime() : Date.now();
         if (Date.now() - startedAt > SCAN_MAX_AGE_MS || (job.attempts || 0) >= SCAN_MAX_ATTEMPTS) {
-            updated.push(Object.assign({}, job, { state: 'timeout', error: 'Der Anbieter hat innerhalb des Zeitfensters kein Ergebnis geliefert.' }));
+            updated.push(Object.assign({}, job, {
+                state: 'timeout',
+                finishedAt: Date.now(),
+                error: 'Der Anbieter hat innerhalb des Zeitfensters kein Ergebnis geliefert.'
+            }));
             notify('notificationTitle', 'notificationScanTimeout', [job.attachmentName || job.sha256]);
             continue;
         }
@@ -329,7 +363,7 @@ async function pollPendingScans() {
     }
 
     const saved = await savePendingScans(updated);
-    await scheduleScanPolling(saved.length > 0);
+    await scheduleScanPolling(hasOpenScanJobs(saved));
     return { checked: jobs.length, finished, pending: saved.length };
 }
 
@@ -2235,7 +2269,24 @@ async function handleRequestScan(request, sender) {
         await addSenderOptIn(request.senderEmail.toLowerCase());
     }
 
-    const messageObj = { id: request.messageId };
+    // Die headerMessageId wird benoetigt, um das zeitverzoegert eintreffende Ergebnis
+    // spaeter dem lokalen Nachrichten-Cache zuordnen zu koennen.
+    let headerMessageId = request.headerMessageId || null;
+    if (!headerMessageId) {
+        try {
+            const header = await browser.messages.get(request.messageId);
+            headerMessageId = (header && header.headerMessageId) || null;
+        } catch (e) {
+            Logger.warn('headerMessageId konnte nicht ermittelt werden:', e);
+        }
+    }
+    const cachedState = displayStates.get(request.tabId) ||
+        Array.from(displayStates.values()).find(state => state && state.messageId === request.messageId);
+    if (!headerMessageId && cachedState) {
+        headerMessageId = cachedState.headerMessageId || null;
+    }
+
+    const messageObj = { id: request.messageId, headerMessageId: headerMessageId, author: (cachedState && cachedState.senderEmail) || '', subject: '' };
     const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (request.tabId || null);
     const tab = { id: tabId };
 
@@ -2454,7 +2505,12 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case "getDisplayState": {
             const tabId = (sender && sender.tab) ? sender.tab.id : (request.tabId !== undefined ? request.tabId : null);
-            const state = tabId !== null ? displayStates.get(tabId) : null;
+            let state = tabId !== null ? displayStates.get(tabId) : null;
+            if (!state && request.messageId !== undefined && request.messageId !== null) {
+                // Das Popup kennt nicht immer die messageDisplay-tabId; dann ueber die Nachricht suchen.
+                state = Array.from(displayStates.values())
+                    .find(entry => entry && entry.mode === 'ready' && entry.messageId === request.messageId) || null;
+            }
             sendResponse(state || { mode: 'pending' });
             return true;
         }

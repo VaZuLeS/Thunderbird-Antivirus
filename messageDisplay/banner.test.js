@@ -228,6 +228,50 @@ describe('messageDisplay/banner.js', () => {
         assert.strictEqual(ctx.dom.window.document.querySelector('a').title, '');
     });
 
+    it('substitutes the detail placeholder in the running status line', async () => {
+        const watching = createContext();
+        watching.context.browser.runtime.sendMessage = async (message) => {
+            watching.sent.push(message);
+            if (message.action === 'getDisplayState') return { mode: 'pending' };
+            if (message.action === 'scanStatus') {
+                return { status: 'success', pollIntervalMinutes: 1, jobs: [
+                    { sha256: 'e'.repeat(64), attachmentName: 'x.exe', state: 'running', attempts: 3, canPollNow: true }
+                ] };
+            }
+            return { success: true, timing: 'delayed', pendingScans: 1, pollIntervalMinutes: 1 };
+        };
+        watching.context.thundyRenderDisplayState(readyState());
+        const banner = watching.dom.window.document.getElementById('thundy-optin-banner');
+        banner.querySelectorAll('button')[0].click();
+        await new Promise(resolve => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        const status = banner.querySelector('#thundy-scan-status');
+        assert.ok(status);
+        assert.match(status.textContent, /attempt 3/);
+        assert.ok(!status.textContent.includes('$'), 'no unresolved placeholders: ' + status.textContent);
+    });
+
+    it('reports completion instead of a blank verdict when nothing is pending', async () => {
+        const done = createContext();
+        done.context.browser.runtime.sendMessage = async (message) => {
+            done.sent.push(message);
+            if (message.action === 'getDisplayState') return { mode: 'pending' };
+            if (message.action === 'scanStatus') return { status: 'success', jobs: [] };
+            return { success: true, timing: 'delayed', pendingScans: 1 };
+        };
+        done.context.thundyRenderDisplayState(readyState());
+        const banner = done.dom.window.document.getElementById('thundy-optin-banner');
+        banner.querySelectorAll('button')[0].click();
+        await new Promise(resolve => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
+
+        const status = banner.querySelector('#thundy-scan-status');
+        assert.ok(status);
+        assert.match(status.textContent, /result is shown in the popup/);
+        assert.ok(!status.textContent.includes('verdict -'), 'no placeholder verdict line');
+    });
+
     it('never transmits anything itself', async () => {
         ctx.context.thundyRenderDisplayState(readyState({ consent: false }));
         const banner = ctx.dom.window.document.getElementById('thundy-optin-banner');

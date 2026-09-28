@@ -561,3 +561,53 @@ web-ext lint + Filter       # 0 Fehler, 29 bekannte TB-False-Positives
 1. Test des XPI in Thunderbird 140 ESR (Funktionsnachweis auf echter Installation).
 2. Echte PNG-Screenshots für das Listing.
 3. Signierung/Einreichung bei addons.thunderbird.net.
+
+---
+
+## 11. Store-Readiness-Analyse v1.7.1 (aktueller Stand)
+
+Geprüft wurde der Auslieferungscode des Releases 1.7.0 (Commit `f9b14e3`), Schwerpunkt auf dem neu hinzugekommenen
+Code (Auftragswarteschlange, `alarms`-Polling, Statusanzeigen, manuelle Anhang-Analyse). **Ergebnis: 5 neue Befunde,
+alle behoben** (Version 1.7.1).
+
+### Neue Befunde dieser Runde
+
+| Nr. | Schwere | Befund | Behebung |
+|---|---|---|---|
+| A1 | hoch | **Wiederholte Benachrichtigungen / endloser Alarm:** `timeout`- und `failed`-Aufträge blieben in der Warteschlange und wurden bei jedem Poll erneut gemeldet (3 Polls → 3 Meldungen; im Betrieb 1/Minute). Der Alarm wurde nie beendet. | Terminale Zustände (`finished`, `timeout`, `failed`) werden nicht mehr abgefragt und nur einmal gemeldet; der Alarm endet, sobald kein offener Auftrag existiert; abgeschlossene Einträge werden nach 24 h entfernt (`hasOpenScanJobs()`, `TERMINAL_SCAN_STATES`). |
+| A2 | mittel | **Nicht ersetzte Platzhalter:** Benachrichtigung lautete wörtlich „No analysis result received in time for: $NAME$“ (Fallback-Pfad). | Platzhalter-Ersetzer kennen jetzt `$NAME$`, `$VERDICT$`, `$DETAIL$`, `$MIN$`, `$ATTEMPT$` (Background **und** Banner). |
+| A3 | mittel | **Spätes Ergebnis ging verloren:** Der Ein-Klick-Scan aus dem Banner speicherte Aufträge ohne `headerMessageId`; `storeJobResult()` brach dadurch ab — genau die vom Nutzer gewünschte spätere Abrufbarkeit war in diesem Pfad kaputt. | `handleRequestScan()` löst die Kennung auf (`messages.get()` bzw. letzter Anzeigezustand) und übergibt sie an die Auftragsverwaltung. |
+| A4 | niedrig | **Score-Anzeige im Popup konnte fehlen:** Zustandssuche nur über die `tabId`; bei Nachrichten in eigenem Fenster/Tab fand die Suche nichts. | Zusätzliche Suche über die `messageId` (`getDisplayState`), Popup übergibt sie. |
+| A5 | niedrig | **Irreführende Statuszeile** „Abgeschlossen – Verdikt: -“ bei leerer Warteschlange. | Eigener Text „Analyse abgeschlossen – Ergebnis im Popup“ (`bannerStatusDone`). |
+
+Nebenbefund: ungenutzte Konstante `SCAN_STATES` entfernt (toter Code).
+
+### Nachweis der Befunde (vor dem Fix)
+
+```
+BEFUND 1  Queue nach 3 Polls: 1 | Zustand: timeout | Benachrichtigungen: 3     <- 3 statt 1
+BEFUND 2  Notification-Text: "No analysis result received in time for: $NAME$" <- Platzhalter nicht ersetzt
+```
+Nach dem Fix: `Benachrichtigungen: 1`, Text `"... for: x.exe"`.
+
+### Gesamturteil v1.7.1
+
+| Bereich | Bewertung |
+|---|---|
+| Funktionalität unter MV3 (statisch + 494 Unit-Tests) | 🟢 Die in v1.0–1.6 gefundenen Blocker sind behoben; Portierung, Consent-Gate, Injektion und Statusverfolgung sind abgedeckt |
+| Manifest/Validierung | 🟢 0 Lint-Fehler; Manifest-, Match-Pattern-, Icon- und Konsent-Checks laufen im Pre-Submit-Gate |
+| Datenschutz/Policy | 🟢 Keine Übermittlung ohne Zustimmung (im Code erzwungen, getestet); Policy und Reviewer Notes deckungsgleich inkl. `pendingScans` und `alarms` |
+| Paket/Release | 🟢 19 Laufzeitdateien, Paketprüfung inkl. Manifest-Referenzen und registrierter Nachrichten-Skripte |
+| **Store-Einreichung** | 🟠 **blockiert durch drei manuelle Schritte** (siehe unten) |
+
+### Offen bis zur Einreichung
+
+1. **Live-Test in Thunderbird 140 ESR** (Pflicht, nicht automatisierbar): Banner-Rendering, beide Scan-Aktionen,
+   Statusverfolgung bis zum Verdikt, manuelle Anhang-Analyse, Kontextmenü, `permissions.request()` aus den Optionen.
+2. **Echte Screenshots** (PNG ≥ 1280 × 800) für das Listing — die Pre-Submit-Checks melden dies als einzige Warnung.
+3. **Signierung und Einreichung** bei addons.thunderbird.net (`web-ext sign --channel listed`; Vorlage in `docs/ci/release.yml`).
+
+### Artefakt-Bereitstellung (jede Änderung liefert ein installierbares XPI)
+
+`npm run build` erzeugt `build/thundy-av-<version>.xpi` samt Paketprüfung; die Vorabversionen liegen als Assets unter
+https://github.com/VaZuLeS/Thunderbird-Antivirus/releases (v1.6, v1.6.1, v1.7.0, v1.7.1) mit SHA-256 in den Releasenotes.

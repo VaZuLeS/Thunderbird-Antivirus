@@ -4153,6 +4153,113 @@ describe('background.js', () => {
         });
     });
 
+    describe('audit fixes: terminal jobs, placeholders, header id, state lookup', () => {
+        function stubStorage() {
+            let store = {};
+            context.browser.storage.local.get = async (keys) => {
+                if (typeof keys === 'string') return { [keys]: store[keys] };
+                if (Array.isArray(keys)) { const out = {}; keys.forEach(k => { out[k] = store[k]; }); return out; }
+                return store;
+            };
+            context.browser.storage.local.set = async (data) => { Object.assign(store, data); };
+            return { get: () => store };
+        }
+
+        it('does not notify again for a job that already timed out', async () => {
+            const storage = stubStorage();
+            context.notifications.length = 0;
+            context.alarmCalls.length = 0;
+            await context.upsertPendingScan({
+                sha256: 'a'.repeat(64), partName: '1', attachmentName: 'late.exe',
+                messageId: 1, messageHeaderId: 'h1', state: 'running',
+                attempts: context.SCAN_MAX_ATTEMPTS, startedAt: Date.now()
+            });
+            context.fetch = async () => ({ status: 404, json: async () => ({}) });
+
+            await context.pollPendingScans();
+            const afterFirst = context.notifications.length;
+            await context.pollPendingScans();
+            await context.pollPendingScans();
+
+            assert.strictEqual(afterFirst, 1, 'exactly one timeout notification expected');
+            assert.strictEqual(context.notifications.length, 1, 'no repeated notifications for the same job');
+            assert.strictEqual(storage.get()[context.PENDING_SCANS_KEY][0].state, 'timeout');
+        });
+
+        it('stops the polling alarm once no job is open any more', async () => {
+            const storage = stubStorage();
+            context.alarmCalls.length = 0;
+            context.alarmCleared.length = 0;
+            await context.upsertPendingScan({
+                sha256: 'b'.repeat(64), partName: '1', attachmentName: 'x.exe',
+                messageId: 2, messageHeaderId: 'h2', state: 'running',
+                attempts: context.SCAN_MAX_ATTEMPTS, startedAt: Date.now()
+            });
+            context.fetch = async () => ({ status: 404, json: async () => ({}) });
+
+            await context.pollPendingScans();
+
+            assert.ok(context.alarmCleared.includes(context.SCAN_ALARM_NAME), 'alarm must be cleared');
+            assert.strictEqual(storage.get()[context.PENDING_SCANS_KEY][0].state, 'timeout');
+        });
+
+        it('substitutes $NAME$ and $VERDICT$ in the fallback notification strings', () => {
+            assert.strictEqual(
+                context.msg('notificationScanTimeout', ['rechnung.pdf']),
+                'No analysis result received in time for: rechnung.pdf'
+            );
+            assert.strictEqual(
+                context.msg('notificationScanFinished', ['rechnung.pdf', 'MALICIOUS']),
+                'Analysis finished: rechnung.pdf - verdict: MALICIOUS'
+            );
+        });
+
+        it('resolves the message header id for one-off scans so results can be stored later', async () => {
+            const storage = stubStorage();
+            context.set_apikey_hybridanalysis('test-key');
+            context.browser.permissions = { contains: async () => true, request: async () => true };
+            context.browser.messages.get = async () => ({ id: 77, headerMessageId: 'hdr-77', author: 'a@example.com', subject: 's' });
+            context.browser.messages.listAttachments = async () => ([
+                { name: 'anhang.exe', contentType: 'application/x-msdownload', size: 128, partName: '1.2' }
+            ]);
+            context.browser.messages.getAttachmentFile = async () => ({
+                slice: () => ({ arrayBuffer: async () => new ArrayBuffer(8) }),
+                type: 'application/x-msdownload'
+            });
+            // Tier 'balanced': unbekannte Anhaenge werden hochgeladen (Upload = zeitverzoegert).
+            context.set_privacyTier('balanced');
+            context.fetch = async (url) => {
+                if (String(url).includes('/overview/')) {
+                    return { status: 404, json: async () => ({}) }; // Datei ist dem Anbieter noch unbekannt
+                }
+                return { status: 200, json: async () => ({ sha256: '1'.repeat(64), submission_id: 's', job_id: 'j' }) };
+            };
+            context.getSharedDB = async () => ({});
+            context.updateStore = async () => {};
+
+            await context.handleRequestScan({ action: 'requestScan', messageId: 77, senderEmail: 'a@example.com' }, { tab: { id: 4 } });
+
+            const jobs = storage.get()[context.PENDING_SCANS_KEY] || [];
+            assert.strictEqual(jobs.length, 1);
+            assert.strictEqual(jobs[0].messageHeaderId, 'hdr-77');
+            assert.strictEqual(jobs[0].messageId, 77);
+        });
+
+        it('finds the display state via the message id even without the tab id', async () => {
+            context.updateDisplayState(99, { mode: 'ready', messageId: 555, threat: { score: 40, reasons: [], authStatus: 'neutral' } });
+
+            let response = null;
+            const listener = context.browser.runtime.onMessage.listeners[0];
+            assert.ok(listener);
+            listener({ action: 'getDisplayState', messageId: 555 }, {}, (res) => { response = res; });
+            await new Promise(resolve => setImmediate(resolve));
+
+            assert.ok(response);
+            assert.strictEqual(response.mode, 'ready');
+            assert.strictEqual(response.threat.score, 40);
+        });
+    });
+
     describe('Manifest V3 port (B1) and consent enforcement (B2)', () => {
         it('defaults to the strict privacy tier (hashes only)', () => {
             assert.strictEqual(context.get_privacyTier(), 'strict');

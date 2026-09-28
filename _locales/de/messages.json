@@ -126,5 +126,8 @@
         "content": "$2"
       }
     }
+  },
+  "bannerStatusDone": {
+    "message": "Analyse abgeschlossen – das Ergebnis wird im Popup angezeigt (Thundy-AV-Button)."
   }
 }

@@ -39,6 +39,31 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.7.1] – 2026-09-28
+
+Ergebnis einer erneuten Pruefung (Audit) des Auslieferungscodes nach 1.7.0.
+
+### Fixed
+
+- **Wiederholte Benachrichtigungen fuer abgelaufene Auftraege.** Zeitueberlaufene oder fehlgeschlagene Auftraege
+  (`timeout`, `failed`) blieben in der Warteschlange und wurden bei jeder Abfrage erneut gemeldet: Nach drei
+  Polling-Runden kamen drei Benachrichtigungen, im Betrieb waere das eine Meldung pro Minute gewesen. Terminale
+  Zustaende werden jetzt nicht mehr abgefragt und nur einmal gemeldet; der Alarm wird beendet, sobald kein offener
+  Auftrag mehr existiert, und abgeschlossene Eintraege werden nach 24 Stunden entfernt.
+- **Nicht ersetzte Platzhalter in Fallback-Texten.** Die Benachrichtigung lautete im Fallback (fehlende oder fremde
+  Sprache) woertlich „No analysis result received in time for: $NAME$“. Der Platzhalter-Ersetzer kennt jetzt auch
+  `$NAME$`, `$VERDICT$`, `$DETAIL$`, `$MIN$` und `$ATTEMPT$` (Hintergrundskript und Banner-Script).
+- **Zeitverzoegerte Ergebnisse gingen im Ein-Klick-Scan verloren.** Beim Scan aus dem Banner wurde der Auftrag ohne
+  `headerMessageId` gespeichert, sodass das spaeter eintreffende Verdikt keinem Nachrichten-Datensatz zugeordnet
+  werden konnte. Die Kennung wird jetzt aufgeloest (Nachrichten-API bzw. zuletzt bekannter Anzeigezustand), und das
+  Ergebnis landet wie vorgesehen im lokalen Cache.
+- **Score-Anzeige im Popup konnte fehlen.** Der Anzeigezustand wurde ausschliesslich ueber die Tab-ID gesucht; je nach
+  Fenster-/Tab-Aufteilung (Nachricht in eigenem Fenster) lief die Suche ins Leere. Die Suche erfolgt jetzt zusaetzlich
+  ueber die Nachrichten-ID.
+- **Irrefuehrende Statuszeile.** Bei leerer Warteschlange zeigte der Banner „Abgeschlossen – Verdikt: -“; jetzt nennt
+  er „Analyse abgeschlossen – Ergebnis im Popup“.
+- Aufraeumen: ungenutzte Konstante `SCAN_STATES` entfernt.
+
 ## [1.7.0] – 2026-09-28
 
 ### Added
