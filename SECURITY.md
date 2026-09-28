@@ -37,8 +37,8 @@ if available – steps to reproduce or a proof of concept.
 
 ## Scope
 
-Relevant: the add-on code in this repository (`background.js`, `db.js`, `api.js`, `options.js`, `popup.html`,
-`content_script.js`, `manifest.json`), its data handling and its permissions.
+Relevant: the add-on code in this repository (`background.js`, `db.js`, `api_gateway.js`, `api.js`, `options.js`,
+`options.html`, `popup.html`, `manifest.json`, `_locales/`), its data handling and its permissions.
 
 Out of scope: vulnerabilities in Thunderbird itself (report these to Mozilla), in third-party analysis services
 (Hybrid Analysis, VirusTotal, urlscan.io, URLhaus, AbuseIPDB) and issues that require an already compromised

@@ -40,9 +40,13 @@ Tests gemockt, es ist kein Netzwerkzugriff nötig.
 node ./scripts/pre-submit-checks.js
 ```
 
-Prüft unter anderem: `manifest.json` vorhanden und `homepage_url` gesetzt, `docs/privacy_policy.md` vorhanden,
-keine verbotenen Permissions (`webRequest`, `<all_urls>`), Host-Origins in HTTPS-Form. Das Skript setzt bei Fehlern
-einen Exit-Code ≠ 0 und lässt damit die CI fehlschlagen.
+Prüft unter anderem: Manifest V3, Name/Version/Beschreibung/`homepage_url`, Add-on-ID, deklarierte und
+**in der richtigen Kantenlänge vorhandene** Icons, `default_locale` samt Katalog und `__MSG_`-Verweise,
+`data_collection_permissions` (kein widersprüchliches `"none"`), verbotene Permissions und MV3-inkompatible Keys,
+valide Match-Patterns in `optional_host_permissions`, referenzierte Dateien (Hintergrundskripte, Optionsseite,
+Popup), Abwesenheit von `install.rdf` sowie Privacy-Policy und Verlinkung auf den Landing-Pages. Ausgabe: eine
+Liste `ok:`/`warning:`/`FAILED:`; bei Fehlern ist der Exit-Code ≠ 0, sodass die CI zuverlässig fehlschlägt.
+Hinweis: Solange echte Screenshots fehlen, erscheint genau eine Warnung (kein Fehler).
 
 ## 5. Lint und Paket bauen
 
@@ -55,7 +59,9 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
   `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-APIs wie `messages.*`
   oder `messageDisplay.*` nicht kennt.
 - `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.zip` (Dateiname aus dem
-  Add-on-Namen). Über `.webextignore` bleiben Testdateien, `docs/`, `scripts/`, `examples/` und Lockfiles außen vor.
+  Add-on-Namen). Die Ausschlüsse für Testdateien, `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und
+  Build-Artefakte stehen in `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`);
+  `node scripts/verify-package.js ./build` prüft anschließend Dateiliste und Größe des Pakets.
 - Signieren für eine Verteilung: `npx web-ext sign --channel unlisted` (selbst verteilen) oder
   `npx web-ext sign --channel listed` (Einreichung im Add-ons Store, benötigt API-Zugangsdaten von
   addons.thunderbird.net).

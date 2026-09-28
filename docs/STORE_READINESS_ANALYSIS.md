@@ -406,7 +406,7 @@ als manuelle Schritte dokumentiert (siehe `docs/STATUS.md`).
 ```bash
 npm ci
 npm run pre-submit-checks      # 0 Fehler, 1 Warnung (fehlende Screenshots)
-npm test                       # alle Unit-Tests grün (386 inkl. Check-Skripte)
+npm test                       # 389 Tests, 0 Fehler (inkl. Tests der Check- und Build-Skripte)
 npx web-ext lint --source-dir . --output json > /tmp/lint.json
 node scripts/filter-lint-warnings.js /tmp/lint.json   # 0 Fehler, 26 bekannte TB-Warnungen
 npx web-ext build --source-dir . --artifacts-dir ./build

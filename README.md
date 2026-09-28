@@ -128,7 +128,8 @@ Temporary add-ons are removed as soon as Thunderbird exits – good for testing,
 Note: a locally built XPI is unsigned. Release builds of Thunderbird refuse unsigned add-ons unless signature
 enforcement is disabled (`about:config` → `xpinstall.signatures.required = false`, not available in all builds); for
 distribution use `npx web-ext sign --channel listed` / `--channel unlisted` or the Add-ons Store signing. Release
-packages are produced with `web-ext build --source-dir .` and cleaned up by the `.webextignore` rules, so that test
+packages are produced with `web-ext build --source-dir .` and cleaned up by the `ignoreFiles` rules in
+`web-ext-config.mjs` (supplemented by `.webextignore`), so that test
 files, `docs/`, `scripts/`, `examples/` and lockfiles are not shipped.
 
 ## Build, lint and test
@@ -146,8 +147,12 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 - `web-ext lint` currently reports **0 errors**. The remaining warnings are almost exclusively `UNSUPPORTED_API`
   notices, because the linter validates against a Firefox target and does not know Thunderbird-only APIs such as
   `messages.*` or `messageDisplay.*`. Review the list before releasing.
-- CI (`.github/workflows/ci.yml`) runs on every push and pull request with Node 22: `npm ci`,
-  `node ./scripts/pre-submit-checks.js`, the unit tests and `npx web-ext lint`.
+- CI (`.github/workflows/ci.yml`) runs on every push and pull request with Node 22: `npm ci`, the pre-submit
+  checks (real exit code), `node --test background.test.js` and `npx web-ext lint`.
+- Extended workflow definitions (full `npm test`, lint filter for the known Thunderbird false positives,
+  XPI build with package verification and a manual signing job) are ready in [docs/ci/](docs/ci/README.md);
+  they could not be committed under `.github/workflows/` in this environment because the token lacks the
+  required `workflows` permission. See [docs/ci/README.md](docs/ci/README.md) for how to apply them.
 - More details: [docs/quickstart.md](docs/quickstart.md).
 
 ## Permissions overview

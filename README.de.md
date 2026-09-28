@@ -130,7 +130,8 @@ Hinweis: Eine lokal gebaute XPI ist unsigniert. Release-Versionen von Thunderbir
 sofern die Signaturprüfung nicht deaktiviert ist (`about:config` → `xpinstall.signatures.required = false`, nicht in
 allen Builds verfügbar); für die Verteilung `npx web-ext sign --channel listed`/`--channel unlisted` oder die
 Store-Signierung nutzen. Release-Pakete entstehen mit `web-ext build --source-dir .` und werden über die
-`.webextignore`-Regeln bereinigt, sodass Testdateien, `docs/`, `scripts/`, `examples/` und Lockfiles nicht
+`ignoreFiles`-Regeln aus `web-ext-config.mjs` (ergänzt durch `.webextignore`) bereinigt, sodass Testdateien,
+`docs/`, `scripts/`, `examples/` und Lockfiles nicht
 mitgeliefert werden.
 
 ## Bauen, Lint und Tests

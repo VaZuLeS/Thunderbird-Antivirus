@@ -37,13 +37,14 @@ abgearbeitet:
 - **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung und Rechte und
   liefert einen echten Exit-Code; der Schritt läuft in der CI.
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission- und MV3-Portierungs-Tests
-  enthalten) und ist grün (385 Tests, 0 Fehler). CI (`.github/workflows/ci.yml`, Node 22) läuft `npm ci`,
-  Pre-Submit-Checks, `npm test`, `web-ext lint` mit Filter bekannter Thunderbird-False-Positives
-  (`scripts/filter-lint-warnings.js`) sowie `web-ext build` mit Paketprüfung (`scripts/verify-package.js`).
-  Die verbesserten Workflow-Definitionen (inkl. manuellem Signier-Job mit `web-ext sign --channel`)
-  liegen einsatzbereit in [`docs/ci/`](ci/README.md); sie konnten in dieser Umgebung nicht unter
-  `.github/workflows/` committed werden, weil das verwendete Token keine `workflows`-Berechtigung hat
-  (GitHub lehnt solche Pushes ab). Übernahme: siehe `docs/ci/README.md`.
+  enthalten) und ist grün (389 Tests, 0 Fehler). Der im Repository aktive Workflow
+  (`.github/workflows/ci.yml`, Node 22) läuft `npm ci`, die Pre-Submit-Checks (jetzt mit echtem Exit-Code),
+  `node --test background.test.js` und `npx web-ext lint`. Die erweiterten Definitionen — vollständiger
+  `npm test`, Lint-Filter für bekannte Thunderbird-False-Positives
+  (`scripts/filter-lint-warnings.js`), `web-ext build` mit Paketprüfung (`scripts/verify-package.js`) und ein
+  manueller Signier-Job (`web-ext sign --channel`) — liegen einsatzbereit in [`docs/ci/`](ci/README.md).
+  Sie konnten in dieser Umgebung nicht unter `.github/workflows/` committed werden, weil das verwendete Token
+  keine `workflows`-Berechtigung besitzt (GitHub lehnt solche Pushes ab). Übernahme: `docs/ci/README.md`.
 - **Dokumente/Policy:** Datenschutzerklärung (`docs/privacy_policy.md`), Reviewer-Hinweise
   (`docs/reviewer_notes.md`), Listing-Entwurf (`docs/store_listing.md`); Live-Policy unter
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html.
