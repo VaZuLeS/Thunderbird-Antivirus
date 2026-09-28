@@ -28,6 +28,47 @@ function escapeHTML(str) {
 
 let apikey_hybridanalysis;
 
+/**
+ * Prüft die Zustimmung zur externen Analyse zum Zeitpunkt des Aufrufs.
+ * Die Zustimmung wird bewusst neu aus dem Speicher gelesen: Nutzer können sie
+ * widerrufen, während das Popup geöffnet ist - danach darf nichts mehr
+ * übertragen werden.
+ */
+async function externalAnalysisAllowed() {
+    try {
+        const stored = await browser.storage.local.get(['externalAnalysisConsent']);
+        return stored.externalAnalysisConsent === true;
+    } catch (error) {
+        console.error('Konnte die Zustimmung nicht lesen:', error);
+        return false;
+    }
+}
+
+async function hasHybridHostPermission() {
+    try {
+        if (browser.permissions && typeof browser.permissions.contains === 'function') {
+            return await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] });
+        }
+    } catch (error) {
+        console.error('Konnte die Host-Berechtigung nicht prüfen:', error);
+    }
+    return false;
+}
+
+/** fetch mit Zeitlimit; fällt ohne AbortController-Unterstützung auf fetch zurück. */
+async function apiFetch(url, options = {}, timeout = 15000) {
+    if (typeof AbortController !== 'function') {
+        return fetch(url, options);
+    }
+    const controller = new AbortController();
+    const timerId = setTimeout(() => controller.abort(), timeout);
+    try {
+        return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+        clearTimeout(timerId);
+    }
+}
+
 (async () => {
 let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
@@ -81,6 +122,7 @@ if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages
 // Popup sichtbar sein, bevor der Nutzer Uploads auslöst.
 const settings = await browser.storage.local.get(['externalAnalysisConsent']);
 const externalAnalysisConsent = settings.externalAnalysisConsent === true;
+
 
 if (!message) {
     let container = document.getElementById('hybrid_analysis_api_content');
@@ -525,9 +567,24 @@ async function fetch_hybrid_report(hybrid_sha) {
         },
     };
 
+    // Der Cache-Eintrag wird bewusst synchron angelegt, damit parallele Aufrufe
+    // denselben Request teilen. Die Zustimmungs- und Berechtigungsprüfung liegt
+    // innerhalb der Promise, damit sie den Zeitpunkt des Aufrufs widerspiegelt:
+    // Wurde die Zustimmung widerrufen, wird der Hash nicht übertragen.
     const fetchPromise = (async () => {
         try {
-            const response = await fetch(options.url, options);
+            if (!(await externalAnalysisAllowed())) {
+                const error = new Error('Externe Analyse ist in den Einstellungen nicht freigegeben - es wurde nichts übertragen.');
+                error.code = 'EXTERNAL_ANALYSIS_DISABLED';
+                throw error;
+            }
+            if (!(await hasHybridHostPermission())) {
+                const error = new Error('Host-Berechtigung für hybrid-analysis.com wurde nicht erteilt.');
+                error.code = 'PERMISSION_DENIED';
+                throw error;
+            }
+
+            const response = await apiFetch(options.url, options);
             const json_data = await response.json();
 
             const result = { response, json_data };
@@ -685,6 +742,12 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
             handle_hybrid_report_error(response, attachmentName, targetContainer);
         }
     } catch (error) {
+        if (error && (error.code === 'EXTERNAL_ANALYSIS_DISABLED' || error.code === 'PERMISSION_DENIED')) {
+            // Der Hinweis auf fehlende Zustimmung/Berechtigung wird bereits oben im
+            // Popup angezeigt; hier keinen zusätzlichen Fehler ausgeben.
+            console.log('Thundy AV: Analysebericht wird nicht geladen -', error.message);
+            return;
+        }
         handle_hybrid_report_fetch_error(error, attachmentName, targetContainer);
     }
 }

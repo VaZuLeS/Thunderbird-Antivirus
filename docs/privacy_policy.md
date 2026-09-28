@@ -172,7 +172,13 @@ Zugriffsrechte des Betriebssystem-Benutzerkontos und die Zugriffskontrolle des T
 
 - Scan-Ergebnisse je Nachricht (Verdikt, Status, Kennungen der Analyse, Zeitstempel),
 - Link-Metadaten (geprüfte URLs und deren Status),
-- Zuordnungen zu Nachrichten über die Message-ID bzw. Header-ID.
+- Zuordnungen zu Nachrichten über die Message-ID bzw. Header-ID,
+- Nachrichten-Metadaten, die zur Anzeige im Popup gespeichert werden (Absenderadresse, Betreff,
+  Dateiname und SHA-256-Hash der geprüften Anhänge sowie der Teilename innerhalb der Nachricht).
+
+Diese Nachrichten-Metadaten verbleiben ausschließlich lokal und werden nicht an die Analyse-Anbieter
+übermittelt; übertragen werden nur die in Abschnitt 3 genannten Datensätze (Hashes, Anhänge, URLs,
+Domains, IP-Adressen) - und nur bei aktiver Zustimmung.
 
 Anhangsinhalte werden nicht dauerhaft in dieser Datenbank gespeichert.
 
@@ -408,7 +414,13 @@ account and by the Thunderbird profile's access control.
 
 - scan results per message (verdict, status, analysis identifiers, timestamps),
 - link metadata (checked URLs and their status),
-- mappings to messages via Message-ID or header ID.
+- mappings to messages via Message-ID or header ID,
+- message metadata stored for the popup (sender address, subject, file name and SHA-256 hash of the
+  checked attachments, and the MIME part name inside the message).
+
+This message metadata stays local and is not transmitted to the analysis providers; only the data
+listed in section 3 (hashes, attachments, URLs, domains, IP addresses) is transmitted - and only
+while consent is active.
 
 Attachment contents are not stored permanently in this database.
 

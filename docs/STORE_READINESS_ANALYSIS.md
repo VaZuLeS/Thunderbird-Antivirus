@@ -417,3 +417,75 @@ cp docs/ci/ci.yml .github/workflows/ci.yml
 cp docs/ci/release.yml .github/workflows/release.yml
 
 ```
+
+---
+
+## 9. Nachaudit (zweiter Durchgang nach der Umsetzung)
+
+Nach Abschluss der Phasen 0–3 wurde der Auslieferungscode erneut vollständig geprüft — diesmal mit Fokus
+auf die *neu hinzugekommenen* Pfade (Consent-Gate, i18n, Build-/Paket-Gates) und auf die Frage, ob die
+Dokumentation exakt zum Verhalten passt. Ergebnis: **zwei neue Befunde, beide behoben.**
+
+### NA-1 (Blocker, behoben) — Consent-Bypass im Popup (`api.js`)
+
+`fetch_hybrid_report()` hat den Bericht für einen Anhang **direkt** von `https://hybrid-analysis.com` geladen
+(`api.js:525ff`, `fetch` ohne Zeitlimit), ohne die globale Zustimmung oder die Host-Berechtigung zu prüfen.
+Die Zustimmung wurde nur für den Hinweistext ausgelesen. Damit wurden nach einem Widerruf der Zustimmung
+weiterhin Hashes übertragen, sobald das Popup für eine Nachricht mit lokal gespeicherten Scan-Ergebnissen
+geöffnet wurde — im Widerspruch zu Policy §3.1/§4 („ohne Zustimmung werden keine Daten übermittelt“).
+
+**Fix:** `externalAnalysisAllowed()` (liest die Zustimmung bei **jedem** Aufruf neu aus dem Speicher) und
+`hasHybridHostPermission()` als Top-Level-Funktionen in `api.js`; der Cache-Eintrag wird weiterhin synchron
+angelegt, damit parallele Aufrufe denselben Request teilen. Fehlende Zustimmung/Berechtigung führt zu den
+Fehlercodes `EXTERNAL_ANALYSIS_DISABLED` / `PERMISSION_DENIED`, ohne zusätzlichen Fehlerbanner (der
+Hinweis-Banner im Popup erklärt die Situation).
+
+**Nebenbefund aus dem Fix:** Die Helfer lagen zunächst *innerhalb* der Init-IIFE von `api.js` und waren für
+`fetch_hybrid_report()` (Top-Level) nicht sichtbar — im echten Popup hätte das einen `ReferenceError` ausgelöst.
+Die Unit-Tests haben das aufgedeckt; die Funktionen liegen jetzt auf Top-Level.
+
+**Tests:** drei neue Tests im Suite „get_hybrid_report_by_sha256“ (keine Übertragung bei widerrufener
+Zustimmung, keine Übertragung ohne Host-Berechtigung, Prüfung erfolgt zum Aufrufzeitpunkt statt nur beim
+Popup-Start).
+
+### NA-2 (niedrig, behoben) — Datei-Upload ohne Zeitlimit
+
+`handle_unknown_attachment()` hat den Anhang mit direktem `fetch()` hochgeladen und damit als einziger
+Provider-Aufruf das `ApiGateway` umgangen (kein Timeout/Abort, abweichende Header-Logik).
+**Fix:** `apiGateway.fetchWithTimeout(url, options, 60000)` — konsistent zu `handleManualUpload`.
+
+### NA-3 (Dokumentationslücke, behoben) — lokal gespeicherte Nachrichten-Metadaten
+
+Die IndexedDB-Einträge enthalten neben Scan-Ergebnissen und Link-Metadaten auch **Absenderadresse,
+Betreff, Dateiname und SHA-256-Hash** der geprüften Anhänge (`background.js:1630–1716`). Die
+Datenschutzerklärung nannte diese Felder nicht.
+**Fix:** Abschnitt 8 der Datenschutzerklärung (DE und EN) listet sie jetzt ausdrücklich auf und stellt klar,
+dass sie ausschließlich lokal bleiben; die Reviewer Notes wurden entsprechend präzisiert.
+
+### Was der Nachaudit bestätigt hat
+
+- **Vollständigkeit der Gates:** Alle 13 Provider-Aufrufe im Auslieferungscode sind entweder durch das globale
+  Consent-Gate (`assertExternalAnalysisAllowed()`/`mayTransmitExternally()`) oder durch eine übergeordnete
+  Prüfung abgedeckt; kein `fetch` in `options.js`, `db.js` oder den HTML-Seiten.
+- **Konsistenz Doku ↔ Code:** Die Aussage „Unabhängig von der Datenschutz-Stufe … urlscan.io/URLhaus/IP-Reputation
+  nur mit Schlüssel und Zustimmung“ (Policy §3.3) entspricht dem Code (`handleCheckLinkState`, `checkURLhausDomains`,
+  `checkIPReputation`). Die Tier-Tabelle meint ausschließlich die Hybrid-Analysis-Uploads.
+- **Keine Secrets, kein Remote-Code:** kein `eval`, kein `new Function`, keine Remote-Skripte, keine
+  Zugangsdaten im Repository; API-Schlüssel ausschließlich lokal und nur in HTTPS-Headern an den jeweiligen Anbieter.
+- **Keine Protokollierung sensibler Werte** (Suche nach API-Key-/Text-/Hash-Ausgaben in `Logger`/`console`).
+
+### Verifikation nach dem Nachaudit
+
+```bash
+npm run pre-submit-checks   # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm test                    # 392 Tests, 0 Fehler
+web-ext lint + Filter       # 0 Fehler, 26 bekannte TB-False-Positives
+web-ext build + verify      # 17 Dateien, ~179 KB, Inhalt valide
+```
+
+### Unverändert offen (nur manuell möglich)
+
+1. Live-Test in Thunderbird 140 ESR (Banner-Injektion, `message_display_action`-Kontextmenü, Time-of-Click,
+   `permissions.request()` aus dem Banner, `contexts: ["link"]`).
+2. Echte PNG-Screenshots für das Listing.
+3. Signierung und Einreichung bei addons.thunderbird.net.

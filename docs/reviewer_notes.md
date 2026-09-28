@@ -77,6 +77,18 @@ own options dialog (checkbox "Allow external analysis") together with the per-se
 message-view banner. No data is transmitted before the user has enabled both the global consent and
 triggered a scan.
 
+Enforcement is centralised and can be verified in two places:
+
+- `background.js`: `mayTransmitExternally()` / `assertExternalAnalysisAllowed()` guard every provider
+  request (attachment and URL uploads, hash, domain and IP lookups). Calls without consent fail with
+  the error code `EXTERNAL_ANALYSIS_DISABLED`.
+- `api.js` (popup): `externalAnalysisAllowed()` and `hasHybridHostPermission()` are evaluated at call
+  time before a report is requested. This matters for messages whose scan results are already stored
+  locally: if the user revokes consent, opening the popup no longer transmits even the stored hash.
+
+Both checks are covered by unit tests (see `npm test`, suites "Manifest V3 port (B1) and consent
+enforcement (B2)" and "get_hybrid_report_by_sha256").
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,
@@ -109,7 +121,7 @@ What is **not** transmitted, regardless of tier:
 | Location | Content | Notes |
 |---|---|---|
 | `browser.storage.local` | settings, consent flags (`externalAnalysisConsent`, `scanningEnabledSenders`), API keys | stored unencrypted (plain local storage of Thunderbird); no remote copy |
-| IndexedDB `thunderbird_av`, version 3, object store `hybridanalysis` | scan results per message (verdict, status, analysis IDs, timestamps), link metadata, mapping via Message-ID/header ID | no attachment contents |
+| IndexedDB `thunderbird_av`, version 3, object store `hybridanalysis` | scan results per message (verdict, status, analysis IDs, timestamps), link metadata, mapping via Message-ID/header ID, plus sender address/subject/file name/hash for the popup view | no attachment contents, nothing transmitted |
 
 Deletion during review: the **"Clear cache"** button in the options dialog empties the object store
 `hybridanalysis`. Removing the add-on removes all local extension data. The add-on operates no

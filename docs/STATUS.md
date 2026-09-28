@@ -37,7 +37,7 @@ abgearbeitet:
 - **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung und Rechte und
   liefert einen echten Exit-Code; der Schritt läuft in der CI.
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission- und MV3-Portierungs-Tests
-  enthalten) und ist grün (389 Tests, 0 Fehler). Der im Repository aktive Workflow
+  enthalten) und ist grün (392 Tests, 0 Fehler). Der im Repository aktive Workflow
   (`.github/workflows/ci.yml`, Node 22) läuft `npm ci`, die Pre-Submit-Checks (jetzt mit echtem Exit-Code),
   `node --test background.test.js` und `npx web-ext lint`. Die erweiterten Definitionen — vollständiger
   `npm test`, Lint-Filter für bekannte Thunderbird-False-Positives
@@ -45,6 +45,12 @@ abgearbeitet:
   manueller Signier-Job (`web-ext sign --channel`) — liegen einsatzbereit in [`docs/ci/`](ci/README.md).
   Sie konnten in dieser Umgebung nicht unter `.github/workflows/` committed werden, weil das verwendete Token
   keine `workflows`-Berechtigung besitzt (GitHub lehnt solche Pushes ab). Übernahme: `docs/ci/README.md`.
+- **Nachaudit (nach der Umsetzung):** Ein zweiter Durchgang über den Auslieferungscode hat zwei Lücken gefunden und behoben -
+  (1) `api.js` (Popup) hat den Analysebericht ohne Zustimmungs-/Berechtigungsprüfung direkt geladen und damit den Hash
+  übertragen (jetzt über `externalAnalysisAllowed()` + `hasHybridHostPermission()` gekapselt, mit Tests),
+  (2) der Datei-Upload in `background.js` lief am `ApiGateway` vorbei (kein Zeitlimit) und nutzt jetzt ebenfalls
+  `apiGateway.fetchWithTimeout(..., 60000)`. Die Nachaudit-Befunde stehen in
+  [docs/STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md), Abschnitt 9.
 - **Dokumente/Policy:** Datenschutzerklärung (`docs/privacy_policy.md`), Reviewer-Hinweise
   (`docs/reviewer_notes.md`), Listing-Entwurf (`docs/store_listing.md`); Live-Policy unter
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html.

@@ -36,7 +36,7 @@ describe('escapeHTML', () => {
             indexedDB: {
                 open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null })
             },
-            console: { log: () => {}, error: () => {} }, // Mock console to avoid noisy logs
+            console: { log: () => {}, error: () => {}, info: () => {} }, // Mock console to avoid noisy logs
             fetch: async () => ({ status: 200, json: async () => ({}) }),
             setTimeout: setTimeout,
             String: String,
@@ -441,8 +441,12 @@ describe('get_hybrid_report_by_sha256', () => {
             browser: {
                 storage: {
                     local: {
-                        get: async () => ({ apikey: 'test' })
+                        get: async () => ({ apikey: 'test', externalAnalysisConsent: true })
                     }
+                },
+                permissions: {
+                    contains: async () => true,
+                    request: async () => true
                 },
                 tabs: {
                     query: async () => [{ id: 1 }]
@@ -451,6 +455,8 @@ describe('get_hybrid_report_by_sha256', () => {
                     getDisplayedMessage: async () => ({ headerMessageId: '123', subject: 'test', author: 'author' })
                 }
             },
+            AbortController: globalThis.AbortController,
+            clearTimeout: globalThis.clearTimeout,
             document: {
                 createTextNode: (text) => ({ textContent: text, outerHTML: text }),
                 createElement: (tag) => ({
@@ -539,7 +545,7 @@ tag: tag,
             indexedDB: {
                 open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null })
             },
-            console: { log: () => {}, error: () => {} }, // Mock console to avoid noisy logs
+            console: { log: () => {}, error: () => {}, info: () => {} }, // Mock console to avoid noisy logs
             fetch: null, // Will be overridden in each test
             setTimeout: setTimeout,
             String: String,
@@ -561,6 +567,53 @@ tag: tag,
         vm.runInContext(wrappedCode, context);
 
         get_hybrid_report_by_sha256 = context.get_hybrid_report_by_sha256;
+    });
+
+    it('does not transmit the hash when the external analysis consent is revoked', async () => {
+        let fetchCalls = 0;
+        context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+        const originalGet = context.browser.storage.local.get;
+        context.browser.storage.local.get = async () => ({ apikey: 'test', externalAnalysisConsent: false });
+
+        try {
+            await get_hybrid_report_by_sha256({ hybrid_sha: 'no_consent_sha', attachmentName: 'test.txt' });
+        } finally {
+            context.browser.storage.local.get = originalGet;
+        }
+
+        assert.strictEqual(fetchCalls, 0, 'without consent nothing may be transmitted');
+    });
+
+    it('does not transmit the hash when the host permission is missing', async () => {
+        let fetchCalls = 0;
+        context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+        const originalContains = context.browser.permissions.contains;
+        context.browser.permissions.contains = async () => false;
+
+        try {
+            await get_hybrid_report_by_sha256({ hybrid_sha: 'no_permission_sha', attachmentName: 'test.txt' });
+        } finally {
+            context.browser.permissions.contains = originalContains;
+        }
+
+        assert.strictEqual(fetchCalls, 0, 'without host permission nothing may be transmitted');
+    });
+
+    it('checks the consent at call time, not only at popup start', async () => {
+        let fetchCalls = 0;
+        context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+
+        await get_hybrid_report_by_sha256({ hybrid_sha: 'consent_sha', attachmentName: 'test.txt' });
+        assert.strictEqual(fetchCalls, 1, 'with consent the report request is sent');
+
+        const originalGet = context.browser.storage.local.get;
+        context.browser.storage.local.get = async () => ({ apikey: 'test', externalAnalysisConsent: false });
+        try {
+            await get_hybrid_report_by_sha256({ hybrid_sha: 'consent_sha_2', attachmentName: 'test.txt' });
+        } finally {
+            context.browser.storage.local.get = originalGet;
+        }
+        assert.strictEqual(fetchCalls, 1, 'after revoking consent no further request is sent');
     });
 
     it('injects Netzwerkfehler message on fetch network failure', async () => {
@@ -1082,7 +1135,8 @@ describe('renderManualUrlScanUI', () => {
         // Create mock environment
         context = {
             browser: {
-                storage: { local: { get: async () => ({ apikey: 'test' }) } },
+                storage: { local: { get: async () => ({ apikey: 'test', externalAnalysisConsent: true }) } },
+                permissions: { contains: async () => true, request: async () => true },
                 tabs: { query: async () => [{ id: 1 }] },
                 messageDisplay: { getDisplayedMessage: async () => ({ headerMessageId: '123', subject: 'test', author: 'author' }) },
                 runtime: { sendMessage: async () => ({ status: 'success' }) }
@@ -1196,7 +1250,7 @@ describe('renderManualUrlScanUI', () => {
                 }
             },
             indexedDB: { open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null }) },
-            console: { log: () => {}, error: () => {} },
+            console: { log: () => {}, error: () => {}, info: () => {} },
             setTimeout: (cb, delay) => {
                 if (!context.timeouts) context.timeouts = [];
                 context.timeouts.push({ cb, delay });
@@ -1397,7 +1451,7 @@ describe('renderVirusTotalStats', () => {
                     };
                 }
             },
-            console: { log: () => {}, error: () => {} },
+            console: { log: () => {}, error: () => {}, info: () => {} },
             String: String,
             Array: Array
         };
@@ -1523,7 +1577,7 @@ describe('renderScannerResults', () => {
                     };
                 }
             },
-            console: { log: () => {}, error: () => {} },
+            console: { log: () => {}, error: () => {}, info: () => {} },
             String: String,
             Array: Array
         };
@@ -1605,7 +1659,7 @@ describe('renderFileDetails', () => {
                     };
                 }
             },
-            console: { log: () => {}, error: () => {} }
+            console: { log: () => {}, error: () => {}, info: () => {} }
         };
 
         vm.createContext(context);
@@ -2042,9 +2096,10 @@ describe('fetch_hybrid_report', () => {
         context = {
             browser: {
                 tabs: { query: async () => [{ id: 1 }] },
-                storage: { local: { get: async () => ({ apikey: 'test' }) } }
+                storage: { local: { get: async () => ({ apikey: 'test', externalAnalysisConsent: true }) } },
+                permissions: { contains: async () => true, request: async () => true }
             },
-            console: { log: () => {}, error: () => {} },
+            console: { log: () => {}, error: () => {}, info: () => {} },
             fetch: async () => ({ status: 200, json: async () => ({}) }),
             setTimeout: setTimeout,
             String: String,
@@ -2614,7 +2669,7 @@ describe('createUploadButton', () => {
             get_hybrid_report_by_sha256: function(opts) {
                 context.lastReportArgs = [opts];
             },
-            console: { log: () => {}, error: () => {} },
+            console: { log: () => {}, error: () => {}, info: () => {} },
             String: String, Array: Array
         };
 
@@ -2847,7 +2902,7 @@ describe('handleUrlScanClick', () => {
                 context.lastReportArgs = context.lastReportArgs || [];
                 context.lastReportArgs.push(opts);
             },
-            console: { log: () => {}, error: () => {} },
+            console: { log: () => {}, error: () => {}, info: () => {} },
             String: String, Array: Array
         };
 
@@ -2998,7 +3053,7 @@ describe('renderActionButtons', () => {
                     return el;
                 }
             },
-            console: { log: () => {}, error: () => {} },
+            console: { log: () => {}, error: () => {}, info: () => {} },
             String: String,
             Array: Array
         };

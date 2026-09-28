@@ -1444,7 +1444,7 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
 
             const uploadOptions = getHybridAnalysisOptions('POST', formData);
             uploadOptions.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
-            const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
+            const uploadResponse = await apiGateway.fetchWithTimeout(uploadOptions.url, uploadOptions, 60000);
             if (uploadResponse.status === 200 || uploadResponse.status === 201) {
                 const uploadData = await uploadResponse.json();
                 const hybridData = HybridDataBuilder.create(
