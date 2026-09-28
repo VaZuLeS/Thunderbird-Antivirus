@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
         'alwaysManual', 'autoScanLinks', 'timeOfClickProtection',
         'privacyTier', 'customWhitelist', 'customBlacklist',
-        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'viewMode', 'historyEnabled', 'historyLimit', 'webhookEnabled', 'webhookUrl', 'webhookSecret'
+        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'viewMode', 'historyEnabled', 'historyLimit', 'webhookEnabled', 'webhookUrl', 'webhookSecret', 'linkGuardMode', 'linkGuardTarget'
     ]).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
@@ -37,6 +37,8 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('webhookEnabled').checked = result.webhookEnabled === true;
       document.getElementById('webhookUrl').value = result.webhookUrl || '';
       document.getElementById('webhookSecret').value = result.webhookSecret || '';
+      document.getElementById('linkGuardMode').value = ['off', 'hint', 'confirm'].includes(result.linkGuardMode) ? result.linkGuardMode : 'hint';
+      document.getElementById('linkGuardTarget').value = result.linkGuardTarget === 'popup' ? 'popup' : 'inline';
 
       const alwaysManualCheckbox = document.getElementById('alwaysManual');
       const privacyTierSelect = document.getElementById('privacyTier');
@@ -123,6 +125,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let webhookEnabledSetting = document.getElementById('webhookEnabled').checked;
     let webhookUrlSetting = document.getElementById('webhookUrl').value.trim();
     let webhookSecretSetting = document.getElementById('webhookSecret').value.trim();
+    let linkGuardModeSetting = document.getElementById('linkGuardMode').value;
+    let linkGuardTargetSetting = document.getElementById('linkGuardTarget').value;
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
@@ -142,7 +146,9 @@ document.addEventListener('DOMContentLoaded', function() {
         historyLimit: historyLimitSetting,
         webhookEnabled: webhookEnabledSetting,
         webhookUrl: webhookUrlSetting,
-        webhookSecret: webhookSecretSetting
+        webhookSecret: webhookSecretSetting,
+        linkGuardMode: linkGuardModeSetting,
+        linkGuardTarget: linkGuardTargetSetting
     }).then(async () => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
@@ -463,6 +469,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const field = document.getElementById(id);
         if (field) field.addEventListener('change', loadHistory);
     });
+
+    const guardModeSelect = document.getElementById('linkGuardMode');
+    if (guardModeSelect) {
+        guardModeSelect.addEventListener('change', function() {
+            const hint = document.getElementById('linkGuardHelp');
+            if (!hint) return;
+            hint.textContent = guardModeSelect.value === 'confirm'
+                ? 'Blockieren aktiv: Links werden erst nach einer Prüfung geöffnet. Bestätigung erfolgt ' +
+                  (document.getElementById('linkGuardTarget').value === 'popup' ? 'im Add-on-Popup.' : 'inline im Tooltip.')
+                : (guardModeSelect.value === 'hint'
+                    ? 'Hinweis aktiv: Beim Überfahren zeigt der Tooltip Ziel-Domain, Merkmale und Prüfstand; der Klick bleibt erlaubt.'
+                    : 'Link-Schutz ist ausgeschaltet.');
+        });
+    }
 
     loadRulesIntoEditor();
 });

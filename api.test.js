@@ -3964,6 +3964,55 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         assert.ok(!labels.some(label => /Alle Links pruefen/.test(label)), 'no bulk scan without consent');
     });
 
+    it('renders the link list with check and open-after-check actions', async () => {
+        const insights = {
+            indicators: {
+                urls: ['https://evil.example/a'], urlAnalyses: [
+                    { url: 'https://evil.example/a', host: 'evil.example', registrableDomain: 'evil.example',
+                      decodedHost: null, flags: ['Tracking-Parameter: utm_source'] }
+                ],
+                domains: [], registrableDomains: [], ips: [], emails: [], hashes: [], messageIds: [], mailServers: [],
+                counts: {}
+            }
+        };
+        const { context, sent } = createHarness({
+            viewMode: 'business',
+            onMessage: (message) => {
+                if (message.action === 'getMessageInsights') return { status: 'success', insights };
+                if (message.action === 'getLinkGuardSettings') return { status: 'success', mode: 'confirm', target: 'popup' };
+                if (message.action === 'evaluateLink') {
+                    return { status: 'success', evaluation: { verdict: 'KNOWN_MALICIOUS', flags: ['Als bösartig bekannt'] } };
+                }
+                if (message.action === 'openLinkAfterCheck') return { status: 'success', tabId: 5, verdict: 'KNOWN_MALICIOUS' };
+                return undefined;
+            }
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        await context.renderLinkList({ id: 1, headerMessageId: 'h1' }, container, 'business');
+
+        const card = context.document.getElementById('thundy-link-list');
+        assert.ok(card, 'link list expected');
+        assert.match(card.textContent, /Links dieser Nachricht/);
+        assert.match(card.textContent, /evil\.example/);
+        assert.match(card.textContent, /Tracking-Parameter: utm_source/);
+        assert.match(card.textContent, /Link-Schutz aktiv/);
+
+        const checkButton = Array.from(card.querySelectorAll('button')).find(button => button.textContent === 'Prüfen');
+        checkButton.click();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.ok(sent.some(message => message.action === 'evaluateLink'));
+        assert.match(card.textContent, /KNOWN_MALICIOUS/);
+
+        const openButton = Array.from(card.querySelectorAll('button')).find(button => /Öffnen nach Prüfung/.test(button.textContent));
+        openButton.click();
+        await new Promise(resolve => setImmediate(resolve));
+        const openMessage = sent.find(message => message.action === 'openLinkAfterCheck');
+        assert.ok(openMessage, 'open after check must be requested');
+        assert.strictEqual(openMessage.headerMessageId, 'h1');
+        assert.match(card.textContent, /Geöffnet/);
+    });
+
     it('renders the local score together with its reasons', async () => {
         const { context } = createHarness({
             displayState: { mode: 'ready', threat: { score: 70, reasons: ['Link-Domain weicht ab.', 'SPF fehlgeschlagen.'], authStatus: 'fail' } },

@@ -186,6 +186,23 @@ The researcher panel adds locally computed forensics:
   Each submission is logged in the local history (including a batch summary).
 - **Burst detection** is computed from the local history when the statistics are opened.
 
+### 3.11 Link guard (time-of-click)
+
+A dedicated script (`messageDisplay/link-guard.js`) is injected into **all frames** of the message display (the message
+body lives in its own frame). Modes (`linkGuardMode`):
+
+- `off` - no decoration, clicks behave normally.
+- `hint` - hovering a link shows a tooltip with target/host/registrable domain, decoded punycode host, anomalies
+  (credentials in the URL, IP host, many subdomains, tracking parameters) and the check status; clicks stay allowed.
+- `confirm` - the click is intercepted (`preventDefault`) and the link is only opened after the user explicitly
+  confirms, either **inline** in the tooltip or in the **add-on popup** (`linkGuardTarget`).
+
+Data handling: the tooltip is filled by `evaluateLink`, which only reads local data (`analyzeUrl`, custom rules, the
+local IndexedDB link records). Opening is done via `openLinkAfterCheck`, which re-checks the link, refuses anything
+blocked by a custom rule (`BLOCKED_BY_RULE`) and then opens a Thunderbird content tab - it never contacts a provider.
+Every opening is logged in the local history (`link-opened`). Both settings can be pinned by administrators and are
+reported by the self test.
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,

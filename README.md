@@ -173,6 +173,14 @@ All of it is computed locally; nothing is transmitted.
 - **Bulk link check** (opt-in, require consent + API key; hidden otherwise) and **findings CSV export**.
 - **Burst detection:** many entries for the same sender within ten minutes are flagged in the statistics.
 
+### Link guard (time-of-click)
+
+- Three modes: `off`, `hint` (hover tooltip with target, domain, decoded punycode host, anomalies, check status) and
+  `confirm`, which intercepts the click and only opens the link after an explicit check.
+- Confirmation either **inline** (tooltip next to the link) or in the **add-on popup**; the popup lists every link of
+  the message with its status and an "Open after check" button.
+- Links blocked by a custom rule are never opened; every opening is recorded in the local history.
+
 ### Localization and branding
 
 - **Localization:** the add-on ships German and English (125 keys each) in `_locales/`. Thunderbird picks the

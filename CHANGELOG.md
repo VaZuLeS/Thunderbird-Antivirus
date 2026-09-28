@@ -39,6 +39,33 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.15.0] – 2026-09-28
+
+### Fixed
+
+- **Time-of-Click-Hinweise funktionierten nicht.** Der Nachrichtentext liegt bei Thunderbird in einem eigenen Frame; das
+  Hinweis-Script wurde aber nur im oberen Dokument eingefuegt und erreichte die Links daher nie. Der Link-Guard wird jetzt
+  mit `allFrames: true` injiziert (Registrierung und Fallback), und die Diagnose zeigt an, in wie vielen Frames das Script
+  aktiv ist. Zusaetzlich war der Bestaetigungspfad fehlerhaft (synchroner Aufruf mit `.then()`), was im Blockiermodus eine
+  Ausnahme ausgeloest haette.
+
+### Added
+
+- **Link-Guard mit drei Modi** (`linkGuardMode`): `off`, `hint` (Tooltip mit Zusatzinformationen, Klick erlaubt) und
+  `confirm` (**Klick wird abgefangen**, Freigabe erst nach Pruefung).
+- **Zwei Bestaetigungswege** (`linkGuardTarget`): **inline** (Tooltip direkt am Link, mit „Pruefen“ und „Oeffnen nach
+  Pruefung“) oder **im Add-on-Popup** (Klick oeffnet das Popup, geoeffnet wird dort).
+- **Tooltip mit echter Zusatzinformation:** Ziel, Host, registrierbare Domain, dekodierter IDN-Host (Punycode),
+  Merkmale (Zugangsdaten in der URL, IP-Host, viele Subdomains, Tracking-Parameter) und Pruefstand (bekannt
+  unauffaellig / als boesartig bekannt / durch eigene Regel blockiert / unbekannt).
+- **Link-Liste im Popup:** alle Links der Nachricht mit Domain, Merkmalen und Pruefstand sowie den Aktionen „Pruefen“
+  und „Oeffnen nach Pruefung“ - der Weg, der fuer die Popup-Bestaetigung gebraucht wird.
+- **Freigabe-Gedaechtnis:** Nach einer Freigabe laesst der Guard denselben Link durch (kein zweiter Dialog).
+- **Verlauf:** Jedes Oeffnen wird als `link-opened` protokolliert (inkl. Verdikt), Blockaden durch eigene Regeln werden
+  verweigert (Fehlercode `BLOCKED_BY_RULE`).
+- Der Link-Guard ist ueber die Enterprise-Policy erzwingbar (`linkGuardMode`, `linkGuardTarget`) und in der Diagnose
+  sichtbar.
+
 ## [1.14.0] – 2026-09-28
 
 ### Added

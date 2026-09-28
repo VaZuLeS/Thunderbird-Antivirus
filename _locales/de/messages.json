@@ -284,6 +284,30 @@
   "opt.diagnostics.idle": {
     "message": "Noch nicht ausgeführt."
   },
+  "opt.guard.confirm": {
+    "message": "Blockieren bis zur Pruefung (Klick wird abgefangen)"
+  },
+  "opt.guard.help": {
+    "message": "Im Modus \"Blockieren\" wird ein Link erst nach einer Pruefung geoeffnet - inline im Tooltip oder ueber das Add-on-Popup."
+  },
+  "opt.guard.hint": {
+    "message": "Hinweis (Zusatzinformationen bei Maus-Over, Klick erlaubt)"
+  },
+  "opt.guard.mode.label": {
+    "message": "Link-Schutz beim Klick (Time-of-Click):"
+  },
+  "opt.guard.off": {
+    "message": "Aus (Links verhalten sich normal)"
+  },
+  "opt.guard.target.inline": {
+    "message": "Inline (Tooltip direkt am Link)"
+  },
+  "opt.guard.target.label": {
+    "message": "Bestaetigung erfolgt:"
+  },
+  "opt.guard.target.popup": {
+    "message": "Im Add-on-Popup (Nachricht mit Button oeffnen)"
+  },
   "opt.h3.about": {
     "message": "Was ist Hybrid-Analysis.com?"
   },
@@ -454,6 +478,30 @@
   },
   "popup.heading": {
     "message": "Thundy AV – Sicherheitsprüfung"
+  },
+  "popup.links.check": {
+    "message": "Pruefen"
+  },
+  "popup.links.guardConfirm": {
+    "message": "Link-Schutz aktiv: Links im Nachrichtentext werden erst nach der Freigabe geoeffnet."
+  },
+  "popup.links.guardHint": {
+    "message": "Tipp: In den Einstellungen kann der Link-Schutz auf \"Blockieren bis zur Pruefung\" gestellt werden."
+  },
+  "popup.links.open": {
+    "message": "Oeffnen nach Pruefung"
+  },
+  "popup.links.opened": {
+    "message": "Geoeffnet - bitte im geoeffneten Tab pruefen."
+  },
+  "popup.links.opening": {
+    "message": "Oeffne..."
+  },
+  "popup.links.title": {
+    "message": "Links dieser Nachricht (Pruefung vor dem Oeffnen):"
+  },
+  "popup.links.unchecked": {
+    "message": "Noch nicht geprueft"
   },
   "popup.loading": {
     "message": "Lade Analyseergebnisse..."

@@ -20,6 +20,8 @@ const KNOWN_THUNDERBIRD_FALSE_POSITIVES = [
   'messages.getAttachmentFile',
   'messages.query',
   'scripting.messageDisplay',
+  // Thunderbird dokumentiert openPopup fuer die messageDisplayAction (der Firefox-Linter kennt sie nicht)
+  'message_display_action.openPopup',
   'alarms'
 ];
 

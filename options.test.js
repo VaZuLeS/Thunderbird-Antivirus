@@ -25,6 +25,9 @@ describe('options.js', () => {
                     <input type="checkbox" id="alwaysManual">
                     <input type="checkbox" id="autoScanLinks">
                     <input type="checkbox" id="timeOfClickProtection">
+                    <select id="linkGuardMode"><option value="off">off</option><option value="hint">hint</option><option value="confirm">confirm</option></select>
+                    <select id="linkGuardTarget"><option value="inline">inline</option><option value="popup">popup</option></select>
+                    <small id="linkGuardHelp"></small>
                     <input type="checkbox" id="externalAnalysisConsent">
                     <select id="ipReputationProvider"><option value="none">none</option><option value="abuseipdb">abuseipdb</option><option value="virustotal">virustotal</option></select>
                     <input id="ipReputationApiKey" value="">
@@ -100,6 +103,8 @@ describe('options.js', () => {
                             webhookEnabled: true,
                             webhookUrl: 'https://siem.example/hook',
                             webhookSecret: 'secret',
+                            linkGuardMode: 'confirm',
+                            linkGuardTarget: 'popup',
                             historyEnabled: true,
                             historyLimit: 250
                         }),

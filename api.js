@@ -207,6 +207,7 @@ if (apiContainer) {
     const activeTabId = tabs[0] ? tabs[0].id : null;
     renderAttachmentPanel(message, message.headerMessageId, apiContainer);
     renderScanStatusPanel(message.headerMessageId, apiContainer);
+    renderLinkList(message, apiContainer, viewMode);
     renderHistoryPanel(message, apiContainer, viewMode);
     renderReportExport(message, apiContainer, viewMode);
     renderResearcherPanel(message, apiContainer, viewMode);
@@ -1118,6 +1119,115 @@ async function renderResearcherPanel(message, container, viewMode) {
 
     container.appendChild(card);
     return { card, insights };
+}
+
+/**
+ * Link-Liste im Popup: zeigt pro Link Ziel-Domain, Merkmale und Pruefstand und
+ * bietet "Pruefen" sowie "Oeffnen nach Pruefung" - genau der Weg, den die
+ * Option "Bestätigung im Popup" verlangt.
+ */
+async function renderLinkList(message, container, viewMode) {
+    let response;
+    try {
+        response = await browser.runtime.sendMessage({
+            action: 'getMessageInsights',
+            messageId: message.id,
+            includeAttachmentBytes: false
+        });
+    } catch (error) {
+        console.error('Link-Liste nicht verfuegbar:', error);
+        return null;
+    }
+    if (!response || response.status !== 'success') return null;
+
+    const urlAnalyses = (response.insights.indicators && response.insights.indicators.urlAnalyses) || [];
+    if (urlAnalyses.length === 0) return null;
+
+    const card = document.createElement('div');
+    card.id = 'thundy-link-list';
+    card.className = 'card card-info mb-3';
+
+    const title = document.createElement('p');
+    title.textContent = thundyT('popup.links.title', 'Links dieser Nachricht (Prüfung vor dem Öffnen):') +
+        ' ' + urlAnalyses.length;
+    card.appendChild(title);
+
+    const guardSettings = await browser.runtime.sendMessage({ action: 'getLinkGuardSettings' }).catch(() => null);
+    const guardActive = guardSettings && guardSettings.status === 'success' ? guardSettings.mode : 'unknown';
+
+    for (const analysis of urlAnalyses.slice(0, 15)) {
+        const row = document.createElement('div');
+        row.className = 'thundy-attachment-row';
+
+        const label = document.createElement('div');
+        label.textContent = shorten(analysis.url, 80);
+        row.appendChild(label);
+
+        const detail = document.createElement('small');
+        detail.className = 'thundy-attachment-status';
+        detail.textContent = (analysis.registrableDomain || analysis.host || '-') +
+            (isTechnicalView(viewMode) && analysis.decodedHost && analysis.decodedHost !== analysis.host
+                ? ' | liest sich als ' + analysis.decodedHost : '') +
+            ((analysis.flags || []).length ? ' | ' + analysis.flags.join('; ') : '');
+        row.appendChild(detail);
+
+        const status = document.createElement('small');
+        status.className = 'thundy-attachment-status';
+        status.textContent = thundyT('popup.links.unchecked', 'Noch nicht geprüft');
+        row.appendChild(status);
+
+        const checkButton = document.createElement('button');
+        checkButton.type = 'button';
+        checkButton.textContent = thundyT('popup.links.check', 'Prüfen');
+        checkButton.addEventListener('click', async () => {
+            checkButton.disabled = true;
+            try {
+                const result = await browser.runtime.sendMessage({ action: 'evaluateLink', url: analysis.url });
+                if (result && result.status === 'success') {
+                    status.textContent = result.evaluation.verdict +
+                        ((result.evaluation.flags || []).length ? ' | ' + result.evaluation.flags.join('; ') : '');
+                    openButton.disabled = result.evaluation.verdict === 'BLOCKED_BY_RULE';
+                }
+            } finally {
+                checkButton.disabled = false;
+            }
+        });
+        row.appendChild(checkButton);
+
+        const openButton = document.createElement('button');
+        openButton.type = 'button';
+        openButton.className = 'btn-accent';
+        openButton.textContent = thundyT('popup.links.open', 'Öffnen nach Prüfung');
+        openButton.addEventListener('click', async () => {
+            openButton.disabled = true;
+            status.textContent = thundyT('popup.links.opening', 'Öffne…');
+            try {
+                const result = await browser.runtime.sendMessage({
+                    action: 'openLinkAfterCheck', url: analysis.url, headerMessageId: message.headerMessageId
+                });
+                status.textContent = result && result.status === 'success'
+                    ? thundyT('popup.links.opened', 'Geöffnet – bitte im geöffneten Tab prüfen.')
+                    : ((result && result.message) || 'Öffnen fehlgeschlagen.');
+            } catch (error) {
+                status.textContent = 'Öffnen fehlgeschlagen: ' + error.message;
+            } finally {
+                openButton.disabled = false;
+            }
+        });
+        row.appendChild(openButton);
+
+        card.appendChild(row);
+    }
+
+    const hint = document.createElement('small');
+    hint.className = 'thundy-muted';
+    hint.textContent = guardActive === 'confirm'
+        ? thundyT('popup.links.guardConfirm', 'Link-Schutz aktiv: Links im Nachrichtentext werden erst nach der Freigabe geöffnet.')
+        : thundyT('popup.links.guardHint', 'Tipp: In den Einstellungen kann der Link-Schutz auf "Blockieren bis zur Prüfung" gestellt werden.');
+    card.appendChild(hint);
+
+    container.appendChild(card);
+    return card;
 }
 
 async function renderHistoryPanel(message, container, viewMode) {

@@ -258,6 +258,10 @@ describe('background.js', () => {
             globalThis.buildFindingsCsv = buildFindingsCsv;
             globalThis.detectBursts = detectBursts;
             globalThis.scanAllLinksOfMessage = scanAllLinksOfMessage;
+            globalThis.decideLinkAction = decideLinkAction;
+            globalThis.evaluateLinkForGuard = evaluateLinkForGuard;
+            globalThis.openLinkAfterCheck = openLinkAfterCheck;
+            globalThis.openLinkGuardPopup = openLinkGuardPopup;
             globalThis.getAllFromStore = typeof getAllFromStore === 'function' ? getAllFromStore : undefined;
             globalThis.validateRule = validateRule;
             globalThis.normalizeRules = normalizeRules;
@@ -1960,10 +1964,12 @@ describe('background.js', () => {
             await context.registerMessageDisplayScript();
             await context.ensureMessageDisplayScript(12);
 
-            assert.strictEqual(injections.length, 1);
+            assert.strictEqual(injections.length, 2);
             assert.strictEqual(injections[0].target.tabId, 12);
-            assert.strictEqual(injections[0].files.length, 1);
             assert.strictEqual(injections[0].files[0], 'messageDisplay/banner.js');
+            assert.strictEqual(injections[0].allFrames, undefined, 'banner stays in the top frame');
+            assert.strictEqual(injections[1].files[0], 'messageDisplay/link-guard.js');
+            assert.strictEqual(injections[1].allFrames, true, 'link guard must reach the message frame');
         });
 
         it('registers the message display script when the API is available', async () => {
@@ -1977,9 +1983,9 @@ describe('background.js', () => {
             assert.strictEqual(ok, true);
             assert.strictEqual(registered.length, 1);
             assert.strictEqual(registered[0].id, 'thundy-av-banner');
-            assert.strictEqual(registered[0].js.length, 1);
+            assert.strictEqual(registered[0].js.length, 2);
             assert.strictEqual(registered[0].js[0].file, 'messageDisplay/banner.js');
-            assert.strictEqual(registered[0].css.length, 1);
+            assert.strictEqual(registered[0].css.length, 2);
             assert.strictEqual(registered[0].css[0].file, 'messageDisplay/banner.css');
 
             // Mit registriertem Script darf nichts zusätzlich injiziert werden
@@ -5161,6 +5167,87 @@ describe('background.js', () => {
             assert.ok(text.includes('Erster Text'), 'plain text part expected');
             assert.ok(text.includes('two.example'), 'nested html part expected');
             assert.strictEqual(urls.length, 2, 'both links must be found, got: ' + urls.join(', '));
+        });
+    });
+
+    describe('link guard (time-of-click)', () => {
+        function stubStorage() {
+            let store = {};
+            context.browser.storage.local.get = async (keys) => {
+                if (typeof keys === 'string') return { [keys]: store[keys] };
+                if (Array.isArray(keys)) { const out = {}; keys.forEach(k => { out[k] = store[k]; }); return out; }
+                return store;
+            };
+            context.browser.storage.local.set = async (data) => { Object.assign(store, data); };
+            return { get: () => store };
+        }
+
+        it('decides per mode and target how a link is handled', () => {
+            assert.strictEqual(context.decideLinkAction({ mode: 'off' }), 'open');
+            assert.strictEqual(context.decideLinkAction({ mode: 'hint' }), 'hint');
+            assert.strictEqual(context.decideLinkAction({ mode: 'confirm', target: 'inline' }), 'confirm-inline');
+            assert.strictEqual(context.decideLinkAction({ mode: 'confirm', target: 'popup' }), 'confirm-popup');
+            assert.strictEqual(context.decideLinkAction({ mode: 'confirm', target: 'popup', alreadyAllowed: true }), 'open');
+        });
+
+        it('evaluates a link with anatomy, rules and cached verdict', async () => {
+            stubStorage();
+            context.set_customRules([]);
+            context.getSharedDB = async () => ({});
+            context.getFromStore = async () => null;
+            context.getAllFromStore = async () => ([{
+                messageHeader: 'hdr-1',
+                links: [{ url: 'https://evil.example/a', state: 'UPLOADED', verdict: 'MALICIOUS', checked_at: '2026-09-28T10:00:00.000Z' }]
+            }]);
+
+            const cached = await context.evaluateLinkForGuard('https://evil.example/a');
+            assert.strictEqual(cached.verdict, 'MALICIOUS');
+            assert.strictEqual(cached.checked, true);
+            assert.strictEqual(cached.messageHeaderId, 'hdr-1');
+            assert.strictEqual(cached.host, 'evil.example');
+            assert.strictEqual(cached.registrableDomain, 'evil.example');
+            assert.ok(cached.display.startsWith('https://evil.example'));
+
+            const unknown = await context.evaluateLinkForGuard('https://xn--80ak6aa92e.com/login');
+            assert.strictEqual(unknown.verdict, 'UNKNOWN');
+            assert.strictEqual(unknown.checked, false);
+            assert.ok(unknown.decodedHost.includes('.com'));
+            assert.ok(unknown.flags.some(flag => flag.includes('liest sich als')));
+
+            context.set_customRules([{ type: 'url', pattern: 'bad.example', action: 'blacklist' }]);
+            const blocked = await context.evaluateLinkForGuard('https://bad.example/x');
+            context.set_customRules([]);
+            assert.strictEqual(blocked.verdict, 'BLOCKED_BY_RULE');
+            assert.strictEqual(blocked.checked, true);
+        });
+
+        it('opens a link only after the check and records it', async () => {
+            stubStorage();
+            context.getSharedDB = async () => ({});
+            context.getFromStore = async () => null;
+            context.getAllFromStore = async () => ([]);
+            let created = null;
+            context.browser.tabs = { create: async (options) => { created = options; return { id: 77 }; } };
+
+            const result = await context.openLinkAfterCheck('https://example.com/a', 'hdr-9');
+
+            assert.strictEqual(created.url, 'https://example.com/a');
+            assert.strictEqual(created.active, false);
+            assert.strictEqual(result.tabId, 77);
+            const history = await context.getScanHistory();
+            assert.ok(history.some(entry => entry.action === 'link-opened' && entry.url === 'https://example.com/a'));
+        });
+
+        it('refuses to open a link that a custom rule blocks', async () => {
+            stubStorage();
+            context.set_customRules([{ type: 'url', pattern: 'blocked.example', action: 'blacklist' }]);
+            context.getSharedDB = async () => ({});
+            context.getFromStore = async () => null;
+            context.getAllFromStore = async () => ([]);
+            context.browser.tabs = { create: async () => ({ id: 1 }) };
+
+            await assert.rejects(() => context.openLinkAfterCheck('https://blocked.example/x'), (error) => error.code === 'BLOCKED_BY_RULE');
+            context.set_customRules([]);
         });
     });
 

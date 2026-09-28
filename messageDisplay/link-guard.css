@@ -1,0 +1,101 @@
+/* ==========================================================================
+   Thundy AV - Link-Guard (Nachrichtenansicht)
+   Tooltip mit Zusatzinformationen und Freigabe-Aktionen.
+   ========================================================================== */
+
+.thundy-guard-link {
+    border-bottom: 1px dashed #ff8c00;
+    cursor: help;
+}
+
+#thundy-link-tooltip {
+    position: fixed;
+    z-index: 2147483647;
+    right: 12px;
+    bottom: 12px;
+    max-width: 420px;
+    background: #ffffff;
+    color: #1b1f23;
+    border: 1px solid #0b5fa5;
+    border-left: 4px solid #0b5fa5;
+    border-radius: 6px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 14px rgba(7, 61, 107, 0.25);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+#thundy-link-tooltip.thundy-guard-modal {
+    border-color: #ff8c00;
+    border-left-color: #ff8c00;
+    outline: 2px solid rgba(255, 140, 0, 0.35);
+}
+
+#thundy-link-tooltip .thundy-guard-title {
+    font-weight: 700;
+    color: #073d6b;
+    margin-bottom: 6px;
+}
+
+#thundy-link-tooltip .thundy-guard-row {
+    margin-bottom: 2px;
+    word-break: break-all;
+}
+
+#thundy-link-tooltip .thundy-guard-flags {
+    margin: 6px 0 6px 0;
+    padding-left: 18px;
+    color: #b26000;
+}
+
+#thundy-link-tooltip .thundy-guard-actions {
+    margin-top: 8px;
+}
+
+#thundy-link-tooltip button {
+    font: inherit;
+    font-weight: 600;
+    margin: 0 6px 0 0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid #0b5fa5;
+    background: #0b5fa5;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+#thundy-link-tooltip button.thundy-guard-check {
+    background: transparent;
+    color: #0b5fa5;
+}
+
+#thundy-link-tooltip button.thundy-guard-open {
+    background: #ff8c00;
+    border-color: #b26000;
+    color: #24160a;
+}
+
+#thundy-link-tooltip button:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+#thundy-link-tooltip .thundy-guard-status {
+    margin-top: 6px;
+    color: #5c6670;
+}
+
+@media (prefers-color-scheme: dark) {
+    #thundy-link-tooltip {
+        background: #24282d;
+        color: #e8eaed;
+        border-color: #4c9be0;
+        border-left-color: #4c9be0;
+    }
+
+    #thundy-link-tooltip .thundy-guard-title { color: #9dc9f0; }
+    #thundy-link-tooltip .thundy-guard-status { color: #a3adb8; }
+    #thundy-link-tooltip .thundy-guard-flags { color: #e0a33a; }
+    #thundy-link-tooltip button.thundy-guard-check { color: #cfe6fa; border-color: #4c9be0; }
+}

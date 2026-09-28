@@ -149,6 +149,15 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.10 Release notes 1.15.0
+
+- **Link guard (time-of-click)**: hover a link to see its target, registrable domain, decoded lookalike (punycode)
+  host, anomalies and check status. Optionally the click is intercepted and the link only opens after you checked it -
+  inline in the tooltip or from the add-on popup.
+- **Link list in the popup** with check status and "Open after check" for every link of the message.
+- **Fix:** the hover hints never reached the message body because the script was injected into the top document only;
+  it is now injected into all frames.
+
 ## 5.9 Release notes 1.14.0
 
 - **Local IOC pivot:** for a hash, IP, domain or URL the add-on now shows where that indicator already appeared in

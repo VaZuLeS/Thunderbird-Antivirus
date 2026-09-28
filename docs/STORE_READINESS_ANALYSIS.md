@@ -941,3 +941,55 @@ web-ext lint + Filter           # 0 Fehler
 1. Live-Test in Thunderbird 140 ESR (Selbsttest, Forscher-Panel, Sandbox, Bulk-Scan in beiden Sprachen).
 2. Echte Store-Screenshots.
 3. Signierung/Einreichung bei addons.thunderbird.net.
+
+---
+
+## 19. Link-Guard statt wirkungsloser Time-of-Click-Hinweise (v1.15.0)
+
+### 19.1 Ursachenanalyse der Rueckmeldung
+
+Rueckmeldung: *„Der Phishing-Schutz bzw. Zusatzinformationen zu Links bei Maus-Over funktioniert nicht.“*
+
+Zwei Ursachen, beide im Code nachweisbar:
+
+1. **Falscher Frame.** Der Nachrichtentext wird von Thunderbird in einem **eigenen Frame** gerendert. Die Injektion lief
+   ohne `allFrames` und traf nur das obere Dokument von `about:message` - die Links im Text wurden also nie dekoriert.
+2. **Fehlerhafter Bestaetigungspfad.** Der Klick-Handler rief die (synchrone) `guardRenderTooltip()` mit `.then()` auf,
+   was im Blockiermodus eine `TypeError`-Ausnahme ausgeloest haette.
+
+Beides ist behoben: Der Link-Guard wird mit `allFrames: true` injiziert (Registrierung **und** Fallback), und die
+Diagnose meldet, in wie vielen Frames das Script aktiv ist (`guardInjectedFrames`).
+
+### 19.2 Ausbau zum Link-Guard (nach Nutzerwunsch: Inline **und** Popup)
+
+| Baustein | Umsetzung |
+|---|---|
+| Modi | `linkGuardMode`: `off`, `hint`, `confirm` (Klick wird abgefangen) |
+| Bestaetigungsziel | `linkGuardTarget`: `inline` (Tooltip) oder `popup` (Add-on-Popup) |
+| Tooltip-Inhalt | Ziel, Host, registrierbare Domain, **dekodierter IDN-Host**, Merkmale (Zugangsdaten in der URL, IP-Host, viele Subdomains, Tracking-Parameter), Pruefstand |
+| Aktionen im Tooltip | „Pruefen“ (lokal), „Oeffnen nach Pruefung“, „Im Popup pruefen“ |
+| Popup | Link-Liste aller Nachrichten-Links mit Domain/Merkmalen/Stand und „Oeffnen nach Pruefung“ |
+| Sicherheit | Blockade durch eigene Regel ⇒ kein Oeffnen (`BLOCKED_BY_RULE`); jedes Oeffnen wird als `link-opened` protokolliert; Freigabe-Gedaechtnis pro Link |
+| Steuerung | Alle drei Optionen sind als Enterprise-Policy setzbar und im Selbsttest sichtbar |
+
+**Kein neuer Datenabfluss:** `evaluateLink` liest nur lokale Daten (Anatomie, eigene Regeln, lokaler Ergebnisspeicher);
+`openLinkAfterCheck` oeffnet einen Thunderbird-Tab und kontaktiert keinen Anbieter. Wer einen Dienst nutzen will, nutzt
+weiterhin die Provider-Pivots bzw. den (konsent-gebundenen) Sammel-Scan.
+
+### 19.3 Verifikation v1.15.0
+
+```bash
+node scripts/check-locales.js   # vollstaendig (en/de, 162 Schluessel)
+npm test                        # 585 Tests, 0 Fehler (5 fuer das Guard-Script in jsdom, 4 im Hintergrund, 1 im Popup)
+npm run pre-submit-checks       # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm run build                   # build/thundy-av-1.15.0.xpi inkl. Paketpruefung
+web-ext lint + Filter           # 0 Fehler
+```
+
+### 19.4 Verbleibend offen
+
+1. Live-Test in Thunderbird 140 ESR - der Link-Guard ist **jetzt gezielt pruefbar**: Nachricht mit Link oeffnen, Modus
+   `confirm` + Ziel `inline` setzen (Klick muss abgefangen werden, Tooltip erscheint) und danach Ziel `popup` (Klick
+   oeffnet das Add-on-Popup).
+2. Echte Store-Screenshots.
+3. Signierung/Einreichung bei addons.thunderbird.net.

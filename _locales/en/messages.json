@@ -284,6 +284,30 @@
   "opt.diagnostics.idle": {
     "message": "Not run yet."
   },
+  "opt.guard.confirm": {
+    "message": "Block until checked (click is intercepted)"
+  },
+  "opt.guard.help": {
+    "message": "In \"block\" mode a link is only opened after a check - inline in the tooltip or via the add-on popup."
+  },
+  "opt.guard.hint": {
+    "message": "Hint (extra information on hover, click allowed)"
+  },
+  "opt.guard.mode.label": {
+    "message": "Link protection on click (time-of-click):"
+  },
+  "opt.guard.off": {
+    "message": "Off (links behave normally)"
+  },
+  "opt.guard.target.inline": {
+    "message": "Inline (tooltip next to the link)"
+  },
+  "opt.guard.target.label": {
+    "message": "Confirmation happens:"
+  },
+  "opt.guard.target.popup": {
+    "message": "In the add-on popup (open it for the message)"
+  },
   "opt.h3.about": {
     "message": "What is Hybrid-Analysis.com?"
   },
@@ -454,6 +478,30 @@
   },
   "popup.heading": {
     "message": "Thundy AV - security check"
+  },
+  "popup.links.check": {
+    "message": "Check"
+  },
+  "popup.links.guardConfirm": {
+    "message": "Link guard active: links in the message are only opened after approval."
+  },
+  "popup.links.guardHint": {
+    "message": "Tip: the link guard can be set to \"block until checked\" in the options."
+  },
+  "popup.links.open": {
+    "message": "Open after check"
+  },
+  "popup.links.opened": {
+    "message": "Opened - please verify in the opened tab."
+  },
+  "popup.links.opening": {
+    "message": "Opening..."
+  },
+  "popup.links.title": {
+    "message": "Links in this message (check before opening):"
+  },
+  "popup.links.unchecked": {
+    "message": "Not checked yet"
   },
   "popup.loading": {
     "message": "Loading analysis results..."

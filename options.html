@@ -122,6 +122,23 @@
     </div>
 
     <div class="mb-3">
+        <label for="linkGuardMode" data-i18n="opt.guard.mode.label">Link-Schutz beim Klick (Time-of-Click):</label>
+        <select id="linkGuardMode" aria-describedby="linkGuardHelp">
+            <option value="off" data-i18n="opt.guard.off">Aus (Links verhalten sich normal)</option>
+            <option value="hint" data-i18n="opt.guard.hint">Hinweis (Zusatzinformationen bei Maus-Over, Klick erlaubt)</option>
+            <option value="confirm" data-i18n="opt.guard.confirm">Blockieren bis zur Prüfung (Klick wird abgefangen)</option>
+        </select>
+        <br><small id="linkGuardHelp" data-i18n="opt.guard.help">Im Modus „Blockieren“ wird ein Link erst nach einer Prüfung geöffnet — entweder inline im Tooltip oder über das Add-on-Popup. Das Ziel wählen Sie darunter.</small>
+    </div>
+    <div class="mb-3">
+        <label for="linkGuardTarget" data-i18n="opt.guard.target.label">Bestätigung erfolgt:</label>
+        <select id="linkGuardTarget">
+            <option value="inline" data-i18n="opt.guard.target.inline">Inline (Tooltip direkt am Link)</option>
+            <option value="popup" data-i18n="opt.guard.target.popup">Im Add-on-Popup (Nachricht mit Button öffnen)</option>
+        </select>
+    </div>
+
+<div class="mb-3">
         <input type="checkbox" id="timeOfClickProtection" checked aria-describedby="tocHelp">
         <label for="timeOfClickProtection" style="display: inline; margin-bottom: 0;" data-i18n="opt.toc.label">Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo bei Hover)</label>
         <br><small id="tocHelp">Zeigt beim Überfahren von Links mit der Maus einen Hinweis an, dass die URL in Echtzeit geprüft wird.</small>

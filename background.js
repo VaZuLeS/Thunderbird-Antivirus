@@ -132,8 +132,8 @@ async function injectIntoMessageDisplay(tabId, injection) {
 }
 
 const MESSAGE_DISPLAY_SCRIPT_ID = 'thundy-av-banner';
-const MESSAGE_DISPLAY_SCRIPT_FILES = ['messageDisplay/banner.js'];
-const MESSAGE_DISPLAY_SCRIPT_CSS = ['messageDisplay/banner.css'];
+const MESSAGE_DISPLAY_SCRIPT_FILES = ['messageDisplay/banner.js', 'messageDisplay/link-guard.js'];
+const MESSAGE_DISPLAY_SCRIPT_CSS = ['messageDisplay/banner.css', 'messageDisplay/link-guard.css'];
 
 let messageDisplayScriptRegistered = false;
 // Welcher Weg funktioniert auf diesem Geraet? Wird in der Diagnose gemeldet.
@@ -142,6 +142,11 @@ let messageDisplayScriptRegistered = false;
 //   failed     - beides fehlgeschlagen (Details in displayScriptError)
 //   unknown    - seit dem Start wurde noch keine Nachricht geoeffnet
 let displayScriptMode = 'unknown';
+let guardInjectionResults = 0;
+// Link-Guard: 'off' | 'hint' (Tooltip) | 'confirm' (Klick erst nach Pruefung)
+// Ziel der Bestaetigung: 'inline' (Tooltip) | 'popup' (Add-on-Popup)
+let linkGuardMode = 'hint';
+let linkGuardTarget = 'inline';
 let displayScriptError = null;
 
 /**
@@ -179,9 +184,13 @@ async function registerMessageDisplayScript() {
 async function ensureMessageDisplayScript(tabId) {
     if (messageDisplayScriptRegistered) return true;
 
-    const result = await injectIntoMessageDisplay(tabId, { files: MESSAGE_DISPLAY_SCRIPT_FILES });
+    const result = await injectIntoMessageDisplay(tabId, { files: ['messageDisplay/banner.js'] });
+    // Der Nachrichtentext liegt in einem eigenen Frame: Der Link-Guard muss in ALLE Frames.
+
+    const guardResult = await injectIntoMessageDisplay(tabId, { files: ['messageDisplay/link-guard.js'], allFrames: true });
     // Ein leeres Ergebnis bedeutet: die Injektion wurde nicht ausgefuehrt.
     const injected = Array.isArray(result) ? result.length > 0 : !!result;
+    guardInjectionResults = Array.isArray(guardResult) ? guardResult.length : 0;
     if (injected) {
         displayScriptMode = 'files';
     } else if (displayScriptMode === 'unknown' || displayScriptMode === 'files') {
@@ -206,7 +215,7 @@ async function ensureMessageDisplayScript(tabId) {
 // Geraete-Policy und werden nie an Dritte uebertragen.
 // ---------------------------------------------------------------------------
 const MANAGED_SETTING_KEYS = ['externalAnalysisConsent', 'privacyTier', 'viewMode', 'historyEnabled',
-    'historyLimit', 'customWhitelist', 'customBlacklist', 'customRules', 'alwaysManual', 'ipReputationProvider', 'webhookEnabled', 'webhookUrl',
+    'historyLimit', 'customWhitelist', 'customBlacklist', 'customRules', 'alwaysManual', 'ipReputationProvider', 'webhookEnabled', 'webhookUrl', 'linkGuardMode', 'linkGuardTarget',
     'timeOfClickProtection'];
 
 let managedSettings = {};
@@ -248,6 +257,8 @@ function applyManagedSettings() {
     if (isManaged('alwaysManual')) alwaysManual = managedSettings.alwaysManual === true;
     if (isManaged('timeOfClickProtection')) timeOfClickProtection = managedSettings.timeOfClickProtection === true;
     if (isManaged('ipReputationProvider')) ipReputationProvider = String(managedSettings.ipReputationProvider);
+    if (isManaged('linkGuardMode')) linkGuardMode = ['off', 'hint', 'confirm'].includes(managedSettings.linkGuardMode) ? managedSettings.linkGuardMode : 'hint';
+    if (isManaged('linkGuardTarget')) linkGuardTarget = ['inline', 'popup'].includes(managedSettings.linkGuardTarget) ? managedSettings.linkGuardTarget : 'inline';
     if (isManaged('webhookEnabled')) webhookEnabled = managedSettings.webhookEnabled === true;
     if (isManaged('webhookUrl')) webhookUrl = String(managedSettings.webhookUrl || '');
     if (isManaged('customRules') && Array.isArray(managedSettings.customRules)) {
@@ -751,7 +762,7 @@ const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join(
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent', 'viewMode', 'historyEnabled', 'historyLimit', 'customRules', 'webhookEnabled', 'webhookUrl', 'webhookSecret']);
+    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent', 'viewMode', 'historyEnabled', 'historyLimit', 'customRules', 'webhookEnabled', 'webhookUrl', 'webhookSecret', 'linkGuardMode', 'linkGuardTarget']);
     if (result.virustotalApikey !== undefined) {
       apikey_virustotal = result.virustotalApikey;
     }
@@ -782,6 +793,12 @@ async function loadSettings() {
     }
     if (result.webhookSecret !== undefined) {
       webhookSecret = String(result.webhookSecret || '');
+    }
+    if (result.linkGuardMode !== undefined) {
+      linkGuardMode = ['off', 'hint', 'confirm'].includes(result.linkGuardMode) ? result.linkGuardMode : 'hint';
+    }
+    if (result.linkGuardTarget !== undefined) {
+      linkGuardTarget = ['inline', 'popup'].includes(result.linkGuardTarget) ? result.linkGuardTarget : 'inline';
     }
     if (result.customBlacklist !== undefined) {
       customBlacklist = new Set(result.customBlacklist.map(s => s ? s.toLowerCase() : ""));
@@ -899,6 +916,18 @@ browser.storage.onChanged.addListener(async (changes, area) => {
   }
   if (area === 'local' && changes.webhookSecret !== undefined) {
     webhookSecret = String(changes.webhookSecret.newValue || '');
+  }
+  if (area === 'local' && (changes.linkGuardMode !== undefined || changes.linkGuardTarget !== undefined)) {
+    if (changes.linkGuardMode !== undefined) {
+      linkGuardMode = ['off', 'hint', 'confirm'].includes(changes.linkGuardMode.newValue) ? changes.linkGuardMode.newValue : 'hint';
+    }
+    if (changes.linkGuardTarget !== undefined) {
+      linkGuardTarget = ['inline', 'popup'].includes(changes.linkGuardTarget.newValue) ? changes.linkGuardTarget.newValue : 'inline';
+    }
+    // Laufende Nachrichtenansichten sofort umstellen.
+    for (const [tabId] of displayStates.entries()) {
+      browser.tabs.sendMessage(tabId, { action: 'updateLinkGuard', mode: linkGuardMode, target: linkGuardTarget }).catch(() => {});
+    }
   }
 });
 
@@ -3300,6 +3329,139 @@ function analyzeHeaderForensics(input = {}) {
     };
 }
 
+// ---------------------------------------------------------------------------
+// Link-Guard (Time-of-Click): Entscheidung, Bewertung, Popup, Freigabe
+// ---------------------------------------------------------------------------
+
+/**
+ * Entscheidet rein lokal, wie ein Link zu behandeln ist:
+ *   'open'           - sofort oeffnen (Guard aus oder bereits freigegeben)
+ *   'confirm-inline' - Klick abfangen, Bestaetigung im Tooltip
+ *   'confirm-popup'  - Klick abfangen, Bestaetigung im Add-on-Popup
+ *   'hint'           - nur Hinweis anzeigen, Klick bleibt erlaubt
+ */
+function decideLinkAction({ mode = 'hint', target = 'inline', alreadyAllowed = false } = {}) {
+    if (mode === 'off') return 'open';
+    if (alreadyAllowed) return 'open';
+    if (mode === 'confirm') return target === 'popup' ? 'confirm-popup' : 'confirm-inline';
+    return 'hint';
+}
+
+/**
+ * Bewertet einen Link fuer den Tooltip: Link-Anatomie, eigene Regeln und ein
+ * bereits gespeichertes Ergebnis aus dem lokalen Cache.
+ */
+async function evaluateLinkForGuard(url, headerMessageId = null) {
+    const analysis = analyzeUrl(url);
+    const evaluation = {
+        url: String(url),
+        display: analysis.valid
+            ? (analysis.scheme + '://' + analysis.host + '/...')
+            : String(url),
+        host: analysis.host,
+        registrableDomain: analysis.registrableDomain,
+        decodedHost: analysis.decodedHost || null,
+        flags: analysis.flags.slice(),
+        verdict: 'UNKNOWN',
+        checked: false,
+        checkedAt: null,
+        messageHeaderId: headerMessageId,
+        action: decideLinkAction({ mode: linkGuardMode, target: linkGuardTarget })
+    };
+
+    const ruleEvaluation = evaluateCustomRules({ urls: [url] });
+    if (ruleEvaluation.blacklisted) {
+        evaluation.verdict = 'BLOCKED_BY_RULE';
+        evaluation.checked = true;
+        evaluation.flags = evaluation.flags.concat(ruleEvaluation.reasons);
+        return evaluation;
+    }
+    if (ruleEvaluation.matches.length > 0) {
+        evaluation.flags = evaluation.flags.concat(ruleEvaluation.reasons);
+    }
+
+    let record = null;
+    try {
+        const db = await getSharedDB();
+        if (headerMessageId) {
+            record = await getFromStore(db, 'hybridanalysis', headerMessageId);
+        }
+        if (!record) {
+            const records = await getAllFromStore(db, 'hybridanalysis');
+            for (const candidate of records || []) {
+                const links = Array.isArray(candidate.links) ? candidate.links : [];
+                if (links.some(link => link.url === url)) {
+                    record = candidate;
+                    break;
+                }
+            }
+        }
+    } catch (e) {
+        Logger.warn('Link-Bewertung ohne Cache:', e);
+    }
+
+    if (record && Array.isArray(record.links)) {
+        const link = record.links.find(entry => entry.url === url);
+        if (link) {
+            evaluation.checked = true;
+            evaluation.checkedAt = link.checked_at || null;
+            evaluation.messageHeaderId = record.messageHeader || headerMessageId;
+            if (link.state === 'UPLOADED' || link.state === 'KNOWN') {
+                evaluation.verdict = link.verdict ? String(link.verdict).toUpperCase() : 'KNOWN_CLEAN';
+            }
+        }
+    }
+
+    return evaluation;
+}
+
+/** Oeffnet das Add-on-Popup der Nachrichtenansicht (Popup-Bestaetigung). */
+function openLinkGuardPopup() {
+    try {
+        if (browser.message_display_action && typeof browser.message_display_action.openPopup === 'function') {
+            browser.message_display_action.openPopup();
+            return { status: 'success', opened: true };
+        }
+        if (browser.action && typeof browser.action.openPopup === 'function') {
+            browser.action.openPopup();
+            return { status: 'success', opened: true };
+        }
+    } catch (e) {
+        Logger.warn('Popup konnte nicht geoeffnet werden:', e);
+    }
+    return { status: 'error', message: 'Popup ist in dieser Umgebung nicht verfuegbar.' };
+}
+
+/**
+ * Oeffnet einen Link erst nach der Pruefung. Der Aufruf stammt immer aus einer
+ * bewussten Nutzeraktion (Tooltip-Button oder Popup).
+ */
+async function openLinkAfterCheck(url, headerMessageId = null) {
+    const evaluation = await evaluateLinkForGuard(url, headerMessageId);
+    if (evaluation.verdict === 'BLOCKED_BY_RULE') {
+        const error = new Error('Der Link ist durch eine eigene Regel blockiert.');
+        error.code = 'BLOCKED_BY_RULE';
+        throw error;
+    }
+
+    const tab = await browser.tabs.create({ url: url, active: false });
+
+    await recordScanHistory({
+        action: 'link-opened',
+        transmitted: false,
+        timing: 'realtime',
+        messageHeaderId: evaluation.messageHeaderId || null,
+        url,
+        domain: evaluation.registrableDomain || null,
+        verdict: evaluation.verdict,
+        outcome: 'ok',
+        detail: 'Link nach Pruefung geoeffnet (' + evaluation.verdict + ').'
+    });
+
+    return { tabId: tab && tab.id, verdict: evaluation.verdict };
+}
+
+
 /**
  * Sucht einen Indikator in den eigenen Daten wieder: im lokalen Verlauf und in
  * den gespeicherten Scan-Ergebnissen. So laesst sich beantworten, ob derselbe
@@ -3938,6 +4100,14 @@ async function collectDiagnostics() {
     add('jobs', 'Offene Analyse-Aufträge', 'ok',
         openJobs === 0 ? 'Keine offenen Aufträge.' : openJobs + ' Auftrag/Aufträge warten auf das Ergebnis.');
 
+    add('link-guard', 'Link-Schutz (Time-of-Click)', linkGuardMode === 'off' ? 'warn' : 'ok',
+        linkGuardMode === 'off'
+            ? 'Deaktiviert - Links werden ohne Hinweis/Pruefung geoeffnet.'
+            : (linkGuardMode === 'confirm'
+                ? 'Blockieren bis zur Pruefung, Bestaetigung ' + (linkGuardTarget === 'popup' ? 'im Add-on-Popup' : 'inline im Tooltip') + '.'
+                : 'Hinweis-Modus: Tooltip mit Zusatzinformationen, Klick bleibt erlaubt.') +
+            (guardInjectionResults > 0 ? ' Script in ' + guardInjectionResults + ' Frame(s) injiziert.' : ''));
+
     add('policy', 'Enterprise-Policy (verwaltete Vorgaben)', 'ok',
         hasManagedPolicy()
             ? 'Aktiv - verwaltete Schlüssel: ' + Object.keys(managedSettings).join(', ')
@@ -3953,6 +4123,9 @@ async function collectDiagnostics() {
         checks,
         summary: { ok: counts.ok || 0, warn: counts.warn || 0, fail: counts.fail || 0 },
         viewMode,
+        linkGuardMode,
+        linkGuardTarget,
+        guardInjectedFrames: guardInjectionResults,
         displayScriptMode,
         displayScriptError,
         managed: hasManagedPolicy(),
@@ -4484,6 +4657,27 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ status: 'success', evaluation });
             return true;
         }
+
+        case "getLinkGuardSettings":
+            sendResponse({ status: 'success', mode: linkGuardMode, target: linkGuardTarget,
+                injectedFrames: guardInjectionResults });
+            return true;
+
+        case "evaluateLink":
+            evaluateLinkForGuard(request.url, request.headerMessageId)
+                .then(evaluation => sendResponse({ status: 'success', evaluation }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
+        case "openLinkAfterCheck":
+            openLinkAfterCheck(request.url, request.headerMessageId)
+                .then(result => sendResponse({ status: 'success', ...result }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
+        case "openLinkGuardPopup":
+            sendResponse(openLinkGuardPopup());
+            return true;
 
         case "pivotIndicator":
             pivotIndicator({
