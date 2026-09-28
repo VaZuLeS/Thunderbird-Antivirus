@@ -611,3 +611,88 @@ Nach dem Fix: `Benachrichtigungen: 1`, Text `"... for: x.exe"`.
 
 `npm run build` erzeugt `build/thundy-av-<version>.xpi` samt Paketprüfung; die Vorabversionen liegen als Assets unter
 https://github.com/VaZuLeS/Thunderbird-Antivirus/releases (v1.6, v1.6.1, v1.7.0, v1.7.1) mit SHA-256 in den Releasenotes.
+
+---
+
+## 12. Usability-Analyse und Weg zur Security Suite (v1.8.0)
+
+### 12.1 Usability-Befunde am bisherigen Stand
+
+Geprüft wurden Popup, Optionsseite und In-Message-Banner des Codes vor 1.8.0.
+
+| Nr. | Befund | Wirkung | Umsetzung in 1.8.0 |
+|---|---|---|---|
+| U1 | Popup zeigte die rohe `MessageHeaderID` | Technische Kennung ohne Nutzen für Privatnutzer, erhöht die kognitive Last | Wird nur noch in `research`/`audit` eingeblendet, sonst ausgeblendet |
+| U2 | Optionsseite: 12+ Felder in einer einzigen Spalte, ohne Gruppierung | Einstiegshürde, unklar wo man anfängt | Abschnitte (Zustimmung, Anbieter, Datenschutz-Stufe, Ansicht/Rolle, Verlauf) + Rollen-Presets |
+| U3 | **Kein Verlauf** – weder „was wurde geprüft“ noch „was wurde übertragen“ | Kernvertrauen fehlte; der Nutzer musste dem Add-on glauben | Audit-Trail mit Filter, Zusammenfassung, CSV/JSON-Export, Löschen (Abschnitt 12.2) |
+| U4 | Keine Steuerung der Informationsmenge | Sicherheitsforscher sehen zu wenig, Privatnutzer zu viel | Fünf Ansichtsrollen (12.3) |
+| U5 | Kein steuerbares Unterbrechungsniveau (Opt-in-Banner bei jeder Nachricht mit Anhang/Link) | Als störend empfunden, besonders im Privatkontext | Rolle `quiet`: keine Hinweisbanner, nur Warnungen |
+| U6 | Gemischte Sprachstände (Banner-Texte englisch als Fallback, Oberfläche deutsch) | Uneinheitlicher Eindruck | i18n-Strings für alle neuen Banner-/Status-Texte (DE/EN); Popup/Options weiterhin deutsch (offen, siehe 12.5) |
+| U7 | Ergebnisse zeitverzögerter Analysen waren nicht auffindbar, wenn der Scan aus dem Banner gestartet wurde | Vertrauensverlust („Scan fehlgeschlagen“) | Behoben in 1.7.1 (A3) + Statusverfolgung |
+| U8 | Verlauf ohne Filter/Suche | Bei vielen Einträgen unübersichtlich | Filter „alle / nur Übertragungen“, Zusammenfassung; Volltextsuche offen (12.5) |
+
+### 12.2 Verlauf (Audit-Trail) — Datenmodell
+
+```
+{ id, timestamp, action, transmitted, provider, dataType, timing,
+  messageHeaderId, messageId, subject, sender, attachmentName, partName, sha256,
+  submissionId, jobId, verdict, outcome, detail }
+```
+
+Aktionen: `local-check`, `hash-lookup`, `attachment-upload`, `url-scan`, `domain-check`, `ip-check`, `verdict`.
+Damit lässt sich jede Übermittlung belegen (Anbieter + Datentyp + Zeitverhalten), was zugleich die Store-/Policy-
+Story stützt: „Der Nutzer kann jederzeit nachsehen, was gesendet wurde.“ Grenzen: 50–5000 Einträge (Default 500),
+Aufzeichnung abschaltbar, Export CSV/JSON, Löschen möglich; keine Übertragung des Verlaufs.
+
+### 12.3 Rollenkonzept — meine Empfehlung
+
+Die drei gewünschten Sichten sind sinnvoll, aber nicht trennscharf genug: „Privat“ und „Geschäftlich“ unterscheiden
+sich vor allem in der Detailtiefe, „IT-Security-Forscher“ in der Tiefe *und* im Bedarf an Rohdaten. Ich schlage daher
+**zwei Achsen** vor, aus denen Rollen als Presets entstehen:
+
+1. **Detailtiefe** (0 = nur Warnungen, 1 = verständlich, 2 = technisch vollständig)
+2. **Nachweis-/Unterbrechungsbedarf** (stille Nutzung vs. protokollierte Nutzung vs. minimale Unterbrechung)
+
+Umgesetzt als fünf Rollen:
+
+| Rolle | Detailtiefe | Unterbrechung | Kernpublikum | Zeigt |
+|---|---|---|---|---|
+| **Nur Warnungen** (`quiet`) *(mein Vorschlag)* | 0 | minimal (keine Hinweisbanner) | Alle, die nur bei Gefahr gestört werden wollen | Nur Warnbanner/badge ab Score 50 |
+| **Privat** (`private`, Default) | 1 | Opt-in-Banner je Nachricht | Endnutzer ohne Sicherheitshintergrund | Score + Begründungen, gekürzter Hash (16 Zeichen), keine Job-IDs |
+| **Geschäftlich** (`business`) | 1 | wie `private` | Angestellte/Admins im Unternehmenskontext | zusätzlich Zeitstempel, Übertragungszusammenfassung („3 Übertragungen an hybrid-analysis, zuletzt 14:32“), Verlauf je Nachricht |
+| **IT-Security-Forscher** (`research`) | 2 | Opt-in-Banner | Analysten, IR-Teams | Hashes vollständig, Submission-/Job-IDs, Versuchszähler, Netzwerkziele, alle Begründungen |
+| **Nachweis/Compliance** (`audit`) *(mein Vorschlag)* | 2 | reduziert, Verlauf im Vordergrund | DSB/Compliance, Auditoren | Verlauf + Export, Hinweis auf CSV/JSON, Belegbarkeit der Übertragungen |
+
+Meine Zusatzvorschläge begründen sich damit, dass `quiet` das *Unterbrechungsniveau* adressiert (nicht die Menge) und
+`audit` den *Nachweisbedarf* (nicht die Analyse). Beide lösen Bedürfnisse, die die drei Ursprungsrollen nur teilweise
+abdecken. Die Rollen sind reine Darstellungs-Presets: sie ändern keine Sicherheitsfunktion und keine Übertragung – das
+ist bewusst so (Reviewer-Argument: „keine versteckte Verhaltensänderung“).
+
+### 12.4 Roadmap zur „Thunderbird Security Suite“ (priorisiert)
+
+| Prio | Erweiterung | Nutzen | Aufwand/Risiko |
+|---|---|---|---|
+| 1 | **Enterprise-Policy via `browser.storage.managed`** (Zwangszustimmung aus, Tier `strict`, Whitelist, Rolle) | Rollout in Firmen, mandantenfähig, ohne neue Rechte für Nutzer | mittel; Testumgebung nötig |
+| 2 | **Quarantäne-/Report-Ordner + Berichtsexport (PDF/CSV)** | Nachweis, Schulung, Ticket-Anhänge | mittel |
+| 3 | **Dashboard für SPF/DKIM/DMARC + Absenderreputation** (aggregiert, lokal) | Impersonation früh erkennen | mittel |
+| 4 | **Erweitertes Attachment-Disarming (CDR)** + Vorschau | Bereits teilweise vorhanden (`disarmHTML`), großer Nutzen | mittel bis hoch |
+| 5 | **SiEM-/Webhook-Export** (nur für Rolle `business`/`audit`, opt-in) | Team-Alarme, SOC-Integration | hoch; **neue Datenübermittlung** → Policy/Audit-Update nötig |
+| 6 | **Regel-Engine mit eigenen Signaturen/IOC-Listen** (lokal) | Forscher-Sicht, Team-Wissen | mittel |
+| 7 | **Offline-/Air-Gap-Modus** (nur lokale Listen, keine Anbieter) | Behörden/Regulierte Umgebungen | niedrig |
+| 8 | **Barrierefreiheit + vollständige Lokalisierung von Popup/Options** | Store-Breite, UX | niedrig, aber Fleißarbeit |
+| 9 | **Executive-Reporting** (monatliche Zusammenfassung aus dem Verlauf) | Management-Sicht | niedrig |
+| 10 | **Team-Profile** (geteilte Whitelists/Regeln ohne Datenabfluss) | KMU | hoch |
+
+**Datenschutz-Leitplanke für alle Erweiterungen:** neue *Darstellung* ist unkritisch, neue *Übertragung* (Prio 5) braucht
+vorab Privacy-Policy, Reviewer Notes und `data_collection_permissions`-Update. Prio 1–4, 6–10 bleiben lokal.
+
+### 12.5 Bewusst offen
+
+- Volltextsuche und Zeitraum-Filter im Verlauf.
+- Vollständige Lokalisierung von Popup/Optionsseite (derzeit deutsch; Banner/Manifest sind DE/EN).
+- Live-Test in Thunderbird 140 ESR, echte Screenshots, Signierung/Einreichung (unverändert).
+
+### 12.6 Artefakt
+
+Ab 1.8.0 liefert jede Änderung ein installierbares XPI: `npm run build` → `build/thundy-av-<version>.xpi` inkl.
+Paketprüfung; Vorabversionen mit Prüfsumme unter https://github.com/VaZuLeS/Thunderbird-Antivirus/releases.

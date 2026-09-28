@@ -129,5 +129,97 @@
   },
   "bannerStatusDone": {
     "message": "Analyse abgeschlossen – das Ergebnis wird im Popup angezeigt (Thundy-AV-Button)."
+  },
+  "bannerStatusBusiness": {
+    "message": "Lokale Prüfung: Bewertung $SCORE$ von 100$TRANSMISSIONS$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "transmissions": {
+        "content": "$2"
+      },
+      "count": {
+        "content": "$3"
+      },
+      "providers": {
+        "content": "$4"
+      },
+      "time": {
+        "content": "$5"
+      },
+      "hashes": {
+        "content": "$6"
+      }
+    }
+  },
+  "bannerTransmissionSummary": {
+    "message": " | $COUNT$ Übertragung(en) an $PROVIDERS$ (zuletzt: $TIME$)",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "transmissions": {
+        "content": "$2"
+      },
+      "count": {
+        "content": "$3"
+      },
+      "providers": {
+        "content": "$4"
+      },
+      "time": {
+        "content": "$5"
+      },
+      "hashes": {
+        "content": "$6"
+      }
+    }
+  },
+  "bannerStatusResearch": {
+    "message": "Lokale Prüfung abgeschlossen (Echtzeit), Bewertung $SCORE$ von 100. Hashes: $HASHES$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "transmissions": {
+        "content": "$2"
+      },
+      "count": {
+        "content": "$3"
+      },
+      "providers": {
+        "content": "$4"
+      },
+      "time": {
+        "content": "$5"
+      },
+      "hashes": {
+        "content": "$6"
+      }
+    }
+  },
+  "bannerHistoryHint": {
+    "message": "Vollständiger Verlauf inkl. CSV/JSON-Export: Einstellungen, Abschnitt \"Verlauf\".",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "transmissions": {
+        "content": "$2"
+      },
+      "count": {
+        "content": "$3"
+      },
+      "providers": {
+        "content": "$4"
+      },
+      "time": {
+        "content": "$5"
+      },
+      "hashes": {
+        "content": "$6"
+      }
+    }
   }
 }

@@ -1,3 +1,5 @@
+const VIEW_MODES = ['quiet', 'private', 'business', 'research', 'audit'];
+
 // Event-Listener für das Laden der Seite
 let _saveTimeoutId = null;
 let _clearTimeoutId = null;
@@ -7,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
         'alwaysManual', 'autoScanLinks', 'timeOfClickProtection',
         'privacyTier', 'customWhitelist', 'customBlacklist',
-        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey'
+        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'viewMode', 'historyEnabled', 'historyLimit'
     ]).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
@@ -24,6 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('externalAnalysisConsent').checked = result.externalAnalysisConsent === true;
       document.getElementById('ipReputationProvider').value = result.ipReputationProvider || "none";
       document.getElementById('ipReputationApiKey').value = result.ipReputationApiKey || "";
+      document.getElementById('viewMode').value = VIEW_MODES.includes(result.viewMode) ? result.viewMode : 'private';
+      document.getElementById('historyEnabled').checked = result.historyEnabled !== false;
+      document.getElementById('historyLimit').value = result.historyLimit || 500;
 
       const alwaysManualCheckbox = document.getElementById('alwaysManual');
       const privacyTierSelect = document.getElementById('privacyTier');
@@ -104,6 +109,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let externalAnalysisConsentSetting = document.getElementById('externalAnalysisConsent').checked;
     let ipReputationProviderSetting = document.getElementById('ipReputationProvider').value;
     let ipReputationApiKeySetting = document.getElementById('ipReputationApiKey').value.trim().replace(/\r|\n/g, '');
+    let viewModeSetting = document.getElementById('viewMode').value;
+    let historyEnabledSetting = document.getElementById('historyEnabled').checked;
+    let historyLimitSetting = parseInt(document.getElementById('historyLimit').value, 10) || 500;
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
@@ -117,7 +125,10 @@ document.addEventListener('DOMContentLoaded', function() {
         timeOfClickProtection: timeOfClickProtectionSetting,
         externalAnalysisConsent: externalAnalysisConsentSetting,
         ipReputationProvider: ipReputationProviderSetting,
-        ipReputationApiKey: ipReputationApiKeySetting
+        ipReputationApiKey: ipReputationApiKeySetting,
+        viewMode: viewModeSetting,
+        historyEnabled: historyEnabledSetting,
+        historyLimit: historyLimitSetting
     }).then(async () => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
@@ -170,6 +181,127 @@ document.addEventListener('DOMContentLoaded', function() {
         saveBtn.textContent = 'Speichern';
     });
   });
+
+// ---------------------------------------------------------------------------
+// Verlauf: Anzeige, Filter, Export und Loeschen (alles lokal)
+// ---------------------------------------------------------------------------
+function formatHistoryTimestamp(entry) {
+    if (!entry || !entry.timestamp) return '-';
+    const date = new Date(entry.timestamp);
+    return isNaN(date.getTime()) ? entry.timestamp : date.toLocaleString();
+}
+
+function describeHistoryLine(entry) {
+    const target = entry.transmitted ? 'uebertragen an ' + (entry.provider || 'Anbieter') : 'nur lokal';
+    const subject = entry.attachmentName || entry.domain || entry.ip || entry.subject || '(Nachricht)';
+    const parts = [formatHistoryTimestamp(entry), entry.action, target, subject];
+    if (entry.sha256) parts.push('sha256=' + entry.sha256);
+    if (entry.jobId) parts.push('job=' + entry.jobId);
+    if (entry.verdict) parts.push('verdict=' + entry.verdict);
+    if (entry.detail) parts.push(entry.detail);
+    return parts.join(' | ');
+}
+
+function buildHistoryCsv(entries) {
+    const columns = ['timestamp', 'action', 'transmitted', 'provider', 'dataType', 'timing',
+        'subject', 'sender', 'attachmentName', 'sha256', 'verdict', 'outcome', 'detail'];
+    const delimiter = ';';
+    const escape = (value) => {
+        if (value === undefined || value === null) return '';
+        const text = String(value).split('"').join('""');
+        return text.indexOf(delimiter) !== -1 || text.indexOf('"') !== -1 || text.indexOf('\n') !== -1
+            ? '"' + text + '"'
+            : text;
+    };
+    const lines = [columns.join(delimiter)];
+    for (const entry of entries || []) {
+        lines.push(columns.map(column => escape(entry[column])).join(delimiter));
+    }
+    return lines.join('\n');
+}
+
+function buildHistoryJson(entries) {
+    return JSON.stringify(entries || [], null, 2);
+}
+
+function downloadHistoryFile(filename, content, mimeType) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    if (anchor.parentNode) anchor.parentNode.removeChild(anchor);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+let lastHistoryEntries = [];
+
+async function loadHistory() {
+    const list = document.getElementById('historyList');
+    const summary = document.getElementById('historySummary');
+    if (!list) return;
+    const filterElement = document.getElementById('historyFilter');
+    const onlyTransmissions = !!(filterElement && filterElement.value === 'transmissions');
+
+    let response;
+    try {
+        response = await browser.runtime.sendMessage({ action: 'getHistory', onlyTransmissions: onlyTransmissions });
+    } catch (error) {
+        if (summary) summary.textContent = 'Verlauf konnte nicht geladen werden.';
+        return;
+    }
+    if (!response || response.status !== 'success') {
+        if (summary) summary.textContent = 'Verlauf konnte nicht geladen werden.';
+        return;
+    }
+
+    lastHistoryEntries = response.entries || [];
+    list.textContent = '';
+    for (const entry of lastHistoryEntries.slice().reverse()) {
+        const item = document.createElement('li');
+        item.textContent = describeHistoryLine(entry);
+        list.appendChild(item);
+    }
+    if (summary) {
+        const stats = response.summary || {};
+        summary.textContent = lastHistoryEntries.length + ' Eintrag/Eintraege angezeigt - ' +
+            (stats.transmissions || 0) + ' Uebertragung(en), ' + (stats.local || 0) + ' rein lokal' +
+            (stats.lastTransmissionAt ? ', letzte Uebertragung: ' + new Date(stats.lastTransmissionAt).toLocaleString() : '');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const refresh = document.getElementById('historyRefresh');
+    if (refresh) refresh.addEventListener('click', loadHistory);
+
+    const filter = document.getElementById('historyFilter');
+    if (filter) filter.addEventListener('change', loadHistory);
+
+    const csvButton = document.getElementById('historyExportCsv');
+    if (csvButton) csvButton.addEventListener('click', function() {
+        downloadHistoryFile('thundy-av-verlauf.csv', buildHistoryCsv(lastHistoryEntries), 'text/csv;charset=utf-8');
+    });
+
+    const jsonButton = document.getElementById('historyExportJson');
+    if (jsonButton) jsonButton.addEventListener('click', function() {
+        downloadHistoryFile('thundy-av-verlauf.json', buildHistoryJson(lastHistoryEntries), 'application/json');
+    });
+
+    const clearButton = document.getElementById('historyClear');
+    if (clearButton) clearButton.addEventListener('click', async function() {
+        if (!confirm('Verlauf wirklich loeschen? Alle lokal gespeicherten Eintraege werden entfernt.')) return;
+        try {
+            await browser.runtime.sendMessage({ action: 'clearHistory' });
+            await loadHistory();
+        } catch (error) {
+            console.error('Verlauf konnte nicht geleert werden:', error);
+        }
+    });
+
+    loadHistory();
+});
 
   document.getElementById('clearCache').addEventListener('click', async function() {
     if (!confirm('Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse.')) {

@@ -121,6 +121,48 @@
         <br><small id="tocHelp">Zeigt beim Überfahren von Links mit der Maus einen Hinweis an, dass die URL in Echtzeit geprüft wird.</small>
     </div>
 
+    <hr>
+    <h3>Ansicht (Rolle)</h3>
+    <div class="mb-3">
+        <label for="viewMode">Darstellung und Informationsmenge:</label>
+        <select id="viewMode" aria-describedby="viewModeHelp">
+            <option value="quiet">Nur Warnungen (minimal, keine Hinweisbanner)</option>
+            <option value="private">Privat (Standard: klare Sprache, keine technischen Kennungen)</option>
+            <option value="business">Geschaeftlich (zusaetzlich Zeitstempel, Uebertragungsuebersicht, Verlauf)</option>
+            <option value="research">IT-Security-Forscher (volle Details: Hashes, Job-IDs, Versuche, Netzwerkziele)</option>
+            <option value="audit">Nachweis / Compliance (Verlauf und Export im Vordergrund)</option>
+        </select>
+        <br><small id="viewModeHelp">Die Rolle steuert, wie viele technische Details Banner und Popup zeigen und wie oft das Add-on von
+        selbst auf sich aufmerksam macht. Sie aendert keine Sicherheitsfunktion, nur die Darstellung. Die Rolle wird sofort
+        uebernommen; fuer die uebrigen Felder danach speichern.</small>
+    </div>
+
+    <hr>
+    <h3>Verlauf</h3>
+    <div class="mb-3">
+        <input type="checkbox" id="historyEnabled" aria-describedby="historyHelp">
+        <label for="historyEnabled" style="display: inline; margin-bottom: 0;">Verlauf aufzeichnen (lokal)</label>
+        <br><small id="historyHelp">Haelt lokal fest, welche Nachrichten geprueft und welche Daten an welchen Anbieter uebertragen wurden
+        (Dateiname, SHA-256, Anbieter, Zeitpunkt, Ergebnis). Der Verlauf verlaesst das Geraet nicht und ist im Popup sowie hier sichtbar.</small>
+    </div>
+    <div class="mb-3">
+        <label for="historyLimit">Maximale Eintraege (50-5000):</label>
+        <input type="number" id="historyLimit" min="50" max="5000" step="50" value="500">
+    </div>
+    <div class="mb-3">
+        <label for="historyFilter">Anzeigen:</label>
+        <select id="historyFilter">
+            <option value="all">Alle Eintraege</option>
+            <option value="transmissions">Nur Uebertragungen an Anbieter</option>
+        </select>
+        <button id="historyRefresh" type="button">Aktualisieren</button>
+        <button id="historyExportCsv" type="button">CSV exportieren</button>
+        <button id="historyExportJson" type="button">JSON exportieren</button>
+        <button id="historyClear" type="button">Verlauf loeschen</button>
+    </div>
+    <p id="historySummary"><small>Verlauf wird geladen...</small></p>
+    <ul id="historyList" class="thundy-history-list"></ul>
+
     <br><br>
     <hr>
 

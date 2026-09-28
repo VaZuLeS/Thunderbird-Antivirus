@@ -217,6 +217,16 @@ describe('background.js', () => {
             globalThis.handleDisplayedMessage = handleDisplayedMessage;
             globalThis.listMessageAttachments = listMessageAttachments;
             globalThis.getPendingScans = getPendingScans;
+            globalThis.recordScanHistory = recordScanHistory;
+            globalThis.clearScanHistory = clearScanHistory;
+            globalThis.filterScanHistory = filterScanHistory;
+            globalThis.summarizeHistory = summarizeHistory;
+            globalThis.getScanHistory = getScanHistory;
+            globalThis.HISTORY_KEY = HISTORY_KEY;
+            globalThis.get_view_mode = () => viewMode;
+            globalThis.set_view_mode = (value) => { viewMode = value; };
+            globalThis.set_history_enabled = (value) => { historyEnabled = value === true; };
+            globalThis.set_history_limit = (value) => { historyLimit = value; };
             globalThis.upsertPendingScan = upsertPendingScan;
             globalThis.pollPendingScans = pollPendingScans;
             globalThis.describeScanJob = describeScanJob;
@@ -4257,6 +4267,123 @@ describe('background.js', () => {
             assert.ok(response);
             assert.strictEqual(response.mode, 'ready');
             assert.strictEqual(response.threat.score, 40);
+        });
+    });
+
+    describe('history (audit trail) and view roles', () => {
+        function stubStorage() {
+            let store = {};
+            context.browser.storage.local.get = async (keys) => {
+                if (typeof keys === 'string') return { [keys]: store[keys] };
+                if (Array.isArray(keys)) { const out = {}; keys.forEach(k => { out[k] = store[k]; }); return out; }
+                return store;
+            };
+            context.browser.storage.local.set = async (data) => { Object.assign(store, data); };
+            return { get: () => store };
+        }
+
+        it('records a local check without marking it as transmitted', async () => {
+            const storage = stubStorage();
+            await context.recordScanHistory({ action: 'local-check', transmitted: false, subject: 'Test' });
+
+            const history = storage.get()[context.HISTORY_KEY];
+            assert.strictEqual(history.length, 1);
+            assert.strictEqual(history[0].transmitted, false);
+            assert.strictEqual(history[0].action, 'local-check');
+            assert.ok(history[0].timestamp, 'timestamp expected');
+            assert.ok(history[0].id, 'id expected');
+        });
+
+        it('records transmissions with provider, data type and timing', async () => {
+            const storage = stubStorage();
+            await context.recordScanHistory({
+                action: 'attachment-upload', transmitted: true, provider: 'hybrid-analysis',
+                dataType: 'attachment', timing: 'delayed', attachmentName: 'x.exe', sha256: 'a'.repeat(64)
+            });
+
+            const entry = storage.get()[context.HISTORY_KEY][0];
+            assert.strictEqual(entry.provider, 'hybrid-analysis');
+            assert.strictEqual(entry.dataType, 'attachment');
+            assert.strictEqual(entry.timing, 'delayed');
+        });
+
+        it('does not record anything while the history is disabled', async () => {
+            const storage = stubStorage();
+            context.set_history_enabled(false);
+            try {
+                await context.recordScanHistory({ action: 'local-check', transmitted: false });
+            } finally {
+                context.set_history_enabled(true);
+            }
+            assert.strictEqual(storage.get()[context.HISTORY_KEY], undefined);
+        });
+
+        it('caps the history at the configured limit', async () => {
+            const storage = stubStorage();
+            context.set_history_limit(50);
+            try {
+                for (let i = 0; i < 60; i++) {
+                    await context.recordScanHistory({ action: 'local-check', transmitted: false, subject: 'm' + i });
+                }
+            } finally {
+                context.set_history_limit(500);
+            }
+            const history = storage.get()[context.HISTORY_KEY];
+            assert.strictEqual(history.length, 50);
+            assert.strictEqual(history[history.length - 1].subject, 'm59');
+        });
+
+        it('filters by message and by transmissions and summarizes', async () => {
+            const history = [
+                { action: 'local-check', transmitted: false, messageHeaderId: 'h1' },
+                { action: 'hash-lookup', transmitted: true, provider: 'virustotal', messageHeaderId: 'h1' },
+                { action: 'attachment-upload', transmitted: true, provider: 'hybrid-analysis', messageHeaderId: 'h2' }
+            ];
+
+            assert.strictEqual(context.filterScanHistory(history, { messageHeaderId: 'h1' }).length, 2);
+            assert.strictEqual(context.filterScanHistory(history, { onlyTransmissions: true }).length, 2);
+            assert.strictEqual(context.filterScanHistory(history, { action: 'local-check' }).length, 1);
+
+            const summary = context.summarizeHistory(context.filterScanHistory(history, { messageHeaderId: 'h1' }));
+            assert.strictEqual(summary.total, 2);
+            assert.strictEqual(summary.transmissions, 1);
+            assert.strictEqual(summary.local, 1);
+            assert.deepStrictEqual(Object.keys(summary.providers), ['virustotal']);
+        });
+
+        it('can be cleared', async () => {
+            const storage = stubStorage();
+            await context.recordScanHistory({ action: 'local-check', transmitted: false });
+            assert.strictEqual(storage.get()[context.HISTORY_KEY].length, 1);
+
+            await context.clearScanHistory();
+
+            const cleared = storage.get()[context.HISTORY_KEY];
+            assert.strictEqual(Array.isArray(cleared), true);
+            assert.strictEqual(cleared.length, 0);
+        });
+
+        it('falls back to the private role for unknown values', () => {
+            assert.strictEqual(context.get_view_mode(), 'private');
+            context.set_view_mode('audit');
+            assert.strictEqual(context.get_view_mode(), 'audit');
+            context.set_view_mode('private');
+        });
+
+        it('exposes the history through the runtime action', async () => {
+            const storage = stubStorage();
+            await context.recordScanHistory({ action: 'attachment-upload', transmitted: true, provider: 'hybrid-analysis' });
+
+            let response = null;
+            const listener = context.browser.runtime.onMessage.listeners[0];
+            listener({ action: 'getHistory', onlyTransmissions: true }, {}, (res) => { response = res; });
+            await new Promise(resolve => setImmediate(resolve));
+
+            assert.ok(response);
+            assert.strictEqual(response.status, 'success');
+            assert.strictEqual(response.entries.length, 1);
+            assert.strictEqual(response.entries[0].transmitted, true);
+            assert.strictEqual(response.viewMode, 'private');
         });
     });
 

@@ -149,6 +149,15 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.3 Release notes 1.8.0
+
+- **View roles** (`Nur Warnungen`, `Privat`, `Geschäftlich`, `IT-Security-Forscher`, `Nachweis/Compliance`) control how
+  much detail the banner and the popup show and how often the add-on interrupts - without changing any scanning
+  behaviour.
+- **Audit trail:** a local history (filterable, exportable as CSV/JSON, deletable, optional) records every check and
+  every transmission with provider, data type, file, hash, job id, verdict and whether the result was real time or
+  delayed.
+
 ## 5.2 Release notes 1.7.0
 
 - **Status tracking for delayed analyses:** uploaded files are analysed asynchronously by the provider. Each job

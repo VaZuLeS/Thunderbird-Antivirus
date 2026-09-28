@@ -32,6 +32,26 @@ describe('options.js', () => {
                     <button id="save">Speichern</button>
                     <span id="saveStatus" style="display: none;">Erfolgreich gespeichert.</span>
 
+                    <select id="viewMode">
+                        <option value="quiet">quiet</option>
+                        <option value="private">private</option>
+                        <option value="business">business</option>
+                        <option value="research">research</option>
+                        <option value="audit">audit</option>
+                    </select>
+                    <input type="checkbox" id="historyEnabled">
+                    <input type="number" id="historyLimit" value="500">
+                    <select id="historyFilter">
+                        <option value="all">all</option>
+                        <option value="transmissions">transmissions</option>
+                    </select>
+                    <button id="historyRefresh">Aktualisieren</button>
+                    <button id="historyExportCsv">CSV</button>
+                    <button id="historyExportJson">JSON</button>
+                    <button id="historyClear">Verlauf loeschen</button>
+                    <p id="historySummary"></p>
+                    <ul id="historyList"></ul>
+
                     <button id="clearCache">Cache leeren</button>
                     <span id="clearCacheStatus" style="display: none;"></span>
                 </body>
@@ -56,7 +76,10 @@ describe('options.js', () => {
                             timeOfClickProtection: false,
                             externalAnalysisConsent: true,
                             ipReputationProvider: 'abuseipdb',
-                            ipReputationApiKey: 'ip-key'
+                            ipReputationApiKey: 'ip-key',
+                            viewMode: 'research',
+                            historyEnabled: true,
+                            historyLimit: 250
                         }),
                         set: async (data) => {
                             context.browser.storage.local.lastSetData = data;
@@ -67,6 +90,18 @@ describe('options.js', () => {
                 permissions: {
                     contains: async () => true,
                     request: async () => true
+                },
+                runtime: {
+                    sendMessage: async (message) => {
+                        context.sentMessages.push(message);
+                        if (message.action === 'getHistory') {
+                            return context.historyResponse;
+                        }
+                        if (message.action === 'clearHistory') {
+                            return { status: 'success' };
+                        }
+                        return { status: 'success' };
+                    }
                 }
             },
             openDB: async (name, version) => ({ name, version }),
@@ -76,6 +111,10 @@ describe('options.js', () => {
                 log: () => {}
             },
             confirm: () => true, // default confirm behavior for tests
+            sentMessages: [],
+            historyResponse: { status: 'success', entries: [], summary: { total: 0, transmissions: 0, local: 0, providers: {}, lastTransmissionAt: null } },
+            URL: { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} },
+            Blob: class Blob { constructor(parts, opts) { this.parts = parts; this.opts = opts; } },
             setTimeout: (cb, ms) => cb() // fire immediately for tests
         };
 
@@ -201,6 +240,81 @@ describe('options.js', () => {
 
         assert.strictEqual(saveBtn.disabled, false);
         assert.strictEqual(saveBtn.textContent, 'Speichern');
+    });
+
+    it('loads the role and history settings', async () => {
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(context.document.getElementById('viewMode').value, 'research');
+        assert.strictEqual(context.document.getElementById('historyEnabled').checked, true);
+        assert.strictEqual(context.document.getElementById('historyLimit').value, '250');
+    });
+
+    it('saves the role and history settings', async () => {
+        context.document.getElementById('viewMode').value = 'audit';
+        context.document.getElementById('historyEnabled').checked = false;
+        context.document.getElementById('historyLimit').value = '1000';
+        context.document.getElementById('apikey').value = 'key';
+        context.document.getElementById('save').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const saved = context.browser.storage.local.lastSetData;
+        assert.strictEqual(saved.viewMode, 'audit');
+        assert.strictEqual(saved.historyEnabled, false);
+        assert.strictEqual(saved.historyLimit, 1000);
+    });
+
+    it('formats a history entry for the options list', () => {
+        const line = context.describeHistoryLine({
+            timestamp: '2026-09-28T10:00:00.000Z', action: 'attachment-upload', transmitted: true,
+            provider: 'hybrid-analysis', attachmentName: 'rechnung.pdf', sha256: 'a'.repeat(64),
+            jobId: 'job-7', verdict: 'MALICIOUS', detail: 'hochgeladen'
+        });
+        assert.match(line, /attachment-upload/);
+        assert.match(line, /uebertragen an hybrid-analysis/);
+        assert.match(line, /rechnung\.pdf/);
+        assert.match(line, /verdict=MALICIOUS/);
+        assert.match(line, /job=job-7/);
+    });
+
+    it('builds a CSV export with a header row and escaping', () => {
+        const csv = context.buildHistoryCsv([
+            { timestamp: '2026-09-28T10:00:00.000Z', action: 'local-check', transmitted: false, subject: 'Rechnung; wichtig', detail: 'ok' }
+        ]);
+        const lines = csv.split('\n');
+        assert.strictEqual(lines.length, 2);
+        assert.match(lines[0], /^timestamp;action;transmitted/);
+        assert.match(lines[1], /Rechnung; wichtig/);
+    });
+
+    it('builds a JSON export', () => {
+        const parsed = JSON.parse(context.buildHistoryJson([{ action: 'url-scan', transmitted: true }]));
+        assert.strictEqual(parsed.length, 1);
+        assert.strictEqual(parsed[0].action, 'url-scan');
+    });
+
+    it('renders the history list and summary', async () => {
+        context.historyResponse = {
+            status: 'success',
+            entries: [
+                { timestamp: '2026-09-28T10:00:00.000Z', action: 'local-check', transmitted: false, subject: 'Erste', detail: 'lokal' },
+                { timestamp: '2026-09-28T10:05:00.000Z', action: 'attachment-upload', transmitted: true, provider: 'hybrid-analysis', attachmentName: 'x.exe', detail: 'hochgeladen' }
+            ],
+            summary: { total: 2, transmissions: 1, local: 1, providers: { 'hybrid-analysis': 1 }, lastTransmissionAt: '2026-09-28T10:05:00.000Z' }
+        };
+        await context.loadHistory();
+
+        const list = context.document.getElementById('historyList');
+        assert.strictEqual(list.children.length, 2);
+        assert.strictEqual(list.children[0].textContent.includes('hochgeladen'), true);
+        assert.match(context.document.getElementById('historySummary').textContent, /1 Uebertragung/);
+    });
+
+    it('clears the history after confirmation', async () => {
+        context.document.getElementById('historyClear').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.ok(context.sentMessages.some(message => message.action === 'clearHistory'));
     });
 
     it('should clear cache when clearCache button is clicked (success)', async () => {

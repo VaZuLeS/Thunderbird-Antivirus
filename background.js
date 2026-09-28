@@ -175,6 +175,93 @@ async function ensureMessageDisplayScript(tabId) {
 }
 
 // ---------------------------------------------------------------------------
+// Verlauf (Audit-Trail)
+//
+// Haelt lokal fest, welche Nachrichten geprueft und welche Daten an welchen
+// Anbieter uebertragen wurden. Der Verlauf dient der Nachvollziehbarkeit fuer
+// Nutzer und Reviewer ("was hat das Add-on wann gesendet?") und verlaesst das
+// Geraet nicht.
+// ---------------------------------------------------------------------------
+const VIEW_MODES = ['quiet', 'private', 'business', 'research', 'audit'];
+const HISTORY_KEY = 'scanHistory';
+
+function newHistoryEntry(entry) {
+    return Object.assign({
+        id: 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+        timestamp: new Date().toISOString(),
+        transmitted: false,
+        provider: null,
+        dataType: null,
+        outcome: 'ok',
+        timing: 'realtime'
+    }, entry || {});
+}
+
+async function getScanHistory() {
+    try {
+        const stored = await browser.storage.local.get(HISTORY_KEY);
+        return Array.isArray(stored[HISTORY_KEY]) ? stored[HISTORY_KEY] : [];
+    } catch (e) {
+        Logger.warn('Verlauf konnte nicht gelesen werden:', e);
+        return [];
+    }
+}
+
+/** Schreibt einen Verlaufseintrag; Fehler duerfen den Scan nie stoeren. */
+async function recordScanHistory(entry) {
+    if (!historyEnabled) return null;
+    const record = newHistoryEntry(entry);
+    if (!record.timestamp || !record.action) return null;
+    try {
+        const history = await getScanHistory();
+        history.push(record);
+        const capped = history.slice(-historyLimit);
+        await browser.storage.local.set({ [HISTORY_KEY]: capped });
+        return record;
+    } catch (e) {
+        Logger.warn('Verlaufseintrag konnte nicht gespeichert werden:', e);
+        return null;
+    }
+}
+
+async function clearScanHistory() {
+    try {
+        await browser.storage.local.set({ [HISTORY_KEY]: [] });
+        return true;
+    } catch (e) {
+        Logger.warn('Verlauf konnte nicht geleert werden:', e);
+        return false;
+    }
+}
+
+function filterScanHistory(history, options = {}) {
+    return (history || []).filter(entry => {
+        if (!entry) return false;
+        if (options.messageHeaderId && entry.messageHeaderId !== options.messageHeaderId) return false;
+        if (options.onlyTransmissions && entry.transmitted !== true) return false;
+        if (options.action && entry.action !== options.action) return false;
+        return true;
+    });
+}
+
+/** Aggregiert die Uebertragungen einer Nachricht (fuer die Business-Ansicht). */
+function summarizeHistory(entries) {
+    const transmissions = (entries || []).filter(entry => entry.transmitted === true);
+    const byProvider = {};
+    for (const entry of transmissions) {
+        const key = entry.provider || 'unbekannt';
+        byProvider[key] = (byProvider[key] || 0) + 1;
+    }
+    return {
+        total: (entries || []).length,
+        transmissions: transmissions.length,
+        local: (entries || []).filter(entry => entry.transmitted !== true).length,
+        providers: byProvider,
+        lastTransmissionAt: transmissions.length ? transmissions[transmissions.length - 1].timestamp : null
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Auftragswarteschlange fuer zeitverzoegerte Analysen
 //
 // Die Schnellanalyse von Hybrid Analysis ist asynchron: Nach dem Upload liegt das
@@ -347,6 +434,23 @@ async function pollPendingScans() {
 
         const result = await fetchHybridVerdictForJob(job);
         if (result && result.verdict) {
+            await recordScanHistory({
+                action: 'verdict',
+                transmitted: true,
+                provider: 'hybrid-analysis',
+                dataType: 'sha256',
+                timing: 'delayed',
+                messageHeaderId: job.messageHeaderId || null,
+                messageId: job.messageId || null,
+                attachmentName: job.attachmentName || null,
+                partName: job.partName || null,
+                sha256: job.sha256,
+                submissionId: result.submissionId || job.submissionId || null,
+                jobId: result.jobId || job.jobId || null,
+                verdict: result.verdict,
+                outcome: 'ok',
+                detail: 'Zeitverzoegertes Ergebnis abgerufen: ' + result.verdict
+            });
             await storeJobResult(job, result);
             await removePendingScan(job.sha256, job.partName);
             finished++;
@@ -458,6 +562,16 @@ let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 let externalAnalysisConsent = false;
 
+// Ansichtsrolle steuert Informationsmenge und Unterbrechungsniveau.
+//   quiet    - nur Warnungen, minimaler Text
+//   private  - Standard: klare Sprache, keine technischen Kennungen
+//   business - zusaetzlich Zeitstempel, Zusammenfassungen, Hinweise
+//   research - volle Details (Hashes, Job-IDs, Versuche, Netzwerkziele)
+//   audit    - Nachweis-Sicht: Verlauf/Export im Vordergrund
+let viewMode = 'private';
+let historyEnabled = true;
+let historyLimit = 500;
+
 let sharedDBPromise = null;
 
 function getSharedDB() {
@@ -509,7 +623,7 @@ const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join(
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent']);
+    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent', 'viewMode', 'historyEnabled', 'historyLimit']);
     if (result.virustotalApikey !== undefined) {
       apikey_virustotal = result.virustotalApikey;
     }
@@ -519,6 +633,15 @@ async function loadSettings() {
     apikey_hybridanalysis = result.apikey;
     if (result.externalAnalysisConsent !== undefined) {
       externalAnalysisConsent = result.externalAnalysisConsent === true;
+    }
+    if (result.viewMode !== undefined) {
+      viewMode = VIEW_MODES.includes(result.viewMode) ? result.viewMode : 'private';
+    }
+    if (result.historyEnabled !== undefined) {
+      historyEnabled = result.historyEnabled === true;
+    }
+    if (result.historyLimit !== undefined) {
+      historyLimit = Math.max(50, Math.min(5000, parseInt(result.historyLimit, 10) || 500));
     }
     if (result.customBlacklist !== undefined) {
       customBlacklist = new Set(result.customBlacklist.map(s => s ? s.toLowerCase() : ""));
@@ -605,6 +728,15 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.externalAnalysisConsent !== undefined) {
     externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
   }
+  if (area === 'local' && changes.viewMode !== undefined) {
+    viewMode = VIEW_MODES.includes(changes.viewMode.newValue) ? changes.viewMode.newValue : 'private';
+  }
+  if (area === 'local' && changes.historyEnabled !== undefined) {
+    historyEnabled = changes.historyEnabled.newValue === true;
+  }
+  if (area === 'local' && changes.historyLimit !== undefined) {
+    historyLimit = Math.max(50, Math.min(5000, parseInt(changes.historyLimit.newValue, 10) || 500));
+  }
 });
 
 function extractPublicIPs(receivedHeaders) {
@@ -655,6 +787,16 @@ function extractPublicIPs(receivedHeaders) {
 async function checkAbuseIPDB(ip, apikey) {
     if (!mayTransmitExternally()) return false;
     try {
+        await recordScanHistory({
+            action: 'ip-check',
+            transmitted: true,
+            provider: 'abuseipdb',
+            dataType: 'ip',
+            timing: 'realtime',
+            ip,
+            outcome: 'ok',
+            detail: 'IP-Adresse bei AbuseIPDB abgefragt.'
+        });
         const response = await apiGateway.fetchWithTimeout(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, {
             method: 'GET',
             headers: {
@@ -1535,9 +1677,32 @@ async function handleDisplayedMessage(tab, message) {
     const showOptIn = !canAutoUpload &&
       ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0));
 
+    // Verlauf: festhalten, dass (und wie) diese Nachricht lokal geprueft wurde.
+    await recordScanHistory({
+      action: 'local-check',
+      transmitted: false,
+      timing: 'realtime',
+      messageHeaderId: message.headerMessageId || null,
+      messageId: message.id,
+      subject: message.subject || null,
+      sender: senderEmail || null,
+      attachmentCount: attachments.length,
+      linkCount: (filteredUrls || []).length,
+      riskScore: threat.score,
+      outcome: 'ok',
+      detail: 'Lokale Pruefung: ' + threat.score + '/100' +
+        (attachments.length ? ', ' + attachments.length + ' Anhang/Anhaenge gehasht' : '') +
+        ((filteredUrls || []).length ? ', ' + filteredUrls.length + ' Link(s) extrahiert' : '')
+    });
+
+    const historyForMessage = filterScanHistory(await getScanHistory(), {
+      messageHeaderId: message.headerMessageId || null
+    });
+
     updateDisplayState(tab.id, {
       mode: 'ready',
       messageId: message.id,
+      headerMessageId: message.headerMessageId || null,
       senderEmail,
       permission,
       consent: mayTransmitExternally(),
@@ -1545,7 +1710,17 @@ async function handleDisplayedMessage(tab, message) {
       showOptIn,
       threat,
       timeOfClickProtection,
-      urls: timeOfClickProtection ? (filteredUrls || []) : []
+      urls: timeOfClickProtection ? (filteredUrls || []) : [],
+      pendingJobs: (await getPendingScans())
+        .filter(job => job.messageId === message.id)
+        .map(describeScanJob),
+      pollIntervalMinutes: SCAN_POLL_INTERVAL_MINUTES,
+      localChecks: { timing: 'realtime', finished: true },
+      viewMode,
+      history: {
+        summary: summarizeHistory(historyForMessage),
+        recent: historyForMessage.slice(-20)
+      }
     });
 
     await ensureMessageDisplayScript(tab.id);
@@ -1726,6 +1901,23 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
                     'UPLOADED',
                     attachment
                 );
+
+                await recordScanHistory({
+                    action: 'attachment-upload',
+                    transmitted: true,
+                    provider: 'hybrid-analysis',
+                    dataType: 'attachment',
+                    timing: 'delayed',
+                    messageHeaderId: messageHeaderId || null,
+                    messageId: messageId || null,
+                    attachmentName: attachment.name,
+                    partName: attachment.partName,
+                    sha256: uploadData.sha256 || local_hash,
+                    submissionId: uploadData.submission_id || null,
+                    jobId: uploadData.job_id || null,
+                    outcome: 'pending',
+                    detail: 'Automatischer Upload (Datenschutz-Stufe).'
+                });
 
                 // Auch automatische Uploads laufen asynchron beim Anbieter.
                 await upsertPendingScan({
@@ -2386,6 +2578,23 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
     if (response.status === 200 || response.status === 201) {
         const sha256 = json_data.sha256 || hash;
 
+        await recordScanHistory({
+            action: 'attachment-upload',
+            transmitted: true,
+            provider: 'hybrid-analysis',
+            dataType: 'attachment',
+            timing: 'delayed',
+            messageHeaderId: headerMessageId || null,
+            messageId: messageId || null,
+            attachmentName,
+            partName,
+            sha256,
+            submissionId: json_data.submission_id || null,
+            jobId: json_data.job_id || null,
+            outcome: 'pending',
+            detail: 'Anhang wurde zur Analyse hochgeladen (Ergebnis zeitverzoegert).'
+        });
+
         // Der Anbieter analysiert asynchron: Auftrag merken und regelmaessig nachfragen.
         await upsertPendingScan({
             sha256,
@@ -2462,6 +2671,32 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case "requestScan":
             handleRequestScan(request, sender).then(res => sendResponse(res));
+            return true;
+
+        case "getHistory":
+            getScanHistory()
+                .then(history => {
+                    const filtered = filterScanHistory(history, {
+                        messageHeaderId: request.messageHeaderId,
+                        onlyTransmissions: request.onlyTransmissions === true
+                    });
+                    const limit = request.limit ? parseInt(request.limit, 10) : filtered.length;
+                    sendResponse({
+                        status: 'success',
+                        entries: filtered.slice(-limit),
+                        summary: summarizeHistory(filtered),
+                        viewMode,
+                        historyEnabled,
+                        historyLimit
+                    });
+                })
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
+        case "clearHistory":
+            clearScanHistory()
+                .then(cleared => sendResponse({ status: cleared ? 'success' : 'error' }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
             return true;
 
         case "scanStatus": {
@@ -2695,6 +2930,20 @@ async function handleUrlScan(url, headerMessageId) {
 
     const sha256 = json_data.sha256 || null;
 
+    await recordScanHistory({
+        action: 'url-scan',
+        transmitted: true,
+        provider: 'hybrid-analysis',
+        dataType: 'url',
+        timing: 'delayed',
+        messageHeaderId: headerMessageId || null,
+        sha256,
+        submissionId: json_data.submission_id || null,
+        jobId: json_data.job_id || null,
+        outcome: 'pending',
+        detail: 'URL wurde zur Analyse uebermittelt.'
+    });
+
     // Auch URL-Scans laufen beim Anbieter asynchron.
     if (sha256) {
         await upsertPendingScan({
@@ -2759,6 +3008,16 @@ async function checkVirusTotal(hash, apikey) {
         };
         try {
             const response = await apiGateway.fetchWithTimeout(url, options);
+            await recordScanHistory({
+                action: 'hash-lookup',
+                transmitted: true,
+                provider: 'virustotal',
+                dataType: 'sha256',
+                timing: 'realtime',
+                sha256: hash,
+                outcome: response.status === 200 ? 'ok' : 'error',
+                detail: 'SHA-256-Hash bei VirusTotal abgefragt (HTTP ' + response.status + ').'
+            });
             if (response.status === 200) {
                 const data = await response.json();
                 if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
@@ -2801,6 +3060,16 @@ async function checkURLhaus(domain, apikey) {
             body: body.toString()
         });
         const data = await response.json();
+        await recordScanHistory({
+            action: 'domain-check',
+            transmitted: true,
+            provider: 'urlhaus',
+            dataType: 'domain',
+            timing: 'realtime',
+            domain,
+            outcome: 'ok',
+            detail: 'Domain bei URLhaus abgefragt (' + (data && data.query_status) + ').'
+        });
         if (data.query_status === 'ok' && data.url_count > 0) {
             return true;
         }

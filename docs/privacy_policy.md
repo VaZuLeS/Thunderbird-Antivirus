@@ -175,9 +175,17 @@ Zugriffsrechte des Betriebssystem-Benutzerkontos und die Zugriffskontrolle des T
 - Zuordnungen zu Nachrichten über die Message-ID bzw. Header-ID,
 - Nachrichten-Metadaten, die zur Anzeige im Popup gespeichert werden (Absenderadresse, Betreff,
   Dateiname und SHA-256-Hash der geprüften Anhänge sowie der Teilename innerhalb der Nachricht),
+- Verlauf (`scanHistory`): Zeitpunkt, Aktion, Anbieter, Datentyp, Dateiname, SHA-256, Submission-/Job-ID,
+  Verdikt und Zeitverhalten (Echtzeit/zeitverzögert) jeder Prüfung und jeder Übertragung. Der Verlauf bleibt
+  lokal, ist auf 50–5000 Einträge begrenzbar, kann abgeschaltet, in den Einstellungen als CSV/JSON exportiert und
+  jederzeit gelöscht werden,
 - offene Analyse-Aufträge (`pendingScans`): SHA-256-Hash, Submission-/Job-ID des Anbieters, Dateiname,
   Nachrichten-Kennung, Startzeit und Anzahl der Abfrageversuche. Diese Liste dient ausschließlich dazu, das
   zeitverzögert eintreffende Ergebnis nachzuladen; sie wird nach Abschluss oder Ablauf des Auftrags geleert.
+
+Die Informationsmenge hängt von der gewählten Ansichtsrolle ab (`viewMode`: „Nur Warnungen“, „Privat“,
+„Geschäftlich“, „IT-Security-Forscher“, „Nachweis/Compliance“). Die Rolle steuert ausschließlich die
+Darstellung, nicht die Verarbeitung oder die Übertragung.
 
 Die externe Analyse ist asynchron: Nach dem Hochladen liegt das Ergebnis erst nach einigen Minuten vor. Die
 Erweiterung fragt es automatisch im Hintergrund ab (über die Alarme-Funktion von Thunderbird, höchstens einmal
@@ -430,6 +438,9 @@ account and by the Thunderbird profile's access control.
 - mappings to messages via Message-ID or header ID,
 - message metadata stored for the popup (sender address, subject, file name and SHA-256 hash of the
   checked attachments, and the MIME part name inside the message),
+- history (`scanHistory`): time, action, provider, data type, file name, SHA-256, submission/job id, verdict and
+  timing (real time vs. delayed) of every check and every transmission. The history stays local, can be limited
+  to 50–5000 entries, switched off, exported as CSV/JSON from the options page and deleted at any time,
 - pending analysis jobs (`pendingScans`): SHA-256 hash, provider submission/job id, file name, message id,
   start time and number of polling attempts. This list only exists to fetch the delayed verdict and is
   cleared once the job is finished or expired.

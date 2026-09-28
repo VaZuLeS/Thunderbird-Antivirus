@@ -110,6 +110,18 @@ popup translates into a user-visible explanation.
 - **Delayed (provider):** `POST /api/v2/quick-scan/file` and `/quick-scan/url` only **enqueue** an analysis at Hybrid Analysis. The verdict is fetched later via `GET /api/v2/overview/{sha256}`. Every job is stored locally (`pendingScans` in `browser.storage.local`, containing SHA-256, submission/job id, attachment name, message id, start time and attempt counter) and polled by the `alarms` handler until the verdict arrives, the attempt limit (30) or the age limit (90 minutes) is reached. Finished verdicts are written into the local IndexedDB cache and reported with a notification.
 - VirusTotal hash lookups and URLhaus/AbuseIPDB checks are synchronous (result within the same request) and are therefore labelled as real time in the UI.
 
+### 3.5 View roles and audit trail
+
+The option `viewMode` controls **presentation only** (`quiet`, `private`, `business`, `research`, `audit`); it never
+changes what is transmitted and adds no permissions. `quiet` suppresses the opt-in banner entirely.
+
+The add-on keeps a local audit trail (`scanHistory` in `browser.storage.local`, capped at 50-5000 entries,
+configurable, can be disabled): one entry per local check, hash lookup, attachment upload, URL scan, domain/IP
+lookup and for each delayed verdict that is fetched. Each entry names the action, the provider, the data type
+(sha256/attachment/url/domain/ip), the timing (real time vs. delayed), the file name, the job id and the verdict -
+so a reviewer can replay exactly what left the device and when. The trail is never transmitted; the options page can
+export it as CSV/JSON and delete it (`getHistory`, `clearHistory`).
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,

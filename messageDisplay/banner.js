@@ -35,7 +35,11 @@ const THUNDY_FALLBACKS = {
   bannerStatusFinished: 'External analysis finished (delayed): verdict $VERDICT$.',
   bannerStatusTimeout: 'No result within the time window - you can trigger the check again later.',
   bannerStatusFailed: 'Analysis failed: $ERROR$',
-  bannerStatusDone: 'Analysis finished - the result is shown in the popup (Thundy AV button).'
+  bannerStatusDone: 'Analysis finished - the result is shown in the popup (Thundy AV button).',
+  bannerStatusBusiness: 'Local check: score $SCORE$ of 100$TRANSMISSIONS$',
+  bannerTransmissionSummary: ' | transmitted: $COUNT$ item(s) to $PROVIDERS$ (last: $TIME$)',
+  bannerStatusResearch: 'Local check finished (real time), score $SCORE$ of 100. Attachments hashed: $HASHES$',
+  bannerHistoryHint: 'Full history and export: add-on options, section "History".'
 };
 
 function thundyText(key, fallback, subs) {
@@ -290,8 +294,33 @@ function thundyWatchScanStatus(container, options) {
 }
 
 /** Renders the complete banner state. Exposed for unit tests. */
+function thundyDetailLevel(viewMode) {
+  switch (viewMode) {
+    case 'quiet': return 0;
+    case 'research':
+    case 'audit': return 2;
+    case 'business': return 1;
+    default: return 1;
+  }
+}
+
 function thundyRenderDisplayState(state) {
   if (!state || state.mode !== 'ready' || !document.body) return;
+
+  const viewMode = state.viewMode || 'private';
+  const detail = thundyDetailLevel(viewMode);
+  const threat = state.threat || {};
+
+  // "Nur Warnungen": keinerlei Hinweisbanner, solange nichts auffaellig ist.
+  if (viewMode === 'quiet' && !(typeof threat.score === 'number' && threat.score >= 50)) {
+    thundyRemove('thundy-optin-banner');
+    thundyRemove('thundy-threat-banner');
+    return;
+  }
+  if (viewMode === 'quiet') {
+    thundyRemove('thundy-optin-banner');
+  }
+
   thundyRenderThreat(state);
   thundyRenderOptIn(state, {
     requestScan: ({ persist }) => browser.runtime.sendMessage({
@@ -315,7 +344,27 @@ function thundyRenderDisplayState(state) {
     });
   } else if (state.localChecks && state.localChecks.finished) {
     const score = state.threat && typeof state.threat.score === 'number' ? state.threat.score : 0;
-    thundyRenderScanStatus(statusContainer, thundyText('bannerStatusRealtime', THUNDY_FALLBACKS.bannerStatusRealtime, [String(score)]));
+    const summary = (state.history && state.history.summary) || null;
+
+    if (detail >= 2) {
+      const recent = (state.history && state.history.recent) || [];
+      const hashes = recent.filter(entry => entry.sha256).slice(-3)
+        .map(entry => entry.sha256.slice(0, 16) + '…').join(', ') || 'keine';
+      thundyRenderScanStatus(statusContainer, thundyText('bannerStatusResearch', THUNDY_FALLBACKS.bannerStatusResearch, [String(score), hashes]));
+      if (viewMode === 'audit') {
+        const status = statusContainer.querySelector('#thundy-scan-status');
+        if (status) status.title = thundyText('bannerHistoryHint', THUNDY_FALLBACKS.bannerHistoryHint);
+      }
+    } else if (summary && summary.transmissions > 0) {
+      const providers = Object.keys(summary.providers).join(', ');
+      const time = summary.lastTransmissionAt ? new Date(summary.lastTransmissionAt).toLocaleTimeString() : '-';
+      thundyRenderScanStatus(statusContainer, thundyText('bannerStatusBusiness', THUNDY_FALLBACKS.bannerStatusBusiness, [
+        String(score),
+        thundyText('bannerTransmissionSummary', THUNDY_FALLBACKS.bannerTransmissionSummary, [String(summary.transmissions), providers, time])
+      ]));
+    } else {
+      thundyRenderScanStatus(statusContainer, thundyText('bannerStatusRealtime', THUNDY_FALLBACKS.bannerStatusRealtime, [String(score)]));
+    }
   }
 }
 

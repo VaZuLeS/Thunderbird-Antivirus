@@ -129,5 +129,97 @@
   },
   "bannerStatusDone": {
     "message": "Analysis finished - the result is shown in the popup (Thundy AV button)."
+  },
+  "bannerStatusBusiness": {
+    "message": "Local check: score $SCORE$ of 100$TRANSMISSIONS$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "transmissions": {
+        "content": "$2"
+      },
+      "count": {
+        "content": "$3"
+      },
+      "providers": {
+        "content": "$4"
+      },
+      "time": {
+        "content": "$5"
+      },
+      "hashes": {
+        "content": "$6"
+      }
+    }
+  },
+  "bannerTransmissionSummary": {
+    "message": " | transmitted: $COUNT$ item(s) to $PROVIDERS$ (last: $TIME$)",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "transmissions": {
+        "content": "$2"
+      },
+      "count": {
+        "content": "$3"
+      },
+      "providers": {
+        "content": "$4"
+      },
+      "time": {
+        "content": "$5"
+      },
+      "hashes": {
+        "content": "$6"
+      }
+    }
+  },
+  "bannerStatusResearch": {
+    "message": "Local check finished (real time), score $SCORE$ of 100. Hashes: $HASHES$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "transmissions": {
+        "content": "$2"
+      },
+      "count": {
+        "content": "$3"
+      },
+      "providers": {
+        "content": "$4"
+      },
+      "time": {
+        "content": "$5"
+      },
+      "hashes": {
+        "content": "$6"
+      }
+    }
+  },
+  "bannerHistoryHint": {
+    "message": "Full history and CSV/JSON export: add-on options, section \"History\".",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "transmissions": {
+        "content": "$2"
+      },
+      "count": {
+        "content": "$3"
+      },
+      "providers": {
+        "content": "$4"
+      },
+      "time": {
+        "content": "$5"
+      },
+      "hashes": {
+        "content": "$6"
+      }
+    }
   }
 }

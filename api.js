@@ -120,8 +120,10 @@ if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages
 
 // Ohne Zustimmung zu externer Analyse wird nichts übertragen - das muss im
 // Popup sichtbar sein, bevor der Nutzer Uploads auslöst.
-const settings = await browser.storage.local.get(['externalAnalysisConsent']);
+const settings = await browser.storage.local.get(['externalAnalysisConsent', 'viewMode', 'historyEnabled']);
 const externalAnalysisConsent = settings.externalAnalysisConsent === true;
+const viewMode = VIEW_MODE_LABELS[settings.viewMode] ? settings.viewMode : 'private';
+const technicalView = isTechnicalView(viewMode);
 
 
 if (!message) {
@@ -154,7 +156,12 @@ const updateGridField = (id, value, fallbackText) => {
 
 updateGridField("subject", message.subject, "(Kein Betreff)");
 updateGridField("from", message.author, "(Unbekannter Absender)");
-updateGridField("MessageHeaderID", message.headerMessageId, "(Keine ID)");
+if (technicalView) {
+    updateGridField("MessageHeaderID", message.headerMessageId, "(Keine ID)");
+} else {
+    const idRow = document.getElementById("MessageHeaderID");
+    if (idRow && idRow.parentNode) idRow.parentNode.style.display = "none";
+}
 
 // Initialen Lade-Status für async Operationen setzen
 let apiContainer = document.getElementById('hybrid_analysis_api_content');
@@ -200,8 +207,9 @@ if (apiContainer) {
     const activeTabId = tabs[0] ? tabs[0].id : null;
     renderAttachmentPanel(message, message.headerMessageId, apiContainer);
     renderScanStatusPanel(message.headerMessageId, apiContainer);
+    renderHistoryPanel(message, apiContainer, viewMode);
     browser.runtime.sendMessage({ action: 'getDisplayState', tabId: activeTabId, messageId: message.id })
-        .then(state => renderThreatSummary(apiContainer, state))
+        .then(state => renderThreatSummary(apiContainer, state, viewMode))
         .catch(error => console.error('Bewertung konnte nicht geladen werden:', error));
 }
 
@@ -698,6 +706,118 @@ async function renderScanStatusPanel(headerMessageId, container) {
     return card;
 }
 
+// ---------------------------------------------------------------------------
+// Rollen (Ansichtsmodi): steuern Informationsmenge und Detailtiefe.
+//   quiet    - nur Warnungen
+//   private  - Standard, klare Sprache ohne technische Kennungen
+//   business - zusaetzlich Zeitstempel und Uebertragungszusammenfassung
+//   research - volle Details (Hashes, Job-IDs, Versuche)
+//   audit    - Nachweis-Sicht mit Verlauf und Export
+// ---------------------------------------------------------------------------
+/** Liest die Ansichtsrolle jederzeit neu aus dem Speicher (Popup kann offen bleiben). */
+async function currentViewMode() {
+    try {
+        const stored = await browser.storage.local.get('viewMode');
+        return VIEW_MODE_LABELS[stored.viewMode] ? stored.viewMode : 'private';
+    } catch (error) {
+        return 'private';
+    }
+}
+
+const VIEW_MODE_LABELS = {
+    quiet: 'Nur Warnungen',
+    private: 'Privat',
+    business: 'Geschaeftlich',
+    research: 'IT-Security-Forscher',
+    audit: 'Nachweis / Compliance'
+};
+
+function viewModeDetailLevel(viewMode) {
+    switch (viewMode) {
+        case 'quiet': return 0;
+        case 'research':
+        case 'audit': return 2;
+        default: return 1;
+    }
+}
+
+function isTechnicalView(viewMode) {
+    return viewModeDetailLevel(viewMode) >= 2;
+}
+
+function shorten(value, length) {
+    if (!value) return '-';
+    const text = String(value);
+    return text.length > length ? text.slice(0, length) + '…' : text;
+}
+
+function describeHistoryEntry(entry, viewMode) {
+    const detail = viewModeDetailLevel(viewMode);
+    const time = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : '-';
+    const what = entry.attachmentName || entry.domain || entry.ip || entry.sha256 || entry.subject || '(Nachricht)';
+    const target = entry.transmitted ? 'uebertragen an ' + (entry.provider || 'Anbieter') : 'nur lokal';
+    let line = time + ' - ' + (detail >= 1 ? what : 'Pruefung') + ' - ' + target;
+    if (detail >= 2) {
+        line += ' [' + entry.action + ']';
+        if (entry.sha256) line += ' sha256=' + shorten(entry.sha256, 16);
+        if (entry.jobId) line += ' job=' + entry.jobId;
+        if (entry.verdict) line += ' verdict=' + entry.verdict;
+    }
+    if (entry.detail) line += ' - ' + entry.detail;
+    return line;
+}
+
+async function renderHistoryPanel(message, container, viewMode) {
+    if (viewModeDetailLevel(viewMode) === 0) return null;
+
+    let response;
+    try {
+        response = await browser.runtime.sendMessage({
+            action: 'getHistory',
+            messageHeaderId: message.headerMessageId,
+            limit: 50
+        });
+    } catch (error) {
+        console.error('Verlauf konnte nicht geladen werden:', error);
+        return null;
+    }
+    if (!response || response.status !== 'success' || !Array.isArray(response.entries) || response.entries.length === 0) {
+        return null;
+    }
+
+    const card = document.createElement('div');
+    card.id = 'thundy-history-panel';
+    card.className = 'card card-info mb-3';
+
+    const title = document.createElement('p');
+    const summary = response.summary || {};
+    title.textContent = VIEW_MODE_LABELS[viewMode] + ': Verlauf dieser Nachricht (' + response.entries.length + ' Eintraege, ' +
+        (summary.transmissions || 0) + ' Uebertragung(en))';
+    card.appendChild(title);
+
+    const list = document.createElement('ul');
+    list.className = 'thundy-history-list';
+    for (const entry of response.entries.slice(-20).reverse()) {
+        const item = document.createElement('li');
+        item.textContent = describeHistoryEntry(entry, viewMode);
+        list.appendChild(item);
+    }
+    card.appendChild(list);
+
+    const hint = document.createElement('small');
+    hint.textContent = viewModeClickHint(viewMode);
+    card.appendChild(hint);
+
+    container.appendChild(card);
+    return card;
+}
+
+function viewModeClickHint(viewMode) {
+    if (viewMode === 'audit') return 'Vollstaendiger Verlauf inklusive CSV/JSON-Export in den Einstellungen, Abschnitt "Verlauf".';
+    if (viewMode === 'research') return 'Die Sicht "IT-Security-Forscher" zeigt Hashes, Job-IDs und Versuche; Export in den Einstellungen.';
+    return 'Mehr Details in den Einstellungen (Ansicht/Verlauf).';
+}
+
 function renderThreatSummary(container, state) {
     if (!state || state.mode !== 'ready' || !state.threat) return;
     const threat = state.threat;
@@ -732,7 +852,9 @@ function renderThreatSummary(container, state) {
     container.appendChild(card);
 }
 
-async function renderAttachmentPanel(message, headerMessageId, container) {
+async function renderAttachmentPanel(message, headerMessageId, container, viewModeOverride) {
+    const activeViewMode = viewModeOverride || await currentViewMode();
+    const technicalViewActive = isTechnicalView(activeViewMode);
     let response;
     try {
         response = await browser.runtime.sendMessage({ action: 'listAttachments', messageId: message.id });
@@ -772,7 +894,9 @@ async function renderAttachmentPanel(message, headerMessageId, container) {
             hashButton.disabled = true;
             try {
                 const result = await requestAttachmentHash(message.id, attachment.partName);
-                status.textContent = 'SHA-256: ' + result.sha256;
+                status.textContent = technicalViewActive
+                    ? 'SHA-256: ' + result.sha256
+                    : 'SHA-256 berechnet: ' + shorten(result.sha256, 16) + ' (' + formatFileSize(result.size) + ')';
             } catch (error) {
                 status.textContent = 'Fehler: ' + error.message;
             } finally {
@@ -807,7 +931,9 @@ async function renderAttachmentPanel(message, headerMessageId, container) {
                     partName: attachment.partName,
                     headerMessageId: headerMessageId
                 });
-                status.textContent = 'Analyse angefordert (SHA-256: ' + sha256 + ')';
+                status.textContent = technicalViewActive
+                    ? 'Analyse angefordert (SHA-256: ' + sha256 + ')'
+                    : 'Analyse angefordert - Ergebnis wird automatisch abgerufen.';
             } catch (error) {
                 status.textContent = 'Fehler: ' + error.message;
                 if (error.code === 'NO_API_KEY' || error.code === 'EXTERNAL_ANALYSIS_DISABLED' || error.code === 'PERMISSION_REQUIRED') {

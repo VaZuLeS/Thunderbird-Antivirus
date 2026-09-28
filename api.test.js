@@ -3477,7 +3477,7 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         const context = {
             browser: {
                 i18n: { getMessage: () => '' },
-                storage: { local: { get: async () => ({ apikey: 'test', externalAnalysisConsent: true }) } },
+                storage: { local: { get: async () => ({ apikey: 'test', externalAnalysisConsent: true, viewMode: options.viewMode || 'private', historyEnabled: true }) } },
                 permissions: { contains: async () => true },
                 tabs: { query: async () => [{ id: 3 }] },
                 messageDisplay: { getDisplayedMessages: async () => ({ messages: [{ id: 1, headerMessageId: 'h1', subject: 's', author: 'a@b.de' }] }) },
@@ -3559,7 +3559,78 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         row.querySelectorAll('button')[0].click();
         await new Promise(resolve => setImmediate(resolve));
 
+        // Rolle "Privat": gekuerzter Hash, keine vollstaendigen technischen Werte
+        assert.match(row.textContent, /SHA-256 berechnet: a{16}/);
+        assert.ok(!row.textContent.includes('a'.repeat(64)), 'full hash must stay hidden in the private view');
+    });
+
+    it('shows the full hash to the technical roles', async () => {
+        const { context } = createHarness({ viewMode: 'research' });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+        await context.renderAttachmentPanel({ id: 1 }, 'h1', container);
+
+        const row = container.querySelectorAll('.thundy-attachment-row')[0];
+        row.querySelectorAll('button')[0].click();
+        await new Promise(resolve => setImmediate(resolve));
+
         assert.match(row.textContent, /SHA-256: a{64}/);
+    });
+
+    it('maps the roles to detail levels', () => {
+        const { context } = createHarness();
+        assert.strictEqual(context.viewModeDetailLevel('quiet'), 0);
+        assert.strictEqual(context.viewModeDetailLevel('private'), 1);
+        assert.strictEqual(context.viewModeDetailLevel('business'), 1);
+        assert.strictEqual(context.viewModeDetailLevel('research'), 2);
+        assert.strictEqual(context.viewModeDetailLevel('audit'), 2);
+        assert.strictEqual(context.isTechnicalView('business'), false);
+        assert.strictEqual(context.isTechnicalView('audit'), true);
+    });
+
+    it('formats history entries according to the role', () => {
+        const { context } = createHarness();
+        const entry = {
+            timestamp: '2026-09-28T12:00:00.000Z', action: 'attachment-upload', transmitted: true,
+            provider: 'hybrid-analysis', attachmentName: 'rechnung.pdf', sha256: 'b'.repeat(64),
+            jobId: 'job-1', detail: 'hochgeladen'
+        };
+        const privateLine = context.describeHistoryEntry(entry, 'private');
+        const researchLine = context.describeHistoryEntry(entry, 'research');
+
+        assert.match(privateLine, /rechnung\.pdf/);
+        assert.match(privateLine, /uebertragen an hybrid-analysis/);
+        assert.ok(!privateLine.includes('b'.repeat(64)), 'no raw hash in the private view');
+        assert.match(researchLine, /sha256=b{16}/);
+        assert.match(researchLine, /job=job-1/);
+        assert.match(researchLine, /\[attachment-upload\]/);
+    });
+
+    it('renders the per-message history for non-quiet roles', async () => {
+        const entry = {
+            timestamp: '2026-09-28T12:00:00.000Z', action: 'local-check', transmitted: false,
+            subject: 'Rechnung', detail: 'Lokale Pruefung: 25/100'
+        };
+        const { context } = createHarness({
+            viewMode: 'business',
+            onMessage: (message) => message.action === 'getHistory'
+                ? { status: 'success', entries: [entry], summary: { total: 1, transmissions: 0, providers: {} } }
+                : undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        await context.renderHistoryPanel({ id: 1, headerMessageId: 'h1' }, container, 'business');
+
+        const panel = context.document.getElementById('thundy-history-panel');
+        assert.ok(panel, 'history panel expected');
+        assert.match(panel.textContent, /Verlauf dieser Nachricht/);
+        assert.match(panel.textContent, /nur lokal/);
+    });
+
+    it('hides the history in the quiet role', async () => {
+        const { context } = createHarness({ viewMode: 'quiet' });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+        const result = await context.renderHistoryPanel({ id: 1, headerMessageId: 'h1' }, container, 'quiet');
+        assert.strictEqual(result, null);
     });
 
     it('uploads on demand and renders the analysis result', async () => {
@@ -3573,6 +3644,7 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
 
         assert.ok(sent.some(m => m.action === 'uploadAttachment' && m.partName === '1.2'));
         assert.match(row.textContent, /Analyse angefordert/);
+        assert.ok(!row.textContent.includes('b'.repeat(64)), 'hash hidden in the private view');
     });
 
     it('explains why a manual upload is not possible and offers the options page', async () => {

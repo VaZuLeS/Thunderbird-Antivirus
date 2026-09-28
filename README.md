@@ -141,6 +141,17 @@ The popup lists every attachment of the displayed message with type and size:
   popup. Without consent, API key or host permission the popup explains what is missing and links to the
   options page.
 
+### View roles and audit trail
+
+Five view roles (`viewMode`) tailor the amount of information and the interruption level: `quiet` (warnings only),
+`private` (default, no technical ids), `business` (timestamps and transmission summary), `research` (hashes, job ids,
+attempts, network targets) and `audit` (evidence-first). Roles change presentation only.
+
+A local audit trail (`scanHistory`) records what was checked and what was transmitted: time, action, provider, data
+type, file name, SHA-256, submission/job id, verdict and whether the result was real time or delayed. It is shown per
+message in the popup, in full in the options page (filter: all / transmissions only), can be exported as CSV/JSON,
+limited (50-5000 entries) or switched off - and it never leaves the device.
+
 ### Scan status: real time vs. delayed
 
 Local checks (attachment hashes, heuristics, header and link analysis) finish immediately - the UI labels them as

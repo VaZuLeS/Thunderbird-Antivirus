@@ -39,6 +39,26 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.8.0] – 2026-09-28
+
+### Added
+
+- **Ansichtsrollen (`viewMode`)** steuern Informationsmenge und Unterbrechungsniveau, ohne Sicherheitsfunktionen zu aendern:
+  `quiet` (nur Warnungen), `private` (Standard, keine technischen Kennungen), `business` (Zeitstempel,
+  Uebertragungsuebersicht), `research` (Hashes, Job-IDs, Versuche), `audit` (Nachweis-Sicht). Banner und Popup richten
+  sich danach; in der Rolle `quiet` erscheint der Opt-in-Hinweis gar nicht mehr.
+- **Verlauf (Audit-Trail):** Der Add-on haelt lokal fest, welche Nachrichten geprueft und **welche Daten an welchen
+  Anbieter uebertragen** wurden (Zeitpunkt, Aktion, Anbieter, Datentyp, Dateiname, SHA-256, Job-ID, Verdikt, Timing
+  Echtzeit/zeitverzoegert). Eintraege entstehen bei lokaler Pruefung, Hash-Abfrage, Anhang-Upload, URL-Scan,
+  Domain-/IP-Pruefung und beim Abruf eines verzoegerten Verdikts.
+- **Verlauf im Popup** je Nachricht (rollenabhaengig: Zusammenfassung oder volle Details) und **vollstaendiger Verlauf
+  in den Einstellungen** mit Filter (alle / nur Uebertragungen), Zusammenfassung, **CSV- und JSON-Export** sowie
+  "Verlauf loeschen". Aufzeichnung und maximale Eintragszahl (50-5000) sind konfigurierbar.
+- Neue Hintergrund-Aktionen `getHistory` und `clearHistory`; neue Einstellungen `viewMode`, `historyEnabled`,
+  `historyLimit`.
+- Optionen-Seite in Abschnitte gegliedert (Zustimmung, Anbieter, Datenschutz, Ansicht/Rolle, Verlauf); die rohe
+  `MessageHeaderID` wird nur noch in den technischen Rollen angezeigt.
+
 ## [1.7.1] – 2026-09-28
 
 Ergebnis einer erneuten Pruefung (Audit) des Auslieferungscodes nach 1.7.0.
