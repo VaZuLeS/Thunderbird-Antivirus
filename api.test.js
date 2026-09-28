@@ -3714,6 +3714,44 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         assert.strictEqual(context.document.getElementById('thundy-scan-status-panel'), null);
     });
 
+    it('builds and offers the per-message report export', async () => {
+        const report = {
+            generatedAt: '2026-09-28T10:00:00.000Z', subject: 'Rechnung', sender: 'kunde@example.com',
+            riskScore: 60, authStatus: 'fail', reasons: ['SPF fehlgeschlagen'],
+            attachments: [{ name: 'rechnung.pdf' }], transmissions: [{ provider: 'hybrid-analysis' }],
+            markdown: '# Bericht'
+        };
+        const { context, sent } = createHarness({
+            viewMode: 'business',
+            onMessage: (message) => message.action === 'getMessageReport'
+                ? { status: 'success', report }
+                : undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        await context.renderReportExport({ id: 1 }, container, 'business');
+
+        const panel = context.document.getElementById('thundy-report-panel');
+        assert.ok(panel, 'report panel expected');
+        assert.match(panel.textContent, /Bewertung 60\/100/);
+        assert.match(panel.textContent, /1 Anhang\/Anhänge/);
+        assert.match(panel.textContent, /1 Übertragung\(en\)/);
+        assert.ok(sent.some(m => m.action === 'getMessageReport' && m.messageId === 1));
+        const buttons = panel.querySelectorAll('button');
+        assert.strictEqual(buttons.length, 2);
+        assert.match(buttons[0].textContent, /Markdown/);
+        assert.match(buttons[1].textContent, /JSON/);
+    });
+
+    it('summarizes the report according to the role', () => {
+        const { context } = createHarness();
+        const report = { riskScore: 60, authStatus: 'fail', attachments: [{}], transmissions: [{}] };
+        assert.match(context.describeReportSummary(report, 'private'), /Bewertung 60\/100/);
+        assert.ok(!context.describeReportSummary(report, 'private').includes('Auth:'),
+            'the private view hides authentication details');
+        assert.match(context.describeReportSummary(report, 'research'), /Auth: fail/);
+    });
+
     it('renders the local score together with its reasons', async () => {
         const { context } = createHarness({
             displayState: { mode: 'ready', threat: { score: 70, reasons: ['Link-Domain weicht ab.', 'SPF fehlgeschlagen.'], authStatus: 'fail' } },

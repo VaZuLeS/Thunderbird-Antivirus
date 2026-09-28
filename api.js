@@ -208,6 +208,7 @@ if (apiContainer) {
     renderAttachmentPanel(message, message.headerMessageId, apiContainer);
     renderScanStatusPanel(message.headerMessageId, apiContainer);
     renderHistoryPanel(message, apiContainer, viewMode);
+    renderReportExport(message, apiContainer, viewMode);
     browser.runtime.sendMessage({ action: 'getDisplayState', tabId: activeTabId, messageId: message.id })
         .then(state => renderThreatSummary(apiContainer, state, viewMode))
         .catch(error => console.error('Bewertung konnte nicht geladen werden:', error));
@@ -765,6 +766,57 @@ function describeHistoryEntry(entry, viewMode) {
     }
     if (entry.detail) line += ' - ' + entry.detail;
     return line;
+}
+
+/** Berichts-Export (Markdown/JSON) je Nachricht - auch ohne Zustimmung moeglich. */
+async function renderReportExport(message, container, viewMode) {
+    let report = null;
+    try {
+        const response = await browser.runtime.sendMessage({ action: 'getMessageReport', messageId: message.id });
+        if (!response || response.status !== 'success') return null;
+        report = response.report;
+    } catch (error) {
+        console.error('Bericht konnte nicht erstellt werden:', error);
+        return null;
+    }
+
+    const card = document.createElement('div');
+    card.id = 'thundy-report-panel';
+    card.className = 'card card-info mb-3';
+
+    const title = document.createElement('p');
+    title.textContent = 'Bericht: ' + describeReportSummary(report, viewMode);
+    card.appendChild(title);
+
+    const markdownButton = document.createElement('button');
+    markdownButton.type = 'button';
+    markdownButton.textContent = 'Bericht als Markdown';
+    markdownButton.addEventListener('click', () => {
+        downloadHistoryFile('thundy-av-bericht.md', report.markdown, 'text/markdown;charset=utf-8');
+    });
+    card.appendChild(markdownButton);
+
+    const jsonButton = document.createElement('button');
+    jsonButton.type = 'button';
+    jsonButton.textContent = 'Bericht als JSON';
+    jsonButton.addEventListener('click', () => {
+        downloadHistoryFile('thundy-av-bericht.json', JSON.stringify(report, null, 2), 'application/json');
+    });
+    card.appendChild(jsonButton);
+
+    container.appendChild(card);
+    return card;
+}
+
+function describeReportSummary(report, viewMode) {
+    if (!report) return 'nicht verfügbar';
+    const score = report.riskScore === null || report.riskScore === undefined ? 'unbekannt' : report.riskScore + '/100';
+    let text = 'Bewertung ' + score + ', ' + report.attachments.length + ' Anhang/Anhänge, ' +
+        report.transmissions.length + ' Übertragung(en)';
+    if (isTechnicalView(viewMode)) {
+        text += ', Auth: ' + (report.authStatus || 'unbekannt');
+    }
+    return text;
 }
 
 async function renderHistoryPanel(message, container, viewMode) {

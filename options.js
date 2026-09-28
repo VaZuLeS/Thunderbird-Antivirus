@@ -272,6 +272,106 @@ async function loadHistory() {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Statistik und Diagnose (rein lokal, keine Übertragung)
+// ---------------------------------------------------------------------------
+function renderStatistics(container, statistics, managedInfo) {
+    if (!container) return;
+    container.textContent = '';
+
+    const headline = document.createElement('p');
+    headline.textContent = 'Zeitraum ' + statistics.windowDays + ' Tag(e): ' + statistics.recent + ' von ' +
+        statistics.total + ' Einträgen';
+    container.appendChild(headline);
+
+    const summaryList = document.createElement('ul');
+    const lines = [
+        'Übertragungen an Anbieter: ' + statistics.transmissions,
+        'Rein lokale Prüfungen: ' + statistics.localOnly
+    ];
+    for (const [provider, count] of Object.entries(statistics.byProvider || {})) {
+        lines.push('davon ' + provider + ': ' + count);
+    }
+    for (const [action, count] of Object.entries(statistics.byAction || {})) {
+        lines.push('Aktion ' + action + ': ' + count);
+    }
+    if (managedInfo && managedInfo.managed) {
+        lines.push('Verwaltete Vorgaben aktiv: ' + (managedInfo.managedKeys || []).join(', '));
+    }
+    for (const line of lines) {
+        const item = document.createElement('li');
+        item.textContent = line;
+        summaryList.appendChild(item);
+    }
+    container.appendChild(summaryList);
+
+    const days = Object.entries(statistics.byDay || {}).sort();
+    if (days.length > 0) {
+        const dayList = document.createElement('small');
+        dayList.textContent = 'Pro Tag: ' + days.map(([day, count]) => day + ': ' + count).join(' · ');
+        container.appendChild(dayList);
+    }
+}
+
+function renderDiagnostics(container, report) {
+    if (!container) return;
+    container.textContent = '';
+
+    const headline = document.createElement('p');
+    headline.textContent = 'Ergebnis: ' + report.summary.ok + ' ok, ' + report.summary.warn + ' Hinweis(e), ' +
+        report.summary.fail + ' Fehler - Stand ' + new Date(report.generatedAt).toLocaleString();
+    container.appendChild(headline);
+
+    const list = document.createElement('ul');
+    for (const check of report.checks) {
+        const item = document.createElement('li');
+        const icon = check.status === 'ok' ? '✅' : (check.status === 'warn' ? '⚠️' : '❌');
+        item.textContent = icon + ' ' + check.label + ': ' + check.detail;
+        list.appendChild(item);
+    }
+    container.appendChild(list);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const statisticsButton = document.getElementById('statisticsRefresh');
+    if (statisticsButton) {
+        statisticsButton.addEventListener('click', async function() {
+            const panel = document.getElementById('statisticsPanel');
+            const days = parseInt(document.getElementById('statisticsDays').value, 10) || 7;
+            try {
+                const response = await browser.runtime.sendMessage({ action: 'getStatistics', days });
+                if (response && response.status === 'success') {
+                    renderStatistics(panel, response.statistics, { managed: response.managed, managedKeys: response.managedKeys });
+                } else {
+                    panel.textContent = 'Statistik konnte nicht geladen werden.';
+                }
+            } catch (error) {
+                console.error('Statistik fehlgeschlagen:', error);
+                panel.textContent = 'Statistik konnte nicht geladen werden.';
+            }
+        });
+    }
+
+    const diagnosticsButton = document.getElementById('diagnosticsRun');
+    if (diagnosticsButton) {
+        diagnosticsButton.addEventListener('click', async function() {
+            const panel = document.getElementById('diagnosticsPanel');
+            try {
+                const response = await browser.runtime.sendMessage({ action: 'getDiagnostics' });
+                if (response && response.status === 'success') {
+                    renderDiagnostics(panel, response.report);
+                } else {
+                    panel.textContent = 'Diagnose konnte nicht ausgeführt werden.';
+                }
+            } catch (error) {
+                console.error('Diagnose fehlgeschlagen:', error);
+                panel.textContent = 'Diagnose konnte nicht ausgeführt werden.';
+            }
+        });
+    }
+});
+
+// Verlaufs-Listener (eigener DOMContentLoaded-Block)
 document.addEventListener('DOMContentLoaded', function() {
     const refresh = document.getElementById('historyRefresh');
     if (refresh) refresh.addEventListener('click', loadHistory);

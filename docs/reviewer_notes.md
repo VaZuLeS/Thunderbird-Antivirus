@@ -122,6 +122,20 @@ lookup and for each delayed verdict that is fetched. Each entry names the action
 so a reviewer can replay exactly what left the device and when. The trail is never transmitted; the options page can
 export it as CSV/JSON and delete it (`getHistory`, `clearHistory`).
 
+### 3.6 Enterprise policy (managed storage) and self test
+
+The add-on reads `browser.storage.managed` (no additional permission; part of `storage`). Administrators can pin
+consent, privacy tier, view role, history on/off and limit, whitelist/blacklist, always-manual, Time-of-Click and
+the IP reputation provider. Managed values override local settings and take effect immediately; they are control
+data from the device policy, are never transmitted and never appear in the history. Template and deployment paths:
+`docs/enterprise/`.
+
+The options page offers a **self test** (`getDiagnostics`) that reports ok/warning/error for consent, API key, host
+permissions, the `alarms`-based delayed-result polling, the registered message display script, the local IndexedDB
+store, the history and any managed policy - useful to verify the add-on on a test machine without network traffic.
+A per-message **report export** (`getMessageReport`) writes a Markdown/JSON summary of local findings, attachments
+and transmissions; it is generated locally and downloaded by the user.
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,

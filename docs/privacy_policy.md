@@ -175,6 +175,9 @@ Zugriffsrechte des Betriebssystem-Benutzerkontos und die Zugriffskontrolle des T
 - Zuordnungen zu Nachrichten über die Message-ID bzw. Header-ID,
 - Nachrichten-Metadaten, die zur Anzeige im Popup gespeichert werden (Absenderadresse, Betreff,
   Dateiname und SHA-256-Hash der geprüften Anhänge sowie der Teilename innerhalb der Nachricht),
+- Enterprise-Vorgaben: Auf verwalteten Geräten liest die Erweiterung Vorgaben aus der Geräte-Policy
+  (`browser.storage.managed`). Diese Steuerdaten bleiben lokal, werden nicht übertragen und erscheinen nicht im
+  Verlauf,
 - Verlauf (`scanHistory`): Zeitpunkt, Aktion, Anbieter, Datentyp, Dateiname, SHA-256, Submission-/Job-ID,
   Verdikt und Zeitverhalten (Echtzeit/zeitverzögert) jeder Prüfung und jeder Übertragung. Der Verlauf bleibt
   lokal, ist auf 50–5000 Einträge begrenzbar, kann abgeschaltet, in den Einstellungen als CSV/JSON exportiert und
@@ -438,6 +441,9 @@ account and by the Thunderbird profile's access control.
 - mappings to messages via Message-ID or header ID,
 - message metadata stored for the popup (sender address, subject, file name and SHA-256 hash of the
   checked attachments, and the MIME part name inside the message),
+- enterprise policy: on managed devices the add-on reads settings from the device policy
+  (`browser.storage.managed`). These control values stay local, are never transmitted and never appear in the
+  history,
 - history (`scanHistory`): time, action, provider, data type, file name, SHA-256, submission/job id, verdict and
   timing (real time vs. delayed) of every check and every transmission. The history stays local, can be limited
   to 50–5000 entries, switched off, exported as CSV/JSON from the options page and deleted at any time,

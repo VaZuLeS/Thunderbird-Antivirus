@@ -141,6 +141,19 @@ The popup lists every attachment of the displayed message with type and size:
   popup. Without consent, API key or host permission the popup explains what is missing and links to the
   options page.
 
+### Enterprise, self test, statistics and reports
+
+- **Managed policy:** administrators can pin consent, privacy tier, view role, history behaviour and
+  whitelists/blacklists via `browser.storage.managed`; managed values override local settings and take effect
+  immediately. See [docs/enterprise/deployment.md](docs/enterprise/deployment.md).
+- **Self test (options → Diagnose):** verifies consent, API key, each host permission, the `alarms`-based
+  delayed-result polling, the message display script, the IndexedDB store, the history and any managed policy -
+  without transmitting anything.
+- **Statistics (options → Statistik):** aggregates the history for 1/7/30/90 days (transmissions per provider,
+  actions, per-day counts).
+- **Report export (popup):** writes a Markdown/JSON report per message with the local score, reasons, attachments,
+  verdicts and transmissions.
+
 ### View roles and audit trail
 
 Five view roles (`viewMode`) tailor the amount of information and the interruption level: `quiet` (warnings only),

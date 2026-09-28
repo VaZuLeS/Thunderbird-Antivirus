@@ -149,6 +149,16 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.4 Release notes 1.9.0
+
+- **Central management for organisations:** administrators can pin consent, privacy tier, view role, history settings
+  and whitelists/blacklists through the browser policy mechanism (`storage.managed`). Managed values win over local
+  settings and are never transmitted.
+- **Self test:** one click in the options dialog verifies consent, API key, host permissions, the delayed-result
+  polling, the message display script, the local result store and the history - without sending anything.
+- **Statistics and reports:** the local history is aggregated for 1/7/30/90 days, and each message can be exported
+  as a Markdown/JSON report listing the findings, attachments, verdicts and transmissions.
+
 ## 5.3 Release notes 1.8.0
 
 - **View roles** (`Nur Warnungen`, `Privat`, `Geschäftlich`, `IT-Security-Forscher`, `Nachweis/Compliance`) control how

@@ -175,6 +175,79 @@ async function ensureMessageDisplayScript(tabId) {
 }
 
 // ---------------------------------------------------------------------------
+// Enterprise-Policy (browser.storage.managed)
+//
+// Administratoren koennen Vorgaben zentral verteilen (z. B. Zustimmung
+// deaktivieren, strikte Datenschutz-Stufe erzwingen, Ansichtsrolle festlegen).
+// Verwaltete Werte haben Vorrang vor lokalen Einstellungen; sie kommen aus der
+// Geraete-Policy und werden nie an Dritte uebertragen.
+// ---------------------------------------------------------------------------
+const MANAGED_SETTING_KEYS = ['externalAnalysisConsent', 'privacyTier', 'viewMode', 'historyEnabled',
+    'historyLimit', 'customWhitelist', 'customBlacklist', 'alwaysManual', 'ipReputationProvider',
+    'timeOfClickProtection'];
+
+let managedSettings = {};
+
+function hasManagedPolicy() {
+    return Object.keys(managedSettings).length > 0;
+}
+
+async function loadManagedSettings() {
+    managedSettings = {};
+    try {
+        if (!browser.storage || !browser.storage.managed || typeof browser.storage.managed.get !== 'function') {
+            return managedSettings;
+        }
+        const values = await browser.storage.managed.get();
+        if (values && typeof values === 'object') {
+            for (const key of MANAGED_SETTING_KEYS) {
+                if (values[key] !== undefined) managedSettings[key] = values[key];
+            }
+        }
+    } catch (e) {
+        // Kein Policy-Manifest installiert (Normalfall) - kein Fehler.
+        managedSettings = {};
+    }
+    return managedSettings;
+}
+
+function isManaged(key) {
+    return Object.prototype.hasOwnProperty.call(managedSettings, key);
+}
+
+/** Wendet verwaltete Vorgaben auf die laufenden Einstellungen an. */
+function applyManagedSettings() {
+    if (isManaged('externalAnalysisConsent')) externalAnalysisConsent = managedSettings.externalAnalysisConsent === true;
+    if (isManaged('privacyTier')) privacyTier = String(managedSettings.privacyTier);
+    if (isManaged('viewMode') && VIEW_MODES.includes(managedSettings.viewMode)) viewMode = managedSettings.viewMode;
+    if (isManaged('historyEnabled')) historyEnabled = managedSettings.historyEnabled === true;
+    if (isManaged('historyLimit')) historyLimit = Math.max(50, Math.min(5000, parseInt(managedSettings.historyLimit, 10) || 500));
+    if (isManaged('alwaysManual')) alwaysManual = managedSettings.alwaysManual === true;
+    if (isManaged('timeOfClickProtection')) timeOfClickProtection = managedSettings.timeOfClickProtection === true;
+    if (isManaged('ipReputationProvider')) ipReputationProvider = String(managedSettings.ipReputationProvider);
+    if (isManaged('customWhitelist') && Array.isArray(managedSettings.customWhitelist)) {
+        customWhitelist = new Set(managedSettings.customWhitelist.map(value => String(value).toLowerCase()));
+    }
+    if (isManaged('customBlacklist') && Array.isArray(managedSettings.customBlacklist)) {
+        customBlacklist = new Set(managedSettings.customBlacklist.map(value => String(value).toLowerCase()));
+    }
+}
+
+/** Effektive Einstellungen fuer die Oberflaeche (lokal + verwaltet). */
+async function getEffectiveSettings() {
+    const stored = await browser.storage.local.get(['externalAnalysisConsent', 'privacyTier', 'viewMode',
+        'historyEnabled', 'historyLimit', 'alwaysManual', 'timeOfClickProtection', 'ipReputationProvider',
+        'customWhitelist', 'customBlacklist']).catch(() => ({}));
+    const effective = Object.assign({
+        externalAnalysisConsent: false, privacyTier: 'strict', viewMode: 'private', historyEnabled: true,
+        historyLimit: 500, alwaysManual: false, timeOfClickProtection: true, ipReputationProvider: 'none'
+    }, stored || {});
+    for (const key of Object.keys(managedSettings)) effective[key] = managedSettings[key];
+    effective.managedKeys = Object.keys(managedSettings);
+    return effective;
+}
+
+// ---------------------------------------------------------------------------
 // Verlauf (Audit-Trail)
 //
 // Haelt lokal fest, welche Nachrichten geprueft und welche Daten an welchen
@@ -674,7 +747,10 @@ async function loadSettings() {
     Logger.error("Fehler beim Laden der Einstellungen:", error);
   }
 }
-loadSettings();
+loadSettings().then(async () => {
+    await loadManagedSettings();
+    applyManagedSettings();
+});
 
 // Opt-In helpers
 async function hasHybridPermission() {
@@ -694,7 +770,15 @@ async function addSenderOptIn(senderEmail) {
 
 
 // Listener für Änderungen an den Einstellungen (API Key)
-browser.storage.onChanged.addListener((changes, area) => {
+browser.storage.onChanged.addListener(async (changes, area) => {
+  if (area === 'managed') {
+    await loadManagedSettings();
+    applyManagedSettings();
+    for (const [tabId, state] of displayStates.entries()) {
+      updateDisplayState(tabId, Object.assign({}, state, { viewMode, consent: mayTransmitExternally() }));
+    }
+    return;
+  }
   if (area === 'local' && changes.apikey) {
     apikey_hybridanalysis = changes.apikey.newValue;
   }
@@ -2425,6 +2509,241 @@ async function computeAttachmentHash(messageId, partName) {
     return { sha256, size: buffer.byteLength };
 }
 
+// ---------------------------------------------------------------------------
+// Diagnose, Statistik und Berichts-Export (alles lokal)
+// ---------------------------------------------------------------------------
+
+/**
+ * Sammelt Prüfergebnisse für die Selbstauskunft im Optionsdialog. Jede Prüfung
+ * ist einzeln abgesichert, damit die Diagnose nie selbst fehlschlägt.
+ */
+async function collectDiagnostics() {
+    const checks = [];
+    const add = (id, label, status, detail) => checks.push({ id, label, status, detail });
+
+    add('consent', 'Zustimmung zur externen Analyse',
+        mayTransmitExternally() ? 'ok' : 'warn',
+        mayTransmitExternally()
+            ? 'Aktiv - Analysen dürfen übertragen werden.'
+            : 'Inaktiv - es wird ausschließlich lokal geprüft (keine Übertragung).');
+
+    add('api-key', 'API-Schlüssel (Hybrid Analysis)',
+        apikey_hybridanalysis ? 'ok' : 'warn',
+        apikey_hybridanalysis ? 'Hinterlegt.' : 'Fehlt - Uploads und Verdict-Abrufe sind nicht möglich.');
+
+    const providers = [
+        ['hybrid-analysis.com', PROVIDER_ORIGINS.hybridanalysis],
+        ['virustotal.com', PROVIDER_ORIGINS.virustotal],
+        ['urlscan.io', PROVIDER_ORIGINS.urlscan],
+        ['urlhaus-api.abuse.ch', PROVIDER_ORIGINS.urlhaus],
+        ['api.abuseipdb.com', PROVIDER_ORIGINS.abuseipdb]
+    ];
+    for (const [label, origin] of providers) {
+        let granted = false;
+        try {
+            granted = !!(browser.permissions && typeof browser.permissions.contains === 'function' &&
+                await browser.permissions.contains({ origins: [origin] }));
+        } catch (e) { granted = false; }
+        add('permission-' + label, 'Host-Berechtigung ' + label,
+            granted ? 'ok' : 'warn',
+            granted ? 'Erteilt.' : 'Nicht erteilt - wird beim Speichern der Einstellungen angefragt.');
+    }
+
+    let alarmReady = false;
+    let alarmDetail = 'browser.alarms ist in dieser Umgebung nicht verfügbar.';
+    try {
+        if (browser.alarms && typeof browser.alarms.get === 'function') {
+            const alarm = await browser.alarms.get(SCAN_ALARM_NAME);
+            alarmReady = true;
+            alarmDetail = alarm
+                ? 'Aktiv - nächste Abfrage geplant (zeitverzögerte Ergebnisse).'
+                : 'Bereit - aktuell sind keine Aufträge offen.';
+        }
+    } catch (e) { alarmDetail = 'Prüfung fehlgeschlagen: ' + (e && e.message); }
+    add('alarms', 'Zeitverzögerte Ergebnisabfrage', alarmReady ? 'ok' : 'warn', alarmDetail);
+
+    add('display-script', 'Banner in der Nachrichtenansicht',
+        messageDisplayScriptRegistered ? 'ok' : 'warn',
+        messageDisplayScriptRegistered
+            ? 'Nachrichten-Script registriert.'
+            : 'Registrierung nicht verfügbar - Banner werden pro Nachricht injiziert.');
+
+    let dbWritable = false;
+    let dbDetail = 'IndexedDB nicht verfügbar.';
+    try {
+        const db = await getSharedDB();
+        dbWritable = !!db;
+        dbDetail = dbWritable ? 'Lokaler Ergebnisspeicher erreichbar.' : dbDetail;
+    } catch (e) { dbDetail = 'Zugriff fehlgeschlagen: ' + (e && e.message); }
+    add('indexeddb', 'Lokaler Ergebnisspeicher (IndexedDB)', dbWritable ? 'ok' : 'fail', dbDetail);
+
+    const history = await getScanHistory();
+    add('history', 'Verlauf',
+        historyEnabled ? 'ok' : 'warn',
+        historyEnabled
+            ? history.length + ' Eintrag/Einträge gespeichert (Limit ' + historyLimit + ').'
+            : 'Aufzeichnung ist deaktiviert.');
+
+    const openJobs = (await getPendingScans()).filter(isOpenScanJob).length;
+    add('jobs', 'Offene Analyse-Aufträge', 'ok',
+        openJobs === 0 ? 'Keine offenen Aufträge.' : openJobs + ' Auftrag/Aufträge warten auf das Ergebnis.');
+
+    add('policy', 'Enterprise-Policy (verwaltete Vorgaben)', 'ok',
+        hasManagedPolicy()
+            ? 'Aktiv - verwaltete Schlüssel: ' + Object.keys(managedSettings).join(', ')
+            : 'Keine verwalteten Vorgaben gefunden (Normalfall außerhalb verwalteter Geräte).');
+
+    const counts = checks.reduce((acc, check) => {
+        acc[check.status] = (acc[check.status] || 0) + 1;
+        return acc;
+    }, {});
+
+    return {
+        generatedAt: new Date().toISOString(),
+        checks,
+        summary: { ok: counts.ok || 0, warn: counts.warn || 0, fail: counts.fail || 0 },
+        viewMode,
+        managed: hasManagedPolicy(),
+        managedKeys: Object.keys(managedSettings)
+    };
+}
+
+/** Aggregiert den Verlauf für die Statistikansicht. */
+function computeHistoryStatistics(history, options = {}) {
+    const days = options.days || 7;
+    const entries = Array.isArray(history) ? history : [];
+    const since = Date.now() - days * 24 * 60 * 60 * 1000;
+
+    const byAction = {};
+    const byProvider = {};
+    const byDay = {};
+    let transmissions = 0;
+    let recent = 0;
+
+    for (const entry of entries) {
+        byAction[entry.action] = (byAction[entry.action] || 0) + 1;
+        if (entry.transmitted === true) {
+            transmissions++;
+            const provider = entry.provider || 'unbekannt';
+            byProvider[provider] = (byProvider[provider] || 0) + 1;
+        }
+        const timestamp = entry.timestamp ? new Date(entry.timestamp).getTime() : null;
+        if (timestamp && timestamp >= since) {
+            recent++;
+            const day = new Date(timestamp).toISOString().slice(0, 10);
+            byDay[day] = (byDay[day] || 0) + 1;
+        }
+    }
+
+    const recentTransmissions = entries
+        .filter(entry => entry.transmitted === true && (entry.attachmentName || entry.domain || entry.sha256))
+        .slice(-10)
+        .map(entry => ({
+            label: entry.attachmentName || entry.domain || (entry.sha256 ? entry.sha256.slice(0, 16) : 'unbekannt'),
+            provider: entry.provider || 'unbekannt',
+            timestamp: entry.timestamp
+        }));
+
+    return {
+        total: entries.length,
+        transmissions,
+        localOnly: entries.length - transmissions,
+        windowDays: days,
+        recent,
+        byAction,
+        byProvider,
+        byDay,
+        recentTransmissions,
+        summary: summarizeHistory(entries)
+    };
+}
+
+/** Baut einen exportierbaren Bericht zu einer Nachricht (Markdown + Daten). */
+function buildMessageReport({ message, threat, attachments, historyEntries, generatedAt }) {
+    const report = {
+        generatedAt: generatedAt || new Date().toISOString(),
+        subject: (message && message.subject) || null,
+        sender: (message && message.sender) || null,
+        riskScore: threat && typeof threat.score === 'number' ? threat.score : null,
+        authStatus: (threat && threat.authStatus) || null,
+        reasons: (threat && Array.isArray(threat.reasons)) ? threat.reasons : [],
+        attachments: (attachments || []).map(attachment => ({
+            name: attachment.name || attachment.attachmentName || null,
+            contentType: attachment.contentType || null,
+            size: typeof attachment.size === 'number' ? attachment.size : null,
+            state: attachment.state || null,
+            verdict: attachment.verdict || null,
+            sha256: attachment.hybrid_sha256 || attachment.sha256 || null,
+            timing: attachment.timing || null
+        })),
+        transmissions: (historyEntries || [])
+            .filter(entry => entry.transmitted === true)
+            .map(entry => ({
+                timestamp: entry.timestamp,
+                provider: entry.provider,
+                dataType: entry.dataType,
+                timing: entry.timing,
+                attachmentName: entry.attachmentName || null,
+                sha256: entry.sha256 || null,
+                jobId: entry.jobId || null,
+                verdict: entry.verdict || null
+            }))
+    };
+
+    report.markdown = buildMessageReportMarkdown(report);
+    return report;
+}
+
+function buildMessageReportMarkdown(report) {
+    const lines = [];
+    lines.push('# Thundy AV - Sicherheitsbericht');
+    lines.push('');
+    lines.push('- Erstellt: ' + report.generatedAt);
+    lines.push('- Betreff: ' + (report.subject || '(ohne Betreff)'));
+    lines.push('- Absender: ' + (report.sender || '(unbekannt)'));
+    lines.push('- Lokale Risikobewertung: ' + (report.riskScore === null ? 'unbekannt' : report.riskScore + ' von 100'));
+    lines.push('- Authentifizierung (SPF/DKIM/DMARC): ' + (report.authStatus || 'unbekannt'));
+    lines.push('');
+    lines.push('## Begruendungen der Bewertung');
+    if (report.reasons.length === 0) {
+        lines.push('- Keine Auffaelligkeiten.');
+    } else {
+        for (const reason of report.reasons) lines.push('- ' + reason);
+    }
+    lines.push('');
+    lines.push('## Anhaenge');
+    if (report.attachments.length === 0) {
+        lines.push('- Keine Anhaenge.');
+    } else {
+        for (const attachment of report.attachments) {
+            lines.push('- ' + (attachment.name || '(ohne Namen)') +
+                ' [' + (attachment.contentType || 'unbekannter Typ') + ']' +
+                (attachment.size !== null ? ', ' + attachment.size + ' Bytes' : '') +
+                ' | Status: ' + (attachment.state || 'unbekannt') +
+                (attachment.verdict ? ' | Verdikt: ' + attachment.verdict : '') +
+                (attachment.sha256 ? ' | SHA-256: ' + attachment.sha256 : '') +
+                (attachment.timing ? ' | Pruefung: ' + attachment.timing : ''));
+        }
+    }
+    lines.push('');
+    lines.push('## Uebertragungen an Analyse-Dienste');
+    if (report.transmissions.length === 0) {
+        lines.push('- Keine - es wurde nichts an Dritte uebertragen.');
+    } else {
+        for (const transmission of report.transmissions) {
+            lines.push('- ' + transmission.timestamp + ': ' + (transmission.dataType || 'Daten') +
+                ' an ' + (transmission.provider || 'Anbieter') +
+                (transmission.timing === 'delayed' ? ' (Ergebnis zeitverzoegert)' : ' (Echtzeit)') +
+                (transmission.attachmentName ? ' | Datei: ' + transmission.attachmentName : '') +
+                (transmission.sha256 ? ' | SHA-256: ' + transmission.sha256 : '') +
+                (transmission.verdict ? ' | Verdikt: ' + transmission.verdict : ''));
+        }
+    }
+    lines.push('');
+    lines.push('_Erstellt von Thundy AV - alle Angaben stammen aus der lokalen Auswertung des Add-ons._');
+    return lines.join('\n');
+}
+
 /**
  * Handles a scan request coming from the injected per-message banner.
  * persist === true adds the sender to the persistent opt-in list, otherwise
@@ -2672,6 +2991,53 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case "requestScan":
             handleRequestScan(request, sender).then(res => sendResponse(res));
             return true;
+
+        case "getDiagnostics":
+            collectDiagnostics()
+                .then(report => sendResponse({ status: 'success', report }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
+        case "getStatistics": {
+            const days = request.days ? parseInt(request.days, 10) : 7;
+            getScanHistory()
+                .then(history => sendResponse({
+                    status: 'success',
+                    statistics: computeHistoryStatistics(history, { days }),
+                    managed: hasManagedPolicy(),
+                    managedKeys: Object.keys(managedSettings)
+                }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+        }
+
+        case "getEffectiveSettings":
+            getEffectiveSettings()
+                .then(settings => sendResponse({ status: 'success', settings }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
+        case "getMessageReport": {
+            const messageId = request.messageId;
+            browser.messages.get(messageId)
+                .then(async (message) => {
+                    const headerMessageId = (message && message.headerMessageId) || request.headerMessageId || null;
+                    let attachments = [];
+                    try { attachments = await browser.messages.listAttachments(messageId); } catch (e) { /* optional */ }
+                    const history = filterScanHistory(await getScanHistory(), { messageHeaderId });
+                    const state = Array.from(displayStates.values())
+                        .find(entry => entry && entry.messageId === messageId) || {};
+                    const report = buildMessageReport({
+                        message: { subject: (message && message.subject) || null, sender: (message && message.author) || null },
+                        threat: state.threat || null,
+                        attachments,
+                        historyEntries: history
+                    });
+                    sendResponse({ status: 'success', report });
+                })
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+        }
 
         case "getHistory":
             getScanHistory()

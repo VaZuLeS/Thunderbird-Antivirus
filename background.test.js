@@ -129,6 +129,9 @@ describe('background.js', () => {
             setTimeout: setTimeout
         };
 
+        // Managed Storage (Enterprise-Policy): standardmaessig ohne Vorgaben
+        context.browser.storage.managed = { get: async () => ({}) };
+
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'background.js'), 'utf8');
         const gatewayCode = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
@@ -223,6 +226,20 @@ describe('background.js', () => {
             globalThis.summarizeHistory = summarizeHistory;
             globalThis.getScanHistory = getScanHistory;
             globalThis.HISTORY_KEY = HISTORY_KEY;
+            globalThis.loadManagedSettings = loadManagedSettings;
+            globalThis.applyManagedSettings = applyManagedSettings;
+            globalThis.hasManagedPolicy = hasManagedPolicy;
+            globalThis.getEffectiveSettings = getEffectiveSettings;
+            globalThis.collectDiagnostics = collectDiagnostics;
+            globalThis.computeHistoryStatistics = computeHistoryStatistics;
+            globalThis.buildMessageReport = buildMessageReport;
+            globalThis.get_privacyTier = () => privacyTier;
+            globalThis.set_privacyTier = (value) => { privacyTier = value; };
+            globalThis.get_externalAnalysisConsent = () => externalAnalysisConsent;
+            globalThis.get_managed_keys = () => Object.keys(managedSettings);
+            globalThis.get_customBlacklist = () => customBlacklist;
+            globalThis.get_history_enabled = () => historyEnabled;
+            globalThis.get_history_limit = () => historyLimit;
             globalThis.get_view_mode = () => viewMode;
             globalThis.set_view_mode = (value) => { viewMode = value; };
             globalThis.set_history_enabled = (value) => { historyEnabled = value === true; };
@@ -4384,6 +4401,152 @@ describe('background.js', () => {
             assert.strictEqual(response.entries.length, 1);
             assert.strictEqual(response.entries[0].transmitted, true);
             assert.strictEqual(response.viewMode, 'private');
+        });
+    });
+
+    describe('enterprise policy (managed storage)', () => {
+        it('applies managed settings with priority over local ones', async () => {
+            context.browser.storage.managed = {
+                get: async () => ({
+                    externalAnalysisConsent: true,
+                    privacyTier: 'strict',
+                    viewMode: 'audit',
+                    historyEnabled: false,
+                    historyLimit: 120,
+                    customBlacklist: ['evil.example']
+                })
+            };
+
+            await context.loadManagedSettings();
+            context.applyManagedSettings();
+
+            assert.strictEqual(context.get_view_mode(), 'audit');
+            assert.strictEqual(context.get_privacyTier(), 'strict');
+            assert.strictEqual(context.hasManagedPolicy(), true);
+            assert.strictEqual(context.get_externalAnalysisConsent(), true);
+            assert.strictEqual(context.get_history_enabled(), false);
+            assert.strictEqual(context.get_customBlacklist().has('evil.example'), true);
+
+            context.browser.storage.managed = { get: async () => ({}) };
+            await context.loadManagedSettings();
+        });
+
+        it('stays neutral when no policy is installed', async () => {
+            context.browser.storage.managed = { get: async () => { throw new Error('no policy'); } };
+            await context.loadManagedSettings();
+            assert.strictEqual(context.hasManagedPolicy(), false);
+        });
+
+        it('ignores invalid managed values', async () => {
+            context.browser.storage.managed = {
+                get: async () => ({ privacyTier: 'balanced', viewMode: 'quatsch', historyLimit: 'viel' })
+            };
+            context.set_view_mode('private');
+            await context.loadManagedSettings();
+            context.applyManagedSettings();
+
+            assert.strictEqual(context.get_privacyTier(), 'balanced');
+            assert.strictEqual(context.get_view_mode(), 'private');
+            assert.strictEqual(context.get_history_limit(), 500);
+
+            context.set_privacyTier('strict');
+            context.browser.storage.managed = { get: async () => ({}) };
+            await context.loadManagedSettings();
+        });
+
+        it('merges local and managed settings for the UI', async () => {
+            context.browser.storage.managed = { get: async () => ({ viewMode: 'research' }) };
+            await context.loadManagedSettings();
+            const effective = await context.getEffectiveSettings();
+
+            assert.strictEqual(effective.viewMode, 'research');
+            assert.strictEqual(effective.managedKeys.length, 1);
+            assert.strictEqual(effective.managedKeys[0], 'viewMode');
+
+            context.browser.storage.managed = { get: async () => ({}) };
+            await context.loadManagedSettings();
+        });
+    });
+
+    describe('diagnostics, statistics and report export', () => {
+        it('reports diagnostics with ok and warn states', async () => {
+            context.set_apikey_hybridanalysis('');
+            context.set_externalAnalysisConsent(false);
+            const report = await context.collectDiagnostics();
+
+            assert.ok(report.checks.length >= 8);
+            assert.ok(report.summary.warn >= 2, 'missing consent and API key are warnings');
+            assert.strictEqual(report.checks.find(check => check.id === 'consent').status, 'warn');
+            assert.ok(report.checks.some(check => check.id === 'indexeddb'));
+            assert.ok(report.checks.some(check => check.id === 'policy'));
+            context.set_externalAnalysisConsent(true);
+        });
+
+        it('aggregates the history into statistics', () => {
+            const now = new Date().toISOString();
+            const history = [
+                { action: 'local-check', transmitted: false, timestamp: now },
+                { action: 'attachment-upload', transmitted: true, provider: 'hybrid-analysis', attachmentName: 'a.exe', timestamp: now },
+                { action: 'hash-lookup', transmitted: true, provider: 'virustotal', sha256: 'a'.repeat(64), timestamp: now },
+                { action: 'domain-check', transmitted: true, provider: 'urlhaus', domain: 'bad.example', timestamp: now }
+            ];
+
+            const statistics = context.computeHistoryStatistics(history, { days: 7 });
+
+            assert.strictEqual(statistics.total, 4);
+            assert.strictEqual(statistics.transmissions, 3);
+            assert.strictEqual(statistics.localOnly, 1);
+            assert.strictEqual(statistics.byProvider['hybrid-analysis'], 1);
+            assert.strictEqual(statistics.byAction['local-check'], 1);
+            assert.strictEqual(statistics.recentTransmissions.length, 3);
+            assert.strictEqual(Object.keys(statistics.byDay).length, 1);
+        });
+
+        it('builds a markdown report that names every transmission', () => {
+            const report = context.buildMessageReport({
+                message: { subject: 'Rechnung', sender: 'kunde@example.com' },
+                threat: { score: 60, authStatus: 'fail', reasons: ['SPF-Pruefung fehlgeschlagen'] },
+                attachments: [{ name: 'rechnung.pdf', contentType: 'application/pdf', size: 2048, state: 'KNOWN', verdict: 'CLEAN', hybrid_sha256: 'f'.repeat(64) }],
+                historyEntries: [
+                    { transmitted: false, action: 'local-check' },
+                    { transmitted: true, action: 'attachment-upload', provider: 'hybrid-analysis', dataType: 'attachment', timing: 'delayed', attachmentName: 'rechnung.pdf', sha256: 'f'.repeat(64) }
+                ]
+            });
+
+            assert.strictEqual(report.riskScore, 60);
+            assert.strictEqual(report.transmissions.length, 1);
+            assert.match(report.markdown, /Thundy AV - Sicherheitsbericht/);
+            assert.match(report.markdown, /Rechnung/);
+            assert.match(report.markdown, /hybrid-analysis/);
+            assert.match(report.markdown, /zeitverzoegert/);
+            assert.match(report.markdown, /rechnung\.pdf/);
+        });
+
+        it('states explicitly when nothing was transmitted', () => {
+            const report = context.buildMessageReport({
+                message: { subject: 'Intern', sender: 'kollege@example.com' },
+                threat: { score: 10, reasons: [] },
+                attachments: [],
+                historyEntries: [{ transmitted: false, action: 'local-check' }]
+            });
+            assert.match(report.markdown, /Keine - es wurde nichts an Dritte uebertragen\./);
+        });
+
+        it('answers diagnostics, statistics and settings requests', async () => {
+            const listener = context.browser.runtime.onMessage.listeners[0];
+            const ask = (message) => new Promise(resolve => listener(message, {}, resolve));
+
+            const diagnostics = await ask({ action: 'getDiagnostics' });
+            assert.strictEqual(diagnostics.status, 'success');
+            assert.ok(diagnostics.report.checks.length > 0);
+
+            const statistics = await ask({ action: 'getStatistics', days: 30 });
+            assert.strictEqual(statistics.status, 'success');
+            assert.strictEqual(statistics.statistics.windowDays, 30);
+
+            const settings = await ask({ action: 'getEffectiveSettings' });
+            assert.strictEqual(settings.status, 'success');
+            assert.ok(settings.settings);
         });
     });
 

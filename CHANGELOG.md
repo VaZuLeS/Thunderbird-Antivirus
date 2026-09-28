@@ -39,6 +39,30 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.9.0] – 2026-09-28
+
+### Added
+
+- **Enterprise-Policy (`browser.storage.managed`):** Administratoren koennen Vorgaben zentral verteilen
+  (Zustimmung, Datenschutz-Stufe, Ansichtsrolle, Verlauf an/aus und Limit, Whitelist/Blacklist, Always-Manual,
+  Time-of-Click, IP-Reputation). Verwaltete Werte haben Vorrang vor lokalen Einstellungen, greifen ohne Neustart
+  (`storage.onChanged` fuer `managed`) und werden nie uebertragen. Anleitung und Vorlage:
+  `docs/enterprise/deployment.md` und `docs/enterprise/policy.json`.
+- **Diagnose / Selbsttest** in den Einstellungen: prueft Zustimmung, API-Schluessel, alle Host-Berechtigungen,
+  die zeitverzoegerte Ergebnisabfrage (`alarms`), die Registrierung des Nachrichten-Scripts, den lokalen
+  Ergebnisspeicher, den Verlauf, offene Auftraege und die Enterprise-Policy - mit ok/Hinweis/Fehler je Punkt und
+  einem Klick. Es werden dabei keine Daten uebertragen.
+- **Statistikansicht:** aggregiert den Verlauf (Uebertragungen, rein lokale Pruefungen, Anbieter, Aktionen,
+  Verteilung pro Tag) fuer 1/7/30/90 Tage, inklusive Hinweis auf aktive verwaltete Vorgaben.
+- **Berichts-Export je Nachricht:** erzeugt aus lokaler Bewertung, Anhaengen, Verdikten und Uebertragungen einen
+  Markdown- und JSON-Bericht ("was wurde geprueft, was wurde uebertragen") zum Ablegen oder Weitergeben.
+
+### Changed
+
+- Neue Hintergrund-Aktionen `getDiagnostics`, `getStatistics`, `getEffectiveSettings` und `getMessageReport`.
+- Diagnose und Statistik sind auch Teil der Vorabpruefung fuer den Store: die Diagnose gibt dem Tester eine
+  gefuehrte Funktionspruefung, statt sich auf Handbuecher zu verlassen.
+
 ## [1.8.0] – 2026-09-28
 
 ### Added

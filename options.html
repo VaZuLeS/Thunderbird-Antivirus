@@ -163,6 +163,27 @@
     <p id="historySummary"><small>Verlauf wird geladen...</small></p>
     <ul id="historyList" class="thundy-history-list"></ul>
 
+    <hr>
+    <h3>Statistik</h3>
+    <p><small>Aggregierte Auswertung des Verlaufs (rein lokal). Zeitraum:
+        <select id="statisticsDays">
+            <option value="1">1 Tag</option>
+            <option value="7" selected>7 Tage</option>
+            <option value="30">30 Tage</option>
+            <option value="90">90 Tage</option>
+        </select>
+        <button id="statisticsRefresh" type="button">Statistik laden</button>
+    </small></p>
+    <div id="statisticsPanel" class="card card-info"><small>Noch nicht geladen.</small></div>
+
+    <hr>
+    <h3>Diagnose / Selbsttest</h3>
+    <p><small>Prüft die Voraussetzungen des Add-ons auf diesem Gerät (Zustimmung, Schlüssel, Host-Berechtigungen,
+        Ergebnisabfrage, Ergebnisspeicher, Verlauf, verwaltete Vorgaben). Es werden dabei <strong>keine</strong> Daten
+        übertragen.</small></p>
+    <button id="diagnosticsRun" type="button">Diagnose starten</button>
+    <div id="diagnosticsPanel" class="card card-info"><small>Noch nicht ausgeführt.</small></div>
+
     <br><br>
     <hr>
 

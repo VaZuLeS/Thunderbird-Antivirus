@@ -1,0 +1,16 @@
+{
+  "policies": {
+    "thundy-av@bludau-it-services.de": {
+      "externalAnalysisConsent": true,
+      "privacyTier": "strict",
+      "viewMode": "business",
+      "historyEnabled": true,
+      "historyLimit": 2000,
+      "alwaysManual": false,
+      "timeOfClickProtection": true,
+      "ipReputationProvider": "none",
+      "customWhitelist": ["kunden-gmbh.de", "partner.example"],
+      "customBlacklist": []
+    }
+  }
+}

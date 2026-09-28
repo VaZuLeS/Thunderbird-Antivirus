@@ -49,6 +49,11 @@ describe('options.js', () => {
                     <button id="historyExportCsv">CSV</button>
                     <button id="historyExportJson">JSON</button>
                     <button id="historyClear">Verlauf loeschen</button>
+                    <select id="statisticsDays"><option value="7">7</option></select>
+                    <button id="statisticsRefresh">Statistik</button>
+                    <div id="statisticsPanel"></div>
+                    <button id="diagnosticsRun">Diagnose</button>
+                    <div id="diagnosticsPanel"></div>
                     <p id="historySummary"></p>
                     <ul id="historyList"></ul>
 
@@ -97,6 +102,12 @@ describe('options.js', () => {
                         if (message.action === 'getHistory') {
                             return context.historyResponse;
                         }
+                        if (message.action === 'getStatistics') {
+                            return context.statisticsResponse;
+                        }
+                        if (message.action === 'getDiagnostics') {
+                            return context.diagnosticsResponse;
+                        }
                         if (message.action === 'clearHistory') {
                             return { status: 'success' };
                         }
@@ -112,6 +123,8 @@ describe('options.js', () => {
             },
             confirm: () => true, // default confirm behavior for tests
             sentMessages: [],
+            statisticsResponse: { status: 'success', statistics: { total: 0, transmissions: 0, localOnly: 0, windowDays: 7, recent: 0, byAction: {}, byProvider: {}, byDay: {}, recentTransmissions: [] }, managed: false, managedKeys: [] },
+            diagnosticsResponse: { status: 'success', report: { generatedAt: '2026-09-28T10:00:00.000Z', summary: { ok: 0, warn: 0, fail: 0 }, checks: [] } },
             historyResponse: { status: 'success', entries: [], summary: { total: 0, transmissions: 0, local: 0, providers: {}, lastTransmissionAt: null } },
             URL: { createObjectURL: () => 'blob:test', revokeObjectURL: () => {} },
             Blob: class Blob { constructor(parts, opts) { this.parts = parts; this.opts = opts; } },
@@ -315,6 +328,50 @@ describe('options.js', () => {
         await new Promise(resolve => setTimeout(resolve, 10));
 
         assert.ok(context.sentMessages.some(message => message.action === 'clearHistory'));
+    });
+
+    it('renders the statistics panel including managed policy info', async () => {
+        context.statisticsResponse = {
+            status: 'success',
+            statistics: {
+                total: 6, transmissions: 2, localOnly: 4, windowDays: 7, recent: 5,
+                byAction: { 'local-check': 4, 'attachment-upload': 2 },
+                byProvider: { 'hybrid-analysis': 2 },
+                byDay: { '2026-09-28': 5 },
+                recentTransmissions: []
+            },
+            managed: true,
+            managedKeys: ['viewMode']
+        };
+        context.document.getElementById('statisticsRefresh').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const panel = context.document.getElementById('statisticsPanel');
+        assert.match(panel.textContent, /Übertragungen an Anbieter: 2/);
+        assert.match(panel.textContent, /Rein lokale Prüfungen: 4/);
+        assert.match(panel.textContent, /hybrid-analysis: 2/);
+        assert.match(panel.textContent, /Verwaltete Vorgaben aktiv: viewMode/);
+    });
+
+    it('renders the diagnostics panel with status icons', async () => {
+        context.diagnosticsResponse = {
+            status: 'success',
+            report: {
+                generatedAt: '2026-09-28T10:00:00.000Z',
+                summary: { ok: 1, warn: 1, fail: 0 },
+                checks: [
+                    { id: 'consent', label: 'Zustimmung', status: 'warn', detail: 'Inaktiv' },
+                    { id: 'indexeddb', label: 'Ergebnisspeicher', status: 'ok', detail: 'Erreichbar' }
+                ]
+            }
+        };
+        context.document.getElementById('diagnosticsRun').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const panel = context.document.getElementById('diagnosticsPanel');
+        assert.match(panel.textContent, /1 ok, 1 Hinweis\(e\), 0 Fehler/);
+        assert.match(panel.textContent, /⚠️ Zustimmung: Inaktiv/);
+        assert.match(panel.textContent, /✅ Ergebnisspeicher: Erreichbar/);
     });
 
     it('should clear cache when clearCache button is clicked (success)', async () => {

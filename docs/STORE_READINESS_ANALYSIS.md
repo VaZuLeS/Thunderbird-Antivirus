@@ -696,3 +696,25 @@ vorab Privacy-Policy, Reviewer Notes und `data_collection_permissions`-Update. P
 
 Ab 1.8.0 liefert jede Änderung ein installierbares XPI: `npm run build` → `build/thundy-av-<version>.xpi` inkl.
 Paketprüfung; Vorabversionen mit Prüfsumme unter https://github.com/VaZuLeS/Thunderbird-Antivirus/releases.
+
+---
+
+## 13. Fortführung: Enterprise, Selbsttest, Statistik und Berichte (v1.9.0)
+
+Umgesetzt wurden die Roadmap-Punkte 1, 2 (ohne PDF), 3 (in vereinfachter Form) und 9 aus Abschnitt 12.4 — bewusst die
+Punkte, die ohne externe Infrastruktur prüfbar sind:
+
+| Roadmap | Umsetzung | Nachweis |
+|---|---|---|
+| 1 – Enterprise-Policy | `browser.storage.managed` mit 10 steuerbaren Schlüsseln, Vorrang vor lokalen Werten, Neustart-freie Übernahme (`storage.onChanged`/`managed`), Vorlage + Verteilungsanleitung in `docs/enterprise/` | 4 Unit-Tests (Vorrang, kein Policy-Fall, ungültige Werte, Merge für die UI) |
+| 2 – Berichtsexport | Markdown-/JSON-Bericht je Nachricht (Score, Begründungen, Auth-Status, Anhänge mit Verdikt/Hash, alle Übertragungen mit Zeitverhalten) über `getMessageReport` | 3 Unit-Tests + Popup-Panel-Tests |
+| 3/9 – Statistik | Aggregation des Verlaufs (1/7/30/90 Tage): Übertragungen je Anbieter, Aktionen, Tagesverteilung, verwaltete Vorgaben | 1 Unit-Test + Options-Panel-Test |
+| — – Selbsttest | `getDiagnostics` prüft 12 Voraussetzungen (Zustimmung, Schlüssel, 5 Host-Berechtigungen, `alarms`, Nachrichten-Script, IndexedDB, Verlauf, offene Aufträge, Policy) mit ok/Hinweis/Fehler | 2 Unit-Tests + Options-Panel-Test |
+
+**Nutzen für die noch offenen manuellen Schritte:** Der Selbsttest ersetzt den bisherigen „Stocher-Test“ in Thunderbird
+durch eine geführte Prüfliste im Produkt selbst (alle Punkte ohne Netzwerkverkehr überprüfbar); zusammen mit dem
+Berichts-Export lassen sich Befunde direkt als Markdown/JSON an den Maintainer geben.
+
+**Nicht umgesetzt (bewusst):** PDF-Export (Markdown/JSON genügen und bleiben abhängigkeitsfrei), SIEM-Webhook
+(Prio 5 – würde eine neue Datenübermittlung einführen und braucht zuerst Policy-/Consent-Änderungen), Umsetzung der
+Punkte 4, 6, 8, 10.
