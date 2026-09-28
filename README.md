@@ -181,6 +181,21 @@ All of it is computed locally; nothing is transmitted.
   the message with its status and an "Open after check" button.
 - Links blocked by a custom rule are never opened; every opening is recorded in the local history.
 
+#### Delayed results and the result cache
+
+- Hybrid Analysis returns verdicts late; every check therefore has an entry in a local cache (`scanResults`) with
+  state (pending/done/failed), verdict, timestamp, attempts and source.
+- The popup shows a **result panel** for the current message (open / finished / without result, with timestamps and
+  an "Fetch result now" button) and refreshes automatically when a delayed verdict arrives.
+- Link tooltips, link list and result panel read the cache first, so reopening the popup shows the previous verdict
+  ("checked at ...") instead of "unknown".
+
+#### Link guard
+
+- In confirm mode an **overlay inside the message body** shows the real target URL (host, registrable domain, decoded
+  punycode host, anomalies, check status) with Check / Open / Cancel. Clicks are intercepted in the capture phase
+  (including middle-click and Ctrl/Cmd-click).
+
 ### Localization and branding
 
 - **Localization:** the add-on ships German and English (125 keys each) in `_locales/`. Thunderbird picks the

@@ -15,7 +15,8 @@ describe('background.js', () => {
             browser: {
                 storage: {
                     local: {
-                        get: async () => ({ apikey: 'test-api-key', virustotalApikey: 'test-vt-key' })
+                        get: async () => ({ apikey: 'test-api-key', virustotalApikey: 'test-vt-key' }),
+                        set: async () => {}
                     },
                     onChanged: {
                         addListener: (listener) => {
@@ -262,6 +263,13 @@ describe('background.js', () => {
             globalThis.evaluateLinkForGuard = evaluateLinkForGuard;
             globalThis.openLinkAfterCheck = openLinkAfterCheck;
             globalThis.openLinkGuardPopup = openLinkGuardPopup;
+            globalThis.cacheResult = cacheResult;
+            globalThis.findCachedResult = findCachedResult;
+            globalThis.summarizeResultCache = summarizeResultCache;
+            globalThis.getAllResults = getAllResults;
+            globalThis.refreshCacheFromHistory = refreshCacheFromHistory;
+            globalThis.RESULT_CACHE_KEY = RESULT_CACHE_KEY;
+            globalThis.resultKey = resultKey;
             globalThis.getAllFromStore = typeof getAllFromStore === 'function' ? getAllFromStore : undefined;
             globalThis.validateRule = validateRule;
             globalThis.normalizeRules = normalizeRules;
@@ -5248,6 +5256,162 @@ describe('background.js', () => {
 
             await assert.rejects(() => context.openLinkAfterCheck('https://blocked.example/x'), (error) => error.code === 'BLOCKED_BY_RULE');
             context.set_customRules([]);
+        });
+    });
+
+    describe('result cache for delayed analyses (part 1)', () => {
+        function stubStorage() {
+            let store = {};
+            context.browser.storage.local.get = async (keys) => {
+                if (typeof keys === 'string') return { [keys]: store[keys] };
+                if (Array.isArray(keys)) { const out = {}; keys.forEach(k => { out[k] = store[k]; }); return out; }
+                return store;
+            };
+            context.browser.storage.local.set = async (data) => { Object.assign(store, data); };
+            return { get: () => store };
+        }
+
+        it('stores a pending entry and later updates it to done', async () => {
+            const storage = stubStorage();
+            await context.cacheResult('sha256', 'a'.repeat(64), { state: 'pending', source: 'hybrid-analysis', attachmentName: 'x.exe' });
+
+            let entry = await context.findCachedResult('sha256', 'a'.repeat(64));
+            assert.strictEqual(entry.state, 'pending');
+            assert.strictEqual(entry.verdict, null);
+            assert.strictEqual(entry.attachmentName, 'x.exe');
+            assert.ok(storage.get()[context.RESULT_CACHE_KEY]);
+
+            await context.cacheResult('sha256', 'a'.repeat(64), { state: 'done', verdict: 'MALICIOUS' });
+            entry = await context.findCachedResult('sha256', 'a'.repeat(64));
+            assert.strictEqual(entry.state, 'done');
+            assert.strictEqual(entry.verdict, 'MALICIOUS');
+            assert.ok(entry.checkedAt, 'a finished entry carries a timestamp');
+            assert.strictEqual(entry.attachmentName, 'x.exe', 'other fields survive the update');
+        });
+
+        it('summarizes pending, done and failed entries', async () => {
+            stubStorage();
+            await context.cacheResult('sha256', 'a'.repeat(64), { state: 'pending' });
+            await context.cacheResult('url', 'https://a.example/x', { state: 'done', verdict: 'CLEAN' });
+            await context.cacheResult('ip', '203.0.113.9', { state: 'failed' });
+
+            const summary = await context.summarizeResultCache();
+            assert.strictEqual(summary.total, 3);
+            assert.strictEqual(summary.pending, 1);
+            assert.strictEqual(summary.done, 1);
+            assert.strictEqual(summary.failed, 1);
+        });
+
+        it('lets the link guard read the cached verdict instead of UNKNOWN', async () => {
+            stubStorage();
+            context.getSharedDB = async () => ({});
+            context.getFromStore = async () => null;
+            context.getAllFromStore = async () => ([]);
+            context.set_customRules([]);
+
+            await context.cacheResult('url', 'https://evil.example/a', {
+                state: 'done', verdict: 'MALICIOUS', source: 'hybrid-analysis', checkedAt: '2026-09-28T10:00:00.000Z'
+            });
+            const done = await context.evaluateLinkForGuard('https://evil.example/a');
+            assert.strictEqual(done.verdict, 'MALICIOUS');
+            assert.strictEqual(done.checked, true);
+            assert.strictEqual(done.state, 'done');
+            assert.strictEqual(done.checkedAt, '2026-09-28T10:00:00.000Z');
+
+            await context.cacheResult('url', 'https://pending.example/b', { state: 'pending', attempts: 2 });
+            const pending = await context.evaluateLinkForGuard('https://pending.example/b');
+            assert.strictEqual(pending.verdict, 'PENDING');
+            assert.strictEqual(pending.checked, false);
+            assert.strictEqual(pending.attempts, 2);
+        });
+    });
+
+    describe('result cache for delayed analyses (part 2)', () => {
+        function stubStorage() {
+            let store = {};
+            context.browser.storage.local.get = async (keys) => {
+                if (typeof keys === 'string') return { [keys]: store[keys] };
+                if (Array.isArray(keys)) { const out = {}; keys.forEach(k => { out[k] = store[k]; }); return out; }
+                return store;
+            };
+            context.browser.storage.local.set = async (data) => { Object.assign(store, data); };
+            return { get: () => store };
+        }
+
+        it('writes the fetched verdict into the cache when a job finishes', async () => {
+            const storage = stubStorage();
+            await context.upsertPendingScan({
+                sha256: 'b'.repeat(64), partName: '1', attachmentName: 'doku.pdf',
+                messageId: 5, messageHeaderId: 'hdr-5', state: 'running', attempts: 1, startedAt: Date.now()
+            });
+            context.getSharedDB = async () => ({});
+            context.updateStore = async () => {};
+            context.fetch = async () => ({ status: 200, json: async () => ({ verdict: 'malicious', submission_id: 's', job_id: 'j' }) });
+
+            await context.pollPendingScans();
+
+            const entry = await context.findCachedResult('sha256', 'b'.repeat(64));
+            assert.ok(entry, 'cache entry expected');
+            assert.strictEqual(entry.state, 'done');
+            assert.strictEqual(entry.verdict, 'MALICIOUS');
+            assert.strictEqual(entry.attachmentName, 'doku.pdf');
+            assert.strictEqual(storage.get()[context.PENDING_SCANS_KEY].length, 0);
+        });
+
+        it('marks a cache entry as failed after the job timed out', async () => {
+            stubStorage();
+            await context.upsertPendingScan({
+                sha256: 'c'.repeat(64), partName: '1', attachmentName: 'late.exe',
+                messageId: 6, messageHeaderId: 'hdr-6', state: 'running',
+                attempts: context.SCAN_MAX_ATTEMPTS, startedAt: Date.now()
+            });
+            context.fetch = async () => ({ status: 404, json: async () => ({}) });
+
+            await context.pollPendingScans();
+
+            const entry = await context.findCachedResult('sha256', 'c'.repeat(64));
+            assert.strictEqual(entry.state, 'failed');
+            assert.ok((entry.reasons || []).some(reason => reason.includes('Zeitfenster')));
+        });
+
+        it('answers the getResults action with summary and entries', async () => {
+            stubStorage();
+            await context.cacheResult('sha256', 'd'.repeat(64), { state: 'done', verdict: 'CLEAN', messageHeaderId: 'hdr-7' });
+            await context.cacheResult('url', 'https://x.example/y', { state: 'pending', messageHeaderId: 'hdr-8' });
+
+            const listener = context.browser.runtime.onMessage.listeners[0];
+            const ask = (message) => new Promise(resolve => listener(message, {}, resolve));
+
+            const all = await ask({ action: 'getResults' });
+            assert.strictEqual(all.status, 'success');
+            assert.strictEqual(all.summary.total, 2);
+
+            const filtered = await ask({ action: 'getResults', messageHeaderId: 'hdr-7' });
+            assert.strictEqual(filtered.entries.length, 1);
+            assert.strictEqual(filtered.entries[0].verdict, 'CLEAN');
+
+            const onlyOpen = await ask({ action: 'getResults', onlyOpen: true });
+            assert.strictEqual(onlyOpen.entries.length, 1);
+            assert.strictEqual(onlyOpen.entries[0].state, 'pending');
+        });
+
+        it('fills the cache from the history so old verdicts stay visible', async () => {
+            stubStorage();
+            await context.recordScanHistory({
+                action: 'attachment-upload', transmitted: true, provider: 'hybrid-analysis',
+                sha256: 'e'.repeat(64), attachmentName: 'alt.exe', messageHeaderId: 'hdr-9'
+            });
+            await context.recordScanHistory({
+                action: 'verdict', transmitted: true, provider: 'hybrid-analysis',
+                sha256: 'e'.repeat(64), verdict: 'MALICIOUS', messageHeaderId: 'hdr-9'
+            });
+
+            await context.refreshCacheFromHistory();
+
+            const entry = await context.findCachedResult('sha256', 'e'.repeat(64));
+            assert.strictEqual(entry.state, 'done');
+            assert.strictEqual(entry.verdict, 'MALICIOUS');
+            assert.strictEqual(entry.attachmentName, 'alt.exe');
         });
     });
 

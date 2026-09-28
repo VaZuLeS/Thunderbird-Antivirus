@@ -207,6 +207,10 @@ if (apiContainer) {
     const activeTabId = tabs[0] ? tabs[0].id : null;
     renderAttachmentPanel(message, message.headerMessageId, apiContainer);
     renderScanStatusPanel(message.headerMessageId, apiContainer);
+    currentMessage = message;
+    currentContainer = apiContainer;
+    currentViewMode = viewMode;
+    renderResultsPanel(message, apiContainer);
     renderLinkList(message, apiContainer, viewMode);
     renderHistoryPanel(message, apiContainer, viewMode);
     renderReportExport(message, apiContainer, viewMode);
@@ -1126,6 +1130,145 @@ async function renderResearcherPanel(message, container, viewMode) {
  * bietet "Pruefen" sowie "Oeffnen nach Pruefung" - genau der Weg, den die
  * Option "Bestätigung im Popup" verlangt.
  */
+/**
+ * Beobachtet einzelne Ergebnisse: Sobald das zeitverzoegerte Verdikt eintrifft,
+ * wird die Statuszeile aktualisiert - auch wenn das Popup noch offen ist.
+ */
+const watchedResults = new Map();
+
+function watchResult(type, value, render) {
+    if (!value || typeof render !== 'function') return;
+    watchedResults.set(type + ':' + String(value).toLowerCase(), { type, value, render });
+}
+
+async function refreshWatchedResults() {
+    if (watchedResults.size === 0) return;
+    for (const watched of Array.from(watchedResults.values())) {
+        try {
+            const response = await browser.runtime.sendMessage({
+                action: 'evaluateLink', url: watched.value
+            });
+            if (response && response.status === 'success' && response.evaluation) {
+                const evaluation = response.evaluation;
+                watched.render({
+                    state: evaluation.state || (evaluation.checked ? 'done' : 'pending'),
+                    verdict: evaluation.verdict,
+                    checkedAt: evaluation.checkedAt,
+                    updatedAt: evaluation.checkedAt,
+                    attempts: evaluation.attempts || 0,
+                    source: evaluation.source || null,
+                    value: watched.value
+                });
+            }
+        } catch (error) { /* Popup kann geschlossen werden */ }
+    }
+}
+
+try {
+    browser.runtime.onMessage.addListener((message) => {
+        if (message && message.action === 'resultsUpdated') {
+            refreshWatchedResults();
+            renderResultsPanel(currentMessage, currentContainer);
+            renderLinkList(currentMessage, currentContainer, currentViewMode);
+        }
+    });
+} catch (e) { /* Listener optional */ }
+
+/**
+ * Ergebnis-Panel: zeigt offene und abgeschlossene Pruefungen aus dem Cache -
+ * auch die, die erst nach dem letzten Oeffnen fertig wurden. Damit ist der
+ * Stand beim naechsten Oeffnen des Popups sofort sichtbar.
+ */
+function describeResultEntry(entry) {
+    const when = entry.checkedAt || entry.updatedAt;
+    const time = when ? new Date(when).toLocaleString() : '-';
+    const label = entry.attachmentName || entry.value;
+    if (entry.state === 'done') {
+        return (entry.verdict || 'unbekannt') + ' | ' + label + ' | geprueft: ' + time +
+            (entry.source ? ' | Quelle: ' + entry.source : '');
+    }
+    if (entry.state === 'failed') {
+        return 'ohne Ergebnis | ' + label + ' | letzter Versuch: ' + time;
+    }
+    const attempts = entry.attempts ? ' (' + entry.attempts + ' Abfrage(n))' : '';
+    return 'Pruefung laeuft (zeitverzoegert)' + attempts + ' | ' + label + ' | gestartet: ' + time;
+}
+
+async function renderResultsPanel(message, container) {
+    let response;
+    try {
+        response = await browser.runtime.sendMessage({
+            action: 'getResults', messageHeaderId: message.headerMessageId, limit: 30
+        });
+    } catch (error) {
+        console.error('Ergebnis-Cache nicht verfuegbar:', error);
+        return null;
+    }
+    if (!response || response.status !== 'success') return null;
+
+    const summary = response.summary || {};
+    const entries = response.entries || [];
+    const openScans = response.pendingScans || [];
+    if (entries.length === 0 && openScans.length === 0) return null;
+
+    let card = document.getElementById('thundy-results-panel');
+    if (!card) {
+        card = document.createElement('div');
+        card.id = 'thundy-results-panel';
+        card.className = 'card card-info mb-3';
+        container.appendChild(card);
+    }
+    card.textContent = '';
+
+    const title = document.createElement('p');
+    title.textContent = thundyT('popup.results.title', 'Pruefergebnisse (zwischengespeichert):') +
+        ' ' + summary.total + ' Eintrag/Eintraege, ' + summary.pending + ' offen, ' + summary.done + ' fertig' +
+        (summary.failed ? ', ' + summary.failed + ' ohne Ergebnis' : '');
+    card.appendChild(title);
+
+    const list = document.createElement('ul');
+    list.className = 'thundy-history-list';
+    for (const entry of entries.slice(0, 15)) {
+        const item = document.createElement('li');
+        item.textContent = describeResultEntry(entry);
+        list.appendChild(item);
+    }
+    for (const job of openScans.slice(0, 10)) {
+        const item = document.createElement('li');
+        item.textContent = 'Auftrag ' + (job.attachmentName || job.sha256) + ': ' + job.state +
+            ' (Pruefung Nr. ' + (job.attempts || 0) + ')';
+        list.appendChild(item);
+    }
+    card.appendChild(list);
+
+    const pollButton = document.createElement('button');
+    pollButton.type = 'button';
+    pollButton.className = 'btn-primary';
+    pollButton.textContent = thundyT('popup.results.pollNow', 'Ergebnis jetzt abrufen');
+    pollButton.addEventListener('click', async () => {
+        pollButton.disabled = true;
+        pollButton.textContent = thundyT('popup.results.polling', 'Frage Anbieter ab...');
+        try {
+            await browser.runtime.sendMessage({ action: 'pollScansNow' });
+            await renderResultsPanel(message, container);
+        } catch (error) {
+            console.error('Abfrage fehlgeschlagen:', error);
+        } finally {
+            pollButton.disabled = false;
+            pollButton.textContent = thundyT('popup.results.pollNow', 'Ergebnis jetzt abrufen');
+        }
+    });
+    card.appendChild(pollButton);
+
+    const hint = document.createElement('small');
+    hint.className = 'thundy-muted';
+    hint.textContent = thundyT('popup.results.hint',
+        'Zeitverzoegerte Analysen werden im Hintergrund abgefragt; das Ergebnis steht beim naechsten Oeffnen sofort bereit.');
+    card.appendChild(hint);
+
+    return card;
+}
+
 async function renderLinkList(message, container, viewMode) {
     let response;
     try {
@@ -1173,7 +1316,15 @@ async function renderLinkList(message, container, viewMode) {
 
         const status = document.createElement('small');
         status.className = 'thundy-attachment-status';
-        status.textContent = thundyT('popup.links.unchecked', 'Noch nicht geprüft');
+        status.textContent = describeResultEntry({
+            state: analysis.result ? analysis.result.state : 'new',
+            verdict: analysis.result ? analysis.result.verdict : null,
+            checkedAt: analysis.result ? analysis.result.checkedAt : null,
+            updatedAt: analysis.result ? analysis.result.checkedAt : null,
+            attempts: analysis.result ? analysis.result.attempts : 0,
+            source: analysis.result ? analysis.result.source : null,
+            value: analysis.url
+        });
         row.appendChild(status);
 
         const checkButton = document.createElement('button');
@@ -1386,7 +1537,7 @@ async function renderAttachmentPanel(message, headerMessageId, container, viewMo
                     const local = await requestAttachmentHash(message.id, attachment.partName);
                     sha256 = local.sha256;
                 }
-                status.textContent = 'Hochgeladen - Analyse wird geladen...';
+                status.textContent = 'Hochgeladen - Pruefung laeuft (Ergebnis zeitverzoegert).';
                 await get_hybrid_report_by_sha256({
                     hybrid_sha: sha256,
                     attachmentName: attachment.name,
@@ -1395,8 +1546,10 @@ async function renderAttachmentPanel(message, headerMessageId, container, viewMo
                     headerMessageId: headerMessageId
                 });
                 status.textContent = technicalViewActive
-                    ? 'Analyse angefordert (SHA-256: ' + sha256 + ')'
+                    ? 'Analyse angefordert (SHA-256: ' + sha256 + ') - Ergebnis zeitverzoegert.'
                     : 'Analyse angefordert - Ergebnis wird automatisch abgerufen.';
+                // Registrieren: sobald das Ergebnis eintrifft, Status neu setzen.
+                watchResult('sha256', sha256, (entry) => { status.textContent = describeResultEntry(entry); });
             } catch (error) {
                 status.textContent = 'Fehler: ' + error.message;
                 if (error.code === 'NO_API_KEY' || error.code === 'EXTERNAL_ANALYSIS_DISABLED' || error.code === 'PERMISSION_REQUIRED') {

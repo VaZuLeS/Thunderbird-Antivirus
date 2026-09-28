@@ -993,3 +993,64 @@ web-ext lint + Filter           # 0 Fehler
    oeffnet das Add-on-Popup).
 2. Echte Store-Screenshots.
 3. Signierung/Einreichung bei addons.thunderbird.net.
+
+---
+
+## 20. Link-Overlay, Ergebnis-Cache und zeitverzögerte Anzeige (v1.16.0)
+
+Drei Rückmeldungen aus dem Live-Test, drei Ursachen, drei Lösungen.
+
+### 20.1 Link-Schutz leitete nicht auf ein Overlay um
+
+**Ursache:** Im Bestätigungsmodus wurde nur optional das Add-on-Popup angefragt
+(`message_display_action.openPopup`). Ist das in der jeweiligen Version nicht programmatisch möglich, passierte
+**gar nichts** — der Klick war abgefangen, aber es erschien keine Oberfläche.
+
+**Lösung:** Im Bestätigungsmodus wird **immer** ein Overlay im Nachrichtentext gerendert (der Guard läuft ja im
+Nachrichten-Frame): echter Ziel-Link groß, Host/Domain/dekodierter IDN-Host, Merkmale, Prüfstand, Buttons *Prüfen* /
+*Öffnen* / *Abbrechen*. Das Add-on-Popup wird zusätzlich versucht („best effort“) und der Button dafür angeboten.
+Zusätzlich: Abfang in der **Capture-Phase** mit `stopImmediatePropagation`, Coverage für Mittelklick und Strg/Cmd-Klick
+und ein dokumentweiter Fallback-Interceptor für noch nicht dekorierte Links.
+
+### 20.2 Manuelle Prüfung lieferte immer „Unknown“
+
+**Ursache (echter Bug, von den Tests aufgedeckt):** In `checkVirusTotal` rief `cacheResult(..., verdict: data && ...)`
+zu, **bevor** `const data = await response.json()` deklariert war → `ReferenceError` (TDZ) im `try` → `catch` → `null`.
+Damit lieferte **jede** VirusTotal-Hash-Abfrage stillschweigend `null`, was in der Oberfläche als „Unknown“ erschien.
+
+**Lösung:** Reihenfolge korrigiert; ein Regressionstest prüft, dass die Abfrage bei HTTP 200 die Statistik liefert.
+
+### 20.3 Zeitverzögerte Ereignisse anzeigen und cachen
+
+**Lösung:** zentraler **Ergebnis-Cache** mit Zustandsmodell.
+
+| Baustein | Umsetzung |
+|---|---|
+| Speicher | `scanResults` in `storage.local`, max. 2000 Einträge, Schlüssel `typ:wert` (sha256/url/domain/ip) |
+| Felder | `state` (`pending`/`done`/`failed`), `verdict`, `reasons`, `submittedAt`, `checkedAt`, `attempts`, `source`, `messageHeaderId`, `attachmentName`, `submissionId`, `jobId` |
+| Schreibpunkte | Scan-Start (Upload/URL), Verdikt-Abruf im Poller, VirusTotal/URLhaus/AbuseIPDB-Ergebnisse, Timeout, Aufbau aus dem Verlauf beim Start |
+| Lesen | Link-Tooltip, Link-Liste, Ergebnis-Panel lesen **zuerst** den Cache → „geprüft: …“ statt „Unknown“; offene Prüfungen erscheinen als „Prüfung läuft (zeitverzögert) – N Abfrage(n)“ |
+| Anzeige | **Ergebnis-Panel** im Popup für die geöffnete Nachricht (offen/fertig/ohne Ergebnis, Zeitstempel, Versuche) + Button „Ergebnis jetzt abrufen“ |
+| Live-Update | Der Poller sendet nach jedem Durchlauf `resultsUpdated`; das offene Popup aktualisiert Watch-Einträge, Ergebnis-Panel und Link-Liste selbst |
+| Beim nächsten Öffnen | Cache wird beim Popup-Start gelesen → das zuletzt geprüfte Ergebnis ist **sofort** sichtbar |
+
+**Datenschutz:** Der Cache bleibt lokal (storage.local), enthält nur Verdikte/Metadaten (keine Dateiinhalte) und wird
+mit den vorhandenen Löschfunktionen (Cache leeren) mitentfernt.
+
+### 20.4 Verifikation v1.16.0
+
+```bash
+node scripts/check-locales.js   # vollstaendig (en/de, 166 Schluessel)
+npm test                        # 595 Tests, 0 Fehler (neu: 7 Cache-, 3 Popup-Panel-, 2 Guard-Tests)
+npm run pre-submit-checks       # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm run build                   # build/thundy-av-1.16.0.xpi inkl. Paketpruefung
+web-ext lint + Filter           # 0 Fehler
+```
+
+### 20.5 Zielgerichteter Live-Test
+
+1. Optionen → Link-Schutz „Blockieren bis zur Prüfung“ → Link in einer Nachricht anklicken: **Overlay** mit dem echten
+   Link muss erscheinen (auch mit Mittelklick/Strg-Klick).
+2. Anhang manuell prüfen → im Popup erscheint „Prüfung läuft (zeitverzögert)“; nach einigen Minuten (oder per
+   „Ergebnis jetzt abrufen“) das Verdikt. Popup schließen und erneut öffnen → Ergebnis ist **sofort** da, mit Prüfzeit.
+3. Optionen → Diagnose: Banner-/Guard-Modus und Frame-Zahl prüfen.

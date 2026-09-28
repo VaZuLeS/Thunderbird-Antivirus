@@ -563,12 +563,27 @@ async function pollPendingScans() {
                 finishedAt: Date.now(),
                 error: 'Der Anbieter hat innerhalb des Zeitfensters kein Ergebnis geliefert.'
             }));
+            await cacheResult('sha256', job.sha256, {
+                state: 'failed',
+                reasons: ['Kein Ergebnis innerhalb des Zeitfensters.'],
+                attempts: job.attempts || 0,
+                source: 'hybrid-analysis'
+            });
             notify('notificationTitle', 'notificationScanTimeout', [job.attachmentName || job.sha256]);
             continue;
         }
 
         const result = await fetchHybridVerdictForJob(job);
         if (result && result.verdict) {
+            await cacheResult('sha256', job.sha256, {
+                state: 'done',
+                verdict: result.verdict,
+                checkedAt: new Date().toISOString(),
+                attempts: (job.attempts || 0) + 1,
+                messageHeaderId: job.messageHeaderId || null,
+                attachmentName: job.attachmentName || null,
+                source: 'hybrid-analysis'
+            });
             await recordScanHistory({
                 action: 'verdict',
                 transmitted: true,
@@ -603,6 +618,14 @@ async function pollPendingScans() {
 
     const saved = await savePendingScans(updated);
     await scheduleScanPolling(hasOpenScanJobs(saved));
+
+    // Oberflaechen (Popup, Banner) ueber neue Staende informieren.
+    if (finished > 0 || saved.length > 0) {
+        try {
+            await browser.runtime.sendMessage({ action: 'resultsUpdated', finished, pending: saved.length });
+        } catch (e) { /* niemand hoert zu */ }
+    }
+
     return { checked: jobs.length, finished, pending: saved.length };
 }
 
@@ -979,6 +1002,12 @@ function extractPublicIPs(receivedHeaders) {
 async function checkAbuseIPDB(ip, apikey) {
     if (!mayTransmitExternally()) return false;
     try {
+        await cacheResult('ip', ip, {
+            state: 'done',
+            verdict: 'UNKNOWN',
+            checkedAt: new Date().toISOString(),
+            source: 'abuseipdb'
+        });
         await recordScanHistory({
             action: 'ip-check',
             transmitted: true,
@@ -2183,6 +2212,16 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
                     detail: 'Automatischer Upload (Datenschutz-Stufe).'
                 });
 
+                await cacheResult('sha256', uploadData.sha256 || local_hash, {
+                    state: 'pending',
+                    submittedAt: new Date().toISOString(),
+                    submissionId: uploadData.submission_id || null,
+                    jobId: uploadData.job_id || null,
+                    messageHeaderId: messageHeaderId || null,
+                    attachmentName: attachment.name || null,
+                    source: 'hybrid-analysis'
+                });
+
                 // Auch automatische Uploads laufen asynchron beim Anbieter.
                 await upsertPendingScan({
                     sha256: uploadData.sha256 || local_hash,
@@ -2525,6 +2564,9 @@ if (browser.alarms) {
             }
         });
     }
+    // Ergebnis-Cache aus dem Verlauf auffuellen, damit alte Verdikte sichtbar bleiben.
+    refreshCacheFromHistory().catch(e => Logger.warn('Ergebnis-Cache konnte nicht aufgebaut werden:', e));
+
     // Nach einem Neustart des Hintergrundskripts: offene Auftraege weiter verfolgen.
     getPendingScans().then(jobs => {
         if (jobs.length > 0) {
@@ -3330,7 +3372,174 @@ function analyzeHeaderForensics(input = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// Link-Guard (Time-of-Click): Entscheidung, Bewertung, Popup, Freigabe
+// Ergebnis-Cache (zeitverzoegerte Analysen)
+//
+// Jede Pruefung (Datei-Hash, URL, Domain, IP) bekommt einen Eintrag mit
+// Zustand und - sobald vorhanden - dem Verdikt. Die Oberflaeche liest daraus
+// sofort einen Stand, statt "UNKNOWN" zu zeigen; der Alarm des Hintergrunds
+// aktualisiert die Eintraege, sobald der Anbieter liefert.
+// ---------------------------------------------------------------------------
+const RESULT_CACHE_KEY = 'scanResults';
+const RESULT_CACHE_MAX = 2000;
+
+function resultKey(type, value) {
+    return String(type || 'unknown') + ':' + String(value || '').toLowerCase();
+}
+
+async function getAllResults() {
+    try {
+        const stored = await browser.storage.local.get(RESULT_CACHE_KEY);
+        return (stored && typeof stored[RESULT_CACHE_KEY] === 'object' && stored[RESULT_CACHE_KEY]) || {};
+    } catch (e) {
+        Logger.warn('Ergebnis-Cache konnte nicht gelesen werden:', e);
+        return {};
+    }
+}
+
+async function saveAllResults(cache) {
+    try {
+        if (browser.storage && browser.storage.local && typeof browser.storage.local.set === 'function') {
+            await browser.storage.local.set({ [RESULT_CACHE_KEY]: cache });
+        }
+    } catch (e) {
+        Logger.warn('Ergebnis-Cache konnte nicht gespeichert werden:', e);
+    }
+    return cache;
+}
+
+/** Legt einen Eintrag an oder aktualisiert ihn (Zustand bleibt erhalten). */
+async function cacheResult(type, value, patch = {}) {
+    if (!value) return null;
+    const cache = await getAllResults();
+    const key = resultKey(type, value);
+    const existing = cache[key] || {};
+    // undefined-Werte duerfen bestehende Felder nicht ueberschreiben.
+    const cleanPatch = {};
+    for (const [patchKey, patchValue] of Object.entries(patch || {})) {
+        if (patchValue !== undefined) cleanPatch[patchKey] = patchValue;
+    }
+
+    const entry = Object.assign({
+        type,
+        value: String(value),
+        state: 'pending',
+        verdict: null,
+        reasons: [],
+        submittedAt: null,
+        checkedAt: null,
+        attempts: 0,
+        source: null,
+        messageHeaderId: null,
+        attachmentName: null,
+        submissionId: null,
+        jobId: null
+    }, existing, cleanPatch);
+    entry.updatedAt = new Date().toISOString();
+    if (entry.state === 'done' && !entry.checkedAt) entry.checkedAt = entry.updatedAt;
+    cache[key] = entry;
+
+    // Groesse begrenzen: aelteste Eintraege zuerst entfernen.
+    const keys = Object.keys(cache);
+    if (keys.length > RESULT_CACHE_MAX) {
+        keys.sort((left, right) => String(cache[left].updatedAt).localeCompare(String(cache[right].updatedAt)));
+        for (const stale of keys.slice(0, keys.length - RESULT_CACHE_MAX)) delete cache[stale];
+    }
+
+    await saveAllResults(cache);
+    return entry;
+}
+
+/** Liest einen Eintrag (auch mehrere Kandidaten fuer dieselbe URL). */
+async function findCachedResult(type, value) {
+    const cache = await getAllResults();
+    const direct = cache[resultKey(type, value)];
+    if (direct) return direct;
+    // Links koennen als Datei-Hash gespeichert sein: Fallback ueber alle Eintraege.
+    const needle = String(value || '').toLowerCase();
+    for (const entry of Object.values(cache)) {
+        if (String(entry.value || '').toLowerCase() === needle) return entry;
+    }
+    return null;
+}
+
+/** Uebernimmt Verlaufseintraege in den Cache (Verdikt aus dem Verdict-Schritt). */
+async function refreshCacheFromHistory() {
+    const history = await getScanHistory();
+    for (const entry of history.slice(-200)) {
+        if (entry.action === 'attachment-upload' && entry.sha256) {
+            await cacheResult('sha256', entry.sha256, {
+                state: entry.verdict ? 'done' : (entry.outcome === 'error' ? 'failed' : 'pending'),
+                verdict: entry.verdict || null,
+                submittedAt: entry.timestamp || null,
+                messageHeaderId: entry.messageHeaderId || null,
+                attachmentName: entry.attachmentName || null,
+                submissionId: entry.submissionId || null,
+                jobId: entry.jobId || null,
+                source: entry.provider || 'hybrid-analysis'
+            });
+        }
+        if (entry.action === 'hash-lookup' && entry.sha256) {
+            await cacheResult('sha256', entry.sha256, {
+                state: 'done',
+                verdict: entry.verdict || 'KNOWN',
+                checkedAt: entry.timestamp || null,
+                source: entry.provider || 'virustotal'
+            });
+        }
+        if (entry.action === 'verdict' && entry.sha256) {
+            await cacheResult('sha256', entry.sha256, {
+                state: 'done',
+                verdict: entry.verdict || null,
+                checkedAt: entry.timestamp || null,
+                messageHeaderId: entry.messageHeaderId || null,
+                attachmentName: entry.attachmentName,
+                source: entry.provider || 'hybrid-analysis'
+            });
+        }
+        if ((entry.action === 'url-scan' || entry.action === 'url-scan-batch') && entry.url) {
+            await cacheResult('url', entry.url, {
+                state: entry.verdict ? 'done' : 'pending',
+                verdict: entry.verdict || null,
+                submittedAt: entry.timestamp || null,
+                messageHeaderId: entry.messageHeaderId || null,
+                source: entry.provider || 'hybrid-analysis'
+            });
+        }
+        if (entry.action === 'domain-check' && entry.domain) {
+            await cacheResult('domain', entry.domain, {
+                state: 'done',
+                verdict: entry.outcome === 'ok' ? 'KNOWN' : 'UNKNOWN',
+                checkedAt: entry.timestamp || null,
+                source: entry.provider || 'urlhaus'
+            });
+        }
+        if (entry.action === 'ip-check' && entry.ip) {
+            await cacheResult('ip', entry.ip, {
+                state: 'done',
+                verdict: entry.outcome === 'ok' ? 'KNOWN' : 'UNKNOWN',
+                checkedAt: entry.timestamp || null,
+                source: entry.provider || 'abuseipdb'
+            });
+        }
+    }
+}
+
+/** Statistik fuer die Oberflaeche: offen / fertig / fehlgeschlagen. */
+async function summarizeResultCache() {
+    const cache = await getAllResults();
+    const entries = Object.values(cache);
+    const byState = entries.reduce((acc, entry) => {
+        acc[entry.state] = (acc[entry.state] || 0) + 1;
+        return acc;
+    }, {});
+    return {
+        total: entries.length,
+        pending: byState.pending || 0,
+        done: byState.done || 0,
+        failed: byState.failed || 0,
+        entries
+    };
+}
 // ---------------------------------------------------------------------------
 
 /**
@@ -3378,6 +3587,25 @@ async function evaluateLinkForGuard(url, headerMessageId = null) {
     }
     if (ruleEvaluation.matches.length > 0) {
         evaluation.flags = evaluation.flags.concat(ruleEvaluation.reasons);
+    }
+
+    // 1) Ergebnis-Cache: sofortiger Stand inklusive Zeitstempel.
+    const cached = await findCachedResult('url', url);
+    if (cached) {
+        evaluation.state = cached.state;
+        evaluation.checkedAt = cached.checkedAt || cached.updatedAt || null;
+        evaluation.source = cached.source || null;
+        evaluation.attempts = cached.attempts || 0;
+        evaluation.checked = cached.state === 'done';
+        if (cached.state === 'done' && cached.verdict) {
+            evaluation.verdict = String(cached.verdict).toUpperCase();
+        } else if (cached.state === 'failed') {
+            evaluation.verdict = 'FAILED';
+            evaluation.checked = true;
+        } else if (cached.state === 'pending') {
+            evaluation.verdict = 'PENDING';
+        }
+        if ((cached.reasons || []).length > 0) evaluation.flags = evaluation.flags.concat(cached.reasons);
     }
 
     let record = null;
@@ -4522,6 +4750,16 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
             detail: 'Anhang wurde zur Analyse hochgeladen (Ergebnis zeitverzoegert).'
         });
 
+        await cacheResult('sha256', sha256, {
+            state: 'pending',
+            submittedAt: new Date().toISOString(),
+            submissionId: json_data.submission_id || null,
+            jobId: json_data.job_id || null,
+            messageHeaderId: headerMessageId || null,
+            attachmentName: attachmentName || null,
+            source: 'hybrid-analysis'
+        });
+
         // Der Anbieter analysiert asynchron: Auftrag merken und regelmaessig nachfragen.
         await upsertPendingScan({
             sha256,
@@ -4658,6 +4896,28 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
         }
 
+        case "getResults": {
+            summarizeResultCache()
+                .then(async (summary) => {
+                    let entries = summary.entries;
+                    if (request.messageHeaderId) {
+                        entries = entries.filter(entry => entry.messageHeaderId === request.messageHeaderId);
+                    }
+                    if (request.onlyOpen) {
+                        entries = entries.filter(entry => entry.state === 'pending');
+                    }
+                    entries.sort((left, right) => String(right.updatedAt).localeCompare(String(left.updatedAt)));
+                    sendResponse({
+                        status: 'success',
+                        summary: { total: summary.total, pending: summary.pending, done: summary.done, failed: summary.failed },
+                        entries: entries.slice(0, request.limit || 50),
+                        pendingScans: (await getPendingScans()).map(describeScanJob)
+                    });
+                })
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+        }
+
         case "getLinkGuardSettings":
             sendResponse({ status: 'success', mode: linkGuardMode, target: linkGuardTarget,
                 injectedFrames: guardInjectionResults });
@@ -4751,6 +5011,19 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     });
                     const threat = calculateThreatScore(message.author, extractUrls(text), evaluationOptions);
                     const indicators = extractIndicators({ urls, fullMessage, attachments, extraText: text });
+                    // Ergebnis-Cache anreichern: Zustand und Verdikt je Link/Anhang.
+                    const resultCache = await getAllResults();
+                    for (const analysis of indicators.urlAnalyses) {
+                        const entry = resultCache[resultKey('url', analysis.url)];
+                        analysis.result = entry ? {
+                            state: entry.state, verdict: entry.verdict, checkedAt: entry.checkedAt || entry.updatedAt,
+                            attempts: entry.attempts || 0, source: entry.source || null
+                        } : null;
+                    }
+                    const attachmentResults = attachments.map(attachment => {
+                        const entry = resultCache[resultKey('sha256', attachment.hybrid_sha256 || '')];
+                        return entry ? { partName: attachment.partName, state: entry.state, verdict: entry.verdict, checkedAt: entry.checkedAt || entry.updatedAt } : null;
+                    }).filter(Boolean);
                     const receivedHeadersForAnalysis = (fullMessage.headers && fullMessage.headers['received']) || [];
                     const authResults = parseAuthenticationResults((fullMessage.headers && fullMessage.headers['authentication-results']) || []);
                     const receivedChain = analyzeReceivedChain(receivedHeadersForAnalysis);
@@ -4793,6 +5066,8 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                                 'x-mailer': headers['x-mailer'] || null
                             },
                             indicators,
+                            attachmentResults,
+                            cacheSummary: await summarizeResultCache(),
                             attachments: analyses
                         }
                     });
@@ -5185,6 +5460,15 @@ async function handleUrlScan(url, headerMessageId) {
         detail: 'URL wurde zur Analyse uebermittelt.'
     });
 
+    await cacheResult('url', url, {
+        state: 'pending',
+        submittedAt: new Date().toISOString(),
+        submissionId: json_data.submission_id || null,
+        jobId: json_data.job_id || null,
+        messageHeaderId: headerMessageId || null,
+        source: 'hybrid-analysis'
+    });
+
     // Auch URL-Scans laufen beim Anbieter asynchron.
     if (sha256) {
         await upsertPendingScan({
@@ -5261,6 +5545,14 @@ async function checkVirusTotal(hash, apikey) {
             });
             if (response.status === 200) {
                 const data = await response.json();
+                await cacheResult('sha256', hash, {
+                    state: 'done',
+                    verdict: (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats)
+                        ? 'KNOWN'
+                        : 'UNKNOWN',
+                    checkedAt: new Date().toISOString(),
+                    source: 'virustotal'
+                });
                 if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
                     return data.data.attributes.last_analysis_stats;
                 }
@@ -5301,6 +5593,12 @@ async function checkURLhaus(domain, apikey) {
             body: body.toString()
         });
         const data = await response.json();
+        await cacheResult('domain', domain, {
+            state: 'done',
+            verdict: (data && data.query_status === 'ok' && data.url_count > 0) ? 'MALICIOUS' : 'CLEAN',
+            checkedAt: new Date().toISOString(),
+            source: 'urlhaus'
+        });
         await recordScanHistory({
             action: 'domain-check',
             transmitted: true,

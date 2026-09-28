@@ -39,6 +39,36 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.16.0] – 2026-09-28
+
+### Fixed
+
+- **Link-Schutz leitete nicht auf ein Overlay um.** Im Bestaetigungsmodus wird jetzt IMMER ein Overlay im
+  Nachrichtentext angezeigt, das den **echten** Ziel-Link gross darstellt (mit Host, Domain, dekodiertem IDN-Host,
+  Merkmalen und Pruefstand) und die Aktionen Pruefen / Oeffnen / Abbrechen bietet. Bisher wurde nur optional das
+  Add-on-Popup angefragt - ist das in der jeweiligen Thunderbird-Version nicht programmatisch zu oeffnen, passierte
+  schlicht nichts. Das Popup wird jetzt zusaetzlich versucht; das Overlay erscheint unabhaengig davon.
+- **Klicks wurden nicht zuverlaessig abgefangen.** Die Abfanglogik laeuft nun in der **Capture-Phase**
+  (`stopImmediatePropagation`) und deckt auch Mittelklick sowie Strg/Cmd-Klick ab; zusaetzlich existiert ein
+  dokumentweiter Fallback-Interceptor fuer Links, die (noch) nicht dekoriert wurden.
+- **Manuelle Pruefung lieferte immer "Unknown".** Ursache war ein TDZ-Fehler in der VirusTotal-Abfrage
+  (`cacheResult` griff auf `data` vor der Deklaration zu), wodurch jede Abfrage stillschweigend `null` zurueckgab -
+  und damit als "Unknown" erschien. Behoben; ein Regressionstest deckt die Reihenfolge ab.
+
+### Added
+
+- **Ergebnis-Cache fuer zeitverzoegerte Analysen** (`scanResults` in `browser.storage.local`, max. 2000 Eintraege):
+  Jede Pruefung (Datei-Hash, URL, Domain, IP) hat einen Eintrag mit `state` (`pending`/`done`/`failed`), Verdikt,
+  Zeitstempeln, Versuchszahl und Quelle. Er wird beim Analysestart, beim Upload, beim Verdikt-Abruf, bei URL-/Domain-/
+  IP-Pruefungen und beim Timeout gepflegt und beim Start aus dem Verlauf aufgefuellt.
+- **Zeitverzoegerte Ereignisse sichtbar:** Das Popup zeigt ein **Ergebnis-Panel** (offen / fertig / ohne Ergebnis,
+  inklusive Zeitstempel und Abfragezahl) fuer die geoeffnete Nachricht, mit **"Ergebnis jetzt abrufen"**. Trifft ein
+  Ergebnis ein, waehrend das Popup offen ist, aktualisiert sich die Anzeige selbst (`resultsUpdated`).
+- **Stand beim naechsten Oeffnen:** Link-Tooltips, Link-Liste und Ergebnis-Panel lesen zuerst den Cache und zeigen
+  Verdikt plus Pruefzeitpunkt ("geprueft: ...") statt "Unknown"; offene Pruefungen erscheinen als
+  "Pruefung laeuft (zeitverzoegert) - N Abfrage(n)".
+- Neue Hintergrund-Aktion `getResults` (Summary + Eintraege, filterbar nach Nachricht/nur offene).
+
 ## [1.15.0] – 2026-09-28
 
 ### Fixed

@@ -27,7 +27,10 @@ const THUNDY_GUARD_FALLBACKS = {
   guardBlockedClick: 'Klick abgefangen – bitte zuerst prüfen.',
   guardInPopupHint: 'Zum Öffnen das Add-on-Popup dieser Nachricht verwenden.',
   guardCheckFailed: 'Prüfung nicht möglich.',
-  guardOpenFailed: 'Öffnen fehlgeschlagen.'
+  guardOpenFailed: 'Öffnen fehlgeschlagen.',
+  guardCancel: 'Abbrechen',
+  guardPending: 'Prüfung läuft – Ergebnis kommt zeitverzögert',
+  guardPopupUnavailable: 'Das Add-on-Popup lässt sich hier nicht automatisch öffnen – bitte den Button in der Nachrichtenkopfzeile verwenden.'
 };
 
 let guardSettings = { mode: 'hint', target: 'inline' };
@@ -178,6 +181,179 @@ function guardRenderTooltip(link, evaluation) {
 }
 
 
+/**
+ * Overlay im Nachrichtentext: zeigt den ECHTEN Ziel-Link gross und deutlich und
+ * fragt vor dem Oeffnen nach. Wird im Bestaetigungsmodus immer angezeigt - auch
+ * dann, wenn zusaetzlich das Add-on-Popup geoeffnet wird (dieses kann in
+ * manchen Thunderbird-Versionen nicht programmatisch geoeffnet werden).
+ */
+function guardShowOverlay(link, evaluation, options) {
+  const opts = options || {};
+  guardRemoveTooltip();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'thundy-link-overlay';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+
+  const box = document.createElement('div');
+  box.className = 'thundy-overlay-box';
+  overlay.appendChild(box);
+
+  const title = document.createElement('div');
+  title.className = 'thundy-overlay-title';
+  title.textContent = opts.reason === 'click'
+    ? guardText('guardBlockedClick')
+    : guardText('guardTooltipTitle');
+  box.appendChild(title);
+
+  const urlLabel = document.createElement('div');
+  urlLabel.className = 'thundy-overlay-url-label';
+  urlLabel.textContent = 'Ziel:';
+  box.appendChild(urlLabel);
+
+  const urlValue = document.createElement('div');
+  urlValue.className = 'thundy-overlay-url';
+  urlValue.textContent = (evaluation && evaluation.url) || link.href;
+  box.appendChild(urlValue);
+
+  const meta = document.createElement('div');
+  meta.className = 'thundy-overlay-meta';
+  const host = evaluation ? evaluation.host : null;
+  const domain = evaluation ? evaluation.registrableDomain : null;
+  const decoded = evaluation && evaluation.decodedHost && evaluation.decodedHost !== evaluation.host
+    ? evaluation.decodedHost : null;
+  meta.textContent = [host ? 'Host: ' + host : null, domain ? 'Domain: ' + domain : null,
+    decoded ? 'liest sich als: ' + decoded : null].filter(Boolean).join(' | ');
+  box.appendChild(meta);
+
+  if (evaluation && (evaluation.flags || []).length > 0) {
+    const flagList = document.createElement('ul');
+    flagList.className = 'thundy-overlay-flags';
+    for (const flag of evaluation.flags) {
+      const item = document.createElement('li');
+      item.textContent = flag;
+      flagList.appendChild(item);
+    }
+    box.appendChild(flagList);
+  }
+
+  const status = document.createElement('div');
+  status.className = 'thundy-overlay-status';
+  status.setAttribute('role', 'status');
+  status.textContent = guardVerdictLabel(evaluation ? evaluation.verdict : 'UNKNOWN') +
+    (evaluation && evaluation.state === 'pending' ? ' (' + guardText('guardPending') + ')' : '');
+  box.appendChild(status);
+
+  const actions = document.createElement('div');
+  actions.className = 'thundy-overlay-actions';
+  box.appendChild(actions);
+
+  const checkButton = document.createElement('button');
+  checkButton.type = 'button';
+  checkButton.className = 'thundy-guard-check';
+  checkButton.textContent = guardText('guardCheck');
+  actions.appendChild(checkButton);
+
+  const openButton = document.createElement('button');
+  openButton.type = 'button';
+  openButton.className = 'thundy-guard-open';
+  openButton.textContent = guardText('guardOpen');
+  openButton.disabled = true;
+  actions.appendChild(openButton);
+
+  const popupButton = document.createElement('button');
+  popupButton.type = 'button';
+  popupButton.className = 'thundy-guard-popup';
+  popupButton.textContent = guardText('guardOpenPopup');
+  actions.appendChild(popupButton);
+
+  const cancelButton = document.createElement('button');
+  cancelButton.type = 'button';
+  cancelButton.className = 'thundy-guard-cancel';
+  cancelButton.textContent = guardText('guardCancel');
+  actions.appendChild(cancelButton);
+
+  let currentVerdict = evaluation ? evaluation.verdict : 'UNKNOWN';
+
+  checkButton.addEventListener('click', async () => {
+    checkButton.disabled = true;
+    status.textContent = guardText('guardChecking');
+    const result = await guardEvaluate(link.href);
+    checkButton.disabled = false;
+    if (result) {
+      currentVerdict = result.verdict;
+      status.textContent = guardVerdictLabel(result.verdict) +
+        ((result.flags || []).length ? ' - ' + result.flags.join('; ') : '');
+      openButton.disabled = result.verdict === 'BLOCKED_BY_RULE';
+    } else {
+      status.textContent = guardText('guardCheckFailed');
+    }
+  });
+
+  popupButton.addEventListener('click', async () => {
+    const response = await browser.runtime.sendMessage({ action: 'openLinkGuardPopup' }).catch(() => null);
+    status.textContent = response && response.status === 'success'
+      ? guardText('guardInPopupHint')
+      : guardText('guardPopupUnavailable');
+  });
+
+  openButton.addEventListener('click', async () => {
+    if (currentVerdict === 'BLOCKED_BY_RULE') {
+      status.textContent = guardText('guardBlocked');
+      return;
+    }
+    guardAllowed.add(link.href);
+    try {
+      const response = await browser.runtime.sendMessage({
+        action: 'openLinkAfterCheck', url: link.href,
+        headerMessageId: evaluation ? evaluation.messageHeaderId : null
+      });
+      status.textContent = response && response.status === 'success'
+        ? guardText('guardAlreadyOpen') : guardText('guardOpenFailed');
+      if (response && response.status === 'success') guardRemoveOverlay();
+    } catch (e) {
+      status.textContent = guardText('guardOpenFailed');
+    }
+  });
+
+  cancelButton.addEventListener('click', () => guardRemoveOverlay());
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay) guardRemoveOverlay();
+  });
+  document.addEventListener('keydown', function onEscape(event) {
+    if (event.key === 'Escape') {
+      guardRemoveOverlay();
+      document.removeEventListener('keydown', onEscape, true);
+    }
+  }, true);
+
+  const parent = document.body || document.documentElement;
+  parent.appendChild(overlay);
+  return overlay;
+}
+
+function guardRemoveOverlay() {
+  const overlay = document.getElementById('thundy-link-overlay');
+  if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+}
+
+/**
+ * Gemeinsame Abfanglogik fuer Klicks im Bestaetigungsmodus: verhindert das
+ * Oeffnen, holt den Stand und zeigt das Overlay mit dem echten Ziel.
+ */
+async function guardHandleIntercept(anchor, event) {
+  event.preventDefault();
+  event.stopPropagation();
+  if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+  const evaluation = await guardEvaluate(anchor.href);
+  guardShowOverlay(anchor, evaluation, { reason: 'click' });
+  if (guardSettings.target === 'popup') {
+    // Best effort: zusaetzlich das Add-on-Popup oeffnen (falls unterstuetzt).
+    browser.runtime.sendMessage({ action: 'openLinkGuardPopup' }).catch(() => {});
+  }
+}
+
 function guardDecorate(link) {
   if (!link || !link.href || !/^https?:/i.test(link.href)) return;
   if (link.getAttribute('data-thundy-guard') === '1') return;
@@ -197,26 +373,37 @@ function guardDecorate(link) {
     }, 250);
   });
 
-  link.addEventListener('click', (event) => {
-    if (guardSettings.mode === 'off') return;
+  const intercept = (event) => {
+    if (guardSettings.mode !== 'confirm') return;
     if (guardAllowed.has(link.href)) return;
+    // Capture-Phase: Thunderbird darf den Link nicht selbst oeffnen.
+    guardHandleIntercept(link, event);
+  };
 
-    if (guardSettings.mode === 'confirm') {
+  link.addEventListener('click', intercept, true);
+  link.addEventListener('auxclick', intercept, true);
+  link.addEventListener('mousedown', (event) => {
+    if (guardSettings.mode === 'confirm' && (event.button === 1 || event.ctrlKey || event.metaKey)) {
       event.preventDefault();
-      event.stopPropagation();
-      if (guardSettings.target === 'popup') {
-        browser.runtime.sendMessage({ action: 'openLinkGuardPopup', url: link.href }).catch(() => {});
-        return;
-      }
-      const tooltip = guardRenderTooltip(link, null);
-      const status = tooltip.querySelector('.thundy-guard-status');
-      if (status) status.textContent = guardText('guardBlockedClick');
-      tooltip.classList.add('thundy-guard-modal');
-      return;
     }
+  }, true);
 
+  link.addEventListener('click', (event) => {
+    if (guardSettings.mode !== 'hint') return;
     guardRenderTooltip(link, null);
   });
+}
+
+/** Faengt auch Links ab, die (noch) nicht dekoriert wurden. */
+function guardInstallFallbackInterceptor() {
+  document.addEventListener('click', (event) => {
+    const anchor = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+    if (!anchor || !/^https?:/i.test(anchor.href)) return;
+    guardDecorate(anchor);
+    if (guardSettings.mode !== 'confirm') return;
+    if (guardAllowed.has(anchor.href)) return;
+    guardHandleIntercept(anchor, event);
+  }, true);
 }
 
 function guardDecorateAll(context) {
@@ -238,6 +425,7 @@ async function guardInit() {
   if (guardSettings.mode === 'off') return;
 
   guardDecorateAll(document);
+  guardInstallFallbackInterceptor();
   try {
     const observer = new MutationObserver(() => guardDecorateAll(document));
     observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -261,6 +449,10 @@ if (typeof globalThis !== 'undefined') {
   globalThis.thundyGuardInit = guardInit;
   globalThis.thundyGuardSettings = () => guardSettings;
   globalThis.thundyGuardAllow = (url) => guardAllowed.add(url);
+  globalThis.thundyGuardShowOverlay = guardShowOverlay;
+  globalThis.thundyGuardHandleIntercept = guardHandleIntercept;
+  globalThis.thundyGuardRemoveOverlay = guardRemoveOverlay;
+  globalThis.thundyGuardInstallFallbackInterceptor = guardInstallFallbackInterceptor;
 }
 
 guardInit();

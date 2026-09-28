@@ -99,3 +99,84 @@
     #thundy-link-tooltip .thundy-guard-flags { color: #e0a33a; }
     #thundy-link-tooltip button.thundy-guard-check { color: #cfe6fa; border-color: #4c9be0; }
 }
+
+/* Overlay im Nachrichtentext: zeigt den echten Link vor dem Oeffnen ------ */
+#thundy-link-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    background: rgba(7, 61, 107, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+#thundy-link-overlay .thundy-overlay-box {
+    background: #ffffff;
+    color: #1b1f23;
+    border: 1px solid #0b5fa5;
+    border-left: 4px solid #ff8c00;
+    border-radius: 8px;
+    padding: 14px 16px;
+    max-width: 560px;
+    width: min(560px, 92vw);
+    box-shadow: 0 10px 30px rgba(7, 61, 107, 0.35);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+#thundy-link-overlay .thundy-overlay-title {
+    font-weight: 700;
+    color: #b26000;
+    margin-bottom: 8px;
+}
+
+#thundy-link-overlay .thundy-overlay-url-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #5c6670;
+}
+
+#thundy-link-overlay .thundy-overlay-url {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    word-break: break-all;
+    background: #e8f1fa;
+    border: 1px solid #0b5fa5;
+    border-radius: 6px;
+    padding: 6px 8px;
+    margin: 2px 0 8px;
+}
+
+#thundy-link-overlay .thundy-overlay-meta { color: #5c6670; margin-bottom: 6px; }
+#thundy-link-overlay .thundy-overlay-flags { color: #b26000; margin: 4px 0 8px; padding-left: 18px; }
+#thundy-link-overlay .thundy-overlay-status { color: #073d6b; font-weight: 600; margin: 6px 0 10px; }
+
+#thundy-link-overlay button {
+    font: inherit;
+    font-weight: 600;
+    margin: 0 8px 0 0;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: 1px solid #0b5fa5;
+    background: #0b5fa5;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+#thundy-link-overlay button.thundy-guard-check { background: transparent; color: #0b5fa5; }
+#thundy-link-overlay button.thundy-guard-open { background: #ff8c00; border-color: #b26000; color: #24160a; }
+#thundy-link-overlay button.thundy-guard-cancel { background: transparent; color: #5c6670; border-color: #d7dbe0; }
+#thundy-link-overlay button:disabled { opacity: 0.55; cursor: default; }
+
+@media (prefers-color-scheme: dark) {
+    #thundy-link-overlay .thundy-overlay-box { background: #24282d; color: #e8eaed; border-color: #4c9be0; }
+    #thundy-link-overlay .thundy-overlay-url { background: #10283d; color: #cfe6fa; border-color: #4c9be0; }
+    #thundy-link-overlay .thundy-overlay-meta { color: #a3adb8; }
+    #thundy-link-overlay .thundy-overlay-flags { color: #e0a33a; }
+    #thundy-link-overlay .thundy-overlay-status { color: #9dc9f0; }
+    #thundy-link-overlay button.thundy-guard-check { color: #cfe6fa; border-color: #4c9be0; }
+    #thundy-link-overlay button.thundy-guard-cancel { color: #a3adb8; border-color: #3a4046; }
+}

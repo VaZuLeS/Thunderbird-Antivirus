@@ -149,6 +149,16 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.11 Release notes 1.16.0
+
+- **Delayed results are now visible and cached:** every check has a local entry with state, verdict, timestamp and
+  attempt count. The popup shows a result panel for the current message including an "Fetch result now" button and
+  updates itself when a verdict arrives in the background - reopening the popup shows the previous verdict instead of
+  "unknown".
+- **Link guard with overlay:** in confirm mode the message body shows an overlay with the real target URL and the
+  actions Check / Open / Cancel; clicks (including middle-click and Ctrl/Cmd-click) are intercepted reliably.
+- **Fix:** a bug in the VirusTotal lookup made every manual check report "unknown".
+
 ## 5.10 Release notes 1.15.0
 
 - **Link guard (time-of-click)**: hover a link to see its target, registrable domain, decoded lookalike (punycode)

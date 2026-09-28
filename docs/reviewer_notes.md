@@ -203,6 +203,22 @@ blocked by a custom rule (`BLOCKED_BY_RULE`) and then opens a Thunderbird conten
 Every opening is logged in the local history (`link-opened`). Both settings can be pinned by administrators and are
 reported by the self test.
 
+### 3.12 Result cache and delayed results
+
+Hybrid Analysis processes uploads asynchronously, so verdicts arrive late. The add-on keeps a local cache
+(`scanResults` in `browser.storage.local`, capped at 2000 entries) where every check has an entry with `state`
+(`pending`, `done`, `failed`), verdict, timestamps, attempt counter and source. It is written when a scan is
+submitted, when a verdict is fetched by the `alarms` poller, when hash/URL/domain/IP checks finish and on timeout;
+on startup it is rebuilt from the local history. The user interface (link tooltip, link list, result panel in the
+popup) reads the cache first, so it shows "checked at ..." with the verdict instead of "unknown", and open checks
+appear as "check running (delayed) - N attempts". When a result arrives while the popup is open, the background
+sends `resultsUpdated` and the popup refreshes. Nothing in the cache leaves the device; it can be cleared with the
+history/cache buttons.
+
+The link guard now always renders an overlay inside the message body in confirm mode (showing the real target URL)
+and falls back to it if the add-on popup cannot be opened programmatically. Clicks are intercepted in the capture
+phase, including middle-click and Ctrl/Cmd-click.
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,

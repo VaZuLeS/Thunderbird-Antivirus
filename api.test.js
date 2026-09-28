@@ -4013,6 +4013,60 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         assert.match(card.textContent, /Geöffnet/);
     });
 
+    it('renders cached results with state, verdict and timestamps', async () => {
+        const { context } = createHarness({
+            viewMode: 'business',
+            onMessage: (message) => message.action === 'getResults'
+                ? {
+                    status: 'success',
+                    summary: { total: 3, pending: 1, done: 1, failed: 1 },
+                    entries: [
+                        { state: 'done', verdict: 'MALICIOUS', value: 'a'.repeat(64), attachmentName: 'x.exe',
+                          checkedAt: '2026-09-28T10:05:00.000Z', updatedAt: '2026-09-28T10:05:00.000Z', source: 'hybrid-analysis' },
+                        { state: 'pending', value: 'https://evil.example/a', attempts: 2,
+                          updatedAt: '2026-09-28T10:01:00.000Z', source: 'hybrid-analysis' },
+                        { state: 'failed', value: 'b'.repeat(64), updatedAt: '2026-09-28T10:02:00.000Z' }
+                    ],
+                    pendingScans: [{ sha256: 'c'.repeat(64), attachmentName: 'doku.pdf', state: 'running', attempts: 3 }]
+                }
+                : undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+
+        await context.renderResultsPanel({ id: 1, headerMessageId: 'h1' }, container);
+
+        const panel = context.document.getElementById('thundy-results-panel');
+        assert.ok(panel, 'results panel expected');
+        assert.match(panel.textContent, /Pruefergebnisse/);
+        assert.match(panel.textContent, /3 Eintrag\/Eintraege, 1 offen, 1 fertig, 1 ohne Ergebnis/);
+        assert.match(panel.textContent, /MALICIOUS \| x\.exe/);
+        assert.match(panel.textContent, /Quelle: hybrid-analysis/);
+        assert.match(panel.textContent, /Pruefung laeuft \(zeitverzoegert\)/);
+        assert.match(panel.textContent, /2 Abfrage\(n\)/);
+        assert.match(panel.textContent, /ohne Ergebnis/);
+        assert.match(panel.textContent, /Auftrag doku\.pdf: running/);
+    });
+
+    it('describes every cache state in plain language', () => {
+        const { context } = createHarness();
+        assert.match(context.describeResultEntry({ state: 'done', verdict: 'CLEAN', value: 'x', checkedAt: '2026-09-28T10:00:00.000Z' }), /CLEAN \| x \| geprueft:/);
+        assert.match(context.describeResultEntry({ state: 'pending', value: 'y', attempts: 1 }), /Pruefung laeuft/);
+        assert.match(context.describeResultEntry({ state: 'failed', value: 'z' }), /ohne Ergebnis/);
+        assert.match(context.describeResultEntry({ state: 'new', value: 'w' }), /Pruefung laeuft/);
+    });
+
+    it('renders nothing when the cache is empty', async () => {
+        const { context } = createHarness({
+            onMessage: (message) => message.action === 'getResults'
+                ? { status: 'success', summary: { total: 0, pending: 0, done: 0, failed: 0 }, entries: [], pendingScans: [] }
+                : undefined
+        });
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+        const panel = await context.renderResultsPanel({ id: 1 }, container);
+        assert.strictEqual(panel, null);
+        assert.strictEqual(context.document.getElementById('thundy-results-panel'), null);
+    });
+
     it('renders the local score together with its reasons', async () => {
         const { context } = createHarness({
             displayState: { mode: 'ready', threat: { score: 70, reasons: ['Link-Domain weicht ab.', 'SPF fehlgeschlagen.'], authStatus: 'fail' } },

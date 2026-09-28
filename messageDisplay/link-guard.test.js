@@ -106,10 +106,12 @@ describe('messageDisplay/link-guard.js', () => {
         await new Promise(resolve => setImmediate(resolve));
 
         assert.strictEqual(blockedEvent.defaultPrevented, true, 'click must be intercepted in confirm mode');
-        const tooltip = blocking.dom.window.document.getElementById('thundy-link-tooltip');
-        assert.ok(tooltip);
-        assert.strictEqual(tooltip.classList.contains('thundy-guard-modal'), true);
-        assert.match(tooltip.textContent, /Klick abgefangen/);
+        const overlay = blocking.dom.window.document.getElementById('thundy-link-overlay');
+        assert.ok(overlay, 'overlay expected in confirm mode');
+        assert.match(overlay.textContent, /Klick abgefangen/);
+        assert.match(overlay.textContent, /https:\/\/evil\.example\/a/);
+        assert.ok(overlay.querySelector('.thundy-guard-open'));
+        assert.ok(overlay.querySelector('.thundy-guard-cancel'));
 
         const hinting = createContext({ mode: 'hint' });
         const hintLink = hinting.dom.window.document.querySelector('a');
@@ -130,7 +132,10 @@ describe('messageDisplay/link-guard.js', () => {
         await new Promise(resolve => setImmediate(resolve));
 
         assert.strictEqual(event.defaultPrevented, true);
-        assert.ok(popup.sent.some(message => message.action === 'openLinkGuardPopup'), 'popup must be requested');
+        await new Promise(resolve => setImmediate(resolve));
+        await new Promise(resolve => setImmediate(resolve));
+        assert.ok(popup.dom.window.document.getElementById('thundy-link-overlay'), 'overlay must appear as well');
+        assert.ok(popup.sent.some(message => message.action === 'openLinkGuardPopup'), 'popup must be requested too');
     });
 
     it('passes an already allowed link through', async () => {
