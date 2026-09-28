@@ -23,3 +23,6 @@
 ## 2024-08-11 - Optimize RegExp by leveraging URL parser lowercase standard
 **Learning:** The URL parser natively lowercases hostnames, meaning `getHostnameOptimized` always returns lowercased strings. Using the case-insensitive `i` flag on `IGNORED_DOMAINS_REGEX` is redundant and incurs per-character case-folding overhead at runtime in V8.
 **Action:** Remove the redundant `i` flag from the regex when matching against standard URL hostnames.
+## 2024-08-11 - Correctly escape regex strings in V8
+**Learning:** When using `String.prototype.replace` to escape characters like `.` for passing into a `new RegExp()` constructor, you must use a global regular expression (`/\./g`) and double-escape the backslash (`'\\\\.'`) so that the resulting string contains literal backslashes that the regex engine will interpret as an escape sequence. Single escaping (`'\\.'`) will be interpreted as a literal dot string by the JS engine *before* the regex engine sees it.
+**Action:** Always use global regex replacement with double escaping when dynamically constructing regex patterns from strings.
