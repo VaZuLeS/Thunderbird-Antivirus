@@ -158,7 +158,7 @@ zeigt die Banner an.
 | Privacy policy URL | https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html |
 | Source code | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
-| Language of the user interface | All visible UI strings (manifest, in-message UI, options page, popup) in English and German via `_locales/` and `browser.i18n` (default locale `en`, fallback texts in the code) |
+| Language of the user interface | All visible UI strings (manifest, in-message UI, options page, popup) in English and German via `_locales/` and `browser.i18n` (default locale `en`, English translation complete, German fallbacks in the code; further languages can be added as additional `_locales/<code>` folders) |
 
 ### Permissions declared in the manifest
 
@@ -201,6 +201,8 @@ built-in data-collection consent, the options dialog asks for that category when
   explicitly opens them.
 - Declared the `menus` permission so both context-menu entries exist, and declared the data collection permissions as
   `required: ["none"]` with the optional category `personalCommunications`.
+- Localized the complete user interface: the options page and the popup are now resolved through `_locales/` and
+  `browser.i18n` as well (English/German, default locale English, German fallback texts in the code).
 
 ## 7. Pre-upload checklist (honest status)
 
@@ -214,9 +216,9 @@ built-in data-collection consent, the options dialog asks for that category when
 | Privacy policy linked from the landing page | done (`docs/index.html`, `index_en.html`, `index_de.html`) |
 | Reviewer notes complete (permissions, data flows, test path) | done (`docs/reviewer_notes.md`) |
 | Manual verification in Thunderbird 140 ESR (banners, warning, badge, both context-menu entries, permission prompt from the banner, blocked link) | **open** — covered by unit tests with mocked APIs only; no live test has been performed |
-| Unit tests green (`npm test`) | done in this environment — **421 tests, 0 failures**; the CI run for the final commit is authoritative |
+| Unit tests green (`npm test`) | done in this environment — **430 tests, 0 failures**; the CI run for the final commit is authoritative |
 | `npx web-ext lint` | 0 errors, 25 warnings — all known Thunderbird false positives (`scripts/filter-lint-warnings.js`) |
-| XPI package contents | 18 files / 197,252 bytes unpacked, verified by `scripts/verify-package.js` |
+| XPI package contents | 18 files / 238,482 bytes unpacked, verified by `scripts/verify-package.js` |
 | XPI built for 1.6 and attached to a release | **open** — the artefact has not been built and attached to a release yet |
 | Signed for distribution | **open** — `npx web-ext sign --channel listed` has not been run |
 | Submitted to the Thunderbird Add-ons Store | **open** — not submitted, no store URL |

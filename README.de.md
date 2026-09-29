@@ -19,7 +19,7 @@ minimal notwendigen Daten an externe Analysedienste.
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
-| Sprachen | Alle sichtbaren UI-Strings (Manifest, UI in der Nachrichtenansicht, Optionsseite, Popup) werden über `browser.i18n` und `_locales/` aufgelöst (Englisch, Deutsch; Standard-Locale `en`, Fallback-Texte im Code) |
+| Sprachen | Alle sichtbaren UI-Strings (Manifest, UI in der Nachrichtenansicht, Optionsseite, Popup) werden über `browser.i18n` und `_locales/` aufgelöst (Englisch, Deutsch; die englische Übersetzung ist vollständig, Standard-Locale `en`, Fallback-Texte im Code; weitere Sprachen über zusätzliche `_locales/<code>`-Ordner) |
 
 ## Was das Add-on macht
 
@@ -172,18 +172,18 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** Testdateien des
-  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **421 Tests, 0 Fehler** – u. a.
+  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **430 Tests, 0 Fehler** – u. a.
   `message_display.test.js` (UI in der Nachrichtenansicht und Time-of-Click), die Popup-Consent-Tests in
   `api.test.js` und die Pre-Submit-Check-Tests in `scripts/pre-submit-checks.test.js`.
 - `scripts/pre-submit-checks.js` prüft zusätzlich, dass jeder verwendete `browser.*`-API-Namespace eine deklarierte
-  Berechtigung hat, dass die `data_collection_permissions`-Deklaration zu den Übermittlungspfaden passt und dass ein
-  programmatisch registriertes Skript (`message_display.js`) im Paket liegt. Aktueller Stand: 0 Fehler,
-  1 Warnung (noch keine echten Screenshots).
+  Berechtigung hat, dass die `data_collection_permissions`-Deklaration zu den Übermittlungspfaden passt, dass ein
+  programmatisch registriertes Skript (`message_display.js`) im Paket liegt und dass jeder lokalisierte UI-String
+  einen Katalogeintrag hat (derzeit 157). Aktueller Stand: 0 Fehler, 1 Warnung (noch keine echten Screenshots).
 - `web-ext lint` meldet derzeit **0 Fehler** und **25 Warnungen**, alle davon bekannte Thunderbird-False-Positives
   (fast ausschließlich `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und
   Thunderbird-spezifische APIs wie `messages.*` oder `messageDisplay.*` nicht kennt). Die Liste wird über
   `scripts/filter-lint-warnings.js` gefiltert.
-- Das gebaute XPI enthält **18 Dateien / 197.252 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
+- Das gebaute XPI enthält **18 Dateien / 238.482 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
   prüft Dateiliste und Größe.
 - Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
   `node ./scripts/pre-submit-checks.js`, `node --test background.test.js` und `npx web-ext lint`.

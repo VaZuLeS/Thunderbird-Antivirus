@@ -96,25 +96,27 @@ abgearbeitet:
   `thundy-av@bludau-it-services.de`, Icons 16/32/64 px, `options_ui.open_in_tab` statt `browser_style`.
 - **Paketbereinigung (g):** `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`) hält Testdateien,
   `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und Entwicklungs-Artefakte aus dem Build. Das XPI
-  enthält **18 Dateien (197.252 Bytes entpackt)** – neu enthalten ist `message_display.js`; `scripts/verify-package.js`
+  enthält **18 Dateien (238.482 Bytes entpackt)** – neu enthalten ist `message_display.js`; `scripts/verify-package.js`
   erlaubt und prüft diese Datei. Toter Code (`content_script.js`) und die Legacy-Dateien sind entfernt.
-- **Lokalisierung:** Alle sichtbaren UI-Strings werden über `browser.i18n` und `_locales/en`/`_locales/de`
+- **Lokalisierung (M2):** Alle sichtbaren UI-Strings werden über `browser.i18n` und `_locales/en`/`_locales/de`
   aufgelöst: Manifest-Strings (`__MSG_`), die UI in der Nachrichtenansicht und die Options-/Popup-Oberfläche
-  (`data-i18n`-Attribute plus `applyUiTranslations()` in `db.js`, `uiText()` in `options.js`/`api.js`) – inklusive
-  Fallback-Texten im Code; Standard-Locale ist `en`. Neue Keys: `tocLinkMarked`, `tocWarningTitle`, `tocChecking`,
-  `tocBlocked`, `tocOpenAnyway`, `tocClose`, `tocBlockedScheme`, `notificationUiUnavailable` sowie die
-  Options-/Popup-Keys.
+  (`data-i18n`-Attribute plus `applyUiTranslations()` in `db.js`, `uiText()` in `options.js`/`api.js`). Die Kataloge
+  enthalten je **165 Keys**, davon 157 lokalisierte UI-Strings; im Code stehen Fallback-Texte (deutsch in den
+  Options-/Popup-Skripten, englisch in Hintergrund- und Message-Display-Skript), Standard-Locale ist `en`. Weitere
+  Sprachen können über zusätzliche `_locales/<code>`-Ordner ergänzt werden. Neue Keys: `tocLinkMarked`,
+  `tocWarningTitle`, `tocChecking`, `tocBlocked`, `tocOpenAnyway`, `tocClose`, `tocBlockedScheme`,
+  `notificationUiUnavailable` sowie die Options-/Popup-Keys.
 - **Datenkonsent-Deklaration (H1):** `data_collection_permissions` jetzt `required: ["none"]` +
   `optional: ["personalCommunications"]`; der Optionsdialog fragt die Kategorie dort an, wo die Umgebung sie
   anbietet (`permissions.request({ data_collection: [...] })`, Feature-Erkennung über
   `permissions.getAll().data_collection`) und deaktiviert die globale Zustimmung bei Ablehnung. Das
   Hintergrundskript erzwingt den erteilten Zustand in `mayTransmitExternally()`.
-- **Pre-Submit-Checks (H1/H3):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung, Rechte,
-  die Deklaration der Datenkonsent, Namespace ⇔ Berechtigung und die Anwesenheit des registrierten Skripts und
-  liefert einen echten Exit-Code; der Schritt läuft in der CI. Ergebnis: 0 Fehler, 1 Warnung (fehlende
-  Screenshots).
+- **Pre-Submit-Checks (H1/H3/M2):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung, Rechte,
+  die Deklaration der Datenkonsent, Namespace ⇔ Berechtigung, die Anwesenheit des registrierten Skripts und seit der
+  UI-Lokalisierung zusätzlich, dass jeder lokalisierte UI-String einen Katalogeintrag hat (derzeit 157), und liefert
+  einen echten Exit-Code; der Schritt läuft in der CI. Ergebnis: 0 Fehler, 1 Warnung (fehlende Screenshots).
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission-, MV3-Portierungs- und
-  Message-Display-Tests enthalten) und ist grün (**421 Tests, 0 Fehler**; neu: `message_display.test.js` mit
+  Message-Display-Tests enthalten) und ist grün (**430 Tests, 0 Fehler**; neu: `message_display.test.js` mit
   17 Tests, 4 Popup-Consent-Tests in `api.test.js`, 9 neue Pre-Submit-Check-Tests). `npx web-ext lint` meldet
   **0 Fehler und 25 Warnungen**, alle davon bekannte Thunderbird-False-Positives
   (`scripts/filter-lint-warnings.js`). Der im Repository aktive Workflow

@@ -25,9 +25,11 @@ Changes that resolve the store-readiness review for 1.6
   `tocBlockedScheme` and `notificationUiUnavailable` in `_locales/en` and `_locales/de`.
 - **Localization of the options page and the popup**: all visible UI strings are now resolved through
   `browser.i18n` and the catalogues (static markup via `data-i18n*` attributes and `applyUiTranslations()` in
-  `db.js`, dynamic strings via `uiText()` in `options.js`/`api.js`), with fallback texts in the code.
+  `db.js`, dynamic strings via `uiText()` in `options.js`/`api.js`). The catalogues contain 165 keys per language
+  (157 localized UI strings), the English translation is complete, German fallbacks remain in the code, and further
+  languages only need an additional `_locales/<code>` folder.
 - Tests: `message_display.test.js` (17 tests), four popup consent tests in `api.test.js` and nine new
-  pre-submit-check tests – **421 tests in total, 0 failures**.
+  pre-submit-check tests – **430 tests in total, 0 failures**.
 
 ### Changed
 
@@ -43,11 +45,12 @@ Changes that resolve the store-readiness review for 1.6
 - **`optional_host_permissions`** reduced to the five origins actually used (wildcard subdomains removed).
 - **Popup**: the displayed message is determined via `messageDisplay.getDisplayedMessages()` (fallback: `tabs.query` +
   `tabId`), and without the global consent no provider is queried at all – the popup then shows a notice card.
-- Localization/UI: the options page and the popup keep their German labels; manifest strings and the in-message UI
-  (banners, warnings, badges) are localized with the default locale `en`.
+- Localization/UI: all visible UI strings – manifest, in-message UI (banners, warnings, badges), options page and
+  popup – are resolved through the catalogues with the default locale `en` and fallback texts in the code.
 - The pre-submit checks additionally verify the API namespace against the declared permission, the data-collection
   declaration and the presence of the programmatically registered script in the package.
-- The built package contains **18 files / 197,252 bytes unpacked**.
+- The built package contains **18 files / 238,482 bytes unpacked**.
+- The pre-submit checks verify that all localized UI strings (currently 157) have a catalogue entry.
 
 ### Fixed
 
