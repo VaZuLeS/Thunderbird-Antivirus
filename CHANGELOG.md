@@ -34,10 +34,10 @@ the 1.6 rework that preceded the audit; this section lists the findings that wer
   (`messages.getFull()` result) again, so URLs and domains from the message body are actually
   analysed and appear in the link evaluation.
 - **Time-of-Click protection (audit H3).** Links are marked in the message view and checked
-  **locally** when they are clicked: URL structure, displayed link text compared with the target, the
-  user's own blacklist and domains that previous scans reported as malicious. A suspicious target is
-  intercepted with a warning that leaves the decision to the user. No data is transmitted for this
-  check.
+  **locally** before they are opened: the verdict is fetched on hover/focus and enforced on click (URL
+  structure, displayed link text compared with the target, the user's own blacklist and domains that
+  previous scans reported as malicious). A suspicious target is intercepted with a warning that leaves
+  the decision to the user. No data is transmitted for this check.
 - **`menus` permission (audit B5).** `"menus"` is declared in `manifest.permissions`, so the two
   context menu entries — "scan this link" (`contexts: ["link"]`) and "scan all links of this message"
   (`contexts: ["message_display_action"]`) — are created again instead of being silently skipped.

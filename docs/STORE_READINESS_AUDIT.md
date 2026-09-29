@@ -14,6 +14,13 @@ Abarbeitung in 1.6. **Dieses Audit prüft den daraus entstandenen Ist-Stand 1.6 
 einzelne dortige Aussagen**, die nicht mehr zutreffen (u. a. „Blocker behoben“, Paketkennzahlen,
 `menus`, Datenklassifizierung).
 
+> **Nachtrag (Umsetzung 2026-09-29):** Die Blocker B1–B5 und die hohen Risiken H1, H2, H3 sowie die
+> mittleren Punkte M2–M12 wurden inzwischen **behoben und getestet**; die verbleibenden Punkte sind
+> ausschließlich extern bedingt (echte Thunderbird-Installation, Store-Zugang, Screenshots,
+> Reviewer-Testkey). Maßgeblicher Status: **Abschnitt 11 „Umsetzungsstand“** am Ende dieses Dokuments.
+> Die Abschnitte 2–4 beschreiben weiterhin den geprüften Ausgangsbefund (Snapshot) und dessen Belege.
+
+
 ---
 
 ## 1. Gesamturteil
@@ -529,6 +536,57 @@ Erwartungsmanagement „keine Signatur-Engine“ (N3).
 **Nicht einreichen, bevor B1–B5 behoben sind** — danach sind H1–H3 (Kernfunktion/Datentransparenz)
 sowie H4–H7 (Screenshots, Live-Test, Reviewer-Testmittel, Release-Konsistenz) abzuarbeiten; die
 mittleren Punkte sind überwiegend Einzeiler und sollten im selben Zug mitlaufen.
+
+---
+
+## 11. Umsetzungsstand (2026-09-29, Branch `cline/w8446rs1`)
+
+Alle Angaben sind mit Kommandos bzw. Testnamen belegt und im Branch reproduzierbar.
+
+| Befund | Status | Beleg |
+|---|---|---|
+| **B1** Consent-Bypass im Popup | ✅ behoben | `api.js` hat **keinen** direkten Netzwerkzugriff mehr (`grep -c 'fetch(' api.js` → `0`); die Abfrage läuft über den neuen Hintergrund-Handler `getHybridOverview`, der Zustimmung, Host-Berechtigung und Schlüssel prüft. Eigene Popup-Reproduktion mit `externalAnalysisConsent = false`: Hinweis sichtbar, **kein** Netzwerkaufruf. Tests: `api.test.js` (105 grün), „handleGetHybridOverview refuses to transmit without consent“ |
+| **B2** Popup-`ReferenceError` | ✅ behoben | `container`/`syncFragment` sauber aufgelöst; Tests für `UNKNOWN`, `MANUAL_CHECK_PENDING`, `links` und Fehlerkarten in `api.test.js` |
+| **B3** Banner-Buttons scheitern | ✅ behoben | `handleRequestScan` löst einen echten `MessageHeader` auf (`browser.messages.get`, Fallback auf die angezeigte Nachricht). Regressionstests: „scans a real MessageHeader and reports success instead of a TypeError“, „falls back to the displayed message when messages.get is unavailable“ |
+| **B4** `data_collection_permissions` | ✅ behoben | `manifest.json`: `required: ["none"]`, `optional: ["personalCommunications"]` (lint-validiert, Variantentest A–F); `options.js` fordert die optionale Datenfreigabe per `permissions.request({ data_collection: […] })` an und gibt sie beim Abschalten per `permissions.remove` zurück (Feature-Erkennung); Pre-Submit-Check an die verifizierten Regeln angepasst |
+| **B5** fehlende `menus`-Berechtigung | ✅ behoben | `manifest.json` enthält `menus`; Pre-Submit-Check meldet „privileged Thunderbird APIs used at runtime are covered by manifest.permissions (10 API/permission pair(s))“; Kontextmenüs zusätzlich per `menus.removeAll()` bereinigt (M11) |
+| **H1** Übermittlung ohne Scan-Trigger | ✅ behoben | Fail-closed `allowExternal`-Gate: nur Absender-Opt-in oder ausdrücklicher Scan erlaubt eine Übertragung. Tests: „does not transmit anything when a message is opened without sender opt-in“ (0 Netzwerkaufrufe) und „transmits automatically once the sender is opted in“ (positive Kontrolle). Eigene Probe: Öffnen ohne Opt-in erzeugt **keine** VT-/HA-/AbuseIPDB-Anfragen |
+| **H2** Link-Prüfung wirkungslos | ✅ behoben | `extractTextFromParts(fullMessage)` an beiden Aufrufstellen; Test „processLinks extracts the text of a real MessagePart structure“ (Text und beide Links werden gefunden) |
+| **H3** Time-of-Click ohne Implementierung | ✅ behoben | Echte lokale Prüfung (`evaluateClickRisk`: URL-Struktur, angezeigter Text vs. Ziel, eigene Listen, zuvor erkannte Domains, Marken-/Tippfehler-Heuristik), Hover-Prefetch über `checkLinkState`, Klick-Warnung mit „Trotzdem öffnen“/„Abbrechen“, Öffnen nur über den Hintergrund (`openLink`, ausschließlich http(s)). jsdom-Tests: Warnung erscheint, Klick wird abgefangen, Abbrechen schließt, „Trotzdem öffnen“ löst `openLink` aus, harmlose Links werden nicht blockiert. `autoScanLinks` prüft Links extern **nur** mit Zustimmung, Anbieter-Schlüssel und Host-Berechtigung |
+| **M2** Versionsschreibweise | ✅ behoben | `manifest.json`, `package.json`, `CHANGELOG.md` einheitlich `1.6.0`; Pre-Submit-Check vergleicht exakt („package.json and manifest.json versions match (1.6.0)“) |
+| **M3** Popup-Branding | ✅ behoben | `popup.html`: Titel/H1 „Thundy AV – E-Mail-Scanner für Thunderbird“ (kein „Thunderbird …“-Präfix mehr) |
+| **M4** Sprache/Releasenotes | ✅ behoben | Englische Releasenotes und präzise Sprachangabe in `docs/store_listing.md` |
+| **M5** Paketkennzahlen | ✅ behoben | Gemessene Werte (Dateien/Bytes) in `docs/STATUS.md` und `docs/store_assets.md` korrigiert |
+| **M6** `.webextignore` wirkungslos | ✅ behoben | Datei gelöscht; wirksam ist ausschließlich `web-ext-config.mjs` (dort auch `'LICENSE/**'` entfernt) |
+| **M7** `jsdom` unter `dependencies` | ✅ behoben | `package.json`: `jsdom` in `devDependencies` |
+| **M8** URLs in Logs | ✅ behoben | `api_gateway.js` loggt nur noch Hosts (`_hostOf`); `api.js` ohne URL-/Key-Logs |
+| **M9** fehlende Redirect-Kontrolle | ✅ behoben | `api_gateway.js` setzt `redirect: 'error'`; **alle** Anbieteraufrufe laufen über das Gateway (`grep 'fetch(' background.js api.js db.js options.js` → kein Treffer) |
+| **M10** Gateway-Schutz toter Code | ✅ behoben | `syncApiGatewayKeys()` befüllt `setApikey()` beim Start und bei jeder Einstellungsänderung; die Host-Bindung in `_injectAuthHeaders` ist damit aktiv |
+| **M11** Kontextmenü-Duplikate | ✅ behoben | `menus.removeAll()` vor dem Anlegen (Promise-kompatibel, Fallback ohne API) |
+| **M12** veraltete Doku-Pfade | ✅ behoben | `docs/reviewer_notes.md`, `docs/store_assets.md`, `docs/store_listing.md` an den Ist-Zustand angeglichen |
+| **N1** fehlende Grenzen | ✅ behoben | Anhang-Limit (10 Anhänge, ≤ 25 MB, Parallelität 3), URL-Limit (5 pro Nachricht), Gateway-Timeouts |
+| **H4** echte Screenshots | ⏳ offen — **extern** | Nur mit Thunderbird-Installation möglich (`docs/screenshot_capture.md`); die SVG-Platzhalter dürfen nicht hochgeladen werden |
+| **H5** Release-/Versionslage | ✅ dokumentiert | Abschnitt „Release-/Versionslage“ in `docs/STATUS.md`: die Tags `v1.6`…`v1.18.0` stammen aus dem Entwicklungsbranch und sind keine Store-Releases |
+| **H6** Live-Verifikation | ⏳ offen — **extern** | Benötigt Thunderbird 140 ESR. Abgesichert: scheitert die Banner-Injektion, erscheint jetzt eine sichtbare Benachrichtigung (`notificationInjectionFailed`) statt eines stillen `Logger.warn` |
+| **H7** Reviewer-Testkey | ⏳ teilweise — **extern** | Beispieldaten (`test/fixtures/reviewer-sample.eml`) und Anleitung ergänzt; der widerrufbare Provider-Key muss vom Maintainer gestellt werden |
+| **M1** CI-Umfang | ⏳ offen — **extern** | `docs/ci/ci.yml` (vollständiger Testumfang) liegt bereit; der Push nach `.github/workflows/` wird weiterhin abgelehnt (kein `workflows`-Recht) |
+| **N3** Erwartungsmanagement | ✅ behoben | Listing/Texte stellen klar, dass keine lokale Signatur-Engine enthalten ist |
+
+**Qualitätsnachweis nach der Umsetzung**
+
+```bash
+npm test                                            # 439 Tests (vorher 389), 0 Fehler
+npx web-ext lint --source-dir . --output json       # 0 Fehler, 27 Warnungen
+node scripts/filter-lint-warnings.js /tmp/lint.json # alle 27 = bekannte TB-False-Positives, Exit 0
+node ./scripts/pre-submit-checks.js                 # 0 Fehler, 1 Warnung (fehlende Screenshots)
+npx web-ext build --source-dir . --artifacts-dir ./build
+node scripts/verify-package.js ./build              # 17 Dateien / 218.834 B entpackt, ZIP 59.551 B
+```
+
+**Restweg vor der Einreichung:** H4 (drei PNG-Screenshots ≥ 1280 × 800 aus Thunderbird 140 ESR),
+H6 (Live-Test: Banner-Injektion, Kontextmenüs, `permissions.request()` aus dem Banner,
+`data_collection`-Dialog), H7 (Reviewer-Testkey), M1 (Workflow manuell übernehmen), danach
+`web-ext sign --channel listed` und Listing ausfüllen.
 
 
 

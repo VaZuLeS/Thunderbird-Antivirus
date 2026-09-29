@@ -178,9 +178,9 @@ the submitted 1.6.0:
 - The popup rendering and the two buttons of the message banner work again ("Scan this message only",
   "Scan this sender permanently").
 - Links and domains from the message body are actually extracted and evaluated again.
-- Time-of-Click protection checks a link **locally** when it is clicked (URL structure, displayed link
-  text vs. target, own black/whitelist, known malicious domains) and transmits nothing; a suspicious
-  target is intercepted with a warning.
+- Time-of-Click protection checks a link **locally** before it is opened (verdict fetched on
+  hover/focus, enforced on click): URL structure, displayed link text vs. target, own black/whitelist,
+  known malicious domains — nothing is transmitted; a suspicious target is intercepted with a warning.
 - The `menus` permission is declared again, so both context menu entries ("scan this link", "scan all
   links of this message") are created.
 - Data classification: `required: ["none"]`, `optional: ["personalCommunications"]`; the optional data
@@ -240,7 +240,7 @@ node scripts/verify-package.js /tmp/build-docs
 ```
 
 - Artifact: `thundy_av_email_scanner_for_thunderbird-1.6.0.zip`
-- Content: **17 files**, **216.804 bytes** uncompressed, ZIP archive **58.997 bytes**
+- Content: **17 files**, **218.834 bytes** uncompressed, ZIP archive **59.551 bytes**
 - The package contains runtime files only (`manifest.json`, `background.js`, `db.js`, `api.js`,
   `api_gateway.js`, `options.html`, `options.js`, `popup.html`, `theme.css`, `LICENSE`,
   `img/*.png`, `_locales/*/messages.json`); `scripts/verify-package.js` reports

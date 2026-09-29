@@ -160,8 +160,6 @@ function runChecks(rootDir) {
       fail('optional_host_permissions are declared but data_collection_permissions only declares "none": ' +
         'the data types sent to analysis providers must be named in the required or optional list ' +
         '(expected optional: ["personalCommunications"])');
-    } else if (requiredTypes.includes('none') && optionalTypes.length === 0) {
-      ok('data_collection_permissions declares that nothing is collected ("none")');
     } else if (transmittedTypes.length === 0) {
       ok('data_collection_permissions declares that nothing is collected ("none")');
     } else {

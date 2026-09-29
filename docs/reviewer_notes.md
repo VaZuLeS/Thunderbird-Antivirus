@@ -141,7 +141,8 @@ respective provider.
 ### 4.1 Link checks: local (on click) vs. external (on request)
 
 - **Time-of-Click check — purely local, no transmission.** Links in the message view are marked, and
-  when the user clicks one the add-on evaluates the target inside Thunderbird only: URL structure
+  when the user points at (hover/focus) or clicks one the add-on evaluates the target inside
+  Thunderbird only: URL structure
   (scheme, embedded credentials, raw IP addresses, punycode), the displayed link text compared with
   the actual target, the user's own blacklist and the domains that earlier scans reported as
   malicious. A suspicious target is intercepted with a warning that names the reasons and lets the

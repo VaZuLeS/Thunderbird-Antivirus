@@ -3432,6 +3432,43 @@ describe('background.js', () => {
             assert.deepEqual(options.maliciousIps, []);
             assert.deepEqual(options.urlhausDomains, []);
         });
+
+        it('does not transmit anything when a message is opened without sender opt-in', async () => {
+            context.set_apikey('test-key');
+            context.set_vt_apikey('test-vt-key');
+            context.set_privacyTier('balanced');
+            context.browser.permissions = { contains: async () => true, request: async () => true };
+            context.browser.storage.local.get = async (key) => (key === 'scanningEnabledSenders' ? { scanningEnabledSenders: [] } : {});
+            context.browser.messages.listAttachments = async () => ([{ name: 'x.exe', contentType: 'application/x-msdownload', size: 10, partName: '1' }]);
+            context.browser.messages.getAttachmentFile = async () => ({ slice: () => ({ arrayBuffer: async () => new ArrayBuffer(4) }), type: 'application/x-msdownload' });
+            context.browser.messages.getFull = async () => ({ headers: {}, parts: [{ contentType: 'text/plain', body: 'hi' }] });
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+
+            await context.handleDisplayedMessage({ id: 5 }, { id: 1, author: 'Sender <sender@example.com>', subject: 'x', headerMessageId: 'h' });
+
+            assert.strictEqual(fetchCalls, 0, 'ohne Absender-Opt-in darf beim Öffnen nichts übertragen werden');
+        });
+
+        it('transmits automatically once the sender is opted in (positive control)', async () => {
+            context.set_apikey('test-key');
+            context.set_vt_apikey('test-vt-key');
+            context.set_privacyTier('balanced');
+            context.browser.permissions = { contains: async () => true, request: async () => true };
+            context.browser.storage.local.get = async (key) => (key === 'scanningEnabledSenders' ? { scanningEnabledSenders: ['sender@example.com'] } : {});
+            context.browser.messages.listAttachments = async () => ([{ name: 'x.exe', contentType: 'application/x-msdownload', size: 10, partName: '1' }]);
+            context.browser.messages.getAttachmentFile = async () => ({ slice: () => ({ arrayBuffer: async () => new ArrayBuffer(4) }), type: 'application/x-msdownload' });
+            context.browser.messages.getFull = async () => ({ headers: {}, parts: [{ contentType: 'text/plain', body: 'hi' }] });
+            let fetchCalls = 0;
+            context.fetch = async () => {
+                fetchCalls++;
+                return { status: 200, json: async () => ({ submission_id: 's', job_id: 'j', data: { attributes: { last_analysis_stats: { malicious: 0, undetected: 5 } } } }) };
+            };
+
+            await context.handleDisplayedMessage({ id: 5 }, { id: 1, author: 'Sender <sender@example.com>', subject: 'x', headerMessageId: 'h' });
+
+            assert.ok(fetchCalls > 0, 'mit Absender-Opt-in müssen die Anbieter-Abfragen laufen');
+        });
     });
 
     describe('Popup-Backend: getHybridOverview und openLink', () => {
@@ -3529,6 +3566,84 @@ describe('background.js', () => {
             );
 
             assert.strictEqual(response.success, true, JSON.stringify(response));
+        });
+    });
+
+    describe('Time-of-Click: injizierter Klick-Schutz (Audit H3)', () => {
+        async function loadInjectedGuard(verdict) {
+            const injected = [];
+            context.set_timeOfClickProtection(true);
+            context.browser.scripting.executeScript = async (opts) => { injected.push(opts); };
+            await context.injectTimeOfClickProtection(42);
+            assert.strictEqual(injected.length, 1);
+
+            const dom = new JSDOM('<!doctype html><html><body><a id="l" href="http://paypa1.com/login">https://www.paypal.com/login</a></body></html>');
+            const sent = [];
+            const sandbox = {
+                document: dom.window.document,
+                browser: {
+                    runtime: {
+                        sendMessage: async (message) => {
+                            sent.push(message);
+                            if (message.action === 'checkLinkState') return { status: 'success', data: verdict };
+                            return { status: 'success', data: { tabId: 7 } };
+                        }
+                    }
+                },
+                Map,
+                Set,
+                Promise,
+                setTimeout,
+                console: { log: () => {}, error: () => {}, warn: () => {} }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext('(' + injected[0].func.toString() + ')', sandbox)(injected[0].args[0]);
+            return { dom, sent, link: dom.window.document.getElementById('l') };
+        }
+
+        it('warns before opening a suspicious link and cancels on request', async () => {
+            const { dom, sent, link } = await loadInjectedGuard({ risk: 'high', reasons: ['tocReasonLookAlike'] });
+
+            link.dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 10));
+            assert.ok(sent.some(m => m.action === 'checkLinkState' && m.displayedText === 'https://www.paypal.com/login'),
+                'das Verdikt muss beim Überfahren lokal abgefragt werden');
+
+            const click = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+            link.dispatchEvent(click);
+            assert.strictEqual(click.defaultPrevented, true, 'verdächtige Links müssen abgefangen werden');
+
+            const overlay = dom.window.document.getElementById('thundy-toc-warning');
+            assert.ok(overlay, 'die Warnung muss erscheinen');
+            assert.ok(overlay.textContent.includes(link.href), 'das Ziel muss genannt werden');
+
+            const buttons = overlay.querySelectorAll('button');
+            assert.strictEqual(buttons.length, 2);
+            buttons[1].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+            assert.strictEqual(dom.window.document.getElementById('thundy-toc-warning'), null, 'Abbrechen schließt die Warnung');
+        });
+
+        it('lets the user open a warned link explicitly and does not block harmless links', async () => {
+            const { dom, sent, link } = await loadInjectedGuard({ risk: 'high', reasons: ['tocReasonTextMismatch'] });
+
+            link.dispatchEvent(new dom.window.MouseEvent('mouseover', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 10));
+
+            const click = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+            link.dispatchEvent(click);
+            const overlay = dom.window.document.getElementById('thundy-toc-warning');
+            overlay.querySelectorAll('button')[0].dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 10));
+            assert.ok(sent.some(m => m.action === 'openLink' && m.url === link.href), 'das Öffnen muss über den Hintergrund laufen');
+
+            // Harmlose Links werden nicht abgefangen
+            const harmless = await loadInjectedGuard({ risk: 'none', reasons: [] });
+            harmless.link.dispatchEvent(new harmless.dom.window.MouseEvent('mouseover', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 10));
+            const harmlessClick = new harmless.dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+            harmless.link.dispatchEvent(harmlessClick);
+            assert.strictEqual(harmlessClick.defaultPrevented, false);
+            assert.strictEqual(harmless.dom.window.document.getElementById('thundy-toc-warning'), null);
         });
     });
 });

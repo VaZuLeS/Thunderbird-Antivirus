@@ -66,7 +66,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
   `install.rdf` und Build-Artefakte stehen ausschließlich in `web-ext-config.mjs` (`ignoreFiles`);
   `web-ext`/`addons-linter` lesen keine `.webextignore` (die Datei wurde entfernt, Audit M6).
   `node scripts/verify-package.js ./build` prüft anschließend Dateiliste und Größe des Pakets. Aktuell gemessen
-  (2026-09-29): 17 Dateien / 216.804 Bytes entpackt, ZIP 58.997 Bytes.
+  (2026-09-29): 17 Dateien / 218.834 Bytes entpackt, ZIP 59.551 Bytes.
 - Signieren für eine Verteilung: `npx web-ext sign --channel unlisted` (selbst verteilen) oder
   `npx web-ext sign --channel listed` (Einreichung im Add-ons Store, benötigt API-Zugangsdaten von
   addons.thunderbird.net).
