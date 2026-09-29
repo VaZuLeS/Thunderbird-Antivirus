@@ -230,7 +230,23 @@
         Ergebnisabfrage, Ergebnisspeicher, Verlauf, verwaltete Vorgaben). Es werden dabei <strong>keine</strong> Daten
         übertragen.</small></p>
     <button id="diagnosticsRun" type="button" data-i18n="opt.btn.diagnostics">Diagnose starten</button>
-    <div id="diagnosticsPanel" class="card card-info"><small>Noch nicht ausgeführt.</small></div>
+    <div id="diagnosticsPanel" class="card card-info"><small data-i18n="opt.diagnostics.idle">Noch nicht ausgeführt.</small></div>
+
+    <h3 data-i18n="opt.h3.errorlog">Fehlerprotokoll</h3>
+    <p><small data-i18n="opt.errorlog.help">Alle Fehler und Warnungen des Add-ons (lokal, max. 100 Einträge). Hilft, stille Probleme wie „Unknown“-Ergebnisse zu finden – bitte bei Fehlermeldungen mit exportieren.</small></p>
+    <div class="mb-3">
+        <label for="errorLogLevel" data-i18n="opt.errorlog.level">Anzeigen:</label>
+        <select id="errorLogLevel">
+            <option value="all" data-i18n="opt.errorlog.all">Alle Einträge</option>
+            <option value="error" data-i18n="opt.errorlog.errors">Nur Fehler</option>
+            <option value="warn" data-i18n="opt.errorlog.warnings">Nur Warnungen</option>
+        </select>
+        <button id="errorLogRefresh" type="button" data-i18n="opt.btn.refresh">Aktualisieren</button>
+        <button id="errorLogExport" type="button" data-i18n="opt.btn.errorLogExport">Protokoll exportieren</button>
+        <button id="errorLogClear" type="button" data-i18n="opt.btn.errorLogClear">Protokoll löschen</button>
+        <br><small id="errorLogStatus"></small>
+    </div>
+    <ul id="errorLogList" class="thundy-history-list"></ul>
 
     <hr>
     <h3 data-i18n="opt.h3.rules">Eigene Regeln (lokale IOC-Listen)</h3>

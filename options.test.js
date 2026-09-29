@@ -451,6 +451,78 @@ describe('options.js', () => {
         assert.match(panel.textContent, /spam@example\.net: 3 Einträge in 10 Minuten \(1 Übertragungen\)/);
     });
 
+    it('fills sample values in demo mode without saving anything', async () => {
+        const dom = new JSDOM(`
+            <!DOCTYPE html><html><body>
+                <input id="apikey" value="">
+                <input id="urlhausApikey" value="">
+                <input id="urlscanApikey" value="">
+                <input id="virustotalApikey" value="">
+                <input id="ipReputationApiKey" value="">
+                <select id="ipReputationProvider"><option value="none">none</option><option value="abuseipdb">abuseipdb</option></select>
+                <select id="privacyTier"><option value="strict">strict</option><option value="balanced">balanced</option></select>
+                <select id="viewMode"><option value="private">private</option><option value="research">research</option></select>
+                <select id="linkGuardMode"><option value="off">off</option><option value="hint">hint</option><option value="confirm">confirm</option></select>
+                <select id="linkGuardTarget"><option value="inline">inline</option><option value="popup">popup</option></select>
+                <input id="customWhitelist"><input id="customBlacklist">
+                <textarea id="rulesJson"></textarea>
+                <input type="checkbox" id="externalAnalysisConsent">
+                <input type="checkbox" id="historyEnabled">
+                <input id="historyLimit" value="">
+                <input type="checkbox" id="alwaysManual"><input type="checkbox" id="autoScanLinks">
+                <input type="checkbox" id="timeOfClickProtection">
+                <input id="sandboxAuthor"><input id="sandboxSubject">
+                <textarea id="sandboxText"></textarea><textarea id="sandboxUrls"></textarea>
+                <input id="historySearch"><input type="date" id="historyFrom"><input type="date" id="historyTo">
+                <select id="historyFilter"><option value="all">all</option></select>
+                <button id="historyRefresh"></button><button id="historyExportCsv"></button>
+                <button id="historyExportJson"></button><button id="historyClear"></button>
+                <ul id="historyList"></ul><p id="historySummary"></p>
+                <select id="statisticsDays"><option value="7">7</option></select><button id="statisticsRefresh"></button>
+                <div id="statisticsPanel"></div><button id="diagnosticsRun"></button><div id="diagnosticsPanel"></div>
+                <select id="errorLogLevel"><option value="all">all</option></select>
+                <button id="errorLogRefresh"></button><button id="errorLogExport"></button><button id="errorLogClear"></button>
+                <ul id="errorLogList"></ul><small id="errorLogStatus"></small>
+                <button id="rulesValidate"></button><button id="rulesExport"></button>
+                <button id="rulesImportFile"></button><input type="file" id="rulesImportInput"><small id="rulesStatus"></small>
+                <button id="webhookTest"></button><small id="webhookStatus"></small>
+                <button id="sandboxRun"></button><div id="sandboxResult"></div>
+                <button id="save"></button>
+                <input type="checkbox" id="webhookEnabled"><input id="webhookUrl"><input id="webhookSecret">
+                <button id="clearCache"></button><span id="clearCacheStatus"></span>
+            </body></html>`, { url: 'moz-extension://demo/options.html?sample=1' });
+        const saved = [];
+        const context = {
+            document: dom.window.document,
+            location: dom.window.location,
+            browser: { storage: { local: { get: async () => ({}), set: async (data) => saved.push(data) } } },
+            console: { log: () => {}, error: () => {} },
+            setTimeout: (cb) => cb(),
+            confirm: () => true
+        };
+        vm.createContext(context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'ui_i18n.js'), 'utf8'), context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8'), context);
+
+        const event = context.document.createEvent('Event');
+        event.initEvent('DOMContentLoaded', true, true);
+        context.document.dispatchEvent(event);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const document = context.document;
+        assert.strictEqual(document.getElementById('viewMode').value, 'research');
+        assert.strictEqual(document.getElementById('linkGuardMode').value, 'confirm');
+        assert.strictEqual(document.getElementById('privacyTier').value, 'strict');
+        assert.ok(document.getElementById('apikey').value.length > 0);
+        assert.match(document.getElementById('customWhitelist').value, /kunden-gmbh\.de/);
+        assert.match(document.getElementById('customBlacklist').value, /werbe-versand\.example/);
+        assert.strictEqual(document.getElementById('linkGuardMode').value, 'confirm');
+        assert.ok(document.getElementById('rulesJson').value.includes('whitelist'));
+        assert.ok(document.getElementById('sandboxUrls').value.includes('login-zahlung.example'));
+        assert.ok(document.getElementById('thundy-demo-badge'), 'demo badge expected');
+        assert.strictEqual(saved.length, 0, 'demo mode must not persist anything');
+    });
+
     it('should clear cache when clearCache button is clicked (success)', async () => {
         let openDBCalled = false;
         let clearStoreCalled = false;

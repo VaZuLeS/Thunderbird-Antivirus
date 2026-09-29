@@ -219,6 +219,18 @@ The link guard now always renders an overlay inside the message body in confirm 
 and falls back to it if the add-on popup cannot be opened programmatically. Clicks are intercepted in the capture
 phase, including middle-click and Ctrl/Cmd-click.
 
+### 3.13 Diagnostics, error log and demo mode
+
+- **Self test** (`getDiagnostics`): 13 local checks (consent, API key, host permissions, alarms, injection mode,
+  link guard mode, IndexedDB, history, open jobs, managed policy, error log). No network traffic.
+- **Error log** (`diagnosticLog` in `browser.storage.local`, ring buffer of 100 entries): every internal warning and
+  error is captured with timestamp and level so silent failures become visible in the options dialog (filter/export/
+  delete). It contains no message contents - only technical messages. Writes are serialised so cascades do not lose
+  entries.
+- **Demo mode** (`?sample=1` on `popup.html`/`options.html`): renders sample data for store screenshots, marked with a
+  DEMO badge. It performs no storage writes, reads no real messages and never contacts a provider (asserted by a unit
+  test).
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,

@@ -1,8 +1,76 @@
+// ---------------------------------------------------------------------------
+// Fehlerprotokoll (Diagnose)
+//
+// Bisher landeten Fehler nur in der Konsole - im Live-Test ist das unsichtbar.
+// Genau das hat den "Unknown"-Fehler verschleiert. Jeder Logger-Aufruf landet
+// jetzt zusaetzlich in einem lokalen Ringpuffer, der im Optionsdialog unter
+// "Diagnose" einsehbar und exportierbar ist.
+// ---------------------------------------------------------------------------
+const DIAGNOSTIC_LOG_KEY = 'diagnosticLog';
+const DIAGNOSTIC_LOG_MAX = 100;
+
+function formatLogArgument(value) {
+    if (value instanceof Error) return value.message;
+    if (typeof value === 'string') return value;
+    try {
+        return JSON.stringify(value);
+    } catch (e) {
+        return String(value);
+    }
+}
+
+// Schreibvorgaenge serialisieren: sonst gehen bei mehreren gleichzeitigen
+// Fehlern (Kaskaden) Eintraege durch konkurrierende Lese-/Schreibzugriffe verloren.
+let diagnosticLogChain = Promise.resolve();
+
+function appendDiagnosticLog(level, args) {
+    try {
+        const message = Array.from(args).map(formatLogArgument).join(' ').slice(0, 500);
+        if (!message) return;
+        diagnosticLogChain = diagnosticLogChain.then(() =>
+            browser.storage.local.get(DIAGNOSTIC_LOG_KEY).then(stored => {
+                const list = Array.isArray(stored && stored[DIAGNOSTIC_LOG_KEY]) ? stored[DIAGNOSTIC_LOG_KEY] : [];
+                list.push({ at: new Date().toISOString(), level, message });
+                while (list.length > DIAGNOSTIC_LOG_MAX) list.shift();
+                return browser.storage.local.set({ [DIAGNOSTIC_LOG_KEY]: list });
+            })
+        ).catch(() => { /* Protokoll darf nie stoeren */ });
+    } catch (e) { /* Protokoll darf nie stoeren */ }
+}
+
 const Logger = {
-    error: (...args) => console.error(...args),
-    warn: (...args) => console.warn(...args),
-    info: (...args) => console.info(...args)
+    error: (...args) => { console.error(...args); appendDiagnosticLog('error', args); },
+    warn: (...args) => { console.warn(...args); appendDiagnosticLog('warn', args); },
+    info: (...args) => { console.info(...args); appendDiagnosticLog('info', args); }
 };
+
+async function getDiagnosticEntries(options = {}) {
+    try {
+        const stored = await browser.storage.local.get(DIAGNOSTIC_LOG_KEY);
+        const list = Array.isArray(stored && stored[DIAGNOSTIC_LOG_KEY]) ? stored[DIAGNOSTIC_LOG_KEY] : [];
+        const filtered = options.level ? list.filter(entry => entry.level === options.level) : list;
+        return options.limit ? filtered.slice(-options.limit) : filtered;
+    } catch (e) {
+        return [];
+    }
+}
+
+async function clearDiagnosticEntries() {
+    try {
+        await browser.storage.local.set({ [DIAGNOSTIC_LOG_KEY]: [] });
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+/** Formatiert das Protokoll fuer den Export (Text, gut lesbar). */
+function buildDiagnosticLogText(entries) {
+    const header = ['Thundy AV - Fehlerprotokoll', 'Eintraege: ' + (entries || []).length, ''];
+    const lines = (entries || []).map(entry =>
+        entry.at + ' [' + entry.level + '] ' + entry.message);
+    return header.concat(lines).join('\n');
+}
 
 // ---------------------------------------------------------------------------
 // Localization
@@ -4328,6 +4396,14 @@ async function collectDiagnostics() {
     add('jobs', 'Offene Analyse-Aufträge', 'ok',
         openJobs === 0 ? 'Keine offenen Aufträge.' : openJobs + ' Auftrag/Aufträge warten auf das Ergebnis.');
 
+    const logEntries = await getDiagnosticEntries({ limit: DIAGNOSTIC_LOG_MAX });
+    const errorCount = logEntries.filter(entry => entry.level === 'error').length;
+    const warnCount = logEntries.filter(entry => entry.level === 'warn').length;
+    add('log', 'Fehlerprotokoll', errorCount > 0 ? 'warn' : 'ok',
+        logEntries.length === 0
+            ? 'Keine Eintraege - keine Fehler oder Warnungen protokolliert.'
+            : logEntries.length + ' Eintrag/Eintraege (' + errorCount + ' Fehler, ' + warnCount + ' Warnungen). Im Abschnitt unten einsehbar und exportierbar.');
+
     add('link-guard', 'Link-Schutz (Time-of-Click)', linkGuardMode === 'off' ? 'warn' : 'ok',
         linkGuardMode === 'off'
             ? 'Deaktiviert - Links werden ohne Hinweis/Pruefung geoeffnet.'
@@ -4895,6 +4971,23 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             sendResponse({ status: 'success', evaluation });
             return true;
         }
+
+        case "getDiagnosticLog":
+            getDiagnosticEntries({ level: request.level, limit: request.limit || 50 })
+                .then(entries => sendResponse({
+                    status: 'success',
+                    entries,
+                    text: buildDiagnosticLogText(entries),
+                    max: DIAGNOSTIC_LOG_MAX
+                }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
+
+        case "clearDiagnosticLog":
+            clearDiagnosticEntries()
+                .then(cleared => sendResponse({ status: cleared ? 'success' : 'error' }))
+                .catch(err => sendResponse({ status: 'error', message: err.message }));
+            return true;
 
         case "getResults": {
             summarizeResultCache()

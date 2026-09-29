@@ -149,6 +149,12 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.12 Release notes 1.17.0
+
+- **Error log and self test:** a built-in diagnostics section with 13 checks plus a local error log (filterable,
+  exportable, deletable) makes problems visible without reading any console.
+- **Fix:** concurrent log writes could lose entries during error cascades; writes are now serialised.
+
 ## 5.11 Release notes 1.16.0
 
 - **Delayed results are now visible and cached:** every check has a local entry with state, verdict, timestamp and

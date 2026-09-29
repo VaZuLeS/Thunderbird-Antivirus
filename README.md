@@ -196,6 +196,15 @@ All of it is computed locally; nothing is transmitted.
   punycode host, anomalies, check status) with Check / Open / Cancel. Clicks are intercepted in the capture phase
   (including middle-click and Ctrl/Cmd-click).
 
+#### Diagnostics, error log and demo mode
+
+- **Self test** in the options dialog: 13 local checks (consent, key, host permissions, alarms, injection mode, link
+  guard, IndexedDB, history, open jobs, managed policy, error log) - nothing is transmitted.
+- **Error log:** every internal warning/error is stored locally (ring buffer, 100 entries) and can be filtered,
+  exported and cleared in the options dialog - this makes silent failures visible (see [docs/diagnostics.md](docs/diagnostics.md)).
+- **Demo mode `?sample=1`** fills popup and options with sample data for store screenshots; it stores nothing, reads no
+  real messages and transmits nothing.
+
 ### Localization and branding
 
 - **Localization:** the add-on ships German and English (125 keys each) in `_locales/`. Thunderbird picks the

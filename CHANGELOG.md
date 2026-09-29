@@ -39,6 +39,27 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.17.0] – 2026-09-28
+
+### Added
+
+- **Fehlerprotokoll (Diagnose):** Jeder `Logger`-Aufruf landet zusaetzlich in einem lokalen Ringpuffer
+  (`diagnosticLog`, max. 100 Eintraege). Im Optionsdialog gibt es dafuer einen eigenen Abschnitt mit Filter
+  (alle/Fehler/Warnungen), **Export als Textdatei**, Loeschen und einer Zeile in der Diagnose
+  („N Fehler, M Warnungen“). Das adressiert genau die Fehlerklasse, die den „Unknown“-Bug verschleiert hat:
+  stille Fehler sind jetzt sichtbar und koennen mit einem Klick berichtet werden.
+- **Demo-/Screenshot-Modus (`?sample=1`)** fuer Popup und Optionsseite: Die Oberflaeche wird mit realistischen
+  Beispieldaten gefuellt (Bewertung 87/100, Forensik-Befunde mit MITRE-Tags, Link-Liste mit dekodiertem Punycode,
+  Ergebnis-Panel mit offenen und fertigen Pruefungen, Forscher-Panel, Bericht-Export, ausgefuellte Einstellungen).
+  Es wird **nichts** gespeichert, **nichts** gelesen und **nichts** uebertragen; ein deutlich sichtbares DEMO-Band kennzeichnet
+  die Ansicht. Damit lassen sich die noch fehlenden Store-Screenshots in Minuten erstellen.
+- Beide Funktionen sind in `docs/screenshot_capture.md` und `docs/diagnostics.md` beschrieben.
+
+### Fixed
+
+- **Verlorene Protokolleintraege bei Fehlerkaskaden:** Mehrere gleichzeitige Logger-Aufrufe konkurrierten beim Lesen/
+  Schreiben desselben Speicherschluessels; jetzt werden die Schreibvorgaenge serialisiert (Test deckt 105 Eintraege ab).
+
 ## [1.16.0] – 2026-09-28
 
 ### Fixed

@@ -270,6 +270,12 @@ describe('background.js', () => {
             globalThis.refreshCacheFromHistory = refreshCacheFromHistory;
             globalThis.RESULT_CACHE_KEY = RESULT_CACHE_KEY;
             globalThis.resultKey = resultKey;
+            globalThis.Logger = Logger;
+            globalThis.getDiagnosticEntries = getDiagnosticEntries;
+            globalThis.clearDiagnosticEntries = clearDiagnosticEntries;
+            globalThis.buildDiagnosticLogText = buildDiagnosticLogText;
+            globalThis.DIAGNOSTIC_LOG_KEY = DIAGNOSTIC_LOG_KEY;
+            globalThis.DIAGNOSTIC_LOG_MAX = DIAGNOSTIC_LOG_MAX;
             globalThis.getAllFromStore = typeof getAllFromStore === 'function' ? getAllFromStore : undefined;
             globalThis.validateRule = validateRule;
             globalThis.normalizeRules = normalizeRules;
@@ -5415,6 +5421,86 @@ describe('background.js', () => {
         });
     });
 
+    describe('diagnostic error log', () => {
+        function stubStorage() {
+            let store = {};
+            context.browser.storage.local.get = async (keys) => {
+                if (typeof keys === 'string') return { [keys]: store[keys] };
+                if (Array.isArray(keys)) { const out = {}; keys.forEach(k => { out[k] = store[k]; }); return out; }
+                return store;
+            };
+            context.browser.storage.local.set = async (data) => { Object.assign(store, data); };
+            return { get: () => store };
+        }
+
+        // Warten, bis die serielle Schreibkette abgearbeitet ist.
+        async function settle(rounds = 12) {
+            for (let i = 0; i < rounds; i++) await new Promise(resolve => setImmediate(resolve));
+        }
+
+        it('records logger calls with level and timestamp', async () => {
+            const storage = stubStorage();
+            context.Logger.error('Etwas ist schiefgelaufen', new Error('Boom'));
+            context.Logger.warn('Nur eine Warnung');
+            await settle();
+
+            const entries = storage.get()[context.DIAGNOSTIC_LOG_KEY];
+            assert.strictEqual(entries.length, 2);
+            assert.strictEqual(entries[0].level, 'error');
+            assert.match(entries[0].message, /Etwas ist schiefgelaufen Boom/);
+            assert.strictEqual(entries[1].level, 'warn');
+            assert.ok(entries[0].at, 'a timestamp is required');
+        });
+
+        it('is picked up by the diagnostics report', async () => {
+            stubStorage();
+            context.browser.permissions = { contains: async () => true, request: async () => true };
+            context.Logger.error('Provider antwortet nicht');
+            await settle();
+
+            const report = await context.collectDiagnostics();
+            const logCheck = report.checks.find(check => check.id === 'log');
+            assert.ok(logCheck, 'the diagnostics must include the error log');
+            assert.strictEqual(logCheck.status, 'warn', 'errors are reported as a hint');
+            assert.match(logCheck.detail, /1 Fehler/);
+        });
+
+        it('answers, exports and clears the log through the runtime action', async () => {
+            stubStorage();
+            context.Logger.error('Fehler A');
+            await settle();
+
+            const listener = context.browser.runtime.onMessage.listeners[0];
+            const ask = (message) => new Promise(resolve => listener(message, {}, resolve));
+
+            const fetched = await ask({ action: 'getDiagnosticLog' });
+            assert.strictEqual(fetched.status, 'success');
+            assert.strictEqual(fetched.entries.length, 1);
+            assert.match(fetched.text, /Thundy AV - Fehlerprotokoll/);
+            assert.match(fetched.text, /\[error\] Fehler A/);
+
+            const errorOnly = await ask({ action: 'getDiagnosticLog', level: 'warn' });
+            assert.strictEqual(errorOnly.entries.length, 0);
+
+            const cleared = await ask({ action: 'clearDiagnosticLog' });
+            assert.strictEqual(cleared.status, 'success');
+            const afterClear = await ask({ action: 'getDiagnosticLog' });
+            assert.strictEqual(afterClear.entries.length, 0);
+        });
+
+        it('keeps the log bounded', async () => {
+            const storage = stubStorage();
+            for (let i = 0; i < context.DIAGNOSTIC_LOG_MAX + 5; i++) {
+                context.Logger.info('Eintrag ' + i);
+            }
+            await settle(60);
+
+            const entries = storage.get()[context.DIAGNOSTIC_LOG_KEY];
+            assert.strictEqual(entries.length, context.DIAGNOSTIC_LOG_MAX);
+            assert.match(entries[0].message, /Eintrag 5/);
+        });
+    });
+
     describe('Manifest V3 port (B1) and consent enforcement (B2)', () => {
         it('defaults to the strict privacy tier (hashes only)', () => {
             assert.strictEqual(context.get_privacyTier(), 'strict');
@@ -5555,7 +5641,8 @@ describe('background.js', () => {
             );
 
             assert.strictEqual(response.success, true);
-            assert.strictEqual(saved, null);
+            const persistedSenderKeys = saved && Object.keys(saved).filter(key => key === 'scanningEnabledSenders');
+            assert.strictEqual(persistedSenderKeys.length, 0, 'no sender opt-in was stored');
         });
 
         it('notify() never throws when the notifications API is unavailable', () => {

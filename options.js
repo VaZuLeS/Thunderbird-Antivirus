@@ -5,6 +5,56 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof thundyApplyTranslations === 'function') thundyApplyTranslations(document);
 });
 
+// ---------------------------------------------------------------------------
+// Demo-/Screenshot-Modus (?sample=1): fuellt die Oberflaeche mit Beispieldaten.
+// Es wird nichts gespeichert und nichts uebertragen - nur fuer Store-Screenshots.
+// ---------------------------------------------------------------------------
+const optionsSampleMode = typeof location !== 'undefined' && /[?&]sample=1/.test(location.search || '');
+
+function applySampleSettings() {
+    const set = (id, value) => {
+        const element = document.getElementById(id);
+        if (element) element.value = value;
+    };
+    const check = (id, value) => {
+        const element = document.getElementById(id);
+        if (element) element.checked = value;
+    };
+
+    set('apikey', 'hybrid-analysis-demo-key');
+    set('urlhausApikey', 'urlhaus-demo-key');
+    set('urlscanApikey', 'urlscan-demo-key');
+    set('virustotalApikey', 'virustotal-demo-key');
+    set('ipReputationApiKey', 'abuseipdb-demo-key');
+    set('ipReputationProvider', 'abuseipdb');
+    set('privacyTier', 'strict');
+    set('viewMode', 'research');
+    set('linkGuardMode', 'confirm');
+    set('linkGuardTarget', 'inline');
+    set('customWhitelist', 'kunden-gmbh.de, partner.example');
+    set('customBlacklist', 'werbe-versand.example');
+    set('rulesJson', JSON.stringify([
+        { type: 'sender', mode: 'exact', pattern: 'rechnung@kunden-gmbh.de', action: 'whitelist', note: 'bekannter Absender' },
+        { type: 'domain', mode: 'contains', pattern: 'werbe-versand.example', action: 'blacklist', note: 'bekannter Spam' },
+        { type: 'attachment-name', mode: 'contains', pattern: '.exe', action: 'score', score: 40, note: 'ausfuehrbare Anhaenge' }
+    ], null, 2));
+    check('externalAnalysisConsent', true);
+    check('historyEnabled', true);
+    set('historyLimit', '500');
+    check('alwaysManual', false);
+    check('autoScanLinks', false);
+    check('timeOfClickProtection', true);
+    set('sandboxAuthor', 'PayPal Service <service@zahlung-service.example>');
+    set('sandboxSubject', 'Ihre Zahlung ist fehlgeschlagen');
+    set('sandboxText', 'Bitte bestaetigen Sie Ihre Zahlung dringend ueber das Konto.');
+    set('sandboxUrls', 'https://login-zahlung.example/anmelden');
+
+    const badge = document.createElement('div');
+    badge.id = 'thundy-demo-badge';
+    badge.textContent = 'DEMO – Beispieldaten, es wird nichts gespeichert oder gesendet';
+    document.body.insertBefore(badge, document.body.firstChild);
+}
+
 // Event-Listener für das Laden der Seite
 let _saveTimeoutId = null;
 let _clearTimeoutId = null;
@@ -67,6 +117,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       // Initiale Setzung
+      if (optionsSampleMode) applySampleSettings();
+
       updatePrivacyTierStatus();
       updateTimeOfClickProtectionStatus();
 
@@ -484,6 +536,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    const errorLogRefresh = document.getElementById('errorLogRefresh');
+    if (errorLogRefresh) errorLogRefresh.addEventListener('click', loadErrorLog);
+
+    const errorLogLevel = document.getElementById('errorLogLevel');
+    if (errorLogLevel) errorLogLevel.addEventListener('change', loadErrorLog);
+
+    const errorLogExport = document.getElementById('errorLogExport');
+    if (errorLogExport) {
+        errorLogExport.addEventListener('click', async function() {
+            try {
+                const response = await browser.runtime.sendMessage({ action: 'getDiagnosticLog', limit: 100 });
+                if (response && response.status === 'success') {
+                    downloadHistoryFile('thundy-av-fehlerprotokoll.txt', response.text, 'text/plain;charset=utf-8');
+                }
+            } catch (error) {
+                console.error('Export fehlgeschlagen:', error);
+            }
+        });
+    }
+
+    const errorLogClear = document.getElementById('errorLogClear');
+    if (errorLogClear) {
+        errorLogClear.addEventListener('click', async function() {
+            if (!confirm('Fehlerprotokoll wirklich loeschen?')) return;
+            try {
+                await browser.runtime.sendMessage({ action: 'clearDiagnosticLog' });
+                await loadErrorLog();
+            } catch (error) {
+                console.error('Loeschen fehlgeschlagen:', error);
+            }
+        });
+    }
+
+    loadErrorLog();
     loadRulesIntoEditor();
 });
 
@@ -524,6 +610,45 @@ function renderSandboxResult(container, result) {
         forensics.textContent = 'Forensik: ' + result.forensics.findings
             .map(finding => '[' + finding.severity + '] ' + finding.detail).join(' | ');
         container.appendChild(forensics);
+    }
+}
+
+/**
+ * Fehlerprotokoll anzeigen (Filter/Export/Loeschen).
+ */
+function renderErrorLog(entries) {
+    const list = document.getElementById('errorLogList');
+    if (!list) return;
+    list.textContent = '';
+    if (!entries || entries.length === 0) {
+        const item = document.createElement('li');
+        item.textContent = 'Keine Eintraege.';
+        list.appendChild(item);
+        return;
+    }
+    for (const entry of entries.slice().reverse()) {
+        const item = document.createElement('li');
+        const when = entry.at ? new Date(entry.at).toLocaleString() : '-';
+        item.textContent = when + ' [' + entry.level + '] ' + entry.message;
+        list.appendChild(item);
+    }
+}
+
+async function loadErrorLog() {
+    const levelSelect = document.getElementById('errorLogLevel');
+    const level = levelSelect && levelSelect.value !== 'all' ? levelSelect.value : undefined;
+    const status = document.getElementById('errorLogStatus');
+    try {
+        const response = await browser.runtime.sendMessage({ action: 'getDiagnosticLog', level, limit: 100 });
+        if (response && response.status === 'success') {
+            renderErrorLog(response.entries);
+            if (status) status.textContent = (response.entries || []).length + ' Eintrag/Eintraege (max. ' + response.max + ').';
+        } else if (status) {
+            status.textContent = 'Protokoll konnte nicht geladen werden.';
+        }
+    } catch (error) {
+        console.error('Fehlerprotokoll nicht verfuegbar:', error);
+        if (status) status.textContent = 'Protokoll konnte nicht geladen werden.';
     }
 }
 

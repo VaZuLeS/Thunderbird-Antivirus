@@ -323,3 +323,16 @@ button:disabled { opacity: 0.55; cursor: default; }
 .ml-2 { margin-left: 8px; display: inline-block; }
 .mb-3:has(:disabled) label,
 .mb-3:has(:disabled) small { opacity: 0.6; }
+
+/* Demo-/Screenshot-Modus: sichtbare Kennzeichnung, damit keine Verwechslung entsteht */
+.thundy-demo-badge,
+#thundy-demo-badge {
+    background: var(--thundy-accent);
+    color: #24160a;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 0 0 var(--thundy-radius) 0;
+    display: inline-block;
+    margin-bottom: 8px;
+}

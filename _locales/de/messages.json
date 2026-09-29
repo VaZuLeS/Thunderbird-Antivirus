@@ -239,6 +239,12 @@
   "opt.btn.diagnostics": {
     "message": "Diagnose starten"
   },
+  "opt.btn.errorLogClear": {
+    "message": "Protokoll loeschen"
+  },
+  "opt.btn.errorLogExport": {
+    "message": "Protokoll exportieren"
+  },
   "opt.btn.exportCsv": {
     "message": "CSV exportieren"
   },
@@ -281,8 +287,26 @@
   "opt.days.90": {
     "message": "90 Tage"
   },
+  "opt.demo.help": {
+    "message": "Fuellt die Oberflaeche mit Beispieldaten (keine echten Nachrichten, keine Uebertragung) - fuer Store-Screenshots. Aufruf: options.html?sample=1"
+  },
   "opt.diagnostics.idle": {
     "message": "Noch nicht ausgeführt."
+  },
+  "opt.errorlog.all": {
+    "message": "Alle Eintraege"
+  },
+  "opt.errorlog.errors": {
+    "message": "Nur Fehler"
+  },
+  "opt.errorlog.help": {
+    "message": "Alle Fehler und Warnungen des Add-ons (lokal, max. 100 Eintraege). Hilft, stille Probleme wie Unknown-Ergebnisse zu finden - bitte bei Fehlermeldungen mit exportieren."
+  },
+  "opt.errorlog.level": {
+    "message": "Anzeigen:"
+  },
+  "opt.errorlog.warnings": {
+    "message": "Nur Warnungen"
   },
   "opt.guard.confirm": {
     "message": "Blockieren bis zur Pruefung (Klick wird abgefangen)"
@@ -320,8 +344,14 @@
   "opt.h3.data": {
     "message": "Datenmanagement"
   },
+  "opt.h3.demo": {
+    "message": "Demo-/Screenshot-Modus"
+  },
   "opt.h3.diagnostics": {
     "message": "Diagnose / Selbsttest"
+  },
+  "opt.h3.errorlog": {
+    "message": "Fehlerprotokoll"
   },
   "opt.h3.history": {
     "message": "Verlauf"

@@ -1054,3 +1054,51 @@ web-ext lint + Filter           # 0 Fehler
 2. Anhang manuell prüfen → im Popup erscheint „Prüfung läuft (zeitverzögert)“; nach einigen Minuten (oder per
    „Ergebnis jetzt abrufen“) das Verdikt. Popup schließen und erneut öffnen → Ergebnis ist **sofort** da, mit Prüfzeit.
 3. Optionen → Diagnose: Banner-/Guard-Modus und Frame-Zahl prüfen.
+
+---
+
+## 21. Sichtbarkeit statt stiller Fehler + Demo-Modus für Screenshots (v1.17.0)
+
+Zwei Themen, die direkt aus dem Live-Test folgen: **Ursachen finden** und **den letzten Einreichungs-Blocker entschärfen**.
+
+### 21.1 Fehlerprotokoll (Klasse des „Unknown“-Bugs adressiert)
+
+Der „Unknown“-Fehler entstand, weil eine Ausnahme im `catch` verschwand. Solche stillen Fehler sind jetzt sichtbar:
+
+| Baustein | Umsetzung |
+|---|---|
+| Aufzeichnung | `Logger.error/warn/info` schreiben zusätzlich in `diagnosticLog` (`storage.local`, Ringpuffer 100) mit Zeitstempel, Level, Nachricht |
+| Robustheit | Schreibvorgänge **serialisiert** (getestet mit 105 Einträgen) — vorher gingen bei Kaskaden Einträge verloren |
+| Oberfläche | Eigener Optionsabschnitt: Filter alle/Fehler/Warnungen, **Export als Textdatei**, Löschen |
+| Diagnose | Neue Zeile „Fehlerprotokoll“ mit „N Fehler, M Warnungen“ |
+
+### 21.2 Demo-/Screenshot-Modus (`?sample=1`) — letzter Blocker
+
+Für die noch fehlenden Store-Screenshots war bisher eine echte Nachricht mit echten Anhängen nötig. Neu:
+`moz-extension://<uuid>/popup.html?sample=1` und `…/options.html?sample=1` rendern die **echten** UI-Bausteine mit
+Beispieldaten:
+
+- Popup: Bewertung 87/100, Ergebnis-Panel (offen/fertig/ohne Ergebnis mit Zeitstempeln), Link-Liste mit dekodiertem
+  Punycode und Prüfstand, Threat- und Statuspanels, Forscher-Panel (MITRE-Tags, Auth-Kette, Hops, Anhang-Typen,
+  Archiv-Hinweis), Bericht-Export (Markdown/JSON).
+- Optionen: ausgefüllte Anbieter-Schlüssel (Demo-Werte), Datenschutz-Stufe, Ansichtsrolle, Link-Schutz, Whitelist/
+  Blacklist, Beispielregeln, Sandbox-Beispiel, Verlauf/Statistik/Diagnose-Panels.
+- Sicherheit: **kein** Storage-Schreibzugriff, **kein** Lesen echter Nachrichten, **keine** Übertragung — per Unit-Test
+  abgesichert; ein deutliches DEMO-Band verhindert Verwechslungen. Die Bilder sind damit ehrliche Screenshots des
+  tatsächlichen UI (mit gekennzeichneten Beispieldaten), keine Retusche.
+
+### 21.3 Verifikation v1.17.0
+
+```bash
+node scripts/check-locales.js   # vollstaendig (en/de, 172 Schluessel)
+npm test                        # 601 Tests, 0 Fehler (neu: 4 Protokoll-, 1 Demo-Popup-, 1 Demo-Options-Test)
+npm run pre-submit-checks       # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm run build                   # build/thundy-av-1.17.0.xpi inkl. Paketpruefung
+web-ext lint + Filter           # 0 Fehler
+```
+
+### 21.4 Verbleibend offen
+
+1. Live-Test in Thunderbird 140 ESR (Selbsttest + Link-Guard + zeitverzögerte Ergebnisse).
+2. **Store-Screenshots** — jetzt in Minuten machbar über `?sample=1` (hell und dunkel, Rolle `research`).
+3. Signierung/Einreichung bei addons.thunderbird.net.

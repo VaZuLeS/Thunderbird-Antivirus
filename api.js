@@ -154,6 +154,21 @@ const updateGridField = (id, value, fallbackText) => {
     }
 };
 
+if (sampleMode) {
+    container.textContent = '';
+    container.appendChild((() => {
+        const badge = document.createElement('div');
+        badge.id = 'thundy-demo-badge';
+        badge.textContent = 'DEMO – Beispieldaten, keine echte Nachricht';    
+        return badge;
+    })());
+    message = Object.assign({}, message, {
+        subject: 'Ihre Zahlung ist fehlgeschlagen – bitte bestaetigen',
+        author: 'PayPal Service <service@zahlung-service.example>',
+        headerMessageId: '<abc123@zahlung-service.example>'
+    });
+}
+
 updateGridField("subject", message.subject, "(Kein Betreff)");
 updateGridField("from", message.author, "(Unbekannter Absender)");
 if (technicalView) {
@@ -210,6 +225,18 @@ if (apiContainer) {
     currentMessage = message;
     currentContainer = apiContainer;
     currentViewMode = viewMode;
+    if (sampleMode) {
+        // Nur rendern: keine Hintergrundabfrage, keine Uebertragung.
+        currentSampleInsights = sampleInsights();
+        renderResultsPanel(message, apiContainer);
+        renderLinkList(message, apiContainer, viewMode);
+        renderThreatSummary(apiContainer, { mode: 'ready', threat: { score: currentSampleInsights.score,
+            reasons: currentSampleInsights.reasons, authStatus: currentSampleInsights.authStatus } }, viewMode);
+        renderResearcherPanel(message, apiContainer, viewMode);
+        renderReportExport(message, apiContainer, viewMode);
+        renderScanStatusPanel(message.headerMessageId, apiContainer);
+        return;
+    }
     renderResultsPanel(message, apiContainer);
     renderLinkList(message, apiContainer, viewMode);
     renderHistoryPanel(message, apiContainer, viewMode);
@@ -647,6 +674,9 @@ function describeJobState(job) {
 }
 
 async function renderScanStatusPanel(headerMessageId, container) {
+    if (sampleMode) {
+        return renderDemoScanStatus(container);
+    }
     let response;
     try {
         response = await browser.runtime.sendMessage({ action: 'scanStatus', headerMessageId: headerMessageId });
@@ -789,6 +819,9 @@ function describeHistoryEntry(entry, viewMode) {
 
 /** Berichts-Export (Markdown/JSON) je Nachricht - auch ohne Zustimmung moeglich. */
 async function renderReportExport(message, container, viewMode) {
+    if (sampleMode) {
+        return renderDemoReportExport(container);
+    }
     let report = null;
     try {
         const response = await browser.runtime.sendMessage({ action: 'getMessageReport', messageId: message.id });
@@ -864,6 +897,10 @@ function describeIndicatorCounts(insights) {
 
 async function renderResearcherPanel(message, container, viewMode) {
     if (!isTechnicalView(viewMode)) return null;
+
+    if (sampleMode) {
+        return renderDemoResearcherPanel(currentSampleInsights || sampleInsights(), container, viewMode);
+    }
 
     let insights = null;
     try {
@@ -1194,7 +1231,245 @@ function describeResultEntry(entry) {
     return 'Pruefung laeuft (zeitverzoegert)' + attempts + ' | ' + label + ' | gestartet: ' + time;
 }
 
+// ---------------------------------------------------------------------------
+// Demo-/Screenshot-Modus: ?sample=1 in der Popup-URL fuellt die Oberflaeche mit
+// Beispieldaten. Es werden KEINE echten Nachrichten gelesen oder uebertragen -
+// nur gerendert, damit Store-Screenshots ohne echte Daten moeglich sind.
+// ---------------------------------------------------------------------------
+const sampleMode = typeof location !== 'undefined' && /[?&]sample=1/.test(location.search || '');
+let currentSampleInsights = null;
+
+function sampleInsights() {
+    return {
+        generatedAt: '2026-09-28T10:05:00.000Z',
+        score: 87,
+        authStatus: 'fail',
+        scoreBreakdown: [
+            { source: 'authentifizierung', points: 60 },
+            { source: 'header-forensik', points: 25 },
+            { source: 'links', points: 25 },
+            { source: 'eigene-regeln', points: 20 }
+        ],
+        reasons: [
+            'Fehlgeschlagene Authentifizierung: SPF=fail, DKIM=fail, DMARC=fail.',
+            'Header-Forensik: Anzeigename "PayPal Service" nennt die Marke paypal, die Absender-Domain ist jedoch zahlung-service.example.',
+            'Link-Domain (login-zahlung.example) aehnelt verdaechtig der bekannten Marke paypal.com.'
+        ],
+        authResults: [
+            { mechanism: 'spf', result: 'fail', domain: 'zahlung-service.example', authservId: 'mx.example.net' },
+            { mechanism: 'dkim', result: 'fail', domain: 'zahlung-service.example', authservId: 'mx.example.net' },
+            { mechanism: 'dmarc', result: 'fail', domain: 'zahlung-service.example', authservId: 'mx.example.net' }
+        ],
+        receivedChain: { totalSeconds: 12, hops: [
+            { from: 'unknown.example', by: 'mx.example.net', ip: '203.0.113.42', date: '2026-09-28T10:04:48.000Z', delaySeconds: null },
+            { from: 'mx.example.net', by: 'inbox.example', ip: '198.51.100.7', date: '2026-09-28T10:05:00.000Z', delaySeconds: 12 }
+        ] },
+        forensics: {
+            findings: [
+                { kind: 'display-name-impersonation', severity: 'hoch', detail: 'Anzeigename nennt die Marke paypal, die Absender-Domain ist jedoch zahlung-service.example.', techniques: ['masquerading', 'phishing'] },
+                { kind: 'auth-failed', severity: 'hoch', detail: 'Fehlgeschlagene Authentifizierung: SPF=fail, DKIM=fail, DMARC=fail.', techniques: ['phishing'] },
+                { kind: 'envelope-mismatch', severity: 'mittel', detail: 'Return-Path (bounce@werbe-versand.example) weicht von der Absender-Domain ab.', techniques: ['emailAccounts'] }
+            ],
+            techniques: [
+                { id: 'T1036.005', name: 'Masquerading: Match Legitimate Name or Location' },
+                { id: 'T1566', name: 'Phishing' },
+                { id: 'T1585.002', name: 'Establish Accounts: Email Accounts' }
+            ],
+            severityCounts: { hoch: 2, mittel: 1 }
+        },
+        stix: { type: 'bundle', spec_version: '2.1', id: 'bundle--thundy-demo', objects: [{ type: 'identity' }] },
+        pivots: {
+            hashes: [{ value: '9f2c1e4b7a5d3c8e1f0b6a4d2c9e7f5a3b1d8c6e4f2a0b9d7c5e3f1a8b6d4c2e',
+                links: [{ provider: 'virustotal', url: 'https://www.virustotal.com/gui/file/demo' }, { provider: 'hybrid-analysis', url: 'https://www.hybrid-analysis.com/search?query=demo' }] }],
+            ips: [{ value: '203.0.113.42', links: [{ provider: 'virustotal', url: 'https://www.virustotal.com/gui/ip-address/203.0.113.42' }, { provider: 'abuseipdb', url: 'https://www.abuseipdb.com/check/203.0.113.42' }] }],
+            domains: [{ value: 'login-zahlung.example', links: [{ provider: 'urlscan', url: 'https://urlscan.io/domain/login-zahlung.example' }] }]
+        },
+        indicators: {
+            urls: ['https://login-zahlung.example/anmelden', 'http://203.0.113.42/paypal/login.php'],
+            urlAnalyses: [
+                { url: 'https://login-zahlung.example/anmelden', host: 'login-zahlung.example', registrableDomain: 'login-zahlung.example',
+                  decodedHost: 'xn--login-zahlung-4vb.example', flags: ['Punycode-Host - liest sich als: xn--login-zahlung-4vb.example', 'Tracking-Parameter: utm_source'],
+                  result: { state: 'done', verdict: 'MALICIOUS', checkedAt: '2026-09-28T10:05:00.000Z', attempts: 2, source: 'hybrid-analysis' } },
+                { url: 'http://203.0.113.42/paypal/login.php', host: '203.0.113.42', registrableDomain: '0.113.42',
+                  decodedHost: null, flags: ['IP-Adresse statt Domain'], result: null }
+            ],
+            domains: ['login-zahlung.example', '203.0.113.42'],
+            registrableDomains: ['login-zahlung.example'],
+            ips: ['203.0.113.42', '198.51.100.7'],
+            emails: ['service@zahlung-service.example', 'bounce@werbe-versand.example'],
+            hashes: ['9f2c1e4b7a5d3c8e1f0b6a4d2c9e7f5a3b1d8c6e4f2a0b9d7c5e3f1a8b6d4c2e'],
+            messageIds: ['abc123@zahlung-service.example'],
+            mailServers: ['mx.example.net'],
+            counts: { urls: 2, domains: 2, ips: 2, emails: 2, hashes: 1 }
+        },
+        attachmentResults: [{ partName: '1.2', state: 'pending', verdict: null, checkedAt: null }],
+        cacheSummary: { total: 4, pending: 1, done: 2, failed: 1 },
+        attachments: [
+            { name: 'Rechnung_2026_09.pdf.exe', declaredType: 'application/pdf', detectedType: 'application/x-dosexec',
+              typeMismatch: true, doubleExtension: true, riskyExtension: true, macroCapable: false,
+              flags: ['doppelte Dateiendung', 'ausfuehrbare/riskante Dateiendung', 'Dateityp weicht vom Inhalt ab (application/pdf vs. application/x-dosexec)'] },
+            { name: 'Angebot.xlsm', declaredType: 'application/vnd.ms-excel.sheet.macroEnabled.12', detectedType: null,
+              typeMismatch: false, doubleExtension: false, riskyExtension: false, macroCapable: true, flags: ['makrofaehiges Dokument'] }
+        ]
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Demo-Renderer (nur fuer Screenshots; keine Hintergrundabfragen)
+// ---------------------------------------------------------------------------
+function renderDemoResultsPanel(insights, container) {
+    const card = document.createElement('div');
+    card.id = 'thundy-results-panel';
+    card.className = 'card card-info mb-3';
+    const summary = insights.cacheSummary;
+    const title = document.createElement('p');
+    title.textContent = 'Pruefergebnisse (zwischengespeichert): ' + summary.total + ' Eintrag/Eintraege, ' +
+        summary.pending + ' offen, ' + summary.done + ' fertig, ' + summary.failed + ' ohne Ergebnis';
+    card.appendChild(title);
+    const list = document.createElement('ul');
+    list.className = 'thundy-history-list';
+    [
+        'MALICIOUS | 9f2c1e4b7a5d3c8e... | geprueft: 28.09.2026, 12:05 | Quelle: hybrid-analysis',
+        'PENDING | Rechnung_2026_09.pdf.exe | Pruefung laeuft (zeitverzoegert) (2 Abfrage(n)) | gestartet: 28.09.2026, 12:04',
+        'CLEAN | login-zahlung.example | geprueft: 28.09.2026, 12:03 | Quelle: urlhaus',
+        'ohne Ergebnis | 198.51.100.7 | letzter Versuch: 28.09.2026, 12:02'
+    ].forEach(line => {
+        const item = document.createElement('li');
+        item.textContent = line;
+        list.appendChild(item);
+    });
+    card.appendChild(list);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn-primary';
+    button.textContent = thundyT('popup.results.pollNow', 'Ergebnis jetzt abrufen');
+    card.appendChild(button);
+    const hint = document.createElement('small');
+    hint.className = 'thundy-muted';
+    hint.textContent = thundyT('popup.results.hint', 'Zeitverzoegerte Analysen werden im Hintergrund abgefragt; das Ergebnis steht beim naechsten Oeffnen sofort bereit.');
+    card.appendChild(hint);
+    container.appendChild(card);
+    return card;
+}
+
+function renderDemoScanStatus(container) {
+    const card = document.createElement('div');
+    card.id = 'thundy-scan-status-panel';
+    card.className = 'card card-info mb-3';
+    const title = document.createElement('p');
+    title.textContent = 'Externe Analyse (zeitverzoegert) - 1 offener Auftrag';
+    card.appendChild(title);
+    const hint = document.createElement('small');
+    hint.textContent = 'Lokale Pruefungen sind abgeschlossen; der Anbieter analysiert asynchron (Abfrage alle 1 Minute).';
+    card.appendChild(hint);
+    container.appendChild(card);
+    return card;
+}
+
+function renderDemoLinkList(insights, container, viewMode) {
+    const card = document.createElement('div');
+    card.id = 'thundy-link-list';
+    card.className = 'card card-info mb-3';
+    const title = document.createElement('p');
+    title.textContent = thundyT('popup.links.title', 'Links dieser Nachricht (Pruefung vor dem Oeffnen):') + ' ' + insights.indicators.urlAnalyses.length;
+    card.appendChild(title);
+    for (const analysis of insights.indicators.urlAnalyses) {
+        const row = document.createElement('div');
+        row.className = 'thundy-attachment-row';
+        const label = document.createElement('div');
+        label.textContent = shorten(analysis.url, 80);
+        row.appendChild(label);
+        const detail = document.createElement('small');
+        detail.className = 'thundy-attachment-status';
+        detail.textContent = (analysis.registrableDomain || '-') +
+            (analysis.decodedHost && analysis.decodedHost !== analysis.host ? ' | liest sich als ' + analysis.decodedHost : '') +
+            ((analysis.flags || []).length ? ' | ' + analysis.flags.join('; ') : '');
+        row.appendChild(detail);
+        const status = document.createElement('small');
+        status.className = 'thundy-attachment-status';
+        status.textContent = analysis.result
+            ? analysis.result.verdict + ' | geprueft: ' + new Date(analysis.result.checkedAt).toLocaleString()
+            : thundyT('popup.links.unchecked', 'Noch nicht geprueft');
+        row.appendChild(status);
+        for (const caption of ['Pruefen', 'Oeffnen nach Pruefung', 'Bericht als Markdown', 'Befunde als CSV']) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = caption;
+            if (caption === 'Oeffnen nach Pruefung') button.className = 'btn-accent';
+            row.appendChild(button);
+        }
+        card.appendChild(row);
+    }
+    const hint = document.createElement('small');
+    hint.className = 'thundy-muted';
+    hint.textContent = thundyT('popup.links.guardConfirm', 'Link-Schutz aktiv: Links im Nachrichtentext werden erst nach der Freigabe geoeffnet.');
+    card.appendChild(hint);
+    container.appendChild(card);
+    return card;
+}
+
+function renderDemoReportExport(container) {
+    const card = document.createElement('div');
+    card.id = 'thundy-report-panel';
+    card.className = 'card card-info mb-3';
+    const title = document.createElement('p');
+    title.textContent = 'Bericht: Bewertung 87/100, 2 Anhang/Anhaenge, 3 Uebertragung(en)';
+    card.appendChild(title);
+    for (const caption of ['Bericht als Markdown', 'Bericht als JSON']) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = caption;
+        card.appendChild(button);
+    }
+    container.appendChild(card);
+    return card;
+}
+
+function renderDemoResearcherPanel(insights, container, viewMode) {
+    const card = document.createElement('div');
+    card.id = 'thundy-researcher-panel';
+    card.className = 'card card-info mb-3';
+    const title = document.createElement('p');
+    title.textContent = thundyT('research.title', 'Forscher-Analyse (lokal erhoben)') + ' - ' + insights.authStatus;
+    card.appendChild(title);
+    const breakdown = document.createElement('small');
+    breakdown.textContent = thundyT('research.breakdown', 'Bewertung nach Bestandteilen:') + ' ' +
+        insights.scoreBreakdown.map(entry => entry.source + ' +' + entry.points).join(', ');
+    card.appendChild(breakdown);
+    const list = document.createElement('ul');
+    list.className = 'thundy-history-list';
+    list.appendChild((() => { const item = document.createElement('li');
+        item.textContent = 'URLs: 2, Domains: 2, IPs: 2, Adressen: 2, Hashes: 1'; return item; })());
+    list.appendChild((() => { const item = document.createElement('li');
+        item.textContent = 'MITRE ATT&CK: T1036.005 Masquerading | T1566 Phishing | T1585.002 Email Accounts'; return item; })());
+    for (const finding of insights.forensics.findings) {
+        const item = document.createElement('li');
+        item.textContent = '[' + finding.severity.toUpperCase() + '] ' + finding.detail;
+        list.appendChild(item);
+    }
+    list.appendChild((() => { const item = document.createElement('li');
+        item.textContent = 'Auth: SPF = fail (zahlung-service.example) via mx.example.net'; return item; })());
+    list.appendChild((() => { const item = document.createElement('li');
+        item.textContent = 'Hop: mx.example.net [198.51.100.7] -> inbox.example (+12 s)'; return item; })());
+    list.appendChild((() => { const item = document.createElement('li');
+        item.textContent = 'Anhang Rechnung_2026_09.pdf.exe | deklariert: application/pdf | erkannt: application/x-dosexec'; return item; })());
+    card.appendChild(list);
+    for (const caption of ['Befunde als CSV', 'IOCs als STIX 2.1', 'IOCs als JSON', 'IOCs als CSV']) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = caption;
+        card.appendChild(button);
+    }
+    container.appendChild(card);
+    return card;
+}
+
 async function renderResultsPanel(message, container) {
+    if (sampleMode) {
+        const insights = currentSampleInsights || sampleInsights();
+        container.textContent = '';
+        return renderDemoResultsPanel(insights, container);
+    }
     let response;
     try {
         response = await browser.runtime.sendMessage({
@@ -1270,6 +1545,9 @@ async function renderResultsPanel(message, container) {
 }
 
 async function renderLinkList(message, container, viewMode) {
+    if (sampleMode) {
+        return renderDemoLinkList(currentSampleInsights || sampleInsights(), container, viewMode);
+    }
     let response;
     try {
         response = await browser.runtime.sendMessage({

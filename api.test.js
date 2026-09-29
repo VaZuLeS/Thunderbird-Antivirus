@@ -4067,6 +4067,52 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
         assert.strictEqual(context.document.getElementById('thundy-results-panel'), null);
     });
 
+    it('renders sample data in demo mode without touching the background', async () => {
+        const dom = new JSDOM('<!doctype html><html><body><div id="hybrid_analysis_api_content"></div></body></html>',
+            { url: 'moz-extension://demo/popup.html?sample=1' });
+        const sent = [];
+        const context = {
+            browser: {
+                i18n: { getMessage: () => '' },
+                storage: { local: { get: async () => ({ apikey: 'demo', externalAnalysisConsent: true, viewMode: 'research' }) } },
+                permissions: { contains: async () => true },
+                tabs: { query: async () => [{ id: 1 }] },
+                messageDisplay: { getDisplayedMessages: async () => ({ messages: [{ id: 1, headerMessageId: 'h1', subject: 's', author: 'a@b.de' }] }) },
+                runtime: { sendMessage: async (message) => { sent.push(message); return { status: 'success' }; }, openOptionsPage: () => {} }
+            },
+            document: dom.window.document,
+            location: dom.window.location,
+            console: { log: () => {}, error: () => {}, warn: () => {} },
+            indexedDB: { open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null }) },
+            fetch: async () => ({ status: 200, json: async () => ({}) }),
+            AbortController: globalThis.AbortController,
+            clearTimeout: globalThis.clearTimeout,
+            setTimeout: globalThis.setTimeout,
+            String, Array, Map, Error, Promise, TextEncoder, JSON
+        };
+        vm.createContext(context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'ui_i18n.js'), 'utf8'), context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8'), context);
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8')
+            .replace(/^\(async \(\) => \{/m, 'async function initAPI() {')
+            .replace(/\}\)\(\);/m, '}');
+        vm.runInContext(code, context);
+
+        const container = context.document.getElementById('hybrid_analysis_api_content');
+        await context.renderResultsPanel({ id: 1, headerMessageId: 'h1' }, container);
+        await context.renderLinkList({ id: 1, headerMessageId: 'h1' }, container, 'research');
+        await context.renderResearcherPanel({ id: 1, headerMessageId: 'h1' }, container, 'research');
+        await context.renderReportExport({ id: 1, headerMessageId: 'h1' }, container, 'research');
+
+        assert.match(container.textContent, /Pruefergebnisse \(zwischengespeichert\)/);
+        assert.match(container.textContent, /Links dieser Nachricht/);
+        assert.match(container.textContent, /Forscher-Analyse/);
+        assert.match(container.textContent, /Bericht: Bewertung 87\/100/);
+        assert.match(container.textContent, /Rechnung_2026_09\.pdf\.exe/);
+        assert.ok(!sent.some(message => ['getResults', 'getMessageInsights', 'evaluateLink'].includes(message.action)),
+            'demo mode must not query the background: ' + sent.map(m => m.action).join(','));
+    });
+
     it('renders the local score together with its reasons', async () => {
         const { context } = createHarness({
             displayState: { mode: 'ready', threat: { score: 70, reasons: ['Link-Domain weicht ab.', 'SPF fehlgeschlagen.'], authStatus: 'fail' } },

@@ -239,6 +239,12 @@
   "opt.btn.diagnostics": {
     "message": "Run diagnostics"
   },
+  "opt.btn.errorLogClear": {
+    "message": "Delete log"
+  },
+  "opt.btn.errorLogExport": {
+    "message": "Export log"
+  },
   "opt.btn.exportCsv": {
     "message": "Export CSV"
   },
@@ -281,8 +287,26 @@
   "opt.days.90": {
     "message": "90 days"
   },
+  "opt.demo.help": {
+    "message": "Fills the UI with sample data (no real messages, no transmission) - for store screenshots. Open options.html?sample=1"
+  },
   "opt.diagnostics.idle": {
     "message": "Not run yet."
+  },
+  "opt.errorlog.all": {
+    "message": "All entries"
+  },
+  "opt.errorlog.errors": {
+    "message": "Errors only"
+  },
+  "opt.errorlog.help": {
+    "message": "All errors and warnings of the add-on (local, max. 100 entries). Helps to find silent problems such as unknown results - please export it with bug reports."
+  },
+  "opt.errorlog.level": {
+    "message": "Show:"
+  },
+  "opt.errorlog.warnings": {
+    "message": "Warnings only"
   },
   "opt.guard.confirm": {
     "message": "Block until checked (click is intercepted)"
@@ -320,8 +344,14 @@
   "opt.h3.data": {
     "message": "Data management"
   },
+  "opt.h3.demo": {
+    "message": "Demo/screenshot mode"
+  },
   "opt.h3.diagnostics": {
     "message": "Diagnostics / self test"
+  },
+  "opt.h3.errorlog": {
+    "message": "Error log"
   },
   "opt.h3.history": {
     "message": "History"

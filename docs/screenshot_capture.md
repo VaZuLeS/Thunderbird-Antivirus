@@ -56,7 +56,23 @@ wie die realen Aufnahmen erstellt werden.
    - Datenschutz-Stufe bewusst wählen (`strict` = nur SHA-256-Hashes, `balanced` = zusätzlich
      vollständige Anhänge unbekannter Dateien, `max` = zusätzlich URLs).
 
-## 3. Die drei aufzunehmenden Zustände
+## 3. Schnellweg: Demo-/Screenshot-Modus (`?sample=1`)
+
+Fuer Store-Screenshots muss keine echte Nachricht geoeffnet werden. Haengen Sie an die Adresse der Erweiterungsseite
+`?sample=1` an, z. B.
+
+```
+moz-extension://<uuid>/popup.html?sample=1
+moz-extension://<uuid>/options.html?sample=1
+```
+
+Die Seiten zeigen dann realistische Beispieldaten (Bewertung 87/100, Forensik-Befunde mit MITRE-Tags, Link-Liste mit
+dekodiertem Punycode, Ergebnis-Panel mit offenen und fertigen Pruefungen, Forscher-Panel, Bericht-Export, ausgefuellte
+Einstellungen) und ein deutlich sichtbares **DEMO-Band**. Es wird nichts gespeichert, nichts gelesen und nichts
+uebertragen. Die `<uuid>` finden Sie in `about:debugging#/runtime/this-thunderbird` (Manifest-URL) bzw. in der
+Adresszeile, nachdem Sie das Add-on-Popup geoeffnet haben.
+
+## 4. Die drei aufzunehmenden Zustände
 
 | Nr. | Zustand | Vorgehen | Zieldatei |
 |---|---|---|---|
