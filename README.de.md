@@ -150,7 +150,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 - `web-ext lint` meldet derzeit **0 Fehler**. Die verbleibenden Warnungen sind fast ausschließlich
   `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-spezifische APIs wie
   `messages.*` oder `messageDisplay.*` nicht kennt. Vor einem Release die Liste durchsehen.
-- Das Paket enthält derzeit **17 Dateien / 218.834 Bytes** entpackt (ZIP 59.551 Bytes), gemessen am 2026-09-29 mit
+- Das Paket enthält derzeit **17 Dateien / 219.132 Bytes** entpackt (ZIP 59.706 Bytes), gemessen am 2026-09-29 mit
   den obigen Befehlen plus `node scripts/verify-package.js /tmp/build-docs`; die Werte ändern sich mit jeder
   Code-Änderung (Details: [docs/store_listing.md](docs/store_listing.md), Abschnitt 9).
 - Die Pre-Submit-Checks prüfen zusätzlich, dass die Datenklassifizierung in der `manifest.json` gültig ist

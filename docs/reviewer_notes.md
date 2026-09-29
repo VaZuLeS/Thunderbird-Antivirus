@@ -308,6 +308,26 @@ These points are deliberately documented as not yet complete and are **not** cla
   `cline/nhfqgaap` and are neither store releases nor store-signed; the store submission uses version
   `1.6.0` from `main`. See `docs/STATUS.md`, section "Release-/Versionslage".
 
+### 9.1 To do before submitting (maintainer)
+
+These steps cannot be done by the code in this repository and are the last gaps before the listing is
+reviewable:
+
+1. **Reviewer test key.** Create a dedicated, revocable provider key (a free Hybrid Analysis account is
+   enough), run one scan with it against `test/fixtures/reviewer-sample.eml`, and paste the key plus
+   the account details into the ATN field *“Notes for Reviewers”*. Never commit the key. Reviewers can
+   otherwise only test the local checks; the external analysis — the advertised core feature — needs an
+   account (Add-on Policies §3).
+2. **Screenshots.** Capture three PNGs (≥ 1280 × 800) from Thunderbird 140 ESR — options page with the
+   consent checkbox, the per-message opt-in banner with both buttons, and the warning banner — following
+   `docs/screenshot_capture.md`, and upload them with the listing. The SVG sketches in
+   `docs/screenshots/` must **not** be uploaded (they show UI states that do not exist).
+3. **Live walkthrough** of section 8.4 in a real Thunderbird installation (banner injection,
+   `message_display_action` context menu, `permissions.request()` from the banner, data collection
+   request, Time-of-Click warning) and a note of the result in `docs/STATUS.md`.
+4. **Sign and submit**: `npx web-ext sign --channel listed` (or `docs/ci/release.yml`), then fill in the
+   listing from `docs/store_listing.md`.
+
 ## 10. Documents and contact
 
 - Privacy policy: `docs/privacy_policy.md`, hosted at

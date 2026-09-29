@@ -85,7 +85,7 @@ node scripts/verify-package.js /tmp/build-docs
 ```
 
 - Artefakt: `thundy_av_email_scanner_for_thunderbird-1.6.0.zip`
-- **17 Dateien**, **218.834 Bytes** entpackt, ZIP **59.551 Bytes**
+- **17 Dateien**, **219.132 Bytes** entpackt, ZIP **59.706 Bytes**
 - `scripts/verify-package.js`: „Package content is valid.“
 
 Diese Zahlen sind eine Momentaufnahme und ändern sich mit jeder Code-Änderung; die früheren Werte

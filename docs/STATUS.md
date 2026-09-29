@@ -12,8 +12,8 @@
 > [CHANGELOG](../CHANGELOG.md) unter `[1.6.0] – 2026-09-29` aufgeführt. Zu korrigierende bzw. zu
 > präzisierende Angaben in dieser Datei:
 > - „15 Dateien (≈176 KB)“ (Zeile 33 der Vorversion) war falsch: der Audit maß am Stand `ae2a08e`
->   **17 Dateien / 179.276 B** entpackt. Nach den Fixes gemessen: **17 Dateien / 218.834 B** entpackt,
->   ZIP **59.551 B** (Abschnitt „Release-/Versionslage“, `docs/store_listing.md` Abschnitt 9).
+>   **17 Dateien / 179.276 B** entpackt. Nach den Fixes gemessen: **17 Dateien / 219.132 B** entpackt,
+>   ZIP **59.706 B** (Abschnitt „Release-/Versionslage“, `docs/store_listing.md` Abschnitt 9).
 > - „Alle Banner-/Link-Funktionen“ sind nicht belegt: die Link-/URL-Prüfung war wegen
 >   `extractTextFromParts(fullMessage.parts || fullMessage)` (`background.js:1048`) wirkungslos. Das ist
 >   behoben; der Live-Test in Thunderbird 140 ESR (H6) steht weiterhin aus.
@@ -48,7 +48,7 @@ abgearbeitet:
   `thundy-av@bludau-it-services.de`, Icons 16/32/64 px, `options_ui.open_in_tab` statt `browser_style`.
 - **Paketbereinigung (g):** `web-ext-config.mjs` (`ignoreFiles`) hält Testdateien, `docs/`, `scripts/`,
   `examples/`, Lockfiles, `install.rdf` und Entwicklungs-Artefakte aus dem Build. Das XPI enthält nur noch
-  **17 Dateien** (gemessen 2026-09-29: 218.834 B entpackt, ZIP 59.551 B; am Stand `ae2a08e` waren es 179.276 B —
+  **17 Dateien** (gemessen 2026-09-29: 219.132 B entpackt, ZIP 59.706 B; am Stand `ae2a08e` waren es 179.276 B —
   vorher 62 Dateien/605 KB); `scripts/verify-package.js` prüft den Paketinhalt. Toter Code (`content_script.js`)
   und die Legacy-Dateien sind entfernt. Die zwischenzeitlich zusätzlich angelegte `.webextignore` war wirkungslos
   (M6) und ist entfernt.

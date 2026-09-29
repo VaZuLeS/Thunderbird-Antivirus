@@ -2305,6 +2305,12 @@ async function handleOpenLink(request, sendResponse) {
     }
 }
 
+/**
+ * Holt das aktuelles Hybrid-Analysis-Verdikt zu einem Hash.
+ * Hinweis für Reviewer: Diese Funktion wird bewusst **nicht** aus dem
+ * Time-of-Click-Pfad aufgerufen – die Klickprüfung ist vollständig lokal. Sie
+ * wird für manuell ausgelöste Prüfungen und vom Popup-Pfad verwendet.
+ */
 async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
     if (hybrid_sha256 && apikey_hybridanalysis && mayTransmitExternally()) {
         const overviewOptions = getHybridAnalysisOptions('GET');

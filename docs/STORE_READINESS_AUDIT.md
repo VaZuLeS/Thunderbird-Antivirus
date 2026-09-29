@@ -580,7 +580,7 @@ npx web-ext lint --source-dir . --output json       # 0 Fehler, 27 Warnungen
 node scripts/filter-lint-warnings.js /tmp/lint.json # alle 27 = bekannte TB-False-Positives, Exit 0
 node ./scripts/pre-submit-checks.js                 # 0 Fehler, 1 Warnung (fehlende Screenshots)
 npx web-ext build --source-dir . --artifacts-dir ./build
-node scripts/verify-package.js ./build              # 17 Dateien / 218.834 B entpackt, ZIP 59.551 B
+node scripts/verify-package.js ./build              # 17 Dateien / 219.132 B entpackt, ZIP 59.706 B
 ```
 
 **Restweg vor der Einreichung:** H4 (drei PNG-Screenshots ≥ 1280 × 800 aus Thunderbird 140 ESR),

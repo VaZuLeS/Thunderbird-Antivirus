@@ -240,7 +240,7 @@ node scripts/verify-package.js /tmp/build-docs
 ```
 
 - Artifact: `thundy_av_email_scanner_for_thunderbird-1.6.0.zip`
-- Content: **17 files**, **218.834 bytes** uncompressed, ZIP archive **59.551 bytes**
+- Content: **17 files**, **219.132 bytes** uncompressed, ZIP archive **59.706 bytes**
 - The package contains runtime files only (`manifest.json`, `background.js`, `db.js`, `api.js`,
   `api_gateway.js`, `options.html`, `options.js`, `popup.html`, `theme.css`, `LICENSE`,
   `img/*.png`, `_locales/*/messages.json`); `scripts/verify-package.js` reports
