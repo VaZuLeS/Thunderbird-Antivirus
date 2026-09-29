@@ -33,7 +33,7 @@ npm test
 `node:test`-Dateien des Repositorys aus (`background.test.js`, `api.test.js`, `db.test.js`,
 `options.test.js`, `api_gateway.test.js`, `message_display.test.js`, `scripts/pre-submit-checks.test.js`,
 `form_test.js`, `vt_test.js`). Die Thunderbird-APIs werden in den Tests gemockt, es ist kein Netzwerkzugriff nötig.
-Aktueller Stand: **430 Tests, 0 Fehler**.
+Aktueller Stand: **437 Tests, 0 Fehler**.
 
 ## 4. Pre-Submit-Checks
 

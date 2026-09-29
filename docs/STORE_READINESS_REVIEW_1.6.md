@@ -12,7 +12,7 @@ Ausgangspunkt der Analyse war Commit `1a72c45`; die Korrekturen liegen in den da
 (`49850f3` Blocker/Hohe Risiken, `8b2fc84` Lokalisierung). Verifikation nach der Umsetzung:
 
 ```bash
-npm test                       # 430 Tests, 0 Fehler
+npm test                       # 437 Tests, 0 Fehler
 npm run pre-submit-checks      # 0 Fehler, 1 Warnung (fehlende Screenshots)
 npx web-ext lint --source-dir . --output json   # 0 Fehler, 25 bekannte Thunderbird-False-Positives
 node scripts/verify-package.js ./build          # 18 Dateien, 238 851 Bytes

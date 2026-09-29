@@ -117,7 +117,7 @@ abgearbeitet:
   einen echten Exit-Code; der Schritt läuft in der CI. Ergebnis: 0 Fehler, 2 Warnungen (fehlende Screenshots; die
   aktive CI führt nur `background.test.js` aus – die vollständige Variante liegt in `docs/ci/ci.yml`).
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission-, MV3-Portierungs- und
-  Message-Display-Tests enthalten) und ist grün (**430 Tests, 0 Fehler**; neu: `message_display.test.js` mit
+  Message-Display-Tests enthalten) und ist grün (**437 Tests, 0 Fehler**; neu: `message_display.test.js` mit
   17 Tests, 4 Popup-Consent-Tests in `api.test.js`, 9 neue Pre-Submit-Check-Tests). `npx web-ext lint` meldet
   **0 Fehler und 25 Warnungen**, alle davon bekannte Thunderbird-False-Positives
   (`scripts/filter-lint-warnings.js`). Der im Repository aktive Workflow

@@ -172,7 +172,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** Testdateien des
-  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **430 Tests, 0 Fehler** – u. a.
+  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **437 Tests, 0 Fehler** – u. a.
   `message_display.test.js` (UI in der Nachrichtenansicht und Time-of-Click), die Popup-Consent-Tests in
   `api.test.js` und die Pre-Submit-Check-Tests in `scripts/pre-submit-checks.test.js`.
 - `scripts/pre-submit-checks.js` prüft zusätzlich, dass jeder verwendete `browser.*`-API-Namespace eine deklarierte

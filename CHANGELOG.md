@@ -28,8 +28,9 @@ Changes that resolve the store-readiness review for 1.6
   `db.js`, dynamic strings via `uiText()` in `options.js`/`api.js`). The catalogues contain 165 keys per language
   (157 localized UI strings), the English translation is complete, German fallbacks remain in the code, and further
   languages only need an additional `_locales/<code>` folder.
-- Tests: `message_display.test.js` (17 tests), four popup consent tests in `api.test.js` and nine new
-  pre-submit-check tests – **430 tests in total, 0 failures**.
+- Tests: `message_display.test.js` (19 tests), four popup consent tests in `api.test.js`, tests for the
+  localization helpers in `db.test.js`, tests for the built-in data consent in `background.test.js`/`options.test.js`
+  and twelve new pre-submit-check tests – **437 tests in total, 0 failures**.
 
 ### Changed
 

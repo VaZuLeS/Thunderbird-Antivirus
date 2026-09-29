@@ -167,7 +167,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` uses the script from `package.json` (`node --test`) and therefore executes **all** test files of the
-  repository, not just `background.test.js`. Current state: **430 tests, 0 failures** – including
+  repository, not just `background.test.js`. Current state: **437 tests, 0 failures** – including
   `message_display.test.js` (in-message UI and time-of-click), the popup consent tests in `api.test.js` and the
   pre-submit-check tests in `scripts/pre-submit-checks.test.js`.
 - `scripts/pre-submit-checks.js` additionally verifies that every used `browser.*` API namespace has its permission

@@ -216,7 +216,7 @@ built-in data-collection consent, the options dialog asks for that category when
 | Privacy policy linked from the landing page | done (`docs/index.html`, `index_en.html`, `index_de.html`) |
 | Reviewer notes complete (permissions, data flows, test path) | done (`docs/reviewer_notes.md`) |
 | Manual verification in Thunderbird 140 ESR (banners, warning, badge, both context-menu entries, permission prompt from the banner, blocked link) | **open** — covered by unit tests with mocked APIs only; no live test has been performed |
-| Unit tests green (`npm test`) | done in this environment — **430 tests, 0 failures**; the CI run for the final commit is authoritative |
+| Unit tests green (`npm test`) | done in this environment — **437 tests, 0 failures**; the CI run for the final commit is authoritative |
 | `npx web-ext lint` | 0 errors, 25 warnings — all known Thunderbird false positives (`scripts/filter-lint-warnings.js`) |
 | XPI package contents | 18 files / 238,851 bytes unpacked, verified by `scripts/verify-package.js` |
 | XPI built for 1.6 and attached to a release | **open** — the artefact has not been built and attached to a release yet |
