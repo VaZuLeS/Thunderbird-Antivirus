@@ -8,7 +8,23 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 ## [Unreleased]
 
-- Nothing yet.
+### Fixed
+
+- **Consent leak in the popup.** `api.js` loaded stored Hybrid Analysis reports
+  (`GET https://hybrid-analysis.com/api/v2/overview/<sha256>` with the API key) even when the global option
+  *"Externe Analyse erlauben"* was switched off, i.e. an attachment hash was transmitted without consent. The popup
+  now has the same consent gate as the background script (`mayFetchExternalReports()`, error code
+  `EXTERNAL_ANALYSIS_DISABLED`) and renders a hint card instead. Covered by three new regression tests.
+- **Stale product name in the popup.** `popup.html` still used the 1.5 name *"Thunderbird Security Antivirus aka
+  Thundy AV"* in the window title and headline; it now reads *"Thundy AV – E-Mail-Scanner"*. The pre-submit checks
+  additionally reject `<title>`/`<h1>` texts that start with the Thunderbird trademark.
+
+### Documentation
+
+- New store readiness review: [`docs/STORE_READINESS_REVIEW.md`](docs/STORE_READINESS_REVIEW.md) (re-verification of
+  1.6 with evidence, open high/medium/low findings and the manual steps before submission).
+- Corrected factual statements in `docs/store_listing.md` (the 1.6 XPI does exist as a release asset) and
+  `docs/reviewer_notes.md` (VirusTotal origin now matches `manifest.json`).
 
 ## [1.6.0] – 2026-09-28
 

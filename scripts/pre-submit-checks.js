@@ -64,6 +64,21 @@ function runChecks(rootDir) {
   if (!/^https:\/\//.test(manifest.homepage_url || '')) fail('manifest.homepage_url must be an https URL');
   else ok('homepage_url present and https');
 
+  // --- visible product naming ---------------------------------------------
+  // manifest.name is checked above; a stale product name in the UI pages is
+  // the same trademark/review risk (found in popup.html in 1.6).
+  for (const page of ['popup.html', 'options.html']) {
+    const pagePath = path.join(rootDir, page);
+    if (!fs.existsSync(pagePath)) continue;
+    const html = fs.readFileSync(pagePath, 'utf8');
+    const titles = Array.from(html.matchAll(/<(title|h1)[^>]*>([\s\S]*?)<\/\1>/gi)).map((m) => m[2].trim());
+    for (const title of titles) {
+      if (/^thunderbird\b/i.test(title)) {
+        fail(page + ' shows the product name "' + title + '": a visible name must not start with the Thunderbird trademark');
+      }
+    }
+  }
+
   // --- icons ---------------------------------------------------------------
   for (const size of ['16', '32', '64']) {
     const iconPath = manifest.icons && manifest.icons[size];

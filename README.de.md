@@ -6,7 +6,8 @@ minimal notwendigen Daten an externe Analysedienste.
 
 > **Status:** Das Add-on ist **noch nicht im Thunderbird-Add-ons-Store (addons.thunderbird.net) gelistet**, es gibt
 > daher keine Store-URL. Bau- und Ladehinweise finden Sie unten. Was fertig ist und was noch offen ist, steht in
-> [docs/STATUS.md](docs/STATUS.md).
+> [docs/STATUS.md](docs/STATUS.md); die Store-Readiness-Nachprüfung für 1.6 (offene Befunde und Checkliste vor der
+> Einreichung) in [docs/STORE_READINESS_REVIEW.md](docs/STORE_READINESS_REVIEW.md).
 
 | Feld | Wert |
 | --- | --- |

@@ -178,7 +178,7 @@ zeigt die Banner an.
 | Reviewer notes complete (permissions, data flows, test path) | done (`docs/reviewer_notes.md`) |
 | Manual verification of the banner injection in Thunderbird 140 ESR | **open** |
 | Unit tests green (`npm test`) | executed in CI; the result for the current commit is authoritative |
-| XPI built for 1.6 and attached to a release | **open** — the 1.6 artefact has not been built yet |
+| XPI built for 1.6 and attached to a GitHub release | done — `v1.6` release with `thundy-av-1.6.xpi` exists; the signed ATN upload is still **open** |
 | Submitted to the Thunderbird Add-ons Store | **open** — not submitted, no store URL |
 
 Note: this table describes documentation and packaging status only. It does not claim that the

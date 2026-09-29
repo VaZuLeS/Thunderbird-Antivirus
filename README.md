@@ -6,7 +6,8 @@ submits the minimum data required to external analysis services.
 
 > **Status:** the add-on is **not listed in the Thunderbird Add-ons Store (addons.thunderbird.net) yet**, so there
 > is no store URL. Build and load the current source as described below. See [docs/STATUS.md](docs/STATUS.md) for
-> what is finished and what is still open.
+> what is finished and what is still open, and [docs/STORE_READINESS_REVIEW.md](docs/STORE_READINESS_REVIEW.md) for
+> the store readiness review of 1.6 (open findings and the checklist before submission).
 
 | Field | Value |
 | --- | --- |

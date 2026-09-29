@@ -37,7 +37,8 @@ abgearbeitet:
 - **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung und Rechte und
   liefert einen echten Exit-Code; der Schritt läuft in der CI.
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission- und MV3-Portierungs-Tests
-  enthalten) und ist grün (389 Tests, 0 Fehler). Der im Repository aktive Workflow
+  enthalten) und ist grün (394 Tests, 0 Fehler – inklusive der drei Regressionstests für das Popup-Consent-Gate und
+  der beiden Tests für den neuen UI-Namens-Check). Der im Repository aktive Workflow
   (`.github/workflows/ci.yml`, Node 22) läuft `npm ci`, die Pre-Submit-Checks (jetzt mit echtem Exit-Code),
   `node --test background.test.js` und `npx web-ext lint`. Die erweiterten Definitionen — vollständiger
   `npm test`, Lint-Filter für bekannte Thunderbird-False-Positives
@@ -51,7 +52,20 @@ abgearbeitet:
 
 ## Remaining
 
-- **Manuelle Verifikation in Thunderbird 140 ESR (Pflicht vor der Einreichung):** Banner-Injektion, der
+**Nachprüfung vom 29.09.2026:** Der Technik-Blocker aus 1.6 (Popup übertrug SHA-256-Hashes ohne Zustimmung) ist
+behoben — siehe [`docs/STORE_READINESS_REVIEW.md`](STORE_READINESS_REVIEW.md), Abschnitt 2. Dort stehen die weiterhin
+offenen Hoch-Befunde (H1–H6), u. a.:
+
+- **H1:** Die Datenschutz-Stufe (`strict`) wird in den manuellen Upload-Pfaden nicht durchgesetzt — Policy und
+  Listing behaupten etwas anderes. Entscheidung nötig: Code absichern **oder** Ausnahme dokumentieren.
+- **H2:** „Time-of-Click“ und urlscan.io sind im Code nicht erreichbar, die Option „Auto-Scan“ ist ohne Wirkung,
+  werden aber in Listing, README, Landing-Pages und Policy beworben.
+- **H3:** Öffentliche Releases bis `v1.18.0` (u. a. mit XPI) stehen der eingereichten Version 1.6 und der Policy
+  gegenüber; `docs/store_listing.md` wurde korrigiert, die Releases nicht.
+- **H4/H5:** Echte Screenshots fehlen weiterhin; die Live-Verifikation in Thunderbird 140 ESR steht aus.
+- **H6:** `default_locale: en`, aber Popup/Options/JS sind hart deutsch (inkl. Sicherheitshinweis).
+
+Manuelle Verifikation in Thunderbird 140 ESR (Pflicht vor der Einreichung): Banner-Injektion, der
   `message_display_action`-Kontextmenüeintrag („Alle Links dieser Nachricht scannen“) sowie der
   Time-of-Click-Hinweis sind nur durch Unit-Tests mit gemockten Thunderbird-APIs abgedeckt. Ebenfalls zu prüfen:
   `permissions.request()` aus dem Banner heraus (Nutzer-Geste über `runtime.sendMessage`) sowie der Link-Kontext
@@ -68,7 +82,8 @@ abgearbeitet:
 
 ## Referenzen
 
-- Befunde und Roadmap: [docs/STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md)
+- Nachprüfung 1.6 (offene Befunde): [docs/STORE_READINESS_REVIEW.md](STORE_READINESS_REVIEW.md)
+- Befunde und Roadmap 1.5: [docs/STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md)
 - Datenschutzerklärung: [docs/privacy_policy.md](privacy_policy.md) ·
   live: https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
 - Reviewer-Hinweise: [docs/reviewer_notes.md](reviewer_notes.md) · Listing-Entwurf:

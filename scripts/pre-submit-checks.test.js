@@ -137,6 +137,22 @@ describe('pre-submit-checks', () => {
     assert.ok(result.errors.some((e) => e.includes('trademark')));
   });
 
+  it('fails when a visible UI title starts with the Thunderbird trademark', () => {
+    const result = runChecks(createExtension({
+      'popup.html': '<html><head><title>Thunderbird Security Antivirus aka Thundy AV</title></head>' +
+        '<body><h1>Thunderbird Security Antivirus aka Thundy AV</h1></body></html>'
+    }));
+    assert.ok(result.errors.some((e) => e.includes('popup.html') && e.includes('trademark')));
+  });
+
+  it('accepts UI pages that use the add-on name', () => {
+    const result = runChecks(createExtension({
+      'popup.html': '<html><head><title>Thundy AV – E-Mail-Scanner</title></head><body><h1>Thundy AV</h1></body></html>',
+      'options.html': '<html><head><title>Thundy AV Einstellungen</title></head><body><h1>Thundy AV</h1></body></html>'
+    }));
+    assert.deepStrictEqual(result.errors, []);
+  });
+
   it('fails when referenced files are missing', () => {
     const result = runChecks(createExtension({}, { background: { scripts: ['nope.js'] } }));
     assert.ok(result.errors.some((e) => e.includes('background script is missing on disk')));
