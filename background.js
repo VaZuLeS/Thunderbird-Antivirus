@@ -823,12 +823,11 @@ async function processAndUploadUrls(message, filteredUrls) {
 async function injectTimeOfClickProtection(tabId, filteredUrls) {
     if (timeOfClickProtection && filteredUrls.length > 0) {
         await injectIntoMessageDisplay(tabId, function() {
-            const links = document.querySelectorAll('a');
+            // ⚡ Bolt Optimization: Use native CSS attribute selector instead of filtering all 'a' tags in JS
+            const links = document.querySelectorAll('a[href^="http"]');
             links.forEach(link => {
-                if (link.href && link.href.startsWith('http')) {
-                    link.title = "Protected by Thundy Time-of-Click";
-                    link.style.borderBottom = "1px dashed #ff8c00";
-                }
+                link.title = "Protected by Thundy Time-of-Click";
+                link.style.borderBottom = "1px dashed #ff8c00";
             });
         });
     }

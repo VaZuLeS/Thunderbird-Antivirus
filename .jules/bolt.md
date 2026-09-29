@@ -20,3 +20,6 @@
 ## 2026-04-01 - Align IP reputation lookup concurrency with URLhaus domain checks
 **Learning:** While `checkURLhausDomains` executed all API lookup promises concurrently in a single `Promise.all()`, `checkIPReputation` artificially chunked requests in batches of 5. This created an asynchronous pipeline bottleneck, multiplying response latency by the number of chunks.
 **Action:** Avoid artificial request chunking loops in extension background scripts when fetching endpoint reputations; collect all promises in a single array and resolve concurrently via `Promise.all()`.
+## 2026-06-15 - Optimize DOM querying with CSS attribute selectors
+**Learning:** When filtering DOM elements by attribute in frontend scripts, fetching all elements (e.g. `querySelectorAll('a')`) and filtering them in a JavaScript loop (e.g. `startsWith('http')`) is inefficient.
+**Action:** Relying on the browser's native C++ DOM querying via CSS attribute selectors (e.g., `document.querySelectorAll('a[href^="http"]')`) is significantly faster. Always prefer native CSS selectors over JS loops when possible.
