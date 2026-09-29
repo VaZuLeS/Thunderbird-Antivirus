@@ -611,7 +611,7 @@
     "message": "Mark links in the message text and check them on click (time-of-click protection)"
   },
   "optionsTocHelp": {
-    "message": "Links are checked when you click them. If a link is known to be malicious or cannot be checked, it is blocked; you can still open it from the notice."
+    "message": "Links are checked when you click them. A link that is known to be malicious or whose check fails is blocked; you can still open it from the notice. Schemes that cannot be checked (e.g. file:, ftp:) are blocked as well."
   },
   "optionsDontForget": {
     "message": "Don't forget to save."

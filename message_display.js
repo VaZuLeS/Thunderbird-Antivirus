@@ -369,11 +369,17 @@
   }
 
   document.addEventListener('click', onLinkClick, true);
+  // Middle click (and other auxiliary clicks) must not bypass the check.
+  document.addEventListener('auxclick', onLinkClick, true);
 
   try {
     browser.runtime.onMessage.addListener((message) => {
       if (!message || message.type !== 'thundy:messageState' || !message.state) return;
-      if (tabId !== null && message.tabId !== undefined && String(message.tabId) !== String(tabId)) return;
+      // The state is rendered for exactly one tab. Until the own tab id is known
+      // (the initial getMessageUiState answer carries it) broadcasts are ignored:
+      // acting on a foreign state would show the wrong banner.
+      if (tabId === null) return;
+      if (message.tabId !== undefined && String(message.tabId) !== String(tabId)) return;
       applyState(message.state);
     });
   } catch (e) { /* ignore */ }

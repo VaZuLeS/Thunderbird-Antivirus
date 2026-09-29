@@ -22,6 +22,8 @@ const PRODUCT_SCRIPT_FILES = ['background.js', 'api.js', 'api_gateway.js', 'db.j
 // the API is not available at runtime (see store readiness finding B1: the
 // missing "menus" permission made both context menu entries dead code that no
 // test, linter run or package check detected).
+// Namespaces without an entry need no declaration for the methods this add-on
+// uses (runtime, i18n, permissions, tabs.query/create).
 const NAMESPACE_PERMISSIONS = {
   messages: ['messagesRead', 'messagesModify'],
   messageDisplay: ['messagesRead'],
@@ -301,6 +303,19 @@ function runChecks(rootDir) {
       ok('all ' + usedKeys.size + ' localized UI strings have a catalogue entry (' + defaultLocale + ')');
     }
     if (Object.keys(catalogue).length === 0) warn('the default locale catalogue is empty');
+  }
+
+  // --- CI coverage ---------------------------------------------------------
+  // The repository CI must run the complete test suite; the reduced variant only
+  // executed background.test.js and therefore missed the popup/in-message tests.
+  const workflowPath = path.join(rootDir, '.github', 'workflows', 'ci.yml');
+  if (fs.existsSync(workflowPath)) {
+    const workflow = fs.readFileSync(workflowPath, 'utf8');
+    if (!/(npm test|node --test(?!.*background\.test\.js))/m.test(workflow)) {
+      warn('.github/workflows/ci.yml does not run the full test suite (npm test); use docs/ci/ci.yml');
+    } else {
+      ok('CI workflow runs the test suite');
+    }
   }
 
   // --- Manifest V3 key restrictions ---------------------------------------

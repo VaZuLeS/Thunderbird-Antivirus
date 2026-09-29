@@ -611,7 +611,7 @@
     "message": "Links im Nachrichtentext markieren und beim Klick prüfen (Time-of-Click Protection)"
   },
   "optionsTocHelp": {
-    "message": "Links werden beim Anklicken geprüft. Ist ein Link als bösartig bekannt oder kann er nicht geprüft werden, wird er blockiert; Sie können ihn im Hinweis trotzdem öffnen."
+    "message": "Links werden beim Anklicken geprüft. Ist ein Link als bösartig bekannt oder schlägt die Prüfung fehl, wird er blockiert; Sie können ihn im Hinweis trotzdem öffnen. Nicht prüfbare Schemes (z. B. file:, ftp:) werden ebenfalls blockiert."
   },
   "optionsDontForget": {
     "message": "Bitte nicht vergessen zu speichern."

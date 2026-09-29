@@ -3368,6 +3368,40 @@ describe('background.js', () => {
             assert.strictEqual(saved, null);
         });
 
+        it('does not transmit while the built-in data category is available but not granted', async () => {
+            context.set_externalAnalysisConsent(true);
+            context.set_builtInDataConsent(true, false);
+            try {
+                assert.strictEqual(context.mayTransmitExternally(), false);
+
+                let fetchCalls = 0;
+                context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+                assert.strictEqual(await context.checkVirusTotal('abc', 'vt-key'), null);
+                assert.throws(() => context.assertExternalAnalysisAllowed());
+                assert.strictEqual(fetchCalls, 0);
+            } finally {
+                context.set_builtInDataConsent(false, true);
+            }
+        });
+
+        it('transmits again once the built-in data category is granted', () => {
+            context.set_externalAnalysisConsent(true);
+            context.set_builtInDataConsent(true, true);
+            try {
+                assert.strictEqual(context.mayTransmitExternally(), true);
+            } finally {
+                context.set_builtInDataConsent(false, true);
+            }
+        });
+
+        it('does not transmit when the built-in data consent is not applicable', () => {
+            context.set_externalAnalysisConsent(true);
+            context.set_builtInDataConsent(false, false);
+            assert.strictEqual(context.mayTransmitExternally(), true,
+                'environments without the built-in data consent rely on the add-on consent checkbox');
+            context.set_builtInDataConsent(false, true);
+        });
+
         it('notify() never throws when the notifications API is unavailable', () => {
             const originalNotifications = context.browser.notifications;
             try {

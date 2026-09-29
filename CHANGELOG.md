@@ -49,7 +49,7 @@ Changes that resolve the store-readiness review for 1.6
   popup – are resolved through the catalogues with the default locale `en` and fallback texts in the code.
 - The pre-submit checks additionally verify the API namespace against the declared permission, the data-collection
   declaration and the presence of the programmatically registered script in the package.
-- The built package contains **18 files / 238,482 bytes unpacked**.
+- The built package contains **18 files / 238,851 bytes unpacked**.
 - The pre-submit checks verify that all localized UI strings (currently 157) have a catalogue entry.
 
 ### Fixed
@@ -77,6 +77,10 @@ Changes that resolve the store-readiness review for 1.6
 
 ## [1.6.0] – 2026-09-28
 
+> This version was never published to addons.thunderbird.net. The description below documents the state at that
+> point in time; the entries under *Unreleased* above supersede the parts that changed during the store readiness
+> review.
+
 ### Added
 
 - **Global consent.** New option *"Externe Analyse erlauben"* (allow external analysis) with the default **off**. The
@@ -102,8 +106,9 @@ Changes that resolve the store-readiness review for 1.6
   for the provider that is actually used.
 - Ported to the Manifest V3 message display APIs (`messageDisplay.onMessagesDisplayed` /
   `getDisplayedMessages()` instead of the removed `onMessageDisplayed` / `getDisplayedMessage`); injection into the
-  message view is centralized in `injectIntoMessageDisplay()`.
-- `data_collection_permissions` declares the required category `personalCommunications`.
+  message view was centralized in a helper (replaced by the registered message display script, see *Unreleased*).
+- `data_collection_permissions` declared the category `personalCommunications` as required (changed to
+  `required: ["none"]` plus the optional category during the store readiness review, see *Unreleased*).
 - Release packages are cleaned up through `.webextignore`; test files, `docs/`, `scripts/`, `examples/` and lockfiles
   are no longer part of the build.
 - `api_gateway.js` is now loaded by the background script so the centralized request/timeout handling is used.

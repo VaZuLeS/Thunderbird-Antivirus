@@ -307,4 +307,45 @@ describe('options.js', () => {
             assert.strictEqual(inputEl.getAttribute('spellcheck'), 'false', `#${id} must have spellcheck="false"`);
         }
     });
+
+    it('requests the optional data collection category where the environment offers it', async () => {
+        const requested = [];
+        context.browser.permissions.getAll = async () => ({ data_collection: [] });
+        context.browser.permissions.request = async (request) => {
+            requested.push(request);
+            return true;
+        };
+
+        assert.strictEqual(await context.requestDataCollectionConsent(), true);
+        assert.strictEqual(requested.length, 1);
+        assert.ok(requested[0].data_collection.includes('personalCommunications'));
+    });
+
+    it('accepts an already granted data collection category without asking again', async () => {
+        let requestCalls = 0;
+        context.browser.permissions.getAll = async () => ({ data_collection: ['personalCommunications'] });
+        context.browser.permissions.request = async () => { requestCalls++; return true; };
+
+        assert.strictEqual(await context.requestDataCollectionConsent(), true);
+        assert.strictEqual(requestCalls, 0);
+    });
+
+    it('reports a denied data collection consent', async () => {
+        context.browser.permissions.getAll = async () => ({ data_collection: [] });
+        context.browser.permissions.request = async () => false;
+
+        assert.strictEqual(await context.requestDataCollectionConsent(), false);
+    });
+
+    it('falls back to the add-on consent when the environment has no data consent API', async () => {
+        delete context.browser.permissions.getAll;
+
+        assert.strictEqual(await context.requestDataCollectionConsent(), true);
+    });
+
+    it('falls back to the add-on consent when the permissions API fails', async () => {
+        context.browser.permissions.getAll = async () => { throw new Error('nope'); };
+
+        assert.strictEqual(await context.requestDataCollectionConsent(), true);
+    });
 });

@@ -305,6 +305,35 @@ describe('message_display.js', () => {
     assert.ok(ui.document.getElementById('thundy-link-warning'), 'fail closed on errors');
   });
 
+  it('also blocks middle clicks (auxclick) on unverified links', async () => {
+    const ui = await createUi({
+      state: OPT_IN_STATE,
+      checkResponse: { status: 'MALICIOUS', reasons: ['known bad'] }
+    });
+
+    const element = ui.document.getElementById('link');
+    const event = new ui.dom.window.MouseEvent('auxclick', { bubbles: true, cancelable: true });
+    element.dispatchEvent(event);
+    await tick();
+    await tick();
+
+    assert.strictEqual(event.defaultPrevented, true, 'a middle click must not bypass the check');
+    assert.deepStrictEqual(ui.opened, []);
+    assert.ok(ui.document.getElementById('thundy-link-warning'));
+  });
+
+  it('ignores broadcasts as long as the own tab id is unknown', async () => {
+    // No initial state -> the script has not learned its tab id yet.
+    const ui = await createUi({ state: null });
+
+    for (const listener of ui.messageListeners) {
+      listener({ type: 'thundy:messageState', tabId: 42, state: { ...OPT_IN_STATE, tabId: 42 } });
+    }
+
+    assert.strictEqual(ui.document.getElementById('thundy-banner'), null,
+      'a foreign broadcast must not be rendered before the own tab id is known');
+  });
+
   it('updates the banner from a broadcast for its own tab only', async () => {
     const ui = await createUi({
       state: { ...OPT_IN_STATE, optInNeeded: false, threat: { score: 0, reasons: [], authStatus: 'none' } }

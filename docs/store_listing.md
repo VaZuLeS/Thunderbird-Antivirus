@@ -218,7 +218,7 @@ built-in data-collection consent, the options dialog asks for that category when
 | Manual verification in Thunderbird 140 ESR (banners, warning, badge, both context-menu entries, permission prompt from the banner, blocked link) | **open** — covered by unit tests with mocked APIs only; no live test has been performed |
 | Unit tests green (`npm test`) | done in this environment — **430 tests, 0 failures**; the CI run for the final commit is authoritative |
 | `npx web-ext lint` | 0 errors, 25 warnings — all known Thunderbird false positives (`scripts/filter-lint-warnings.js`) |
-| XPI package contents | 18 files / 238,482 bytes unpacked, verified by `scripts/verify-package.js` |
+| XPI package contents | 18 files / 238,851 bytes unpacked, verified by `scripts/verify-package.js` |
 | XPI built for 1.6 and attached to a release | **open** — the artefact has not been built and attached to a release yet |
 | Signed for distribution | **open** — `npx web-ext sign --channel listed` has not been run |
 | Submitted to the Thunderbird Add-ons Store | **open** — not submitted, no store URL |

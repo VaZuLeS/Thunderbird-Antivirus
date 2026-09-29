@@ -15,7 +15,7 @@ Ausgangspunkt der Analyse war Commit `1a72c45`; die Korrekturen liegen in den da
 npm test                       # 430 Tests, 0 Fehler
 npm run pre-submit-checks      # 0 Fehler, 1 Warnung (fehlende Screenshots)
 npx web-ext lint --source-dir . --output json   # 0 Fehler, 25 bekannte Thunderbird-False-Positives
-node scripts/verify-package.js ./build          # 18 Dateien, 238 482 Bytes
+node scripts/verify-package.js ./build          # 18 Dateien, 238 851 Bytes
 ```
 
 | Befund | Umsetzung | Nachweis |
@@ -169,7 +169,7 @@ Projektstatus selbst noch nicht live geprüft (`docs/STATUS.md:54-58`). Er ist d
 **entweder** live in Thunderbird 140 ESR widerlegen (`docs/quickstart.md`) **oder** umsetzen.
 
 **Fix (empfohlene Umsetzung):** Einmalig
-`browser.scripting.messageDisplay.registerScripts([{ id: 'thundy-ui', js: ['messageDisplayScript.js'], runAt: 'document_idle' }])`
+`browser.scripting.messageDisplay.registerScripts([{ id: 'thundy-ui', js: ['message_display.js'], runAt: 'document_idle' }])`
 registrieren (Skript im XPI, keine Remote-Ressourcen). Das Skript holt seinen Zustand per
 `browser.runtime.sendMessage(...)` vom Hintergrundskript; der Hintergrund ermittelt die Nachricht des Absenders
 über `messageDisplay.getDisplayedMessages(sender.tab.id)` und antwortet mit Banner-, Warn- und Hover-Daten. Damit

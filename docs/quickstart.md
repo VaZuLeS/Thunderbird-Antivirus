@@ -64,7 +64,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
   und Thunderbird-APIs wie `messages.*` oder `messageDisplay.*` nicht kennt); `scripts/filter-lint-warnings.js`
   kennt diese Liste.
 - `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.zip` (Dateiname aus dem
-  Add-on-Namen). Aktueller Inhalt: **18 Dateien / 238.482 Bytes entpackt** (neu: `message_display.js`). Die
+  Add-on-Namen). Aktueller Inhalt: **18 Dateien / 238.851 Bytes entpackt** (neu: `message_display.js`). Die
   Ausschlüsse für Testdateien, `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und
   Build-Artefakte stehen in `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`);
   `node scripts/verify-package.js ./build` prüft anschließend Dateiliste und Größe des Pakets.

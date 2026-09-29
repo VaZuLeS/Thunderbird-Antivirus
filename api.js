@@ -322,13 +322,6 @@ try {
 }
 })();
 
-function createEl(tag, className = '', textContent = '') {
-    const el = document.createElement(tag);
-    if (className) el.className = className;
-    if (textContent) el.textContent = textContent;
-    return el;
-}
-
 function renderInProgressStatus(json_data, hybrid_sha, card) {
     const pStatus = document.createElement('p');
     pStatus.className = "text-warning";
