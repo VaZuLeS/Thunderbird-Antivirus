@@ -1,5 +1,44 @@
 # Store-Readiness-Review 1.6 — „Thundy AV – Email Scanner for Thunderbird“
 
+> **Umsetzungsstand (dieser Branch): alle unten analysierten Befunde sind abgearbeitet.** Der Abschnitt
+> [0. Umsetzung](#0-umsetzung) listet für jeden Befund die konkrete Änderung und den Nachweis. Die Analyse-
+> kapitel 1–7 beschreiben den **vorgefundenen** Stand (Commit `1a72c45`) und bleiben als Begründung stehen.
+
+---
+
+## 0. Umsetzung
+
+Ausgangspunkt der Analyse war Commit `1a72c45`; die Korrekturen liegen in den darauf folgenden Commits
+(`49850f3` Blocker/Hohe Risiken, `8b2fc84` Lokalisierung). Verifikation nach der Umsetzung:
+
+```bash
+npm test                       # 430 Tests, 0 Fehler
+npm run pre-submit-checks      # 0 Fehler, 1 Warnung (fehlende Screenshots)
+npx web-ext lint --source-dir . --output json   # 0 Fehler, 25 bekannte Thunderbird-False-Positives
+node scripts/verify-package.js ./build          # 18 Dateien, 238 482 Bytes
+```
+
+| Befund | Umsetzung | Nachweis |
+|---|---|---|
+| **B1** `menus` fehlte | `menus` in `manifest.json` deklariert; Permission-Tabellen und Reviewer-Notizen ergänzt | `manifest.json`, `scripts/pre-submit-checks.js` (neuer Namespace-Check), `background.test.js` |
+| **B2** Injektion über `scripting.executeScript` | Neues, einmalig registriertes Message-Display-Skript `message_display.js` (`scripting.messageDisplay.registerScripts`), Zustandsübergabe über `getMessageUiState` + Broadcast `thundy:messageState`; `executeScript`-Pfad entfernt | `background.js` (`registerMessageDisplayScript`, `buildMessageUiState`, `handleGetMessageUiState`), `message_display.js`, `message_display.test.js` (17 Tests) |
+| **B3** Time-of-Click nur kosmetisch | Echte Klick-Interception im Message-Display-Skript: Prüfung über `checkLinkState` (lokales Verdikt/urlscan.io), Blockade bei MALICIOUS/TIMEOUT/ERROR, Fail-Closed für nicht prüfbare Schemes, Freigabe durch den Nutzer („Link trotzdem öffnen“), In-Memory-Set statt DOM-Attribut; `handleCheckLinkState` ist damit wieder erreichbar | `message_display.js`, `background.js` (`handleOpenVerifiedLink`), Tests in `message_display.test.js` |
+| **B4** Popup fragte ohne Zustimmung ab | Klarer Abbruch im Popup, solange `externalAnalysisConsent` aus ist (kein `fetch`, keine Upload-Buttons) + Tests | `api.js`, `api.test.js` (Describe „popup consent gate“) |
+| **H1** Deklarationssemantik | `data_collection_permissions: { required: ["none"], optional: ["personalCommunications"] }`; zusätzlich wird die eingebaute Kategorie-Zustimmung im Optionsdialog angefragt (Feature-Detection) und im Hintergrund in `mayTransmitExternally()` erzwungen | `manifest.json`, `options.js`, `background.js`, `pre-submit-checks.js` |
+| **H2/M6** Doku-Drift | README/README.de/STATUS/Listing/Reviewer-Notizen/Datenschutz/CHANGELOG auf den neuen Stand gebracht (Zahlen, Funktionen, offene Punkte) | Doku-Commit |
+| **H3** Kein Gate für Permissions/CI | Pre-Submit-Checks prüfen jetzt Namespace ⇔ Permission, Datenkonsent-Deklaration, registriertes Skript und Lokalisierungs-Keys; vollständige CI-Definition in `docs/ci/ci.yml` (Übernahme in `.github/workflows/` scheitert weiter an der fehlenden `workflows`-Berechtigung des Tokens) | `scripts/pre-submit-checks.js`, `scripts/pre-submit-checks.test.js` |
+| **M1** Überbreite Host-Patterns | `optional_host_permissions` auf die 5 tatsächlich genutzten Origins reduziert | `manifest.json` |
+| **M2** UI nur deutsch | Optionsseite und Popup vollständig über `_locales/{en,de}` + `browser.i18n` lokalisierbar (157 Strings, deutsche Fallbacks im Code, `en` als Standard-Locale); Katalog-Konsistenz wird geprüft | `db.js`, `options.js/html`, `api.js`, `popup.html`, `_locales/*`, `db.test.js` |
+| **M3** Popup-Tab-Auflösung | `messageDisplay.getDisplayedMessages()` ohne `tabId` (Fallback Tabs-API) | `api.js` |
+| **M7** Produktname | Popup-Titel/-Überschrift = Add-on-Name | `popup.html` |
+| **M8** Fehler nur im Log / tote Pfade | Registrierungsfehler erzeugen eine Notification; zusätzlich zwei latente `ReferenceError`s im Popup behoben (`syncFragment`, `container`), die das Anzeigen gespeicherter Ergebnisse verhinderten; Option „Auto-Scan“ funktional umgesetzt (`autoScanLinksOfMessage`) | `background.js`, `api.js`, Tests |
+
+**Weiterhin offen und in dieser Umgebung nicht leistbar** (unverändert Punkte 6.1–6.4): manuelle Live-Verifikation
+in Thunderbird 140 ESR, echte Screenshots, Signierung/Einreichung bei addons.thunderbird.net, Übernahme der
+vollständigen CI-Workflows mit einem Token, das die `workflows`-Berechtigung besitzt.
+
+---
+
 **Prüfgegenstand:** Repository `VaZuLeS/Thunderbird-Antivirus`, Branch `cline/ktzgfrzf`, Arbeitsstand
 `manifest.json` Version **1.6**, Add-on-ID `thundy-av@bludau-it-services.de`
 **Zielplattform:** Thunderbird Add-ons Store (ATN, addons.thunderbird.net) — Listung + Signierung
