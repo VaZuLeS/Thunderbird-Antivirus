@@ -26,39 +26,43 @@ function escapeHTML(str) {
     return res + s.substring(last);
 }
 
-let apikey_hybridanalysis;
+// Zustimmung zur externen Analyse. Das Popup überträgt selbst keine Daten an
+// Dritte: Jede Anbieter-Abfrage läuft als Nachricht an den Hintergrund, der
+// Zustimmung und Host-Berechtigung erzwingt (siehe fetch_hybrid_report).
+let externalAnalysisConsent = false;
+
+// Zuletzt angezeigte Nachricht, damit eine Änderung der Zustimmung die Ansicht
+// erneut aufbauen kann (browser.storage.onChanged).
+let displayedPopupMessage = null;
+
+const CONSENT_NOTICE_ID = 'thundy-consent-notice';
+const CONSENT_REQUIRED_NOTE = 'Hinweis: Manuelle Uploads und URL-Scans erfordern die Zustimmung zur externen Analyse. Ohne Zustimmung lehnt der Hintergrund die Anfrage ab.';
 
 (async () => {
-let result = await browser.storage.local.get('apikey');
-apikey_hybridanalysis = result.apikey;
+try {
+    await initPopup();
+} catch (error) {
+    // Kein Pfad darf werfen: auch ein unerwarteter Fehler endet in einer Karte.
+    console.error('Unerwarteter Fehler beim Aufbau der Popup-Ansicht:', error && error.name ? error.name : 'Error');
+    safeRenderUnexpectedErrorCard();
+}
+})();
 
-if (!apikey_hybridanalysis) {
-    let container = document.getElementById('hybrid_analysis_api_content');
-    container.textContent = '';
-    let alertDiv = document.createElement('div');
-    alertDiv.className = 'alert-error';
-    alertDiv.setAttribute('role', 'alert');
-    let strong = document.createElement('strong');
-    strong.textContent = 'Warnung:';
-    alertDiv.appendChild(strong);
+// Baut die Popup-Ansicht auf. Als benannte Funktion, damit ein Fehler beim
+// Aufbau nicht als unbehandelte Rejection endet.
+async function initPopup() {
+// Die Zustimmung wird vor jeder Anzeige und vor jedem Anbieter-Zugriff gelesen.
+const settings = (await browser.storage.local.get(['externalAnalysisConsent'])) || {};
+externalAnalysisConsent = settings.externalAnalysisConsent === true;
 
-    let messageSpan = document.createElement('span');
-    messageSpan.id = 'api-key-error-msg';
-    messageSpan.textContent = ' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.';
-    alertDiv.appendChild(messageSpan);
-
-    let btnSettings = document.createElement('button');
-    btnSettings.className = 'btn-primary mt-2 ml-2';
-    btnSettings.textContent = 'Einstellungen öffnen';
-    btnSettings.setAttribute('aria-describedby', 'api-key-error-msg');
-    btnSettings.addEventListener('click', () => {
-        browser.runtime.openOptionsPage();
+// Schaltet der Nutzer die Zustimmung um, wird die Ansicht sofort neu aufgebaut.
+if (browser.storage && browser.storage.onChanged && typeof browser.storage.onChanged.addListener === 'function') {
+    browser.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName && areaName !== 'local') return;
+        if (!changes || !Object.prototype.hasOwnProperty.call(changes, 'externalAnalysisConsent')) return;
+        externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
+        renderPopupAnalysis(displayedPopupMessage).catch(() => {});
     });
-    alertDiv.appendChild(document.createElement('br'));
-    alertDiv.appendChild(btnSettings);
-
-    container.appendChild(alertDiv);
-    return;
 }
 
 // Der Benutzer hat auf unseren Button geklickt, holen Sie sich den aktiven Tab im aktuellen Fenster mit
@@ -77,28 +81,145 @@ if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages
     message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
 }
 
-// Ohne Zustimmung zu externer Analyse wird nichts übertragen - das muss im
-// Popup sichtbar sein, bevor der Nutzer Uploads auslöst.
-const settings = await browser.storage.local.get(['externalAnalysisConsent']);
-const externalAnalysisConsent = settings.externalAnalysisConsent === true;
+displayedPopupMessage = message;
 
-if (!message) {
-    let container = document.getElementById('hybrid_analysis_api_content');
+await renderPopupAnalysis(message);
+}
+
+// ---------------------------------------------------------------------------
+// Popup-Anzeige: Container, Zustimmung und Fehlerkarten
+// ---------------------------------------------------------------------------
+
+// Rendert die Fehlerkarte, ohne selbst werfen zu können.
+function safeRenderUnexpectedErrorCard() {
+    try {
+        renderUnexpectedErrorCard(getPopupContainer());
+    } catch (error) {
+        console.error('Popup-Fehlerkarte konnte nicht gerendert werden:', error && error.name ? error.name : 'Error');
+    }
+}
+
+function getPopupContainer() {
+    return document.getElementById('hybrid_analysis_api_content');
+}
+
+// Nimmt entweder einen DOM-Container oder eine Sink-Funktion (syncFragment)
+// entgegen, damit beide Aufrufarten unterstützt werden.
+function toNodeSink(target) {
+    if (typeof target === 'function') {
+        return target;
+    }
+    if (target && typeof target.appendChild === 'function') {
+        return (node) => target.appendChild(node);
+    }
+    return () => {};
+}
+
+// Hängt einen Knoten (Element oder DocumentFragment) an den Zielcontainer an,
+// wenn er Inhalt hat. Leere Fragmente werden verworfen.
+function appendIfNotEmpty(target, node) {
+    if (!node) return false;
+    if (typeof node.hasChildNodes === 'function' && !node.hasChildNodes()) {
+        return false;
+    }
+    toNodeSink(target)(node);
+    return true;
+}
+
+function isExternalAnalysisConsentEnabled() {
+    return externalAnalysisConsent === true;
+}
+
+// Leert den Container und setzt den Consent-Hinweis sofort wieder: Der Hinweis
+// darf während des Ladens der Daten nicht verschwinden.
+function clearPopupContainer(container) {
+    if (!container) return;
     container.textContent = '';
-    let emptyCard = document.createElement('div');
-    emptyCard.className = 'card card-info mt-3';
-    emptyCard.setAttribute('role', 'status');
-    let msg = document.createElement('p');
-    msg.className = 'text-info';
-    msg.textContent = "Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.";
-    emptyCard.appendChild(msg);
-    container.appendChild(emptyCard);
-    return;
+    if (!isExternalAnalysisConsentEnabled()) {
+        appendConsentNotice(container);
+    }
+}
+
+// Sichtbarer Hinweis (eigene Karte, role="status"), dass ohne Zustimmung nichts
+// an Dritte übertragen wird. Ohne Zustimmung führt das Popup keine Abfrage aus.
+function appendConsentNotice(container, extraMessage) {
+    if (!container) return null;
+
+    const existing = document.getElementById(CONSENT_NOTICE_ID);
+    if (existing && typeof existing.remove === 'function') {
+        existing.remove();
+    }
+
+    const consentCard = document.createElement('div');
+    consentCard.id = CONSENT_NOTICE_ID;
+    consentCard.className = 'card card-warn mb-3';
+    consentCard.setAttribute('role', 'status');
+
+    const consentP = document.createElement('p');
+    consentP.textContent = 'Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.';
+    consentCard.appendChild(consentP);
+
+    if (extraMessage) {
+        const extraP = document.createElement('p');
+        extraP.textContent = extraMessage;
+        consentCard.appendChild(extraP);
+    }
+
+    const consentButton = document.createElement('button');
+    consentButton.type = 'button';
+    consentButton.className = 'btn-primary mt-2';
+    consentButton.textContent = 'Einstellungen öffnen';
+    consentButton.addEventListener('click', () => browser.runtime.openOptionsPage());
+    consentCard.appendChild(consentButton);
+
+    container.appendChild(consentCard);
+    return consentCard;
+}
+
+function appendStatusCard(container, text, className = 'card card-info mb-3') {
+    if (!container) return;
+    const card = document.createElement('div');
+    card.className = className;
+    card.setAttribute('role', 'status');
+    const p = document.createElement('p');
+    p.className = 'text-info';
+    p.textContent = text;
+    card.appendChild(p);
+    container.appendChild(card);
+}
+
+function renderUnexpectedErrorCard(targetContainer) {
+    const container = targetContainer || getPopupContainer();
+    if (!container) return;
+
+    clearPopupContainer(container);
+
+    const errDiv = document.createElement('div');
+    errDiv.className = 'alert-error';
+    errDiv.setAttribute('role', 'alert');
+
+    const errMsg = document.createElement('span');
+    errMsg.id = 'unexpected-error-msg';
+    errMsg.textContent = 'Unerwarteter Fehler beim Laden der Analyseergebnisse.';
+    errDiv.appendChild(errMsg);
+
+    const btnSettings = document.createElement('button');
+    btnSettings.className = 'btn-primary mt-2 ml-2';
+    btnSettings.textContent = 'Einstellungen öffnen';
+    btnSettings.setAttribute('aria-describedby', 'unexpected-error-msg');
+    btnSettings.addEventListener('click', () => {
+        browser.runtime.openOptionsPage();
+    });
+    errDiv.appendChild(document.createElement('br'));
+    errDiv.appendChild(btnSettings);
+
+    container.appendChild(errDiv);
 }
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
-const updateGridField = (id, value, fallbackText) => {
+function updateGridField(id, value, fallbackText) {
     const el = document.getElementById(id);
+    if (!el) return;
     if (value && String(value).trim() !== '') {
         el.textContent = value;
         el.style.color = "";
@@ -108,169 +229,265 @@ const updateGridField = (id, value, fallbackText) => {
         el.style.color = "var(--text-muted)";
         el.style.fontStyle = "italic";
     }
-};
+}
 
-updateGridField("subject", message.subject, "(Kein Betreff)");
-updateGridField("from", message.author, "(Unbekannter Absender)");
-updateGridField("MessageHeaderID", message.headerMessageId, "(Keine ID)");
+// Baut die Popup-Ansicht vollständig auf. Wird auch nach einer Änderung der
+// Zustimmung (browser.storage.onChanged) erneut aufgerufen.
+async function renderPopupAnalysis(message) {
+    const container = getPopupContainer();
 
-// Initialen Lade-Status für async Operationen setzen
-let apiContainer = document.getElementById('hybrid_analysis_api_content');
-if (apiContainer) {
-    let cardDiv = document.createElement('div');
-    cardDiv.id = 'thundy-initial-loading';
-    cardDiv.className = 'card card-info mb-3';
+    if (!message) {
+        appendStatusCard(container, "Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.", 'card card-info mt-3');
+        return;
+    }
 
-    let loadingP = document.createElement('p');
-    loadingP.setAttribute('aria-live', 'polite');
-    loadingP.setAttribute('role', 'status');
+    updateGridField("subject", message.subject, "(Kein Betreff)");
+    updateGridField("from", message.author, "(Unbekannter Absender)");
+    updateGridField("MessageHeaderID", message.headerMessageId, "(Keine ID)");
+
+    // Der Consent-Hinweis steht sichtbar über dem Ladehinweis und wird beim
+    // Laden der Daten nicht mehr entfernt.
+    if (!isExternalAnalysisConsentEnabled()) {
+        appendConsentNotice(container);
+    }
+
+    // Initialen Lade-Status für async Operationen setzen
+    if (container) {
+        const cardDiv = document.createElement('div');
+        cardDiv.id = 'thundy-initial-loading';
+        cardDiv.className = 'card card-info mb-3';
+
+        const loadingP = document.createElement('p');
+        loadingP.setAttribute('aria-live', 'polite');
+        loadingP.setAttribute('role', 'status');
         loadingP.setAttribute('aria-busy', 'true');
-    loadingP.className = 'text-info';
-    loadingP.textContent = 'Lade Analyseergebnisse...';
+        loadingP.className = 'text-info';
+        loadingP.textContent = 'Lade Analyseergebnisse...';
 
-    cardDiv.appendChild(loadingP);
-    apiContainer.appendChild(cardDiv);
+        cardDiv.appendChild(loadingP);
+        container.appendChild(cardDiv);
+    }
+
+    await loadStoredRecordAndRender(message, container);
 }
 
-// Hinweis, wenn die externe Analyse (Datenübermittlung) nicht freigegeben ist.
-if (!externalAnalysisConsent && apiContainer) {
-    let consentCard = document.createElement('div');
-    consentCard.id = 'thundy-consent-notice';
-    consentCard.className = 'card card-warn mb-3';
-    consentCard.setAttribute('role', 'status');
-
-    let consentP = document.createElement('p');
-    consentP.textContent = 'Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.';
-    consentCard.appendChild(consentP);
-
-    let consentButton = document.createElement('button');
-    consentButton.type = 'button';
-    consentButton.className = 'btn-primary mt-2';
-    consentButton.textContent = 'Einstellungen öffnen';
-    consentButton.addEventListener('click', () => browser.runtime.openOptionsPage());
-    consentCard.appendChild(consentButton);
-
-    apiContainer.appendChild(consentCard);
-}
-
-try {
-
-    // Öffnen Sie die Datenbank
-    let openRequest = indexedDB.open("thunderbird_av", 3);
-
-    openRequest.onupgradeneeded = function (e) {
-        let db = e.target.result;
-
-        if (!db.objectStoreNames.contains('hybridanalysis')) {
-            db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
+// Liest den lokal gespeicherten Datensatz und baut daraus die Ansicht.
+function loadStoredRecordAndRender(message, container) {
+    return new Promise((resolve) => {
+        let openRequest;
+        try {
+            // Öffnen Sie die Datenbank
+            openRequest = indexedDB.open("thunderbird_av", 3);
+        } catch (error) {
+            console.error('IndexedDB konnte nicht geöffnet werden:', error && error.name ? error.name : 'Error');
+            renderUnexpectedErrorCard(container);
+            resolve();
+            return;
         }
-    };
 
+        openRequest.onupgradeneeded = function (e) {
+            const db = e.target.result;
 
-    openRequest.onsuccess = async function (e) {
-        let db = e.target.result;
-        // Erstellen Sie eine Transaktion und öffnen Sie den Object Store
-        let transaction = db.transaction(["hybridanalysis"], "readonly");
-        let store = transaction.objectStore("hybridanalysis");
-        // Führen Sie eine Anfrage aus, um den Hash für die angegebene MessageHeaderId zu finden.
-        let getRequest = store.get(message.headerMessageId);
-        getRequest.onsuccess = async function (e) {
-            const record = getRequest.result;
-            const hasAttachments = record && record.attachments && record.attachments.length > 0;
-            const hasLinks = record && record.links && record.links.length > 0;
-
-            if (hasAttachments || hasLinks) {
-                document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
-
-                let fetchTasks = [];
-
-                if (hasAttachments) {
-                    for (const att of record.attachments) {
-                        const hash256 = att.hybrid_sha256;
-                        if (att.state === 'UNKNOWN') {
-                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, syncFragment);
-                        } else {
-                            fetchTasks.push((frag) =>
-                                get_hybrid_report_by_sha256({
-                                    hybrid_sha: hash256,
-                                    attachmentName: att.attachment_name,
-                                    messageId: message.id,
-                                    partName: att.partName,
-                                    headerMessageId: message.headerMessageId,
-                                    virustotal_stats: att.virustotal_stats
-                                }, frag)
-                            );
-                        }
-                    }
-                }
-
-                if (hasLinks) {
-                    processRecordLinks(record.links, message.headerMessageId, syncFragment, fetchTasks);
-                }
-
-                if (fetchTasks.length > 0) {
-                    await Promise.all(fetchTasks.map(async task => {
-                        let taskFragment = document.createDocumentFragment();
-                        await task(taskFragment);
-                        if (taskFragment.hasChildNodes()) {
-                            container.appendChild(taskFragment);
-                        }
-                    }));
-                }
-            } else {
-                let container = document.getElementById('hybrid_analysis_api_content');
-                if (container) container.textContent = '';
-                let emptyCard = document.createElement('div');
-                emptyCard.className = 'card card-info mb-3';
-                emptyCard.setAttribute('role', 'status');
-                let p1 = document.createElement('p');
-                p1.className = 'text-info';
-                p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.';
-                emptyCard.appendChild(p1);
-                container.appendChild(emptyCard);
+            if (!db.objectStoreNames.contains('hybridanalysis')) {
+                db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
             }
         };
-    };
 
-    openRequest.onerror = function(e) {
-        let container = document.getElementById('hybrid_analysis_api_content');
-        if (container) container.textContent = '';
-        let emptyCard = document.createElement('div');
-        emptyCard.className = 'card card-info mb-3';
-        emptyCard.setAttribute('role', 'status');
-        let p2 = document.createElement('p');
-        p2.className = 'text-info';
-        p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.';
-        emptyCard.appendChild(p2);
-        container.appendChild(emptyCard);
+        openRequest.onsuccess = function (e) {
+            const db = e.target.result;
+            // Erstellen Sie eine Transaktion und öffnen Sie den Object Store
+            const transaction = db.transaction(["hybridanalysis"], "readonly");
+            const store = transaction.objectStore("hybridanalysis");
+            // Führen Sie eine Anfrage aus, um den Hash für die angegebene MessageHeaderId zu finden.
+            const getRequest = store.get(message.headerMessageId);
+
+            getRequest.onsuccess = async function () {
+                try {
+                    await renderRecordView(getRequest.result, message, container);
+                } catch (error) {
+                    console.error('Fehler beim Anzeigen der Analyseergebnisse:', error && error.name ? error.name : 'Error');
+                    renderUnexpectedErrorCard(container);
+                } finally {
+                    resolve();
+                }
+            };
+        };
+
+        openRequest.onerror = function () {
+            appendStatusCard(container, 'Keine Analyseergebnisse für diese E-Mail vorhanden.');
+            resolve();
+        };
+    });
+}
+
+// Zeigt einen gespeicherten Datensatz an. Ohne Zustimmung werden ausschließlich
+// lokal vorliegende Daten und die manuellen Aktionen dargestellt - es wird kein
+// getHybridOverview ausgelöst und keine Fetch-Aufgabe gebaut.
+async function renderRecordView(record, message, container) {
+    clearPopupContainer(container);
+
+    const attachments = (record && Array.isArray(record.attachments)) ? record.attachments : [];
+    const links = (record && Array.isArray(record.links)) ? record.links : [];
+    const hasAttachments = attachments.length > 0;
+    const hasLinks = links.length > 0;
+
+    if (!hasAttachments && !hasLinks) {
+        appendStatusCard(container, 'Keine Anhänge oder URLs für diese E-Mail gefunden.');
+        return;
     }
-} catch (error) {
-    let container = document.getElementById('hybrid_analysis_api_content');
-    if (container) {
-        container.textContent = '';
-        let errDiv = document.createElement('div');
-        errDiv.className = 'alert-error';
-        errDiv.setAttribute('role', 'alert');
 
-        let errMsg = document.createElement('span');
-        errMsg.id = 'unexpected-error-msg';
-        errMsg.textContent = 'Unerwarteter Fehler beim Laden der Analyseergebnisse.';
-        errDiv.appendChild(errMsg);
+    if (!isExternalAnalysisConsentEnabled()) {
+        renderStoredDataWithoutConsent(record, message, container);
+        return;
+    }
 
-        let btnSettings = document.createElement('button');
-        btnSettings.className = 'btn-primary mt-2 ml-2';
-        btnSettings.textContent = 'Einstellungen öffnen';
-        btnSettings.setAttribute('aria-describedby', 'unexpected-error-msg');
-        btnSettings.addEventListener('click', () => {
-            browser.runtime.openOptionsPage();
-        });
-        errDiv.appendChild(document.createElement('br'));
-        errDiv.appendChild(btnSettings);
+    // Zustimmung erteilt: Jede Abfrage läuft über den Hintergrund.
+    const fetchTasks = [];
+    // Hängt einen Knoten nur an, wenn er Inhalt hat (deckt den früheren
+    // Namensfehler "syncFragment is not defined" ab).
+    const syncFragment = (node) => appendIfNotEmpty(container, node);
 
-        container.appendChild(errDiv);
+    if (hasAttachments) {
+        for (const att of attachments) {
+            if (!att || typeof att !== 'object') continue;
+            const hash256 = att.hybrid_sha256;
+            if (att.state === 'UNKNOWN') {
+                renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, syncFragment);
+            } else {
+                fetchTasks.push((frag) =>
+                    get_hybrid_report_by_sha256({
+                        hybrid_sha: hash256,
+                        attachmentName: att.attachment_name,
+                        messageId: message.id,
+                        partName: att.partName,
+                        headerMessageId: message.headerMessageId,
+                        virustotal_stats: att.virustotal_stats
+                    }, frag)
+                );
+            }
+        }
+    }
+
+    if (hasLinks) {
+        processRecordLinks(links, message.headerMessageId, syncFragment, fetchTasks);
+    }
+
+    if (fetchTasks.length > 0) {
+        await Promise.all(fetchTasks.map(async task => {
+            const taskFragment = document.createDocumentFragment();
+            await task(taskFragment);
+            syncFragment(taskFragment);
+        }));
     }
 }
-})();
+
+// ---------------------------------------------------------------------------
+// Ohne Zustimmung: gespeicherte Daten und manuelle Aktionen
+// ---------------------------------------------------------------------------
+
+// Stellt ausschließlich lokal vorhandene Daten dar und bietet die manuellen
+// Aktionen an. Ohne Zustimmung wird nichts an einen Anbieter übertragen.
+function renderStoredDataWithoutConsent(record, message, container) {
+    if (!container) return;
+
+    if (!isExternalAnalysisConsentEnabled()) {
+        appendConsentNotice(container);
+    }
+
+    const attachments = (record && Array.isArray(record.attachments)) ? record.attachments : [];
+    const links = (record && Array.isArray(record.links)) ? record.links : [];
+
+    for (const att of attachments) {
+        if (att && typeof att === 'object') {
+            renderStoredAttachmentCard(att, message, container);
+        }
+    }
+
+    for (const link of links) {
+        if (link && typeof link === 'object') {
+            renderStoredLinkCard(link, message, container);
+        }
+    }
+}
+
+function renderStoredAttachmentCard(att, message, container) {
+    const hash = att.hybrid_sha256 || '';
+    const safeHash = escapeHTML(hash);
+
+    const card = document.createElement('div');
+    card.className = 'card card-info mb-3';
+    card.id = `stored-attachment-${safeHash}`;
+    card.setAttribute('role', 'status');
+
+    card.appendChild(createEl('h2', '', `Anhang: ${att.attachment_name || 'Unbekannt'}`));
+    card.appendChild(createEl('p', '', `SHA-256: ${hash || 'N/A'}`));
+    card.appendChild(createEl('p', '', `Status: ${att.state || 'UNKNOWN'}`));
+    if (att.virustotal_stats && typeof att.virustotal_stats === 'object') {
+        renderVirusTotalStats(att.virustotal_stats, card);
+    }
+    card.appendChild(createEl('p', 'text-warning', CONSENT_REQUIRED_NOTE));
+    container.appendChild(card);
+
+    createUploadButton(card, {
+        hash: hash,
+        safeHash: safeHash,
+        attachmentName: att.attachment_name,
+        messageId: message.id,
+        partName: att.partName,
+        headerMessageId: message.headerMessageId
+    });
+    createCdrButton(card, safeHash, att.attachment_name, message.id, att.partName);
+}
+
+function renderStoredLinkCard(link, message, container) {
+    const card = document.createElement('div');
+    card.className = 'card card-info mb-3';
+    card.setAttribute('role', 'status');
+
+    card.appendChild(createEl('h2', '', `URL: ${link.url || 'Unbekannt'}`));
+    card.appendChild(createEl('p', '', `Status: ${link.state || 'UNKNOWN'}`));
+    if (link.hybrid_sha256) {
+        card.appendChild(createEl('p', '', `SHA-256: ${link.hybrid_sha256}`));
+    }
+    card.appendChild(createEl('p', 'text-warning', CONSENT_REQUIRED_NOTE));
+    container.appendChild(card);
+
+    createUrlScanButton(card, link.url, message.headerMessageId);
+}
+
+// Erzeugt eine sichere, eindeutige ID für eine URL.
+function computeUrlId(url) {
+    const u8 = new TextEncoder().encode(url || '');
+    // ⚡ Bolt Optimization: Use a pre-allocated array and .join() to avoid string concatenation overhead.
+    const hex = new Array(u8.length);
+    for (let j = 0; j < u8.length; j++) hex[j] = byteToHex[u8[j]];
+    return hex.join('');
+}
+
+// Erzeugt den manuellen URL-Scan-Button samt Statuszeile innerhalb einer Karte.
+function createUrlScanButton(card, url, headerMessageId) {
+    const urlId = computeUrlId(url);
+
+    const btnUpload = document.createElement('button');
+    btnUpload.id = `btn-upload-${urlId}`;
+    btnUpload.className = "btn-primary mt-2";
+    btnUpload.textContent = "URL jetzt scannen";
+    btnUpload.setAttribute('aria-describedby', `upload-status-${urlId}`);
+    card.appendChild(btnUpload);
+
+    const pStatus = document.createElement('p');
+    pStatus.id = `upload-status-${urlId}`;
+    pStatus.className = "mt-2";
+    pStatus.setAttribute('aria-live', 'polite');
+    pStatus.setAttribute('role', 'status');
+    card.appendChild(pStatus);
+
+    btnUpload.addEventListener('click', function() {
+        handleUrlScanClick(this, url, urlId, headerMessageId);
+    });
+
+    return urlId;
+}
 
 function createEl(tag, className = '', textContent = '') {
     const el = document.createElement(tag);
@@ -510,40 +727,47 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
 
 const hybrid_report_cache = new Map();
 
-async function fetch_hybrid_report(hybrid_sha) {
+// Kein direkter Netzwerkzugriff im Popup: Der Hintergrund prüft Zustimmung und
+// Host-Berechtigung und antwortet mit
+//   { status: 'success', data: <Provider-JSON> }
+// oder
+//   { status: 'error', code: 'EXTERNAL_ANALYSIS_DISABLED' | 'permission_denied' |
+//     'no_api_key' | 'http_<code>' | 'network_error', message: '<lokalisierter Text>' }.
+async function fetch_hybrid_report({ hybrid_sha, attachmentName, messageId, partName, headerMessageId }) {
     if (hybrid_report_cache.has(hybrid_sha)) {
         return hybrid_report_cache.get(hybrid_sha);
     }
 
-    const options = {
-        method: 'GET',
-        url: 'https://hybrid-analysis.com/api/v2/overview/' + hybrid_sha,
-        headers: {
-            accept: 'application/json',
-            'api-key': apikey_hybridanalysis,
-            'user-agent': 'Falcon',
-        },
-    };
+    const requestPromise = requestHybridOverview({ hybrid_sha, attachmentName, messageId, partName, headerMessageId });
 
-    const fetchPromise = (async () => {
-        try {
-            const response = await fetch(options.url, options);
-            const json_data = await response.json();
+    hybrid_report_cache.set(hybrid_sha, requestPromise);
+    return requestPromise;
+}
 
-            const result = { response, json_data };
-            if (response.status !== 200) {
-                hybrid_report_cache.delete(hybrid_sha);
-            }
+async function requestHybridOverview({ hybrid_sha, attachmentName, messageId, partName, headerMessageId }) {
+    try {
+        const response = await browser.runtime.sendMessage({
+            action: 'getHybridOverview',
+            sha256: hybrid_sha,
+            headerMessageId: headerMessageId,
+            attachmentName: attachmentName,
+            partName: partName
+        });
 
-            return result;
-        } catch (error) {
+        if (!response || typeof response !== 'object' || typeof response.status !== 'string') {
             hybrid_report_cache.delete(hybrid_sha);
-            throw error;
+            return { status: 'error', code: 'network_error', message: 'Unerwartete Antwort des Hintergrunddienstes.' };
         }
-    })();
 
-    hybrid_report_cache.set(hybrid_sha, fetchPromise);
-    return fetchPromise;
+        if (response.status !== 'success') {
+            hybrid_report_cache.delete(hybrid_sha);
+        }
+
+        return response;
+    } catch (error) {
+        hybrid_report_cache.delete(hybrid_sha);
+        throw error;
+    }
 }
 
 function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, headerMessageId }) {
@@ -637,20 +861,55 @@ function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partNa
     setupCdrButton({ hybrid_sha, attachmentName, messageId, partName });
 }
 
-function handle_hybrid_report_error(response, attachmentName, targetContainer) {
-    console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
-    let errDiv1 = document.createElement('div');
+const ERROR_CODES_WITH_SETTINGS_BUTTON = ['permission_denied', 'no_api_key', 'http_401', 'http_403'];
+
+// Baut den Fehlertext aus dem Antwortvertrag des Hintergrunds. attachmentName
+// bleibt der lokale Dateiname; es werden keine URLs protokolliert.
+function buildAnalysisErrorMessage(code, message, attachmentName) {
+    const target = attachmentName ? ` für Element ${attachmentName}` : '';
+    let base = message;
+
+    if (!base) {
+        if (code === 'permission_denied') {
+            base = 'Keine Berechtigung für die externe Analyse';
+        } else if (code === 'no_api_key') {
+            base = 'Kein API-Schlüssel für den Analyse-Dienst im Add-on hinterlegt';
+        } else if (code === 'network_error') {
+            base = 'Netzwerkfehler bei der Abfrage des Analyse-Dienstes';
+        } else if (/^http_\d+$/.test(code)) {
+            base = `API Error: ${code.slice(5)}`;
+        } else {
+            base = `Analyse nicht möglich (${code})`;
+        }
+    }
+
+    if (code === 'permission_denied' && !message) {
+        return `${base}${target}. Bitte erteilen Sie dem Add-on die Host-Berechtigung für den Analyse-Dienst.`;
+    }
+
+    if (code === 'no_api_key' || code === 'http_401' || code === 'http_403') {
+        return `${base}${target} (Möglicherweise ungültiger oder fehlender API-Schlüssel).`;
+    }
+
+    return `${base}${target}.`;
+}
+
+function handle_hybrid_report_error(errorResponse, attachmentName, targetContainer) {
+    const code = (errorResponse && errorResponse.code) ? String(errorResponse.code) : 'unknown_error';
+    // Nur der Fehlercode wird protokolliert - keine URLs, keine Empfängerdaten.
+    console.error('Hybrid Analysis Abfrage fehlgeschlagen, Fehlercode:', code);
+
+    const errDiv1 = document.createElement('div');
     errDiv1.className = 'alert-error';
     errDiv1.setAttribute('role', 'alert');
 
-    let errMsg = document.createElement('span');
+    const errMsg = document.createElement('span');
     errMsg.id = 'api-error-msg-key';
-    errMsg.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+    errMsg.textContent = buildAnalysisErrorMessage(code, errorResponse && errorResponse.message, attachmentName);
     errDiv1.appendChild(errMsg);
 
-    if (response.status === 401 || response.status === 403) {
-        errMsg.textContent += ' (Möglicherweise ungültiger oder fehlender API-Schlüssel).';
-        let btnSettings = document.createElement('button');
+    if (ERROR_CODES_WITH_SETTINGS_BUTTON.includes(code)) {
+        const btnSettings = document.createElement('button');
         btnSettings.className = 'btn-primary mt-2 ml-2';
         btnSettings.textContent = 'Einstellungen öffnen';
         btnSettings.setAttribute('aria-describedby', 'api-error-msg-key');
@@ -661,32 +920,48 @@ function handle_hybrid_report_error(response, attachmentName, targetContainer) {
         errDiv1.appendChild(btnSettings);
     }
 
-    let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
-    container.appendChild(errDiv1);
+    toNodeSink(targetContainer || getPopupContainer())(errDiv1);
 }
 
 function handle_hybrid_report_fetch_error(error, attachmentName, targetContainer) {
-    console.error('Fetch error:', error);
-    let errDiv2 = document.createElement('div');
+    // Nur der Fehlername wird protokolliert, nicht die Meldung (kann URLs enthalten).
+    console.error('Netzwerkfehler bei der Hybrid-Analysis-Abfrage:', (error && error.name) ? error.name : 'Error');
+    const errDiv2 = document.createElement('div');
     errDiv2.className = 'alert-error';
     errDiv2.setAttribute('role', 'alert');
-    errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`;
-    let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
-    container.appendChild(errDiv2);
+    errDiv2.textContent = `Netzwerkfehler: ${(error && error.message) ? error.message : 'Unbekannter Fehler'} für Element ${attachmentName}`;
+    toNodeSink(targetContainer || getPopupContainer())(errDiv2);
 }
 
 async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }, targetContainer) {
-    try {
-        const { response, json_data } = await fetch_hybrid_report(hybrid_sha);
+    const container = targetContainer || getPopupContainer();
 
-        if (response.status === 200) {
-            render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }, targetContainer);
-        } else {
-            handle_hybrid_report_error(response, attachmentName, targetContainer);
-        }
+    let response;
+    try {
+        response = await fetch_hybrid_report({ hybrid_sha, attachmentName, messageId, partName, headerMessageId });
     } catch (error) {
-        handle_hybrid_report_fetch_error(error, attachmentName, targetContainer);
+        handle_hybrid_report_fetch_error(error, attachmentName, container);
+        return;
     }
+
+    if (response && response.status === 'success') {
+        // Die Detail-Felder des Provider-JSON dürfen fehlen.
+        const json_data = (response.data && typeof response.data === 'object') ? response.data : {};
+        render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }, container);
+        return;
+    }
+
+    const code = (response && response.code) ? String(response.code) : 'unknown_error';
+
+    if (code === 'EXTERNAL_ANALYSIS_DISABLED') {
+        // Der Hintergrund ist die maßgebliche Instanz: Die Zustimmung liegt nicht
+        // (mehr) vor. Hinweis anzeigen - kein Retry, kein weiterer Aufruf.
+        externalAnalysisConsent = false;
+        appendConsentNotice(container, response && response.message);
+        return;
+    }
+
+    handle_hybrid_report_error({ code, message: response && response.message }, attachmentName, container);
 }
 
 function handleUrlScanClick(btn, url, urlId, headerMessageId) {
@@ -744,24 +1019,19 @@ function processRecordLinks(links, headerMessageId, syncFragment, fetchTasks) {
 }
 
 function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
-    let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
-    // Erzeuge eine sichere, eindeutige ID für die URL
-    const u8 = new TextEncoder().encode(url);
-    // ⚡ Bolt Optimization: Use a pre-allocated array and .join() to avoid string concatenation overhead.
-    const hex = new Array(u8.length);
-    for (let j = 0; j < u8.length; j++) hex[j] = byteToHex[u8[j]];
-    let urlId = hex.join('');
+    // Nimmt sowohl einen Container als auch syncFragment (Sink) entgegen.
+    const sink = toNodeSink(targetContainer || getPopupContainer());
 
-    let card = document.createElement('div');
+    const card = document.createElement('div');
     card.className = "card card-info mb-3";
-    card.id = `upload-container-${urlId}`;
+    card.id = `upload-container-${computeUrlId(url)}`;
     card.setAttribute('role', 'status');
 
-    let h2 = document.createElement('h2');
+    const h2 = document.createElement('h2');
     h2.textContent = `URL: ${url}`;
     card.appendChild(h2);
 
-    let pInfo = document.createElement('p');
+    const pInfo = document.createElement('p');
     pInfo.className = "text-info";
     pInfo.appendChild(document.createTextNode("Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie "));
     const infoStrong = document.createElement('strong');
@@ -770,25 +1040,9 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
     pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
 
-    let btnUpload = document.createElement('button');
-    btnUpload.id = `btn-upload-${urlId}`;
-    btnUpload.className = "btn-primary mt-2";
-    btnUpload.textContent = "URL jetzt scannen";
-    btnUpload.setAttribute('aria-describedby', `upload-status-${urlId}`);
-    card.appendChild(btnUpload);
+    createUrlScanButton(card, url, headerMessageId);
 
-    let pStatus = document.createElement('p');
-    pStatus.id = `upload-status-${urlId}`;
-    pStatus.className = "mt-2";
-    pStatus.setAttribute('aria-live', 'polite');
-    pStatus.setAttribute('role', 'status');
-    card.appendChild(pStatus);
-
-    container.appendChild(card);
-
-    btnUpload.addEventListener('click', function() {
-        handleUrlScanClick(this, url, urlId, headerMessageId);
-    });
+    sink(card);
 }
 
 function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
@@ -945,9 +1199,6 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId });
     createCdrButton(card, safeHash, attachmentName, messageId, partName);
 
-    if (targetContainer) {
-        targetContainer.appendChild(card);
-    } else {
-        document.getElementById('hybrid_analysis_api_content').appendChild(card);
-    }
+    // Nimmt sowohl einen Container als auch syncFragment (Sink) entgegen.
+    toNodeSink(targetContainer || getPopupContainer())(card);
 }

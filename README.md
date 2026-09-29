@@ -13,7 +13,7 @@ submits the minimum data required to external analysis services.
 | Add-on name | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6 – see [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.0 – see [CHANGELOG.md](CHANGELOG.md) |
 | License | MIT – see [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
@@ -129,8 +129,8 @@ Note: a locally built XPI is unsigned. Release builds of Thunderbird refuse unsi
 enforcement is disabled (`about:config` → `xpinstall.signatures.required = false`, not available in all builds); for
 distribution use `npx web-ext sign --channel listed` / `--channel unlisted` or the Add-ons Store signing. Release
 packages are produced with `web-ext build --source-dir .` and cleaned up by the `ignoreFiles` rules in
-`web-ext-config.mjs` (supplemented by `.webextignore`), so that test
-files, `docs/`, `scripts/`, `examples/` and lockfiles are not shipped.
+`web-ext-config.mjs` (`web-ext` and `addons-linter` do not read a `.webextignore` file — that file was removed),
+so that test files, `docs/`, `scripts/`, `examples/` and lockfiles are not shipped.
 
 ## Build, lint and test
 
@@ -147,6 +147,13 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 - `web-ext lint` currently reports **0 errors**. The remaining warnings are almost exclusively `UNSUPPORTED_API`
   notices, because the linter validates against a Firefox target and does not know Thunderbird-only APIs such as
   `messages.*` or `messageDisplay.*`. Review the list before releasing.
+- The package currently contains **17 files / 216.804 bytes** uncompressed (ZIP 58.997 bytes), measured on
+  2026-09-29 with the commands above plus `node scripts/verify-package.js /tmp/build-docs`; the values change with
+  every code change (details: [docs/store_listing.md](docs/store_listing.md), section 9).
+- The pre-submit checks also verify that the data classification in `manifest.json` is valid
+  (`required: ["none"]`, `optional: ["personalCommunications"]`), that every privileged API used at runtime has its
+  permission in `manifest.permissions` (e.g. `browser.menus` → `menus`) and that `manifest.json` and
+  `package.json` carry exactly the same version.
 - CI (`.github/workflows/ci.yml`) runs on every push and pull request with Node 22: `npm ci`, the pre-submit
   checks (real exit code), `node --test background.test.js` and `npx web-ext lint`.
 - Extended workflow definitions (full `npm test`, lint filter for the known Thunderbird false positives,
@@ -162,7 +169,8 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 | `messagesRead` | Read the displayed message (subject, sender, body, attachments) so it can be analysed; used only for the message you open and when a scan is triggered. |
 | `storage` | Store settings, the consent flag, per-sender opt-in flags, provider API keys and the local scan cache. |
 | `notifications` | Report scan start, submission and errors in a system notification. |
-| `scripting` | Inject the banner, the threat warning and the time-of-click hover notice into the message view (extension-bundled code only, no remote code). |
+| `menus` | Add the two context menu entries that start a link scan ("Scan this link with Thundy AV" in the `link` context, "Scan all links of this message" in the `message_display_action` context). |
+| `scripting` | Inject the banner, the threat warning and the time-of-click marker into the message view (extension-bundled code only, no remote code). |
 | `downloads` | Save a locally sanitized ("disarmed") HTML attachment through the browser download manager. |
 
 Optional host permissions (`optional_host_permissions` in `manifest.json`) – each one is requested at runtime, only
@@ -176,9 +184,12 @@ when the matching provider is used:
 | `https://urlhaus-api.abuse.ch/*` | URLhaus (abuse.ch) |
 | `https://api.abuseipdb.com/*` | AbuseIPDB |
 
-`manifest.json` also declares `browser_specific_settings.gecko.data_collection_permissions` with the **required**
-category `personalCommunications`. It documents that the add-on can process message content; data is only transmitted
-after the global consent and a user action, and only to providers you have granted access to.
+`manifest.json` also declares `browser_specific_settings.gecko.data_collection_permissions` as
+`{ "required": ["none"], "optional": ["personalCommunications"] }`: nothing is collected by default, and the
+transmission of message content to analysis providers is an optional data type that needs your consent. The optional
+data type is requested together with the host permission when you enable the consent in the options dialog
+(`browser.permissions.request({ data_collection: ["personalCommunications"] })`), and removed again when you switch
+the consent off. Time-of-click checks the target **locally** and transmits nothing.
 
 ## Adding another analysis service
 

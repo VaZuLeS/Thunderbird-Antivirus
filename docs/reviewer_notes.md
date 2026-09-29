@@ -2,7 +2,7 @@
 
 **Add-on name:** Thundy AV – Email Scanner for Thunderbird (short name: "Thundy AV")
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.6
+**Version:** 1.6.0
 **Manifest:** MV3 (`manifest_version: 3`), `strict_min_version: 140.0`
 **License:** MIT
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus
@@ -10,7 +10,10 @@
 **Support / maintainer contact:** Jan Bludau (VaZuLeS), bludau.it.services@gmail.com
 
 This document explains to reviewers what the add-on does, why each permission is needed, exactly
-which data leaves the machine (and when it does not), and how to test the add-on.
+which data leaves the machine (and when it does not), and how to test the add-on. It describes the
+submission state after the independent store-readiness audit
+([docs/STORE_READINESS_AUDIT.md](STORE_READINESS_AUDIT.md), 2026-09-29); points that are still open
+are marked as such in section 9.
 
 ## 1. Purpose
 
@@ -21,6 +24,11 @@ locally (e.g. "is this file/hash known to be malicious?", "is this URL a known p
 the add-on can optionally query third-party analysis services. Those queries are opt-in and
 disabled by default.
 
+The message display action (the add-on's button in the message header area) opens a popup with the
+header data of the displayed message and the results stored for it. The popup performs no provider
+request while the global consent is off — it shows the consent notice instead; the background script
+additionally rejects such a request with `EXTERNAL_ANALYSIS_DISABLED` and the popup does not retry.
+
 ## 2. Permissions and why they are needed
 
 ### 2.1 Required permissions
@@ -28,6 +36,7 @@ disabled by default.
 | Permission | Why it is required |
 |---|---|
 | `messagesRead` | The core function is to inspect the message the user has opened: headers (sender, recipients, subject, date, Received), the text and HTML body, links, and the list of attachments including their content (which is hashed locally). Without this permission the add-on cannot perform any check. |
+| `menus` | Adds the two context menu entries that start a link scan: **"Scan this link with Thundy AV"** in the `link` context (right-click on a link) and **"Scan all links of this message"** in the `message_display_action` context (the add-on's button in the message header area). Thunderbird documents `menus.create()`/`menus.onClicked` as "Required permissions: menus", and both contexts used here (`link`, `message_display_action`) are valid since Thunderbird 89. Without the permission the code would silently skip the menu creation and the entries would never appear. |
 | `storage` | Stores the user's settings (privacy tier, whitelist/blacklist, scan options), the consent flags (`externalAnalysisConsent`, `scanningEnabledSenders`) and the API keys the user enters, in `browser.storage.local`. No remote storage. |
 | `scripting` | Injects the UI banners into the message view: the per-message opt-in banner with its two buttons, the threat/warning banner, and the Time-of-Click marker on links. All injected code is bundled with the add-on (`scripting.executeScript({ func })` / `files`); no remote code is fetched or evaluated. |
 | `notifications` | Shows short system notifications for actions that are not visible in the message pane, e.g. "scan started", "scan submitted (job ID …)" and error messages for the context-menu link scan. This gives feedback when the scan is triggered from an entry point without its own result area. |
@@ -68,7 +77,41 @@ There is no `<all_urls>`, no `webRequest`, no `tabs` and no `cookies` permission
    - `balanced`: additionally full attachments of *unknown* files are uploaded to Hybrid Analysis;
    - `max`: additionally URLs from the message are submitted to Hybrid Analysis.
 
-### 3.2 Why the add-on implements its own consent dialog
+### 3.2 Data collection declaration (`data_collection_permissions`)
+
+`manifest.json` declares the data collection as follows:
+
+```json
+"browser_specific_settings": {
+  "gecko": {
+    "data_collection_permissions": {
+      "required": ["none"],
+      "optional": ["personalCommunications"]
+    }
+  }
+}
+```
+
+- `required: ["none"]` states what the code does by default: the add-on collects and transmits
+  nothing. No data leaves the computer until the user has explicitly enabled the global consent
+  (section 3.1) **and** triggered a scan.
+- The transmission of message content (SHA-256 hashes, complete attachments, URLs, domains, IP
+  addresses) is declared as an **optional** data type, `personalCommunications`, because it can be
+  switched on and off by the user at any time.
+- The optional data type is requested in the same user action that enables the consent checkbox in
+  the options dialog ("Allow external analysis" → *Save*), together with the host permission of the
+  provider whose key was entered:
+
+  ```js
+  await browser.permissions.request({ data_collection: ['personalCommunications'] });
+  ```
+
+  Switching the consent off calls
+  `permissions.remove({ data_collection: ['personalCommunications'] })`. Thunderbird supports
+  `data_collection` in `permissions.request()` (schema `permissions.json`, MV3); versions that do not
+  know the field are detected via `permissions.getAll()` and skip this step without failing.
+
+### 3.3 Why the add-on implements its own consent dialog
 
 Unlike Firefox, Thunderbird does not use the browser's built-in onboarding flow for data-collection
 consent; the Thunderbird add-on documentation states that add-ons must request such consent
@@ -88,12 +131,28 @@ either automatically (sender opted in) or manually ("Scan this message only" / c
 | SHA-256 hash of an attachment | attachment scan, all tiers | Hybrid Analysis (`hybrid-analysis.com`) | check whether the file is already analysed (hash overview) |
 | Complete attachment (file content, file name, MIME type, size) | tier `balanced` and `max`, only when the hash lookup returned no match | Hybrid Analysis (`hybrid-analysis.com`, `api.hybrid-analysis.com`) | static and dynamic analysis in the Falcon Sandbox |
 | URLs from the message | tier `max` | Hybrid Analysis (`hybrid-analysis.com/api/v2/quick-scan/url`) | URL analysis |
-| URLs when the user clicks/checks a link, and links marked for review | whenever an urlscan.io key is configured | urlscan.io (`urlscan.io`) | link/phishing analysis (screenshot-based) |
+| URLs of the message, only for the **automatic** link scan | only when "automatic link scan" is enabled **and** an urlscan.io key is configured | urlscan.io (`urlscan.io`) | link/phishing analysis (screenshot-based); a maximum of 5 URLs per message |
 | Domains extracted from the message body | whenever a URLhaus key is configured | URLhaus (`urlhaus-api.abuse.ch`) | check the domain against malware URL lists |
 | IP addresses found in the `Received` headers | only when a provider + key for IP reputation are configured | AbuseIPDB (`api.abuseipdb.com`) or VirusTotal (`virustotal.com`) | IP reputation |
 
 Inherent to HTTP, each request also reveals the requesting IP address and a user-agent string to the
 respective provider.
+
+### 4.1 Link checks: local (on click) vs. external (on request)
+
+- **Time-of-Click check — purely local, no transmission.** Links in the message view are marked, and
+  when the user clicks one the add-on evaluates the target inside Thunderbird only: URL structure
+  (scheme, embedded credentials, raw IP addresses, punycode), the displayed link text compared with
+  the actual target, the user's own blacklist and the domains that earlier scans reported as
+  malicious. A suspicious target is intercepted with a warning that names the reasons and lets the
+  user decide ("Open anyway" / "Cancel"). **Nothing is transmitted for this check** — it also works
+  without consent, without API keys and offline.
+- **External link scan — only on request.** The two context menu entries ("Scan this link with
+  Thundy AV", "Scan all links of this message") submit the link(s) the user selected to Hybrid
+  Analysis (`quick-scan/url`; up to 20 links for "all links of this message"). This requires the
+  global consent and the host permission for `hybrid-analysis.com`. Independent of the context menu,
+  the *automatic* link scan submits up to 5 URLs of a message to urlscan.io — only when "automatic
+  link scan" is enabled, an urlscan.io key is configured and the host permission has been granted.
 
 What is **not** transmitted, regardless of tier:
 
@@ -171,7 +230,9 @@ No other hosts are contacted. All requests are HTTPS.
    `balanced` or `max` for a second run if you want to verify uploads.
 9. Click **Save**. Because a key is now stored, Thunderbird asks for the optional host permission
    for `hybrid-analysis.com` — grant it. Without this grant no request is made and the add-on
-   reports that the permission is missing.
+   reports that the permission is missing. Thunderbird also asks for the optional data type
+   `personalCommunications` (section 3.2) in the same user action; on versions that do not know that
+   field the step is skipped silently.
 10. Optional negative test: leave the consent checkbox off, save, open a message with an attachment
     and confirm that **no** network request to a provider occurs (Thunderbird Developer Tools →
     Network, or a local proxy).
@@ -204,6 +265,28 @@ No other hosts are contacted. All requests are HTTPS.
     `hybridanalysis` (database `thunderbird_av`, version 3) is emptied; the confirmation
     "Cache erfolgreich geleert." is shown. The stored consent and settings are not affected.
 
+### 8.6 Reviewer quick test with the sample message („Reviewer-Schnelltest mit Beispieldaten“)
+
+18. Import the sample message `test/fixtures/reviewer-sample.eml`: in Thunderbird right-click a local
+    folder → **"Import Message(s)…"** (in newer versions **☰ → Tools → Import → "Import mail from a
+    file"**), or drag and drop the file onto the folder. The file is a harmless RFC 822/MIME message
+    with a `text/plain` + `text/html` alternative part and a small PDF attachment (600 bytes, Base64
+    body); all addresses and links use the reserved documentation domains `example.com` and
+    `example.org`, so no real personal data is imported.
+19. What the sample lets you check **without an API key and without consent** (all of it local):
+    - the local link extraction: the two links of the HTML body are found and evaluated,
+    - the Time-of-Click marker on both links and the local check when one is clicked (section 4.1),
+    - the mismatch reason: the second link displays `https://www.example.com/konto-hilfe` but points to
+      `https://login.example.org/verify?account=reviewer`, so the warning names "Displayed link text
+      differs from the target" and offers *Open anyway* / *Cancel*; the first link matches its own
+      text and must **not** produce that reason,
+    - the attachment list, which shows `thundy-av-testdokument.pdf`,
+    - the negative check: with the consent switched off, no request may appear in Thunderbird's
+      developer tools (Network tab) while the message is opened or a link is clicked.
+20. With consent and an API key (section 8.2) the same message additionally exercises the external
+    hash lookup of the attachment (Hybrid Analysis and, if configured, VirusTotal) and — in tier
+    `max` — the URL upload.
+
 ## 9. Known open items
 
 These points are deliberately documented as not yet complete and are **not** claims of finished work:
@@ -211,19 +294,26 @@ These points are deliberately documented as not yet complete and are **not** cla
 - Manual verification of the banner injection in Thunderbird 140 ESR is still outstanding. Until it
   is done, the in-message banners (opt-in banner, threat banner, Time-of-Click marker) are the parts
   of the add-on that are least verified in a real Thunderbird installation.
-- There are **no real screenshots** yet; the repository only contains SVG placeholders
-  (`docs/screenshot-*.svg`, `docs/screenshots/*.svg`). See `docs/store_assets.md`.
-- The add-on has **not** been submitted to the Thunderbird Add-ons Store; there is no store URL and
-  no store download button.
+- There are **no real screenshots** yet; the repository only contains three SVG placeholders in
+  `docs/screenshots/` (`inline_optin_banner.svg`, `options_page.svg`, `warning_banner.svg`), which are
+  sketches and not UI captures. See `docs/store_assets.md` and `docs/store_listing.md`.
+- The add-on has **not** been submitted to the Thunderbird Add-ons Store; there is no store URL and no
+  store download button, and the XPI for the submission has not been signed yet.
 - No dedicated reviewer test key is included: the API key required for a full end-to-end run is the
-  reviewer's own free provider account (step 8.2). Without a key, the local checks still work, but
-  no external analysis can be triggered.
+  reviewer's own free provider account (step 8.2). Without a key, the local checks still work, but no
+  external analysis can be triggered. A harmless sample message *is* included
+  (`test/fixtures/reviewer-sample.eml`, section 8.6).
+- The public releases and tags up to `v1.18.0` in the repository come from the development branch
+  `cline/nhfqgaap` and are neither store releases nor store-signed; the store submission uses version
+  `1.6.0` from `main`. See `docs/STATUS.md`, section "Release-/Versionslage".
 
 ## 10. Documents and contact
 
 - Privacy policy: `docs/privacy_policy.md`, hosted at
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
 - Store listing texts: `docs/store_listing.md`
+- Change history and fixed findings: `CHANGELOG.md`, `docs/STORE_READINESS_AUDIT.md`
+- Sample message for reviewers: `test/fixtures/reviewer-sample.eml` (section 8.6)
 - Asset status: `docs/store_assets.md`, capture guide: `docs/screenshot_capture.md`
 - Maintainer and support: Jan Bludau (VaZuLeS), bludau.it.services@gmail.com
 - Repository and issue tracker: https://github.com/VaZuLeS/Thunderbird-Antivirus

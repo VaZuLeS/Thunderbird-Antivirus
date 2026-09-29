@@ -66,7 +66,17 @@ describe('options.js', () => {
                 },
                 permissions: {
                     contains: async () => true,
-                    request: async () => true
+                    getAll: async () => ({ data_collection: ['personalCommunications'] }),
+                    request: async (spec) => {
+                        context.browser.permissions.requests.push(spec);
+                        return true;
+                    },
+                    remove: async (spec) => {
+                        context.browser.permissions.removals.push(spec);
+                        return true;
+                    },
+                    requests: [],
+                    removals: []
                 }
             },
             openDB: async (name, version) => ({ name, version }),
@@ -123,18 +133,24 @@ describe('options.js', () => {
         assert.strictEqual(privacyTierSelect.disabled, false);
         assert.strictEqual(privacyTierSelect.title, '');
 
-        // Check autoScanLinks disables timeOfClickProtection
+        // Auto-Scan (autoScanLinks) und Time-of-Click-Schutz sind unabhängige
+        // Optionen: Auto-Scan deaktiviert die Time-of-Click-Option nicht mehr.
         const autoScanLinksCheckbox = context.document.getElementById('autoScanLinks');
         const timeOfClickProtectionCheckbox = context.document.getElementById('timeOfClickProtection');
 
-        // Initial is checked (true) in mock setup
-        assert.strictEqual(timeOfClickProtectionCheckbox.disabled, true);
-        assert.strictEqual(timeOfClickProtectionCheckbox.title, 'Time-of-Click Protection ist irrelevant, wenn Auto-Scan aktiv ist');
+        // Mock-Setup: autoScanLinks = true, timeOfClickProtection = false
+        assert.strictEqual(timeOfClickProtectionCheckbox.disabled, false);
+        assert.strictEqual(timeOfClickProtectionCheckbox.title, '');
 
         autoScanLinksCheckbox.checked = false;
         autoScanLinksCheckbox.dispatchEvent(changeEvent);
         assert.strictEqual(timeOfClickProtectionCheckbox.disabled, false);
         assert.strictEqual(timeOfClickProtectionCheckbox.title, '');
+
+        // Beide Optionen bleiben getrennt schaltbar
+        timeOfClickProtectionCheckbox.checked = true;
+        assert.strictEqual(timeOfClickProtectionCheckbox.checked, true);
+        assert.strictEqual(autoScanLinksCheckbox.checked, false);
     });
 
     it('should save settings when save button is clicked', async () => {
@@ -292,6 +308,144 @@ describe('options.js', () => {
         assert.strictEqual(statusSpan.className, 'text-danger ml-2');
         assert.strictEqual(statusSpan.style.display, 'none');
     });
+
+    it('should keep autoScanLinks and timeOfClickProtection independent of each other', async () => {
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const autoScanLinksCheckbox = context.document.getElementById('autoScanLinks');
+        const timeOfClickProtectionCheckbox = context.document.getElementById('timeOfClickProtection');
+        const consentCheckbox = context.document.getElementById('externalAnalysisConsent');
+        const urlscanApikeyInput = context.document.getElementById('urlscanApikey');
+        const urlhausApikeyInput = context.document.getElementById('urlhausApikey');
+
+        const changeEvent = context.document.createEvent('Event');
+        changeEvent.initEvent('change', true, true);
+        const inputEvent = context.document.createEvent('Event');
+        inputEvent.initEvent('input', true, true);
+
+        // Ausgangslage des Mocks: Auto-Scan an, Zustimmung an, urlscan-Schlüssel vorhanden
+        assert.strictEqual(autoScanLinksCheckbox.checked, true);
+        assert.strictEqual(autoScanLinksCheckbox.disabled, false);
+        assert.strictEqual(autoScanLinksCheckbox.title, '');
+        assert.strictEqual(timeOfClickProtectionCheckbox.disabled, false);
+        assert.strictEqual(timeOfClickProtectionCheckbox.title, '');
+
+        // Ohne Anbieter-Schlüssel bleibt Auto-Scan bedienbar – es erscheint nur der Hinweis
+        urlscanApikeyInput.value = '';
+        urlhausApikeyInput.value = '';
+        urlscanApikeyInput.dispatchEvent(inputEvent);
+        assert.notStrictEqual(autoScanLinksCheckbox.title, '');
+        assert.strictEqual(autoScanLinksCheckbox.disabled, false);
+        assert.strictEqual(timeOfClickProtectionCheckbox.disabled, false);
+
+        // Schlüssel wieder vorhanden -> Hinweis verschwindet
+        urlscanApikeyInput.value = 'urlscan-key';
+        urlscanApikeyInput.dispatchEvent(inputEvent);
+        assert.strictEqual(autoScanLinksCheckbox.title, '');
+
+        // Ohne Zustimmung erscheint der Hinweis erneut, nichts wird deaktiviert
+        consentCheckbox.checked = false;
+        consentCheckbox.dispatchEvent(changeEvent);
+        assert.notStrictEqual(autoScanLinksCheckbox.title, '');
+        assert.strictEqual(autoScanLinksCheckbox.disabled, false);
+        assert.strictEqual(timeOfClickProtectionCheckbox.disabled, false);
+
+        // Time-of-Click-Schutz ist unabhängig vom Auto-Scan aktivierbar
+        timeOfClickProtectionCheckbox.checked = true;
+        assert.strictEqual(timeOfClickProtectionCheckbox.checked, true);
+        assert.strictEqual(timeOfClickProtectionCheckbox.disabled, false);
+    });
+
+
+    it('should request the optional data collection permission when external analysis consent is enabled', async () => {
+        const permissions = context.browser.permissions;
+        context.document.getElementById('apikey').value = 'consent-key';
+        context.document.getElementById('externalAnalysisConsent').checked = true;
+
+        context.document.getElementById('save').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(permissions.requests.length, 1);
+        // Der Aufruf entsteht im vm-Kontext -> Felder einzeln prüfen (Realm-übergreifend)
+        assert.deepStrictEqual(permissions.requests[0].data_collection.length, 1);
+        assert.strictEqual(permissions.requests[0].data_collection[0], 'personalCommunications');
+        assert.strictEqual(permissions.removals.length, 0);
+        assert.strictEqual(context.browser.storage.local.lastSetData.externalAnalysisConsent, true);
+        assert.strictEqual(context.document.getElementById('save').disabled, false);
+    });
+
+    it('should return the optional data collection permission when the consent is switched off', async () => {
+        const permissions = context.browser.permissions;
+        context.document.getElementById('apikey').value = 'consent-key';
+        context.document.getElementById('externalAnalysisConsent').checked = false;
+
+        context.document.getElementById('save').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(permissions.removals.length, 1);
+        assert.strictEqual(permissions.removals[0].data_collection.length, 1);
+        assert.strictEqual(permissions.removals[0].data_collection[0], 'personalCommunications');
+        assert.strictEqual(permissions.requests.length, 0);
+        assert.strictEqual(context.browser.storage.local.lastSetData.externalAnalysisConsent, false);
+    });
+
+    it('should use the existing status hint (no alert) when the data collection permission is denied', async () => {
+        const permissions = context.browser.permissions;
+        permissions.request = async (spec) => {
+            permissions.requests.push(spec);
+            return false; // Nutzer lehnt die optionale Datenfreigabe ab
+        };
+        let alertCalls = 0;
+        context.alert = () => { alertCalls += 1; };
+        context.document.getElementById('apikey').value = 'consent-key';
+        context.document.getElementById('externalAnalysisConsent').checked = true;
+
+        context.document.getElementById('save').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(alertCalls, 0);
+        const statusSpan = context.document.getElementById('saveStatus');
+        assert.match(statusSpan.textContent, /Datenfreigabe wurde nicht erteilt/);
+        assert.strictEqual(context.browser.storage.local.lastSetData.externalAnalysisConsent, true);
+        assert.strictEqual(context.document.getElementById('save').disabled, false);
+        assert.strictEqual(context.document.getElementById('save').textContent, 'Speichern');
+    });
+
+
+    it('should not call the data collection API on older Thunderbird versions without data_collection', async () => {
+        const permissions = context.browser.permissions;
+        permissions.getAll = async () => ({}); // ältere Version: keine data_collection-Angabe
+        let requestCalled = false;
+        let removeCalled = false;
+        permissions.request = async () => { requestCalled = true; return true; };
+        permissions.remove = async () => { removeCalled = true; return true; };
+        context.document.getElementById('apikey').value = 'consent-key';
+        context.document.getElementById('externalAnalysisConsent').checked = true;
+
+        context.document.getElementById('save').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(requestCalled, false);
+        assert.strictEqual(removeCalled, false);
+        assert.notStrictEqual(context.browser.storage.local.lastSetData, null);
+        assert.strictEqual(context.document.getElementById('save').disabled, false);
+        assert.strictEqual(context.document.getElementById('save').textContent, 'Speichern');
+    });
+
+    it('should keep saving when permissions.getAll is not available at all', async () => {
+        const permissions = context.browser.permissions;
+        delete permissions.getAll; // ältere Version ohne Feature-Erkennungs-API
+        context.document.getElementById('apikey').value = 'consent-key';
+        context.document.getElementById('externalAnalysisConsent').checked = true;
+
+        context.document.getElementById('save').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(context.browser.storage.local.lastSetData.externalAnalysisConsent, true);
+        assert.strictEqual(context.document.getElementById('save').disabled, false);
+        assert.strictEqual(context.document.getElementById('save').textContent, 'Speichern');
+    });
+
 
     it('should enforce security attributes on all API key input fields in options.html', () => {
         const html = fs.readFileSync(path.join(__dirname, 'options.html'), 'utf8');

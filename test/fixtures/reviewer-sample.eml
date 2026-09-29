@@ -1,0 +1,77 @@
+From: Thundy AV Testabsender <test-absender@example.com>
+To: Reviewer <reviewer@example.org>
+Subject: Thundy AV reviewer sample - harmless test message
+Date: Tue, 29 Sep 2026 10:00:00 +0000
+Message-ID: <thundy-av-reviewer-sample-1@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----=_ThundyAV_Sample_Mixed"
+
+This is a multi-part message in MIME format.
+
+------=_ThundyAV_Sample_Mixed
+Content-Type: multipart/alternative; boundary="----=_ThundyAV_Sample_Alt"
+
+------=_ThundyAV_Sample_Alt
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+Hallo,
+
+dies ist eine unbedenkliche Testnachricht fuer die Store-Pruefung von Thundy AV.
+Sie enthaelt zwei harmlose Links und einen kleinen PDF-Anhang (nicht ausfuehrbar).
+
+Link 1 (Anzeigetext und Ziel stimmen ueberein):
+https://example.com/support/login
+
+Link 2 (der Anzeigetext nennt eine andere Domain als das Ziel):
+https://login.example.org/verify?account=reviewer
+
+Alle Adressen und Links zeigen auf die fuer Dokumentation reservierten Domains
+example.com und example.org (RFC 2606). Es sind keine echten Personen-, Kunden-
+oder Zugangsdaten enthalten.
+
+Viele Gruesse
+Thundy AV Testabsender
+
+------=_ThundyAV_Sample_Alt
+Content-Type: text/html; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+
+<html>
+<body>
+<p>Hallo,</p>
+<p>dies ist eine unbedenkliche Testnachricht fuer die Store-Pruefung von Thundy AV.
+Sie enthaelt zwei harmlose Links und einen kleinen PDF-Anhang (nicht ausfuehrbar).</p>
+<ul>
+<li>Link 1 - Anzeigetext und Ziel stimmen ueberein:
+<a href="https://example.com/support/login">https://example.com/support/login</a></li>
+<li>Link 2 - der Anzeigetext nennt eine andere Domain als das Ziel:
+<a href="https://login.example.org/verify?account=reviewer">https://www.example.com/konto-hilfe</a></li>
+</ul>
+<p>Alle Adressen und Links zeigen auf die fuer Dokumentation reservierten Domains
+example.com und example.org (RFC 2606). Es sind keine echten Personen-, Kunden-
+oder Zugangsdaten enthalten.</p>
+<p>Viele Gruesse<br>Thundy AV Testabsender</p>
+</body>
+</html>
+
+------=_ThundyAV_Sample_Alt--
+
+------=_ThundyAV_Sample_Mixed
+Content-Type: application/pdf; name="thundy-av-testdokument.pdf"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="thundy-av-testdokument.pdf"
+
+JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2Jq
+CjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2Jq
+CjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAzMjAg
+MjAwXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA1IDAgUiA+PiA+PiAvQ29udGVudHMgNCAw
+IFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCA1NyA+PgpzdHJlYW0KQlQgL0YxIDEyIFRm
+IDIwIDEyMCBUZCAoVGh1bmR5IEFWIHJldmlld2VyIHNhbXBsZSkgVGogRVQKZW5kc3RyZWFtCmVu
+ZG9iago1IDAgb2JqCjw8IC9UeXBlIC9Gb250IC9TdWJ0eXBlIC9UeXBlMSAvQmFzZUZvbnQgL0hl
+bHZldGljYSA+PgplbmRvYmoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDA5
+IDAwMDAwIG4gCjAwMDAwMDAwNTggMDAwMDAgbiAKMDAwMDAwMDExNSAwMDAwMCBuIAowMDAwMDAw
+MjQxIDAwMDAwIG4gCjAwMDAwMDAzNDcgMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA2IC9Sb290
+IDEgMCBSID4+CnN0YXJ0eHJlZgo0MTcKJSVFT0YK
+
+------=_ThundyAV_Sample_Mixed--

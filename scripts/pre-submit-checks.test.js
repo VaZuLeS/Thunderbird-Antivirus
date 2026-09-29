@@ -20,7 +20,7 @@ function baseManifest(overrides = {}) {
   return Object.assign({
     manifest_version: 3,
     name: '__MSG_extensionName__',
-    version: '1.6',
+    version: '1.6.0',
     description: 'Opt-in scanner for email attachments and links.',
     homepage_url: 'https://example.org/addon/',
     default_locale: 'en',
@@ -114,7 +114,7 @@ describe('pre-submit-checks', () => {
     assert.ok(result.errors.some((e) => e.includes('data_collection_permissions is missing')));
   });
 
-  it('fails when data collection declares "none" combined with optional permissions', () => {
+  it('accepts "none" as required value combined with an optional data type', () => {
     const result = runChecks(createExtension({}, {
       browser_specific_settings: {
         gecko: {
@@ -124,7 +124,117 @@ describe('pre-submit-checks', () => {
         }
       }
     }));
-    assert.ok(result.errors.some((e) => e.includes('contradictory')));
+    assert.deepStrictEqual(result.errors, []);
+    assert.ok(result.passes.some((p) => p.includes('personalCommunications') && p.includes('(optional)')));
+  });
+
+  it('fails when only "none" is declared although provider host permissions exist', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['none'] }
+        }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('declares "none"') || e.includes('only declares "none"')));
+  });
+
+  it('accepts "none" when no provider host permissions are declared', () => {
+    const result = runChecks(createExtension({}, {
+      optional_host_permissions: [],
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['none'] }
+        }
+      }
+    }));
+    assert.deepStrictEqual(result.errors, []);
+    assert.ok(result.passes.some((p) => p.includes('nothing is collected')));
+  });
+
+  it('fails when data_collection_permissions.required is empty', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: [], optional: ['personalCommunications'] }
+        }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('required must list at least one data type')));
+  });
+
+  it('fails when data_collection_permissions combines "none" with other required data types', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['none', 'personalCommunications'] }
+        }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('combines "none" with other data types')));
+  });
+
+  it('fails on a data type that is not in the allowed taxonomy', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['healthData'] }
+        }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('unknown data_collection_permissions value: healthData')));
+  });
+
+  it('fails when "browser.menus" is used without the menus permission', () => {
+    const result = runChecks(createExtension({
+      'background.js': 'browser.menus.create({ id: "scan-link" });\n'
+    }));
+    assert.ok(result.errors.some((e) => e.includes('browser.menus') && e.includes('"menus" permission is missing')));
+  });
+
+  it('accepts "browser.menus" usage when the menus permission is declared', () => {
+    const result = runChecks(createExtension({
+      'background.js': 'browser.menus.create({ id: "scan-link" });\n'
+    }, { permissions: ['menus', 'messagesRead', 'storage'] }));
+    assert.deepStrictEqual(result.errors, []);
+  });
+
+  it('maps message APIs and browser.storage.local to their permissions', () => {
+    const missing = runChecks(createExtension({
+      'api.js': 'await browser.messages.getFull(1);\n'
+    }, { permissions: ['storage'] }));
+    assert.ok(missing.errors.some((e) => e.includes('browser.messages') && e.includes('"messagesRead" permission is missing')));
+
+    const covered = runChecks(createExtension({
+      'api.js': 'await browser.messageDisplay.getDisplayedMessages(1);\nawait browser.storage.local.get("x");\n'
+    }));
+    assert.deepStrictEqual(covered.errors, []);
+    assert.ok(covered.passes.some((p) => p.includes('privileged Thunderbird APIs used at runtime')));
+  });
+
+  it('fails when package.json and manifest.json versions differ (1.6 vs. 1.6.0)', () => {
+    const result = runChecks(createExtension({
+      'package.json': JSON.stringify({ name: 'demo', version: '1.6' })
+    }));
+    assert.ok(result.errors.some((e) => e.includes('package.json version (1.6) differs from manifest.json version (1.6.0)')));
+  });
+
+  it('accepts identical versions in package.json and manifest.json', () => {
+    const result = runChecks(createExtension({
+      'package.json': JSON.stringify({ name: 'demo', version: '1.6.0' })
+    }));
+    assert.deepStrictEqual(result.errors, []);
+    assert.ok(result.passes.some((p) => p.includes('versions match (1.6.0)')));
   });
 
   it('fails when a forbidden permission is requested', () => {
@@ -197,6 +307,15 @@ describe('pre-submit-checks', () => {
   it('validates the real repository without errors', () => {
     const result = runChecks(REPO_ROOT);
     assert.deepStrictEqual(result.errors, [], 'the repository must pass the pre-submit checks');
+  });
+
+  it('the real manifest declares the menus permission and the optional data classification', () => {
+    const manifest = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'manifest.json'), 'utf8'));
+    assert.ok(manifest.permissions.includes('menus'), 'background.js uses browser.menus, so "menus" must be declared');
+    assert.deepStrictEqual(manifest.browser_specific_settings.gecko.data_collection_permissions, {
+      required: ['none'],
+      optional: ['personalCommunications']
+    });
   });
 
   it('rejects malformed match patterns and accepts valid ones', () => {

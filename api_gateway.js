@@ -50,13 +50,18 @@ class ApiGateway {
             ...this._injectAuthHeaders(url, options),
             signal: controller.signal
         };
+        // Weiterleitungen werden nicht verfolgt: ein Cross-Origin-Redirect könnte
+        // sonst Anbieter-Schlüssel an einen fremden Host weiterreichen.
+        if (fetchOptions.redirect === undefined) {
+            fetchOptions.redirect = 'error';
+        }
 
         try {
             const response = await fetch(url, fetchOptions);
             clearTimeout(id);
 
             if (response.status === 429) {
-                console.warn(`[ApiGateway] Rate limit exceeded (429) for ${url}`);
+                console.warn(`[ApiGateway] Rate limit exceeded (429) for host ${this._hostOf(url)}`);
                 // In a production scenario, you might want to implement retry logic here
             }
 
@@ -64,9 +69,17 @@ class ApiGateway {
         } catch (error) {
             clearTimeout(id);
             if (error.name === 'AbortError') {
-                throw new Error(`[ApiGateway] Request to ${url} timed out after ${timeout}ms`);
+                throw new Error(`[ApiGateway] Request to ${this._hostOf(url)} timed out after ${timeout}ms`);
             }
             throw error; // Let other network errors bubble up
+        }
+    }
+
+    _hostOf(url) {
+        try {
+            return new URL(url).hostname;
+        } catch (e) {
+            return 'unknown host';
         }
     }
 

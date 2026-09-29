@@ -124,21 +124,49 @@ function runChecks(rootDir) {
   if (!gecko.strict_min_version) warn('strict_min_version is not set');
 
   // --- data collection declaration ----------------------------------------
+  // Validation rules verified against the addons-linter of web-ext 10.7 (audit B4):
+  // `required` is mandatory and needs at least one entry; "none" is a valid value and may be
+  // combined with `optional` (e.g. required ["none"] + optional ["personalCommunications"]).
+  const ALLOWED_DATA_TYPES = [
+    'authenticationInfo', 'bookmarksInfo', 'browsingActivity', 'financialAndPaymentInfo', 'healthInfo',
+    'locationInfo', 'personalCommunications', 'personallyIdentifyingInfo', 'searchTerms', 'websiteActivity',
+    'websiteContent', 'technicalAndInteraction', 'none',
+  ];
+
+  const optionalHosts = Array.isArray(manifest.optional_host_permissions) ? manifest.optional_host_permissions : [];
+
   const dcp = gecko.data_collection_permissions;
-  if (!dcp) {
-    fail('browser_specific_settings.gecko.data_collection_permissions is missing: the add-on transmits message data to third parties');
+  if (!dcp || typeof dcp !== 'object' || Array.isArray(dcp)) {
+    fail('browser_specific_settings.gecko.data_collection_permissions is missing or not an object: the key is ' +
+      'mandatory and its "required" list needs at least one data type (use ["none"] when nothing is collected)');
   } else {
     const requiredTypes = Array.isArray(dcp.required) ? dcp.required : [];
     const optionalTypes = Array.isArray(dcp.optional) ? dcp.optional : [];
-    if (requiredTypes.length === 0) fail('data_collection_permissions.required must list at least one data type');
-    if (requiredTypes.includes('none')) {
-      if (optionalTypes.length > 0) fail('data_collection_permissions is contradictory: "none" cannot be combined with optional data types');
-      else fail('data_collection_permissions declares "none" although the add-on transmits message data to analysis providers');
+    if (!Array.isArray(dcp.required)) fail('data_collection_permissions.required must be an array of data types');
+    if (requiredTypes.length === 0) {
+      fail('data_collection_permissions.required must list at least one data type (use ["none"] when nothing is collected)');
     }
-    const allowed = ['authenticationInfo', 'bookmarksInfo', 'browsingActivity', 'financialAndPaymentInfo', 'healthInfo',
-      'locationInfo', 'personalCommunications', 'personallyIdentifyingInfo', 'searchTerms', 'websiteActivity', 'websiteContent', 'technicalAndInteraction', 'none'];
     for (const type of requiredTypes.concat(optionalTypes)) {
-      if (!allowed.includes(type)) fail('unknown data_collection_permissions value: ' + type);
+      if (!ALLOWED_DATA_TYPES.includes(type)) fail('unknown data_collection_permissions value: ' + type);
+    }
+    if (requiredTypes.includes('none') && requiredTypes.length > 1) {
+      fail('data_collection_permissions.required combines "none" with other data types');
+    }
+    // Every transmission to a provider must be declared: if optional host permissions for analysis
+    // providers exist, at least one real data type has to be named in `required` or `optional`. In
+    // other words "none" is only acceptable when the optional list names the transmitted data type.
+    const transmittedTypes = requiredTypes.concat(optionalTypes).filter((type) => type !== 'none');
+    if (optionalHosts.length > 0 && transmittedTypes.length === 0) {
+      fail('optional_host_permissions are declared but data_collection_permissions only declares "none": ' +
+        'the data types sent to analysis providers must be named in the required or optional list ' +
+        '(expected optional: ["personalCommunications"])');
+    } else if (requiredTypes.includes('none') && optionalTypes.length === 0) {
+      ok('data_collection_permissions declares that nothing is collected ("none")');
+    } else if (transmittedTypes.length === 0) {
+      ok('data_collection_permissions declares that nothing is collected ("none")');
+    } else {
+      ok('data_collection_permissions declares ' + Array.from(new Set(transmittedTypes)).join(', ') +
+        (optionalTypes.length > 0 ? ' (optional)' : ' (required)'));
     }
   }
 
@@ -156,7 +184,7 @@ function runChecks(rootDir) {
     fail('optional_permissions is not supported in Thunderbird Manifest V3, use optional_host_permissions: ' + entry);
   }
 
-  const optionalHosts = manifest.optional_host_permissions || [];
+  // `optionalHosts` is computed in the data collection block above.
   if (optionalHosts.length === 0 && permissions.length === 0) warn('no permissions declared at all - is that intended?');
   for (const origin of optionalHosts) {
     if (!MATCH_PATTERN_RE.test(origin)) fail('optional_host_permissions contains an invalid match pattern: ' + origin);
@@ -164,6 +192,39 @@ function runChecks(rootDir) {
   if (optionalHosts.length > 0) ok('optional_host_permissions are valid match patterns (' + optionalHosts.length + ')');
   if (optionalHosts.length > 0 && !errors.some((e) => e.startsWith('data_collection_permissions'))) {
     ok('host permissions are optional and declared for analysis providers');
+  }
+
+  // --- privileged APIs used in the runtime code vs. declared permissions ---
+  // Static mapping API -> required permission. Thunderbird documents for example
+  // `menus.create()`/`menus.onClicked` as "Required permissions: menus", so a runtime call without
+  // the matching manifest permission makes the feature silently unavailable (audit B5). The mapping
+  // is intentionally explicit; a new API call has to be added here deliberately.
+  const PRIVILEGED_API_PERMISSIONS = [
+    { api: 'browser.menus', pattern: /\bbrowser\.menus\b/, permission: 'menus' },
+    { api: 'browser.messages', pattern: /\bbrowser\.messages\./, permission: 'messagesRead' },
+    { api: 'browser.messageDisplay', pattern: /\bbrowser\.messageDisplay\./, permission: 'messagesRead' },
+    { api: 'browser.scripting', pattern: /\bbrowser\.scripting(\.|\b)/, permission: 'scripting' },
+    { api: 'browser.notifications', pattern: /\bbrowser\.notifications\./, permission: 'notifications' },
+    { api: 'browser.downloads', pattern: /\bbrowser\.downloads\./, permission: 'downloads' },
+    { api: 'browser.storage.local', pattern: /\bbrowser\.storage\.local\b/, permission: 'storage' },
+  ];
+  const RUNTIME_API_FILES = ['background.js', 'api.js', 'db.js', 'options.js', 'api_gateway.js'];
+  let checkedApiPairs = 0;
+  for (const runtimeFile of RUNTIME_API_FILES) {
+    const absolute = path.join(rootDir, runtimeFile);
+    if (!fs.existsSync(absolute)) continue;
+    const source = fs.readFileSync(absolute, 'utf8');
+    for (const { api, pattern, permission } of PRIVILEGED_API_PERMISSIONS) {
+      if (!pattern.test(source)) continue;
+      if (permissions.includes(permission)) {
+        checkedApiPairs += 1;
+        continue;
+      }
+      fail(api + ' is used in ' + runtimeFile + ' but the "' + permission + '" permission is missing from manifest.permissions');
+    }
+  }
+  if (checkedApiPairs > 0) {
+    ok('privileged Thunderbird APIs used at runtime are covered by manifest.permissions (' + checkedApiPairs + ' API/permission pair(s))');
   }
 
   // --- Manifest V3 key restrictions ---------------------------------------
@@ -211,17 +272,13 @@ function runChecks(rootDir) {
   if (fs.existsSync(path.join(rootDir, 'package.json'))) {
     try {
       const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
-      const normalize = (value) => String(value).split('-')[0].split('.').map((part) => parseInt(part, 10) || 0);
       if (pkg.version) {
-        const a = normalize(pkg.version);
-        const b = normalize(manifest.version);
-        const length = Math.max(a.length, b.length);
-        const sameVersion = Array.from({ length }, (_, i) => a[i] || 0).join('.') ===
-          Array.from({ length }, (_, i) => b[i] || 0).join('.');
-        if (!sameVersion) {
-          warn('package.json version (' + pkg.version + ') differs from manifest.json version (' + manifest.version + ')');
+        // Exact string comparison (audit M2): the store submission uses the manifest version, and a
+        // drift like "1.6" vs. "1.6.0" between manifest.json and package.json must not pass.
+        if (String(pkg.version) !== String(manifest.version)) {
+          fail('package.json version (' + pkg.version + ') differs from manifest.json version (' + manifest.version + ')');
         } else {
-          ok('package.json and manifest.json versions match');
+          ok('package.json and manifest.json versions match (' + manifest.version + ')');
         }
       }
     } catch (e) {

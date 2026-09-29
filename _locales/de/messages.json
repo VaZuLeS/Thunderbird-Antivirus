@@ -82,6 +82,9 @@
   "notificationTitleError": {
     "message": "Thundy AV Scanner Fehler"
   },
+  "notificationInjectionFailed": {
+    "message": "Die Erweiterung konnte ihr Banner in der Nachrichtenansicht nicht anzeigen. Bitte melden Sie dies zusammen mit Ihrer Thunderbird-Version."
+  },
   "bannerAuthPass": {
     "message": "Absender verifiziert (SPF/DKIM/DMARC bestanden)"
   },
@@ -96,5 +99,64 @@
   },
   "notificationNoLinks": {
     "message": "In dieser Nachricht wurden keine Links gefunden."
+  },
+  "tocLinkMarked": {
+    "message": "Thundy AV: wird beim Klick lokal geprüft"
+  },
+  "tocWarnTitle": {
+    "message": "Thundy AV: verdächtiger Link"
+  },
+  "tocWarnReasons": {
+    "message": "Gründe: $REASONS$",
+    "placeholders": {
+      "reasons": {
+        "content": "$1"
+      }
+    }
+  },
+  "tocWarnOpenAnyway": {
+    "message": "Trotzdem öffnen"
+  },
+  "tocWarnCancel": {
+    "message": "Abbrechen"
+  },
+  "tocWarnNote": {
+    "message": "Die Prüfung erfolgte lokal; es wurden keine Daten übertragen. Das Öffnen erfolgt auf eigenes Risiko."
+  },
+  "tocWarnOpenFailed": {
+    "message": "Link konnte nicht geöffnet werden."
+  },
+  "bannerNoApiKey": {
+    "message": "Kein API-Schlüssel für Hybrid Analysis konfiguriert."
+  },
+  "tocReasonInvalidUrl": {
+    "message": "Ungültiges Link-Ziel"
+  },
+  "tocReasonScheme": {
+    "message": "Kein http(s)-Link"
+  },
+  "tocReasonBlacklist": {
+    "message": "Durch Ihre eigene Blacklist blockiert"
+  },
+  "tocReasonKnownMalicious": {
+    "message": "Bereits als bösartig gemeldet"
+  },
+  "tocReasonUserInfo": {
+    "message": "Zugangsdaten in der URL eingebettet"
+  },
+  "tocReasonIpLiteral": {
+    "message": "Rohe IP-Adresse statt Domain"
+  },
+  "tocReasonPunycode": {
+    "message": "Punycode-/verschleierte Domain"
+  },
+  "tocReasonTextMismatch": {
+    "message": "Angezeigter Linktext weicht vom Ziel ab"
+  },
+  "tocReasonBrandInSubdomain": {
+    "message": "Markenname in einer fremden Domain"
+  },
+  "tocReasonLookAlike": {
+    "message": "Domain sieht einer bekannten Marke ähnlich"
   }
 }

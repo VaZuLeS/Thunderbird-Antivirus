@@ -82,6 +82,9 @@
   "notificationTitleError": {
     "message": "Thundy AV Scanner error"
   },
+  "notificationInjectionFailed": {
+    "message": "The add-on could not display its banner in the message view. Please report this together with your Thunderbird version."
+  },
   "bannerAuthPass": {
     "message": "Sender verified (SPF/DKIM/DMARC passed)"
   },
@@ -96,5 +99,64 @@
   },
   "notificationNoLinks": {
     "message": "No links found in this message."
+  },
+  "tocLinkMarked": {
+    "message": "Thundy AV: checked locally when clicked"
+  },
+  "tocWarnTitle": {
+    "message": "Thundy AV: suspicious link"
+  },
+  "tocWarnReasons": {
+    "message": "Reasons: $REASONS$",
+    "placeholders": {
+      "reasons": {
+        "content": "$1"
+      }
+    }
+  },
+  "tocWarnOpenAnyway": {
+    "message": "Open anyway"
+  },
+  "tocWarnCancel": {
+    "message": "Cancel"
+  },
+  "tocWarnNote": {
+    "message": "The check was local; no data was transmitted. Opening is at your own risk."
+  },
+  "tocWarnOpenFailed": {
+    "message": "Could not open the link."
+  },
+  "bannerNoApiKey": {
+    "message": "No API key for Hybrid Analysis configured."
+  },
+  "tocReasonInvalidUrl": {
+    "message": "Invalid link target"
+  },
+  "tocReasonScheme": {
+    "message": "Not an http(s) link"
+  },
+  "tocReasonBlacklist": {
+    "message": "Blocked by your own blacklist"
+  },
+  "tocReasonKnownMalicious": {
+    "message": "Previously reported as malicious"
+  },
+  "tocReasonUserInfo": {
+    "message": "Credentials embedded in the URL"
+  },
+  "tocReasonIpLiteral": {
+    "message": "Raw IP address instead of a domain"
+  },
+  "tocReasonPunycode": {
+    "message": "Punycode/obfuscated domain"
+  },
+  "tocReasonTextMismatch": {
+    "message": "Displayed link text differs from the target"
+  },
+  "tocReasonBrandInSubdomain": {
+    "message": "Brand name in an unrelated domain"
+  },
+  "tocReasonLookAlike": {
+    "message": "Domain looks like a well-known brand"
   }
 }

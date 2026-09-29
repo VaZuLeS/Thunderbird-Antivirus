@@ -39,25 +39,42 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       const autoScanLinksCheckbox = document.getElementById('autoScanLinks');
-      const timeOfClickProtectionCheckbox = document.getElementById('timeOfClickProtection');
+      const externalAnalysisConsentCheckbox = document.getElementById('externalAnalysisConsent');
+      const urlhausApikeyInput = document.getElementById('urlhausApikey');
+      const urlscanApikeyInput = document.getElementById('urlscanApikey');
 
-      function updateTimeOfClickProtectionStatus() {
-          if (autoScanLinksCheckbox.checked) {
-              timeOfClickProtectionCheckbox.disabled = true;
-              timeOfClickProtectionCheckbox.title = 'Time-of-Click Protection ist irrelevant, wenn Auto-Scan aktiv ist';
+      // Auto-Scan und Time-of-Click-Schutz sind zwei unabhängige Optionen:
+      //  - Auto-Scan prüft Links schon beim Öffnen der Nachricht. Lokal geschieht das
+      //    immer; extern (URL-/Domain-Übermittlung) nur zusätzlich, wenn „Externe
+      //    Analyse erlauben“ aktiv ist, ein Anbieter-Schlüssel (urlscan.io oder
+      //    URLhaus) hinterlegt ist und die Host-Berechtigung erteilt wurde.
+      //  - Time-of-Click markiert Links und prüft sie lokal beim Klick – ohne
+      //    Datenübertragung.
+      // Deshalb wird keine der beiden Optionen deaktiviert. Das Kontrollkästchen
+      // Auto-Scan erhält lediglich einen erklärenden Hinweis, solange die
+      // Voraussetzungen für die zusätzliche externe Prüfung fehlen.
+      function updateAutoScanPrerequisites() {
+          const hasProviderKey = urlscanApikeyInput.value.trim().length > 0 ||
+              urlhausApikeyInput.value.trim().length > 0;
+          const externalCheckPossible = externalAnalysisConsentCheckbox.checked && hasProviderKey;
+
+          if (autoScanLinksCheckbox.checked && !externalCheckPossible) {
+              autoScanLinksCheckbox.title = 'Links werden beim Öffnen lokal geprüft. Für eine zusätzliche externe Prüfung zusätzlich „Externe Analyse erlauben“ aktivieren, einen Schlüssel für urlscan.io oder URLhaus hinterlegen und die Host-Berechtigung erteilen.';
           } else {
-              timeOfClickProtectionCheckbox.disabled = false;
-              timeOfClickProtectionCheckbox.title = '';
+              autoScanLinksCheckbox.title = '';
           }
       }
 
       // Initiale Setzung
       updatePrivacyTierStatus();
-      updateTimeOfClickProtectionStatus();
+      updateAutoScanPrerequisites();
 
       // Event Listener für Änderungen
       alwaysManualCheckbox.addEventListener('change', updatePrivacyTierStatus);
-      autoScanLinksCheckbox.addEventListener('change', updateTimeOfClickProtectionStatus);
+      autoScanLinksCheckbox.addEventListener('change', updateAutoScanPrerequisites);
+      externalAnalysisConsentCheckbox.addEventListener('change', updateAutoScanPrerequisites);
+      urlhausApikeyInput.addEventListener('input', updateAutoScanPrerequisites);
+      urlscanApikeyInput.addEventListener('input', updateAutoScanPrerequisites);
     });
   });
   
@@ -150,6 +167,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Host‑Berechtigung nicht erteilt für: ' + denied.join(', ') +
                     '. Ohne diese Berechtigung sind die entsprechenden Prüfungen deaktiviert.');
             }
+        }
+
+        // Optionale Datenfreigabe (data_collection) im selben Nutzer-Klick wie das
+        // Speichern anfragen bzw. bei deaktivierter Zustimmung wieder zurückgeben.
+        // Feature-Erkennung: ältere Thunderbird-Versionen kennen
+        // permissions.getAll().data_collection (und request/remove dafür) nicht –
+        // dann erfolgt kein Aufruf und es entsteht kein Fehler.
+        let dataCollectionDenied = false;
+        try {
+            const canQueryPermissions = browser.permissions &&
+                typeof browser.permissions.getAll === 'function';
+            const perms = canQueryPermissions
+                ? await browser.permissions.getAll().catch(() => ({}))
+                : {};
+            const hasDataCollectionApi = perms && Array.isArray(perms.data_collection);
+
+            if (hasDataCollectionApi) {
+                if (externalAnalysisConsentSetting) {
+                    if (typeof browser.permissions.request === 'function') {
+                        const granted = await browser.permissions
+                            .request({ data_collection: ['personalCommunications'] })
+                            .catch(() => false);
+                        dataCollectionDenied = !granted;
+                    }
+                } else if (typeof browser.permissions.remove === 'function') {
+                    await browser.permissions
+                        .remove({ data_collection: ['personalCommunications'] })
+                        .catch(() => {});
+                }
+            }
+        } catch (e) {
+            console.error('Optionale Datenfreigabe konnte nicht angepasst werden', e);
+        }
+
+        // Kein alert()-Spam: eine Ablehnung wird ausschließlich über den
+        // bestehenden Status-Hinweis (aria-live) mitgeteilt.
+        if (dataCollectionDenied) {
+            statusSpan.textContent = 'Gespeichert – optionale Datenfreigabe wurde nicht erteilt. Ohne diese Freigabe findet keine externe Analyse statt.';
         }
 
         if (statusSpan.id === 'status') {

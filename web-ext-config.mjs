@@ -4,6 +4,10 @@
  * The add-on package must only contain files that are actually loaded at
  * runtime. Tests, developer scripts, documentation and store assets live in the
  * repository but are excluded from the XPI (see store readiness analysis, H2).
+ *
+ * This file is the single place for the exclude rules: web-ext and
+ * addons-linter do not read a `.webextignore` file, so that file was removed
+ * (audit M6).
  */
 export default {
   build: {
@@ -20,14 +24,23 @@ export default {
     'benchmark_compare.js',
     'form_test.js',
     'vt_test.js',
-    // documentation and store assets (kept in the repository only)
+    // documentation and store assets (kept in the repository only).
+    // The markdown files are listed explicitly (instead of '*.md') so that new
+    // repository documents - e.g. a future VENDOR.md - become part of the
+    // package again and are looked at deliberately.
     'docs',
     'docs/**',
     'examples',
     'examples/**',
-    '*.md',
+    'README.md',
+    'README.de.md',
+    'CHANGELOG.md',
+    'CONTRIBUTING.md',
+    'CODE_OF_CONDUCT.md',
+    'SECURITY.md',
+    'COMMUNITY.md',
+    'FIRST_TIMERS.md',
     'CODEOWNERS',
-    'LICENSE/**',
     // repository configuration
     '.github',
     '.github/**',
@@ -35,7 +48,6 @@ export default {
     '.Jules',
     '.Jules/**',
     '.gitignore',
-    '.webextignore',
     'web-ext-config.mjs',
     // package metadata / lock files
     'package.json',

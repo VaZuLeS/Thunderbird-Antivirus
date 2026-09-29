@@ -28,7 +28,8 @@ const I18N_FALLBACKS = {
     notificationScanSubmitted: 'Scan submitted successfully. Job ID: $JOBID$',
     notificationScanError: 'Scan error: $ERROR$',
     notificationTitle: 'Thundy AV Scanner',
-    notificationTitleError: 'Thundy AV Scanner error'
+    notificationTitleError: 'Thundy AV Scanner error',
+    notificationInjectionFailed: 'The add-on could not display its banner in the message view. Please report this together with your Thunderbird version.'
 };
 
 function msg(key, subs) {
@@ -40,7 +41,7 @@ function msg(key, subs) {
     } catch (e) { /* fall through to the fallback string */ }
     let text = I18N_FALLBACKS[key] || key;
     const values = Array.isArray(subs) ? subs.slice() : (subs === undefined ? [] : [subs]);
-    text = text.replace(/\$(SCORE|URL|JOBID|ERROR)\$/g, () => (values.length ? String(values.shift()) : ''));
+    text = text.replace(/\$(SCORE|URL|JOBID|ERROR|REASONS)\$/g, () => (values.length ? String(values.shift()) : ''));
     return text;
 }
 
@@ -110,6 +111,9 @@ async function hasHostPermissionFor(url) {
  * Thunderbird's generic scripting API is used; if a future Thunderbird
  * release exposes scripting.messageDisplay.executeScript, it is preferred.
  */
+const injectionFailureNotified = new Set();
+const MAX_INJECTION_FAILURES_TRACKED = 100;
+
 async function injectIntoMessageDisplay(tabId, func, args = []) {
     if (tabId === undefined || tabId === null) return null;
     const injection = { target: { tabId }, func, args };
@@ -121,6 +125,15 @@ async function injectIntoMessageDisplay(tabId, func, args = []) {
         return await browser.scripting.executeScript(injection);
     } catch (e) {
         Logger.warn('Injecting into the message display failed (please report with your Thunderbird version):', e);
+        // Ein fehlgeschlagener Injektionsversuch darf nicht still bleiben: ohne
+        // Banner fehlt dem Nutzer der zweite Zustimmungsschritt.
+        if (!injectionFailureNotified.has(tabId)) {
+            if (injectionFailureNotified.size >= MAX_INJECTION_FAILURES_TRACKED) {
+                injectionFailureNotified.delete(injectionFailureNotified.values().next().value);
+            }
+            injectionFailureNotified.add(tabId);
+            notify('notificationTitleError', 'notificationInjectionFailed');
+        }
         return null;
     }
 }
@@ -139,6 +152,39 @@ let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 let externalAnalysisConsent = false;
+
+// ---------------------------------------------------------------------------
+// Grenzen und Zustand für automatische Scans
+// `allowExternal` (siehe unten) ist überall fail-closed: eine Übermittlung
+// findet nur statt, wenn der Aufrufer sie ausdrücklich erlaubt (Absender-Opt-in
+// oder ausdrücklich ausgelöster Scan).
+// ---------------------------------------------------------------------------
+const MAX_AUTO_SCAN_ATTACHMENT_BYTES = 25 * 1024 * 1024; // Anhänge > 25 MB werden nicht automatisch verarbeitet
+const MAX_AUTO_SCAN_ATTACHMENTS = 10;                    // höchstens 10 Anhänge pro Nachricht
+const ATTACHMENT_SCAN_CONCURRENCY = 3;                   // parallele Anhang-Verarbeitungen
+const MAX_AUTO_SCAN_URLS = 5;                            // höchstens 5 Links pro Nachricht automatisch prüfen
+
+// Domains, die im laufenden Betrieb als bösartig erkannt wurden (URLhaus,
+// urlscan.io). Grundlage für den lokalen Time-of-Click-Hinweis; rein lokal.
+const flaggedDomains = new Set();
+const MAX_FLAGGED_DOMAINS = 2000;
+
+function markDomainFlagged(domain) {
+    if (!domain || typeof domain !== 'string') return;
+    const normalized = domain.toLowerCase();
+    if (flaggedDomains.size >= MAX_FLAGGED_DOMAINS) {
+        flaggedDomains.delete(flaggedDomains.values().next().value);
+    }
+    flaggedDomains.add(normalized);
+}
+
+function domainOfUrl(url) {
+    try {
+        return new URL(url).hostname.toLowerCase();
+    } catch (e) {
+        return '';
+    }
+}
 
 let sharedDBPromise = null;
 
@@ -233,6 +279,24 @@ async function loadSettings() {
     Logger.error("Fehler beim Laden der Einstellungen:", error);
   }
 }
+
+/**
+ * Hält die Schlüssel im API-Gateway aktuell. Das Gateway bindet einen Schlüssel
+ * nur an den Host, zu dem er gehört (api_gateway.js: _injectAuthHeaders) und
+ * setzt Redirects/Timeouts zentral durch.
+ */
+function syncApiGatewayKeys() {
+  try {
+    if (typeof apiGateway === 'undefined' || typeof apiGateway.setApikey !== 'function') return;
+    apiGateway.setApikey('hybridanalysis', apikey_hybridanalysis || '');
+    apiGateway.setApikey('virustotal', apikey_virustotal || '');
+    apiGateway.setApikey('urlhaus', urlhausApikey || '');
+    apiGateway.setApikey('urlscan', urlscanApikey || '');
+    apiGateway.setApikey('abuseipdb', ipReputationProvider === 'abuseipdb' ? (ipReputationApiKey || '') : '');
+  } catch (e) { /* Gateway ist optional */ }
+}
+
+syncApiGatewayKeys();
 loadSettings();
 
 // Opt-In helpers
@@ -287,6 +351,7 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.externalAnalysisConsent !== undefined) {
     externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
   }
+  syncApiGatewayKeys();
 });
 
 function extractPublicIPs(receivedHeaders) {
@@ -639,6 +704,95 @@ function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, rea
     return false;
 }
 
+// ---------------------------------------------------------------------------
+// Lokale Linkbewertung für den Time-of-Click-Schutz.
+// Es findet KEIN Netzwerkzugriff statt: geprüft werden URL-Struktur, der
+// angezeigte Linktext, eigene Listen und bereits erkannte bösartige Domains.
+// ---------------------------------------------------------------------------
+const PHISHING_BRAND_DOMAINS = [
+    'paypal.com', 'amazon.de', 'amazon.com', 'microsoft.com', 'apple.com', 'google.com',
+    'dhl.de', 'deutschepost.de', 'sparkasse.de', 'commerzbank.de', 'volksbank.de', 'ing.de',
+    'postbank.de', 'netflix.com', 'ebay.de', 'ebay.com', 'telekom.de', 'vodafone.de',
+    'facebook.com', 'instagram.com', 'whatsapp.com', 'binance.com', 'coinbase.com', 'klarna.com'
+];
+
+const IPV4_ONLY_REGEX = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+const IPV6_LITERAL_REGEX = /^\[[0-9a-f:.]+\]$/i;
+
+function firstUrlInText(text) {
+    if (!text || typeof text !== 'string') return '';
+    const match = text.match(/https?:\/\/[^\s<>"']+/i);
+    return match ? match[0] : '';
+}
+
+/**
+ * Bewertet einen Link ausschließlich lokal.
+ * @returns {{risk: 'none'|'high', reasons: string[]}} reasons sind i18n-Schlüssel
+ */
+function evaluateClickRisk(url, { displayedText = '', flagged = flaggedDomains, blacklist = customBlacklist, whitelist = customWhitelist } = {}) {
+    let parsed;
+    try {
+        parsed = new URL(url);
+    } catch (e) {
+        return { risk: 'high', reasons: ['tocReasonInvalidUrl'] };
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        return { risk: 'high', reasons: ['tocReasonScheme'] };
+    }
+
+    const host = (parsed.hostname || '').toLowerCase();
+    const mainDomain = getMainDomain(host);
+
+    if (whitelist && (whitelist.has(host) || whitelist.has(mainDomain))) {
+        return { risk: 'none', reasons: [] };
+    }
+    if (blacklist && (blacklist.has(host) || blacklist.has(mainDomain))) {
+        return { risk: 'high', reasons: ['tocReasonBlacklist'] };
+    }
+    if (flagged && (flagged.has(host) || flagged.has(mainDomain))) {
+        return { risk: 'high', reasons: ['tocReasonKnownMalicious'] };
+    }
+    if (parsed.username || parsed.password) {
+        return { risk: 'high', reasons: ['tocReasonUserInfo'] };
+    }
+    if (IPV4_ONLY_REGEX.test(host) || IPV6_LITERAL_REGEX.test(parsed.hostname)) {
+        return { risk: 'high', reasons: ['tocReasonIpLiteral'] };
+    }
+    if (host.includes('xn--')) {
+        return { risk: 'high', reasons: ['tocReasonPunycode'] };
+    }
+
+    const reasons = [];
+
+    // Klassisches Phishing: der angezeigte Linktext nennt eine andere Domain als das Ziel
+    const textUrl = firstUrlInText(displayedText);
+    if (textUrl) {
+        let textHost = '';
+        try { textHost = new URL(textUrl).hostname.toLowerCase(); } catch (e) { textHost = ''; }
+        if (textHost && textHost !== host && getMainDomain(textHost) !== mainDomain) {
+            reasons.push('tocReasonTextMismatch');
+        }
+    }
+
+    // Markenmissbrauch in Subdomains bzw. Tippfehler-Domains
+    const mainLabel = mainDomain.split('.')[0];
+    for (const brand of PHISHING_BRAND_DOMAINS) {
+        const brandMain = getMainDomain(brand);
+        const brandLabel = brandMain.split('.')[0];
+        if (mainDomain === brandMain) break; // echte Markendomain
+        if (host.includes(brand) && mainDomain !== brandMain) {
+            reasons.push('tocReasonBrandInSubdomain');
+            break;
+        }
+        if (brandLabel.length > 4 && mainLabel.length > 4 && levenshteinDistance(mainLabel, brandLabel) === 1) {
+            reasons.push('tocReasonLookAlike');
+            break;
+        }
+    }
+
+    return { risk: reasons.length > 0 ? 'high' : 'none', reasons };
+}
+
 function evaluateLinks(options = {}) {
     let {
         urls = [],
@@ -820,19 +974,161 @@ async function processAndUploadUrls(message, filteredUrls) {
     }
 }
 
-async function injectTimeOfClickProtection(tabId, filteredUrls) {
-    if (timeOfClickProtection && filteredUrls.length > 0) {
-        await injectIntoMessageDisplay(tabId, function() {
-            const links = document.querySelectorAll('a');
-            links.forEach(link => {
-                if (link.href && link.href.startsWith('http')) {
-                    link.title = "Protected by Thundy Time-of-Click";
-                    link.style.borderBottom = "1px dashed #ff8c00";
+/**
+ * Time-of-Click-Schutz: markiert Links in der Nachrichtenansicht und prüft sie
+ * beim Überfahren/Klick ausschließlich LOKAL (URL-Struktur, angezeigter
+ * Linktext, eigene Listen, bereits erkannte bösartige Domains). Verdächtige
+ * Ziele werden vor dem Öffnen mit einer Warnung abgefangen, die dem Nutzer die
+ * Entscheidung überlässt. Es werden dabei keine Daten übertragen.
+ */
+async function injectTimeOfClickProtection(tabId) {
+    if (!timeOfClickProtection || tabId === undefined || tabId === null) return;
+    const strings = {
+        marked: msg('tocLinkMarked', 'Thundy AV: checked locally when clicked'),
+        title: msg('tocWarnTitle', 'Thundy AV: suspicious link'),
+        reasonsLabel: msg('tocWarnReasons', 'Reasons: $REASONS$'),
+        openAnyway: msg('tocWarnOpenAnyway', 'Open anyway'),
+        cancel: msg('tocWarnCancel', 'Cancel'),
+        note: msg('tocWarnNote', 'The check was local; no data was transmitted. Opening is at your own risk.'),
+        openFailed: msg('tocWarnOpenFailed', 'Could not open the link.'),
+        reasonTexts: {
+            tocReasonInvalidUrl: msg('tocReasonInvalidUrl', 'Invalid link target'),
+            tocReasonScheme: msg('tocReasonScheme', 'Not an http(s) link'),
+            tocReasonBlacklist: msg('tocReasonBlacklist', 'Blocked by your own blacklist'),
+            tocReasonKnownMalicious: msg('tocReasonKnownMalicious', 'Previously reported as malicious'),
+            tocReasonUserInfo: msg('tocReasonUserInfo', 'Credentials embedded in the URL'),
+            tocReasonIpLiteral: msg('tocReasonIpLiteral', 'Raw IP address instead of a domain'),
+            tocReasonPunycode: msg('tocReasonPunycode', 'Punycode/obfuscated domain'),
+            tocReasonTextMismatch: msg('tocReasonTextMismatch', 'Displayed link text differs from the target'),
+            tocReasonBrandInSubdomain: msg('tocReasonBrandInSubdomain', 'Brand name in an unrelated domain'),
+            tocReasonLookAlike: msg('tocReasonLookAlike', 'Domain looks like a well-known brand')
+        }
+    };
+    await injectIntoMessageDisplay(tabId, function(strings) {
+        const OVERLAY_ID = 'thundy-toc-warning';
+        const verdicts = new Map();
+        const pending = new Set();
+
+        const requestVerdict = async (url, displayedText) => {
+            if (!url || verdicts.has(url) || pending.has(url)) return;
+            pending.add(url);
+            try {
+                const response = await browser.runtime.sendMessage({
+                    action: 'checkLinkState',
+                    url: url,
+                    displayedText: displayedText
+                });
+                if (response && response.data && response.data.risk) {
+                    verdicts.set(url, response.data);
+                }
+            } catch (e) { /* ohne Antwort bleibt der Link ungeprüft, aber unverändert nutzbar */ }
+            finally { pending.delete(url); }
+        };
+
+        const reasonText = (key) => strings.reasonTexts[key] || key;
+
+        const closeOverlay = () => {
+            const existing = document.getElementById(OVERLAY_ID);
+            if (existing) existing.remove();
+        };
+        const showWarning = (url, verdict) => {
+            closeOverlay();
+            const overlay = document.createElement('div');
+            overlay.id = OVERLAY_ID;
+            overlay.setAttribute('role', 'alertdialog');
+            overlay.setAttribute('aria-label', strings.title);
+            overlay.style.position = 'fixed';
+            overlay.style.top = '10px';
+            overlay.style.left = '10px';
+            overlay.style.right = '10px';
+            overlay.style.zIndex = '2147483647';
+            overlay.style.backgroundColor = '#fff3f3';
+            overlay.style.border = '2px solid #d32f2f';
+            overlay.style.borderRadius = '6px';
+            overlay.style.padding = '10px 12px';
+            overlay.style.fontFamily = 'Arial, sans-serif';
+            overlay.style.fontSize = '13px';
+            overlay.style.color = '#333';
+            overlay.style.boxShadow = '0 2px 8px rgba(0,0,0,0.25)';
+
+            const headline = document.createElement('div');
+            headline.style.fontWeight = 'bold';
+            headline.style.color = '#d32f2f';
+            headline.textContent = strings.title;
+            overlay.appendChild(headline);
+
+            const target = document.createElement('div');
+            target.style.margin = '4px 0';
+            target.style.wordBreak = 'break-all';
+            target.textContent = url; // nur textContent -> kein HTML aus der Mail
+            overlay.appendChild(target);
+
+            const reasonsText = (verdict.reasons || []).map(reasonText).join(', ');
+            const reasons = document.createElement('div');
+            reasons.textContent = strings.reasonsLabel.indexOf('$REASONS$') !== -1
+                ? strings.reasonsLabel.replace('$REASONS$', reasonsText)
+                : strings.reasonsLabel + ' ' + reasonsText;
+            overlay.appendChild(reasons);
+
+            const note = document.createElement('div');
+            note.style.marginTop = '6px';
+            note.style.fontSize = '12px';
+            note.textContent = strings.note;
+            overlay.appendChild(note);
+
+            const actions = document.createElement('div');
+            actions.style.marginTop = '8px';
+
+            const openBtn = document.createElement('button');
+            openBtn.type = 'button';
+            openBtn.textContent = strings.openAnyway;
+            openBtn.addEventListener('click', async () => {
+                openBtn.disabled = true;
+                try {
+                    const resp = await browser.runtime.sendMessage({ action: 'openLink', url: url });
+                    if (!resp || resp.status === 'error') throw new Error('open_failed');
+                    closeOverlay();
+                } catch (e) {
+                    openBtn.disabled = false;
+                    note.textContent = strings.openFailed;
                 }
             });
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.style.marginLeft = '8px';
+            cancelBtn.textContent = strings.cancel;
+            cancelBtn.addEventListener('click', closeOverlay);
+
+            actions.appendChild(openBtn);
+            actions.appendChild(cancelBtn);
+            overlay.appendChild(actions);
+
+            const host = document.body || document.documentElement;
+            if (host) host.insertBefore(overlay, host.firstChild);
+        };
+
+        const links = document.querySelectorAll('a');
+        links.forEach(link => {
+            const href = link.href;
+            if (!href || !href.startsWith('http')) return;
+            link.title = strings.marked;
+            link.style.borderBottom = '1px dashed #ff8c00';
+            const prefetch = () => { void requestVerdict(href, link.textContent || ''); };
+            link.addEventListener('mouseover', prefetch);
+            link.addEventListener('focus', prefetch);
+            link.addEventListener('click', (event) => {
+                const verdict = verdicts.get(href);
+                if (verdict && verdict.risk === 'high') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    showWarning(href, verdict);
+                }
+            }, true);
         });
-    }
+    }, [strings]);
 }
+
 
 async function checkIPReputation(receivedHeaders) {
     let maliciousIps = [];
@@ -942,9 +1238,15 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
             if (urlhausCache.has(domain)) {
                 const cached = urlhausCache.get(domain);
                 if (cached instanceof Promise) {
-                    domainChecks.push(cached.then(isMal => { if (isMal) urlhausDomains.push(domain); }));
+                    domainChecks.push(cached.then(isMal => {
+                        if (isMal) {
+                            urlhausDomains.push(domain);
+                            markDomainFlagged(domain);
+                        }
+                    }));
                 } else if (cached) {
                     urlhausDomains.push(domain);
+                    markDomainFlagged(domain);
                 }
                 continue;
             }
@@ -959,7 +1261,10 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
 
             domainChecks.push(checkPromise.then(isMalicious => {
                 urlhausCache.set(domain, isMalicious);
-                if (isMalicious) urlhausDomains.push(domain);
+                if (isMalicious) {
+                    urlhausDomains.push(domain);
+                    markDomainFlagged(domain);
+                }
             }));
         }
 
@@ -1036,27 +1341,78 @@ async function injectThreatBanner(tabId, threat) {
     }
 }
 
-async function processAttachments(message) {
+async function processAttachments(message, { allowExternal = false } = {}) {
   let attachments = await browser.messages.listAttachments(message.id);
+  if (!attachments || attachments.length === 0) return;
 
-  if (attachments.length > 0) {
-    await sent_to_hybrid_by_attachment(message, attachments);
+  // Grenzen (Speicher-/Bandbreitenschutz): nur die ersten N Anhänge und nur
+  // Anhänge unterhalb der Größenobergrenze werden verarbeitet.
+  const candidates = [];
+  const limited = attachments.slice(0, MAX_AUTO_SCAN_ATTACHMENTS);
+  if (attachments.length > limited.length) {
+    Logger.warn('Attachment limit reached, the remaining attachments are skipped:', attachments.length);
+  }
+  for (const attachment of limited) {
+    const size = typeof attachment.size === 'number' ? attachment.size : 0;
+    if (size > MAX_AUTO_SCAN_ATTACHMENT_BYTES) {
+      Logger.warn('Attachment skipped (too large for automatic processing):', attachment.name);
+      continue;
+    }
+    candidates.push(attachment);
+  }
+
+  if (candidates.length > 0) {
+    await sent_to_hybrid_by_attachment(message, candidates, { allowExternal });
   }
 }
 
-async function processLinks(tab, message, fullMessage, parsedUrlCache = null) {
-  let messageText = extractTextFromParts(fullMessage.parts || fullMessage);
+async function processLinks(tab, message, fullMessage, parsedUrlCache = null, { allowExternal = false } = {}) {
+  let messageText = extractTextFromParts(fullMessage);
   let urls = extractUrls(messageText);
   let filteredUrls = filterUrls(urls, parsedUrlCache);
 
   if (filteredUrls.length > 0) {
-    await processAndUploadUrls(message, filteredUrls);
+    if (allowExternal) {
+      await processAndUploadUrls(message, filteredUrls);
+      if (autoScanLinks) {
+        // Bewusst nicht abgewartet: die Anzeige der Nachricht darf nicht auf
+        // langlaufende Link-Abfragen warten.
+        void scanLinksWithConfiguredProviders(filteredUrls.slice(0, MAX_AUTO_SCAN_URLS), message.headerMessageId);
+      }
+    } else {
+      await indexedDB_save_links_to_db(message, filteredUrls);
+    }
   }
 
-  // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
-  await injectTimeOfClickProtection(tab.id, filteredUrls);
+  // Time-of-Click-Schutz markiert und prüft Links lokal (ohne Netzwerkzugriff)
+  await injectTimeOfClickProtection(tab.id);
 
   return { messageText, urls, filteredUrls };
+}
+
+/**
+ * Prüft Links über die konfigurierten Dienste (derzeit urlscan.io). Nur wenn
+ * der Nutzer den Auto-Scan aktiviert hat, die globale Zustimmung vorliegt und
+ * eine Host-Berechtigung für den Dienst erteilt wurde. Erkannte bösartige
+ * Domains werden lokal markiert, damit der Time-of-Click-Schutz sie kennt.
+ */
+async function scanLinksWithConfiguredProviders(urls, headerMessageId) {
+  try {
+    if (!autoScanLinks || !mayTransmitExternally() || !urlscanApikey) return;
+    if (!(await hasHostPermissionFor('https://urlscan.io/api/v1/scan/'))) return;
+    for (const url of urls) {
+      try {
+        const res = await checkUrlscanIo(url, urlscanApikey);
+        if (res && res.status === 'MALICIOUS_VISUAL') {
+          markDomainFlagged(domainOfUrl(url));
+        }
+      } catch (e) {
+        Logger.warn('Link check failed for a message link');
+      }
+    }
+  } catch (e) {
+    Logger.warn('Automatic link check skipped');
+  }
 }
 
 async function extractBecProtectionData(message, fullMessage) {
@@ -1068,13 +1424,14 @@ async function extractBecProtectionData(message, fullMessage) {
   return { senderEmail, isFirstCommunication, replyTo, subject };
 }
 
-async function collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache }) {
+async function collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal = false }) {
   const authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
   const receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
 
+  // IP- und Domain-Abfragen nur nach Opt-in (Absender) bzw. ausgelöstem Scan.
   const [maliciousIps, urlhausDomains, becData] = await Promise.all([
-    checkIPReputation(receivedHeaders),
-    checkURLhausDomains(filteredUrls, parsedUrlCache),
+    allowExternal ? checkIPReputation(receivedHeaders) : Promise.resolve([]),
+    allowExternal ? checkURLhausDomains(filteredUrls, parsedUrlCache) : Promise.resolve([]),
     extractBecProtectionData(message, fullMessage)
   ]);
 
@@ -1090,8 +1447,8 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
   };
 }
 
-async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
-  const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache });
+async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null, allowExternal = false }) {
+  const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal });
   const threat = calculateThreatScore(message.author, urls, options);
   await injectThreatBanner(tab.id, threat);
 }
@@ -1258,7 +1615,10 @@ async function handleDisplayedMessage(tab, message) {
     const enabledSenders = stored.scanningEnabledSenders || [];
 
     const permission = await hasHybridPermission();
-    const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual &&
+    // Automatische externe Prüfungen sind an das ausdrückliche Opt-in für diesen
+    // Absender gebunden (plus globale Zustimmung, Host-Berechtigung und Schlüssel).
+    // Ohne Opt-in läuft ausschließlich die lokale Bewertung.
+    const automaticScanAllowed = permission && enabledSenders.includes(senderEmail) && !alwaysManual &&
       !!apikey_hybridanalysis && mayTransmitExternally();
 
     let fullMessage = await browser.messages.getFull(message.id);
@@ -1267,14 +1627,14 @@ async function handleDisplayedMessage(tab, message) {
       attachments = await browser.messages.listAttachments(message.id);
     } catch (e) { /* ignore */ }
 
-    await processAttachments(message);
+    await processAttachments(message, { allowExternal: automaticScanAllowed });
 
     let parsedUrlCache = new Map();
-    let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage, parsedUrlCache);
+    let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage, parsedUrlCache, { allowExternal: automaticScanAllowed });
 
-    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
+    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache, allowExternal: automaticScanAllowed });
 
-    if (!canAutoUpload && ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0))) {
+    if (!automaticScanAllowed && ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0))) {
       await injectOptInBanner(tab.id, message.id, senderEmail, mayTransmitExternally());
     }
   } catch (error) {
@@ -1444,7 +1804,7 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
 
             const uploadOptions = getHybridAnalysisOptions('POST', formData);
             uploadOptions.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
-            const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
+            const uploadResponse = await apiGateway.fetchWithTimeout(uploadOptions.url, uploadOptions, 60000);
             if (uploadResponse.status === 200 || uploadResponse.status === 201) {
                 const uploadData = await uploadResponse.json();
                 const hybridData = HybridDataBuilder.create(
@@ -1525,7 +1885,7 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
 }
 
 
-async function process_single_attachment(message, attachment) {
+async function process_single_attachment(message, attachment, { allowExternal = false } = {}) {
     let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
 
     switch (attachment.contentType) {
@@ -1545,9 +1905,11 @@ async function process_single_attachment(message, attachment) {
             const arrayBuffer = await content_of_attachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
 
-            const virustotal_stats = await fetch_virustotal_stats(local_hash, apikey_virustotal);
+            const virustotal_stats = allowExternal
+                ? await fetch_virustotal_stats(local_hash, apikey_virustotal)
+                : null;
 
-            if (alwaysManual || !mayTransmitExternally()) {
+            if (alwaysManual || !allowExternal) {
                 return create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats);
             }
 
@@ -1567,17 +1929,20 @@ async function process_single_attachment(message, attachment) {
 }
 
 
-async function sent_to_hybrid_by_attachment(message, attachments) {
+async function sent_to_hybrid_by_attachment(message, attachments, { allowExternal = false } = {}) {
   if (!apikey_hybridanalysis) {
       Logger.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
       return;
   }
 
-  const promises = [];
-  for (const attachment of attachments) {
-    promises.push(process_single_attachment(message, attachment));
+  // Begrenzte Parallelität: große Nachrichten sollen den Prozess nicht fluten.
+  const results = [];
+  for (let i = 0; i < attachments.length; i += ATTACHMENT_SCAN_CONCURRENCY) {
+    const batch = attachments.slice(i, i + ATTACHMENT_SCAN_CONCURRENCY);
+    results.push(...await Promise.all(
+      batch.map(attachment => process_single_attachment(message, attachment, { allowExternal }))
+    ));
   }
-  const results = await Promise.all(promises);
 
   const validResults = results.filter(r => r !== null);
   if (validResults.length > 0) {
@@ -1751,14 +2116,28 @@ function createContextMenus() {
             contexts: ["message_display_action"]
         }
     ];
-    for (const menu of menus) {
-        try {
-            browser.menus.create(menu);
-        } catch (e) {
-            // Duplicate ids can occur if the background page is restarted.
-            Logger.warn('Could not create context menu entry', menu.id, e);
+    const createAll = () => {
+        for (const menu of menus) {
+            try {
+                browser.menus.create(menu);
+            } catch (e) {
+                // Duplicate ids can occur if the background page is restarted.
+                Logger.warn('Could not create context menu entry', menu.id, e);
+            }
         }
-    }
+    };
+    // Vor dem Anlegen aufräumen, damit ein Neustart des Hintergrundskripts keine
+    // Duplikat-IDs hinterlässt.
+    try {
+        if (typeof browser.menus.removeAll === 'function') {
+            const result = browser.menus.removeAll();
+            if (result && typeof result.then === 'function') {
+                result.then(createAll).catch(createAll);
+                return;
+            }
+        }
+    } catch (e) { /* ohne removeAll direkt anlegen */ }
+    createAll();
 }
 
 function notify(titleKey, messageKey, subs) {
@@ -1785,7 +2164,7 @@ async function scanLinksOfDisplayedMessage(tabId) {
     try {
         assertExternalAnalysisAllowed();
         const fullMessage = await browser.messages.getFull(message.id);
-        const text = extractTextFromParts(fullMessage.parts || fullMessage);
+        const text = extractTextFromParts(fullMessage);
         const urls = filterUrls(extractUrls(text));
         if (urls.length === 0) {
             notify('notificationTitle', 'notificationNoLinks', []);
@@ -1838,58 +2217,91 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
     }
 });
 
+/**
+ * Sucht den zu einer URL gespeicherten Link-Datensatz (URL-Normalisierung wie
+ * beim Speichern: mit und ohne abschließenden Schrägstrich).
+ */
+function findLinkRecord(record, url) {
+    if (!record || !Array.isArray(record.links) || typeof url !== 'string') return null;
+    const reqUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+    const reqUrlSlash = reqUrl + '/';
+    for (let i = 0; i < record.links.length; i++) {
+        const u = record.links[i].url;
+        if (u === reqUrl || u === reqUrlSlash) return record.links[i];
+    }
+    return null;
+}
+
+/**
+ * Time-of-Click-Verdikt für einen Link. Ausschließlich LOKAL: URL-Struktur,
+ * angezeigter Linktext, eigene Listen, zuvor erkannte bösartige Domains und ein
+ * bereits gespeichertes Scan-Ergebnis. Es wird kein Netzwerkdienst aufgerufen.
+ */
 async function handleCheckLinkState(request, sender, sendResponse) {
     try {
-        // Need to find the active message to get headerMessageId
-        const message = await getFirstDisplayedMessage(sender && sender.tab && sender.tab.id, { throwOnError: true });
-        if (!message || !message.headerMessageId) {
-            sendResponse({status: 'UNKNOWN'});
+        const url = (request && typeof request.url === 'string') ? request.url : '';
+        if (!url) {
+            sendResponse({ status: 'error', code: 'invalid_request' });
             return;
         }
+        const displayedText = (request && typeof request.displayedText === 'string') ? request.displayedText : '';
+        const verdict = evaluateClickRisk(url, { displayedText });
 
-        const db = await getSharedDB();
-        const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
+        let storedState = null;
+        try {
+            const message = await getFirstDisplayedMessage(sender && sender.tab && sender.tab.id);
+            if (message && message.headerMessageId) {
+                const db = await getSharedDB();
+                const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
+                const linkObj = findLinkRecord(record, url);
+                if (linkObj && typeof linkObj.state === 'string') storedState = linkObj.state;
+            }
+        } catch (e) { /* optionale Zusatzinformation */ }
 
-        let linkObj = null;
-        if (record && record.links) {
-            // ⚡ Optimize URL normalization: Move requestUrl processing out of loop and use fast string methods over Regex
-            const reqUrl = request.url.endsWith("/") ? request.url.slice(0, -1) : request.url;
-            const reqUrlSlash = reqUrl + "/";
-            // ⚡ Bolt Optimization: Replace .find() with for loop to avoid callback overhead
-            linkObj = undefined; // Reset to match .find() semantics
-            const links = record.links;
-            const len = links.length;
-            for (let i = 0; i < len; i++) {
-                const u = links[i].url;
-                if (u === reqUrl || u === reqUrlSlash) {
-                    linkObj = links[i];
-                    break;
-                }
+        if (storedState === 'MALICIOUS' || storedState === 'MALICIOUS_VISUAL') {
+            verdict.risk = 'high';
+            if (!verdict.reasons.includes('tocReasonKnownMalicious')) {
+                verdict.reasons.push('tocReasonKnownMalicious');
             }
         }
 
-        // Time-of-Click Live Scan via urlscan.io
-        if (urlscanApikey && (!linkObj || linkObj.state === 'UNKNOWN')) {
-            try {
-                const res = await checkUrlscanIo(request.url, urlscanApikey);
-                if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT') {
-                    // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
-                    sendResponse({ status: res.status, reasons: res.reasons });
-                    return;
-                }
-            } catch (e) {
-                Logger.error("Fehler bei Time-of-Click Live-Scan:", e);
+        const domain = domainOfUrl(url);
+        if (domain && flaggedDomains.has(domain)) {
+            verdict.risk = 'high';
+            if (!verdict.reasons.includes('tocReasonKnownMalicious')) {
+                verdict.reasons.push('tocReasonKnownMalicious');
             }
         }
 
-        if (linkObj) {
-            const status = await checkHybridAnalysisVerdict(linkObj.hybrid_sha256, linkObj.state);
-            sendResponse({status: status});
-        } else {
-            sendResponse({status: 'UNKNOWN'});
-        }
+        sendResponse({ status: 'success', data: { risk: verdict.risk, reasons: verdict.reasons, storedState } });
     } catch (err) {
-        sendResponse({status: 'ERROR'});
+        sendResponse({ status: 'error', code: 'check_failed' });
+    }
+}
+
+/**
+ * Öffnet einen Link, den der Nutzer nach der Time-of-Click-Warnung ausdrücklich
+ * freigegeben hat. Nur http(s); alles andere wird abgelehnt.
+ */
+async function handleOpenLink(request, sendResponse) {
+    try {
+        const url = (request && typeof request.url === 'string') ? request.url : '';
+        let parsed;
+        try {
+            parsed = new URL(url);
+        } catch (e) {
+            sendResponse({ status: 'error', code: 'invalid_url' });
+            return;
+        }
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+            sendResponse({ status: 'error', code: 'invalid_url' });
+            return;
+        }
+        const tab = await browser.tabs.create({ url: parsed.href });
+        sendResponse({ status: 'success', data: { tabId: tab && tab.id !== undefined ? tab.id : null } });
+    } catch (err) {
+        Logger.warn('Could not open the link', err);
+        sendResponse({ status: 'error', code: 'open_failed' });
     }
 }
 
@@ -1948,18 +2360,63 @@ async function handleRequestScan(request, sender) {
     }
 
     try {
-        const messageObj = { id: request.messageId };
-        await processAttachments(messageObj);
+        // Vollständiger MessageHeader (mit author/headerMessageId) - ein Objekt
+        // mit nur einer id würde die Bewertung mit einem TypeError abbrechen.
+        let messageObj = null;
+        try {
+            messageObj = await browser.messages.get(request.messageId);
+        } catch (e) { /* fallback unten */ }
+        if (!messageObj) {
+            messageObj = await getFirstDisplayedMessage(
+                (sender && sender.tab && sender.tab.id !== undefined) ? sender.tab.id : request.tabId
+            );
+        }
+        if (!messageObj) {
+            return { success: false, error: 'message_not_found' };
+        }
+        await processAttachments(messageObj, { allowExternal: true });
         const fullMessage = await browser.messages.getFull(request.messageId);
         const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (request.tabId || null);
         const tab = { id: tabId };
         const parsedUrlCache = new Map();
-        const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache);
-        await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
+        const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache, { allowExternal: true });
+        await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache, allowExternal: true });
         return { success: true, persisted: request.persist === true };
     } catch (e) {
         Logger.error('requestScan failed', e);
         return { success: false, error: e && e.message ? e.message : String(e) };
+    }
+}
+
+/**
+ * Holt das Hybrid-Analysis-Overview zu einem SHA-256-Hash für das Popup.
+ * Läuft vollständig durch die zentrale Schranke: ohne globale Zustimmung, ohne
+ * Host-Berechtigung oder ohne Schlüssel wird nichts übertragen.
+ */
+async function handleGetHybridOverview(request) {
+    try {
+        if (!request || typeof request.sha256 !== 'string' || !/^[a-fA-F0-9]{64}$/.test(request.sha256)) {
+            return { status: 'error', code: 'invalid_request', message: 'invalid sha256' };
+        }
+        if (!mayTransmitExternally()) {
+            return { status: 'error', code: EXTERNAL_ANALYSIS_DISABLED, message: msg('bannerConsentMissing') };
+        }
+        if (!apikey_hybridanalysis) {
+            return { status: 'error', code: 'no_api_key', message: msg('bannerNoApiKey', 'No API key for Hybrid Analysis configured.') };
+        }
+        if (!(await hasHybridPermission())) {
+            return { status: 'error', code: 'permission_denied', message: msg('bannerPermissionDenied') };
+        }
+        const options = getHybridAnalysisOptions('GET');
+        options.url = 'https://hybrid-analysis.com/api/v2/overview/' + request.sha256;
+        const response = await apiGateway.fetchWithTimeout(options.url, options);
+        if (response.status !== 200) {
+            return { status: 'error', code: 'http_' + response.status, message: 'HTTP ' + response.status };
+        }
+        return { status: 'success', data: await response.json() };
+    } catch (e) {
+        Logger.warn('Overview lookup failed:', e && e.name ? e.name : 'error');
+        return { status: 'error', code: 'network_error', message: e && e.message ? e.message : String(e) };
     }
 }
 
@@ -1989,6 +2446,16 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case "requestScan":
             handleRequestScan(request, sender).then(res => sendResponse(res));
+            return true;
+
+        case "getHybridOverview":
+            handleGetHybridOverview(request)
+                .then(res => sendResponse(res))
+                .catch(err => sendResponse({ status: 'error', code: 'network_error', message: err.message }));
+            return true;
+
+        case "openLink":
+            handleOpenLink(request, sendResponse);
             return true;
 
         default:

@@ -42,7 +42,7 @@
     <div class="mb-3 mt-3">
         <input type="checkbox" id="externalAnalysisConsent" aria-describedby="externalAnalysisConsentHelp">
         <label for="externalAnalysisConsent" style="display: inline; margin-bottom: 0;"><strong>Externe Analyse erlauben (Datenübermittlung an Drittanbieter)</strong></label>
-        <br><small id="externalAnalysisConsentHelp">Ohne diese Zustimmung werden <strong>keine</strong> Hashes, Dateien, Links oder IP-Adressen an externe Dienste übertragen. Erst nach der Zustimmung können Anhänge, Links und Metadaten zur Analyse an Hybrid Analysis, VirusTotal, urlscan.io, URLhaus oder AbuseIPDB gesendet werden – abhängig von der Datenschutz-Stufe. Die Zustimmung kann jederzeit durch Deaktivieren dieser Option widerrufen werden. Details: <a href="https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html" target="_blank" rel="noopener noreferrer">Datenschutzerklärung <span aria-hidden="true" style="margin-left: 4px;">↗</span></a></small>
+        <br><small id="externalAnalysisConsentHelp">Ohne diese Zustimmung werden <strong>keine</strong> Hashes, Dateien, Links oder IP-Adressen an externe Dienste übertragen. Erst nach der Zustimmung können Anhänge, Links und Metadaten zur Analyse an Hybrid Analysis, VirusTotal, urlscan.io, URLhaus oder AbuseIPDB gesendet werden – abhängig von der Datenschutz-Stufe. Beim Speichern wird – sofern die Thunderbird-Version dies unterstützt – zusätzlich die optionale Datenfreigabe für persönliche Kommunikation abgefragt. Die Zustimmung kann jederzeit durch Deaktivieren dieser Option widerrufen werden; dabei wird die Datenfreigabe wieder entzogen. Rein lokale Prüfungen (z. B. Link-Markierung und Warnung beim Klick) laufen auch ohne Zustimmung und übertragen keine Daten. Details: <a href="https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html" target="_blank" rel="noopener noreferrer">Datenschutzerklärung <span aria-hidden="true" style="margin-left: 4px;">↗</span></a></small>
     </div>
 
     <div class="mb-3 mt-3">
@@ -52,15 +52,15 @@
     </div>
 
     <div class="mb-3">
-        <label for="urlhausApikey">URLhaus API Schlüssel (Optional für Echtzeit-Domain-Checks):</label>
+        <label for="urlhausApikey">URLhaus API Schlüssel (optional, nur für externe Domain-Prüfungen):</label>
         <input type="password" id="urlhausApikey" aria-describedby="urlhausHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-        <br><small id="urlhausHelp">Sie können einen kostenlosen API Schlüssel unter <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer" aria-label="urlhaus.abuse.ch (öffnet in einem neuen Tab)">urlhaus.abuse.ch <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
+        <br><small id="urlhausHelp">Sie können einen kostenlosen API Schlüssel unter <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer" aria-label="urlhaus.abuse.ch (öffnet in einem neuen Tab)">urlhaus.abuse.ch <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten. Der Schlüssel wird nur verwendet, wenn „Externe Analyse erlauben“ aktiviert und die Host-Berechtigung erteilt ist; lokale Prüfungen laufen auch ohne Schlüssel.</small>
     </div>
 
     <div class="mb-3">
-        <label for="urlscanApikey">urlscan.io API Schlüssel (Computer Vision Erkennung von z.B. gefälschten Logins):</label>
+        <label for="urlscanApikey">urlscan.io API Schlüssel (optional, nur für externe Link-Prüfungen):</label>
         <input type="password" id="urlscanApikey" aria-describedby="urlscanHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-        <br><small id="urlscanHelp">Einen kostenlosen API Schlüssel erhalten Sie unter <a href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer" aria-label="urlscan.io (öffnet in einem neuen Tab)">urlscan.io <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>.</small>
+        <br><small id="urlscanHelp">Einen kostenlosen API Schlüssel erhalten Sie unter <a href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer" aria-label="urlscan.io (öffnet in einem neuen Tab)">urlscan.io <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>. Der Schlüssel wird nur verwendet, wenn „Externe Analyse erlauben“ aktiviert und die Host-Berechtigung erteilt ist.</small>
     </div>
 
     <div class="mb-3">
@@ -106,19 +106,19 @@
     <div class="mb-3">
         <input type="checkbox" id="alwaysManual" aria-describedby="alwaysManualHelp">
         <label for="alwaysManual" style="display: inline; margin-bottom: 0;">Immer manuell scannen (Kein Auto-Upload)</label>
-        <br><small id="alwaysManualHelp">Verhindert den automatischen Upload von Anhängen, unabhängig von der gewählten Datenschutz-Stufe.</small>
+        <br><small id="alwaysManualHelp">Verhindert automatische Uploads von Anhängen sowie automatische Hash- und IP-Abfragen bei externen Diensten – unabhängig von der gewählten Datenschutz-Stufe. Manuelle Scans über den Button oder das Kontextmenü bleiben möglich.</small>
     </div>
 
     <div class="mb-3">
         <input type="checkbox" id="autoScanLinks" aria-describedby="autoScanHelp">
-        <label for="autoScanLinks" style="display: inline; margin-bottom: 0;">Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)</label>
-        <br><small id="autoScanHelp">Wenn deaktiviert, werden Links erst im Moment des Klickens gescannt (Time-of-Click Protection).</small>
+        <label for="autoScanLinks" style="display: inline; margin-bottom: 0;">Links in der E-Mail beim Öffnen prüfen (Auto-Scan)</label>
+        <br><small id="autoScanHelp">Wirkt nur zusammen mit „Externe Analyse erlauben“ und einem hinterlegten Schlüssel für einen Link-Prüfdienst (urlscan.io oder URLhaus). Ohne diese Voraussetzungen werden Links nur lokal bewertet.</small>
     </div>
 
     <div class="mb-3">
         <input type="checkbox" id="timeOfClickProtection" checked aria-describedby="tocHelp">
-        <label for="timeOfClickProtection" style="display: inline; margin-bottom: 0;">Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo bei Hover)</label>
-        <br><small id="tocHelp">Zeigt beim Überfahren von Links mit der Maus einen Hinweis an, dass die URL in Echtzeit geprüft wird.</small>
+        <label for="timeOfClickProtection" style="display: inline; margin-bottom: 0;">Time-of-Click-Schutz: Links vor dem Öffnen lokal prüfen</label>
+        <br><small id="tocHelp">Markiert Links in der Nachricht und warnt vor dem Öffnen, wenn ein Link verdächtig aussieht (z. B. abweichender angezeigter Text, IP-Adresse oder Punycode im Ziel, bekannte bösartige Domain). Die Prüfung erfolgt lokal – es werden dabei keine Daten übertragen.</small>
     </div>
 
     <br><br>

@@ -141,6 +141,15 @@ describe('background.js', () => {
             globalThis.tab_mail_open_display = tab_mail_open_display;
             globalThis.sent_to_hybrid_by_attachment = sent_to_hybrid_by_attachment;
             globalThis.injectTimeOfClickProtection = injectTimeOfClickProtection;
+            globalThis.evaluateClickRisk = evaluateClickRisk;
+            globalThis.markDomainFlagged = markDomainFlagged;
+            globalThis.flaggedDomains = flaggedDomains;
+            globalThis.findLinkRecord = findLinkRecord;
+            globalThis.handleOpenLink = handleOpenLink;
+            globalThis.handleGetHybridOverview = handleGetHybridOverview;
+            globalThis.scanLinksWithConfiguredProviders = scanLinksWithConfiguredProviders;
+            globalThis.processAttachments = processAttachments;
+            globalThis.processLinks = processLinks;
             globalThis.set_timeOfClickProtection = (val) => { timeOfClickProtection = val; };
             globalThis.set_privacyTier = (val) => { privacyTier = val; };
             globalThis.get_sha256_hash = get_sha256_hash;
@@ -509,7 +518,7 @@ describe('background.js', () => {
             { name: 'test.exe', contentType: 'application/x-msdownload', size: 100, partName: '1' }
         ];
 
-        await context.sent_to_hybrid_by_attachment({ id: 1 }, attachments);
+        await context.sent_to_hybrid_by_attachment({ id: 1 }, attachments, { allowExternal: true });
 
         assert.ok(savedResults);
         assert.strictEqual(savedResults.length, 1);
@@ -540,7 +549,7 @@ describe('background.js', () => {
             { name: 'unknown.exe', contentType: 'application/x-msdownload', size: 100, partName: '1' }
         ];
 
-        await context.sent_to_hybrid_by_attachment({ id: 1 }, attachments);
+        await context.sent_to_hybrid_by_attachment({ id: 1 }, attachments, { allowExternal: true });
 
         assert.ok(savedResults);
         assert.strictEqual(savedResults.length, 1);
@@ -548,6 +557,35 @@ describe('background.js', () => {
         assert.strictEqual(savedResults[0].hybrid_data.submission_id, 'PENDING_UPLOAD');
         assert.strictEqual(savedResults[0].hybrid_data.job_id, 'PENDING_UPLOAD');
         assert.strictEqual(savedResults[0].attachmentName, 'unknown.exe');
+    });
+
+    it('sent_to_hybrid_by_attachment does not transmit anything without allowExternal (fail-closed)', async () => {
+        context.set_apikey('test-key');
+        context.set_vt_apikey('test-vt-key');
+        context.set_privacyTier('balanced');
+        // Zustimmung ist per Default aktiv (beforeEach) - hier ohne allowExternal
+
+        let fetchCalls = 0;
+        context.fetch = async () => {
+            fetchCalls++;
+            return { status: 200, json: async () => ({ submission_id: 's', job_id: 'j' }) };
+        };
+
+        let savedResults = null;
+        context.indexedDB_save_batch_hybrid_data_to_db = (msg, results) => {
+            savedResults = results;
+        };
+
+        const attachments = [
+            { name: 'test.exe', contentType: 'application/x-msdownload', size: 100, partName: '1' }
+        ];
+
+        await context.sent_to_hybrid_by_attachment({ id: 1 }, attachments);
+
+        assert.strictEqual(fetchCalls, 0, 'ohne allowExternal darf keine Anfrage rausgehen');
+        assert.ok(savedResults);
+        assert.strictEqual(savedResults[0].hybrid_data.state, 'MANUAL_CHECK_PENDING');
+        assert.ok(!savedResults[0].virustotal_stats, 'ohne allowExternal dürfen keine VirusTotal-Daten abgefragt werden');
     });
 
     it('handleManualUpload successfully uploads and updates DB', async () => {
@@ -1850,40 +1888,38 @@ describe('background.js', () => {
             };
         });
 
-        it('injects script when timeOfClickProtection is true and filteredUrls exist', async () => {
+        it('injects the local click guard when timeOfClickProtection is true', async () => {
             context.set_timeOfClickProtection(true);
-            const filteredUrls = ['http://malicious.com'];
 
-            await context.injectTimeOfClickProtection(10, filteredUrls);
+            await context.injectTimeOfClickProtection(10);
 
             assert.strictEqual(executedScripts.length, 1);
             assert.strictEqual(executedScripts[0].target.tabId, 10);
             assert.strictEqual(typeof executedScripts[0].func, 'function');
-            // The injected script for time of click does not take arguments
-            assert.strictEqual(executedScripts[0].args.length, 0);
+            // Der injizierte Code erhält die vorlokalisierten Texte als Argument
+            assert.strictEqual(executedScripts[0].args.length, 1);
+            assert.strictEqual(typeof executedScripts[0].args[0].marked, 'string');
+            assert.strictEqual(typeof executedScripts[0].args[0].reasonTexts.tocReasonPunycode, 'string');
         });
 
         it('does not inject script when timeOfClickProtection is false', async () => {
             context.set_timeOfClickProtection(false);
-            const filteredUrls = ['http://malicious.com'];
 
-            await context.injectTimeOfClickProtection(10, filteredUrls);
+            await context.injectTimeOfClickProtection(10);
 
             assert.strictEqual(executedScripts.length, 0);
         });
 
-        it('does not inject script when filteredUrls is empty', async () => {
+        it('injects the click guard even when the message has no URLs', async () => {
             context.set_timeOfClickProtection(true);
-            const filteredUrls = [];
 
-            await context.injectTimeOfClickProtection(10, filteredUrls);
+            await context.injectTimeOfClickProtection(11);
 
-            assert.strictEqual(executedScripts.length, 0);
+            assert.strictEqual(executedScripts.length, 1);
         });
 
         it('handles executeScript error gracefully', async () => {
             context.set_timeOfClickProtection(true);
-            const filteredUrls = ['http://malicious.com'];
 
             context.browser.scripting.executeScript = async () => {
                 throw new Error("Simulated injection failure");
@@ -1898,7 +1934,7 @@ describe('background.js', () => {
             };
 
             try {
-                const result = await context.injectTimeOfClickProtection(10, filteredUrls);
+                const result = await context.injectTimeOfClickProtection(10);
                 // Ensure promises resolve before checking
                 await new Promise(process.nextTick);
                 assert.strictEqual(errorLogged, true);
@@ -2891,117 +2927,122 @@ describe('background.js', () => {
             });
         });
 
-        it('returns UNKNOWN if no active message or headerMessageId', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [] });
+        it('returns a local verdict for a harmless link without contacting any provider', async () => {
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
 
             let response;
             await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'UNKNOWN' });
-
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 1 }] }); // Missing headerMessageId
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'UNKNOWN' });
+            assert.strictEqual(response.status, 'success');
+            assert.strictEqual(response.data.risk, 'none');
+            assert.deepEqual(response.data.reasons, []);
+            assert.strictEqual(fetchCalls, 0, 'die Klick-Prüfung darf ausschließlich lokal arbeiten');
         });
 
-        it('returns UNKNOWN if no link object is found and urlscan is disabled', async () => {
+        it('flags a raw IP address as target', async () => {
+            let response;
+            await context.handleCheckLinkState({ url: 'http://203.0.113.7/login' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.strictEqual(response.data.risk, 'high');
+            assert.ok(response.data.reasons.includes('tocReasonIpLiteral'));
+        });
+
+        it('flags punycode/obfuscated domains', async () => {
+            let response;
+            await context.handleCheckLinkState({ url: 'http://xn--paypal-9ra.com/' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.strictEqual(response.data.risk, 'high');
+            assert.ok(response.data.reasons.includes('tocReasonPunycode'));
+        });
+
+        it('flags a link whose displayed text shows a different domain', async () => {
+            let response;
+            await context.handleCheckLinkState(
+                { url: 'http://evil.example.com/login', displayedText: 'https://www.paypal.com/login' },
+                { tab: { id: 1 } },
+                (res) => { response = res; }
+            );
+            assert.strictEqual(response.data.risk, 'high');
+            assert.ok(response.data.reasons.includes('tocReasonTextMismatch'));
+        });
+
+        it('flags credentials embedded in the URL', async () => {
+            let response;
+            await context.handleCheckLinkState({ url: 'http://user:secret@example.com/' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.strictEqual(response.data.risk, 'high');
+            assert.ok(response.data.reasons.includes('tocReasonUserInfo'));
+        });
+
+        it('flags domains from the user blacklist and honours the whitelist', async () => {
+            context.set_customBlacklist(new Set(['blacklisted.example']));
+            let response;
+            await context.handleCheckLinkState({ url: 'http://blacklisted.example/x' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.strictEqual(response.data.risk, 'high');
+            assert.ok(response.data.reasons.includes('tocReasonBlacklist'));
+
+            context.set_customBlacklist(new Set());
+            context.set_customWhitelist(new Set(['trusted.example']));
+            await context.handleCheckLinkState({ url: 'http://trusted.example/x' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.strictEqual(response.data.risk, 'none');
+            context.set_customWhitelist(new Set());
+        });
+
+        it('flags domains that were detected as malicious before', async () => {
+            context.markDomainFlagged('known-bad.example');
+            let response;
+            await context.handleCheckLinkState({ url: 'http://known-bad.example/login' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.strictEqual(response.data.risk, 'high');
+            assert.ok(response.data.reasons.includes('tocReasonKnownMalicious'));
+        });
+
+        it('uses a stored malicious scan result without fetching anything', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-            context.getFromStore = async () => ({ links: [] });
+            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'MALICIOUS' }] });
             context.openDB = async () => ({});
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
 
             let response;
             await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'UNKNOWN' });
+            assert.strictEqual(response.data.storedState, 'MALICIOUS');
+            assert.strictEqual(response.data.risk, 'high');
+            assert.strictEqual(fetchCalls, 0);
         });
 
-        it('checks urlscan.io if no link object is found and urlscan is active, returning MALICIOUS', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-            context.set_urlscanApikey('test-urlscan');
-
-            // Mock checkUrlscanIo behaviour via fetch
-            let callCount = 0;
-            context.fetch = async (url) => {
-                callCount++;
-                if (callCount === 1) return { ok: true, status: 200, json: async () => ({ uuid: 'uuid-1' }) };
-                if (callCount === 2) return { status: 200, json: async () => ({ verdicts: { overall: { malicious: true } } }) };
-            };
-
-            context.getFromStore = async () => ({ links: [] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.strictEqual(response.status, 'MALICIOUS_VISUAL');
-        });
-
-        it('returns linkObj state if urlscan is clean and hybrid_sha256 is missing', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-            context.set_urlscanApikey('test-urlscan');
-
-            let callCount = 0;
-            context.fetch = async (url) => {
-                callCount++;
-                if (callCount === 1) return { ok: true, status: 200, json: async () => ({ uuid: 'uuid-2' }) };
-                if (callCount === 2) return { status: 200, json: async () => ({ verdicts: {} }) };
-            };
-
-            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'CUSTOM_STATE' }] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'CUSTOM_STATE' });
-        });
-
-        it('fetches overview from hybrid analysis if hybrid_sha256 exists, returning CLEAN for no specific threat', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-            // Disable urlscan to simplify
-            context.set_urlscanApikey('');
-
-            context.fetch = async (url) => {
-                assert.ok(url.includes('api/v2/overview/hash123'));
-                return { status: 200, json: async () => ({ verdict: 'no specific threat' }) };
-            };
-
-            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UPLOADED', hybrid_sha256: 'hash123' }] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'CLEAN' });
-        });
-
-        it('fetches overview from hybrid analysis, returning UPPERCASE verdict for threats', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-
-            context.fetch = async () => ({ status: 200, json: async () => ({ verdict: 'malicious' }) });
-
-            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UPLOADED', hybrid_sha256: 'hash123' }] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'MALICIOUS' });
-        });
-
-        it('falls back to link state if hybrid analysis fetch throws an error', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-
-            context.fetch = async () => { throw new Error('Network error'); };
-
-            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'FALLBACK_STATE', hybrid_sha256: 'hash123' }] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'FALLBACK_STATE' });
-        });
-
-        it('returns ERROR on generic unexpected errors in the main flow', async () => {
+        it('still answers locally when the displayed message cannot be determined', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => { throw new Error('API failure'); };
 
             let response;
             await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'ERROR' });
+            assert.strictEqual(response.status, 'success');
+            assert.strictEqual(response.data.risk, 'none');
+        });
+
+        it('rejects requests without a URL', async () => {
+            let response;
+            await context.handleCheckLinkState({}, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.deepEqual(response, { status: 'error', code: 'invalid_request' });
+        });
+    });
+
+    describe('evaluateClickRisk', () => {
+        it('rates brand look-alike domains as high risk', () => {
+            const verdict = context.evaluateClickRisk('http://paypa1.com/login');
+            assert.strictEqual(verdict.risk, 'high');
+        });
+
+        it('rates subdomains of unrelated domains carrying a brand name as high risk', () => {
+            const verdict = context.evaluateClickRisk('http://paypal.com.secure-login.example/');
+            assert.strictEqual(verdict.risk, 'high');
+            assert.ok(verdict.reasons.includes('tocReasonBrandInSubdomain'));
+        });
+
+        it('accepts the genuine brand domain', () => {
+            const verdict = context.evaluateClickRisk('https://www.paypal.com/login');
+            assert.strictEqual(verdict.risk, 'none');
+        });
+
+        it('rejects non-http(s) schemes', () => {
+            const verdict = context.evaluateClickRisk('javascript:alert(1)');
+            assert.strictEqual(verdict.risk, 'high');
         });
     });
 
@@ -3342,6 +3383,152 @@ describe('background.js', () => {
             } finally {
                 context.browser.notifications = originalNotifications;
             }
+        });
+    });
+
+    describe('Consent- und Trigger-Gates (Audit B1/H1/H2)', () => {
+        it('processLinks extracts the text of a real MessagePart structure', async () => {
+            const fullMessage = {
+                headers: {},
+                parts: [
+                    { contentType: 'text/plain', body: 'Bitte Zahlung pruefen: http://evil.example.com/pay' },
+                    { contentType: 'text/html', body: '<a href="http://second.example.com/">klick</a>' }
+                ]
+            };
+            const result = await context.processLinks({ id: 7 }, { id: 1, headerMessageId: 'h1' }, fullMessage, new Map());
+            assert.ok(result.messageText.includes('evil.example.com/pay'), 'der Nachrichtentext muss extrahiert werden');
+            assert.ok(result.urls.length >= 2, 'beide Links müssen gefunden werden');
+        });
+
+        it('processLinks does not transmit anything without allowExternal', async () => {
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+            let savedLinks = null;
+            context.indexedDB_save_links_to_db = (msg, urls) => { savedLinks = urls; };
+
+            const fullMessage = { headers: {}, parts: [{ contentType: 'text/plain', body: 'see http://evil.example.com/pay' }] };
+            await context.processLinks({ id: 7 }, { id: 1, headerMessageId: 'h1' }, fullMessage, new Map());
+
+            assert.strictEqual(fetchCalls, 0, 'ohne allowExternal darf kein Link übertragen werden');
+            assert.ok(Array.isArray(savedLinks) && savedLinks.length === 1);
+        });
+
+        it('collectThreatEvaluationOptions keeps IP and domain checks local without allowExternal', async () => {
+            context.set_ipReputationProvider('abuseipdb');
+            context.set_ipReputationApiKey('key');
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+
+            const options = await context.collectThreatEvaluationOptions({
+                message: { author: 'a@example.com', subject: 'hi' },
+                fullMessage: { headers: { received: ['from mx (203.0.113.9)'] } },
+                filteredUrls: ['http://evil.example.com/x'],
+                messageText: 'x',
+                parsedUrlCache: new Map(),
+                allowExternal: false
+            });
+
+            assert.strictEqual(fetchCalls, 0);
+            assert.deepEqual(options.maliciousIps, []);
+            assert.deepEqual(options.urlhausDomains, []);
+        });
+    });
+
+    describe('Popup-Backend: getHybridOverview und openLink', () => {
+        it('handleGetHybridOverview refuses to transmit without consent', async () => {
+            context.set_externalAnalysisConsent(false);
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+
+            const res = await context.handleGetHybridOverview({ sha256: 'a'.repeat(64) });
+            assert.strictEqual(res.status, 'error');
+            assert.strictEqual(res.code, 'EXTERNAL_ANALYSIS_DISABLED');
+            assert.strictEqual(fetchCalls, 0);
+        });
+
+        it('handleGetHybridOverview requires a valid sha256 and an API key', async () => {
+            const invalid = await context.handleGetHybridOverview({ sha256: 'not-a-hash' });
+            assert.strictEqual(invalid.code, 'invalid_request');
+
+            context.set_apikey_hybridanalysis('');
+            const noKey = await context.handleGetHybridOverview({ sha256: 'a'.repeat(64) });
+            assert.strictEqual(noKey.code, 'no_api_key');
+        });
+
+        it('handleGetHybridOverview fetches the overview once consent, permission and key are given', async () => {
+            context.set_apikey_hybridanalysis('test-key');
+            context.browser.permissions.contains = async () => true;
+            let requestedUrl = null;
+            context.fetch = async (url) => {
+                requestedUrl = url;
+                return { status: 200, json: async () => ({ verdict: 'no specific threat' }) };
+            };
+
+            const hash = 'b'.repeat(64);
+            const res = await context.handleGetHybridOverview({ sha256: hash });
+            assert.strictEqual(res.status, 'success');
+            assert.strictEqual(res.data.verdict, 'no specific threat');
+            assert.ok(requestedUrl.endsWith('/api/v2/overview/' + hash));
+        });
+
+        it('handleOpenLink only opens http(s) targets', async () => {
+            const created = [];
+            const originalTabs = context.browser.tabs;
+            context.browser.tabs = { create: async (opts) => { created.push(opts.url); return { id: 9 }; } };
+            try {
+                let response;
+                await context.handleOpenLink({ url: 'https://example.com/x' }, (res) => { response = res; });
+                assert.strictEqual(response.status, 'success');
+                assert.deepStrictEqual(created, ['https://example.com/x']);
+
+                await context.handleOpenLink({ url: 'javascript:alert(1)' }, (res) => { response = res; });
+                assert.strictEqual(response.code, 'invalid_url');
+                assert.strictEqual(created.length, 1);
+            } finally {
+                context.browser.tabs = originalTabs;
+            }
+        });
+    });
+
+    describe('handleRequestScan mit echtem MessageHeader (Audit B3)', () => {
+        const realHeader = {
+            id: 101,
+            author: 'Service <service@paypal-support.com>',
+            subject: 'Action required',
+            headerMessageId: 'h1'
+        };
+
+        beforeEach(() => {
+            context.browser.permissions = { contains: async () => true, request: async () => true };
+            context.browser.messages.listAttachments = async () => ([]);
+            context.browser.messages.getFull = async () => ({
+                headers: {},
+                parts: [{ contentType: 'text/plain', body: 'please pay http://evil.example.com/pay' }]
+            });
+            context.set_apikey('test-key');
+        });
+
+        it('scans a real MessageHeader and reports success instead of a TypeError', async () => {
+            context.browser.messages.get = async () => realHeader;
+
+            const response = await context.handleRequestScan(
+                { action: 'requestScan', messageId: 101, tabId: 1 },
+                { tab: { id: 1 } }
+            );
+
+            assert.strictEqual(response.success, true, 'requestScan muss erfolgreich sein: ' + JSON.stringify(response));
+        });
+
+        it('falls back to the displayed message when messages.get is unavailable', async () => {
+            context.browser.messages.get = undefined;
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [realHeader] });
+
+            const response = await context.handleRequestScan(
+                { action: 'requestScan', messageId: 101, tabId: 1 },
+                { tab: { id: 1 } }
+            );
+
+            assert.strictEqual(response.success, true, JSON.stringify(response));
         });
     });
 });

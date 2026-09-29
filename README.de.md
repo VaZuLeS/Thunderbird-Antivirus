@@ -13,7 +13,7 @@ minimal notwendigen Daten an externe Analysedienste.
 | Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6 – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.0 – siehe [CHANGELOG.md](CHANGELOG.md) |
 | Lizenz | MIT – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
@@ -130,7 +130,8 @@ Hinweis: Eine lokal gebaute XPI ist unsigniert. Release-Versionen von Thunderbir
 sofern die Signaturprüfung nicht deaktiviert ist (`about:config` → `xpinstall.signatures.required = false`, nicht in
 allen Builds verfügbar); für die Verteilung `npx web-ext sign --channel listed`/`--channel unlisted` oder die
 Store-Signierung nutzen. Release-Pakete entstehen mit `web-ext build --source-dir .` und werden über die
-`ignoreFiles`-Regeln aus `web-ext-config.mjs` (ergänzt durch `.webextignore`) bereinigt, sodass Testdateien,
+`ignoreFiles`-Regeln aus `web-ext-config.mjs` bereinigt (`web-ext` und `addons-linter` lesen keine
+`.webextignore`-Datei; sie wurde entfernt), sodass Testdateien,
 `docs/`, `scripts/`, `examples/` und Lockfiles nicht
 mitgeliefert werden.
 
@@ -149,6 +150,13 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 - `web-ext lint` meldet derzeit **0 Fehler**. Die verbleibenden Warnungen sind fast ausschließlich
   `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-spezifische APIs wie
   `messages.*` oder `messageDisplay.*` nicht kennt. Vor einem Release die Liste durchsehen.
+- Das Paket enthält derzeit **17 Dateien / 216.804 Bytes** entpackt (ZIP 58.997 Bytes), gemessen am 2026-09-29 mit
+  den obigen Befehlen plus `node scripts/verify-package.js /tmp/build-docs`; die Werte ändern sich mit jeder
+  Code-Änderung (Details: [docs/store_listing.md](docs/store_listing.md), Abschnitt 9).
+- Die Pre-Submit-Checks prüfen zusätzlich, dass die Datenklassifizierung in der `manifest.json` gültig ist
+  (`required: ["none"]`, `optional: ["personalCommunications"]`), dass jede zur Laufzeit genutzte privilegierte API
+  ihre Berechtigung in `manifest.permissions` hat (z. B. `browser.menus` → `menus`) und dass `manifest.json` und
+  `package.json` exakt dieselbe Version tragen.
 - Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
   `node ./scripts/pre-submit-checks.js`, Unit-Tests und `npx web-ext lint`.
 - Ausführlicher: [docs/quickstart.md](docs/quickstart.md).
@@ -160,7 +168,8 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 | `messagesRead` | Angezeigte Nachricht (Betreff, Absender, Text, Anhänge) lesen, damit sie analysiert werden kann; nur für geöffnete Nachrichten und wenn ein Scan ausgelöst wird. |
 | `storage` | Einstellungen, Zustimmungs-Flag, Absender-Opt-ins, Anbieter-API-Schlüssel und der lokale Scan-Cache. |
 | `notifications` | Systembenachrichtigungen zu Scan-Start, Einreichung und Fehlern. |
-| `scripting` | Banner, Warnhinweis und Time-of-Click-Hinweis in die Nachrichtenansicht einfügen (nur mitgelieferter Code, kein Remote-Code). |
+| `menus` | Die beiden Kontextmenüeinträge für den Link-Scan anlegen („Diesen Link mit Thundy AV scannen“ im Kontext `link`, „Alle Links dieser Nachricht scannen“ im Kontext `message_display_action`). |
+| `scripting` | Banner, Warnhinweis und Time-of-Click-Markierung in die Nachrichtenansicht einfügen (nur mitgelieferter Code, kein Remote-Code). |
 | `downloads` | Einen lokal bereinigten („entschärften“) HTML-Anhang über den Download-Manager speichern. |
 
 Optionale Host-Berechtigungen (`optional_host_permissions` in der `manifest.json`) – jede wird erst zur Laufzeit
@@ -174,10 +183,12 @@ angefragt, wenn der passende Anbieter genutzt wird:
 | `https://urlhaus-api.abuse.ch/*` | URLhaus (abuse.ch) |
 | `https://api.abuseipdb.com/*` | AbuseIPDB |
 
-Zusätzlich deklariert die `manifest.json` unter `browser_specific_settings.gecko.data_collection_permissions` die
-**verpflichtende** Kategorie `personalCommunications`. Sie dokumentiert, dass das Add-on Nachrichteninhalte
-verarbeiten kann; übertragen wird nur nach globaler Zustimmung und einer Nutzeraktion und nur an Anbieter, denen Sie
-den Zugriff gewährt haben.
+Zusätzlich deklariert die `manifest.json` unter `browser_specific_settings.gecko.data_collection_permissions`
+`{ "required": ["none"], "optional": ["personalCommunications"] }`: Standardmäßig wird nichts erhoben, und die
+Übermittlung von Nachrichteninhalten an Analyse-Anbieter ist ein **optionaler** Datentyp, der Ihre Zustimmung
+voraussetzt. Der optionale Datentyp wird zusammen mit der Host-Berechtigung beim Aktivieren der Zustimmung im
+Optionsdialog angefragt (`browser.permissions.request({ data_collection: ["personalCommunications"] })`) und beim
+Ausschalten der Zustimmung wieder entfernt. Der Time-of-Click-Schutz prüft das Ziel **lokal** und überträgt nichts.
 
 ## Einen weiteren Analysedienst ergänzen
 

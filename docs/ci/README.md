@@ -25,6 +25,17 @@ Repository:
 - `scripts/filter-lint-warnings.js` (nur bekannte Thunderbird-False-Positives werden toleriert)
 - `scripts/verify-package.js` (Paketinhalt und -größe)
 
+**Erneut verifiziert am 2026-09-29 (Audit-Befund M1):** Ein Push, der eine Workflow-Datei anlegt
+oder ändert, wird weiterhin mit genau dieser Meldung abgelehnt. Die Übernahme von `docs/ci/ci.yml`
+und `docs/ci/release.yml` nach `.github/workflows/` ist und bleibt damit ein **manueller** Schritt.
+
+**Was die aktive CI derzeit ausführt** (`.github/workflows/ci.yml`, unverändert): `npm ci`, die
+Pre-Submit-Checks (`node ./scripts/pre-submit-checks.js`), **nur** `node --test background.test.js`
+als Testschritt und `npx web-ext lint`. Die übrigen Testdateien (`api.test.js`, `db.test.js`,
+`options.test.js`, `api_gateway.test.js`, `scripts/pre-submit-checks.test.js`) laufen dort nicht —
+genau das ändert `docs/ci/ci.yml` (vollständiger `npm test`, Lint-Filter, XPI-Build mit
+Paketprüfung).
+
 ## Übernehmen
 
 1. Datei an die Zielstelle kopieren:

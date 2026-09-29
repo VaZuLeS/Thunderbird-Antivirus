@@ -42,7 +42,10 @@ node ./scripts/pre-submit-checks.js
 
 Prüft unter anderem: Manifest V3, Name/Version/Beschreibung/`homepage_url`, Add-on-ID, deklarierte und
 **in der richtigen Kantenlänge vorhandene** Icons, `default_locale` samt Katalog und `__MSG_`-Verweise,
-`data_collection_permissions` (kein widersprüchliches `"none"`), verbotene Permissions und MV3-inkompatible Keys,
+`data_collection_permissions` (`required` vorhanden und nicht leer; `"none"` nur erlaubt, wenn keine
+`optional_host_permissions` auf Anbieter deklariert sind oder `optional` den Datentyp nennt), jede zur Laufzeit
+genutzte privilegierte API gegen `manifest.permissions` (z. B. `browser.menus` → `menus`), exakte
+Versionsgleichheit von `manifest.json` und `package.json`, verbotene Permissions und MV3-inkompatible Keys,
 valide Match-Patterns in `optional_host_permissions`, referenzierte Dateien (Hintergrundskripte, Optionsseite,
 Popup), Abwesenheit von `install.rdf` sowie Privacy-Policy und Verlinkung auf den Landing-Pages. Ausgabe: eine
 Liste `ok:`/`warning:`/`FAILED:`; bei Fehlern ist der Exit-Code ≠ 0, sodass die CI zuverlässig fehlschlägt.
@@ -58,10 +61,12 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 - `npx web-ext lint` (addons-linter) muss **0 Fehler** melden. Die verbleibenden Warnungen sind überwiegend
   `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-APIs wie `messages.*`
   oder `messageDisplay.*` nicht kennt.
-- `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.zip` (Dateiname aus dem
-  Add-on-Namen). Die Ausschlüsse für Testdateien, `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und
-  Build-Artefakte stehen in `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`);
-  `node scripts/verify-package.js ./build` prüft anschließend Dateiliste und Größe des Pakets.
+- `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.0.zip` (Dateiname aus dem
+  Add-on-Namen und der Version). Die Ausschlüsse für Testdateien, `docs/`, `scripts/`, `examples/`, Lockfiles,
+  `install.rdf` und Build-Artefakte stehen ausschließlich in `web-ext-config.mjs` (`ignoreFiles`);
+  `web-ext`/`addons-linter` lesen keine `.webextignore` (die Datei wurde entfernt, Audit M6).
+  `node scripts/verify-package.js ./build` prüft anschließend Dateiliste und Größe des Pakets. Aktuell gemessen
+  (2026-09-29): 17 Dateien / 216.804 Bytes entpackt, ZIP 58.997 Bytes.
 - Signieren für eine Verteilung: `npx web-ext sign --channel unlisted` (selbst verteilen) oder
   `npx web-ext sign --channel listed` (Einreichung im Add-ons Store, benötigt API-Zugangsdaten von
   addons.thunderbird.net).

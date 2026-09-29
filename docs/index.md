@@ -1,18 +1,20 @@
 # Thundy AV – Documentation
 
 Landing page for the documentation of **Thundy AV – Email Scanner for Thunderbird**
-(short name "Thundy AV"), version 1.6, MIT license.
+(short name "Thundy AV"), version 1.6.0, MIT license.
 
 - Language selection page (GitHub Pages root): [index.html](index.html) ·
   [English](index_en.html) · [Deutsch](index_de.html)
 - Privacy policy (German, with an English section): [privacy_policy.md](privacy_policy.md)
   · hosted: https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
 - Reviewer notes (permissions, data flows, test path): [reviewer_notes.md](reviewer_notes.md)
+  · sample message: `test/fixtures/reviewer-sample.eml`
 - Store listing copy: [store_listing.md](store_listing.md)
 - Asset status: [store_assets.md](store_assets.md) · capture guide:
   [screenshot_capture.md](screenshot_capture.md)
-- Store-readiness analysis (findings B1–B6, H1–H12, M1–M12):
-  [STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md)
+- Store-readiness **audit** (current state, findings B1–B5/H1–H7/M1–M12, 2026-09-29):
+  [STORE_READINESS_AUDIT.md](STORE_READINESS_AUDIT.md)
+- Store-readiness analysis (historical snapshot of the 1.5/1.6 work): [STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md)
 
 ## Data processing in one sentence
 

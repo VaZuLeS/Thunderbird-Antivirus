@@ -3,7 +3,7 @@
 **Add-on:** Thundy AV – Email Scanner for Thunderbird
 **Short name:** Thundy AV
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.6 (Manifest V3, `strict_min_version` 140.0)
+**Version:** 1.6.0 (Manifest V3, `strict_min_version` 140.0)
 **License:** MIT
 **Homepage:** https://vazules.github.io/Thunderbird-Antivirus/
 **Privacy policy URL:** https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
@@ -51,6 +51,11 @@ it.**
   switch that blocks any automatic upload, an entry in the link context menu for a manual link
   scan, a popup with the message header data and a one-click *"Clear cache"* button for the local
   analysis database.
+
+**What it is not:** Thundy AV contains no virus signature engine of its own. It evaluates a message
+locally (heuristics and scoring) and, only with your consent, asks the third-party services named
+below — for example whether a file hash or a URL is already known to be malicious. Without an API key
+of your own, the external analysis is inactive.
 
 ### What is transmitted, and when
 
@@ -139,7 +144,7 @@ zeigt die Banner an.
 | Title | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | thundy-av@bludau-it-services.de |
-| Version | 1.6 |
+| Version | 1.6.0 |
 | Category (proposal) | "Privacy & Security"; if the store's picker does not offer it, "Miscellaneous" |
 | License | MIT (`LICENSE` in the repository) |
 | Support email | bludau.it.services@gmail.com |
@@ -147,9 +152,9 @@ zeigt die Banner an.
 | Privacy policy URL | https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html |
 | Source code | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
-| Language of the user interface | German (localisation not implemented yet) |
+| Language of the user interface | German — the options page and the popup are German only (`<html lang="de">`; UI localisation is not implemented yet). The manifest strings (name, description, action title) and the banner texts are localised in English and German via `_locales/` (default locale `en`). |
 
-## 6. Release notes 1.6
+## 6. Release notes 1.6.0 (EN)
 
 - Ported the background/code paths to the Manifest V3 APIs (`scripting`,
   `optional_host_permissions`, message APIs) and removed code that relied on MV2-only entries.
@@ -165,21 +170,82 @@ zeigt die Banner an.
 - Renamed the add-on to "Thundy AV – Email Scanner for Thunderbird" (short name "Thundy AV"),
   removed the "Thunderbird" trademark from the product name and consolidated the icons.
 
-## 7. Pre-upload checklist (honest status)
+Fixes of the independent store-readiness audit (2026-09-29, `docs/STORE_READINESS_AUDIT.md`), part of
+the submitted 1.6.0:
+
+- The popup no longer transmits anything without the global consent; it shows the consent notice
+  instead, and the background script rejects such a request with `EXTERNAL_ANALYSIS_DISABLED`.
+- The popup rendering and the two buttons of the message banner work again ("Scan this message only",
+  "Scan this sender permanently").
+- Links and domains from the message body are actually extracted and evaluated again.
+- Time-of-Click protection checks a link **locally** when it is clicked (URL structure, displayed link
+  text vs. target, own black/whitelist, known malicious domains) and transmits nothing; a suspicious
+  target is intercepted with a warning.
+- The `menus` permission is declared again, so both context menu entries ("scan this link", "scan all
+  links of this message") are created.
+- Data classification: `required: ["none"]`, `optional: ["personalCommunications"]`; the optional data
+  type is requested together with the host permission when the consent is enabled.
+- Version `1.6.0` in `manifest.json` and `package.json`; packaging rules live in `web-ext-config.mjs`
+  only (the ineffective `.webextignore` was removed).
+
+## 7. Releasenotes 1.6.0 (DE)
+
+- Portierung der Hintergrund-/Codepfade auf die Manifest-V3-APIs (`scripting`,
+  `optional_host_permissions`, Nachrichten-APIs); MV2-only-Code wurde entfernt.
+- Zustimmungsmodell: globale Zustimmung „Externe Analyse erlauben“ (`externalAnalysisConsent`,
+  Standard **aus**), Opt-in je Absender (`scanningEnabledSenders`) mit zwei Buttons im Banner
+  („Nur diese Nachricht scannen“ / „Absender dauerhaft scannen“) und Datenschutz-Stufe
+  (`privacyTier`, Standard `strict`).
+- Host-Berechtigungen der Anbieter liegen in `optional_host_permissions` und werden erst angefragt,
+  wenn im Optionsdialog ein Schlüssel gespeichert wird.
+- Paketbereinigung: Test- und Entwicklungsartefakte, Lockfiles, `docs/`, `install.rdf` und
+  Beispielskripte bleiben aus der XPI heraus; Paketinhalt und -größe werden geprüft.
+- Umbenennung in „Thundy AV – Email Scanner for Thunderbird“ (Kurzname „Thundy AV“), Entfernung des
+  Markennamens „Thunderbird“ aus dem Produktnamen, konsolidierte Icons.
+- Behoben (Befunde des Store-Readiness-Audits vom 2026-09-29): Popup überträgt ohne Zustimmung keine
+  Daten mehr und zeigt stattdessen den Zustimmungshinweis; die Darstellung des Popups und die beiden
+  Banner-Buttons funktionieren wieder; Links aus dem Nachrichtenkörper werden wieder extrahiert und
+  bewertet; der Time-of-Click-Schutz prüft Links beim Klick **lokal** (ohne Übermittlung); die
+  Berechtigung `menus` ist deklariert (beide Kontextmenüeinträge); Datenklassifizierung
+  `required: ["none"]`, `optional: ["personalCommunications"]`; Version `1.6.0` einheitlich in
+  `manifest.json` und `package.json`.
+
+## 8. Pre-upload checklist (honest status)
 
 | Item | Status |
 |---|---|
-| Real screenshots (PNG, ≥ 1280 × 800, three motifs) | **open** — only SVG placeholders exist (`docs/store_assets.md`) |
-| Icons in usable resolutions (16/32/48/64/128 px, shield motif) | done — reproducibly generated by `node scripts/generate-icons.js`, dimensions verified by the pre-submit checks |
-| Manifest metadata (name, ID, version 1.6, `strict_min_version`, MIT) | done |
-| Consent model documented | done (see note below) |
+| Real screenshots (PNG, ≥ 1280 × 800, three motifs) | **open** — only three SVG sketches exist (`docs/screenshots/*.svg`, see `docs/store_assets.md`) |
+| Icons in usable resolutions (16/32/48/64/128 px, shield motif) | done for format and size — reproducibly generated by `node scripts/generate-icons.js`, every declared size verified as PNG with exactly that edge length by the pre-submit checks (`scripts/pre-submit-checks.js`). The **artwork** is a generated placeholder, not designed artwork; replacing it is recommended but not required by ATN. |
+| Manifest metadata (name, ID, version 1.6.0, `strict_min_version`, MIT) | done |
+| Consent model documented | done (sections 1, 3.2, 3.3 and 4) |
+| Data classification (`data_collection_permissions`) | done — `required: ["none"]`, `optional: ["personalCommunications"]` (`manifest.json`), requested in the options dialog via `permissions.request({ data_collection: […] })` |
 | Privacy policy publicly reachable | done — https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html |
 | Privacy policy linked from the landing page | done (`docs/index.html`, `index_en.html`, `index_de.html`) |
-| Reviewer notes complete (permissions, data flows, test path) | done (`docs/reviewer_notes.md`) |
+| Reviewer notes complete (permissions incl. `menus`, data flows, test path, sample message) | done (`docs/reviewer_notes.md`, sections 2, 3.2, 4.1, 8.6) |
 | Manual verification of the banner injection in Thunderbird 140 ESR | **open** |
-| Unit tests green (`npm test`) | executed in CI; the result for the current commit is authoritative |
-| XPI built for 1.6 and attached to a release | **open** — the 1.6 artefact has not been built yet |
+| Unit tests green (`npm test`) | not re-run as part of this document — the CI result for the current commit is authoritative; `node --test scripts/pre-submit-checks.test.js` passes locally |
+| XPI built for 1.6.0 and attached to a release | **open** — the artefact builds reproducibly (see section 9), but it is not signed and not attached to a release |
 | Submitted to the Thunderbird Add-ons Store | **open** — not submitted, no store URL |
 
 Note: this table describes documentation and packaging status only. It does not claim that the
 manual Thunderbird test has been performed or that the screenshots exist.
+
+## 9. Package facts (measured)
+
+Measured on 2026-09-29 in this repository with
+
+```bash
+npx web-ext build --source-dir . --artifacts-dir /tmp/build-docs
+node scripts/verify-package.js /tmp/build-docs
+```
+
+- Artifact: `thundy_av_email_scanner_for_thunderbird-1.6.0.zip`
+- Content: **17 files**, **216.804 bytes** uncompressed, ZIP archive **58.997 bytes**
+- The package contains runtime files only (`manifest.json`, `background.js`, `db.js`, `api.js`,
+  `api_gateway.js`, `options.html`, `options.js`, `popup.html`, `theme.css`, `LICENSE`,
+  `img/*.png`, `_locales/*/messages.json`); `scripts/verify-package.js` reports
+  "Package content is valid."
+
+The values are a snapshot: they change with every code change. Earlier measurements
+(179.276 bytes uncompressed, 48.092 bytes ZIP) referred to commit `ae2a08e` of `main` and are
+superseded.

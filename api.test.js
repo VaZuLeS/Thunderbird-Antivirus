@@ -3,6 +3,7 @@ const vm = require('vm');
 const path = require('path');
 const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert');
+const { JSDOM } = require('jsdom');
 
 describe('escapeHTML', () => {
     let context;
@@ -476,6 +477,8 @@ tag: tag,
                         this.children.push(node);
                     },
                     setAttribute: function() {},
+                    getAttribute: function() {},
+                    addEventListener: function() {},
                     removeAttribute: function() {}
                 }),
                 createDocumentFragment: () => ({
@@ -518,7 +521,17 @@ tag: tag,
                         }
                         return context.apiContentElement;
                     }
-                    return { textContent: '', insertAdjacentHTML: () => {}, innerHTML: '', appendChild: () => {} };
+                    // DOM-naher Stub für Buttons/Status-Elemente.
+                    return {
+                        textContent: '',
+                        innerText: '',
+                        innerHTML: '',
+                        insertAdjacentHTML: () => {},
+                        appendChild: () => {},
+                        setAttribute: () => {},
+                        removeAttribute: () => {},
+                        addEventListener: () => {}
+                    };
                 }
             },
             DOMParser: class DOMParser {
@@ -565,7 +578,8 @@ tag: tag,
 
     it('injects Netzwerkfehler message on fetch network failure', async () => {
         context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement.innerHTML = '';
-        context.fetch = async () => {
+        const originalFetch = context.fetch_hybrid_report;
+        context.fetch_hybrid_report = async () => {
             throw new Error('Network timeout');
         };
 
@@ -574,22 +588,78 @@ tag: tag,
         const html = context.apiContentElement.innerHTML;
         assert.ok(html.includes('alert-error'));
         assert.ok(html.includes('Netzwerkfehler: Network timeout'));
+
+        context.fetch_hybrid_report = originalFetch;
     });
 
     it('injects API Error message on fetch non-200 status', async () => {
         context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement.innerHTML = '';
-        context.fetch = async () => {
-            return {
-                status: 500,
-                statusText: 'Internal Server Error',
-                json: async () => ({})
-            };
+        const originalFetch = context.fetch_hybrid_report;
+        context.fetch_hybrid_report = async () => {
+            return { status: 'error', code: 'http_500', statusText: 'Internal Server Error' };
         };
 
         await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha', attachmentName: 'test.txt' });
 
         assert.ok(context.apiContentElement.innerHTML.includes('API Error: 500 für Element test.txt'));
         assert.ok(context.apiContentElement.innerHTML.includes('alert-error'));
+
+        context.fetch_hybrid_report = originalFetch;
+    });
+
+    it('zeigt den Consent-Hinweis bei EXTERNAL_ANALYSIS_DISABLED und wiederholt den Aufruf nicht', async () => {
+        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement.innerHTML = '';
+        const originalFetch = context.fetch_hybrid_report;
+        let calls = 0;
+        context.fetch_hybrid_report = async () => {
+            calls++;
+            return { status: 'error', code: 'EXTERNAL_ANALYSIS_DISABLED', message: 'Externe Analyse ist im Hintergrund deaktiviert.' };
+        };
+
+        await get_hybrid_report_by_sha256({ hybrid_sha: 'dummy_sha_disabled', attachmentName: 'test.txt' });
+        await new Promise(resolve => setTimeout(resolve, 20));
+
+        const html = context.apiContentElement.innerHTML;
+        assert.strictEqual(calls, 1, 'kein Retry nach EXTERNAL_ANALYSIS_DISABLED');
+        assert.ok(html.includes('card card-warn mb-3'), 'Consent-Hinweiskarte muss gerendert werden');
+        assert.ok(html.includes('Externe Analyse ist im Hintergrund deaktiviert.'));
+        assert.ok(html.includes('Einstellungen öffnen'));
+        assert.ok(!html.includes('alert-error'));
+
+        context.fetch_hybrid_report = originalFetch;
+    });
+
+    it('sendet getHybridOverview mit SHA, Header-ID, Anhang und Part und rendert die Antwort', async () => {
+        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement.innerHTML = '';
+        const originalFetch = context.fetch_hybrid_report;
+        const sent = [];
+        context.browser.runtime = {
+            sendMessage: async (msg) => {
+                sent.push(msg);
+                return { status: 'success', data: { threat_score: 42, verdict: 'suspicious' } };
+            }
+        };
+
+        await get_hybrid_report_by_sha256({
+            hybrid_sha: 'sha-1',
+            attachmentName: 'a.pdf',
+            messageId: 'm1',
+            partName: 'p1',
+            headerMessageId: 'h1'
+        });
+
+        assert.strictEqual(sent.length, 1);
+        assert.strictEqual(sent[0].action, 'getHybridOverview');
+        assert.strictEqual(sent[0].sha256, 'sha-1');
+        assert.strictEqual(sent[0].headerMessageId, 'h1');
+        assert.strictEqual(sent[0].attachmentName, 'a.pdf');
+        assert.strictEqual(sent[0].partName, 'p1');
+
+        const html = context.apiContentElement.innerHTML;
+        assert.ok(html.includes('Bedrohungsscore'));
+        assert.ok(html.includes('suspicious'));
+
+        context.fetch_hybrid_report = originalFetch;
     });
 
     it('calls render_hybrid_report_ui on successful fetch', async () => {
@@ -597,8 +667,8 @@ tag: tag,
         let originalRender = context.render_hybrid_report_ui;
 
         let renderArgs = null;
-        context.fetch_hybrid_report = async (sha) => {
-            return { response: { status: 200 }, json_data: { test: 'data' } };
+        context.fetch_hybrid_report = async () => {
+            return { status: 'success', data: { test: 'data' } };
         };
         context.render_hybrid_report_ui = (args) => {
             renderArgs = args;
@@ -631,8 +701,8 @@ tag: tag,
         let originalHandleError = context.handle_hybrid_report_error;
 
         let handleErrorArgs = null;
-        context.fetch_hybrid_report = async (sha) => {
-            return { response: { status: 500, statusText: 'Internal Error' }, json_data: null };
+        context.fetch_hybrid_report = async () => {
+            return { status: 'error', code: 'http_500', message: 'Serverfehler' };
         };
         context.handle_hybrid_report_error = (response, attachmentName) => {
             handleErrorArgs = { response, attachmentName };
@@ -644,7 +714,8 @@ tag: tag,
         });
 
         assert.ok(handleErrorArgs, 'handle_hybrid_report_error should have been called');
-        assert.strictEqual(handleErrorArgs.response.status, 500);
+        assert.strictEqual(handleErrorArgs.response.code, 'http_500');
+        assert.strictEqual(handleErrorArgs.response.message, 'Serverfehler');
         assert.strictEqual(handleErrorArgs.attachmentName, 'test.txt');
 
         context.fetch_hybrid_report = originalFetch;
@@ -837,9 +908,9 @@ describe('handle_hybrid_report_error', () => {
         handle_hybrid_report_error = context.handle_hybrid_report_error;
     });
 
-    it('injects standard error message on generic non-200 status', async () => {
+    it('injects standard error message on generic error code', async () => {
         context.apiContentElement = null; // Reset
-        handle_hybrid_report_error({ status: 500, statusText: 'Internal Server Error' }, 'test.txt');
+        handle_hybrid_report_error({ status: 'error', code: 'http_500' }, 'test.txt');
 
         const appended = context.apiContentElement.child;
         assert.strictEqual(appended.className, 'alert-error');
@@ -849,10 +920,54 @@ describe('handle_hybrid_report_error', () => {
         assert.strictEqual(appended.role, 'alert');
     });
 
+    it('nutzt die lokalisierte Meldung des Hintergrunds, wenn sie vorliegt', async () => {
+        context.apiContentElement = null; // Reset
+        handle_hybrid_report_error({ status: 'error', code: 'network_error', message: 'Der Dienst ist nicht erreichbar.' }, 'test.txt');
+
+        const appended = context.apiContentElement.child;
+        const errMsgSpan = appended.children.find(c => c.tag === 'span');
+        assert.ok(errMsgSpan.textContent.includes('Der Dienst ist nicht erreichbar. für Element test.txt'));
+        assert.ok(!context.apiContentElement.child.children.some(c => c.tag === 'button'));
+    });
+
+    it('injects standard error message and settings button on no_api_key', async () => {
+        context.apiContentElement = null; // Reset
+        context.optionsPageOpened = false;
+        handle_hybrid_report_error({ status: 'error', code: 'no_api_key' }, 'test.txt');
+
+        const appended = context.apiContentElement.child;
+        const errMsgSpan = appended.children.find(c => c.tag === 'span');
+        assert.ok(errMsgSpan.textContent.includes('Kein API-Schlüssel für den Analyse-Dienst im Add-on hinterlegt'));
+        assert.ok(errMsgSpan.textContent.includes('für Element test.txt'));
+        assert.ok(errMsgSpan.textContent.includes('Möglicherweise ungültiger oder fehlender API-Schlüssel'));
+
+        const settingsBtn = appended.children.find(c => c.tag === 'button');
+        assert.ok(settingsBtn);
+        settingsBtn.click();
+        assert.strictEqual(context.optionsPageOpened, true);
+    });
+
+    it('zeigt bei permission_denied einen Berechtigungshinweis mit Einstellungen-Button', async () => {
+        context.apiContentElement = null; // Reset
+        context.optionsPageOpened = false;
+        handle_hybrid_report_error({ status: 'error', code: 'permission_denied' }, 'test.txt');
+
+        const appended = context.apiContentElement.child;
+        assert.strictEqual(appended.className, 'alert-error');
+        const errMsgSpan = appended.children.find(c => c.tag === 'span');
+        assert.ok(errMsgSpan.textContent.includes('Keine Berechtigung für die externe Analyse'));
+        assert.ok(errMsgSpan.textContent.includes('Host-Berechtigung'));
+
+        const settingsBtn = appended.children.find(c => c.tag === 'button');
+        assert.ok(settingsBtn);
+        settingsBtn.click();
+        assert.strictEqual(context.optionsPageOpened, true);
+    });
+
     it('injects standard error message and settings button on 401 status', async () => {
         context.apiContentElement = null; // Reset
         context.optionsPageOpened = false;
-        handle_hybrid_report_error({ status: 401, statusText: 'Unauthorized' }, 'test.txt');
+        handle_hybrid_report_error({ status: 'error', code: 'http_401' }, 'test.txt');
 
         const appended = context.apiContentElement.child;
         assert.strictEqual(appended.className, 'alert-error');
@@ -874,7 +989,7 @@ describe('handle_hybrid_report_error', () => {
     it('injects standard error message and settings button on 403 status', async () => {
         context.apiContentElement = null; // Reset
         context.optionsPageOpened = false;
-        handle_hybrid_report_error({ status: 403, statusText: 'Forbidden' }, 'test.txt');
+        handle_hybrid_report_error({ status: 'error', code: 'http_403' }, 'test.txt');
 
         const appended = context.apiContentElement.child;
         assert.strictEqual(appended.className, 'alert-error');
@@ -2042,10 +2157,16 @@ describe('fetch_hybrid_report', () => {
         context = {
             browser: {
                 tabs: { query: async () => [{ id: 1 }] },
-                storage: { local: { get: async () => ({ apikey: 'test' }) } }
+                storage: { local: { get: async () => ({ externalAnalysisConsent: true }) } },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success', data: { result: 'success data' } })
+                }
             },
             console: { log: () => {}, error: () => {} },
-            fetch: async () => ({ status: 200, json: async () => ({}) }),
+            // Das Popup darf selbst keinen Netzwerkzugriff mehr auslösen.
+            fetch: () => {
+                throw new Error('fetch darf in api.js nicht mehr aufgerufen werden');
+            },
             setTimeout: setTimeout,
             String: String,
             Array: Array,
@@ -2067,9 +2188,6 @@ describe('fetch_hybrid_report', () => {
         wrappedCode += '\n; globalThis.fetch_hybrid_report = fetch_hybrid_report;\n';
         wrappedCode += '\n; globalThis.hybrid_report_cache = hybrid_report_cache;\n';
 
-        // Setup API key directly in context since we are stripping the IIFE that normally sets it
-        wrappedCode += '\n; apikey_hybridanalysis = "mock_api_key";\n';
-
         vm.runInContext(wrappedCode, context);
 
         fetch_hybrid_report = context.fetch_hybrid_report;
@@ -2080,104 +2198,100 @@ describe('fetch_hybrid_report', () => {
     it('returns cached promise if sha is in cache', async () => {
         const mockPromise = Promise.resolve('cached result');
         hybrid_report_cache.set('test_sha', mockPromise);
-        const result = await fetch_hybrid_report('test_sha');
+        const result = await fetch_hybrid_report({ hybrid_sha: 'test_sha' });
         assert.strictEqual(result, 'cached result');
     });
 
-    it('fetches successfully and updates cache', async () => {
-        let fetchedUrl, fetchedOptions;
-        context.fetch = async (url, options) => {
-            fetchedUrl = url;
-            fetchedOptions = options;
-            return {
-                status: 200,
-                json: async () => ({ result: 'success data' })
-            };
+    it('sendet getHybridOverview und aktualisiert den Cache', async () => {
+        const sent = [];
+        context.browser.runtime.sendMessage = async (msg) => {
+            sent.push(msg);
+            return { status: 'success', data: { result: 'success data' } };
         };
 
-        const resultPromise = fetch_hybrid_report('test_sha_2');
+        const resultPromise = fetch_hybrid_report({
+            hybrid_sha: 'test_sha_2',
+            attachmentName: 'test.txt',
+            messageId: 7,
+            partName: '1.2',
+            headerMessageId: 'hdr-2'
+        });
         assert.ok(hybrid_report_cache.has('test_sha_2'));
 
         const result = await resultPromise;
 
-        assert.strictEqual(fetchedUrl, 'https://hybrid-analysis.com/api/v2/overview/test_sha_2');
-        assert.strictEqual(fetchedOptions.method, 'GET');
-        assert.strictEqual(fetchedOptions.headers['api-key'], 'mock_api_key');
-        assert.strictEqual(fetchedOptions.headers['user-agent'], 'Falcon');
+        assert.strictEqual(sent.length, 1);
+        assert.strictEqual(sent[0].action, 'getHybridOverview');
+        assert.strictEqual(sent[0].sha256, 'test_sha_2');
+        assert.strictEqual(sent[0].headerMessageId, 'hdr-2');
+        assert.strictEqual(sent[0].attachmentName, 'test.txt');
+        assert.strictEqual(sent[0].partName, '1.2');
 
-        assert.strictEqual(result.response.status, 200);
-        assert.deepStrictEqual(result.json_data, { result: 'success data' });
+        assert.strictEqual(result.status, 'success');
+        assert.deepStrictEqual(result.data, { result: 'success data' });
     });
 
-    it('deletes from cache on non-200 response', async () => {
-        context.fetch = async (url, options) => {
-            return {
-                status: 404,
-                json: async () => ({ error: 'not found' })
-            };
-        };
+    it('entfernt den Cache bei einer Fehlerantwort', async () => {
+        context.browser.runtime.sendMessage = async () => ({ status: 'error', code: 'http_404', message: 'nicht gefunden' });
 
-        const resultPromise = fetch_hybrid_report('test_sha_3');
+        const resultPromise = fetch_hybrid_report({ hybrid_sha: 'test_sha_3' });
         assert.ok(hybrid_report_cache.has('test_sha_3'));
 
         const result = await resultPromise;
 
-        assert.strictEqual(result.response.status, 404);
+        assert.strictEqual(result.status, 'error');
+        assert.strictEqual(result.code, 'http_404');
         assert.ok(!hybrid_report_cache.has('test_sha_3'), 'Cache should be deleted');
     });
 
-    it('deletes from cache and throws on network error', async () => {
+    it('entfernt den Cache und wirft weiter, wenn sendMessage scheitert', async () => {
         const testError = new Error('Network error');
-        context.fetch = async () => {
+        context.browser.runtime.sendMessage = async () => {
             throw testError;
         };
 
-        const resultPromise = fetch_hybrid_report('test_sha_4');
+        const resultPromise = fetch_hybrid_report({ hybrid_sha: 'test_sha_4' });
         assert.ok(hybrid_report_cache.has('test_sha_4'));
 
         await assert.rejects(resultPromise, testError);
         assert.ok(!hybrid_report_cache.has('test_sha_4'), 'Cache should be deleted on error');
     });
 
-    it('handles concurrent calls by returning the same promise and fetching once', async () => {
-        let fetchCount = 0;
-        let resolveFetch;
-        const fetchPromise = new Promise(resolve => {
-            resolveFetch = resolve;
+    it('meldet nicht verwertbare Antworten als network_error und entfernt den Cache', async () => {
+        context.browser.runtime.sendMessage = async () => undefined;
+
+        const resultPromise = fetch_hybrid_report({ hybrid_sha: 'test_sha_6' });
+        assert.ok(hybrid_report_cache.has('test_sha_6'));
+
+        const result = await resultPromise;
+
+        assert.strictEqual(result.status, 'error');
+        assert.strictEqual(result.code, 'network_error');
+        assert.ok(!hybrid_report_cache.has('test_sha_6'), 'Cache should be deleted on invalid response');
+    });
+
+    it('handles concurrent calls by returning the same promise and sending once', async () => {
+        let sendCount = 0;
+        let resolveMessage;
+        const messagePromise = new Promise(resolve => {
+            resolveMessage = resolve;
         });
 
-        context.fetch = async () => {
-            fetchCount++;
-            return fetchPromise;
+        context.browser.runtime.sendMessage = async () => {
+            sendCount++;
+            return messagePromise;
         };
 
-        const resultPromise1 = fetch_hybrid_report('test_sha_5');
-        const resultPromise2 = fetch_hybrid_report('test_sha_5');
+        const resultPromise1 = fetch_hybrid_report({ hybrid_sha: 'test_sha_5' });
+        const resultPromise2 = fetch_hybrid_report({ hybrid_sha: 'test_sha_5' });
 
-        resolveFetch({
-            status: 200,
-            json: async () => ({ result: 'concurrent success' })
-        });
+        resolveMessage({ status: 'success', data: { result: 'concurrent success' } });
 
         const [result1, result2] = await Promise.all([resultPromise1, resultPromise2]);
 
-        assert.strictEqual(fetchCount, 1);
-        assert.deepStrictEqual(result1.json_data, { result: 'concurrent success' });
-        assert.deepStrictEqual(result2.json_data, { result: 'concurrent success' });
-    });
-
-    it('deletes from cache and throws on invalid JSON', async () => {
-        const jsonError = new Error('Invalid JSON');
-        context.fetch = async () => ({
-            status: 200,
-            json: async () => { throw jsonError; }
-        });
-
-        const resultPromise = fetch_hybrid_report('test_sha_6');
-        assert.ok(hybrid_report_cache.has('test_sha_6'));
-
-        await assert.rejects(resultPromise, jsonError);
-        assert.ok(!hybrid_report_cache.has('test_sha_6'), 'Cache should be deleted on JSON error');
+        assert.strictEqual(sendCount, 1);
+        assert.deepStrictEqual(result1.data, { result: 'concurrent success' });
+        assert.deepStrictEqual(result2.data, { result: 'concurrent success' });
     });
 });
 
@@ -3410,3 +3524,346 @@ describe('createCdrButton', () => {
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 });
+
+describe('Popup: Consent-Gate und Anzeigepfade (B1/B2)', () => {
+    let dom;
+    let context;
+    let sentMessages;
+    let fetchCalls;
+    let storageListeners;
+    let sendMessageImpl;
+
+    const messageFixture = { id: 42, headerMessageId: 'hdr-1', subject: 'Testbetreff', author: 'absender@example.com' };
+
+    function buildContext({ record, consent, message = messageFixture }) {
+        dom = new JSDOM(`<!DOCTYPE html><html><body>
+            <h2 id="subject"></h2>
+            <span id="from"></span>
+            <span id="MessageHeaderID"></span>
+            <div id="hybrid_analysis_api_content"></div>
+        </body></html>`);
+
+        sentMessages = [];
+        fetchCalls = [];
+        storageListeners = [];
+        sendMessageImpl = null;
+
+        context = {
+            browser: {
+                tabs: { query: async () => [{ id: 1 }] },
+                storage: {
+                    local: { get: async () => ({ externalAnalysisConsent: consent }) },
+                    onChanged: { addListener: (listener) => { storageListeners.push(listener); } }
+                },
+                messageDisplay: { getDisplayedMessages: async () => ({ messages: message ? [message] : [] }) },
+                runtime: {
+                    sendMessage: async (msg) => {
+                        sentMessages.push(msg);
+                        if (sendMessageImpl) return sendMessageImpl(msg);
+                        return { status: 'success', data: {} };
+                    },
+                    openOptionsPage: () => {}
+                }
+            },
+            document: dom.window.document,
+            indexedDB: {
+                open: () => {
+                    const openReq = {};
+                    setTimeout(() => {
+                        if (typeof openReq.onupgradeneeded === 'function') {
+                            openReq.onupgradeneeded({
+                                target: { result: { objectStoreNames: { contains: () => true }, createObjectStore: () => {} } }
+                            });
+                        }
+                        if (typeof openReq.onsuccess === 'function') {
+                            openReq.onsuccess({
+                                target: {
+                                    result: {
+                                        transaction: () => ({
+                                            objectStore: () => ({
+                                                get: () => {
+                                                    const getReq = { result: record };
+                                                    setTimeout(() => {
+                                                        if (typeof getReq.onsuccess === 'function') getReq.onsuccess({});
+                                                    }, 0);
+                                                    return getReq;
+                                                }
+                                            })
+                                        })
+                                    }
+                                }
+                            });
+                        }
+                    }, 0);
+                    return openReq;
+                }
+            },
+            // Das Popup darf selbst keinen Netzwerkzugriff mehr ausführen.
+            fetch: (url, options) => {
+                fetchCalls.push({ url, options });
+                throw new Error('fetch darf im Popup nicht mehr aufgerufen werden');
+            },
+            console: { log: () => {}, error: () => {} },
+            setTimeout: setTimeout,
+            clearTimeout: clearTimeout,
+            String: String,
+            Array: Array,
+            Object: Object,
+            Map: Map,
+            Promise: Promise,
+            Error: Error,
+            TextEncoder: TextEncoder
+        };
+        context.messenger = context.browser;
+
+        vm.createContext(context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        vm.runInContext(wrappedCode, context);
+
+        return context;
+    }
+
+    function container() {
+        return dom.window.document.getElementById('hybrid_analysis_api_content');
+    }
+
+    function overviewCalls() {
+        return sentMessages.filter(msg => msg && msg.action === 'getHybridOverview');
+    }
+
+    // Wartet Makrotasks ab, damit die IndexedDB-Mocks und Promise-Ketten durchlaufen.
+    function flush(rounds = 6) {
+        let pending = Promise.resolve();
+        for (let i = 0; i < rounds; i++) {
+            pending = pending.then(() => new Promise(resolve => setTimeout(resolve, 1)));
+        }
+        return pending;
+    }
+    it('Consent deaktiviert: kein getHybridOverview, Hinweis sichtbar, gespeicherte Daten und manuelle Aktionen', async () => {
+        buildContext({
+            consent: false,
+            record: {
+                messageHeader: 'hdr-1',
+                attachments: [{
+                    hybrid_sha256: 'hash-abc',
+                    attachment_name: 'invoice.pdf',
+                    partName: '1.2',
+                    state: 'MANUAL_CHECK_PENDING',
+                    virustotal_stats: { malicious: 2, suspicious: 1, undetected: 3, harmless: 4 }
+                }]
+            }
+        });
+
+        await context.initAPI();
+        await flush();
+
+        const notice = container().querySelector('#thundy-consent-notice');
+        assert.ok(notice, 'Consent-Hinweis muss sichtbar sein');
+        assert.strictEqual(notice.getAttribute('role'), 'status');
+        assert.ok(notice.textContent.includes('Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.'));
+        assert.strictEqual(container().querySelectorAll('#thundy-consent-notice').length, 1);
+
+        assert.strictEqual(overviewCalls().length, 0, 'ohne Consent darf kein getHybridOverview gesendet werden');
+        assert.strictEqual(fetchCalls.length, 0, 'das Popup darf kein fetch verwenden');
+
+        const text = container().textContent;
+        assert.ok(text.includes('Anhang: invoice.pdf'));
+        assert.ok(text.includes('SHA-256: hash-abc'));
+        assert.ok(text.includes('Status: MANUAL_CHECK_PENDING'));
+        assert.ok(text.includes('Malicious: 2'));
+        assert.ok(text.includes('Zustimmung zur externen Analyse'), 'manuelle Aktionen brauchen einen Consent-Hinweis');
+        assert.ok(container().querySelector('button[id^="btn-upload-"]'), 'Upload-Button muss sichtbar sein');
+    });
+
+    it('Consent aktiviert und status success: Report wird gerendert', async () => {
+        buildContext({
+            consent: true,
+            record: {
+                messageHeader: 'hdr-1',
+                attachments: [{ hybrid_sha256: 'hash-rep', attachment_name: 'report.exe', partName: '1.2', state: 'COMPLETED' }]
+            }
+        });
+
+        sendMessageImpl = () => ({
+            status: 'success',
+            data: { threat_score: 85, verdict: 'malicious', vx_family: 'Trojan', multiscan_result: 5, analysis_start_time: 't', tags: ['tag1'], sha256: 'hash-rep', scanners: [] }
+        });
+
+        await context.initAPI();
+        await flush();
+
+        assert.strictEqual(overviewCalls().length, 1);
+        assert.strictEqual(overviewCalls()[0].sha256, 'hash-rep');
+        assert.strictEqual(overviewCalls()[0].headerMessageId, 'hdr-1');
+        assert.strictEqual(overviewCalls()[0].attachmentName, 'report.exe');
+        assert.strictEqual(overviewCalls()[0].partName, '1.2');
+        assert.strictEqual(fetchCalls.length, 0);
+        assert.strictEqual(container().querySelector('#thundy-consent-notice'), null);
+
+        const text = container().textContent;
+        assert.ok(text.includes('Geprüftes Element: report.exe'));
+        assert.ok(text.includes('Bedrohungsscore:'));
+        assert.ok(text.includes('Urteil:'));
+        assert.ok(text.includes('Trojan'));
+        assert.ok(!text.includes('Lade Analyseergebnisse...'));
+    });
+
+    it('EXTERNAL_ANALYSIS_DISABLED: Hinweis statt Fehlerkarte und kein Retry', async () => {
+        buildContext({
+            consent: true,
+            record: {
+                messageHeader: 'hdr-1',
+                attachments: [{ hybrid_sha256: 'hash-disabled', attachment_name: 'a.pdf', partName: '1', state: 'COMPLETED' }]
+            }
+        });
+
+        sendMessageImpl = () => ({
+            status: 'error',
+            code: 'EXTERNAL_ANALYSIS_DISABLED',
+            message: 'Externe Analyse wurde im Hintergrund abgelehnt.'
+        });
+
+        await context.initAPI();
+        await flush(12);
+
+        assert.strictEqual(overviewCalls().length, 1, 'kein Retry nach EXTERNAL_ANALYSIS_DISABLED');
+
+        const notice = container().querySelector('#thundy-consent-notice');
+        assert.ok(notice, 'Consent-Hinweis muss erscheinen');
+        assert.ok(notice.textContent.includes('Externe Analyse wurde im Hintergrund abgelehnt.'));
+        assert.strictEqual(container().querySelector('.alert-error'), null);
+        assert.strictEqual(fetchCalls.length, 0);
+    });
+
+
+    it('Record mit state UNKNOWN: manuelle Upload-UI ohne Exception', async () => {
+        buildContext({
+            consent: true,
+            record: {
+                messageHeader: 'hdr-1',
+                attachments: [{ hybrid_sha256: 'hash-unknown', attachment_name: 'setup.exe', partName: '1.2', state: 'UNKNOWN' }]
+            }
+        });
+
+        await context.initAPI();
+        await flush();
+
+        assert.strictEqual(overviewCalls().length, 0, 'UNKNOWN-Anhänge dürfen nicht automatisch abgefragt werden');
+        assert.strictEqual(fetchCalls.length, 0);
+
+        const text = container().textContent;
+        assert.ok(text.includes('Anhang: setup.exe'));
+        assert.ok(text.includes('SHA-256: hash-unknown'));
+        assert.ok(text.includes('nicht automatisch hochgeladen'));
+        assert.ok(container().querySelector('button[id^="btn-upload-"]'), 'manueller Upload-Button muss sichtbar sein');
+    });
+
+    it('Record mit links: URL-Karten ohne Exception', async () => {
+        buildContext({
+            consent: true,
+            record: {
+                messageHeader: 'hdr-1',
+                links: [
+                    { url: 'https://example.com/login', state: 'UNKNOWN' },
+                    { url: 'https://example.org/download', state: 'COMPLETED', hybrid_sha256: 'hash-link' }
+                ]
+            }
+        });
+
+        sendMessageImpl = (msg) => ({
+            status: 'success',
+            data: { sha256: msg.sha256, threat_score: 10, verdict: 'no specific threat', tags: [], scanners: [] }
+        });
+
+        await context.initAPI();
+        await flush();
+
+        assert.strictEqual(overviewCalls().length, 1);
+        assert.strictEqual(overviewCalls()[0].sha256, 'hash-link');
+        assert.strictEqual(fetchCalls.length, 0);
+
+        const text = container().textContent;
+        assert.ok(text.includes('URL: https://example.com/login'));
+        assert.ok(text.includes('URL jetzt scannen'));
+        assert.ok(text.includes('Geprüftes Element: https://example.org/download'));
+        assert.ok(text.includes('no specific threat'));
+    });
+
+    it('Consent deaktiviert mit links: URL-Karte und Consent-Hinweis, keine Abfrage', async () => {
+        buildContext({
+            consent: false,
+            record: {
+                messageHeader: 'hdr-1',
+                links: [{ url: 'https://example.com/login', state: 'UNKNOWN', hybrid_sha256: 'hash-link-off' }]
+            }
+        });
+
+        await context.initAPI();
+        await flush();
+
+        assert.strictEqual(overviewCalls().length, 0);
+        assert.strictEqual(fetchCalls.length, 0);
+        assert.ok(container().querySelector('#thundy-consent-notice'));
+
+        const text = container().textContent;
+        assert.ok(text.includes('URL: https://example.com/login'));
+        assert.ok(text.includes('Status: UNKNOWN'));
+        assert.ok(text.includes('SHA-256: hash-link-off'));
+        assert.ok(text.includes('Zustimmung zur externen Analyse'));
+        assert.ok(container().querySelector('button[id^="btn-upload-"]'), 'URL-Scan-Button muss sichtbar sein');
+    });
+
+    it('ohne gespeicherten Datensatz: keine Exception und Hinweis bleibt sichtbar', async () => {
+        buildContext({ consent: false, record: undefined });
+
+        await context.initAPI();
+        await flush();
+
+        assert.ok(container().querySelector('#thundy-consent-notice'));
+        assert.ok(container().textContent.includes('Keine Anhänge oder URLs für diese E-Mail gefunden.'));
+        assert.strictEqual(overviewCalls().length, 0);
+    });
+
+    it('storage.onChanged schaltet den Consent um und aktualisiert die Ansicht', async () => {
+        buildContext({
+            consent: false,
+            record: {
+                messageHeader: 'hdr-1',
+                attachments: [{ hybrid_sha256: 'hash-toggle', attachment_name: 'a.pdf', partName: '1', state: 'COMPLETED' }]
+            }
+        });
+
+        await context.initAPI();
+        await flush();
+
+        assert.strictEqual(storageListeners.length, 1, 'storage.onChanged muss registriert sein');
+        assert.ok(container().querySelector('#thundy-consent-notice'));
+        assert.strictEqual(overviewCalls().length, 0);
+
+        // Umschalten auf aktiviert: Hinweis verschwindet, Abfrage läuft genau einmal.
+        storageListeners.forEach(listener => listener({ externalAnalysisConsent: { newValue: true } }, 'local'));
+        await flush(12);
+
+        assert.strictEqual(container().querySelector('#thundy-consent-notice'), null);
+        assert.strictEqual(overviewCalls().length, 1);
+        assert.ok(container().textContent.includes('Geprüftes Element'));
+
+        // Umschalten auf deaktiviert: Hinweis erscheint wieder, keine weitere Abfrage.
+        storageListeners.forEach(listener => listener({ externalAnalysisConsent: { newValue: false } }, 'local'));
+        await flush(12);
+
+        assert.ok(container().querySelector('#thundy-consent-notice'));
+        assert.strictEqual(overviewCalls().length, 1);
+        assert.strictEqual(fetchCalls.length, 0);
+
+        // Änderungen an anderen Schlüsseln dürfen nichts auslösen.
+        storageListeners.forEach(listener => listener({ apikey: { newValue: 'x' } }, 'local'));
+        await flush();
+        assert.strictEqual(overviewCalls().length, 1);
+    });
+
+});
+

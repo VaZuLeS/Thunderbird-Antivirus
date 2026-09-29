@@ -5,6 +5,14 @@
 **Prüfmethode:** statische Code-Analyse, automatisierte Linter/Tests, XPI-Build-Inspektion, Abgleich mit Mozilla-Add-on-Policies, Thunderbird-Manifest-/MV3-Dokumentation, Prüfung der öffentlichen Projekt-/Rechtsseiten
 **Datum:** siehe Git-Historie dieser Datei (Branch `cline/nhfqgaap`)
 
+> **Historischer Snapshot (Stand 1.5 sowie die daraus abgeleitete 1.6-Umsetzung).** Dieses Dokument ist
+> **nicht** der Ist-Stand. Die aktuelle unabhängige Nachprüfung inklusive der danach behobenen und der
+> weiterhin offenen Punkte steht in
+> [docs/STORE_READINESS_AUDIT.md](STORE_READINESS_AUDIT.md) (2026-09-29). Einzelne Aussagen hier sind
+> inzwischen überholt — insbesondere Paketkennzahlen („15 Dateien, ≈176 KB entpackt“), der Status
+> „behoben“ für einzelne Befunde und die Beschreibung von `.webextignore` (wirkungslos, inzwischen
+> entfernt). Maßgeblich ist das Audit.
+
 ---
 
 ## 1. Gesamturteil

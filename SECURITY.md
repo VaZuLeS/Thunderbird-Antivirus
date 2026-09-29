@@ -50,6 +50,13 @@ Thunderbird profile or a manipulated local build.
 - Third-party transmission requires the global consent switch ("Externe Analyse erlauben", default off) **and** a user
   action – enforced centrally in `background.js`.
 - Host permissions are declared as `optional_host_permissions` and requested at runtime per provider.
+- The data classification is declared as `required: ["none"]` and `optional: ["personalCommunications"]`
+  (`browser_specific_settings.gecko.data_collection_permissions`): nothing is collected by default, and the optional
+  data type is requested together with the host permission when the consent is enabled
+  (`browser.permissions.request({ data_collection: ["personalCommunications"] })`) and removed again when the consent
+  is switched off.
+- The `menus` permission is required for the two context menu entries that start a link scan; Time-of-Click protection
+  evaluates a link locally inside Thunderbird and transmits nothing.
 - No remote code: the extension packages only bundled scripts and sets the CSP
   `script-src 'self'; object-src 'none';`.
 - API keys are stored unencrypted in `browser.storage.local` in the Thunderbird profile; see
