@@ -196,6 +196,12 @@ All of it is computed locally; nothing is transmitted.
   punycode host, anomalies, check status) with Check / Open / Cancel. Clicks are intercepted in the capture phase
   (including middle-click and Ctrl/Cmd-click).
 
+#### Opening links reliably
+
+- Approved links are opened through `windows.openDefaultBrowser` (system browser), with fallbacks to a content tab
+  and to a new window. If all paths fail, the reason is shown in the UI and logged - never silent.
+- The popup loading section links directly to the options and can reload the report cards in place.
+
 #### Diagnostics, error log and demo mode
 
 - **Self test** in the options dialog: 13 local checks (consent, key, host permissions, alarms, injection mode, link

@@ -231,6 +231,15 @@ phase, including middle-click and Ctrl/Cmd-click.
   DEMO badge. It performs no storage writes, reads no real messages and never contacts a provider (asserted by a unit
   test).
 
+### 3.14 Opening links
+
+When the user approves a link (overlay button or popup list), `openLinkAfterCheck()` re-checks it and then tries the
+documented ways in order: `windows.openDefaultBrowser(url)` (opens in the system browser, available since
+Thunderbird 85), `tabs.create({ url })` (content tab) and `windows.create({ url })` (new window). If every path
+fails, the error lists the individual messages and is shown in the UI and stored in the local history
+(`link-open-failed`) - nothing fails silently. A successful open is recorded as `link-opened` including the path
+used. The self test reports which paths are available on the current Thunderbird build.
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,

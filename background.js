@@ -3729,8 +3729,57 @@ function openLinkGuardPopup() {
 }
 
 /**
+ * Oeffnet einen externen Link. Thunderbird bietet dafuer mehrere Wege, die je
+ * nach Version/Umgebung unterschiedlich verfuegbar sind:
+ *   1. `windows.openDefaultBrowser(url)` - dokumentierter Weg (ab TB 85), oeffnet
+ *      im Systembrowser. Das ist das erwartete Verhalten fuer "Link oeffnen".
+ *   2. `tabs.create({ url })` - Inhaltstab in Thunderbird.
+ *   3. `windows.create({ url })` - neues Thunderbird-Fenster mit der Seite.
+ * Alle Fehlversuche werden gesammelt, damit die Oberflaeche eine konkrete
+ * Ursache anzeigen kann (statt eines stillen Nichtstuns).
+ */
+async function openExternalLink(url) {
+    const attempts = [];
+
+    if (browser.windows && typeof browser.windows.openDefaultBrowser === 'function') {
+        try {
+            await browser.windows.openDefaultBrowser(url);
+            return { opened: true, via: 'default-browser', attempts };
+        } catch (e) {
+            attempts.push('openDefaultBrowser: ' + (e && e.message ? e.message : String(e)));
+        }
+    } else {
+        attempts.push('windows.openDefaultBrowser nicht verfuegbar (benoetigt Thunderbird 85+)');
+    }
+
+    if (browser.tabs && typeof browser.tabs.create === 'function') {
+        try {
+            const tab = await browser.tabs.create({ url, active: true });
+            return { opened: true, via: 'content-tab', tabId: tab && tab.id, attempts };
+        } catch (e) {
+            attempts.push('tabs.create: ' + (e && e.message ? e.message : String(e)));
+        }
+    } else {
+        attempts.push('tabs.create nicht verfuegbar');
+    }
+
+    if (browser.windows && typeof browser.windows.create === 'function') {
+        try {
+            const windowRef = await browser.windows.create({ url });
+            return { opened: true, via: 'window', windowId: windowRef && windowRef.id, attempts };
+        } catch (e) {
+            attempts.push('windows.create: ' + (e && e.message ? e.message : String(e)));
+        }
+    } else {
+        attempts.push('windows.create nicht verfuegbar');
+    }
+
+    return { opened: false, via: null, attempts };
+}
+
+/**
  * Oeffnet einen Link erst nach der Pruefung. Der Aufruf stammt immer aus einer
- * bewussten Nutzeraktion (Tooltip-Button oder Popup).
+ * bewussten Nutzeraktion (Overlay-Button, Popup-Liste).
  */
 async function openLinkAfterCheck(url, headerMessageId = null) {
     const evaluation = await evaluateLinkForGuard(url, headerMessageId);
@@ -3740,7 +3789,22 @@ async function openLinkAfterCheck(url, headerMessageId = null) {
         throw error;
     }
 
-    const tab = await browser.tabs.create({ url: url, active: false });
+    const result = await openExternalLink(url);
+    if (!result.opened) {
+        const error = new Error('Der Link konnte nicht geoeffnet werden: ' + result.attempts.join(' | '));
+        error.code = 'OPEN_FAILED';
+        error.attempts = result.attempts;
+        await recordScanHistory({
+            action: 'link-open-failed',
+            transmitted: false,
+            timing: 'realtime',
+            messageHeaderId: evaluation.messageHeaderId || null,
+            url,
+            outcome: 'error',
+            detail: 'Oeffnen fehlgeschlagen: ' + result.attempts.join(' | ')
+        });
+        throw error;
+    }
 
     await recordScanHistory({
         action: 'link-opened',
@@ -3751,10 +3815,10 @@ async function openLinkAfterCheck(url, headerMessageId = null) {
         domain: evaluation.registrableDomain || null,
         verdict: evaluation.verdict,
         outcome: 'ok',
-        detail: 'Link nach Pruefung geoeffnet (' + evaluation.verdict + ').'
+        detail: 'Link nach Pruefung geoeffnet (' + evaluation.verdict + ', Weg: ' + result.via + ').'
     });
 
-    return { tabId: tab && tab.id, verdict: evaluation.verdict };
+    return { tabId: result.tabId, windowId: result.windowId, via: result.via, verdict: evaluation.verdict };
 }
 
 
@@ -4399,6 +4463,15 @@ async function collectDiagnostics() {
     const logEntries = await getDiagnosticEntries({ limit: DIAGNOSTIC_LOG_MAX });
     const errorCount = logEntries.filter(entry => entry.level === 'error').length;
     const warnCount = logEntries.filter(entry => entry.level === 'warn').length;
+    const openPaths = [];
+    if (browser.windows && typeof browser.windows.openDefaultBrowser === 'function') openPaths.push('windows.openDefaultBrowser (Systembrowser)');
+    if (browser.tabs && typeof browser.tabs.create === 'function') openPaths.push('tabs.create (Inhaltstab)');
+    if (browser.windows && typeof browser.windows.create === 'function') openPaths.push('windows.create (neues Fenster)');
+    add('open-link', 'Link oeffnen', openPaths.length > 0 ? 'ok' : 'fail',
+        openPaths.length > 0
+            ? 'Verfuegbare Wege: ' + openPaths.join(', ') + '. Der erste wird bevorzugt.'
+            : 'Keiner der dokumentierten Wege ist verfuegbar - Links koennen nicht geoeffnet werden.');
+
     add('log', 'Fehlerprotokoll', errorCount > 0 ? 'warn' : 'ok',
         logEntries.length === 0
             ? 'Keine Eintraege - keine Fehler oder Warnungen protokolliert.'

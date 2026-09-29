@@ -149,6 +149,13 @@ zeigt die Banner an.
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
 | Language of the user interface | German (localisation not implemented yet) |
 
+## 5.13 Release notes 1.18.0
+
+- **Links open reliably:** approved links are handed to the system browser (with content-tab and new-window
+  fallbacks). Failures now name the cause instead of doing nothing.
+- **Better popup start:** the loading section explains delayed results and offers "Open options" plus "Reload
+  results" without closing the popup.
+
 ## 5.12 Release notes 1.17.0
 
 - **Error log and self test:** a built-in diagnostics section with 13 checks plus a local error log (filterable,

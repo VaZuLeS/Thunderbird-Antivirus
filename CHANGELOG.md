@@ -39,6 +39,27 @@ Thunderbird either load it as a temporary add-on via `about:debugging` or sign i
   Time-of-Click markers, “never transmits anything itself”).
 
 
+## [1.18.0] – 2026-09-29
+
+### Fixed
+
+- **„Link oeffnen“ tat nichts.** Der Aufruf nutzte ausschliesslich `tabs.create({ url })` - in Thunderbird entsteht dabei
+  je nach Version nur ein leerer Inhaltstab, und Fehler blieben unsichtbar (kein `catch`). Jetzt gibt es eine
+  dokumentierte Fallback-Kette: `windows.openDefaultBrowser(url)` (der vorgesehene Weg fuer externe Links, ab TB 85)
+  -> `tabs.create({ url, active: true })` -> `windows.create({ url })`. Schlaegt alles fehl, wird die Ursache
+  (Fehlermeldung je Weg) im Zwischenfenster und im Verlauf (`link-open-failed`) angezeigt sowie im Fehlerprotokoll
+  protokolliert. Ein erfolgreicher Weg wird als `via` mitgeloggt (`link-opened`).
+- **Einrueckungs-/Zuordnungsfehler in der Diagnose** behoben: Der Punkt „Banner in der Nachrichtenansicht“ enthielt
+  Restcode aus der Link-Guard-Erweiterung; jetzt werden Banner-Modus, Link-Schutz und Oeffnen-Wege getrennt geprueft.
+
+### Added
+
+- **Ladeabschnitt im Popup aufgewertet:** Statt nur „Lade Analyseergebnisse...“ gibt es jetzt einen Hinweis, dass
+  Ergebnisse zeitverzoegert eintreffen, einen direkten Button **„Einstellungen oeffnen“** (Zustimmung, Schluessel,
+  Rolle, Link-Schutz) und **„Ergebnisse neu laden“**, das die Karten ohne Schliessen des Popups neu aufbaut.
+- **Diagnose-Punkt „Link oeffnen“:** listet die verfuegbaren Wege (`openDefaultBrowser`, `tabs.create`,
+  `windows.create`) und meldet Fehler, wenn keiner verfuegbar ist.
+
 ## [1.17.0] – 2026-09-28
 
 ### Added

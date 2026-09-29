@@ -22,7 +22,8 @@ const KNOWN_THUNDERBIRD_FALSE_POSITIVES = [
   'scripting.messageDisplay',
   // Thunderbird dokumentiert openPopup fuer die messageDisplayAction (der Firefox-Linter kennt sie nicht)
   'message_display_action.openPopup',
-  'alarms'
+  // Thunderbird dokumentiert openDefaultBrowser fuer windows (der Firefox-Linter kennt sie nicht)
+  'windows.openDefaultBrowser',  'alarms'
 ];
 
 const ALLOWED_CODES = [

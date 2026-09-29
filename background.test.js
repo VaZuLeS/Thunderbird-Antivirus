@@ -5240,16 +5240,44 @@ describe('background.js', () => {
             context.getSharedDB = async () => ({});
             context.getFromStore = async () => null;
             context.getAllFromStore = async () => ([]);
+            let openedInBrowser = null;
             let created = null;
+            context.browser.windows = {
+                openDefaultBrowser: async (url) => { openedInBrowser = url; },
+            };
             context.browser.tabs = { create: async (options) => { created = options; return { id: 77 }; } };
 
             const result = await context.openLinkAfterCheck('https://example.com/a', 'hdr-9');
 
-            assert.strictEqual(created.url, 'https://example.com/a');
-            assert.strictEqual(created.active, false);
-            assert.strictEqual(result.tabId, 77);
+            assert.strictEqual(openedInBrowser, 'https://example.com/a', 'the system browser is the preferred path');
+            assert.strictEqual(created, null, 'no content tab is opened when the browser worked');
+            assert.strictEqual(result.via, 'default-browser');
             const history = await context.getScanHistory();
             assert.ok(history.some(entry => entry.action === 'link-opened' && entry.url === 'https://example.com/a'));
+        });
+
+        it('falls back through the open paths and reports why it failed', async () => {
+            stubStorage();
+            context.getSharedDB = async () => ({});
+            context.getFromStore = async () => null;
+            context.getAllFromStore = async () => ([]);
+            context.set_customRules([]);
+
+            const failures = [];
+            context.browser.windows = {
+                openDefaultBrowser: async () => { failures.push('openDefaultBrowser'); throw new Error('kein Systembrowser'); },
+                create: async () => { failures.push('windows.create'); throw new Error('kein Fenster'); }
+            };
+            context.browser.tabs = { create: async () => { failures.push('tabs.create'); throw new Error('kein Tab'); } };
+
+            await assert.rejects(
+                () => context.openLinkAfterCheck('https://example.com/a'),
+                (error) => error.code === 'OPEN_FAILED' && error.message.includes('kein Systembrowser')
+            );
+            assert.deepStrictEqual(failures, ['openDefaultBrowser', 'tabs.create', 'windows.create'], 'all paths are tried in order');
+
+            const history = await context.getScanHistory();
+            assert.ok(history.some(entry => entry.action === 'link-open-failed'), 'failures are logged');
         });
 
         it('refuses to open a link that a custom rule blocks', async () => {

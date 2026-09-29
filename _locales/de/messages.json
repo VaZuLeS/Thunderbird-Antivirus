@@ -536,6 +536,9 @@
   "popup.loading": {
     "message": "Lade Analyseergebnisse..."
   },
+  "popup.loadingHint": {
+    "message": "Die Ergebnisse kommen je nach Anbieter zeitverzoegert. Alles Weitere (Zustimmung, Schluessel, Rolle, Link-Schutz) steht in den Einstellungen."
+  },
   "popup.messageId": {
     "message": "MessageHeaderID:"
   },
@@ -553,6 +556,18 @@
   },
   "popup.openOptions": {
     "message": "Einstellungen öffnen"
+  },
+  "popup.openSettings": {
+    "message": "Einstellungen oeffnen"
+  },
+  "popup.refresh": {
+    "message": "Ergebnisse neu laden"
+  },
+  "popup.reloaded": {
+    "message": "Ergebnisse aktualisiert."
+  },
+  "popup.reloading": {
+    "message": "Lade Ergebnisse neu..."
   },
   "popup.subject": {
     "message": "Betreff:"

@@ -1102,3 +1102,52 @@ web-ext lint + Filter           # 0 Fehler
 1. Live-Test in Thunderbird 140 ESR (Selbsttest + Link-Guard + zeitverzögerte Ergebnisse).
 2. **Store-Screenshots** — jetzt in Minuten machbar über `?sample=1` (hell und dunkel, Rolle `research`).
 3. Signierung/Einreichung bei addons.thunderbird.net.
+
+---
+
+## 22. Link oeffnen und Popup-Ladeabschnitt (v1.18.0)
+
+### 22.1 Ursache: falscher Oeffnungsweg, stille Fehler
+
+Der Guard-Button „Oeffnen (nach Pruefung)“ rief `browser.tabs.create({ url, active: false })` auf - **ohne** `catch`.
+In Thunderbird erzeugt `tabs.create` je nach Version nur einen **leeren Inhaltstab** (oder wirft), und weil Fehler
+nicht behandelt wurden, passierte schlicht **nichts**. Laut Thunderbird-Dokumentation ist der vorgesehene Weg fuer
+externe Links `windows.openDefaultBrowser(url)` (ab TB 85).
+
+**Fix - dokumentierte Fallback-Kette mit sichtbaren Fehlern:**
+
+| Reihenfolge | API | Ergebnis |
+|---|---|---|
+| 1 | `windows.openDefaultBrowser(url)` | Link im Systembrowser |
+| 2 | `tabs.create({ url, active: true })` | Inhaltstab in Thunderbird |
+| 3 | `windows.create({ url })` | neues Thunderbird-Fenster |
+
+Schlaegt alles fehl, enthaelt die Fehlermeldung die Einzelbegruendungen; sie wird im Overlay/Popup angezeigt, als
+`link-open-failed` im Verlauf gespeichert und ist ueber das Fehlerprotokoll exportierbar. Erfolgreiche Oeffnungen
+werden als `link-opened` inklusive Weg (`via`) protokolliert. Die Diagnose hat dafuer einen neuen Punkt „Link
+oeffnen“, der die verfuegbaren Wege auflistet.
+
+### 22.2 Popup: Ladeabschnitt aufgewertet
+
+Statt eines nackten „Lade Analyseergebnisse...“ zeigt der Ladeabschnitt jetzt:
+
+- Hinweis, dass Ergebnisse **zeitverzoegert** eintreffen,
+- Button **„Einstellungen oeffnen“** (`runtime.openOptionsPage()`),
+- Button **„Ergebnisse neu laden“**, der alle Karten (`rebuildReportCards()`) ohne Schliessen des Popups neu aufbaut.
+
+### 22.3 Verifikation v1.18.0
+
+```bash
+node scripts/check-locales.js   # vollstaendig (en/de, 177 Schluessel)
+npm test                        # 603 Tests, 0 Fehler (neu: 1 Fallback-Ketten-, 1 Ladeabschnitt-Test)
+npm run pre-submit-checks       # 0 Fehler, 1 Warnung (fehlende echte Screenshots)
+npm run build                   # build/thundy-av-1.18.0.xpi inkl. Paketpruefung
+web-ext lint + Filter           # 0 Fehler
+```
+
+### 22.4 Live-Test
+
+1. Link im Nachrichtentext anklicken -> Overlay -> **Pruefen** -> **Oeffnen**: Der Link muss im Systembrowser
+   erscheinen. Passiert nichts, zeigt das Overlay jetzt den Grund (und das Protokoll exportiert ihn).
+2. Popup oeffnen: Ladeabschnitt mit **„Einstellungen oeffnen“** und **„Ergebnisse neu laden“** pruefen.
+3. Optionen -> Diagnose -> „Link oeffnen“ muss die verfuegbaren Wege nennen.

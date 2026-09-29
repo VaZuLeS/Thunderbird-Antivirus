@@ -4113,6 +4113,43 @@ describe('manuelle Anhang-Analyse (api.js)', () => {
             'demo mode must not query the background: ' + sent.map(m => m.action).join(','));
     });
 
+    it('offers settings and reload in the loading section', async () => {
+        const dom = new JSDOM(`<!doctype html><html><body>
+            <div id="hybrid_analysis_api_content"></div>
+        </body></html>`);
+        const opened = [];
+        const context = {
+            browser: {
+                i18n: { getMessage: () => '' },
+                runtime: { openOptionsPage: () => { opened.push('options'); } }
+            },
+            document: dom.window.document,
+            console: { log: () => {}, error: () => {}, warn: () => {} }
+        };
+        vm.createContext(context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'ui_i18n.js'), 'utf8'), context);
+
+        // Nur den Ladeabschnitt aus api.js ausfuehren (vor der Initialisierung).
+        const source = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const start = source.indexOf('// Initialen Lade-Status für async Operationen setzen');
+        const end = source.indexOf('// Hinweis, wenn die externe Analyse');
+        const loadingSection = source.slice(start, end);
+        vm.runInContext(loadingSection, context);
+
+        const status = dom.window.document.getElementById('thundy-loading-status');
+        assert.ok(status, 'loading status expected');
+        assert.match(status.textContent, /Lade Analyseergebnisse/);
+
+        const settingsButton = dom.window.document.getElementById('thundy-open-settings');
+        assert.ok(settingsButton, 'settings button expected');
+        settingsButton.click();
+        assert.deepStrictEqual(opened, ['options']);
+
+        assert.ok(dom.window.document.getElementById('thundy-refresh-popup'), 'reload button expected');
+        const hint = dom.window.document.querySelector('#thundy-initial-loading small');
+        assert.match(hint.textContent, /Einstellungen/);
+    });
+
     it('renders the local score together with its reasons', async () => {
         const { context } = createHarness({
             displayState: { mode: 'ready', threat: { score: 70, reasons: ['Link-Domain weicht ab.', 'SPF fehlgeschlagen.'], authStatus: 'fail' } },

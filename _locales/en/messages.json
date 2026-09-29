@@ -536,6 +536,9 @@
   "popup.loading": {
     "message": "Loading analysis results..."
   },
+  "popup.loadingHint": {
+    "message": "Results may arrive delayed depending on the provider. Everything else (consent, keys, role, link guard) lives in the options."
+  },
   "popup.messageId": {
     "message": "Message header ID:"
   },
@@ -553,6 +556,18 @@
   },
   "popup.openOptions": {
     "message": "Open options"
+  },
+  "popup.openSettings": {
+    "message": "Open options"
+  },
+  "popup.refresh": {
+    "message": "Reload results"
+  },
+  "popup.reloaded": {
+    "message": "Results updated."
+  },
+  "popup.reloading": {
+    "message": "Reloading results..."
   },
   "popup.subject": {
     "message": "Subject:"

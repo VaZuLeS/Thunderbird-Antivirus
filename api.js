@@ -186,13 +186,55 @@ if (apiContainer) {
     cardDiv.className = 'card card-info mb-3';
 
     let loadingP = document.createElement('p');
+    loadingP.id = 'thundy-loading-status';
     loadingP.setAttribute('aria-live', 'polite');
     loadingP.setAttribute('role', 'status');
-        loadingP.setAttribute('aria-busy', 'true');
+    loadingP.setAttribute('aria-busy', 'true');
     loadingP.className = 'text-info';
-    loadingP.textContent = 'Lade Analyseergebnisse...';
-
+    loadingP.textContent = thundyT('popup.loading', 'Lade Analyseergebnisse...');
     cardDiv.appendChild(loadingP);
+
+    // Direkter Weg in die Einstellungen - dort wird alles konfiguriert
+    // (Zustimmung, Schluessel, Rolle, Link-Schutz), und die Ergebniskarten
+    // werden nach dem Speichern erneut aufgebaut.
+    const loadingHint = document.createElement('small');
+    loadingHint.className = 'thundy-muted';
+    loadingHint.textContent = thundyT('popup.loadingHint',
+        'Die Ergebnisse kommen je nach Anbieter zeitverzoegert. Alles Weitere (Zustimmung, Schluessel, Rolle, Link-Schutz) steht in den Einstellungen.');
+    cardDiv.appendChild(loadingHint);
+
+    const loadingActions = document.createElement('div');
+    loadingActions.className = 'thundy-guard-actions';
+
+    const openSettingsButton = document.createElement('button');
+    openSettingsButton.type = 'button';
+    openSettingsButton.id = 'thundy-open-settings';
+    openSettingsButton.className = 'btn-primary';
+    openSettingsButton.textContent = thundyT('popup.openSettings', 'Einstellungen oeffnen');
+    openSettingsButton.addEventListener('click', () => browser.runtime.openOptionsPage());
+    loadingActions.appendChild(openSettingsButton);
+
+    const refreshButton = document.createElement('button');
+    refreshButton.type = 'button';
+    refreshButton.id = 'thundy-refresh-popup';
+    refreshButton.textContent = thundyT('popup.refresh', 'Ergebnisse neu laden');
+    refreshButton.addEventListener('click', async () => {
+        refreshButton.disabled = true;
+        refreshButton.setAttribute('aria-busy', 'true');
+        loadingP.textContent = thundyT('popup.reloading', 'Lade Ergebnisse neu...');
+        try {
+            await rebuildReportCards();
+            loadingP.textContent = thundyT('popup.reloaded', 'Ergebnisse aktualisiert.');
+        } catch (error) {
+            loadingP.textContent = 'Aktualisieren fehlgeschlagen: ' + error.message;
+        } finally {
+            refreshButton.disabled = false;
+            refreshButton.removeAttribute('aria-busy');
+        }
+    });
+    loadingActions.appendChild(refreshButton);
+
+    cardDiv.appendChild(loadingActions);
     apiContainer.appendChild(cardDiv);
 }
 
@@ -218,33 +260,39 @@ if (!externalAnalysisConsent && apiContainer) {
 }
 
 // Lokale Bewertung transparent machen und die manuelle Anhang-Analyse anbieten.
-if (apiContainer) {
+async function rebuildReportCards() {
+    if (!apiContainer || !currentMessage) return;
+    renderAttachmentPanel(currentMessage, currentMessage.headerMessageId, apiContainer);
+    renderScanStatusPanel(currentMessage.headerMessageId, apiContainer);
+    if (sampleMode) {
+        currentSampleInsights = sampleInsights();
+        renderResultsPanel(currentMessage, apiContainer);
+        renderLinkList(currentMessage, apiContainer, currentViewMode);
+        renderThreatSummary(apiContainer, { mode: 'ready', threat: { score: currentSampleInsights.score,
+            reasons: currentSampleInsights.reasons, authStatus: currentSampleInsights.authStatus } }, currentViewMode);
+        renderResearcherPanel(currentMessage, apiContainer, currentViewMode);
+        renderReportExport(currentMessage, apiContainer, currentViewMode);
+        return;
+    }
+    renderResultsPanel(currentMessage, apiContainer);
+    renderLinkList(currentMessage, apiContainer, currentViewMode);
+    renderHistoryPanel(currentMessage, apiContainer, currentViewMode);
+    renderReportExport(currentMessage, apiContainer, currentViewMode);
+    renderResearcherPanel(currentMessage, apiContainer, currentViewMode);
     const activeTabId = tabs[0] ? tabs[0].id : null;
-    renderAttachmentPanel(message, message.headerMessageId, apiContainer);
-    renderScanStatusPanel(message.headerMessageId, apiContainer);
+    try {
+        const state = await browser.runtime.sendMessage({ action: 'getDisplayState', tabId: activeTabId, messageId: currentMessage.id });
+        renderThreatSummary(apiContainer, state, currentViewMode);
+    } catch (error) {
+        console.error('Bewertung konnte nicht geladen werden:', error);
+    }
+}
+
+if (apiContainer) {
     currentMessage = message;
     currentContainer = apiContainer;
     currentViewMode = viewMode;
-    if (sampleMode) {
-        // Nur rendern: keine Hintergrundabfrage, keine Uebertragung.
-        currentSampleInsights = sampleInsights();
-        renderResultsPanel(message, apiContainer);
-        renderLinkList(message, apiContainer, viewMode);
-        renderThreatSummary(apiContainer, { mode: 'ready', threat: { score: currentSampleInsights.score,
-            reasons: currentSampleInsights.reasons, authStatus: currentSampleInsights.authStatus } }, viewMode);
-        renderResearcherPanel(message, apiContainer, viewMode);
-        renderReportExport(message, apiContainer, viewMode);
-        renderScanStatusPanel(message.headerMessageId, apiContainer);
-        return;
-    }
-    renderResultsPanel(message, apiContainer);
-    renderLinkList(message, apiContainer, viewMode);
-    renderHistoryPanel(message, apiContainer, viewMode);
-    renderReportExport(message, apiContainer, viewMode);
-    renderResearcherPanel(message, apiContainer, viewMode);
-    browser.runtime.sendMessage({ action: 'getDisplayState', tabId: activeTabId, messageId: message.id })
-        .then(state => renderThreatSummary(apiContainer, state, viewMode))
-        .catch(error => console.error('Bewertung konnte nicht geladen werden:', error));
+    await rebuildReportCards();
 }
 
 try {
