@@ -374,7 +374,6 @@ kennzeichnen).
 - **Testlage und Tooling.** `npm test` → 394 Tests, 0 Fehler; Pre-Submit-Checks mit echtem Exit-Code; CI-Pins
   (`actions/checkout@v7`, `actions/setup-node@v7`) existieren.
 
-
 ---
 
 ## 5. Vor der Einreichung manuell zu erledigen (Checkliste)

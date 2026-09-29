@@ -1,5 +1,10 @@
 # Store-Readiness-Analyse — „Thundy AV“ (Thunderbird SECurity AntiVirus)
 
+> **Aktueller Stand:** Die Nachprüfung für Version 1.6 liegt in
+> [`docs/STORE_READINESS_REVIEW.md`](STORE_READINESS_REVIEW.md). Dort steht, welche der hier gelisteten Befunde
+> behoben wurden und welche Punkte (u. a. Datenschutz-Stufe in manuellen Pfaden, nicht erreichbare beworbene
+> Funktionen, öffentliche Releases bis 1.18.0) noch offen sind. Dieses Dokument bleibt als Befundstand 1.5 erhalten.
+
 **Prüfgegenstand:** Repository `VaZuLeS/Thunderbird-Antivirus` (Thunderbird-WebExtension, MV3, Manifest-Version 1.5)
 **Zielplattform:** Thunderbird Add-ons Store (ATN, addons.thunderbird.net) — Listung + Signierung
 **Prüfmethode:** statische Code-Analyse, automatisierte Linter/Tests, XPI-Build-Inspektion, Abgleich mit Mozilla-Add-on-Policies, Thunderbird-Manifest-/MV3-Dokumentation, Prüfung der öffentlichen Projekt-/Rechtsseiten
