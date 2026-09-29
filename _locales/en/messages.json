@@ -96,5 +96,39 @@
   },
   "notificationNoLinks": {
     "message": "No links found in this message."
+  },
+  "tocLinkMarked": {
+    "message": "Protected by Thundy AV time-of-click protection"
+  },
+  "tocWarningTitle": {
+    "message": "Thundy AV blocked this link"
+  },
+  "tocChecking": {
+    "message": "Thundy AV is checking this link before it is opened…"
+  },
+  "tocBlocked": {
+    "message": "The link could not be verified."
+  },
+  "tocOpenAnyway": {
+    "message": "Open the link anyway"
+  },
+  "tocClose": {
+    "message": "Dismiss"
+  },
+  "tocBlockedScheme": {
+    "message": "This link uses the scheme \"$SCHEME$\", which Thundy AV cannot verify.",
+    "placeholders": {
+      "scheme": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationUiUnavailable": {
+    "message": "Thundy AV could not activate its in-message UI: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
   }
 }

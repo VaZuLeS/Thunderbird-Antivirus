@@ -140,7 +140,6 @@ describe('background.js', () => {
             globalThis.reset_sharedDBPromise = () => { sharedDBPromise = null; };
             globalThis.tab_mail_open_display = tab_mail_open_display;
             globalThis.sent_to_hybrid_by_attachment = sent_to_hybrid_by_attachment;
-            globalThis.injectTimeOfClickProtection = injectTimeOfClickProtection;
             globalThis.set_timeOfClickProtection = (val) => { timeOfClickProtection = val; };
             globalThis.set_privacyTier = (val) => { privacyTier = val; };
             globalThis.get_sha256_hash = get_sha256_hash;
@@ -178,7 +177,21 @@ describe('background.js', () => {
             globalThis.extractBecProtectionData = extractBecProtectionData;
             globalThis.collectThreatEvaluationOptions = collectThreatEvaluationOptions;
             globalThis.addSenderOptIn = addSenderOptIn;
-            globalThis.evaluateAndInjectThreats = evaluateAndInjectThreats;
+            globalThis.evaluateThreats = evaluateThreats;
+            globalThis.buildMessageUiState = buildMessageUiState;
+            globalThis.registerMessageDisplayScript = registerMessageDisplayScript;
+            globalThis.handleGetMessageUiState = handleGetMessageUiState;
+            globalThis.broadcastMessageUiState = broadcastMessageUiState;
+            globalThis.rememberMessageUiState = rememberMessageUiState;
+            globalThis.messageUiStates = messageUiStates;
+            globalThis.handleOpenVerifiedLink = handleOpenVerifiedLink;
+            globalThis.autoScanLinksOfMessage = autoScanLinksOfMessage;
+            globalThis.refreshDataCollectionConsent = refreshDataCollectionConsent;
+            globalThis.set_autoScanLinks = (val) => { autoScanLinks = val; };
+            globalThis.set_builtInDataConsent = (available, granted) => {
+                builtInDataConsentAvailable = available === true;
+                builtInDataConsentGranted = granted !== false;
+            };
 
             // CheckIPReputation exposed variables
             globalThis.checkIPReputation = checkIPReputation;
@@ -193,7 +206,6 @@ describe('background.js', () => {
             globalThis.getFirstDisplayedMessage = getFirstDisplayedMessage;
             globalThis.messageListToArray = messageListToArray;
             globalThis.handleRequestScan = handleRequestScan;
-            globalThis.injectIntoMessageDisplay = injectIntoMessageDisplay;
             globalThis.mayTransmitExternally = mayTransmitExternally;
             globalThis.hasHostPermissionFor = hasHostPermissionFor;
             globalThis.assertExternalAnalysisAllowed = assertExternalAnalysisAllowed;
@@ -683,7 +695,8 @@ describe('background.js', () => {
         let processed = false;
         context.processAttachments = async (msg) => { processed = true; };
         context.processLinks = async (tab, message, fullMessage) => ({ messageText: '', urls: [], filteredUrls: [] });
-        context.evaluateAndInjectThreats = async () => { processed = true; };
+        context.evaluateThreats = async () => ({ score: 0, reasons: [], authStatus: 'none' });
+        context.buildMessageUiState = () => ({ tabId: 1, messageId: 101 });
 
         // persist: true -> dauerhaftes Opt-in für den Absender
         const response = await context.handleRequestScan(
@@ -717,7 +730,8 @@ describe('background.js', () => {
 
         context.processAttachments = async () => {};
         context.processLinks = async () => ({ messageText: '', urls: [], filteredUrls: [] });
-        context.evaluateAndInjectThreats = async () => {};
+        context.evaluateThreats = async () => ({ score: 0, reasons: [], authStatus: 'none' });
+        context.buildMessageUiState = () => ({ tabId: 1, messageId: 102 });
 
         const response = await context.handleRequestScan(
             { action: 'requestScan', messageId: 102, senderEmail: 'once@example.com', persist: false },
@@ -1840,141 +1854,147 @@ describe('background.js', () => {
         });
     });
 
-    describe('injectTimeOfClickProtection', () => {
-        let executedScripts = [];
-
-        beforeEach(() => {
-            executedScripts = [];
-            context.browser.scripting.executeScript = async (opts) => {
-                executedScripts.push(opts);
-            };
-        });
-
-        it('injects script when timeOfClickProtection is true and filteredUrls exist', async () => {
-            context.set_timeOfClickProtection(true);
-            const filteredUrls = ['http://malicious.com'];
-
-            await context.injectTimeOfClickProtection(10, filteredUrls);
-
-            assert.strictEqual(executedScripts.length, 1);
-            assert.strictEqual(executedScripts[0].target.tabId, 10);
-            assert.strictEqual(typeof executedScripts[0].func, 'function');
-            // The injected script for time of click does not take arguments
-            assert.strictEqual(executedScripts[0].args.length, 0);
-        });
-
-        it('does not inject script when timeOfClickProtection is false', async () => {
-            context.set_timeOfClickProtection(false);
-            const filteredUrls = ['http://malicious.com'];
-
-            await context.injectTimeOfClickProtection(10, filteredUrls);
-
-            assert.strictEqual(executedScripts.length, 0);
-        });
-
-        it('does not inject script when filteredUrls is empty', async () => {
-            context.set_timeOfClickProtection(true);
-            const filteredUrls = [];
-
-            await context.injectTimeOfClickProtection(10, filteredUrls);
-
-            assert.strictEqual(executedScripts.length, 0);
-        });
-
-        it('handles executeScript error gracefully', async () => {
-            context.set_timeOfClickProtection(true);
-            const filteredUrls = ['http://malicious.com'];
-
-            context.browser.scripting.executeScript = async () => {
-                throw new Error("Simulated injection failure");
+    describe('message display script (MV3 injection path)', () => {
+        it('registers message_display.js through scripting.messageDisplay.registerScripts', async () => {
+            const registered = [];
+            context.browser.scripting.messageDisplay = {
+                getRegisteredScripts: async () => [],
+                registerScripts: async (scripts) => { registered.push(scripts); },
+                unregisterScripts: async () => {}
             };
 
-            let errorLogged = false;
-            const originalConsoleWarn = context.console.warn;
-            context.console.warn = (msg) => {
-                if (typeof msg === 'string' && msg.includes("Injecting into the message display failed")) {
-                    errorLogged = true;
-                }
+            const ok = await context.registerMessageDisplayScript();
+
+            assert.strictEqual(ok, true);
+            assert.strictEqual(registered.length, 1);
+            assert.strictEqual(registered[0].length, 1);
+            assert.strictEqual(registered[0][0].id, 'thundy-ui');
+            assert.deepStrictEqual([...registered[0][0].js], ['message_display.js']);
+            assert.strictEqual(registered[0][0].runAt, 'document_idle');
+        });
+
+        it('does not register the script twice', async () => {
+            let registerCalls = 0;
+            context.browser.scripting.messageDisplay = {
+                getRegisteredScripts: async () => ([{ id: 'thundy-ui' }]),
+                registerScripts: async () => { registerCalls++; }
             };
 
+            assert.strictEqual(await context.registerMessageDisplayScript(), true);
+            assert.strictEqual(registerCalls, 0);
+        });
+
+        it('reports a failure when Thunderbird has no scripting.messageDisplay API', async () => {
+            delete context.browser.scripting.messageDisplay;
+            assert.strictEqual(await context.registerMessageDisplayScript(), false);
+        });
+
+        it('notifies the user when the registration fails', async () => {
+            let notified = false;
+            context.browser.scripting.messageDisplay = {
+                getRegisteredScripts: async () => [],
+                registerScripts: async () => { throw new Error('registration failed'); }
+            };
+            const originalNotify = context.notify;
+            context.notify = () => { notified = true; };
             try {
-                const result = await context.injectTimeOfClickProtection(10, filteredUrls);
-                // Ensure promises resolve before checking
-                await new Promise(process.nextTick);
-                assert.strictEqual(errorLogged, true);
-                assert.strictEqual(result, undefined);
+                assert.strictEqual(await context.registerMessageDisplayScript(), false);
             } finally {
-                context.console.warn = originalConsoleWarn;
+                context.notify = originalNotify;
             }
+            assert.strictEqual(notified, true);
+        });
+
+        it('buildMessageUiState carries threat, opt-in flag, consent and the time-of-click setting', () => {
+            context.set_timeOfClickProtection(true);
+            const state = context.buildMessageUiState({
+                tabId: 4,
+                messageId: 7,
+                senderEmail: 'a@example.com',
+                threat: { score: 80, reasons: ['x'], authStatus: 'none' },
+                optInNeeded: true,
+                consentGiven: true
+            });
+
+            assert.strictEqual(state.tabId, 4);
+            assert.strictEqual(state.messageId, 7);
+            assert.strictEqual(state.threat.score, 80);
+            assert.strictEqual(state.optInNeeded, true);
+            assert.strictEqual(state.consentGiven, true);
+            assert.strictEqual(state.timeOfClickProtection, true);
         });
     });
 
-    describe('tab_mail_open_display with threat score', () => {
-        it('injects warning banner if score >= 50', async () => {
-            let executedWarningScripts = [];
-            context.browser.scripting.executeScript = async (opts) => {
-                executedWarningScripts.push(opts);
-            };
-
-            // disable timeOfClickProtection to avoid another executeScript call
-            context.set_timeOfClickProtection(false);
-            context.set_privacyTier('balanced');
-
-            context.browser.messages.listAttachments = async () => ([]);
+    describe('handleDisplayedMessage publishes the message UI state', () => {
+        it('stores and broadcasts the evaluated state for the tab', async () => {
+            const broadcasts = [];
+            context.browser.runtime.sendMessage = async (message) => { broadcasts.push(message); };
+            context.browser.messages.listAttachments = async () => [];
+            context.browser.storage.local.get = async () => ({ scanningEnabledSenders: [] });
             context.browser.messages.getFull = async () => ({
                 contentType: 'text/html',
                 body: '<a href="https://login.amaz0n.de">Click</a>'
             });
+            context.set_timeOfClickProtection(true);
+            context.set_privacyTier('balanced');
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 1, headerMessageId: 'h1' }] });
 
-            await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Service <service@paypal-support.com>', subject: 'Action required' });
+            await context.handleDisplayedMessage({ id: 10 }, { id: 1, author: 'Service <service@paypal-support.com>', subject: 'Action required' });
 
-            assert.ok(executedWarningScripts.length > 0);
-            assert.strictEqual(executedWarningScripts[0].target.tabId, 10);
-            assert.strictEqual(typeof executedWarningScripts[0].func, 'function');
-            assert.strictEqual(executedWarningScripts[0].args[0], 100); // 100 score
+            assert.strictEqual(broadcasts.length, 1);
+            assert.strictEqual(broadcasts[0].type, 'thundy:messageState');
+            assert.strictEqual(broadcasts[0].tabId, 10);
+            assert.ok(broadcasts[0].state.threat.score >= 50);
+            assert.strictEqual(broadcasts[0].state.optInNeeded, true);
+            assert.strictEqual(broadcasts[0].state.senderEmail, 'service@paypal-support.com');
+
+            const cached = await context.handleGetMessageUiState({ tab: { id: 10 } }, { action: 'getMessageUiState' });
+            assert.strictEqual(cached.messageId, 1);
+            assert.strictEqual(cached.tabId, 10);
         });
 
-        it('does not inject warning banner if score < 50', async () => {
-            let executedWarningScripts = [];
-            context.browser.scripting.executeScript = async (opts) => {
-                executedWarningScripts.push(opts);
-            };
-            context.set_timeOfClickProtection(false);
-            context.set_privacyTier('balanced');
+        it('marks a message with attachments as needing an opt-in', async () => {
+            const broadcasts = [];
+            context.browser.runtime.sendMessage = async (message) => { broadcasts.push(message); };
+            context.browser.storage.local.get = async () => ({ scanningEnabledSenders: [] });
+            context.browser.messages.getFull = async () => ({ contentType: 'text/plain', body: 'hello' });
+            context.browser.messages.listAttachments = async () => ([{ name: 'invoice.pdf', partName: '1.2' }]);
 
-            context.browser.messages.listAttachments = async () => ([]);
-            context.browser.messages.getFull = async () => ({
-                contentType: 'text/plain',
-                body: 'Just a normal text.'
-            });
+            context.processAttachments = async () => {};
+            await context.handleDisplayedMessage({ id: 11 }, { id: 2, author: 'unknown@example.com', subject: 'Invoice' });
 
-            // This will trigger a score of 20 because of the "Action required" subject and no other reasons.
-            await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'User <user@example.com>', subject: 'Action required' });
-
-            assert.strictEqual(executedWarningScripts.length, 0);
+            assert.strictEqual(broadcasts.length, 1);
+            assert.strictEqual(broadcasts[0].state.optInNeeded, true);
+            assert.strictEqual(broadcasts[0].state.consentGiven, true);
         });
 
-        it('does not inject warning banner if score === 0', async () => {
-            let executedWarningScripts = [];
-            context.browser.scripting.executeScript = async (opts) => {
-                executedWarningScripts.push(opts);
-            };
-            context.set_timeOfClickProtection(false);
-            context.set_privacyTier('balanced');
+        it('answers with pending=true while the evaluation is still running', async () => {
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 99, author: 'a@example.com' }] });
+            context.messageUiStates.clear();
 
-            context.browser.messages.listAttachments = async () => ([]);
-            context.browser.messages.getFull = async () => ({
-                contentType: 'text/plain',
-                body: 'Just a normal text without links.'
-            });
+            const state = await context.handleGetMessageUiState({ tab: { id: 12 } }, { action: 'getMessageUiState' });
 
-            await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
+            assert.strictEqual(state.pending, true);
+            assert.strictEqual(state.messageId, 99);
+            assert.strictEqual(state.tabId, 12);
+        });
 
-            assert.ok(executedWarningScripts.length === 0);
+        it('returns null when no message is displayed', async () => {
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [] });
+            assert.strictEqual(await context.handleGetMessageUiState({ tab: { id: 3 } }, {}), null);
+        });
+
+        it('opens a verified link through the tabs API and refuses other schemes', async () => {
+            const created = [];
+            context.browser.tabs = { create: async (details) => { created.push(details.url); } };
+
+            assert.strictEqual(await context.handleOpenVerifiedLink('https://example.com/x'), true);
+            assert.strictEqual(await context.handleOpenVerifiedLink('file:///etc/passwd'), false);
+            assert.deepStrictEqual(created, ['https://example.com/x']);
         });
     });
 
-    describe('evaluateAndInjectThreats and helpers', () => {
+    describe('evaluateThreats and helpers', () => {
         it('extractBecProtectionData extracts senderEmail, firstComm, replyTo, and subject', async () => {
             const originalQuery = context.browser.messages.query;
             context.browser.messages.query = async () => ({ messages: [] });
@@ -3228,7 +3248,8 @@ describe('background.js', () => {
             const processed = [];
             context.processAttachments = async (message) => { processed.push(message.id); };
             context.processLinks = async () => ({ messageText: '', urls: [], filteredUrls: [] });
-            context.evaluateAndInjectThreats = async () => {};
+            context.evaluateThreats = async () => ({ score: 0, reasons: [], authStatus: 'none' });
+        context.buildMessageUiState = () => ({ tabId: 1, messageId: 102 });
             context.browser.messages.listAttachments = async () => ([]);
             context.browser.storage.local.get = async () => ({ scanningEnabledSenders: [] });
 
@@ -3237,30 +3258,44 @@ describe('background.js', () => {
             assert.deepStrictEqual(processed, [101, 102]);
         });
 
-        it('injectIntoMessageDisplay uses scripting.messageDisplay when available', async () => {
-            const calls = [];
-            context.browser.scripting.messageDisplay = {
-                executeScript: async (injection) => { calls.push(['messageDisplay', injection.target.tabId]); }
+        it('routes getMessageUiState requests to the state handler', async () => {
+            const originalHandler = context.handleGetMessageUiState;
+            const seen = [];
+            context.handleGetMessageUiState = async (sender, request) => {
+                seen.push([sender && sender.tab && sender.tab.id, request.action]);
+                return { tabId: 5, messageId: 1, pending: false };
             };
-            const genericCalls = [];
-            context.browser.scripting.executeScript = async (injection) => { genericCalls.push(injection.target.tabId); };
-
-            await context.injectIntoMessageDisplay(5, function () {});
-
-            assert.deepStrictEqual(calls, [['messageDisplay', 5]]);
-            assert.strictEqual(genericCalls.length, 0);
+            try {
+                const listeners = context.browser.runtime.onMessage.listeners;
+                // The last registered listener is the one of the current context.
+                const listener = listeners[listeners.length - 1];
+                const response = await new Promise((resolve) => {
+                    const keptAlive = listener({ action: 'getMessageUiState' }, { tab: { id: 5 } }, resolve);
+                    assert.strictEqual(keptAlive, true);
+                });
+                assert.deepStrictEqual(seen, [[5, 'getMessageUiState']]);
+                assert.strictEqual(response.tabId, 5);
+            } finally {
+                context.handleGetMessageUiState = originalHandler;
+            }
         });
 
-        it('injectIntoMessageDisplay falls back to scripting.executeScript and swallows errors', async () => {
-            delete context.browser.scripting.messageDisplay;
-            const genericCalls = [];
-            context.browser.scripting.executeScript = async (injection) => { genericCalls.push(injection.target.tabId); };
-            await context.injectIntoMessageDisplay(6, function () {});
-            assert.deepStrictEqual(genericCalls, [6]);
+        it('routes openVerifiedLink requests and rejects non-http schemes', async () => {
+            const created = [];
+            context.browser.tabs = { create: async (details) => { created.push(details.url); } };
+            const listeners = context.browser.runtime.onMessage.listeners;
+            const listener = listeners[listeners.length - 1];
 
-            context.browser.scripting.executeScript = async () => { throw new Error('blocked'); };
-            const result = await context.injectIntoMessageDisplay(6, function () {});
-            assert.strictEqual(result, null);
+            const ok = await new Promise((resolve) => {
+                listener({ action: 'openVerifiedLink', url: 'https://example.com/a' }, {}, resolve);
+            });
+            const blocked = await new Promise((resolve) => {
+                listener({ action: 'openVerifiedLink', url: 'javascript:alert(1)' }, {}, resolve);
+            });
+
+            assert.strictEqual(ok.opened, true);
+            assert.strictEqual(blocked.opened, false);
+            assert.deepStrictEqual(created, ['https://example.com/a']);
         });
 
         it('originForUrl maps provider hosts to the declared optional host permissions', () => {
@@ -3321,7 +3356,8 @@ describe('background.js', () => {
             context.browser.permissions = { contains: async () => true, request: async () => true };
             context.processAttachments = async () => {};
             context.processLinks = async () => ({ messageText: '', urls: [], filteredUrls: [] });
-            context.evaluateAndInjectThreats = async () => {};
+            context.evaluateThreats = async () => ({ score: 0, reasons: [], authStatus: 'none' });
+        context.buildMessageUiState = () => ({ tabId: 1, messageId: 102 });
 
             const response = await context.handleRequestScan(
                 { action: 'requestScan', messageId: 1, senderEmail: 'once@example.com', persist: false },

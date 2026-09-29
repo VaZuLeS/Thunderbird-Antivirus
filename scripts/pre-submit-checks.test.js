@@ -71,6 +71,81 @@ describe('pre-submit-checks', () => {
     assert.deepStrictEqual(result.errors, []);
   });
 
+  it('accepts an optional data collection declaration (nothing is required)', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['none'], optional: ['personalCommunications'] }
+        }
+      }
+    }));
+    assert.deepStrictEqual(result.errors, []);
+    assert.ok(result.passes.some((p) => p.includes('personalCommunications (optional)')));
+  });
+
+  it('fails when no data collection type is declared at all', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: { id: 'demo@example.org', data_collection_permissions: { required: [], optional: [] } }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('must list at least one data type')));
+  });
+
+  it('fails when "none" hides the transmission without any optional declaration', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: { id: 'demo@example.org', data_collection_permissions: { required: ['none'] } }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('declares "none" although the add-on transmits')));
+  });
+
+  it('fails when "none" is mixed with other required data types', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          data_collection_permissions: { required: ['none', 'personalCommunications'] }
+        }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('cannot be combined with other required data types')));
+  });
+
+  it('fails when a used API namespace has no declared permission (menus regression)', () => {
+    const result = runChecks(createExtension({
+      'background.js': 'browser.menus.create({ id: "x", title: "x", contexts: ["link"] });\n'
+    }, { permissions: ['messagesRead', 'storage'] }));
+    assert.ok(result.errors.some((e) => e.includes('browser.menus is used but none of its permissions is declared')));
+  });
+
+  it('accepts a used API namespace whose permission is declared', () => {
+    const result = runChecks(createExtension({
+      'background.js': 'browser.menus.create({ id: "x" });\nbrowser.notifications.create({});\n'
+    }, { permissions: ['messagesRead', 'storage', 'menus', 'notifications'] }));
+    assert.deepStrictEqual(result.errors, []);
+    assert.ok(result.passes.some((p) => p.includes('permission for browser.menus is declared')));
+  });
+
+  it('fails when a registered message display script is not shipped', () => {
+    const result = runChecks(createExtension({
+      'background.js': "browser.scripting.messageDisplay.registerScripts([{ id: 'x', js: ['message_display.js'] }]);\n"
+    }, { permissions: ['messagesRead', 'storage', 'scripting'] }));
+    assert.ok(result.errors.some((e) => e.includes('registered script is referenced by the code but missing on disk')));
+  });
+
+  it('accepts a shipped registered message display script', () => {
+    const result = runChecks(createExtension({
+      'background.js': "browser.scripting.messageDisplay.registerScripts([{ id: 'x', js: ['message_display.js'] }]);\n",
+      'message_display.js': '// ui\n'
+    }, { permissions: ['messagesRead', 'storage', 'scripting'] }));
+    assert.deepStrictEqual(result.errors, []);
+    assert.ok(result.passes.some((p) => p.includes('registered script present (message_display.js)')));
+  });
+
   it('fails when manifest.json is missing', () => {
     const rootDir = fs.mkdtempSync(path.join(tmpDir, 'empty-'));
     const result = runChecks(rootDir);
@@ -114,17 +189,17 @@ describe('pre-submit-checks', () => {
     assert.ok(result.errors.some((e) => e.includes('data_collection_permissions is missing')));
   });
 
-  it('fails when data collection declares "none" combined with optional permissions', () => {
+  it('fails when "none" is listed as an optional data type', () => {
     const result = runChecks(createExtension({}, {
       browser_specific_settings: {
         gecko: {
           id: 'demo@example.org',
           strict_min_version: '140.0',
-          data_collection_permissions: { required: ['none'], optional: ['personalCommunications'] }
+          data_collection_permissions: { required: ['personalCommunications'], optional: ['none'] }
         }
       }
     }));
-    assert.ok(result.errors.some((e) => e.includes('contradictory')));
+    assert.ok(result.errors.some((e) => e.includes('must not be listed as optional data type')));
   });
 
   it('fails when a forbidden permission is requested', () => {

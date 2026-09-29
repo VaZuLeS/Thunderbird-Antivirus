@@ -11,6 +11,7 @@ const { execFileSync } = require('child_process');
 const ALLOWED_FILES = [
   'manifest.json',
   'background.js',
+  'message_display.js',
   'db.js',
   'api.js',
   'api_gateway.js',

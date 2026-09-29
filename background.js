@@ -28,7 +28,15 @@ const I18N_FALLBACKS = {
     notificationScanSubmitted: 'Scan submitted successfully. Job ID: $JOBID$',
     notificationScanError: 'Scan error: $ERROR$',
     notificationTitle: 'Thundy AV Scanner',
-    notificationTitleError: 'Thundy AV Scanner error'
+    notificationTitleError: 'Thundy AV Scanner error',
+    notificationUiUnavailable: 'Thundy AV could not activate its in-message UI: $ERROR$',
+    tocLinkMarked: 'Protected by Thundy AV time-of-click protection',
+    tocWarningTitle: 'Thundy AV blocked this link',
+    tocChecking: 'Thundy AV is checking this link before it is opened…',
+    tocBlocked: 'The link could not be verified.',
+    tocOpenAnyway: 'Open the link anyway',
+    tocClose: 'Dismiss',
+    tocBlockedScheme: 'This link uses the scheme "$SCHEME$", which Thundy AV cannot verify.'
 };
 
 function msg(key, subs) {
@@ -40,7 +48,7 @@ function msg(key, subs) {
     } catch (e) { /* fall through to the fallback string */ }
     let text = I18N_FALLBACKS[key] || key;
     const values = Array.isArray(subs) ? subs.slice() : (subs === undefined ? [] : [subs]);
-    text = text.replace(/\$(SCORE|URL|JOBID|ERROR)\$/g, () => (values.length ? String(values.shift()) : ''));
+    text = text.replace(/\$(SCORE|URL|JOBID|ERROR|SCHEME)\$/g, () => (values.length ? String(values.shift()) : ''));
     return text;
 }
 
@@ -61,8 +69,29 @@ function iconUrl() {
 // ---------------------------------------------------------------------------
 const EXTERNAL_ANALYSIS_DISABLED = 'EXTERNAL_ANALYSIS_DISABLED';
 
+// Where the browser offers the built-in data collection consent (Firefox/
+// Thunderbird 140+), the declared *optional* category personalCommunications
+// must be granted by the user as well. Older versions do not expose the API;
+// there the add-on's own consent checkbox in the options is authoritative.
+let builtInDataConsentAvailable = false;
+let builtInDataConsentGranted = true;
+
+async function refreshDataCollectionConsent() {
+    try {
+        if (!browser.permissions || typeof browser.permissions.getAll !== 'function') return;
+        const granted = await browser.permissions.getAll();
+        if (!granted || !Array.isArray(granted.data_collection)) return;
+        builtInDataConsentAvailable = true;
+        builtInDataConsentGranted = granted.data_collection.includes('personalCommunications');
+    } catch (e) {
+        Logger.warn('Could not read the data collection permissions', e);
+    }
+}
+
 function mayTransmitExternally() {
-    return externalAnalysisConsent === true;
+    if (externalAnalysisConsent !== true) return false;
+    if (builtInDataConsentAvailable && !builtInDataConsentGranted) return false;
+    return true;
 }
 
 function assertExternalAnalysisAllowed() {
@@ -105,24 +134,111 @@ async function hasHostPermissionFor(url) {
     }
 }
 
-/**
- * Injects a function into the message display document of a tab.
- * Thunderbird's generic scripting API is used; if a future Thunderbird
- * release exposes scripting.messageDisplay.executeScript, it is preferred.
- */
-async function injectIntoMessageDisplay(tabId, func, args = []) {
-    if (tabId === undefined || tabId === null) return null;
-    const injection = { target: { tabId }, func, args };
-    try {
-        if (browser.scripting && browser.scripting.messageDisplay &&
-            typeof browser.scripting.messageDisplay.executeScript === 'function') {
-            return await browser.scripting.messageDisplay.executeScript(injection);
-        }
-        return await browser.scripting.executeScript(injection);
-    } catch (e) {
-        Logger.warn('Injecting into the message display failed (please report with your Thunderbird version):', e);
-        return null;
+// ---------------------------------------------------------------------------
+// Message display UI
+//
+// Thunderbird runs code in the message view through a *registered* message
+// display script (scripting.messageDisplay.registerScripts, the Manifest V3
+// replacement for messageDisplayScripts). The background therefore registers
+// message_display.js once and afterwards only exchanges state with it:
+//   message script -> background: getMessageUiState, requestScan, checkLinkState
+//   background -> message script: { type: 'thundy:messageState', tabId, state }
+// ---------------------------------------------------------------------------
+const MESSAGE_DISPLAY_SCRIPT_ID = 'thundy-ui';
+const MESSAGE_DISPLAY_SCRIPT_FILE = 'message_display.js';
+const MESSAGE_UI_STATE_LIMIT = 100;
+const messageUiStates = new Map(); // `${tabId}:${messageId}` -> state
+
+async function registerMessageDisplayScript() {
+    const api = browser.scripting && browser.scripting.messageDisplay;
+    if (!api || typeof api.registerScripts !== 'function') {
+        Logger.error('scripting.messageDisplay.registerScripts is not available: the in-message UI cannot be registered.');
+        return false;
     }
+    try {
+        if (typeof api.getRegisteredScripts === 'function') {
+            const registered = await api.getRegisteredScripts();
+            if (Array.isArray(registered) && registered.some((script) => script && script.id === MESSAGE_DISPLAY_SCRIPT_ID)) {
+                return true;
+            }
+        }
+        await api.registerScripts([{
+            id: MESSAGE_DISPLAY_SCRIPT_ID,
+            js: [MESSAGE_DISPLAY_SCRIPT_FILE],
+            runAt: 'document_idle'
+        }]);
+        return true;
+    } catch (e) {
+        Logger.error('Could not register the message display script:', e);
+        notify('notificationTitleError', 'notificationUiUnavailable', [e && e.message ? e.message : String(e)]);
+        return false;
+    }
+}
+
+function messageUiStateKey(tabId, messageId) {
+    return String(tabId) + ':' + String(messageId);
+}
+
+function rememberMessageUiState(tabId, state) {
+    if (tabId === undefined || tabId === null || !state) return;
+    messageUiStates.set(messageUiStateKey(tabId, state.messageId), state);
+    while (messageUiStates.size > MESSAGE_UI_STATE_LIMIT) {
+        const oldest = messageUiStates.keys().next();
+        if (oldest.done) break;
+        messageUiStates.delete(oldest.value);
+    }
+}
+
+/**
+ * Pushes the state of a message to the message display script (broadcast; the
+ * script filters by tab id).
+ */
+async function broadcastMessageUiState(tabId, state) {
+    if (!state) return;
+    try {
+        if (browser.runtime && typeof browser.runtime.sendMessage === 'function') {
+            await browser.runtime.sendMessage({ type: 'thundy:messageState', tabId, state });
+        }
+    } catch (e) { /* no receiver (e.g. in unit tests) - the script polls instead */ }
+}
+
+function buildMessageUiState({ tabId, messageId, senderEmail, threat, optInNeeded, consentGiven }) {
+    return {
+        tabId,
+        messageId,
+        senderEmail: senderEmail || '',
+        threat: threat || null,
+        optInNeeded: optInNeeded === true,
+        consentGiven: consentGiven === true,
+        timeOfClickProtection: timeOfClickProtection === true
+    };
+}
+
+/**
+ * Answers a getMessageUiState request from a message display script.
+ */
+async function handleGetMessageUiState(sender, request) {
+    const tabId = (sender && sender.tab && sender.tab.id !== undefined)
+        ? sender.tab.id
+        : (request && request.tabId !== undefined ? request.tabId : null);
+    if (tabId === null) return null;
+
+    const message = await getFirstDisplayedMessage(tabId);
+    if (!message || message.id === undefined) return null;
+
+    const cached = messageUiStates.get(messageUiStateKey(tabId, message.id));
+    if (cached) return cached;
+
+    return {
+        tabId,
+        messageId: message.id,
+        senderEmail: extractEmailAddress(message.author || ''),
+        threat: null,
+        optInNeeded: false,
+        consentGiven: mayTransmitExternally(),
+        timeOfClickProtection: timeOfClickProtection === true,
+        pending: true
+    };
 }
 
 let customBlacklist = new Set();
@@ -202,6 +318,7 @@ async function loadSettings() {
     if (result.externalAnalysisConsent !== undefined) {
       externalAnalysisConsent = result.externalAnalysisConsent === true;
     }
+    await refreshDataCollectionConsent();
     if (result.customBlacklist !== undefined) {
       customBlacklist = new Set(result.customBlacklist.map(s => s ? s.toLowerCase() : ""));
     }
@@ -820,18 +937,36 @@ async function processAndUploadUrls(message, filteredUrls) {
     }
 }
 
-async function injectTimeOfClickProtection(tabId, filteredUrls) {
-    if (timeOfClickProtection && filteredUrls.length > 0) {
-        await injectIntoMessageDisplay(tabId, function() {
-            const links = document.querySelectorAll('a');
-            links.forEach(link => {
-                if (link.href && link.href.startsWith('http')) {
-                    link.title = "Protected by Thundy Time-of-Click";
-                    link.style.borderBottom = "1px dashed #ff8c00";
-                }
-            });
-        });
+// Maximum number of links that are checked automatically when a message is
+// opened (keeps the request volume for a single message bounded).
+const MAX_AUTO_SCAN_LINKS = 20;
+
+/**
+ * Option "Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)": checks
+ * the links of a displayed message with urlscan.io (opt-in, consent enforced by
+ * checkUrlscanIo) and stores the verdicts so the time-of-click check can use
+ * them without a network round trip.
+ */
+async function autoScanLinksOfMessage(message, filteredUrls) {
+  if (!urlscanApikey || !filteredUrls || filteredUrls.length === 0) return [];
+  if (!mayTransmitExternally()) return [];
+
+  const verdicts = [];
+  for (const url of filteredUrls.slice(0, MAX_AUTO_SCAN_LINKS)) {
+    try {
+      const verdict = await checkUrlscanIo(url, urlscanApikey);
+      if (verdict && verdict.status && verdict.status !== 'ERROR' && verdict.status !== 'TIMEOUT') {
+        verdicts.push({ url, state: verdict.status, reasons: verdict.reasons || [] });
+      }
+    } catch (e) {
+      Logger.warn('Automatic link check failed', e);
     }
+  }
+
+  if (verdicts.length > 0) {
+    await indexedDB_save_links_objects_to_db(message, verdicts);
+  }
+  return verdicts;
 }
 
 async function checkIPReputation(receivedHeaders) {
@@ -970,71 +1105,6 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
     return urlhausDomains;
 }
 
-async function injectThreatBanner(tabId, threat) {
-    if (threat.score >= 50 || threat.authStatus === 'pass') {
-        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus) {
-                const t = (key, fallback, subs) => {
-                    try {
-                        return browser.i18n.getMessage(key, subs) || fallback;
-                    } catch (e) {
-                        return fallback;
-                    }
-                };
-                if (score >= 50) {
-                    // Sichere DOM-Manipulation ohne innerHTML
-                    const banner = document.createElement('div');
-                    banner.id = 'thundy-threat-banner';
-                    banner.style.backgroundColor = '#ffeeee';
-                    banner.style.border = '1px solid #ff0000';
-                    banner.style.color = '#ff0000';
-                    banner.style.padding = '10px';
-                    banner.style.margin = '10px';
-                    banner.style.borderRadius = '4px';
-                    banner.style.fontWeight = 'bold';
-                    banner.style.fontFamily = 'Arial, sans-serif';
-                    banner.style.zIndex = '9999';
-
-                    const title = document.createElement('div');
-                    title.textContent = '🔴 ⚠️ ' + t('bannerThreatTitle', 'Thundy AV warning') +
-                        ' (' + t('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
-                    title.style.fontSize = '16px';
-                    title.style.marginBottom = '5px';
-                    banner.appendChild(title);
-
-                    const reasonList = document.createElement('ul');
-                    reasonList.style.margin = '0';
-                    reasonList.style.paddingLeft = '20px';
-                    reasonList.style.fontSize = '14px';
-
-                    for (const reason of reasons) {
-                        const li = document.createElement('li');
-                        li.textContent = reason;
-                        reasonList.appendChild(li);
-                    }
-                    banner.appendChild(reasonList);
-
-                    document.body.prepend(banner);
-                } else if (authStatus === 'pass') {
-                    const badge = document.createElement('div');
-                    badge.id = 'thundy-auth-badge';
-                    badge.style.display = 'inline-block';
-                    badge.style.backgroundColor = '#e6ffe6';
-                    badge.style.border = '1px solid #008000';
-                    badge.style.color = '#008000';
-                    badge.style.padding = '5px 10px';
-                    badge.style.margin = '10px';
-                    badge.style.borderRadius = '20px';
-                    badge.style.fontWeight = 'bold';
-                    badge.style.fontFamily = 'Arial, sans-serif';
-                    badge.style.fontSize = '12px';
-                    badge.style.zIndex = '9999';
-                    badge.textContent = '🟢 🛡️ ' + t('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
-
-                    document.body.prepend(badge);
-                }
-        }, [threat.score, threat.reasons, threat.authStatus]);
-    }
-}
 
 async function processAttachments(message) {
   let attachments = await browser.messages.listAttachments(message.id);
@@ -1044,7 +1114,7 @@ async function processAttachments(message) {
   }
 }
 
-async function processLinks(tab, message, fullMessage, parsedUrlCache = null) {
+async function processLinks(message, fullMessage, parsedUrlCache = null) {
   let messageText = extractTextFromParts(fullMessage.parts || fullMessage);
   let urls = extractUrls(messageText);
   let filteredUrls = filterUrls(urls, parsedUrlCache);
@@ -1053,9 +1123,9 @@ async function processLinks(tab, message, fullMessage, parsedUrlCache = null) {
     await processAndUploadUrls(message, filteredUrls);
   }
 
-  // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
-  await injectTimeOfClickProtection(tab.id, filteredUrls);
-
+  // The visual time-of-click marker and the click check run in the registered
+  // message display script (message_display.js); it gets the state from
+  // handleGetMessageUiState()/broadcastMessageUiState().
   return { messageText, urls, filteredUrls };
 }
 
@@ -1090,128 +1160,14 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
   };
 }
 
-async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
+async function evaluateThreats({ message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
   const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache });
-  const threat = calculateThreatScore(message.author, urls, options);
-  await injectThreatBanner(tab.id, threat);
+  return calculateThreatScore(message.author, urls, options);
 }
 
 /**
- * Injects the per-message opt-in banner.
- * Two explicit actions: scan this message once (no persistent opt-in) or
- * enable scanning for this sender permanently.
- */
-async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
-  await injectIntoMessageDisplay(tabId, function(messageId, senderEmail, consentGiven) {
-        const t = (key, fallback, subs) => {
-          try {
-            return browser.i18n.getMessage(key, subs) || fallback;
-          } catch (e) {
-            return fallback;
-          }
-        };
-
-        const existing = document.getElementById('thundy-optin-banner');
-        if (existing) return;
-
-        const banner = document.createElement('div');
-        banner.id = 'thundy-optin-banner';
-        banner.style.backgroundColor = '#fff8e1';
-        banner.style.border = '1px solid #ffcc80';
-        banner.style.color = '#333';
-        banner.style.padding = '8px';
-        banner.style.margin = '8px';
-        banner.style.borderRadius = '4px';
-        banner.style.fontFamily = 'Arial, sans-serif';
-        banner.style.zIndex = '9999';
-
-        const text = document.createElement('span');
-        text.textContent = t('bannerTitleOptIn', 'Thundy AV: real-time scanning is not enabled for this message.');
-        banner.appendChild(text);
-
-        const createButton = (label, persist) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.textContent = label;
-          btn.style.marginLeft = '10px';
-          btn.addEventListener('click', async () => {
-            const buttons = banner.querySelectorAll('button');
-            buttons.forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
-            btn.textContent = t('bannerScanRunning', 'Scanning…');
-            try {
-              const resp = await browser.runtime.sendMessage({
-                action: 'requestScan',
-                messageId: messageId,
-                senderEmail: senderEmail,
-                persist: persist
-              });
-              if (resp && resp.success) {
-                btn.textContent = t('bannerScanDone', 'Scan finished');
-                btn.removeAttribute('aria-busy');
-                buttons.forEach(b => { b.disabled = false; });
-                if (persist) {
-                  setNote(t('bannerSenderOptIn', 'This sender is now scanned automatically.'));
-                }
-              } else if (resp && resp.error === 'permission_denied') {
-                btn.textContent = t('bannerPermissionDenied', 'Required host permission was denied');
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-              } else if (resp && (resp.error === 'EXTERNAL_ANALYSIS_DISABLED' || resp.code === 'EXTERNAL_ANALYSIS_DISABLED')) {
-                setNote(t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.'));
-                addOptionsButton();
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); btn.textContent = label; });
-              } else {
-                btn.textContent = t('bannerScanFailed', 'Scan failed');
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-              }
-            } catch (e) {
-              btn.textContent = t('bannerScanFailed', 'Scan failed');
-              buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-            }
-          });
-          banner.appendChild(btn);
-        };
-
-        const note = document.createElement('div');
-        note.id = 'thundy-optin-note';
-        note.style.fontSize = '12px';
-        note.style.marginTop = '6px';
-        note.textContent = t('bannerNoteOptIn', 'Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you gave your consent. See the add-on options.');
-        if (!consentGiven) {
-          note.textContent = t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.');
-        }
-
-        function setNote(value) {
-          note.textContent = value;
-        }
-
-        function addOptionsButton() {
-          if (banner.querySelector('#thundy-open-options')) return;
-          const optionsButton = document.createElement('button');
-          optionsButton.id = 'thundy-open-options';
-          optionsButton.type = 'button';
-          optionsButton.textContent = t('bannerOpenOptions', 'Open options');
-          optionsButton.style.marginLeft = '10px';
-          optionsButton.addEventListener('click', () => browser.runtime.openOptionsPage());
-          note.appendChild(optionsButton);
-        }
-
-        createButton(t('bannerScanOnce', 'Scan this message once'), false);
-        createButton(t('bannerScanSender', 'Always scan this sender'), true);
-
-        banner.appendChild(note);
-
-        if (!consentGiven) {
-          addOptionsButton();
-        }
-
-        document.body.prepend(banner);
-  }, [messageId, senderEmail, consentGiven === true]);
-}
-
-/**
- * Returns the first message displayed in the given tab.
- * Manifest V3 in Thunderbird removed messageDisplay.getDisplayedMessage();
- * getDisplayedMessages() returns a MessageList instead.
+ * Returns the message that is currently displayed in the given tab (MV3:
+ * messageDisplay.getDisplayedMessages() returns a MessageList).
  */
 async function getFirstDisplayedMessage(tabId, { throwOnError = false } = {}) {
   if (tabId === undefined || tabId === null) return null;
@@ -1251,6 +1207,7 @@ async function tab_mail_open_display(tab, messages) {
 
 async function handleDisplayedMessage(tab, message) {
   if (!message || message.id === undefined || message.id === null) return;
+  const tabId = tab && tab.id !== undefined ? tab.id : null;
   try {
     const senderEmail = extractEmailAddress(message.author || '');
 
@@ -1270,13 +1227,32 @@ async function handleDisplayedMessage(tab, message) {
     await processAttachments(message);
 
     let parsedUrlCache = new Map();
-    let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage, parsedUrlCache);
+    let { messageText, urls, filteredUrls } = await processLinks(message, fullMessage, parsedUrlCache);
 
-    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
-
-    if (!canAutoUpload && ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0))) {
-      await injectOptInBanner(tab.id, message.id, senderEmail, mayTransmitExternally());
+    // Optional auto-scan of the links in the message (opt-in, consent gated).
+    if (autoScanLinks && filteredUrls && filteredUrls.length > 0) {
+      try {
+        await autoScanLinksOfMessage(message, filteredUrls);
+      } catch (e) {
+        Logger.warn('Automatic link check failed', e);
+      }
     }
+
+    const threat = await evaluateThreats({ message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
+
+    const optInNeeded = !canAutoUpload &&
+      ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0));
+
+    const state = buildMessageUiState({
+      tabId,
+      messageId: message.id,
+      senderEmail,
+      threat,
+      optInNeeded,
+      consentGiven: mayTransmitExternally()
+    });
+    rememberMessageUiState(tabId, state);
+    await broadcastMessageUiState(tabId, state);
   } catch (error) {
     Logger.error(`Fehler beim Laden der Anhänge oder Links: ${error}`);
   }
@@ -1737,6 +1713,33 @@ if (browser.messageDisplay) {
     }
 }
 
+// The in-message UI (opt-in banner, threat banner, time-of-click protection)
+// lives in message_display.js. It is registered once for every displayed
+// message and re-registered after a restart/update (registration survives only
+// for the current session).
+registerMessageDisplayScript().then((ok) => {
+    if (ok) Logger.info('Message display script registered.');
+}).catch((e) => Logger.error('Message display script registration failed', e));
+
+if (browser.permissions && browser.permissions.onAdded) {
+    browser.permissions.onAdded.addListener(() => { refreshDataCollectionConsent(); });
+}
+if (browser.permissions && browser.permissions.onRemoved) {
+    browser.permissions.onRemoved.addListener(() => { refreshDataCollectionConsent(); });
+}
+refreshDataCollectionConsent();
+
+if (browser.runtime && browser.runtime.onStartup) {
+    browser.runtime.onStartup.addListener(() => {
+        registerMessageDisplayScript().catch((e) => Logger.error('Message display script registration failed', e));
+    });
+}
+if (browser.runtime && browser.runtime.onInstalled) {
+    browser.runtime.onInstalled.addListener(() => {
+        registerMessageDisplayScript().catch((e) => Logger.error('Message display script registration failed', e));
+    });
+}
+
 function createContextMenus() {
     if (!browser.menus || typeof browser.menus.create !== 'function') return;
     const menus = [
@@ -1918,7 +1921,7 @@ async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
 }
 
 /**
- * Handles a scan request coming from the injected per-message banner.
+ * Handles a scan request coming from the message display banner.
  * persist === true adds the sender to the persistent opt-in list, otherwise
  * the scan stays a one-off action (no hidden opt-in).
  */
@@ -1951,16 +1954,47 @@ async function handleRequestScan(request, sender) {
         const messageObj = { id: request.messageId };
         await processAttachments(messageObj);
         const fullMessage = await browser.messages.getFull(request.messageId);
-        const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (request.tabId || null);
-        const tab = { id: tabId };
+        const tabId = (sender && sender.tab && sender.tab.id !== undefined)
+            ? sender.tab.id
+            : (request.tabId !== undefined ? request.tabId : null);
         const parsedUrlCache = new Map();
-        const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache);
-        await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
-        return { success: true, persisted: request.persist === true };
+        const { messageText, urls, filteredUrls } = await processLinks(messageObj, fullMessage, parsedUrlCache);
+        const threat = await evaluateThreats({ message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
+
+        // The message is scanned now, so the banner is replaced by the result.
+        const state = buildMessageUiState({
+            tabId,
+            messageId: request.messageId,
+            senderEmail: request.senderEmail || '',
+            threat,
+            optInNeeded: false,
+            consentGiven: true
+        });
+        rememberMessageUiState(tabId, state);
+        await broadcastMessageUiState(tabId, state);
+        return { success: true, persisted: request.persist === true, state };
     } catch (e) {
         Logger.error('requestScan failed', e);
         return { success: false, error: e && e.message ? e.message : String(e) };
     }
+}
+
+/**
+ * Opens a link that the time-of-click check verified. Used as a fallback when
+ * the link element is not reachable anymore in the message document.
+ */
+async function handleOpenVerifiedLink(url) {
+    if (!url || typeof url !== 'string') return false;
+    if (!/^https?:\/\//i.test(url)) return false;
+    try {
+        if (browser.tabs && typeof browser.tabs.create === 'function') {
+            await browser.tabs.create({ url });
+            return true;
+        }
+    } catch (e) {
+        Logger.error('Could not open the verified link', e);
+    }
+    return false;
 }
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -1979,6 +2013,21 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case "checkLinkState":
             handleCheckLinkState(request, sender, sendResponse);
+            return true;
+
+        case "getMessageUiState":
+            handleGetMessageUiState(sender, request)
+                .then(state => sendResponse(state))
+                .catch(err => {
+                    Logger.error('getMessageUiState failed', err);
+                    sendResponse(null);
+                });
+            return true;
+
+        case "openVerifiedLink":
+            handleOpenVerifiedLink(request.url)
+                .then(opened => sendResponse({ opened }))
+                .catch(() => sendResponse({ opened: false }));
             return true;
 
         case "downloadDisarmed":

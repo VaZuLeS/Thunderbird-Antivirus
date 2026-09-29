@@ -14,6 +14,32 @@ const REQUIRED_MDM_KEYS = ['gecko'];
 const FORBIDDEN_PERMISSIONS = ['webRequest', '<all_urls>', 'management'];
 const MV3_UNSUPPORTED_KEYS = ['content_scripts', 'optional_permissions', 'user_scripts', 'web_accessible_resources'];
 
+// Product files that are shipped inside the XPI and may call WebExtension APIs.
+const PRODUCT_SCRIPT_FILES = ['background.js', 'api.js', 'api_gateway.js', 'db.js', 'options.js', 'message_display.js'];
+
+// API namespace -> permission(s) that Thunderbird requires for it. At least one
+// of the listed permissions has to be declared for a used namespace, otherwise
+// the API is not available at runtime (see store readiness finding B1: the
+// missing "menus" permission made both context menu entries dead code that no
+// test, linter run or package check detected).
+const NAMESPACE_PERMISSIONS = {
+  messages: ['messagesRead', 'messagesModify'],
+  messageDisplay: ['messagesRead'],
+  messageDisplayAction: ['messagesRead'],
+  menus: ['menus'],
+  notifications: ['notifications'],
+  downloads: ['downloads'],
+  storage: ['storage'],
+  scripting: ['scripting'],
+  compose: ['compose'],
+  accounts: ['accountsRead'],
+  addressBooks: ['addressBooks']
+};
+
+// Files that are registered programmatically (scripting.messageDisplay.registerScripts)
+// and therefore have to exist in the package.
+const REGISTERED_SCRIPT_FILES = ['message_display.js'];
+
 // Match patterns: <scheme>://<host><path> (path is mandatory, e.g. "/*")
 const MATCH_PATTERN_RE = /^(https?|wss?|ftp):\/\/(\*|\*\.[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*|[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*)\/.*$/;
 
@@ -130,15 +156,35 @@ function runChecks(rootDir) {
   } else {
     const requiredTypes = Array.isArray(dcp.required) ? dcp.required : [];
     const optionalTypes = Array.isArray(dcp.optional) ? dcp.optional : [];
-    if (requiredTypes.length === 0) fail('data_collection_permissions.required must list at least one data type');
-    if (requiredTypes.includes('none')) {
-      if (optionalTypes.length > 0) fail('data_collection_permissions is contradictory: "none" cannot be combined with optional data types');
-      else fail('data_collection_permissions declares "none" although the add-on transmits message data to analysis providers');
+    const allTypes = requiredTypes.concat(optionalTypes);
+    // Thunderbird's validator requires a non-empty "required" list. Data may only
+    // be transmitted after an explicit, revocable opt-in, so nothing is
+    // *required* (-> "none") and the transmitted categories are declared as
+    // optional data collection.
+    if (requiredTypes.length === 0) {
+      fail('data_collection_permissions.required must list at least one data type ("none" when nothing is required)');
+    }
+    if (requiredTypes.includes('none') && requiredTypes.length > 1) {
+      fail('data_collection_permissions: "none" cannot be combined with other required data types');
+    }
+    if (optionalTypes.includes('none')) {
+      fail('data_collection_permissions: "none" must not be listed as optional data type');
+    }
+    if (requiredTypes.includes('none') && optionalTypes.length === 0) {
+      fail('data_collection_permissions declares "none" although the add-on transmits message data to analysis providers');
     }
     const allowed = ['authenticationInfo', 'bookmarksInfo', 'browsingActivity', 'financialAndPaymentInfo', 'healthInfo',
       'locationInfo', 'personalCommunications', 'personallyIdentifyingInfo', 'searchTerms', 'websiteActivity', 'websiteContent', 'technicalAndInteraction', 'none'];
-    for (const type of requiredTypes.concat(optionalTypes)) {
+    for (const type of allTypes) {
       if (!allowed.includes(type)) fail('unknown data_collection_permissions value: ' + type);
+    }
+    // Message content may only be handled for the purpose of the add-on; the
+    // transmission paths are consent gated in the code.
+    if (!allTypes.includes('personalCommunications')) {
+      warn('data_collection_permissions does not declare personalCommunications although message data can be transmitted');
+    } else {
+      ok('data collection declaration covers personalCommunications (' +
+        (requiredTypes.includes('personalCommunications') ? 'required' : 'optional') + ')');
     }
   }
 
@@ -164,6 +210,62 @@ function runChecks(rootDir) {
   if (optionalHosts.length > 0) ok('optional_host_permissions are valid match patterns (' + optionalHosts.length + ')');
   if (optionalHosts.length > 0 && !errors.some((e) => e.startsWith('data_collection_permissions'))) {
     ok('host permissions are optional and declared for analysis providers');
+  }
+
+  // --- API namespace vs. declared permissions -----------------------------
+  // Thunderbird only exposes an API namespace when its permission is declared
+  // (and granted). A namespace that is used without its permission is dead code
+  // at runtime, which unit tests with mocks cannot detect.
+  const declaredPermissions = new Set(permissions);
+  const usedNamespaces = new Set();
+  for (const file of PRODUCT_SCRIPT_FILES) {
+    const absolute = path.join(rootDir, file);
+    if (!fs.existsSync(absolute)) continue;
+    const content = fs.readFileSync(absolute, 'utf8');
+    for (const match of content.matchAll(/browser\.([A-Za-z][A-Za-z0-9_]*)\s*\./g)) {
+      usedNamespaces.add(match[1]);
+    }
+    for (const match of content.matchAll(/messenger\.([A-Za-z][A-Za-z0-9_]*)\s*\./g)) {
+      usedNamespaces.add(match[1]);
+    }
+  }
+  for (const namespace of Object.keys(NAMESPACE_PERMISSIONS).sort()) {
+    if (!usedNamespaces.has(namespace)) continue;
+    const candidates = NAMESPACE_PERMISSIONS[namespace];
+    if (!candidates.some((permission) => declaredPermissions.has(permission))) {
+      fail('browser.' + namespace + ' is used but none of its permissions is declared: ' + candidates.join(' / '));
+    } else {
+      ok('permission for browser.' + namespace + ' is declared');
+    }
+  }
+  const usedPermissionNamespaces = new Set();
+  for (const namespace of Object.keys(NAMESPACE_PERMISSIONS)) {
+    if (usedNamespaces.has(namespace)) {
+      NAMESPACE_PERMISSIONS[namespace].forEach((permission) => usedPermissionNamespaces.add(permission));
+    }
+  }
+  for (const permission of declaredPermissions) {
+    if (usedPermissionNamespaces.has(permission)) continue;
+    // messagesModify/accountsRead/... are alternatives; do not fail on those.
+    const alternatives = Object.values(NAMESPACE_PERMISSIONS).some((list) => list.includes(permission));
+    warn('declared permission is not used by the product code: ' + permission + (alternatives ? ' (alternative permission)' : ''));
+  }
+
+  // --- registered message display scripts ---------------------------------
+  // A script that is registered programmatically (scripting.messageDisplay
+  // .registerScripts) must be shipped inside the package.
+  const productSources = PRODUCT_SCRIPT_FILES
+    .map((file) => path.join(rootDir, file))
+    .filter((absolute) => fs.existsSync(absolute))
+    .map((absolute) => fs.readFileSync(absolute, 'utf8'))
+    .join('\n');
+  for (const file of REGISTERED_SCRIPT_FILES) {
+    if (!productSources.includes(file)) continue;
+    if (!fs.existsSync(path.join(rootDir, file))) {
+      fail('registered script is referenced by the code but missing on disk: ' + file);
+    } else {
+      ok('registered script present (' + file + ')');
+    }
   }
 
   // --- Manifest V3 key restrictions ---------------------------------------
@@ -253,4 +355,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { runChecks, MATCH_PATTERN_RE };
+module.exports = { runChecks, MATCH_PATTERN_RE, NAMESPACE_PERMISSIONS, PRODUCT_SCRIPT_FILES };

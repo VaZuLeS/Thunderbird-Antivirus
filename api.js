@@ -61,19 +61,29 @@ if (!apikey_hybridanalysis) {
     return;
 }
 
-// Der Benutzer hat auf unseren Button geklickt, holen Sie sich den aktiven Tab im aktuellen Fenster mit
-// der Tabs API.
-let tabs = await browser.tabs.query({ active: true, currentWindow: true });
-
-// Holen Sie sich die aktuell angezeigte Nachricht im aktiven Tab, mit der
-// messageDisplay API. Hinweis: Dies benötigt die messagesRead Berechtigung.
+// Aktuell angezeigte Nachricht ermitteln. getDisplayedMessages() ohne tabId
+// bezieht sich auf den aktiven Tab; nur wenn das leer bleibt, wird der Tab
+// zusätzlich über die Tabs-API bestimmt (Fallback).
+// Hinweis: Dies benötigt die messagesRead Berechtigung.
 // Manifest V3 in Thunderbird: getDisplayedMessages() liefert eine MessageList.
+function pickFirstMessage(list) {
+    if (!list) return null;
+    if (Array.isArray(list)) return list[0] || null;
+    if (Array.isArray(list.messages)) return list.messages[0] || null;
+    return list;
+}
+
 let message = null;
 if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages === 'function') {
-    const messageList = await browser.messageDisplay.getDisplayedMessages(tabs[0].id);
-    const messages = Array.isArray(messageList) ? messageList : (messageList && messageList.messages) || [];
-    message = messages[0] || null;
+    message = pickFirstMessage(await browser.messageDisplay.getDisplayedMessages());
+    if (!message) {
+        const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+        if (tabs && tabs[0]) {
+            message = pickFirstMessage(await browser.messageDisplay.getDisplayedMessages(tabs[0].id));
+        }
+    }
 } else if (browser.messageDisplay) {
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
     message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
 }
 
@@ -182,13 +192,29 @@ try {
             if (hasAttachments || hasLinks) {
                 document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
 
+                // Consent gate (store readiness B4): without the global consent
+                // nothing may be transmitted to a third party. Stored results are
+                // therefore not queried and no upload action is offered.
+                if (!externalAnalysisConsent) {
+                    const container = document.getElementById('hybrid_analysis_api_content');
+                    const blockedCard = document.createElement('div');
+                    blockedCard.className = 'card card-info mb-3';
+                    blockedCard.setAttribute('role', 'status');
+                    const blockedText = document.createElement('p');
+                    blockedText.className = 'text-info';
+                    blockedText.textContent = 'Gespeicherte Analyseergebnisse werden nicht abgerufen, solange die externe Analyse in den Einstellungen nicht erlaubt ist.';
+                    blockedCard.appendChild(blockedText);
+                    container.appendChild(blockedCard);
+                    return;
+                }
+
                 let fetchTasks = [];
 
                 if (hasAttachments) {
                     for (const att of record.attachments) {
                         const hash256 = att.hybrid_sha256;
                         if (att.state === 'UNKNOWN') {
-                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, syncFragment);
+                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, null);
                         } else {
                             fetchTasks.push((frag) =>
                                 get_hybrid_report_by_sha256({
@@ -205,14 +231,15 @@ try {
                 }
 
                 if (hasLinks) {
-                    processRecordLinks(record.links, message.headerMessageId, syncFragment, fetchTasks);
+                    processRecordLinks(record.links, message.headerMessageId, null, fetchTasks);
                 }
 
                 if (fetchTasks.length > 0) {
+                    const container = document.getElementById('hybrid_analysis_api_content');
                     await Promise.all(fetchTasks.map(async task => {
                         let taskFragment = document.createDocumentFragment();
                         await task(taskFragment);
-                        if (taskFragment.hasChildNodes()) {
+                        if (taskFragment.hasChildNodes() && container) {
                             container.appendChild(taskFragment);
                         }
                     }));

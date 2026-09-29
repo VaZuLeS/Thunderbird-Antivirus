@@ -3,6 +3,7 @@ const vm = require('vm');
 const path = require('path');
 const { describe, it, before, beforeEach } = require('node:test');
 const assert = require('node:assert');
+const { JSDOM, VirtualConsole } = require('jsdom');
 
 describe('escapeHTML', () => {
     let context;
@@ -3410,3 +3411,142 @@ describe('createCdrButton', () => {
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 });
+
+describe('popup consent gate (store readiness B4)', () => {
+    const POPUP_HTML = '<html><body>' +
+        '<div id="hybrid_analysis_api_content"></div>' +
+        '<div id="status_message"></div>' +
+        '<div id="subject"></div><div id="from"></div><div id="MessageHeaderID"></div>' +
+        '</body></html>';
+
+    function createPopup({ consent, record = {}, fetchStatus = 500 }) {
+        const dom = new JSDOM(POPUP_HTML, { url: 'about:blank', virtualConsole: new VirtualConsole() });
+        const fetchCalls = [];
+        const sentMessages = [];
+
+        const getRequest = { result: record };
+        const store = {
+            get: () => {
+                setTimeout(() => {
+                    if (typeof getRequest.onsuccess === 'function') getRequest.onsuccess({ target: getRequest });
+                }, 0);
+                return getRequest;
+            }
+        };
+        const db = {
+            objectStoreNames: { contains: () => true },
+            transaction: () => ({ objectStore: () => store })
+        };
+
+        const context = {
+            browser: {
+                storage: {
+                    local: {
+                        get: async (keys) => (Array.isArray(keys) ? { externalAnalysisConsent: consent } : { apikey: 'test-key' })
+                    }
+                },
+                tabs: { query: async () => ([{ id: 1 }]) },
+                messageDisplay: {
+                    getDisplayedMessages: async () => ({ messages: [{ id: 1, headerMessageId: 'h1', subject: 's', author: 'a@example.com' }] })
+                },
+                runtime: {
+                    sendMessage: async (message) => { sentMessages.push(message); return { status: 'success' }; },
+                    openOptionsPage: () => {}
+                }
+            },
+            document: dom.window.document,
+            indexedDB: {
+                open: () => {
+                    const openRequest = { onupgradeneeded: null, onsuccess: null, onerror: null, result: db };
+                    setTimeout(() => {
+                        if (typeof openRequest.onsuccess === 'function') openRequest.onsuccess({ target: openRequest });
+                    }, 0);
+                    return openRequest;
+                }
+            },
+            fetch: async (url) => { fetchCalls.push(String(url)); return { status: fetchStatus, json: async () => ({}) }; },
+            console: { log: () => {}, error: () => {} },
+            setTimeout,
+            clearTimeout,
+            URL,
+            String,
+            Array,
+            Object,
+            JSON,
+            Map,
+            Set,
+            Date,
+            TextEncoder
+        };
+
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+        vm.runInContext(wrappedCode, context);
+
+        return { context, dom, fetchCalls, sentMessages };
+    }
+
+    const RECORD = {
+        attachments: [{ hybrid_sha256: 'abc123', attachment_name: 'invoice.exe', partName: '1', state: 'UPLOADED' }],
+        links: []
+    };
+
+    it('does not query any provider while the global consent is off', async () => {
+        const { context, dom, fetchCalls, sentMessages } = createPopup({ consent: false, record: RECORD });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        assert.deepStrictEqual(fetchCalls, [], 'no third party request may happen without consent');
+        assert.deepStrictEqual(sentMessages, [], 'no background request may happen without consent');
+        const container = dom.window.document.getElementById('hybrid_analysis_api_content');
+        assert.ok(container.textContent.includes('werden nicht abgerufen'),
+            'the popup explains why nothing is queried');
+    });
+
+    it('queries Hybrid Analysis once the consent is granted', async () => {
+        const { context, fetchCalls } = createPopup({ consent: true, record: RECORD });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        assert.strictEqual(fetchCalls.length, 1);
+        assert.ok(fetchCalls[0].startsWith('https://hybrid-analysis.com/api/v2/overview/'));
+    });
+
+    it('does not offer an upload action for unknown attachments without consent', async () => {
+        const { context, dom, sentMessages } = createPopup({
+            consent: false,
+            record: {
+                attachments: [{ hybrid_sha256: 'def456', attachment_name: 'unknown.bin', partName: '1', state: 'UNKNOWN' }],
+                links: [{ url: 'https://example.com', state: 'UNKNOWN' }]
+            }
+        });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        assert.deepStrictEqual(sentMessages, []);
+        const container = dom.window.document.getElementById('hybrid_analysis_api_content');
+        assert.strictEqual(container.querySelectorAll('button').length, 0, 'no upload/rescan buttons');
+    });
+
+    it('renders the stored links and unknown attachments when the consent is granted', async () => {
+        const { context, dom } = createPopup({
+            consent: true,
+            record: {
+                attachments: [{ hybrid_sha256: 'def456', attachment_name: 'unknown.bin', partName: '1', state: 'UNKNOWN' }],
+                links: [{ url: 'https://example.com', state: 'UNKNOWN' }]
+            }
+        });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        const container = dom.window.document.getElementById('hybrid_analysis_api_content');
+        assert.ok(container.children.length > 0, 'the stored record is rendered without a ReferenceError');
+    });
+});
+

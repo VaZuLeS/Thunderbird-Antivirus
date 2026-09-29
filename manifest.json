@@ -12,7 +12,12 @@
       "id": "thundy-av@bludau-it-services.de",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
-        "required": ["personalCommunications"]
+        "required": [
+          "none"
+        ],
+        "optional": [
+          "personalCommunications"
+        ]
       }
     }
   },
@@ -21,14 +26,13 @@
     "storage",
     "notifications",
     "scripting",
-    "downloads"
+    "downloads",
+    "menus"
   ],
   "optional_host_permissions": [
     "https://hybrid-analysis.com/*",
-    "https://*.hybrid-analysis.com/*",
-    "https://*.virustotal.com/*",
+    "https://www.virustotal.com/*",
     "https://urlscan.io/*",
-    "https://*.urlscan.io/*",
     "https://urlhaus-api.abuse.ch/*",
     "https://api.abuseipdb.com/*"
   ],
