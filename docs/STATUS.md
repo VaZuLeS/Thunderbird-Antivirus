@@ -3,6 +3,19 @@
 **Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6** · **ID** `thundy-av@bludau-it-services.de`
 **Zielplattform:** Thunderbird 140.0 oder neuer (Manifest V3) · **Lizenz:** MIT
 
+> **Nachprüfung 2026-09-29:** Das unabhängige [Store-Readiness-Audit](STORE_READINESS_AUDIT.md)
+> hat den Stand `ae2a08e` erneut geprüft und dabei **5 Blocker, 7 hohe und 12 mittlere Befunde**
+> dokumentiert, die in dieser Datei (Stand der 1.6-Umsetzung) noch nicht abgebildet sind. Abweichende
+> bzw. zu korrigierende Angaben in dieser Datei:
+> - „Blocker behoben“ gilt nur für die 1.5-Befunde (MV3-APIs, Paketbereinigung, Policy, Icons). Es
+>   gibt neue Blocker: Consent-Bypass im Popup (`api.js:513-530`), defektes Popup
+>   (`api.js:216`/`208`), funktionslose Banner-Buttons (`background.js:1951`), fehlende
+>   `menus`-Berechtigung und inhaltlich falsche `data_collection_permissions`.
+> - „15 Dateien (≈176 KB)“ (Zeile 33) ist falsch: aktuell **17 Dateien / 179.276 B** entpackt.
+> - „Alle Banner-/Link-Funktionen“ sind nicht belegt: die Link-/URL-Prüfung ist wegen
+>   `extractTextFromParts(fullMessage.parts || fullMessage)` (`background.js:1048`) wirkungslos.
+> Maßgeblich für den Store-Reifegrad ist das Audit, nicht die Abschnitte „Completed in 1.6“.
+
 ## Completed in 1.6
 
 Die Store-Readiness-Befunde aus [docs/STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md) wurden in 1.6
