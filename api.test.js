@@ -559,6 +559,10 @@ tag: tag,
 
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         vm.runInContext(wrappedCode, context);
+        // Globale Zustimmung zur externen Analyse (Default ist aus) für diese Tests
+        vm.runInContext('externalAnalysisConsent = true;', context);
+
+
 
         get_hybrid_report_by_sha256 = context.get_hybrid_report_by_sha256;
     });
@@ -2070,6 +2074,9 @@ describe('fetch_hybrid_report', () => {
         // Setup API key directly in context since we are stripping the IIFE that normally sets it
         wrappedCode += '\n; apikey_hybridanalysis = "mock_api_key";\n';
 
+        // Globale Zustimmung zur externen Analyse (Default ist aus)
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';
+
         vm.runInContext(wrappedCode, context);
 
         fetch_hybrid_report = context.fetch_hybrid_report;
@@ -3410,3 +3417,98 @@ describe('createCdrButton', () => {
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 });
+
+/**
+ * Das Popup darf ohne die globale Zustimmung („Externe Analyse erlauben“)
+ * keinerlei Daten an Analyse-Dienste senden. Früher hat es gespeicherte
+ * Hybrid-Analysis-Reports unabhängig von der Zustimmung nachgeladen.
+ */
+describe('Consent-Gate für externe Report-Abfragen', () => {
+    function createConsentContext(consent) {
+        const container = {
+            children: [],
+            appendChild(child) { this.children.push(child); return child; }
+        };
+        const context = {
+            browser: {
+                tabs: { query: async () => [{ id: 1 }] },
+                storage: { local: { get: async () => ({ apikey: 'test', externalAnalysisConsent: consent }) } },
+                runtime: { openOptionsPage: () => {}, sendMessage: async () => ({}) },
+                messageDisplay: { getDisplayedMessage: async () => null }
+            },
+            document: {
+                getElementById: () => container,
+                createElement: (tag) => ({
+                    tagName: tag,
+                    children: [],
+                    className: '',
+                    textContent: '',
+                    setAttribute() {},
+                    appendChild(child) { this.children.push(child); return child; },
+                    addEventListener() {}
+                })
+            },
+            indexedDB: { open: () => ({ onupgradeneeded: null, onsuccess: null, onerror: null }) },
+            console: { log: () => {}, error: () => {} },
+            fetch: null,
+            setTimeout,
+            clearTimeout,
+            String: String,
+            Array: Array,
+            TextEncoder: TextEncoder,
+            Map: Map,
+            Promise: Promise,
+            Error: Error
+        };
+        context.messenger = context.browser;
+
+        vm.createContext(context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8'), context);
+
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        vm.runInContext(wrappedCode, context);
+        // Zustimmung wie beim Laden des Popups setzen (Default: aus)
+        vm.runInContext('externalAnalysisConsent = ' + (consent === true) + ';', context);
+
+        return { context, container };
+    }
+
+    it('sendet ohne globale Zustimmung keinen Hash an Hybrid Analysis', async () => {
+        const { context, container } = createConsentContext(false);
+        const calls = [];
+        context.fetch = async (url) => { calls.push(url); return { status: 200, json: async () => ({}) }; };
+
+        await context.get_hybrid_report_by_sha256({ hybrid_sha: 'abc123', attachmentName: 'rechnung.pdf' });
+
+        assert.strictEqual(calls.length, 0, 'ohne Zustimmung darf kein Netzwerkaufruf erfolgen');
+        assert.strictEqual(container.children.length, 1, 'es muss ein Hinweis gerendert werden');
+        assert.match(container.children[0].children[0].textContent, /keine Hashes, Dateien oder Links/);
+    });
+
+    it('lädt den Report mit globaler Zustimmung', async () => {
+        const { context } = createConsentContext(true);
+        const calls = [];
+        context.fetch = async (url) => { calls.push(url); return { status: 200, json: async () => ({}) }; };
+        context.render_hybrid_report_ui = () => {};
+
+        await context.get_hybrid_report_by_sha256({ hybrid_sha: 'abc123', attachmentName: 'rechnung.pdf' });
+
+        assert.strictEqual(calls.length, 1);
+        assert.strictEqual(calls[0], 'https://hybrid-analysis.com/api/v2/overview/abc123');
+    });
+
+    it('fetch_hybrid_report wirft EXTERNAL_ANALYSIS_DISABLED ohne Zustimmung', async () => {
+        const { context } = createConsentContext(false);
+        const calls = [];
+        context.fetch = async (url) => { calls.push(url); return { status: 200, json: async () => ({}) }; };
+
+        await assert.rejects(
+            () => context.fetch_hybrid_report('abc123'),
+            (error) => error.code === 'EXTERNAL_ANALYSIS_DISABLED'
+        );
+        assert.strictEqual(calls.length, 0);
+    });
+});
+

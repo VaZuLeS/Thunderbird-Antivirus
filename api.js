@@ -28,6 +28,19 @@ function escapeHTML(str) {
 
 let apikey_hybridanalysis;
 
+// Globale Zustimmung zur externen Analyse (Option „Externe Analyse erlauben“).
+// Sie ist standardmäßig AUS: ohne Zustimmung darf auch das Popup keine
+// Hash-Abfragen an Analyse-Dienste senden. Das Hintergrundskript erzwingt
+// dieselbe Regel über mayTransmitExternally(); dieses Gate schließt den
+// Popup-Pfad, der früher direkt `fetch()` aufgerufen hat.
+let externalAnalysisConsent = false;
+
+const EXTERNAL_ANALYSIS_DISABLED = 'EXTERNAL_ANALYSIS_DISABLED';
+
+function mayFetchExternalReports() {
+    return externalAnalysisConsent === true;
+}
+
 (async () => {
 let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
@@ -80,7 +93,7 @@ if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages
 // Ohne Zustimmung zu externer Analyse wird nichts übertragen - das muss im
 // Popup sichtbar sein, bevor der Nutzer Uploads auslöst.
 const settings = await browser.storage.local.get(['externalAnalysisConsent']);
-const externalAnalysisConsent = settings.externalAnalysisConsent === true;
+externalAnalysisConsent = settings.externalAnalysisConsent === true;
 
 if (!message) {
     let container = document.getElementById('hybrid_analysis_api_content');
@@ -189,7 +202,7 @@ try {
                         const hash256 = att.hybrid_sha256;
                         if (att.state === 'UNKNOWN') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, syncFragment);
-                        } else {
+                        } else if (mayFetchExternalReports()) {
                             fetchTasks.push((frag) =>
                                 get_hybrid_report_by_sha256({
                                     hybrid_sha: hash256,
@@ -204,7 +217,9 @@ try {
                     }
                 }
 
-                if (hasLinks) {
+                // Ohne globale Zustimmung werden keine gespeicherten Reports
+                // nachgeladen (der Hinweis-Card oben erklärt den Grund).
+                if (hasLinks && mayFetchExternalReports()) {
                     processRecordLinks(record.links, message.headerMessageId, syncFragment, fetchTasks);
                 }
 
@@ -511,6 +526,13 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
 const hybrid_report_cache = new Map();
 
 async function fetch_hybrid_report(hybrid_sha) {
+    // Hardes Gate: ohne globale Zustimmung wird der SHA-256-Hash nicht an
+    // Hybrid Analysis übertragen (dokumentierte Zusage in docs/privacy_policy.md).
+    if (!mayFetchExternalReports()) {
+        const error = new Error('External analysis is disabled – nothing was transmitted.');
+        error.code = EXTERNAL_ANALYSIS_DISABLED;
+        throw error;
+    }
     if (hybrid_report_cache.has(hybrid_sha)) {
         return hybrid_report_cache.get(hybrid_sha);
     }
@@ -675,7 +697,33 @@ function handle_hybrid_report_fetch_error(error, attachmentName, targetContainer
     container.appendChild(errDiv2);
 }
 
+// Hinweis-Card, wenn ein Report ohne globale Zustimmung nicht geladen wird.
+function renderConsentRequired(elementName, targetContainer) {
+    const card = document.createElement('div');
+    card.className = 'card card-warn mb-3';
+    card.setAttribute('role', 'status');
+
+    const p = document.createElement('p');
+    p.textContent = 'Externe Analyse ist nicht aktiviert: Für „' + (elementName || 'Unbekannt') +
+        '“ wird kein Analyse-Ergebnis abgerufen und es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.';
+    card.appendChild(p);
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn-primary mt-2';
+    button.textContent = 'Einstellungen öffnen';
+    button.addEventListener('click', () => browser.runtime.openOptionsPage());
+    card.appendChild(button);
+
+    const container = targetContainer || document.getElementById('hybrid_analysis_api_content');
+    container.appendChild(card);
+}
+
 async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }, targetContainer) {
+    if (!mayFetchExternalReports()) {
+        renderConsentRequired(attachmentName, targetContainer);
+        return;
+    }
     try {
         const { response, json_data } = await fetch_hybrid_report(hybrid_sha);
 
