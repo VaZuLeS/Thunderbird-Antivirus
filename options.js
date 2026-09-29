@@ -1,7 +1,50 @@
+// UI localization for the options page. Self-contained (the page also loads
+// db.js, but the helper must work in every environment, including tests).
+function uiText(key, fallback, subs) {
+    try {
+        if (typeof browser !== 'undefined' && browser.i18n && typeof browser.i18n.getMessage === 'function') {
+            const value = browser.i18n.getMessage(key, subs);
+            if (value) return value;
+        }
+    } catch (e) { /* fall through to the bundled fallback */ }
+    const values = Array.isArray(subs) ? subs.slice() : (subs === undefined ? [] : [subs]);
+    return String(fallback).replace(/\$(\d)/g, (match, index) => {
+        const position = Number(index) - 1;
+        return position < values.length ? String(values[position]) : match;
+    });
+}
+
+/**
+ * Asks for the optional data collection category "personalCommunications"
+ * where the environment offers the built-in data consent experience
+ * (Firefox/Thunderbird 140+). Returns true when the environment has no such API
+ * (then the add-on's own consent checkbox is authoritative) or when the
+ * category has been granted.
+ */
+async function requestDataCollectionConsent() {
+    try {
+        if (!browser.permissions || typeof browser.permissions.getAll !== 'function') return true;
+        const granted = await browser.permissions.getAll();
+        if (!granted || !Array.isArray(granted.data_collection)) return true;
+        if (granted.data_collection.includes('personalCommunications')) return true;
+        if (typeof browser.permissions.request !== 'function') return true;
+        return (await browser.permissions.request({ data_collection: ['personalCommunications'] })) === true;
+    } catch (e) {
+        console.error('Data collection consent request failed', e);
+        return true;
+    }
+}
+
 // Event-Listener für das Laden der Seite
 let _saveTimeoutId = null;
 let _clearTimeoutId = null;
 document.addEventListener('DOMContentLoaded', function() {
+    // Localize the static markup (see options.html and _locales/).
+    try {
+        if (typeof applyUiTranslations === 'function') applyUiTranslations();
+        document.title = uiText('optionsTitle', 'Thundy AV Einstellungen');
+    } catch (e) { /* ignore */ }
+
     // Abrufen der gespeicherten Einstellung
     browser.storage.local.get([
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
@@ -31,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
       function updatePrivacyTierStatus() {
           if (alwaysManualCheckbox.checked) {
               privacyTierSelect.disabled = true;
-              privacyTierSelect.title = 'Datenschutz-Stufe ist bei manuellem Scan irrelevant';
+              privacyTierSelect.title = uiText('optionsPrivacyTierIrrelevant', 'Datenschutz-Stufe ist bei manuellem Scan irrelevant');
           } else {
               privacyTierSelect.disabled = false;
               privacyTierSelect.title = '';
@@ -44,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
       function updateTimeOfClickProtectionStatus() {
           if (autoScanLinksCheckbox.checked) {
               timeOfClickProtectionCheckbox.disabled = true;
-              timeOfClickProtectionCheckbox.title = 'Time-of-Click Protection ist irrelevant, wenn Auto-Scan aktiv ist';
+              timeOfClickProtectionCheckbox.title = uiText('optionsTocIrrelevant', 'Time-of-Click Protection ist irrelevant, wenn Auto-Scan aktiv ist');
           } else {
               timeOfClickProtectionCheckbox.disabled = false;
               timeOfClickProtectionCheckbox.title = '';
@@ -70,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveBtn = document.getElementById('save');
     saveBtn.disabled = true;
     saveBtn.setAttribute('aria-busy', 'true');
-    saveBtn.textContent = 'Wird gespeichert...';
+    saveBtn.textContent = uiText('optionsSaving', 'Wird gespeichert...');
 
     let mySetting = apikeyInput.value.trim().replace(/\r|\n/g, '');
     let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
@@ -123,7 +166,19 @@ document.addEventListener('DOMContentLoaded', function() {
         statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
-        saveBtn.textContent = 'Speichern';
+        saveBtn.textContent = uiText('optionsSave', 'Speichern');
+
+        // Datenkonsent: wo die Umgebung die eingebaute Kategorie-Zustimmung
+        // anbietet, wird sie zusätzlich angefragt (Nutzer-Geste = "Speichern").
+        // Die eigene Checkbox bleibt der Fallback für ältere Versionen.
+        if (externalAnalysisConsentSetting) {
+            const dataCollectionGranted = await requestDataCollectionConsent();
+            if (!dataCollectionGranted) {
+                alert(uiText('optionsDataConsentDenied', 'Ohne die Zustimmung zur Datenkategorie „persönliche Kommunikation“ überträgt die Erweiterung keine Daten. Die externe Analyse bleibt deaktiviert.'));
+                document.getElementById('externalAnalysisConsent').checked = false;
+                await browser.storage.local.set({ externalAnalysisConsent: false });
+            }
+        }
 
         // Host-Berechtigungen nur für die tatsächlich konfigurierten Dienste
         // anfragen (Nutzer-Geste = Klick auf "Speichern").
@@ -147,8 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             if (denied.length > 0) {
-                alert('Host‑Berechtigung nicht erteilt für: ' + denied.join(', ') +
-                    '. Ohne diese Berechtigung sind die entsprechenden Prüfungen deaktiviert.');
+                alert(uiText('optionsPermissionDenied', 'Host-Berechtigung nicht erteilt für: $1. Ohne diese Berechtigung sind die entsprechenden Prüfungen deaktiviert.', [denied.join(', ')]));
             }
         }
 
@@ -167,18 +221,18 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Speichern fehlgeschlagen", error);
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
-        saveBtn.textContent = 'Speichern';
+        saveBtn.textContent = uiText('optionsSave', 'Speichern');
     });
   });
 
   document.getElementById('clearCache').addEventListener('click', async function() {
-    if (!confirm('Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse.')) {
+    if (!confirm(uiText('optionsCacheClearConfirm', 'Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse.'))) {
         return;
     }
     const clearBtn = document.getElementById('clearCache');
     clearBtn.disabled = true;
     clearBtn.setAttribute('aria-busy', 'true');
-    clearBtn.textContent = 'Wird geleert...';
+    clearBtn.textContent = uiText('optionsClearing', 'Wird geleert...');
 
     let statusSpan = document.getElementById('clearCacheStatus');
     statusSpan.style.display = 'none';
@@ -190,18 +244,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const cleared = await clearStore(db, 'hybridanalysis');
 
         if (cleared) {
-            statusSpan.textContent = 'Cache erfolgreich geleert.';
+            statusSpan.textContent = uiText('optionsCacheCleared', 'Cache erfolgreich geleert.');
         } else {
-            statusSpan.textContent = 'Datenbank existiert noch nicht oder ist bereits leer.';
+            statusSpan.textContent = uiText('optionsCacheEmpty', 'Datenbank existiert noch nicht oder ist bereits leer.');
         }
     } catch (error) {
         statusSpan.className = 'text-danger ml-2';
-        statusSpan.textContent = 'Fehler beim Leeren des Caches.';
+        statusSpan.textContent = uiText('optionsCacheClearFailed', 'Fehler beim Leeren des Caches.');
         console.error(error);
     } finally {
         clearBtn.disabled = false;
         clearBtn.removeAttribute('aria-busy');
-        clearBtn.textContent = 'Cache leeren';
+        clearBtn.textContent = uiText('optionsClearCache', 'Cache leeren');
     }
 
     statusSpan.style.display = 'inline';

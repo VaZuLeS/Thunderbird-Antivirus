@@ -19,22 +19,36 @@ submits the minimum data required to external analysis services.
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Requires | Thunderbird 140.0 or newer (Manifest V3) |
-| Strings | Manifest strings and banners are localized (English, German – `_locales/`); the options page and the popup are currently German only |
+| Strings | All visible UI strings (manifest, in-message UI, options page, popup) are resolved via `browser.i18n` and `_locales/` (English, German; default locale `en`, fallback texts in the code) |
 
 ## What the add-on does
 
 - **Local checks first.** When a message is displayed, Thundy AV hashes its attachments (SHA-256), evaluates
   subject/body heuristics, the sender domain, typosquatting lookalikes, the Reply-To domain, first-contact status,
   authentication headers (SPF/DKIM/DMARC) and your custom black/whitelist, and computes a local risk score (0–100).
-- **Banner in the message view.** Above the message you get a banner that states whether the sender is scanned.
-  It offers two buttons: **"Scan this message once"** and **"Always scan this sender"**.
-- **Threat banner.** If the risk score exceeds the threshold, a warning banner with the reasons is injected into the
-  message view.
-- **Links.** Links can be checked when the message is opened or at the moment you click them (time-of-click
-  protection, with an on-hover notice). A context-menu entry scans a link with Thundy AV.
+- **In-message UI.** The user interface in the message view is rendered by a message display script that is
+  registered once (`message_display.js`, registered through `scripting.messageDisplay.registerScripts()`); it
+  receives its state from the background script via runtime messaging. It shows an opt-in banner with the buttons
+  **"Scan this message once"**, **"Always scan this sender"** and **"Open options"**, a warning banner from a risk
+  score of **50** upwards (including the list of reasons), and a green badge when SPF/DKIM/DMARC passed.
+- **Time-of-click protection.** Links in the message text are marked (dashed underline plus tooltip). When you click
+  a link, Thundy AV checks it *before* it opens: a verdict stored in the local database, otherwise – with consent
+  and a configured urlscan.io key – a live urlscan.io lookup with a 6-second budget. Malicious and unverifiable
+  links (`MALICIOUS`, `MALICIOUS_VISUAL`, `TIMEOUT`, `ERROR`) are blocked and an inline notice shows the reasons and
+  the target URL plus a **"Open the link anyway"** button; the release is remembered for the session only
+  (in-memory, deliberately not in the DOM). Non-HTTP(S) schemes (e.g. `file:`, `ftp:`, `smb:`) are blocked as well
+  (fail closed); `mailto:`, `tel:`, `news:` and `nntp:` are allowed. If the option "Time-of-Click Protection" is
+  switched off, links are not intercepted.
+- **Auto-scan option.** "Check links in the email immediately when it is opened (auto-scan)" checks up to **20
+  links** per message with urlscan.io when consent is given and an urlscan.io key is configured, and stores the
+  verdicts locally so a later click does not need a new network request.
+- **Context menus.** Two entries exist (permission `menus`): **"Scan link with Thundy AV"** (context `link`) and
+  **"Scan all links of this message"** (context `message_display_action`, up to 20 links per run).
 - **Popup** (message display action): message metadata, stored scan results, manual upload of an attachment, a URL
   scan and **"download disarmed HTML"** (an HTML attachment is sanitized locally before it is saved via the
-  browser's download manager).
+  browser's download manager). The popup determines the displayed message via
+  `messageDisplay.getDisplayedMessages()`; **without the global consent it queries no provider at all** and only
+  shows a notice card with a link to the options.
 - **Notifications** report scan progress and results.
 - **IP reputation (optional):** the sending mail servers extracted from `Received` headers can be checked against
   VirusTotal or AbuseIPDB.
@@ -51,6 +65,15 @@ submits the minimum data required to external analysis services.
    is granted up front.
 4. **Per-message or per-sender.** A scan is either a one-off action from the banner/popup/context menu or a
    permanent opt-in for a single sender.
+5. **Data-collection declaration.** `manifest.json` declares
+   `browser_specific_settings.gecko.data_collection_permissions` as `required: ["none"]` plus the **optional**
+   category `personalCommunications`. Nothing is required, and message content may only be transmitted after an
+   explicit opt-in. Where Thunderbird offers the built-in data-collection consent, the options dialog additionally
+   requests that category (`browser.permissions.request({ data_collection: ['personalCommunications'] })`, feature
+   detection via `permissions.getAll().data_collection`) when you enable the global consent; if you decline, the
+   global consent is switched off again and nothing is transmitted. The background script enforces the granted state
+   in `mayTransmitExternally()` (`background.js`): if the environment reports `personalCommunications` as not
+   granted, no data is transmitted.
 
 | Privacy tier | Attachments | Links/URLs |
 | --- | --- | --- |
@@ -61,7 +84,8 @@ submits the minimum data required to external analysis services.
 ## Data & privacy
 
 - No transmission without the global consent **and** a user action (banner button, popup, context menu or an
-  explicit per-sender opt-in).
+  explicit per-sender opt-in). This also applies to the popup: without the global consent it queries no provider
+  and renders a notice card instead.
 - **No telemetry and no developer-operated server.** All requests go directly from your Thunderbird to the provider
   you configured and granted permission for.
 - Locally stored: settings, opt-in flags, API keys and a scan-metadata cache (IndexedDB, `db.js`). The cache can be
@@ -143,10 +167,19 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` uses the script from `package.json` (`node --test`) and therefore executes **all** test files of the
-  repository, not just `background.test.js`.
-- `web-ext lint` currently reports **0 errors**. The remaining warnings are almost exclusively `UNSUPPORTED_API`
-  notices, because the linter validates against a Firefox target and does not know Thunderbird-only APIs such as
-  `messages.*` or `messageDisplay.*`. Review the list before releasing.
+  repository, not just `background.test.js`. Current state: **421 tests, 0 failures** – including
+  `message_display.test.js` (in-message UI and time-of-click), the popup consent tests in `api.test.js` and the
+  pre-submit-check tests in `scripts/pre-submit-checks.test.js`.
+- `scripts/pre-submit-checks.js` additionally verifies that every used `browser.*` API namespace has its permission
+  declared, that the `data_collection_permissions` declaration matches the transmission paths, and that a
+  programmatically registered script (`message_display.js`) is part of the package. Current state: 0 errors,
+  1 warning (no real screenshots yet).
+- `web-ext lint` currently reports **0 errors** and **25 warnings**, all of them known Thunderbird false positives
+  (almost exclusively `UNSUPPORTED_API` notices, because the linter validates against a Firefox target and does not
+  know Thunderbird-only APIs such as `messages.*` or `messageDisplay.*`). The list is filtered by
+  `scripts/filter-lint-warnings.js`.
+- The built XPI contains **18 files / 197,252 bytes unpacked** (previously 17 files); `scripts/verify-package.js`
+  checks the file list and the size.
 - CI (`.github/workflows/ci.yml`) runs on every push and pull request with Node 22: `npm ci`, the pre-submit
   checks (real exit code), `node --test background.test.js` and `npx web-ext lint`.
 - Extended workflow definitions (full `npm test`, lint filter for the known Thunderbird false positives,
@@ -161,24 +194,29 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 | --- | --- |
 | `messagesRead` | Read the displayed message (subject, sender, body, attachments) so it can be analysed; used only for the message you open and when a scan is triggered. |
 | `storage` | Store settings, the consent flag, per-sender opt-in flags, provider API keys and the local scan cache. |
-| `notifications` | Report scan start, submission and errors in a system notification. |
-| `scripting` | Inject the banner, the threat warning and the time-of-click hover notice into the message view (extension-bundled code only, no remote code). |
+| `notifications` | Report scan start, submission and errors in a system notification (also used when the in-message UI cannot be registered). |
+| `scripting` | Register the bundled message display script `message_display.js` (`scripting.messageDisplay.registerScripts()`) that renders the in-message UI: the opt-in banner with its buttons, the threat banner and the time-of-click protection. Only code that ships with the add-on is executed; no remote resources or remote code are used. |
 | `downloads` | Save a locally sanitized ("disarmed") HTML attachment through the browser download manager. |
+| `menus` | Create the two context-menu entries "Scan link with Thundy AV" (link context) and "Scan all links of this message" (message display action). |
 
-Optional host permissions (`optional_host_permissions` in `manifest.json`) – each one is requested at runtime, only
-when the matching provider is used:
+Optional host permissions (`optional_host_permissions` in `manifest.json`) – exactly five origins, each one requested
+at runtime, only when the matching provider is used:
 
 | Origin | Provider |
 | --- | --- |
-| `https://hybrid-analysis.com/*`, `https://*.hybrid-analysis.com/*` | Hybrid Analysis |
-| `https://*.virustotal.com/*` | VirusTotal |
-| `https://urlscan.io/*`, `https://*.urlscan.io/*` | urlscan.io |
+| `https://hybrid-analysis.com/*` | Hybrid Analysis |
+| `https://www.virustotal.com/*` | VirusTotal |
+| `https://urlscan.io/*` | urlscan.io |
 | `https://urlhaus-api.abuse.ch/*` | URLhaus (abuse.ch) |
 | `https://api.abuseipdb.com/*` | AbuseIPDB |
 
-`manifest.json` also declares `browser_specific_settings.gecko.data_collection_permissions` with the **required**
-category `personalCommunications`. It documents that the add-on can process message content; data is only transmitted
-after the global consent and a user action, and only to providers you have granted access to.
+`manifest.json` declares `browser_specific_settings.gecko.data_collection_permissions` as
+`required: ["none"]` and `optional: ["personalCommunications"]`: **nothing is collected as a requirement**, and
+message content may only be transmitted after the user has explicitly opted in (global consent plus a scan action).
+Where the environment offers the built-in data-collection consent, the options dialog asks for the category when
+the global consent is enabled (feature detection via `browser.permissions.getAll().data_collection`) and switches
+the consent off again if the request is declined. Independently of that, the background script enforces the granted
+state in `mayTransmitExternally()`: if `personalCommunications` is reported as not granted, no data is transmitted.
 
 ## Adding another analysis service
 
@@ -193,14 +231,19 @@ after the global consent and a user action, and only to providers you have grant
 
 ## Known limitations
 
-- **Manual verification pending.** The banner injection into the Thunderbird message view is covered by unit tests
-  (with mocked Thunderbird APIs), but it has not yet been verified by hand in Thunderbird 140 ESR. Please report
-  unexpected behavior with your Thunderbird version; the code logs a hint through `Logger.warn` if an injection fails.
+- **Manual verification pending (required before submission).** The in-message UI (opt-in banner, warning banner,
+  SPF/DKIM/DMARC badge, link marking), the two context-menu entries, the permission prompt triggered from the banner
+  and the blocking of a link are covered by unit tests with mocked Thunderbird APIs only; they have not been verified
+  by hand in Thunderbird 140 ESR. Please report unexpected behavior with your Thunderbird version. If the message
+  display script cannot be registered, the code logs an error and raises a system notification
+  (`notificationUiUnavailable`).
+- **Built-in data-collection consent not verified.** The options dialog requests the declared *optional* category
+  `personalCommunications` where the environment exposes it, and the background script refuses to transmit while it
+  is reported as not granted. Whether and how Thunderbird 140 ESR displays that prompt has not been verified in this
+  environment – the code path is covered by unit tests with mocked APIs only.
 - **No real store screenshots yet.** `docs/screenshots/` only contains SVG placeholders; real screenshots have to be
-  taken for the store listing.
+  taken for the store listing – and only after the live test in Thunderbird.
 - **Not submitted to the Add-ons Store yet** – there is no public listing and no store URL.
-- The options page and the popup are currently available in German only; the manifest strings and the banners are
-  localized (English/German).
 - With the default tier `strict`, unknown attachments are not uploaded automatically; you have to switch to
   `balanced`/`max` or start a manual upload from the popup.
 - Detection quality and rate limits depend on the configured providers and on your own API keys.

@@ -4,8 +4,25 @@ Dieses Verzeichnis enthält die **vorgeschlagenen Workflow-Definitionen** für d
 
 | Datei | Ziel im Repository | Zweck |
 |---|---|---|
-| `ci.yml` | `.github/workflows/ci.yml` | `npm ci`, Pre-Submit-Checks, vollständige Unit-Tests, `web-ext lint` mit Filter bekannter Thunderbird-False-Positives, XPI-Build und Paketprüfung |
+| `ci.yml` | `.github/workflows/ci.yml` | `npm ci`, Pre-Submit-Checks (Manifest, Rechte/Datenkonsent, Assets), vollständige Unit-Tests, `web-ext lint` mit Filter bekannter Thunderbird-False-Positives, XPI-Build und Paketprüfung |
 | `release.yml` | `.github/workflows/release.yml` | manueller Signier-/Release-Job (`web-ext sign --channel listed|unlisted`) über die Secrets `ATN_API_KEY` und `ATN_API_SECRET` |
+
+## Aktueller Stand im Repository
+
+Aktiv ist weiterhin die **reduzierte** CI unter `.github/workflows/ci.yml` (Node 22): `npm ci`,
+`node ./scripts/pre-submit-checks.js`, `node --test background.test.js` und `npx web-ext lint`. Sie führt damit
+weder die vollständige Testsuite noch den Paket-Build aus.
+
+Die Pre-Submit-Checks, die in beiden Varianten laufen, prüfen inzwischen zusätzlich:
+
+- **benutzter API-Namespace ⇒ deklarierte Berechtigung** (genau der Fall, der die fehlende `menus`-Berechtigung
+  unentdeckt ließ),
+- die **Deklaration der Datenerhebung** (`data_collection_permissions`: u. a. dass `"none"` die Übermittlung nicht
+  verschleiert),
+- dass ein **programmatisch registriertes Skript** (`message_display.js`) im Paket liegt.
+
+Die vollständigen Definitionen in diesem Verzeichnis ergänzen das um die komplette `npm test`-Suite, den
+Lint-Filter und `web-ext build` + `scripts/verify-package.js`.
 
 ## Warum liegen sie hier und nicht direkt unter `.github/workflows/`?
 
@@ -33,6 +50,12 @@ Repository:
    cp docs/ci/ci.yml      .github/workflows/ci.yml
    cp docs/ci/release.yml .github/workflows/release.yml
    ```
+
+   Kurzform in einer Zeile:
+   `cp docs/ci/ci.yml .github/workflows/ci.yml && cp docs/ci/release.yml .github/workflows/release.yml`
+
+   Das ist nur mit einem Token bzw. durch eine Person möglich, das/die die Berechtigung `workflows` besitzt –
+   GitHub lehnt Pushes mit Workflow-Dateien sonst mit der oben zitierten Meldung ab.
 
 2. Mit einem Token committen und pushen, das die Berechtigung `workflows` hat (z. B. ein
    persönliches Zugriffstoken mit `workflow`-Scope oder über die GitHub-Weboberfläche).

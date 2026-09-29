@@ -268,6 +268,41 @@ function runChecks(rootDir) {
     }
   }
 
+  // --- localization keys ---------------------------------------------------
+  // Every localized UI string used by the product code (data-i18n attributes,
+  // uiText()/i18nText()/msg() calls and __MSG_*__ manifest placeholders) needs
+  // an entry in the default locale catalogue, otherwise the UI would silently
+  // fall back to the bundled text or an empty string.
+  const defaultLocale = manifest.default_locale || 'en';
+  const cataloguePath = path.join(rootDir, '_locales', defaultLocale, 'messages.json');
+  if (!fs.existsSync(cataloguePath)) {
+    warn('no default locale catalogue found for ' + defaultLocale);
+  } else {
+    let catalogue = {};
+    try {
+      catalogue = JSON.parse(fs.readFileSync(cataloguePath, 'utf8'));
+    } catch (e) {
+      fail('_locales/' + defaultLocale + '/messages.json is not valid JSON: ' + e.message);
+    }
+    const usedKeys = new Set();
+    const scannedFiles = PRODUCT_SCRIPT_FILES.concat(['options.html', 'popup.html', 'manifest.json']);
+    for (const file of scannedFiles) {
+      const absolute = path.join(rootDir, file);
+      if (!fs.existsSync(absolute)) continue;
+      const content = fs.readFileSync(absolute, 'utf8');
+      for (const match of content.matchAll(/data-i18n(?:-placeholder|-title)?="([A-Za-z0-9_]+)"/g)) usedKeys.add(match[1]);
+      for (const match of content.matchAll(/(?:uiText|i18nText|msg)\(\s*'([A-Za-z0-9_]+)'/g)) usedKeys.add(match[1]);
+      for (const match of content.matchAll(/__MSG_([A-Za-z0-9_]+)__/g)) usedKeys.add(match[1]);
+    }
+    const missingKeys = Array.from(usedKeys).filter((key) => !catalogue[key]).sort();
+    if (missingKeys.length > 0) {
+      fail('localized strings without a catalogue entry in ' + defaultLocale + ': ' + missingKeys.join(', '));
+    } else {
+      ok('all ' + usedKeys.size + ' localized UI strings have a catalogue entry (' + defaultLocale + ')');
+    }
+    if (Object.keys(catalogue).length === 0) warn('the default locale catalogue is empty');
+  }
+
   // --- Manifest V3 key restrictions ---------------------------------------
   for (const key of MV3_UNSUPPORTED_KEYS) {
     if (manifest[key] !== undefined) fail('manifest key "' + key + '" is not supported in Thunderbird Manifest V3');

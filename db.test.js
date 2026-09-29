@@ -3,6 +3,81 @@ const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const { JSDOM } = require('jsdom');
+
+describe('UI localization helpers (db.js)', () => {
+    function loadDb({ i18n } = {}) {
+        const dom = new JSDOM('<!doctype html><html><body>' +
+            '<h1 data-i18n="optionsTitle">Alt</h1>' +
+            '<input id="field" placeholder="alt">' +
+            '<div id="box" title="alt-title">x</div>' +
+            '</body></html>');
+        const context = {
+            browser: i18n ? { i18n } : {},
+            document: dom.window.document,
+            console: { log: () => {}, error: () => {} },
+            Promise,
+            indexedDB: { open: () => ({}) }
+        };
+        vm.createContext(context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8'), context);
+        return { context, document: dom.window.document };
+    }
+
+    it('returns the bundled fallback when no catalogue is available', () => {
+        const { context } = loadDb();
+        assert.strictEqual(context.i18nText('optionsTitle', 'Thundy AV Einstellungen'), 'Thundy AV Einstellungen');
+    });
+
+    it('substitutes the $1..$n placeholders in the fallback text', () => {
+        const { context } = loadDb();
+        assert.strictEqual(context.i18nText('optionsPermissionDenied', 'Nicht erteilt für: $1.', ['a.com, b.com']),
+            'Nicht erteilt für: a.com, b.com.');
+        assert.strictEqual(context.i18nText('optionsTwo', 'First $1 then $2', ['A', 'B']), 'First A then B');
+    });
+
+    it('prefers the catalogue message when browser.i18n provides one', () => {
+        const { context } = loadDb({ i18n: { getMessage: (key) => (key === 'optionsTitle' ? 'Thundy AV settings' : '') } });
+        assert.strictEqual(context.i18nText('optionsTitle', 'Thundy AV Einstellungen'), 'Thundy AV settings');
+        assert.strictEqual(context.i18nText('other', 'Fallback'), 'Fallback');
+    });
+
+    it('survives a throwing i18n implementation', () => {
+        const { context } = loadDb({ i18n: { getMessage: () => { throw new Error('no i18n'); } } });
+        assert.strictEqual(context.i18nText('optionsTitle', 'Fallback'), 'Fallback');
+    });
+
+    it('applies translations to data-i18n elements and attributes', () => {
+        const { context, document } = loadDb({
+            i18n: {
+                getMessage: (key) => ({
+                    optionsTitle: 'Thundy AV settings',
+                    optionsPlaceholder: 'e.g. abcdef',
+                    optionsTitleAttr: 'Opens in a new tab'
+                }[key] || '')
+            }
+        });
+        document.getElementById('field').setAttribute('data-i18n-placeholder', 'optionsPlaceholder');
+        document.getElementById('box').setAttribute('data-i18n-title', 'optionsTitleAttr');
+
+        context.applyUiTranslations(document);
+
+        assert.strictEqual(document.querySelector('h1').textContent, 'Thundy AV settings');
+        assert.strictEqual(document.getElementById('field').getAttribute('placeholder'), 'e.g. abcdef');
+        assert.strictEqual(document.getElementById('box').getAttribute('title'), 'Opens in a new tab');
+    });
+
+    it('keeps the existing markup when a key has no catalogue entry', () => {
+        const { context, document } = loadDb();
+        context.applyUiTranslations(document);
+        assert.strictEqual(document.querySelector('h1').textContent, 'Alt');
+    });
+
+    it('does not throw without a document', () => {
+        const { context } = loadDb();
+        assert.doesNotThrow(() => context.applyUiTranslations(null));
+    });
+});
 
 describe('db.js module', () => {
     let context;

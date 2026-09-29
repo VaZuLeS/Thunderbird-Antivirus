@@ -29,7 +29,7 @@
   let timeOfClickEnabled = true;
   let renderedStateKey = null;
 
-  function t(key, fallback, subs) {
+  function uiText(key, fallback, subs) {
     try {
       const value = browser.i18n.getMessage(key, subs);
       if (value) return value;
@@ -108,8 +108,8 @@
       banner.style.color = '#ff0000';
       banner.style.fontWeight = 'bold';
       const title = document.createElement('div');
-      title.textContent = '\u{1F534} \u26A0\uFE0F ' + t('bannerThreatTitle', 'Thundy AV warning') +
-        ' (' + t('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
+      title.textContent = '\u{1F534} \u26A0\uFE0F ' + uiText('bannerThreatTitle', 'Thundy AV warning') +
+        ' (' + uiText('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
       banner.appendChild(title);
       const list = document.createElement('ul');
       list.style.margin = '0';
@@ -125,27 +125,27 @@
       banner.style.backgroundColor = '#e6ffe6';
       banner.style.border = '1px solid #008000';
       banner.style.color = '#008000';
-      banner.textContent = '\u{1F7E2} \u{1F6E1}\uFE0F ' + t('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
+      banner.textContent = '\u{1F7E2} \u{1F6E1}\uFE0F ' + uiText('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
     } else if (state.optInNeeded) {
       banner.style.backgroundColor = '#fff8e1';
       banner.style.border = '1px solid #ffcc80';
       banner.style.color = '#333';
       const text = document.createElement('span');
       text.textContent = state.consentGiven
-        ? t('bannerTitleOptIn', 'Thundy AV: real-time scanning is not enabled for this message.')
-        : t('bannerConsentMissing', 'External analysis is disabled in the options \u2013 nothing was transmitted.');
+        ? uiText('bannerTitleOptIn', 'Thundy AV: real-time scanning is not enabled for this message.')
+        : uiText('bannerConsentMissing', 'External analysis is disabled in the options \u2013 nothing was transmitted.');
       banner.appendChild(text);
 
       const choices = [
-        { label: t('bannerScanOnce', 'Scan this message once'), persist: false },
-        { label: t('bannerScanSender', 'Always scan this sender'), persist: true }
+        { label: uiText('bannerScanOnce', 'Scan this message once'), persist: false },
+        { label: uiText('bannerScanSender', 'Always scan this sender'), persist: true }
       ];
       for (const choice of choices) {
         const element = button(choice.label);
         element.addEventListener('click', async () => {
           const buttons = banner.querySelectorAll('button');
           buttons.forEach((entry) => { entry.disabled = true; entry.setAttribute('aria-busy', 'true'); });
-          element.textContent = t('bannerScanRunning', 'Scanning\u2026');
+          element.textContent = uiText('bannerScanRunning', 'Scanning\u2026');
           const response = await sendToBackground({
             action: 'requestScan',
             messageId: state.messageId,
@@ -155,22 +155,22 @@
           buttons.forEach((entry) => { entry.disabled = false; entry.removeAttribute('aria-busy'); });
 
           if (response && response.success) {
-            element.textContent = t('bannerScanDone', 'Scan finished');
+            element.textContent = uiText('bannerScanDone', 'Scan finished');
             if (choice.persist) {
-              setNote(banner, t('bannerSenderOptIn', 'This sender is now scanned automatically.'));
+              setNote(banner, uiText('bannerSenderOptIn', 'This sender is now scanned automatically.'));
             }
           } else if (response && response.error === 'permission_denied') {
-            element.textContent = t('bannerPermissionDenied', 'Required host permission was denied');
+            element.textContent = uiText('bannerPermissionDenied', 'Required host permission was denied');
           } else if (response && (response.error === 'EXTERNAL_ANALYSIS_DISABLED' || response.code === 'EXTERNAL_ANALYSIS_DISABLED')) {
-            setNote(banner, t('bannerConsentMissing', 'External analysis is disabled in the options \u2013 nothing was transmitted.'));
+            setNote(banner, uiText('bannerConsentMissing', 'External analysis is disabled in the options \u2013 nothing was transmitted.'));
           } else {
-            element.textContent = t('bannerScanFailed', 'Scan failed');
+            element.textContent = uiText('bannerScanFailed', 'Scan failed');
           }
         });
         banner.appendChild(element);
       }
 
-      const optionsButton = button(t('bannerOpenOptions', 'Open options'));
+      const optionsButton = button(uiText('bannerOpenOptions', 'Open options'));
       optionsButton.addEventListener('click', () => {
         try { browser.runtime.openOptionsPage(); } catch (e) { /* ignore */ }
       });
@@ -202,7 +202,7 @@
         link.dataset.thundyMarked = '1';
         link.style.borderBottom = '1px dashed #ff8c00';
         try {
-          link.title = t('tocLinkMarked', 'Protected by Thundy AV time-of-click protection');
+          link.title = uiText('tocLinkMarked', 'Protected by Thundy AV time-of-click protection');
         } catch (e) { /* ignore */ }
       }
     });
@@ -222,13 +222,13 @@
 
     const title = document.createElement('div');
     title.style.fontWeight = 'bold';
-    title.textContent = t('tocWarningTitle', 'Thundy AV blocked this link');
+    title.textContent = uiText('tocWarningTitle', 'Thundy AV blocked this link');
     warning.appendChild(title);
 
     const list = document.createElement('ul');
     list.style.margin = '4px 0';
     list.style.paddingLeft = '20px';
-    const entries = (reasons && reasons.length) ? reasons : [t('tocBlocked', 'The link could not be verified.')];
+    const entries = (reasons && reasons.length) ? reasons : [uiText('tocBlocked', 'The link could not be verified.')];
     for (const reason of entries) {
       const item = document.createElement('li');
       item.textContent = reason;
@@ -242,7 +242,7 @@
     warning.appendChild(target);
 
     if (allowOpen) {
-      const openButton = button(t('tocOpenAnyway', 'Open the link anyway'));
+      const openButton = button(uiText('tocOpenAnyway', 'Open the link anyway'));
       openButton.addEventListener('click', () => {
         verifiedLinks.add(url);
         removeNode(LINK_WARNING_ID);
@@ -251,7 +251,7 @@
       warning.appendChild(openButton);
     }
 
-    const closeButton = button(t('tocClose', 'Dismiss'));
+    const closeButton = button(uiText('tocClose', 'Dismiss'));
     closeButton.addEventListener('click', () => removeNode(LINK_WARNING_ID));
     warning.appendChild(closeButton);
 
@@ -326,7 +326,7 @@
       // unless the user confirms explicitly.
       event.preventDefault();
       event.stopPropagation();
-      showLinkWarning(url, [t('tocBlockedScheme', 'This link uses the scheme "$SCHEME$", which Thundy AV cannot verify.', [scheme])], true);
+      showLinkWarning(url, [uiText('tocBlockedScheme', 'This link uses the scheme "$SCHEME$", which Thundy AV cannot verify.', [scheme])], true);
       return;
     }
 
@@ -341,7 +341,7 @@
     spinner.style.left = '10px';
     spinner.style.right = '10px';
     spinner.style.bottom = '10px';
-    spinner.textContent = t('tocChecking', 'Thundy AV is checking this link before it is opened\u2026');
+    spinner.textContent = uiText('tocChecking', 'Thundy AV is checking this link before it is opened\u2026');
     insertOnTop(spinner);
 
     const result = await Promise.race([
@@ -364,7 +364,7 @@
     // the reason is shown and the user keeps the last word.
     const reasons = (result && result.reasons && result.reasons.length)
       ? result.reasons
-      : [t('tocBlocked', 'The link could not be verified.')];
+      : [uiText('tocBlocked', 'The link could not be verified.')];
     showLinkWarning(url, reasons, true);
   }
 

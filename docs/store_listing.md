@@ -46,11 +46,16 @@ it.**
   (domain checks against malware URL lists) and AbuseIPDB (IP reputation for addresses found in
   Received headers). Host access to those providers is optional and is only requested when you save
   a key for that provider.
-- **Time-of-Click protection.** Links in the message can be checked at the moment you click them.
+- **Time-of-Click protection.** Links in the message text are marked (dashed underline with a tooltip) and are
+  checked *before* they open: a locally stored verdict is used first, otherwise – with your consent and a
+  configured urlscan.io key – a live urlscan.io check runs with a 6-second budget. Malicious and unverifiable links
+  are blocked with an inline notice (reasons, target URL) and an *"Open the link anyway"* button, so the final
+  decision stays with you. Non-HTTP(S) schemes are blocked; `mailto:`, `tel:`, `news:`, `nntp:` are not affected.
 - **Manual controls.** Whitelist and blacklist for domains and senders, a *"always scan manually"*
-  switch that blocks any automatic upload, an entry in the link context menu for a manual link
-  scan, a popup with the message header data and a one-click *"Clear cache"* button for the local
-  analysis database.
+  switch that blocks any automatic upload, **two context-menu entries** ("Scan link with Thundy AV" and "Scan all
+  links of this message", up to 20 links per run), a popup with the message header data and a one-click *"Clear
+  cache"* button for the local analysis database. Without the global consent the popup does not query any provider
+  at all: it only shows a notice card that links to the options.
 
 ### What is transmitted, and when
 
@@ -101,11 +106,17 @@ erlauben.**
   (Domain-Prüfung gegen Malware-URL-Listen) und AbuseIPDB (Reputation von IP-Adressen aus
   Received-Headern) abfragen. Der Host-Zugriff auf diese Anbieter ist optional und wird erst
   angefragt, wenn Sie einen Schlüssel für den jeweiligen Anbieter speichern.
-- **Time-of-Click-Schutz.** Links in der Nachricht können im Moment des Klickens geprüft werden.
+- **Time-of-Click-Schutz.** Links im Nachrichtentext werden markiert (gestrichelte Unterstreichung mit Tooltip) und
+  *vor* dem Öffnen geprüft: zuerst über ein lokal gespeichertes Verdikt, sonst – bei erteilter Zustimmung und
+  konfiguriertem urlscan.io-Schlüssel – über einen Live-Scan bei urlscan.io mit 6-Sekunden-Budget. Bösartige und
+  nicht verifizierbare Links werden blockiert; ein Inline-Hinweis nennt Begründungen und Ziel-URL und bietet
+  „Link trotzdem öffnen“, sodass die letzte Entscheidung beim Nutzer bleibt. Nicht-http(s)-Schemes werden
+  blockiert; `mailto:`, `tel:`, `news:`, `nntp:` sind nicht betroffen.
 - **Manuelle Kontrolle.** Whitelist und Blacklist für Domains und Absender, ein Schalter „Immer
-  manuell scannen", der jeden automatischen Upload verhindert, ein Eintrag im Link-Kontextmenü für
-  einen manuellen Link-Scan, ein Popup mit den Kopfzeilendaten der Nachricht und eine
-  Schaltfläche „Cache leeren“ für die lokale Analysedatenbank.
+  manuell scannen", der jeden automatischen Upload verhindert, **zwei Kontextmenü-Einträge** („Link mit Thundy AV
+  scannen“ und „Alle Links dieser Nachricht scannen“, bis zu 20 Links je Aufruf), ein Popup mit den Kopfzeilendaten
+  der Nachricht und eine Schaltfläche „Cache leeren“ für die lokale Analysedatenbank. Ohne globale Zustimmung fragt
+  das Popup keinen Anbieter ab: es zeigt nur eine Hinweiskarte mit Verweis auf die Einstellungen.
 
 ### Was wann übertragen wird
 
@@ -147,7 +158,28 @@ zeigt die Banner an.
 | Privacy policy URL | https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html |
 | Source code | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
-| Language of the user interface | German (localisation not implemented yet) |
+| Language of the user interface | All visible UI strings (manifest, in-message UI, options page, popup) in English and German via `_locales/` and `browser.i18n` (default locale `en`, fallback texts in the code) |
+
+### Permissions declared in the manifest
+
+Required: `messagesRead`, `storage`, `notifications`, `scripting`, `downloads`, `menus` (`menus` creates the two
+context-menu entries; `scripting` registers the bundled message display script `message_display.js` – no remote
+code, no remote resources).
+
+Optional host permissions – exactly these five origins, requested at runtime only when the matching provider is
+used:
+
+| Origin | Provider |
+|---|---|
+| `https://hybrid-analysis.com/*` | Hybrid Analysis |
+| `https://www.virustotal.com/*` | VirusTotal |
+| `https://urlscan.io/*` | urlscan.io |
+| `https://urlhaus-api.abuse.ch/*` | URLhaus (abuse.ch) |
+| `https://api.abuseipdb.com/*` | AbuseIPDB |
+
+Data collection declaration: `required: ["none"]`, `optional: ["personalCommunications"]` – nothing is collected as
+a requirement; message content may only be transmitted after an explicit opt-in. Where the environment offers the
+built-in data-collection consent, the options dialog asks for that category when the global consent is enabled.
 
 ## 6. Release notes 1.6
 
@@ -164,21 +196,29 @@ zeigt die Banner an.
   `install.rdf`, sample scripts) are excluded from the XPI; the package list and size are checked.
 - Renamed the add-on to "Thundy AV – Email Scanner for Thunderbird" (short name "Thundy AV"),
   removed the "Thunderbird" trademark from the product name and consolidated the icons.
+- The in-message UI is now rendered by a message display script that is registered once
+  (`message_display.js`), and time-of-click protection really blocks malicious or unverifiable links until the user
+  explicitly opens them.
+- Declared the `menus` permission so both context-menu entries exist, and declared the data collection permissions as
+  `required: ["none"]` with the optional category `personalCommunications`.
 
 ## 7. Pre-upload checklist (honest status)
 
 | Item | Status |
 |---|---|
-| Real screenshots (PNG, ≥ 1280 × 800, three motifs) | **open** — only SVG placeholders exist (`docs/store_assets.md`) |
+| Real screenshots (PNG, ≥ 1280 × 800, three motifs) | **open** — only SVG placeholders exist (`docs/store_assets.md`); the motifs may only be captured after the live test in Thunderbird |
 | Icons in usable resolutions (16/32/48/64/128 px, shield motif) | done — reproducibly generated by `node scripts/generate-icons.js`, dimensions verified by the pre-submit checks |
 | Manifest metadata (name, ID, version 1.6, `strict_min_version`, MIT) | done |
 | Consent model documented | done (see note below) |
 | Privacy policy publicly reachable | done — https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html |
 | Privacy policy linked from the landing page | done (`docs/index.html`, `index_en.html`, `index_de.html`) |
 | Reviewer notes complete (permissions, data flows, test path) | done (`docs/reviewer_notes.md`) |
-| Manual verification of the banner injection in Thunderbird 140 ESR | **open** |
-| Unit tests green (`npm test`) | executed in CI; the result for the current commit is authoritative |
-| XPI built for 1.6 and attached to a release | **open** — the 1.6 artefact has not been built yet |
+| Manual verification in Thunderbird 140 ESR (banners, warning, badge, both context-menu entries, permission prompt from the banner, blocked link) | **open** — covered by unit tests with mocked APIs only; no live test has been performed |
+| Unit tests green (`npm test`) | done in this environment — **421 tests, 0 failures**; the CI run for the final commit is authoritative |
+| `npx web-ext lint` | 0 errors, 25 warnings — all known Thunderbird false positives (`scripts/filter-lint-warnings.js`) |
+| XPI package contents | 18 files / 197,252 bytes unpacked, verified by `scripts/verify-package.js` |
+| XPI built for 1.6 and attached to a release | **open** — the artefact has not been built and attached to a release yet |
+| Signed for distribution | **open** — `npx web-ext sign --channel listed` has not been run |
 | Submitted to the Thunderbird Add-ons Store | **open** — not submitted, no store URL |
 
 Note: this table describes documentation and packaging status only. It does not claim that the

@@ -38,11 +38,12 @@ Die drei SVG-Dateien in `docs/screenshots/` zeigen die drei Motive als grobe Ski
 | Nr. | Motiv | Dateiname (Vorschlag) | Inhalt |
 |---|---|---|---|
 | 1 | Optionsseite mit Konsent-Checkbox | `docs/screenshots/01-options-consent.png` | Checkbox „Externe Analyse erlauben“ (Standard: aus), Auswahl der Datenschutz-Stufe (`strict`/`balanced`/`max`), Felder für die Anbieter-Schlüssel |
-| 2 | Banner mit beiden Opt-in-Buttons | `docs/screenshots/02-inline-optin-banner.png` | Opt-in-Banner in der Nachrichtenansicht mit **beiden** Buttons: „Nur diese Nachricht scannen“ und „Absender dauerhaft scannen“ |
-| 3 | Threat-Banner | `docs/screenshots/03-threat-banner.png` | Warnbanner in der Nachrichtenansicht nach der Bewertung (Verdikt/Score, Begründungsliste) |
+| 2 | Banner mit den Opt-in-Buttons | `docs/screenshots/02-inline-optin-banner.png` | Opt-in-Banner in der Nachrichtenansicht mit den Buttons „Nur diese Nachricht scannen“ und „Absender dauerhaft scannen“ (zusätzlich „Einstellungen öffnen“) |
+| 3 | Threat-Banner | `docs/screenshots/03-threat-banner.png` | Warnbanner in der Nachrichtenansicht nach der Bewertung ab Risiko-Score 50 (Verdikt/Score, Begründungsliste) |
 
-Optional ergänzend: Popup der Nachrichten-Display-Aktion und der Abschnitt „Datenmanagement“
-(Cache leeren) der Optionsseite.
+Optional ergänzend: Popup der Nachrichten-Display-Aktion, der Inline-Hinweis des Time-of-Click-Schutzes
+(„Thundy AV blocked this link“ mit Begründungen, Ziel-URL und „Link trotzdem öffnen“) und der Abschnitt
+„Datenmanagement“ (Cache leeren) der Optionsseite.
 
 ## 4. Anforderungen an die Aufnahmen
 
@@ -51,7 +52,9 @@ Optional ergänzend: Popup der Nachrichten-Display-Aktion und der Abschnitt „D
   Anhangsinhalte durch Testdaten ersetzen oder unkenntlich machen.
 - Pro Motiv genau ein Bild; keine zusammengesetzten Collagen und keine nachträglich eingefügten
   UI-Elemente — die Screenshots müssen die reale Oberfläche zeigen.
-- Sprache der Oberfläche: Deutsch (die Oberfläche ist derzeit nur deutsch lokalisiert).
+- Sprache der Oberfläche: Deutsch oder Englisch sind möglich – die UI-Strings werden über `_locales/en|de`
+  aufgelöst (Standard-Locale `en`). Für das Store-Listing die Sprache wählen, in der die Testumgebung läuft, und
+  in allen Motiven dieselbe Sprache verwenden.
 
 ## 5. Erstellung
 
@@ -64,7 +67,11 @@ den tatsächlichen Build-/Test-Workflow des Repositories korrigiert (`npx web-ex
 
 - Screenshots: **offen** — es existieren nur SVG-Platzhalter.
 - Icon-Auflösungen: **offen** — 32 px und 64 px nur in minimaler Qualität vorhanden.
-- Die Verifikation der Banner-Injektion in Thunderbird 140 ESR steht aus. Ohne diese Verifikation
+- Die Verifikation der In-Message-UI in Thunderbird 140 ESR steht aus. Ohne diese Verifikation
   ist nicht belegt, dass Motiv 2 und Motiv 3 in der beschriebenen Form überhaupt auftreten; die
-  Aufnahmen sind daher erst nach dieser Prüfung möglich.
+  Aufnahmen sind daher erst **nach** dieser Prüfung möglich. Das gilt ebenso für das optionale Motiv
+  des Time-of-Click-Hinweises.
+- Die Motive 2 und 3 werden von `message_display.js` gerendert (registriertes Message-Display-Skript);
+  ob Thunderbird diese UI wie erwartet anzeigt, ist bisher nur durch Unit-Tests mit gemockten APIs
+  abgedeckt.
 - Das Add-on ist noch **nicht** im Store eingereicht; es existiert keine Store-URL.

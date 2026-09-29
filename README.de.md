@@ -19,22 +19,38 @@ minimal notwendigen Daten an externe Analysedienste.
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
-| Sprachen | Manifest-Strings und Banner lokalisiert (Englisch, Deutsch – `_locales/`); Options- und Popup-Oberfläche derzeit nur auf Deutsch |
+| Sprachen | Alle sichtbaren UI-Strings (Manifest, UI in der Nachrichtenansicht, Optionsseite, Popup) werden über `browser.i18n` und `_locales/` aufgelöst (Englisch, Deutsch; Standard-Locale `en`, Fallback-Texte im Code) |
 
 ## Was das Add-on macht
 
 - **Zuerst lokale Prüfungen.** Beim Anzeigen einer Nachricht werden Anhänge gehasht (SHA-256) und Betreff/Body,
   Absenderdomain, Typosquatting-Ähnlichkeiten, Reply-To-Domain, Erstkontakt, Authentifizierungs-Header
   (SPF/DKIM/DMARC) und Ihre eigene Weiße/Schwarze Liste ausgewertet; daraus entsteht ein lokaler Risiko-Score (0–100).
-- **Banner in der Nachrichtenansicht.** Über der Nachricht erscheint ein Banner mit dem Hinweis, ob der Absender
-  gescannt wird, und zwei Schaltflächen: **„Nur diese Nachricht scannen“** und **„Absender dauerhaft scannen“**.
-- **Warnbanner.** Überschreitet der Risiko-Score die Schwelle, wird ein Warnbanner mit den Gründen in die
-  Nachrichtenansicht eingefügt.
-- **Links.** Links können beim Öffnen der Nachricht oder erst im Moment des Klickens geprüft werden
-  (Time-of-Click-Schutz mit Hinweis beim Überfahren). Ein Kontextmenü-Eintrag scannt einen Link mit Thundy AV.
+- **UI in der Nachrichtenansicht.** Die Oberfläche in der Nachrichtenansicht wird von einem einmalig registrierten
+  Message-Display-Skript gerendert (`message_display.js`, registriert über
+  `scripting.messageDisplay.registerScripts()`); den Zustand liefert das Hintergrundskript über Runtime-Messaging.
+  Angezeigt werden ein Opt-in-Banner mit den Schaltflächen **„Nur diese Nachricht scannen“**,
+  **„Absender dauerhaft scannen“** und **„Einstellungen öffnen“**, ein Warnbanner ab einem Risiko-Score von **50**
+  (mit Begründungsliste) und ein grüner Badge, wenn SPF/DKIM/DMARC bestanden wurden.
+- **Time-of-Click-Schutz.** Links im Nachrichtentext werden markiert (gestrichelte Unterstreichung plus Tooltip).
+  Beim Klick wird ein Link *vor* dem Öffnen geprüft: über ein lokal gespeichertes Verdikt, sonst – bei erteilter
+  Zustimmung und konfiguriertem urlscan.io-Schlüssel – über einen Live-Scan bei urlscan.io mit 6-Sekunden-Budget.
+  Bösartige und nicht verifizierbare Links (`MALICIOUS`, `MALICIOUS_VISUAL`, `TIMEOUT`, `ERROR`) werden blockiert;
+  ein Inline-Hinweis nennt die Begründungen und die Ziel-URL und bietet **„Link trotzdem öffnen“**. Eine so erteilte
+  Freigabe gilt nur für die Sitzung (im Arbeitsspeicher, bewusst nicht im DOM). Nicht-http(s)-Schemes (z. B. `file:`,
+  `ftp:`, `smb:`) werden ebenfalls blockiert (fail closed); erlaubt sind `mailto:`, `tel:`, `news:` und `nntp:`.
+  Ist die Option „Time-of-Click Protection“ deaktiviert, wird nicht eingegriffen.
+- **Auto-Scan-Option.** „Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)“ prüft bei erteilter Zustimmung
+  und konfiguriertem urlscan.io-Schlüssel bis zu **20 Links** je Nachricht über urlscan.io und speichert die
+  Verdikte lokal, sodass ein späterer Klick keine neue Netzwerkanfrage benötigt.
+- **Kontextmenüs.** Zwei Einträge existieren (Berechtigung `menus`): **„Link mit Thundy AV scannen“** (Kontext
+  `link`) und **„Alle Links dieser Nachricht scannen“** (Kontext `message_display_action`, bis zu 20 Links je
+  Aufruf).
 - **Popup** (Button in der Nachrichtenansicht): Nachrichten-Metadaten, gespeicherte Scan-Ergebnisse, manueller
   Upload eines Anhangs, URL-Scan und **„HTML entschärfen“** (ein HTML-Anhang wird lokal bereinigt und über den
-  Download-Manager gespeichert).
+  Download-Manager gespeichert). Das Popup ermittelt die angezeigte Nachricht über
+  `messageDisplay.getDisplayedMessages()`; **ohne globale Zustimmung fragt es keinen Anbieter ab** und zeigt nur eine
+  Hinweiskarte mit Verweis auf die Einstellungen.
 - **Benachrichtigungen** melden Scan-Start, Einreichung und Fehler.
 - **IP-Reputation (optional):** Die aus den `Received`-Headern extrahierten Mailserver-IPs können über VirusTotal
   oder AbuseIPDB geprüft werden.
@@ -51,6 +67,16 @@ minimal notwendigen Daten an externe Analysedienste.
    Anbieter angefragt. Vorab wird nichts gewährt.
 4. **Pro Nachricht oder pro Absender.** Ein Scan ist entweder eine einmalige Aktion (Banner, Popup, Kontextmenü)
    oder eine dauerhafte Zustimmung für einen einzelnen Absender.
+5. **Datenkonsent-Deklaration.** Die `manifest.json` deklariert
+   `browser_specific_settings.gecko.data_collection_permissions` als `required: ["none"]` plus die **optionale**
+   Kategorie `personalCommunications`. Es wird also nichts zwingend erhoben; Nachrichteninhalte dürfen nur nach
+   ausdrücklichem Opt-in übermittelt werden. Wo Thunderbird die eingebaute Datenkonsent anbietet, fragt der
+   Optionsdialog diese Kategorie zusätzlich an
+   (`browser.permissions.request({ data_collection: ['personalCommunications'] })`, Feature-Erkennung über
+   `permissions.getAll().data_collection`), sobald die globale Zustimmung aktiviert wird; wird sie abgelehnt, wird
+   die globale Zustimmung wieder deaktiviert und nichts übermittelt. Das Hintergrundskript erzwingt den erteilten
+   Zustand in `mayTransmitExternally()`: Meldet die Umgebung `personalCommunications` als nicht erteilt, wird nicht
+   übermittelt.
 
 | Datenschutz-Stufe | Anhänge | Links/URLs |
 | --- | --- | --- |
@@ -61,7 +87,8 @@ minimal notwendigen Daten an externe Analysedienste.
 ## Daten und Datenschutz
 
 - Keine Übertragung ohne **globale Zustimmung** und eine Nutzeraktion (Banner-Button, Popup, Kontextmenü oder eine
-  ausdrückliche Absender-Zustimmung).
+  ausdrückliche Absender-Zustimmung). Das gilt auch für das Popup: Ohne globale Zustimmung fragt es keinen Anbieter
+  ab und zeigt stattdessen eine Hinweiskarte.
 - **Keine Telemetrie und kein Entwickler-Server.** Alle Anfragen gehen direkt von Ihrem Thunderbird an den
   Anbieter, den Sie konfiguriert und freigegeben haben.
 - Lokal gespeichert werden: Einstellungen, Zustimmungs-Flags, API-Schlüssel und ein Scan-Metadaten-Cache
@@ -145,12 +172,21 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** Testdateien des
-  Repositorys aus, nicht nur `background.test.js`.
-- `web-ext lint` meldet derzeit **0 Fehler**. Die verbleibenden Warnungen sind fast ausschließlich
-  `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-spezifische APIs wie
-  `messages.*` oder `messageDisplay.*` nicht kennt. Vor einem Release die Liste durchsehen.
+  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **421 Tests, 0 Fehler** – u. a.
+  `message_display.test.js` (UI in der Nachrichtenansicht und Time-of-Click), die Popup-Consent-Tests in
+  `api.test.js` und die Pre-Submit-Check-Tests in `scripts/pre-submit-checks.test.js`.
+- `scripts/pre-submit-checks.js` prüft zusätzlich, dass jeder verwendete `browser.*`-API-Namespace eine deklarierte
+  Berechtigung hat, dass die `data_collection_permissions`-Deklaration zu den Übermittlungspfaden passt und dass ein
+  programmatisch registriertes Skript (`message_display.js`) im Paket liegt. Aktueller Stand: 0 Fehler,
+  1 Warnung (noch keine echten Screenshots).
+- `web-ext lint` meldet derzeit **0 Fehler** und **25 Warnungen**, alle davon bekannte Thunderbird-False-Positives
+  (fast ausschließlich `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und
+  Thunderbird-spezifische APIs wie `messages.*` oder `messageDisplay.*` nicht kennt). Die Liste wird über
+  `scripts/filter-lint-warnings.js` gefiltert.
+- Das gebaute XPI enthält **18 Dateien / 197.252 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
+  prüft Dateiliste und Größe.
 - Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
-  `node ./scripts/pre-submit-checks.js`, Unit-Tests und `npx web-ext lint`.
+  `node ./scripts/pre-submit-checks.js`, `node --test background.test.js` und `npx web-ext lint`.
 - Ausführlicher: [docs/quickstart.md](docs/quickstart.md).
 
 ## Berechtigungen im Überblick
@@ -159,25 +195,31 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 | --- | --- |
 | `messagesRead` | Angezeigte Nachricht (Betreff, Absender, Text, Anhänge) lesen, damit sie analysiert werden kann; nur für geöffnete Nachrichten und wenn ein Scan ausgelöst wird. |
 | `storage` | Einstellungen, Zustimmungs-Flag, Absender-Opt-ins, Anbieter-API-Schlüssel und der lokale Scan-Cache. |
-| `notifications` | Systembenachrichtigungen zu Scan-Start, Einreichung und Fehlern. |
-| `scripting` | Banner, Warnhinweis und Time-of-Click-Hinweis in die Nachrichtenansicht einfügen (nur mitgelieferter Code, kein Remote-Code). |
+| `notifications` | Systembenachrichtigungen zu Scan-Start, Einreichung und Fehlern (auch wenn die UI in der Nachrichtenansicht nicht registriert werden kann). |
+| `scripting` | Das mitgelieferte Message-Display-Skript `message_display.js` registrieren (`scripting.messageDisplay.registerScripts()`), das die UI in der Nachrichtenansicht rendert: Opt-in-Banner mit seinen Schaltflächen, Warnbanner und Time-of-Click-Schutz. Ausgeführt wird ausschließlich mitgelieferter Code; es werden keine Remote-Ressourcen und kein Remote-Code geladen. |
 | `downloads` | Einen lokal bereinigten („entschärften“) HTML-Anhang über den Download-Manager speichern. |
+| `menus` | Die beiden Kontextmenü-Einträge „Link mit Thundy AV scannen“ (Link-Kontext) und „Alle Links dieser Nachricht scannen“ (Kontext der Nachrichtenanzeige-Aktion) anlegen. |
 
-Optionale Host-Berechtigungen (`optional_host_permissions` in der `manifest.json`) – jede wird erst zur Laufzeit
-angefragt, wenn der passende Anbieter genutzt wird:
+Optionale Host-Berechtigungen (`optional_host_permissions` in der `manifest.json`) – genau fünf Origins, jede wird
+erst zur Laufzeit angefragt, wenn der passende Anbieter genutzt wird:
 
 | Origin | Anbieter |
 | --- | --- |
-| `https://hybrid-analysis.com/*`, `https://*.hybrid-analysis.com/*` | Hybrid Analysis |
-| `https://*.virustotal.com/*` | VirusTotal |
-| `https://urlscan.io/*`, `https://*.urlscan.io/*` | urlscan.io |
+| `https://hybrid-analysis.com/*` | Hybrid Analysis |
+| `https://www.virustotal.com/*` | VirusTotal |
+| `https://urlscan.io/*` | urlscan.io |
 | `https://urlhaus-api.abuse.ch/*` | URLhaus (abuse.ch) |
 | `https://api.abuseipdb.com/*` | AbuseIPDB |
 
-Zusätzlich deklariert die `manifest.json` unter `browser_specific_settings.gecko.data_collection_permissions` die
-**verpflichtende** Kategorie `personalCommunications`. Sie dokumentiert, dass das Add-on Nachrichteninhalte
-verarbeiten kann; übertragen wird nur nach globaler Zustimmung und einer Nutzeraktion und nur an Anbieter, denen Sie
-den Zugriff gewährt haben.
+Die `manifest.json` deklariert unter `browser_specific_settings.gecko.data_collection_permissions`
+`required: ["none"]` und `optional: ["personalCommunications"]`: Es wird **nichts zwingend erhoben**, und
+Nachrichteninhalte dürfen nur nach ausdrücklichem Opt-in (globale Zustimmung plus ausgelöster Scan) übermittelt
+werden. Zusätzlich fragt der Optionsdialog dort, wo die Umgebung die eingebaute Datenkonsent anbietet, die
+Kategorie an, sobald die globale Zustimmung aktiviert wird (Feature-Erkennung über
+`browser.permissions.getAll().data_collection`), und deaktiviert die Zustimmung wieder, wenn die Anfrage
+abgelehnt wird. Unabhängig davon erzwingt das Hintergrundskript den erteilten Zustand in
+`mayTransmitExternally()`: Wird `personalCommunications` als nicht erteilt gemeldet, findet keine Übermittlung
+statt.
 
 ## Einen weiteren Analysedienst ergänzen
 
@@ -192,14 +234,19 @@ den Zugriff gewährt haben.
 
 ## Bekannte Einschränkungen
 
-- **Manuelle Verifikation steht aus.** Die Banner-Injektion in die Thunderbird-Nachrichtenansicht ist durch
-  Unit-Tests (mit gemockten Thunderbird-APIs) abgedeckt, aber noch nicht manuell in Thunderbird 140 ESR geprüft.
-  Bitte melden Sie unerwartetes Verhalten mit Ihrer Thunderbird-Version; schlägt eine Injektion fehl, protokolliert
-  der Code einen Hinweis über `Logger.warn`.
+- **Manuelle Verifikation steht aus (Pflicht vor der Einreichung).** Die UI in der Nachrichtenansicht (Opt-in-Banner,
+  Warnbanner, SPF/DKIM/DMARC-Badge, Link-Markierung), die beiden Kontextmenü-Einträge, der aus dem Banner
+  ausgelöste Berechtigungsdialog und die Blockade eines Links sind nur durch Unit-Tests mit gemockten
+  Thunderbird-APIs abgedeckt; sie wurden noch nicht manuell in Thunderbird 140 ESR geprüft. Bitte melden Sie
+  unerwartetes Verhalten mit Ihrer Thunderbird-Version. Lässt sich das Message-Display-Skript nicht registrieren,
+  protokolliert der Code einen Fehler und erzeugt eine Systembenachrichtigung (`notificationUiUnavailable`).
+- **Eingebaute Datenkonsent nicht verifiziert.** Der Optionsdialog fragt die deklarierte **optionale** Kategorie
+  `personalCommunications` dort an, wo die Umgebung sie anbietet; das Hintergrundskript übermittelt nicht, solange
+  sie als nicht erteilt gemeldet wird. Ob und wie Thunderbird 140 ESR diesen Dialog anzeigt, wurde in dieser
+  Umgebung nicht verifiziert – der Codepfad ist nur durch Unit-Tests mit gemockten APIs abgedeckt.
 - **Noch keine echten Store-Screenshots.** In `docs/screenshots/` liegen nur SVG-Platzhalter; für das Store-Listing
-  müssen echte Screenshots erstellt werden.
+  müssen echte Screenshots erstellt werden – erst nach dem Live-Test in Thunderbird.
 - **Noch nicht im Add-ons-Store eingereicht** – es gibt kein öffentliches Listing und keine Store-URL.
-- Options- und Popup-Oberfläche gibt es derzeit nur auf Deutsch; Manifest-Strings und Banner sind lokalisiert.
 - In der Standard-Stufe `strict` werden unbekannte Anhänge nicht automatisch hochgeladen; dafür auf `balanced`/`max`
   umstellen oder einen manuellen Upload im Popup starten.
 - Erkennungsqualität und Ratenlimits hängen von den konfigurierten Anbietern und Ihren eigenen API-Schlüsseln ab.

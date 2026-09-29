@@ -269,6 +269,22 @@ describe('pre-submit-checks', () => {
     }
   });
 
+  it('fails when a localized UI string has no catalogue entry', () => {
+    const result = runChecks(createExtension({
+      'options.html': '<html><body><h1 data-i18n="missingUiKey">Alt</h1></body></html>'
+    }));
+    assert.ok(result.errors.some((e) => e.includes('localized strings without a catalogue entry')));
+  });
+
+  it('accepts localized UI strings that exist in the default catalogue', () => {
+    const result = runChecks(createExtension({
+      'options.html': '<html><body><h1 data-i18n="extensionName">Demo</h1></body></html>',
+      'popup.html': '<html><body><div data-i18n-placeholder="extensionName"></div></body></html>'
+    }));
+    assert.deepStrictEqual(result.errors, []);
+    assert.ok(result.passes.some((p) => p.includes('localized UI strings have a catalogue entry')));
+  });
+
   it('validates the real repository without errors', () => {
     const result = runChecks(REPO_ROOT);
     assert.deepStrictEqual(result.errors, [], 'the repository must pass the pre-submit checks');

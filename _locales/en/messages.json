@@ -130,5 +130,543 @@
         "content": "$1"
       }
     }
+  },
+  "popupWarning": {
+    "message": "Warning:"
+  },
+  "popupNoApiKey": {
+    "message": " No Hybrid Analysis API key found. Please add it in the add-on settings."
+  },
+  "popupOpenSettings": {
+    "message": "Open settings"
+  },
+  "popupSelectMail": {
+    "message": "Please select an email to check."
+  },
+  "popupNoSubject": {
+    "message": "(No subject)"
+  },
+  "popupUnknownSender": {
+    "message": "(Unknown sender)"
+  },
+  "popupNoMessageId": {
+    "message": "(No ID)"
+  },
+  "popupLoadingResults": {
+    "message": "Loading analysis results…"
+  },
+  "popupConsentDisabled": {
+    "message": "External analysis is not enabled: no hashes, files or links are transmitted to analysis services."
+  },
+  "popupResultsBlocked": {
+    "message": "Stored analysis results are not retrieved as long as external analysis is not enabled in the settings."
+  },
+  "popupNoAttachmentsOrUrls": {
+    "message": "No attachments or URLs found for this email."
+  },
+  "popupNoResults": {
+    "message": "No analysis results available for this email."
+  },
+  "popupUnexpectedError": {
+    "message": "Unexpected error while loading the analysis results."
+  },
+  "popupStatusLabel": {
+    "message": "Status:"
+  },
+  "popupThreatScore": {
+    "message": "Threat score:"
+  },
+  "popupVerdict": {
+    "message": "Verdict:"
+  },
+  "popupVxFamily": {
+    "message": "Vx family:"
+  },
+  "popupMultiscan": {
+    "message": "Multiscan result: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupAnalysisStart": {
+    "message": "Analysis start time: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupTags": {
+    "message": "Tags: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupVtResults": {
+    "message": "VirusTotal results:"
+  },
+  "popupVtMalicious": {
+    "message": "Malicious: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupVtUndetected": {
+    "message": "Undetected: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupVtSuspicious": {
+    "message": "Suspicious: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupVtHarmless": {
+    "message": "Harmless: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupScanner": {
+    "message": "Scanner: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupScannerStatus": {
+    "message": "Status: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupAvResults": {
+    "message": "AV results:"
+  },
+  "popupAvVerdict": {
+    "message": "AV: $VALUE$ - verdict: $VALUE2$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      },
+      "value2": {
+        "content": "$2"
+      }
+    }
+  },
+  "popupNoScannerResults": {
+    "message": "No scanner results available."
+  },
+  "popupSha256Value": {
+    "message": "SHA-256 hash value: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupLastName": {
+    "message": "Last file name: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupSize": {
+    "message": "Size: $VALUE$ bytes",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupType": {
+    "message": "Type: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupSha256": {
+    "message": "SHA-256: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "commonUnknown": {
+    "message": "Unknown"
+  },
+  "popupRescanButton": {
+    "message": "Rescan"
+  },
+  "popupCdrButton": {
+    "message": "Disarm & download (local CDR)"
+  },
+  "popupCheckedItem": {
+    "message": "Checked item: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupAttachmentHeading": {
+    "message": "Attachment: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupUrlHeading": {
+    "message": "URL: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupInProgress": {
+    "message": " The analysis is still running (IN_PROGRESS). Please try again later."
+  },
+  "popupSendRescan": {
+    "message": "Sending rescan…"
+  },
+  "popupUploadingRescan": {
+    "message": "File is being uploaded for rescan…"
+  },
+  "popupRescanStarted": {
+    "message": "Rescan started successfully. Reloading the page…"
+  },
+  "popupSuccess": {
+    "message": "Done"
+  },
+  "popupRescanFailed": {
+    "message": "Rescan failed: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupRetry": {
+    "message": "Try again"
+  },
+  "popupCommunicationError": {
+    "message": "Communication error: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "commonUnknownError": {
+    "message": "Unknown error"
+  },
+  "popupDisarming": {
+    "message": "Disarming…"
+  },
+  "popupLocalCdrRunning": {
+    "message": "Running local CDR…"
+  },
+  "popupDownloadStarted": {
+    "message": "Download started successfully."
+  },
+  "popupDisarmed": {
+    "message": "Disarmed"
+  },
+  "popupDownloadFailed": {
+    "message": "Download failed: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupApiError": {
+    "message": "API error: $VALUE$ for element $VALUE2$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      },
+      "value2": {
+        "content": "$2"
+      }
+    }
+  },
+  "popupNetworkError": {
+    "message": "Network error: $VALUE$ for element $VALUE2$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      },
+      "value2": {
+        "content": "$2"
+      }
+    }
+  },
+  "popupHybridApiError": {
+    "message": "Hybrid Analysis API error: $VALUE$ - $VALUE2$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      },
+      "value2": {
+        "content": "$2"
+      }
+    }
+  },
+  "popupSendUrl": {
+    "message": "Sending URL…"
+  },
+  "popupUrlUploading": {
+    "message": "URL is being transmitted to Hybrid Analysis…"
+  },
+  "popupUrlScanStarted": {
+    "message": "Scan requested successfully! Loading analysis results…"
+  },
+  "popupUploadFailed": {
+    "message": "Upload failed: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupNotUploadedAutomatically": {
+    "message": "not uploaded automatically"
+  },
+  "popupScanUrlNow": {
+    "message": "Scan URL now"
+  },
+  "popupUploading": {
+    "message": "Uploading…"
+  },
+  "popupFileTransfer": {
+    "message": "File is being transmitted to Hybrid Analysis…"
+  },
+  "popupUploadSuccess": {
+    "message": "Upload successful! Loading analysis results…"
+  },
+  "popupScanFileNow": {
+    "message": "Scan this file now (upload)"
+  },
+  "popupPrivacyUnknownFile": {
+    "message": "This file is unknown to the Hybrid Analysis database. For privacy reasons it was "
+  },
+  "popupPrivacyUnknownUrl": {
+    "message": "This URL was found in the email. For privacy reasons it was "
+  },
+  "popupApiKeyHint": {
+    "message": " (possibly an invalid or missing API key)."
+  },
+  "popupTitle": {
+    "message": "Thundy AV – Email Scanner for Thunderbird"
+  },
+  "popupAllSubmissions": {
+    "message": "Open all Hybrid Analysis submissions"
+  },
+  "popupSubjectLabel": {
+    "message": "Subject:"
+  },
+  "popupFromLabel": {
+    "message": "From:"
+  },
+  "popupMessageIdLabel": {
+    "message": "MessageHeaderID:"
+  },
+  "optionsTitle": {
+    "message": "Thundy AV settings"
+  },
+  "optionsAboutHeading": {
+    "message": "What is Hybrid-Analysis.com?"
+  },
+  "optionsApiKeyHeading": {
+    "message": "How to get an API key"
+  },
+  "optionsApiKeyNeed": {
+    "message": "You need a free API key from"
+  },
+  "optionsApiKeyWhere": {
+    "message": "After signing in you find the API key under \"Nickname\" -> \"Profile\" -> \"API KEY\"."
+  },
+  "optionsApiKeyPaste": {
+    "message": "Paste the API key here."
+  },
+  "optionsConsentLabel": {
+    "message": "Allow external analysis (data transmission to third parties)"
+  },
+  "optionsConsentHelpPart1": {
+    "message": "Without this consent"
+  },
+  "optionsConsentHelpNone": {
+    "message": "no"
+  },
+  "optionsConsentHelpPart2": {
+    "message": "hashes, files, links or IP addresses are transmitted to external services. Only after you gave your consent can attachments, links and metadata be sent for analysis to Hybrid Analysis, VirusTotal, urlscan.io, URLhaus or AbuseIPDB – depending on the privacy tier. You can revoke the consent at any time by turning this option off. Details:"
+  },
+  "optionsPrivacyPolicyLink": {
+    "message": "Privacy policy"
+  },
+  "optionsHybridApiKeyLabel": {
+    "message": "API key (Hybrid-Analysis):"
+  },
+  "optionsUrlhausLabel": {
+    "message": "URLhaus API key (optional, for real-time domain checks):"
+  },
+  "optionsUrlhausHelp": {
+    "message": "You can get a free API key at"
+  },
+  "optionsUrlscanLabel": {
+    "message": "urlscan.io API key (computer vision detection of e.g. fake logins):"
+  },
+  "optionsUrlscanHelp": {
+    "message": "You can get a free API key at"
+  },
+  "optionsVirustotalLabel": {
+    "message": "VirusTotal API key (optional, for file scanner engines):"
+  },
+  "optionsVirusTotalHelp": {
+    "message": "You can get a free API key at"
+  },
+  "optionsPrivacyTierLabel": {
+    "message": "Privacy tier:"
+  },
+  "optionsTierStrict": {
+    "message": "Strict (default: send hashes only, no upload)"
+  },
+  "optionsTierBalanced": {
+    "message": "Balanced (upload unknown files, no URLs)"
+  },
+  "optionsTierMax": {
+    "message": "Maximum protection (upload everything including URLs)"
+  },
+  "optionsPrivacyTierHelp": {
+    "message": "Determines how much data is sent to Hybrid Analysis. Only effective when \"Allow external analysis\" is enabled."
+  },
+  "optionsIpReputationLabel": {
+    "message": "IP reputation (check Received headers):"
+  },
+  "optionsIpNone": {
+    "message": "Disabled"
+  },
+  "optionsIpVirusTotal": {
+    "message": "VirusTotal (requires a VirusTotal API key)"
+  },
+  "optionsIpAbuseIpDb": {
+    "message": "AbuseIPDB (requires an AbuseIPDB API key)"
+  },
+  "optionsIpApiKeyLabel": {
+    "message": "API key for IP reputation:"
+  },
+  "optionsIpReputationHelp": {
+    "message": "Sends public IP addresses from the message's \"Received\" headers to the selected service. Only active when \"Allow external analysis\" is enabled."
+  },
+  "optionsWhitelistLabel": {
+    "message": "Allowlist (domains or email addresses, comma separated):"
+  },
+  "optionsWhitelistHelp": {
+    "message": "Add trusted domains or email addresses here to exclude them from scanning."
+  },
+  "optionsBlacklistLabel": {
+    "message": "Blocklist (domains or email addresses, comma separated):"
+  },
+  "optionsBlacklistHelp": {
+    "message": "Add blocked domains or email addresses here."
+  },
+  "optionsAlwaysManualLabel": {
+    "message": "Always scan manually (no automatic upload)"
+  },
+  "optionsAlwaysManualHelp": {
+    "message": "Prevents the automatic upload of attachments, independent of the selected privacy tier."
+  },
+  "optionsAutoScanLabel": {
+    "message": "Check links of the email right away when it is opened (auto scan)"
+  },
+  "optionsAutoScanHelp": {
+    "message": "When disabled, a link is only checked at the moment you click it (time-of-click protection)."
+  },
+  "optionsTocLabel": {
+    "message": "Mark links in the message text and check them on click (time-of-click protection)"
+  },
+  "optionsTocHelp": {
+    "message": "Links are checked when you click them. If a link is known to be malicious or cannot be checked, it is blocked; you can still open it from the notice."
+  },
+  "optionsDontForget": {
+    "message": "Don't forget to save."
+  },
+  "optionsSave": {
+    "message": "Save"
+  },
+  "optionsSavedStatus": {
+    "message": "Saved successfully!"
+  },
+  "optionsDataManagementHeading": {
+    "message": "Data management"
+  },
+  "optionsDataManagementText": {
+    "message": "Here you can clear the local cache to free up space and delete old metadata."
+  },
+  "optionsClearCache": {
+    "message": "Clear cache"
+  },
+  "optionsSaving": {
+    "message": "Saving…"
+  },
+  "optionsClearing": {
+    "message": "Clearing…"
+  },
+  "optionsCacheCleared": {
+    "message": "Cache cleared successfully."
+  },
+  "optionsCacheEmpty": {
+    "message": "The database does not exist yet or is already empty."
+  },
+  "optionsCacheClearFailed": {
+    "message": "Error while clearing the cache."
+  },
+  "optionsCacheClearConfirm": {
+    "message": "Do you really want to clear the cache? This removes all locally stored analysis results."
+  },
+  "optionsPermissionDenied": {
+    "message": "Host permission not granted for: $VALUE$. Without this permission the corresponding checks are disabled.",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsDataConsentDenied": {
+    "message": "Without the consent for the data category \"personal communications\" the add-on does not transmit any data. External analysis stays disabled."
+  },
+  "optionsPrivacyTierIrrelevant": {
+    "message": "The privacy tier is irrelevant for manual scans"
+  },
+  "optionsTocIrrelevant": {
+    "message": "Time-of-click protection is irrelevant while the auto scan is active"
+  },
+  "optionsAboutText": {
+    "message": "Hybrid-Analysis.com is a free malware analysis service for the community. With this service you can submit files for detailed static and dynamic analysis.\n\nThe website uses a unique hybrid analysis technology to detect and analyse unknown threats. It is powered by the Falcon Sandbox from CrowdStrike.\n\nThe Falcon Sandbox is a state of the art malware analysis framework with a very agile architecture. It is used by SOCs, CERTs, DFIR teams, IT security forensics labs, researchers and threat intelligence providers around the world."
   }
 }

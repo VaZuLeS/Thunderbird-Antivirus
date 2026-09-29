@@ -2,7 +2,8 @@
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird (Kurzname „Thundy AV“), Version 1.6
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (Lizenz: MIT)
-**Stand:** September 2026
+**Stand:** September 2026 (Add-on-Version 1.6; die Angaben in diesem Dokument wurden am Code geprüft;
+ein Live-Test in Thunderbird wird nicht behauptet)
 
 Diese Erklärung beschreibt, welche Daten die Thunderbird-Erweiterung „Thundy AV“ verarbeitet,
 welche Daten an Dritte übermittelt werden können und unter welchen Bedingungen.
@@ -25,7 +26,9 @@ Nutzerdaten.
   verlässt den Rechner nicht. Ohne Zustimmung wird **nichts** an Dritte übermittelt.
 - Eine Übermittlung an externe Analyse-Dienste findet nur statt, wenn die globale Zustimmung
   „Externe Analyse erlauben“ aktiv ist **und** ein Scan für die betreffende Nachricht bzw. den
-  betreffenden Absender ausgelöst wurde.
+  betreffenden Absender ausgelöst wurde. Das gilt auch für das Popup der Nachrichtenansicht: Ohne
+  diese Zustimmung fragt es keinen Analyse-Dienst ab und zeigt nur einen Hinweis mit Verweis auf
+  die Einstellungen.
 - Standardmäßig ist die Datenschutz-Stufe „Strikt“ aktiv; dann werden ausschließlich
   SHA-256-Hashes von Anhängen übermittelt.
 - Es gibt **keine** Telemetrie, **kein** Analytics, **keine** Nutzungsstatistik, **keine**
@@ -53,7 +56,10 @@ Anzeige von Hinweis- und Warnbannern) laufen auch ohne diese Zustimmung.
 
 Die Zustimmung kann jederzeit im Optionsdialog entzogen werden. Durch den Widerruf werden künftige
 Übermittlungen gestoppt; bereits übermittelte Daten können dadurch nicht zurückgeholt werden
-(Abschnitt 8).
+(Abschnitt 8). Wird die globale Zustimmung im Optionsdialog aktiviert und gespeichert, fragt die
+Erweiterung dort, wo die Umgebung die eingebaute Datenkonsent anbietet, zusätzlich die optionale
+Datenkategorie `personalCommunications` an (Abschnitt 3.4); lehnt der Nutzer diese Anfrage ab, wird
+die globale Zustimmung wieder deaktiviert und es findet keine Übermittlung statt.
 
 ### 3.2 Opt-in je Absender
 
@@ -84,6 +90,29 @@ ein Schlüssel konfiguriert ist und die globale Zustimmung (3.1) aktiv ist. Die 
 findet nur statt, wenn dafür ausdrücklich ein Anbieter und ein Schlüssel hinterlegt wurden;
 standardmäßig ist sie nicht konfiguriert.
 
+### 3.4 Deklaration der Datenerhebung im Manifest
+
+Die `manifest.json` deklariert unter `browser_specific_settings.gecko.data_collection_permissions`:
+
+```json
+{ "required": ["none"], "optional": ["personalCommunications"] }
+```
+
+Damit ist **keine** Datenart als verpflichtend deklariert; Nachrichteninhalte (Kategorie
+`personalCommunications`) dürfen nur nach ausdrücklichem Opt-in übermittelt werden. Umsetzung:
+
+- **Optionsdialog:** Wird die globale Zustimmung (3.1) aktiviert und gespeichert, fragt die Erweiterung die
+  optionale Kategorie dort an, wo die Umgebung das anbietet (Feature-Erkennung über
+  `browser.permissions.getAll().data_collection`, Anfrage über
+  `browser.permissions.request({ data_collection: ['personalCommunications'] })` als Reaktion auf das Speichern).
+  Wird die Anfrage abgelehnt, deaktiviert die Erweiterung die globale Zustimmung wieder und informiert den Nutzer;
+  es findet dann keine Übermittlung statt.
+- **Hintergrundskript:** Es wertet den erteilten Zustand aus und erzwingt ihn in `mayTransmitExternally()`:
+  Solange die Umgebung `personalCommunications` als nicht erteilt meldet, findet **keine** Übermittlung statt. In
+  Umgebungen, die keine Datenkategorien melden, ist die globale Zustimmung nach Abschnitt 3.1 maßgeblich.
+
+Ob und wie Thunderbird 140 ESR diesen Dialog für die Kategorie anzeigt, ist nicht verifiziert.
+
 ## 4. Lokal gelesene Daten
 
 Beim Öffnen einer Nachricht liest die Erweiterung in Thunderbird lokal:
@@ -109,8 +138,19 @@ Empfänger. Jede Übermittlung setzt die globale Zustimmung nach Abschnitt 3.1 v
 | SHA-256-Hash eines Anhangs | Scan eines Anhangs; alle Stufen (`strict`, `balanced`, `max`) | VirusTotal, Hybrid Analysis |
 | Vollständiger Anhang (Dateiinhalt, Dateiname, Dateityp, Größe) | nur Stufe `balanced` und `max`, und nur wenn zum Hash kein Treffer vorliegt | Hybrid Analysis |
 | URLs/Links aus der Nachricht, die zur Prüfung anstehen | Stufe `max` (Hybrid Analysis); urlscan.io-Abfrage sofern ein urlscan.io-Schlüssel konfiguriert ist | Hybrid Analysis, urlscan.io |
+| URL, auf die Sie im Nachrichtentext klicken (Time-of-Click-Schutz), sowie die Links der Nachricht bei aktivierter Option „Auto-Scan“ (bis zu 20 Links) | nur wenn die globale Zustimmung aktiv ist, ein urlscan.io-Schlüssel konfiguriert ist und zur URL noch kein lokal gespeichertes Verdikt vorliegt | urlscan.io |
 | Domains aus dem Nachrichtentext | sofern ein URLhaus-Schlüssel konfiguriert ist | URLhaus (abuse.ch) |
 | IP-Adressen aus den Received-Headern | nur sofern ein Anbieter und ein Schlüssel für die IP-Reputation konfiguriert sind | AbuseIPDB, VirusTotal |
+
+**Time-of-Click-Pfad.** Beim Klick auf einen Link im Nachrichtentext prüft die Erweiterung den Link vor
+dem Öffnen: Zuerst wird ein bereits lokal in der IndexedDB gespeichertes Verdikt verwendet; liegt keines
+vor, wird die URL – ausschließlich bei aktiver globaler Zustimmung und konfiguriertem urlscan.io-Schlüssel –
+an urlscan.io übermittelt (Wartezeit maximal 6 Sekunden). Nur die Verdikte „unauffällig“ (`CLEAN`) und
+„unbekannt ohne konfigurierten Dienst“ (`UNKNOWN`) geben den Link frei. Bösartige oder nicht
+verifizierbare Links (`MALICIOUS`, `MALICIOUS_VISUAL`, `TIMEOUT`, `ERROR`) werden **blockiert**; der
+Nutzer sieht einen Hinweis mit Begründungen und Ziel-URL und kann den Link über „Link trotzdem öffnen“
+bewusst selbst freigeben (gilt nur für die laufende Sitzung). Ist die Option „Time-of-Click Protection“
+deaktiviert, erfolgt keine Prüfung und kein Eingriff beim Klick.
 
 Technisch bedingt übermittelt jede HTTP-Anfrage zusätzlich die IP-Adresse des anfragenden Systems
 und einen HTTP-User-Agent-String. Die Abfrage bei VirusTotal setzt einen konfigurierten
@@ -123,11 +163,14 @@ Zustimmungen und API-Schlüssel.
 
 ### 5.1 Adressierte Hosts
 
+Die Erweiterung deklariert genau diese fünf Origin-Berechtigungen als optionale Host-Berechtigungen und
+kontaktiert keine weiteren Hosts:
+
 | Dienst | Adressierte Hosts | Zweck |
 |---|---|---|
-| Hybrid Analysis | `hybrid-analysis.com`, `api.hybrid-analysis.com` | Datei-/Hash-/URL-Analyse (Sandbox, Multi-Engine) |
-| VirusTotal | `virustotal.com`, `www.virustotal.com` | Hash-Abfrage zu Anhängen, IP-Reputation |
-| urlscan.io | `urlscan.io`, `www.urlscan.io` | Analyse/Reputation von Links |
+| Hybrid Analysis | `hybrid-analysis.com` | Datei-/Hash-/URL-Analyse (Sandbox, Multi-Engine) |
+| VirusTotal | `www.virustotal.com` | Hash-Abfrage zu Anhängen, IP-Reputation |
+| urlscan.io | `urlscan.io` | Analyse/Reputation von Links |
 | URLhaus (abuse.ch) | `urlhaus-api.abuse.ch` | Prüfung von Domains gegen Malware-URL-Listen |
 | AbuseIPDB | `api.abuseipdb.com` | Reputationsprüfung von IP-Adressen |
 
@@ -255,7 +298,7 @@ Repository und Issue-Tracker: https://github.com/VaZuLeS/Thunderbird-Antivirus
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird (short name "Thundy AV"), version 1.6
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (MIT License)
-**Last updated:** September 2026
+**Last updated:** September 2026 (add-on version 1.6; the statements were checked against the code)
 
 ### 1. Controller
 
@@ -271,7 +314,9 @@ server that receives user data, and the developer has no access to user data.
 - Reading the opened message locally happens regardless of any consent and stays on the device.
   Without consent, **nothing** is transmitted to third parties.
 - Data is transmitted to external analysis services only if the global consent "Allow external
-  analysis" is enabled **and** a scan has been triggered for that message or sender.
+  analysis" is enabled **and** a scan has been triggered for that message or sender. This also applies
+  to the message display action popup: without that consent it queries no analysis service and only
+  shows a notice that links to the options.
 - The default privacy tier is `strict`; in that tier only SHA-256 hashes of attachments are
   transmitted.
 - There is **no** telemetry, **no** analytics, **no** usage statistics, **no** crash or error
@@ -296,7 +341,10 @@ Local features (scoring of the message text, evaluation of headers and attachmen
 notice and warning banners) keep working without this consent.
 
 Consent can be withdrawn at any time in the options dialog. Withdrawal stops future transmissions;
-data already transmitted cannot be recalled (section 8).
+data already transmitted cannot be recalled (section 8). When the global consent is enabled and saved,
+the add-on additionally requests the optional data category `personalCommunications` where the
+environment offers the built-in data-collection consent (section 3.4); if the user declines that
+request, the global consent is switched off again and no transmission takes place.
 
 #### 3.2 Per-sender opt-in
 
@@ -325,6 +373,28 @@ checks run only if a key for the respective service is configured and the global
 enabled. IP reputation checks run only if a provider and a key have explicitly been configured for
 them; by default they are not configured.
 
+#### 3.4 Data-collection declaration in the manifest
+
+`manifest.json` declares under `browser_specific_settings.gecko.data_collection_permissions`:
+
+```json
+{ "required": ["none"], "optional": ["personalCommunications"] }
+```
+
+so **no** data category is declared as a requirement; message content (category
+`personalCommunications`) may only be transmitted after an explicit opt-in. Implementation:
+
+- **Options dialog:** When the global consent (3.1) is enabled and saved, the add-on requests the optional category
+  where the environment offers it (feature detection via `browser.permissions.getAll().data_collection`, request via
+  `browser.permissions.request({ data_collection: ['personalCommunications'] })` in response to the save action).
+  If the request is declined, the add-on switches the global consent off again and informs the user; no data is
+  transmitted then.
+- **Background script:** It evaluates the granted state and enforces it in `mayTransmitExternally()`: as long as the
+  environment reports `personalCommunications` as not granted, **no** transmission takes place. In environments that
+  do not report data categories, the global consent of section 3.1 is authoritative.
+
+Whether and how Thunderbird 140 ESR presents this dialog for the category has not been verified.
+
 ### 4. Data read locally
 
 When a message is opened, the add-on reads the following data locally inside Thunderbird:
@@ -348,8 +418,18 @@ recipient. Every transmission requires the global consent described in section 3
 | SHA-256 hash of an attachment | when an attachment is scanned; all tiers (`strict`, `balanced`, `max`) | VirusTotal, Hybrid Analysis |
 | Complete attachment (file content, file name, content type, size) | tier `balanced` and `max` only, and only if the hash lookup returned no match | Hybrid Analysis |
 | URLs/links from the message that are queued for checking | tier `max` (Hybrid Analysis); urlscan.io lookup if an urlscan.io key is configured | Hybrid Analysis, urlscan.io |
+| URL the user clicks in the message text (time-of-click protection), and the links of the message when the "auto-scan" option is enabled (up to 20 links) | only if the global consent is enabled, an urlscan.io key is configured and no locally stored verdict exists for that URL yet | urlscan.io |
 | Domains extracted from the message body | if a URLhaus key is configured | URLhaus (abuse.ch) |
 | IP addresses found in the Received headers | only if a provider and a key for IP reputation are configured | AbuseIPDB, VirusTotal |
+
+**Time-of-click path.** When a link in the message text is clicked, the add-on checks the link before
+it opens: a verdict already stored locally in IndexedDB is used first; if none exists, the URL is
+transmitted to urlscan.io – exclusively while the global consent is enabled and an urlscan.io key is
+configured – with a maximum wait of 6 seconds. Only the verdicts "clean" (`CLEAN`) and "unknown with no
+service configured" (`UNKNOWN`) release the link. Malicious or unverifiable links (`MALICIOUS`,
+`MALICIOUS_VISUAL`, `TIMEOUT`, `ERROR`) are **blocked**; the user sees a notice with the reasons and the
+target URL and can release the link deliberately via "Open the link anyway" (session only). If the
+"Time-of-Click Protection" option is disabled, no check and no interception happens.
 
 As an inherent property of HTTP, every request also transmits the IP address of the requesting
 system and an HTTP user-agent string. VirusTotal lookups require a configured VirusTotal key; without
@@ -361,11 +441,13 @@ recipient addresses, the content of attachments typed as plain-text formats (e.g
 
 #### 5.1 Hosts contacted
 
+The add-on declares exactly these five origins as optional host permissions and contacts no other hosts:
+
 | Service | Hosts contacted | Purpose |
 |---|---|---|
-| Hybrid Analysis | `hybrid-analysis.com`, `api.hybrid-analysis.com` | file/hash/URL analysis (sandbox, multi-engine) |
-| VirusTotal | `virustotal.com`, `www.virustotal.com` | hash lookup for attachments, IP reputation |
-| urlscan.io | `urlscan.io`, `www.urlscan.io` | analysis/reputation of links |
+| Hybrid Analysis | `hybrid-analysis.com` | file/hash/URL analysis (sandbox, multi-engine) |
+| VirusTotal | `www.virustotal.com` | hash lookup for attachments, IP reputation |
+| urlscan.io | `urlscan.io` | analysis/reputation of links |
 | URLhaus (abuse.ch) | `urlhaus-api.abuse.ch` | checks domains against malware URL lists |
 | AbuseIPDB | `api.abuseipdb.com` | IP address reputation |
 

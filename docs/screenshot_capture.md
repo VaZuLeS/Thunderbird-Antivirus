@@ -2,7 +2,7 @@
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird, Version 1.6
 **Status:** Es existieren noch **keine** echten Screenshots; im Repository liegen nur
-SVG-Platzhalter (`docs/screenshot-*.svg`, `docs/screenshots/*.svg`). Dieses Dokument beschreibt,
+SVG-Platzhalter (`docs/screenshots/*.svg`). Dieses Dokument beschreibt,
 wie die realen Aufnahmen erstellt werden.
 
 ## 1. Voraussetzungen
@@ -51,8 +51,10 @@ wie die realen Aufnahmen erstellt werden.
 
    - Optionsseite des Add-ons öffnen und den Hybrid-Analysis-API-Schlüssel eintragen (kostenlose
      Registrierung unter `https://www.hybrid-analysis.com/signup`) und speichern.
-   - Checkbox „Externe Analyse erlauben“ aktivieren (Standard: aus), damit beim Speichern die
-     Host-Berechtigung für den Anbieter angefragt und erteilt werden kann.
+   - Checkbox „Externe Analyse erlauben“ aktivieren (Standard: aus). Beim Speichern fragt die Seite – wo die
+     Umgebung es anbietet – zusätzlich die eingebaute Datenkategorie `personalCommunications` an; diese bestätigen,
+     damit die Datenübermittlung im Optionsdialog konsistent bleibt. Danach die Host-Berechtigung für den Anbieter
+     erteilen.
    - Datenschutz-Stufe bewusst wählen (`strict` = nur SHA-256-Hashes, `balanced` = zusätzlich
      vollständige Anhänge unbekannter Dateien, `max` = zusätzlich URLs).
 
@@ -61,12 +63,14 @@ wie die realen Aufnahmen erstellt werden.
 | Nr. | Zustand | Vorgehen | Zieldatei |
 |---|---|---|---|
 | 1 | Optionsseite mit Konsent-Checkbox | Optionsseite des Add-ons öffnen; Checkbox „Externe Analyse erlauben“ und die Datenschutz-Stufe müssen sichtbar sein | `docs/screenshots/01-options-consent.png` |
-| 2 | Opt-in-Banner mit beiden Buttons | Nachricht eines Absenders öffnen, für den kein Opt-in gespeichert ist; der Banner erscheint oberhalb der Nachricht mit **beiden** Buttons „Nur diese Nachricht scannen“ und „Absender dauerhaft scannen“ | `docs/screenshots/02-inline-optin-banner.png` |
-| 3 | Threat-Banner | Zustimmung erteilen und einen Scan auslösen bzw. eine Nachricht mit auffälligem Inhalt öffnen; der Bewertungs-Banner zeigt Verdikt/Score und die Begründungsliste | `docs/screenshots/03-threat-banner.png` |
+| 2 | Opt-in-Banner mit den Buttons | Nachricht eines Absenders öffnen, für den kein Opt-in gespeichert ist; der Banner erscheint oberhalb der Nachricht mit den Buttons „Nur diese Nachricht scannen“ und „Absender dauerhaft scannen“ (zusätzlich „Einstellungen öffnen“) | `docs/screenshots/02-inline-optin-banner.png` |
+| 3 | Threat-Banner | Zustimmung erteilen und einen Scan auslösen bzw. eine Nachricht mit auffälligem Inhalt öffnen (Risiko-Score ≥ 50); der Bewertungs-Banner zeigt Verdikt/Score und die Begründungsliste | `docs/screenshots/03-threat-banner.png` |
 
-Für Motiv 2 und Motiv 3 gilt: Die Sichtbarkeit der Banner-Injektionen in Thunderbird 140 ESR ist
+Für Motiv 2 und Motiv 3 gilt: Die In-Message-UI (gerendert von `message_display.js`, registriert über
+`scripting.messageDisplay.registerScripts()`) ist in Thunderbird 140 ESR
 **noch nicht manuell verifiziert**. Vor der Aufnahme ist dieser Test durchzuführen; erscheinen die
-Banner im Testfall nicht, dürfen die Motive nicht als Screenshot eingereicht werden.
+Banner im Testfall nicht, dürfen die Motive nicht als Screenshot eingereicht werden. Dasselbe gilt für
+die optionalen Motive (Popup, Time-of-Click-Hinweis, Datenmanagement-Abschnitt).
 
 ## 4. Aufnahme
 
