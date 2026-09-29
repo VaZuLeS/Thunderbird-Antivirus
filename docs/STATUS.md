@@ -3,6 +3,23 @@
 **Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6** · **ID** `thundy-av@bludau-it-services.de`
 **Zielplattform:** Thunderbird 140.0 oder neuer (Manifest V3) · **Lizenz:** MIT
 
+## Offene Store-Blocker (verifiziert 1.6)
+
+Der unabhängig verifizierte Review für Version 1.6 steht in
+[docs/STORE_READINESS_REVIEW_1.6.md](STORE_READINESS_REVIEW_1.6.md). Kurzfassung der dort belegten Blocker:
+
+- **B1:** `menus` fehlt in `manifest.json` → beide Kontextmenü-Einträge (`contexts: ["link"]`,
+  `["message_display_action"]`) werden nie erzeugt; der Guard bricht still ab, Tests/Lint erkennen das nicht.
+- **B2:** Die Banner-/Threat-/Time-of-Click-Injektion nutzt `scripting.executeScript({target:{tabId}})`
+  (der bevorzugte Zweig `scripting.messageDisplay.executeScript` existiert in Thunderbird nicht) → die sichtbare
+  Schutz-UI erscheint voraussichtlich gar nicht; der lokale Score wird nur über das Banner ausgegeben.
+- **B3:** „Time-of-Click Protection“ ist nur kosmetisch (nur `title`/Border); `handleCheckLinkState` hat keinen
+  Sender (toter Code), die Listing-Aussage ist damit unzutreffend.
+- **B4:** Das Popup (`api.js`) fragt Hybrid-Analysis-Reports ab, ohne die globale Zustimmung zu prüfen —
+  Widerspruch zu `docs/privacy_policy.md:44-49`.
+
+Vor der Einreichung zusätzlich offen: Live-Verifikation in Thunderbird 140 ESR, echte Screenshots, Signierung.
+
 ## Completed in 1.6
 
 Die Store-Readiness-Befunde aus [docs/STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md) wurden in 1.6
