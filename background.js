@@ -428,7 +428,7 @@ function levenshteinDistance(a, b) {
 
 const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
 const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
-const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`, 'i');
+const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\\\$&')).join('|')})$`, 'i');
 
 function checkLists(email, senderDomain) {
     if (email) email = email.toLowerCase();
@@ -1380,7 +1380,7 @@ const IGNORED_DOMAINS = [
     'mozilla.org', 'schemas.microsoft.com', 'yahoo.com', 'github.com'
 ];
 // Precompiled regex for faster O(1) checks instead of O(N) array loops
-const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d.replace(/\./g, '\\.')).join('|')})$`, 'i');
+const IGNORED_DOMAINS_REGEX = new RegExp(`(?:^|\\.)(${IGNORED_DOMAINS.map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})$`);
 
 function filterUrls(urls, parsedUrlCache = null) {
     return urls.filter(url => {
