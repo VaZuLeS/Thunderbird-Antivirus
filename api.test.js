@@ -3438,8 +3438,10 @@ describe('popup consent gate (store readiness B4)', () => {
         assert.deepStrictEqual(fetchCalls, [], 'no third party request may happen without consent');
         assert.deepStrictEqual(sentMessages, [], 'no background request may happen without consent');
         const container = dom.window.document.getElementById('hybrid_analysis_api_content');
-        assert.ok(container.textContent.includes('werden nicht abgerufen'),
+        assert.ok(container.textContent.includes('Externe Analyse ist nicht aktiviert'),
             'the popup explains why nothing is queried');
+        // Stored (local) results stay visible: they require no transmission.
+        assert.ok(container.textContent.includes('invoice.exe'), 'the stored attachment is listed');
     });
 
     it('queries Hybrid Analysis once the consent is granted', async () => {
@@ -3464,9 +3466,14 @@ describe('popup consent gate (store readiness B4)', () => {
         await context.initAPI();
         await new Promise((resolve) => setTimeout(resolve, 30));
 
-        assert.deepStrictEqual(sentMessages, []);
+        assert.deepStrictEqual(sentMessages, [], 'no background scan may be started without consent');
         const container = dom.window.document.getElementById('hybrid_analysis_api_content');
-        assert.strictEqual(container.querySelectorAll('button').length, 0, 'no upload/rescan buttons');
+        const buttonLabels = Array.from(container.querySelectorAll('button')).map((button) => button.textContent);
+        assert.ok(!buttonLabels.some((label) => /scannen|scan|upload/i.test(label)),
+            'no upload/scan buttons without consent, only the settings shortcut: ' + buttonLabels.join(', '));
+        // The stored states are still listed (local data, no transmission).
+        assert.ok(container.textContent.includes('unknown.bin'), 'the stored attachment is listed');
+        assert.ok(container.textContent.includes('https://example.com'), 'the stored link is listed');
     });
 
     it('treats a missing built-in data collection consent like a missing consent', async () => {
@@ -3481,7 +3488,7 @@ describe('popup consent gate (store readiness B4)', () => {
 
         assert.deepStrictEqual(fetchCalls, [], 'the built-in category must be granted as well');
         assert.deepStrictEqual(sentMessages, []);
-        assert.ok(dom.window.document.getElementById('hybrid_analysis_api_content').textContent.includes('werden nicht abgerufen'));
+        assert.ok(dom.window.document.getElementById('hybrid_analysis_api_content').textContent.includes('Externe Analyse ist nicht aktiviert'));
     });
 
     it('queries providers when the built-in data collection consent is granted', async () => {
@@ -3495,6 +3502,84 @@ describe('popup consent gate (store readiness B4)', () => {
         await new Promise((resolve) => setTimeout(resolve, 30));
 
         assert.strictEqual(fetchCalls.length, 1);
+    });
+
+    it('renders the stored local assessment (score, reasons, auth) in the popup', async () => {
+        const { context, dom } = createPopup({
+            consent: false,
+            record: {
+                attachments: [],
+                links: [],
+                localAssessment: {
+                    score: 72,
+                    reasons: ['Absender-Domain weicht ab', 'Erstkontakt'],
+                    authStatus: 'fail',
+                    evaluatedAt: '2026-09-30T08:00:00.000Z'
+                }
+            }
+        });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        const container = dom.window.document.getElementById('hybrid_analysis_api_content');
+        assert.ok(container.textContent.includes('Lokale Bewertung'), 'the assessment card is rendered');
+        assert.ok(container.textContent.includes('72/100'), 'the score is shown');
+        assert.ok(container.textContent.includes('Absender-Domain weicht ab'), 'the reasons are listed');
+        assert.ok(container.textContent.includes('SPF/DKIM/DMARC-Prüfung fehlgeschlagen'), 'the auth result is shown');
+
+        const card = container.querySelector('.card--danger');
+        assert.ok(card, 'a high score uses the danger severity');
+        const fill = container.querySelector('.score__fill');
+        assert.ok(fill, 'a score bar is rendered');
+        assert.strictEqual(fill.style.width, '72%');
+    });
+
+    it('renders stored verdicts for attachments and links without querying a provider', async () => {
+        const { context, dom, fetchCalls } = createPopup({
+            consent: false,
+            record: {
+                attachments: [{ hybrid_sha256: 'aaa', attachment_name: 'clean.pdf', partName: '1', state: 'CLEAN' }],
+                links: [{ url: 'https://good.example', state: 'CLEAN' }, { url: 'https://bad.example', state: 'MALICIOUS', reasons: ['known bad'] }]
+            }
+        });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        const container = dom.window.document.getElementById('hybrid_analysis_api_content');
+        assert.deepStrictEqual(fetchCalls, []);
+        assert.ok(container.textContent.includes('clean.pdf'));
+        assert.ok(container.textContent.includes('unauffällig'));
+        assert.ok(container.textContent.includes('https://bad.example'));
+        assert.ok(container.textContent.includes('bösartig'));
+        assert.ok(container.querySelector('.chip--danger'), 'a malicious link is highlighted');
+    });
+
+    it('explains when nothing is stored for the message yet', async () => {
+        const { context, dom } = createPopup({ consent: true, record: {} });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        const container = dom.window.document.getElementById('hybrid_analysis_api_content');
+        assert.ok(container.textContent.includes('liegt noch kein Ergebnis vor'));
+    });
+
+    it('mentions the missing API key as a hint instead of hiding the results', async () => {
+        const { context, dom } = createPopup({
+            consent: true,
+            record: { attachments: [], links: [], localAssessment: { score: 0, reasons: [], authStatus: 'none' } }
+        });
+        // The default mock provides an API key; simulate a missing one.
+        context.browser.storage.local.get = async (keys) => (Array.isArray(keys) ? { externalAnalysisConsent: true } : {});
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        const container = dom.window.document.getElementById('hybrid_analysis_api_content');
+        assert.ok(container.textContent.includes('Lokale Bewertung'), 'the local assessment is still shown');
+        assert.ok(container.textContent.includes('Kein API-Schlüssel'), 'the missing key is explained');
     });
 
     it('renders the stored links and unknown attachments when the consent is granted', async () => {

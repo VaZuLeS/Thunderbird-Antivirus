@@ -7,39 +7,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="popupTitle">Thundy AV – Email Scanner for Thunderbird</title>
     <link rel="stylesheet" href="theme.css">
-    <style>
-        body {
-            font-size: 14px;
-            margin: 10px;
-            width: 600px;
-        }
-        h1 {
-            font-size: 18px;
-        }
-        #hybrid_analysis_api_content {
-            grid-column: 1 / -1;
-            margin-top: 15px;
-        }
-    </style>
 </head>
 
-<body>
-    <h1 data-i18n="popupTitle">Thundy AV – Email Scanner for Thunderbird</h1>
-    <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer" aria-label="Alle Übertragungen zu Hybrid Analysis aufrufen (öffnet in einem neuen Tab)" data-i18n="popupAllSubmissions">Alle Übertragungen zu Hybrid Analysis aufrufen <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>
+<body class="popup">
+    <div class="app">
+        <header class="app__header">
+            <img class="app__logo" src="img/icon-32px.png" alt="" aria-hidden="true">
+            <div class="app__headings">
+                <h1 class="app__title" data-i18n="popupTitle">Thundy AV – Email Scanner for Thunderbird</h1>
+                <p class="app__subtitle" data-i18n="popupSubtitle">Lokale Prüfung zuerst – externe Analyse nur mit Ihrer Zustimmung.</p>
+            </div>
+        </header>
 
-    <div class="grid-container">
-        <div class="grid-header" data-i18n="popupSubjectLabel">Betreff:</div>
-        <div id="subject" class="grid-content"></div>
+        <section class="message-meta" aria-labelledby="message-meta-title">
+            <h2 id="message-meta-title" class="section__title" data-i18n="popupMessageHeading">Nachricht</h2>
+            <dl class="meta-list">
+                <dt class="meta-list__label" data-i18n="popupSubjectLabel">Betreff:</dt>
+                <dd id="subject" class="meta-list__value"></dd>
 
-        <div class="grid-header" data-i18n="popupFromLabel">Von:</div>
-        <div id="from" class="grid-content"></div>
+                <dt class="meta-list__label" data-i18n="popupFromLabel">Von:</dt>
+                <dd id="from" class="meta-list__value"></dd>
 
-        <div class="grid-header" data-i18n="popupMessageIdLabel">MessageHeaderID:</div>
-        <div id="MessageHeaderID" class="grid-content"></div>
+                <dt class="meta-list__label" data-i18n="popupDateLabel">Datum:</dt>
+                <dd id="message_date" class="meta-list__value"></dd>
+
+                <dt class="meta-list__label" data-i18n="popupMessageIdLabel">Message-ID:</dt>
+                <dd id="MessageHeaderID" class="meta-list__value mono"></dd>
+            </dl>
+        </section>
+
+        <div id="status_message" class="status" role="status" aria-live="polite"></div>
+        <div id="hybrid_analysis_api_content" class="results" aria-live="polite"></div>
+
+        <footer class="app__footer">
+            <a class="toolbar__link" href="https://www.hybrid-analysis.com/my-submissions/all"
+                target="_blank" rel="noopener noreferrer"
+                aria-label="Alle Übertragungen zu Hybrid Analysis aufrufen (öffnet in einem neuen Tab)"
+                data-i18n="popupAllSubmissions">Alle Übertragungen zu Hybrid Analysis aufrufen</a>
+        </footer>
     </div>
-
-    <div id="status_message" class="grid-content mt-2" style="font-weight: bold;" aria-live="polite" role="status"></div>
-    <div id="hybrid_analysis_api_content" class="grid-content mt-3"></div>
 
     <script src="db.js"></script>
     <script type="module" src="api.js"></script>

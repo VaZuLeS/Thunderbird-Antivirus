@@ -1250,6 +1250,7 @@ async function handleDisplayedMessage(tab, message) {
     }
 
     const threat = await evaluateThreats({ message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
+    await indexedDB_save_assessment(message, threat, { senderEmail });
 
     const optInNeeded = !canAutoUpload &&
       ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0));
@@ -1579,6 +1580,44 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
   const validResults = results.filter(r => r !== null);
   if (validResults.length > 0) {
       await indexedDB_save_batch_hybrid_data_to_db(message, validResults);
+  }
+}
+
+/**
+ * Stores the local assessment (score, reasons, authentication result) of a
+ * message in the same IndexedDB record the popup reads. This makes the local
+ * verdict visible in the message display action popup even when no provider key
+ * is configured and nothing has been transmitted.
+ */
+async function indexedDB_save_assessment(message, threat, meta = {}) {
+  try {
+    if (!message || !message.headerMessageId) return false;
+    const db = await getSharedDB();
+    await updateStore(db, 'hybridanalysis', message.headerMessageId, (existingRecord) => {
+      const record = existingRecord || {
+        messageHeader: message.headerMessageId,
+        author: message.author,
+        subject: message.subject,
+        attachments: [],
+        links: []
+      };
+      if (!Array.isArray(record.attachments)) record.attachments = [];
+      if (!Array.isArray(record.links)) record.links = [];
+      record.localAssessment = {
+        score: threat && typeof threat.score === 'number' ? threat.score : 0,
+        reasons: (threat && Array.isArray(threat.reasons)) ? threat.reasons : [],
+        authStatus: (threat && threat.authStatus) ? threat.authStatus : 'none',
+        senderEmail: meta.senderEmail || extractEmailAddress(message.author || ''),
+        subject: message.subject || '',
+        evaluatedAt: new Date().toISOString(),
+        consentGiven: mayTransmitExternally()
+      };
+      return record;
+    });
+    return true;
+  } catch (e) {
+    Logger.error('Could not store the local assessment', e);
+    return false;
   }
 }
 
@@ -1974,7 +2013,21 @@ async function handleRequestScan(request, sender) {
     }
 
     try {
-        const messageObj = { id: request.messageId };
+        // The full message header is required: the scan result is stored per
+        // message under its headerMessageId and the popup reads it back with
+        // exactly that key. Without it every database write silently did nothing
+        // (store readiness follow-up: "scan results are not shown").
+        let messageObj = { id: request.messageId };
+        try {
+            if (browser.messages && typeof browser.messages.get === 'function') {
+                const header = await browser.messages.get(request.messageId);
+                if (header && header.id !== undefined) messageObj = header;
+            }
+        } catch (e) {
+            Logger.warn('Could not load the message header for the scan', e);
+        }
+        if (!messageObj.author && request.senderEmail) messageObj.author = request.senderEmail;
+
         await processAttachments(messageObj);
         const fullMessage = await browser.messages.getFull(request.messageId);
         const tabId = (sender && sender.tab && sender.tab.id !== undefined)
@@ -1983,6 +2036,7 @@ async function handleRequestScan(request, sender) {
         const parsedUrlCache = new Map();
         const { messageText, urls, filteredUrls } = await processLinks(messageObj, fullMessage, parsedUrlCache);
         const threat = await evaluateThreats({ message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
+        await indexedDB_save_assessment(messageObj, threat, { senderEmail: request.senderEmail });
 
         // The message is scanned now, so the banner is replaced by the result.
         const state = buildMessageUiState({

@@ -144,6 +144,7 @@ describe('background.js', () => {
             globalThis.set_privacyTier = (val) => { privacyTier = val; };
             globalThis.get_sha256_hash = get_sha256_hash;
             globalThis.indexedDB_save_batch_hybrid_data_to_db = indexedDB_save_batch_hybrid_data_to_db;
+            globalThis.indexedDB_save_assessment = indexedDB_save_assessment;
             globalThis.handleManualUpload = handleManualUpload;
             globalThis.extractEmailAddress = extractEmailAddress;
             globalThis.extractEmailDomain = extractEmailDomain;
@@ -3461,6 +3462,72 @@ describe('background.js', () => {
             assert.strictEqual(context.mayTransmitExternally(), true,
                 'environments without the built-in data consent rely on the add-on consent checkbox');
             context.set_builtInDataConsent(false, true);
+        });
+
+        it('stores the local assessment under the message header id (popup read key)', async () => {
+            const saved = [];
+            context.getSharedDB = async () => ({ fake: true });
+            context.updateStore = async (db, store, key, updateFn) => {
+                saved.push([store, key, updateFn({})]);
+            };
+
+            const ok = await context.indexedDB_save_assessment(
+                { headerMessageId: 'hdr-1', author: 'Sender <s@example.com>', subject: 'Invoice' },
+                { score: 70, reasons: ['Erstkontakt'], authStatus: 'fail' }
+            );
+
+            assert.strictEqual(ok, true);
+            assert.strictEqual(saved.length, 1);
+            assert.strictEqual(saved[0][0], 'hybridanalysis');
+            assert.strictEqual(saved[0][1], 'hdr-1');
+            assert.strictEqual(saved[0][2].localAssessment.score, 70);
+            assert.deepStrictEqual(saved[0][2].localAssessment.reasons, ['Erstkontakt']);
+            assert.strictEqual(saved[0][2].localAssessment.senderEmail, 's@example.com');
+            assert.ok(Array.isArray(saved[0][2].attachments) && Array.isArray(saved[0][2].links));
+        });
+
+        it('keeps existing attachments/links when the assessment is updated', async () => {
+            let record;
+            context.getSharedDB = async () => ({ fake: true });
+            context.updateStore = async (db, store, key, updateFn) => {
+                record = updateFn({ messageHeader: key, attachments: [{ attachment_name: 'a.exe' }], links: [{ url: 'https://x' }] });
+            };
+
+            await context.indexedDB_save_assessment({ headerMessageId: 'hdr-2', author: 'a@b.c', subject: 's' }, { score: 5, reasons: [], authStatus: 'none' });
+
+            assert.strictEqual(record.attachments.length, 1);
+            assert.strictEqual(record.links.length, 1);
+            assert.strictEqual(record.localAssessment.score, 5);
+        });
+
+        it('does not write anything without a headerMessageId', async () => {
+            let called = false;
+            context.getSharedDB = async () => { called = true; return {}; };
+            const ok = await context.indexedDB_save_assessment({ id: 5 }, { score: 1, reasons: [], authStatus: 'none' });
+            assert.strictEqual(ok, false);
+            assert.strictEqual(called, false);
+        });
+
+        it('requestScan resolves the real message header so results become visible in the popup', async () => {
+            context.set_externalAnalysisConsent(true);
+            context.browser.permissions = { contains: async () => true, request: async () => true };
+            context.browser.messages.get = async (id) => ({ id, headerMessageId: 'hdr-request', author: 'Sender <s@example.com>', subject: 'Subject' });
+            const writtenKeys = [];
+            context.getSharedDB = async () => ({ fake: true });
+            context.updateStore = async (db, store, key) => { writtenKeys.push(key); };
+            context.processAttachments = async () => {};
+            context.processLinks = async () => ({ messageText: '', urls: [], filteredUrls: [] });
+            context.evaluateThreats = async () => ({ score: 42, reasons: ['r'], authStatus: 'none' });
+            context.buildMessageUiState = () => ({ tabId: 1, messageId: 7 });
+
+            const response = await context.handleRequestScan(
+                { action: 'requestScan', messageId: 7, senderEmail: 's@example.com', persist: false },
+                { tab: { id: 1 } }
+            );
+
+            assert.strictEqual(response.success, true);
+            assert.ok(writtenKeys.includes('hdr-request'),
+                'the assessment must be stored under the headerMessageId the popup reads');
         });
 
         it('notify() never throws when the notifications API is unavailable', () => {

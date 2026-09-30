@@ -668,5 +668,93 @@
   },
   "optionsAboutText": {
     "message": "Hybrid-Analysis.com is a free malware analysis service for the community. With this service you can submit files for detailed static and dynamic analysis.\n\nThe website uses a unique hybrid analysis technology to detect and analyse unknown threats. It is powered by the Falcon Sandbox from CrowdStrike.\n\nThe Falcon Sandbox is a state of the art malware analysis framework with a very agile architecture. It is used by SOCs, CERTs, DFIR teams, IT security forensics labs, researchers and threat intelligence providers around the world."
+  },
+  "popupSubtitle": {
+    "message": "Local checks first – external analysis only with your consent."
+  },
+  "popupMessageHeading": {
+    "message": "Message"
+  },
+  "popupDateLabel": {
+    "message": "Date:"
+  },
+  "popupNoDate": {
+    "message": "(No date)"
+  },
+  "popupLocalAssessment": {
+    "message": "Local assessment"
+  },
+  "popupScoreValue": {
+    "message": "Risk $VALUE$/100",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupNoFindings": {
+    "message": "The local checks found no anomalies."
+  },
+  "popupEvaluatedAt": {
+    "message": "Evaluated: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupEvaluatedUnknown": {
+    "message": "Evaluation time unknown"
+  },
+  "popupAuthFail": {
+    "message": "SPF/DKIM/DMARC check failed"
+  },
+  "popupSectionAttachments": {
+    "message": "Attachments"
+  },
+  "popupSectionLinks": {
+    "message": "Links in the message"
+  },
+  "popupNoRecordHint": {
+    "message": "There is no result for this message yet. Open the message again or start a scan from the banner above the message."
+  },
+  "popupAttachmentState": {
+    "message": "Status: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupLinkState": {
+    "message": "Link: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupStateMalicious": {
+    "message": "malicious"
+  },
+  "popupStateClean": {
+    "message": "no findings"
+  },
+  "popupStateUploaded": {
+    "message": "in analysis"
+  },
+  "popupStateInProgress": {
+    "message": "running"
+  },
+  "popupStateUnknown": {
+    "message": "unknown"
+  },
+  "popupUnknownAttachment": {
+    "message": "Attachment „$VALUE$“ is still unknown and is not uploaded without consent/API key.",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
   }
 }

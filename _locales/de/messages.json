@@ -668,5 +668,93 @@
   },
   "optionsAboutText": {
     "message": "Hybrid-Analysis.com ist ein kostenloser Malware-Analyse-Service für die Community. Mit diesem Service können Sie Dateien zur detaillierten statischen und dynamischen Analyse einreichen.\n\nDie Webseite verwendet eine einzigartige Hybrid-Analyse-Technologie, um unbekannte Bedrohungen zu erkennen und zu analysieren. Sie wird von der Falcon Sandbox von CrowdStrike angetrieben.\n\nDie Falcon Sandbox ist ein hochmodernes Malware-Analyse-Framework mit einer sehr agilen Architektur. Sie wird derzeit von SOCs, CERTs, DFIR-Teams, IT-Sicherheitsforensiklabors, Forschern und Anbietern von Bedrohungsdaten auf der ganzen Welt genutzt."
+  },
+  "popupSubtitle": {
+    "message": "Lokale Prüfung zuerst – externe Analyse nur mit Ihrer Zustimmung."
+  },
+  "popupMessageHeading": {
+    "message": "Nachricht"
+  },
+  "popupDateLabel": {
+    "message": "Datum:"
+  },
+  "popupNoDate": {
+    "message": "(Kein Datum)"
+  },
+  "popupLocalAssessment": {
+    "message": "Lokale Bewertung"
+  },
+  "popupScoreValue": {
+    "message": "Risiko $VALUE$/100",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupNoFindings": {
+    "message": "Die lokalen Prüfungen haben keine Auffälligkeiten gefunden."
+  },
+  "popupEvaluatedAt": {
+    "message": "Bewertet: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupEvaluatedUnknown": {
+    "message": "Bewertungszeitpunkt unbekannt"
+  },
+  "popupAuthFail": {
+    "message": "SPF/DKIM/DMARC-Prüfung fehlgeschlagen"
+  },
+  "popupSectionAttachments": {
+    "message": "Anhänge"
+  },
+  "popupSectionLinks": {
+    "message": "Links in der Nachricht"
+  },
+  "popupNoRecordHint": {
+    "message": "Für diese Nachricht liegt noch kein Ergebnis vor. Öffnen Sie die Nachricht erneut oder starten Sie einen Scan über den Banner oberhalb der Nachricht."
+  },
+  "popupAttachmentState": {
+    "message": "Status: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupLinkState": {
+    "message": "Link: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupStateMalicious": {
+    "message": "bösartig"
+  },
+  "popupStateClean": {
+    "message": "unauffällig"
+  },
+  "popupStateUploaded": {
+    "message": "in Analyse"
+  },
+  "popupStateInProgress": {
+    "message": "läuft"
+  },
+  "popupStateUnknown": {
+    "message": "unbekannt"
+  },
+  "popupUnknownAttachment": {
+    "message": "Anhang „$VALUE$“ ist noch unbekannt und wird ohne Zustimmung/API-Schlüssel nicht hochgeladen.",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
   }
 }

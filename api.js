@@ -55,34 +55,9 @@ let apikey_hybridanalysis;
 let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
 
-if (!apikey_hybridanalysis) {
-    let container = document.getElementById('hybrid_analysis_api_content');
-    container.textContent = '';
-    let alertDiv = document.createElement('div');
-    alertDiv.className = 'alert-error';
-    alertDiv.setAttribute('role', 'alert');
-    let strong = document.createElement('strong');
-    strong.textContent = uiText('popupWarning', 'Warnung:');
-    alertDiv.appendChild(strong);
-
-    let messageSpan = document.createElement('span');
-    messageSpan.id = 'api-key-error-msg';
-    messageSpan.textContent = uiText('popupNoApiKey', ' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.');
-    alertDiv.appendChild(messageSpan);
-
-    let btnSettings = document.createElement('button');
-    btnSettings.className = 'btn-primary mt-2 ml-2';
-    btnSettings.textContent = uiText('popupOpenSettings', 'Einstellungen öffnen');
-    btnSettings.setAttribute('aria-describedby', 'api-key-error-msg');
-    btnSettings.addEventListener('click', () => {
-        browser.runtime.openOptionsPage();
-    });
-    alertDiv.appendChild(document.createElement('br'));
-    alertDiv.appendChild(btnSettings);
-
-    container.appendChild(alertDiv);
-    return;
-}
+// Hinweis: Ein fehlender Hybrid-Analysis-Schlüssel beendet die Anzeige nicht
+// mehr. Er wird weiter unten als Hinweis ausgegeben, damit die lokal
+// gespeicherten Ergebnisse trotzdem sichtbar bleiben.
 
 // Aktuell angezeigte Nachricht ermitteln. getDisplayedMessages() ohne tabId
 // bezieht sich auf den aktiven Tab; nur wenn das leer bleibt, wird der Tab
@@ -129,209 +104,393 @@ if (externalAnalysisConsent) {
     } catch (e) { /* keep the add-on consent */ }
 }
 
-if (!message) {
-    let container = document.getElementById('hybrid_analysis_api_content');
-    container.textContent = '';
-    let emptyCard = document.createElement('div');
-    emptyCard.className = 'card card-info mt-3';
-    emptyCard.setAttribute('role', 'status');
-    let msg = document.createElement('p');
-    msg.className = 'text-info';
-    msg.textContent = uiText('popupSelectMail', 'Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.');
-    emptyCard.appendChild(msg);
-    container.appendChild(emptyCard);
-    return;
+// ---------------------------------------------------------------------------
+// Popup rendering helpers
+// ---------------------------------------------------------------------------
+const resultsContainer = document.getElementById('hybrid_analysis_api_content');
+
+function severityForScore(score) {
+    if (typeof score !== 'number' || Number.isNaN(score)) return 'info';
+    if (score >= 70) return 'danger';
+    if (score >= 50) return 'warn';
+    if (score > 0) return 'info';
+    return 'ok';
 }
 
-// Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
-const updateGridField = (id, value, fallbackText) => {
-    const el = document.getElementById(id);
-    if (value && String(value).trim() !== '') {
-        el.textContent = value;
-        el.style.color = "";
-        el.style.fontStyle = "normal";
-    } else {
-        el.textContent = fallbackText;
-        el.style.color = "var(--text-muted)";
-        el.style.fontStyle = "italic";
-    }
-};
-
-updateGridField("subject", message.subject, uiText('popupNoSubject', '(Kein Betreff)'));
-updateGridField("from", message.author, uiText('popupUnknownSender', '(Unbekannter Absender)'));
-updateGridField("MessageHeaderID", message.headerMessageId, uiText('popupNoMessageId', '(Keine ID)'));
-
-// Initialen Lade-Status für async Operationen setzen
-let apiContainer = document.getElementById('hybrid_analysis_api_content');
-if (apiContainer) {
-    let cardDiv = document.createElement('div');
-    cardDiv.id = 'thundy-initial-loading';
-    cardDiv.className = 'card card-info mb-3';
-
-    let loadingP = document.createElement('p');
-    loadingP.setAttribute('aria-live', 'polite');
-    loadingP.setAttribute('role', 'status');
-        loadingP.setAttribute('aria-busy', 'true');
-    loadingP.className = 'text-info';
-    loadingP.textContent = uiText('popupLoadingResults', 'Lade Analyseergebnisse...');
-
-    cardDiv.appendChild(loadingP);
-    apiContainer.appendChild(cardDiv);
+function createCard(kind, extraClass = '') {
+    const card = document.createElement('div');
+    card.className = ('card card--' + kind + (extraClass ? ' ' + extraClass : '')).trim();
+    return card;
 }
 
-// Hinweis, wenn die externe Analyse (Datenübermittlung) nicht freigegeben ist.
-if (!externalAnalysisConsent && apiContainer) {
-    let consentCard = document.createElement('div');
-    consentCard.id = 'thundy-consent-notice';
-    consentCard.className = 'card card-warn mb-3';
-    consentCard.setAttribute('role', 'status');
-
-    let consentP = document.createElement('p');
-    consentP.textContent = uiText('popupConsentDisabled', 'Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.');
-    consentCard.appendChild(consentP);
-
-    let consentButton = document.createElement('button');
-    consentButton.type = 'button';
-    consentButton.className = 'btn-primary mt-2';
-    consentButton.textContent = uiText('popupOpenSettings', 'Einstellungen öffnen');
-    consentButton.addEventListener('click', () => browser.runtime.openOptionsPage());
-    consentCard.appendChild(consentButton);
-
-    apiContainer.appendChild(consentCard);
+function createSettingsButton(extraClass = '') {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = ('btn btn--primary ' + extraClass).trim();
+    button.textContent = uiText('popupOpenSettings', 'Einstellungen öffnen');
+    button.addEventListener('click', () => {
+        try { browser.runtime.openOptionsPage(); } catch (e) { /* ignore */ }
+    });
+    return button;
 }
 
-try {
+function appendHint(container, { id, kind = 'info', text, withSettingsButton = false } = {}) {
+    const card = createCard(kind, 'hint');
+    if (id) card.id = id;
+    card.setAttribute('role', 'status');
 
-    // Öffnen Sie die Datenbank
-    let openRequest = indexedDB.open("thunderbird_av", 3);
+    const paragraph = document.createElement('p');
+    paragraph.className = 'card__text';
+    paragraph.textContent = text;
+    card.appendChild(paragraph);
 
-    openRequest.onupgradeneeded = function (e) {
-        let db = e.target.result;
+    if (withSettingsButton) card.appendChild(createSettingsButton());
 
-        if (!db.objectStoreNames.contains('hybridanalysis')) {
-            db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
+    container.appendChild(card);
+    return card;
+}
+
+function renderSectionTitle(container, key, fallback) {
+    const title = document.createElement('h2');
+    title.className = 'section__title';
+    title.textContent = uiText(key, fallback);
+    container.appendChild(title);
+    return title;
+}
+
+function stateChipKind(state) {
+    const value = String(state || 'UNKNOWN').toUpperCase();
+    if (value === 'MALICIOUS' || value === 'MALICIOUS_VISUAL') return 'danger';
+    if (value === 'CLEAN') return 'ok';
+    if (value === 'UPLOADED' || value === 'IN_PROGRESS') return 'info';
+    return 'neutral';
+}
+
+/**
+ * Renders stored per-item results (attachment and link verdicts) that are
+ * already in the local database. Nothing is transmitted for this, so it is
+ * shown regardless of the consent state.
+ */
+function appendResultList(container, rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    const card = createCard('neutral', 'results-list');
+    const list = document.createElement('ul');
+    list.className = 'list';
+    for (const row of rows) {
+        const item = document.createElement('li');
+        item.className = 'list__item';
+
+        const title = document.createElement('span');
+        title.className = 'list__item-title';
+        title.textContent = row.title;
+        title.title = row.title;
+        item.appendChild(title);
+
+        const chip = document.createElement('span');
+        chip.className = 'chip chip--' + row.kind;
+        chip.textContent = row.chip;
+        item.appendChild(chip);
+
+        if (row.reasons && row.reasons.length > 0) {
+            const text = document.createElement('span');
+            text.className = 'list__item-text';
+            text.textContent = row.reasons.join(' · ');
+            item.appendChild(text);
         }
-    };
 
-
-    openRequest.onsuccess = async function (e) {
-        let db = e.target.result;
-        // Erstellen Sie eine Transaktion und öffnen Sie den Object Store
-        let transaction = db.transaction(["hybridanalysis"], "readonly");
-        let store = transaction.objectStore("hybridanalysis");
-        // Führen Sie eine Anfrage aus, um den Hash für die angegebene MessageHeaderId zu finden.
-        let getRequest = store.get(message.headerMessageId);
-        getRequest.onsuccess = async function (e) {
-            const record = getRequest.result;
-            const hasAttachments = record && record.attachments && record.attachments.length > 0;
-            const hasLinks = record && record.links && record.links.length > 0;
-
-            if (hasAttachments || hasLinks) {
-                document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
-
-                // Consent gate (store readiness B4): without the global consent
-                // nothing may be transmitted to a third party. Stored results are
-                // therefore not queried and no upload action is offered.
-                if (!externalAnalysisConsent) {
-                    const container = document.getElementById('hybrid_analysis_api_content');
-                    const blockedCard = document.createElement('div');
-                    blockedCard.className = 'card card-info mb-3';
-                    blockedCard.setAttribute('role', 'status');
-                    const blockedText = document.createElement('p');
-                    blockedText.className = 'text-info';
-                    blockedText.textContent = uiText('popupResultsBlocked', 'Gespeicherte Analyseergebnisse werden nicht abgerufen, solange die externe Analyse in den Einstellungen nicht erlaubt ist.');
-                    blockedCard.appendChild(blockedText);
-                    container.appendChild(blockedCard);
-                    return;
-                }
-
-                let fetchTasks = [];
-
-                if (hasAttachments) {
-                    for (const att of record.attachments) {
-                        const hash256 = att.hybrid_sha256;
-                        if (att.state === 'UNKNOWN') {
-                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, null);
-                        } else {
-                            fetchTasks.push((frag) =>
-                                get_hybrid_report_by_sha256({
-                                    hybrid_sha: hash256,
-                                    attachmentName: att.attachment_name,
-                                    messageId: message.id,
-                                    partName: att.partName,
-                                    headerMessageId: message.headerMessageId,
-                                    virustotal_stats: att.virustotal_stats
-                                }, frag)
-                            );
-                        }
-                    }
-                }
-
-                if (hasLinks) {
-                    processRecordLinks(record.links, message.headerMessageId, null, fetchTasks);
-                }
-
-                if (fetchTasks.length > 0) {
-                    const container = document.getElementById('hybrid_analysis_api_content');
-                    await Promise.all(fetchTasks.map(async task => {
-                        let taskFragment = document.createDocumentFragment();
-                        await task(taskFragment);
-                        if (taskFragment.hasChildNodes() && container) {
-                            container.appendChild(taskFragment);
-                        }
-                    }));
-                }
-            } else {
-                let container = document.getElementById('hybrid_analysis_api_content');
-                if (container) container.textContent = '';
-                let emptyCard = document.createElement('div');
-                emptyCard.className = 'card card-info mb-3';
-                emptyCard.setAttribute('role', 'status');
-                let p1 = document.createElement('p');
-                p1.className = 'text-info';
-                p1.textContent = uiText('popupNoAttachmentsOrUrls', 'Keine Anhänge oder URLs für diese E-Mail gefunden.');
-                emptyCard.appendChild(p1);
-                container.appendChild(emptyCard);
-            }
-        };
-    };
-
-    openRequest.onerror = function(e) {
-        let container = document.getElementById('hybrid_analysis_api_content');
-        if (container) container.textContent = '';
-        let emptyCard = document.createElement('div');
-        emptyCard.className = 'card card-info mb-3';
-        emptyCard.setAttribute('role', 'status');
-        let p2 = document.createElement('p');
-        p2.className = 'text-info';
-        p2.textContent = uiText('popupNoResults', 'Keine Analyseergebnisse für diese E-Mail vorhanden.');
-        emptyCard.appendChild(p2);
-        container.appendChild(emptyCard);
+        list.appendChild(item);
     }
-} catch (error) {
-    let container = document.getElementById('hybrid_analysis_api_content');
-    if (container) {
-        container.textContent = '';
-        let errDiv = document.createElement('div');
-        errDiv.className = 'alert-error';
-        errDiv.setAttribute('role', 'alert');
+    card.appendChild(list);
+    container.appendChild(card);
+    return card;
+}
 
-        let errMsg = document.createElement('span');
-        errMsg.id = 'unexpected-error-msg';
-        errMsg.textContent = uiText('popupUnexpectedError', 'Unerwarteter Fehler beim Laden der Analyseergebnisse.');
-        errDiv.appendChild(errMsg);
+function storedStateLabel(state) {
+    const value = String(state || 'UNKNOWN').toUpperCase();
+    if (value === 'MALICIOUS' || value === 'MALICIOUS_VISUAL') return uiText('popupStateMalicious', 'bösartig');
+    if (value === 'CLEAN') return uiText('popupStateClean', 'unauffällig');
+    if (value === 'UPLOADED') return uiText('popupStateUploaded', 'in Analyse');
+    if (value === 'IN_PROGRESS') return uiText('popupStateInProgress', 'läuft');
+    return uiText('popupStateUnknown', 'unbekannt');
+}
 
-        let btnSettings = document.createElement('button');
-        btnSettings.className = 'btn-primary mt-2 ml-2';
-        btnSettings.textContent = uiText('popupOpenSettings', 'Einstellungen öffnen');
-        btnSettings.setAttribute('aria-describedby', 'unexpected-error-msg');
-        btnSettings.addEventListener('click', () => {
-            browser.runtime.openOptionsPage();
+function formatTimestamp(value) {
+    try {
+        const date = value ? new Date(value) : new Date();
+        if (Number.isNaN(date.getTime())) return '';
+        return date.toLocaleString();
+    } catch (e) {
+        return '';
+    }
+}
+
+function renderMessageMeta(message) {
+    const setField = (id, value, fallback) => {
+        const element = document.getElementById(id);
+        if (!element) return;
+        const hasValue = value !== undefined && value !== null && String(value).trim() !== '';
+        element.textContent = hasValue ? value : fallback;
+        element.classList.toggle('is-muted', !hasValue);
+    };
+
+    setField('subject', message.subject, uiText('popupNoSubject', '(Kein Betreff)'));
+    setField('from', message.author, uiText('popupUnknownSender', '(Unbekannter Absender)'));
+    setField('MessageHeaderID', message.headerMessageId, uiText('popupNoMessageId', '(Keine ID)'));
+    setField('message_date', message.date ? formatTimestamp(message.date) : '', uiText('popupNoDate', '(Kein Datum)'));
+}
+
+/**
+ * Renders the stored local assessment (risk score, reasons, authentication
+ * result). This data is local only, so it is shown independently of any consent.
+ */
+function renderAssessmentCard(record, container) {
+    const assessment = record && record.localAssessment;
+    if (!assessment) return false;
+
+    const severity = severityForScore(assessment.score);
+    const card = createCard(severity, 'assessment');
+    card.id = 'thundy-assessment';
+
+    const head = document.createElement('div');
+    head.className = 'card__head';
+    const title = document.createElement('h2');
+    title.className = 'card__title';
+    title.textContent = uiText('popupLocalAssessment', 'Lokale Bewertung');
+    head.appendChild(title);
+
+    const chip = document.createElement('span');
+    chip.className = 'chip chip--' + severity;
+    chip.textContent = uiText('popupScoreValue', 'Risiko $1/100', [String(assessment.score)]);
+    head.appendChild(chip);
+    card.appendChild(head);
+
+    const score = document.createElement('div');
+    score.className = 'score';
+    score.setAttribute('role', 'img');
+    score.setAttribute('aria-label', chip.textContent);
+    const fill = document.createElement('div');
+    fill.className = 'score__fill score__fill--' + severity;
+    fill.style.width = Math.max(0, Math.min(100, Number(assessment.score) || 0)) + '%';
+    score.appendChild(fill);
+    card.appendChild(score);
+
+    const badges = document.createElement('div');
+    badges.className = 'badges';
+    if (assessment.authStatus === 'pass') {
+        const authChip = document.createElement('span');
+        authChip.className = 'chip chip--ok';
+        authChip.textContent = uiText('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
+        badges.appendChild(authChip);
+    } else if (assessment.authStatus === 'fail') {
+        const authChip = document.createElement('span');
+        authChip.className = 'chip chip--warn';
+        authChip.textContent = uiText('popupAuthFail', 'SPF/DKIM/DMARC-Prüfung fehlgeschlagen');
+        badges.appendChild(authChip);
+    }
+    if (badges.children.length > 0) card.appendChild(badges);
+
+    const reasons = Array.isArray(assessment.reasons) ? assessment.reasons : [];
+    if (reasons.length > 0) {
+        const list = document.createElement('ul');
+        list.className = 'reasons';
+        for (const reason of reasons) {
+            const item = document.createElement('li');
+            item.className = 'reasons__item';
+            item.textContent = reason;
+            list.appendChild(item);
+        }
+        card.appendChild(list);
+    } else {
+        const quiet = document.createElement('p');
+        quiet.className = 'card__text';
+        quiet.textContent = uiText('popupNoFindings', 'Die lokalen Prüfungen haben keine Auffälligkeiten gefunden.');
+        card.appendChild(quiet);
+    }
+
+    const evaluatedAt = formatTimestamp(assessment.evaluatedAt);
+    const meta = document.createElement('p');
+    meta.className = 'card__meta';
+    meta.textContent = evaluatedAt
+        ? uiText('popupEvaluatedAt', 'Bewertet: $1', [evaluatedAt])
+        : uiText('popupEvaluatedUnknown', 'Bewertungszeitpunkt unbekannt');
+    card.appendChild(meta);
+
+    container.appendChild(card);
+    return true;
+}
+
+/**
+ * Reads the stored analysis record for a message (IndexedDB, keyed by the
+ * Message-ID header). Resolves with null when nothing is stored or on errors.
+ */
+function readAnalysisRecord(key) {
+    return new Promise((resolve) => {
+        if (!key) { resolve(null); return; }
+        try {
+            const openRequest = indexedDB.open("thunderbird_av", 3);
+
+            openRequest.onupgradeneeded = function (e) {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains('hybridanalysis')) {
+                    db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
+                }
+            };
+
+            openRequest.onerror = function () { resolve(null); };
+
+            openRequest.onsuccess = function (e) {
+                try {
+                    const db = e.target.result;
+                    const transaction = db.transaction(["hybridanalysis"], "readonly");
+                    const store = transaction.objectStore("hybridanalysis");
+                    const getRequest = store.get(key);
+                    getRequest.onsuccess = function () { resolve(getRequest.result || null); };
+                    getRequest.onerror = function () { resolve(null); };
+                } catch (error) {
+                    console.error('Could not read the stored analysis record', error);
+                    resolve(null);
+                }
+            };
+        } catch (error) {
+            console.error('Could not open the analysis database', error);
+            resolve(null);
+        }
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Main flow: the local assessment is shown first, provider data only with consent
+// ---------------------------------------------------------------------------
+if (!resultsContainer) {
+    console.error('The popup container is missing in popup.html');
+} else if (!message) {
+    resultsContainer.textContent = '';
+    appendHint(resultsContainer, {
+        id: 'thundy-no-message',
+        kind: 'info',
+        text: uiText('popupSelectMail', 'Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.')
+    });
+} else {
+    renderMessageMeta(message);
+    resultsContainer.textContent = '';
+    const loadingCard = appendHint(resultsContainer, {
+        id: 'thundy-initial-loading',
+        kind: 'info',
+        text: uiText('popupLoadingResults', 'Lade Analyseergebnisse...')
+    });
+    loadingCard.setAttribute('aria-busy', 'true');
+
+    const record = await readAnalysisRecord(message.headerMessageId);
+    const attachments = (record && Array.isArray(record.attachments)) ? record.attachments : [];
+    const links = (record && Array.isArray(record.links)) ? record.links : [];
+    const hasAttachments = attachments.length > 0;
+    const hasLinks = links.length > 0;
+    const mayQueryProviders = externalAnalysisConsent && !!apikey_hybridanalysis;
+
+    resultsContainer.textContent = '';
+
+    const hasAssessment = renderAssessmentCard(record, resultsContainer);
+
+    if (!externalAnalysisConsent) {
+        appendHint(resultsContainer, {
+            id: 'thundy-consent-notice',
+            kind: 'warn',
+            text: uiText('popupConsentDisabled', 'Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.'),
+            withSettingsButton: true
         });
-        errDiv.appendChild(document.createElement('br'));
-        errDiv.appendChild(btnSettings);
+    } else if (!apikey_hybridanalysis) {
+        appendHint(resultsContainer, {
+            id: 'thundy-api-key-hint',
+            kind: 'warn',
+            text: uiText('popupNoApiKey', ' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.'),
+            withSettingsButton: true
+        });
+    }
 
-        container.appendChild(errDiv);
+    const fetchTasks = [];
+    const resultsBlockedHint = () => appendHint(resultsContainer, {
+        kind: 'info',
+        text: uiText('popupResultsBlocked', 'Gespeicherte Analyseergebnisse werden nicht abgerufen, solange die externe Analyse in den Einstellungen nicht erlaubt ist.')
+    });
+
+    if (hasAttachments) {
+        renderSectionTitle(resultsContainer, 'popupSectionAttachments', 'Anhänge');
+        const rows = [];
+        for (const attachment of attachments) {
+            const state = String(attachment.state || 'UNKNOWN').toUpperCase();
+            if (state !== 'UNKNOWN') {
+                rows.push({
+                    title: attachment.attachment_name || uiText('commonUnknown', 'Unbekannt'),
+                    chip: uiText('popupAttachmentState', 'Status: $1', [storedStateLabel(state)]),
+                    kind: stateChipKind(state),
+                    reasons: Array.isArray(attachment.reasons) ? attachment.reasons : []
+                });
+            }
+        }
+        appendResultList(resultsContainer, rows);
+
+        for (const attachment of attachments) {
+            const state = String(attachment.state || 'UNKNOWN').toUpperCase();
+            if (state === 'UNKNOWN') {
+                if (mayQueryProviders) {
+                    renderManualUploadUI(attachment.hybrid_sha256, attachment.attachment_name, message.id, attachment.partName, message.headerMessageId, null);
+                } else {
+                    appendHint(resultsContainer, {
+                        kind: 'info',
+                        text: uiText('popupUnknownAttachment', 'Anhang „$1“ ist noch unbekannt und wird ohne Zustimmung/API-Schlüssel nicht hochgeladen.', [attachment.attachment_name || uiText('commonUnknown', 'Unbekannt')])
+                    });
+                }
+            } else if (mayQueryProviders) {
+                fetchTasks.push((fragment) =>
+                    get_hybrid_report_by_sha256({
+                        hybrid_sha: attachment.hybrid_sha256,
+                        attachmentName: attachment.attachment_name,
+                        messageId: message.id,
+                        partName: attachment.partName,
+                        headerMessageId: message.headerMessageId,
+                        virustotal_stats: attachment.virustotal_stats
+                    }, fragment)
+                );
+            }
+        }
+    }
+
+    if (hasLinks) {
+        renderSectionTitle(resultsContainer, 'popupSectionLinks', 'Links');
+        appendResultList(resultsContainer, links.map((link) => ({
+            title: link.url,
+            chip: uiText('popupLinkState', 'Link: $1', [storedStateLabel(link.state)]),
+            kind: stateChipKind(link.state),
+            reasons: Array.isArray(link.reasons) ? link.reasons : []
+        })));
+
+        if (mayQueryProviders) {
+            processRecordLinks(links, message.headerMessageId, null, fetchTasks);
+        }
+    }
+
+    if (fetchTasks.length > 0) {
+        await Promise.all(fetchTasks.map(async task => {
+            const taskFragment = document.createDocumentFragment();
+            await task(taskFragment);
+            if (taskFragment.hasChildNodes()) {
+                resultsContainer.appendChild(taskFragment);
+            }
+        }));
+    }
+
+    if (!hasAssessment && !hasAttachments && !hasLinks) {
+        appendHint(resultsContainer, {
+            id: 'thundy-no-record',
+            kind: 'info',
+            text: uiText('popupNoRecordHint', 'Für diese Nachricht liegt noch kein Ergebnis vor. Öffnen Sie die Nachricht erneut oder starten Sie einen Scan über den Banner oberhalb der Nachricht.')
+        });
+    } else if (hasAssessment && !hasAttachments && !hasLinks) {
+        appendHint(resultsContainer, {
+            id: 'thundy-no-provider-data',
+            kind: 'info',
+            text: uiText('popupNoAttachmentsOrUrls', 'Keine Anhänge oder URLs für diese E-Mail gefunden.')
+        });
     }
 }
 })();
