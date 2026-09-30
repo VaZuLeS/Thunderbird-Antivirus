@@ -43,7 +43,7 @@ made in direct response to that user action.
 | Provider | Requested origin(s) | Requested when |
 |---|---|---|
 | Hybrid Analysis | `https://hybrid-analysis.com/*`, `https://*.hybrid-analysis.com/*` | the user saves a Hybrid Analysis API key |
-| VirusTotal | `https://virustotal.com/*`, `https://*.virustotal.com/*` | the user saves a VirusTotal API key |
+| VirusTotal | `https://*.virustotal.com/*` (manifest.json); requested at runtime as `https://www.virustotal.com/*` | the user saves a VirusTotal API key |
 | urlscan.io | `https://urlscan.io/*`, `https://*.urlscan.io/*` | the user saves an urlscan.io API key |
 | URLhaus (abuse.ch) | `https://urlhaus-api.abuse.ch/*` | the user saves a URLhaus Auth-Key |
 | AbuseIPDB | `https://api.abuseipdb.com/*` | the user configures IP reputation with AbuseIPDB |
@@ -67,6 +67,14 @@ There is no `<all_urls>`, no `webRequest`, no `tabs` and no `cookies` permission
    - `strict`: only SHA-256 hashes of attachments are transmitted;
    - `balanced`: additionally full attachments of *unknown* files are uploaded to Hybrid Analysis;
    - `max`: additionally URLs from the message are submitted to Hybrid Analysis.
+4. **Data collection declaration (manifest)** — `browser_specific_settings.gecko.data_collection_permissions`
+   declares `personalCommunications` as **optional** (`"required": ["none"]`): nothing is mandatory, because
+   every check runs locally. When the user enables the global consent, `options.js` additionally requests the
+   optional data collection permission
+   (`browser.permissions.request({ data_collection: ["personalCommunications"] })`) inside the save handler.
+   If that prompt is declined the stored consent stays off and nothing is transmitted; disabling the checkbox
+   releases the permission again. Rationale and the validator evidence:
+   [data_collection_decision.md](data_collection_decision.md).
 
 ### 3.2 Why the add-on implements its own consent dialog
 
@@ -219,7 +227,54 @@ These points are deliberately documented as not yet complete and are **not** cla
   reviewer's own free provider account (step 8.2). Without a key, the local checks still work, but
   no external analysis can be triggered.
 
-## 10. Documents and contact
+## 10. Anticipated review questions (response catalogue, A-33)
+
+Each answer is verifiable in the repository; the referenced files/lines are the evidence.
+
+1. **"The linter reports `messagesRead` as an invalid permission and 18 unsupported APIs."**
+   `web-ext lint` validates against a **Firefox** target, which has no `messages.*`, `messageDisplay.*` or
+   `scripting.messageDisplay` APIs. All 18 warnings are covered by
+   `scripts/filter-lint-warnings.js` (`KNOWN_THUNDERBIRD_FALSE_POSITIVES`) and are documented in
+   `docs/STATUS.md`. Errors: 0.
+2. **"Why does the manifest use `optional_host_permissions` instead of `permissions`?"**
+   Host access is only needed for the analysis providers the user actually configures. Since Firefox/
+   Thunderbird 128 `optional_host_permissions` is the recommended Manifest V3 key for that (MDN
+   `manifest.json/optional_host_permissions`); the permission is requested at runtime when a key is saved
+   (`options.js`) or when a scan starts (`background.js`, `handleRequestScan`). No `<all_urls>`, no
+   `webRequest`, no `tabs`, no `cookies`.
+3. **"`data_collection_permissions` declares `personalCommunications` as optional – why not required?"**
+   All checks run locally; nothing is mandatory. `required: ["none"]` plus an `optional` type is the
+   validator-supported way to express that (`addons-linter`, rule `NONE_DATA_COLLECTION_IS_EXCLUSIVE` only
+   applies inside `required`). The optional permission is requested in the save handler
+   (`options.js`, `syncDataCollectionConsent`). Full rationale:
+   [`data_collection_decision.md`](data_collection_decision.md).
+4. **"Thunderbird has no built-in data-collection prompt – where is the consent?"**
+   In the options dialog (checkbox "Allow external analysis", default **off**), described in the privacy
+   policy §3.1, plus a per-sender opt-in from the message-view banner. Thunderbird's own API reference
+   names exactly this pattern as the required approach for Thunderbird.
+5. **"How do you inject into the message view – does that work at all?"**
+   Through `browser.scripting.executeScript({ target: { tabId }, func, args })`, which is the documented
+   way to run code in **already open** message display tabs (`scripting.messageDisplay` only offers
+   `registerScripts`/`unregisterScripts`). A failure is logged, stored (`messageDisplayInjectionFailed`)
+   and surfaced through a notification instead of failing silently. Verified by unit test
+   (`background.test.js`, "handles executeScript error gracefully and reports it to the user"); the manual
+   live test in Thunderbird 140 ESR is documented in [`live_test_protocol.md`](live_test_protocol.md).
+6. **"API keys are stored unencrypted – is that a security problem?"**
+   Yes, and it is documented as a known limitation (README "Known limitations", `privacy_policy.md` §7,
+   `external_service_hardening.md`): keys live in `browser.storage.local` inside the Thunderbird profile.
+   The add-on has no server, no telemetry and does not transmit the keys anywhere except to the provider
+   they belong to (HTTPS only, `api_gateway.js` refuses to attach keys to non-HTTPS URLs).
+7. **"Why `strict_min_version: 140.0`?"**
+   Manifest V3 message APIs, `optional_host_permissions` and `data_collection_permissions` require
+   Thunderbird 140+. Older ESR versions are intentionally unsupported (README "Requires",
+   `store_listing.md` metadata).
+8. **"No screenshots / no first-run experience yet?"**
+   Correct and documented: real screenshots are outstanding (only SVG placeholders exist), the manual
+   verification in Thunderbird 140 ESR is outstanding, and the add-on is not listed yet. These points are
+   tracked as blockers P0-1/P0-2 in `PROBLEMANALYSE_STORE_READINESS.md`; nothing in the listing claims
+   otherwise.
+
+## 11. Documents and contact
 
 - Privacy policy: `docs/privacy_policy.md`, hosted at
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html

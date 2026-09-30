@@ -3,7 +3,7 @@
 **Add-on:** Thundy AV – Email Scanner for Thunderbird
 **Short name:** Thundy AV
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.6 (Manifest V3, `strict_min_version` 140.0)
+**Version:** 1.6.1 (Manifest V3, `strict_min_version` 140.0)
 **License:** MIT
 **Homepage:** https://vazules.github.io/Thunderbird-Antivirus/
 **Privacy policy URL:** https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
@@ -139,7 +139,7 @@ zeigt die Banner an.
 | Title | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | thundy-av@bludau-it-services.de |
-| Version | 1.6 |
+| Version | 1.6.1 |
 | Category (proposal) | "Privacy & Security"; if the store's picker does not offer it, "Miscellaneous" |
 | License | MIT (`LICENSE` in the repository) |
 | Support email | bludau.it.services@gmail.com |
@@ -147,9 +147,9 @@ zeigt die Banner an.
 | Privacy policy URL | https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html |
 | Source code | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
-| Language of the user interface | German (localisation not implemented yet) |
+| Language of the user interface | Message-view banners and manifest strings: English + German (`_locales/`). Options page and popup: **German only** (screenshot motifs are therefore German). This is stated here and in the listing on purpose — see `docs/STATUS.md` (remaining item: localisation of options/popup). |
 
-## 6. Release notes 1.6
+## 6. Release notes 1.6.1
 
 - Ported the background/code paths to the Manifest V3 APIs (`scripting`,
   `optional_host_permissions`, message APIs) and removed code that relied on MV2-only entries.

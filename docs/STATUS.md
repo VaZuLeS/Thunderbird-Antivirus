@@ -1,6 +1,6 @@
 # Status – Thundy AV (Stand: September 2026)
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6** · **ID** `thundy-av@bludau-it-services.de`
+**Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6.1** · **ID** `thundy-av@bludau-it-services.de`
 **Zielplattform:** Thunderbird 140.0 oder neuer (Manifest V3) · **Lizenz:** MIT
 
 ## Completed in 1.6
@@ -28,23 +28,25 @@ abgearbeitet:
   konfigurierbar in den Einstellungen.
 - **Name/ID/Icon (f):** Name „Thundy AV – Email Scanner for Thunderbird“, `short_name` „Thundy AV“, neue ID
   `thundy-av@bludau-it-services.de`, Icons 16/32/64 px, `options_ui.open_in_tab` statt `browser_style`.
-- **Paketbereinigung (g):** `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`) hält Testdateien,
-  `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und Entwicklungs-Artefakte aus dem Build. Das XPI
-  enthält nur noch 15 Dateien (≈176 KB entpackt statt vorher 62 Dateien/605 KB); `scripts/verify-package.js` prüft
-  den Paketinhalt in der CI. Toter Code (`content_script.js`) und die Legacy-Dateien sind entfernt.
+- **Paketbereinigung (g):** `web-ext-config.mjs` (`ignoreFiles`) — die einzige Ignore-Quelle, `.webextignore` wurde
+  entfernt — hält Testdateien, `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und Entwicklungs-Artefakte
+  aus dem Build. Das XPI enthält nur noch 17 Dateien (185.470 Bytes entpackt statt vorher 62 Dateien/605 KB);
+  `scripts/verify-package.js` prüft den Paketinhalt. Toter Code (`content_script.js`) und die Legacy-Dateien sind
+  entfernt.
 - **Lokalisierung:** Manifest-Strings und Banner-Texte über `_locales/en` und `_locales/de` inklusive
-  englischer Fallbacks im Hintergrundskript.
-- **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung und Rechte und
-  liefert einen echten Exit-Code; der Schritt läuft in der CI.
-- **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission- und MV3-Portierungs-Tests
-  enthalten) und ist grün (389 Tests, 0 Fehler). Der im Repository aktive Workflow
-  (`.github/workflows/ci.yml`, Node 22) läuft `npm ci`, die Pre-Submit-Checks (jetzt mit echtem Exit-Code),
-  `node --test background.test.js` und `npx web-ext lint`. Die erweiterten Definitionen — vollständiger
-  `npm test`, Lint-Filter für bekannte Thunderbird-False-Positives
-  (`scripts/filter-lint-warnings.js`), `web-ext build` mit Paketprüfung (`scripts/verify-package.js`) und ein
-  manueller Signier-Job (`web-ext sign --channel`) — liegen einsatzbereit in [`docs/ci/`](ci/README.md).
-  Sie konnten in dieser Umgebung nicht unter `.github/workflows/` committed werden, weil das verwendete Token
-  keine `workflows`-Berechtigung besitzt (GitHub lehnt solche Pushes ab). Übernahme: `docs/ci/README.md`.
+  englischer Fallbacks im Hintergrundskript. Options- und Popup-Oberfläche sind weiterhin nur deutsch
+  (dokumentiert in `README.md`, `docs/store_listing.md` und der neuen Store-Readiness-Doku).
+- **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung, Daten-Deklaration
+  und Rechte und liefert einen echten Exit-Code.
+- **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission-, Daten-Deklarations- und
+  MV3-Portierungs-Tests enthalten) und ist grün (**395 Tests, 0 Fehler**); `web-ext lint` meldet 0 Fehler und
+  **18 Warnungen**, die vollständig als bekannte Thunderbird-False-Positives gefiltert sind
+  (`scripts/filter-lint-warnings.js`). Der im Repository aktive Workflow (`.github/workflows/ci.yml`, Node 22)
+  läuft `npm ci`, die Pre-Submit-Checks, `node --test background.test.js` und `npx web-ext lint`. Die vollständige
+  Fassung — `npm test`, Lint-Filter, `web-ext build` mit Paketprüfung und ein manueller Signier-Job mit
+  `--amo-base-url https://addons.thunderbird.net/api/v5/` — liegt einsatzbereit in [`docs/ci/`](ci/README.md).
+  Die Übernahme nach `.github/workflows/` scheitert weiterhin an der fehlenden `workflows`-Berechtigung des
+  verwendeten Tokens (Fehler erneut reproduziert, siehe Aufgabenplan A-19).
 - **Dokumente/Policy:** Datenschutzerklärung (`docs/privacy_policy.md`), Reviewer-Hinweise
   (`docs/reviewer_notes.md`), Listing-Entwurf (`docs/store_listing.md`); Live-Policy unter
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html.

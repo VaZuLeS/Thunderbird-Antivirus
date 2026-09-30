@@ -86,7 +86,12 @@
     "message": "Thundy AV Scanner error"
   },
   "notificationBannerFailed": {
-    "message": "The banner could not be inserted into the message view ($1$). Message scanning is limited until this is fixed."
+    "message": "The banner could not be inserted into the message view ($DETAIL$). Message scanning is limited until this is fixed.",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
   },
   "bannerAuthPass": {
     "message": "Sender verified (SPF/DKIM/DMARC passed)"

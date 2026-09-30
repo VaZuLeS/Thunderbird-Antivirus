@@ -1,0 +1,16 @@
+From: "PayPal Service" <service@paypal-support.example>
+To: Thundy AV Test <test@example.test>
+Subject: Test: reply-to mismatch and lookalike sender domain
+Date: Mon, 01 Sep 2026 09:15:00 +0200
+Message-ID: <test-04@example.com>
+MIME-Version: 1.0
+Authentication-Results: mx.example.test; spf=pass smtp.mailfrom=example.com; dkim=pass; dmarc=pass
+Reply-To: collect@other-domain.example
+Content-Type: multipart/mixed; boundary="b04"
+
+--b04
+Content-Type: text/plain; charset=utf-8
+
+Fixture for the sender/reply-to heuristics. No attachment, no link.
+
+--b04--

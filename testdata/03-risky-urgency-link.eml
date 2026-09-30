@@ -1,0 +1,23 @@
+From: Billing <billing@example.com>
+To: Thundy AV Test <test@example.test>
+Subject: URGENT: Ihre Rechnung ist faellig - sofort zahlen
+Date: Mon, 01 Sep 2026 09:10:00 +0200
+Message-ID: <test-03@example.com>
+MIME-Version: 1.0
+Authentication-Results: mx.example.test; spf=pass smtp.mailfrom=example.com; dkim=pass; dmarc=pass
+Content-Type: multipart/mixed; boundary="b03"
+
+--b03
+Content-Type: text/plain; charset=utf-8
+
+Dringend! Ihre Ueberweisung ist faellig. Bitte sofort bezahlen:
+
+https://example.com/login?token=test
+https://example.org/verify
+
+--b03
+Content-Type: text/html; charset=utf-8
+
+<html><body><p><strong>Dringend!</strong> Zahlung faellig.</p><p><a href="https://example.com/login?token=test">Rechnung pruefen</a></p><p><a href="https://example.org/verify">Konto verifizieren</a></p></body></html>
+
+--b03--

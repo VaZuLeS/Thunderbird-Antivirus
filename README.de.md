@@ -13,7 +13,7 @@ minimal notwendigen Daten an externe Analysedienste.
 | Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6 – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.1 – siehe [CHANGELOG.md](CHANGELOG.md) |
 | Lizenz | MIT – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
@@ -175,9 +175,11 @@ angefragt, wenn der passende Anbieter genutzt wird:
 | `https://api.abuseipdb.com/*` | AbuseIPDB |
 
 Zusätzlich deklariert die `manifest.json` unter `browser_specific_settings.gecko.data_collection_permissions` die
-**verpflichtende** Kategorie `personalCommunications`. Sie dokumentiert, dass das Add-on Nachrichteninhalte
-verarbeiten kann; übertragen wird nur nach globaler Zustimmung und einer Nutzeraktion und nur an Anbieter, denen Sie
-den Zugriff gewährt haben.
+**optionale** Kategorie `personalCommunications` (`"required": ["none"]`): verpflichtend ist nichts, weil alle
+Prüfungen lokal laufen. Sie dokumentiert, dass das Add-on Nachrichteninhalte verarbeiten kann; übertragen wird nur
+nach globaler Zustimmung und einer Nutzeraktion und nur an Anbieter, denen Sie den Zugriff gewährt haben. Beim
+Aktivieren der Zustimmung wird zusätzlich die optionale Datenberechtigung in Thunderbird angefragt; die Entscheidung
+und ihre Begründung stehen in [docs/data_collection_decision.md](docs/data_collection_decision.md).
 
 ## Einen weiteren Analysedienst ergänzen
 

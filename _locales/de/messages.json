@@ -86,7 +86,12 @@
     "message": "Thundy AV Scanner Fehler"
   },
   "notificationBannerFailed": {
-    "message": "Das Banner konnte nicht in die Nachrichtenansicht eingefügt werden ($1$). Der Nachrichten-Scan ist bis zur Behebung eingeschränkt."
+    "message": "Das Banner konnte nicht in die Nachrichtenansicht eingefügt werden ($DETAIL$). Der Nachrichten-Scan ist bis zur Behebung eingeschränkt.",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
   },
   "bannerAuthPass": {
     "message": "Absender verifiziert (SPF/DKIM/DMARC bestanden)"

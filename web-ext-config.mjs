@@ -20,6 +20,9 @@ export default {
     'benchmark_compare.js',
     'form_test.js',
     'vt_test.js',
+    // test fixtures for the manual Thunderbird live test (A-02)
+    'testdata',
+    'testdata/**',
     // documentation and store assets (kept in the repository only)
     'docs',
     'docs/**',

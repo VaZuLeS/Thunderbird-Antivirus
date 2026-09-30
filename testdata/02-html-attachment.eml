@@ -1,0 +1,26 @@
+From: Test Sender <sender@example.com>
+To: Thundy AV Test <test@example.test>
+Subject: Test: message with an HTML attachment (disarm test)
+Date: Mon, 01 Sep 2026 09:05:00 +0200
+Message-ID: <test-02@example.com>
+MIME-Version: 1.0
+Authentication-Results: mx.example.test; spf=pass smtp.mailfrom=example.com; dkim=pass; dmarc=pass
+Content-Type: multipart/mixed; boundary="b02"
+
+--b02
+Content-Type: text/plain; charset=utf-8
+
+The attachment is a simple HTML page with a script tag.
+
+--b02
+Content-Type: text/html; charset=utf-8; name="invoice.html"
+Content-Disposition: attachment; filename="invoice.html"
+
+<!DOCTYPE html>
+<html><body>
+<h1>Test invoice</h1>
+<script>document.title = "should be removed by the disarm function";</script>
+<p>Fixture for the "download disarmed HTML" action.</p>
+</body></html>
+
+--b02--

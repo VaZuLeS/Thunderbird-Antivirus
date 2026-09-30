@@ -31,8 +31,8 @@ npm test
 
 `npm test` entspricht dem Skript aus `package.json` (`node --test --test-reporter=spec`) und führt damit **alle**
 `node:test`-Dateien des Repositorys aus (`background.test.js`, `api.test.js`, `db.test.js`, `options.test.js`,
-`content_script.test.js`, `api_gateway.test.js`, `form_test.js`, `vt_test.js`). Die Thunderbird-APIs werden in den
-Tests gemockt, es ist kein Netzwerkzugriff nötig.
+`api_gateway.test.js`, `scripts/pre-submit-checks.test.js`, `form_test.js`, `vt_test.js`). Die Thunderbird-APIs
+werden in den Tests gemockt, es ist kein Netzwerkzugriff nötig.
 
 ## 4. Pre-Submit-Checks
 
@@ -58,13 +58,22 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 - `npx web-ext lint` (addons-linter) muss **0 Fehler** melden. Die verbleibenden Warnungen sind überwiegend
   `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-APIs wie `messages.*`
   oder `messageDisplay.*` nicht kennt.
-- `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.zip` (Dateiname aus dem
+- `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.1.zip` (Dateiname aus dem
   Add-on-Namen). Die Ausschlüsse für Testdateien, `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und
-  Build-Artefakte stehen in `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`);
+  Build-Artefakte stehen ausschließlich in `web-ext-config.mjs` (`ignoreFiles`);
   `node scripts/verify-package.js ./build` prüft anschließend Dateiliste und Größe des Pakets.
-- Signieren für eine Verteilung: `npx web-ext sign --channel unlisted` (selbst verteilen) oder
-  `npx web-ext sign --channel listed` (Einreichung im Add-ons Store, benötigt API-Zugangsdaten von
-  addons.thunderbird.net).
+- Signieren für eine Verteilung: `web-ext` verwendet standardmäßig den **AMO**-Endpunkt
+  (`https://addons.mozilla.org/api/v5/`). Für Thunderbird muss der ATN-Endpunkt explizit gesetzt werden:
+
+  ```bash
+  # selbst verteilen (unlisted)
+  npx web-ext sign --source-dir . --artifacts-dir ./build \
+      --amo-base-url https://addons.thunderbird.net/api/v5/ --channel unlisted
+
+  # Einreichung im Add-ons Store (listed), benötigt API-Zugangsdaten von addons.thunderbird.net
+  npx web-ext sign --source-dir . --artifacts-dir ./build \
+      --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed
+  ```
 
 ## 6. In Thunderbird laden
 

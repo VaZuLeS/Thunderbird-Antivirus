@@ -1,0 +1,23 @@
+From: Test Sender <sender@example.com>
+To: Thundy AV Test <test@example.test>
+Subject: Test: message with a harmless attachment
+Date: Mon, 01 Sep 2026 09:00:00 +0200
+Message-ID: <test-01@example.com>
+MIME-Version: 1.0
+Authentication-Results: mx.example.test; spf=pass smtp.mailfrom=example.com; dkim=pass; dmarc=pass
+Content-Type: multipart/mixed; boundary="b01"
+
+--b01
+Content-Type: text/plain; charset=utf-8
+
+Hello,
+
+this is a harmless test attachment for the Thundy AV test run.
+
+--b01
+Content-Type: text/plain; charset=utf-8; name="test.txt"
+Content-Disposition: attachment; filename="test.txt"
+
+Thundy AV test fixture 01 - not malware.
+
+--b01--

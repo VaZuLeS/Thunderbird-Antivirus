@@ -1,6 +1,6 @@
 # Datenschutzerklärung — Thundy AV – Email Scanner for Thunderbird
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird (Kurzname „Thundy AV“), Version 1.6
+**Add-on:** Thundy AV – Email Scanner for Thunderbird (Kurzname „Thundy AV“), Version 1.6.1
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (Lizenz: MIT)
 **Stand:** September 2026
 
@@ -54,6 +54,15 @@ Anzeige von Hinweis- und Warnbannern) laufen auch ohne diese Zustimmung.
 Die Zustimmung kann jederzeit im Optionsdialog entzogen werden. Durch den Widerruf werden künftige
 Übermittlungen gestoppt; bereits übermittelte Daten können dadurch nicht zurückgeholt werden
 (Abschnitt 8).
+
+**Zusätzliche Bestätigung auf Plattformebene:** Die Manifest-Deklaration
+`browser_specific_settings.gecko.data_collection_permissions` führt `personalCommunications` als
+**optionale** Datenart (`required: ["none"]`) – es ist also nichts verpflichtend. Beim Aktivieren der
+Checkbox fragt das Add-on die optionale Datenberechtigung zusätzlich beim Browser ab
+(`permissions.request({ data_collection: ["personalCommunications"] })`). Lehnen Sie diese Abfrage ab,
+bleibt die Zustimmung ausgeschaltet und es wird nichts übertragen. Beim Deaktivieren der Checkbox gibt das
+Add-on die Berechtigung wieder zurück. Hintergrund und Begründung:
+[docs/data_collection_decision.md](data_collection_decision.md).
 
 ### 3.2 Opt-in je Absender
 

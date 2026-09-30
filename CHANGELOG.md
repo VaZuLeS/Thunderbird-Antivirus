@@ -8,15 +8,63 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 ## [Unreleased]
 
+- Nothing yet.
+
+## [1.6.1] – Store-Readiness-Paket (unveröffentlicht, vorbereitet)
+
 ### Added
 
-- **Problemanalyse und Aufgabenplan für die Store-Readiness (Version 1.6):**
+- **Problemanalyse und Aufgabenplan für die Store-Readiness:**
   [`docs/PROBLEMANALYSE_STORE_READINESS.md`](docs/PROBLEMANALYSE_STORE_READINESS.md) dokumentiert mit
-  reproduzierten Nachweisen 5 Blocker, 6 hohe Risiken, 6 mittlere und 1 kleinen Befund für eine Listung
-  im Thunderbird Add-ons Store (ATN). Der daraus abgeleitete
-  [`docs/AUFGABENPLAN_STORE_READINESS.md`](docs/AUFGABENPLAN_STORE_READINESS.md) ordnet die Aufgaben in
-  vier Phasen, inklusive Traceability-Matrix Befund → Aufgabe, Schätzungen, Abnahmekriterien und
-  Risiko-Register.
+  reproduzierten Nachweisen 5 Blocker, 6 hohe Risiken, 6 mittlere und 1 kleinen Befund für eine Listung im
+  Thunderbird Add-ons Store (ATN). Der daraus abgeleitete
+  [`docs/AUFGABENPLAN_STORE_READINESS.md`](docs/AUFGABENPLAN_STORE_READINESS.md) ordnet die Aufgaben in vier
+  Phasen, inklusive Traceability-Matrix Befund → Aufgabe, Schätzungen, Abnahmekriterien und Risiko-Register.
+- **Entscheidungsdokument zur Daten-Deklaration:** [`docs/data_collection_decision.md`](docs/data_collection_decision.md)
+  mit Validator-Nachweis (`addons-linter`, `NONE_DATA_COLLECTION_IS_EXCLUSIVE`), Begründung, Grenzen und
+  vorbereitetem Rückfrage-Text für das ATN-Review.
+- **Live-Test-Protokoll und Testdaten:** [`docs/live_test_protocol.md`](docs/live_test_protocol.md) mit
+  ausfüllbaren Tabellen für Banner-Injektion, Consent-/Permission-Flow und Kontextmenüs;
+  `node scripts/make-testdata.js` erzeugt vier reproduzierbare `.eml`-Fixtures in `testdata/` (nicht Teil des XPI),
+  beschrieben in [`docs/testdata.md`](docs/testdata.md).
+- **Antwortkatalog für Review-Rückfragen** in `docs/reviewer_notes.md` (Linter-Warnungen, Host-Permissions,
+  Daten-Deklaration, Consent-Ort, Injektionsmechanismus, Schlüsselablage, Versionskompatibilität).
+
+### Changed
+
+- **Daten-Deklaration:** `data_collection_permissions` deklariert `personalCommunications` jetzt als
+  **optional** (`"required": ["none"]`) statt als verpflichtend. Beim Aktivieren von „Externe Analyse erlauben“
+  fragt `options.js` zusätzlich die optionale Datenberechtigung an
+  (`browser.permissions.request({ data_collection: [...] })`) und gibt sie beim Abschalten zurück; eine
+  Ablehnung des Dialogs lässt die Zustimmung ausgeschaltet.
+- **Signierziel korrigiert:** `web-ext sign` verwendet standardmäßig den AMO-Endpunkt. `docs/ci/release.yml`,
+  `docs/ci/README.md`, `docs/quickstart.md` und `docs/STATUS.md` setzen nun
+  `--amo-base-url https://addons.thunderbird.net/api/v5/` (Umgebungsvariable `ATN_API_BASE_URL`).
+- **CI-Mirror erweitert:** `docs/ci/ci.yml` entspricht dem gewünschten Umfang (`npm test`, Lint-Filter,
+  Paketprüfung); `docs/ci/release.yml` ist überarbeitet. Die Übernahme nach `.github/workflows/` scheitert
+  weiterhin an der fehlenden `workflows`-Berechtigung des Tokens (in `docs/ci/README.md` dokumentiert).
+- **Sprachaussage präzisiert:** Listing, README und Status benennen die Options-/Popup-Oberfläche ausdrücklich
+  als deutschsprachig (Manifest-Strings und Banner sind englisch/deutsch lokalisiert).
+- **Paketkonfiguration konsolidiert:** `.webextignore` entfernt; einzige Ignore-Quelle ist
+  `web-ext-config.mjs` (dort zusätzlich `testdata` ausgeschlossen, ebenso in `scripts/verify-package.js`).
+
+### Fixed
+
+- **Sichtbares Fehler-Feedback:** Schlägt die Injektion in die Nachrichtenansicht fehl, wird das nicht mehr
+  still verschluckt, sondern protokolliert, als Diagnose gespeichert (`messageDisplayInjectionFailed`) und
+  einmal pro Sitzung per Benachrichtigung gemeldet; das Banner erklärt eine verweigerte Host-Berechtigung und
+  verlinkt die Einstellungen.
+- **MV3-Bereinigung:** Die in Thunderbird MV3 entfernten APIs (`messageDisplay.getDisplayedMessage`,
+  `messageDisplay.onMessageDisplayed`) und der unerreichbare Zweig
+  `scripting.messageDisplay.executeScript` sind entfernt; Pre-Submit-Checks und Tests decken das ab.
+  `web-ext lint` meldet dadurch 18 statt 26 Warnungen (0 Fehler).
+- **Zentrale Timeouts:** Der Hybrid-Analysis-Upload und der Report-Abruf im Popup laufen über
+  `apiGateway.fetchWithTimeout` statt über direktes `fetch` (Popup lädt `api_gateway.js`).
+- **Pre-Submit-Regel zur Daten-Deklaration** entspricht dem Validator-Verhalten und erzwingt zusätzlich, dass
+  deklarierte optionale Datentypen zur Laufzeit tatsächlich angefragt werden.
+- **Dokumentationsdrift:** Paketkennzahlen (17 Dateien, 185.468 Bytes), Testdateiliste in `docs/quickstart.md`,
+  `npm run lint`-Hinweis in `CONTRIBUTING.md` und die VirusTotal-Origins in `docs/reviewer_notes.md` an den
+  tatsächlichen Stand angepasst.
 
 ## [1.6.0] – 2026-09-28
 
