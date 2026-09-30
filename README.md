@@ -102,7 +102,7 @@ their own infrastructure.
 
 ```text
 Thunderbird → ☰ → Add-ons and Themes → gear icon → "Debug Add-ons"
-(opens about:debugging#/runtime/this-thunderbird)
+(in about:debugging → "This Firefox"/"This Thunderbird" → Load Temporary Add-on)
 → "Load Temporary Add-on…" → select /path/to/Thunderbird-Antivirus/manifest.json
 ```
 
@@ -111,6 +111,9 @@ Alternatively start Thunderbird via web-ext:
 ```bash
 npx web-ext run --firefox=/path/to/thunderbird
 ```
+
+For an isolated test profile with the add-on preloaded there is
+`examples/run-in-thunderbird.sh /path/to/thunderbird` (see `docs/live_test_protocol.md`).
 
 `web-ext` has **no** `--target thunderbird` option (its targets are `firefox-desktop`, `firefox-android` and
 `chromium`). Use `--firefox` with the path to your Thunderbird binary, or pass an alias like `--firefox nightly`.
@@ -135,20 +138,25 @@ files, `docs/`, `scripts/`, `examples/` and lockfiles are not shipped.
 ## Build, lint and test
 
 ```bash
-npm ci                                                # install dev dependencies (jsdom, web-ext)
-npm test                                              # run all node:test files
-node ./scripts/pre-submit-checks.js                   # manifest / privacy policy / permission checks
-npx web-ext lint                                      # addons-linter
-npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
+npm ci                       # install dev dependencies (jsdom, web-ext)
+npm run check                # everything that must pass before a PR or a submission:
+                             #   pre-submit checks, submission gate, all tests,
+                             #   filtered lint, XPI build + package content check
 ```
+
+Individual steps: `npm run pre-submit-checks`, `npm run gate`, `npm test`, `npm run lint:filtered`,
+`npm run package:verify`.
 
 - `npm test` uses the script from `package.json` (`node --test`) and therefore executes **all** test files of the
   repository, not just `background.test.js`.
 - `web-ext lint` currently reports **0 errors**. The remaining warnings are almost exclusively `UNSUPPORTED_API`
   notices, because the linter validates against a Firefox target and does not know Thunderbird-only APIs such as
   `messages.*` or `messageDisplay.*`. Review the list before releasing.
+- `npm run gate` (see [docs/AUFGABENPLAN_STORE_READINESS.md](docs/AUFGABENPLAN_STORE_READINESS.md) §10) checks the
+  submission criteria and fails with exit code 1 while real screenshots or the completed live test are missing.
 - CI (`.github/workflows/ci.yml`) runs on every push and pull request with Node 22: `npm ci`, the pre-submit
-  checks (real exit code), `node --test background.test.js` and `npx web-ext lint`.
+  checks (real exit code), `node --test background.test.js` and `npx web-ext lint`. The full gate above runs
+  locally until the workflow definitions in [docs/ci/](docs/ci/README.md) can be activated.
 - Extended workflow definitions (full `npm test`, lint filter for the known Thunderbird false positives,
   XPI build with package verification and a manual signing job) are ready in [docs/ci/](docs/ci/README.md);
   they could not be committed under `.github/workflows/` in this environment because the token lacks the
@@ -220,7 +228,7 @@ optional data collection permission in Thunderbird; the decision and its rationa
 
 Suggestions and pull requests are welcome – see [CONTRIBUTING.md](CONTRIBUTING.md),
 [COMMUNITY.md](COMMUNITY.md) and [FIRST_TIMERS.md](FIRST_TIMERS.md). All statements in the documentation should be
-verifiable against the code; please run `npm test` and `npx web-ext lint` before opening a pull request.
+verifiable against the code; please run `npm run check` before opening a pull request.
 
 ## License
 

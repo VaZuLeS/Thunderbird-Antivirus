@@ -185,7 +185,7 @@ zeigt die Banner an.
 | Reviewer notes complete (permissions, data flows, test path, response catalogue) | done (`docs/reviewer_notes.md`) |
 | Test data for reviewers | done — `scripts/make-testdata.js` → `testdata/`, described in `docs/testdata.md` |
 | Manual verification of the banner injection in Thunderbird 140 ESR | **open** — protocol and test data are ready (`docs/live_test_protocol.md`) |
-| Unit tests green (`npm test`) | done — 395 tests, 0 failures (verified on 1.6.1) |
+| Unit tests green (`npm test`) | done — 422 tests, 0 failures (verified on 1.6.1) |
 | XPI built for 1.6.1 and attached to a release | **partly** — local build `thundy_av_email_scanner_for_thunderbird-1.6.1.zip` exists; signing/tagging requires the ATN API keys |
 | Submitted to the Thunderbird Add-ons Store | **open** — not submitted, no store URL |
 

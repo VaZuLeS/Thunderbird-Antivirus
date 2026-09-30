@@ -85,6 +85,7 @@ Banner im Testfall nicht, dürfen die Motive nicht als Screenshot eingereicht we
   Anhänge durch Testdaten ersetzen; im Zweifel unkenntlich machen.
 - Keine retuschierten UI-Zustände: was im Screenshot zu sehen ist, muss im Testlauf genauso
   aufgetreten sein.
+- Verifikation: `npm run gate` prüft, dass mindestens drei PNG-Screenshots mit ≥ 1200 px Breite in `docs/` liegen
 - Nach der Aufnahme: Sichtprüfung der PNG-Dateien (Abmessungen z. B. über `file` oder `identify`) und
   Abgleich mit der Bedarfsliste in `docs/store_assets.md`.
 

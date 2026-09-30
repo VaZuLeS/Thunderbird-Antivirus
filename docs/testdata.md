@@ -30,8 +30,9 @@ Authentifizierungszweig deterministisch zu testen.
    - **Drag & Drop:** die `.eml`-Dateien aus `testdata/` per Drag & Drop in einen Ordner des Testkontos
      ziehen (Thunderbird importiert `.eml` als Nachricht); oder
    - **Maildir:** die `.eml`-Dateien in `<Maildir>/cur/` kopieren und Thunderbird neu starten.
-4. **Add-on laden:** `about:debugging#/runtime/this-firefox` → *Temporäres Add-on laden* → `manifest.json`
-   aus dem Repository wählen (alternativ `web-ext run --firefox=/pfad/zu/thunderbird`).
+4. **Add-on laden:** entweder `about:debugging` → *Temporäres Add-on laden* → `manifest.json` aus dem
+   Repository wählen, oder `web-ext run --firefox=/pfad/zu/thunderbird`, oder – mit getrenntem Testprofil –
+   `./examples/run-in-thunderbird.sh /pfad/zu/thunderbird`.
 5. Prüfschritte und Protokoll: [live_test_protocol.md](live_test_protocol.md).
 
 ## 3. Hinweise für Reviewer (A-15)
