@@ -309,6 +309,27 @@ describe('options.js', () => {
         }
     });
 
+    it('keeps the real options.html in sync with the script (ids and i18n keys)', async () => {
+        const html = fs.readFileSync(path.join(__dirname, 'options.html'), 'utf8');
+        const optionsDom = new JSDOM(html);
+
+        // Every element the script accesses by id must exist.
+        const ids = ['apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey', 'privacyTier', 'ipReputationProvider',
+            'ipReputationApiKey', 'customWhitelist', 'customBlacklist', 'alwaysManual', 'autoScanLinks',
+            'timeOfClickProtection', 'externalAnalysisConsent', 'save', 'saveStatus', 'clearCache', 'clearCacheStatus',
+            'diagnosticsOutput'];
+        for (const id of ids) {
+            assert.ok(optionsDom.window.document.getElementById(id), 'options.html must provide #' + id);
+        }
+
+        // Every data-i18n key of the markup must exist in the default catalogue.
+        const catalogue = JSON.parse(fs.readFileSync(path.join(__dirname, '_locales', 'en', 'messages.json'), 'utf8'));
+        const keys = Array.from(html.matchAll(/data-i18n(?:-placeholder|-title)?="([A-Za-z0-9_]+)"/g)).map((m) => m[1]);
+        assert.ok(keys.length > 20, 'the options page is localized');
+        const missing = keys.filter((key) => !catalogue[key]);
+        assert.deepStrictEqual(missing, [], 'every data-i18n key has a catalogue entry');
+    });
+
     it('renders the diagnostics list with consent and key state', async () => {
         const list = context.document.getElementById('diagnosticsOutput');
         assert.ok(list, 'the diagnostics list exists');
