@@ -12,7 +12,12 @@ Landing page for the documentation of **Thundy AV – Email Scanner for Thunderb
 - Asset status: [store_assets.md](store_assets.md) · capture guide:
   [screenshot_capture.md](screenshot_capture.md)
 - Store-readiness analysis (findings B1–B6, H1–H12, M1–M12):
-  [STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md)
+  [STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md) — *historic, pre-1.6 snapshot*
+- **Store-readiness problem analysis (current snapshot, findings P0-1 … P3-25):**
+  [PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md)
+- **Task plan derived from it (phases, traceability, DoD):**
+  [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md)
+- Raw audit reports of that analysis: [audits/](audits/) (code, documentation/policy, build/pipeline)
 
 ## Data processing in one sentence
 

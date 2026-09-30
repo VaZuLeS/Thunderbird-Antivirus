@@ -15,8 +15,8 @@ Dokumentation) und einen Build-/Pipeline-Audit
 
 Das Add-on ist auf diesem Stand **noch nicht store-ready**. Die technische Basis ist deutlich besser als bei
 der ersten Analyse (MV3-Manifest korrekt, entfernte APIs nur noch als toter Fallback, Tests und
-Pre-Submit-Checks laufen, XPI baut) — es bleiben aber **sechs harte Blocker** und eine Reihe von Nachweisen,
-die vor einer Einreichung fehlen. Fünf Blocker sind inhaltlich neu bzw. bisher nicht belegt:
+Pre-Submit-Checks laufen, XPI baut) — es bleiben aber **neun harte Blocker** und eine Reihe fehlender
+Nachweise. Sieben Blocker sind inhaltlich neu bzw. bisher nicht belegt:
 
 1. **Daten-Deklaration widerspricht dem Verhalten** (`required: ["personalCommunications"]`, obwohl ohne
    Opt-in nichts übertragen wird) — Thunderbird hat laut eigener API-Doku *keinen* automatischen
@@ -24,17 +24,22 @@ die vor einer Einreichung fehlen. Fünf Blocker sind inhaltlich neu bzw. bisher 
 2. **Die Datenschutz-Zusage „strikt = nur Hashes“ ist im Code nicht haltbar**, weil die *manuellen* Pfade
    (Popup-Upload, Link-/Kontextmenü-Scan) die Datenschutz-Stufe nicht prüfen und in Stufe `strict` den
    vollständigen Anhang bzw. URLs senden.
-3. **Das Paket-Gate ist rot**: das gebaute XPI enthält zwei Entwickler-Scratch-Dateien
+3. **Das Popup überträgt ohne globale Zustimmung**: `api.js:515–548` ruft Hybrid Analysis direkt auf; die
+   Konsent-Prüfung (`api.js:136`) blendet nur einen Hinweis ein und verhindert nichts.
+4. **Die Kontextmenü-Einträge sind tot**: `manifest.json` deklariert die Berechtigung `menus` nicht, die der
+   Thunderbird-Namespace `menus` verlangt — beide Einträge werden stillschweigend nie erzeugt.
+5. **Das Popup-Skript ist defekt**: `syncFragment` (`api.js:193`, `:210`) und `container` (`api.js:218`) sind
+   nicht definiert → `ReferenceError`, der Analysebereich rendert nicht (per `eslint no-undef` belegt).
+6. **Das Paket-Gate ist rot**: das gebaute XPI enthält zwei Entwickler-Scratch-Dateien
    (`test_regex_escape.js`, `test_regex_escape2.js`), `scripts/verify-package.js` endet mit Exit-Code 1.
-4. **Kernfunktion nicht live belegt**: Banner-Injektion, Kontextmenü und `permissions.request()` aus dem
+7. **Kernfunktion nicht live belegt**: Banner-Injektion, Kontextmenü und `permissions.request()` aus dem
    Banner sind nur mit gemockten Thunderbird-APIs getestet; in Thunderbird 140 ESR wurde das nie manuell
-   geprüft.
-5. **Es gibt keine echten Screenshots** — nur SVG-Platzhalter; dazu existiert noch keine ATN-Listung.
+   geprüft. Dazu: keine echten Screenshots (nur SVG-Platzhalter) und noch keine ATN-Listung.
 
-**Gezählte Befunde:** 6 Blocker (P0-1 … P0-6), 7 hohe (P1-7 … P1-13), 6 mittlere (P2-14 … P2-19), 3 niedrige
-(P3-20 … P3-22).
+**Gezählte Befunde:** 9 Blocker (P0-1 … P0-9), 9 hohe (P1-7 … P1-15), 11 mittlere (P2-14 … P2-24),
+6 niedrige (P3-20 … P3-25). Die Kennungen sind stabile Labels (Präfix = Schweregrad), keine Sortierung.
 
-**Gesamturteil: NO-GO** (Kriterien in §8). Der zugehörige Arbeitsplan steht in
+**Gesamturteil: NO-GO** (Kriterien in §9). Der zugehörige Arbeitsplan steht in
 [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md).
 
 ---
@@ -80,6 +85,14 @@ Alle Werte wurden in dieser Umgebung selbst gemessen (Ausgaben gekürzt):
 | CI | `diff docs/ci/ci.yml .github/workflows/ci.yml` | Aktiv ist die **reduzierte** Variante (nur `background.test.js`, Lint ohne Filter, kein Build/Paketcheck) |
 | Repo-Zustand | `gh release list`, `gh api …/tags`, `gh api compare/main...v1.18.0` | „Latest“-Release ist von **2024** (Tag `Thunderbird`, Asset eines alten Stands); zusätzlich Tags `v1.6` … `v1.18.0`; `v1.18.0` ist von `main` **divergiert** (17 vor / 18 zurück); 400+ Branches |
 | Sicherheit | Grep auf `eval(`, `new Function`, `innerHTML` | Keine Treffer im Laufzeitcode; CSP `script-src 'self'; object-src 'none'`; keine Secrets im Repo |
+| Popup-Konsent | `grep -n externalAnalysisConsent api.js` | nur Zeilen 82/83/136 — die Notizkarte verhindert die Übertragung **nicht**; der `fetch` steht in `api.js:532` |
+| Popup-Skript | `npx eslint --no-config-lookup --config … --rule no-undef api.js` | 3 Fehler: `syncFragment` (`api.js:193`, `:210`) und `container` (`api.js:218`) sind nicht definiert |
+| `menus`-Berechtigung | `manifest.json:19–25` vs. Schema `mail/components/extensions/schemas/menus.json` | Schema verlangt `permissions: ["menus"]`; das Manifest listet sie nicht → beide Kontextmenü-Pfade sind ohne Wirkung (`background.js:1745`, `:1815`) |
+| CI-Testumfang | `gh run view <run> --log` + Testzählung pro Datei | aktiv läuft nur `background.test.js` = **243 von 389 Tests** (146 Tests / 37 % fehlen) |
+| Lint-Gate | `npx web-ext dump-config` | `warningsAsErrors: false`; die 26 Warnungen brechen den Job nicht ab, der kuratierte Filter läuft nur im **nicht** aktiven Spiegel |
+| Signieren | `npx web-ext sign --help`, `node_modules/web-ext/lib/program.js:19` | Default-Endpunkt ist `https://addons.mozilla.org/api/v5/` (AMO), Approval-Timeout 900 s |
+| Ignore-Konfiguration | `npx web-ext build --no-config-discovery --source-dir .` | 67 Dateien → `.webextignore` wird von `web-ext` **nicht** gelesen; alle Excludes stammen aus `web-ext-config.mjs` |
+| Lokalisierung | `_locales/en/messages.json` vs. `de` | 25 Schlüssel, identische Mengen |
 
 **Wichtiger Kontext für die Interpretation:** `main` ist Version **1.6**. Im Repository existieren
 gleichzeitig Tags/Releases bis **v1.18.0** auf einer von `main` divergierten Linie (Branch
@@ -92,19 +105,21 @@ weil ohne die Entscheidung „welche Linie wird eingereicht“ jede weitere Arbe
 
 | Bereich | Bewertung | Begründung (Befund) |
 |---|---|---|
-| Manifest / MV3-Konformität | 🟢 **weitgehend ok** | MV3-Keys gültig, keine entfernten APIs im Produktivpfad; Rest: toter MV2-Fallback (P1-10), Lint-Filter (P1-8) |
-| Daten-Deklaration / Consent | 🔴 **Blocker** | `required: ["personalCommunications"]` widerspricht dem Opt-in-Verhalten (P0-1) |
-| Datenschutz-Doku vs. Code | 🔴 **Blocker** | Manuelle Uploads/URL-Scans umgehen die Datenschutz-Stufe, Doku behauptet das Gegenteil (P0-2) |
+| Manifest / MV3-Konformität | 🟡 **ok mit Lücken** | MV3-Keys gültig, keine entfernten APIs im Produktivpfad; aber `menus`-Permission fehlt (P0-8), toter MV2-Fallback (P1-10), zu grober Lint-Filter (P1-8) |
+| Daten-Deklaration / Consent | 🔴 **Blocker** | `required: ["personalCommunications"]` widerspricht dem Opt-in-Verhalten (P0-1); das Popup überträgt sogar **ohne** Zustimmung (P0-7) |
+| Datenschutz-Doku vs. Code | 🔴 **Blocker** | Manuelle Uploads/URL-Scans umgehen die Datenschutz-Stufe, die Doku behauptet das Gegenteil (P0-2) |
+| Popup-Funktion | 🔴 **Blocker** | `ReferenceError` im Popup-Skript; Analysebereich rendert nicht (P0-9) |
 | Live-Funktionsnachweis in TB | 🔴 **Blocker** | Banner/Kontextmenü/Permission-Geste nie manuell geprüft (P0-3) |
-| Listing-/Asset-Reife | 🔴 **Blocker** | Keine echten Screenshots, keine Testmittel für Reviewer, keine Listung (P0-4, P0-5) |
-| Paket-/Release-Hygiene | 🔴 **Blocker** | XPI enthält Fremddateien, Paket-Gate rot, divergente Versionslinie (P0-5, P0-6) |
-| CI-/Qualitätsgates | 🟠 **hoch** | Aktive CI prüft nur einen Teil; Lint-Filter kann Regressionen maskieren (P1-7, P1-8) |
+| Listing-/Asset-Reife | 🔴 **Blocker** | Keine echten Screenshots, keine Testmittel für Reviewer, keine Listung (P0-4, P2-17) |
+| Paket-/Release-Hygiene | 🔴 **Blocker** | XPI enthält Fremddateien, Paket-Gate rot und potenziell blind fürs falsche Artefakt, divergente Versionslinie (P0-5, P0-6, P2-20) |
+| Signierweg | 🔴 **Blocker (Prozess)** | Signieraufruf zeigt per Default auf AMO; `--channel listed` läuft in den 15-min-Timeout (P1-14, P1-15) |
+| CI-/Qualitätsgates | 🟠 **hoch** | Aktive CI prüft 243 von 389 Tests und hat kein Build-/Paketgate; Lint-Filter maskiert entfernte APIs (P1-7, P1-8) |
 | Sicherheit | 🟢 **ok** | Kein Remote-Code, keine `innerHTML`-Nutzung, CSP gesetzt, keine Secrets |
-| Positiv | — | 389 Tests grün, ein Consent-Zentrum im Code, Host-Rechte optional, Doku-Set vorhanden, Icon-Set vollständig |
+| Positiv | — | 389 Tests grün, ein Consent-Zentrum im Hintergrundskript, Host-Rechte optional, Doku-Set vorhanden, Icon-Set vollständig, `_locales` DE/EN vollständig |
 
-**Urteil: NO-GO für die Einreichung.** Nach Behebung der sechs Blocker und der Nachweise aus Phase 1/2 ist
-eine Einreichung realistisch (Aufwandsschätzung im Aufgabenplan: ~5–7 Personentage, davon ~1 Tag live in
-Thunderbird).
+**Urteil: NO-GO für die Einreichung.** Nach Behebung der neun Blocker und der Nachweise aus Phase 1–3 ist
+eine Einreichung realistisch. Aufwandsschätzung im Aufgabenplan: **≈ 78 h ≈ 10 Personentage**, davon ~1 Tag
+live in Thunderbird.
 
 ---
 
@@ -123,8 +138,14 @@ Thunderbird).
 - Firefox-Datenkonsent-Doku: Werte in `required` muss der Nutzer akzeptieren, „they cannot opt out“;
   `optional`-Werte werden zur Laufzeit über `browser.permissions.request({ data_collection: [...] })` erteilt.
 - Gegenprobe mit dem Validator (addons-linter 10.13.0): Variante `required:["none"]` +
-  `optional:["personalCommunications"]` → **0 Fehler / 26 Warnungen**, identisch zum aktuellen Stand. Der
-  Widerspruch ist also **kein** Lint-Fehler, sondern ein Policy-/Review-Risiko.
+  `optional:["personalCommunications"]` → **0 Fehler / 26 Warnungen** (identisch zum aktuellen Stand), also
+  die vom offiziellen Validator **akzeptierte** korrekte Deklaration. **Der repo-eigene Pre-Submit-Check
+  verbietet sie dagegen**: `scripts/pre-submit-checks.js:127–141` bricht mit
+  *„data_collection_permissions is contradictory: "none" cannot be combined with optional data types“* ab
+  (selbst nachgestellt: `runChecks()` auf der Variantenkopie → 1 Fehler). Der Widerspruch ist also **kein**
+  Lint-Fehler, sondern eine Policy-/Review-Frage **plus** eine eigene, zu strenge Hausregel.
+- Ergänzend: der gleiche Check verlangt eine **nicht leere** `required`-Liste (`:133`), eine reine
+  `optional`-Deklaration ist damit ebenfalls nicht möglich.
 ### P0-2 — Manuelle Upload-/Scan-Pfade ignorieren die Datenschutz-Stufe; die Doku behauptet das Gegenteil
 **Belege**
 - `background.js:2205–2207` (`handleManualUpload`): nur API-Key- und
@@ -246,6 +267,70 @@ Reviewer, der die Quelle gegen das Paket legt, sieht Dateien ohne Laufzeitfunkti
 Root-Skripte ergänzen (`form_test.js`, `vt_test.js`, `test_regex_escape*.js`, `benchmark_compare.js` →
 sauberer: alle Entwicklungsdateien in `tools/` bündeln); Paketprüfung in die aktive CI aufnehmen; STATUS-Zahlen
 auf die gemessenen Werte korrigieren.
+### P0-7 — Das Popup überträgt Daten ohne die globale Zustimmung
+**Belege**
+- `api.js:515–548` (`fetch_hybrid_report`): direktes `fetch` auf
+  `https://hybrid-analysis.com/api/v2/overview/<sha256>` mit dem API-Key des Nutzers; aufgerufen über
+  `get_hybrid_report_by_sha256` (`api.js:680–682`) aus dem Popup-Rendering (`api.js:196`, `:716`, `:740`,
+  `:823`).
+- `externalAnalysisConsent` wird im Popup nur an drei Stellen berührt (`api.js:82`, `:83`, `:136`): Zeile 136
+  hängt lediglich eine **Hinweiskarte** („Externe Analyse ist nicht aktiviert …“) in die Oberfläche, ohne den
+  Codefluss zu beenden. Es gibt **kein** Guard vor dem `fetch`.
+- Damit gilt die zentrale Zusage „Ohne Zustimmung wird **nichts** an Dritte übermittelt“
+  (`docs/privacy_policy.md:44–49`, `README.md:44–47`) für das Popup nicht.
+
+**Auswirkung:** Ein Nutzer ohne Zustimmung, der das Popup öffnet (bzw. eine Nachricht mit gespeichertem
+Datensatz ansieht), löst eine Übermittlung von Anhang-Hashes an Hybrid Analysis aus. Das ist der klassische
+Policy-Verstoß (Add-on-Policies 6.2: Übermittlung personenbezogener Daten nur mit ausdrücklicher Zustimmung)
+und wäre bei einem Reviewer-Test sofort reproduzierbar. Der zentrale Code-Kommentar
+(`background.js:56–61`) beschreibt dagegen korrekt, dass die Erzwingung im Hintergrundskript liegt — das
+Popup ist schlicht nicht angeschlossen.
+
+**Fix-Skizze:** Im Popup vor jedem Netzwerkzugriff dieselbe Bedingung prüfen (`externalAnalysisConsent === true`,
+sonst nur Hinweiskarte + Button „Einstellungen öffnen“); API-Key-Lookup ebenfalls nur mit Zustimmung;
+Test mit `fetch`-Stub, der beweist, dass im ausgeschalteten Zustand **null** Aufrufe erfolgen (Aufgabe A-09).
+
+### P0-8 — Kontextmenü-Einträge sind ohne die Berechtigung `menus` wirkungslos
+**Belege**
+- `manifest.json:19–25`: `permissions: ["messagesRead", "storage", "notifications", "scripting", "downloads"]`
+  — **`menus` fehlt**.
+- Thunderbird-Schema `mail/components/extensions/schemas/menus.json`: `"namespace": "menus",
+  "permissions": ["menus"]` (ebenso `menus_child.json`). Ohne diese Berechtigung ist `browser.menus` nicht
+  verfügbar.
+- Der Code bricht daher still ab: `background.js:1745`
+  (`if (!browser.menus || typeof browser.menus.create !== 'function') return;`) und `background.js:1815`
+  (`if (browser.menus && browser.menus.onClicked) …`).
+- Betroffene, öffentlich beworbene Funktionen: „A context-menu entry scans a link with Thundy AV“
+  (`README.md:34`), Prüfschritte 8.4 in `docs/reviewer_notes.md`.
+
+**Auswirkung:** Zwei beworbene Einstiegspunkte (Link-Kontextmenü, „Alle Links dieser Nachricht scannen“)
+existieren nicht. Das ist ein Funktions- und Erwartungsbruch (Listing vs. Realität) und fällt im Review
+sofort auf, weil die Reviewer-Notes einen Testschritt dafür enthalten.
+
+**Fix-Skizze:** `"menus"` in `permissions` aufnehmen, Reviewer-Notes-Begründung ergänzen, Funktion im
+Live-Test belegen (A-10). Zusätzlich einen Test, der die Permission erzwingt, sobald `browser.menus` genutzt
+wird (Guard gegen Rückfälle).
+
+### P0-9 — Das Popup-Skript bricht mit `ReferenceError` ab; der Analysebereich rendert nie
+**Belege**
+- `npx eslint --no-config-lookup --config /tmp/eslint.audit.config.mjs --rule no-undef api.js` →
+  `'syncFragment' is not defined` (`api.js:193`, `api.js:210`), `'container' is not defined` (`api.js:218`).
+- `syncFragment` wird nur als Parameter weitergegeben (`api.js:735`, `:738`), nie definiert; `container` ist
+  im `if (hasAttachments || hasLinks)`-Zweig nicht deklariert (die `let container`-Deklarationen liegen in
+  anderen Blöcken/Funktionen, z. B. `api.js:223`).
+- Die Fehler entstehen in asynchronen Handlern (`getRequest.onsuccess`) → unbehandelte Promise-Rejection; die
+  Oberfläche bleibt bei „Lade Analyseergebnisse…“ stehen.
+- `api.test.js` deckt das nicht ab, weil die selbstausführende Popup-Kapsel vor dem Laden entfernt wird.
+
+**Auswirkung:** Das Popup ist der zentrale Einstieg für „manueller Upload“, „URL-Scan“, „HTML entschärfen“ und
+die Ergebnisanzeige. Es funktioniert nur teilweise (Stammdaten/Buttons), der Ergebnisbereich nicht — bei
+390 grünen Tests. Für ein Store-Review ist das ein sichtbarer Funktionsmangel.
+
+**Fix-Skizze:** Fragment-/Container-Handling korrigieren (gemeinsames `container`-Element deklarieren,
+`syncFragment` als echte Funktion bereitstellen oder Parameter entfernen), Regressionstest ergänzen, der
+`api.js` **ohne** Entfernen der Kapsel in einer JSDOM-Umgebung ausführt (mindestens Smoke-Test).
+
+
 
 
 ---
@@ -352,6 +437,42 @@ Pull-Requests (Bot-Läufe „Bolt/Palette/Sentinel“) und 400+ Branches.
 historisch markieren; Kandidatenversion taggen und XPI anhängen; überholte Bot-Branches/PRs aufräumen.
 
 
+### P1-14 — Der dokumentierte Signierweg würde gegen die AMO-API senden, nicht gegen ATN
+**Belege**
+- `docs/ci/release.yml:42–44`: `npx web-ext sign --source-dir . --artifacts-dir ./build --channel "${{ inputs.channel }}"`.
+- `node_modules/web-ext/lib/program.js:19`: `export const AMO_BASE_URL = 'https://addons.mozilla.org/api/v5/'`;
+  `:426–431` setzt diesen Wert als Default für `--amo-base-url` (bestätigt durch `npx web-ext sign --help`:
+  *„[default: https://addons.mozilla.org/api/v5/]“*).
+- Im Workflow fehlt `--amo-base-url` bzw. `WEB_EXT_AMO_BASE_URL` (`grep` auf `amo-base` in
+  `docs/ci/release.yml` → kein Treffer). Ein Release-Workflow ist zudem **nicht** aktiv: im Repository
+  existiert nur `.github/workflows/ci.yml`.
+- Die Umgebungsvariablen `WEB_EXT_API_KEY`/`WEB_EXT_API_SECRET` sind korrekt vorgesehen; der Endpunkt ist das
+  Problem.
+
+**Auswirkung:** Ein Signierlauf mit den ATN-Schlüsseln würde die Thunderbird-Extension an die
+**Mozilla-AMO-API** schicken — falscher Katalog, Ablehnung (Thunderbird-only-Manifest/ID) oder zumindest
+irreführende Fehlermeldungen. Ohne aktiven Workflow wird ohnehin manuell signiert; die Anleitung muss dann
+stimmen.
+
+**Fix-Skizze:** `--amo-base-url https://addons.thunderbird.net/api/v5/` ergänzen, Workflow aktivieren,
+Signierkommando in `docs/quickstart.md`/`docs/store_listing.md` dokumentieren (Aufgabe A-19).
+
+### P1-15 — `--channel listed` läuft in den 15-Minuten-Approval-Timeout und erzeugt kein XPI
+**Belege**
+- `node_modules/web-ext/lib/util/submit-addon.js:59`: `approvalCheckTimeout = 900000, // 15 minutes.`
+  (Default); `:224–232` bricht bei Ablauf ab (*„Approval: timeout exceeded.“*).
+- Das signierte XPI wird nur bei `status === 'public'` heruntergeladen (`:215–230`).
+- `docs/ci/release.yml:45–51` lädt `build/*.xpi` mit `if-no-files-found: error` hoch.
+
+**Auswirkung:** Bei einer **listed**-Einreichung prüft ATN manuell; ein Review dauert fast immer länger als
+15 Minuten. Der Signierlauf endet folglich ohne XPI, und der Upload-Schritt scheitert zusätzlich hart. Die
+Einreichung selbst kann trotzdem erfolgreich gewesen sein (Version liegt im Review) — der Workflow würde das
+aber als Fehler melden und das Artefakt fehlt für die Nachweisführung.
+
+**Fix-Skizze:** Für `listed` `--approval-timeout 0` setzen (nur einreichen), Artefakt-Upload auf
+`if-no-files-found: warn` stellen und den Review-Status separat verfolgen (Aufgabe A-19).
+
+
 ---
 
 ## 6. Mittlere und kleine Punkte
@@ -410,6 +531,27 @@ Thunderbird 140 ausgewertet (Gecko-Manifest-Schema `data_collection_permissions`
 **Auswirkung:** Bewusste Entscheidung mit Reichweitenverlust; muss im Listing begründet stehen, sonst wirkt
 es wie ein Fehler.
 **Fix:** Im Listing „Requires Thunderbird 140+“ begründen (MV3 + Daten-Konsent) und prüfen, ob 128 ESR
+### P2-20 — Die Paketprüfung kann ein veraltetes ZIP prüfen und „valid“ melden
+**Belege:** `scripts/verify-package.js:50–57` liest alle `*.zip` aus dem Artefaktverzeichnis und wählt
+`candidates.sort().pop()` — also lexikografisch, nicht nach Version. Weder `docs/ci/ci.yml:29–33` noch
+`docs/ci/release.yml:32–36` leeren `./build` vorher.
+**Auswirkung:** Liegen mehrere ZIPs im Verzeichnis (z. B. `…-1.6.zip` und `…-1.10.zip`), gewinnt
+lexikografisch `…-1.6.zip`; das Gate meldet dann für das **alte** Paket „Package content is valid“. Ein
+falsches „grün“ direkt vor der Einreichung ist die worst-case-Variante für ein Release.
+**Fix:** Artefakt nach höchster Version bzw. `mtime` wählen und/oder `build/` vor dem Build leeren
+(Aufgabe A-12).
+
+### P2-21 — Der Build ist nicht byte-reproduzierbar
+**Belege:** Zwei aufeinanderfolgende `npx web-ext build` erzeugen ZIPs mit identischer Größe (48.890 Bytes)
+und identischen CRC-Werten pro Eintrag, aber **wechselnder Eintragsreihenfolge** und jeweils aktueller
+Zeitstempel in den Einträgen (Hash 1 ≠ Hash 2).
+**Auswirkung:** Kein stabiler Artefakt-Hash für Release-Checksummen/Attestierungen; zusätzlich nutzt
+`web-ext sign` einen CRC-basierten Upload-Cache (`.amo-upload-uuid`), der durch wechselnde Reihenfolge
+wirkungslos wird — jeder Signierlauf lädt erneut hoch.
+**Fix:** Deterministisches Archivieren (Reihenfolge/Zeitstempel fixieren, z. B. `SOURCE_DATE_EPOCH`) oder
+Nicht-Reproduzierbarkeit als Restrisiko dokumentieren (Aufgabe A-15).
+
+
 bewusst nicht unterstützt wird (Aufgabe A-13).
 
 ### P3-20 — Entwickler-Scratch-Dateien im Repository-Root
@@ -437,6 +579,72 @@ gewählt werden.
 
 
 ---
+### P3-23 — `.webextignore` ist tote Konfiguration und suggeriert eine Sicherung, die es nicht gibt
+**Belege:** `grep -rq webextignore node_modules/web-ext/lib` → kein Treffer; `web-ext` liest ausschließlich
+`--ignore-files` bzw. `ignoreFiles` aus der Config. Gegenprobe:
+`npx web-ext build --no-config-discovery --source-dir .` erzeugt **67 Dateien** (u. a. `docs/**`,
+`*.test.js`, `package.json`, Lockfiles) — alle Excludes stammen aus `web-ext-config.mjs`.
+`docs/STATUS.md:31–32` formuliert dagegen „`ignoreFiles`, **ergänzt durch** `.webextignore“.
+**Auswirkung:** Zwei divergierende Ignore-Quellen; die vermeintliche zweite Sicherung existiert nicht und hat
+den Paketfehler P0-6 begünstigt.
+**Fix:** `.webextignore` entfernen oder als „von `web-ext` nicht gelesen“ kennzeichnen und ausschließlich
+`web-ext-config.mjs` pflegen (A-07/A-13).
+
+### P3-24 — Zwei parallele Lockfiles, nur npm wird genutzt
+**Belege:** `package-lock.json` (lockfileVersion 3) und `pnpm-lock.yaml` (9.0) existieren parallel mit
+denselben Specifern; kein Workflow/Skript nutzt `pnpm`. `npm ci` ist konsistent (Exit 0).
+**Auswirkung:** Divergenzrisiko bei Dependency-Updates (Dependabot-PRs betreffen nur eine Datei);
+`pnpm-lock.yaml` wird derzeit nur aus dem Paket ausgeschlossen.
+**Fix:** Datei löschen oder pnpm als alleinigen Paketmanager etablieren (A-21).
+
+
+### P2-22 — Die Thunderbird-Berechtigung `sensitiveDataUpload` ist nicht deklariert
+**Belege:** Thunderbird stellt `sensitiveDataUpload` als (optionale) Berechtigung bereit; die
+TB-Beschreibung lautet *„Transfer sensitive user data (if access has been granted) to a remote server for
+further processing“* (`mail/locales/en-US/messenger/extensionPermissions.ftl`). Thunderbirds eigenes
+Zusatz-Add-on deklariert sie in `permissions` (`mail/extensions/builtin-addons/thundermail/extension/manifest.json`).
+Das Add-on lädt Anhangsinhalte hoch (`background.js:1451`, `:2221`); `grep -rn 'sensitiveDataUpload' manifest.json *.js`
+→ 0 Treffer. Eine Durchsetzung im comm-central-Code ist nicht auffindbar → **unverifiziert**, ob ATN das
+Fehlen beanstandet.
+**Auswirkung:** Potenzieller Review-Einwand „lädt sensible Nutzerdaten hoch, deklariert aber nicht die dafür
+vorgesehene Berechtigung“. Gleichzeitig verbietet der repo-eigene Pre-Submit-Check `optional_permissions`
+(`scripts/pre-submit-checks.js`), sodass die Deklaration derzeit gar nicht möglich wäre.
+**Fix:** Entscheidung dokumentieren und mit ATN klären (A-04); je nach Antwort `optional_permissions` +
+`permissions.request({permissions:['sensitiveDataUpload']})` nutzen und die Hausregel für diesen
+Sonderfall öffnen.
+
+### P2-23 — `permissions.request()` aus dem Banner läuft ohne Nutzergeste im Zielkontext
+**Belege:** `background.js:1939–1944` (`handleRequestScan`) ruft `browser.permissions.request(...)` auf.
+Aufgerufen wird es über `runtime.sendMessage` aus dem injizierten Banner (Klick) →
+`onMessage`-Listener (`background.js:1994–1996`). Zwischen Klick und Request liegt damit ein
+Messaging-Sprung **und** ein `await` (`hasHybridPermission()`), also kein unmittelbarer Gestenkontext.
+Vergleich: `options.js:137–142` fordert die Rechte im Klick-Handler auf „Speichern“ korrekt an.
+**Auswirkung:** Lehnt Thunderbird die Anfrage ab, funktioniert der beworbene Ein-Klick-Scan nicht; der
+Nutzer muss die Rechte in den Optionen erteilen (Fehlerpfad ist immerhin sichtbar, `background.js:1155–1171`).
+**Fix:** Berechtigung im Banner-Kontext anfordern oder den Nutzer explizit in die Optionen führen; im
+Live-Test verifizieren (A-06/A-08).
+
+### P2-24 — IP-Reputations-Cache friert „kein Treffer“-Ergebnisse aus der Zeit ohne Zustimmung ein
+**Belege:** `checkAbuseIPDB`/`checkVirusTotalIP` geben ohne Zustimmung `false` zurück (`background.js:338`,
+`:358`); `checkIPReputation` legt dieses `false` als endgültiges Ergebnis im Cache ab
+(`background.js:875–880`), und der Cache wird bei erneutem Aufruf nur noch gelesen (`:850–857`).
+**Auswirkung:** Wer die Zustimmung erst nach dem ersten Öffnen von Nachrichten erteilt, erhält für die
+bereits gecachten IPs dauerhaft „nicht auffällig“ — ein stiller Falsch-Negativ-Effekt genau in der Funktion,
+die der Nutzer gerade aktiviert hat.
+**Fix:** `false` nicht cachen, wenn keine Zustimmung/kein Host-Recht vorlag (Sentinel oder Cache-Leerung bei
+Konsent-Wechsel; `browser.storage.onChanged` ist bereits verdrahtet, `background.js:256`), Test ergänzen
+(A-08).
+
+### P3-25 — Sammelbefund: kleinere Codehärtungen
+**Belege (jeweils mit Zeile im Code-Audit belegt):** unerreichbarer Code nach `return` in `filterUrls()`;
+tote Key-Injektion in `api_gateway.js`; Benachrichtigungen enthalten die vollständige gescannte URL
+(Datenschutz-Kleinigkeit); `runtime.onMessage`-Listener ohne Absender-/Parameterprüfung; `menus.create` mit
+`try/catch`, das Fehler nicht abfängt (asynchron); doppelte `MessageList`-Normalisierung in `api.js`.
+**Auswirkung:** Kein Blocker, aber Review- und Wartbarkeitsrauschen; einzelne Punkte (URL in
+Benachrichtigung, fehlende Absenderprüfung) berühren Datenschutz/Härtung.
+**Fix:** im Rahmen von A-16 (Codebereinigung) abarbeiten, Benachrichtigungstexte ohne vollständige URL.
+
+
 
 ## 7. Positivnachweise (bereits store-tauglich — nicht „kaputt reparieren“)
 
@@ -448,9 +656,11 @@ gewählt werden.
 3. **Berechtigungsmodell:** Host-Zugriff ausschließlich über `optional_host_permissions` (7 valide Patterns,
    Pre-Submit-Check bestätigt sie); Anfrage zur Laufzeit nur für konfigurierte Anbieter in einer Nutzergeste
    (`options.js:128–146`); kein `webRequest`, kein `<all_urls>`, kein `management`.
-4. **Consent-Zentrum:** Ein einziger Erzwingungspunkt (`mayTransmitExternally()` /
-   `assertExternalAnalysisAllowed()`, `background.js:62–74`), der allen geprüften Netzwerkpfaden vorgeschaltet
-   ist; der Fehlercode `EXTERNAL_ANALYSIS_DISABLED` wird bis in die UI transportiert.
+4. **Consent-Zentrum im Hintergrundskript:** `mayTransmitExternally()` /
+   `assertExternalAnalysisAllowed()` (`background.js:62–74`) ist allen **Hintergrund**-Netzwerkpfaden
+   vorgeschaltet; der Fehlercode `EXTERNAL_ANALYSIS_DISABLED` wird bis in die UI transportiert. **Nicht**
+   abgedeckt: das Popup-Skript (`api.js`, P0-7) — die Aussage „ohne Zustimmung wird nichts übertragen“ gilt
+   daher nur für den Hintergrund, nicht für das Add-on als Ganzes.
 5. **Sicherheit:** kein `eval`, kein `new Function`, keine Remote-Skripte, kein `innerHTML` im Laufzeitcode
    (DOM über `createElement`/`textContent`, vgl. `background.js:988`), strikte CSP, keine Secrets im Repo,
    HTTPS-only-Ziele, API-Keys nur in `browser.storage.local` (unverschlüsselte Ablage ist in der
@@ -484,18 +694,25 @@ gewählt werden.
 **GO nur, wenn alle Punkte mit reproduzierbarem Nachweis erfüllt sind:**
 
 1. `npm run pre-submit-checks` → 0 Fehler, **0 Warnungen** (Screenshot-Warnung entfällt).
-2. `npm test` → 0 Fehler, und der Lauf enthält keine Nicht-Testdateien mehr (P2-16).
-3. `npx web-ext lint` → 0 Fehler; der Filter nutzt eine Allow-Liste **ohne** in MV3 entfernte APIs (P1-8).
-4. `npx web-ext build` + `scripts/verify-package.js` → Exit 0, nur Laufzeitdateien im Paket (P0-6), und diese
-   Kette läuft in der **aktiven** CI (P1-7).
-5. `manifest.json` deklariert `data_collection_permissions` wahrheitsgemäß; Laufzeit-Consent implementiert
+2. `npm test` → 0 Fehler, und der Lauf enthält keine Nicht-Testdateien mehr (P2-16); zusätzlich ist das
+   Popup-Skript durch einen Smoke-Test abgedeckt, der die Kapsel **nicht** entfernt (P0-9).
+3. `npx eslint --rule no-undef` auf allen Laufzeitskripten → 0 Fehler (`syncFragment`/`container`-Klasse, P0-9).
+4. `npx web-ext lint` → 0 Fehler; der Filter nutzt eine Allow-Liste **ohne** in MV3 entfernte APIs (P1-8).
+5. `npx web-ext build` + `scripts/verify-package.js` → Exit 0, nur Laufzeitdateien im Paket (P0-6), mit
+   versionbasierter Artefaktwahl (P2-20); diese Kette läuft in der **aktiven** CI (P1-7).
+6. `manifest.json` deklariert `data_collection_permissions` wahrheitsgemäß; Laufzeit-Consent implementiert
    (P0-1).
-6. Die Datenschutz-Stufe wirkt nachweislich auf **alle** Übermittlungspfade — oder die Ausnahme ist in
+7. **Kein Pfad überträgt ohne Zustimmung** — nachgewiesen mit einem `fetch`-Zähler in Tests, der für
+   Hintergrund **und** Popup im ausgeschalteten Zustand 0 Aufrufe zeigt (P0-7).
+8. Die Datenschutz-Stufe wirkt nachweislich auf **alle** Übermittlungspfade — oder die Ausnahme ist in
    Datenschutzerklärung, Listing und Reviewer-Notes identisch beschrieben (P0-2, P2-15).
-7. Live-Testprotokoll in Thunderbird 140 ESR vollständig, ohne offene Fehlschläge (P0-3).
-8. Drei echte PNG-Screenshots liegen im Repo und sind im Listing verankert (P0-4).
-9. Einreichungskandidat festgelegt, getaggt, als XPI gebaut; Datenschutzerklärung öffentlich erreichbar und
-   konsistent (P0-5, P1-13).
+9. Live-Testprotokoll in Thunderbird 140 ESR vollständig, ohne offene Fehlschläge, **inklusive**
+   Kontextmenü-Einträgen (P0-3, P0-8).
+10. Drei echte PNG-Screenshots liegen im Repo und sind im Listing verankert (P0-4).
+11. Einreichungskandidat festgelegt, getaggt, als XPI gebaut; Datenschutzerklärung öffentlich erreichbar und
+    konsistent (P0-5, P1-13).
+12. Signierweg geprüft: `--amo-base-url https://addons.thunderbird.net/api/v5/`, bei `listed`
+    `--approval-timeout 0` (P1-14, P1-15).
 10. Doku-Drift bereinigt: keine Aussage in README/Listing/Reviewer-Notes/Policy widerspricht dem Code (P1-11).
 
 ---
@@ -537,11 +754,13 @@ npx web-ext lint --source-dir /tmp/dc_v1   # 0 Fehler / 26 Warnungen
 
 | Bericht | Inhalt | Hauptbezug |
 |---|---|---|
+| `docs/audits/code-audit.md` | Code-Audit: MV3-APIs, Consent-Erzwingung, Permission-Flüsse, Sicherheit, toter Code | P0-7, P0-8, P0-9, P1-8, P1-9, P1-10, P1-12 |
 | `docs/audits/docs-audit.md` | Doku-/Policy-Audit: Datenfluss-Tabellen gegen Code, Provider-/Origin-Abgleich, Listing-Anforderungen, Doku-Widersprüche | P0-2, P1-11, P1-12, P2-14, P2-18 |
-| `docs/audits/code-audit.md` | Code-Audit: MV3-APIs, Consent-Erzwingung, Permission-Flüsse, Sicherheit, toter Code | P0-1, P0-3, P1-8, P1-9, P1-10, P1-12 |
-| `docs/audits/pipeline-audit.md` | Build-/Paket-/CI-/Release-Audit: XPI-Inhalt, Gates, Signierfähigkeit, Versionskonsistenz | P0-5, P0-6, P1-7, P1-13, P2-14 |
+| `docs/audits/pipeline-audit.md` | Build-/Paket-/CI-/Release-Audit: XPI-Inhalt, Gates, Signierfähigkeit, Versionskonsistenz | P0-5, P0-6, P1-7, P1-13, P1-14, P1-15, P2-20, P2-21, P3-23, P3-24 |
 
-Die Berichte sind Rohbelege der Audits; maßgeblich für die Befundliste sind die in §4–§6 zitierten Stellen,
-die beim Zusammenführen redaktionell gegen die Messwerte aus §2 abgeglichen wurden.
+Die Berichte sind Rohbelege der drei unabhängigen Auditläufe (jeweils mit eigenen Kommando- und
+Datei:Zeile-Nachweisen). Maßgeblich für die Befundliste sind die in §4–§6 zitierten Stellen; sie wurden beim
+Zusammenführen **einzeln gegen die Messwerte aus §2 nachgeprüft** (u. a. `eslint no-undef`, XPI-Inhalt,
+Manifest-/Schema-Abgleich, `web-ext`-Defaults).
 
 
