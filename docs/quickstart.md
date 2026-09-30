@@ -75,29 +75,33 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
       --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed
   ```
 
-## 5a. Vollständiges lokales Gate (Ersatz für die blockierte CI)
+## 5a. Lokale Gates (Ersatz für die blockierte CI)
 
-Ein Befehl prüft alles, was vor einem Pull Request bzw. einer Einreichung nötig ist:
+Für Pull Requests – ein Befehl, der alles Nötige prüft:
 
 ```bash
 npm run check
 ```
 
-Das führt nacheinander aus: Pre-Submit-Checks, das **Submission-Gate** (Go/No-Go-Checkliste aus §10 der
-Problemanalyse), die vollständige Testsuite, den Linter mit Filter der bekannten Thunderbird-False-Positives
-und den Paketbau inklusive Inhaltsprüfung. Einzeln:
+Das führt nacheinander aus: Pre-Submit-Checks, die vollständige Testsuite, den Linter mit Filter der bekannten
+Thunderbird-False-Positives und den Paketbau inklusive Inhaltsprüfung. Einzeln:
 
 ```bash
-npm run pre-submit-checks   # Manifest, Rechte, Daten-Deklaration, Screenshots
-npm run gate                # Go/No-Go vor der Store-Einreichung
-npm test                    # 421 Tests
+npm run pre-submit-checks   # Manifest, Rechte, Daten-Deklaration, Assets
+npm test                    # 422 Tests
 npm run lint:filtered       # web-ext lint, nur bekannte False-Positives erlaubt
 npm run package:verify      # XPI bauen und Inhalt/Größe prüfen
 ```
 
-Das Gate meldet `BLOCKER:`-Zeilen mit Exit-Code 1, solange Einreichungsvoraussetzungen fehlen (z. B. echte
-Screenshots oder ein abgeschlossenes Live-Test-Protokoll) und ist damit die ausführbare Fassung der
-Go/No-Go-Liste.
+Für die **Store-Einreichung** kommt das Submission-Gate dazu (Go/No-Go-Checkliste aus §10 der Problemanalyse):
+
+```bash
+npm run gate
+```
+
+Es meldet `BLOCKER:`-Zeilen mit Exit-Code 1, solange Einreichungsvoraussetzungen fehlen (aktuell: echte
+Screenshots und ein abgeschlossenes Live-Test-Protokoll). Bewusst **nicht** Teil von `npm run check`, damit ein
+Pull Request auch dann grün sein kann, wenn die Einreichung noch nicht vollständig vorbereitet ist.
 
 ## 6. In Thunderbird laden
 

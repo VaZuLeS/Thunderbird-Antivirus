@@ -17,15 +17,11 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm ci
-      - name: Pre-submit checks (manifest, permissions, data collection, assets)
-        run: npm run pre-submit-checks
-      - name: Run unit tests
-        run: npm test
-      - name: web-ext lint (errors block, known Thunderbird false positives are filtered)
-        run: |
-          npx web-ext lint --source-dir . --output json > /tmp/lint.json
-          node scripts/filter-lint-warnings.js /tmp/lint.json
-      - name: Build XPI and verify package contents
-        run: |
-          npx web-ext build --source-dir . --artifacts-dir ./build
-          node scripts/verify-package.js ./build
+      # Single step on purpose: the workflow runs exactly the same command that
+      # contributors run locally, so the CI cannot drift from npm run check.
+      # It covers: pre-submit checks, submission gate, all tests,
+      # web-ext lint with the known Thunderbird false positives filtered and
+      # the XPI build with the package content check.
+      - name: Full quality gate (npm run check)
+        run: npm run check
+

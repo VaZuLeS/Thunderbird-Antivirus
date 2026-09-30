@@ -79,8 +79,9 @@ blockierten Punkte (§0.1) im Detail.
   Antwortkatalog für erwartete Review-Fragen in den Reviewer-Hinweisen.
 - **Ausführbares Go/No-Go:** `npm run gate` (`scripts/submission-gate.js`) prüft die Einreichungsvoraussetzungen
   (Versionen, Screenshots, abgeschlossener Live-Test, Lokalisierung, Reviewer-Paket, Signierziel) und meldet
-  offene Punkte als `BLOCKER:` mit Exit-Code 1; `npm run check` bündelt Pre-Submit-Checks, Gate, Tests, Lint
-  und Paketprüfung als lokalen Ersatz für die (blockierte) CI.
+  offene Punkte als `BLOCKER:` mit Exit-Code 1. `npm run check` bündelt Pre-Submit-Checks, Tests, Lint und
+  Paketprüfung als lokalen Ersatz für die (blockierte) CI; das Gate läuft separat, damit Pull Requests auch ohne
+  fertige Einreichungs-Assets grün sein können.
 - **Regressionsschutz:** `test/store_readiness.test.js` verankert die Review-relevanten Entscheidungen,
   `test/i18n.test.js` die Vollständigkeit der Sprachkataloge (zusammen 410 Tests, 0 Fehler).
 

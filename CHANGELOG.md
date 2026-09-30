@@ -20,10 +20,11 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
   Live-Test-Protokoll inklusive ausgefüllter Umgebungsfelder, vollständige Lokalisierung, Reviewer-Paket,
   Dokumentation der Daten-Deklaration und das ATN-Signierziel. Offene Punkte werden als `BLOCKER:` mit
   Exit-Code 1 gemeldet (aktuell: Screenshots und Live-Test).
-- **Ein Befehl für das komplette Qualitätsgate:** `npm run check` führt Pre-Submit-Checks, Submission-Gate,
-  alle Tests, den gefilterten Linter (`npm run lint:filtered`) und den Paketbau mit Inhaltsprüfung
-  (`npm run package:verify`) aus – der lokale Ersatz für den Workflow, der wegen der fehlenden
-  `workflows`-Push-Berechtigung nicht aktiviert werden kann.
+- **Ein Befehl für das PR-Qualitätsgate:** `npm run check` führt Pre-Submit-Checks, alle Tests, den gefilterten
+  Linter (`npm run lint:filtered`) und den Paketbau mit Inhaltsprüfung (`npm run package:verify`) aus – der
+  lokale Ersatz für den Workflow, der wegen der fehlenden `workflows`-Push-Berechtigung nicht aktiviert werden
+  kann. Die CI-Definition in `docs/ci/ci.yml` ruft genau diesen Befehl auf, damit sie nicht von ihm abweichen
+  kann; das Submission-Gate läuft bewusst separat.
 - **Beispielskript für den Live-Test:** `examples/run-in-thunderbird.sh` startet Thunderbird mit einem
   getrennten Testprofil und geladenem Add-on (ersetzt das veraltete `examples/minimal_scan.sh`, das ein in
   diesem Repository nie existierendes CLI aufrief).

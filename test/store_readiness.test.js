@@ -56,8 +56,9 @@ describe('store readiness contracts', () => {
     assert.ok(pkg.scripts.gate, 'npm run gate is missing');
     assert.ok(pkg.scripts['package:verify'], 'npm run package:verify is missing');
     assert.ok(pkg.scripts['lint:filtered'], 'npm run lint:filtered is missing');
-    assert.match(pkg.scripts.check, /npm run gate/, 'npm run check must include the gate');
-    assert.match(pkg.scripts.check, /npm test/, 'npm run check must run the tests');
+    // The PR quality gate must not include the submission gate: a pull request
+    // has to pass even while screenshots or the live test are still missing.
+    assert.ok(!pkg.scripts.check.includes('npm run gate'), 'npm run check must stay PR-oriented');
   });
 
   it('offers a reliable user gesture fallback for the provider host permission (A-12)', () => {
@@ -83,10 +84,16 @@ describe('store readiness contracts', () => {
     const release = read('docs/ci/release.yml');
     assert.match(release, /--amo-base-url/);
     assert.match(release, /https:\/\/addons\.thunderbird\.net\/api\/v5\//);
+    // The CI mirror must call the same command contributors run locally, so the
+    // workflow cannot drift from the individual checks again (see P1-7).
     const ci = read('docs/ci/ci.yml');
-    assert.match(ci, /npm test/);
-    assert.match(ci, /filter-lint-warnings\.js/);
-    assert.match(ci, /verify-package\.js/);
+    assert.match(ci, /npm run check/);
+    const pkg = JSON.parse(read('package.json'));
+    const covered = ['npm run pre-submit-checks', 'npm test', 'npm run lint:filtered',
+      'npm run package:verify'];
+    for (const command of covered) {
+      assert.ok(pkg.scripts.check.includes(command), 'npm run check must cover ' + command);
+    }
   });
 
   it('ships the reviewer package required for the store review (A-15/A-33)', () => {

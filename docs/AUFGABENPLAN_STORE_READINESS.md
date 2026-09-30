@@ -69,6 +69,8 @@ npm run gate                    # Go/No-Go: 3 Blocker (Screenshots, Live-Test-Pr
   `permissions.request()` durchgereicht wird, bietet das Popup eine zusätzliche Freigabe an
   (`renderHostPermissionNotice()` → „Zugriff erteilen“). Der Opt-in-Flow bleibt damit auch dann benutzbar, wenn
   der Banner-Weg in Thunderbird scheitert.
+- **A-31:** Die Go/No-Go-Liste ist als `npm run gate` ausführbar; das Gate ist bewusst **nicht** Teil von
+  `npm run check`, damit Pull Requests auch dann grün sein können, wenn Screenshots und Live-Test noch fehlen.
 - **A-15:** Testdaten und Testanleitung sind vorhanden; ein mitgelieferter Reviewer-API-Schlüssel ist nicht
   möglich (kein Anbieterkonto des Maintainers). Deshalb dokumentiert `docs/testdata.md` §3 ausdrücklich, was
   **ohne** Schlüssel prüfbar ist.

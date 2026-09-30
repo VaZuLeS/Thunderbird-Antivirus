@@ -5,7 +5,7 @@ Dieses Verzeichnis enthält die **fertigen Workflow-Definitionen**, die nach `.g
 
 | Datei | Ziel im Repository | Zweck |
 |---|---|---|
-| `ci.yml` | `.github/workflows/ci.yml` | `npm ci`, Pre-Submit-Checks, vollständige Unit-Tests, `web-ext lint` mit Filter bekannter Thunderbird-False-Positives, XPI-Build und Paketprüfung |
+| `ci.yml` | `.github/workflows/ci.yml` | `npm ci` und `npm run check` (Pre-Submit-Checks, alle Tests, `web-ext lint` mit Filter bekannter Thunderbird-False-Positives, XPI-Build und Paketprüfung) – derselbe Befehl wie lokal, damit der Workflow nicht von `npm run check` abweichen kann. Das Submission-Gate (`npm run gate`) läuft bewusst nicht in der CI, weil ein PR auch ohne fertige Einreichungs-Assets grün sein muss. |
 | `release.yml` | `.github/workflows/release.yml` | manueller Signier-/Release-Job (`web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed\|unlisted`) über die Secrets `ATN_API_KEY` und `ATN_API_SECRET` |
 
 ## Warum liegen sie hier und nicht direkt unter `.github/workflows/`?
@@ -68,15 +68,15 @@ Alle Schritte lassen sich ohne GitHub Actions nachvollziehen:
 
 ```bash
 npm ci
-npm run check        # entspricht allen Schritten der ci.yml in einem Befehl:
-                     # pre-submit-checks, Gate, npm test, lint:filtered, package:verify
+npm run check       # entspricht der ci.yml in einem Befehl: pre-submit-checks,
+                    # npm test, lint:filtered, package:verify
+npm run gate        # zusätzlich vor einer Store-Einreichung (Go/No-Go nach §10)
 ```
 
 Einzeln (identisch zu den Workflow-Schritten):
 
 ```bash
 npm run pre-submit-checks
-npm run gate
 npm test
 npm run lint:filtered
 npm run package:verify

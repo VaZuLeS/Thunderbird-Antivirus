@@ -139,13 +139,14 @@ files, `docs/`, `scripts/`, `examples/` and lockfiles are not shipped.
 
 ```bash
 npm ci                       # install dev dependencies (jsdom, web-ext)
-npm run check                # everything that must pass before a PR or a submission:
-                             #   pre-submit checks, submission gate, all tests,
-                             #   filtered lint, XPI build + package content check
+npm run check                # everything that must pass before a PR:
+                             #   pre-submit checks, all tests, filtered lint,
+                             #   XPI build + package content check
+npm run gate                 # submission readiness (also run before submitting)
 ```
 
-Individual steps: `npm run pre-submit-checks`, `npm run gate`, `npm test`, `npm run lint:filtered`,
-`npm run package:verify`.
+Individual steps: `npm run pre-submit-checks`, `npm test`, `npm run lint:filtered`, `npm run package:verify`
+(plus `npm run gate` for the submission criteria).
 
 - `npm test` uses the script from `package.json` (`node --test`) and therefore executes **all** test files of the
   repository, not just `background.test.js`.
