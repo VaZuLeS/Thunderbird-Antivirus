@@ -173,7 +173,7 @@ What is **not** transmitted, regardless of tier:
 | Location | Content | Notes |
 |---|---|---|
 | `browser.storage.local` | settings, consent flags (`externalAnalysisConsent`, `scanningEnabledSenders`), API keys | stored unencrypted (plain local storage of Thunderbird); no remote copy |
-| IndexedDB `thunderbird_av`, version 3, object store `hybridanalysis` | scan results per message (verdict, status, analysis IDs, timestamps), link metadata, mapping via Message-ID/header ID | no attachment contents |
+| IndexedDB `thunderbird_av`, version 3, object store `hybridanalysis` | scan results per message (verdict, status, analysis IDs, timestamps), the **local assessment** per message (risk score, reasons, SPF/DKIM/DMARC result, evaluation time — this is what the popup shows), link metadata, mapping via Message-ID/header ID | no attachment contents |
 
 Deletion during review: the **"Clear cache"** button in the options dialog empties the object store
 `hybridanalysis`. Removing the add-on removes all local extension data. The add-on operates no
