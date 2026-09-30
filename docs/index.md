@@ -1,17 +1,24 @@
 # Thundy AV – Documentation
 
 Landing page for the documentation of **Thundy AV – Email Scanner for Thunderbird**
-(short name "Thundy AV"), version 1.6, MIT license.
+(short name "Thundy AV"), version 1.6.1, MIT license.
 
 - Language selection page (GitHub Pages root): [index.html](index.html) ·
   [English](index_en.html) · [Deutsch](index_de.html)
 - Privacy policy (German, with an English section): [privacy_policy.md](privacy_policy.md)
   · hosted: https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
-- Reviewer notes (permissions, data flows, test path): [reviewer_notes.md](reviewer_notes.md)
+- Reviewer notes (permissions, data flows, test path, response catalogue):
+  [reviewer_notes.md](reviewer_notes.md)
 - Store listing copy: [store_listing.md](store_listing.md)
 - Asset status: [store_assets.md](store_assets.md) · capture guide:
   [screenshot_capture.md](screenshot_capture.md)
-- Store-readiness analysis (findings B1–B6, H1–H12, M1–M12):
+- **Store-readiness problem analysis (current, 1.6.1):**
+  [PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md) and the derived
+  **task plan** [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md)
+- Live test protocol for Thunderbird 140 ESR: [live_test_protocol.md](live_test_protocol.md) ·
+  test data: [testdata.md](testdata.md)
+- Data collection decision record: [data_collection_decision.md](data_collection_decision.md)
+- Store-readiness analysis of version 1.5 (historical baseline, findings B1–B6, H1–H12, M1–M12):
   [STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md)
 
 ## Data processing in one sentence

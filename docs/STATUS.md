@@ -39,7 +39,8 @@ abgearbeitet:
 - **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung, Daten-Deklaration
   und Rechte und liefert einen echten Exit-Code.
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission-, Daten-Deklarations- und
-  MV3-Portierungs-Tests enthalten) und ist grün (**395 Tests, 0 Fehler**); `web-ext lint` meldet 0 Fehler und
+  MV3-Portierungs-, Lokalisierungs- und Vertragstests enthalten) und ist grün (**410 Tests, 0 Fehler**);
+  `web-ext lint` meldet 0 Fehler und
   **18 Warnungen**, die vollständig als bekannte Thunderbird-False-Positives gefiltert sind
   (`scripts/filter-lint-warnings.js`). Der im Repository aktive Workflow (`.github/workflows/ci.yml`, Node 22)
   läuft `npm ci`, die Pre-Submit-Checks, `node --test background.test.js` und `npx web-ext lint`. Die vollständige
@@ -51,6 +52,33 @@ abgearbeitet:
   (`docs/reviewer_notes.md`), Listing-Entwurf (`docs/store_listing.md`); Live-Policy unter
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html.
 
+## Completed in 1.6.1 (Store-Readiness-Paket)
+
+Grundlage ist die neue [Problemanalyse](PROBLEMANALYSE_STORE_READINESS.md) mit
+[Aufgabenplan](AUFGABENPLAN_STORE_READINESS.md); dort stehen Durchführungsstand (§0), Go/No-Go (§10) und die
+blockierten Punkte (§0.1) im Detail.
+
+- **Daten-Deklaration korrigiert (P0-4):** `data_collection_permissions` deklariert `personalCommunications`
+  jetzt als **optional** (`"required": ["none"]`); beim Aktivieren von „Externe Analyse erlauben“ fragt
+  `options.js` zusätzlich die optionale Datenberechtigung an und gibt sie beim Abschalten zurück. Begründung
+  mit Validator-Nachweis: [data_collection_decision.md](data_collection_decision.md).
+- **Fehler werden sichtbar (P1-11):** Eine fehlgeschlagene Banner-Injektion wird protokolliert, als Diagnose
+  gespeichert und einmal pro Sitzung gemeldet; fehlt die Host-Berechtigung, erklärt das Banner den Weg dorthin
+  und das Popup bietet eine zuverlässige Freigabe per Klick (echte Nutzer-Geste).
+- **MV3-Bereinigung (P1-10):** Die in MV3 entfernten APIs und der unerreichbare
+  `scripting.messageDisplay.executeScript`-Zweig sind entfernt; `web-ext lint` meldet 18 statt 26 Warnungen.
+- **Vollständige Lokalisierung (P1-9):** Optionsseite und Popup nutzen `browser.i18n`/`_locales` (151 Schlüssel
+  je Sprache, deutscher Markup-Text als Fallback), abgesichert durch `test/i18n.test.js`.
+- **Zentrale Netzwerkbehandlung (P2-16):** Alle Anbieter-Anfragen (inkl. Datei-Upload und Popup-Abruf) laufen
+  über `apiGateway.fetchWithTimeout`.
+- **Signierweg korrigiert (P1-6):** Dokumentation und `docs/ci/release.yml` signieren über
+  `--amo-base-url https://addons.thunderbird.net/api/v5/` statt (web-ext-Default) über AMO.
+- **Reviewer-Paket (A-15/A-33):** [live_test_protocol.md](live_test_protocol.md),
+  [testdata.md](testdata.md) mit reproduzierbaren Testnachrichten (`node scripts/make-testdata.js`) und
+  Antwortkatalog für erwartete Review-Fragen in den Reviewer-Hinweisen.
+- **Regressionsschutz:** `test/store_readiness.test.js` verankert die Review-relevanten Entscheidungen,
+  `test/i18n.test.js` die Vollständigkeit der Sprachkataloge (zusammen 410 Tests, 0 Fehler).
+
 ## Remaining
 
 - **Manuelle Verifikation in Thunderbird 140 ESR (Pflicht vor der Einreichung):** Banner-Injektion, der
@@ -61,10 +89,9 @@ abgearbeitet:
 - **Echte Store-Screenshots:** In `docs/screenshots/` liegen nur SVG-Platzhalter; es fehlen Screenshots aus einer
   echten Thunderbird-Instanz.
 - **Store-Einreichung:** Noch nicht bei addons.thunderbird.net eingereicht – Listing ausfüllen, Privacy-Policy-URL,
-  Screenshots und Releasenotes hochladen, Paket signieren (`npx web-ext sign --channel listed`). Es existiert noch
-  keine Store-URL.
-- **Optional: Lokalisierung der Oberfläche:** Options- und Popup-Seite sind derzeit nur auf Deutsch; lokalisiert sind
-  bisher nur Manifest-Strings und Banner.
+  Screenshots und Releasenotes hochladen, Paket über ATN signieren
+  (`npx web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed`); die von `web-ext`
+  sonst verwendete AMO-Adresse ist für dieses Add-on falsch. Es existiert noch keine Store-URL.
 - **Nach der Einreichung:** Pflege der Releasenotes, Beantwortung von Reviewer-Rückfragen, Aktualisierung dieser
   Datei.
 
