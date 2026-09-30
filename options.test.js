@@ -33,6 +33,7 @@ describe('options.js', () => {
                     <span id="saveStatus" style="display: none;">Erfolgreich gespeichert.</span>
 
                     <button id="clearCache">Cache leeren</button>
+                    <ul id="diagnosticsOutput"></ul>
                     <span id="clearCacheStatus" style="display: none;"></span>
                 </body>
             </html>
@@ -306,6 +307,34 @@ describe('options.js', () => {
             assert.strictEqual(inputEl.getAttribute('maxlength'), '255', `#${id} must have maxlength="255"`);
             assert.strictEqual(inputEl.getAttribute('spellcheck'), 'false', `#${id} must have spellcheck="false"`);
         }
+    });
+
+    it('renders the diagnostics list with consent and key state', async () => {
+        const list = context.document.getElementById('diagnosticsOutput');
+        assert.ok(list, 'the diagnostics list exists');
+
+        await context.renderDiagnostics();
+
+        const text = list.textContent;
+        assert.ok(text.includes('Externe Analyse'), 'the consent state is reported');
+        assert.ok(text.includes('Hinterlegte API-Schlüssel'), 'the stored keys are counted');
+        assert.ok(text.includes('Datenschutz-Stufe'), 'the privacy tier is reported');
+    });
+
+    it('reports a registered in-message UI when the API is available', async () => {
+        context.browser.scripting = {
+            messageDisplay: { getRegisteredScripts: async () => ([{ id: 'thundy-ui' }]) }
+        };
+        await context.renderDiagnostics();
+        assert.ok(context.document.getElementById('diagnosticsOutput').textContent.includes('registriert'));
+    });
+
+    it('reports a missing in-message UI registration', async () => {
+        context.browser.scripting = {
+            messageDisplay: { getRegisteredScripts: async () => ([]) }
+        };
+        await context.renderDiagnostics();
+        assert.ok(context.document.getElementById('diagnosticsOutput').textContent.includes('NICHT registriert'));
     });
 
     it('requests the optional data collection category where the environment offers it', async () => {

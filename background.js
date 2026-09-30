@@ -36,7 +36,13 @@ const I18N_FALLBACKS = {
     tocBlocked: 'The link could not be verified.',
     tocOpenAnyway: 'Open the link anyway',
     tocClose: 'Dismiss',
-    tocBlockedScheme: 'This link uses the scheme "$SCHEME$", which Thundy AV cannot verify.'
+    tocBlockedScheme: 'This link uses the scheme "$SCHEME$", which Thundy AV cannot verify.',
+    errorApiKeyMissing: 'API key is missing.',
+    errorUrlScanFailed: 'URL scan failed: $ERROR$',
+    errorUploadFailed: 'Upload failed: $ERROR$',
+    errorUrlscanStartFailed: 'Could not start the urlscan.io scan: $ERROR$',
+    errorUrlscanNoUuid: 'No UUID received from urlscan.io.',
+    errorUrlscanResultFailed: 'Could not retrieve the urlscan.io result: $ERROR$'
 };
 
 function msg(key, subs) {
@@ -287,7 +293,7 @@ const vtCache = new Map();
 const MAX_VT_CACHE_SIZE = 1000;
 
 function getHybridAnalysisOptions(method, body = null, isUrl = false) {
-    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+    if (!apikey_hybridanalysis) throw new Error(msg('errorApiKeyMissing'));
     const options = {
         method: method,
         headers: {
@@ -2278,7 +2284,7 @@ function disarmHTML(htmlString) {
 }
 
 async function handleUrlScan(url, headerMessageId) {
-    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+    if (!apikey_hybridanalysis) throw new Error(msg('errorApiKeyMissing'));
     assertExternalAnalysisAllowed();
 
     const formBody = new URLSearchParams();
@@ -2321,12 +2327,12 @@ async function handleUrlScan(url, headerMessageId) {
         }
         return json_data;
     } else {
-        throw new Error("Fehler beim URL-Scan: " + JSON.stringify(json_data));
+        throw new Error(msg('errorUrlScanFailed', [JSON.stringify(json_data)]));
     }
 }
 
 async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
-    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+    if (!apikey_hybridanalysis) throw new Error(msg('errorApiKeyMissing'));
     assertExternalAnalysisAllowed();
 
     let file = await browser.messages.getAttachmentFile(messageId, partName);
@@ -2372,7 +2378,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
         }
         return json_data;
     } else {
-        throw new Error("Fehler beim Upload: " + JSON.stringify(json_data));
+        throw new Error(msg('errorUploadFailed', [JSON.stringify(json_data)]));
     }
 }
 
@@ -2465,12 +2471,12 @@ async function checkUrlscanIo(url, apikey) {
            return { status: 'ERROR', details: 'Domain not resolvable' };
         }
 
-        if (!scanRes.ok) throw new Error("Fehler beim Starten des Scans (urlscan.io): " + scanRes.status);
+        if (!scanRes.ok) throw new Error(msg('errorUrlscanStartFailed', [scanRes.status]));
 
         const scanData = await scanRes.json();
         const uuid = scanData.uuid;
 
-        if (!uuid) throw new Error("Keine UUID von urlscan.io erhalten.");
+        if (!uuid) throw new Error(msg('errorUrlscanNoUuid'));
 
         return await pollUrlscanIoResult(uuid);
     } catch (e) {
@@ -2517,7 +2523,7 @@ async function pollUrlscanIoResult(uuid) {
         } else if (resultRes.status === 404) {
             // Not ready yet, continue polling
         } else {
-            throw new Error("Fehler beim Abrufen der Ergebnisse (urlscan.io): " + resultRes.status);
+            throw new Error(msg('errorUrlscanResultFailed', [resultRes.status]));
         }
     }
 

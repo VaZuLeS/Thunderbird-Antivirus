@@ -315,7 +315,13 @@ the steps below (it also serves as the motif for the popup screenshot).
     and `meta refresh` are removed) and saves the result through the download manager; the button reports
     "Bereinigt". Nothing is uploaded for this action — it works without any consent.
 
-### 8.8 Clear local data
+### 8.8 Options page self-check
+
+25. Open the options dialog: the section *"Status der Erweiterung"* lists whether the in-message script is
+    registered ("registriert"), the consent state, the number of stored API keys and the privacy tier. If it reports
+    "NICHT registriert", reload the add-on — the message view UI cannot work in that state.
+
+### 8.9 Clear local data
 
 25. In the options dialog, click **"Clear cache"** and confirm. The IndexedDB object store
     `hybridanalysis` (database `thunderbird_av`, version 3) is emptied; the confirmation

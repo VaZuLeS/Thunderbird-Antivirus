@@ -53,6 +53,9 @@ minimal notwendigen Daten an externe Analysedienste.
   und gespeicherte Verdikte kommen ausschließlich aus der lokalen Datenbank und werden **ohne** Zustimmung
   angezeigt; Anbieter-Daten (Berichte, Uploads) erfordern die globale Zustimmung **und** einen API-Schlüssel. Das
   Popup ermittelt die angezeigte Nachricht über `messageDisplay.getDisplayedMessages()`.
+- **Selbsttest in den Einstellungen.** Eine kurze Statusliste zeigt, ob die UI in der Nachrichtenansicht registriert
+  ist und wie Zustimmung, hinterlegte API-Schlüssel und Datenschutz-Stufe gesetzt sind – dafür wird nichts
+  übertragen.
 - **Benachrichtigungen** melden Scan-Start, Einreichung und Fehler.
 - **IP-Reputation (optional):** Die aus den `Received`-Headern extrahierten Mailserver-IPs können über VirusTotal
   oder AbuseIPDB geprüft werden.
@@ -174,7 +177,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** Testdateien des
-  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **462 Tests, 0 Fehler** – u. a.
+  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **465 Tests, 0 Fehler** – u. a.
   `message_display.test.js` (UI in der Nachrichtenansicht und Time-of-Click), die Popup-Consent-Tests in
   `api.test.js` und die Pre-Submit-Check-Tests in `scripts/pre-submit-checks.test.js`.
 - `scripts/pre-submit-checks.js` prüft zusätzlich, dass jeder verwendete `browser.*`-API-Namespace eine deklarierte
@@ -187,7 +190,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
   (fast ausschließlich `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und
   Thunderbird-spezifische APIs wie `messages.*` oder `messageDisplay.*` nicht kennt). Die Liste wird über
   `scripts/filter-lint-warnings.js` gefiltert.
-- Das gebaute XPI enthält **18 Dateien / 270.797 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
+- Das gebaute XPI enthält **18 Dateien / 278.125 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
   prüft Dateiliste und Größe.
 - Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
   `node ./scripts/pre-submit-checks.js`, `node --test background.test.js` und `npx web-ext lint`.

@@ -51,6 +51,8 @@ submits the minimum data required to external analysis services.
   verdicts are read from the local database only, so they are shown **without** any consent; provider data (reports,
   uploads) requires the global consent **and** an API key. The popup determines the displayed message via
   `messageDisplay.getDisplayedMessages()`.
+- **Self-check on the options page.** A short status list shows whether the in-message UI is registered and how the
+  consent flag, the stored API keys and the privacy tier are set — nothing is transmitted for it.
 - **Notifications** report scan progress and results.
 - **IP reputation (optional):** the sending mail servers extracted from `Received` headers can be checked against
   VirusTotal or AbuseIPDB.
@@ -169,19 +171,19 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` uses the script from `package.json` (`node --test`) and therefore executes **all** test files of the
-  repository, not just `background.test.js`. Current state: **462 tests, 0 failures** – including
+  repository, not just `background.test.js`. Current state: **465 tests, 0 failures** – including
   `message_display.test.js` (in-message UI and time-of-click), the popup consent tests in `api.test.js` and the
   pre-submit-check tests in `scripts/pre-submit-checks.test.js`.
 - `scripts/pre-submit-checks.js` additionally verifies that every used `browser.*` API namespace has its permission
   declared, that the `data_collection_permissions` declaration matches the transmission paths, that a
   programmatically registered script (`message_display.js`) is part of the package and that every localized UI string
-  has a catalogue entry (currently 181). Current state: 0 errors, 2 warnings (no real screenshots yet, and the
+  has a catalogue entry (currently 197). Current state: 0 errors, 2 warnings (no real screenshots yet, and the
   active `.github/workflows/ci.yml` still runs only `background.test.js` – `docs/ci/ci.yml` contains the full CI).
 - `web-ext lint` currently reports **0 errors** and **25 warnings**, all of them known Thunderbird false positives
   (almost exclusively `UNSUPPORTED_API` notices, because the linter validates against a Firefox target and does not
   know Thunderbird-only APIs such as `messages.*` or `messageDisplay.*`). The list is filtered by
   `scripts/filter-lint-warnings.js`.
-- The built XPI contains **18 files / 270,797 bytes unpacked** (previously 17 files); `scripts/verify-package.js`
+- The built XPI contains **18 files / 278,125 bytes unpacked** (previously 17 files); `scripts/verify-package.js`
   checks the file list and the size.
 - CI (`.github/workflows/ci.yml`) runs on every push and pull request with Node 22: `npm ci`, the pre-submit
   checks (real exit code), `node --test background.test.js` and `npx web-ext lint`.

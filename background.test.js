@@ -619,7 +619,7 @@ describe('background.js', () => {
                 await context.handleManualUpload(1, 'part1', 'file.exe', 'hash123', 'header123');
             },
             (err) => {
-                assert.strictEqual(err.message, 'Fehler beim Upload: {"error":"Internal Error"}');
+                assert.strictEqual(err.message, 'Upload failed: {"error":"Internal Error"}');
                 return true;
             }
         );
@@ -3109,7 +3109,7 @@ describe('background.js', () => {
             context.set_apikey_hybridanalysis(null);
             assert.throws(
                 () => context.getHybridAnalysisOptions('GET'),
-                /API-Key fehlt\./
+                /API key is missing\./
             );
         });
 

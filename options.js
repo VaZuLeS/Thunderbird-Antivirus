@@ -35,10 +35,62 @@ async function requestDataCollectionConsent() {
     }
 }
 
+/**
+ * Shows a short self-check so users and reviewers can see whether the
+ * in-message UI is registered and how the consent/keys are set. Nothing is
+ * transmitted anywhere for this.
+ */
+async function renderDiagnostics() {
+    const output = document.getElementById('diagnosticsOutput');
+    if (!output) return;
+    const lines = [];
+
+    try {
+        const api = browser.scripting && browser.scripting.messageDisplay;
+        const registered = api && typeof api.getRegisteredScripts === 'function' ? await api.getRegisteredScripts() : null;
+        if (Array.isArray(registered)) {
+            const active = registered.some((script) => script && script.id === 'thundy-ui');
+            lines.push(active
+                ? uiText('optionsDiagUiActive', 'UI in der Nachrichtenansicht: registriert')
+                : uiText('optionsDiagUiInactive', 'UI in der Nachrichtenansicht: NICHT registriert – das Add-on bitte neu laden'));
+        } else {
+            lines.push(uiText('optionsDiagUiUnknown', 'UI in der Nachrichtenansicht: konnte nicht geprüft werden'));
+        }
+    } catch (e) {
+        lines.push(uiText('optionsDiagUiUnknown', 'UI in der Nachrichtenansicht: konnte nicht geprüft werden'));
+    }
+
+    try {
+        const stored = await browser.storage.local.get([
+            'externalAnalysisConsent', 'apikey', 'virustotalApikey', 'urlscanApikey', 'urlhausApikey',
+            'ipReputationProvider', 'ipReputationApiKey', 'privacyTier'
+        ]);
+        lines.push(stored && stored.externalAnalysisConsent === true
+            ? uiText('optionsDiagConsentOn', 'Externe Analyse: erlaubt')
+            : uiText('optionsDiagConsentOff', 'Externe Analyse: nicht erlaubt (es wird nichts übertragen)'));
+        const keyCount = ['apikey', 'virustotalApikey', 'urlscanApikey', 'urlhausApikey', 'ipReputationApiKey']
+            .filter((name) => stored && typeof stored[name] === 'string' && stored[name].length > 0).length;
+        lines.push(uiText('optionsDiagKeys', 'Hinterlegte API-Schlüssel: $1', [String(keyCount)]));
+        lines.push(uiText('optionsDiagTier', 'Datenschutz-Stufe: $1', [String((stored && stored.privacyTier) || 'strict')]));
+    } catch (e) {
+        lines.push(uiText('optionsDiagStorageUnknown', 'Einstellungen: konnten nicht gelesen werden'));
+    }
+
+    output.textContent = '';
+    for (const line of lines) {
+        const item = document.createElement('li');
+        item.textContent = line;
+        output.appendChild(item);
+    }
+}
+
 // Event-Listener für das Laden der Seite
 let _saveTimeoutId = null;
 let _clearTimeoutId = null;
 document.addEventListener('DOMContentLoaded', function() {
+    // Self-check for the in-message UI and the current consent/keys.
+    renderDiagnostics().catch((error) => console.error('Diagnostics failed', error));
+
     // Localize the static markup (see options.html and _locales/).
     try {
         if (typeof applyUiTranslations === 'function') applyUiTranslations();

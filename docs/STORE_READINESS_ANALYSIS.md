@@ -384,7 +384,7 @@ als manuelle Schritte dokumentiert (siehe `docs/STATUS.md`).
 | B5 Listing-Assets | **teilweise** | Icons 16/32/48/64/128 generiert und in `manifest.json` verdrahtet (dimensionsgeprüft); Listing-Texte, Kategorien, Checkliste und Screenshot-Anleitung vollständig; **echte PNG-Screenshots fehlen weiterhin** (erfordert eine Thunderbird-Instanz) |
 | B6 Privacy-Policy-URL | **behoben** | Policy live unter `https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html`, aus `index.html`/`index_en.html`/`index_de.html` verlinkt, Pre-Submit-Check prüft die Verlinkung |
 | H1 wirkungsloses CI-Gate | **behoben** | `scripts/pre-submit-checks.js` als testbares Modul mit echtem `process.exitCode` (21 Unit-Tests inkl. Nachweis, dass Fehler fehlschlagen) |
-| H2 Paketinhalt | **behoben** | `web-ext-config.mjs`/`.webextignore`; XPI seinerzeit 15 Dateien/≈176 KB entpackt statt 62 Dateien/605 KB; `scripts/verify-package.js` als CI-Gate. **Aktueller Stand (1.6, nach dem Review): 18 Dateien/270 797 Bytes – siehe `STORE_READINESS_REVIEW_1.6.md`.** |
+| H2 Paketinhalt | **behoben** | `web-ext-config.mjs`/`.webextignore`; XPI seinerzeit 15 Dateien/≈176 KB entpackt statt 62 Dateien/605 KB; `scripts/verify-package.js` als CI-Gate. **Aktueller Stand (1.6, nach dem Review): 18 Dateien/278 125 Bytes – siehe `STORE_READINESS_REVIEW_1.6.md`.** |
 | H3 `install.rdf` | **behoben** | Datei entfernt, neue ID `thundy-av@bludau-it-services.de` |
 | H4 Trademark-Name | **behoben** | „Thundy AV – Email Scanner for Thunderbird“ (+ `short_name`), Pre-Submit-Check lehnt `Thunderbird*` als Namenspräfix ab |
 | H5 stilles Dauer-Opt-in | **behoben** | Banner mit zwei Buttons („Nur diese Nachricht scannen“ / „Absender dauerhaft scannen“); `requestScan` persistiert nur mit `persist: true` (durch Tests abgedeckt) |
@@ -415,7 +415,7 @@ npm test                       # 389 Tests, 0 Fehler (inkl. Tests der Check- und
 npx web-ext lint --source-dir . --output json > /tmp/lint.json
 node scripts/filter-lint-warnings.js /tmp/lint.json   # 0 Fehler, 26 bekannte TB-Warnungen
 npx web-ext build --source-dir . --artifacts-dir ./build
-node scripts/verify-package.js ./build                # Stand 1.5: 15 Dateien/≈176 KB; aktuell 18 Dateien/270 797 Bytes
+node scripts/verify-package.js ./build                # Stand 1.5: 15 Dateien/≈176 KB; aktuell 18 Dateien/278 125 Bytes
 
 # Workflow-Definitionen (Spiegel) nach .github/workflows/ übernehmen:
 cp docs/ci/ci.yml .github/workflows/ci.yml

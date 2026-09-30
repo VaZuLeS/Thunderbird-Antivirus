@@ -13,6 +13,9 @@ Changes that resolve the store-readiness review for 1.6
 
 ### Added
 
+- **Self-check on the options page** ("Status der Erweiterung"): reports whether the in-message script is
+  registered, the consent state, the number of stored API keys and the privacy tier (reviewer/QA aid, nothing is
+  transmitted).
 - **Integration test** (`integration.test.js`) that runs the background script and the popup script against one
   shared in-memory IndexedDB and proves the contract *message displayed → assessment stored under the Message-ID
   header → popup renders it*, including a banner-triggered scan. This is the regression guard for the
@@ -41,7 +44,7 @@ Changes that resolve the store-readiness review for 1.6
   languages only need an additional `_locales/<code>` folder.
 - Tests: `message_display.test.js` (19 tests), four popup consent tests in `api.test.js`, tests for the
   localization helpers in `db.test.js`, tests for the built-in data consent in `background.test.js`/`options.test.js`
-  and twelve new pre-submit-check tests – **462 tests in total, 0 failures**.
+  and twelve new pre-submit-check tests – **465 tests in total, 0 failures**.
 
 ### Changed
 
@@ -61,7 +64,7 @@ Changes that resolve the store-readiness review for 1.6
   popup – are resolved through the catalogues with the default locale `en` and fallback texts in the code.
 - The pre-submit checks additionally verify the API namespace against the declared permission, the data-collection
   declaration and the presence of the programmatically registered script in the package.
-- The built package contains **18 files / 270,797 bytes unpacked**.
+- The built package contains **18 files / 278,125 bytes unpacked**.
 - The pre-submit checks verify that all localized UI strings (currently 181) have a catalogue entry.
 - **Upload cap:** attachments larger than 100 MB are never uploaded automatically (provider limits); they stay in
   the manual path.
@@ -70,6 +73,8 @@ Changes that resolve the store-readiness review for 1.6
 
 ### Fixed
 
+- **User visible error messages are localized** (missing API key, upload/URL scan/urlscan.io failures) — they were
+  the last German-only strings a user could see.
 - **Scan results were not shown in the popup.** Two causes: scans triggered from the in-message banner worked
   with `{ id }` only, so every IndexedDB write was skipped (they require `message.headerMessageId`), and the popup
   returned early when no Hybrid Analysis key was stored. The scan now resolves the real `MessageHeader`, and the

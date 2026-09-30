@@ -780,5 +780,83 @@
   },
   "popupScanFailed": {
     "message": "Scan failed"
+  },
+  "errorApiKeyMissing": {
+    "message": "API key is missing."
+  },
+  "errorUrlScanFailed": {
+    "message": "URL scan failed: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorUploadFailed": {
+    "message": "Upload failed: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorUrlscanStartFailed": {
+    "message": "Could not start the urlscan.io scan: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorUrlscanNoUuid": {
+    "message": "No UUID received from urlscan.io."
+  },
+  "errorUrlscanResultFailed": {
+    "message": "Could not retrieve the urlscan.io result: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsDiagnosticsHeading": {
+    "message": "Add-on status"
+  },
+  "optionsDiagnosticsText": {
+    "message": "These lines help with troubleshooting (for example when no banner appears in the message view) and are not transmitted anywhere."
+  },
+  "optionsDiagUiActive": {
+    "message": "In-message UI: registered"
+  },
+  "optionsDiagUiInactive": {
+    "message": "In-message UI: NOT registered – please reload the add-on"
+  },
+  "optionsDiagUiUnknown": {
+    "message": "In-message UI: could not be checked"
+  },
+  "optionsDiagConsentOn": {
+    "message": "External analysis: allowed"
+  },
+  "optionsDiagConsentOff": {
+    "message": "External analysis: not allowed (nothing is transmitted)"
+  },
+  "optionsDiagKeys": {
+    "message": "Stored API keys: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsDiagTier": {
+    "message": "Privacy tier: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsDiagStorageUnknown": {
+    "message": "Settings: could not be read"
   }
 }

@@ -780,5 +780,83 @@
   },
   "popupScanFailed": {
     "message": "Scan fehlgeschlagen"
+  },
+  "errorApiKeyMissing": {
+    "message": "API-Schlüssel fehlt."
+  },
+  "errorUrlScanFailed": {
+    "message": "Fehler beim URL-Scan: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorUploadFailed": {
+    "message": "Fehler beim Upload: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorUrlscanStartFailed": {
+    "message": "Fehler beim Starten des Scans (urlscan.io): $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorUrlscanNoUuid": {
+    "message": "Keine UUID von urlscan.io erhalten."
+  },
+  "errorUrlscanResultFailed": {
+    "message": "Fehler beim Abrufen der Ergebnisse (urlscan.io): $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsDiagnosticsHeading": {
+    "message": "Status der Erweiterung"
+  },
+  "optionsDiagnosticsText": {
+    "message": "Diese Zeilen helfen bei der Fehlersuche (z. B. wenn in der Nachrichtenansicht kein Banner erscheint) und wurden noch nicht an den Entwickler übermittelt."
+  },
+  "optionsDiagUiActive": {
+    "message": "UI in der Nachrichtenansicht: registriert"
+  },
+  "optionsDiagUiInactive": {
+    "message": "UI in der Nachrichtenansicht: NICHT registriert – das Add-on bitte neu laden"
+  },
+  "optionsDiagUiUnknown": {
+    "message": "UI in der Nachrichtenansicht: konnte nicht geprüft werden"
+  },
+  "optionsDiagConsentOn": {
+    "message": "Externe Analyse: erlaubt"
+  },
+  "optionsDiagConsentOff": {
+    "message": "Externe Analyse: nicht erlaubt (es wird nichts übertragen)"
+  },
+  "optionsDiagKeys": {
+    "message": "Hinterlegte API-Schlüssel: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsDiagTier": {
+    "message": "Datenschutz-Stufe: $VALUE$",
+    "placeholders": {
+      "value": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsDiagStorageUnknown": {
+    "message": "Einstellungen: konnten nicht gelesen werden"
   }
 }
