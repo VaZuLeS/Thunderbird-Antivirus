@@ -81,7 +81,7 @@ Alle Zeilen wurden in diesem Checkout ausgeführt bzw. gemessen.
 Store-Readiness-Status hängt derzeit an **Nachweisführung (T1/T2/T5), Listing-Assets (T4) und
 Release-Prozess (T6)**, nicht an einem kaputten Build.
 
-**Befundzählung:** 5 Blocker (P0), 6 hohe Risiken (P1), 6 mittlere Punkte (P2), 1 kleiner Punkt (P3).
+**Befundzählung:** 5 Blocker (P0), 6 hohe Risiken (P1), 5 mittlere Punkte (P2), 1 kleiner Punkt (P3) – insgesamt 17 Befunde. *(Korrigiert in Iteration 2: die ursprüngliche Angabe nannte sechs mittlere Punkte.)*
 Die Zuordnung Befund → Aufgabe steht in der Traceability-Matrix des Aufgabenplans.
 
 ---

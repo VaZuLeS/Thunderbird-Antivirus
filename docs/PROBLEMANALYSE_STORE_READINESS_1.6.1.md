@@ -65,6 +65,10 @@ hinterlassen, die vorher abzuarbeiten sind.**
 | P2-16 Umgehung des ApiGateway | 🟢 erledigt | alle Aufrufe über `apiGateway.fetchWithTimeout` (per Test erzwungen) |
 | P3-17 doppelte Ignore-Konfiguration | 🟢 erledigt | `.webextignore` entfernt; Test prüft die Abwesenheit |
 
+> **Nachgezählt statt übernommen:** Iteration 1 nennt in ihrer Befundzählung „6 mittlere Punkte“, tatsächlich
+> sind es 5 (P2-12…P2-16). Die Zählung wurde in beiden Iteration-1-Dokumenten und im CHANGELOG korrigiert
+> (insgesamt **17** Befunde). Alle 17 Zeilen oben sind einzeln nachgeprüft, nicht aus der Vorfassung übernommen.
+
 ---
 
 ## 4. Neue Befunde aus dem aktuellen Stand (N-01…N-09)

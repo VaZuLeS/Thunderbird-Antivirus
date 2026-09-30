@@ -16,7 +16,7 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 - **Store-Readiness-Analyse der Iteration 2 (Prüfstand 1.6.1):**
   [`docs/PROBLEMANALYSE_STORE_READINESS_1.6.1.md`](docs/PROBLEMANALYSE_STORE_READINESS_1.6.1.md) erhebt den Stand nach
-  den Maßnahmen neu: 16 nachgeprüfte Punkte aus Iteration 1, neun neue Befunde N-01…N-09 (u. a. Divergenz zwischen
+  den Maßnahmen neu: 17 nachgeprüfte Punkte aus Iteration 1, neun neue Befunde N-01…N-09 (u. a. Divergenz zwischen
   veröffentlichter und Repository-Datenschutzerklärung, irreführender Diagnose-Text, fehlender Zeitstempel in der
   Diagnose) und die Positivnachweise dieses Laufs. Der zugehörige
   [`docs/AUFGABENPLAN_STORE_READINESS_1.6.1.md`](docs/AUFGABENPLAN_STORE_READINESS_1.6.1.md) ist die gültige
@@ -46,7 +46,7 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
   Oberfläche oder dem Manifest verwendete Zeichenkette in **beiden** Sprachkatalogen existiert.
 - **Problemanalyse und Aufgabenplan für die Store-Readiness:**
   [`docs/PROBLEMANALYSE_STORE_READINESS.md`](docs/PROBLEMANALYSE_STORE_READINESS.md) dokumentiert mit
-  reproduzierten Nachweisen 5 Blocker, 6 hohe Risiken, 6 mittlere und 1 kleinen Befund für eine Listung im
+  reproduzierten Nachweisen 5 Blocker, 6 hohe Risiken, 5 mittlere und 1 kleinen Befund (17 Befunde) für eine Listung im
   Thunderbird Add-ons Store (ATN). Der daraus abgeleitete
   [`docs/AUFGABENPLAN_STORE_READINESS.md`](docs/AUFGABENPLAN_STORE_READINESS.md) ordnet die Aufgaben in vier
   Phasen, inklusive Traceability-Matrix Befund → Aufgabe, Schätzungen, Abnahmekriterien und Risiko-Register.

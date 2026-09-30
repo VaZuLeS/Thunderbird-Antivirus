@@ -12,7 +12,7 @@ Ergebnisartefakt und ein Abnahmekriterium. Er ist so geschrieben, dass er direkt
 | Feld | Wert |
 |---|---|
 | Ziel | Einreichung von Version 1.6/1.6.x im ATN als `listed`-Add-on, ohne Ablehnungsschleife |
-| Ausgangslage | 5 Blocker, 6 hohe Risiken, 6 mittlere, 1 kleiner Punkt |
+| Ausgangslage | 5 Blocker, 6 hohe Risiken, 5 mittlere, 1 kleiner Punkt (17 Befunde; die ursprüngliche Angabe nannte einen mittleren Punkt zu viel) |
 | Durchführungsstand | **26 Aufgaben bearbeitet:** 12 ✅ erledigt, 2 🟨 teilweise, 12 ⛔ durch fehlende Ressourcen blockiert – Details in §0 |
 | Ergebnis Go/No-Go | **NO-GO** (3/7 Kriterien erfüllt, 4 hängen an Thunderbird-Installation, ATN-Zugang und Workflow-Push-Rechte) – Details in §10 |
 | Geschätzter Gesamtaufwand | ≈ 8–10 Personentage (zzgl. Wartezeit im Review) |
