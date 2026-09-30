@@ -137,6 +137,12 @@ live in Thunderbird.
   automatic prompt.“*
 - Firefox-Datenkonsent-Doku: Werte in `required` muss der Nutzer akzeptieren, „they cannot opt out“;
   `optional`-Werte werden zur Laufzeit über `browser.permissions.request({ data_collection: [...] })` erteilt.
+- Extension Workshop, „Firefox built-in consent for data collection and transmission“: *„From November 3,
+  2025, all new extensions must adopt the Firefox built-in data collection consent system. Extensions must
+  state if and what data they collect or transmit.“*
+- Extension Workshop, „Best practices for collecting user data consents“: *„Incorrect classification of data
+  on the data collection consent will result in a review rejection.“* — Das ist der entscheidende Satz für
+  die Einstufung als Blocker.
 - Gegenprobe mit dem Validator (addons-linter 10.13.0): Variante `required:["none"]` +
   `optional:["personalCommunications"]` → **0 Fehler / 26 Warnungen** (identisch zum aktuellen Stand), also
   die vom offiziellen Validator **akzeptierte** korrekte Deklaration. **Der repo-eigene Pre-Submit-Check
@@ -605,12 +611,15 @@ unnötig neu erzeugt.
 **Fix:** Als Empfehlung kennzeichnen.
 
 ### P3-22 — Listing-Metadaten (Kategorie, Autor, Support) final festlegen
-**Belege:** `manifest.json:7` `author: "Jan Bludau"`; `docs/store_listing.md:143` schlägt Kategorie
-„Privacy & Security“, sonst „Miscellaneous“, vor. Eine ATN-Kategorieliste war in dieser Umgebung nicht
-abrufbar (ATN liefert 403 / JS-gerenderte Seiten) — daher **nicht online geprüft**.
-**Auswirkung:** Klein; Kategorie/Entwicklername erscheinen im Listing und sollten vor dem Upload bewusst
-gewählt werden.
-**Fix:** Beim Anlegen der Listung Kategorie final aus der ATN-Auswahl wählen und hier dokumentieren.
+**Belege:** `manifest.json:7` `author: "Jan Bludau"`; `docs/store_listing.md:143` schlägt die Kategorie
+„Privacy & Security“ vor. Die ATN-Kategorien-API (`https://addons.thunderbird.net/api/v4/addons/categories/`,
+abgerufen 2026-09-30) führt für `app=thunderbird&type=extension` die Kategorie **„Privacy and Security“**
+(Slug `privacy-and-security`) — „Privacy & Security“ ist die Firefox-Variante. Weitere sinnvolle ATN-Optionen
+wären „Miscellaneous“ oder „Message and News Reading“.
+**Auswirkung:** Klein, aber die Kategorie erscheint im Listing und im Verzeichnis-Browse; ein falscher Name
+führt zu Nacharbeit beim Anlegen.
+**Fix:** Beim Anlegen der Listung exakt „Privacy and Security“ (oder begründet „Miscellaneous“) wählen und hier
+dokumentieren (Aufgabe A-18).
 
 
 ---
@@ -681,7 +690,7 @@ Benachrichtigung, fehlende Absenderprüfung) berühren Datenschutz/Härtung.
 | `permissions.request()` aus dem Banner heraus als Nutzergeste | nur im echten Klickpfad beobachtbar | Testschritt im Protokoll |
 | Tatsächliche Netzwerkziele zur Laufzeit | kein Mailkonto/Provider-Key in dieser Umgebung | Netzwerk-Mitschnitt (DevTools) laut Reviewer-Notes |
 | Optik der Optionsseite und des Popups | GUI nötig | Screenshot-Aufnahme (A-09) |
-| ATN-Kategorienliste und Formularfelder | ATN antwortet auf automatisierte Anfragen mit HTTP 403 | beim Anlegen der Listung manuell prüfen (A-13) |
+| ATN-Listing-Formular und finale Kategorienauswahl | ATN-HTML-Seiten liefern HTTP 403 / sind JS-gerendert (API-Endpunkte sind erreichbar und wurden für die Kategorien geprüft) | beim Anlegen der Listung manuell prüfen (A-18) |
 | Ergebnis des ATN-Reviews | nicht vorhersagbar | Go/No-Go-Kriterien + vollständige Reviewer-Notes |
 
 
@@ -728,7 +737,9 @@ Benachrichtigung, fehlende Absenderprüfung) berühren Datenschutz/Härtung.
 - Thunderbird-Browsertest: `mail/components/extensions/test/browser/browser_ext_messageDisplayScripts_mv3.js`
   (belegt `scripting.executeScript` auf Nachrichten-Tabs und die Pflicht von `messagesRead`)
 - Firefox-Extension-Workshop: „Firefox built-in consent for data collection and transmission“,
-  „Submitting an add-on“, „Create an appealing listing“, „Add-on Policies“ (Abschnitte 1, 6.1, 6.2)
+  „Best practices for collecting user data consents“, „Submitting an add-on“, „Create an appealing listing“,
+  „Add-on Policies“ (Abschnitte 1, 6.1, 6.2)
+- ATN-Kategorien: `https://addons.thunderbird.net/api/v4/addons/categories/` (abgerufen 2026-09-30)
 - Thunderbird-Entwicklerdoku: „A Guide to Extensions“, „Supported Manifest Keys“, „What's new: Manifest V3“
 - Toolchain: `web-ext` 10.7.0, `addons-linter` 10.13.0
 
