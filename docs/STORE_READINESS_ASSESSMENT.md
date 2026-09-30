@@ -20,7 +20,7 @@ Manifest ⇔ Code ⇔ veröffentlichter Doku, Prüfung der Live-URLs, unabhängi
 | Manifest-, Paket- und Rechtekonformität | 🟢 erfüllt (auch automatisiert geprüft) |
 | Datenschutz-Deklaration und Consent-Durchsetzung | 🟢 erfüllt (deklariert, im Code erzwungen, mehrfach getestet) |
 | Übereinstimmung Listing/Policy ↔ Code | 🟢 erfüllt (nach Doku-Abgleich) |
-| Tests, Lint, Paket, Lokalisierung | 🟢 erfüllt (465 Tests, Lint 0 Fehler, 18 Dateien, 208×2 Katalog-Keys) |
+| Tests, Lint, Paket, Lokalisierung | 🟢 erfüllt (469 Tests, Lint 0 Fehler, 18 Dateien, 208×2 Katalog-Keys) |
 | Icons, Lizenz, Support, Datenschutz-URL | 🟢 erfüllt |
 | **Manuelle Live-Verifikation in Thunderbird** | 🔴 **offen** — Kernfunktion nur durch Unit-Tests mit gemockten APIs belegt |
 | **Store-Screenshots** | 🔴 **offen** — nur SVG-Platzhalter |
@@ -37,7 +37,7 @@ sind: **Live-Test → Screenshots → Signieren/Einreichen**.
 ## 2. Frische Nachweise (Commit `b27a487`)
 
 ```bash
-npm test                                          # 465 Tests, 69 Suites, 0 Fehler
+npm test                                          # 469 Tests, 69 Suites, 0 Fehler
 npm run pre-submit-checks                         # 0 Fehler, 2 Warnungen (Screenshots, reduzierte CI)
 npx web-ext lint --source-dir . --output json     # 0 Fehler, 25 bekannte Thunderbird-False-Positives
 npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
@@ -98,7 +98,7 @@ Zusätzliche Prüfungen, die die Pre-Submit-Checks seit der Umsetzung automatisc
 - XPI enthält 18 Dateien: `manifest.json`, `background.js`, `message_display.js`, `db.js`, `api.js`,
   `api_gateway.js`, `options.{html,js}`, `popup.html`, `theme.css`, 5 Icons, 2 Locale-Kataloge, `LICENSE`.
   Keine Tests, Docs, Lockfiles oder Legacy-Dateien; keine ungenutzten Dateien.
-- 465 Tests in 69 Suites, 0 Fehler — u. a. für Consent-Durchsetzung, Datenschutz-Stufen, Berechtigungs-/
+- 469 Tests in 69 Suites, 0 Fehler — u. a. für Consent-Durchsetzung, Datenschutz-Stufen, Berechtigungs-/
   Namespace-Konsistenz, MV3-Portierung, Message-Display-UI und Time-of-Click, Popup-Consent-Gate,
   Lokalisierungs-Helfer und Datenkonsent-Anfrage.
 - Lokalisierung: `_locales/en` und `_locales/de` mit je 208 Keys (vollständige Parität, automatisch geprüft), Default-Locale `en`,

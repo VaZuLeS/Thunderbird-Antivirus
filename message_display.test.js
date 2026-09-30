@@ -334,6 +334,18 @@ describe('message_display.js', () => {
       'a foreign broadcast must not be rendered before the own tab id is known');
   });
 
+  it('tells the user when the scan result could not be assigned to the message', async () => {
+    const ui = await createUi({ state: OPT_IN_STATE, scanResponse: { success: true, stored: false } });
+    const buttons = ui.document.getElementById('thundy-banner').querySelectorAll('button');
+
+    buttons[0].dispatchEvent(new ui.dom.window.MouseEvent('click', { bubbles: true }));
+    await tick();
+
+    const banner = ui.document.getElementById('thundy-banner');
+    assert.ok(banner.textContent.includes('could not be assigned'),
+      'the banner explains why the popup will not show the result');
+  });
+
   it('updates the banner from a broadcast for its own tab only', async () => {
     const ui = await createUi({
       state: { ...OPT_IN_STATE, optInNeeded: false, threat: { score: 0, reasons: [], authStatus: 'none' } }

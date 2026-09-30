@@ -3548,6 +3548,49 @@ describe('background.js', () => {
             assert.strictEqual(broadcasts.length, 1);
         });
 
+        it('reports stored=false when the result cannot be assigned to a message', async () => {
+            context.set_externalAnalysisConsent(true);
+            context.browser.permissions = { contains: async () => true, request: async () => true };
+            context.browser.messages.get = async () => ({ id: 7 }); // no headerMessageId
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [] });
+            context.processAttachments = async () => {};
+            context.processLinks = async () => ({ messageText: '', urls: [], filteredUrls: [] });
+            context.evaluateThreats = async () => ({ score: 0, reasons: [], authStatus: 'none' });
+            context.buildMessageUiState = () => ({ tabId: 1, messageId: 7 });
+
+            const response = await context.handleRequestScan(
+                { action: 'requestScan', messageId: 7, senderEmail: 'a@example.com', persist: false },
+                { tab: { id: 1 } }
+            );
+
+            assert.strictEqual(response.success, true);
+            assert.strictEqual(response.stored, false, 'the caller is told that nothing was stored');
+        });
+
+        it('falls back to the displayed message header to assign the result', async () => {
+            context.set_externalAnalysisConsent(true);
+            context.browser.permissions = { contains: async () => true, request: async () => true };
+            context.browser.messages.get = async () => ({ id: 7 }); // no headerMessageId
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [
+                { id: 7, headerMessageId: 'hdr-displayed', author: 'Sender <a@example.com>', subject: 's' }
+            ] });
+            const writtenKeys = [];
+            context.getSharedDB = async () => ({});
+            context.updateStore = async (db, store, key) => { writtenKeys.push(key); };
+            context.processAttachments = async () => {};
+            context.processLinks = async () => ({ messageText: '', urls: [], filteredUrls: [] });
+            context.evaluateThreats = async () => ({ score: 1, reasons: [], authStatus: 'none' });
+            context.buildMessageUiState = () => ({ tabId: 1, messageId: 7 });
+
+            const response = await context.handleRequestScan(
+                { action: 'requestScan', messageId: 7, senderEmail: 'a@example.com', persist: false },
+                { tab: { id: 1 } }
+            );
+
+            assert.strictEqual(response.stored, true);
+            assert.deepStrictEqual(writtenKeys, ['hdr-displayed']);
+        });
+
         it('notify() never throws when the notifications API is unavailable', () => {
             const originalNotifications = context.browser.notifications;
             try {
