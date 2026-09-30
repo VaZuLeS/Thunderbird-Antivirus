@@ -35,13 +35,24 @@ describe('background.js', () => {
                     })
                 },
                 messageDisplay: {
+                    getDisplayedMessages: async () => ({ messages: [{ headerMessageId: 'test-msg-id' }] }),
                     getDisplayedMessage: async () => ({ headerMessageId: 'test-msg-id' }),
+                    onMessagesDisplayed: {
+                        addListener: (listener) => {
+                            context.browser.messageDisplay.onMessagesDisplayed.listeners.push(listener);
+                        },
+                        listeners: []
+                    },
                     onMessageDisplayed: {
                         addListener: (listener) => {
                             context.browser.messageDisplay.onMessageDisplayed.listeners.push(listener);
                         },
                         listeners: []
                     }
+                },
+                permissions: {
+                    contains: async () => true,
+                    request: async () => true
                 },
                 runtime: {
                     onMessage: {
@@ -91,8 +102,10 @@ describe('background.js', () => {
                     }
                 })
             },
-            console: { log: () => {}, error: () => {} },
+            console: { log: () => {}, error: () => {}, warn: () => {} },
             fetch: async () => ({ status: 200, json: async () => ({}) }),
+            AbortController: globalThis.AbortController,
+            clearTimeout: globalThis.clearTimeout,
             FormData: class FormData { append() {} },
             File: class File { constructor(bits, name, options) { this.bits = bits; this.name = name; this.options = options; } },
             ArrayBuffer: globalThis.ArrayBuffer,
@@ -107,13 +120,17 @@ describe('background.js', () => {
 
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'background.js'), 'utf8');
+        const gatewayCode = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
         const wrappedCode = `
             globalThis.customBlacklist = new Set();
             globalThis.customWhitelist = new Set();
             globalThis.knownSendersCache = new Set();
             globalThis.MAX_KNOWN_SENDERS = 1000;
+            ${gatewayCode}
             ${code}
             globalThis.loadSettings = loadSettings;
+            globalThis.set_externalAnalysisConsent = (val) => { externalAnalysisConsent = val === true; };
+            globalThis.get_externalAnalysisConsent = () => externalAnalysisConsent;
             globalThis.set_customBlacklist = (list) => { customBlacklist = new Set(Array.from(list).map(s => s ? s.toLowerCase() : "")); };
             globalThis.set_customWhitelist = (list) => { customWhitelist = new Set(Array.from(list).map(s => s ? s.toLowerCase() : "")); };
             globalThis.get_apikey = () => apikey_hybridanalysis;
@@ -173,11 +190,29 @@ describe('background.js', () => {
             globalThis.set_ipReputationApiKey = (val) => { ipReputationApiKey = val; };
             globalThis.set_urlscanApikey = (val) => { urlscanApikey = val; };
             globalThis.set_apikey_hybridanalysis = (val) => { apikey_hybridanalysis = val; };
+            globalThis.getFirstDisplayedMessage = getFirstDisplayedMessage;
+            globalThis.messageListToArray = messageListToArray;
+            globalThis.handleRequestScan = handleRequestScan;
+            globalThis.injectIntoMessageDisplay = injectIntoMessageDisplay;
+            globalThis.mayTransmitExternally = mayTransmitExternally;
+            globalThis.hasHostPermissionFor = hasHostPermissionFor;
+            globalThis.assertExternalAnalysisAllowed = assertExternalAnalysisAllowed;
+            globalThis.originForUrl = originForUrl;
+            globalThis.PROVIDER_ORIGINS = PROVIDER_ORIGINS;
+            globalThis.handleDisplayedMessage = handleDisplayedMessage;
+            globalThis.notify = notify;
+            globalThis.scanLinksOfDisplayedMessage = scanLinksOfDisplayedMessage;
+            globalThis.msg = msg;
+            globalThis.get_privacyTier = () => privacyTier;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
         context.URLSearchParams = URLSearchParams;
         vm.runInContext(wrappedCode, context);
+
+        // Default für Tests: Zustimmung zur externen Analyse erteilt.
+        // Tests, die das Fehlen der Zustimmung prüfen, setzen sie explizit auf false.
+        context.set_externalAnalysisConsent(true);
 
         if (context.knownSendersCache) context.knownSendersCache.clear();
         if (context.urlhausCache) context.urlhausCache.clear();
@@ -606,20 +641,22 @@ describe('background.js', () => {
             request: async () => false
         };
 
-        const listeners = context.browser.runtime.onMessage.listeners;
-        let found = false;
-        for (const listener of listeners) {
-            try {
-                const res = await listener({ action: 'requestScan', messageId: 42, senderEmail: 'user@example.com' }, { tab: { id: 1 } });
-                if (res && res.error === 'permission_denied') {
-                    found = true;
-                    break;
-                }
-            } catch (e) {
-                // Some listeners may use callback style; ignore
-            }
-        }
-        assert.ok(found, 'Expected at least one runtime listener to return permission_denied');
+        const response = await context.handleRequestScan(
+            { action: 'requestScan', messageId: 42, senderEmail: 'user@example.com' },
+            { tab: { id: 1 } }
+        );
+        assert.strictEqual(response.error, 'permission_denied');
+    });
+
+    it('runtime.onMessage requestScan returns EXTERNAL_ANALYSIS_DISABLED without consent', async () => {
+        context.set_externalAnalysisConsent(false);
+
+        const response = await context.handleRequestScan(
+            { action: 'requestScan', messageId: 42, senderEmail: 'user@example.com', persist: true },
+            { tab: { id: 1 } }
+        );
+        assert.strictEqual(response.error, 'EXTERNAL_ANALYSIS_DISABLED');
+        assert.strictEqual(response.code, 'EXTERNAL_ANALYSIS_DISABLED');
     });
 
     it('runtime.onMessage requestScan asks for permission and runs scan when granted', async () => {
@@ -648,18 +685,48 @@ describe('background.js', () => {
         context.processLinks = async (tab, message, fullMessage) => ({ messageText: '', urls: [], filteredUrls: [] });
         context.evaluateAndInjectThreats = async () => { processed = true; };
 
-        const listeners = context.browser.runtime.onMessage.listeners;
-        let gotSuccess = false;
-        for (const listener of listeners) {
-            try {
-                const res = await listener({ action: 'requestScan', messageId: 101, senderEmail: 'user@example.com', tabId: 1 }, { tab: { id: 1 } });
-                if (res && res.success) { gotSuccess = true; break; }
-            } catch (e) {}
-        }
+        // persist: true -> dauerhaftes Opt-in für den Absender
+        const response = await context.handleRequestScan(
+            { action: 'requestScan', messageId: 101, senderEmail: 'user@example.com', tabId: 1, persist: true },
+            { tab: { id: 1 } }
+        );
 
         assert.strictEqual(requested, true);
+        assert.strictEqual(response.success, true);
+        assert.strictEqual(response.persisted, true);
+        assert.ok(processed);
         assert.ok(stored.scanningEnabledSenders && stored.scanningEnabledSenders.includes('user@example.com'));
-        assert.ok(gotSuccess, 'Expected requestScan handler to return success when permission granted');
+    });
+
+    it('runtime.onMessage requestScan without persist does not create a permanent opt-in', async () => {
+        context.browser.permissions = {
+            contains: async () => true,
+            request: async () => true
+        };
+
+        let stored = {};
+        context.browser.storage.local.get = async (keys) => {
+            if (Array.isArray(keys)) {
+                const out = {};
+                keys.forEach(k => { out[k] = stored[k]; });
+                return out;
+            }
+            return { [keys]: stored[keys] };
+        };
+        context.browser.storage.local.set = async (obj) => { Object.assign(stored, obj); };
+
+        context.processAttachments = async () => {};
+        context.processLinks = async () => ({ messageText: '', urls: [], filteredUrls: [] });
+        context.evaluateAndInjectThreats = async () => {};
+
+        const response = await context.handleRequestScan(
+            { action: 'requestScan', messageId: 102, senderEmail: 'once@example.com', persist: false },
+            { tab: { id: 1 } }
+        );
+
+        assert.strictEqual(response.success, true);
+        assert.strictEqual(response.persisted, false);
+        assert.strictEqual(stored.scanningEnabledSenders, undefined);
     });
 
 
@@ -1793,7 +1860,7 @@ describe('background.js', () => {
             assert.strictEqual(executedScripts[0].target.tabId, 10);
             assert.strictEqual(typeof executedScripts[0].func, 'function');
             // The injected script for time of click does not take arguments
-            assert.strictEqual(executedScripts[0].args, undefined);
+            assert.strictEqual(executedScripts[0].args.length, 0);
         });
 
         it('does not inject script when timeOfClickProtection is false', async () => {
@@ -1823,20 +1890,21 @@ describe('background.js', () => {
             };
 
             let errorLogged = false;
-            const originalConsoleError = context.console.error;
-            context.console.error = (msg, ...args) => {
-                if (msg.includes("Fehler beim Injecten von Time-of-Click Styles")) {
+            const originalConsoleWarn = context.console.warn;
+            context.console.warn = (msg) => {
+                if (typeof msg === 'string' && msg.includes("Injecting into the message display failed")) {
                     errorLogged = true;
                 }
             };
 
             try {
-                await context.injectTimeOfClickProtection(10, filteredUrls);
+                const result = await context.injectTimeOfClickProtection(10, filteredUrls);
                 // Ensure promises resolve before checking
                 await new Promise(process.nextTick);
                 assert.strictEqual(errorLogged, true);
+                assert.strictEqual(result, undefined);
             } finally {
-                context.console.error = originalConsoleError;
+                context.console.warn = originalConsoleWarn;
             }
         });
     });
@@ -2824,19 +2892,19 @@ describe('background.js', () => {
         });
 
         it('returns UNKNOWN if no active message or headerMessageId', async () => {
-            context.browser.messageDisplay.getDisplayedMessage = async () => null;
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [] });
 
             let response;
             await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'UNKNOWN' });
 
-            context.browser.messageDisplay.getDisplayedMessage = async () => ({ id: 1 }); // Missing headerMessageId
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 1 }] }); // Missing headerMessageId
             await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'UNKNOWN' });
         });
 
         it('returns UNKNOWN if no link object is found and urlscan is disabled', async () => {
-            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
             context.getFromStore = async () => ({ links: [] });
             context.openDB = async () => ({});
 
@@ -2846,7 +2914,7 @@ describe('background.js', () => {
         });
 
         it('checks urlscan.io if no link object is found and urlscan is active, returning MALICIOUS', async () => {
-            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
             context.set_urlscanApikey('test-urlscan');
 
             // Mock checkUrlscanIo behaviour via fetch
@@ -2866,7 +2934,7 @@ describe('background.js', () => {
         });
 
         it('returns linkObj state if urlscan is clean and hybrid_sha256 is missing', async () => {
-            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
             context.set_urlscanApikey('test-urlscan');
 
             let callCount = 0;
@@ -2885,7 +2953,7 @@ describe('background.js', () => {
         });
 
         it('fetches overview from hybrid analysis if hybrid_sha256 exists, returning CLEAN for no specific threat', async () => {
-            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
             // Disable urlscan to simplify
             context.set_urlscanApikey('');
 
@@ -2903,7 +2971,7 @@ describe('background.js', () => {
         });
 
         it('fetches overview from hybrid analysis, returning UPPERCASE verdict for threats', async () => {
-            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
 
             context.fetch = async () => ({ status: 200, json: async () => ({ verdict: 'malicious' }) });
 
@@ -2916,7 +2984,7 @@ describe('background.js', () => {
         });
 
         it('falls back to link state if hybrid analysis fetch throws an error', async () => {
-            context.browser.messageDisplay.getDisplayedMessage = async () => ({ headerMessageId: 'msg1' });
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
 
             context.fetch = async () => { throw new Error('Network error'); };
 
@@ -2929,7 +2997,7 @@ describe('background.js', () => {
         });
 
         it('returns ERROR on generic unexpected errors in the main flow', async () => {
-            context.browser.messageDisplay.getDisplayedMessage = async () => { throw new Error('API failure'); };
+            context.browser.messageDisplay.getDisplayedMessages = async () => { throw new Error('API failure'); };
 
             let response;
             await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
@@ -3120,4 +3188,160 @@ describe('background.js', () => {
         });
     });
 });
+
+    describe('Manifest V3 port (B1) and consent enforcement (B2)', () => {
+        it('defaults to the strict privacy tier (hashes only)', () => {
+            assert.strictEqual(context.get_privacyTier(), 'strict');
+        });
+
+        it('registers onMessagesDisplayed (MV3) instead of the removed onMessageDisplayed', () => {
+            assert.strictEqual(context.browser.messageDisplay.onMessagesDisplayed.listeners.length, 1);
+            assert.strictEqual(context.browser.messageDisplay.onMessageDisplayed.listeners.length, 0);
+        });
+
+        it('messageListToArray handles MessageList objects, arrays and single messages', () => {
+            const fromList = context.messageListToArray({ messages: [{ id: 1 }] });
+            assert.strictEqual(fromList.length, 1);
+            assert.strictEqual(fromList[0].id, 1);
+
+            const fromArray = context.messageListToArray([{ id: 2 }]);
+            assert.strictEqual(fromArray.length, 1);
+            assert.strictEqual(fromArray[0].id, 2);
+
+            const fromSingle = context.messageListToArray({ id: 3 });
+            assert.strictEqual(fromSingle.length, 1);
+            assert.strictEqual(fromSingle[0].id, 3);
+
+            assert.strictEqual(context.messageListToArray(null).length, 0);
+        });
+
+        it('getFirstDisplayedMessage prefers getDisplayedMessages and falls back to getDisplayedMessage', async () => {
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 11, headerMessageId: 'h11' }] });
+            assert.strictEqual((await context.getFirstDisplayedMessage(1)).headerMessageId, 'h11');
+
+            delete context.browser.messageDisplay.getDisplayedMessages;
+            context.browser.messageDisplay.getDisplayedMessage = async () => ({ id: 12, headerMessageId: 'h12' });
+            assert.strictEqual((await context.getFirstDisplayedMessage(1)).headerMessageId, 'h12');
+        });
+
+        it('tab_mail_open_display processes every message of a MessageList', async () => {
+            const processed = [];
+            context.processAttachments = async (message) => { processed.push(message.id); };
+            context.processLinks = async () => ({ messageText: '', urls: [], filteredUrls: [] });
+            context.evaluateAndInjectThreats = async () => {};
+            context.browser.messages.listAttachments = async () => ([]);
+            context.browser.storage.local.get = async () => ({ scanningEnabledSenders: [] });
+
+            await context.tab_mail_open_display({ id: 7 }, { messages: [{ id: 101, author: 'a@example.com' }, { id: 102, author: 'b@example.com' }] });
+
+            assert.deepStrictEqual(processed, [101, 102]);
+        });
+
+        it('injectIntoMessageDisplay uses scripting.messageDisplay when available', async () => {
+            const calls = [];
+            context.browser.scripting.messageDisplay = {
+                executeScript: async (injection) => { calls.push(['messageDisplay', injection.target.tabId]); }
+            };
+            const genericCalls = [];
+            context.browser.scripting.executeScript = async (injection) => { genericCalls.push(injection.target.tabId); };
+
+            await context.injectIntoMessageDisplay(5, function () {});
+
+            assert.deepStrictEqual(calls, [['messageDisplay', 5]]);
+            assert.strictEqual(genericCalls.length, 0);
+        });
+
+        it('injectIntoMessageDisplay falls back to scripting.executeScript and swallows errors', async () => {
+            delete context.browser.scripting.messageDisplay;
+            const genericCalls = [];
+            context.browser.scripting.executeScript = async (injection) => { genericCalls.push(injection.target.tabId); };
+            await context.injectIntoMessageDisplay(6, function () {});
+            assert.deepStrictEqual(genericCalls, [6]);
+
+            context.browser.scripting.executeScript = async () => { throw new Error('blocked'); };
+            const result = await context.injectIntoMessageDisplay(6, function () {});
+            assert.strictEqual(result, null);
+        });
+
+        it('originForUrl maps provider hosts to the declared optional host permissions', () => {
+            assert.strictEqual(context.originForUrl('https://www.virustotal.com/api/v3/files/x'), context.PROVIDER_ORIGINS.virustotal);
+            assert.strictEqual(context.originForUrl('https://urlhaus-api.abuse.ch/v1/host/'), context.PROVIDER_ORIGINS.urlhaus);
+            assert.strictEqual(context.originForUrl('https://api.abuseipdb.com/api/v2/check'), context.PROVIDER_ORIGINS.abuseipdb);
+            assert.strictEqual(context.originForUrl('https://hybrid-analysis.com/api/v2/overview/x'), context.PROVIDER_ORIGINS.hybridanalysis);
+            assert.strictEqual(context.originForUrl('https://urlscan.io/api/v1/scan/'), context.PROVIDER_ORIGINS.urlscan);
+            assert.strictEqual(context.originForUrl('https://example.com/'), null);
+            assert.strictEqual(context.originForUrl('not a url'), null);
+        });
+
+        it('msg() falls back to English strings and substitutes placeholders', () => {
+            assert.strictEqual(context.msg('bannerScanOnce'), 'Scan this message once');
+            assert.strictEqual(context.msg('bannerThreatScore', ['77']), 'Risk score: 77 of 100');
+            assert.strictEqual(context.msg('doesNotExist'), 'doesNotExist');
+        });
+
+        it('blocks every third party request without explicit consent', async () => {
+            context.set_externalAnalysisConsent(false);
+
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+
+            assert.strictEqual(await context.checkVirusTotal('abc', 'vt-key'), null);
+            assert.strictEqual(await context.checkURLhaus('example.com', 'urlhaus-key'), false);
+            assert.strictEqual(await context.checkAbuseIPDB('1.1.1.1', 'ip-key'), false);
+            assert.strictEqual(await context.checkUrlscanIo('https://example.com', 'scan-key'), null);
+            assert.throws(() => context.assertExternalAnalysisAllowed());
+
+            await context.processAndUploadUrls({ id: 1 }, ['https://example.com']);
+            assert.strictEqual(fetchCalls, 0, 'no network activity may happen without consent');
+        });
+
+        it('does not auto-upload attachments without consent even on the balanced tier', async () => {
+            context.set_externalAnalysisConsent(false);
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+
+            const result = await context.handle_unknown_attachment({
+                attachment: { name: 'x.exe', partName: '1' },
+                content_of_attachment: {},
+                local_hash: 'hash',
+                virustotal_stats: null,
+                privacyTier: 'balanced',
+                fileType: 'application/x-msdownload'
+            });
+
+            assert.strictEqual(fetchCalls, 0);
+            assert.strictEqual(result.hybrid_data.state, 'UNKNOWN');
+            assert.strictEqual(result.hybrid_data.submission_id, 'PENDING_UPLOAD');
+        });
+
+        it('does not persist a sender when a one-off scan finishes', async () => {
+            let saved = null;
+            context.browser.storage.local.get = async () => ({ scanningEnabledSenders: [] });
+            context.browser.storage.local.set = async (obj) => { saved = obj; };
+            context.browser.permissions = { contains: async () => true, request: async () => true };
+            context.processAttachments = async () => {};
+            context.processLinks = async () => ({ messageText: '', urls: [], filteredUrls: [] });
+            context.evaluateAndInjectThreats = async () => {};
+
+            const response = await context.handleRequestScan(
+                { action: 'requestScan', messageId: 1, senderEmail: 'once@example.com', persist: false },
+                { tab: { id: 1 } }
+            );
+
+            assert.strictEqual(response.success, true);
+            assert.strictEqual(saved, null);
+        });
+
+        it('notify() never throws when the notifications API is unavailable', () => {
+            const originalNotifications = context.browser.notifications;
+            try {
+                context.browser.notifications = {
+                    create: () => { throw new Error('no notifications'); }
+                };
+                assert.doesNotThrow(() => context.notify('notificationTitle', 'notificationScanStarted', ['https://example.com']));
+            } finally {
+                context.browser.notifications = originalNotifications;
+            }
+        });
+    });
 });

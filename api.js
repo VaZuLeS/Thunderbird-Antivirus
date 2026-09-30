@@ -67,9 +67,20 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 
 // Holen Sie sich die aktuell angezeigte Nachricht im aktiven Tab, mit der
 // messageDisplay API. Hinweis: Dies benötigt die messagesRead Berechtigung.
-// Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
-// Informationen.
-let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
+// Manifest V3 in Thunderbird: getDisplayedMessages() liefert eine MessageList.
+let message = null;
+if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages === 'function') {
+    const messageList = await browser.messageDisplay.getDisplayedMessages(tabs[0].id);
+    const messages = Array.isArray(messageList) ? messageList : (messageList && messageList.messages) || [];
+    message = messages[0] || null;
+} else if (browser.messageDisplay) {
+    message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
+}
+
+// Ohne Zustimmung zu externer Analyse wird nichts übertragen - das muss im
+// Popup sichtbar sein, bevor der Nutzer Uploads auslöst.
+const settings = await browser.storage.local.get(['externalAnalysisConsent']);
+const externalAnalysisConsent = settings.externalAnalysisConsent === true;
 
 if (!message) {
     let container = document.getElementById('hybrid_analysis_api_content');
@@ -119,6 +130,29 @@ if (apiContainer) {
 
     cardDiv.appendChild(loadingP);
     apiContainer.appendChild(cardDiv);
+}
+
+// Hinweis, wenn die externe Analyse (Datenübermittlung) nicht freigegeben ist.
+if (!externalAnalysisConsent && apiContainer) {
+    let consentCard = document.createElement('div');
+    consentCard.id = 'thundy-consent-notice';
+    consentCard.className = 'card card-warn mb-3';
+    consentCard.setAttribute('role', 'status');
+
+    let consentP = document.createElement('p');
+    consentP.id = 'consent-notice-msg';
+    consentP.textContent = 'Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.';
+    consentCard.appendChild(consentP);
+
+    let consentButton = document.createElement('button');
+    consentButton.type = 'button';
+    consentButton.className = 'btn-primary mt-2';
+    consentButton.textContent = 'Einstellungen öffnen';
+    consentButton.setAttribute('aria-describedby', 'consent-notice-msg');
+    consentButton.addEventListener('click', () => browser.runtime.openOptionsPage());
+    consentCard.appendChild(consentButton);
+
+    apiContainer.appendChild(consentCard);
 }
 
 try {
@@ -334,7 +368,7 @@ function renderVirusTotalStats(virustotal_stats, card) {
     const pVtMal = document.createElement('p');
     const malCount = virustotal_stats.malicious || 0;
     pVtMal.className = `ml-4 ${malCount > 0 ? "text-danger" : ""}`;
-    pVtMal.textContent = `Malicious: ${malCount}`;
+    pVtMal.textContent = `Malicious: ${malCount}${malCount > 0 ? " (Gefährlich)" : ""}`;
     card.appendChild(pVtMal);
 
     const pVtUnd = document.createElement('p');
@@ -345,7 +379,7 @@ function renderVirusTotalStats(virustotal_stats, card) {
     const pVtSus = document.createElement('p');
     const susCount = virustotal_stats.suspicious || 0;
     pVtSus.className = `ml-4 ${susCount > 0 ? "text-warning" : ""}`;
-    pVtSus.textContent = `Suspicious: ${susCount}`;
+    pVtSus.textContent = `Suspicious: ${susCount}${susCount > 0 ? " (Verdächtig)" : ""}`;
     card.appendChild(pVtSus);
 
     const pVtHarm = document.createElement('p');

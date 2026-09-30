@@ -20,12 +20,6 @@
 ## 2026-04-01 - Align IP reputation lookup concurrency with URLhaus domain checks
 **Learning:** While `checkURLhausDomains` executed all API lookup promises concurrently in a single `Promise.all()`, `checkIPReputation` artificially chunked requests in batches of 5. This created an asynchronous pipeline bottleneck, multiplying response latency by the number of chunks.
 **Action:** Avoid artificial request chunking loops in extension background scripts when fetching endpoint reputations; collect all promises in a single array and resolve concurrently via `Promise.all()`.
-## 2024-08-11 - Optimize RegExp by leveraging URL parser lowercase standard
-**Learning:** The URL parser natively lowercases hostnames, meaning `getHostnameOptimized` always returns lowercased strings. Using the case-insensitive `i` flag on `IGNORED_DOMAINS_REGEX` is redundant and incurs per-character case-folding overhead at runtime in V8.
-**Action:** Remove the redundant `i` flag from the regex when matching against standard URL hostnames.
-## 2024-08-11 - Correctly escape regex strings in V8
-**Learning:** When using `String.prototype.replace` to escape characters like `.` for passing into a `new RegExp()` constructor, you must use a global regular expression (`/\./g`) and double-escape the backslash (`'\\\\.'`) so that the resulting string contains literal backslashes that the regex engine will interpret as an escape sequence. Single escaping (`'\\.'`) will be interpreted as a literal dot string by the JS engine *before* the regex engine sees it.
-**Action:** Always use global regex replacement with double escaping when dynamically constructing regex patterns from strings.
-## 2024-08-11 - Properly escape string inputs when building RegExp objects
-**Learning:** When using `String.prototype.replace` to escape characters like `.` for passing into a `new RegExp()` constructor, you must use a global regular expression (`/[.*+?^${}()|[\]\\]/g`) and double-escape the backslash (`'\\\\$&'`) so that the resulting string contains literal backslashes that the regex engine will interpret as an escape sequence. Single escaping (`'\\$&'`) will be interpreted as a literal escape by the JS engine *before* the regex engine sees it, causing the final RegExp to treat characters like `.` as unescaped wildcards.
-**Action:** Always use global regex replacement with double escaping when dynamically constructing regex patterns from strings.
+## 2026-06-15 - Optimize DOM querying with CSS attribute selectors
+**Learning:** When filtering DOM elements by attribute in frontend scripts, fetching all elements (e.g. `querySelectorAll('a')`) and filtering them in a JavaScript loop (e.g. `startsWith('http')`) is inefficient.
+**Action:** Relying on the browser's native C++ DOM querying via CSS attribute selectors (e.g., `document.querySelectorAll('a[href^="http"]')`) is significantly faster. Always prefer native CSS selectors over JS loops when possible.

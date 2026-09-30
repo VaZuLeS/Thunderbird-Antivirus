@@ -6,19 +6,24 @@ document.addEventListener('DOMContentLoaded', function() {
     browser.storage.local.get([
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
         'alwaysManual', 'autoScanLinks', 'timeOfClickProtection',
-        'privacyTier', 'customWhitelist', 'customBlacklist'
+        'privacyTier', 'customWhitelist', 'customBlacklist',
+        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey'
     ]).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
       document.getElementById('urlscanApikey').value = result.urlscanApikey || "";
       document.getElementById('virustotalApikey').value = result.virustotalApikey || "";
-      document.getElementById('privacyTier').value = result.privacyTier || "balanced";
+      document.getElementById('privacyTier').value = result.privacyTier || "strict";
       document.getElementById('customWhitelist').value = (result.customWhitelist || []).join(', ');
       document.getElementById('customBlacklist').value = (result.customBlacklist || []).join(', ');
       document.getElementById('alwaysManual').checked = result.alwaysManual || false;
       document.getElementById('autoScanLinks').checked = result.autoScanLinks || false;
       // Default für timeOfClickProtection ist true
       document.getElementById('timeOfClickProtection').checked = result.timeOfClickProtection !== undefined ? result.timeOfClickProtection : true;
+      // Zustimmung zur externen Analyse ist standardmäßig NICHT erteilt
+      document.getElementById('externalAnalysisConsent').checked = result.externalAnalysisConsent === true;
+      document.getElementById('ipReputationProvider').value = result.ipReputationProvider || "none";
+      document.getElementById('ipReputationApiKey').value = result.ipReputationApiKey || "";
 
       const alwaysManualCheckbox = document.getElementById('alwaysManual');
       const privacyTierSelect = document.getElementById('privacyTier');
@@ -96,6 +101,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let alwaysManualSetting = document.getElementById('alwaysManual').checked;
     let autoScanLinksSetting = document.getElementById('autoScanLinks').checked;
     let timeOfClickProtectionSetting = document.getElementById('timeOfClickProtection').checked;
+    let externalAnalysisConsentSetting = document.getElementById('externalAnalysisConsent').checked;
+    let ipReputationProviderSetting = document.getElementById('ipReputationProvider').value;
+    let ipReputationApiKeySetting = document.getElementById('ipReputationApiKey').value.trim().replace(/\r|\n/g, '');
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
@@ -106,7 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
         customBlacklist: blacklistSetting,
         alwaysManual: alwaysManualSetting,
         autoScanLinks: autoScanLinksSetting,
-        timeOfClickProtection: timeOfClickProtectionSetting
+        timeOfClickProtection: timeOfClickProtectionSetting,
+        externalAnalysisConsent: externalAnalysisConsentSetting,
+        ipReputationProvider: ipReputationProviderSetting,
+        ipReputationApiKey: ipReputationApiKeySetting
     }).then(async () => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
@@ -114,15 +125,30 @@ document.addEventListener('DOMContentLoaded', function() {
         saveBtn.removeAttribute('aria-busy');
         saveBtn.textContent = 'Speichern';
 
-        // Wenn ein API-Key gesetzt ist und nicht 'alwaysManual', fordere optional die Host‑Berechtigung an
-        if (mySetting && !alwaysManualSetting) {
-            try {
-                const granted = await browser.permissions.request({ origins: ['https://hybrid-analysis.com/*'] });
-                if (!granted) {
-                    alert('Host‑Berechtigung für hybrid-analysis.com wurde nicht erteilt. Automatische Cloud‑Scans sind deaktiviert.');
+        // Host-Berechtigungen nur für die tatsächlich konfigurierten Dienste
+        // anfragen (Nutzer-Geste = Klick auf "Speichern").
+        const requestedOrigins = [];
+        if (mySetting) requestedOrigins.push(['hybrid-analysis.com', 'https://hybrid-analysis.com/*']);
+        if (virustotalSetting || ipReputationProviderSetting === 'virustotal') requestedOrigins.push(['virustotal.com', 'https://www.virustotal.com/*']);
+        if (urlscanSetting) requestedOrigins.push(['urlscan.io', 'https://urlscan.io/*']);
+        if (urlhausSetting) requestedOrigins.push(['urlhaus.abuse.ch', 'https://urlhaus-api.abuse.ch/*']);
+        if (ipReputationProviderSetting === 'abuseipdb') requestedOrigins.push(['abuseipdb.com', 'https://api.abuseipdb.com/*']);
+
+        if (externalAnalysisConsentSetting && requestedOrigins.length > 0) {
+            const denied = [];
+            for (const [label, origin] of requestedOrigins) {
+                try {
+                    const granted = await browser.permissions.contains({ origins: [origin] }) ||
+                        await browser.permissions.request({ origins: [origin] });
+                    if (!granted) denied.push(label);
+                } catch (e) {
+                    console.error('Permission request failed', e);
+                    denied.push(label);
                 }
-            } catch (e) {
-                console.error('Permission request failed', e);
+            }
+            if (denied.length > 0) {
+                alert('Host‑Berechtigung nicht erteilt für: ' + denied.join(', ') +
+                    '. Ohne diese Berechtigung sind die entsprechenden Prüfungen deaktiviert.');
             }
         }
 

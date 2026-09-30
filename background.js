@@ -4,6 +4,127 @@ const Logger = {
     info: (...args) => console.info(...args)
 };
 
+// ---------------------------------------------------------------------------
+// Localization
+// Strings are resolved through browser.i18n (see _locales/) with English
+// fallbacks, so unit tests and unusual environments never produce "undefined".
+// ---------------------------------------------------------------------------
+const I18N_FALLBACKS = {
+    bannerScanOnce: 'Scan this message once',
+    bannerScanSender: 'Always scan this sender',
+    bannerTitleOptIn: 'Thundy AV: real-time scanning is not enabled for this message.',
+    bannerNoteOptIn: 'Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you gave your consent. See the add-on options.',
+    bannerScanRunning: 'Scanning…',
+    bannerScanDone: 'Scan finished',
+    bannerScanFailed: 'Scan failed',
+    bannerPermissionDenied: 'Required host permission was denied',
+    bannerConsentMissing: 'External analysis is disabled in the options – nothing was transmitted.',
+    bannerThreatTitle: 'Thundy AV warning',
+    bannerThreatScore: 'Risk score: $SCORE$ of 100',
+    bannerAuthPass: 'Sender verified (SPF/DKIM/DMARC passed)',
+    bannerOpenOptions: 'Open options',
+    bannerSenderOptIn: 'This sender is now scanned automatically.',
+    notificationScanStarted: 'Scan started for: $URL$',
+    notificationScanSubmitted: 'Scan submitted successfully. Job ID: $JOBID$',
+    notificationScanError: 'Scan error: $ERROR$',
+    notificationTitle: 'Thundy AV Scanner',
+    notificationTitleError: 'Thundy AV Scanner error'
+};
+
+function msg(key, subs) {
+    try {
+        if (typeof browser !== 'undefined' && browser.i18n && typeof browser.i18n.getMessage === 'function') {
+            const value = browser.i18n.getMessage(key, subs);
+            if (value) return value;
+        }
+    } catch (e) { /* fall through to the fallback string */ }
+    let text = I18N_FALLBACKS[key] || key;
+    const values = Array.isArray(subs) ? subs.slice() : (subs === undefined ? [] : [subs]);
+    text = text.replace(/\$(SCORE|URL|JOBID|ERROR)\$/g, () => (values.length ? String(values.shift()) : ''));
+    return text;
+}
+
+function iconUrl() {
+    try {
+        if (typeof browser !== 'undefined' && browser.runtime && typeof browser.runtime.getURL === 'function') {
+            return browser.runtime.getURL('img/icon-64px.png');
+        }
+    } catch (e) { /* ignore */ }
+    return 'img/icon-64px.png';
+}
+
+// ---------------------------------------------------------------------------
+// External analysis consent
+// Thunderbird has no built-in data collection consent prompt, therefore the
+// add-on asks for consent explicitly (options page) and enforces it here:
+// without consent nothing is sent to any third party service.
+// ---------------------------------------------------------------------------
+const EXTERNAL_ANALYSIS_DISABLED = 'EXTERNAL_ANALYSIS_DISABLED';
+
+function mayTransmitExternally() {
+    return externalAnalysisConsent === true;
+}
+
+function assertExternalAnalysisAllowed() {
+    if (!mayTransmitExternally()) {
+        const error = new Error(msg('bannerConsentMissing'));
+        error.code = EXTERNAL_ANALYSIS_DISABLED;
+        throw error;
+    }
+}
+
+// Host origins that are declared in manifest.json -> optional_host_permissions
+const PROVIDER_ORIGINS = {
+    hybridanalysis: 'https://hybrid-analysis.com/*',
+    virustotal: 'https://www.virustotal.com/*',
+    urlscan: 'https://urlscan.io/*',
+    urlhaus: 'https://urlhaus-api.abuse.ch/*',
+    abuseipdb: 'https://api.abuseipdb.com/*'
+};
+
+function originForUrl(url) {
+    try {
+        const host = new URL(url).hostname;
+        if (host === 'hybrid-analysis.com' || host.endsWith('.hybrid-analysis.com')) return PROVIDER_ORIGINS.hybridanalysis;
+        if (host === 'virustotal.com' || host.endsWith('.virustotal.com')) return PROVIDER_ORIGINS.virustotal;
+        if (host === 'urlscan.io' || host.endsWith('.urlscan.io')) return PROVIDER_ORIGINS.urlscan;
+        if (host === 'urlhaus-api.abuse.ch') return PROVIDER_ORIGINS.urlhaus;
+        if (host === 'api.abuseipdb.com') return PROVIDER_ORIGINS.abuseipdb;
+    } catch (e) { /* invalid URL */ }
+    return null;
+}
+
+async function hasHostPermissionFor(url) {
+    const origin = originForUrl(url);
+    if (!origin) return false;
+    try {
+        return await browser.permissions.contains({ origins: [origin] });
+    } catch (e) {
+        Logger.error('permissions.contains failed', e);
+        return false;
+    }
+}
+
+/**
+ * Injects a function into the message display document of a tab.
+ * Thunderbird's generic scripting API is used; if a future Thunderbird
+ * release exposes scripting.messageDisplay.executeScript, it is preferred.
+ */
+async function injectIntoMessageDisplay(tabId, func, args = []) {
+    if (tabId === undefined || tabId === null) return null;
+    const injection = { target: { tabId }, func, args };
+    try {
+        if (browser.scripting && browser.scripting.messageDisplay &&
+            typeof browser.scripting.messageDisplay.executeScript === 'function') {
+            return await browser.scripting.messageDisplay.executeScript(injection);
+        }
+        return await browser.scripting.executeScript(injection);
+    } catch (e) {
+        Logger.warn('Injecting into the message display failed (please report with your Thunderbird version):', e);
+        return null;
+    }
+}
+
 let customBlacklist = new Set();
 let customWhitelist = new Set();
 let authStatus = null;
@@ -11,12 +132,13 @@ let apikey_hybridanalysis;
 let urlhausApikey = "";
 let urlscanApikey = "";
 let apikey_virustotal;
-let privacyTier = "balanced";
+let privacyTier = "strict";
 let alwaysManual = false;
 let autoScanLinks = false;
 let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
+let externalAnalysisConsent = false;
 
 let sharedDBPromise = null;
 
@@ -69,7 +191,7 @@ const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join(
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist']);
+    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent']);
     if (result.virustotalApikey !== undefined) {
       apikey_virustotal = result.virustotalApikey;
     }
@@ -77,6 +199,9 @@ async function loadSettings() {
       privacyTier = result.privacyTier;
     }
     apikey_hybridanalysis = result.apikey;
+    if (result.externalAnalysisConsent !== undefined) {
+      externalAnalysisConsent = result.externalAnalysisConsent === true;
+    }
     if (result.customBlacklist !== undefined) {
       customBlacklist = new Set(result.customBlacklist.map(s => s ? s.toLowerCase() : ""));
     }
@@ -112,12 +237,7 @@ loadSettings();
 
 // Opt-In helpers
 async function hasHybridPermission() {
-  try {
-    return await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] });
-  } catch (e) {
-    Logger.error('permissions.contains failed', e);
-    return false;
-  }
+  return await hasHostPermissionFor('https://hybrid-analysis.com/api/v2/overview/');
 }
 
 async function addSenderOptIn(senderEmail) {
@@ -163,6 +283,9 @@ browser.storage.onChanged.addListener((changes, area) => {
   }
   if (area === 'local' && changes.customWhitelist !== undefined) {
     customWhitelist = new Set((changes.customWhitelist.newValue || []).map(s => s ? s.toLowerCase() : ""));
+  }
+  if (area === 'local' && changes.externalAnalysisConsent !== undefined) {
+    externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
   }
 });
 
@@ -212,8 +335,9 @@ function extractPublicIPs(receivedHeaders) {
 }
 
 async function checkAbuseIPDB(ip, apikey) {
+    if (!mayTransmitExternally()) return false;
     try {
-        const response = await fetch(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, {
+        const response = await apiGateway.fetchWithTimeout(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, {
             method: 'GET',
             headers: {
                 'Key': apikey,
@@ -231,8 +355,9 @@ async function checkAbuseIPDB(ip, apikey) {
 }
 
 async function checkVirusTotalIP(ip, apikey) {
+    if (!mayTransmitExternally()) return false;
     try {
-        const response = await fetch(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`, {
+        const response = await apiGateway.fetchWithTimeout(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`, {
             method: 'GET',
             headers: {
                 'x-apikey': apikey,
@@ -484,6 +609,11 @@ function getHostnameOptimized(url, cache = null) {
 }
 
 function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, reasonsDomainsSet) {
+    // ⚡ Bolt Optimization: Fast-path for exact brand matches early
+    if (KNOWN_BRANDS_SET.has(linkMainDomain)) {
+        return false;
+    }
+
     let cachedBrandMatch = checkedMainDomains.get(linkMainDomain);
     if (cachedBrandMatch !== undefined) {
         if (cachedBrandMatch !== null) {
@@ -647,7 +777,7 @@ function calculateThreatScore(author, urls, options = {}) {
 }
 
 async function processAndUploadUrls(message, filteredUrls) {
-    if (privacyTier === 'max') {
+    if (privacyTier === 'max' && mayTransmitExternally()) {
         const urlResults = [];
         const concurrencyLimit = 5;
         let i = 0;
@@ -665,7 +795,7 @@ async function processAndUploadUrls(message, filteredUrls) {
 
                     const options = getHybridAnalysisOptions('POST', formBody, true);
                     options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url';
-                    const response = await fetch(options.url, options);
+                    const response = await apiGateway.fetchWithTimeout(options.url, options);
                     if (response.status === 200 || response.status === 201) {
                         const json_data = await response.json();
                         result = {
@@ -697,18 +827,14 @@ async function processAndUploadUrls(message, filteredUrls) {
 
 async function injectTimeOfClickProtection(tabId, filteredUrls) {
     if (timeOfClickProtection && filteredUrls.length > 0) {
-        await browser.scripting.executeScript({
-            target: { tabId: tabId },
-            func: function() {
-                const links = document.querySelectorAll('a');
-                links.forEach(link => {
-                    if (link.href && link.href.startsWith('http')) {
-                        link.title = "Protected by Thundy Time-of-Click";
-                        link.style.borderBottom = "1px dashed #ff8c00";
-                    }
-                });
-            }
-        }).catch(e => Logger.error("Fehler beim Injecten von Time-of-Click Styles:", e));
+        await injectIntoMessageDisplay(tabId, function() {
+            // ⚡ Bolt Optimization: Use native CSS attribute selector instead of filtering all 'a' tags in JS
+            const links = document.querySelectorAll('a[href^="http"]');
+            links.forEach(link => {
+                link.title = "Protected by Thundy Time-of-Click";
+                link.style.borderBottom = "1px dashed #ff8c00";
+            });
+        });
     }
 }
 
@@ -794,7 +920,7 @@ async function checkFirstCommunication(senderEmail) {
 
 async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
     let urlhausDomains = [];
-    if (urlhausApikey && filteredUrls.length > 0) {
+    if (urlhausApikey && filteredUrls.length > 0 && mayTransmitExternally()) {
         let linkDomainsSet = new Set();
         // ⚡ Bolt Optimization: Use indexed loop and inline cache check to reduce function call overhead
         for (let i = 0; i < filteredUrls.length; i++) {
@@ -850,12 +976,18 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
 
 async function injectThreatBanner(tabId, threat) {
     if (threat.score >= 50 || threat.authStatus === 'pass') {
-        await browser.scripting.executeScript({
-            target: { tabId: tabId },
-            func: function(score, reasons, authStatus) {
+        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus) {
+                const t = (key, fallback, subs) => {
+                    try {
+                        return browser.i18n.getMessage(key, subs) || fallback;
+                    } catch (e) {
+                        return fallback;
+                    }
+                };
                 if (score >= 50) {
                     // Sichere DOM-Manipulation ohne innerHTML
                     const banner = document.createElement('div');
+                    banner.id = 'thundy-threat-banner';
                     banner.style.backgroundColor = '#ffeeee';
                     banner.style.border = '1px solid #ff0000';
                     banner.style.color = '#ff0000';
@@ -867,7 +999,8 @@ async function injectThreatBanner(tabId, threat) {
                     banner.style.zIndex = '9999';
 
                     const title = document.createElement('div');
-                    title.textContent = `🔴 ⚠️ Warnung! Mögliches Phishing erkannt (Risk Score: ${score}/100)`;
+                    title.textContent = '🔴 ⚠️ ' + t('bannerThreatTitle', 'Thundy AV warning') +
+                        ' (' + t('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
                     title.style.fontSize = '16px';
                     title.style.marginBottom = '5px';
                     banner.appendChild(title);
@@ -887,6 +1020,7 @@ async function injectThreatBanner(tabId, threat) {
                     document.body.prepend(banner);
                 } else if (authStatus === 'pass') {
                     const badge = document.createElement('div');
+                    badge.id = 'thundy-auth-badge';
                     badge.style.display = 'inline-block';
                     badge.style.backgroundColor = '#e6ffe6';
                     badge.style.border = '1px solid #008000';
@@ -898,13 +1032,11 @@ async function injectThreatBanner(tabId, threat) {
                     badge.style.fontFamily = 'Arial, sans-serif';
                     badge.style.fontSize = '12px';
                     badge.style.zIndex = '9999';
-                    badge.textContent = `🟢 🛡️ Absender verifiziert`;
+                    badge.textContent = '🟢 🛡️ ' + t('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
 
                     document.body.prepend(badge);
                 }
-            },
-            args: [threat.score, threat.reasons, threat.authStatus]
-        });
+        }, [threat.score, threat.reasons, threat.authStatus]);
     }
 }
 
@@ -968,13 +1100,24 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
   await injectThreatBanner(tab.id, threat);
 }
 
-async function injectOptInBanner(tabId, messageId, senderEmail) {
-  try {
-    await browser.scripting.executeScript({
-      target: { tabId },
-      func: function(messageId, senderEmail) {
+/**
+ * Injects the per-message opt-in banner.
+ * Two explicit actions: scan this message once (no persistent opt-in) or
+ * enable scanning for this sender permanently.
+ */
+async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
+  await injectIntoMessageDisplay(tabId, function(messageId, senderEmail, consentGiven) {
+        const t = (key, fallback, subs) => {
+          try {
+            return browser.i18n.getMessage(key, subs) || fallback;
+          } catch (e) {
+            return fallback;
+          }
+        };
+
         const existing = document.getElementById('thundy-optin-banner');
         if (existing) return;
+
         const banner = document.createElement('div');
         banner.id = 'thundy-optin-banner';
         banner.style.backgroundColor = '#fff8e1';
@@ -987,54 +1130,131 @@ async function injectOptInBanner(tabId, messageId, senderEmail) {
         banner.style.zIndex = '9999';
 
         const text = document.createElement('span');
-        text.textContent = 'Thundy AV: Echtzeit‑Scan ist für diese Nachricht nicht aktiviert.';
+        text.textContent = t('bannerTitleOptIn', 'Thundy AV: real-time scanning is not enabled for this message.');
         banner.appendChild(text);
 
-        const btn = document.createElement('button');
-        btn.textContent = 'Für diese Nachricht scannen';
-        btn.style.marginLeft = '10px';
-        btn.addEventListener('click', async () => {
-          btn.disabled = true;
-          btn.setAttribute('aria-busy', 'true');
-          btn.textContent = 'Scannen...';
-          try {
-            const resp = await browser.runtime.sendMessage({ action: 'requestScan', messageId: messageId, senderEmail: senderEmail });
-            if (resp && resp.success) {
-              btn.textContent = 'Scan abgeschlossen';
-              btn.removeAttribute('aria-busy');
-            } else if (resp && resp.error === 'permission_denied') {
-              btn.textContent = 'Erforderliche Berechtigung verweigert';
-              btn.disabled = false;
-              btn.removeAttribute('aria-busy');
-            } else {
-              btn.textContent = 'Scan fehlgeschlagen';
-              btn.disabled = false;
-              btn.removeAttribute('aria-busy');
+        const createButton = (label, persist) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = label;
+          btn.style.marginLeft = '10px';
+          btn.addEventListener('click', async () => {
+            const buttons = banner.querySelectorAll('button');
+            buttons.forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
+            btn.textContent = t('bannerScanRunning', 'Scanning…');
+            try {
+              const resp = await browser.runtime.sendMessage({
+                action: 'requestScan',
+                messageId: messageId,
+                senderEmail: senderEmail,
+                persist: persist
+              });
+              if (resp && resp.success) {
+                btn.textContent = t('bannerScanDone', 'Scan finished');
+                btn.removeAttribute('aria-busy');
+                buttons.forEach(b => { b.disabled = false; });
+                if (persist) {
+                  setNote(t('bannerSenderOptIn', 'This sender is now scanned automatically.'));
+                }
+              } else if (resp && resp.error === 'permission_denied') {
+                btn.textContent = t('bannerPermissionDenied', 'Required host permission was denied');
+                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
+              } else if (resp && (resp.error === 'EXTERNAL_ANALYSIS_DISABLED' || resp.code === 'EXTERNAL_ANALYSIS_DISABLED')) {
+                setNote(t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.'));
+                addOptionsButton();
+                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); btn.textContent = label; });
+              } else {
+                btn.textContent = t('bannerScanFailed', 'Scan failed');
+                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
+              }
+            } catch (e) {
+              btn.textContent = t('bannerScanFailed', 'Scan failed');
+              buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
             }
-          } catch (e) {
-            btn.textContent = 'Fehler beim Starten des Scans';
-            Logger.error(e);
-            btn.disabled = false;
-            btn.removeAttribute('aria-busy');
-          }
-        });
-        banner.appendChild(btn);
+          });
+          banner.appendChild(btn);
+        };
 
-        const small = document.createElement('div');
-        small.style.fontSize = '12px';
-        small.style.marginTop = '6px';
-        small.textContent = 'Hinweis: Beim Scannen werden (je nach Einstellung) Dateien/Hashes an einen externen Service übertragen. Scanning kann in den Erweiterungs‑Einstellungen konfiguriert werden.';
-        banner.appendChild(small);
+        const note = document.createElement('div');
+        note.id = 'thundy-optin-note';
+        note.style.fontSize = '12px';
+        note.style.marginTop = '6px';
+        note.textContent = t('bannerNoteOptIn', 'Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you gave your consent. See the add-on options.');
+        if (!consentGiven) {
+          note.textContent = t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.');
+        }
+
+        function setNote(value) {
+          note.textContent = value;
+        }
+
+        function addOptionsButton() {
+          if (banner.querySelector('#thundy-open-options')) return;
+          const optionsButton = document.createElement('button');
+          optionsButton.id = 'thundy-open-options';
+          optionsButton.type = 'button';
+          optionsButton.textContent = t('bannerOpenOptions', 'Open options');
+          optionsButton.style.marginLeft = '10px';
+          optionsButton.addEventListener('click', () => browser.runtime.openOptionsPage());
+          note.appendChild(optionsButton);
+        }
+
+        createButton(t('bannerScanOnce', 'Scan this message once'), false);
+        createButton(t('bannerScanSender', 'Always scan this sender'), true);
+
+        banner.appendChild(note);
+
+        if (!consentGiven) {
+          addOptionsButton();
+        }
 
         document.body.prepend(banner);
-      },
-      args: [messageId, senderEmail]
-    });
-  } catch (e) { Logger.error('Failed to inject opt-in banner', e); }
+  }, [messageId, senderEmail, consentGiven === true]);
 }
 
-// Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
-async function tab_mail_open_display(tab, message) {
+/**
+ * Returns the first message displayed in the given tab.
+ * Manifest V3 in Thunderbird removed messageDisplay.getDisplayedMessage();
+ * getDisplayedMessages() returns a MessageList instead.
+ */
+async function getFirstDisplayedMessage(tabId, { throwOnError = false } = {}) {
+  if (tabId === undefined || tabId === null) return null;
+  try {
+    if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages === 'function') {
+      const list = await browser.messageDisplay.getDisplayedMessages(tabId);
+      if (!list) return null;
+      if (Array.isArray(list)) return list[0] || null;
+      if (Array.isArray(list.messages)) return list.messages[0] || null;
+      return list || null;
+    }
+    // Legacy fallback (Manifest V2)
+    if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessage === 'function') {
+      return await browser.messageDisplay.getDisplayedMessage(tabId);
+    }
+  } catch (e) {
+    Logger.error('Failed to determine the displayed message', e);
+    if (throwOnError) throw e;
+  }
+  return null;
+}
+
+function messageListToArray(messages) {
+  if (!messages) return [];
+  if (Array.isArray(messages)) return messages;
+  if (Array.isArray(messages.messages)) return messages.messages;
+  return [messages];
+}
+
+// Hauptfunktion: Wird ausgelöst, wenn Nachrichten angezeigt werden
+// (MV3: messageDisplay.onMessagesDisplayed liefert eine MessageList)
+async function tab_mail_open_display(tab, messages) {
+  for (const message of messageListToArray(messages)) {
+    await handleDisplayedMessage(tab, message);
+  }
+}
+
+async function handleDisplayedMessage(tab, message) {
+  if (!message || message.id === undefined || message.id === null) return;
   try {
     const senderEmail = extractEmailAddress(message.author || '');
 
@@ -1042,7 +1262,8 @@ async function tab_mail_open_display(tab, message) {
     const enabledSenders = stored.scanningEnabledSenders || [];
 
     const permission = await hasHybridPermission();
-    const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual && !!apikey_hybridanalysis;
+    const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual &&
+      !!apikey_hybridanalysis && mayTransmitExternally();
 
     let fullMessage = await browser.messages.getFull(message.id);
     let attachments = [];
@@ -1058,7 +1279,7 @@ async function tab_mail_open_display(tab, message) {
     await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
 
     if (!canAutoUpload && ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0))) {
-      await injectOptInBanner(tab.id, message.id, senderEmail);
+      await injectOptInBanner(tab.id, message.id, senderEmail, mayTransmitExternally());
     }
   } catch (error) {
     Logger.error(`Fehler beim Laden der Anhänge oder Links: ${error}`);
@@ -1218,7 +1439,7 @@ class HybridDataBuilder {
 }
 
 async function handle_unknown_attachment({ attachment, content_of_attachment, local_hash, virustotal_stats, privacyTier, fileType }) {
-    if (privacyTier === 'balanced' || privacyTier === 'max') {
+    if ((privacyTier === 'balanced' || privacyTier === 'max') && mayTransmitExternally()) {
         try {
             const file_to_submit = new File([content_of_attachment], attachment.name, { type: fileType || 'application/octet-stream' });
             const formData = new FormData();
@@ -1259,7 +1480,7 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
 
 
 async function fetch_virustotal_stats(local_hash, apikey) {
-    if (apikey) {
+    if (apikey && mayTransmitExternally() && await hasHostPermissionFor('https://www.virustotal.com/api/v3/files/x')) {
         return await checkVirusTotal(local_hash, apikey);
     }
     return null;
@@ -1278,9 +1499,12 @@ function create_manual_check_hybrid_data(local_hash, attachment, virustotal_stat
 }
 
 async function check_hybrid_analysis_for_attachment(local_hash, attachment, content_of_attachment, virustotal_stats, file_type) {
+    if (!mayTransmitExternally()) {
+        return create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats);
+    }
     const optionsCheck = getHybridAnalysisOptions('GET');
     optionsCheck.url = 'https://hybrid-analysis.com/api/v2/overview/' + local_hash;
-    const responseCheck = await fetch(optionsCheck.url, optionsCheck);
+    const responseCheck = await apiGateway.fetchWithTimeout(optionsCheck.url, optionsCheck);
 
     if (responseCheck.status === 200) {
         const json_data = await responseCheck.json();
@@ -1327,7 +1551,7 @@ async function process_single_attachment(message, attachment) {
 
             const virustotal_stats = await fetch_virustotal_stats(local_hash, apikey_virustotal);
 
-            if (alwaysManual) {
+            if (alwaysManual || !mayTransmitExternally()) {
                 return create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats);
             }
 
@@ -1506,52 +1730,114 @@ async function indexedDB_save_links_to_db(message, urls) {
 }
 
 // Listener registrieren
-browser.messageDisplay.onMessageDisplayed.addListener(tab_mail_open_display);
+// Manifest V3 removed messageDisplay.onMessageDisplayed in favour of
+// onMessagesDisplayed (which delivers a MessageList).
+if (browser.messageDisplay) {
+    if (browser.messageDisplay.onMessagesDisplayed) {
+        browser.messageDisplay.onMessagesDisplayed.addListener(tab_mail_open_display);
+    } else if (browser.messageDisplay.onMessageDisplayed) {
+        // Legacy fallback (Manifest V2 / Thunderbird < 121)
+        browser.messageDisplay.onMessageDisplayed.addListener(tab_mail_open_display);
+    }
+}
 
-if (browser.menus) browser.menus.create({
-    id: "scan-link-thundy",
-    title: "Link mit Thundy scannen",
-    contexts: ["link"]
-});
+function createContextMenus() {
+    if (!browser.menus || typeof browser.menus.create !== 'function') return;
+    const menus = [
+        {
+            id: "scan-link-thundy",
+            title: msg('menuScanLink', 'Scan link with Thundy AV'),
+            contexts: ["link"]
+        },
+        {
+            id: "scan-message-links-thundy",
+            title: msg('menuScanMessageLinks', 'Scan all links of this message'),
+            contexts: ["message_display_action"]
+        }
+    ];
+    for (const menu of menus) {
+        try {
+            browser.menus.create(menu);
+        } catch (e) {
+            // Duplicate ids can occur if the background page is restarted.
+            Logger.warn('Could not create context menu entry', menu.id, e);
+        }
+    }
+}
 
-if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListener(async (info, tab) => {
-    if (info.menuItemId === "scan-link-thundy") {
-        let url = info.linkUrl;
-
+function notify(titleKey, messageKey, subs) {
+    try {
         browser.notifications.create({
             type: "basic",
-            iconUrl: "img/icon-64px.jpg",
-            title: "Thundy AV Scanner",
-            message: "Scan gestartet für: " + url
+            iconUrl: iconUrl(),
+            title: msg(titleKey),
+            message: msg(messageKey, subs)
         });
+    } catch (e) {
+        Logger.error('Could not create notification', e);
+    }
+}
+
+// Scans every link of the currently displayed message (context menu entry of
+// the message display action, which is a documented Thunderbird context).
+async function scanLinksOfDisplayedMessage(tabId) {
+    const message = await getFirstDisplayedMessage(tabId);
+    if (!message) {
+        notify('notificationTitleError', 'notificationScanError', ['No displayed message found']);
+        return;
+    }
+    try {
+        assertExternalAnalysisAllowed();
+        const fullMessage = await browser.messages.getFull(message.id);
+        const text = extractTextFromParts(fullMessage.parts || fullMessage);
+        const urls = filterUrls(extractUrls(text));
+        if (urls.length === 0) {
+            notify('notificationTitle', 'notificationNoLinks', []);
+            return;
+        }
+        let submitted = 0;
+        for (const url of urls.slice(0, 20)) {
+            try {
+                await handleUrlScan(url, message.headerMessageId);
+                submitted++;
+            } catch (e) {
+                Logger.error('Could not submit link for analysis', e);
+            }
+        }
+        notify('notificationTitle', 'notificationScanSubmitted', [String(submitted)]);
+    } catch (e) {
+        notify('notificationTitleError', 'notificationScanError', [e.message]);
+    }
+}
+
+createContextMenus();
+
+if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListener(async (info, tab) => {
+    if (info.menuItemId === "scan-message-links-thundy") {
+        await scanLinksOfDisplayedMessage(tab && tab.id);
+        return;
+    }
+
+    if (info.menuItemId === "scan-link-thundy") {
+        let url = info.linkUrl;
+        if (!url) {
+            Logger.warn('No link URL available in the context menu data');
+            return;
+        }
+
+        notify('notificationTitle', 'notificationScanStarted', [url]);
 
         try {
             // Need a dummy headerMessageId as context menu might be clicked outside standard flow
             // or we just fetch the active message
-            let activeMessage = null;
-            try {
-                activeMessage = await browser.messageDisplay.getDisplayedMessage(tab.id);
-            } catch (e) {
-                Logger.error("Failed to get displayed message for context menu scan:", e);
-            }
-
+            const activeMessage = await getFirstDisplayedMessage(tab && tab.id);
             let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
 
             let result = await handleUrlScan(url, msgId);
 
-            browser.notifications.create({
-                type: "basic",
-                iconUrl: "img/icon-64px.jpg",
-                title: "Thundy AV Scanner",
-                message: "Scan erfolgreich eingereicht. Job ID: " + result.job_id
-            });
+            notify('notificationTitle', 'notificationScanSubmitted', [String(result.job_id)]);
         } catch (error) {
-            browser.notifications.create({
-                type: "basic",
-                iconUrl: "img/icon-64px.jpg",
-                title: "Thundy AV Scanner Fehler",
-                message: error.message
-            });
+            notify('notificationTitleError', 'notificationScanError', [error.message]);
         }
     }
 });
@@ -1559,7 +1845,7 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
 async function handleCheckLinkState(request, sender, sendResponse) {
     try {
         // Need to find the active message to get headerMessageId
-        const message = await browser.messageDisplay.getDisplayedMessage(sender.tab.id);
+        const message = await getFirstDisplayedMessage(sender && sender.tab && sender.tab.id, { throwOnError: true });
         if (!message || !message.headerMessageId) {
             sendResponse({status: 'UNKNOWN'});
             return;
@@ -1612,11 +1898,11 @@ async function handleCheckLinkState(request, sender, sendResponse) {
 }
 
 async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
-    if (hybrid_sha256 && apikey_hybridanalysis) {
+    if (hybrid_sha256 && apikey_hybridanalysis && mayTransmitExternally()) {
         const overviewOptions = getHybridAnalysisOptions('GET');
         overviewOptions.url = 'https://hybrid-analysis.com/api/v2/overview/' + hybrid_sha256;
         try {
-            const response = await fetch(overviewOptions.url, overviewOptions);
+            const response = await apiGateway.fetchWithTimeout(overviewOptions.url, overviewOptions);
             const json_data = await response.json();
             if (json_data.verdict) {
                 if (json_data.verdict === 'no specific threat') {
@@ -1635,8 +1921,54 @@ async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
     }
 }
 
+/**
+ * Handles a scan request coming from the injected per-message banner.
+ * persist === true adds the sender to the persistent opt-in list, otherwise
+ * the scan stays a one-off action (no hidden opt-in).
+ */
+async function handleRequestScan(request, sender) {
+    if (!request || !request.messageId) {
+        return { success: false, error: 'invalid_request' };
+    }
+
+    if (!mayTransmitExternally()) {
+        return { success: false, error: EXTERNAL_ANALYSIS_DISABLED, code: EXTERNAL_ANALYSIS_DISABLED };
+    }
+
+    // Ensure permission to contact the analysis service
+    let granted = await hasHybridPermission();
+    if (!granted) {
+        try {
+            granted = await browser.permissions.request({ origins: [PROVIDER_ORIGINS.hybridanalysis] });
+        } catch (e) { granted = false; }
+    }
+
+    if (!granted) {
+        return { success: false, error: 'permission_denied' };
+    }
+
+    if (request.persist === true && request.senderEmail) {
+        await addSenderOptIn(request.senderEmail.toLowerCase());
+    }
+
+    try {
+        const messageObj = { id: request.messageId };
+        await processAttachments(messageObj);
+        const fullMessage = await browser.messages.getFull(request.messageId);
+        const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (request.tabId || null);
+        const tab = { id: tabId };
+        const parsedUrlCache = new Map();
+        const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache);
+        await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
+        return { success: true, persisted: request.persist === true };
+    } catch (e) {
+        Logger.error('requestScan failed', e);
+        return { success: false, error: e && e.message ? e.message : String(e) };
+    }
+}
+
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    switch (request.action) {
+    switch (request && request.action) {
         case "uploadAttachment":
             handleManualUpload(request.messageId, request.partName, request.attachmentName, request.hash, request.headerMessageId)
                 .then(res => sendResponse({status: 'success', data: res}))
@@ -1659,44 +1991,13 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 .catch(err => sendResponse({status: 'error', message: err.message}));
             return true;
 
+        case "requestScan":
+            handleRequestScan(request, sender).then(res => sendResponse(res));
+            return true;
+
         default:
             return false;
     }
-});
-
-// Handle runtime requests from injected content to perform a one-off scan
-browser.runtime.onMessage.addListener(async (msg, sender) => {
-  if (msg && msg.action === 'requestScan' && msg.messageId) {
-        // Ensure permission to contact hybrid-analysis
-        let granted = await hasHybridPermission();
-        if (!granted) {
-          try {
-            granted = await browser.permissions.request({ origins: ['https://hybrid-analysis.com/*'] });
-          } catch (e) { granted = false; }
-        }
-
-        if (!granted) {
-          return { success: false, error: 'permission_denied' };
-        }
-
-        if (msg.senderEmail) {
-          await addSenderOptIn(msg.senderEmail.toLowerCase());
-        }
-
-        try {
-          const messageObj = { id: msg.messageId };
-          await processAttachments(messageObj);
-          const fullMessage = await browser.messages.getFull(msg.messageId);
-          const tab = { id: sender.tab && sender.tab.id ? sender.tab.id : (msg.tabId || null) };
-          let parsedUrlCache = new Map();
-          const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache);
-          await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
-          return { success: true };
-        } catch (e) {
-          Logger.error('requestScan failed', e);
-          return { success: false, error: e && e.message ? e.message : String(e) };
-        }
-  }
 });
 
 /**
@@ -1856,6 +2157,7 @@ function disarmHTML(htmlString) {
 
 async function handleUrlScan(url, headerMessageId) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+    assertExternalAnalysisAllowed();
 
     const formBody = new URLSearchParams();
     formBody.append('scan_type', 'all');
@@ -1864,7 +2166,7 @@ async function handleUrlScan(url, headerMessageId) {
     const options = getHybridAnalysisOptions('POST', formBody, true);
     options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url';
 
-    const response = await fetch(options.url, options);
+    const response = await apiGateway.fetchWithTimeout(options.url, options);
     const json_data = await response.json();
 
     if (response.status === 200 || response.status === 201) {
@@ -1903,6 +2205,7 @@ async function handleUrlScan(url, headerMessageId) {
 
 async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+    assertExternalAnalysisAllowed();
 
     let file = await browser.messages.getAttachmentFile(messageId, partName);
     const content_of_atachment = file.slice();
@@ -1915,7 +2218,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
     const options = getHybridAnalysisOptions('POST', formData);
     options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
 
-    const response = await fetch(options.url, options);
+    const response = await apiGateway.fetchWithTimeout(options.url, options, 60000);
     const json_data = await response.json();
 
     if (response.status === 200 || response.status === 201) {
@@ -1953,6 +2256,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
 
 async function checkVirusTotal(hash, apikey) {
     if (!apikey) return null;
+    if (!mayTransmitExternally()) return null;
     if (vtCache.has(hash)) {
         return await vtCache.get(hash);
     }
@@ -1967,7 +2271,7 @@ async function checkVirusTotal(hash, apikey) {
             }
         };
         try {
-            const response = await fetch(url, options);
+            const response = await apiGateway.fetchWithTimeout(url, options);
             if (response.status === 200) {
                 const data = await response.json();
                 if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
@@ -1997,10 +2301,11 @@ async function checkVirusTotal(hash, apikey) {
 
 async function checkURLhaus(domain, apikey) {
     if (!apikey) return false;
+    if (!mayTransmitExternally()) return false;
     try {
         const body = new URLSearchParams();
         body.append('host', domain);
-        const response = await fetch('https://urlhaus-api.abuse.ch/v1/host/', {
+        const response = await apiGateway.fetchWithTimeout('https://urlhaus-api.abuse.ch/v1/host/', {
             method: 'POST',
             headers: {
                 'Auth-Key': apikey,
@@ -2020,10 +2325,11 @@ async function checkURLhaus(domain, apikey) {
 
 async function checkUrlscanIo(url, apikey) {
     if (!apikey) return null;
+    if (!mayTransmitExternally()) return null;
     try {
         // Start Scan
         // 🛡️ Sentinel: Prevent sensitive URL leakage by defaulting to 'unlisted' instead of 'public' visibility
-        const scanRes = await fetch('https://urlscan.io/api/v1/scan/', {
+        const scanRes = await apiGateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/', {
             method: 'POST',
             headers: {
                 'API-Key': apikey,
@@ -2061,7 +2367,7 @@ async function pollUrlscanIoResult(uuid) {
         elapsed += waitTime;
         waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
 
-        const resultRes = await fetch(`https://urlscan.io/api/v1/result/${uuid}/`);
+        const resultRes = await apiGateway.fetchWithTimeout(`https://urlscan.io/api/v1/result/${uuid}/`);
         if (resultRes.status === 200) {
             const resultData = await resultRes.json();
 
