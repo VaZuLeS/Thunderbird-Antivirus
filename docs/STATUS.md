@@ -68,7 +68,9 @@ abgearbeitet:
 
 ## Referenzen
 
-- Befunde und Roadmap: [docs/STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md)
+- **Aktuelle Problemanalyse (Version 1.6):** [docs/PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md) ·
+  **Aufgabenplan:** [docs/AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md)
+- Befunde und Roadmap der Version 1.5 (Baseline): [docs/STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md)
 - Datenschutzerklärung: [docs/privacy_policy.md](privacy_policy.md) ·
   live: https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
 - Reviewer-Hinweise: [docs/reviewer_notes.md](reviewer_notes.md) · Listing-Entwurf:

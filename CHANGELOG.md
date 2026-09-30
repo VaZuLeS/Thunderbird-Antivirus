@@ -8,7 +8,15 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 ## [Unreleased]
 
-- Nothing yet.
+### Added
+
+- **Problemanalyse und Aufgabenplan für die Store-Readiness (Version 1.6):**
+  [`docs/PROBLEMANALYSE_STORE_READINESS.md`](docs/PROBLEMANALYSE_STORE_READINESS.md) dokumentiert mit
+  reproduzierten Nachweisen 5 Blocker, 6 hohe Risiken, 6 mittlere und 1 kleinen Befund für eine Listung
+  im Thunderbird Add-ons Store (ATN). Der daraus abgeleitete
+  [`docs/AUFGABENPLAN_STORE_READINESS.md`](docs/AUFGABENPLAN_STORE_READINESS.md) ordnet die Aufgaben in
+  vier Phasen, inklusive Traceability-Matrix Befund → Aufgabe, Schätzungen, Abnahmekriterien und
+  Risiko-Register.
 
 ## [1.6.0] – 2026-09-28
 
