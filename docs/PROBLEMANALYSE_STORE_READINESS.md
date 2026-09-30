@@ -1,4 +1,8 @@
-# Problemanalyse – Store-Readiness „Thundy AV“ für den Thunderbird Add-ons Store (ATN)
+# Problemanalyse (Iteration 1, Stand 1.6) – Store-Readiness „Thundy AV“ für den Thunderbird Add-ons Store (ATN)
+
+> **Diese Fassung beschreibt den Stand 1.6 (Iteration 1).** Die **aktuelle** Re-Erhebung ist
+> [PROBLEMANALYSE_STORE_READINESS_1.6.1.md](PROBLEMANALYSE_STORE_READINESS_1.6.1.md) mit dem
+> [Aufgabenplan der Iteration 2](AUFGABENPLAN_STORE_READINESS_1.6.1.md).
 
 **Auftrag:** Analyse der Thunderbird-Erweiterung „Thundy AV – Email Scanner for Thunderbird“ auf ihre
 Readiness für eine Listung im Mozilla-Thunderbird-Add-ons-Store (`addons.thunderbird.net`, ATN).

@@ -12,9 +12,12 @@ Landing page for the documentation of **Thundy AV – Email Scanner for Thunderb
 - Store listing copy: [store_listing.md](store_listing.md)
 - Asset status: [store_assets.md](store_assets.md) · capture guide:
   [screenshot_capture.md](screenshot_capture.md)
-- **Store-readiness problem analysis (current, 1.6.1):**
-  [PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md) and the derived
-  **task plan** [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md)
+- **Store-readiness problem analysis (current, iteration 2, state 1.6.1):**
+  [PROBLEMANALYSE_STORE_READINESS_1.6.1.md](PROBLEMANALYSE_STORE_READINESS_1.6.1.md) and the derived
+  **task plan** [AUFGABENPLAN_STORE_READINESS_1.6.1.md](AUFGABENPLAN_STORE_READINESS_1.6.1.md).
+  The analysis of iteration 1 (state 1.6) plus its execution record:
+  [PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md),
+  [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md)
 - Live test protocol for Thunderbird 140 ESR: [live_test_protocol.md](live_test_protocol.md) ·
   test data: [testdata.md](testdata.md)
 - Data collection decision record: [data_collection_decision.md](data_collection_decision.md)

@@ -1,4 +1,8 @@
-# Aufgabenplan – Store-Readiness „Thundy AV“ (Thunderbird Add-ons Store)
+# Aufgabenplan (Iteration 1, Stand 1.6) – Store-Readiness „Thundy AV“ (Thunderbird Add-ons Store)
+
+> **Diese Fassung ist die Iteration 1** (Befunde P0-1…P3-17, Nachweis der abgeschlossenen Maßnahmen).
+> Die **aktuelle Arbeitsliste** ist [AUFGABENPLAN_STORE_READINESS_1.6.1.md](AUFGABENPLAN_STORE_READINESS_1.6.1.md),
+> basierend auf der [Re-Erhebung zum Stand 1.6.1](PROBLEMANALYSE_STORE_READINESS_1.6.1.md).
 
 **Grundlage:** [PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md) (Befunde P0-1 … P3-17).
 Dieser Plan ist die Umsetzung der dortigen Befunde: jede Aufgabe nennt die Befund-ID, ein prüfbares

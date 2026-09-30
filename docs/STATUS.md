@@ -54,9 +54,10 @@ abgearbeitet:
 
 ## Completed in 1.6.1 (Store-Readiness-Paket)
 
-Grundlage ist die neue [Problemanalyse](PROBLEMANALYSE_STORE_READINESS.md) mit
-[Aufgabenplan](AUFGABENPLAN_STORE_READINESS.md); dort stehen Durchführungsstand (§0), Go/No-Go (§10) und die
-blockierten Punkte (§0.1) im Detail.
+Grundlage sind die [Problemanalyse der Iteration 2](PROBLEMANALYSE_STORE_READINESS_1.6.1.md) (Prüfstand 1.6.1)
+mit ihrem [Aufgabenplan](AUFGABENPLAN_STORE_READINESS_1.6.1.md); die Verweise auf 1.6 sind die Iteration 1
+([Analyse](PROBLEMANALYSE_STORE_READINESS.md), [Plan](AUFGABENPLAN_STORE_READINESS.md)) mit Durchführungsstand (§0),
+Go/No-Go (§10) und den blockierten Punkten (§0.1).
 
 - **Daten-Deklaration korrigiert (P0-4):** `data_collection_permissions` deklariert `personalCommunications`
   jetzt als **optional** (`"required": ["none"]`); beim Aktivieren von „Externe Analyse erlauben“ fragt

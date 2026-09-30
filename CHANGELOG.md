@@ -14,6 +14,14 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 ### Added
 
+- **Store-Readiness-Analyse der Iteration 2 (Prüfstand 1.6.1):**
+  [`docs/PROBLEMANALYSE_STORE_READINESS_1.6.1.md`](docs/PROBLEMANALYSE_STORE_READINESS_1.6.1.md) erhebt den Stand nach
+  den Maßnahmen neu: 16 nachgeprüfte Punkte aus Iteration 1, neun neue Befunde N-01…N-09 (u. a. Divergenz zwischen
+  veröffentlichter und Repository-Datenschutzerklärung, irreführender Diagnose-Text, fehlender Zeitstempel in der
+  Diagnose) und die Positivnachweise dieses Laufs. Der zugehörige
+  [`docs/AUFGABENPLAN_STORE_READINESS_1.6.1.md`](docs/AUFGABENPLAN_STORE_READINESS_1.6.1.md) ist die gültige
+  Arbeitsliste (18 Aufgaben in vier Phasen, Traceability-Matrix, kritischer Pfad, Risiko-Register). Die Dokumente der
+  Iteration 1 sind als solche gekennzeichnet und verweisen auf die aktuelle Fassung.
 - **Ausführbares Go/No-Go-Gate:** `npm run gate` (`scripts/submission-gate.js`) prüft die sieben
   Einreichungskriterien aus §10 der Store-Readiness-Analyse automatisch – Versionskonsistenz über
   `manifest.json`/`package.json`/`CHANGELOG.md`/Listing, echte Screenshots (PNG ≥ 1200 px), abgeschlossenes
