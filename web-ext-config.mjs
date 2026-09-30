@@ -35,7 +35,7 @@ export default {
     '.Jules',
     '.Jules/**',
     '.gitignore',
-    '.webextignore',
+    '.webextignore', // defensive: a stale local copy must never ship
     'web-ext-config.mjs',
     // package metadata / lock files
     'package.json',

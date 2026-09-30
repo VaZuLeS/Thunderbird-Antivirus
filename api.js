@@ -511,6 +511,35 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
 
 const hybrid_report_cache = new Map();
 
+/**
+ * Returns the shared ApiGateway instance when it is available in the current
+ * document (popup.html loads api_gateway.js before this module) and null
+ * otherwise - for example in unit tests that only provide fetch().
+ */
+function getApiGateway() {
+    if (typeof apiGateway !== 'undefined' && apiGateway && typeof apiGateway.fetchWithTimeout === 'function') {
+        return apiGateway;
+    }
+    if (typeof globalThis !== 'undefined' && globalThis.apiGateway &&
+        typeof globalThis.apiGateway.fetchWithTimeout === 'function') {
+        return globalThis.apiGateway;
+    }
+    const Ctor = (typeof globalThis !== 'undefined') ? globalThis.ApiGateway : undefined;
+    return (typeof Ctor === 'function') ? new Ctor() : null;
+}
+
+/**
+ * Uses the central ApiGateway (uniform timeouts and error messages) when it is
+ * available and falls back to plain fetch() otherwise.
+ */
+async function fetchWithTimeout(url, options = {}, timeout = 15000) {
+    const gateway = getApiGateway();
+    if (gateway) {
+        return gateway.fetchWithTimeout(url, options, timeout);
+    }
+    return fetch(url, options);
+}
+
 async function fetch_hybrid_report(hybrid_sha) {
     if (hybrid_report_cache.has(hybrid_sha)) {
         return hybrid_report_cache.get(hybrid_sha);
@@ -528,7 +557,7 @@ async function fetch_hybrid_report(hybrid_sha) {
 
     const fetchPromise = (async () => {
         try {
-            const response = await fetch(options.url, options);
+            const response = await fetchWithTimeout(options.url, options);
             const json_data = await response.json();
 
             const result = { response, json_data };
