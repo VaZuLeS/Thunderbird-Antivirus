@@ -609,6 +609,11 @@ function getHostnameOptimized(url, cache = null) {
 }
 
 function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, reasonsDomainsSet) {
+    // ⚡ Bolt Optimization: Fast-path for exact brand matches early
+    if (KNOWN_BRANDS_SET.has(linkMainDomain)) {
+        return false;
+    }
+
     let cachedBrandMatch = checkedMainDomains.get(linkMainDomain);
     if (cachedBrandMatch !== undefined) {
         if (cachedBrandMatch !== null) {
