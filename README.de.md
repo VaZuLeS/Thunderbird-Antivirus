@@ -46,11 +46,13 @@ minimal notwendigen Daten an externe Analysedienste.
 - **Kontextmenüs.** Zwei Einträge existieren (Berechtigung `menus`): **„Link mit Thundy AV scannen“** (Kontext
   `link`) und **„Alle Links dieser Nachricht scannen“** (Kontext `message_display_action`, bis zu 20 Links je
   Aufruf).
-- **Popup** (Button in der Nachrichtenansicht): Nachrichten-Metadaten, gespeicherte Scan-Ergebnisse, manueller
-  Upload eines Anhangs, URL-Scan und **„HTML entschärfen“** (ein HTML-Anhang wird lokal bereinigt und über den
-  Download-Manager gespeichert). Das Popup ermittelt die angezeigte Nachricht über
-  `messageDisplay.getDisplayedMessages()`; **ohne globale Zustimmung fragt es keinen Anbieter ab** und zeigt nur eine
-  Hinweiskarte mit Verweis auf die Einstellungen.
+- **Popup** (Button in der Nachrichtenansicht): Nachrichten-Metadaten (Betreff, Absender, Datum, Message-ID), die
+  **lokale Bewertung** der Nachricht (Risiko-Score mit Balken, Begründungen, SPF/DKIM/DMARC-Ergebnis, Bewertungszeit),
+  die gespeicherten Anhang- und Link-Verdikte als Status-Chips, manueller Upload eines Anhangs und **„HTML
+  entschärfen“** (ein HTML-Anhang wird lokal bereinigt und über den Download-Manager gespeichert). Lokale Bewertung
+  und gespeicherte Verdikte kommen ausschließlich aus der lokalen Datenbank und werden **ohne** Zustimmung
+  angezeigt; Anbieter-Daten (Berichte, Uploads) erfordern die globale Zustimmung **und** einen API-Schlüssel. Das
+  Popup ermittelt die angezeigte Nachricht über `messageDisplay.getDisplayedMessages()`.
 - **Benachrichtigungen** melden Scan-Start, Einreichung und Fehler.
 - **IP-Reputation (optional):** Die aus den `Received`-Headern extrahierten Mailserver-IPs können über VirusTotal
   oder AbuseIPDB geprüft werden.
@@ -172,20 +174,20 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** Testdateien des
-  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **442 Tests, 0 Fehler** – u. a.
+  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **454 Tests, 0 Fehler** – u. a.
   `message_display.test.js` (UI in der Nachrichtenansicht und Time-of-Click), die Popup-Consent-Tests in
   `api.test.js` und die Pre-Submit-Check-Tests in `scripts/pre-submit-checks.test.js`.
 - `scripts/pre-submit-checks.js` prüft zusätzlich, dass jeder verwendete `browser.*`-API-Namespace eine deklarierte
   Berechtigung hat, dass die `data_collection_permissions`-Deklaration zu den Übermittlungspfaden passt, dass ein
   programmatisch registriertes Skript (`message_display.js`) im Paket liegt und dass jeder lokalisierte UI-String
-  einen Katalogeintrag hat (derzeit 157). Aktueller Stand: 0 Fehler, 2 Warnungen (noch keine echten Screenshots, und
+  einen Katalogeintrag hat (derzeit 173). Aktueller Stand: 0 Fehler, 2 Warnungen (noch keine echten Screenshots, und
   die aktive `.github/workflows/ci.yml` führt weiterhin nur `background.test.js` aus – die vollständige CI steht in
   `docs/ci/ci.yml`).
 - `web-ext lint` meldet derzeit **0 Fehler** und **25 Warnungen**, alle davon bekannte Thunderbird-False-Positives
   (fast ausschließlich `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und
   Thunderbird-spezifische APIs wie `messages.*` oder `messageDisplay.*` nicht kennt). Die Liste wird über
   `scripts/filter-lint-warnings.js` gefiltert.
-- Das gebaute XPI enthält **18 Dateien / 240.959 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
+- Das gebaute XPI enthält **18 Dateien / 265.425 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
   prüft Dateiliste und Größe.
 - Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
   `node ./scripts/pre-submit-checks.js`, `node --test background.test.js` und `npx web-ext lint`.

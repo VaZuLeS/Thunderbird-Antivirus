@@ -3530,6 +3530,24 @@ describe('background.js', () => {
                 'the assessment must be stored under the headerMessageId the popup reads');
         });
 
+        it('handleDisplayedMessage stores the assessment for the popup', async () => {
+            const broadcasts = [];
+            const writtenKeys = [];
+            context.browser.runtime.sendMessage = async (message) => { broadcasts.push(message); };
+            context.browser.storage.local.get = async () => ({ scanningEnabledSenders: [] });
+            context.browser.messages.getFull = async () => ({ contentType: 'text/plain', body: 'hello' });
+            context.browser.messages.listAttachments = async () => [];
+            context.set_privacyTier('balanced');
+            context.getSharedDB = async () => ({ fake: true });
+            context.updateStore = async (db, store, key) => { writtenKeys.push(key); };
+
+            await context.handleDisplayedMessage({ id: 21 }, { id: 3, headerMessageId: 'hdr-display', author: 'a@example.com', subject: 's' });
+
+            assert.deepStrictEqual(writtenKeys, ['hdr-display'],
+                'the displayed message must persist its assessment under the headerMessageId');
+            assert.strictEqual(broadcasts.length, 1);
+        });
+
         it('notify() never throws when the notifications API is unavailable', () => {
             const originalNotifications = context.browser.notifications;
             try {

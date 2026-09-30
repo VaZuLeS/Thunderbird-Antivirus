@@ -291,9 +291,13 @@ No other hosts are contacted. All requests are HTTPS.
 
 ### 8.6 Test the popup and the context menus
 
-22. Open the message display action popup: it lists the message header data (subject, sender, date) plus stored
-    results. **Without** the global consent it must show only the notice card and must produce **no** provider
-    request; with consent and a key it may query the providers.
+22. Open the message display action popup. It always shows the message metadata (subject, sender, date, Message-ID)
+    and — when the message was displayed before — the **local assessment** card (risk score with bar, reasons,
+    SPF/DKIM/DMARC result) plus the stored attachment/link verdicts as status chips. These come from the local
+    IndexedDB only, so they appear without any consent. **Without** the global consent the popup must produce **no**
+    provider request (it shows the consent notice instead); with consent and a key it additionally loads/starts
+    provider reports. If it shows "no result for this message yet", open the message once in the 3-pane view or
+    start a scan from the banner.
 23. With consent granted, right-click a link in the message text and choose **"Scan link with Thundy AV"**; a
     notification reports the outcome. Right-click inside the message area and choose **"Scan all links of this
     message"** (message display action) — up to 20 links are submitted and the result is reported in a notification.

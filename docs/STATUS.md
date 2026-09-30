@@ -96,12 +96,12 @@ abgearbeitet:
   `thundy-av@bludau-it-services.de`, Icons 16/32/64 px, `options_ui.open_in_tab` statt `browser_style`.
 - **Paketbereinigung (g):** `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`) hält Testdateien,
   `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und Entwicklungs-Artefakte aus dem Build. Das XPI
-  enthält **18 Dateien (240.959 Bytes entpackt)** – neu enthalten ist `message_display.js`; `scripts/verify-package.js`
+  enthält **18 Dateien (265.425 Bytes entpackt)** – neu enthalten ist `message_display.js`; `scripts/verify-package.js`
   erlaubt und prüft diese Datei. Toter Code (`content_script.js`) und die Legacy-Dateien sind entfernt.
 - **Lokalisierung (M2):** Alle sichtbaren UI-Strings werden über `browser.i18n` und `_locales/en`/`_locales/de`
   aufgelöst: Manifest-Strings (`__MSG_`), die UI in der Nachrichtenansicht und die Options-/Popup-Oberfläche
   (`data-i18n`-Attribute plus `applyUiTranslations()` in `db.js`, `uiText()` in `options.js`/`api.js`). Die Kataloge
-  enthalten je **165 Keys**, davon 157 lokalisierte UI-Strings; im Code stehen Fallback-Texte (deutsch in den
+  enthalten je **186 Keys**, davon 173 lokalisierte UI-Strings; im Code stehen Fallback-Texte (deutsch in den
   Options-/Popup-Skripten, englisch in Hintergrund- und Message-Display-Skript), Standard-Locale ist `en`. Weitere
   Sprachen können über zusätzliche `_locales/<code>`-Ordner ergänzt werden. Neue Keys: `tocLinkMarked`,
   `tocWarningTitle`, `tocChecking`, `tocBlocked`, `tocOpenAnyway`, `tocClose`, `tocBlockedScheme`,
@@ -113,11 +113,11 @@ abgearbeitet:
   Hintergrundskript erzwingt den erteilten Zustand in `mayTransmitExternally()`.
 - **Pre-Submit-Checks (H1/H3/M2):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung, Rechte,
   die Deklaration der Datenkonsent, Namespace ⇔ Berechtigung, die Anwesenheit des registrierten Skripts und seit der
-  UI-Lokalisierung zusätzlich, dass jeder lokalisierte UI-String einen Katalogeintrag hat (derzeit 157), und liefert
+  UI-Lokalisierung zusätzlich, dass jeder lokalisierte UI-String einen Katalogeintrag hat (derzeit 173), und liefert
   einen echten Exit-Code; der Schritt läuft in der CI. Ergebnis: 0 Fehler, 2 Warnungen (fehlende Screenshots; die
   aktive CI führt nur `background.test.js` aus – die vollständige Variante liegt in `docs/ci/ci.yml`).
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission-, MV3-Portierungs- und
-  Message-Display-Tests enthalten) und ist grün (**442 Tests, 0 Fehler**; neu: `message_display.test.js` mit
+  Message-Display-Tests enthalten) und ist grün (**454 Tests, 0 Fehler**; neu: `message_display.test.js` mit
   17 Tests, 4 Popup-Consent-Tests in `api.test.js`, 9 neue Pre-Submit-Check-Tests). `npx web-ext lint` meldet
   **0 Fehler und 25 Warnungen**, alle davon bekannte Thunderbird-False-Positives
   (`scripts/filter-lint-warnings.js`). Der im Repository aktive Workflow
@@ -131,6 +131,17 @@ abgearbeitet:
 - **Dokumente/Policy:** Datenschutzerklärung (`docs/privacy_policy.md`), Reviewer-Hinweise
   (`docs/reviewer_notes.md`), Listing-Entwurf (`docs/store_listing.md`); die Live-Policy unter
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html.
+
+## Popup (Nachrichtenansicht)
+
+Das Popup wurde mit dem Store-Readiness-Follow-up überarbeitet: Es zeigt jetzt **immer** die lokale Bewertung der
+geöffneten Nachricht (Risiko-Score mit Balken, Begründungen, SPF/DKIM/DMARC-Ergebnis, Bewertungszeit, gespeichert
+über `indexedDB_save_assessment`) und die gespeicherten Anhang-/Link-Verdikte als Status-Chips. Zuvor blieben die
+Ergebnisse unsichtbar, weil (a) der Scan aus dem Banner ohne `headerMessageId` arbeitete und damit alle
+Datenbank-Schreibvorgänge übersprungen wurden und (b) das Popup ohne Hybrid-Analysis-Schlüssel früh abbrach.
+Nachrichten-Metadaten (Betreff, Absender, Datum, Message-ID) und das Design (hell/dunkel, Karten, Chips,
+Fokus-Zustände) wurden ebenfalls modernisiert; ohne Zustimmung/API-Schlüssel werden weiterhin **keine** Anbieter
+abgefragt.
 
 ## Weiterhin offen
 

@@ -20,7 +20,7 @@ Die Pre-Submit-Checks, die in beiden Varianten laufen, prüfen inzwischen zusät
 - die **Deklaration der Datenerhebung** (`data_collection_permissions`: u. a. dass `"none"` die Übermittlung nicht
   verschleiert),
 - dass ein **programmatisch registriertes Skript** (`message_display.js`) im Paket liegt,
-- dass jeder **lokalisierte UI-String** einen Katalogeintrag hat (derzeit 157).
+- dass jeder **lokalisierte UI-String** einen Katalogeintrag hat (derzeit 173).
 
 Die vollständigen Definitionen in diesem Verzeichnis ergänzen das um die komplette `npm test`-Suite, den
 Lint-Filter und `web-ext build` + `scripts/verify-package.js`.

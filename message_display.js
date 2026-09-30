@@ -52,12 +52,33 @@
     document.body.insertBefore(node, document.body.firstChild);
   }
 
+  // Design tokens of the popup/options theme (theme.css). The message view is a
+  // separate content document, so the values are applied inline instead of
+  // pulling in the stylesheet - they stay in sync with the 2026 redesign.
+  const TONES = {
+    warn: { bg: '#fff4e0', border: '#e2b269', fg: '#8a4b00' },
+    danger: { bg: '#fdeceb', border: '#e5a19c', fg: '#a71d1d' },
+    ok: { bg: '#e8f6ed', border: '#9ecfae', fg: '#1a6b3c' },
+    neutral: { bg: '#eef0f4', border: '#d8dce3', fg: '#16181d' }
+  };
+  const FONT_STACK = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+  function applyTone(node, tone) {
+    const colors = TONES[tone] || TONES.neutral;
+    node.style.backgroundColor = colors.bg;
+    node.style.border = '1px solid ' + colors.border;
+    node.style.color = colors.fg;
+    return node;
+  }
+
   function baseStyle(node) {
-    node.style.padding = '8px';
-    node.style.margin = '8px';
-    node.style.borderRadius = '4px';
-    node.style.fontFamily = 'Arial, sans-serif';
-    node.style.fontSize = '14px';
+    node.style.padding = '12px';
+    node.style.margin = '12px 8px';
+    node.style.borderRadius = '10px';
+    node.style.fontFamily = FONT_STACK;
+    node.style.fontSize = '13px';
+    node.style.lineHeight = '1.5';
+    node.style.boxShadow = '0 2px 8px rgba(16, 20, 28, 0.10)';
     node.style.zIndex = '9999';
     return node;
   }
@@ -66,7 +87,15 @@
     const element = document.createElement('button');
     element.type = 'button';
     element.textContent = label;
-    element.style.marginLeft = '10px';
+    element.style.marginLeft = '8px';
+    element.style.marginTop = '4px';
+    element.style.padding = '6px 12px';
+    element.style.borderRadius = '999px';
+    element.style.border = '1px solid currentColor';
+    element.style.background = 'transparent';
+    element.style.color = 'inherit';
+    element.style.font = 'inherit';
+    element.style.cursor = 'pointer';
     return element;
   }
 
@@ -103,10 +132,8 @@
     const score = threat && typeof threat.score === 'number' ? threat.score : 0;
 
     if (score >= 50) {
-      banner.style.backgroundColor = '#ffeeee';
-      banner.style.border = '1px solid #ff0000';
-      banner.style.color = '#ff0000';
-      banner.style.fontWeight = 'bold';
+      applyTone(banner, 'danger');
+      banner.style.fontWeight = '600';
       const title = document.createElement('div');
       title.textContent = '\u{1F534} \u26A0\uFE0F ' + uiText('bannerThreatTitle', 'Thundy AV warning') +
         ' (' + uiText('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
@@ -122,14 +149,10 @@
       }
       banner.appendChild(list);
     } else if (threat && threat.authStatus === 'pass') {
-      banner.style.backgroundColor = '#e6ffe6';
-      banner.style.border = '1px solid #008000';
-      banner.style.color = '#008000';
+      applyTone(banner, 'ok');
       banner.textContent = '\u{1F7E2} \u{1F6E1}\uFE0F ' + uiText('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
     } else if (state.optInNeeded) {
-      banner.style.backgroundColor = '#fff8e1';
-      banner.style.border = '1px solid #ffcc80';
-      banner.style.color = '#333';
+      applyTone(banner, 'warn');
       const text = document.createElement('span');
       text.textContent = state.consentGiven
         ? uiText('bannerTitleOptIn', 'Thundy AV: real-time scanning is not enabled for this message.')
@@ -200,7 +223,7 @@
     links.forEach((link) => {
       if (link.href && link.href.startsWith('http') && link.dataset.thundyMarked !== '1') {
         link.dataset.thundyMarked = '1';
-        link.style.borderBottom = '1px dashed #ff8c00';
+        link.style.borderBottom = '1px dashed #b26a00';
         try {
           link.title = uiText('tocLinkMarked', 'Protected by Thundy AV time-of-click protection');
         } catch (e) { /* ignore */ }
@@ -212,9 +235,7 @@
     removeNode(LINK_WARNING_ID);
     const warning = baseStyle(document.createElement('div'));
     warning.id = LINK_WARNING_ID;
-    warning.style.backgroundColor = '#ffeeee';
-    warning.style.border = '1px solid #ff0000';
-    warning.style.color = '#b00';
+    applyTone(warning, 'danger');
     warning.style.position = 'fixed';
     warning.style.left = '10px';
     warning.style.right = '10px';
@@ -335,8 +356,7 @@
 
     const spinner = baseStyle(document.createElement('div'));
     spinner.id = LINK_WARNING_ID;
-    spinner.style.backgroundColor = '#fff8e1';
-    spinner.style.border = '1px solid #ffcc80';
+    applyTone(spinner, 'warn');
     spinner.style.position = 'fixed';
     spinner.style.left = '10px';
     spinner.style.right = '10px';

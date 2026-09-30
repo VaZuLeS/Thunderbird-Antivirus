@@ -55,11 +55,14 @@ it.**
   configured urlscan.io key – a live urlscan.io check runs with a 6-second budget. Malicious and unverifiable links
   are blocked with an inline notice (reasons, target URL) and an *"Open the link anyway"* button, so the final
   decision stays with you. Non-HTTP(S) schemes are blocked; `mailto:`, `tel:`, `news:`, `nntp:` are not affected.
+- **Popup with the local result.** The message display action shows the message metadata and the local assessment of
+  the open message (risk score with bar, reasons, SPF/DKIM/DMARC result, evaluation time) plus the stored attachment
+  and link verdicts as status chips — all read from the local database, without any transmission. Provider reports and
+  manual uploads appear only with the global consent and an API key; otherwise a notice card links to the options.
 - **Manual controls.** Whitelist and blacklist for domains and senders, a *"always scan manually"*
   switch that blocks any automatic upload, **two context-menu entries** ("Scan link with Thundy AV" and "Scan all
-  links of this message", up to 20 links per run), a popup with the message header data and a one-click *"Clear
-  cache"* button for the local analysis database. Without the global consent the popup does not query any provider
-  at all: it only shows a notice card that links to the options.
+  links of this message", up to 20 links per run) and a one-click *"Clear cache"* button for the local analysis
+  database.
 
 ### What is transmitted, and when
 
@@ -120,11 +123,15 @@ erlauben.**
   nicht verifizierbare Links werden blockiert; ein Inline-Hinweis nennt Begründungen und Ziel-URL und bietet
   „Link trotzdem öffnen“, sodass die letzte Entscheidung beim Nutzer bleibt. Nicht-http(s)-Schemes werden
   blockiert; `mailto:`, `tel:`, `news:`, `nntp:` sind nicht betroffen.
+- **Popup mit dem lokalen Ergebnis.** Das Popup in der Nachrichtenansicht zeigt die Kopfzeilendaten und die lokale
+  Bewertung der geöffneten Nachricht (Risiko-Score mit Balken, Begründungen, SPF/DKIM/DMARC-Ergebnis,
+  Bewertungszeit) sowie die gespeicherten Anhang- und Link-Verdikte als Status-Chips – ausschließlich aus der lokalen
+  Datenbank, ohne Übertragung. Anbieter-Berichte und manuelle Uploads erscheinen nur mit globaler Zustimmung und
+  API-Schlüssel; andernfalls verweist eine Hinweiskarte auf die Einstellungen.
 - **Manuelle Kontrolle.** Whitelist und Blacklist für Domains und Absender, ein Schalter „Immer
   manuell scannen", der jeden automatischen Upload verhindert, **zwei Kontextmenü-Einträge** („Link mit Thundy AV
-  scannen“ und „Alle Links dieser Nachricht scannen“, bis zu 20 Links je Aufruf), ein Popup mit den Kopfzeilendaten
-  der Nachricht und eine Schaltfläche „Cache leeren“ für die lokale Analysedatenbank. Ohne globale Zustimmung fragt
-  das Popup keinen Anbieter ab: es zeigt nur eine Hinweiskarte mit Verweis auf die Einstellungen.
+  scannen“ und „Alle Links dieser Nachricht scannen“, bis zu 20 Links je Aufruf) und eine Schaltfläche „Cache leeren“
+  für die lokale Analysedatenbank.
 
 ### Was wann übertragen wird
 
@@ -224,9 +231,9 @@ built-in data-collection consent, the options dialog asks for that category when
 | Privacy policy linked from the landing page | done (`docs/index.html`, `index_en.html`, `index_de.html`) |
 | Reviewer notes complete (permissions, data flows, test path) | done (`docs/reviewer_notes.md`) — includes the local test recipe (section 8) that needs no API key for banner/warning/badge/time-of-click |
 | Manual verification in Thunderbird 140 ESR (banners, warning, badge, both context-menu entries, permission prompt from the banner, blocked link) | **open** — covered by unit tests with mocked APIs only; no live test has been performed |
-| Unit tests green (`npm test`) | done in this environment — **442 tests, 0 failures**; the CI run for the final commit is authoritative |
+| Unit tests green (`npm test`) | done in this environment — **454 tests, 0 failures**; the CI run for the final commit is authoritative |
 | `npx web-ext lint` | 0 errors, 25 warnings — all known Thunderbird false positives (`scripts/filter-lint-warnings.js`) |
-| XPI package contents | 18 files / 240,959 bytes unpacked, verified by `scripts/verify-package.js` |
+| XPI package contents | 18 files / 265,425 bytes unpacked, verified by `scripts/verify-package.js` |
 | XPI built for 1.6 and attached to a release | **open** — the artefact has not been built and attached to a release yet |
 | Signed for distribution | **open** — `npx web-ext sign --channel listed` has not been run |
 | Submitted to the Thunderbird Add-ons Store | **open** — not submitted, no store URL |

@@ -20,7 +20,7 @@ Manifest ⇔ Code ⇔ veröffentlichter Doku, Prüfung der Live-URLs, unabhängi
 | Manifest-, Paket- und Rechtekonformität | 🟢 erfüllt (auch automatisiert geprüft) |
 | Datenschutz-Deklaration und Consent-Durchsetzung | 🟢 erfüllt (deklariert, im Code erzwungen, mehrfach getestet) |
 | Übereinstimmung Listing/Policy ↔ Code | 🟢 erfüllt (nach Doku-Abgleich) |
-| Tests, Lint, Paket, Lokalisierung | 🟢 erfüllt (438 Tests, Lint 0 Fehler, 18 Dateien, 165×2 Katalog-Keys) |
+| Tests, Lint, Paket, Lokalisierung | 🟢 erfüllt (454 Tests, Lint 0 Fehler, 18 Dateien, 186×2 Katalog-Keys) |
 | Icons, Lizenz, Support, Datenschutz-URL | 🟢 erfüllt |
 | **Manuelle Live-Verifikation in Thunderbird** | 🔴 **offen** — Kernfunktion nur durch Unit-Tests mit gemockten APIs belegt |
 | **Store-Screenshots** | 🔴 **offen** — nur SVG-Platzhalter |
@@ -37,11 +37,11 @@ sind: **Live-Test → Screenshots → Signieren/Einreichen**.
 ## 2. Frische Nachweise (Commit `b27a487`)
 
 ```bash
-npm test                                          # 438 Tests, 67 Suites, 0 Fehler
+npm test                                          # 454 Tests, 67 Suites, 0 Fehler
 npm run pre-submit-checks                         # 0 Fehler, 2 Warnungen (Screenshots, reduzierte CI)
 npx web-ext lint --source-dir . --output json     # 0 Fehler, 25 bekannte Thunderbird-False-Positives
 npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
-node scripts/verify-package.js ./build            # 18 Dateien, 240 959 Bytes, Paketinhalt gültig
+node scripts/verify-package.js ./build            # 18 Dateien, 265 425 Bytes, Paketinhalt gültig
 curl -s -o /dev/null -w '%{http_code}' https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html   # 200
 ```
 
@@ -55,7 +55,7 @@ Zusätzliche Prüfungen, die die Pre-Submit-Checks seit der Umsetzung automatisc
 | Optionale Host-Rechte: gültige Match-Patterns, nur für Analyse-Anbieter | ok (5 Origins) |
 | benutzter API-Namespace ⇔ deklarierte Berechtigung (`downloads`, `menus`, `messageDisplay`, `messages`, `notifications`, `scripting`, `storage`) | ok |
 | registriertes Message-Display-Skript liegt im Paket (`message_display.js`) | ok |
-| alle 157 lokalisierten UI-Strings haben einen Katalogeintrag (Default-Locale `en`) | ok |
+| alle 173 lokalisierten UI-Strings haben einen Katalogeintrag (Default-Locale `en`) | ok |
 | kein Legacy `install.rdf`, Datenschutzerklärung vorhanden und von 3 Landingpages verlinkt, Versionen konsistent | ok |
 | Screenshots, vollständige Testsuite in der aktiven CI | Warnung (bewusst, siehe Abschnitt 4) |
 
@@ -98,13 +98,32 @@ Zusätzliche Prüfungen, die die Pre-Submit-Checks seit der Umsetzung automatisc
 - XPI enthält 18 Dateien: `manifest.json`, `background.js`, `message_display.js`, `db.js`, `api.js`,
   `api_gateway.js`, `options.{html,js}`, `popup.html`, `theme.css`, 5 Icons, 2 Locale-Kataloge, `LICENSE`.
   Keine Tests, Docs, Lockfiles oder Legacy-Dateien; keine ungenutzten Dateien.
-- 438 Tests in 67 Suites, 0 Fehler — u. a. für Consent-Durchsetzung, Datenschutz-Stufen, Berechtigungs-/
+- 454 Tests in 67 Suites, 0 Fehler — u. a. für Consent-Durchsetzung, Datenschutz-Stufen, Berechtigungs-/
   Namespace-Konsistenz, MV3-Portierung, Message-Display-UI und Time-of-Click, Popup-Consent-Gate,
   Lokalisierungs-Helfer und Datenkonsent-Anfrage.
-- Lokalisierung: `_locales/en` und `_locales/de` mit je 165 Keys (vollständige Parität), Default-Locale `en`,
+- Lokalisierung: `_locales/en` und `_locales/de` mit je 186 Keys (vollständige Parität), Default-Locale `en`,
   deutsche Fallbacks im Code; Optionsseite, Popup, Banner und Manifest-Strings laufen über `browser.i18n`.
 
 ---
+
+## 3b. Nachträglich umgesetzt: Popup-Ergebnisse und Design (September 2026)
+
+Zwei Rückmeldungen aus der Nutzung wurden zusätzlich abgearbeitet:
+
+- **„Die Ergebnisse vom Scan werden nicht angezeigt.“** Zwei Ursachen: (a) der Scan aus dem Banner arbeitete mit
+  `{ id }` ohne `headerMessageId`, wodurch alle IndexedDB-Schreibvorgänge still übersprungen wurden, und
+  (b) das Popup brach ohne Hybrid-Analysis-Schlüssel sofort ab. Der Scan löst nun den echten `MessageHeader` auf,
+  und das Popup zeigt **immer** die lokale Bewertung (Score mit Balken, Begründungen, SPF/DKIM/DMARC-Ergebnis,
+  Bewertungszeit) sowie die gespeicherten Anhang-/Link-Verdikte als Status-Chips. Anbieter-Berichte und Uploads
+  bleiben durch Zustimmung **und** API-Schlüssel geschützt.
+- **Design modernisiert:** `theme.css` wurde auf Design-Tokens (Farben, Abstände, Radien, Schatten, Typo-Skala),
+  Hell/Dunkel über `prefers-color-scheme`, sichtbare Fokus-Zustände und reduzierte Bewegung umgestellt; Popup und
+  Optionsseite nutzen Karten, Chips, Score-Balken und eine ruhige Hierarchie. Die Banner in der Nachrichtenansicht
+  wurden auf dieselben Farbwerte/Abstände gezogen (inline, da eigenes Dokument). Keine Remote-Ressourcen, keine
+  Webfonts, CSP unverändert.
+
+**Store-Relevanz:** Beide Änderungen sind rein lokal — keine neue Berechtigung, kein neuer Netzwerkpfad, keine
+zusätzliche Datenerhebung; Datenschutzerklärung und Reviewer-Notizen wurden entsprechend präzisiert.
 
 ## 4. Was für die Einreichung noch fehlt (priorisiert)
 

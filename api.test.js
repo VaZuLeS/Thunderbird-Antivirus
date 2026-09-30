@@ -3345,6 +3345,131 @@ describe('createCdrButton', () => {
     });
 });
 
+describe('popup markup contract (popup.html + api.js)', () => {
+    const POPUP_PATH = path.join(__dirname, 'popup.html');
+
+    function createPopupFromMarkup({ consent = false, record = {} } = {}) {
+        const html = fs.readFileSync(POPUP_PATH, 'utf8');
+        const dom = new JSDOM(html, { url: 'about:blank', virtualConsole: new VirtualConsole() });
+        const fetchCalls = [];
+        const getRequest = { result: record };
+        const store = {
+            get: () => {
+                setTimeout(() => {
+                    if (typeof getRequest.onsuccess === 'function') getRequest.onsuccess({ target: getRequest });
+                }, 0);
+                return getRequest;
+            }
+        };
+        const db = {
+            objectStoreNames: { contains: () => true },
+            transaction: () => ({ objectStore: () => store })
+        };
+
+        const context = {
+            browser: {
+                storage: { local: { get: async (keys) => (Array.isArray(keys) ? { externalAnalysisConsent: consent } : { apikey: 'test-key' }) } },
+                tabs: { query: async () => ([{ id: 1 }]) },
+                messageDisplay: {
+                    getDisplayedMessages: async () => ({ messages: [{
+                        id: 1,
+                        headerMessageId: 'markup@example.com',
+                        subject: 'Betreff aus dem Test',
+                        author: 'Absender <s@example.com>',
+                        date: '2026-09-30T09:00:00.000Z'
+                    }] })
+                },
+                runtime: {
+                    sendMessage: async () => ({ status: 'success' }),
+                    openOptionsPage: () => {}
+                },
+                i18n: { getMessage: () => '' },
+                permissions: { getAll: async () => ({ data_collection: ['personalCommunications'] }) }
+            },
+            document: dom.window.document,
+            indexedDB: {
+                open: () => {
+                    const openRequest = { onupgradeneeded: null, onsuccess: null, onerror: null, result: db };
+                    setTimeout(() => {
+                        if (typeof openRequest.onsuccess === 'function') openRequest.onsuccess({ target: openRequest });
+                    }, 0);
+                    return openRequest;
+                }
+            },
+            fetch: async (url) => { fetchCalls.push(String(url)); return { status: 500, json: async () => ({}) }; },
+            console: { log: () => {}, error: () => {}, warn: () => {} },
+            setTimeout,
+            clearTimeout,
+            URL,
+            String,
+            Array,
+            Object,
+            JSON,
+            Map,
+            Set,
+            Date,
+            TextEncoder
+        };
+
+        vm.createContext(context);
+        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+        wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
+        vm.runInContext(wrappedCode, context);
+        return { context, dom, fetchCalls };
+    }
+
+    it('fills every message metadata field of the real popup markup', async () => {
+        const { context, dom } = createPopupFromMarkup({
+            record: { attachments: [], links: [], localAssessment: { score: 12, reasons: [], authStatus: 'pass', evaluatedAt: '2026-09-30T09:05:00.000Z' } }
+        });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        const doc = dom.window.document;
+        assert.strictEqual(doc.getElementById('subject').textContent, 'Betreff aus dem Test');
+        assert.ok(doc.getElementById('from').textContent.includes('s@example.com'));
+        assert.ok(doc.getElementById('message_date').textContent.length > 0, 'the date field is filled');
+        assert.strictEqual(doc.getElementById('MessageHeaderID').textContent, 'markup@example.com');
+    });
+
+    it('renders the local assessment card into the real results container', async () => {
+        const { context, dom } = createPopupFromMarkup({
+            consent: false,
+            record: {
+                attachments: [{ attachment_name: 'clean.pdf', state: 'CLEAN' }],
+                links: [{ url: 'https://bad.example', state: 'MALICIOUS', reasons: ['bekannt bösartig'] }],
+                localAssessment: { score: 85, reasons: ['Erstkontakt', 'Reply-To weicht ab'], authStatus: 'fail', evaluatedAt: '2026-09-30T09:05:00.000Z' }
+            }
+        });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        const container = dom.window.document.getElementById('hybrid_analysis_api_content');
+        assert.ok(container.querySelector('#thundy-assessment'), 'assessment card rendered');
+        assert.ok(container.querySelector('.card--danger'), 'high score uses the danger tone');
+        assert.strictEqual(container.querySelector('.score__fill').style.width, '85%');
+        assert.ok(container.textContent.includes('Erstkontakt'));
+        assert.ok(container.textContent.includes('clean.pdf'));
+        assert.ok(container.textContent.includes('https://bad.example'));
+        assert.ok(container.querySelector('#thundy-consent-notice'), 'consent notice is shown');
+    });
+
+    it('keeps the popup free of provider requests without consent', async () => {
+        const { context, fetchCalls } = createPopupFromMarkup({
+            consent: false,
+            record: { attachments: [{ attachment_name: 'x.exe', state: 'UPLOADED', hybrid_sha256: 'abc' }], links: [] }
+        });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        assert.deepStrictEqual(fetchCalls, []);
+    });
+});
+
 describe('popup consent gate (store readiness B4)', () => {
     const POPUP_HTML = '<html><body>' +
         '<div id="hybrid_analysis_api_content"></div>' +

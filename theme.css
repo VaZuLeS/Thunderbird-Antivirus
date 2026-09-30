@@ -1,209 +1,259 @@
-:root {
-    --bg-color: #ffffff;
-    --text-color: #333333;
-    --text-muted: #555555;
-    --link-color: #005a9e;
-    --link-hover-color: #003e6e;
-    --card-bg: #f9f9f9;
-    --card-border: #dddddd;
-    --btn-primary-bg: #005a9e;
-    --btn-primary-text: #ffffff;
-    --btn-success-bg: #008000;
-    --btn-success-text: #ffffff;
-    --alert-error-bg: #ffeeee;
-    --alert-error-border: #cc0000;
-    --alert-info-border: #0000ff;
+/*
+ * Thundy AV - theme.css - popup (popup.html) + options page (options.html).
+ * Local only: no remote resources, no web fonts, pure CSS3.
+ * Body defaults = options page; .popup overrides them for the 400px popup.
+ */
 
-    --color-success: #008000;
-    --color-warning: #b26000;
-    --color-danger: #cc0000;
-    --color-info: #0000ff;
+/* 1. Design tokens: text on surface 16.7:1, muted 6.1:1, tone text >= 5.8:1. */
+:root {
+    color-scheme: light dark;
+    --bg: #f4f5f7; --surface: #fff; --surface-2: #eef0f4; --surface-3: #e3e6ec;
+    --text: #16181d; --text-muted: #5b6270; --border: #d8dce3; --border-strong: #c2c8d2;
+    --accent: #1f5fbf; --accent-hover: #174c9b;
+    --link: #1a4f9c; --link-hover: #123a75;
+    --success-solid: #1a6b3c; --danger-solid: #b3261e; --danger-solid-hover: #971f18;
+    --tone-info-fg: #1a56a8; --tone-info-bg: #eaf1fc;
+    --tone-warn-fg: #8a4b00; --tone-warn-bg: #fff4e0;
+    --tone-danger-fg: #a71d1d; --tone-danger-bg: #fdeceb;
+    --tone-ok-fg: #1a6b3c; --tone-ok-bg: #e8f6ed;
+    --tone-neutral-fg: #4a5262; --tone-neutral-bg: #edeff3;
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px;
+    --radius-sm: 6px; --radius-md: 10px; --radius-pill: 999px;
+    --shadow-sm: 0 1px 2px rgba(16, 20, 28, 0.06); --shadow-md: 0 4px 14px rgba(16, 20, 28, 0.09);
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --fs-xs: 11px; --fs-sm: 12px; --fs-md: 13px; --fs-lg: 15px; --fs-xl: 18px;
 }
 
+/* 1b. Dark scheme: only tokens change, no rule is duplicated. */
 @media (prefers-color-scheme: dark) {
     :root {
-        --bg-color: #1e1e1e;
-        --text-color: #f0f0f0;
-        --text-muted: #aaaaaa;
-        --link-color: #66b3ff;
-        --link-hover-color: #99ccff;
-        --card-bg: #2d2d2d;
-        --card-border: #444444;
-        --btn-primary-bg: #005a9e;
-        --btn-primary-text: #ffffff;
-        --btn-success-bg: #28a745;
-        --btn-success-text: #ffffff;
-        --alert-error-bg: #4a1c1c;
-        --alert-error-border: #ff6b6b;
-        --alert-info-border: #3399ff;
-
-        --color-success: #28a745;
-        --color-warning: #ffb84d;
-        --color-danger: #ff6b6b;
-        --color-info: #66b3ff;
+        --bg: #15171c; --surface: #1e2126; --surface-2: #262a31; --surface-3: #30353d;
+        --text: #e9ecf1; --text-muted: #a3aab7; --border: #363b44; --border-strong: #454b56;
+        --accent: #1f6fd0; --accent-hover: #1d63bd;
+        --link: #79b0f5; --link-hover: #a5cbfa;
+        --success-solid: #2e7d52; --danger-solid: #c0392b; --danger-solid-hover: #a83226;
+        --tone-info-fg: #8ab6f0; --tone-info-bg: #1b2a3d;
+        --tone-warn-fg: #f0bd6a; --tone-warn-bg: #33270f;
+        --tone-danger-fg: #f28b86; --tone-danger-bg: #3a1c1c;
+        --tone-ok-fg: #7fd39b; --tone-ok-bg: #162a1e;
+        --tone-neutral-fg: #b6bdc9; --tone-neutral-bg: #262a31;
     }
 }
 
+/* Motion: honour the OS preference (standard reduced-motion idiom). */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* 2. Base elements (options page defaults; .popup overrides below) */
 body {
-    font-family: Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    margin: 0 auto; padding: var(--space-5); max-width: 760px;
+    font-family: var(--font-sans); font-size: var(--fs-lg); line-height: 1.5;
+    background-color: var(--bg); color: var(--text);
 }
-
-/* Base styles for popup and options */
-a {
-    color: var(--link-color);
-    text-decoration: none;
+h1, h2, h3 { margin: 0 0 var(--space-2); font-weight: 600; line-height: 1.3; color: var(--text); }
+h1 { font-size: var(--fs-xl); margin-bottom: var(--space-4); }
+h3 { font-size: var(--fs-lg); margin-top: var(--space-5); }
+h3:first-of-type { margin-top: 0; }
+p { margin: 0 0 var(--space-2); }
+p:last-child { margin-bottom: 0; }
+small { display: block; margin-top: var(--space-1); font-size: var(--fs-sm); line-height: 1.45; color: var(--text-muted); }
+a { color: var(--link); text-decoration: none; text-underline-offset: 2px; }
+a:hover { color: var(--link-hover); text-decoration: underline; }
+/* Decorative "opens in a new tab" arrow inside option links. */
+a span[aria-hidden="true"] { margin-left: var(--space-1); }
+hr { border: 0; border-top: 1px solid var(--border); margin: var(--space-5) 0; }
+label { display: block; margin-bottom: var(--space-1); font-weight: 500; color: var(--text); cursor: pointer; }
+/* Checkbox/radio labels stay on the same line as their input. */
+input[type="checkbox"] + label, input[type="radio"] + label { display: inline; margin-bottom: 0; font-weight: 600; }
+code {
+    font-family: var(--font-mono); font-size: 0.92em; padding: 1px 5px; color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); background-color: var(--surface-2);
 }
-
-a:hover {
-    color: var(--link-hover-color);
-    text-decoration: underline;
+input, select, textarea {
+    font-family: inherit; font-size: inherit; line-height: 1.4; color: var(--text); max-width: 100%;
+    padding: var(--space-2) var(--space-3); background-color: var(--surface);
+    border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-
-h1, h2, h3 {
-    color: var(--text-color);
-}
-
-.head_line {
-    font-size: 16px;
-    font-weight: bold;
-}
-
+input[type="text"], input[type="password"], input[type="url"],
+input[type="email"], input[type="search"], select, textarea { width: 100%; }
+input[type="checkbox"], input[type="radio"] { width: auto; accent-color: var(--accent); }
+textarea { min-height: 72px; resize: vertical; }
+input:hover:not(:disabled), select:hover:not(:disabled), textarea:hover:not(:disabled) { border-color: var(--text-muted); }
+/* Visible keyboard focus ring (readable in light and dark). */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: opacity 0.2s ease, filter 0.2s ease;
+    font-family: inherit; font-size: inherit; font-weight: 500; line-height: 1.2; cursor: pointer;
+    margin-right: var(--space-2); padding: var(--space-2) var(--space-4); color: var(--text);
+    background-color: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, filter 0.15s ease;
 }
-
-button:hover:not(:disabled) {
-    filter: brightness(0.9);
-}
-
-@media (prefers-color-scheme: dark) {
-    button:hover:not(:disabled) {
-        filter: brightness(1.1);
-    }
-}
-
-button:active:not(:disabled) {
-    filter: brightness(0.8);
-}
-
-@media (prefers-color-scheme: dark) {
-    button:active:not(:disabled) {
-        filter: brightness(1.2);
-    }
-}
-
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-a:focus-visible {
-    outline: 2px solid var(--link-color);
-    outline-offset: 2px;
-}
-
-button:disabled,
-input:disabled,
-select:disabled,
-textarea:disabled,
+button:hover:not(:disabled) { background-color: var(--surface-3); }
+button:active:not(:disabled) { filter: brightness(0.96); }
+button:disabled, input:disabled, select:disabled, textarea:disabled { opacity: 0.55; cursor: not-allowed; }
+/* Dim the whole form row of a disabled field (legacy markup uses .mb-3). */
 .mb-3:has(:disabled) label,
-.mb-3:has(:disabled) small {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-button[aria-busy="true"]:disabled {
-    cursor: progress;
-}
-
-.btn-primary {
-    background-color: var(--btn-primary-bg);
-    color: var(--btn-primary-text);
-}
-
-.btn-success {
-    background-color: var(--btn-success-bg);
-    color: var(--btn-success-text);
-}
-
-/* Card and grid layouts */
-.card {
-    background-color: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 20px;
-}
-
-.card-info {
-    border-left: 5px solid var(--alert-info-border);
-}
-
-.grid-container {
-    display: grid;
-    grid-template-columns: 150px 1fr;
-    gap: 10px;
-    margin-top: 15px;
-    background-color: var(--card-bg);
-    padding: 10px;
-    border-radius: 5px;
-    border: 1px solid var(--card-border);
-}
-
-.grid-header {
-    font-weight: bold;
-    color: var(--text-muted);
-}
-
-.grid-content {
-    overflow-wrap: anywhere;
-    word-break: normal;
-}
-
-/* Alerts */
-.alert-error {
-    color: var(--color-danger);
-    padding: 10px;
-    border: 1px solid var(--alert-error-border);
-    background-color: var(--alert-error-bg);
-    border-radius: 4px;
-    margin-bottom: 15px;
-}
-
-/* Text Utilities */
-.text-success { color: var(--color-success) !important; }
-.text-warning { color: var(--color-warning) !important; }
-.text-danger { color: var(--color-danger) !important; }
-.text-info { color: var(--color-info) !important; }
-
-/* Margins */
-.mt-2 { margin-top: 10px; }
-.mt-3 { margin-top: 15px; }
-.mb-3 { margin-bottom: 15px; }
-.ml-2 { margin-left: 10px; }
-.ml-4 { margin-left: 20px; }
-.ml-6 { margin-left: 30px; }
-
+.mb-3:has(:disabled) small { opacity: 0.7; }
+button[aria-busy="true"]:disabled { cursor: progress; }
 @keyframes thundy-spin {
     to { transform: rotate(360deg); }
 }
-
 button[aria-busy="true"]::after,
 [role="status"][aria-busy="true"]::after {
-    content: "";
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    margin-left: 8px;
-    vertical-align: middle;
-    border: 2px solid currentColor;
-    border-right-color: transparent;
-    border-radius: 50%;
-    animation: thundy-spin 0.8s linear infinite;
+    content: ""; display: inline-block; vertical-align: middle; width: 12px; height: 12px;
+    margin-left: var(--space-2); border: 2px solid currentColor; border-right-color: transparent;
+    border-radius: 50%; animation: thundy-spin 0.8s linear infinite;
 }
+
+/* 3. Popup layout */
+.popup { width: 400px; max-width: 100%; padding: 0; font-size: var(--fs-md); overflow-x: hidden; }
+.app { display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-4); min-width: 0; }
+.app__header { display: flex; align-items: flex-start; gap: var(--space-3); }
+.app__logo { flex: 0 0 auto; width: 32px; height: 32px; border-radius: var(--radius-sm); }
+.app__headings { min-width: 0; }
+.app__title { margin: 0; font-size: var(--fs-xl); letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.app__subtitle { margin: 2px 0 0; font-size: var(--fs-sm); font-weight: 400; color: var(--text-muted); overflow-wrap: anywhere; }
+.app__footer { padding-top: var(--space-3); border-top: 1px solid var(--border); font-size: var(--fs-sm); }
+.message-meta { min-width: 0; }
+.section__title {
+    margin: 0 0 var(--space-2); font-size: var(--fs-xs); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);
+}
+.meta-list {
+    display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    gap: var(--space-1) var(--space-3); margin: 0; padding: var(--space-3);
+    border: 1px solid var(--border); border-radius: var(--radius-md); background-color: var(--surface);
+}
+.meta-list__label { font-size: var(--fs-sm); color: var(--text-muted); }
+.meta-list__value { margin: 0; min-width: 0; font-size: var(--fs-md); overflow-wrap: anywhere; }
+.mono { font-family: var(--font-mono); font-size: var(--fs-sm); }
+/* Placeholders for missing metadata (class toggled by renderMessageMeta). */
+.is-muted { color: var(--text-muted); font-style: italic; }
+.results { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+.status { font-size: var(--fs-sm); font-weight: 400; color: var(--text-muted); overflow-wrap: anywhere; }
+/* Keep the popup compact while there is nothing to report. */
+.status:empty { display: none; }
+
+/* 4. Cards */
+.card { min-width: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--border); border-radius: var(--radius-md); background-color: var(--surface); box-shadow: var(--shadow-sm); }
+.card__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-2); }
+.card__title { margin: 0; font-size: var(--fs-lg); font-weight: 600; }
+.card__text { margin: var(--space-2) 0 0; font-size: var(--fs-md); overflow-wrap: anywhere; }
+.card__text:first-child, .card__head + .card__text { margin-top: 0; }
+.card__meta { margin: var(--space-3) 0 0; font-size: var(--fs-xs); color: var(--text-muted); }
+/* Tone cards: tinted surface + 3px tone rail. Rail and label text (not the
+   colour alone) carry the meaning. */
+.card--info, .card--warn, .card--danger, .card--ok, .card--neutral { border-left-width: 3px; border-left-style: solid; }
+.card--info { background-color: var(--tone-info-bg); border-left-color: var(--tone-info-fg); }
+.card--warn { background-color: var(--tone-warn-bg); border-left-color: var(--tone-warn-fg); }
+/* Malicious / high score: the loudest card of the popup. */
+.card--danger { background-color: var(--tone-danger-bg); border-left-color: var(--tone-danger-fg); box-shadow: var(--shadow-md); }
+.card--danger .card__title { color: var(--tone-danger-fg); }
+.card--warn .card__title { color: var(--tone-warn-fg); }
+/* Unremarkable verdict: quiet, no tint, only a soft accent rail. */
+.card--ok { border-left-color: var(--tone-ok-fg); }
+.card--neutral { border-left-color: var(--tone-neutral-fg); }
+/* Hint/consent cards: dashed outline distinguishes them without colour. */
+.card--hint, .card.hint { border-style: dashed; box-shadow: none; }
+.card--assessment, .card.assessment { box-shadow: var(--shadow-md); }
+.card--results-list, .card.results-list { padding-top: var(--space-2); padding-bottom: var(--space-2); }
+
+/* 5. Chips and badges */
+.chip {
+    display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%;
+    padding: 1px var(--space-3); border: 1px solid var(--tone-neutral-fg);
+    border-radius: var(--radius-pill); background-color: var(--tone-neutral-bg);
+    color: var(--tone-neutral-fg); font-size: var(--fs-xs); font-weight: 600;
+    line-height: 1.7; overflow-wrap: anywhere;
+}
+.chip--info { border-color: var(--tone-info-fg); background-color: var(--tone-info-bg); color: var(--tone-info-fg); }
+.chip--warn { border-color: var(--tone-warn-fg); background-color: var(--tone-warn-bg); color: var(--tone-warn-fg); }
+.chip--ok { border-color: var(--tone-ok-fg); background-color: var(--tone-ok-bg); color: var(--tone-ok-fg); }
+.chip--neutral { border-color: var(--tone-neutral-fg); background-color: var(--tone-neutral-bg); color: var(--tone-neutral-fg); }
+/* Malicious entries: heavier ring + bold text on top of the colour. */
+.chip--danger {
+    border-width: 2px; border-color: var(--tone-danger-fg); font-weight: 700;
+    background-color: var(--tone-danger-bg); color: var(--tone-danger-fg);
+}
+.badges { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+
+/* 6. Score bar (the width is set inline by api.js, never in CSS) */
+.score {
+    height: 8px; margin-top: var(--space-3); border-radius: var(--radius-pill);
+    background-color: var(--surface-3); overflow: hidden;
+}
+.score__fill { height: 100%; border-radius: inherit; background-color: var(--tone-neutral-fg); transition: width 0.3s ease; }
+.score__fill--info { background-color: var(--tone-info-fg); }
+.score__fill--warn { background-color: var(--tone-warn-fg); }
+.score__fill--danger { background-color: var(--tone-danger-fg); }
+.score__fill--ok { background-color: var(--tone-ok-fg); }
+
+/* 7. Lists */
+.list { display: flex; flex-direction: column; margin: var(--space-3) 0 0; padding: 0; list-style: none; }
+.list__item { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-2); padding: var(--space-2) 0; border-top: 1px solid var(--border); min-width: 0; }
+.list__item:first-child { padding-top: 0; border-top: 0; }
+/* Clamp long URLs/names to two lines (full value stays in the title tooltip). */
+.list__item-title {
+    flex: 1 1 140px; min-width: 0; display: -webkit-box; -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere;
+    font-size: var(--fs-md); font-weight: 500;
+}
+.list__item-text { flex: 1 1 100%; min-width: 0; font-size: var(--fs-xs); color: var(--text-muted); overflow-wrap: anywhere; }
+.reasons { display: flex; flex-direction: column; gap: var(--space-1); margin: var(--space-3) 0 0; padding: 0; list-style: none; }
+.reasons__item { position: relative; padding-left: var(--space-4); font-size: var(--fs-md); overflow-wrap: anywhere; }
+.reasons__item::before {
+    content: ""; position: absolute; top: 0.55em; left: var(--space-1);
+    width: 4px; height: 4px; border-radius: 50%; background-color: var(--text-muted);
+}
+
+/* 8. Buttons and links */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); line-height: 1.2; }
+.btn--primary, .btn-primary { border-color: transparent; background-color: var(--accent); color: #fff; }
+.btn--primary:hover:not(:disabled), .btn-primary:hover:not(:disabled) { background-color: var(--accent-hover); color: #fff; }
+.btn--secondary { border-color: var(--border-strong); background-color: var(--surface-2); color: var(--text); }
+.btn--secondary:hover:not(:disabled) { background-color: var(--surface-3); color: var(--text); }
+.btn--danger { border-color: transparent; background-color: var(--danger-solid); color: #fff; }
+.btn--danger:hover:not(:disabled) { background-color: var(--danger-solid-hover); color: #fff; }
+.btn--ghost { border-color: transparent; background-color: transparent; color: var(--link); }
+.btn--ghost:hover:not(:disabled) { background-color: var(--surface-2); color: var(--link-hover); }
+.btn-success, .btn--success { border-color: transparent; background-color: var(--success-solid); color: #fff; }
+.btn-success:hover:not(:disabled), .btn--success:hover:not(:disabled) { filter: brightness(1.08); color: #fff; }
+.toolbar__link { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--fs-sm); font-weight: 500; }
+.toolbar__link::after { content: "\2197"; font-size: 0.95em; }
+
+/* 9. Legacy helpers still generated by api.js / options.html */
+.card-info { border-left: 3px solid var(--tone-info-fg); }
+.alert-error {
+    margin-bottom: var(--space-3); padding: var(--space-3); font-size: var(--fs-md);
+    border: 1px solid var(--tone-danger-fg); border-left-width: 3px;
+    border-radius: var(--radius-sm); background-color: var(--tone-danger-bg); color: var(--tone-danger-fg);
+}
+.text-info { color: var(--tone-info-fg); }
+.text-warning { color: var(--tone-warn-fg); }
+.text-danger { color: var(--tone-danger-fg); }
+.text-success { color: var(--tone-ok-fg); }
+.head_line { font-size: var(--fs-lg); font-weight: 600; }
+/* Spacing utilities (legacy class names mapped onto the spacing scale). */
+.mt-2 { margin-top: var(--space-2); }
+.mt-3 { margin-top: var(--space-4); }
+.mb-3 { margin-bottom: var(--space-4); }
+.ml-2 { margin-left: var(--space-2); }
+.ml-4 { margin-left: var(--space-4); }
+.ml-6 { margin-left: var(--space-5); }
+.grid-container {
+    display: grid; grid-template-columns: minmax(120px, 150px) minmax(0, 1fr);
+    gap: var(--space-2) var(--space-3); margin-top: var(--space-3); padding: var(--space-3);
+    border: 1px solid var(--border); border-radius: var(--radius-md); background-color: var(--surface);
+}
+.grid-header { font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); }
+.grid-content { min-width: 0; overflow-wrap: anywhere; }
+
+/* 10. Options page: the pre-formatted intro text (page metrics are in body). */
+#aboutText { white-space: pre-line; }

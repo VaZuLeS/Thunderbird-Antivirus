@@ -25,12 +25,12 @@ Changes that resolve the store-readiness review for 1.6
   `tocBlockedScheme` and `notificationUiUnavailable` in `_locales/en` and `_locales/de`.
 - **Localization of the options page and the popup**: all visible UI strings are now resolved through
   `browser.i18n` and the catalogues (static markup via `data-i18n*` attributes and `applyUiTranslations()` in
-  `db.js`, dynamic strings via `uiText()` in `options.js`/`api.js`). The catalogues contain 165 keys per language
-  (157 localized UI strings), the English translation is complete, German fallbacks remain in the code, and further
+  `db.js`, dynamic strings via `uiText()` in `options.js`/`api.js`). The catalogues contain 186 keys per language
+  (173 localized UI strings), the English translation is complete, German fallbacks remain in the code, and further
   languages only need an additional `_locales/<code>` folder.
 - Tests: `message_display.test.js` (19 tests), four popup consent tests in `api.test.js`, tests for the
   localization helpers in `db.test.js`, tests for the built-in data consent in `background.test.js`/`options.test.js`
-  and twelve new pre-submit-check tests – **442 tests in total, 0 failures**.
+  and twelve new pre-submit-check tests – **454 tests in total, 0 failures**.
 
 ### Changed
 
@@ -50,8 +50,8 @@ Changes that resolve the store-readiness review for 1.6
   popup – are resolved through the catalogues with the default locale `en` and fallback texts in the code.
 - The pre-submit checks additionally verify the API namespace against the declared permission, the data-collection
   declaration and the presence of the programmatically registered script in the package.
-- The built package contains **18 files / 240,959 bytes unpacked**.
-- The pre-submit checks verify that all localized UI strings (currently 157) have a catalogue entry.
+- The built package contains **18 files / 265,425 bytes unpacked**.
+- The pre-submit checks verify that all localized UI strings (currently 173) have a catalogue entry.
 - **Upload cap:** attachments larger than 100 MB are never uploaded automatically (provider limits); they stay in
   the manual path.
 - **Reviewer notes:** the tier descriptions state precisely which transmissions happen independently of the tier,
@@ -59,6 +59,11 @@ Changes that resolve the store-readiness review for 1.6
 
 ### Fixed
 
+- **Scan results were not shown in the popup.** Two causes: scans triggered from the in-message banner worked
+  with `{ id }` only, so every IndexedDB write was skipped (they require `message.headerMessageId`), and the popup
+  returned early when no Hybrid Analysis key was stored. The scan now resolves the real `MessageHeader`, and the
+  popup always renders the local assessment (risk score, score bar, reasons, SPF/DKIM/DMARC result, evaluation time)
+  plus the stored attachment/link verdicts as status chips. Provider data stays gated by consent **and** API key.
 - **Robustness:** the state and link handlers fall back to the active message display when Thunderbird does not
   report `sender.tab` for the message display script; the popup applies the same consent rule as the background
   (own consent **and** the granted built-in data category) before it queries providers.

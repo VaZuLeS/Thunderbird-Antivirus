@@ -12,10 +12,10 @@ Ausgangspunkt der Analyse war Commit `1a72c45`; die Korrekturen liegen in den da
 (`49850f3` Blocker/Hohe Risiken, `8b2fc84` Lokalisierung). Verifikation nach der Umsetzung:
 
 ```bash
-npm test                       # 442 Tests, 0 Fehler
+npm test                       # 454 Tests, 0 Fehler
 npm run pre-submit-checks      # 0 Fehler, 1 Warnung (fehlende Screenshots)
 npx web-ext lint --source-dir . --output json   # 0 Fehler, 25 bekannte Thunderbird-False-Positives
-node scripts/verify-package.js ./build          # 18 Dateien, 240 959 Bytes
+node scripts/verify-package.js ./build          # 18 Dateien, 265 425 Bytes
 ```
 
 | Befund | Umsetzung | Nachweis |
@@ -28,7 +28,7 @@ node scripts/verify-package.js ./build          # 18 Dateien, 240 959 Bytes
 | **H2/M6** Doku-Drift | README/README.de/STATUS/Listing/Reviewer-Notizen/Datenschutz/CHANGELOG auf den neuen Stand gebracht (Zahlen, Funktionen, offene Punkte) | Doku-Commit |
 | **H3** Kein Gate für Permissions/CI | Pre-Submit-Checks prüfen jetzt Namespace ⇔ Permission, Datenkonsent-Deklaration, registriertes Skript und Lokalisierungs-Keys; vollständige CI-Definition in `docs/ci/ci.yml` (Übernahme in `.github/workflows/` scheitert weiter an der fehlenden `workflows`-Berechtigung des Tokens) | `scripts/pre-submit-checks.js`, `scripts/pre-submit-checks.test.js` |
 | **M1** Überbreite Host-Patterns | `optional_host_permissions` auf die 5 tatsächlich genutzten Origins reduziert | `manifest.json` |
-| **M2** UI nur deutsch | Optionsseite und Popup vollständig über `_locales/{en,de}` + `browser.i18n` lokalisierbar (157 Strings, deutsche Fallbacks im Code, `en` als Standard-Locale); Katalog-Konsistenz wird geprüft | `db.js`, `options.js/html`, `api.js`, `popup.html`, `_locales/*`, `db.test.js` |
+| **M2** UI nur deutsch | Optionsseite und Popup vollständig über `_locales/{en,de}` + `browser.i18n` lokalisierbar (173 Strings, deutsche Fallbacks im Code, `en` als Standard-Locale); Katalog-Konsistenz wird geprüft | `db.js`, `options.js/html`, `api.js`, `popup.html`, `_locales/*`, `db.test.js` |
 | **M3** Popup-Tab-Auflösung | `messageDisplay.getDisplayedMessages()` ohne `tabId` (Fallback Tabs-API) | `api.js` |
 | **M7** Produktname | Popup-Titel/-Überschrift = Add-on-Name | `popup.html` |
 | **M8** Fehler nur im Log / tote Pfade | Registrierungsfehler erzeugen eine Notification; zusätzlich zwei latente `ReferenceError`s im Popup behoben (`syncFragment`, `container`), die das Anzeigen gespeicherter Ergebnisse verhinderten; Option „Auto-Scan“ funktional umgesetzt (`autoScanLinksOfMessage`) | `background.js`, `api.js`, Tests |
