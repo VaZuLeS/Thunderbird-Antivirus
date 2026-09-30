@@ -68,10 +68,16 @@ Alle Schritte lassen sich ohne GitHub Actions nachvollziehen:
 
 ```bash
 npm ci
+npm run check        # entspricht allen Schritten der ci.yml in einem Befehl:
+                     # pre-submit-checks, Gate, npm test, lint:filtered, package:verify
+```
+
+Einzeln (identisch zu den Workflow-Schritten):
+
+```bash
 npm run pre-submit-checks
+npm run gate
 npm test
-npx web-ext lint --source-dir . --output json > /tmp/lint.json
-node scripts/filter-lint-warnings.js /tmp/lint.json
-npx web-ext build --source-dir . --artifacts-dir ./build
-node scripts/verify-package.js ./build
+npm run lint:filtered
+npm run package:verify
 ```

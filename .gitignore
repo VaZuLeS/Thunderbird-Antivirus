@@ -3,3 +3,6 @@ build/
 web-ext-artifacts/
 *.log
 test_output.log
+
+# local Thunderbird profile for the manual live test (examples/run-in-thunderbird.sh)
+.thundy-test-profile/

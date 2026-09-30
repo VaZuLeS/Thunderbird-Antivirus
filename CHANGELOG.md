@@ -14,6 +14,19 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 ### Added
 
+- **Ausführbares Go/No-Go-Gate:** `npm run gate` (`scripts/submission-gate.js`) prüft die sieben
+  Einreichungskriterien aus §10 der Store-Readiness-Analyse automatisch – Versionskonsistenz über
+  `manifest.json`/`package.json`/`CHANGELOG.md`/Listing, echte Screenshots (PNG ≥ 1200 px), abgeschlossenes
+  Live-Test-Protokoll inklusive ausgefüllter Umgebungsfelder, vollständige Lokalisierung, Reviewer-Paket,
+  Dokumentation der Daten-Deklaration und das ATN-Signierziel. Offene Punkte werden als `BLOCKER:` mit
+  Exit-Code 1 gemeldet (aktuell: Screenshots und Live-Test).
+- **Ein Befehl für das komplette Qualitätsgate:** `npm run check` führt Pre-Submit-Checks, Submission-Gate,
+  alle Tests, den gefilterten Linter (`npm run lint:filtered`) und den Paketbau mit Inhaltsprüfung
+  (`npm run package:verify`) aus – der lokale Ersatz für den Workflow, der wegen der fehlenden
+  `workflows`-Push-Berechtigung nicht aktiviert werden kann.
+- **Beispielskript für den Live-Test:** `examples/run-in-thunderbird.sh` startet Thunderbird mit einem
+  getrennten Testprofil und geladenem Add-on (ersetzt das veraltete `examples/minimal_scan.sh`, das ein in
+  diesem Repository nie existierendes CLI aufrief).
 - **Zuverlässige Host-Freigabe im Popup:** Fehlt die Host-Berechtigung für Hybrid Analysis (z. B. weil sie aus
   dem Banner heraus nicht erteilt werden konnte), zeigt das Popup einen Hinweis mit der Schaltfläche
   „Zugriff erteilen“. Der Klick im Popup ist garantiert eine Nutzer-Geste und damit der verlässliche Weg zur

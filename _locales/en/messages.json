@@ -682,5 +682,18 @@
   "popupGrantAccessHint": {
     "message": "The access is only needed for Hybrid Analysis and can be revoked at any time in the add-on permissions.",
     "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupInjectionFailed": {
+    "message": "The in-message banner could not be inserted into the message view (last error: $DETAIL$). Please report this together with your Thunderbird version.",
+    "description": "Popup UI string (store readiness A-23).",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupDismiss": {
+    "message": "Dismiss",
+    "description": "Popup UI string (store readiness A-23)."
   }
 }

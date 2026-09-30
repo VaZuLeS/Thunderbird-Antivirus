@@ -48,13 +48,15 @@ Ergebnisartefakt und ein Abnahmekriterium. Er ist so geschrieben, dass er direkt
 ### 0.2 Nachweise dieses Arbeitslaufs (lokal verifiziert, Version 1.6.1)
 
 ```bash
-npm test                        # 410 Tests, 0 Fehler (inkl. test/i18n.test.js
-                                #   und test/store_readiness.test.js)
+npm test                        # 422 Tests, 0 Fehler (inkl. test/i18n.test.js,
+                                #   test/store_readiness.test.js und
+                                #   scripts/submission-gate.test.js)
 npm run pre-submit-checks       # 0 Fehler, 1 Warnung (fehlende Screenshots)
 npx web-ext lint                # 0 Fehler, 18 Warnungen (alle gefiltert)
 npx web-ext build --source-dir . --artifacts-dir ./build
-node scripts/verify-package.js ./build   # 17 Dateien, 240.000 Bytes, Inhalt gültig
+node scripts/verify-package.js ./build   # 17 Dateien, Inhalt gültig
 node scripts/make-testdata.js   # 4 reproduzierbare .eml-Fixtures
+npm run gate                    # Go/No-Go: 3 Blocker (Screenshots, Live-Test-Protokoll)
 ```
 
 ### 0.3 Bewusst gewählte Varianten (im Plan ausdrücklich zugelassen)
@@ -197,6 +199,9 @@ Einreichung bei ATN realistisch in einem Zyklus durchführbar.** *(Umsetzungssta
 ## 10. Go/No-Go-Protokoll (Aufgabe A-31, durchgeführt)
 
 Geprüft gegen §10 der [Problemanalyse](PROBLEMANALYSE_STORE_READINESS.md), Stand Version 1.6.1.
+Die Liste ist als ausführbares Gate implementiert: `npm run gate` (`scripts/submission-gate.js`) meldet
+`BLOCKER:`-Zeilen mit Exit-Code 1. Ergebnis dieses Laufs: **3 Blocker** – echte Screenshots, unvollständiges
+Live-Test-Protokoll (offene Checkliste + leere Umgebungsfelder).
 
 | # | Kriterium | Ergebnis | Beleg / offener Rest |
 |---|---|---|---|

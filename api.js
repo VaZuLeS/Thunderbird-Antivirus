@@ -122,6 +122,52 @@ async function renderHostPermissionNotice() {
     }
 }
 
+/**
+ * Surfaces the diagnostics written by background.js when the in-message banner
+ * could not be inserted (store readiness P1-11). A user - or a reviewer - gets a
+ * concrete error message instead of a silently missing UI element, and can
+ * dismiss the notice once it has been reported.
+ */
+async function renderInjectionDiagnostics() {
+    try {
+        const stored = await browser.storage.local.get('messageDisplayInjectionFailed');
+        const failure = stored ? stored.messageDisplayInjectionFailed : null;
+        if (!failure || !failure.message) return false;
+
+        const statusArea = document.getElementById('status_message');
+        if (!statusArea) return true;
+
+        const card = document.createElement('div');
+        card.className = 'card card-warn mb-3';
+        card.setAttribute('role', 'status');
+
+        const text = document.createElement('p');
+        text.textContent = t('popupInjectionFailed',
+            `Das Banner konnte zuletzt nicht in die Nachrichtenansicht eingefügt werden (letzter Fehler: ${failure.message}). Bitte melden Sie das mit Ihrer Thunderbird-Version.`,
+            [String(failure.message)]);
+        card.appendChild(text);
+
+        const dismissButton = document.createElement('button');
+        dismissButton.className = 'btn-primary mt-2';
+        dismissButton.textContent = t('popupDismiss', 'Ausblenden');
+        dismissButton.addEventListener('click', async () => {
+            try {
+                await browser.storage.local.remove('messageDisplayInjectionFailed');
+            } catch (e) {
+                console.error('Could not clear the injection diagnostics', e);
+            }
+            card.remove();
+        });
+        card.appendChild(dismissButton);
+
+        statusArea.appendChild(card);
+        return true;
+    } catch (e) {
+        console.error('Injection diagnostics could not be rendered', e);
+        return false;
+    }
+}
+
 const byteToHex = new Array(256);
 for (let n = 0; n <= 255; n++) {
     byteToHex[n] = n.toString(16).padStart(2, '0');
@@ -189,6 +235,9 @@ if (!apikey_hybridanalysis) {
 // nicht erteilt werden konnte), laesst sie sich hier nachholen: der Klick auf
 // den Button ist eine echte Nutzer-Geste.
 await renderHostPermissionNotice();
+
+// Eine fehlgeschlagene Banner-Injektion sichtbar machen (Diagnose aus dem Hintergrundskript).
+await renderInjectionDiagnostics();
 
 // Der Benutzer hat auf unseren Button geklickt, holen Sie sich den aktiven Tab im aktuellen Fenster mit
 // der Tabs API.

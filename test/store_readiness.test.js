@@ -45,6 +45,19 @@ describe('store readiness contracts', () => {
     assert.match(background, /reportMessageDisplayInjectionFailure/);
     assert.match(background, /browser\.storage\.local\.set\(\{\s*messageDisplayInjectionFailed/);
     assert.match(background, /notify\('notificationTitleError', 'notificationBannerFailed'/);
+    assert.match(api, /renderInjectionDiagnostics/);
+    assert.match(api, /storage\.local\.get\('messageDisplayInjectionFailed'\)/);
+  });
+
+  it('ships the executable submission gate (A-31)', () => {
+    assert.ok(fs.existsSync(path.join(ROOT, 'scripts', 'submission-gate.js')));
+    assert.ok(fs.existsSync(path.join(ROOT, 'scripts', 'submission-gate.test.js')));
+    const pkg = JSON.parse(read('package.json'));
+    assert.ok(pkg.scripts.gate, 'npm run gate is missing');
+    assert.ok(pkg.scripts['package:verify'], 'npm run package:verify is missing');
+    assert.ok(pkg.scripts['lint:filtered'], 'npm run lint:filtered is missing');
+    assert.match(pkg.scripts.check, /npm run gate/, 'npm run check must include the gate');
+    assert.match(pkg.scripts.check, /npm test/, 'npm run check must run the tests');
   });
 
   it('offers a reliable user gesture fallback for the provider host permission (A-12)', () => {

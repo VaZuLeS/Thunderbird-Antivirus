@@ -75,6 +75,30 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
       --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed
   ```
 
+## 5a. Vollständiges lokales Gate (Ersatz für die blockierte CI)
+
+Ein Befehl prüft alles, was vor einem Pull Request bzw. einer Einreichung nötig ist:
+
+```bash
+npm run check
+```
+
+Das führt nacheinander aus: Pre-Submit-Checks, das **Submission-Gate** (Go/No-Go-Checkliste aus §10 der
+Problemanalyse), die vollständige Testsuite, den Linter mit Filter der bekannten Thunderbird-False-Positives
+und den Paketbau inklusive Inhaltsprüfung. Einzeln:
+
+```bash
+npm run pre-submit-checks   # Manifest, Rechte, Daten-Deklaration, Screenshots
+npm run gate                # Go/No-Go vor der Store-Einreichung
+npm test                    # 421 Tests
+npm run lint:filtered       # web-ext lint, nur bekannte False-Positives erlaubt
+npm run package:verify      # XPI bauen und Inhalt/Größe prüfen
+```
+
+Das Gate meldet `BLOCKER:`-Zeilen mit Exit-Code 1, solange Einreichungsvoraussetzungen fehlen (z. B. echte
+Screenshots oder ein abgeschlossenes Live-Test-Protokoll) und ist damit die ausführbare Fassung der
+Go/No-Go-Liste.
+
 ## 6. In Thunderbird laden
 
 **Variante A – temporäres Add-on (für die Entwicklung empfohlen):**

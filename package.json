@@ -18,9 +18,12 @@
   "scripts": {
     "test": "NODE_PATH=node_modules node --test --test-reporter=spec",
     "lint": "web-ext lint --source-dir .",
+    "lint:filtered": "web-ext lint --source-dir . --output json > /tmp/web-ext-lint.json && node scripts/filter-lint-warnings.js /tmp/web-ext-lint.json",
     "build": "web-ext build --source-dir . --artifacts-dir ./build",
+    "package:verify": "npm run build && node scripts/verify-package.js ./build",
     "pre-submit-checks": "node ./scripts/pre-submit-checks.js",
-    "check": "npm run pre-submit-checks && npm test"
+    "gate": "node ./scripts/submission-gate.js",
+    "check": "npm run pre-submit-checks && npm run gate && npm test && npm run lint:filtered && npm run package:verify"
   },
   "devDependencies": {
     "web-ext": "^10.7.0"

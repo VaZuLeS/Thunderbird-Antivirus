@@ -39,7 +39,7 @@ abgearbeitet:
 - **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung, Daten-Deklaration
   und Rechte und liefert einen echten Exit-Code.
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission-, Daten-Deklarations- und
-  MV3-Portierungs-, Lokalisierungs- und Vertragstests enthalten) und ist grün (**410 Tests, 0 Fehler**);
+  MV3-Portierungs-, Lokalisierungs- und Vertragstests enthalten) und ist grün (**422 Tests, 0 Fehler**);
   `web-ext lint` meldet 0 Fehler und
   **18 Warnungen**, die vollständig als bekannte Thunderbird-False-Positives gefiltert sind
   (`scripts/filter-lint-warnings.js`). Der im Repository aktive Workflow (`.github/workflows/ci.yml`, Node 22)
@@ -63,8 +63,9 @@ blockierten Punkte (§0.1) im Detail.
   `options.js` zusätzlich die optionale Datenberechtigung an und gibt sie beim Abschalten zurück. Begründung
   mit Validator-Nachweis: [data_collection_decision.md](data_collection_decision.md).
 - **Fehler werden sichtbar (P1-11):** Eine fehlgeschlagene Banner-Injektion wird protokolliert, als Diagnose
-  gespeichert und einmal pro Sitzung gemeldet; fehlt die Host-Berechtigung, erklärt das Banner den Weg dorthin
-  und das Popup bietet eine zuverlässige Freigabe per Klick (echte Nutzer-Geste).
+  gespeichert und einmal pro Sitzung gemeldet; das Popup zeigt die letzte Diagnose mit „Ausblenden“-Option,
+  fehlt die Host-Berechtigung, erklärt das Banner den Weg dorthin und das Popup bietet eine zuverlässige
+  Freigabe per Klick (echte Nutzer-Geste).
 - **MV3-Bereinigung (P1-10):** Die in MV3 entfernten APIs und der unerreichbare
   `scripting.messageDisplay.executeScript`-Zweig sind entfernt; `web-ext lint` meldet 18 statt 26 Warnungen.
 - **Vollständige Lokalisierung (P1-9):** Optionsseite und Popup nutzen `browser.i18n`/`_locales` (151 Schlüssel
@@ -76,6 +77,10 @@ blockierten Punkte (§0.1) im Detail.
 - **Reviewer-Paket (A-15/A-33):** [live_test_protocol.md](live_test_protocol.md),
   [testdata.md](testdata.md) mit reproduzierbaren Testnachrichten (`node scripts/make-testdata.js`) und
   Antwortkatalog für erwartete Review-Fragen in den Reviewer-Hinweisen.
+- **Ausführbares Go/No-Go:** `npm run gate` (`scripts/submission-gate.js`) prüft die Einreichungsvoraussetzungen
+  (Versionen, Screenshots, abgeschlossener Live-Test, Lokalisierung, Reviewer-Paket, Signierziel) und meldet
+  offene Punkte als `BLOCKER:` mit Exit-Code 1; `npm run check` bündelt Pre-Submit-Checks, Gate, Tests, Lint
+  und Paketprüfung als lokalen Ersatz für die (blockierte) CI.
 - **Regressionsschutz:** `test/store_readiness.test.js` verankert die Review-relevanten Entscheidungen,
   `test/i18n.test.js` die Vollständigkeit der Sprachkataloge (zusammen 410 Tests, 0 Fehler).
 
