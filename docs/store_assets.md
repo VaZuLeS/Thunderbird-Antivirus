@@ -41,7 +41,12 @@ Die drei SVG-Dateien in `docs/screenshots/` zeigen die drei Motive als grobe Ski
 | 2 | Banner mit den Opt-in-Buttons | `docs/screenshots/02-inline-optin-banner.png` | Opt-in-Banner in der Nachrichtenansicht mit den Buttons „Nur diese Nachricht scannen“ und „Absender dauerhaft scannen“ (zusätzlich „Einstellungen öffnen“) |
 | 3 | Threat-Banner | `docs/screenshots/03-threat-banner.png` | Warnbanner in der Nachrichtenansicht nach der Bewertung ab Risiko-Score 50 (Verdikt/Score, Begründungsliste) |
 
-Optional ergänzend: Popup der Nachrichten-Display-Aktion, der Inline-Hinweis des Time-of-Click-Schutzes
+Als viertes Motiv empfohlen: **Popup der Nachrichten-Display-Aktion** mit lokaler Bewertung (Score-Balken,
+Begründungen, SPF/DKIM/DMARC-Ergebnis), Status-Chips der gespeicherten Anhänge/Links und der Scan-Aktion
+(`docs/screenshots/04-popup-assessment.png`) – am einfachsten mit der Testnachricht
+`docs/test_messages/suspicious_message.eml`.
+
+Optional ergänzend: der Inline-Hinweis des Time-of-Click-Schutzes
 („Thundy AV blocked this link“ mit Begründungen, Ziel-URL und „Link trotzdem öffnen“) und der Abschnitt
 „Datenmanagement“ (Cache leeren) der Optionsseite.
 

@@ -3593,9 +3593,12 @@ describe('popup consent gate (store readiness B4)', () => {
 
         assert.deepStrictEqual(sentMessages, [], 'no background scan may be started without consent');
         const container = dom.window.document.getElementById('hybrid_analysis_api_content');
-        const buttonLabels = Array.from(container.querySelectorAll('button')).map((button) => button.textContent);
-        assert.ok(!buttonLabels.some((label) => /scannen|scan|upload/i.test(label)),
-            'no upload/scan buttons without consent, only the settings shortcut: ' + buttonLabels.join(', '));
+        const scanButtons = Array.from(container.querySelectorAll('button'))
+            .filter((button) => /scannen|scan|upload/i.test(button.textContent));
+        assert.ok(scanButtons.length > 0, 'the scan action is offered (but disabled)');
+        scanButtons.forEach((button) => assert.strictEqual(button.disabled, true,
+            'no scan/upload action may be usable without consent: ' + button.textContent));
+        assert.ok(container.textContent.includes('erlauben'), 'the reason is explained');
         // The stored states are still listed (local data, no transmission).
         assert.ok(container.textContent.includes('unknown.bin'), 'the stored attachment is listed');
         assert.ok(container.textContent.includes('https://example.com'), 'the stored link is listed');
@@ -3705,6 +3708,43 @@ describe('popup consent gate (store readiness B4)', () => {
         const container = dom.window.document.getElementById('hybrid_analysis_api_content');
         assert.ok(container.textContent.includes('Lokale Bewertung'), 'the local assessment is still shown');
         assert.ok(container.textContent.includes('Kein API-Schlüssel'), 'the missing key is explained');
+    });
+
+    it('starts a scan for the displayed message from the popup and reports it', async () => {
+        const sent = [];
+        const { context, dom } = createPopup({
+            consent: true,
+            record: { attachments: [], links: [], localAssessment: { score: 0, reasons: [], authStatus: 'none' } }
+        });
+        context.browser.runtime.sendMessage = async (message) => { sent.push(message); return { success: true }; };
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        const button = dom.window.document.getElementById('thundy-scan-now');
+        assert.ok(button, 'the scan button is rendered');
+        assert.strictEqual(button.disabled, false, 'the button is usable with consent and a key');
+
+        button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
+        assert.strictEqual(sent.length, 1, 'exactly one scan request is sent');
+        assert.strictEqual(sent[0].action, 'requestScan');
+        assert.strictEqual(sent[0].messageId, 1);
+        assert.strictEqual(sent[0].persist, false, 'the popup action is a one-off scan');
+        assert.strictEqual(sent[0].senderEmail, 'a@example.com', 'the sender of the displayed message is reported');
+    });
+
+    it('disables the scan action and explains why when consent is missing', async () => {
+        const { context, dom } = createPopup({ consent: false, record: {} });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        const button = dom.window.document.getElementById('thundy-scan-now');
+        assert.strictEqual(button.disabled, true);
+        assert.ok(dom.window.document.getElementById('hybrid_analysis_api_content').textContent
+            .includes('erlauben'), 'the missing consent is explained');
     });
 
     it('renders the stored links and unknown attachments when the consent is granted', async () => {

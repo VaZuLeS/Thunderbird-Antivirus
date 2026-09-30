@@ -756,5 +756,29 @@
         "content": "$1"
       }
     }
+  },
+  "popupScanNow": {
+    "message": "Diese Nachricht jetzt scannen"
+  },
+  "popupScanHint": {
+    "message": "Prüft Anhänge und Links über die konfigurierten Dienste und speichert das Ergebnis für dieses Popup."
+  },
+  "popupScanDisabled": {
+    "message": "Scannen ist erst nach Zustimmung und mit hinterlegtem API-Schlüssel möglich."
+  },
+  "popupScanDisabledConsent": {
+    "message": "Scannen ist erst möglich, wenn Sie die externe Analyse in den Einstellungen erlauben."
+  },
+  "popupScanDisabledKey": {
+    "message": "Scannen benötigt einen hinterlegten API-Schlüssel (z. B. Hybrid Analysis)."
+  },
+  "popupScanRunningHint": {
+    "message": "Der Scan läuft…"
+  },
+  "popupScanDoneHint": {
+    "message": "Scan abgeschlossen – Ansicht wird aktualisiert…"
+  },
+  "popupScanFailed": {
+    "message": "Scan fehlgeschlagen"
   }
 }

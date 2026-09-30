@@ -318,6 +318,36 @@ function runChecks(rootDir) {
     }
   }
 
+  // --- locale parity -------------------------------------------------------
+  // Every key of the default locale must exist in the additional catalogues,
+  // otherwise the UI silently falls back to the bundled text for that language.
+  const localeFiles = [];
+  for (const locale of DEFAULT_LOCALES) {
+    const file = path.join(rootDir, '_locales', locale, 'messages.json');
+    if (fs.existsSync(file)) localeFiles.push({ locale, file });
+  }
+  if (localeFiles.length > 1) {
+    const catalogues = localeFiles.map(({ locale, file }) => {
+      let data = {};
+      try { data = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { data = {}; }
+      return { locale, keys: Object.keys(data) };
+    });
+    const reference = catalogues[0];
+    for (const catalogue of catalogues.slice(1)) {
+      const missing = reference.keys.filter((key) => !catalogue.keys.includes(key));
+      const extra = catalogue.keys.filter((key) => !reference.keys.includes(key));
+      if (missing.length > 0) {
+        fail('_locales/' + catalogue.locale + ' is missing ' + missing.length + ' key(s) present in ' +
+          reference.locale + ': ' + missing.slice(0, 5).join(', '));
+      } else if (extra.length > 0) {
+        warn('_locales/' + catalogue.locale + ' has ' + extra.length + ' key(s) that are unknown to ' +
+          reference.locale + ' (unused translations)');
+      } else {
+        ok('locale catalogues are in sync (' + reference.locale + ' ↔ ' + catalogue.locale + ')');
+      }
+    }
+  }
+
   // --- Manifest V3 key restrictions ---------------------------------------
   for (const key of MV3_UNSUPPORTED_KEYS) {
     if (manifest[key] !== undefined) fail('manifest key "' + key + '" is not supported in Thunderbird Manifest V3');

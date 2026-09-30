@@ -1,0 +1,45 @@
+From: "PayPal Service" <service@paypal-support.com>
+To: Test User <test.user@example.com>
+Subject: Action required: verify your account immediately
+Date: Wed, 30 Sep 2026 10:00:00 +0200
+Message-ID: <fixture-thundy-av-0001@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----=thundy-av-boundary"
+Received: from unknown (mail.suspicious-relay.example [203.0.113.42]) by mx.example.com with SMTP; Wed, 30 Sep 2026 10:00:01 +0200
+Authentication-Results: mx.example.com; spf=fail smtp.mailfrom=service@paypal-support.com; dkim=none; dmarc=fail
+Reply-To: recovery@mail-verify.example.net
+
+------=thundy-av-boundary
+Content-Type: multipart/alternative; boundary="----=thundy-av-alt"
+
+------=thundy-av-alt
+Content-Type: text/plain; charset="utf-8"
+
+Dear customer,
+
+we noticed unusual activity. Your payment of 1.289,00 EUR is due today.
+Confirm the transfer immediately to avoid a lock of your account:
+http://login.amaz0n.de/paypal/verify
+
+------=thundy-av-alt
+Content-Type: text/html; charset="utf-8"
+
+<html><body>
+<p>Dear customer,</p>
+<p>we noticed unusual activity. Your payment of <strong>1.289,00 EUR</strong> is due today.</p>
+<p><a href="http://login.amaz0n.de/paypal/verify">Confirm the transfer immediately</a></p>
+<p>Or open the attached invoice:</p>
+</body></html>
+------=thundy-av-alt--
+
+------=thundy-av-boundary
+Content-Type: text/html; name="invoice_98231.html"
+Content-Disposition: attachment; filename="invoice_98231.html"
+Content-Transfer-Encoding: base64
+
+PGh0bWw+PGJvZHk+PHA+UmVjaG51bmcgOTgyMzE8L3A+PHNjcmlwdD53aW5kb3cubG9jYXRpb24uaHJl
+Zj0iaHR0cDovL2V2aWwuZXhhbXBsZS9zdGVhbCI7PC9zY3JpcHQ+PGZvcm0gYWN0aW9uPSJodHRwOi8v
+ZXZpbC5leGFtcGxlL3N1Ym1pdCIgbWV0aG9kPSJwb3N0Ij48aW5wdXQgbmFtZT0icGFzc3dvcmQiPjwv
+Zm9ybT48L2JvZHk+PC9odG1sPg==
+
+------=thundy-av-boundary--

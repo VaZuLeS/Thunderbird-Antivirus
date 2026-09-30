@@ -13,6 +13,17 @@ Changes that resolve the store-readiness review for 1.6
 
 ### Added
 
+- **Integration test** (`integration.test.js`) that runs the background script and the popup script against one
+  shared in-memory IndexedDB and proves the contract *message displayed → assessment stored under the Message-ID
+  header → popup renders it*, including a banner-triggered scan. This is the regression guard for the
+  "results are not shown" bug.
+- **Scan action in the popup**: *"Scan this message now"* starts the scan for the displayed message and refreshes
+  the view afterwards; without consent/API key it stays disabled and explains why.
+- **Locale parity check** in the pre-submit checks (every key of the default locale must exist in `de`) and
+  three new tests for it.
+- **Test message fixture** [`docs/test_messages/suspicious_message.eml`](docs/test_messages/README.md) that
+  triggers the local detections (lookalike sender, urgent wording, `spf=fail`, typosquatting link, HTML attachment)
+  without any API key or consent — used for the pending manual test and recommended as the fourth screenshot motif.
 - **New bundled message display script `message_display.js`**: it renders the opt-in banner (the two scan buttons plus
   "Open options"), the warning banner from a risk score of 50 upwards (with the list of reasons) and the green
   SPF/DKIM/DMARC badge in the message view, and it implements the time-of-click protection.
@@ -26,11 +37,11 @@ Changes that resolve the store-readiness review for 1.6
 - **Localization of the options page and the popup**: all visible UI strings are now resolved through
   `browser.i18n` and the catalogues (static markup via `data-i18n*` attributes and `applyUiTranslations()` in
   `db.js`, dynamic strings via `uiText()` in `options.js`/`api.js`). The catalogues contain 186 keys per language
-  (173 localized UI strings), the English translation is complete, German fallbacks remain in the code, and further
+  (181 localized UI strings), the English translation is complete, German fallbacks remain in the code, and further
   languages only need an additional `_locales/<code>` folder.
 - Tests: `message_display.test.js` (19 tests), four popup consent tests in `api.test.js`, tests for the
   localization helpers in `db.test.js`, tests for the built-in data consent in `background.test.js`/`options.test.js`
-  and twelve new pre-submit-check tests – **454 tests in total, 0 failures**.
+  and twelve new pre-submit-check tests – **462 tests in total, 0 failures**.
 
 ### Changed
 
@@ -50,8 +61,8 @@ Changes that resolve the store-readiness review for 1.6
   popup – are resolved through the catalogues with the default locale `en` and fallback texts in the code.
 - The pre-submit checks additionally verify the API namespace against the declared permission, the data-collection
   declaration and the presence of the programmatically registered script in the package.
-- The built package contains **18 files / 265,425 bytes unpacked**.
-- The pre-submit checks verify that all localized UI strings (currently 173) have a catalogue entry.
+- The built package contains **18 files / 270,797 bytes unpacked**.
+- The pre-submit checks verify that all localized UI strings (currently 181) have a catalogue entry.
 - **Upload cap:** attachments larger than 100 MB are never uploaded automatically (provider limits); they stay in
   the manual path.
 - **Reviewer notes:** the tier descriptions state precisely which transmissions happen independently of the tier,

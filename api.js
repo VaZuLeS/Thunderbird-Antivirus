@@ -150,6 +150,76 @@ function appendHint(container, { id, kind = 'info', text, withSettingsButton = f
     return card;
 }
 
+function appendScanAction(container, message, { enabled, reason } = {}) {
+    const card = createCard(enabled ? 'info' : 'neutral', 'scan-action');
+
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'thundy-scan-now';
+    button.className = 'btn btn--primary';
+    button.textContent = uiText('popupScanNow', 'Diese Nachricht jetzt scannen');
+    button.disabled = enabled !== true;
+    if (enabled !== true && reason) button.title = reason;
+
+    const status = document.createElement('p');
+    status.className = 'card__meta';
+    status.setAttribute('role', 'status');
+    status.textContent = enabled === true
+        ? uiText('popupScanHint', 'Prüft Anhänge und Links über die konfigurierten Dienste und speichert das Ergebnis für dieses Popup.')
+        : (reason || uiText('popupScanDisabled', 'Scannen ist erst nach Zustimmung und mit hinterlegtem API-Schlüssel möglich.'));
+
+    button.addEventListener('click', async () => {
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.textContent = uiText('bannerScanRunning', 'Scanne…');
+        status.textContent = uiText('popupScanRunningHint', 'Der Scan läuft…');
+
+        let response = null;
+        try {
+            response = await browser.runtime.sendMessage({
+                action: 'requestScan',
+                messageId: message.id,
+                senderEmail: extractSenderEmailFromAuthor(message.author),
+                persist: false
+            });
+        } catch (error) {
+            response = null;
+        }
+
+        if (response && response.success) {
+            status.textContent = uiText('popupScanDoneHint', 'Scan abgeschlossen – Ansicht wird aktualisiert…');
+            button.textContent = uiText('bannerScanDone', 'Scan abgeschlossen');
+            try {
+                if (typeof window !== 'undefined' && window.location && typeof window.location.reload === 'function') {
+                    window.location.reload();
+                    return;
+                }
+            } catch (e) { /* the popup may not allow a reload in tests */ }
+        } else if (response && response.error === 'permission_denied') {
+            status.textContent = uiText('bannerPermissionDenied', 'Erforderliche Host-Berechtigung wurde verweigert');
+        } else if (response && (response.error === 'EXTERNAL_ANALYSIS_DISABLED' || response.code === 'EXTERNAL_ANALYSIS_DISABLED')) {
+            status.textContent = uiText('bannerConsentMissing', 'Externe Analyse ist in den Einstellungen deaktiviert – es wurden keine Daten übertragen.');
+        } else {
+            status.textContent = uiText('popupScanFailed', 'Scan fehlgeschlagen');
+        }
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+        button.textContent = uiText('popupScanNow', 'Diese Nachricht jetzt scannen');
+    });
+
+    card.appendChild(button);
+    card.appendChild(status);
+    container.appendChild(card);
+    return card;
+}
+
+/** Extracts the plain email address from a header author string. */
+function extractSenderEmailFromAuthor(author) {
+    const value = String(author || '');
+    const match = value.match(/[^\s<>"]+@[^\s<>"]+/);
+    return match ? match[0] : '';
+}
+
 function renderSectionTitle(container, key, fallback) {
     const title = document.createElement('h2');
     title.className = 'section__title';
@@ -390,6 +460,14 @@ if (!resultsContainer) {
     resultsContainer.textContent = '';
 
     const hasAssessment = renderAssessmentCard(record, resultsContainer);
+
+    // A scan can be started right here; it refreshes the view when it finished.
+    appendScanAction(resultsContainer, message, {
+        enabled: mayQueryProviders,
+        reason: !externalAnalysisConsent
+            ? uiText('popupScanDisabledConsent', 'Scannen ist erst möglich, wenn Sie die externe Analyse in den Einstellungen erlauben.')
+            : uiText('popupScanDisabledKey', 'Scannen benötigt einen hinterlegten API-Schlüssel (z. B. Hybrid Analysis).')
+    });
 
     if (!externalAnalysisConsent) {
         appendHint(resultsContainer, {

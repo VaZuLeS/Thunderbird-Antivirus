@@ -756,5 +756,29 @@
         "content": "$1"
       }
     }
+  },
+  "popupScanNow": {
+    "message": "Scan this message now"
+  },
+  "popupScanHint": {
+    "message": "Checks attachments and links through the configured services and stores the result for this popup."
+  },
+  "popupScanDisabled": {
+    "message": "Scanning is only possible after consent and with a stored API key."
+  },
+  "popupScanDisabledConsent": {
+    "message": "Scanning is only possible once you allow external analysis in the settings."
+  },
+  "popupScanDisabledKey": {
+    "message": "Scanning needs a stored API key (e.g. Hybrid Analysis)."
+  },
+  "popupScanRunningHint": {
+    "message": "The scan is running…"
+  },
+  "popupScanDoneHint": {
+    "message": "Scan finished – refreshing the view…"
+  },
+  "popupScanFailed": {
+    "message": "Scan failed"
   }
 }

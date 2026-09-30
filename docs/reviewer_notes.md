@@ -204,6 +204,12 @@ No other hosts are contacted. All requests are HTTPS.
 
 ## 8. Step-by-step test instructions
 
+A ready-made test message that triggers the local detections without any API key or consent is included in the
+repository: [`docs/test_messages/suspicious_message.eml`](test_messages/README.md) — suspicious lookalike sender,
+urgent wording, mismatching `Reply-To`, `spf=fail`/`dmarc=fail`, a `Received` header with a public IP, an HTTP
+typosquatting link and a disarmable HTML attachment. Drag it into a folder in Thunderbird to import it and use it for
+the steps below (it also serves as the motif for the popup screenshot).
+
 ### 8.1 Load the add-on
 
 1. Get the source and build the package:

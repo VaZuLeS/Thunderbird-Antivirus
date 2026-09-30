@@ -174,20 +174,20 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** Testdateien des
-  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **454 Tests, 0 Fehler** – u. a.
+  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **462 Tests, 0 Fehler** – u. a.
   `message_display.test.js` (UI in der Nachrichtenansicht und Time-of-Click), die Popup-Consent-Tests in
   `api.test.js` und die Pre-Submit-Check-Tests in `scripts/pre-submit-checks.test.js`.
 - `scripts/pre-submit-checks.js` prüft zusätzlich, dass jeder verwendete `browser.*`-API-Namespace eine deklarierte
   Berechtigung hat, dass die `data_collection_permissions`-Deklaration zu den Übermittlungspfaden passt, dass ein
   programmatisch registriertes Skript (`message_display.js`) im Paket liegt und dass jeder lokalisierte UI-String
-  einen Katalogeintrag hat (derzeit 173). Aktueller Stand: 0 Fehler, 2 Warnungen (noch keine echten Screenshots, und
+  einen Katalogeintrag hat (derzeit 181). Aktueller Stand: 0 Fehler, 2 Warnungen (noch keine echten Screenshots, und
   die aktive `.github/workflows/ci.yml` führt weiterhin nur `background.test.js` aus – die vollständige CI steht in
   `docs/ci/ci.yml`).
 - `web-ext lint` meldet derzeit **0 Fehler** und **25 Warnungen**, alle davon bekannte Thunderbird-False-Positives
   (fast ausschließlich `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und
   Thunderbird-spezifische APIs wie `messages.*` oder `messageDisplay.*` nicht kennt). Die Liste wird über
   `scripts/filter-lint-warnings.js` gefiltert.
-- Das gebaute XPI enthält **18 Dateien / 265.425 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
+- Das gebaute XPI enthält **18 Dateien / 270.797 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
   prüft Dateiliste und Größe.
 - Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
   `node ./scripts/pre-submit-checks.js`, `node --test background.test.js` und `npx web-ext lint`.

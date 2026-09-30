@@ -285,6 +285,32 @@ describe('pre-submit-checks', () => {
     assert.ok(result.passes.some((p) => p.includes('localized UI strings have a catalogue entry')));
   });
 
+  it('fails when a locale catalogue is missing keys of the default locale', () => {
+    const manifest = baseManifest();
+    const result = runChecks(createExtension({
+      '_locales/en/messages.json': JSON.stringify({ extensionName: { message: 'Demo' }, extraKey: { message: 'x' } }),
+      '_locales/de/messages.json': JSON.stringify({ extensionName: { message: 'Demo' } })
+    }, manifest));
+    assert.ok(result.errors.some((e) => e.includes('_locales/de is missing')), 'missing keys are reported');
+  });
+
+  it('accepts locale catalogues that are in sync', () => {
+    const result = runChecks(createExtension({
+      '_locales/en/messages.json': JSON.stringify({ extensionName: { message: 'Demo' } }),
+      '_locales/de/messages.json': JSON.stringify({ extensionName: { message: 'Demo' } })
+    }));
+    assert.deepStrictEqual(result.errors, []);
+    assert.ok(result.passes.some((p) => p.includes('locale catalogues are in sync')));
+  });
+
+  it('warns about translations that the default locale does not know', () => {
+    const result = runChecks(createExtension({
+      '_locales/en/messages.json': JSON.stringify({ extensionName: { message: 'Demo' } }),
+      '_locales/de/messages.json': JSON.stringify({ extensionName: { message: 'Demo' }, unknown: { message: 'x' } })
+    }));
+    assert.ok(result.warnings.some((w) => w.includes('unknown to')));
+  });
+
   it('validates the real repository without errors', () => {
     const result = runChecks(REPO_ROOT);
     assert.deepStrictEqual(result.errors, [], 'the repository must pass the pre-submit checks');
