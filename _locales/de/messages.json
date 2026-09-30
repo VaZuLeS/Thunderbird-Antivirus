@@ -20,9 +20,6 @@
   "bannerTitleOptIn": {
     "message": "Thundy AV: Echtzeit-Scan ist für diese Nachricht nicht aktiviert."
   },
-  "bannerNoteOptIn": {
-    "message": "Beim Scannen werden Daten an externe Analysedienste übertragen – aber nur, wenn Sie dies in den Einstellungen aktiviert und zugestimmt haben. Details in den Einstellungen der Erweiterung."
-  },
   "bannerScanRunning": {
     "message": "Scannen…"
   },
@@ -131,9 +128,6 @@
       }
     }
   },
-  "popupWarning": {
-    "message": "Warnung:"
-  },
   "popupNoApiKey": {
     "message": " Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung."
   },
@@ -163,12 +157,6 @@
   },
   "popupNoAttachmentsOrUrls": {
     "message": "Keine Anhänge oder URLs für diese E-Mail gefunden."
-  },
-  "popupNoResults": {
-    "message": "Keine Analyseergebnisse für diese E-Mail vorhanden."
-  },
-  "popupUnexpectedError": {
-    "message": "Unerwarteter Fehler beim Laden der Analyseergebnisse."
   },
   "popupStatusLabel": {
     "message": "Status:"
@@ -858,5 +846,11 @@
   },
   "optionsDiagStorageUnknown": {
     "message": "Einstellungen: konnten nicht gelesen werden"
+  },
+  "bannerResultNotStored": {
+    "message": "Das Ergebnis konnte dieser Nachricht nicht zugeordnet werden (keine Message-ID) und erscheint daher nicht im Popup."
+  },
+  "popupScanNotStored": {
+    "message": "Der Scan lief, das Ergebnis konnte dieser Nachricht aber nicht zugeordnet werden (keine Message-ID)."
   }
 }

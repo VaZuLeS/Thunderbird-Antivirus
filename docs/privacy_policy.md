@@ -215,7 +215,8 @@ Zugriffsrechte des Betriebssystem-Benutzerkontos und die Zugriffskontrolle des T
 **Lokal in der IndexedDB-Datenbank `thunderbird_av`** (Version 3, Objektspeicher `hybridanalysis`):
 
 - Scan-Ergebnisse je Nachricht (Verdikt, Status, Kennungen der Analyse, Zeitstempel),
-- die lokale Bewertung je Nachricht (Risiko-Score 0–100, Begründungen, SPF/DKIM/DMARC-Ergebnis, Bewertungszeit),
+- die lokale Bewertung je Nachricht (Risiko-Score 0–100, Begründungen, SPF/DKIM/DMARC-Ergebnis, Bewertungszeit,
+  Absender- und Betreffangabe der Nachricht sowie der Zustimmungsstatus zum Bewertungszeitpunkt),
 - Link-Metadaten (geprüfte URLs und deren Status),
 - Zuordnungen zu Nachrichten über die Message-ID bzw. Header-ID.
 
@@ -491,7 +492,8 @@ account and by the Thunderbird profile's access control.
 **Locally in the IndexedDB database `thunderbird_av`** (version 3, object store `hybridanalysis`):
 
 - scan results per message (verdict, status, analysis identifiers, timestamps),
-- the local assessment per message (risk score 0-100, reasons, SPF/DKIM/DMARC result, evaluation time),
+- the local assessment per message (risk score 0-100, reasons, SPF/DKIM/DMARC result, evaluation time, the
+  message's sender and subject as well as the consent state at the time of the evaluation),
 - link metadata (checked URLs and their status),
 - mappings to messages via Message-ID or header ID.
 

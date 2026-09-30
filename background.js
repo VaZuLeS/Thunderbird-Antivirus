@@ -1989,6 +1989,46 @@ async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
 }
 
 /**
+ * Resolves the message a scan request refers to. The header is required: the
+ * result is stored per message under its headerMessageId and the popup reads it
+ * back with that key. If the header cannot be loaded, the header of the
+ * displayed message is used as a fallback.
+ */
+async function resolveMessageForScan(messageId, senderEmail, tabId) {
+    let header = null;
+    try {
+        if (browser.messages && typeof browser.messages.get === 'function') {
+            header = await browser.messages.get(messageId);
+        }
+    } catch (e) {
+        Logger.warn('Could not load the message header for the scan', e);
+    }
+
+    if (header && header.headerMessageId) return header;
+
+    try {
+        const displayed = await getFirstDisplayedMessage(tabId);
+        if (displayed && displayed.headerMessageId) {
+            const merged = Object.assign({}, displayed);
+            if (header) {
+                for (const key of Object.keys(header)) {
+                    if (header[key] !== undefined && header[key] !== null) merged[key] = header[key];
+                }
+            }
+            merged.id = messageId;
+            merged.headerMessageId = displayed.headerMessageId;
+            return merged;
+        }
+    } catch (e) {
+        Logger.warn('Could not determine the displayed message for the scan', e);
+    }
+
+    const fallback = header || { id: messageId };
+    if (!fallback.author && senderEmail) fallback.author = senderEmail;
+    return fallback;
+}
+
+/**
  * Handles a scan request coming from the message display banner.
  * persist === true adds the sender to the persistent opt-in list, otherwise
  * the scan stays a one-off action (no hidden opt-in).
@@ -2019,30 +2059,21 @@ async function handleRequestScan(request, sender) {
     }
 
     try {
-        // The full message header is required: the scan result is stored per
-        // message under its headerMessageId and the popup reads it back with
-        // exactly that key. Without it every database write silently did nothing
+        // The message header is required: the result is stored per message under
+        // its headerMessageId and the popup reads it back with exactly that key
         // (store readiness follow-up: "scan results are not shown").
-        let messageObj = { id: request.messageId };
-        try {
-            if (browser.messages && typeof browser.messages.get === 'function') {
-                const header = await browser.messages.get(request.messageId);
-                if (header && header.id !== undefined) messageObj = header;
-            }
-        } catch (e) {
-            Logger.warn('Could not load the message header for the scan', e);
-        }
-        if (!messageObj.author && request.senderEmail) messageObj.author = request.senderEmail;
+        const tabId = resolveSenderTabId(sender, request);
+        const messageObj = await resolveMessageForScan(request.messageId, request.senderEmail, tabId);
 
         await processAttachments(messageObj);
         const fullMessage = await browser.messages.getFull(request.messageId);
-        const tabId = (sender && sender.tab && sender.tab.id !== undefined)
-            ? sender.tab.id
-            : (request.tabId !== undefined ? request.tabId : null);
         const parsedUrlCache = new Map();
         const { messageText, urls, filteredUrls } = await processLinks(messageObj, fullMessage, parsedUrlCache);
         const threat = await evaluateThreats({ message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
-        await indexedDB_save_assessment(messageObj, threat, { senderEmail: request.senderEmail });
+        const stored = await indexedDB_save_assessment(messageObj, threat, { senderEmail: request.senderEmail });
+        if (!stored) {
+            Logger.warn('The scan result could not be stored (no Message-ID available); the popup cannot show it.');
+        }
 
         // The message is scanned now, so the banner is replaced by the result.
         const state = buildMessageUiState({
@@ -2055,7 +2086,7 @@ async function handleRequestScan(request, sender) {
         });
         rememberMessageUiState(tabId, state);
         await broadcastMessageUiState(tabId, state);
-        return { success: true, persisted: request.persist === true, state };
+        return { success: true, persisted: request.persist === true, stored, state };
     } catch (e) {
         Logger.error('requestScan failed', e);
         return { success: false, error: e && e.message ? e.message : String(e) };

@@ -20,9 +20,6 @@
   "bannerTitleOptIn": {
     "message": "Thundy AV: real-time scanning is not enabled for this message."
   },
-  "bannerNoteOptIn": {
-    "message": "Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you give your consent. See the add-on options."
-  },
   "bannerScanRunning": {
     "message": "Scanning…"
   },
@@ -131,9 +128,6 @@
       }
     }
   },
-  "popupWarning": {
-    "message": "Warning:"
-  },
   "popupNoApiKey": {
     "message": " No Hybrid Analysis API key found. Please add it in the add-on settings."
   },
@@ -163,12 +157,6 @@
   },
   "popupNoAttachmentsOrUrls": {
     "message": "No attachments or URLs found for this email."
-  },
-  "popupNoResults": {
-    "message": "No analysis results available for this email."
-  },
-  "popupUnexpectedError": {
-    "message": "Unexpected error while loading the analysis results."
   },
   "popupStatusLabel": {
     "message": "Status:"
@@ -858,5 +846,11 @@
   },
   "optionsDiagStorageUnknown": {
     "message": "Settings: could not be read"
+  },
+  "bannerResultNotStored": {
+    "message": "The result could not be assigned to this message (no Message-ID) and therefore does not appear in the popup."
+  },
+  "popupScanNotStored": {
+    "message": "The scan ran, but its result could not be assigned to this message (no Message-ID)."
   }
 }

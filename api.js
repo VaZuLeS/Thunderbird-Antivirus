@@ -186,6 +186,14 @@ function appendScanAction(container, message, { enabled, reason } = {}) {
             response = null;
         }
 
+        if (response && response.success && response.stored === false) {
+            status.textContent = uiText('popupScanNotStored',
+                'Der Scan lief, das Ergebnis konnte dieser Nachricht aber nicht zugeordnet werden (keine Message-ID).');
+            button.disabled = false;
+            button.removeAttribute('aria-busy');
+            button.textContent = uiText('popupScanNow', 'Diese Nachricht jetzt scannen');
+            return;
+        }
         if (response && response.success) {
             status.textContent = uiText('popupScanDoneHint', 'Scan abgeschlossen – Ansicht wird aktualisiert…');
             button.textContent = uiText('bannerScanDone', 'Scan abgeschlossen');
@@ -349,7 +357,7 @@ function renderAssessmentCard(record, container) {
     if (assessment.authStatus === 'pass') {
         const authChip = document.createElement('span');
         authChip.className = 'chip chip--ok';
-        authChip.textContent = uiText('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
+        authChip.textContent = uiText('bannerAuthPass', 'Absender verifiziert (SPF/DKIM/DMARC bestanden)');
         badges.appendChild(authChip);
     } else if (assessment.authStatus === 'fail') {
         const authChip = document.createElement('span');
@@ -486,11 +494,6 @@ if (!resultsContainer) {
     }
 
     const fetchTasks = [];
-    const resultsBlockedHint = () => appendHint(resultsContainer, {
-        kind: 'info',
-        text: uiText('popupResultsBlocked', 'Gespeicherte Analyseergebnisse werden nicht abgerufen, solange die externe Analyse in den Einstellungen nicht erlaubt ist.')
-    });
-
     if (hasAttachments) {
         renderSectionTitle(resultsContainer, 'popupSectionAttachments', 'Anhänge');
         const rows = [];
@@ -1007,7 +1010,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
                 // response.data.sha256 enthält den sha256-Hash des URL-Scans
                 get_hybrid_report_by_sha256({
                     hybrid_sha: response.data.sha256,
-                    attachmentName: url
+                    attachmentName: url,
+                    headerMessageId: headerMessageId
                 });
             }, 3000);
         } else {

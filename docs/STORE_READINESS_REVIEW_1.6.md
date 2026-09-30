@@ -15,7 +15,7 @@ Ausgangspunkt der Analyse war Commit `1a72c45`; die Korrekturen liegen in den da
 npm test                       # 465 Tests, 0 Fehler
 npm run pre-submit-checks      # 0 Fehler, 1 Warnung (fehlende Screenshots)
 npx web-ext lint --source-dir . --output json   # 0 Fehler, 25 bekannte Thunderbird-False-Positives
-node scripts/verify-package.js ./build          # 18 Dateien, 278 125 Bytes
+node scripts/verify-package.js ./build          # 18 Dateien, 279 353 Bytes
 ```
 
 | Befund | Umsetzung | Nachweis |

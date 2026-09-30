@@ -64,7 +64,7 @@ Changes that resolve the store-readiness review for 1.6
   popup – are resolved through the catalogues with the default locale `en` and fallback texts in the code.
 - The pre-submit checks additionally verify the API namespace against the declared permission, the data-collection
   declaration and the presence of the programmatically registered script in the package.
-- The built package contains **18 files / 278,125 bytes unpacked**.
+- The built package contains **18 files / 279,353 bytes unpacked**.
 - The pre-submit checks verify that all localized UI strings (currently 181) have a catalogue entry.
 - **Upload cap:** attachments larger than 100 MB are never uploaded automatically (provider limits); they stay in
   the manual path.
@@ -73,6 +73,12 @@ Changes that resolve the store-readiness review for 1.6
 
 ### Fixed
 
+- **Scan results without a Message-ID are reported instead of being lost.** A banner/popup scan now falls back to
+  the header of the displayed message if `messages.get()` yields no `headerMessageId`, and the response carries
+  `stored: false` when the result could not be assigned, which the banner and the popup surface in plain text.
+- The URL-scan path keeps the `headerMessageId`, so a later rescan updates the stored record (it sent `undefined`
+  before and the database update was silently skipped).
+- Removed dead code/markup: unused `#status_message` element, unused helper, four unused catalogue keys.
 - **User visible error messages are localized** (missing API key, upload/URL scan/urlscan.io failures) — they were
   the last German-only strings a user could see.
 - **Scan results were not shown in the popup.** Two causes: scans triggered from the in-message banner worked

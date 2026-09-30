@@ -139,7 +139,7 @@ either automatically (sender opted in) or manually ("Scan this message only" / c
 |---|---|---|---|
 | SHA-256 hash of an attachment | attachment scan, all tiers (`strict`, `balanced`, `max`); only if a VirusTotal key is configured | VirusTotal (`virustotal.com`) | check whether the file is already known |
 | SHA-256 hash of an attachment | attachment scan, all tiers | Hybrid Analysis (`hybrid-analysis.com`) | check whether the file is already analysed (hash overview) |
-| Complete attachment (file content, file name, MIME type, size) | tier `balanced` and `max`, only when the hash lookup returned no match | Hybrid Analysis (`hybrid-analysis.com`, `api.hybrid-analysis.com`) | static and dynamic analysis in the Falcon Sandbox |
+| Complete attachment (file content, file name, MIME type, size) | tier `balanced` and `max`, only when the hash lookup returned no match | Hybrid Analysis (`hybrid-analysis.com`, `hybrid-analysis.com`) | static and dynamic analysis in the Falcon Sandbox |
 | URLs from the message | tier `max` | Hybrid Analysis (`hybrid-analysis.com/api/v2/quick-scan/url`) | URL analysis |
 | URLs the user clicks (time-of-click protection) and links checked by the auto-scan option | only with the global consent **and** a configured urlscan.io key; the auto-scan option checks at most 20 links per message | urlscan.io (`urlscan.io`) | link/phishing analysis (screenshot-based) |
 | Domains extracted from the message body | whenever a URLhaus key is configured | URLhaus (`urlhaus-api.abuse.ch`) | check the domain against malware URL lists |
@@ -173,7 +173,7 @@ What is **not** transmitted, regardless of tier:
 | Location | Content | Notes |
 |---|---|---|
 | `browser.storage.local` | settings, consent flags (`externalAnalysisConsent`, `scanningEnabledSenders`), API keys | stored unencrypted (plain local storage of Thunderbird); no remote copy |
-| IndexedDB `thunderbird_av`, version 3, object store `hybridanalysis` | scan results per message (verdict, status, analysis IDs, timestamps), the **local assessment** per message (risk score, reasons, SPF/DKIM/DMARC result, evaluation time — this is what the popup shows), link metadata, mapping via Message-ID/header ID | no attachment contents |
+| IndexedDB `thunderbird_av`, version 3, object store `hybridanalysis` | scan results per message (verdict, status, analysis IDs, timestamps), the **local assessment** per message (risk score, reasons, SPF/DKIM/DMARC result, evaluation time, sender, subject, consent state at evaluation time — this is what the popup shows), link metadata, mapping via Message-ID/header ID | no attachment contents |
 
 Deletion during review: the **"Clear cache"** button in the options dialog empties the object store
 `hybridanalysis`. Removing the add-on removes all local extension data. The add-on operates no

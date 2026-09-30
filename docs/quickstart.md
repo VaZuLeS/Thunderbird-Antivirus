@@ -64,7 +64,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
   und Thunderbird-APIs wie `messages.*` oder `messageDisplay.*` nicht kennt); `scripts/filter-lint-warnings.js`
   kennt diese Liste.
 - `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.zip` (Dateiname aus dem
-  Add-on-Namen). Aktueller Inhalt: **18 Dateien / 278.125 Bytes entpackt** (neu: `message_display.js`). Die
+  Add-on-Namen). Aktueller Inhalt: **18 Dateien / 279.353 Bytes entpackt** (neu: `message_display.js`). Die
   Ausschlüsse für Testdateien, `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und
   Build-Artefakte stehen in `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`);
   `node scripts/verify-package.js ./build` prüft anschließend Dateiliste und Größe des Pakets.
@@ -106,7 +106,7 @@ nachvollzogen wird (dieselben Schritte in ausführlicher Form: [reviewer_notes.m
 1. Add-on temporär laden und die **Einstellungen** öffnen.
 2. **Ohne Zustimmung testen:** „Externe Analyse erlauben“ bleibt aus. Ein Scan (Banner, Popup oder Kontextmenü) darf
    nichts an Dritte übertragen; das Banner meldet, dass keine Daten übertragen wurden, und das Popup zeigt nur die
-   Hinweiskarte statt Anbieter-Abfragen.
+   lokale Bewertung sowie die Hinweiskarte (keine Anbieter-Abfragen).
 3. **Zustimmung erteilen** und speichern. Beim Aktivieren der globalen Zustimmung fragt die Optionsseite – wo die
    Umgebung es anbietet – zusätzlich die eingebaute Datenkategorie `personalCommunications` an; eine Ablehnung
    deaktiviert die globale Zustimmung wieder. Anschließend die Host-Berechtigung für einen Anbieter anfragen lassen.

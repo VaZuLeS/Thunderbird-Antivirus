@@ -177,7 +177,11 @@
           });
           buttons.forEach((entry) => { entry.disabled = false; entry.removeAttribute('aria-busy'); });
 
-          if (response && response.success) {
+          if (response && response.success && response.stored === false) {
+            element.textContent = uiText('bannerScanDone', 'Scan finished');
+            setNote(banner, uiText('bannerResultNotStored',
+              'The result could not be assigned to this message (no Message-ID) and therefore does not appear in the popup.'));
+          } else if (response && response.success) {
             element.textContent = uiText('bannerScanDone', 'Scan finished');
             if (choice.persist) {
               setNote(banner, uiText('bannerSenderOptIn', 'This sender is now scanned automatically.'));

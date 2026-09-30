@@ -2,7 +2,8 @@
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6** · **ID** `thundy-av@bludau-it-services.de`
 **Zielplattform:** Thunderbird 140.0 oder neuer (Manifest V3) · **Lizenz:** MIT
-**Dokumentstand:** September 2026 – die Aussagen in dieser Datei wurden am Code geprüft (Commit `49850f3`); es wird
+**Dokumentstand:** September 2026 – die Aussagen in dieser Datei wurden am Code geprüft (Commit `9c98fe9` bzw. der
+aktuelle Branch-Stand; die Zahlen stammen aus dem jeweils letzten vollständigen Lauf); es wird
 kein Live-Test in Thunderbird behauptet.
 
 ## Behoben nach dem Store-Readiness-Review 1.6
@@ -96,12 +97,12 @@ abgearbeitet:
   `thundy-av@bludau-it-services.de`, Icons 16/32/64 px, `options_ui.open_in_tab` statt `browser_style`.
 - **Paketbereinigung (g):** `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`) hält Testdateien,
   `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und Entwicklungs-Artefakte aus dem Build. Das XPI
-  enthält **18 Dateien (278.125 Bytes entpackt)** – neu enthalten ist `message_display.js`; `scripts/verify-package.js`
+  enthält **18 Dateien (279.353 Bytes entpackt)** – neu enthalten ist `message_display.js`; `scripts/verify-package.js`
   erlaubt und prüft diese Datei. Toter Code (`content_script.js`) und die Legacy-Dateien sind entfernt.
 - **Lokalisierung (M2):** Alle sichtbaren UI-Strings werden über `browser.i18n` und `_locales/en`/`_locales/de`
   aufgelöst: Manifest-Strings (`__MSG_`), die UI in der Nachrichtenansicht und die Options-/Popup-Oberfläche
   (`data-i18n`-Attribute plus `applyUiTranslations()` in `db.js`, `uiText()` in `options.js`/`api.js`). Die Kataloge
-  enthalten je **210 Keys**, davon 197 lokalisierte UI-Strings; im Code stehen Fallback-Texte (deutsch in den
+  enthalten je **208 Keys**, davon 198 lokalisierte UI-Strings; im Code stehen Fallback-Texte (deutsch in den
   Options-/Popup-Skripten, englisch in Hintergrund- und Message-Display-Skript), Standard-Locale ist `en`. Weitere
   Sprachen können über zusätzliche `_locales/<code>`-Ordner ergänzt werden. Neue Keys: `tocLinkMarked`,
   `tocWarningTitle`, `tocChecking`, `tocBlocked`, `tocOpenAnyway`, `tocClose`, `tocBlockedScheme`,
@@ -113,7 +114,7 @@ abgearbeitet:
   Hintergrundskript erzwingt den erteilten Zustand in `mayTransmitExternally()`.
 - **Pre-Submit-Checks (H1/H3/M2):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung, Rechte,
   die Deklaration der Datenkonsent, Namespace ⇔ Berechtigung, die Anwesenheit des registrierten Skripts und seit der
-  UI-Lokalisierung zusätzlich, dass jeder lokalisierte UI-String einen Katalogeintrag hat (derzeit 197), und liefert
+  UI-Lokalisierung zusätzlich, dass jeder lokalisierte UI-String einen Katalogeintrag hat (derzeit 198), und liefert
   einen echten Exit-Code; der Schritt läuft in der CI. Ergebnis: 0 Fehler, 2 Warnungen (fehlende Screenshots; die
   aktive CI führt nur `background.test.js` aus – die vollständige Variante liegt in `docs/ci/ci.yml`).
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission-, MV3-Portierungs- und

@@ -190,7 +190,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
   (fast ausschließlich `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und
   Thunderbird-spezifische APIs wie `messages.*` oder `messageDisplay.*` nicht kennt). Die Liste wird über
   `scripts/filter-lint-warnings.js` gefiltert.
-- Das gebaute XPI enthält **18 Dateien / 278.125 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
+- Das gebaute XPI enthält **18 Dateien / 279.353 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
   prüft Dateiliste und Größe.
 - Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
   `node ./scripts/pre-submit-checks.js`, `node --test background.test.js` und `npx web-ext lint`.

@@ -20,7 +20,7 @@ Manifest ⇔ Code ⇔ veröffentlichter Doku, Prüfung der Live-URLs, unabhängi
 | Manifest-, Paket- und Rechtekonformität | 🟢 erfüllt (auch automatisiert geprüft) |
 | Datenschutz-Deklaration und Consent-Durchsetzung | 🟢 erfüllt (deklariert, im Code erzwungen, mehrfach getestet) |
 | Übereinstimmung Listing/Policy ↔ Code | 🟢 erfüllt (nach Doku-Abgleich) |
-| Tests, Lint, Paket, Lokalisierung | 🟢 erfüllt (465 Tests, Lint 0 Fehler, 18 Dateien, 210×2 Katalog-Keys) |
+| Tests, Lint, Paket, Lokalisierung | 🟢 erfüllt (465 Tests, Lint 0 Fehler, 18 Dateien, 208×2 Katalog-Keys) |
 | Icons, Lizenz, Support, Datenschutz-URL | 🟢 erfüllt |
 | **Manuelle Live-Verifikation in Thunderbird** | 🔴 **offen** — Kernfunktion nur durch Unit-Tests mit gemockten APIs belegt |
 | **Store-Screenshots** | 🔴 **offen** — nur SVG-Platzhalter |
@@ -41,7 +41,7 @@ npm test                                          # 465 Tests, 69 Suites, 0 Fehl
 npm run pre-submit-checks                         # 0 Fehler, 2 Warnungen (Screenshots, reduzierte CI)
 npx web-ext lint --source-dir . --output json     # 0 Fehler, 25 bekannte Thunderbird-False-Positives
 npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
-node scripts/verify-package.js ./build            # 18 Dateien, 278 125 Bytes, Paketinhalt gültig
+node scripts/verify-package.js ./build            # 18 Dateien, 279 353 Bytes, Paketinhalt gültig
 curl -s -o /dev/null -w '%{http_code}' https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html   # 200
 ```
 
@@ -101,7 +101,7 @@ Zusätzliche Prüfungen, die die Pre-Submit-Checks seit der Umsetzung automatisc
 - 465 Tests in 69 Suites, 0 Fehler — u. a. für Consent-Durchsetzung, Datenschutz-Stufen, Berechtigungs-/
   Namespace-Konsistenz, MV3-Portierung, Message-Display-UI und Time-of-Click, Popup-Consent-Gate,
   Lokalisierungs-Helfer und Datenkonsent-Anfrage.
-- Lokalisierung: `_locales/en` und `_locales/de` mit je 210 Keys (vollständige Parität, automatisch geprüft), Default-Locale `en`,
+- Lokalisierung: `_locales/en` und `_locales/de` mit je 208 Keys (vollständige Parität, automatisch geprüft), Default-Locale `en`,
   deutsche Fallbacks im Code; Optionsseite, Popup, Banner und Manifest-Strings laufen über `browser.i18n`.
 
 ---

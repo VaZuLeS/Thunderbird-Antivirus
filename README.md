@@ -177,13 +177,13 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 - `scripts/pre-submit-checks.js` additionally verifies that every used `browser.*` API namespace has its permission
   declared, that the `data_collection_permissions` declaration matches the transmission paths, that a
   programmatically registered script (`message_display.js`) is part of the package and that every localized UI string
-  has a catalogue entry (currently 197). Current state: 0 errors, 2 warnings (no real screenshots yet, and the
+  has a catalogue entry (currently 198). Current state: 0 errors, 2 warnings (no real screenshots yet, and the
   active `.github/workflows/ci.yml` still runs only `background.test.js` – `docs/ci/ci.yml` contains the full CI).
 - `web-ext lint` currently reports **0 errors** and **25 warnings**, all of them known Thunderbird false positives
   (almost exclusively `UNSUPPORTED_API` notices, because the linter validates against a Firefox target and does not
   know Thunderbird-only APIs such as `messages.*` or `messageDisplay.*`). The list is filtered by
   `scripts/filter-lint-warnings.js`.
-- The built XPI contains **18 files / 278,125 bytes unpacked** (previously 17 files); `scripts/verify-package.js`
+- The built XPI contains **18 files / 279,353 bytes unpacked** (previously 17 files); `scripts/verify-package.js`
   checks the file list and the size.
 - CI (`.github/workflows/ci.yml`) runs on every push and pull request with Node 22: `npm ci`, the pre-submit
   checks (real exit code), `node --test background.test.js` and `npx web-ext lint`.
