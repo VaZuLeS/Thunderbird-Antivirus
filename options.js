@@ -104,6 +104,56 @@ document.addEventListener('DOMContentLoaded', function() {
     let externalAnalysisConsentSetting = document.getElementById('externalAnalysisConsent').checked;
     let ipReputationProviderSetting = document.getElementById('ipReputationProvider').value;
     let ipReputationApiKeySetting = document.getElementById('ipReputationApiKey').value.trim().replace(/\r|\n/g, '');
+    const DATA_COLLECTION_TYPE = 'personalCommunications';
+
+    /**
+     * Synchronises the platform level data collection permission with the
+     * add-on's own "Externe Analyse erlauben" switch.
+     *
+     * manifest.json declares personalCommunications as *optional* data
+     * collection (required: ["none"]): all local checks run without any
+     * transmission, so nothing is mandatory. Thunderbird does not show an
+     * automatic data collection prompt ("Unlike Firefox, Thunderbird does not
+     * use the built-in onboarding flow ... add-ons must request consent
+     * explicitly"), therefore the opt-in is requested here - directly in
+     * response to the "Speichern" click, which is a user gesture.
+     *
+     * The add-on's own consent flag stays authoritative: platforms without a
+     * data collection permission API simply return { supported: false }.
+     */
+    async function syncDataCollectionConsent(enabled) {
+        const permissionsApi = (typeof browser !== 'undefined' && browser.permissions) ? browser.permissions : null;
+        if (!permissionsApi || typeof permissionsApi.request !== 'function') {
+            return { supported: false, granted: false };
+        }
+        try {
+            if (enabled) {
+                const granted = await permissionsApi.request({ data_collection: [DATA_COLLECTION_TYPE] });
+                return { supported: true, granted: granted === true };
+            }
+            if (typeof permissionsApi.remove === 'function') {
+                await permissionsApi.remove({ data_collection: [DATA_COLLECTION_TYPE] });
+            }
+            return { supported: true, granted: false };
+        } catch (e) {
+            console.warn('Data collection permission could not be synchronised', e);
+            return { supported: false, granted: false };
+        }
+    }
+
+    if (externalAnalysisConsentSetting) {
+        const dataCollection = await syncDataCollectionConsent(true);
+        if (dataCollection.supported && !dataCollection.granted) {
+            // The user declined the data transmission prompt: keep the switch off
+            // so that the stored consent matches the granted permission.
+            externalAnalysisConsentSetting = false;
+            document.getElementById('externalAnalysisConsent').checked = false;
+            alert('Die Zustimmung zur Datenübermittlung wurde nicht erteilt. „Externe Analyse erlauben“ bleibt abgeschaltet, es werden weiterhin keine Daten übertragen.');
+        }
+    } else {
+        await syncDataCollectionConsent(false);
+    }
+
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,

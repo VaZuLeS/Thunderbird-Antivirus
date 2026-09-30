@@ -35,6 +35,9 @@
   "bannerPermissionDenied": {
     "message": "Erforderliche Host-Berechtigung wurde verweigert"
   },
+  "bannerPermissionDeniedNote": {
+    "message": "Thundy AV darf den Analysedienst noch nicht kontaktieren. Öffnen Sie die Einstellungen des Add-ons, speichern Sie dort Ihre Angaben und bestätigen Sie die Zugriffsanfrage – danach funktioniert diese Schaltfläche."
+  },
   "bannerConsentMissing": {
     "message": "Externe Analyse ist in den Einstellungen deaktiviert – es wurden keine Daten übertragen."
   },
@@ -81,6 +84,9 @@
   },
   "notificationTitleError": {
     "message": "Thundy AV Scanner Fehler"
+  },
+  "notificationBannerFailed": {
+    "message": "Das Banner konnte nicht in die Nachrichtenansicht eingefügt werden ($1$). Der Nachrichten-Scan ist bis zur Behebung eingeschränkt."
   },
   "bannerAuthPass": {
     "message": "Absender verifiziert (SPF/DKIM/DMARC bestanden)"

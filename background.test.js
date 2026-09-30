@@ -194,6 +194,7 @@ describe('background.js', () => {
             globalThis.messageListToArray = messageListToArray;
             globalThis.handleRequestScan = handleRequestScan;
             globalThis.injectIntoMessageDisplay = injectIntoMessageDisplay;
+            globalThis.reportMessageDisplayInjectionFailure = reportMessageDisplayInjectionFailure;
             globalThis.mayTransmitExternally = mayTransmitExternally;
             globalThis.hasHostPermissionFor = hasHostPermissionFor;
             globalThis.assertExternalAnalysisAllowed = assertExternalAnalysisAllowed;
@@ -1881,13 +1882,20 @@ describe('background.js', () => {
             assert.strictEqual(executedScripts.length, 0);
         });
 
-        it('handles executeScript error gracefully', async () => {
+        it('handles executeScript error gracefully and reports it to the user', async () => {
             context.set_timeOfClickProtection(true);
             const filteredUrls = ['http://malicious.com'];
 
             context.browser.scripting.executeScript = async () => {
                 throw new Error("Simulated injection failure");
             };
+
+            // The failure has to become visible: system notification + stored
+            // diagnostics for the popup (store readiness P1-11).
+            const notifications = [];
+            context.browser.notifications.create = (options) => { notifications.push(options); return 'n1'; };
+            const stored = [];
+            context.browser.storage.local.set = async (data) => { stored.push(data); };
 
             let errorLogged = false;
             const originalConsoleWarn = context.console.warn;
@@ -1903,6 +1911,9 @@ describe('background.js', () => {
                 await new Promise(process.nextTick);
                 assert.strictEqual(errorLogged, true);
                 assert.strictEqual(result, undefined);
+                assert.strictEqual(notifications.length, 1, 'the user must see that the injection failed');
+                assert.ok(stored.some((entry) => entry.messageDisplayInjectionFailed &&
+                    entry.messageDisplayInjectionFailed.message.includes('Simulated injection failure')));
             } finally {
                 context.console.warn = originalConsoleWarn;
             }
@@ -3215,13 +3226,21 @@ describe('background.js', () => {
             assert.strictEqual(context.messageListToArray(null).length, 0);
         });
 
-        it('getFirstDisplayedMessage prefers getDisplayedMessages and falls back to getDisplayedMessage', async () => {
+        it('getFirstDisplayedMessage uses getDisplayedMessages and never calls the removed MV2 API', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 11, headerMessageId: 'h11' }] });
             assert.strictEqual((await context.getFirstDisplayedMessage(1)).headerMessageId, 'h11');
 
+            // Thunderbird 140 has no getDisplayedMessage(); if getDisplayedMessages
+            // is unavailable the helper must return null instead of calling a
+            // function that does not exist (see store readiness P1-10).
+            const legacyCalls = [];
             delete context.browser.messageDisplay.getDisplayedMessages;
-            context.browser.messageDisplay.getDisplayedMessage = async () => ({ id: 12, headerMessageId: 'h12' });
-            assert.strictEqual((await context.getFirstDisplayedMessage(1)).headerMessageId, 'h12');
+            context.browser.messageDisplay.getDisplayedMessage = async () => {
+                legacyCalls.push(1);
+                return { id: 12, headerMessageId: 'h12' };
+            };
+            assert.strictEqual(await context.getFirstDisplayedMessage(1), null);
+            assert.deepStrictEqual(legacyCalls, []);
         });
 
         it('tab_mail_open_display processes every message of a MessageList', async () => {
@@ -3237,30 +3256,38 @@ describe('background.js', () => {
             assert.deepStrictEqual(processed, [101, 102]);
         });
 
-        it('injectIntoMessageDisplay uses scripting.messageDisplay when available', async () => {
+        it('injectIntoMessageDisplay uses scripting.executeScript on the message display tab', async () => {
+            // scripting.messageDisplay has no executeScript() function (only
+            // registerScripts/unregisterScripts), so the generic API is the
+            // documented injection point for already open message display tabs.
             const calls = [];
             context.browser.scripting.messageDisplay = {
-                executeScript: async (injection) => { calls.push(['messageDisplay', injection.target.tabId]); }
+                registerScripts: async () => {},
+                executeScript: async () => { throw new Error('scripting.messageDisplay.executeScript does not exist'); }
             };
-            const genericCalls = [];
-            context.browser.scripting.executeScript = async (injection) => { genericCalls.push(injection.target.tabId); };
+            context.browser.scripting.executeScript = async (injection) => {
+                calls.push(injection.target.tabId);
+                return [{ result: 'ok' }];
+            };
 
-            await context.injectIntoMessageDisplay(5, function () {});
+            const result = await context.injectIntoMessageDisplay(5, function () {});
 
-            assert.deepStrictEqual(calls, [['messageDisplay', 5]]);
-            assert.strictEqual(genericCalls.length, 0);
+            assert.deepStrictEqual(calls, [5]);
+            assert.deepStrictEqual(result, [{ result: 'ok' }]);
         });
 
-        it('injectIntoMessageDisplay falls back to scripting.executeScript and swallows errors', async () => {
-            delete context.browser.scripting.messageDisplay;
-            const genericCalls = [];
-            context.browser.scripting.executeScript = async (injection) => { genericCalls.push(injection.target.tabId); };
-            await context.injectIntoMessageDisplay(6, function () {});
-            assert.deepStrictEqual(genericCalls, [6]);
+        it('reportMessageDisplayInjectionFailure notifies the user only once per session', async () => {
+            const notifications = [];
+            context.browser.notifications.create = (options) => { notifications.push(options); return 'n1'; };
+            const stored = [];
+            context.browser.storage.local.set = async (data) => { stored.push(data); };
 
-            context.browser.scripting.executeScript = async () => { throw new Error('blocked'); };
-            const result = await context.injectIntoMessageDisplay(6, function () {});
-            assert.strictEqual(result, null);
+            await context.reportMessageDisplayInjectionFailure(new Error('first'));
+            await context.reportMessageDisplayInjectionFailure(new Error('second'));
+
+            assert.strictEqual(notifications.length, 1, 'no notification spam for every message');
+            assert.strictEqual(stored.length, 2, 'diagnostics are refreshed for every failure');
+            assert.strictEqual(await context.injectIntoMessageDisplay(null, function () {}), null);
         });
 
         it('originForUrl maps provider hosts to the declared optional host permissions', () => {

@@ -35,6 +35,9 @@
   "bannerPermissionDenied": {
     "message": "Required host permission was denied"
   },
+  "bannerPermissionDeniedNote": {
+    "message": "Thundy AV is not allowed to contact the analysis service yet. Open the add-on options, save your settings there and confirm the access request – afterwards this button works."
+  },
   "bannerConsentMissing": {
     "message": "External analysis is disabled in the options – nothing was transmitted."
   },
@@ -81,6 +84,9 @@
   },
   "notificationTitleError": {
     "message": "Thundy AV Scanner error"
+  },
+  "notificationBannerFailed": {
+    "message": "The banner could not be inserted into the message view ($1$). Message scanning is limited until this is fixed."
   },
   "bannerAuthPass": {
     "message": "Sender verified (SPF/DKIM/DMARC passed)"

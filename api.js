@@ -68,13 +68,14 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Holen Sie sich die aktuell angezeigte Nachricht im aktiven Tab, mit der
 // messageDisplay API. Hinweis: Dies benötigt die messagesRead Berechtigung.
 // Manifest V3 in Thunderbird: getDisplayedMessages() liefert eine MessageList.
+// Der in MV3 entfernte Aufruf getDisplayedMessage() wird nicht mehr verwendet.
 let message = null;
 if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages === 'function') {
     const messageList = await browser.messageDisplay.getDisplayedMessages(tabs[0].id);
     const messages = Array.isArray(messageList) ? messageList : (messageList && messageList.messages) || [];
     message = messages[0] || null;
-} else if (browser.messageDisplay) {
-    message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
+} else {
+    console.error('messageDisplay.getDisplayedMessages is unavailable in this Thunderbird version');
 }
 
 // Ohne Zustimmung zu externer Analyse wird nichts übertragen - das muss im

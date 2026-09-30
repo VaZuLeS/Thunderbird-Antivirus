@@ -22,7 +22,7 @@ describe('escapeHTML', () => {
                     query: async () => [{ id: 1 }]
                 },
                 messageDisplay: {
-                    getDisplayedMessage: async () => ({ headerMessageId: '123', subject: 'test', author: 'author' })
+                    getDisplayedMessages: async () => ({ messages: [{ headerMessageId: '123', subject: 'test', author: 'author' }] })
                 },
                 runtime: {
                     sendMessage: async () => ({ status: 'success' })
@@ -448,7 +448,7 @@ describe('get_hybrid_report_by_sha256', () => {
                     query: async () => [{ id: 1 }]
                 },
                 messageDisplay: {
-                    getDisplayedMessage: async () => ({ headerMessageId: '123', subject: 'test', author: 'author' })
+                    getDisplayedMessages: async () => ({ messages: [{ headerMessageId: '123', subject: 'test', author: 'author' }] })
                 }
             },
             document: {
@@ -1084,7 +1084,7 @@ describe('renderManualUrlScanUI', () => {
             browser: {
                 storage: { local: { get: async () => ({ apikey: 'test' }) } },
                 tabs: { query: async () => [{ id: 1 }] },
-                messageDisplay: { getDisplayedMessage: async () => ({ headerMessageId: '123', subject: 'test', author: 'author' }) },
+                messageDisplay: { getDisplayedMessages: async () => ({ messages: [{ headerMessageId: '123', subject: 'test', author: 'author' }] }) },
                 runtime: { sendMessage: async () => ({ status: 'success' }) }
             },
             document: {

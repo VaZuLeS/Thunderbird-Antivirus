@@ -114,8 +114,14 @@ describe('pre-submit-checks', () => {
     assert.ok(result.errors.some((e) => e.includes('data_collection_permissions is missing')));
   });
 
-  it('fails when data collection declares "none" combined with optional permissions', () => {
-    const result = runChecks(createExtension({}, {
+  it('accepts "required: none" together with optional data types (all transmission is opt-in)', () => {
+    // addons-linter (used by AMO and ATN) only forbids combining "none" with
+    // other data types *within* the required list (NONE_DATA_COLLECTION_IS_EXCLUSIVE);
+    // "required: none" plus an optional type is the documented way to express
+    // "nothing is mandatory, this data type is opt-in".
+    const result = runChecks(createExtension({
+      'options.js': "await browser.permissions.request({ data_collection: ['personalCommunications'] });\n"
+    }, {
       browser_specific_settings: {
         gecko: {
           id: 'demo@example.org',
@@ -124,7 +130,48 @@ describe('pre-submit-checks', () => {
         }
       }
     }));
-    assert.ok(result.errors.some((e) => e.includes('contradictory')));
+    assert.ok(!result.errors.some((e) => e.includes('contradictory')));
+    assert.ok(!result.errors.some((e) => e.includes('data_collection_permissions')));
+    assert.ok(result.passes.some((p) => p.includes('optional only')));
+  });
+
+  it('fails when "none" is combined with another data type in the required list', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['none', 'personalCommunications'] }
+        }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('must not combine "none"')));
+  });
+
+  it('fails when "none" is declared without any optional data type', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['none'] }
+        }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('declares "none" although the add-on transmits')));
+  });
+
+  it('fails when optional data types are declared but never requested at runtime', () => {
+    const result = runChecks(createExtension({ 'options.js': '// no permission request here\n' }, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['none'], optional: ['personalCommunications'] }
+        }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('never calls permissions.request')));
   });
 
   it('fails when a forbidden permission is requested', () => {

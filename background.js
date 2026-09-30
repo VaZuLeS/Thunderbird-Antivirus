@@ -107,22 +107,47 @@ async function hasHostPermissionFor(url) {
 
 /**
  * Injects a function into the message display document of a tab.
- * Thunderbird's generic scripting API is used; if a future Thunderbird
- * release exposes scripting.messageDisplay.executeScript, it is preferred.
+ *
+ * Thunderbird's message display is not reachable through a content script
+ * match pattern; the documented way to run code there is
+ * `scripting.messageDisplay.registerScripts()` (newly opened messages) and
+ * `scripting.executeScript(injection)` for tabs that are already open
+ * (see the official note in the `scripting.messageDisplay` reference).
+ * `scripting.messageDisplay` itself has no `executeScript()` function, so the
+ * generic API is the only runtime injection point.
+ *
+ * If the injection fails the user is informed instead of being left with a
+ * silent no-op (see reportMessageDisplayInjectionFailure).
  */
 async function injectIntoMessageDisplay(tabId, func, args = []) {
     if (tabId === undefined || tabId === null) return null;
-    const injection = { target: { tabId }, func, args };
     try {
-        if (browser.scripting && browser.scripting.messageDisplay &&
-            typeof browser.scripting.messageDisplay.executeScript === 'function') {
-            return await browser.scripting.messageDisplay.executeScript(injection);
-        }
-        return await browser.scripting.executeScript(injection);
+        return await browser.scripting.executeScript({ target: { tabId }, func, args });
     } catch (e) {
-        Logger.warn('Injecting into the message display failed (please report with your Thunderbird version):', e);
+        await reportMessageDisplayInjectionFailure(e);
         return null;
     }
+}
+
+// Only report a failing banner injection once per background session; a broken
+// injection would otherwise spam a notification for every message.
+let messageDisplayInjectionFailureReported = false;
+
+/**
+ * Makes a failed banner injection visible: logs it, stores the diagnostics for
+ * the popup and shows a system notification once per session.
+ */
+async function reportMessageDisplayInjectionFailure(error) {
+    const message = (error && error.message) ? String(error.message) : String(error);
+    Logger.warn('Injecting into the message display failed (please report with your Thunderbird version):', message);
+    try {
+        await browser.storage.local.set({
+            messageDisplayInjectionFailed: { at: Date.now(), message }
+        });
+    } catch (e) { /* diagnostics are best effort */ }
+    if (messageDisplayInjectionFailureReported) return;
+    messageDisplayInjectionFailureReported = true;
+    notify('notificationTitleError', 'notificationBannerFailed', [message]);
 }
 
 let customBlacklist = new Set();
@@ -1153,7 +1178,9 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
                   setNote(t('bannerSenderOptIn', 'This sender is now scanned automatically.'));
                 }
               } else if (resp && resp.error === 'permission_denied') {
-                btn.textContent = t('bannerPermissionDenied', 'Required host permission was denied');
+                btn.textContent = label;
+                setNote(t('bannerPermissionDeniedNote', 'Thundy AV is not allowed to contact the analysis service yet. Open the add-on options, save your settings there and confirm the access request – afterwards this button works.'));
+                addOptionsButton();
                 buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
               } else if (resp && (resp.error === 'EXTERNAL_ANALYSIS_DISABLED' || resp.code === 'EXTERNAL_ANALYSIS_DISABLED')) {
                 setNote(t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.'));
@@ -1215,18 +1242,16 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
  */
 async function getFirstDisplayedMessage(tabId, { throwOnError = false } = {}) {
   if (tabId === undefined || tabId === null) return null;
+  if (!browser.messageDisplay || typeof browser.messageDisplay.getDisplayedMessages !== 'function') {
+    Logger.warn('messageDisplay.getDisplayedMessages is unavailable in this Thunderbird version');
+    return null;
+  }
   try {
-    if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages === 'function') {
-      const list = await browser.messageDisplay.getDisplayedMessages(tabId);
-      if (!list) return null;
-      if (Array.isArray(list)) return list[0] || null;
-      if (Array.isArray(list.messages)) return list.messages[0] || null;
-      return list || null;
-    }
-    // Legacy fallback (Manifest V2)
-    if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessage === 'function') {
-      return await browser.messageDisplay.getDisplayedMessage(tabId);
-    }
+    const list = await browser.messageDisplay.getDisplayedMessages(tabId);
+    if (!list) return null;
+    if (Array.isArray(list)) return list[0] || null;
+    if (Array.isArray(list.messages)) return list.messages[0] || null;
+    return list || null;
   } catch (e) {
     Logger.error('Failed to determine the displayed message', e);
     if (throwOnError) throw e;
@@ -1727,14 +1752,13 @@ async function indexedDB_save_links_to_db(message, urls) {
 
 // Listener registrieren
 // Manifest V3 removed messageDisplay.onMessageDisplayed in favour of
-// onMessagesDisplayed (which delivers a MessageList).
-if (browser.messageDisplay) {
-    if (browser.messageDisplay.onMessagesDisplayed) {
-        browser.messageDisplay.onMessagesDisplayed.addListener(tab_mail_open_display);
-    } else if (browser.messageDisplay.onMessageDisplayed) {
-        // Legacy fallback (Manifest V2 / Thunderbird < 121)
-        browser.messageDisplay.onMessageDisplayed.addListener(tab_mail_open_display);
-    }
+// onMessagesDisplayed (which delivers a MessageList). The removed event is not
+// registered as a fallback anymore: in Thunderbird 140 the property does not
+// exist, so the branch would only be dead code (see store readiness P1-10).
+if (browser.messageDisplay && browser.messageDisplay.onMessagesDisplayed) {
+    browser.messageDisplay.onMessagesDisplayed.addListener(tab_mail_open_display);
+} else {
+    Logger.warn('messageDisplay.onMessagesDisplayed is unavailable - message scanning is disabled');
 }
 
 function createContextMenus() {

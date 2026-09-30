@@ -66,9 +66,13 @@ describe('options.js', () => {
                 },
                 permissions: {
                     contains: async () => true,
-                    request: async () => true
+                    request: async () => true,
+                    lastRequest: null,
+                    lastRemove: null
                 }
             },
+            alerts: [],
+            alert: (message) => { context.alerts.push(message); },
             openDB: async (name, version) => ({ name, version }),
             clearStore: async (db, storeName) => true,
             console: {
@@ -201,6 +205,50 @@ describe('options.js', () => {
 
         assert.strictEqual(saveBtn.disabled, false);
         assert.strictEqual(saveBtn.textContent, 'Speichern');
+    });
+
+    it('should request the optional data collection permission when external analysis is enabled', async () => {
+        // manifest.json declares personalCommunications as optional data collection
+        // (required: ["none"]). Thunderbird has no built-in data collection prompt,
+        // so the add-on has to ask for it in a user gesture handler - here the
+        // "Speichern" click.
+        context.document.getElementById('externalAnalysisConsent').checked = true;
+        context.browser.permissions.request = async (permissions) => {
+            context.browser.permissions.lastRequest = permissions;
+            return true;
+        };
+
+        context.document.getElementById('save').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(JSON.stringify(context.browser.permissions.lastRequest), JSON.stringify({ data_collection: ['personalCommunications'] }));
+        assert.strictEqual(context.browser.storage.local.lastSetData.externalAnalysisConsent, true);
+    });
+
+    it('should keep the consent disabled when the data collection prompt is declined', async () => {
+        context.document.getElementById('externalAnalysisConsent').checked = true;
+        context.browser.permissions.request = async () => false;
+        context.alerts = [];
+
+        context.document.getElementById('save').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(context.browser.storage.local.lastSetData.externalAnalysisConsent, false);
+        assert.strictEqual(context.document.getElementById('externalAnalysisConsent').checked, false);
+        assert.strictEqual(context.alerts.length, 1);
+    });
+
+    it('should withdraw the optional data collection permission when the consent is switched off', async () => {
+        context.document.getElementById('externalAnalysisConsent').checked = false;
+        context.browser.permissions.remove = async (permissions) => {
+            context.browser.permissions.lastRemove = permissions;
+        };
+
+        context.document.getElementById('save').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(JSON.stringify(context.browser.permissions.lastRemove), JSON.stringify({ data_collection: ['personalCommunications'] }));
+        assert.strictEqual(context.browser.storage.local.lastSetData.externalAnalysisConsent, false);
     });
 
     it('should clear cache when clearCache button is clicked (success)', async () => {

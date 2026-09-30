@@ -131,9 +131,23 @@ function runChecks(rootDir) {
     const requiredTypes = Array.isArray(dcp.required) ? dcp.required : [];
     const optionalTypes = Array.isArray(dcp.optional) ? dcp.optional : [];
     if (requiredTypes.length === 0) fail('data_collection_permissions.required must list at least one data type');
-    if (requiredTypes.includes('none')) {
-      if (optionalTypes.length > 0) fail('data_collection_permissions is contradictory: "none" cannot be combined with optional data types');
-      else fail('data_collection_permissions declares "none" although the add-on transmits message data to analysis providers');
+    if (requiredTypes.includes('none') && requiredTypes.length > 1) {
+      // Mirrors the addons-linter rule NONE_DATA_COLLECTION_IS_EXCLUSIVE:
+      // "none" may not be combined with other values *within required*.
+      fail('data_collection_permissions.required must not combine "none" with other data types');
+    }
+    if (requiredTypes.includes('none') && optionalTypes.length === 0) {
+      fail('data_collection_permissions declares "none" although the add-on transmits message data to analysis providers; declare the transmitted data types in "optional" (opt-in) or "required"');
+    }
+    if (requiredTypes.includes('none') && optionalTypes.length > 0) {
+      ok('data collection is declared as optional only (required: none) - the runtime opt-in is requested by the add-on');
+      // Guard: an optional data type is useless if the add-on never asks for it.
+      // Thunderbird has no built-in data collection prompt, so the request has
+      // to happen in a user gesture handler.
+      const optionsFile = path.join(rootDir, 'options.js');
+      if (fs.existsSync(optionsFile) && !fs.readFileSync(optionsFile, 'utf8').includes('data_collection')) {
+        fail('data_collection_permissions declares optional data types but options.js never calls permissions.request({ data_collection: [...] })');
+      }
     }
     const allowed = ['authenticationInfo', 'bookmarksInfo', 'browsingActivity', 'financialAndPaymentInfo', 'healthInfo',
       'locationInfo', 'personalCommunications', 'personallyIdentifyingInfo', 'searchTerms', 'websiteActivity', 'websiteContent', 'technicalAndInteraction', 'none'];
