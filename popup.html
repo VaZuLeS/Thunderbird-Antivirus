@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="script-src 'self';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thunderbird Security Antivirus aka Thundy AV</title>
+    <title data-i18n="popupDocumentTitle">Thundy AV – Scan-Ergebnisse</title>
     <link rel="stylesheet" href="theme.css">
     <style>
         body {
@@ -24,14 +24,14 @@
 </head>
 
 <body>
-    <h1>Thunderbird Security Antivirus aka Thundy AV</h1>
-    <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer" aria-label="Alle Übertragungen zu Hybrid Analysis aufrufen (öffnet in einem neuen Tab)">Alle Übertragungen zu Hybrid Analysis aufrufen <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>
+    <h1 data-i18n="popupHeading">Thundy AV – Scan-Ergebnisse zu dieser Nachricht</h1>
+    <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer" data-i18n-aria-label="popupAllSubmissionsAria" aria-label="Alle Übertragungen zu Hybrid Analysis aufrufen (öffnet in einem neuen Tab)"><span data-i18n="popupAllSubmissions">Alle Übertragungen zu Hybrid Analysis aufrufen</span> <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>
 
     <div class="grid-container">
-        <div class="grid-header">Betreff:</div>
+        <div class="grid-header" data-i18n="popupSubjectLabel">Betreff:</div>
         <div id="subject" class="grid-content"></div>
 
-        <div class="grid-header">Von:</div>
+        <div class="grid-header" data-i18n="popupFromLabel">Von:</div>
         <div id="from" class="grid-content"></div>
 
         <div class="grid-header">MessageHeaderID:</div>

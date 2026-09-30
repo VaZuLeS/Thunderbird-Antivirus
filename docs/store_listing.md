@@ -147,7 +147,7 @@ zeigt die Banner an.
 | Privacy policy URL | https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html |
 | Source code | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
-| Language of the user interface | Message-view banners and manifest strings: English + German (`_locales/`). Options page and popup: **German only** (screenshot motifs are therefore German). This is stated here and in the listing on purpose — see `docs/STATUS.md` (remaining item: localisation of options/popup). |
+| Language of the user interface | Fully localized in English and German (`_locales/`): manifest strings, message-view banners, options page and popup. The UI follows the Thunderbird UI language; the German markup text is the fallback. |
 
 ## 6. Release notes 1.6.1
 
@@ -167,8 +167,9 @@ zeigt die Banner an.
 - **Review package:** added `docs/live_test_protocol.md`, `docs/testdata.md` (+ `scripts/make-testdata.js`
   generating four reproducible test messages) and a response catalogue for expected review questions in
   `docs/reviewer_notes.md`.
-- Signing documentation now uses the ATN endpoint
-  (`web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/`).
+- **Localisation:** the options page and the popup now use `browser.i18n` with the `_locales/en|de` catalogues
+  (`data-i18n*` attributes plus a `t()` helper whose fallback is the German markup text). `test/i18n.test.js`
+  verifies that every key used by the UI exists in both catalogues.
 
 ## 7. Pre-upload checklist (honest status)
 

@@ -1,7 +1,62 @@
 // Event-Listener für das Laden der Seite
 let _saveTimeoutId = null;
 let _clearTimeoutId = null;
+
+/**
+ * Returns the localized string for a key and falls back to the German text that
+ * is shipped in the markup. Without this fallback the options page stays usable
+ * even if the platform does not provide i18n (e.g. in unit tests).
+ */
+function t(key, fallback, subs) {
+  try {
+    const i18n = (typeof browser !== 'undefined') ? browser.i18n : null;
+    if (i18n && typeof i18n.getMessage === 'function') {
+      const message = i18n.getMessage(key, subs);
+      if (message) return message;
+    }
+  } catch (e) { /* fall through to the fallback text */ }
+  return fallback;
+}
+
+/**
+ * Applies the localizations declared in options.html via data-i18n* attributes.
+ * The German text in the markup is used as the build-in fallback.
+ */
+function applyI18n() {
+  const i18n = (typeof browser !== 'undefined') ? browser.i18n : null;
+  if (!i18n || typeof i18n.getMessage !== 'function') return;
+
+  const resolve = (element, attribute) => {
+    const key = element.getAttribute(attribute);
+    if (!key) return null;
+    const subs = element.getAttribute('data-i18n-subs');
+    return i18n.getMessage(key, subs ? subs.split(',') : undefined) || null;
+  };
+
+  for (const element of document.querySelectorAll('[data-i18n]')) {
+    const message = resolve(element, 'data-i18n');
+    if (message) element.textContent = message;
+  }
+  for (const element of document.querySelectorAll('[data-i18n-placeholder]')) {
+    const message = resolve(element, 'data-i18n-placeholder');
+    if (message) element.placeholder = message;
+  }
+  for (const element of document.querySelectorAll('[data-i18n-aria-label]')) {
+    const message = resolve(element, 'data-i18n-aria-label');
+    if (message) element.setAttribute('aria-label', message);
+  }
+  for (const element of document.querySelectorAll('[data-i18n-title]')) {
+    const message = resolve(element, 'data-i18n-title');
+    if (message) element.title = message;
+  }
+  if (typeof i18n.getUILanguage === 'function') {
+    const language = i18n.getUILanguage();
+    if (language) document.documentElement.lang = language;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    applyI18n();
     // Abrufen der gespeicherten Einstellung
     browser.storage.local.get([
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
@@ -31,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
       function updatePrivacyTierStatus() {
           if (alwaysManualCheckbox.checked) {
               privacyTierSelect.disabled = true;
-              privacyTierSelect.title = 'Datenschutz-Stufe ist bei manuellem Scan irrelevant';
+              privacyTierSelect.title = t('optTierTooltipManual', 'Datenschutz-Stufe ist bei manuellem Scan irrelevant');
           } else {
               privacyTierSelect.disabled = false;
               privacyTierSelect.title = '';
@@ -44,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
       function updateTimeOfClickProtectionStatus() {
           if (autoScanLinksCheckbox.checked) {
               timeOfClickProtectionCheckbox.disabled = true;
-              timeOfClickProtectionCheckbox.title = 'Time-of-Click Protection ist irrelevant, wenn Auto-Scan aktiv ist';
+              timeOfClickProtectionCheckbox.title = t('optTocTooltipAuto', 'Time-of-Click Protection ist irrelevant, wenn Auto-Scan aktiv ist');
           } else {
               timeOfClickProtectionCheckbox.disabled = false;
               timeOfClickProtectionCheckbox.title = '';
@@ -70,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveBtn = document.getElementById('save');
     saveBtn.disabled = true;
     saveBtn.setAttribute('aria-busy', 'true');
-    saveBtn.textContent = 'Wird gespeichert...';
+    saveBtn.textContent = t('optSaving', 'Wird gespeichert...');
 
     let mySetting = apikeyInput.value.trim().replace(/\r|\n/g, '');
     let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
@@ -148,7 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // so that the stored consent matches the granted permission.
             externalAnalysisConsentSetting = false;
             document.getElementById('externalAnalysisConsent').checked = false;
-            alert('Die Zustimmung zur Datenübermittlung wurde nicht erteilt. „Externe Analyse erlauben“ bleibt abgeschaltet, es werden weiterhin keine Daten übertragen.');
+            alert(t('optDataConsentDeclined',
+                'Die Zustimmung zur Datenübermittlung wurde nicht erteilt. „Externe Analyse erlauben“ bleibt abgeschaltet, es werden weiterhin keine Daten übertragen.'));
         }
     } else {
         await syncDataCollectionConsent(false);
@@ -173,7 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
         statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
-        saveBtn.textContent = 'Speichern';
+        saveBtn.textContent = t('optSaveButton', 'Speichern');
 
         // Host-Berechtigungen nur für die tatsächlich konfigurierten Dienste
         // anfragen (Nutzer-Geste = Klick auf "Speichern").
@@ -197,8 +253,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             if (denied.length > 0) {
-                alert('Host‑Berechtigung nicht erteilt für: ' + denied.join(', ') +
-                    '. Ohne diese Berechtigung sind die entsprechenden Prüfungen deaktiviert.');
+                alert(t('optHostPermissionDenied',
+                    'Host-Berechtigung nicht erteilt für: ' + denied.join(', ') +
+                    '. Ohne diese Berechtigung sind die entsprechenden Prüfungen deaktiviert.',
+                    [denied.join(', ')]));
             }
         }
 
@@ -217,18 +275,18 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Speichern fehlgeschlagen", error);
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
-        saveBtn.textContent = 'Speichern';
+        saveBtn.textContent = t('optSaveButton', 'Speichern');
     });
   });
 
   document.getElementById('clearCache').addEventListener('click', async function() {
-    if (!confirm('Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse.')) {
+    if (!confirm(t('optClearCacheConfirm', 'Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse.'))) {
         return;
     }
     const clearBtn = document.getElementById('clearCache');
     clearBtn.disabled = true;
     clearBtn.setAttribute('aria-busy', 'true');
-    clearBtn.textContent = 'Wird geleert...';
+    clearBtn.textContent = t('optClearing', 'Wird geleert...');
 
     let statusSpan = document.getElementById('clearCacheStatus');
     statusSpan.style.display = 'none';
@@ -240,18 +298,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const cleared = await clearStore(db, 'hybridanalysis');
 
         if (cleared) {
-            statusSpan.textContent = 'Cache erfolgreich geleert.';
+            statusSpan.textContent = t('optCacheCleared', 'Cache erfolgreich geleert.');
         } else {
-            statusSpan.textContent = 'Datenbank existiert noch nicht oder ist bereits leer.';
+            statusSpan.textContent = t('optCacheEmpty', 'Datenbank existiert noch nicht oder ist bereits leer.');
         }
     } catch (error) {
         statusSpan.className = 'text-danger ml-2';
-        statusSpan.textContent = 'Fehler beim Leeren des Caches.';
+        statusSpan.textContent = t('optCacheError', 'Fehler beim Leeren des Caches.');
         console.error(error);
     } finally {
         clearBtn.disabled = false;
         clearBtn.removeAttribute('aria-busy');
-        clearBtn.textContent = 'Cache leeren';
+        clearBtn.textContent = t('optClearCacheButton', 'Cache leeren');
     }
 
     statusSpan.style.display = 'inline';

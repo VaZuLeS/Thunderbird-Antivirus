@@ -1,3 +1,127 @@
+/**
+ * Returns the localized string for a key and falls back to the German text that
+ * is part of the call site. The fallback keeps the popup working on platforms
+ * without i18n (for example in the unit tests).
+ */
+function t(key, fallback, subs) {
+    try {
+        const i18n = (typeof browser !== 'undefined') ? browser.i18n : null;
+        if (i18n && typeof i18n.getMessage === 'function') {
+            const message = i18n.getMessage(key, subs);
+            if (message) return message;
+        }
+    } catch (e) { /* fall through to the fallback text */ }
+    return fallback;
+}
+
+/**
+ * Applies the localizations declared in popup.html via data-i18n* attributes.
+ * Never throws: the popup must stay usable even if the DOM or i18n is missing.
+ */
+function applyI18n() {
+    try {
+        const i18n = (typeof browser !== 'undefined') ? browser.i18n : null;
+        if (!i18n || typeof i18n.getMessage !== 'function') return;
+        if (typeof document === 'undefined' || !document.querySelectorAll) return;
+        const resolve = (element, attribute) => {
+            const key = element.getAttribute(attribute);
+            if (!key) return null;
+            const subs = element.getAttribute('data-i18n-subs');
+            return i18n.getMessage(key, subs ? subs.split(',') : undefined) || null;
+        };
+        for (const element of document.querySelectorAll('[data-i18n]')) {
+            const message = resolve(element, 'data-i18n');
+            if (message) element.textContent = message;
+        }
+        for (const element of document.querySelectorAll('[data-i18n-aria-label]')) {
+            const message = resolve(element, 'data-i18n-aria-label');
+            if (message) element.setAttribute('aria-label', message);
+        }
+        if (typeof i18n.getUILanguage === 'function') {
+            const language = i18n.getUILanguage();
+            if (language) document.documentElement.lang = language;
+        }
+    } catch (e) { /* localization is best effort */ }
+}
+
+applyI18n();
+
+const HYBRID_ANALYSIS_ORIGIN = 'https://hybrid-analysis.com/*';
+
+/**
+ * The banner in the message view asks for the host permission from a message
+ * handler (runtime.sendMessage), where the user gesture is not guaranteed to
+ * survive (store readiness A-12/P0-1). The popup is an extension page, so a
+ * click here is always a user gesture - this is the reliable place to grant it.
+ */
+async function requestHybridAnalysisAccess(button) {
+    try {
+        if (button) {
+            button.disabled = true;
+            button.setAttribute('aria-busy', 'true');
+        }
+        const granted = await browser.permissions.request({ origins: [HYBRID_ANALYSIS_ORIGIN] });
+        if (granted && typeof location !== 'undefined' && typeof location.reload === 'function') {
+            location.reload();
+        }
+        return granted === true;
+    } catch (e) {
+        console.error('Host permission request failed', e);
+        if (button) {
+            button.disabled = false;
+            button.removeAttribute('aria-busy');
+        }
+        return false;
+    }
+}
+
+/**
+ * Shows a notice with a "grant access" button when an API key is configured but
+ * the Hybrid Analysis host permission is missing. Returns true when the notice
+ * was shown. Never throws.
+ */
+async function renderHostPermissionNotice() {
+    try {
+        const permissionsApi = (typeof browser !== 'undefined') ? browser.permissions : null;
+        if (!permissionsApi || typeof permissionsApi.contains !== 'function' ||
+            typeof permissionsApi.request !== 'function') {
+            return false;
+        }
+        if (await permissionsApi.contains({ origins: [HYBRID_ANALYSIS_ORIGIN] })) return false;
+
+        const statusArea = document.getElementById('status_message');
+        if (!statusArea) return true;
+        statusArea.textContent = '';
+
+        const notice = document.createElement('div');
+        notice.className = 'card card-warn mb-3';
+        notice.setAttribute('role', 'status');
+
+        const text = document.createElement('p');
+        text.textContent = t('popupHostPermissionMissing',
+            'Thundy AV darf den Analysedienst noch nicht kontaktieren. Bitte erteilen Sie den Zugriff.');
+        notice.appendChild(text);
+
+        const grantButton = document.createElement('button');
+        grantButton.className = 'btn-primary mt-2';
+        grantButton.textContent = t('popupGrantAccess', 'Zugriff erteilen');
+        grantButton.addEventListener('click', () => requestHybridAnalysisAccess(grantButton));
+        notice.appendChild(grantButton);
+
+        const hint = document.createElement('p');
+        hint.className = 'text-muted';
+        hint.textContent = t('popupGrantAccessHint',
+            'Der Zugriff wird nur für Hybrid Analysis benötigt und kann jederzeit in den Add-on-Berechtigungen entzogen werden.');
+        notice.appendChild(hint);
+
+        statusArea.appendChild(notice);
+        return true;
+    } catch (e) {
+        console.error('Host permission notice failed', e);
+        return false;
+    }
+}
+
 const byteToHex = new Array(256);
 for (let n = 0; n <= 255; n++) {
     byteToHex[n] = n.toString(16).padStart(2, '0');
@@ -39,17 +163,17 @@ if (!apikey_hybridanalysis) {
     alertDiv.className = 'alert-error';
     alertDiv.setAttribute('role', 'alert');
     let strong = document.createElement('strong');
-    strong.textContent = 'Warnung:';
+    strong.textContent = t('popupWarningLabel', 'Warnung:');
     alertDiv.appendChild(strong);
 
     let messageSpan = document.createElement('span');
     messageSpan.id = 'api-key-error-msg';
-    messageSpan.textContent = ' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.';
+    messageSpan.textContent = ' ' + t('popupNoApiKey', 'Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.');
     alertDiv.appendChild(messageSpan);
 
     let btnSettings = document.createElement('button');
     btnSettings.className = 'btn-primary mt-2 ml-2';
-    btnSettings.textContent = 'Einstellungen öffnen';
+    btnSettings.textContent = t('popupOpenSettings', 'Einstellungen öffnen');
     btnSettings.setAttribute('aria-describedby', 'api-key-error-msg');
     btnSettings.addEventListener('click', () => {
         browser.runtime.openOptionsPage();
@@ -60,6 +184,11 @@ if (!apikey_hybridanalysis) {
     container.appendChild(alertDiv);
     return;
 }
+
+// Fehlt die Host-Berechtigung (zum Beispiel, weil sie beim Scan aus dem Banner
+// nicht erteilt werden konnte), laesst sie sich hier nachholen: der Klick auf
+// den Button ist eine echte Nutzer-Geste.
+await renderHostPermissionNotice();
 
 // Der Benutzer hat auf unseren Button geklickt, holen Sie sich den aktiven Tab im aktuellen Fenster mit
 // der Tabs API.
@@ -91,7 +220,7 @@ if (!message) {
     emptyCard.setAttribute('role', 'status');
     let msg = document.createElement('p');
     msg.className = 'text-info';
-    msg.textContent = "Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.";
+    msg.textContent = t('popupNoMessageSelected', 'Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.');
     emptyCard.appendChild(msg);
     container.appendChild(emptyCard);
     return;
@@ -111,9 +240,9 @@ const updateGridField = (id, value, fallbackText) => {
     }
 };
 
-updateGridField("subject", message.subject, "(Kein Betreff)");
-updateGridField("from", message.author, "(Unbekannter Absender)");
-updateGridField("MessageHeaderID", message.headerMessageId, "(Keine ID)");
+updateGridField("subject", message.subject, t('popupNoSubject', '(Kein Betreff)'));
+updateGridField("from", message.author, t('popupUnknownSender', '(Unbekannter Absender)'));
+updateGridField("MessageHeaderID", message.headerMessageId, t('popupNoId', '(Keine ID)'));
 
 // Initialen Lade-Status für async Operationen setzen
 let apiContainer = document.getElementById('hybrid_analysis_api_content');
@@ -127,7 +256,7 @@ if (apiContainer) {
     loadingP.setAttribute('role', 'status');
         loadingP.setAttribute('aria-busy', 'true');
     loadingP.className = 'text-info';
-    loadingP.textContent = 'Lade Analyseergebnisse...';
+    loadingP.textContent = t('popupLoading', 'Lade Analyseergebnisse...');
 
     cardDiv.appendChild(loadingP);
     apiContainer.appendChild(cardDiv);
@@ -141,13 +270,13 @@ if (!externalAnalysisConsent && apiContainer) {
     consentCard.setAttribute('role', 'status');
 
     let consentP = document.createElement('p');
-    consentP.textContent = 'Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.';
+    consentP.textContent = t('popupConsentInactive', 'Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.');
     consentCard.appendChild(consentP);
 
     let consentButton = document.createElement('button');
     consentButton.type = 'button';
     consentButton.className = 'btn-primary mt-2';
-    consentButton.textContent = 'Einstellungen öffnen';
+    consentButton.textContent = t('popupOpenSettings', 'Einstellungen öffnen');
     consentButton.addEventListener('click', () => browser.runtime.openOptionsPage());
     consentCard.appendChild(consentButton);
 
@@ -226,7 +355,7 @@ try {
                 emptyCard.setAttribute('role', 'status');
                 let p1 = document.createElement('p');
                 p1.className = 'text-info';
-                p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.';
+                p1.textContent = t('popupNoAttachments', 'Keine Anhänge oder URLs für diese E-Mail gefunden.');
                 emptyCard.appendChild(p1);
                 container.appendChild(emptyCard);
             }
@@ -241,7 +370,7 @@ try {
         emptyCard.setAttribute('role', 'status');
         let p2 = document.createElement('p');
         p2.className = 'text-info';
-        p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.';
+        p2.textContent = t('popupNoResults', 'Keine Analyseergebnisse für diese E-Mail vorhanden.');
         emptyCard.appendChild(p2);
         container.appendChild(emptyCard);
     }
@@ -255,12 +384,12 @@ try {
 
         let errMsg = document.createElement('span');
         errMsg.id = 'unexpected-error-msg';
-        errMsg.textContent = 'Unerwarteter Fehler beim Laden der Analyseergebnisse.';
+        errMsg.textContent = t('popupUnexpectedError', 'Unerwarteter Fehler beim Laden der Analyseergebnisse.');
         errDiv.appendChild(errMsg);
 
         let btnSettings = document.createElement('button');
         btnSettings.className = 'btn-primary mt-2 ml-2';
-        btnSettings.textContent = 'Einstellungen öffnen';
+        btnSettings.textContent = t('popupOpenSettings', 'Einstellungen öffnen');
         btnSettings.setAttribute('aria-describedby', 'unexpected-error-msg');
         btnSettings.addEventListener('click', () => {
             browser.runtime.openOptionsPage();
@@ -284,9 +413,9 @@ function renderInProgressStatus(json_data, hybrid_sha, card) {
     const pStatus = document.createElement('p');
     pStatus.className = "text-warning";
     const statusStrong = document.createElement('strong');
-    statusStrong.textContent = "Status:";
+    statusStrong.textContent = t('popupStatusLabel', 'Status:');
     pStatus.appendChild(statusStrong);
-    pStatus.appendChild(document.createTextNode(" Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut."));
+    pStatus.appendChild(document.createTextNode(' ' + t('popupInProgress', 'Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.')));
     card.appendChild(pStatus);
 
     const pHash = document.createElement('p');
@@ -296,20 +425,20 @@ function renderInProgressStatus(json_data, hybrid_sha, card) {
 
 function renderThreatInfo(json_data, card) {
     let threatClass = "text-success";
-    let semanticLabel = " (Normal)";
+    let semanticLabel = t('popupSemanticNormal', ' (Normal)');
     if (json_data.threat_score > 50) {
         threatClass = "text-warning";
-        semanticLabel = " (Suspicious)";
+        semanticLabel = t('popupSemanticSuspicious', ' (Suspicious)');
     }
     if (json_data.threat_score > 80) {
         threatClass = "text-danger";
-        semanticLabel = " (Critical)";
+        semanticLabel = t('popupSemanticCritical', ' (Critical)');
     }
 
     const pThreat = document.createElement('p');
     const threatStrong = document.createElement('strong');
     threatStrong.className = `head_line ${threatClass}`;
-    threatStrong.textContent = "Bedrohungsscore:";
+    threatStrong.textContent = t('popupThreatScoreLabel', 'Bedrohungsscore:');
     pThreat.appendChild(threatStrong);
     pThreat.appendChild(document.createTextNode(" "));
     const threatSpan = document.createElement('span');
@@ -321,7 +450,7 @@ function renderThreatInfo(json_data, card) {
     const pVerdict = document.createElement('p');
     const verdictStrong = document.createElement('strong');
     verdictStrong.className = `head_line ${threatClass}`;
-    verdictStrong.textContent = "Urteil:";
+    verdictStrong.textContent = t('popupVerdictLabel', 'Urteil:');
     pVerdict.appendChild(verdictStrong);
     pVerdict.appendChild(document.createTextNode(" "));
     const verdictSpan = document.createElement('span');
@@ -332,13 +461,13 @@ function renderThreatInfo(json_data, card) {
 
     const pVxFamily = document.createElement('p');
     const vxStrong = document.createElement('strong');
-    vxStrong.textContent = "Vx-Familie:";
+    vxStrong.textContent = t('popupVxFamilyLabel', 'Vx-Familie:');
     pVxFamily.appendChild(vxStrong);
     pVxFamily.appendChild(document.createTextNode(` ${json_data.vx_family || 'N/A'}`));
     card.appendChild(pVxFamily);
 
     const pMulti = document.createElement('p');
-    pMulti.textContent = `Multiscan-Ergebnis: ${json_data.multiscan_result || 'N/A'}`;
+    pMulti.textContent = t('popupMultiscanResult', `Multiscan-Ergebnis: ${json_data.multiscan_result || 'N/A'}`, [json_data.multiscan_result || 'N/A']);
     card.appendChild(pMulti);
 
     const pAddInfo = document.createElement('p');
@@ -360,7 +489,7 @@ function renderVirusTotalStats(virustotal_stats, card) {
     const pVtHead = document.createElement('p');
     pVtHead.className = "ml-2";
     const vtHeadStrong = document.createElement('strong');
-    vtHeadStrong.textContent = "VirusTotal Ergebnisse:";
+    vtHeadStrong.textContent = t('popupVtResults', 'VirusTotal Ergebnisse:');
     pVtHead.appendChild(vtHeadStrong);
     card.appendChild(pVtHead);
 
@@ -406,14 +535,14 @@ function renderScannerResults(scanners, card) {
             if (avResults) {
                 const pAvRes = document.createElement('p');
                 pAvRes.className = "ml-4";
-                pAvRes.textContent = `AV-Ergebnisse:`;
+                pAvRes.textContent = t('popupAvResults', 'AV-Ergebnisse:');
                 fragment.appendChild(pAvRes);
 
                 for (const avResult of avResults) {
                     const { product, verdict } = avResult;
                     const pAv = document.createElement('p');
                     pAv.className = "ml-6";
-                    pAv.textContent = `AV: ${product} - Urteil: ${verdict}`;
+                    pAv.textContent = t('popupAvVerdict', `AV: ${product} - Urteil: ${verdict}`, [product, verdict]);
                     fragment.appendChild(pAv);
                 }
             }
@@ -425,7 +554,7 @@ function renderScannerResults(scanners, card) {
         emptyCard.setAttribute('role', 'status');
         const pNoScanners = document.createElement('p');
         pNoScanners.className = 'text-info';
-        pNoScanners.textContent = `Keine Scanner-Ergebnisse verfügbar.`;
+        pNoScanners.textContent = t('popupNoScanners', 'Keine Scanner-Ergebnisse verfügbar.');
         emptyCard.appendChild(pNoScanners);
         card.appendChild(emptyCard);
     }
@@ -433,19 +562,19 @@ function renderScannerResults(scanners, card) {
 
 function renderFileDetails(json_data, card) {
     const pHash256 = document.createElement('p');
-    pHash256.textContent = `SHA-256-Hashwert: ${json_data.sha256}`;
+    pHash256.textContent = t('popupHashLabel', `SHA-256-Hashwert: ${json_data.sha256}`, [json_data.sha256]);
     card.appendChild(pHash256);
 
     const pFileName = document.createElement('p');
-    pFileName.textContent = `Letzter Dateiname: ${json_data.last_file_name || 'N/A'}`;
+    pFileName.textContent = t('popupFileNameLabel', `Letzter Dateiname: ${json_data.last_file_name || 'N/A'}`, [json_data.last_file_name || 'N/A']);
     card.appendChild(pFileName);
 
     const pSize = document.createElement('p');
-    pSize.textContent = `Größe: ${json_data.size || 'N/A'} Bytes`;
+    pSize.textContent = t('popupSizeLabel', `Größe: ${json_data.size || 'N/A'} Bytes`, [json_data.size || 'N/A']);
     card.appendChild(pSize);
 
     const pType = document.createElement('p');
-    pType.textContent = `Typ: ${json_data.type || 'N/A'}`;
+    pType.textContent = t('popupTypeLabel', `Typ: ${json_data.type || 'N/A'}`, [json_data.type || 'N/A']);
     card.appendChild(pType);
 }
 
@@ -453,7 +582,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
     const btnRescan = document.createElement('button');
     btnRescan.id = `btn-rescan-${hybrid_sha}`;
     btnRescan.className = "btn-success mt-2";
-    btnRescan.textContent = `Erneut scannen (Rescan)`;
+    btnRescan.textContent = t('popupRescanButton', 'Erneut scannen (Rescan)');
     btnRescan.setAttribute('aria-describedby', `rescan-status-${hybrid_sha}`);
     card.appendChild(btnRescan);
 
@@ -468,7 +597,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
         const btnCdr = document.createElement('button');
         btnCdr.id = `btn-cdr-${hybrid_sha}`;
         btnCdr.className = "btn-primary mt-2 ml-2";
-        btnCdr.textContent = `Bereinigen & Herunterladen (Lokales CDR)`;
+        btnCdr.textContent = t('popupCdrButton', 'Bereinigen & Herunterladen (Lokales CDR)');
         btnCdr.setAttribute('aria-describedby', `cdr-status-${hybrid_sha}`);
         card.appendChild(btnCdr);
 
@@ -486,7 +615,7 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
     card.className = "card mb-3";
 
     const h2 = document.createElement('h2');
-    h2.textContent = `Geprüftes Element: ${attachmentName || 'Unbekannt'}`;
+    h2.textContent = t('popupCheckedElement', `Geprüftes Element: ${attachmentName || t('popupUnknown', 'Unbekannt')}`, [attachmentName || t('popupUnknown', 'Unbekannt')]);
     card.appendChild(h2);
 
     if (json_data.state === 'IN_PROGRESS') {
@@ -584,8 +713,8 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
             let statusEl = document.getElementById(`rescan-status-${hybrid_sha}`);
             btn.disabled = true;
             btn.setAttribute('aria-busy', 'true');
-            btn.textContent = "Sende Rescan...";
-            statusEl.textContent = "Datei wird für Rescan hochgeladen...";
+            btn.textContent = t('popupRescanSending', 'Sende Rescan...');
+            statusEl.textContent = t('popupRescanUploading', 'Datei wird für Rescan hochgeladen...');
 
             browser.runtime.sendMessage({
                 action: "uploadAttachment",
@@ -596,25 +725,25 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
                 headerMessageId: headerMessageId
             }).then(res => {
                 if (res && res.status === 'success') {
-                    statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
+                    statusEl.innerText = t('popupRescanStarted', 'Rescan erfolgreich initiiert. Lade Seite neu...');
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2";
-                    btn.innerText = "Erfolgreich";
+                    btn.innerText = t('popupSuccess', 'Erfolgreich');
                     if (btn.rescanTimeoutId) clearTimeout(btn.rescanTimeoutId);
                     btn.rescanTimeoutId = setTimeout(() => {
                         window.location.reload();
                     }, 2000);
                 } else {
-                    statusEl.innerText = "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler");
+                    statusEl.innerText = t('popupRescanError', 'Fehler beim Rescan: ' + (res ? res.message : t('popupUnknownError', 'Unbekannter Fehler')), [res ? res.message : t('popupUnknownError', 'Unbekannter Fehler')]);
                     btn.disabled = false;
                     btn.removeAttribute('aria-busy');
-                    btn.innerText = "Erneut versuchen";
+                    btn.innerText = t('popupRetry', 'Erneut versuchen');
                 }
             }).catch(err => {
-                statusEl.innerText = "Kommunikationsfehler: " + err;
+                statusEl.innerText = t('popupCommunicationError', 'Kommunikationsfehler: ' + err, [String(err)]);
                 btn.disabled = false;
                 btn.removeAttribute('aria-busy');
-                btn.innerText = "Erneut versuchen";
+                btn.innerText = t('popupRetry', 'Erneut versuchen');
             });
         });
     }
@@ -628,8 +757,8 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
             let statusEl = document.getElementById(`cdr-status-${hybrid_sha}`);
             btn.disabled = true;
             btn.setAttribute('aria-busy', 'true');
-            btn.innerText = "Bereinige...";
-            statusEl.innerText = "Lokales CDR wird durchgeführt...";
+            btn.innerText = t('popupCdrRunning', 'Bereinige...');
+            statusEl.innerText = t('popupCdrInProgress', 'Lokales CDR wird durchgeführt...');
 
             browser.runtime.sendMessage({
                 action: "downloadDisarmed",
@@ -638,21 +767,21 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
                 attachmentName: attachmentName
             }).then(res => {
                 if (res && res.status === 'success') {
-                    statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                    statusEl.innerText = t('popupCdrDownloadStarted', 'Herunterladen erfolgreich initiiert.');
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2 ml-2";
-                    btn.innerText = "Bereinigt";
+                    btn.innerText = t('popupCdrDone', 'Bereinigt');
                 } else {
-                    statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
+                    statusEl.innerText = t('popupDownloadError', 'Fehler beim Herunterladen: ' + (res ? res.message : t('popupUnknownError', 'Unbekannter Fehler')), [res ? res.message : t('popupUnknownError', 'Unbekannter Fehler')]);
                     btn.disabled = false;
                     btn.removeAttribute('aria-busy');
-                    btn.innerText = "Erneut versuchen";
+                    btn.innerText = t('popupRetry', 'Erneut versuchen');
                 }
             }).catch(err => {
-                statusEl.innerText = "Kommunikationsfehler: " + err;
+                statusEl.innerText = t('popupCommunicationError', 'Kommunikationsfehler: ' + err, [String(err)]);
                 btn.disabled = false;
                 btn.removeAttribute('aria-busy');
-                btn.innerText = "Erneut versuchen";
+                btn.innerText = t('popupRetry', 'Erneut versuchen');
             });
         });
     }
@@ -675,14 +804,14 @@ function handle_hybrid_report_error(response, attachmentName, targetContainer) {
 
     let errMsg = document.createElement('span');
     errMsg.id = 'api-error-msg-key';
-    errMsg.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+    errMsg.textContent = t('popupApiError', `API Error: ${response.status} für Element ${attachmentName}`, [response.status, attachmentName]);
     errDiv1.appendChild(errMsg);
 
     if (response.status === 401 || response.status === 403) {
-        errMsg.textContent += ' (Möglicherweise ungültiger oder fehlender API-Schlüssel).';
+        errMsg.textContent += t('popupApiErrorHint', ' (Möglicherweise ungültiger oder fehlender API-Schlüssel).');
         let btnSettings = document.createElement('button');
         btnSettings.className = 'btn-primary mt-2 ml-2';
-        btnSettings.textContent = 'Einstellungen öffnen';
+        btnSettings.textContent = t('popupOpenSettings', 'Einstellungen öffnen');
         btnSettings.setAttribute('aria-describedby', 'api-error-msg-key');
         btnSettings.addEventListener('click', () => {
             browser.runtime.openOptionsPage();
@@ -700,7 +829,7 @@ function handle_hybrid_report_fetch_error(error, attachmentName, targetContainer
     let errDiv2 = document.createElement('div');
     errDiv2.className = 'alert-error';
     errDiv2.setAttribute('role', 'alert');
-    errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`;
+    errDiv2.textContent = t('popupNetworkError', `Netzwerkfehler: ${error.message} für Element ${attachmentName}`, [error.message, attachmentName]);
     let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     container.appendChild(errDiv2);
 }
@@ -724,7 +853,7 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
     btn.disabled = true;
     btn.setAttribute('aria-busy', 'true');
     btn.innerText = "Sende URL...";
-    statusEl.innerText = "URL wird an Hybrid Analysis übertragen...";
+    statusEl.innerText = t('popupUrlTransfer', 'URL wird an Hybrid Analysis übertragen...');
 
     browser.runtime.sendMessage({
         action: "scanUrl",
@@ -732,10 +861,10 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
         headerMessageId: headerMessageId
     }).then(response => {
         if (response && response.status === 'success') {
-            statusEl.innerText = "Scan erfolgreich beauftragt! Lade Analyseergebnisse...";
+            statusEl.innerText = t('popupScanOrdered', 'Scan erfolgreich beauftragt! Lade Analyseergebnisse...');
             btn.removeAttribute('aria-busy');
             btn.className = "btn-success mt-2";
-            btn.innerText = "Erfolgreich";
+            btn.innerText = t('popupSuccess', 'Erfolgreich');
             if (btn.urlScanTimeoutId) clearTimeout(btn.urlScanTimeoutId);
             btn.urlScanTimeoutId = setTimeout(() => {
                 const el = document.getElementById(`upload-container-${urlId}`);
@@ -747,16 +876,16 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
                 });
             }, 3000);
         } else {
-            statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
+            statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : t('popupUnknownError', 'Unbekannter Fehler'));
             btn.disabled = false;
             btn.removeAttribute('aria-busy');
-            btn.innerText = "Erneut versuchen";
+            btn.innerText = t('popupRetry', 'Erneut versuchen');
         }
     }).catch(err => {
-        statusEl.innerText = "Kommunikationsfehler: " + err;
+        statusEl.innerText = t('popupCommunicationError', 'Kommunikationsfehler: ' + err, [String(err)]);
         btn.disabled = false;
         btn.removeAttribute('aria-busy');
-        btn.innerText = "Erneut versuchen";
+        btn.innerText = t('popupRetry', 'Erneut versuchen');
     });
 }
 
@@ -793,7 +922,7 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
 
     let pInfo = document.createElement('p');
     pInfo.className = "text-info";
-    pInfo.appendChild(document.createTextNode("Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie "));
+    pInfo.appendChild(document.createTextNode(t('popupUrlFoundPrefix', 'Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie ')));
     const infoStrong = document.createElement('strong');
     infoStrong.textContent = "nicht automatisch hochgeladen";
     pInfo.appendChild(infoStrong);
@@ -829,7 +958,7 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
         btn.disabled = true;
         btn.setAttribute('aria-busy', 'true');
         btn.innerText = "Lade hoch...";
-        if (statusEl) statusEl.textContent = "Datei wird an Hybrid Analysis übertragen...";
+        if (statusEl) statusEl.textContent = t('popupFileTransfer', 'Datei wird an Hybrid Analysis übertragen...');
 
         browser.runtime.sendMessage({
             action: "uploadAttachment",
@@ -840,10 +969,10 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
             headerMessageId: headerMessageId
         }).then(response => {
             if (response && response.status === 'success') {
-                if (statusEl) statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
+                if (statusEl) statusEl.innerText = t('popupUploadSuccess', 'Upload erfolgreich! Lade Analyseergebnisse...');
                 btn.removeAttribute('aria-busy');
                 btn.className = "btn-success mt-2";
-                btn.innerText = "Erfolgreich";
+                btn.innerText = t('popupSuccess', 'Erfolgreich');
                 if (btn.uploadTimeoutId) clearTimeout(btn.uploadTimeoutId);
                 btn.uploadTimeoutId = setTimeout(() => {
                     let container = document.getElementById(`upload-container-${safeHash}`);
@@ -857,16 +986,16 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                     });
                 }, 3000);
             } else {
-                if (statusEl) statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
+                if (statusEl) statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : t('popupUnknownError', 'Unbekannter Fehler'));
                 btn.disabled = false;
                 btn.removeAttribute('aria-busy');
-                btn.innerText = "Erneut versuchen";
+                btn.innerText = t('popupRetry', 'Erneut versuchen');
             }
         }).catch(err => {
-            if (statusEl) statusEl.innerText = "Kommunikationsfehler: " + err;
+            if (statusEl) statusEl.innerText = t('popupCommunicationError', 'Kommunikationsfehler: ' + err, [String(err)]);
             btn.disabled = false;
             btn.removeAttribute('aria-busy');
-            btn.innerText = "Erneut versuchen";
+            btn.innerText = t('popupRetry', 'Erneut versuchen');
         });
     };
 
@@ -916,8 +1045,8 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
         let statusEl = document.getElementById(statusId);
         btn.disabled = true;
         if (btn) btn.setAttribute('aria-busy', 'true');
-        btn.innerText = "Bereinige...";
-        if (statusEl) statusEl.textContent = "Lokales CDR wird durchgeführt...";
+        btn.innerText = t('popupCdrRunning', 'Bereinige...');
+        if (statusEl) statusEl.textContent = t('popupCdrInProgress', 'Lokales CDR wird durchgeführt...');
 
         browser.runtime.sendMessage({
             action: "downloadDisarmed",
@@ -926,23 +1055,23 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
             attachmentName: attachmentName
         }).then(res => {
             if (res && res.status === 'success') {
-                if (statusEl) statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                if (statusEl) statusEl.innerText = t('popupCdrDownloadStarted', 'Herunterladen erfolgreich initiiert.');
                 if (btn) {
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2 ml-2";
-                    btn.innerText = "Bereinigt";
+                    btn.innerText = t('popupCdrDone', 'Bereinigt');
                 }
             } else {
-                if (statusEl) statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
+                if (statusEl) statusEl.innerText = t('popupDownloadError', 'Fehler beim Herunterladen: ' + (res ? res.message : t('popupUnknownError', 'Unbekannter Fehler')), [res ? res.message : t('popupUnknownError', 'Unbekannter Fehler')]);
                 btn.disabled = false;
                 if (btn) btn.removeAttribute('aria-busy');
-                btn.innerText = "Erneut versuchen";
+                btn.innerText = t('popupRetry', 'Erneut versuchen');
             }
         }).catch(err => {
-            if (statusEl) statusEl.innerText = "Kommunikationsfehler: " + err;
+            if (statusEl) statusEl.innerText = t('popupCommunicationError', 'Kommunikationsfehler: ' + err, [String(err)]);
             btn.disabled = false;
             if (btn) btn.removeAttribute('aria-busy');
-            btn.innerText = "Erneut versuchen";
+            btn.innerText = t('popupRetry', 'Erneut versuchen');
         });
     });
 }
@@ -956,7 +1085,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     card.setAttribute('role', 'status');
 
     let h2 = document.createElement('h2');
-    h2.textContent = `Anhang: ${attachmentName || 'Unbekannt'}`;
+    h2.textContent = `Anhang: ${attachmentName || t('popupUnknown', 'Unbekannt')}`;
     card.appendChild(h2);
 
     let pHash = document.createElement('p');
@@ -965,7 +1094,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
 
     let pInfo = document.createElement('p');
     pInfo.className = "text-info";
-    pInfo.appendChild(document.createTextNode("Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie "));
+    pInfo.appendChild(document.createTextNode(t('popupFileUnknownPrefix', 'Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie ')));
     const infoStrong = document.createElement('strong');
     infoStrong.textContent = "nicht automatisch hochgeladen";
     pInfo.appendChild(infoStrong);

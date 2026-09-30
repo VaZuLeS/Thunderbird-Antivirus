@@ -33,9 +33,9 @@ abgearbeitet:
   aus dem Build. Das XPI enthält nur noch 17 Dateien (185.470 Bytes entpackt statt vorher 62 Dateien/605 KB);
   `scripts/verify-package.js` prüft den Paketinhalt. Toter Code (`content_script.js`) und die Legacy-Dateien sind
   entfernt.
-- **Lokalisierung:** Manifest-Strings und Banner-Texte über `_locales/en` und `_locales/de` inklusive
-  englischer Fallbacks im Hintergrundskript. Options- und Popup-Oberfläche sind weiterhin nur deutsch
-  (dokumentiert in `README.md`, `docs/store_listing.md` und der neuen Store-Readiness-Doku).
+- **Lokalisierung:** Vollständig über `_locales/en` und `_locales/de` – Manifest-Strings, Banner-Texte, Optionsseite
+  und Popup (Mechanik: `data-i18n*`-Attribute plus `t()`-Helfer mit deutschem Markup-Fallback; abgesichert durch
+  `test/i18n.test.js`).
 - **Pre-Submit-Checks (H1):** `scripts/pre-submit-checks.js` prüft Manifest, Datenschutzerklärung, Daten-Deklaration
   und Rechte und liefert einen echten Exit-Code.
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission-, Daten-Deklarations- und

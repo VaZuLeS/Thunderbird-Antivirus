@@ -268,7 +268,12 @@ Each answer is verifiable in the repository; the referenced files/lines are the 
    Manifest V3 message APIs, `optional_host_permissions` and `data_collection_permissions` require
    Thunderbird 140+. Older ESR versions are intentionally unsupported (README "Requires",
    `store_listing.md` metadata).
-8. **"No screenshots / no first-run experience yet?"**
+8. **"Is the UI localized?"**
+   Yes (since 1.6.1): message-view banners, the options page and the popup use `_locales/en` and `_locales/de` via
+   `browser.i18n`; the UI follows the Thunderbird UI language and the German text in the markup is only the
+   fallback. `test/i18n.test.js` fails the build if any key used by the UI or the manifest is missing from either
+   catalogue, and the pre-submit checks verify `default_locale` plus the `__MSG_` references.
+9. **"No screenshots / no first-run experience yet?"**
    Correct and documented: real screenshots are outstanding (only SVG placeholders exist), the manual
    verification in Thunderbird 140 ESR is outstanding, and the add-on is not listed yet. These points are
    tracked as blockers P0-1/P0-2 in `PROBLEMANALYSE_STORE_READINESS.md`; nothing in the listing claims

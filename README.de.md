@@ -19,7 +19,7 @@ minimal notwendigen Daten an externe Analysedienste.
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
-| Sprachen | Manifest-Strings und Banner lokalisiert (Englisch, Deutsch – `_locales/`); Options- und Popup-Oberfläche derzeit nur auf Deutsch |
+| Sprachen | Vollständig lokalisiert: Manifest-Strings, Banner, Optionsseite und Popup (Englisch, Deutsch – `_locales/`) |
 
 ## Was das Add-on macht
 
@@ -201,7 +201,9 @@ und ihre Begründung stehen in [docs/data_collection_decision.md](docs/data_coll
 - **Noch keine echten Store-Screenshots.** In `docs/screenshots/` liegen nur SVG-Platzhalter; für das Store-Listing
   müssen echte Screenshots erstellt werden.
 - **Noch nicht im Add-ons-Store eingereicht** – es gibt kein öffentliches Listing und keine Store-URL.
-- Options- und Popup-Oberfläche gibt es derzeit nur auf Deutsch; Manifest-Strings und Banner sind lokalisiert.
+- Die Oberfläche folgt der Thunderbird-Oberflächensprache (englischer/deutscher Katalog in `_locales/`; der deutsche
+  Text im Markup ist der Fallback, falls ein Schlüssel fehlt). Weitere Sprachen entstehen durch Kopieren von
+  `_locales/en`.
 - In der Standard-Stufe `strict` werden unbekannte Anhänge nicht automatisch hochgeladen; dafür auf `balanced`/`max`
   umstellen oder einen manuellen Upload im Popup starten.
 - Erkennungsqualität und Ratenlimits hängen von den konfigurierten Anbietern und Ihren eigenen API-Schlüsseln ab.

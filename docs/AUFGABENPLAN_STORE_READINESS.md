@@ -9,7 +9,7 @@ Ergebnisartefakt und ein Abnahmekriterium. Er ist so geschrieben, dass er direkt
 |---|---|
 | Ziel | Einreichung von Version 1.6/1.6.x im ATN als `listed`-Add-on, ohne Ablehnungsschleife |
 | Ausgangslage | 5 Blocker, 6 hohe Risiken, 6 mittlere, 1 kleiner Punkt |
-| Durchführungsstand | **26 Aufgaben bearbeitet:** 11 ✅ erledigt, 3 🟨 teilweise, 12 ⛔ durch fehlende Ressourcen blockiert – Details in §0 |
+| Durchführungsstand | **26 Aufgaben bearbeitet:** 12 ✅ erledigt, 2 🟨 teilweise, 12 ⛔ durch fehlende Ressourcen blockiert – Details in §0 |
 | Ergebnis Go/No-Go | **NO-GO** (3/7 Kriterien erfüllt, 4 hängen an Thunderbird-Installation, ATN-Zugang und Workflow-Push-Rechte) – Details in §10 |
 | Geschätzter Gesamtaufwand | ≈ 8–10 Personentage (zzgl. Wartezeit im Review) |
 | Kritischer Pfad | A-01/A-02 → A-11/A-12/A-13 → A-17 → A-16 → A-15 → A-21 → A-22 → A-31 → A-32 |
@@ -31,8 +31,8 @@ Ergebnisartefakt und ein Abnahmekriterium. Er ist so geschrieben, dass er direkt
 
 | Status | Aufgaben | Bedeutung |
 |---|---|---|
-| ✅ | A-03, A-04, A-14, A-17, A-18, A-22, A-24, A-25, A-26, A-31, A-33 | vollständig erledigt, Nachweis im Commit bzw. Artefakt |
-| 🟨 | A-02, A-15, A-23 | durchführbarer Teil erledigt, Rest ist umgebungs- bzw. entscheidungsabhängig |
+| ✅ | A-03, A-04, A-14, A-17, A-18, A-22, A-23, A-24, A-25, A-26, A-31, A-33 | vollständig erledigt, Nachweis im Commit bzw. Artefakt |
+| 🟨 | A-02, A-15 | durchführbarer Teil erledigt, Rest ist umgebungsabhängig |
 | ⛔ | A-01, A-11, A-12, A-13, A-16, A-19, A-20, A-21, A-32, A-41, A-42, A-43 | benötigt Ressourcen, die in dieser Umgebung nicht existieren |
 
 ### 0.1 Nicht durchführbar in dieser Umgebung (mit Nachweis)
@@ -43,25 +43,30 @@ Ergebnisartefakt und ein Abnahmekriterium. Er ist so geschrieben, dass er direkt
 | A-01, A-21, A-32 | ATN-Entwicklerkonto und API-Schlüssel existieren nicht; Signieren/Validieren ist ohne sie nicht möglich | `npx web-ext sign` erfordert `--amo-base-url` **und** `WEB_EXT_API_KEY`/`WEB_EXT_API_SECRET` | Maintainer-Konto bei addons.thunderbird.net |
 | A-19 | Push von `.github/workflows/*` wird abgelehnt | `! [remote rejected] … (refusing to allow a GitHub App to create or update workflow '.github/workflows/ci.yml' without 'workflows' permission)` – in diesem Lauf erneut reproduziert | Token/App mit `workflows`-Berechtigung |
 | A-20 | Signierter Build nicht möglich (siehe A-01); ein unverschlüsseltes Artefakt wäre für Nutzer nicht installierbar, deshalb kein öffentliches Release | lokaler Build: `build/thundy_av_email_scanner_for_thunderbird-1.6.1.zip` | ATN-Schlüssel + Maintainer-Freigabe |
-| A-23 | vollständige EN-Lokalisierung von Options- und Popup-Oberfläche (> 80 Strings) bewusst nicht begonnen – eine halb übersetzte Oberfläche wäre für das Review schlechter als eine konsistente mit exakter Sprachangabe | siehe §0.2 | Zeitfenster/Entscheidung des Maintainers |
 | A-41, A-42, A-43 | setzen die Einreichung bzw. Listung voraus | – | ATN-Release |
 
 ### 0.2 Nachweise dieses Arbeitslaufs (lokal verifiziert, Version 1.6.1)
 
 ```bash
-npm test                        # 395 Tests, 0 Fehler
+npm test                        # 410 Tests, 0 Fehler (inkl. test/i18n.test.js
+                                #   und test/store_readiness.test.js)
 npm run pre-submit-checks       # 0 Fehler, 1 Warnung (fehlende Screenshots)
 npx web-ext lint                # 0 Fehler, 18 Warnungen (alle gefiltert)
 npx web-ext build --source-dir . --artifacts-dir ./build
-node scripts/verify-package.js ./build   # 17 Dateien, 185.470 Bytes, Inhalt gültig
+node scripts/verify-package.js ./build   # 17 Dateien, 240.000 Bytes, Inhalt gültig
 node scripts/make-testdata.js   # 4 reproduzierbare .eml-Fixtures
 ```
 
 ### 0.3 Bewusst gewählte Varianten (im Plan ausdrücklich zugelassen)
 
-- **A-23:** Variante „Sprachangabe eindeutig kennzeichnen“ statt vollständiger UI-Lokalisierung; die Sprachaussage
-  ist jetzt in `README.md`, `README.de.md`, `docs/STATUS.md`, `docs/store_listing.md` und den Reviewer-Hinweisen
-  präzise (Options-/Popup-Oberfläche: deutsch; Manifest-Strings und Banner: EN/DE).
+- **A-23:** vollständige Lokalisierung umgesetzt (nicht nur die im Plan als Alternative zugelassene Sprachangabe):
+  Optionsseite und Popup nutzen `browser.i18n` mit `_locales/en|de` (138 Schlüssel je Sprache), die
+  Manifest-Strings und Banner waren bereits lokalisiert. Die Sprachaussage in `README.md`, `README.de.md`,
+  `docs/STATUS.md` und `docs/store_listing.md` beschreibt jetzt den tatsächlichen Stand.
+- **P0-1/A-12-Mitigation:** Falls die User-Geste über `runtime.sendMessage` nicht bis
+  `permissions.request()` durchgereicht wird, bietet das Popup eine zusätzliche Freigabe an
+  (`renderHostPermissionNotice()` → „Zugriff erteilen“). Der Opt-in-Flow bleibt damit auch dann benutzbar, wenn
+  der Banner-Weg in Thunderbird scheitert.
 - **A-15:** Testdaten und Testanleitung sind vorhanden; ein mitgelieferter Reviewer-API-Schlüssel ist nicht
   möglich (kein Anbieterkonto des Maintainers). Deshalb dokumentiert `docs/testdata.md` §3 ausdrücklich, was
   **ohne** Schlüssel prüfbar ist.
@@ -126,7 +131,7 @@ node scripts/make-testdata.js   # 4 reproduzierbare .eml-Fixtures
 | A-20 | Release-Fähigkeit herstellen: Version taggen, Build erzeugen, Artefakt-Namen dokumentieren, Release im Repository anlegen (zunächst `unlisted`-Build als Selbstverteilungs-Artefakt für die GitHub-Pages-Links) | P1-8 | A-18 | 0,25 | Git-Tag + Release mit `.xpi`/`.zip` | Der Download-Link auf `docs/index_*.html` funktioniert nachweislich | ⛔ |
 | A-21 | ATN-Validator-Lauf mit echtem Zugang: XPI hochladen und Validierungsbericht auswerten; alle Fehler beheben, alle Warnungen entweder beseitigen oder in `docs/reviewer_notes.md` begründen | Rest-Risiko (P1-10) | A-01, A-20 | 0,5 | Validierungsbericht + Behebungsnachweis | Bericht enthält 0 Fehler; jede Warnung hat eine dokumentierte Begründung | ⛔ |
 | A-22 | Signier-/Release-Test mit **ATN**-Endpunkt: `npx web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed` (bzw. `WEB_EXT_AMO_BASE_URL`) im `release.yml` und in `docs/quickstart.md`/`docs/STATUS.md`/`docs/ci/README.md` korrigieren | P1-6 | A-01, A-19 | 0,25 | Korrigierter Workflow + funktionierende Signatur | Signatur wird von ATN ausgestellt; kein Aufruf ohne `--amo-base-url` bleibt im Repo | ✅ |
-| A-23 | Lokalisierung: entweder Optionsseite und Popup auf `browser.i18n`/`_locales` umstellen (EN/DE) **oder** die Sprachangabe im Listing und in den README-Dateien eindeutig als „UI: Deutsch“ kennzeichnen und die EN-Hauptbeschreibung um diesen Hinweis ergänzen | P1-9 | – | 1,0 | Lokalisierte UI **oder** konsistente Sprachdeklaration | Kein Dokument behauptet mehr eine Lokalisierung, die es nicht gibt; Strings liegen in `_locales` oder die Angabe ist eindeutig | 🟨 |
+| A-23 | Lokalisierung: entweder Optionsseite und Popup auf `browser.i18n`/`_locales` umstellen (EN/DE) **oder** die Sprachangabe im Listing und in den README-Dateien eindeutig als „UI: Deutsch“ kennzeichnen und die EN-Hauptbeschreibung um diesen Hinweis ergänzen | P1-9 | – | 1,0 | Lokalisierte UI **oder** konsistente Sprachdeklaration | Kein Dokument behauptet mehr eine Lokalisierung, die es nicht gibt; Strings liegen in `_locales` oder die Angabe ist eindeutig | ✅ |
 | A-24 | MV3-Cleanup: MV2-Fallbacks (`getDisplayedMessage`, `onMessageDisplayed` in `background.js`/`api.js`) entfernen, toten `scripting.messageDisplay.executeScript`-Zweig streichen, `scripts/filter-lint-warnings.js`-Begründung in `docs/reviewer_notes.md` verlinken; Lint-Warnungszahl dokumentieren | P1-10 | A-17 | 0,5 | Bereinigter Code + aktualisierte Doku | Lint bleibt bei 0 Fehlern; die verbleibenden Warnungen sind vollständig begründet | ✅ |
 | A-25 | Dokumentationsdrift beseitigen: Paketkennzahlen korrigieren (17 Dateien / 179.276 Bytes statt „15 Dateien/≈176 KB“), `docs/quickstart.md` auf die realen Testdateien korrigieren, `CONTRIBUTING.md` (`npm run lint` existiert), `docs/reviewer_notes.md` §2.2 an die tatsächlichen Manifest-Origins angleichen | P2-12, P2-13 | – | 0,5 | Korrigierte Dokumente | Stichprobenprüfung: jede Zahl/jeder Dateiname/Origin in den Dokumenten stimmt mit dem Repository überein | ✅ |
 | A-26 | Kleinhygiene: die beiden `fetch`-Direktaufrufe (`background.js:1447`, `api.js:530`) über `apiGateway.fetchWithTimeout` leiten; `.webextignore` entfernen oder in `web-ext-config.mjs` überführen und die Entscheidung dokumentieren | P2-16, P3-17 | – | 0,5 | Codeänderung + Konsolidierung der Ignore-Konfiguration | Upload-/Scanpfade nutzen überall denselben Timeout; es gibt genau eine Ignore-Quelle | ✅ |
@@ -158,7 +163,7 @@ node scripts/make-testdata.js   # 4 reproduzierbare .eml-Fixtures
 | Risiko | Eintrittswahrscheinlichkeit | Auswirkung | Gegenmaßnahme |
 |---|---|---|---|
 | Banner-Injektion funktioniert in TB 140 ESR nicht (`executeScript` auf Nachrichtenansichts-Tab) | mittel | hoch – Kernfunktion im Review unbestätigt | A-11 früh durchführen; bei Fehlschlag auf `scripting.messageDisplay.registerScripts` mit Datei-basiertem Message-Display-Script umbauen (A-17); Feature bis dahin aus dem Listing streichen |
-| `permissions.request()` schlägt im Banner-Pfad wegen fehlender User-Geste fehl | mittel | hoch – Opt-in-Flow unbenutzbar | A-12; Alternative: Freigabe ausschließlich aus der Optionsseite und Banner verweist dorthin |
+| `permissions.request()` schlägt im Banner-Pfad wegen fehlender User-Geste fehl | niedrig (Mitigation umgesetzt) | mittel – Opt-in-Flow wäre unbenutzbar | **umgesetzt:** das Popup zeigt bei fehlender Host-Berechtigung einen Hinweis mit „Zugriff erteilen“; der Klick im Popup ist garantiert eine Nutzer-Geste (`requestHybridAnalysisAccess`). Im Live-Test (A-12) zu bestätigen. |
 | ATN-Review bewertet die Daten-Deklaration als unzureichend | mittel | hoch – Ablehnung | A-04 vorab klären, A-14 umsetzen, A-33 vorbereiten |
 | Lokalisierungsentscheidung (A-23) zieht sich | mittel | mittel – Listing wirkt inkonsistent | Minimalvariante: Sprachangabe korrigieren (Aufwand 0,25 PT) |
 | ATN-Validator meldet Fehler zu Thunderbird-Permissions/APIs | niedrig | mittel – Verzögerung | A-21 vor der Einreichung; Behebungsnachweis dokumentieren |

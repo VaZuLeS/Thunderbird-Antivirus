@@ -19,7 +19,7 @@ submits the minimum data required to external analysis services.
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Requires | Thunderbird 140.0 or newer (Manifest V3) |
-| Strings | Manifest strings and banners are localized (English, German – `_locales/`); the options page and the popup are currently German only |
+| Strings | Fully localized: manifest strings, message-view banners, options page and popup (English, German – `_locales/`) |
 
 ## What the add-on does
 
@@ -202,8 +202,8 @@ optional data collection permission in Thunderbird; the decision and its rationa
 - **No real store screenshots yet.** `docs/screenshots/` only contains SVG placeholders; real screenshots have to be
   taken for the store listing.
 - **Not submitted to the Add-ons Store yet** – there is no public listing and no store URL.
-- The options page and the popup are currently available in German only; the manifest strings and the banners are
-  localized (English/German).
+- The user interface follows the Thunderbird UI language (English/German catalogues in `_locales/`; the German text in
+  the markup is the fallback if a key is missing). Further languages can be added by copying `_locales/en`.
 - With the default tier `strict`, unknown attachments are not uploaded automatically; you have to switch to
   `balanced`/`max` or start a manual upload from the popup.
 - Detection quality and rate limits depend on the configured providers and on your own API keys.

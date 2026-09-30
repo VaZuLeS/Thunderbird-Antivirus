@@ -2,6 +2,13 @@ name: Release (sign and attach XPI)
 
 # Manual trigger only. Requires the ATN API credentials as repository secrets:
 #   ATN_API_KEY / ATN_API_SECRET  (see https://addons.thunderbird.net/en-US/developers/addon/api/key/)
+#
+# IMPORTANT: web-ext defaults to the AMO endpoint
+# (`--amo-base-url https://addons.mozilla.org/api/v5/`, see web-ext/lib/program.js).
+# A Thunderbird add-on has to be signed through ATN, therefore the base URL is
+# passed explicitly below. Without it the XPI would be uploaded to
+# addons.mozilla.org - which rejects Thunderbird-only permissions such as
+# `messagesRead`.
 on:
   workflow_dispatch:
     inputs:
@@ -13,6 +20,9 @@ on:
         options:
           - unlisted
           - listed
+
+env:
+  ATN_API_BASE_URL: https://addons.thunderbird.net/api/v5/
 
 jobs:
   sign:
@@ -32,12 +42,16 @@ jobs:
         run: |
           npx web-ext build --source-dir . --artifacts-dir ./build
           node scripts/verify-package.js ./build
-      - name: Sign the add-on
+      - name: Sign the add-on at addons.thunderbird.net
         env:
           WEB_EXT_API_KEY: ${{ secrets.ATN_API_KEY }}
           WEB_EXT_API_SECRET: ${{ secrets.ATN_API_SECRET }}
         run: |
-          npx web-ext sign --source-dir . --artifacts-dir ./build --channel "${{ inputs.channel }}"
+          npx web-ext sign \
+            --source-dir . \
+            --artifacts-dir ./build \
+            --amo-base-url "$ATN_API_BASE_URL" \
+            --channel "${{ inputs.channel }}"
       - name: Upload signed artifact
         uses: actions/upload-artifact@v4
         with:

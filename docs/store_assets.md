@@ -51,7 +51,9 @@ Optional ergänzend: Popup der Nachrichten-Display-Aktion und der Abschnitt „D
   Anhangsinhalte durch Testdaten ersetzen oder unkenntlich machen.
 - Pro Motiv genau ein Bild; keine zusammengesetzten Collagen und keine nachträglich eingefügten
   UI-Elemente — die Screenshots müssen die reale Oberfläche zeigen.
-- Sprache der Oberfläche: Deutsch (die Oberfläche ist derzeit nur deutsch lokalisiert).
+- Sprache der Oberfläche: Englisch/Deutsch – die Oberfläche folgt der Thunderbird-Oberflächensprache; für
+  englischsprachige Screenshots kann Thunderbird auf Englisch umgestellt oder eine zweite Aufnahmerunde gefahren
+  werden.
 
 ## 5. Erstellung
 

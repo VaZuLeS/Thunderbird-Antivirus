@@ -495,7 +495,7 @@ die in dieser Umgebung nicht verfügbar ist.
 | P1-6 Signierweg zielt auf AMO | ✅ behoben in 1.6.1 | `docs/ci/release.yml`, `docs/ci/README.md`, `docs/quickstart.md`, `docs/STATUS.md` setzen `--amo-base-url https://addons.thunderbird.net/api/v5/` |
 | P1-7 aktive CI zu schwach | 🟨 teilweise behoben | vollständige Fassung liegt in `docs/ci/ci.yml`; Push nach `.github/workflows/` wird von der Token-Berechtigung abgelehnt (Fehler reproduziert) |
 | P1-8 kein Release-Artefakt | 🟨 teilweise behoben | Version 1.6.1 + CHANGELOG + lokaler Build; Tag/Release und Signatur erfordern ATN-Schlüssel |
-| P1-9 UI nur deutsch | ✅ behoben in 1.6.1 (Variante B) | Sprachaussage in `README.md`, `README.de.md`, `docs/STATUS.md`, `docs/store_listing.md`, `docs/reviewer_notes.md` präzise; vollständige UI-Lokalisierung als offene Aufgabe dokumentiert |
+| P1-9 UI nur deutsch | ✅ behoben in 1.6.1 | Optionsseite und Popup vollständig über `browser.i18n`/`_locales` lokalisiert (138 Schlüssel je Sprache; `data-i18n*` + `t()`-Fallback), Sprachaussage in README/Status/Listing präzisiert, abgesichert durch `test/i18n.test.js` |
 | P1-10 MV2-Altpfade/Linter-Rauschen | ✅ behoben in 1.6.1 | `getDisplayedMessage`/`onMessageDisplayed`/`scripting.messageDisplay.executeScript` entfernt; Lint 26 → 18 Warnungen, Tests angepasst |
 | P1-11 Fehler bleiben unsichtbar | ✅ behoben in 1.6.1 | `reportMessageDisplayInjectionFailure` (Log + Diagnose in `storage.local` + Benachrichtigung einmal pro Sitzung), Banner erklärt verweigerte Host-Berechtigung, 2 Tests |
 | P2-12 Dokumentationsdrift | ✅ behoben in 1.6.1 | Paketkennzahlen, Testdateiliste, `npm run lint`-Hinweis korrigiert |

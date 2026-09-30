@@ -55,6 +55,10 @@ arbeiten – der einzige Nachweis, den Unit-Tests mit gemockten APIs **nicht** l
 | 5 | Wieder **an**, Speichern, Banner-Button „Nur diese Nachricht scannen“ klicken | Scan startet (bei fehlender Host-Berechtigung erscheint der Hinweis „… darf den Analysedienst noch nicht kontaktieren“ **plus** Schaltfläche „Open options“) | | | |
 | 6 | Negativtest: Zustimmung aus, Banner-Button klicken | Meldung „Externe Analyse ist in den Einstellungen deaktiviert – es wurde nichts übertragen.“ | | | |
 
+**Zusätzlicher Pfad (Mitigation):** Ist die Host-Berechtigung nicht erteilt, zeigt das Popup einen Hinweis mit
+der Schaltfläche „Zugriff erteilen“; dieser Klick ist garantiert eine Nutzer-Geste und muss die Berechtigung
+erteilen (danach lädt das Popup neu). Bitte mitprüfen, wenn die Banner-Anfrage in Schritt 5 fehlschlägt.
+
 **Kritische Frage (Befund P0-1/P1-11):** Bleibt die Nutzer-Geste erhalten, wenn der Banner-Button über
 `runtime.sendMessage` im Hintergrundskript `browser.permissions.request()` auslöst? Wenn **nein**, ist die
 Alternative „Freigabe ausschließlich aus der Optionsseite, Banner verweist dorthin“ umzusetzen

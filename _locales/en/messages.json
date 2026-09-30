@@ -107,5 +107,580 @@
   },
   "notificationNoLinks": {
     "message": "No links found in this message."
+  },
+  "optDocumentTitle": {
+    "message": "Thundy AV settings",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optTitle": {
+    "message": "Thundy AV settings",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optAboutHeading": {
+    "message": "What is Hybrid-Analysis.com?",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optAboutP1": {
+    "message": "Hybrid-Analysis.com is a free malware analysis service for the community. It lets you submit files for detailed static and dynamic analysis.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optAboutP2": {
+    "message": "The website uses a unique hybrid analysis technology to detect and analyse unknown threats. It is powered by the CrowdStrike Falcon Sandbox.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optAboutP3": {
+    "message": "The Falcon Sandbox is a state-of-the-art malware analysis framework with a very agile architecture. It is used by SOCs, CERTs, DFIR teams, IT security forensic labs, researchers and threat intelligence providers around the world.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optApiKeyHeading": {
+    "message": "How to get the API key",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optApiKeyStep1Lead": {
+    "message": "You need a free API key from",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optApiKeyStep2": {
+    "message": "After signing in you will find the API key under \"Nickname\" -> \"Profile\" -> \"API KEY\". Paste that API key here.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optConsentLabel": {
+    "message": "Allow external analysis (data transmission to third parties)",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optConsentHelp": {
+    "message": "Without this consent, no hashes, files, links or IP addresses are transmitted to external services. Only after you have given consent can attachments, links and metadata be sent for analysis to Hybrid Analysis, VirusTotal, urlscan.io, URLhaus or AbuseIPDB – depending on the privacy tier. You can revoke the consent at any time by switching this option off.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optConsentHelpDetails": {
+    "message": "Details:",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optPrivacyPolicyLink": {
+    "message": "Privacy policy",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optApiKeyLabel": {
+    "message": "API key (Hybrid Analysis):",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optPlaceholderApiKey": {
+    "message": "e.g. abcdef123456...",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optUrlhausLabel": {
+    "message": "URLhaus API key (optional, for real-time domain checks):",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optUrlhausHelp": {
+    "message": "You can get a free API key here:",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optUrlscanLabel": {
+    "message": "urlscan.io API key (computer-vision detection of e.g. fake login pages):",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optUrlscanHelp": {
+    "message": "You can get a free API key here:",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optVirustotalLabel": {
+    "message": "VirusTotal API key (optional, for file scanner engines):",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optVirustotalHelp": {
+    "message": "You can get a free API key here:",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optAriaOpensInNewTab": {
+    "message": "$DOMAIN$ (opens in a new tab)",
+    "placeholders": {
+      "domain": {
+        "content": "$1"
+      }
+    },
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optTierLabel": {
+    "message": "Privacy tier:",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optTierStrict": {
+    "message": "Strict (default: send hashes only, no upload)",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optTierBalanced": {
+    "message": "Balanced (upload unknown files, no URLs)",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optTierMax": {
+    "message": "Maximum (upload everything, including URLs)",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optTierHelp": {
+    "message": "Determines how much data is sent to Hybrid Analysis. Only effective when \"Allow external analysis\" is enabled.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optIpRepLabel": {
+    "message": "IP reputation (check Received headers):",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optIpRepNone": {
+    "message": "Disabled",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optIpRepVirustotal": {
+    "message": "VirusTotal (requires a VirusTotal API key)",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optIpRepAbuseipdb": {
+    "message": "AbuseIPDB (requires an AbuseIPDB API key)",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optIpRepKeyLabel": {
+    "message": "API key for IP reputation:",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optIpRepHelp": {
+    "message": "Sends public IP addresses from the message's \"Received\" headers to the selected service. Only active when \"Allow external analysis\" is enabled.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optWhitelistLabel": {
+    "message": "Whitelist (domains or email addresses, comma-separated):",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optWhitelistHelp": {
+    "message": "Enter trusted domains or email addresses here to exclude them from scanning.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optBlacklistLabel": {
+    "message": "Blacklist (domains or email addresses, comma-separated):",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optBlacklistHelp": {
+    "message": "Enter blocked domains or email addresses here.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optPlaceholderList": {
+    "message": "e.g. example.com, test@example.com",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optAlwaysManualLabel": {
+    "message": "Always scan manually (no automatic upload)",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optAlwaysManualHelp": {
+    "message": "Prevents the automatic upload of attachments, regardless of the selected privacy tier.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optAutoScanLabel": {
+    "message": "Check links in the email immediately when it is opened (auto-scan)",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optAutoScanHelp": {
+    "message": "When disabled, links are only checked at the moment you click them (time-of-click protection).",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optTocLabel": {
+    "message": "Show time-of-click protection in the email body (extra hint on hover)",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optTocHelp": {
+    "message": "Shows a hint when you hover over a link, stating that the URL is checked in real time.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optSaveReminder": {
+    "message": "Don't forget to save.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optSaveButton": {
+    "message": "Save",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optSaveSuccess": {
+    "message": "Saved successfully!",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optDataHeading": {
+    "message": "Data management",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optDataText": {
+    "message": "Here you can clear the local cache to free up space and remove old metadata.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optClearCacheButton": {
+    "message": "Clear cache",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optSaving": {
+    "message": "Saving…",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optClearing": {
+    "message": "Clearing…",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optCacheCleared": {
+    "message": "Cache cleared successfully.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optCacheEmpty": {
+    "message": "The database does not exist yet or is already empty.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optCacheError": {
+    "message": "Error while clearing the cache.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optHostPermissionDenied": {
+    "message": "Host permission not granted for: $PROVIDERS$. Without this permission the corresponding checks stay disabled.",
+    "placeholders": {
+      "providers": {
+        "content": "$1"
+      }
+    },
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optDataConsentDeclined": {
+    "message": "The consent to data transmission was not granted. \"Allow external analysis\" stays disabled, so nothing is transmitted.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optTierTooltipManual": {
+    "message": "The privacy tier is irrelevant for manual scans",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "optTocTooltipAuto": {
+    "message": "Time-of-Click protection is irrelevant while auto-scan is active",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "popupWarningLabel": {
+    "message": "Warning:",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupNoApiKey": {
+    "message": "No Hybrid Analysis API key found. Please add one in the add-on settings.",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupOpenSettings": {
+    "message": "Open settings",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupLoading": {
+    "message": "Loading analysis results…",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupConsentInactive": {
+    "message": "External analysis is not enabled: no hashes, files or links are transmitted to analysis services.",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupNoAttachments": {
+    "message": "No attachments or URLs found for this email.",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupNoResults": {
+    "message": "No analysis results available for this email.",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupUnexpectedError": {
+    "message": "Unexpected error while loading the analysis results.",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupInProgress": {
+    "message": "The analysis is still running (IN_PROGRESS). Please try again later.",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupStatusLabel": {
+    "message": "Status:",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupThreatScoreLabel": {
+    "message": "Threat score:",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupVerdictLabel": {
+    "message": "Verdict:",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupVxFamilyLabel": {
+    "message": "Vx family:",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupVtResults": {
+    "message": "VirusTotal results:",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupNoScanners": {
+    "message": "No scanner results available.",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupAvResults": {
+    "message": "AV results:",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupRescanButton": {
+    "message": "Scan again (rescan)",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupCdrButton": {
+    "message": "Sanitize & download (local CDR)",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupUnknown": {
+    "message": "Unknown",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupMultiscanResult": {
+    "message": "Multiscan result: $RESULT$",
+    "placeholders": {
+      "result": {
+        "content": "$1"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupAvVerdict": {
+    "message": "AV: $PRODUCT$ - verdict: $VERDICT$",
+    "placeholders": {
+      "product": {
+        "content": "$1"
+      },
+      "verdict": {
+        "content": "$2"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupHashLabel": {
+    "message": "SHA-256 hash: $HASH$",
+    "placeholders": {
+      "hash": {
+        "content": "$1"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupFileNameLabel": {
+    "message": "Last file name: $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupSizeLabel": {
+    "message": "Size: $SIZE$ bytes",
+    "placeholders": {
+      "size": {
+        "content": "$1"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupTypeLabel": {
+    "message": "Type: $TYPE$",
+    "placeholders": {
+      "type": {
+        "content": "$1"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupCheckedElement": {
+    "message": "Checked element: $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupRescanSending": {
+    "message": "Sending rescan…",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupRescanUploading": {
+    "message": "Uploading file for rescan…",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupRescanStarted": {
+    "message": "Rescan started successfully. Reloading page…",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupSuccess": {
+    "message": "Done",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupRetry": {
+    "message": "Try again",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupUnknownError": {
+    "message": "Unknown error",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupCommunicationError": {
+    "message": "Communication error: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupRescanError": {
+    "message": "Rescan failed: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupCdrRunning": {
+    "message": "Sanitizing…",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupCdrInProgress": {
+    "message": "Local CDR is running…",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupCdrDownloadStarted": {
+    "message": "Download started successfully.",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupCdrDone": {
+    "message": "Sanitized",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupDownloadError": {
+    "message": "Download failed: $DETAIL$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupApiError": {
+    "message": "API error: $STATUS$ for element $NAME$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      },
+      "name": {
+        "content": "$2"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupApiErrorHint": {
+    "message": " (possibly an invalid or missing API key).",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupNetworkError": {
+    "message": "Network error: $DETAIL$ for element $NAME$",
+    "placeholders": {
+      "detail": {
+        "content": "$1"
+      },
+      "name": {
+        "content": "$2"
+      }
+    },
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupSemanticNormal": {
+    "message": " (Normal)",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupSemanticSuspicious": {
+    "message": " (Suspicious)",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupSemanticCritical": {
+    "message": " (Critical)",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupDocumentTitle": {
+    "message": "Thundy AV – scan results",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupHeading": {
+    "message": "Thundy AV – scan results for this message",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupAllSubmissions": {
+    "message": "Open all Hybrid Analysis submissions",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupAllSubmissionsAria": {
+    "message": "Open all Hybrid Analysis submissions (opens in a new tab)",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupSubjectLabel": {
+    "message": "Subject:",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupFromLabel": {
+    "message": "From:",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "optClearCacheConfirm": {
+    "message": "Do you really want to clear the cache? This removes all locally stored analysis results.",
+    "description": "Options page UI string (store readiness A-23)."
+  },
+  "popupNoMessageSelected": {
+    "message": "Please select an email to check.",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupNoSubject": {
+    "message": "(no subject)",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupUnknownSender": {
+    "message": "(unknown sender)",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupNoId": {
+    "message": "(no ID)",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupUrlTransfer": {
+    "message": "Submitting URL to Hybrid Analysis…",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupScanOrdered": {
+    "message": "Scan submitted successfully! Loading analysis results…",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupUrlFoundPrefix": {
+    "message": "This URL was found in the email. For privacy reasons it was ",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupFileTransfer": {
+    "message": "Submitting file to Hybrid Analysis…",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupUploadSuccess": {
+    "message": "Upload successful! Loading analysis results…",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupFileUnknownPrefix": {
+    "message": "This file is unknown to the Hybrid Analysis database. For privacy reasons it was ",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupHostPermissionMissing": {
+    "message": "Thundy AV is not allowed to contact the analysis service yet. Please grant the access.",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupGrantAccess": {
+    "message": "Grant access",
+    "description": "Popup UI string (store readiness A-23)."
+  },
+  "popupGrantAccessHint": {
+    "message": "The access is only needed for Hybrid Analysis and can be revoked at any time in the add-on permissions.",
+    "description": "Popup UI string (store readiness A-23)."
   }
 }

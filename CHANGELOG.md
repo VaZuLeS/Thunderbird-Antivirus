@@ -14,6 +14,14 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 ### Added
 
+- **Zuverlässige Host-Freigabe im Popup:** Fehlt die Host-Berechtigung für Hybrid Analysis (z. B. weil sie aus
+  dem Banner heraus nicht erteilt werden konnte), zeigt das Popup einen Hinweis mit der Schaltfläche
+  „Zugriff erteilen“. Der Klick im Popup ist garantiert eine Nutzer-Geste und damit der verlässliche Weg zur
+  Freigabe (`renderHostPermissionNotice()`/`requestHybridAnalysisAccess()` in `api.js`).
+- **Vertrags- und Lokalisierungstests:** `test/store_readiness.test.js` verankert die Review-relevanten
+  Entscheidungen (Daten-Deklaration, Runtime-Opt-in, Injektionsweg, sichtbare Fehler, ApiGateway-Nutzung,
+  eine Ignore-Quelle, ATN-Signierziel, Reviewer-Paket); `test/i18n.test.js` stellt sicher, dass jede von der
+  Oberfläche oder dem Manifest verwendete Zeichenkette in **beiden** Sprachkatalogen existiert.
 - **Problemanalyse und Aufgabenplan für die Store-Readiness:**
   [`docs/PROBLEMANALYSE_STORE_READINESS.md`](docs/PROBLEMANALYSE_STORE_READINESS.md) dokumentiert mit
   reproduzierten Nachweisen 5 Blocker, 6 hohe Risiken, 6 mittlere und 1 kleinen Befund für eine Listung im
@@ -32,6 +40,10 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 ### Changed
 
+- **Oberfläche vollständig lokalisiert:** Optionsseite und Popup nutzen jetzt `browser.i18n` mit den Katalogen
+  `_locales/en` und `_locales/de` (`data-i18n*`-Attribute auf den Seitenelementen, ein `t()`-Helfer mit dem
+  deutschen Markup-Text als Fallback für Umgebungen ohne i18n). Die Oberfläche folgt damit der
+  Thunderbird-Oberflächensprache statt fest deutsch zu sein.
 - **Daten-Deklaration:** `data_collection_permissions` deklariert `personalCommunications` jetzt als
   **optional** (`"required": ["none"]`) statt als verpflichtend. Beim Aktivieren von „Externe Analyse erlauben“
   fragt `options.js` zusätzlich die optionale Datenberechtigung an
