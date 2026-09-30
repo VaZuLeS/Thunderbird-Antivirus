@@ -140,6 +140,7 @@ if (!externalAnalysisConsent && apiContainer) {
     consentCard.setAttribute('role', 'status');
 
     let consentP = document.createElement('p');
+    consentP.id = 'consent-notice-msg';
     consentP.textContent = 'Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.';
     consentCard.appendChild(consentP);
 
@@ -147,6 +148,7 @@ if (!externalAnalysisConsent && apiContainer) {
     consentButton.type = 'button';
     consentButton.className = 'btn-primary mt-2';
     consentButton.textContent = 'Einstellungen öffnen';
+    consentButton.setAttribute('aria-describedby', 'consent-notice-msg');
     consentButton.addEventListener('click', () => browser.runtime.openOptionsPage());
     consentCard.appendChild(consentButton);
 
