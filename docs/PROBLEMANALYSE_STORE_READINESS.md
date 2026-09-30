@@ -38,6 +38,10 @@ Ein Add-on gilt hier erst als store-ready, wenn **alle** folgenden Tore erfüllt
 
 ## 2. Verifizierter Ist-Zustand (Nachweise)
 
+> **Prüfstand:** Die Werte in dieser Tabelle sind der **Ausgangszustand vor den Maßnahmen** (Version 1.6,
+> Commit `ae2a08e`). Der Stand nach den umgesetzten Fixes (Version 1.6.1, u. a. 410 Tests, 18 Lint-Warnungen)
+> steht in §12 dieser Datei und in §0 des [Aufgabenplans](AUFGABENPLAN_STORE_READINESS.md).
+
 Alle Zeilen wurden in diesem Checkout ausgeführt bzw. gemessen.
 
 | Prüfung | Kommando / Quelle | Ergebnis |
@@ -405,8 +409,10 @@ Musterlisten; `web-ext` liest `.webextignore` nicht, das Paket wird ausschließl
 Diese Punkte sind **verifiziert in Ordnung** und müssen nicht „gefixt“ werden – sie sind die Grundlage
 dafür, dass der Rest in kurzer Zeit erledigt werden kann:
 
-- **Technische Validierung (T3) erfüllt:** 389 Tests / 0 Fehler, Pre-Submit-Checks mit echtem Exit-Code,
-  `web-ext lint` mit 0 Fehlern, Paketinhalt geprüft (17 Dateien, keine Tests/Doku/Lockfiles im XPI).
+- **Technische Validierung (T3) erfüllt:** Stand 1.6.1: **410 Tests / 0 Fehler** (inkl. der neuen
+  Lokalisierungs- und Vertragstests), Pre-Submit-Checks mit echtem Exit-Code,
+  `web-ext lint` mit 0 Fehlern und 18 dokumentierten Thunderbird-False-Positives, Paketinhalt geprüft
+  (17 Dateien, keine Tests/Doku/Lockfiles im XPI).
 - **Kein Remote-Code:** keine `eval`/`new Function`/`innerHTML`-Verwendung in den Laufzeitdateien;
   CSP `script-src 'self'; object-src 'none';` (`manifest.json`). Policies 4 erfüllt.
 - **Minimale, begründete Rechte:** 5 API-Permissions, Host-Zugriff ausschließlich **optional**
