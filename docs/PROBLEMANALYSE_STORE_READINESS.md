@@ -86,7 +86,7 @@ Alle Werte wurden in dieser Umgebung selbst gemessen (Ausgaben gekürzt):
 | Repo-Zustand | `gh release list`, `gh api …/tags`, `gh api compare/main...v1.18.0` | „Latest“-Release ist von **2024** (Tag `Thunderbird`, Asset eines alten Stands); zusätzlich Tags `v1.6` … `v1.18.0`; `v1.18.0` ist von `main` **divergiert** (17 vor / 18 zurück); 400+ Branches |
 | Sicherheit | Grep auf `eval(`, `new Function`, `innerHTML` | Keine Treffer im Laufzeitcode; CSP `script-src 'self'; object-src 'none'`; keine Secrets im Repo |
 | Popup-Konsent | `grep -n externalAnalysisConsent api.js` | nur Zeilen 82/83/136 — die Notizkarte verhindert die Übertragung **nicht**; der `fetch` steht in `api.js:532` |
-| Popup-Skript | `npx eslint --no-config-lookup --config … --rule no-undef api.js` | 3 Fehler: `syncFragment` (`api.js:193`, `:210`) und `container` (`api.js:218`) sind nicht definiert |
+| Popup-Skript | `npx eslint --no-config-lookup --config … --rule no-undef api.js` | 3 echte Fehler (nach Ausschluss des Extension-Globals `browser`): `syncFragment` (`api.js:193`, `:210`) und `container` (`api.js:218`) sind nicht definiert |
 | `menus`-Berechtigung | `manifest.json:19–25` vs. Schema `mail/components/extensions/schemas/menus.json` | Schema verlangt `permissions: ["menus"]`; das Manifest listet sie nicht → beide Kontextmenü-Pfade sind ohne Wirkung (`background.js:1745`, `:1815`) |
 | CI-Testumfang | `gh run view <run> --log` + Testzählung pro Datei | aktiv läuft nur `background.test.js` = **243 von 389 Tests** (146 Tests / 37 % fehlen) |
 | Lint-Gate | `npx web-ext dump-config` | `warningsAsErrors: false`; die 26 Warnungen brechen den Job nicht ab, der kuratierte Filter läuft nur im **nicht** aktiven Spiegel |
@@ -332,7 +332,6 @@ die Ergebnisanzeige. Es funktioniert nur teilweise (Stammdaten/Buttons), der Erg
 
 
 
-
 ---
 
 ## 5. Hohe Risiken (stark wahrscheinliche Reviewer-Nachfragen)
@@ -531,6 +530,8 @@ Thunderbird 140 ausgewertet (Gecko-Manifest-Schema `data_collection_permissions`
 **Auswirkung:** Bewusste Entscheidung mit Reichweitenverlust; muss im Listing begründet stehen, sonst wirkt
 es wie ein Fehler.
 **Fix:** Im Listing „Requires Thunderbird 140+“ begründen (MV3 + Daten-Konsent) und prüfen, ob 128 ESR
+bewusst nicht unterstützt wird (Aufgabe A-13).
+
 ### P2-20 — Die Paketprüfung kann ein veraltetes ZIP prüfen und „valid“ melden
 **Belege:** `scripts/verify-package.js:50–57` liest alle `*.zip` aus dem Artefaktverzeichnis und wählt
 `candidates.sort().pop()` — also lexikografisch, nicht nach Version. Weder `docs/ci/ci.yml:29–33` noch
@@ -551,8 +552,42 @@ wirkungslos wird — jeder Signierlauf lädt erneut hoch.
 **Fix:** Deterministisches Archivieren (Reihenfolge/Zeitstempel fixieren, z. B. `SOURCE_DATE_EPOCH`) oder
 Nicht-Reproduzierbarkeit als Restrisiko dokumentieren (Aufgabe A-15).
 
+### P2-22 — Die Thunderbird-Berechtigung `sensitiveDataUpload` ist nicht deklariert
+**Belege:** Thunderbird stellt `sensitiveDataUpload` als (optionale) Berechtigung bereit; die
+TB-Beschreibung lautet *„Transfer sensitive user data (if access has been granted) to a remote server for
+further processing“* (`mail/locales/en-US/messenger/extensionPermissions.ftl`). Thunderbirds eigenes
+Zusatz-Add-on deklariert sie in `permissions` (`mail/extensions/builtin-addons/thundermail/extension/manifest.json`).
+Das Add-on lädt Anhangsinhalte hoch (`background.js:1451`, `:2221`); `grep -rn 'sensitiveDataUpload' manifest.json *.js`
+→ 0 Treffer. Eine Durchsetzung im comm-central-Code ist nicht auffindbar → **unverifiziert**, ob ATN das
+Fehlen beanstandet.
+**Auswirkung:** Potenzieller Review-Einwand „lädt sensible Nutzerdaten hoch, deklariert aber nicht die dafür
+vorgesehene Berechtigung“. Gleichzeitig verbietet der repo-eigene Pre-Submit-Check `optional_permissions`
+(`scripts/pre-submit-checks.js`), sodass die Deklaration derzeit gar nicht möglich wäre.
+**Fix:** Entscheidung dokumentieren und mit ATN klären (A-04); je nach Antwort `optional_permissions` +
+`permissions.request({permissions:['sensitiveDataUpload']})` nutzen und die Hausregel für diesen
+Sonderfall öffnen.
 
-bewusst nicht unterstützt wird (Aufgabe A-13).
+### P2-23 — `permissions.request()` aus dem Banner läuft ohne Nutzergeste im Zielkontext
+**Belege:** `background.js:1939–1944` (`handleRequestScan`) ruft `browser.permissions.request(...)` auf.
+Aufgerufen wird es über `runtime.sendMessage` aus dem injizierten Banner (Klick) →
+`onMessage`-Listener (`background.js:1994–1996`). Zwischen Klick und Request liegt damit ein
+Messaging-Sprung **und** ein `await` (`hasHybridPermission()`), also kein unmittelbarer Gestenkontext.
+Vergleich: `options.js:137–142` fordert die Rechte im Klick-Handler auf „Speichern“ korrekt an.
+**Auswirkung:** Lehnt Thunderbird die Anfrage ab, funktioniert der beworbene Ein-Klick-Scan nicht; der
+Nutzer muss die Rechte in den Optionen erteilen (Fehlerpfad ist immerhin sichtbar, `background.js:1155–1171`).
+**Fix:** Berechtigung im Banner-Kontext anfordern oder den Nutzer explizit in die Optionen führen; im
+Live-Test verifizieren (A-06/A-08).
+
+### P2-24 — IP-Reputations-Cache friert „kein Treffer“-Ergebnisse aus der Zeit ohne Zustimmung ein
+**Belege:** `checkAbuseIPDB`/`checkVirusTotalIP` geben ohne Zustimmung `false` zurück (`background.js:338`,
+`:358`); `checkIPReputation` legt dieses `false` als endgültiges Ergebnis im Cache ab
+(`background.js:875–880`), und der Cache wird bei erneutem Aufruf nur noch gelesen (`:850–857`).
+**Auswirkung:** Wer die Zustimmung erst nach dem ersten Öffnen von Nachrichten erteilt, erhält für die
+bereits gecachten IPs dauerhaft „nicht auffällig“ — ein stiller Falsch-Negativ-Effekt genau in der Funktion,
+die der Nutzer gerade aktiviert hat.
+**Fix:** `false` nicht cachen, wenn keine Zustimmung/kein Host-Recht vorlag (Sentinel oder Cache-Leerung bei
+Konsent-Wechsel; `browser.storage.onChanged` ist bereits verdrahtet, `background.js:256`), Test ergänzen
+(A-08).
 
 ### P3-20 — Entwickler-Scratch-Dateien im Repository-Root
 **Belege:** `test_regex_escape.js`, `test_regex_escape2.js`, `form_test.js`, `vt_test.js`,
@@ -598,42 +633,6 @@ denselben Specifern; kein Workflow/Skript nutzt `pnpm`. `npm ci` ist konsistent 
 **Fix:** Datei löschen oder pnpm als alleinigen Paketmanager etablieren (A-21).
 
 
-### P2-22 — Die Thunderbird-Berechtigung `sensitiveDataUpload` ist nicht deklariert
-**Belege:** Thunderbird stellt `sensitiveDataUpload` als (optionale) Berechtigung bereit; die
-TB-Beschreibung lautet *„Transfer sensitive user data (if access has been granted) to a remote server for
-further processing“* (`mail/locales/en-US/messenger/extensionPermissions.ftl`). Thunderbirds eigenes
-Zusatz-Add-on deklariert sie in `permissions` (`mail/extensions/builtin-addons/thundermail/extension/manifest.json`).
-Das Add-on lädt Anhangsinhalte hoch (`background.js:1451`, `:2221`); `grep -rn 'sensitiveDataUpload' manifest.json *.js`
-→ 0 Treffer. Eine Durchsetzung im comm-central-Code ist nicht auffindbar → **unverifiziert**, ob ATN das
-Fehlen beanstandet.
-**Auswirkung:** Potenzieller Review-Einwand „lädt sensible Nutzerdaten hoch, deklariert aber nicht die dafür
-vorgesehene Berechtigung“. Gleichzeitig verbietet der repo-eigene Pre-Submit-Check `optional_permissions`
-(`scripts/pre-submit-checks.js`), sodass die Deklaration derzeit gar nicht möglich wäre.
-**Fix:** Entscheidung dokumentieren und mit ATN klären (A-04); je nach Antwort `optional_permissions` +
-`permissions.request({permissions:['sensitiveDataUpload']})` nutzen und die Hausregel für diesen
-Sonderfall öffnen.
-
-### P2-23 — `permissions.request()` aus dem Banner läuft ohne Nutzergeste im Zielkontext
-**Belege:** `background.js:1939–1944` (`handleRequestScan`) ruft `browser.permissions.request(...)` auf.
-Aufgerufen wird es über `runtime.sendMessage` aus dem injizierten Banner (Klick) →
-`onMessage`-Listener (`background.js:1994–1996`). Zwischen Klick und Request liegt damit ein
-Messaging-Sprung **und** ein `await` (`hasHybridPermission()`), also kein unmittelbarer Gestenkontext.
-Vergleich: `options.js:137–142` fordert die Rechte im Klick-Handler auf „Speichern“ korrekt an.
-**Auswirkung:** Lehnt Thunderbird die Anfrage ab, funktioniert der beworbene Ein-Klick-Scan nicht; der
-Nutzer muss die Rechte in den Optionen erteilen (Fehlerpfad ist immerhin sichtbar, `background.js:1155–1171`).
-**Fix:** Berechtigung im Banner-Kontext anfordern oder den Nutzer explizit in die Optionen führen; im
-Live-Test verifizieren (A-06/A-08).
-
-### P2-24 — IP-Reputations-Cache friert „kein Treffer“-Ergebnisse aus der Zeit ohne Zustimmung ein
-**Belege:** `checkAbuseIPDB`/`checkVirusTotalIP` geben ohne Zustimmung `false` zurück (`background.js:338`,
-`:358`); `checkIPReputation` legt dieses `false` als endgültiges Ergebnis im Cache ab
-(`background.js:875–880`), und der Cache wird bei erneutem Aufruf nur noch gelesen (`:850–857`).
-**Auswirkung:** Wer die Zustimmung erst nach dem ersten Öffnen von Nachrichten erteilt, erhält für die
-bereits gecachten IPs dauerhaft „nicht auffällig“ — ein stiller Falsch-Negativ-Effekt genau in der Funktion,
-die der Nutzer gerade aktiviert hat.
-**Fix:** `false` nicht cachen, wenn keine Zustimmung/kein Host-Recht vorlag (Sentinel oder Cache-Leerung bei
-Konsent-Wechsel; `browser.storage.onChanged` ist bereits verdrahtet, `background.js:256`), Test ergänzen
-(A-08).
 
 ### P3-25 — Sammelbefund: kleinere Codehärtungen
 **Belege (jeweils mit Zeile im Code-Audit belegt):** unerreichbarer Code nach `return` in `filterUrls()`;
@@ -643,7 +642,6 @@ tote Key-Injektion in `api_gateway.js`; Benachrichtigungen enthalten die vollst�
 **Auswirkung:** Kein Blocker, aber Review- und Wartbarkeitsrauschen; einzelne Punkte (URL in
 Benachrichtigung, fehlende Absenderprüfung) berühren Datenschutz/Härtung.
 **Fix:** im Rahmen von A-16 (Codebereinigung) abarbeiten, Benachrichtigungstexte ohne vollständige URL.
-
 
 
 ## 7. Positivnachweise (bereits store-tauglich — nicht „kaputt reparieren“)
@@ -696,7 +694,10 @@ Benachrichtigung, fehlende Absenderprüfung) berühren Datenschutz/Härtung.
 1. `npm run pre-submit-checks` → 0 Fehler, **0 Warnungen** (Screenshot-Warnung entfällt).
 2. `npm test` → 0 Fehler, und der Lauf enthält keine Nicht-Testdateien mehr (P2-16); zusätzlich ist das
    Popup-Skript durch einen Smoke-Test abgedeckt, der die Kapsel **nicht** entfernt (P0-9).
-3. `npx eslint --rule no-undef` auf allen Laufzeitskripten → 0 Fehler (`syncFragment`/`container`-Klasse, P0-9).
+3. `npx eslint --rule no-undef` auf dem Popup-Skript (`api.js`) → 0 Fehler (Config mit Extension-Globals
+   `browser`/`chrome`; die `syncFragment`/`container`-Klasse, P0-9). Für `background.js`/`options.js`/`db.js`
+   muss die Prüfung die bewusst geteilten Globals der Geschwisterdateien kennen (z. B. gemeinsamer
+   Projektlauf), sonst entstehen falsche Positive (`apiGateway`, `openDB`).
 4. `npx web-ext lint` → 0 Fehler; der Filter nutzt eine Allow-Liste **ohne** in MV3 entfernte APIs (P1-8).
 5. `npx web-ext build` + `scripts/verify-package.js` → Exit 0, nur Laufzeitdateien im Paket (P0-6), mit
    versionbasierter Artefaktwahl (P2-20); diese Kette läuft in der **aktiven** CI (P1-7).
@@ -740,6 +741,17 @@ npx web-ext lint --source-dir . --output json > /tmp/lint.json
 node scripts/filter-lint-warnings.js /tmp/lint.json
 npx web-ext build --source-dir . --artifacts-dir /tmp/build
 node scripts/verify-package.js /tmp/build  # -> Exit 1 (test_regex_escape*.js)
+
+# Popup-Blocker P0-9 (no-undef mit Extension-Globals):
+cat > /tmp/eslint.audit.config.mjs <<MJSCONF
+import globals from '$PWD/node_modules/globals/index.js';
+export default [{ files: ['**/*.js'],
+  languageOptions: { ecmaVersion: 2022, sourceType: 'module',
+    globals: { ...globals.browser, browser: 'readonly', chrome: 'readonly' } },
+  rules: { 'no-undef': 'error' } }];
+MJSCONF
+npx eslint --no-config-lookup --config /tmp/eslint.audit.config.mjs api.js
+# -> 'syncFragment' is not defined (2x), 'container' is not defined (1x)
 
 # Daten-Deklaration gegenprüfen:
 git archive HEAD | tar -x -C /tmp/dc_v1
