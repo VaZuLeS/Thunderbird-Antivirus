@@ -146,6 +146,9 @@ abgefragt.
 
 ## Weiterhin offen
 
+> **Übergabe-Checkliste für die Einreichung:** [docs/RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) — Reihenfolge,
+> Kommandos und Abnahmekriterien für Live-Test, Screenshots, Policy-Deploy und Signierung.
+
 - **Manuelle Verifikation in Thunderbird 140 ESR (Pflicht vor der Einreichung):** zu prüfen sind das Erscheinen von
   Opt-in-Banner, Warnbanner und SPF/DKIM/DMARC-Badge, beide Kontextmenü-Einträge („Link mit Thundy AV scannen“,
   „Alle Links dieser Nachricht scannen“), der aus dem Banner heraus ausgelöste Berechtigungsdialog

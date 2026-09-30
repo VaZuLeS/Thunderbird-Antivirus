@@ -128,10 +128,18 @@ der Message-ID gespeichert → Popup zeigt sie), eine **Scan-Aktion im Popup** u
 `docs/test_messages/suspicious_message.eml` für den noch offenen Live-Test; die Pre-Submit-Checks prüfen zusätzlich
 die Parität der Locale-Kataloge.
 
+Ebenfalls in dieser Runde: ein **Selbsttest in den Einstellungen** ("Status der Erweiterung": In-Message-UI
+registriert? Zustimmung, Schlüsselanzahl, Datenschutz-Stufe), **lokalisierte Fehlertexte** statt hart kodierter
+deutscher Meldungen sowie ein **`stored`-Signal** im Scan-Ergebnis, damit ein nicht zuordenbarer Scan sichtbar
+gemeldet wird statt still zu verschwinden.
+
 **Store-Relevanz:** Alle Änderungen sind rein lokal — keine neue Berechtigung, kein neuer Netzwerkpfad, keine
 zusätzliche Datenerhebung; Datenschutzerklärung und Reviewer-Notizen wurden entsprechend präzisiert.
 
 ## 4. Was für die Einreichung noch fehlt (priorisiert)
+
+> Kurzfassung mit Kommandos und Abnahmekriterien: [docs/RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
+
 
 ### Muss vor der Einreichung
 1. **Live-Verifikation in Thunderbird 140 ESR** (nicht in dieser Umgebung möglich). Zu prüfen sind genau die
