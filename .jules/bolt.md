@@ -20,6 +20,6 @@
 ## 2026-04-01 - Align IP reputation lookup concurrency with URLhaus domain checks
 **Learning:** While `checkURLhausDomains` executed all API lookup promises concurrently in a single `Promise.all()`, `checkIPReputation` artificially chunked requests in batches of 5. This created an asynchronous pipeline bottleneck, multiplying response latency by the number of chunks.
 **Action:** Avoid artificial request chunking loops in extension background scripts when fetching endpoint reputations; collect all promises in a single array and resolve concurrently via `Promise.all()`.
-## 2024-11-20 - Fast-path collection lookups for equality
-**Learning:** Typosquatting checks evaluate a target string against a list of known brand strings. Executing string distance calculations (like Levenshtein) on exact match scenarios wastes CPU cycles. Adding an `O(1)` Set lookup fast-path (`if (KNOWN_BRANDS_SET.has(linkMainDomain)) return false;`) immediately halts expensive iteration for identical values, improving performance by ~3x on the happy path.
-**Action:** Always verify if a fast O(1) equality check (using Sets or Maps) can be inserted at the top of expensive string calculation loops to immediately bail out on exact matches.
+## 2026-06-15 - Optimize DOM querying with CSS attribute selectors
+**Learning:** When filtering DOM elements by attribute in frontend scripts, fetching all elements (e.g. `querySelectorAll('a')`) and filtering them in a JavaScript loop (e.g. `startsWith('http')`) is inefficient.
+**Action:** Relying on the browser's native C++ DOM querying via CSS attribute selectors (e.g., `document.querySelectorAll('a[href^="http"]')`) is significantly faster. Always prefer native CSS selectors over JS loops when possible.
