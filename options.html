@@ -87,7 +87,7 @@
             <option value="abuseipdb">AbuseIPDB (benötigt AbuseIPDB-API-Schlüssel)</option>
         </select>
         <label for="ipReputationApiKey">API-Schlüssel für IP-Reputation:</label>
-        <input type="password" id="ipReputationApiKey" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
+        <input type="password" id="ipReputationApiKey" aria-describedby="ipReputationHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
         <br><small id="ipReputationHelp">Sendet öffentliche IP-Adressen aus den „Received“-Kopfzeilen der Nachricht an den gewählten Dienst. Nur aktiv, wenn „Externe Analyse erlauben“ aktiviert ist.</small>
     </div>
 
