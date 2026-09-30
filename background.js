@@ -215,17 +215,26 @@ function buildMessageUiState({ tabId, messageId, senderEmail, threat, optInNeede
 }
 
 /**
+ * Determines the tab a message came from. The message display script cannot
+ * know its own tab id, therefore the tab of the sender is used; when the
+ * environment does not report it, the currently active message display is used
+ * as a fallback (undefined tabId).
+ */
+function resolveSenderTabId(sender, request) {
+    if (sender && sender.tab && sender.tab.id !== undefined && sender.tab.id !== null) return sender.tab.id;
+    if (request && request.tabId !== undefined && request.tabId !== null) return request.tabId;
+    return undefined;
+}
+
+/**
  * Answers a getMessageUiState request from a message display script.
  */
 async function handleGetMessageUiState(sender, request) {
-    const tabId = (sender && sender.tab && sender.tab.id !== undefined)
-        ? sender.tab.id
-        : (request && request.tabId !== undefined ? request.tabId : null);
-    if (tabId === null) return null;
-
-    const message = await getFirstDisplayedMessage(tabId);
+    const senderTabId = resolveSenderTabId(sender, request);
+    const message = await getFirstDisplayedMessage(senderTabId);
     if (!message || message.id === undefined) return null;
 
+    const tabId = senderTabId !== undefined ? senderTabId : null;
     const cached = messageUiStates.get(messageUiStateKey(tabId, message.id));
     if (cached) return cached;
 
@@ -1167,10 +1176,12 @@ async function evaluateThreats({ message, fullMessage, urls, filteredUrls, messa
 
 /**
  * Returns the message that is currently displayed in the given tab (MV3:
- * messageDisplay.getDisplayedMessages() returns a MessageList).
+ * messageDisplay.getDisplayedMessages() returns a MessageList). Without a tabId
+ * the currently active tab is used, which is the documented behaviour of the
+ * API and the fallback when the sender tab is unknown.
  */
 async function getFirstDisplayedMessage(tabId, { throwOnError = false } = {}) {
-  if (tabId === undefined || tabId === null) return null;
+  if (tabId === null) return null;
   try {
     if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages === 'function') {
       const list = await browser.messageDisplay.getDisplayedMessages(tabId);
@@ -1843,8 +1854,10 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
 
 async function handleCheckLinkState(request, sender, sendResponse) {
     try {
-        // Need to find the active message to get headerMessageId
-        const message = await getFirstDisplayedMessage(sender && sender.tab && sender.tab.id, { throwOnError: true });
+        // Need to find the displayed message to get its headerMessageId. The
+        // message display script does not know its tab, so the sender tab is
+        // used and the active message display serves as the fallback.
+        const message = await getFirstDisplayedMessage(resolveSenderTabId(sender, request), { throwOnError: true });
         if (!message || !message.headerMessageId) {
             sendResponse({status: 'UNKNOWN'});
             return;

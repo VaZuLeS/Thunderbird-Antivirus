@@ -1979,6 +1979,24 @@ describe('background.js', () => {
             assert.strictEqual(state.tabId, 12);
         });
 
+        it('falls back to the active message display when the sender tab is unknown', async () => {
+            const original = context.browser.messageDisplay.getDisplayedMessages;
+            const seenTabIds = [];
+            context.browser.messageDisplay.getDisplayedMessages = async (tabId) => {
+                seenTabIds.push(tabId);
+                return { messages: [{ id: 55, headerMessageId: 'h55', author: 'fallback@example.com' }] };
+            };
+            context.messageUiStates.clear();
+            try {
+                const state = await context.handleGetMessageUiState({}, { action: 'getMessageUiState' });
+                assert.strictEqual(state.messageId, 55);
+                assert.deepStrictEqual(seenTabIds, [undefined],
+                    'without a sender tab the active message display is used');
+            } finally {
+                context.browser.messageDisplay.getDisplayedMessages = original;
+            }
+        });
+
         it('returns null when no message is displayed', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [] });
             assert.strictEqual(await context.handleGetMessageUiState({ tab: { id: 3 } }, {}), null);
