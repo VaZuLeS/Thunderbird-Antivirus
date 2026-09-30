@@ -479,8 +479,35 @@ Die Einreichung darf erst gestartet werden, wenn **alle** Kriterien erfüllt sin
 
 ---
 
-**Weiter:** Aufgabenplan mit priorisierten, abhängigkeitsgeordneten Arbeitspaketen →
+## 12. Status der Befunde nach dem Arbeitslauf (Version 1.6.1)
+
+Nachweiszeile je Befund gemäß der Definition of Done des Aufgabenplans. „Behoben“ heißt: die Ursache ist im
+Code bzw. in der Dokumentation beseitigt und durch Tests/Checks belegt; „offen“ heißt: es fehlt eine Ressource,
+die in dieser Umgebung nicht verfügbar ist.
+
+| Befund | Status | Nachweis |
+|---|---|---|
+| P0-1 Kernfunktion nicht nachgewiesen | 🟨 teilweise behoben | toter `scripting.messageDisplay.executeScript`-Zweig entfernt, Injektionsfehler werden sichtbar gemeldet (Test in `background.test.js`); Live-Test in TB 140 ESR steht aus (Protokoll + Testdaten liegen bereit) |
+| P0-2 keine echten Screenshots | ⛔ offen | nur SVG-Platzhalter; Pre-Submit-Checks melden weiterhin genau diese Warnung |
+| P0-3 keine Reviewer-Testmittel | 🟨 teilweise behoben | `scripts/make-testdata.js` + `docs/testdata.md` (was ohne Schlüssel prüfbar ist); ein Test-API-Schlüssel kann nicht bereitgestellt werden |
+| P0-4 Datendeklaration/Consent | ✅ behoben in 1.6.1 | `required:["none"]` + `optional:["personalCommunications"]`, Runtime-Opt-in in `options.js`, Entscheidung belegt in `docs/data_collection_decision.md`, `privacy_policy.md` §3.1 angepasst, 3 neue Tests |
+| P0-5 keine Store-Präsenz | ⛔ offen | erfordert ATN-Konto (A-01/A-32) |
+| P1-6 Signierweg zielt auf AMO | ✅ behoben in 1.6.1 | `docs/ci/release.yml`, `docs/ci/README.md`, `docs/quickstart.md`, `docs/STATUS.md` setzen `--amo-base-url https://addons.thunderbird.net/api/v5/` |
+| P1-7 aktive CI zu schwach | 🟨 teilweise behoben | vollständige Fassung liegt in `docs/ci/ci.yml`; Push nach `.github/workflows/` wird von der Token-Berechtigung abgelehnt (Fehler reproduziert) |
+| P1-8 kein Release-Artefakt | 🟨 teilweise behoben | Version 1.6.1 + CHANGELOG + lokaler Build; Tag/Release und Signatur erfordern ATN-Schlüssel |
+| P1-9 UI nur deutsch | ✅ behoben in 1.6.1 (Variante B) | Sprachaussage in `README.md`, `README.de.md`, `docs/STATUS.md`, `docs/store_listing.md`, `docs/reviewer_notes.md` präzise; vollständige UI-Lokalisierung als offene Aufgabe dokumentiert |
+| P1-10 MV2-Altpfade/Linter-Rauschen | ✅ behoben in 1.6.1 | `getDisplayedMessage`/`onMessageDisplayed`/`scripting.messageDisplay.executeScript` entfernt; Lint 26 → 18 Warnungen, Tests angepasst |
+| P1-11 Fehler bleiben unsichtbar | ✅ behoben in 1.6.1 | `reportMessageDisplayInjectionFailure` (Log + Diagnose in `storage.local` + Benachrichtigung einmal pro Sitzung), Banner erklärt verweigerte Host-Berechtigung, 2 Tests |
+| P2-12 Dokumentationsdrift | ✅ behoben in 1.6.1 | Paketkennzahlen, Testdateiliste, `npm run lint`-Hinweis korrigiert |
+| P2-13 Reviewer-Origins ≠ Manifest | ✅ behoben in 1.6.1 | `docs/reviewer_notes.md` §2.2 nennt jetzt `https://*.virustotal.com/*` (manifest.json) und den Laufzeit-Origin `https://www.virustotal.com/*` |
+| P2-14 Listing-Metadaten offen | 🟨 teilweise behoben | Version/Sprachangabe/Kompatibilität aktualisiert; Screenshots und Store-URL fehlen noch |
+| P2-15 Kompatibilitätsaussage | ✅ behoben in 1.6.1 | „Thunderbird 140+“ in Listing, README und Antwortkatalog (Reviewer-Notes §10 Nr. 7) begründet |
+| P2-16 Umgehung des ApiGateway | ✅ behoben in 1.6.1 | Upload (`background.js`) und Popup-Abruf (`api.js`) nutzen `apiGateway.fetchWithTimeout`; `popup.html` lädt `api_gateway.js` |
+| P3-17 doppelte Ignore-Konfiguration | ✅ behoben in 1.6.1 | `.webextignore` entfernt, einzige Quelle ist `web-ext-config.mjs` (dort zusätzlich `testdata` ausgeschlossen) |
+
+**Weiter:** Aufgabenplan mit Durchführungsstand, Go/No-Go-Protokoll und den nächsten Schritten →
 [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md)
+
 
 
 
