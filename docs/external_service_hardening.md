@@ -17,6 +17,13 @@ when hashes, URLs or attachments are transmitted. It is aimed at maintainers and
 - There is no server-side key storage. Users paste their own provider API keys into the extension options; the keys
   are stored in `browser.storage.local` inside the Thunderbird profile and are **not encrypted**. Anyone who can read
   the profile (local user account, backup, synced profile, forensic copy) can read the keys.
+- Host access is declared per provider in `optional_host_permissions` and requested at runtime only for the provider
+  whose key is saved. The patterns cover exactly the hosts the code calls:
+  `https://hybrid-analysis.com/*`, `https://www.virustotal.com/*`, `https://urlscan.io/*`,
+  `https://urlhaus-api.abuse.ch/*`, `https://api.abuseipdb.com/*`.
+  **Note for maintainers:** if a provider starts redirecting to a different host (for example `www.hybrid-analysis.com`),
+  the corresponding origin has to be added to the manifest and to the request list in `options.js`, otherwise the call
+  fails with a permission error. This has not been verified live (no provider keys in the test environment).
 - Client-side measures implemented by the extension:
   - No API key is hard-coded in the source or committed to the repository; keys are only entered by the user at
     runtime and are never part of the build artifact.

@@ -172,7 +172,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** Testdateien des
-  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **437 Tests, 0 Fehler** – u. a.
+  Repositorys aus, nicht nur `background.test.js`. Aktueller Stand: **442 Tests, 0 Fehler** – u. a.
   `message_display.test.js` (UI in der Nachrichtenansicht und Time-of-Click), die Popup-Consent-Tests in
   `api.test.js` und die Pre-Submit-Check-Tests in `scripts/pre-submit-checks.test.js`.
 - `scripts/pre-submit-checks.js` prüft zusätzlich, dass jeder verwendete `browser.*`-API-Namespace eine deklarierte
@@ -185,7 +185,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
   (fast ausschließlich `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und
   Thunderbird-spezifische APIs wie `messages.*` oder `messageDisplay.*` nicht kennt). Die Liste wird über
   `scripts/filter-lint-warnings.js` gefiltert.
-- Das gebaute XPI enthält **18 Dateien / 238.851 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
+- Das gebaute XPI enthält **18 Dateien / 240.959 Bytes entpackt** (zuvor 17 Dateien); `scripts/verify-package.js`
   prüft Dateiliste und Größe.
 - Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
   `node ./scripts/pre-submit-checks.js`, `node --test background.test.js` und `npx web-ext lint`.
@@ -248,9 +248,14 @@ statt.
   Umgebung nicht verifiziert – der Codepfad ist nur durch Unit-Tests mit gemockten APIs abgedeckt.
 - **Noch keine echten Store-Screenshots.** In `docs/screenshots/` liegen nur SVG-Platzhalter; für das Store-Listing
   müssen echte Screenshots erstellt werden – erst nach dem Live-Test in Thunderbird.
-- **Noch nicht im Add-ons-Store eingereicht** – es gibt kein öffentliches Listing und keine Store-URL.
+- **Noch nicht im Add-ons-Store eingereicht** – es gibt kein öffentliches Listing und keine Store-URL. Die
+  veröffentlichte Datenschutzerklärung ist erreichbar, entspricht aber einer älteren Revision von `docs/`; sie muss
+  vor der Listung neu veröffentlicht werden.
 - In der Standard-Stufe `strict` werden unbekannte Anhänge nicht automatisch hochgeladen; dafür auf `balanced`/`max`
-  umstellen oder einen manuellen Upload im Popup starten.
+  umstellen oder einen manuellen Upload im Popup starten. Anhänge über 100 MB werden nie automatisch hochgeladen
+  (Anbieter-Limits); sie bleiben im manuellen Pfad.
+- Interne Diagnosemeldungen (Konsole/`Logger`) sind englisch; einzelne Fehlertexte, die Nutzer sehen könnten, sind
+  noch nicht lokalisiert.
 - Erkennungsqualität und Ratenlimits hängen von den konfigurierten Anbietern und Ihren eigenen API-Schlüsseln ab.
 - API-Schlüssel liegen unverschlüsselt im Thunderbird-Profil (`browser.storage.local`) – wer Zugriff auf das Profil
   hat, kann sie lesen.

@@ -167,7 +167,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 ```
 
 - `npm test` uses the script from `package.json` (`node --test`) and therefore executes **all** test files of the
-  repository, not just `background.test.js`. Current state: **437 tests, 0 failures** – including
+  repository, not just `background.test.js`. Current state: **442 tests, 0 failures** – including
   `message_display.test.js` (in-message UI and time-of-click), the popup consent tests in `api.test.js` and the
   pre-submit-check tests in `scripts/pre-submit-checks.test.js`.
 - `scripts/pre-submit-checks.js` additionally verifies that every used `browser.*` API namespace has its permission
@@ -179,7 +179,7 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
   (almost exclusively `UNSUPPORTED_API` notices, because the linter validates against a Firefox target and does not
   know Thunderbird-only APIs such as `messages.*` or `messageDisplay.*`). The list is filtered by
   `scripts/filter-lint-warnings.js`.
-- The built XPI contains **18 files / 238,851 bytes unpacked** (previously 17 files); `scripts/verify-package.js`
+- The built XPI contains **18 files / 240,959 bytes unpacked** (previously 17 files); `scripts/verify-package.js`
   checks the file list and the size.
 - CI (`.github/workflows/ci.yml`) runs on every push and pull request with Node 22: `npm ci`, the pre-submit
   checks (real exit code), `node --test background.test.js` and `npx web-ext lint`.
@@ -244,9 +244,13 @@ state in `mayTransmitExternally()`: if `personalCommunications` is reported as n
   environment – the code path is covered by unit tests with mocked APIs only.
 - **No real store screenshots yet.** `docs/screenshots/` only contains SVG placeholders; real screenshots have to be
   taken for the store listing – and only after the live test in Thunderbird.
-- **Not submitted to the Add-ons Store yet** – there is no public listing and no store URL.
+- **Not submitted to the Add-ons Store yet** – there is no public listing and no store URL. The published
+  privacy policy is live but reflects an older revision of `docs/`; it has to be re-published before the listing.
 - With the default tier `strict`, unknown attachments are not uploaded automatically; you have to switch to
-  `balanced`/`max` or start a manual upload from the popup.
+  `balanced`/`max` or start a manual upload from the popup. Attachments larger than 100 MB are never uploaded
+  automatically (provider limits); they stay in the manual path.
+- Internal diagnostic messages (console/`Logger`) are English; a few error strings that could be shown to users
+  are still German only.
 - Detection quality and rate limits depend on the configured providers and on your own API keys.
 - API keys are stored unencrypted in the Thunderbird profile (`browser.storage.local`) – anyone with access to your
   profile can read them.

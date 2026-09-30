@@ -111,9 +111,23 @@ if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages
 }
 
 // Ohne Zustimmung zu externer Analyse wird nichts übertragen - das muss im
-// Popup sichtbar sein, bevor der Nutzer Uploads auslöst.
+// Popup sichtbar sein, bevor der Nutzer Uploads auslöst. Wo die Umgebung die
+// eingebaute Datenkonsent-Kategorie anbietet, muss diese zusätzlich erteilt
+// sein (dieselbe Regel wie im Hintergrundskript in mayTransmitExternally()).
 const settings = await browser.storage.local.get(['externalAnalysisConsent']);
-const externalAnalysisConsent = settings.externalAnalysisConsent === true;
+let externalAnalysisConsent = settings.externalAnalysisConsent === true;
+
+if (externalAnalysisConsent) {
+    try {
+        if (browser.permissions && typeof browser.permissions.getAll === 'function') {
+            const granted = await browser.permissions.getAll();
+            if (granted && Array.isArray(granted.data_collection) &&
+                !granted.data_collection.includes('personalCommunications')) {
+                externalAnalysisConsent = false;
+            }
+        }
+    } catch (e) { /* keep the add-on consent */ }
+}
 
 if (!message) {
     let container = document.getElementById('hybrid_analysis_api_content');

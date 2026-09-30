@@ -10,7 +10,6 @@ examples/
 install.rdf
 package-lock.json
 pnpm-lock.yaml
-benchmark_compare.js
 form_test.js
 vt_test.js
 build/

@@ -3352,7 +3352,7 @@ describe('popup consent gate (store readiness B4)', () => {
         '<div id="subject"></div><div id="from"></div><div id="MessageHeaderID"></div>' +
         '</body></html>';
 
-    function createPopup({ consent, record = {}, fetchStatus = 500 }) {
+    function createPopup({ consent, record = {}, fetchStatus = 500, dataCollection = null }) {
         const dom = new JSDOM(POPUP_HTML, { url: 'about:blank', virtualConsole: new VirtualConsole() });
         const fetchCalls = [];
         const sentMessages = [];
@@ -3385,6 +3385,9 @@ describe('popup consent gate (store readiness B4)', () => {
                 runtime: {
                     sendMessage: async (message) => { sentMessages.push(message); return { status: 'success' }; },
                     openOptionsPage: () => {}
+                },
+                permissions: {
+                    getAll: async () => (dataCollection === null ? {} : { data_collection: dataCollection })
                 }
             },
             document: dom.window.document,
@@ -3464,6 +3467,34 @@ describe('popup consent gate (store readiness B4)', () => {
         assert.deepStrictEqual(sentMessages, []);
         const container = dom.window.document.getElementById('hybrid_analysis_api_content');
         assert.strictEqual(container.querySelectorAll('button').length, 0, 'no upload/rescan buttons');
+    });
+
+    it('treats a missing built-in data collection consent like a missing consent', async () => {
+        const { context, dom, fetchCalls, sentMessages } = createPopup({
+            consent: true,
+            record: RECORD,
+            dataCollection: []
+        });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        assert.deepStrictEqual(fetchCalls, [], 'the built-in category must be granted as well');
+        assert.deepStrictEqual(sentMessages, []);
+        assert.ok(dom.window.document.getElementById('hybrid_analysis_api_content').textContent.includes('werden nicht abgerufen'));
+    });
+
+    it('queries providers when the built-in data collection consent is granted', async () => {
+        const { context, fetchCalls } = createPopup({
+            consent: true,
+            record: RECORD,
+            dataCollection: ['personalCommunications']
+        });
+
+        await context.initAPI();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        assert.strictEqual(fetchCalls.length, 1);
     });
 
     it('renders the stored links and unknown attachments when the consent is granted', async () => {

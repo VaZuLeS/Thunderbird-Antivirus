@@ -29,8 +29,9 @@ Nutzerdaten.
   betreffenden Absender ausgelöst wurde. Das gilt auch für das Popup der Nachrichtenansicht: Ohne
   diese Zustimmung fragt es keinen Analyse-Dienst ab und zeigt nur einen Hinweis mit Verweis auf
   die Einstellungen.
-- Standardmäßig ist die Datenschutz-Stufe „Strikt“ aktiv; dann werden ausschließlich
-  SHA-256-Hashes von Anhängen übermittelt.
+- Standardmäßig ist die Datenschutz-Stufe „Strikt“ aktiv; dann werden
+  keine Dateiinhalte automatisch hochgeladen; Hash- und Reputationsabfragen bei den Diensten, für die
+  Sie einen Schlüssel hinterlegt haben, sind möglich (siehe unten).
 - Es gibt **keine** Telemetrie, **kein** Analytics, **keine** Nutzungsstatistik, **keine**
   Fehlerberichte an den Entwickler und **keine** Cookies oder Tracker.
 
@@ -80,7 +81,7 @@ Schlüssel `privacyTier` gespeichert. **Standardwert: „strict“ (Strikt).**
 
 | Stufe | Was zusätzlich übermittelt werden kann |
 |---|---|
-| `strict` (Strikt) | ausschließlich SHA-256-Hashes von Anhängen |
+| `strict` (Strikt) | keine automatischen Uploads; nur Hash- und Reputationsabfragen (siehe unten) |
 | `balanced` (Ausgewogen) | zusätzlich vollständige Anhänge unbekannter Dateien an Hybrid Analysis |
 | `max` (Maximal) | zusätzlich URLs aus der Nachricht an Hybrid Analysis |
 
@@ -317,8 +318,8 @@ server that receives user data, and the developer has no access to user data.
   analysis" is enabled **and** a scan has been triggered for that message or sender. This also applies
   to the message display action popup: without that consent it queries no analysis service and only
   shows a notice that links to the options.
-- The default privacy tier is `strict`; in that tier only SHA-256 hashes of attachments are
-  transmitted.
+- The default privacy tier is `strict`; in that tier no file content is uploaded automatically. Hash and
+  reputation lookups (for the providers configured with a key) do happen: see the section below.
 - There is **no** telemetry, **no** analytics, **no** usage statistics, **no** crash or error
   reporting to the developer, and **no** cookies or trackers.
 
@@ -364,7 +365,7 @@ key `privacyTier`. **Default: `strict`.**
 
 | Tier | What may additionally be transmitted |
 |---|---|
-| `strict` | SHA-256 hashes of attachments only |
+| `strict` | no automatic uploads; hash and reputation lookups only (see below) |
 | `balanced` | additionally complete attachments of unknown files to Hybrid Analysis |
 | `max` | additionally URLs from the message to Hybrid Analysis |
 

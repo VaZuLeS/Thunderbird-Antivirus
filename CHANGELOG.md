@@ -30,7 +30,7 @@ Changes that resolve the store-readiness review for 1.6
   languages only need an additional `_locales/<code>` folder.
 - Tests: `message_display.test.js` (19 tests), four popup consent tests in `api.test.js`, tests for the
   localization helpers in `db.test.js`, tests for the built-in data consent in `background.test.js`/`options.test.js`
-  and twelve new pre-submit-check tests – **437 tests in total, 0 failures**.
+  and twelve new pre-submit-check tests – **442 tests in total, 0 failures**.
 
 ### Changed
 
@@ -50,11 +50,18 @@ Changes that resolve the store-readiness review for 1.6
   popup – are resolved through the catalogues with the default locale `en` and fallback texts in the code.
 - The pre-submit checks additionally verify the API namespace against the declared permission, the data-collection
   declaration and the presence of the programmatically registered script in the package.
-- The built package contains **18 files / 238,851 bytes unpacked**.
+- The built package contains **18 files / 240,959 bytes unpacked**.
 - The pre-submit checks verify that all localized UI strings (currently 157) have a catalogue entry.
+- **Upload cap:** attachments larger than 100 MB are never uploaded automatically (provider limits); they stay in
+  the manual path.
+- **Reviewer notes:** the tier descriptions state precisely which transmissions happen independently of the tier,
+  the test path now covers the local CDR/"disarm" action, and the maintainer note about provider hosts was added.
 
 ### Fixed
 
+- **Robustness:** the state and link handlers fall back to the active message display when Thunderbird does not
+  report `sender.tab` for the message display script; the popup applies the same consent rule as the background
+  (own consent **and** the granted built-in data category) before it queries providers.
 - **Review B1** – `menus` was missing from `manifest.json`, so both context-menu entries were never created.
 - **Review B2** – the message-view UI was injected through a code path Thunderbird does not offer.
 - **Review B3** – time-of-click protection was cosmetic only and `handleCheckLinkState` was dead code. Links are now

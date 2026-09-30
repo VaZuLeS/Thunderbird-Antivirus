@@ -17,7 +17,6 @@ export default {
     'test/**',
     'scripts',
     'scripts/**',
-    'benchmark_compare.js',
     'form_test.js',
     'vt_test.js',
     // documentation and store assets (kept in the repository only)

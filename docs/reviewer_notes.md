@@ -92,10 +92,13 @@ State flows in both directions through `browser.runtime.sendMessage`:
 2. **Per-sender opt-in** — for automatic scans of messages from a sender, that sender must be added
    to `scanningEnabledSenders`. The banner in the message view offers two separate buttons:
    - "Scan this message only" → one-off scan, the sender is not stored permanently;
-   - "Scan this sender permanently" → the sender is added to the persistent list and future messages
-     from that sender are scanned automatically (while the global consent is enabled).
+   - "Scan this sender permanently" → the sender is added to the persistent list. Future messages from
+     that sender are then scanned automatically **while the global consent is enabled, a Hybrid Analysis key is
+     configured and the host permission is granted** (`handleDisplayedMessage`, `canAutoUpload`); otherwise the
+     banner offers the one-off scan again.
 3. **Privacy tier (`privacyTier`)** — selectable in the options dialog, **default `strict`**:
-   - `strict`: only SHA-256 hashes of attachments are transmitted;
+   - `strict` (the default): no automatic uploads; hash lookups (Hybrid Analysis, VirusTotal) and — for the
+     providers the user configured — reputation lookups for URLs/domains/IP addresses are transmitted;
    - `balanced`: additionally full attachments of *unknown* files are uploaded to Hybrid Analysis;
    - `max`: additionally URLs from the message are submitted to Hybrid Analysis.
 
@@ -256,7 +259,10 @@ No other hosts are contacted. All requests are HTTPS.
     storage (`scanningEnabledSenders`). To compare the behaviour of a one-off scan, repeat step 13
     with a sender that has no persistent opt-in.
 15. Expected network traffic for tier `strict`: `GET https://hybrid-analysis.com/api/v2/overview/<sha256>`
-    (hash lookup) and only if a VirusTotal key is configured `GET https://www.virustotal.com/api/v3/files/<sha256>`.
+    (hash lookup) and only if a VirusTotal key is configured `GET https://www.virustotal.com/api/v3/files/<sha256>`;
+    tier `strict` never uploads file content. Independently of the tier, a configured urlscan.io key causes
+    `POST https://urlscan.io/api/v1/scan/` for clicked/newly seen URLs and a configured URLhaus key causes
+    `POST https://urlhaus-api.abuse.ch/v1/host/` for domains (each only with the global consent).
     For tier `balanced`/`max`, additionally `POST https://hybrid-analysis.com/api/v2/quick-scan/file`
     when the hash is unknown; for tier `max` additionally
     `POST https://hybrid-analysis.com/api/v2/quick-scan/url`.
@@ -292,9 +298,16 @@ No other hosts are contacted. All requests are HTTPS.
     notification reports the outcome. Right-click inside the message area and choose **"Scan all links of this
     message"** (message display action) — up to 20 links are submitted and the result is reported in a notification.
 
-### 8.7 Clear local data
+### 8.7 Disarm an HTML attachment
 
-24. In the options dialog, click **"Clear cache"** and confirm. The IndexedDB object store
+24. Open a message that carries an `.html` attachment and click **"Disarm & download (local CDR)"** in the popup.
+    The add-on sanitizes the HTML locally (scripts, event handlers, `javascript:` URIs, `iframe`/`object`/`embed`
+    and `meta refresh` are removed) and saves the result through the download manager; the button reports
+    "Bereinigt". Nothing is uploaded for this action — it works without any consent.
+
+### 8.8 Clear local data
+
+25. In the options dialog, click **"Clear cache"** and confirm. The IndexedDB object store
     `hybridanalysis` (database `thunderbird_av`, version 3) is emptied; the confirmation
     "Cache erfolgreich geleert." is shown. The stored consent and settings are not affected.
 

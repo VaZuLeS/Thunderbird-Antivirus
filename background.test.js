@@ -3367,6 +3367,49 @@ describe('background.js', () => {
             assert.strictEqual(result.hybrid_data.submission_id, 'PENDING_UPLOAD');
         });
 
+        it('does not upload very large attachments automatically', async () => {
+            context.set_externalAnalysisConsent(true);
+            context.set_privacyTier('balanced');
+            let fetchCalls = 0;
+            context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
+
+            const result = await context.handle_unknown_attachment({
+                attachment: { name: 'huge.bin', partName: '1' },
+                content_of_attachment: { byteLength: 150 * 1024 * 1024, size: 150 * 1024 * 1024 },
+                local_hash: 'hash',
+                virustotal_stats: null,
+                privacyTier: 'balanced',
+                fileType: 'application/octet-stream'
+            });
+
+            assert.strictEqual(fetchCalls, 0, 'files above the provider limit stay in the manual path');
+            assert.strictEqual(result.hybrid_data.state, 'UNKNOWN');
+            assert.strictEqual(result.hybrid_data.submission_id, 'PENDING_UPLOAD');
+        });
+
+        it('uploaded a small unknown attachment on the balanced tier while the consent is given', async () => {
+            context.set_externalAnalysisConsent(true);
+            context.set_privacyTier('balanced');
+            const urls = [];
+            context.fetch = async (url) => {
+                urls.push(url);
+                return { status: 200, json: async () => ({ submission_id: 's1', job_id: 'j1', sha256: 'sha' }) };
+            };
+
+            const result = await context.handle_unknown_attachment({
+                attachment: { name: 'small.bin', partName: '1' },
+                content_of_attachment: { byteLength: 1024, size: 1024 },
+                local_hash: 'hash',
+                virustotal_stats: null,
+                privacyTier: 'balanced',
+                fileType: 'application/octet-stream'
+            });
+
+            assert.strictEqual(urls.length, 1);
+            assert.ok(urls[0].includes('hybrid-analysis.com'));
+            assert.strictEqual(result.hybrid_data.state, 'UPLOADED');
+        });
+
         it('does not persist a sender when a one-off scan finishes', async () => {
             let saved = null;
             context.browser.storage.local.get = async () => ({ scanningEnabledSenders: [] });

@@ -96,7 +96,7 @@ abgearbeitet:
   `thundy-av@bludau-it-services.de`, Icons 16/32/64 px, `options_ui.open_in_tab` statt `browser_style`.
 - **Paketbereinigung (g):** `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`) hält Testdateien,
   `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und Entwicklungs-Artefakte aus dem Build. Das XPI
-  enthält **18 Dateien (238.851 Bytes entpackt)** – neu enthalten ist `message_display.js`; `scripts/verify-package.js`
+  enthält **18 Dateien (240.959 Bytes entpackt)** – neu enthalten ist `message_display.js`; `scripts/verify-package.js`
   erlaubt und prüft diese Datei. Toter Code (`content_script.js`) und die Legacy-Dateien sind entfernt.
 - **Lokalisierung (M2):** Alle sichtbaren UI-Strings werden über `browser.i18n` und `_locales/en`/`_locales/de`
   aufgelöst: Manifest-Strings (`__MSG_`), die UI in der Nachrichtenansicht und die Options-/Popup-Oberfläche
@@ -117,7 +117,7 @@ abgearbeitet:
   einen echten Exit-Code; der Schritt läuft in der CI. Ergebnis: 0 Fehler, 2 Warnungen (fehlende Screenshots; die
   aktive CI führt nur `background.test.js` aus – die vollständige Variante liegt in `docs/ci/ci.yml`).
 - **Tests/CI:** `npm test` führt alle `node:test`-Dateien aus (Consent-, Tier-, Permission-, MV3-Portierungs- und
-  Message-Display-Tests enthalten) und ist grün (**437 Tests, 0 Fehler**; neu: `message_display.test.js` mit
+  Message-Display-Tests enthalten) und ist grün (**442 Tests, 0 Fehler**; neu: `message_display.test.js` mit
   17 Tests, 4 Popup-Consent-Tests in `api.test.js`, 9 neue Pre-Submit-Check-Tests). `npx web-ext lint` meldet
   **0 Fehler und 25 Warnungen**, alle davon bekannte Thunderbird-False-Positives
   (`scripts/filter-lint-warnings.js`). Der im Repository aktive Workflow
@@ -129,7 +129,7 @@ abgearbeitet:
   Sie konnten in dieser Umgebung nicht unter `.github/workflows/` committed werden, weil das verwendete Token
   keine `workflows`-Berechtigung besitzt (GitHub lehnt solche Pushes ab). Übernahme: `docs/ci/README.md`.
 - **Dokumente/Policy:** Datenschutzerklärung (`docs/privacy_policy.md`), Reviewer-Hinweise
-  (`docs/reviewer_notes.md`), Listing-Entwurf (`docs/store_listing.md`); Live-Policy unter
+  (`docs/reviewer_notes.md`), Listing-Entwurf (`docs/store_listing.md`); die Live-Policy unter
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html.
 
 ## Weiterhin offen

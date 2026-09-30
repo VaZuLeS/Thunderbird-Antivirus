@@ -1421,8 +1421,18 @@ class HybridDataBuilder {
     }
 }
 
+// Maximum size of an attachment that is uploaded automatically. Larger files
+// stay in the manual path: the provider would reject them anyway and the user
+// keeps control over such a transfer.
+const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+
 async function handle_unknown_attachment({ attachment, content_of_attachment, local_hash, virustotal_stats, privacyTier, fileType }) {
-    if ((privacyTier === 'balanced' || privacyTier === 'max') && mayTransmitExternally()) {
+    // Provider limits: very large files are not uploaded automatically, they stay
+    // available for a manual upload (which reports the provider's error verbatim).
+    const sizeInBytes = content_of_attachment && typeof content_of_attachment.byteLength === 'number'
+        ? content_of_attachment.byteLength
+        : (content_of_attachment && typeof content_of_attachment.size === 'number' ? content_of_attachment.size : 0);
+    if ((privacyTier === 'balanced' || privacyTier === 'max') && mayTransmitExternally() && sizeInBytes <= MAX_UPLOAD_BYTES) {
         try {
             const file_to_submit = new File([content_of_attachment], attachment.name, { type: fileType || 'application/octet-stream' });
             const formData = new FormData();
