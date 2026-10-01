@@ -92,9 +92,85 @@ describe('pre-submit-checks', () => {
     assert.ok(result.errors.some((e) => e.includes('host patterns must not be listed in permissions')));
   });
 
-  it('fails when optional_permissions is used in Manifest V3', () => {
+  it('fails when a host pattern is listed in optional_permissions', () => {
     const result = runChecks(createExtension({}, { optional_permissions: ['https://example.com/*'] }));
-    assert.ok(result.errors.some((e) => e.includes('optional_permissions is not supported')));
+    assert.ok(result.errors.some((e) => e.includes('host patterns must not be listed in optional_permissions')));
+  });
+
+  it('accepts an optional Thunderbird API permission (sensitiveDataUpload)', () => {
+    const result = runChecks(createExtension({}, { optional_permissions: ['sensitiveDataUpload'] }));
+    assert.deepStrictEqual(result.errors, []);
+  });
+
+  it('fails when an optional data collection type is never requested at runtime', () => {
+    // The fixture has no options.js requesting data_collection, so the declared
+    // optional type is not honest -> error.
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['none'], optional: ['personalCommunications'] }
+        }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('never requested in options.js')));
+  });
+
+  it('accepts an opt-in declaration that is requested at runtime', () => {
+    const result = runChecks(createExtension({
+      'options.js': "browser.permissions.request({ data_collection: ['personalCommunications'] });\n"
+    }, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['none'], optional: ['personalCommunications'] }
+        }
+      }
+    }));
+    assert.deepStrictEqual(result.errors, []);
+  });
+
+  it('fails when "none" is combined with other types inside required', () => {
+    const result = runChecks(createExtension({}, {
+      browser_specific_settings: {
+        gecko: {
+          id: 'demo@example.org',
+          strict_min_version: '140.0',
+          data_collection_permissions: { required: ['none', 'personalCommunications'] }
+        }
+      }
+    }));
+    assert.ok(result.errors.some((e) => e.includes('combines "none" with other data types')));
+  });
+
+  it('fails when browser.menus is used without the "menus" permission', () => {
+    const result = runChecks(createExtension({
+      'background.js': 'browser.menus.create({ id: "x", title: "t", contexts: ["link"] });\n'
+    }));
+    assert.ok(result.errors.some((e) => e.includes('"menus" permission is missing')));
+  });
+
+  it('accepts browser.menus when the "menus" permission is declared', () => {
+    const result = runChecks(createExtension({
+      'background.js': 'browser.menus.create({ id: "x", title: "t", contexts: ["link"] });\n'
+    }, { permissions: ['messagesRead', 'storage', 'menus'] }));
+    assert.deepStrictEqual(result.errors, []);
+  });
+
+  it('fails when a Manifest V3 removed API is used in a runtime file', () => {
+    const result = runChecks(createExtension({
+      'background.js': 'browser.messageDisplay.onMessageDisplayed.addListener(() => {});\n'
+    }));
+    assert.ok(result.errors.some((e) => e.includes('onMessageDisplayed is removed in MV3')));
+  });
+
+  it('fails when the non-existing scripting.messageDisplay.executeScript is used', () => {
+    const result = runChecks(createExtension({
+      'background.js': 'await browser.scripting.messageDisplay.executeScript({ target: { tabId: 1 } });\n'
+    }));
+    assert.ok(result.errors.some((e) => e.includes('executeScript does not exist')));
   });
 
   it('fails on invalid match patterns', () => {
@@ -114,8 +190,10 @@ describe('pre-submit-checks', () => {
     assert.ok(result.errors.some((e) => e.includes('data_collection_permissions is missing')));
   });
 
-  it('fails when data collection declares "none" combined with optional permissions', () => {
-    const result = runChecks(createExtension({}, {
+  it('accepts "none" plus optional types when they are requested at runtime', () => {
+    const result = runChecks(createExtension({
+      'options.js': "browser.permissions.request({ data_collection: ['personalCommunications'] });\n"
+    }, {
       browser_specific_settings: {
         gecko: {
           id: 'demo@example.org',
@@ -124,7 +202,7 @@ describe('pre-submit-checks', () => {
         }
       }
     }));
-    assert.ok(result.errors.some((e) => e.includes('contradictory')));
+    assert.deepStrictEqual(result.errors, []);
   });
 
   it('fails when a forbidden permission is requested', () => {

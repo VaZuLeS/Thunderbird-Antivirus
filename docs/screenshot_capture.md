@@ -1,15 +1,15 @@
 # Screenshot-Aufnahmeanleitung — Thundy AV (Thunderbird-WebExtension)
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird, Version 1.6
+**Add-on:** Thundy AV – Email Scanner for Thunderbird, Version 1.6.2
 **Status:** Es existieren noch **keine** echten Screenshots; im Repository liegen nur
-SVG-Platzhalter (`docs/screenshot-*.svg`, `docs/screenshots/*.svg`). Dieses Dokument beschreibt,
+SVG-Platzhalter (`docs/screenshots/*.svg`). Dieses Dokument beschreibt,
 wie die realen Aufnahmen erstellt werden.
 
 ## 1. Voraussetzungen
 
 - Thunderbird mit einer Version ≥ `strict_min_version` (140.0), geprüft auf 140 ESR.
-- Node.js + npm (für `web-ext`; das Repository führt `web-ext` nicht als Abhängigkeit, das Paket
-  wird über `npx` bezogen).
+- Node.js + npm (für `web-ext`; das Repository führt `web-ext` als Dev-Abhängigkeit, das Paket kann
+  alternativ über `npx` bezogen werden).
 - Ein Testpostfach mit mindestens einer Nachricht, die einen Anhang und einen Link enthält.
   Absender, Betreff und Dateinamen müssen frei erfundene Testdaten sein.
 - Für die Anzeige von Analyseergebnissen: ein kostenloser Hybrid-Analysis-API-Schlüssel
@@ -70,7 +70,8 @@ Banner im Testfall nicht, dürfen die Motive nicht als Screenshot eingereicht we
 
 ## 4. Aufnahme
 
-1. Fenster auf mindestens 1280 px Breite ziehen (der Screenshot soll mindestens 1200 px breit sein).
+1. Fenster auf etwa 1280 px Breite ziehen (empfohlene Aufnahmegröße 1280 × 800 px, Seitenverhältnis
+   1.6:1; die Größe ist eine **Empfehlung**, keine Store-Pflicht).
 2. Betriebssystem-Werkzeug verwenden: Windows `Win+Shift+S` (Snipping Tool), macOS `Cmd+Shift+4`,
    Linux `gnome-screenshot -f datei.png` oder `flameshot`.
 3. Nur den relevanten Ausschnitt aufnehmen (Optionsseite bzw. Nachrichtenansicht), ohne Taskleiste
@@ -79,8 +80,8 @@ Banner im Testfall nicht, dürfen die Motive nicht als Screenshot eingereicht we
 
 ## 5. Anforderungen und Prüfung
 
-- PNG, mindestens 1200 px breit, empfohlen 1280 × 800 px oder größer — der Motivinhalt muss auch im
-  skalierten Vorschaubild erkennbar sein.
+- PNG; empfohlen 1280 × 800 px (Seitenverhältnis 1.6:1). Die Größe ist eine **Empfehlung**, keine
+  Store-Pflicht — der Motivinhalt muss auch im skalierten Vorschaubild erkennbar sein.
 - Keine echten Nutzerdaten: private E-Mail-Adressen, Namen, Telefonnummern, Betreffzeilen und
   Anhänge durch Testdaten ersetzen; im Zweifel unkenntlich machen.
 - Keine retuschierten UI-Zustände: was im Screenshot zu sehen ist, muss im Testlauf genauso

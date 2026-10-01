@@ -15,7 +15,7 @@ describe('escapeHTML', () => {
                 tabs: { query: async () => [{ id: 1 }] },
                 storage: {
                     local: {
-                        get: async () => ({ apikey: 'test' })
+                        get: async () => ({ apikey: 'test', externalAnalysisConsent: true })
                     }
                 },
                 tabs: {
@@ -56,6 +56,7 @@ describe('escapeHTML', () => {
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
 
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
         vm.runInContext(wrappedCode, context);
 
         escapeHTML = context.escapeHTML;
@@ -156,6 +157,7 @@ describe('createEl', () => {
         // Prevent the IIFE from executing during test initialization
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
         vm.runInContext(wrappedCode, context);
 
         createEl = context.createEl;
@@ -231,6 +233,7 @@ describe('renderInProgressStatus', () => {
         // Let's emulate what get_hybrid_report_by_sha256 test does.
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
         try {
             vm.runInContext(wrappedCode, context);
         } catch(e) {
@@ -329,6 +332,7 @@ describe('renderThreatInfo', () => {
 
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
         try {
             vm.runInContext(wrappedCode, context);
         } catch(e) {
@@ -441,7 +445,7 @@ describe('get_hybrid_report_by_sha256', () => {
             browser: {
                 storage: {
                     local: {
-                        get: async () => ({ apikey: 'test' })
+                        get: async () => ({ apikey: 'test', externalAnalysisConsent: true })
                     }
                 },
                 tabs: {
@@ -558,6 +562,7 @@ tag: tag,
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
 
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
         vm.runInContext(wrappedCode, context);
 
         get_hybrid_report_by_sha256 = context.get_hybrid_report_by_sha256;
@@ -740,6 +745,7 @@ describe('handle_hybrid_report_fetch_error', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
         vm.runInContext(wrappedCode, context);
 
         handle_hybrid_report_fetch_error = context.handle_hybrid_report_fetch_error;
@@ -832,6 +838,7 @@ describe('handle_hybrid_report_error', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
         vm.runInContext(wrappedCode, context);
 
         handle_hybrid_report_error = context.handle_hybrid_report_error;
@@ -955,6 +962,7 @@ describe('renderManualUploadUI', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
 
         vm.runInContext(wrappedCode, context);
 
@@ -1082,7 +1090,7 @@ describe('renderManualUrlScanUI', () => {
         // Create mock environment
         context = {
             browser: {
-                storage: { local: { get: async () => ({ apikey: 'test' }) } },
+                storage: { local: { get: async () => ({ apikey: 'test', externalAnalysisConsent: true }) } },
                 tabs: { query: async () => [{ id: 1 }] },
                 messageDisplay: { getDisplayedMessage: async () => ({ headerMessageId: '123', subject: 'test', author: 'author' }) },
                 runtime: { sendMessage: async () => ({ status: 'success' }) }
@@ -1239,6 +1247,7 @@ describe('renderManualUrlScanUI', () => {
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
 
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
         vm.runInContext(wrappedCode, context);
 
         context.get_hybrid_report_by_sha256 = function(opts) {
@@ -1941,6 +1950,7 @@ describe('renderReport', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
         try {
             vm.runInContext(wrappedCode, context);
         } catch(e) {}
@@ -2042,7 +2052,7 @@ describe('fetch_hybrid_report', () => {
         context = {
             browser: {
                 tabs: { query: async () => [{ id: 1 }] },
-                storage: { local: { get: async () => ({ apikey: 'test' }) } }
+                storage: { local: { get: async () => ({ apikey: 'test', externalAnalysisConsent: true }) } }
             },
             console: { log: () => {}, error: () => {} },
             fetch: async () => ({ status: 200, json: async () => ({}) }),
@@ -2063,18 +2073,44 @@ describe('fetch_hybrid_report', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
 
         wrappedCode += '\n; globalThis.fetch_hybrid_report = fetch_hybrid_report;\n';
         wrappedCode += '\n; globalThis.hybrid_report_cache = hybrid_report_cache;\n';
+        wrappedCode += '\n; globalThis.hasExternalAnalysisConsent = hasExternalAnalysisConsent;\n';
+        wrappedCode += '\n; globalThis.setExternalAnalysisConsentForTest = (value) => { externalAnalysisConsent = value === true; };\n';
 
         // Setup API key directly in context since we are stripping the IIFE that normally sets it
         wrappedCode += '\n; apikey_hybridanalysis = "mock_api_key";\n';
+        // Consent is granted in this suite; the P0-7 regression test below turns it off.
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';
 
         vm.runInContext(wrappedCode, context);
 
         fetch_hybrid_report = context.fetch_hybrid_report;
         hybrid_report_cache = context.hybrid_report_cache;
         hybrid_report_cache.clear();
+    });
+
+    it('does not transmit anything without the global consent (P0-7 regression test)', async () => {
+        let fetchCount = 0;
+        context.fetch = async () => {
+            fetchCount++;
+            return { status: 200, json: async () => ({}) };
+        };
+
+        context.setExternalAnalysisConsentForTest(false);
+        assert.strictEqual(context.hasExternalAnalysisConsent(), false);
+
+        await assert.rejects(
+            () => fetch_hybrid_report('test_sha_no_consent'),
+            /external-analysis-disabled/
+        );
+        assert.strictEqual(fetchCount, 0, 'no network request may happen without consent');
+        assert.ok(!hybrid_report_cache.has('test_sha_no_consent'), 'nothing may be cached without consent');
+
+        context.setExternalAnalysisConsentForTest(true);
+        assert.strictEqual(context.hasExternalAnalysisConsent(), true);
     });
 
     it('returns cached promise if sha is in cache', async () => {
@@ -2234,6 +2270,7 @@ describe('setupCdrButton', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
 
         wrappedCode += '\n; globalThis.setupCdrButton = setupCdrButton;';
 
@@ -2398,6 +2435,7 @@ describe('createCdrButton', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
 
         // Export createCdrButton for testing
         wrappedCode += '\n; globalThis.createCdrButton = createCdrButton;';
@@ -2626,6 +2664,7 @@ describe('createUploadButton', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
 
         vm.runInContext(wrappedCode, context);
         createUploadButton = context.createUploadButton;
@@ -2859,6 +2898,7 @@ describe('handleUrlScanClick', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
 
         vm.runInContext(wrappedCode, context);
         handleUrlScanClick = context.handleUrlScanClick;
@@ -3129,6 +3169,7 @@ describe('setupRescanButton', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
 
         // Export setupRescanButton for testing
         wrappedCode += '\n; globalThis.setupRescanButton = setupRescanButton;';
@@ -3285,6 +3326,7 @@ describe('createCdrButton', () => {
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+        wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
 
         // Export createCdrButton for testing
         wrappedCode += '\n; globalThis.createCdrButton = createCdrButton;';

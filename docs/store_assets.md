@@ -1,6 +1,6 @@
 # Store-Assets — Status
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird (Version 1.6)
+**Add-on:** Thundy AV – Email Scanner for Thunderbird (Version 1.6.2)
 **Stand dieses Dokuments:** September 2026
 **Ziel:** Thunderbird Add-ons Store (ATN) — Listung mit Screenshots und Icon
 
@@ -24,13 +24,14 @@ Pre-Submit-Checks prüfen zusätzlich, dass jede in `manifest.json` deklarierte 
 mit exakt dieser Kantenlänge vorliegt.
 
 Die drei SVG-Dateien in `docs/screenshots/` zeigen die drei Motive als grobe Skizze. Die früheren Dubletten
-(`docs/screenshot-*.svg`) wurden entfernt, damit es genau einen Ablageort gibt.
+im Wurzelverzeichnis von `docs/` wurden entfernt, damit es genau einen Ablageort (`docs/screenshots/`) gibt.
 
 ## 2. Was fehlt
 
-- **Echte PNG-Screenshots** (mindestens 1280 × 800 px, mindestens 1200 px breit) — es existiert
-  **kein** PNG- oder JPG-Screenshot der Oberfläche im Repository. Die Pre-Submit-Checks geben dafür
-  eine Warnung aus, bis die Aufnahmen vorliegen.
+- **Echte PNG-Screenshots** — Format PNG, empfohlene Größe 1280 × 800 px (Seitenverhältnis 1.6:1); diese
+  Größenangabe ist eine **Empfehlung**, keine Store-Pflicht. Es existiert **kein** PNG- oder
+  JPG-Screenshot der Oberfläche im Repository. Die Pre-Submit-Checks geben dafür eine Warnung aus, bis
+  die Aufnahmen vorliegen.
 - **Promo-/Feature-Grafik** (optional, von ATN nicht zwingend gefordert).
 
 ## 3. Welche Screenshots gebraucht werden
@@ -46,7 +47,9 @@ Optional ergänzend: Popup der Nachrichten-Display-Aktion und der Abschnitt „D
 
 ## 4. Anforderungen an die Aufnahmen
 
-- Format **PNG**, mindestens 1200 px breit (empfohlen: 1280 × 800 px oder größer).
+- Format **PNG**; empfohlen wird eine Breite von 1280 px (Seitenverhältnis 1.6:1, also 1280 × 800 px). Die
+  Größe ist eine **Empfehlung**, keine Store-Pflicht — der Motivinhalt muss nur auch im skalierten
+  Vorschaubild erkennbar sein.
 - **Keine echten Nutzerdaten:** private Absenderadressen, Namen, Betreffzeilen, Dateinamen und
   Anhangsinhalte durch Testdaten ersetzen oder unkenntlich machen.
 - Pro Motiv genau ein Bild; keine zusammengesetzten Collagen und keine nachträglich eingefügten
@@ -63,7 +66,9 @@ den tatsächlichen Build-/Test-Workflow des Repositories korrigiert (`npx web-ex
 ## 6. Offene Punkte (ehrlich)
 
 - Screenshots: **offen** — es existieren nur SVG-Platzhalter.
-- Icon-Auflösungen: **offen** — 32 px und 64 px nur in minimaler Qualität vorhanden.
+- Icons: **vorhanden** — alle in der `manifest.json` deklarierten Größen (16/32/48/64/128 px) liegen als
+  PNG vor und werden vom Pre-Submit-Check auf die exakte Kantenlänge geprüft. Offen ist allenfalls die
+  **subjektive Qualität der kleinen Größen** (32 px/64 px) im Vergleich zur 128-px-Fassung.
 - Die Verifikation der Banner-Injektion in Thunderbird 140 ESR steht aus. Ohne diese Verifikation
   ist nicht belegt, dass Motiv 2 und Motiv 3 in der beschriebenen Form überhaupt auftreten; die
   Aufnahmen sind daher erst nach dieser Prüfung möglich.

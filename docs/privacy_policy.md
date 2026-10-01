@@ -1,6 +1,6 @@
 # Datenschutzerklärung — Thundy AV – Email Scanner for Thunderbird
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird (Kurzname „Thundy AV“), Version 1.6
+**Add-on:** Thundy AV – Email Scanner for Thunderbird (Kurzname „Thundy AV“), Version 1.6.2
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (Lizenz: MIT)
 **Stand:** September 2026
 
@@ -74,15 +74,41 @@ Schlüssel `privacyTier` gespeichert. **Standardwert: „strict“ (Strikt).**
 
 | Stufe | Was zusätzlich übermittelt werden kann |
 |---|---|
-| `strict` (Strikt) | ausschließlich SHA-256-Hashes von Anhängen |
-| `balanced` (Ausgewogen) | zusätzlich vollständige Anhänge unbekannter Dateien an Hybrid Analysis |
-| `max` (Maximal) | zusätzlich URLs aus der Nachricht an Hybrid Analysis |
+| `strict` (Strikt) | ausschließlich SHA-256-Hashes von Anhängen. Der **manuelle** Anhang-Upload und der **manuelle** URL-Scan im Popup sind in dieser Stufe deaktiviert und zeigen einen Hinweis („In Stufe Strikt deaktiviert – in den Einstellungen auf Ausgewogen/Maximal umstellen“). |
+| `balanced` (Ausgewogen) | zusätzlich vollständige Anhänge unbekannter Dateien an Hybrid Analysis — beim automatischen Scan **und** über den manuellen Anhang-Upload im Popup. |
+| `max` (Maximal) | zusätzlich URLs aus der Nachricht an Hybrid Analysis — automatisch **und** über den manuellen URL-Scan im Popup. |
 
-Unabhängig von der Datenschutz-Stufe gilt: Die Prüfung von Domains über URLhaus, von Links über
-urlscan.io und die Reputationsprüfung von IP-Adressen erfolgen nur, wenn für den jeweiligen Dienst
-ein Schlüssel konfiguriert ist und die globale Zustimmung (3.1) aktiv ist. Die IP-Reputationsprüfung
-findet nur statt, wenn dafür ausdrücklich ein Anbieter und ein Schlüssel hinterlegt wurden;
-standardmäßig ist sie nicht konfiguriert.
+Die Stufe begrenzt **jeden** Übermittlungspfad, nicht nur den automatischen Scan: Ein vollständiger
+Anhang-Upload ist erst ab `balanced` möglich, ein vollständiger URL-Upload an Hybrid Analysis erst ab
+`max`. In `strict` sind die manuellen Upload-Pfade im Popup gar nicht verfügbar (siehe Tabelle).
+
+Unabhängig von der Datenschutz-Stufe gilt: Hash-Abfragen (SHA-256) sowie die Prüfung von Domains
+über URLhaus, von Links über urlscan.io und die Reputationsprüfung von IP-Adressen bleiben möglich,
+sofern für den jeweiligen Dienst ein Schlüssel konfiguriert ist und die globale Zustimmung (3.1)
+aktiv ist. Die IP-Reputationsprüfung findet nur statt, wenn dafür ausdrücklich ein Anbieter und ein
+Schlüssel hinterlegt wurden; standardmäßig ist sie nicht konfiguriert.
+
+### 3.4 Daten-Deklaration und Berechtigung `sensitiveDataUpload`
+
+Im Manifest (`manifest.json`) ist die Daten-Deklaration wie folgt hinterlegt:
+
+```json
+"data_collection_permissions": { "required": ["none"], "optional": ["personalCommunications"] }
+```
+
+`required: "none"` bedeutet, dass das Add-on **ohne** die optionale Zustimmung keine der
+deklarierten Datenkategorien erhebt oder überträgt. Die Kategorie `personalCommunications` ist
+**optional**: Sie wird erst relevant, wenn der Nutzer die externe Analyse freigibt.
+
+Die Zustimmung wird weiterhin über die Optionsseiten-Checkbox **„Externe Analyse erlauben“**
+(Standard: aus) eingeholt. Zusätzlich fragt das Add-on in derselben Nutzergeste die optionale
+Thunderbird-Berechtigung `sensitiveDataUpload` an; sie ist im Manifest als
+`optional_permissions: ["sensitiveDataUpload"]` deklariert und trägt in Thunderbird die Bezeichnung
+„sensible Nutzerdaten an einen Remote-Server übertragen“. Die Anfrage erfolgt programmatisch über
+`browser.permissions.request({ data_collection: ['personalCommunications'], permissions: ['sensitiveDataUpload'] })`.
+Wird die Zustimmung abgeschaltet, entfernt das Add-on die Berechtigung wieder
+(`browser.permissions.remove(...)`). Ohne diese optionale Berechtigung findet keine Übermittlung an
+Dritte statt.
 
 ## 4. Lokal gelesene Daten
 
@@ -107,14 +133,18 @@ Empfänger. Jede Übermittlung setzt die globale Zustimmung nach Abschnitt 3.1 v
 | Datenart | Wann | Empfänger |
 |---|---|---|
 | SHA-256-Hash eines Anhangs | Scan eines Anhangs; alle Stufen (`strict`, `balanced`, `max`) | VirusTotal, Hybrid Analysis |
-| Vollständiger Anhang (Dateiinhalt, Dateiname, Dateityp, Größe) | nur Stufe `balanced` und `max`, und nur wenn zum Hash kein Treffer vorliegt | Hybrid Analysis |
-| URLs/Links aus der Nachricht, die zur Prüfung anstehen | Stufe `max` (Hybrid Analysis); urlscan.io-Abfrage sofern ein urlscan.io-Schlüssel konfiguriert ist | Hybrid Analysis, urlscan.io |
+| Vollständiger Anhang (Dateiinhalt, Dateiname, Dateityp, Größe) | nur Stufe `balanced` und `max`; entweder automatisch (wenn zum Hash kein Treffer vorliegt) oder über den **manuellen Anhang-Upload** im Popup | Hybrid Analysis |
+| URLs/Links aus der Nachricht, die zur Prüfung anstehen | Stufe `max`; automatisch oder über den **manuellen URL-Scan** im Popup (Hybrid Analysis). urlscan.io-Abfrage sofern ein urlscan.io-Schlüssel konfiguriert ist (in allen Stufen) | Hybrid Analysis, urlscan.io |
 | Domains aus dem Nachrichtentext | sofern ein URLhaus-Schlüssel konfiguriert ist | URLhaus (abuse.ch) |
 | IP-Adressen aus den Received-Headern | nur sofern ein Anbieter und ein Schlüssel für die IP-Reputation konfiguriert sind | AbuseIPDB, VirusTotal |
 
 Technisch bedingt übermittelt jede HTTP-Anfrage zusätzlich die IP-Adresse des anfragenden Systems
 und einen HTTP-User-Agent-String. Die Abfrage bei VirusTotal setzt einen konfigurierten
 VirusTotal-Schlüssel voraus; ohne Schlüssel wird kein Hash an VirusTotal übermittelt.
+
+Übermittelte Links können personenbezogene Kennungen enthalten (z. B. Newsletter-Tracking-IDs,
+Kampagnen- oder Empfänger-Parameter in der URL); sie werden nur mit Zustimmung und ausgelöstem Scan
+übermittelt.
 
 **Nicht übermittelt werden** (unabhängig von der Stufe): der vollständige Nachrichtentext, die
 Betreffzeile, Empfänger- und Absenderadressen, Inhalte von Anhängen, die als Klartexttypen
@@ -125,9 +155,9 @@ Zustimmungen und API-Schlüssel.
 
 | Dienst | Adressierte Hosts | Zweck |
 |---|---|---|
-| Hybrid Analysis | `hybrid-analysis.com`, `api.hybrid-analysis.com` | Datei-/Hash-/URL-Analyse (Sandbox, Multi-Engine) |
-| VirusTotal | `virustotal.com`, `www.virustotal.com` | Hash-Abfrage zu Anhängen, IP-Reputation |
-| urlscan.io | `urlscan.io`, `www.urlscan.io` | Analyse/Reputation von Links |
+| Hybrid Analysis | `hybrid-analysis.com` | Datei-/Hash-/URL-Analyse (Sandbox, Multi-Engine) |
+| VirusTotal | `www.virustotal.com` | Hash-Abfrage zu Anhängen, IP-Reputation |
+| urlscan.io | `urlscan.io` | Analyse/Reputation von Links |
 | URLhaus (abuse.ch) | `urlhaus-api.abuse.ch` | Prüfung von Domains gegen Malware-URL-Listen |
 | AbuseIPDB | `api.abuseipdb.com` | Reputationsprüfung von IP-Adressen |
 
@@ -253,7 +283,7 @@ Repository und Issue-Tracker: https://github.com/VaZuLeS/Thunderbird-Antivirus
 
 ## Privacy Policy (English)
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird (short name "Thundy AV"), version 1.6
+**Add-on:** Thundy AV – Email Scanner for Thunderbird (short name "Thundy AV"), version 1.6.2
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (MIT License)
 **Last updated:** September 2026
 
@@ -316,14 +346,40 @@ key `privacyTier`. **Default: `strict`.**
 
 | Tier | What may additionally be transmitted |
 |---|---|
-| `strict` | SHA-256 hashes of attachments only |
-| `balanced` | additionally complete attachments of unknown files to Hybrid Analysis |
-| `max` | additionally URLs from the message to Hybrid Analysis |
+| `strict` | SHA-256 hashes of attachments only. Manual attachment upload and manual URL scan in the popup are disabled in this tier and show a notice ("In Stufe Strikt deaktiviert – in den Einstellungen auf Ausgewogen/Maximal umstellen" / disabled in the *strict* tier — switch to *balanced*/*max* in the options). |
+| `balanced` | additionally complete attachments of unknown files to Hybrid Analysis — for the automatic scan **and** via the manual attachment upload in the popup. |
+| `max` | additionally URLs from the message to Hybrid Analysis — automatically **and** via the manual URL scan in the popup. |
 
-Regardless of the tier: domain checks via URLhaus, link checks via urlscan.io and IP reputation
-checks run only if a key for the respective service is configured and the global consent (3.1) is
-enabled. IP reputation checks run only if a provider and a key have explicitly been configured for
-them; by default they are not configured.
+The tier limits **every** transmission path, not just the automatic scan: a complete attachment upload
+is only possible from `balanced` upwards, a complete URL upload to Hybrid Analysis only from `max`. In
+`strict` the manual upload paths in the popup are not available at all.
+
+Regardless of the tier: hash lookups (SHA-256) as well as domain checks via URLhaus, link checks via
+urlscan.io and IP reputation checks remain possible if a key for the respective service is configured
+and the global consent (3.1) is enabled. IP reputation checks run only if a provider and a key have
+explicitly been configured for them; by default they are not configured.
+
+#### 3.4 Data declaration and the `sensitiveDataUpload` permission
+
+The manifest (`manifest.json`) declares the following data-collection permission:
+
+```json
+"data_collection_permissions": { "required": ["none"], "optional": ["personalCommunications"] }
+```
+
+`required: "none"` means that without the optional consent the add-on does not collect or transmit any
+of the declared data categories. The category `personalCommunications` is **optional**: it only
+becomes relevant once the user enables external analysis.
+
+Consent is still obtained through the options-page checkbox **"Allow external analysis"** (default:
+off). In the same user gesture the add-on additionally requests the optional Thunderbird permission
+`sensitiveDataUpload`; it is declared as `optional_permissions: ["sensitiveDataUpload"]` in the
+manifest (Thunderbird labels it "transfer sensitive user data to a remote server"). The request is
+made programmatically via
+`browser.permissions.request({ data_collection: ['personalCommunications'], permissions: ['sensitiveDataUpload'] })`.
+When consent is switched off, the add-on removes the permission again
+(`browser.permissions.remove(...)`). Without this optional permission, no data is transmitted to third
+parties.
 
 ### 4. Data read locally
 
@@ -346,14 +402,17 @@ recipient. Every transmission requires the global consent described in section 3
 | Data category | When | Recipient |
 |---|---|---|
 | SHA-256 hash of an attachment | when an attachment is scanned; all tiers (`strict`, `balanced`, `max`) | VirusTotal, Hybrid Analysis |
-| Complete attachment (file content, file name, content type, size) | tier `balanced` and `max` only, and only if the hash lookup returned no match | Hybrid Analysis |
-| URLs/links from the message that are queued for checking | tier `max` (Hybrid Analysis); urlscan.io lookup if an urlscan.io key is configured | Hybrid Analysis, urlscan.io |
+| Complete attachment (file content, file name, content type, size) | tier `balanced` and `max` only; either automatically (when the hash lookup returned no match) or via the **manual attachment upload** in the popup | Hybrid Analysis |
+| URLs/links from the message that are queued for checking | tier `max`; automatically or via the **manual URL scan** in the popup (Hybrid Analysis). urlscan.io lookup if an urlscan.io key is configured (in all tiers) | Hybrid Analysis, urlscan.io |
 | Domains extracted from the message body | if a URLhaus key is configured | URLhaus (abuse.ch) |
 | IP addresses found in the Received headers | only if a provider and a key for IP reputation are configured | AbuseIPDB, VirusTotal |
 
 As an inherent property of HTTP, every request also transmits the IP address of the requesting
 system and an HTTP user-agent string. VirusTotal lookups require a configured VirusTotal key; without
 a key no hash is transmitted to VirusTotal.
+
+Links that are transmitted can contain personal identifiers (e.g. newsletter tracking IDs, campaign or
+recipient parameters in the URL); they are transmitted only with consent and a triggered scan.
 
 **Never transmitted** (regardless of tier): the full message body, the subject line, sender and
 recipient addresses, the content of attachments typed as plain-text formats (e.g. `text/plain`,
@@ -363,9 +422,9 @@ recipient addresses, the content of attachments typed as plain-text formats (e.g
 
 | Service | Hosts contacted | Purpose |
 |---|---|---|
-| Hybrid Analysis | `hybrid-analysis.com`, `api.hybrid-analysis.com` | file/hash/URL analysis (sandbox, multi-engine) |
-| VirusTotal | `virustotal.com`, `www.virustotal.com` | hash lookup for attachments, IP reputation |
-| urlscan.io | `urlscan.io`, `www.urlscan.io` | analysis/reputation of links |
+| Hybrid Analysis | `hybrid-analysis.com` | file/hash/URL analysis (sandbox, multi-engine) |
+| VirusTotal | `www.virustotal.com` | hash lookup for attachments, IP reputation |
+| urlscan.io | `urlscan.io` | analysis/reputation of links |
 | URLhaus (abuse.ch) | `urlhaus-api.abuse.ch` | checks domains against malware URL lists |
 | AbuseIPDB | `api.abuseipdb.com` | IP address reputation |
 

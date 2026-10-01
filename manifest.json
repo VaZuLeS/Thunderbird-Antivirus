@@ -5,14 +5,15 @@
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "author": "Jan Bludau",
-  "version": "1.6",
+  "version": "1.6.2",
   "homepage_url": "https://vazules.github.io/Thunderbird-Antivirus/",
   "browser_specific_settings": {
     "gecko": {
       "id": "thundy-av@bludau-it-services.de",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
-        "required": ["personalCommunications"]
+        "required": ["none"],
+        "optional": ["personalCommunications"]
       }
     }
   },
@@ -21,7 +22,11 @@
     "storage",
     "notifications",
     "scripting",
-    "downloads"
+    "downloads",
+    "menus"
+  ],
+  "optional_permissions": [
+    "sensitiveDataUpload"
   ],
   "optional_host_permissions": [
     "https://hybrid-analysis.com/*",

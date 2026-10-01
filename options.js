@@ -1,3 +1,67 @@
+// ---------------------------------------------------------------------------
+// Data collection consent
+//
+// manifest.json declares `data_collection_permissions: { required: ["none"],
+// optional: ["personalCommunications"] }` and the Thunderbird permission
+// `sensitiveDataUpload` as an optional permission. Thunderbird has no built-in
+// onboarding prompt for data collection ("add-ons must request consent
+// explicitly", webextension-api.thunderbird.net/en/mv3/permissions.html), so the
+// consent is requested here - inside the save click handler, i.e. in a user
+// gesture. Feature detection via permissions.getAll() keeps this working on
+// Thunderbird builds without the built-in data collection consent.
+// ---------------------------------------------------------------------------
+const DATA_COLLECTION_REQUEST = {
+    data_collection: ['personalCommunications'],
+    permissions: ['sensitiveDataUpload']
+};
+
+async function dataCollectionConsentSupported() {
+    try {
+        const permissions = await browser.permissions.getAll();
+        return !!permissions && Object.prototype.hasOwnProperty.call(permissions, 'data_collection');
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Requests the data collection consent (and the Thunderbird permission for
+ * uploading sensitive data). Returns true if the add-on may transmit.
+ */
+async function requestDataCollectionConsent() {
+    if (!(await dataCollectionConsentSupported())) {
+        // No built-in consent model: the checkbox on this page is the authority.
+        await requestSensitiveDataUploadPermission();
+        return true;
+    }
+    try {
+        const granted = await browser.permissions.request(DATA_COLLECTION_REQUEST);
+        return granted === true;
+    } catch (e) {
+        // Older builds may not accept the combined request; try the permission alone.
+        await requestSensitiveDataUploadPermission();
+        return true;
+    }
+}
+
+async function requestSensitiveDataUploadPermission() {
+    try {
+        await browser.permissions.contains({ permissions: ['sensitiveDataUpload'] }) ||
+            await browser.permissions.request({ permissions: ['sensitiveDataUpload'] });
+    } catch (e) {
+        // Best effort: the permission is a signal for reviewers, not a gate.
+    }
+}
+
+async function removeDataCollectionConsent() {
+    try {
+        await browser.permissions.remove({ data_collection: ['personalCommunications'] });
+    } catch (e) { /* ignore */ }
+    try {
+        await browser.permissions.remove({ permissions: ['sensitiveDataUpload'] });
+    } catch (e) { /* ignore */ }
+}
+
 // Event-Listener für das Laden der Seite
 let _saveTimeoutId = null;
 let _clearTimeoutId = null;
@@ -29,13 +93,13 @@ document.addEventListener('DOMContentLoaded', function() {
       const privacyTierSelect = document.getElementById('privacyTier');
 
       function updatePrivacyTierStatus() {
-          if (alwaysManualCheckbox.checked) {
-              privacyTierSelect.disabled = true;
-              privacyTierSelect.title = 'Datenschutz-Stufe ist bei manuellem Scan irrelevant';
-          } else {
-              privacyTierSelect.disabled = false;
-              privacyTierSelect.title = '';
-          }
+          // The privacy tier now also governs the manual actions (popup upload /
+          // URL scan), so it is never irrelevant - the tier stays selectable and
+          // "strict" blocks those actions explicitly (see P0-2).
+          privacyTierSelect.disabled = false;
+          privacyTierSelect.title = alwaysManualCheckbox.checked
+              ? 'Automatische Uploads sind gesperrt ("Immer manuell scannen"); die Stufe gilt weiterhin für manuelle Scans.'
+              : '';
       }
 
       const autoScanLinksCheckbox = document.getElementById('autoScanLinks');
@@ -133,6 +197,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (urlscanSetting) requestedOrigins.push(['urlscan.io', 'https://urlscan.io/*']);
         if (urlhausSetting) requestedOrigins.push(['urlhaus.abuse.ch', 'https://urlhaus-api.abuse.ch/*']);
         if (ipReputationProviderSetting === 'abuseipdb') requestedOrigins.push(['abuseipdb.com', 'https://api.abuseipdb.com/*']);
+
+        // Daten-Deklaration und Konsent: das Manifest deklariert die Übermittlung
+        // als optional, deshalb wird die Zustimmung hier eingeholt (Thunderbird
+        // zeigt keinen eigenen Prompt). Lehnt der Nutzer den Dialog ab, wird die
+        // Checkbox zurückgesetzt - ohne Zustimmung wird nichts übertragen.
+        if (externalAnalysisConsentSetting) {
+            const consentGranted = await requestDataCollectionConsent();
+            if (!consentGranted) {
+                externalAnalysisConsentSetting = false;
+                await browser.storage.local.set({ externalAnalysisConsent: false });
+                const consentBox = document.getElementById('externalAnalysisConsent');
+                if (consentBox) consentBox.checked = false;
+                statusSpan.textContent = 'Zustimmung zur Datenübermittlung nicht erteilt – es wird nichts übertragen.';
+            }
+        } else {
+            await removeDataCollectionConsent();
+        }
 
         if (externalAnalysisConsentSetting && requestedOrigins.length > 0) {
             const denied = [];

@@ -29,10 +29,11 @@ Build). Zum Laden des Add-ons in Thunderbird sind sie nicht erforderlich.
 npm test
 ```
 
-`npm test` entspricht dem Skript aus `package.json` (`node --test --test-reporter=spec`) und führt damit **alle**
-`node:test`-Dateien des Repositorys aus (`background.test.js`, `api.test.js`, `db.test.js`, `options.test.js`,
-`content_script.test.js`, `api_gateway.test.js`, `form_test.js`, `vt_test.js`). Die Thunderbird-APIs werden in den
-Tests gemockt, es ist kein Netzwerkzugriff nötig.
+`npm test` entspricht dem Skript aus `package.json` (`node --test --test-reporter=spec`) und führt genau die dort
+aufgeführten `node:test`-Dateien aus (`api.test.js`, `api_gateway.test.js`, `background.test.js`, `db.test.js`,
+`options.test.js` sowie die Skript-/Integrations-Tests unter `scripts/` und `test/`). Die Thunderbird-APIs werden in
+den Tests gemockt, es ist kein Netzwerkzugriff nötig. Die früheren Ad-hoc-Skripte (`form_test.js`, `vt_test.js`,
+`benchmark_compare.js`) liegen jetzt als Entwicklerwerkzeuge unter `tools/` und werden vom Testlauf nicht erfasst.
 
 ## 4. Pre-Submit-Checks
 
@@ -42,7 +43,7 @@ node ./scripts/pre-submit-checks.js
 
 Prüft unter anderem: Manifest V3, Name/Version/Beschreibung/`homepage_url`, Add-on-ID, deklarierte und
 **in der richtigen Kantenlänge vorhandene** Icons, `default_locale` samt Katalog und `__MSG_`-Verweise,
-`data_collection_permissions` (kein widersprüchliches `"none"`), verbotene Permissions und MV3-inkompatible Keys,
+`data_collection_permissions` (Deklaration `required`/`optional`, keine widersprüchliche Kombination), verbotene Permissions und MV3-inkompatible Keys,
 valide Match-Patterns in `optional_host_permissions`, referenzierte Dateien (Hintergrundskripte, Optionsseite,
 Popup), Abwesenheit von `install.rdf` sowie Privacy-Policy und Verlinkung auf den Landing-Pages. Ausgabe: eine
 Liste `ok:`/`warning:`/`FAILED:`; bei Fehlern ist der Exit-Code ≠ 0, sodass die CI zuverlässig fehlschlägt.
@@ -53,15 +54,20 @@ Hinweis: Solange echte Screenshots fehlen, erscheint genau eine Warnung (kein Fe
 ```bash
 npx web-ext lint
 npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
+node ./scripts/verify-package.js ./build
+npm run store-gate
 ```
 
 - `npx web-ext lint` (addons-linter) muss **0 Fehler** melden. Die verbleibenden Warnungen sind überwiegend
   `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-APIs wie `messages.*`
-  oder `messageDisplay.*` nicht kennt.
-- `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.zip` (Dateiname aus dem
-  Add-on-Namen). Die Ausschlüsse für Testdateien, `docs/`, `scripts/`, `examples/`, Lockfiles, `install.rdf` und
-  Build-Artefakte stehen in `web-ext-config.mjs` (`ignoreFiles`, ergänzt durch `.webextignore`);
-  `node scripts/verify-package.js ./build` prüft anschließend Dateiliste und Größe des Pakets.
+  oder `messageDisplay.*` nicht kennt (`npm run lint:filtered` prüft sie gegen eine Allow-Liste).
+- `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.2.zip` (Dateiname aus dem
+  Add-on-Namen). Die Ausschlüsse für Testdateien, `tools/`, `testdata/`, `docs/`, `scripts/`, `examples/`, Lockfiles,
+  `install.rdf` und Build-Artefakte stehen in `web-ext-config.mjs` (`ignoreFiles`); `web-ext` liest keine
+  `.webextignore`-Datei, diese Konfiguration ist also die einzige Quelle. `node scripts/verify-package.js ./build`
+  prüft anschließend Dateiliste, Pflicht-Laufzeitdateien und Größe des Pakets.
+- `npm run store-gate` (Submission-Gate, vom Maintainer ergänzt) bündelt die Store-Readiness-Prüfungen; `npm run check`
+  verkettet Pre-Submit-Checks, Tests, Lint-Filter, Build und Paketprüfung.
 - Signieren für eine Verteilung: `npx web-ext sign --channel unlisted` (selbst verteilen) oder
   `npx web-ext sign --channel listed` (Einreichung im Add-ons Store, benötigt API-Zugangsdaten von
   addons.thunderbird.net).
@@ -94,6 +100,10 @@ deaktivierter Signaturprüfung (`about:config` → `xpinstall.signatures.require
 
 ### Testablauf (Kurzfassung)
 
+Für die Prüfung Testnachrichten aus `testdata/` verwenden (harmloser Anhang, HTML-Anhang, Absender-/Domain-Abweichung,
+gefälschter Anzeigename, Dringlichkeits-Link); keine echten Mails. Der vollständige Live-Test-Ablauf steht in
+[docs/live_test_protocol.md](live_test_protocol.md).
+
 1. Add-on laden und die **Einstellungen** öffnen.
 2. **Ohne Zustimmung testen:** „Externe Analyse erlauben“ bleibt aus. Ein Scan (Banner, Popup oder Kontextmenü) darf
    nichts an Dritte übertragen; das Banner meldet, dass keine Daten übertragen wurden.
@@ -112,6 +122,9 @@ deaktivierter Signaturprüfung (`about:config` → `xpinstall.signatures.require
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html)
 - [docs/reviewer_notes.md](reviewer_notes.md) – Berechtigungen, Datenflüsse und Testablauf für Store-Reviewer
 - [docs/store_listing.md](store_listing.md) – Listing-Entwurf · [docs/STATUS.md](STATUS.md) – offene Punkte
+- [docs/live_test_protocol.md](live_test_protocol.md) – Live-Test-Ablauf (Thunderbird 140 ESR) ·
+  [docs/decisions.md](decisions.md) – verbindliche Entscheidungen
+- [testdata/](../testdata/) – Beispielnachrichten (`.eml`) für den Testablauf
 - [docs/external_service_hardening.md](external_service_hardening.md) – Hinweise zu externen Aufrufen und
   API-Schlüsseln
 - [CHANGELOG.md](../CHANGELOG.md) – Änderungen je Version

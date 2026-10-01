@@ -1,46 +1,66 @@
-name: Release (sign and attach XPI)
+name: Release / Sign (Thunderbird Add-ons Store)
 
-# Manual trigger only. Requires the ATN API credentials as repository secrets:
-#   ATN_API_KEY / ATN_API_SECRET  (see https://addons.thunderbird.net/en-US/developers/addon/api/key/)
+# Manual release job. It signs/submits the current package to
+# addons.thunderbird.net (ATN) - NOT to addons.mozilla.org:
+# `web-ext sign` defaults to https://addons.mozilla.org/api/v5/ and would send a
+# Thunderbird-only add-on to the wrong catalog, so --amo-base-url is mandatory
+# (finding P1-14 in docs/PROBLEMANALYSE_STORE_READINESS.md).
+#
+# For the "listed" channel ATN reviews manually; the default approval timeout of
+# 15 minutes expires long before a human review finishes and leaves the job
+# without an XPI (finding P1-15). Use approval_timeout=0 to submit and exit, and
+# fetch the signed file from ATN afterwards.
+
 on:
   workflow_dispatch:
     inputs:
       channel:
-        description: 'Signing channel (listed = publish to addons.thunderbird.net, unlisted = self distribution)'
+        description: 'Release channel at ATN'
         required: true
-        default: unlisted
+        default: 'listed'
         type: choice
         options:
-          - unlisted
           - listed
+          - unlisted
+      approval_timeout:
+        description: 'Seconds to wait for the ATN review (0 = submit and stop)'
+        required: true
+        default: '0'
+        type: string
 
 jobs:
   sign:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - name: Use Node.js
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
+          cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Pre-submit checks
+      - name: Pre-submit checks (manifest, data declaration, permissions, assets)
         run: npm run pre-submit-checks
-      - name: Run unit tests
+      - name: Unit tests (complete suite)
         run: npm test
-      - name: Build XPI and verify package content
-        run: |
-          npx web-ext build --source-dir . --artifacts-dir ./build
-          node scripts/verify-package.js ./build
-      - name: Sign the add-on
+      - name: Build XPI and verify the package content
+        run: npm run package
+      - name: Sign and submit to addons.thunderbird.net
         env:
           WEB_EXT_API_KEY: ${{ secrets.ATN_API_KEY }}
           WEB_EXT_API_SECRET: ${{ secrets.ATN_API_SECRET }}
         run: |
-          npx web-ext sign --source-dir . --artifacts-dir ./build --channel "${{ inputs.channel }}"
-      - name: Upload signed artifact
+          npx web-ext sign \
+            --source-dir . \
+            --artifacts-dir ./build \
+            --channel "${{ inputs.channel }}" \
+            --amo-base-url https://addons.thunderbird.net/api/v5/ \
+            --approval-timeout "${{ inputs.approval_timeout }}"
+      - name: Upload the signed XPI (if ATN returned one)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: signed-xpi
           path: build/*.xpi
-          if-no-files-found: error
+          if-no-files-found: warn

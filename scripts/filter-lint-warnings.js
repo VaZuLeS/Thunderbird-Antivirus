@@ -4,25 +4,33 @@
  * The linter ships Firefox API metadata only, so Thunderbird specific APIs and
  * permissions are reported as "unsupported". Those known false positives are
  * listed here explicitly - everything else fails the CI job.
+ *
+ * Deliberately NOT listed any more: `messageDisplay.onMessageDisplayed` and
+ * `messageDisplay.getDisplayedMessage`. Those APIs were really removed in
+ * Manifest V3 (Thunderbird's schema marks them `max_manifest_version: 2`), so
+ * allow-listing them would hide exactly the regression that the store-readiness
+ * analysis flagged as blocker B1/P0-3. `scripts/pre-submit-checks.js` now checks
+ * the runtime files for them instead.
  */
 const fs = require('fs');
 
 const KNOWN_THUNDERBIRD_FALSE_POSITIVES = [
   'messagesRead',
   'messageDisplay.getDisplayedMessages',
-  'messageDisplay.getDisplayedMessage',
   'messageDisplay.onMessagesDisplayed',
-  'messageDisplay.onMessageDisplayed',
   'messages.getFull',
   'messages.listAttachments',
   'messages.getAttachmentFile',
   'messages.query',
-  'scripting.messageDisplay'
+  'scripting.messageDisplay',
+  // Thunderbird-only optional permission for uploading user data
+  'sensitiveDataUpload'
 ];
 
 const ALLOWED_CODES = [
   // Thunderbird only permission / API surface
   'MANIFEST_PERMISSIONS',
+  'MANIFEST_OPTIONAL_PERMISSIONS',
   'UNSUPPORTED_API',
   // The add-on targets Thunderbird, not Firefox for Android
   'KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION'
@@ -33,9 +41,13 @@ function isKnownFalsePositive(warning) {
   // The add-on is distributed for Thunderbird only; the Firefox for Android
   // compatibility notice can never apply and is always irrelevant.
   if (warning.code === 'KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION') return true;
+  if (warning.code === 'MANIFEST_OPTIONAL_PERMISSIONS') {
+    return (warning.message || '').includes('sensitiveDataUpload');
+  }
   const message = warning.message || '';
   return KNOWN_THUNDERBIRD_FALSE_POSITIVES.some((needle) => message.includes(needle));
 }
+
 
 function main() {
   const file = process.argv[2] || '/tmp/lint.json';

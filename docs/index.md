@@ -1,7 +1,7 @@
 # Thundy AV – Documentation
 
 Landing page for the documentation of **Thundy AV – Email Scanner for Thunderbird**
-(short name "Thundy AV"), version 1.6, MIT license.
+(short name "Thundy AV"), version 1.6.2, MIT license.
 
 - Language selection page (GitHub Pages root): [index.html](index.html) ·
   [English](index_en.html) · [Deutsch](index_de.html)
@@ -12,7 +12,15 @@ Landing page for the documentation of **Thundy AV – Email Scanner for Thunderb
 - Asset status: [store_assets.md](store_assets.md) · capture guide:
   [screenshot_capture.md](screenshot_capture.md)
 - Store-readiness analysis (findings B1–B6, H1–H12, M1–M12):
-  [STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md)
+  [STORE_READINESS_ANALYSIS.md](STORE_READINESS_ANALYSIS.md) — *historic, pre-1.6 snapshot*
+- **Store-readiness problem analysis (current snapshot, findings P0-1 … P3-25):**
+  [PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md)
+- **Task plan derived from it (phases, traceability, DoD):**
+  [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md)
+- Raw audit reports of that analysis: [audits/](audits/) (code, documentation/policy, build/pipeline)
+- Live test protocol (manual test in Thunderbird 140 ESR): [live_test_protocol.md](live_test_protocol.md)
+- Decisions log (binding decisions for the current submission candidate): [decisions.md](decisions.md)
+- Reviewer test data (sample `.eml` messages): [../testdata/](../testdata/)
 
 ## Data processing in one sentence
 
@@ -30,5 +38,10 @@ without consent. There is no telemetry, no analytics and no developer-operated s
 ## Status (honest)
 
 - The add-on is **not** listed in the Thunderbird Add-ons Store yet; there is no store URL.
-- **No real screenshots** exist so far — only SVG placeholders.
-- Manual verification of the in-message banners in Thunderbird 140 ESR is still outstanding.
+- **No real screenshots** exist so far — only SVG placeholders (`docs/screenshots/*.svg`).
+- Manual verification in Thunderbird 140 ESR is still outstanding; the protocol and the test data are
+  ready ([live_test_protocol.md](live_test_protocol.md), [../testdata/](../testdata/)).
+- The store-readiness gates of this snapshot: pre-submit checks 0 errors / 1 warning (screenshots),
+  `npm test` 427 tests / 0 failures, `npm run lint:filtered` 0 errors, `npm run package` valid
+  (17 files, 196,505 bytes). `npm run store-gate` still reports **NO-GO** because the manual criteria
+  (C5 screenshots, C6 live test, C7 release tag) are open — see [STATUS.md](STATUS.md).

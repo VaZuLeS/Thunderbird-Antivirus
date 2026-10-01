@@ -3,3 +3,4 @@ build/
 web-ext-artifacts/
 *.log
 test_output.log
+.audit/

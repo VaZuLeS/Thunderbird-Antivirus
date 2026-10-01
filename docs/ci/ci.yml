@@ -15,17 +15,20 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: '22'
+          cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Pre-submit checks (manifest, permissions, data collection, assets)
+      - name: Pre-submit checks (manifest, privacy, permissions, data declaration, assets)
         run: npm run pre-submit-checks
-      - name: Run unit tests
+      - name: Unit tests (complete suite)
         run: npm test
-      - name: web-ext lint (errors block, known Thunderbird false positives are filtered)
-        run: |
-          npx web-ext lint --source-dir . --output json > /tmp/lint.json
-          node scripts/filter-lint-warnings.js /tmp/lint.json
-      - name: Build XPI and verify package contents
-        run: |
-          npx web-ext build --source-dir . --artifacts-dir ./build
-          node scripts/verify-package.js ./build
+      - name: web-ext lint with curated Thunderbird allow-list
+        run: npm run lint:filtered
+      - name: Build XPI and verify the package content
+        run: npm run package
+      - name: Upload the built XPI as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-xpi
+          path: build/*.zip
+          if-no-files-found: warn

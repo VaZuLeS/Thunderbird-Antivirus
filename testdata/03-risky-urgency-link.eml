@@ -1,0 +1,43 @@
+Return-Path: <buchhaltung@example.net>
+Received: from mail.example.net (mail.example.net [198.51.100.31])
+	by mx.test.example.com (Postfix) with ESMTPS id 5E2F8A1B0C
+	for <test@example.com>; Wed, 01 Oct 2025 11:20:15 +0200 (CEST)
+From: "Buchhaltung Thundy-Test" <buchhaltung@example.net>
+To: test@example.com
+Subject: =?utf-8?q?Dringend=3A_=C3=9Cberweisung_sofort_freigeben?=
+Date: Wed, 01 Oct 2025 11:20:15 +0200
+Message-ID: <testdata-03-urgency@example.net>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="----=_ThundyTest03"
+Content-Language: de-DE
+
+This is a multi-part message in MIME format.
+
+------=_ThundyTest03
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+Sehr geehrte Damen und Herren,
+
+die Rechnung 2025-4711 ist sofort fällig. Bitte führen Sie die Überweisung dringend und
+schnellstmöglich aus, damit keine Mahngebühren entstehen. Diese Zahlung ist wichtig.
+
+Zahlungsportal:   https://portal.example.net/rechnung/4711?uid=123
+Login prüfen:     http://secure-login.example.org/verify
+Betrag freigeben: https://example.net/freigabe/4711
+
+Mit freundlichen Grüßen
+Buchhaltung
+
+------=_ThundyTest03
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+<html><body>
+<p>Die Rechnung 2025-4711 ist <b>sofort f&auml;llig</b>. Bitte die &Uuml;berweisung
+<b>dringend</b> freigeben.</p>
+<p><a href="https://portal.example.net/rechnung/4711?uid=123">Zahlungsportal</a><br>
+<a href="http://secure-login.example.org/verify">Login pr&uuml;fen</a><br>
+<a href="https://example.net/freigabe/4711">Betrag freigeben</a></p>
+</body></html>
+------=_ThundyTest03--

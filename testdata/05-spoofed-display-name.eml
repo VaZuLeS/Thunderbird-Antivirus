@@ -1,0 +1,22 @@
+Return-Path: <bounce@secure-microsoft365.example>
+Received: from smtp.secure-microsoft365.example (smtp.secure-microsoft365.example [203.0.113.55])
+	by mx.test.example.com (Postfix) with ESMTPS id 9F8E7D6C5B
+	for <test@example.com>; Wed, 01 Oct 2025 13:47:22 +0200 (CEST)
+From: =?utf-8?b?0Jxp0YFyb3NvZnQgMzY1IChTaWNoZXJoZWl0c3RlYW0p?= <no-reply@secure-microsoft365.example>
+To: test@example.com
+Subject: =?utf-8?q?Aktion_erforderlich=3A_Konto_best=C3=A4tigen?=
+Date: Wed, 01 Oct 2025 13:47:22 +0200
+Message-ID: <testdata-05-spoofed@secure-microsoft365.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+Guten Tag,
+
+Ihr Konto muss bestätigt werden. Bitte melden Sie sich über den folgenden Link an:
+
+https://login.secure-microsoft365.example/verify?uid=123
+
+Andernfalls wird Ihr Konto in 24 Stunden gesperrt.
+
+Ihr Microsoft 365 Sicherheitsteam
