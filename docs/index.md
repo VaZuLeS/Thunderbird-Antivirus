@@ -1,7 +1,7 @@
 # Thundy AV – Documentation
 
 Landing page for the documentation of **Thundy AV – Email Scanner for Thunderbird**
-(short name "Thundy AV"), version 1.6.2, MIT license.
+(short name "Thundy AV"), version 1.6.3, MIT license.
 
 - Language selection page (GitHub Pages root): [index.html](index.html) ·
   [English](index_en.html) · [Deutsch](index_de.html)
@@ -29,6 +29,18 @@ nothing is transmitted to third parties unless you enable "Externe Analyse erlau
 **and** trigger a scan for a message or a sender. External analysis services that may then be
 contacted are Hybrid Analysis, VirusTotal, urlscan.io, URLhaus (abuse.ch) and AbuseIPDB — never
 without consent. There is no telemetry, no analytics and no developer-operated server.
+
+## For security researchers
+
+The message popup has a **Researcher** tab that lays out the locally collected evidence: header
+forensics (From/Reply-To/Return-Path, SPF/DKIM/DMARC from `Authentication-Results`, the `Received`
+chain with hops, time differences and IPs), attachment forensics (name, MIME type, size, SHA-256,
+provider status), link anatomy (scheme, host, registrable domain, TLD, punycode/homoglyph suspicion,
+tracking parameters, short-URL detection), an extracted IOC block, a per-rule risk breakdown, a
+timeline and a heuristic MITRE ATT&CK mapping. It can be exported locally as JSON, CSV or a minimal
+STIX 2.1 bundle through the download manager. The tab runs entirely locally and needs no additional
+permission; the MITRE ATT&CK mapping is a heuristic hint, not proof of an attack. Details:
+[README.md](../README.md#for-security-researchers).
 
 ## Contact
 

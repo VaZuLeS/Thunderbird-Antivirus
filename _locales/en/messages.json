@@ -114,5 +114,108 @@
   },
   "bannerTierBlocked": {
     "message": "This action is not allowed by the current privacy tier. See the add-on options."
+  },
+  "bannerThreatHint": {
+    "message": "Open the Thundy AV button in the message toolbar for the full researcher view (headers, IOCs, MITRE mapping, export)."
+  },
+  "verdictClean": {
+    "message": "checked, no findings"
+  },
+  "verdictUnclear": {
+    "message": "unclear, please verify"
+  },
+  "verdictSuspicious": {
+    "message": "suspicious"
+  },
+  "verdictMalicious": {
+    "message": "malicious indicators"
+  },
+  "notificationScanRunning": {
+    "message": "Scanning \"$SUBJECT$\" …",
+    "placeholders": {
+      "subject": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanProgress": {
+    "message": "Link $DONE$ of $TOTAL$ submitted …",
+    "placeholders": {
+      "done": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "notificationScanLinksChecked": {
+    "message": "$COUNT$ link(s) checked, analysis running …",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanResult": {
+    "message": "Result: $VERDICT$ (risk score $SCORE$ of 100)",
+    "placeholders": {
+      "verdict": {
+        "content": "$1"
+      },
+      "score": {
+        "content": "$2"
+      }
+    }
+  },
+  "notificationClickHint": {
+    "message": "Click the notification to open the message."
+  },
+  "notificationFallbackSubject": {
+    "message": "the open message"
+  },
+  "researchRuleLists": {
+    "message": "Custom black/whitelist"
+  },
+  "researchRuleAuth": {
+    "message": "Authentication (SPF/DKIM/DMARC)"
+  },
+  "researchRuleUrlhaus": {
+    "message": "URLhaus domain reputation"
+  },
+  "researchRuleReplyTo": {
+    "message": "Reply-To deviation"
+  },
+  "researchRuleBehavior": {
+    "message": "Content and urgency heuristics"
+  },
+  "researchRuleSenderDomain": {
+    "message": "Sender domain / brand look-alike"
+  },
+  "researchRuleLinks": {
+    "message": "Link analysis"
+  },
+  "timelineMessageDate": {
+    "message": "Message date"
+  },
+  "timelineHop": {
+    "message": "Received hop"
+  },
+  "timelineSuspiciousDelay": {
+    "message": "unusual delay"
+  },
+  "timelineLocalAssessment": {
+    "message": "Local assessment"
+  },
+  "timelineLocalAssessmentDetail": {
+    "message": "risk score $SCORE$ of 100 – $VERDICT$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "verdict": {
+        "content": "$2"
+      }
+    }
   }
 }

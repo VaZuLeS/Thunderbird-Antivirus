@@ -18,6 +18,8 @@ const KNOWN_THUNDERBIRD_FALSE_POSITIVES = [
   'messagesRead',
   'messageDisplay.getDisplayedMessages',
   'messageDisplay.onMessagesDisplayed',
+  'messageDisplay.open',
+  'messages.get',
   'messages.getFull',
   'messages.listAttachments',
   'messages.getAttachmentFile',

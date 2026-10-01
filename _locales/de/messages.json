@@ -114,5 +114,108 @@
   },
   "bannerTierBlocked": {
     "message": "Diese Aktion ist in der aktuellen Datenschutz-Stufe nicht erlaubt. Siehe Einstellungen des Add-ons."
+  },
+  "bannerThreatHint": {
+    "message": "Über den Thundy-AV-Button in der Nachrichtenleiste erreichen Sie die vollständige Forscher-Ansicht (Header, IOCs, MITRE-Zuordnung, Export)."
+  },
+  "verdictClean": {
+    "message": "geprüft, keine Auffälligkeiten"
+  },
+  "verdictUnclear": {
+    "message": "unklar, bitte prüfen"
+  },
+  "verdictSuspicious": {
+    "message": "verdächtig"
+  },
+  "verdictMalicious": {
+    "message": "bösartige Indikatoren"
+  },
+  "notificationScanRunning": {
+    "message": "„$SUBJECT$“ wird geprüft …",
+    "placeholders": {
+      "subject": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanProgress": {
+    "message": "Link $DONE$ von $TOTAL$ übermittelt …",
+    "placeholders": {
+      "done": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "notificationScanLinksChecked": {
+    "message": "$COUNT$ Link(s) geprüft, Analyse läuft …",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanResult": {
+    "message": "Ergebnis: $VERDICT$ (Risiko-Score $SCORE$ von 100)",
+    "placeholders": {
+      "verdict": {
+        "content": "$1"
+      },
+      "score": {
+        "content": "$2"
+      }
+    }
+  },
+  "notificationClickHint": {
+    "message": "Klick auf die Benachrichtigung öffnet die Nachricht."
+  },
+  "notificationFallbackSubject": {
+    "message": "die geöffnete Nachricht"
+  },
+  "researchRuleLists": {
+    "message": "Eigene Schwarz-/Whitelist"
+  },
+  "researchRuleAuth": {
+    "message": "Authentifizierung (SPF/DKIM/DMARC)"
+  },
+  "researchRuleUrlhaus": {
+    "message": "URLhaus-Domain-Reputation"
+  },
+  "researchRuleReplyTo": {
+    "message": "Reply-To-Abweichung"
+  },
+  "researchRuleBehavior": {
+    "message": "Inhalts- und Dringlichkeits-Heuristiken"
+  },
+  "researchRuleSenderDomain": {
+    "message": "Absender-Domain / Marken-Ähnlichkeit"
+  },
+  "researchRuleLinks": {
+    "message": "Link-Analyse"
+  },
+  "timelineMessageDate": {
+    "message": "Nachrichtendatum"
+  },
+  "timelineHop": {
+    "message": "Received-Hop"
+  },
+  "timelineSuspiciousDelay": {
+    "message": "ungewöhnliche Verzögerung"
+  },
+  "timelineLocalAssessment": {
+    "message": "Lokale Bewertung"
+  },
+  "timelineLocalAssessmentDetail": {
+    "message": "Risiko-Score $SCORE$ von 100 – $VERDICT$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "verdict": {
+        "content": "$2"
+      }
+    }
   }
 }

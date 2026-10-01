@@ -31,8 +31,30 @@ const I18N_FALLBACKS = {
     notificationInjectionFailed: 'The banner could not be inserted into the message view. Please report this with your Thunderbird version.',
     bannerTierBlocked: 'This action is not allowed by the current privacy tier. See the add-on options.',
     notificationScanStarted: 'Scan started for: $URL$',
+    notificationScanRunning: 'Scanning "$SUBJECT$" …',
+    notificationScanProgress: 'Link $DONE$ of $TOTAL$ submitted …',
+    notificationScanLinksChecked: '$COUNT$ link(s) checked, analysis running …',
+    notificationFallbackSubject: 'the open message',
     notificationScanSubmitted: 'Scan submitted successfully. Job ID: $JOBID$',
+    notificationScanResult: 'Result: $VERDICT$ (risk score $SCORE$ of 100)',
+    notificationClickHint: 'Click the notification to open the message.',
     notificationScanError: 'Scan error: $ERROR$',
+    verdictClean: 'checked, no findings',
+    verdictUnclear: 'unclear, please verify',
+    verdictSuspicious: 'suspicious',
+    verdictMalicious: 'malicious indicators',
+    researchRuleLists: 'Custom black/whitelist',
+    researchRuleAuth: 'Authentication (SPF/DKIM/DMARC)',
+    researchRuleUrlhaus: 'URLhaus domain reputation',
+    researchRuleReplyTo: 'Reply-To deviation',
+    researchRuleBehavior: 'Content and urgency heuristics',
+    researchRuleSenderDomain: 'Sender domain / brand look-alike',
+    researchRuleLinks: 'Link analysis',
+    timelineMessageDate: 'Message date',
+    timelineHop: 'Received hop',
+    timelineSuspiciousDelay: 'unusual delay',
+    timelineLocalAssessment: 'Local assessment',
+    timelineLocalAssessmentDetail: 'risk score $SCORE$ of 100 – $VERDICT$',
     notificationTitle: 'Thundy AV Scanner',
     notificationTitleError: 'Thundy AV Scanner error',
     notificationNoLinks: 'No links found in this message.'
@@ -47,7 +69,9 @@ function msg(key, subs) {
     } catch (e) { /* fall through to the fallback string */ }
     let text = I18N_FALLBACKS[key] || key;
     const values = Array.isArray(subs) ? subs.slice() : (subs === undefined ? [] : [subs]);
-    text = text.replace(/\$(SCORE|URL|JOBID|ERROR)\$/g, () => (values.length ? String(values.shift()) : ''));
+    // Generic placeholder handling: $SCORE$, $URL$, $JOBID$, $ERROR$, $SUBJECT$,
+    // $VERDICT$ … are filled in the order in which they appear.
+    text = text.replace(/\$([A-Z0-9_]+)\$/g, () => (values.length ? String(values.shift()) : ''));
     return text;
 }
 
@@ -805,37 +829,76 @@ function calculateThreatScore(author, urls, options = {}) {
     } = options;
     let score = 0;
     let reasons = [];
+    // Scoring ledger: every stage records how many points it contributed and which
+    // reasons it added. The researcher view (and the notifications) show this
+    // breakdown instead of just a total that nobody can reconstruct.
+    const breakdown = [];
 
     let email = extractEmailAddress(author);
     let senderDomain = extractEmailDomain(email);
 
     const listCheck = checkLists(email, senderDomain);
     if (listCheck) {
-        return { score: listCheck.score, reasons: listCheck.reasons, authStatus: 'neutral' };
+        return {
+            score: listCheck.score,
+            reasons: listCheck.reasons,
+            authStatus: 'neutral',
+            verdict: verdictForScore(listCheck.score),
+            breakdown: [{
+                id: 'lists',
+                label: msg('researchRuleLists'),
+                points: listCheck.score,
+                reasons: listCheck.reasons
+            }]
+        };
     }
 
-    const authEval = evaluateAuthHeaders(authHeaders, score, reasons);
-    score = authEval.score;
-    let authStatus = authEval.authStatus;
+    const runStage = (id, labelKey, stageFn) => {
+        const scoreBefore = score;
+        const reasonsBefore = reasons.length;
+        score = stageFn();
+        const points = score - scoreBefore;
+        const stageReasons = reasons.slice(reasonsBefore);
+        if (points !== 0 || stageReasons.length > 0) {
+            breakdown.push({ id, label: msg(labelKey), points, reasons: stageReasons });
+        }
+    };
 
-    score = evaluateUrlhaus(urlhausDomains, score, reasons);
-    score = evaluateReplyTo(replyTo, senderDomain, score, reasons);
-    score = evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons);
+    let authStatus = 'neutral';
+    runStage('auth', 'researchRuleAuth', () => {
+        const authEval = evaluateAuthHeaders(authHeaders, score, reasons);
+        authStatus = authEval.authStatus;
+        return authEval.score;
+    });
+    runStage('urlhaus', 'researchRuleUrlhaus', () => evaluateUrlhaus(urlhausDomains, score, reasons));
+    runStage('replyto', 'researchRuleReplyTo', () => evaluateReplyTo(replyTo, senderDomain, score, reasons));
+    runStage('behavior', 'researchRuleBehavior', () => evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons));
 
-    const senderEval = evaluateSenderDomain(senderDomain, score, reasons);
-    score = senderEval.score;
-    let senderMainDomain = senderEval.senderMainDomain;
+    let senderMainDomain = '';
+    runStage('sender', 'researchRuleSenderDomain', () => {
+        const senderEval = evaluateSenderDomain(senderDomain, score, reasons);
+        senderMainDomain = senderEval.senderMainDomain;
+        return senderEval.score;
+    });
 
-    score = evaluateLinks({
+    runStage('links', 'researchRuleLinks', () => evaluateLinks({
         urls,
         senderDomain,
         senderMainDomain,
         score,
         reasons,
         parsedUrlCache
-    });
+    }));
 
-    return { score: Math.min(score, 100), reasons: reasons, authStatus: authStatus };
+    const total = Math.min(score, 100);
+    return {
+        score: total,
+        rawScore: score,
+        reasons: reasons,
+        authStatus: authStatus,
+        verdict: verdictForScore(total),
+        breakdown
+    };
 }
 
 async function processAndUploadUrls(message, filteredUrls) {
@@ -1063,9 +1126,51 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
     return urlhausDomains;
 }
 
+/**
+ * Injected banners cannot use theme.css (they live in the message display
+ * document), so the palette is duplicated here - it must stay in sync with the
+ * severity tokens in theme.css (see docs/design_system.md).
+ */
+const BANNER_PALETTE = {
+    light: {
+        critical: { fg: '#b3261e', bg: '#fdecea' },
+        high: { fg: '#b45309', bg: '#fdf3e3' },
+        medium: { fg: '#a16207', bg: '#fdf8e3' },
+        low: { fg: '#1f7a3f', bg: '#eaf6ee' },
+        info: { fg: '#0b5fa5', bg: '#e8f1fb' }
+    },
+    dark: {
+        critical: { fg: '#ff8a80', bg: '#3a1d1b' },
+        high: { fg: '#ffc078', bg: '#3a2a16' },
+        medium: { fg: '#ffd666', bg: '#3a3416' },
+        low: { fg: '#7ee2a8', bg: '#16301f' },
+        info: { fg: '#7cc4ff', bg: '#16283a' }
+    }
+};
+
+function severityForScore(score) {
+    if (score >= 75) return 'critical';
+    if (score >= 50) return 'high';
+    if (score >= 20) return 'medium';
+    return 'low';
+}
+
+/**
+ * The injected banner cannot read CSS media queries for its inline palette, so
+ * the colour scheme is chosen from the user's preference.
+ */
+function prefersDarkScheme() {
+    try {
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+        }
+    } catch (e) { /* fall back to the light palette */ }
+    return false;
+}
+
 async function injectThreatBanner(tabId, threat) {
     if (threat.score >= 50 || threat.authStatus === 'pass') {
-        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus) {
+        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus, severity, palette, verdictText) {
                 const t = (key, fallback, subs) => {
                     try {
                         return browser.i18n.getMessage(key, subs) || fallback;
@@ -1073,26 +1178,57 @@ async function injectThreatBanner(tabId, threat) {
                         return fallback;
                     }
                 };
+                const existing = document.getElementById('thundy-threat-banner') || document.getElementById('thundy-auth-badge');
+                if (existing) existing.remove();
+
                 if (score >= 50) {
                     // Sichere DOM-Manipulation ohne innerHTML
                     const banner = document.createElement('div');
                     banner.id = 'thundy-threat-banner';
-                    banner.style.backgroundColor = '#ffeeee';
-                    banner.style.border = '1px solid #ff0000';
-                    banner.style.color = '#ff0000';
-                    banner.style.padding = '10px';
+                    banner.setAttribute('role', 'alert');
+                    banner.setAttribute('aria-live', 'assertive');
+                    banner.style.backgroundColor = palette.bg;
+                    banner.style.border = '1px solid ' + palette.fg;
+                    banner.style.borderLeft = '6px solid ' + palette.fg;
+                    banner.style.color = palette.fg;
+                    banner.style.padding = '12px 14px';
                     banner.style.margin = '10px';
-                    banner.style.borderRadius = '4px';
-                    banner.style.fontWeight = 'bold';
-                    banner.style.fontFamily = 'Arial, sans-serif';
+                    banner.style.borderRadius = '8px';
+                    banner.style.fontFamily = 'system-ui, Arial, sans-serif';
+                    banner.style.fontSize = '14px';
+                    banner.style.lineHeight = '1.45';
                     banner.style.zIndex = '9999';
 
-                    const title = document.createElement('div');
-                    title.textContent = '🔴 ⚠️ ' + t('bannerThreatTitle', 'Thundy AV warning') +
-                        ' (' + t('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
-                    title.style.fontSize = '16px';
-                    title.style.marginBottom = '5px';
-                    banner.appendChild(title);
+                    const header = document.createElement('div');
+                    header.style.display = 'flex';
+                    header.style.alignItems = 'baseline';
+                    header.style.gap = '10px';
+                    header.style.flexWrap = 'wrap';
+
+                    const scoreBadge = document.createElement('span');
+                    scoreBadge.id = 'thundy-threat-score';
+                    scoreBadge.textContent = String(score) + '/100';
+                    scoreBadge.style.display = 'inline-block';
+                    scoreBadge.style.padding = '2px 10px';
+                    scoreBadge.style.borderRadius = '999px';
+                    scoreBadge.style.backgroundColor = palette.fg;
+                    scoreBadge.style.color = palette.bg;
+                    scoreBadge.style.fontWeight = '700';
+                    scoreBadge.style.fontSize = '13px';
+                    scoreBadge.style.fontVariantNumeric = 'tabular-nums';
+                    header.appendChild(scoreBadge);
+
+                    const title = document.createElement('strong');
+                    title.textContent = t('bannerThreatTitle', 'Thundy AV warning');
+                    title.style.fontSize = '15px';
+                    header.appendChild(title);
+
+                    const verdict = document.createElement('span');
+                    verdict.textContent = verdictText;
+                    verdict.style.fontWeight = '600';
+                    header.appendChild(verdict);
+
+                    banner.appendChild(header);
 
                     const reasonList = document.createElement('ul');
                     reasonList.style.margin = '0';
@@ -1106,26 +1242,35 @@ async function injectThreatBanner(tabId, threat) {
                     }
                     banner.appendChild(reasonList);
 
+                    const footer = document.createElement('div');
+                    footer.style.marginTop = '8px';
+                    footer.style.fontSize = '12px';
+                    footer.style.opacity = '0.85';
+                    footer.textContent = t('bannerThreatHint', 'Open the Thundy AV button in the message toolbar for the full researcher view (headers, IOCs, MITRE mapping, export).');
+                    banner.appendChild(footer);
+
                     document.body.prepend(banner);
                 } else if (authStatus === 'pass') {
                     const badge = document.createElement('div');
                     badge.id = 'thundy-auth-badge';
+                    badge.setAttribute('role', 'status');
                     badge.style.display = 'inline-block';
-                    badge.style.backgroundColor = '#e6ffe6';
-                    badge.style.border = '1px solid #008000';
-                    badge.style.color = '#008000';
-                    badge.style.padding = '5px 10px';
+                    badge.style.backgroundColor = palette.bg;
+                    badge.style.border = '1px solid ' + palette.fg;
+                    badge.style.color = palette.fg;
+                    badge.style.padding = '5px 12px';
                     badge.style.margin = '10px';
-                    badge.style.borderRadius = '20px';
-                    badge.style.fontWeight = 'bold';
-                    badge.style.fontFamily = 'Arial, sans-serif';
+                    badge.style.borderRadius = '999px';
+                    badge.style.fontWeight = '600';
+                    badge.style.fontFamily = 'system-ui, Arial, sans-serif';
                     badge.style.fontSize = '12px';
                     badge.style.zIndex = '9999';
-                    badge.textContent = '🟢 🛡️ ' + t('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
+                    badge.textContent = t('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
 
                     document.body.prepend(badge);
                 }
-        }, [threat.score, threat.reasons, threat.authStatus]);
+        }, [threat.score, threat.reasons, threat.authStatus, severityForScore(threat.score),
+            BANNER_PALETTE[prefersDarkScheme() ? 'dark' : 'light'], verdictLabel(threat.verdict)]);
     }
 }
 
@@ -1187,6 +1332,7 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
   const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache });
   const threat = calculateThreatScore(message.author, urls, options);
   await injectThreatBanner(tab.id, threat);
+  return threat;
 }
 
 /**
@@ -1876,17 +2022,551 @@ function createContextMenus() {
     }
 }
 
-function notify(titleKey, messageKey, subs) {
+// ---------------------------------------------------------------------------
+// Researcher dossier
+//
+// Everything below is local processing of the message the user has opened: no
+// additional network access and no additional permissions (messagesRead +
+// storage already cover it). The dossier is what the researcher view in the
+// message-display popup renders and what the export functions serialise.
+// ---------------------------------------------------------------------------
+
+// Heuristic MITRE ATT&CK mapping. It maps *local indicators* (heuristics) to the
+// technique they would belong to if the message were malicious - it is explicitly
+// not a detection and must be presented as "heuristic".
+const MITRE_TECHNIQUES = {
+    spearphishingAttachment: { id: 'T1566.001', name: 'Spearphishing Attachment', tactic: 'Initial Access' },
+    spearphishingLink: { id: 'T1566.002', name: 'Spearphishing Link', tactic: 'Initial Access' },
+    phishing: { id: 'T1566', name: 'Phishing', tactic: 'Initial Access' },
+    userExecutionFile: { id: 'T1204.002', name: 'User Execution: Malicious File', tactic: 'Execution' },
+    userExecutionLink: { id: 'T1204.001', name: 'User Execution: Malicious Link', tactic: 'Execution' },
+    masquerading: { id: 'T1036.005', name: 'Masquerading: Match Legitimate Name or Location', tactic: 'Defense Evasion' },
+    impersonation: { id: 'T1656', name: 'Impersonation', tactic: 'Defense Evasion' },
+    obfuscatedFiles: { id: 'T1027', name: 'Obfuscated Files or Information', tactic: 'Defense Evasion' },
+    archiveCollected: { id: 'T1560.001', name: 'Archive Collected Data: Archive via Utility', tactic: 'Collection' }
+};
+
+// Extensions a security researcher reacts to in an e-mail attachment.
+const RISKY_ATTACHMENT_EXTENSIONS = [
+    'exe', 'scr', 'com', 'pif', 'bat', 'cmd', 'ps1', 'psm1', 'vbs', 'vbe', 'js', 'jse', 'wsf', 'wsh',
+    'hta', 'jar', 'lnk', 'iso', 'img', 'vhd', 'msi', 'msp', 'dll', 'cpl', 'reg', 'docm', 'xlsm', 'pptm',
+    'dotm', 'xlam', 'svg', 'html', 'htm', 'chm', 'apk', 'dmg', 'one', 'iqy', 'slk', 'xll'
+];
+const ARCHIVE_EXTENSIONS = ['zip', 'rar', '7z', 'gz', 'bz2', 'xz', 'tar', 'cab', 'arj', 'lzh', 'ace'];
+// Hosts that only exist to shorten/redirect a link.
+const URL_SHORTENER_HOSTS = new Set([
+    'bit.ly', 't.co', 'tinyurl.com', 'goo.gl', 'ow.ly', 'is.gd', 'buff.ly', 'rebrand.ly', 'cutt.ly',
+    'lnkd.in', 'rb.gy', 'shorturl.at', 't.ly', 's.id', 'tiny.cc', 'urlz.fr', 'shorte.st', 'adf.ly'
+]);
+// Query parameters that usually carry tracking/identifiers rather than content.
+const TRACKING_PARAMETERS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content',
+    'gclid', 'fbclid', 'mc_eid', 'mkt_tok', 'uid', 'userid', 'subscriber', 'token', 'ref', 'redirect'];
+
+function getFileExtension(name) {
+    const clean = String(name || '').split(/[?#]/)[0];
+    const index = clean.lastIndexOf('.');
+    return index === -1 ? '' : clean.slice(index + 1).toLowerCase();
+}
+
+function isRiskyAttachmentName(name) {
+    return RISKY_ATTACHMENT_EXTENSIONS.includes(getFileExtension(name));
+}
+
+function isArchiveAttachmentName(name) {
+    return ARCHIVE_EXTENSIONS.includes(getFileExtension(name));
+}
+
+/**
+ * Checks whether a registrable domain is a look-alike of one of the known brands
+ * (the same Levenshtein heuristic the score uses, but pure - no reasons array).
+ */
+function findBrandLookalike(mainDomain) {
+    if (!mainDomain || KNOWN_BRANDS_SET.has(mainDomain)) return null;
+    for (const brand of KNOWN_BRANDS) {
+        if (Math.abs(brand.length - mainDomain.length) > 3) continue;
+        if (levenshteinDistance(mainDomain, brand) <= 2) return brand;
+    }
+    return null;
+}
+
+/**
+ * Breaks a URL down into the parts a researcher looks at.
+ */
+function analyseLinkAnatomy(url) {
     try {
-        browser.notifications.create({
-            type: "basic",
+        const parsed = new URL(url);
+        const host = parsed.hostname.toLowerCase();
+        const mainDomain = getMainDomain(host);
+        const labels = host.split('.');
+        const trackingParameters = [];
+        for (const parameter of TRACKING_PARAMETERS) {
+            if (parsed.searchParams.has(parameter)) trackingParameters.push(parameter);
+        }
+        return {
+            url: url,
+            scheme: parsed.protocol.replace(':', ''),
+            host: host,
+            registrableDomain: mainDomain,
+            tld: labels.length > 1 ? labels[labels.length - 1] : '',
+            port: parsed.port || null,
+            path: parsed.pathname,
+            isPunycode: host.includes('xn--') || /[^\u0000-\u007f]/.test(host),
+            brandLookalike: findBrandLookalike(mainDomain),
+            trackingParameters: trackingParameters,
+            isShortener: URL_SHORTENER_HOSTS.has(host) || URL_SHORTENER_HOSTS.has(mainDomain),
+            hasCredentials: parsed.username !== '' || parsed.password !== '',
+            isHttps: parsed.protocol === 'https:'
+        };
+    } catch (e) {
+        return { url: url, invalid: true };
+    }
+}
+
+/**
+ * Parses `Authentication-Results` and `Received-SPF` headers into a flat result.
+ */
+function parseAuthenticationResults(authHeaders = [], spfHeaders = []) {
+    const result = { spf: null, dkim: [], dmarc: null, spoofingSuspect: false, raw: [], spfRaw: [] };
+    for (const header of authHeaders) {
+        const text = String(header);
+        result.raw.push(text);
+        for (const chunk of text.split(';')) {
+            const match = chunk.trim().match(/^(spf|dkim|dmarc)\s*=\s*([a-z]+)/i);
+            if (!match) continue;
+            const name = match[1].toLowerCase();
+            const value = match[2].toLowerCase();
+            if (name === 'dkim') result.dkim.push(value);
+            else if (result[name] === null) result[name] = value;
+            else if (result[name] !== value) result[name] = result[name] + ',' + value;
+        }
+    }
+    for (const header of spfHeaders) {
+        const text = String(header);
+        result.spfRaw.push(text);
+        const match = text.match(/^(pass|fail|softfail|neutral|none|temperror|permerror)/i);
+        if (match && (result.spf === null || result.spf === 'none')) result.spf = match[1].toLowerCase();
+    }
+    const failing = (value) => typeof value === 'string' && /fail|permerror/.test(value);
+    result.spoofingSuspect = failing(result.spf) || failing(result.dmarc) || result.dkim.some(failing);
+    return result;
+}
+
+/**
+ * Parses the `Received` chain. Received headers are prepended by every hop, so
+ * they are ordered newest-first; the delay between two hops is one of the few
+ * timing signals a mail header offers (long or negative delays are interesting).
+ */
+function parseReceivedChain(receivedHeaders = []) {
+    const hops = receivedHeaders.map((raw, index) => {
+        const text = String(raw).replace(/\s+/g, ' ');
+        const from = text.match(/\bfrom\s+([^\s;()]+)/i);
+        const by = text.match(/\bby\s+([^\s;()]+)/i);
+        const ip = text.match(/\[?((?:\d{1,3}\.){3}\d{1,3})\]?/);
+        const protocol = text.match(/\bwith\s+([A-Za-z0-9+._-]+)/i);
+        const datePart = text.split(';').pop().trim();
+        const parsedDate = Date.parse(datePart);
+        return {
+            index: index,
+            from: from ? from[1] : null,
+            by: by ? by[1] : null,
+            ip: ip ? ip[1] : null,
+            protocol: protocol ? protocol[1] : null,
+            timestamp: Number.isNaN(parsedDate) ? null : new Date(parsedDate).toISOString(),
+            raw: text.length > 400 ? text.slice(0, 400) + '…' : text
+        };
+    });
+
+    const chronological = hops
+        .filter((hop) => hop.timestamp)
+        .slice()
+        .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+    for (let i = 1; i < chronological.length; i += 1) {
+        const delay = (Date.parse(chronological[i].timestamp) - Date.parse(chronological[i - 1].timestamp)) / 1000;
+        chronological[i].delaySeconds = Math.round(delay);
+        chronological[i].delaySuspicious = delay < 0 || delay > 3600;
+    }
+    return hops;
+}
+
+/**
+ * Extracts the indicators of compromise that are visible in the message itself
+ * (no external lookup). Everything is de-duplicated and capped so the export
+ * stays usable.
+ */
+function extractIocs(messageText = '', urls = []) {
+    const iocs = { urls: [], domains: [], ips: [], hashes: [], emails: [] };
+    const seen = new Set();
+    const limit = 100;
+    const add = (bucket, value) => {
+        const text = String(value || '').trim().toLowerCase();
+        if (!text || seen.has(bucket + '|' + text) || iocs[bucket].length >= limit) return;
+        seen.add(bucket + '|' + text);
+        iocs[bucket].push(text);
+    };
+
+    for (const url of urls) {
+        add('urls', url);
+        try { add('domains', new URL(url).hostname); } catch (e) { /* ignore */ }
+    }
+    const body = String(messageText || '');
+    for (const match of body.matchAll(/\b((?:\d{1,3}\.){3}\d{1,3})\b/g)) add('ips', match[1]);
+    for (const match of body.matchAll(/\b([a-f0-9]{64})\b/gi)) add('hashes', match[1]);
+    for (const match of body.matchAll(/\b([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})\b/g)) add('emails', match[1]);
+    for (const match of body.matchAll(/\b((?:[a-z0-9-]+\.)+(?:[a-z]{2,}))\b/gi)) {
+        const candidate = match[1].toLowerCase();
+        // Skip the documentation/example infrastructure the test data uses.
+        if (candidate.endsWith('.example') || candidate.endsWith('example.com')) continue;
+        add('domains', candidate);
+    }
+    return iocs;
+}
+
+/**
+ * Maps the local indicators to MITRE ATT&CK techniques. This is a *heuristic*
+ * hint for the analyst - not a detection and not a statement that an attack
+ * happened.
+ */
+function mapMitreTechniques({ breakdown = [], attachments = [], links = [], authentication = {}, sender = {} } = {}) {
+    const found = new Map();
+    const addTechnique = (key, evidence) => {
+        const technique = MITRE_TECHNIQUES[key];
+        if (!technique) return;
+        if (!found.has(technique.id)) {
+            found.set(technique.id, {
+                id: technique.id,
+                name: technique.name,
+                tactic: technique.tactic,
+                confidence: 'heuristic',
+                evidence: []
+            });
+        }
+        const entry = found.get(technique.id);
+        if (evidence && entry.evidence.length < 5 && !entry.evidence.includes(evidence)) {
+            entry.evidence.push(evidence);
+        }
+    };
+
+    const riskyAttachments = attachments.filter((attachment) => isRiskyAttachmentName(attachment.name));
+    if (riskyAttachments.length > 0) {
+        addTechnique('spearphishingAttachment', riskyAttachments.map((a) => a.name).join(', '));
+        addTechnique('userExecutionFile', 'risky attachment type: ' + riskyAttachments.map((a) => getFileExtension(a.name)).join(', '));
+    }
+    const archiveAttachments = attachments.filter((attachment) => isArchiveAttachmentName(attachment.name));
+    if (archiveAttachments.length > 0) {
+        addTechnique('archiveCollected', archiveAttachments.map((a) => a.name).join(', '));
+        addTechnique('obfuscatedFiles', 'payload delivered inside an archive');
+    }
+    const lookalikeLinks = links.filter((link) => link.brandLookalike || link.isPunycode);
+    if (lookalikeLinks.length > 0) {
+        addTechnique('spearphishingLink', lookalikeLinks.map((l) => l.host).slice(0, 3).join(', '));
+        addTechnique('masquerading', 'look-alike domain: ' + lookalikeLinks.map((l) => l.host).slice(0, 3).join(', '));
+    }
+    if (links.some((link) => link.isShortener)) {
+        addTechnique('userExecutionLink', 'link shortener used');
+    }
+    if (links.some((link) => (link.trackingParameters || []).length > 0)) {
+        addTechnique('phishing', 'tracking parameters in the link (bulk phishing infrastructure)');
+    }
+    if (sender.displayNameMismatch || sender.replyToMismatch || sender.displayNameLookalike) {
+        addTechnique('impersonation', sender.displayNameMismatch
+            ? 'display name differs from the address'
+            : 'Reply-To domain differs from the sender domain');
+        addTechnique('masquerading', 'sender identity does not match the address');
+    }
+    if (authentication.spoofingSuspect) {
+        addTechnique('impersonation', 'SPF/DKIM/DMARC failure');
+    }
+    for (const rule of breakdown) {
+        if (rule.points > 0 && (rule.id === 'behavior' || rule.id === 'links')) {
+            addTechnique('phishing', rule.reasons[0] || rule.label);
+        }
+    }
+    return Array.from(found.values()).sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/**
+ * Chronological view of everything with a timestamp: message date, the Received
+ * hops (with delays) and the local assessment.
+ */
+function buildDossierTimeline(header, receivedChain, threat) {
+    const entries = [];
+    if (header.date) entries.push({ at: new Date(header.date).toISOString(), event: msg('timelineMessageDate'), detail: '' });
+    for (const hop of receivedChain) {
+        if (!hop.timestamp) continue;
+        const delay = hop.delaySeconds === undefined
+            ? ''
+            : ' (+' + hop.delaySeconds + 's' + (hop.delaySuspicious ? ', ' + msg('timelineSuspiciousDelay') : '') + ')';
+        entries.push({
+            at: hop.timestamp,
+            event: msg('timelineHop'),
+            detail: [hop.from, hop.by, hop.ip].filter(Boolean).join(' → ') + delay
+        });
+    }
+    entries.push({
+        at: new Date().toISOString(),
+        event: msg('timelineLocalAssessment'),
+        detail: msg('timelineLocalAssessmentDetail', [String(threat.score), verdictLabel(threat.verdict)])
+    });
+    return entries.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+}
+
+/**
+ * Builds the researcher dossier for one message. Everything is local: headers,
+ * body, attachments and the states already stored in the local cache database.
+ * The only network activity is the same consent-gated reputation check the
+ * normal message scan performs.
+ */
+async function buildResearchDossier(messageId) {
+    const header = await browser.messages.get(messageId);
+    const fullMessage = await browser.messages.getFull(messageId);
+    const headers = fullMessage.headers || {};
+    const parseCache = new Map();
+    const messageText = extractTextFromParts(fullMessage.parts || fullMessage);
+    const urls = filterUrls(extractUrls(messageText), parseCache);
+
+    let listedAttachments = [];
+    try {
+        listedAttachments = await browser.messages.listAttachments(messageId);
+    } catch (e) {
+        Logger.warn('listAttachments failed for the dossier', e);
+    }
+    const attachments = [];
+    for (const attachment of listedAttachments.slice(0, 25)) {
+        let sha256 = null;
+        try {
+            const file = await browser.messages.getAttachmentFile(messageId, attachment.partName);
+            sha256 = await get_sha256_hash(file);
+        } catch (e) {
+            sha256 = null;
+        }
+        attachments.push({
+            partName: attachment.partName,
+            name: attachment.name,
+            contentType: attachment.contentType,
+            size: attachment.size,
+            sha256: sha256,
+            riskyExtension: isRiskyAttachmentName(attachment.name),
+            archive: isArchiveAttachmentName(attachment.name)
+        });
+    }
+
+    const senderEmail = extractEmailAddress(header.author || '');
+    const senderDomain = extractEmailDomain(senderEmail);
+    const senderMainDomain = getMainDomain(senderDomain);
+    const replyTo = (headers['reply-to'] || [''])[0];
+    const replyToEmail = replyTo ? extractEmailAddress(replyTo) : '';
+    const replyToDomain = replyToEmail ? extractEmailDomain(replyToEmail) : '';
+    const displayName = String(header.author || '').replace(/<[^>]*>/, '').trim().replace(/^"|"$/g, '');
+    const authentication = parseAuthenticationResults(headers['authentication-results'] || [], headers['received-spf'] || []);
+    const receivedChain = parseReceivedChain(headers['received'] || []);
+    const links = urls.map(analyseLinkAnatomy);
+
+    let isFirstCommunication = false;
+    try {
+        isFirstCommunication = await checkFirstCommunication(senderEmail);
+    } catch (e) { /* first contact detection is best effort */ }
+    let urlhausDomains = [];
+    try {
+        urlhausDomains = await checkURLhausDomains(urls, parseCache);
+    } catch (e) { /* requires a configured URLhaus key and consent */ }
+    let maliciousIps = [];
+    try {
+        maliciousIps = await checkIPReputation(headers['received'] || []);
+    } catch (e) { /* requires a configured provider and consent */ }
+
+    const threat = calculateThreatScore(header.author, urls, {
+        authHeaders: headers['authentication-results'] || [],
+        urlhausDomains: urlhausDomains,
+        isFirstCommunication: isFirstCommunication,
+        messageText: messageText,
+        subject: header.subject || '',
+        replyTo: replyTo,
+        parsedUrlCache: parseCache
+    });
+
+    const sender = {
+        address: senderEmail,
+        domain: senderDomain,
+        registrableDomain: senderMainDomain,
+        displayName: displayName,
+        replyTo: replyToEmail,
+        replyToDomain: replyToDomain,
+        replyToMismatch: !!replyToDomain && !!senderDomain && replyToDomain !== senderDomain,
+        displayNameMismatch: !!displayName && !!senderDomain &&
+            !displayName.toLowerCase().includes(senderDomain.split('.')[0]),
+        displayNameLookalike: !!findBrandLookalike(senderMainDomain),
+        firstContact: isFirstCommunication
+    };
+
+    return {
+        schema: 'thundy-av/research-dossier@1',
+        generatedAt: new Date().toISOString(),
+        message: {
+            id: header.id,
+            headerMessageId: header.headerMessageId || null,
+            subject: header.subject || '',
+            date: header.date ? new Date(header.date).toISOString() : null,
+            recipients: (header.recipients || []).join(', '),
+            size: header.size || null,
+            folder: (header.folder && header.folder.name) || null
+        },
+        securityHeaders: {
+            returnPath: (headers['return-path'] || [''])[0] || null,
+            messageId: (headers['message-id'] || [''])[0] || null,
+            xMailer: (headers['x-mailer'] || [''])[0] || null,
+            listUnsubscribe: (headers['list-unsubscribe'] || [''])[0] || null
+        },
+        provenance: {
+            computedLocally: true,
+            privacyTier: privacyTier,
+            consentGiven: mayTransmitExternally(),
+            providersConfigured: {
+                hybridAnalysis: !!apikey_hybridanalysis,
+                virusTotal: !!apikey_virustotal,
+                urlscan: !!urlscanApikey,
+                urlhaus: !!urlhausApikey,
+                abuseIpdb: ipReputationProvider === 'abuseipdb',
+                ipReputation: ipReputationProvider !== 'none'
+            },
+            urlhausMatches: urlhausDomains,
+            maliciousIps: maliciousIps
+        },
+        authentication: authentication,
+        receivedChain: receivedChain,
+        sender: sender,
+        attachments: attachments,
+        links: links,
+        iocs: extractIocs(messageText, urls),
+        risk: {
+            score: threat.score,
+            rawScore: threat.rawScore,
+            verdict: threat.verdict,
+            authStatus: threat.authStatus,
+            reasons: threat.reasons,
+            breakdown: threat.breakdown
+        },
+        mitre: mapMitreTechniques({ breakdown: threat.breakdown, attachments, links, authentication, sender }),
+        timeline: buildDossierTimeline(header, receivedChain, threat)
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+//
+// One notification per scan context with a *stable* id: Thunderbird replaces the
+// existing bubble instead of stacking a new one, so a scan reports
+// "running -> submitted (job id) -> result" in a single place. `buttons` is
+// marked as unsupported by Thunderbird's notifications API, therefore the click
+// on the notification itself is the only action - it opens the message the
+// notification belongs to. Message texts never contain the full URL (only the
+// host, see describeUrlForUser).
+// ---------------------------------------------------------------------------
+const NOTIFICATION_CONTEXTS = new Map();
+const MAX_NOTIFICATION_CONTEXTS = 50;
+
+function notificationIdFor(key) {
+    return 'thundy-' + String(key).replace(/[^A-Za-z0-9_.-]/g, '_').slice(0, 80);
+}
+
+function rememberNotificationContext(notificationId, context) {
+    if (!notificationId || !context) return;
+    NOTIFICATION_CONTEXTS.set(notificationId, Object.assign({ createdAt: Date.now() }, context));
+    while (NOTIFICATION_CONTEXTS.size > MAX_NOTIFICATION_CONTEXTS) {
+        NOTIFICATION_CONTEXTS.delete(NOTIFICATION_CONTEXTS.keys().next().value);
+    }
+}
+
+function showNotification({ id, titleKey, messageKey, subs = [], context = null }) {
+    try {
+        const options = {
+            type: 'basic',
             iconUrl: iconUrl(),
             title: msg(titleKey),
             message: msg(messageKey, subs)
-        });
+        };
+        if (id) {
+            const notificationId = notificationIdFor(id);
+            const created = browser.notifications.create(notificationId, options);
+            if (created && typeof created.catch === 'function') {
+                created.catch((e) => Logger.warn('Could not update notification', e));
+            }
+            rememberNotificationContext(notificationId, context);
+            return notificationId;
+        }
+        const created = browser.notifications.create(options);
+        if (created && typeof created.catch === 'function') {
+            created.catch((e) => Logger.warn('Could not create notification', e));
+        }
+        return undefined;
     } catch (e) {
         Logger.error('Could not create notification', e);
+        return undefined;
     }
+}
+
+function notify(titleKey, messageKey, subs) {
+    return showNotification({ titleKey, messageKey, subs });
+}
+
+/**
+ * Updates (or creates) the notification that belongs to one scan context, e.g.
+ * `scan-<messageId>` for a message scan or `scan-url-<host>` for a link scan.
+ */
+function notifyScanStatus(key, titleKey, messageKey, subs = [], context = null) {
+    return showNotification({ id: key, titleKey, messageKey, subs, context });
+}
+
+function clearNotification(key) {
+    const notificationId = notificationIdFor(key);
+    try {
+        if (browser.notifications && typeof browser.notifications.clear === 'function') {
+            browser.notifications.clear(notificationId);
+        }
+    } catch (e) { /* the notification may already be gone */ }
+    NOTIFICATION_CONTEXTS.delete(notificationId);
+}
+
+/**
+ * Classifies a local risk score into the verdict vocabulary used by the banners,
+ * the notifications and the researcher view.
+ */
+function verdictForScore(score) {
+    if (score >= 75) return 'malicious';
+    if (score >= 50) return 'suspicious';
+    if (score >= 20) return 'unclear';
+    return 'clean';
+}
+
+function verdictLabel(verdict) {
+    switch (verdict) {
+        case 'malicious': return msg('verdictMalicious');
+        case 'suspicious': return msg('verdictSuspicious');
+        case 'unclear': return msg('verdictUnclear');
+        default: return msg('verdictClean');
+    }
+}
+
+async function openMessageFromNotification(notificationId) {
+    const context = NOTIFICATION_CONTEXTS.get(notificationId);
+    if (!context || context.messageId === undefined || context.messageId === null) return;
+    try {
+        if (browser.messageDisplay && typeof browser.messageDisplay.open === 'function') {
+            await browser.messageDisplay.open({ messageId: context.messageId });
+        }
+    } catch (e) {
+        Logger.warn('Could not open the message from the notification', e);
+    }
+}
+
+if (browser.notifications && browser.notifications.onClicked) {
+    browser.notifications.onClicked.addListener((notificationId) => {
+        openMessageFromNotification(notificationId);
+    });
+}
+if (browser.notifications && browser.notifications.onClosed) {
+    browser.notifications.onClosed.addListener((notificationId) => {
+        NOTIFICATION_CONTEXTS.delete(notificationId);
+    });
 }
 
 // Scans every link of the currently displayed message (context menu entry of
@@ -1906,16 +2586,23 @@ async function scanLinksOfDisplayedMessage(tabId) {
             notify('notificationTitle', 'notificationNoLinks', []);
             return;
         }
+        const notificationKey = 'scan-links-' + message.id;
+        const notificationContext = { messageId: message.id };
         let submitted = 0;
+        notifyScanStatus(notificationKey, 'notificationTitle', 'notificationScanRunning',
+            [truncateForNotification(message.subject, msg('notificationFallbackSubject'))], notificationContext);
         for (const url of urls.slice(0, 20)) {
             try {
                 await handleUrlScan(url, message.headerMessageId);
                 submitted++;
+                notifyScanStatus(notificationKey, 'notificationTitle', 'notificationScanProgress',
+                    [String(submitted), String(Math.min(urls.length, 20))], notificationContext);
             } catch (e) {
                 Logger.error('Could not submit link for analysis', e);
             }
         }
-        notify('notificationTitle', 'notificationScanSubmitted', [String(submitted)]);
+        notifyScanStatus(notificationKey, 'notificationTitle', 'notificationScanSubmitted',
+            [String(submitted)], notificationContext);
     } catch (e) {
         notify('notificationTitleError', 'notificationScanError', [e.message]);
     }
@@ -1936,19 +2623,22 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             return;
         }
 
-        notify('notificationTitle', 'notificationScanStarted', [describeUrlForUser(url)]);
+        const notificationKey = 'scan-url-' + describeUrlForUser(url);
+        notifyScanStatus(notificationKey, 'notificationTitle', 'notificationScanStarted', [describeUrlForUser(url)]);
 
         try {
             // Need a dummy headerMessageId as context menu might be clicked outside standard flow
             // or we just fetch the active message
             const activeMessage = await getFirstDisplayedMessage(tab && tab.id);
             let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
+            const notificationContext = activeMessage ? { messageId: activeMessage.id } : null;
 
             let result = await handleUrlScan(url, msgId);
 
-            notify('notificationTitle', 'notificationScanSubmitted', [String(result.job_id)]);
+            notifyScanStatus(notificationKey, 'notificationTitle', 'notificationScanSubmitted',
+                [String(result.job_id)], notificationContext);
         } catch (error) {
-            notify('notificationTitleError', 'notificationScanError', [error.message]);
+            notifyScanStatus(notificationKey, 'notificationTitleError', 'notificationScanError', [error.message]);
         }
     }
 });
@@ -2065,18 +2755,44 @@ async function handleRequestScan(request, sender) {
 
     try {
         const messageObj = { id: request.messageId };
+        const notificationKey = 'scan-message-' + request.messageId;
+        const notificationContext = { messageId: request.messageId };
+        let subject = '';
+        try {
+            const header = await browser.messages.get(request.messageId);
+            subject = (header && header.subject) || '';
+        } catch (e) { /* the subject is only a display detail */ }
+        notifyScanStatus(notificationKey, 'notificationTitle', 'notificationScanRunning',
+            [truncateForNotification(subject, msg('notificationFallbackSubject'))], notificationContext);
         await processAttachments(messageObj);
         const fullMessage = await browser.messages.getFull(request.messageId);
         const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (request.tabId || null);
         const tab = { id: tabId };
         const parsedUrlCache = new Map();
         const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache);
-        await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
-        return { success: true, persisted: request.persist === true };
+        notifyScanStatus(notificationKey, 'notificationTitle', 'notificationScanLinksChecked',
+            [String(filteredUrls.length)], notificationContext);
+        const threat = (await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache })) ||
+            { score: 0, verdict: 'clean' };
+        notifyScanStatus(notificationKey, 'notificationTitle', 'notificationScanResult',
+            [verdictLabel(threat.verdict), String(threat.score)], notificationContext);
+        return { success: true, persisted: request.persist === true, verdict: threat.verdict, score: threat.score };
     } catch (e) {
         Logger.error('requestScan failed', e);
+        notifyScanStatus('scan-message-' + request.messageId, 'notificationTitleError', 'notificationScanError',
+            [e && e.message ? e.message : String(e)], { messageId: request.messageId });
         return { success: false, error: e && e.message ? e.message : String(e), code: e && e.code ? e.code : undefined };
     }
+}
+
+/**
+ * Notification texts are one-liners: long subjects are cut and never contain the
+ * full URL (privacy).
+ */
+function truncateForNotification(text, fallback = '') {
+    const value = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!value) return fallback;
+    return value.length > 60 ? value.slice(0, 57) + '…' : value;
 }
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -2115,14 +2831,61 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             handleRequestScan(request, sender).then(res => sendResponse(res));
             return true;
 
+        case "getResearchDossier":
+            buildResearchDossier(request.messageId)
+                .then(dossier => sendResponse({ status: 'success', data: dossier }))
+                .catch(error => {
+                    Logger.error('Research dossier failed', error);
+                    sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) });
+                });
+            return true;
+
+        case "saveResearchExport":
+            handleSaveResearchExport(request)
+                .then(res => sendResponse({ status: 'success', data: res }))
+                .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
+            return true;
+
         default:
             return false;
     }
 });
 
 /**
- * Handles the "downloadDisarmed" message to sanitize and download an HTML attachment.
- * Called dynamically via background messaging (e.g., from api.js).
+ * Saves a researcher export (JSON/CSV/STIX) through the download manager. The
+ * content is generated locally in the popup; the background only writes it to
+ * disk, so no additional permission or network access is involved.
+ */
+async function handleSaveResearchExport(request) {
+    const content = String((request && request.content) || '');
+    if (!content) throw new Error('empty export');
+
+    const mimeType = (request && request.mimeType) || 'application/json';
+    const rawName = String((request && request.filename) || 'thundy-export.json');
+    const safeName = rawName.split(/[\/\\]/).pop().replace(/[^a-zA-Z0-9_.-]/g, '_') || 'thundy-export.json';
+
+    const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    try {
+        const downloadId = await browser.downloads.download({
+            url: url,
+            filename: safeName,
+            saveAs: true
+        });
+        setTimeout(() => {
+            try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
+        }, 10000);
+        return { downloadId: downloadId, filename: safeName, bytes: content.length };
+    } catch (e) {
+        try { URL.revokeObjectURL(url); } catch (revokeError) { /* ignore */ }
+        throw e;
+    }
+}
+
+
+/**
+ * Handles the "downloadDisarmed" message: sanitise an HTML attachment locally
+ * and save the safe copy through the download manager.
  *
  * @param {number} messageId - The ID of the message containing the attachment.
  * @param {string} partName - The part name of the attachment.

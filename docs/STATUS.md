@@ -1,6 +1,6 @@
 # Status – Thundy AV (Stand: 1. Oktober 2026)
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6.2** · **ID** `thundy-av@bludau-it-services.de`
+**Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6.3 (in Vorbereitung)** · **ID** `thundy-av@bludau-it-services.de`
 **Zielplattform:** Thunderbird 140.0 oder neuer (Manifest V3) · **Lizenz:** MIT
 **Snapshot:** Branch `cline/k0d34w90` (Einreichungskandidat, Entscheidung D1 in [decisions.md](decisions.md))
 
@@ -17,6 +17,43 @@
 
 Ablauf und Begründung: D11 in [decisions.md](decisions.md). ATN kennt weiterhin keine Version dieses
 Add-ons (API-Abfrage → 404); die Einreichung dort ist noch offen (siehe „Remaining“).
+
+## Release 1.6.3 (in Vorbereitung)
+
+Version 1.6.3 bringt die Forscher-Funktionalität (Researcher-Ansicht im Popup, gebündelte
+Benachrichtigungen und ein durchgängiges Design-System). Die folgenden Angaben sind **Platzhalter**;
+die Messwerte (Tag, Commit, Asset-Hash, URL) trägt der Lead nach Build und Tag ein.
+
+| Feld | Wert |
+|---|---|
+| Release | __(noch zu füllen)__ |
+| Commit / Tag | __(noch zu füllen)__ |
+| Asset | __(noch zu füllen)__ |
+| SHA-256 | __(noch zu füllen)__ |
+| Pull Request | __(noch zu füllen)__ |
+| Release-Notes | [store_listing.md](store_listing.md) §6 + [CHANGELOG.md](../CHANGELOG.md) |
+
+### Funktionsumfang 1.6.3
+
+- **Forscher-Ansicht** im Popup (Message-Display-Action), zusätzlich zur Ergebnisanzeige: Kopfbereich
+  (Risiko-Score 0–100 als Badge, Verdikt, Zustimmungsstatus, Datenschutz-Stufe, Zeitstempel,
+  Datenherkunft), Header-Forensik (From/Reply-To/Return-Path, Anzeigename vs. Adresse, Message-ID,
+  Datum, SPF/DKIM/DMARC aus `Authentication-Results`, `Received`-Kette mit Hops, Zeitdifferenzen und
+  IPs), Anhang-Forensik (Dateiname, MIME-Typ, Größe, SHA-256, VirusTotal-/Hybrid-Analysis-Status,
+  „HTML entschärfen“), Link-Anatomie (Schema, Host, registrierbare Domain, TLD, Punycode-/Homoglyph-
+  Verdacht, Tracking-Parameter, Kurz-URL-Erkennung, URLhaus-/urlscan.io-Status), IOC-Block (URLs,
+  Domains, IP-Adressen, Hashes, E-Mail-Adressen), Risiko-Aufschlüsselung je Regel sowie
+  MITRE-ATT&CK-Zuordnung (heuristisch) und Zeitleiste.
+- **Export** der Forscher-Ansicht als JSON, CSV und minimales STIX-2.1-Bundle über den Download-Manager
+  (lokal erzeugt).
+- **Benachrichtigungen:** eine Meldung je Scan-Vorgang mit stabiler ID, die aktualisiert wird
+  (läuft → übermittelt/Job-ID → Ergebnis mit Verdikt und Score); ein Klick öffnet die Nachricht; es
+  wird nur der Host genannt; Fehler werden weiterhin separat gemeldet.
+- **Design-System:** Farb-/Abstands-/Typografie-Tokens, Schweregrad-Chips, Verdikt-Badge, Risikobalken,
+  Tabellen, Monospace-Hashes mit Kopierknopf, aufklappbare Sektionen, hell/dunkel, tastaturbedienbar,
+  Tabs „Übersicht“ und „Forscher“.
+- **Keine neuen Berechtigungen:** Die Forscher-Ansicht und die Exporte arbeiten rein lokal über die
+  bestehenden Berechtigungen `messagesRead`, `storage`, `notifications` und `downloads`.
 
 ## Store-Readiness-Paket: umgesetzt (Arbeitslauf 2026-10-01)
 

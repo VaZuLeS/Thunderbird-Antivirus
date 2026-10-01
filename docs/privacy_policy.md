@@ -1,6 +1,6 @@
 # Datenschutzerklärung — Thundy AV – Email Scanner for Thunderbird
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird (Kurzname „Thundy AV“), Version 1.6.2
+**Add-on:** Thundy AV – Email Scanner for Thunderbird (Kurzname „Thundy AV“), Version 1.6.3
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (Lizenz: MIT)
 **Stand:** September 2026
 
@@ -124,6 +124,17 @@ Diese Verarbeitung dient ausschließlich den Sicherheitsfunktionen und der Anzei
 Thunderbird. Sie ist lokal; ohne Zustimmung werden keine dieser Daten übermittelt. Frühere
 Darstellungen, das Add-on lese „keine E-Mail-Inhalte, nur Anhänge“, waren unzutreffend und sind
 korrigiert.
+
+**Forscher-Ansicht (ausschließlich lokal).** Die Forscher-Ansicht im Popup arbeitet
+**ausschließlich lokal**. Sie stellt die bereits lokal gelesenen und berechneten Daten dar:
+Kopfzeilen samt `Received`-Kette und Authentifizierungs-Ergebnissen aus `Authentication-Results`,
+Anhang-Metadaten und lokal berechnete SHA-256-Hashes, Links samt Bestandteilen (Schema, Host,
+registrierbare Domain, TLD, Punycode-/Homoglyph-Verdacht, Tracking-Parameter, Kurz-URL), die
+IOC-Liste, die Risiko-Aufschlüsselung, die Zeitleiste und die MITRE-ATT&CK-Zuordnung. Die
+MITRE-ATT&CK-Zuordnung wird **lokal berechnet** und ist heuristisch (ein Hinweis, kein Nachweis eines
+Angriffs). Die Exporte der Forscher-Ansicht (JSON, CSV, minimales STIX-2.1-Bundle) werden **lokal
+erzeugt** und über den Download-Manager von Thunderbird auf dem Gerät der Nutzerin bzw. des Nutzers
+gespeichert; dabei findet **keine** Übermittlung an Dritte statt.
 
 ## 5. Übermittlung an Dritte — nur bei aktiver globaler Zustimmung
 
@@ -393,6 +404,16 @@ When a message is opened, the add-on reads the following data locally inside Thu
 This processing serves the security features and the in-Thunderbird display only. It is local; no
 such data is transmitted without consent. Earlier statements that the add-on reads "no email
 content, only attachments" were incorrect and have been corrected.
+
+**Researcher view (local only).** The researcher view in the popup works **entirely locally**. It
+displays data that has already been read and computed locally: headers including the `Received` chain
+and the authentication results from `Authentication-Results`, attachment metadata and locally
+computed SHA-256 hashes, links together with their parts (scheme, host, registrable domain, TLD,
+punycode/homoglyph suspicion, tracking parameters, short URL), the IOC list, the risk breakdown, the
+timeline and the MITRE ATT&CK mapping. The MITRE ATT&CK mapping is **computed locally** and is
+heuristic (a hint, not evidence of an attack). The exports of the researcher view (JSON, CSV, minimal
+STIX 2.1 bundle) are **generated locally** and saved through Thunderbird's download manager on the
+user's device; **no** transmission to third parties takes place.
 
 ### 5. Transmission to third parties — only with the global consent enabled
 

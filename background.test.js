@@ -204,6 +204,29 @@ describe('background.js', () => {
             globalThis.scanLinksOfDisplayedMessage = scanLinksOfDisplayedMessage;
             globalThis.msg = msg;
             globalThis.get_privacyTier = () => privacyTier;
+
+            // Researcher dossier / notifications (store-readiness round 3)
+            globalThis.notifyScanStatus = notifyScanStatus;
+            globalThis.clearNotification = clearNotification;
+            globalThis.verdictForScore = verdictForScore;
+            globalThis.verdictLabel = verdictLabel;
+            globalThis.severityForScore = severityForScore;
+            globalThis.truncateForNotification = truncateForNotification;
+            globalThis.openMessageFromNotification = openMessageFromNotification;
+            globalThis.NOTIFICATION_CONTEXTS = NOTIFICATION_CONTEXTS;
+            globalThis.parseAuthenticationResults = parseAuthenticationResults;
+            globalThis.parseReceivedChain = parseReceivedChain;
+            globalThis.analyseLinkAnatomy = analyseLinkAnatomy;
+            globalThis.extractIocs = extractIocs;
+            globalThis.mapMitreTechniques = mapMitreTechniques;
+            globalThis.buildResearchDossier = buildResearchDossier;
+            globalThis.buildDossierTimeline = buildDossierTimeline;
+            globalThis.getFileExtension = getFileExtension;
+            globalThis.isRiskyAttachmentName = isRiskyAttachmentName;
+            globalThis.findBrandLookalike = findBrandLookalike;
+            globalThis.handleSaveResearchExport = handleSaveResearchExport;
+            globalThis.BANNER_PALETTE = BANNER_PALETTE;
+            globalThis.calculateThreatScore = calculateThreatScore;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -3456,4 +3479,215 @@ describe('background.js', () => {
             }
         });
     });
+
+    describe('Researcher dossier and notification lifecycle', () => {
+        it('classifies risk scores into the verdict vocabulary', () => {
+            assert.strictEqual(context.verdictForScore(0), 'clean');
+            assert.strictEqual(context.verdictForScore(19), 'clean');
+            assert.strictEqual(context.verdictForScore(20), 'unclear');
+            assert.strictEqual(context.verdictForScore(49), 'unclear');
+            assert.strictEqual(context.verdictForScore(50), 'suspicious');
+            assert.strictEqual(context.verdictForScore(74), 'suspicious');
+            assert.strictEqual(context.verdictForScore(75), 'malicious');
+            assert.strictEqual(context.severityForScore(75), 'critical');
+            assert.strictEqual(context.severityForScore(50), 'high');
+            assert.strictEqual(context.severityForScore(20), 'medium');
+            assert.strictEqual(context.severityForScore(5), 'low');
+        });
+
+        it('keeps the banner palette in sync with the light/dark severity colours', () => {
+            for (const scheme of ['light', 'dark']) {
+                for (const severity of ['critical', 'high', 'medium', 'low', 'info']) {
+                    const entry = context.BANNER_PALETTE[scheme][severity];
+                    assert.match(entry.fg, /^#[0-9a-f]{6}$/i, scheme + '/' + severity + ' fg');
+                    assert.match(entry.bg, /^#[0-9a-f]{6}$/i, scheme + '/' + severity + ' bg');
+                }
+            }
+        });
+
+        it('reuses one notification id per scan context and remembers the message', () => {
+            const created = [];
+            context.browser.notifications = {
+                create: (id, options) => { created.push({ id, options }); return Promise.resolve(id); },
+                clear: () => Promise.resolve(true)
+            };
+            context.NOTIFICATION_CONTEXTS.clear();
+
+            context.notifyScanStatus('scan-message-42', 'notificationTitle', 'notificationScanRunning', ['Test'], { messageId: 42 });
+            context.notifyScanStatus('scan-message-42', 'notificationTitle', 'notificationScanResult', ['clean', '0'], { messageId: 42 });
+
+            assert.strictEqual(created.length, 2);
+            assert.strictEqual(created[0].id, created[1].id, 'the same id updates the existing bubble');
+            assert.ok(created[0].id.startsWith('thundy-scan-message-42'));
+            assert.strictEqual(context.NOTIFICATION_CONTEXTS.get(created[0].id).messageId, 42);
+        });
+
+        it('opens the message when the notification is clicked', async () => {
+            const opened = [];
+            context.browser.messageDisplay.open = async (options) => { opened.push(options); };
+            context.NOTIFICATION_CONTEXTS.clear();
+            context.NOTIFICATION_CONTEXTS.set('thundy-scan-message-7', { messageId: 7 });
+
+            await context.openMessageFromNotification('thundy-scan-message-7');
+            assert.strictEqual(opened.length, 1);
+            assert.strictEqual(opened[0].messageId, 7);
+
+            await context.openMessageFromNotification('thundy-unknown');
+            assert.strictEqual(opened.length, 1, 'unknown notifications do nothing');
+        });
+
+        it('never puts an overlong subject into a notification', () => {
+            assert.strictEqual(context.truncateForNotification('kurz', 'fallback'), 'kurz');
+            assert.strictEqual(context.truncateForNotification('', 'fallback'), 'fallback');
+            assert.strictEqual(context.truncateForNotification('x'.repeat(120)).length, 58);
+            assert.ok(context.truncateForNotification('x'.repeat(120)).endsWith('…'));
+
+        it('parses Authentication-Results and Received-SPF headers', () => {
+            const pass = context.parseAuthenticationResults(
+                ['mx.example.com; spf=pass smtp.mailfrom=example.com; dkim=pass header.d=example.com; dmarc=pass header.from=example.com'],
+                ['Received-SPF: pass (example.com: domain designates the sender as authorized)']
+            );
+            assert.strictEqual(pass.spf, 'pass');
+            assert.deepEqual(pass.dkim, ['pass']);
+            assert.strictEqual(pass.dmarc, 'pass');
+            assert.strictEqual(pass.spoofingSuspect, false);
+
+            const fail = context.parseAuthenticationResults(['mx.test; spf=fail smtp.mailfrom=evil.example; dmarc=fail'], []);
+            assert.strictEqual(fail.spf, 'fail');
+            assert.strictEqual(fail.spoofingSuspect, true);
+
+            const multiple = context.parseAuthenticationResults(['a; dkim=pass header.d=a.example; dkim=fail header.d=b.example'], []);
+            assert.deepEqual(multiple.dkim, ['pass', 'fail']);
+            assert.strictEqual(multiple.spoofingSuspect, true);
+        });
+
+        it('parses the Received chain and computes hop delays', () => {
+            const chain = context.parseReceivedChain([
+                'from mx-out.example.org (mx-out.example.org [203.0.113.9]) by mx.example.com with ESMTPS id 1; Mon, 1 Oct 2026 10:02:00 +0000',
+                'from mail.sender.example (mail.sender.example [198.51.100.4]) by mx-out.example.org with ESMTP id 2; Mon, 1 Oct 2026 10:00:00 +0000'
+            ]);
+            assert.strictEqual(chain.length, 2);
+            assert.strictEqual(chain[0].from, 'mx-out.example.org');
+            assert.strictEqual(chain[0].ip, '203.0.113.9');
+            assert.strictEqual(chain[0].protocol, 'ESMTPS');
+            const older = chain.find((hop) => hop.ip === '198.51.100.4');
+            const newer = chain.find((hop) => hop.ip === '203.0.113.9');
+            assert.strictEqual(newer.delaySeconds, 120);
+            assert.strictEqual(newer.delaySuspicious, false);
+            assert.strictEqual(older.delaySeconds, undefined);
+        });
+
+        it('flags unusual Received delays', () => {
+            const chain = context.parseReceivedChain([
+                'from a.example by b.example with ESMTP; Mon, 1 Oct 2026 12:00:00 +0000',
+                'from c.example by a.example with ESMTP; Mon, 1 Oct 2026 06:00:00 +0000'
+            ]);
+            const newest = chain.find((hop) => hop.by === 'b.example');
+            assert.strictEqual(newest.delaySeconds, 21600);
+            assert.strictEqual(newest.delaySuspicious, true);
+        });
+
+        it('breaks links down into scheme, host, registrable domain and risk markers', () => {
+            const shortener = context.analyseLinkAnatomy('http://bit.ly/3xY?utm_source=mail&uid=42');
+            assert.strictEqual(shortener.scheme, 'http');
+            assert.strictEqual(shortener.host, 'bit.ly');
+            assert.strictEqual(shortener.isShortener, true);
+            assert.strictEqual(shortener.isHttps, false);
+            assert.deepEqual(shortener.trackingParameters, ['utm_source', 'uid']);
+
+            const lookalike = context.analyseLinkAnatomy('https://paypa1.com/login');
+            assert.strictEqual(lookalike.registrableDomain, 'paypa1.com');
+            assert.strictEqual(lookalike.brandLookalike, 'paypal.com');
+
+            const punycode = context.analyseLinkAnatomy('https://xn--microsoft-9o2b.example/path');
+            assert.strictEqual(punycode.isPunycode, true);
+
+            const credentials = context.analyseLinkAnatomy('https://user:secret@example.com/');
+            assert.strictEqual(credentials.hasCredentials, true);
+
+            assert.strictEqual(context.analyseLinkAnatomy('not a url').invalid, true);
+        });
+
+        it('extracts IOCs from the message text without duplicates', () => {
+            const text = 'Kontakt: a@example.org, zweite a@example.org. Hash 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef, IP 203.0.113.5 und Link zu evil-mail.example.';
+            const iocs = context.extractIocs(text, ['https://evil-mail.example/login?uid=7']);
+            assert.deepEqual(iocs.urls, ['https://evil-mail.example/login?uid=7']);
+            assert.ok(iocs.domains.includes('evil-mail.example'));
+            assert.deepEqual(iocs.emails, ['a@example.org']);
+            assert.deepEqual(iocs.ips, ['203.0.113.5']);
+            assert.strictEqual(iocs.hashes.length, 1);
+        });
+
+
+        it('maps local indicators to heuristic MITRE techniques', () => {
+            const techniques = context.mapMitreTechniques({
+                breakdown: [{ id: 'behavior', points: 30, reasons: ['Dringlichkeits-Signalwörter gefunden.'], label: 'x' }],
+                attachments: [{ name: 'rechnung.docm' }],
+                links: [{ host: 'paypa1.com', brandLookalike: 'paypal.com', trackingParameters: ['uid'], isShortener: false }],
+                authentication: { spoofingSuspect: true },
+                sender: { replyToMismatch: true }
+            });
+            const ids = techniques.map((technique) => technique.id);
+            for (const expected of ['T1566.001', 'T1204.002', 'T1566.002', 'T1036.005', 'T1656', 'T1566']) {
+                assert.ok(ids.includes(expected), 'expected ' + expected + ' in ' + ids.join(','));
+            }
+            for (const technique of techniques) {
+                assert.strictEqual(technique.confidence, 'heuristic');
+                assert.ok(technique.evidence.length > 0, technique.id + ' needs evidence');
+            }
+        });
+
+        it('returns an empty MITRE list for a harmless message', () => {
+            assert.deepEqual(context.mapMitreTechniques({}), []);
+        });
+
+        it('sums the risk breakdown into the total score', () => {
+            const threat = context.calculateThreatScore('Spoofer <spoof@paypa1.com>', ['http://bit.ly/x'], {
+                authHeaders: ['mx; spf=fail smtp.mailfrom=paypa1.com; dmarc=fail'],
+                urlhausDomains: [],
+                isFirstCommunication: true,
+                messageText: 'Dringend: bitte überweisen Sie sofort die Zahlung.',
+                subject: 'Dringend: Zahlung',
+                replyTo: 'andere@other.example',
+                parsedUrlCache: new Map()
+            });
+            assert.ok(Array.isArray(threat.breakdown) && threat.breakdown.length > 0);
+            assert.strictEqual(typeof threat.verdict, 'string');
+            const sum = threat.breakdown.reduce((total, rule) => total + rule.points, 0);
+            assert.strictEqual(sum, threat.rawScore, 'the breakdown must explain the raw score');
+            assert.strictEqual(threat.score, Math.min(threat.rawScore, 100), 'the displayed score is capped at 100');
+            for (const rule of threat.breakdown) {
+                assert.ok(rule.id && rule.label);
+                assert.ok(Array.isArray(rule.reasons));
+            }
+        });
+
+        it('uses the local timeline for message date, hops and the assessment', () => {
+            const timeline = context.buildDossierTimeline(
+                { date: Date.parse('2026-10-01T08:00:00Z') },
+                [{ timestamp: '2026-10-01T08:30:00.000Z', from: 'a.example', by: 'b.example', ip: '203.0.113.1', delaySeconds: 60 }],
+                { score: 80, verdict: 'malicious' }
+            );
+            assert.strictEqual(timeline[0].event, 'Message date');
+            assert.ok(timeline.some((entry) => entry.event === 'Received hop'));
+            assert.strictEqual(timeline[timeline.length - 1].event, 'Local assessment');
+        });
+
+        it('sanitises the filename of a researcher export', async () => {
+            const downloads = [];
+            context.browser.downloads = {
+                download: async (options) => { downloads.push(options); return 1; }
+            };
+            const result = await context.handleSaveResearchExport({
+                filename: 'report/../../etc/passwd.json',
+                content: '{"a":1}',
+                mimeType: 'application/json'
+            });
+            assert.strictEqual(result.downloadId, 1);
+            assert.strictEqual(downloads[0].filename, 'passwd.json');
+            assert.strictEqual(downloads[0].saveAs, true);
+            await assert.rejects(() => context.handleSaveResearchExport({ filename: 'x.json', content: '' }), /empty export/);
+        });
+    });
+});
 });

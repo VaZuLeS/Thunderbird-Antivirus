@@ -13,12 +13,12 @@ minimal notwendigen Daten an externe Analysedienste.
 | Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.2 – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.3 – siehe [CHANGELOG.md](CHANGELOG.md) |
 | Lizenz | MIT – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.2 |
+| Release (unsigniertes XPI zum Testen) | v1.6.2 – https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.2; das Release 1.6.3 ist in Vorbereitung (siehe [docs/STATUS.md](docs/STATUS.md)) |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
 | Sprachen | Manifest-Strings und Banner lokalisiert (Englisch, Deutsch – `_locales/`); Options- und Popup-Oberfläche derzeit nur auf Deutsch |
 
@@ -36,9 +36,40 @@ minimal notwendigen Daten an externe Analysedienste.
 - **Popup** (Button in der Nachrichtenansicht): Nachrichten-Metadaten, gespeicherte Scan-Ergebnisse, manueller
   Upload eines Anhangs, URL-Scan und **„HTML entschärfen“** (ein HTML-Anhang wird lokal bereinigt und über den
   Download-Manager gespeichert).
-- **Benachrichtigungen** melden Scan-Start, Einreichung und Fehler.
+- **Benachrichtigungen** fassen jeden Scan-Vorgang in **einer** Meldung mit stabiler ID zusammen:
+  Sie wird **aktualisiert** (läuft → übermittelt/Job-ID → Ergebnis mit Verdikt und Score), statt neue
+  Meldungen zu erzeugen; ein Klick auf die Benachrichtigung öffnet die zugehörige Nachricht, und es
+  wird nur der Host genannt (kein vollständiger URL-Text). Fehler werden weiterhin separat gemeldet.
 - **IP-Reputation (optional):** Die aus den `Received`-Headern extrahierten Mailserver-IPs können über VirusTotal
   oder AbuseIPDB geprüft werden.
+
+## Für Sicherheitsforscher
+
+Der Button in der Nachrichtenansicht (Popup) bietet neben der normalen Ergebnisanzeige eine
+**Forscher-Ansicht** für IT-Sicherheitsanalysten. Sie bündelt, was die lokale Analyse über die
+geöffnete Nachricht bereits weiß; die Forscher-Ansicht selbst überträgt nichts nach außen.
+
+- **A1 – Kopfbereich.** Risiko-Score (0–100) als Badge, Verdikt, Zustimmungsstatus, Datenschutz-Stufe,
+  Zeitstempel der Erhebung und Datenherkunft („lokal berechnet“ vs. „von Anbieter X geliefert“).
+- **A2 – Header-Forensik.** From / Reply-To / Return-Path, Anzeigename vs. Adresse, Message-ID, Datum,
+  die SPF/DKIM/DMARC-Ergebnisse aus `Authentication-Results` sowie die `Received`-Kette mit ihren Hops,
+  den Zeitdifferenzen zwischen den Hops und den jeweils genannten IP-Adressen.
+- **A3 – Anhang-Forensik.** Dateiname, MIME-Typ, Größe, SHA-256 (kopierbar), VirusTotal-/Hybrid-
+  Analysis-Status und die bestehende Schaltfläche **„HTML entschärfen“**.
+- **A4 – Link-Anatomie.** URL, Schema, Host, registrierbare Domain, TLD, Punycode-/Homoglyph-Verdacht,
+  Tracking-Parameter, Kurz-URL-Erkennung und URLhaus-/urlscan.io-Status.
+- **A5 – IOC-Block.** Automatisch extrahierte URLs, Domains, IP-Adressen, Hashes und E-Mail-Adressen —
+  kopierbar.
+- **A6 – Risiko-Aufschlüsselung.** Je Regel der Beitrag zum Score und die Begründung.
+- **A7 – MITRE-ATT&CK-Zuordnung (heuristisch).** Technik-ID, Name, Taktik und Belegindikator, zusammen
+  mit dem ausdrücklichen Hinweis *„heuristische Zuordnung lokaler Indikatoren, kein Nachweis eines
+  Angriffs“*.
+- **A8 – Zeitleiste.** Nachrichtendatum, die Scan-Zeitpunkte sowie Job-Einreichung/-Abruf.
+- **A9 – Export.** JSON, CSV und ein minimales STIX-2.1-Bundle, lokal erzeugt und über den
+  Download-Manager des Browsers gespeichert.
+
+Die **MITRE-ATT&CK-Zuordnung ist heuristisch**: Sie verknüpft lokal beobachtete Indikatoren mit
+Techniken und ist ein Hinweis für die manuelle Triage – kein Nachweis eines Angriffs.
 
 ## Zustimmungsmodell (neu in 1.6)
 

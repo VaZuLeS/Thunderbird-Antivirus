@@ -2,7 +2,7 @@
 
 **Add-on name:** Thundy AV – Email Scanner for Thunderbird (short name: "Thundy AV")
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.6
+**Version:** 1.6.3
 **Manifest:** MV3 (`manifest_version: 3`), `strict_min_version: 140.0`
 **License:** MIT
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus
@@ -268,7 +268,70 @@ a test account instead of using real mail.
 
 The full end-to-end protocol for the live test is described in `docs/live_test_protocol.md`.
 
-## 9. Known open items
+## 9. Researcher view and notifications
+
+The popup button in the message display action has a second tab, the **researcher view**, aimed at
+IT security analysts. It is a **purely local** presentation layer: it reads and displays data the
+add-on already has, and it introduces **no new permission and no new transmission path**.
+
+### 9.1 Data that is read locally
+
+Everything shown in the researcher view is derived from the currently opened message and from the
+local scan state:
+
+- **Headers:** From, Reply-To and Return-Path, the display name vs. the address, Message-ID, the date,
+  the `Authentication-Results` header (SPF/DKIM/DMARC verdicts) and the full `Received` chain (hops,
+  the time differences between the hops, and the IP addresses each hop names).
+- **Attachments:** file name, MIME type, size and the locally computed SHA-256 hash; the provider
+  status (VirusTotal/Hybrid Analysis) comes from the stored scan result, not from a new request.
+- **Links:** the URL and its parts (scheme, host, registrable domain, TLD, punycode/homoglyph
+  suspicion, tracking parameters, short-URL detection) plus the stored URLhaus/urlscan.io status.
+- **Derived, local views:** the IOC list (URLs, domains, IPs, hashes, e-mail addresses), the per-rule
+  risk breakdown, the timeline (message date, scan timestamps, job submission/retrieval) and the
+  MITRE ATT&CK mapping.
+
+### 9.2 No new permissions
+
+The researcher view needs **no additional permissions**. It uses exactly the permissions the add-on
+already declares and that are documented in section 2:
+
+| Permission | Role in the researcher view |
+|---|---|
+| `messagesRead` | Read the headers, the `Received` chain, the links and the attachment metadata of the opened message. |
+| `storage` | Read the local scan results, the consent flags, the tier and the analysis identifiers. |
+| `notifications` | Show and update the per-scan notification (section 9.4). |
+| `downloads` | Save the exports (JSON/CSV/STIX 2.1) that the user requests (section 9.3). |
+
+No optional host permission is requested for the researcher view; it performs no provider request of
+its own.
+
+### 9.3 Local exports
+
+The export actions (JSON, CSV and a minimal STIX 2.1 bundle) are generated **locally** and written to
+disk through `browser.downloads.download()`. No export is uploaded and no server is contacted. The
+file is created only in response to the user's explicit click.
+
+### 9.4 One notification per scan, updated in place
+
+Each scan uses a **single, stable notification ID**. Instead of posting a new notification per stage,
+the add-on **updates** the same notification: *running* → *submitted / job ID* → *result with verdict
+and score*. Clicking the notification opens the related message. The notification text names only the
+**host** of the scanned entity — never the complete URL. Error messages are still delivered as
+separate notifications.
+
+### 9.5 Reviewer check steps
+
+- **Export:** open an analyzed message, switch to the researcher tab, choose an export (JSON, CSV or
+  STIX 2.1) and confirm that Thunderbird's download manager saves the file locally. Open the file and
+  check that it contains the locally derived data (headers, attachments, links, IOCs, timeline).
+- **Notification:** trigger a scan (banner button, popup or context menu) and watch the system
+  notification. It must stay the **same** notification while it goes from *running* to
+  *submitted/job ID* to *result*, and a click must open the scanned message. Confirm that the
+  notification shows only the host and not the full URL.
+- **No new permission prompt:** while using the researcher view and the exports, Thunderbird must not
+  ask for any additional permission.
+
+## 10. Known open items
 
 These points are deliberately documented as not yet complete and are **not** claims of finished work:
 
@@ -283,7 +346,7 @@ These points are deliberately documented as not yet complete and are **not** cla
   reviewer's own free provider account (step 8.2). Without a key, the local checks still work, but
   no external analysis can be triggered.
 
-## 10. Documents and contact
+## 11. Documents and contact
 
 - Privacy policy: `docs/privacy_policy.md`, hosted at
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html

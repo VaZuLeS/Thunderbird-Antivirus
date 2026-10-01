@@ -18,6 +18,40 @@
     --color-warning: #b26000;
     --color-danger: #cc0000;
     --color-info: #0000ff;
+
+    /* Thundy AV design system: severity tokens (light theme). The exact
+       light values are mirrored 1:1 in the injected message banners. */
+    --sev-critical: #b3261e;
+    --sev-high: #b45309;
+    --sev-medium: #a16207;
+    --sev-low: #1f7a3f;
+    --sev-info: #0b5fa5;
+
+    --sev-critical-bg: #fdecea;
+    --sev-high-bg: #fdf3e3;
+    --sev-medium-bg: #fdf8e3;
+    --sev-low-bg: #eaf6ee;
+    --sev-info-bg: #e8f1fb;
+
+    /* Spacing scale (4/8/12/16/24/32 px) */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+
+    /* Radii and type scale */
+    --radius-1: 4px;
+    --radius-2: 8px;
+
+    --fs-xs: 11px;
+    --fs-s: 12px;
+    --fs-m: 14px;
+    --fs-l: 16px;
+    --fs-xl: 22px;
+
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -41,6 +75,20 @@
         --color-warning: #ffb84d;
         --color-danger: #ff6b6b;
         --color-info: #66b3ff;
+
+        /* Thundy AV design system: severity tokens (dark theme). The exact
+           dark values are mirrored 1:1 in the injected message banners. */
+        --sev-critical: #ff8a80;
+        --sev-high: #ffc078;
+        --sev-medium: #ffd666;
+        --sev-low: #7ee2a8;
+        --sev-info: #7cc4ff;
+
+        --sev-critical-bg: #3a1d1b;
+        --sev-high-bg: #3a2a16;
+        --sev-medium-bg: #3a3416;
+        --sev-low-bg: #16301f;
+        --sev-info-bg: #16283a;
     }
 }
 
@@ -206,4 +254,638 @@ button[aria-busy="true"]::after,
     border-right-color: transparent;
     border-radius: 50%;
     animation: thundy-spin 0.8s linear infinite;
+}
+
+/* ==========================================================================
+   Thundy AV design system (v1.6.3)
+   Additive layer on top of the tokens above. Everything new (popup research
+   view, injected banners) is built from these tokens and modifiers so the
+   surfaces stay consistent. Legacy classes/tokens above are untouched.
+   ========================================================================== */
+
+/* --- Page shells: replaces the former inline <style> blocks --------------- */
+body.thundy-popup {
+    font-size: var(--fs-m);
+    margin: var(--space-2);
+    width: 600px;
+}
+
+body.thundy-popup h1 {
+    font-size: var(--fs-l);
+}
+
+body.thundy-popup .thundy-report__mount {
+    grid-column: 1 / -1;
+    margin-top: var(--space-3);
+}
+
+body.thundy-options {
+    font-size: 1.2em;
+    margin: var(--space-2);
+}
+
+body.thundy-options label {
+    display: block;
+    margin-bottom: var(--space-2);
+    cursor: pointer;
+}
+
+body.thundy-options .thundy-check label {
+    display: inline;
+    margin-bottom: 0;
+}
+
+body.thundy-options textarea {
+    width: 100%;
+}
+
+/* Consistent checkbox/toggle rows on the options page */
+.thundy-check {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--space-2);
+}
+
+.thundy-check > input[type="checkbox"] {
+    flex: 0 0 auto;
+    margin-top: 3px;
+}
+
+.thundy-check > label {
+    flex: 1 1 auto;
+    cursor: pointer;
+}
+
+.thundy-check > small {
+    flex: 1 1 100%;
+}
+
+/* --- Small inline helpers -------------------------------------------------- */
+.thundy-exticon {
+    margin-left: var(--space-1);
+}
+
+.thundy-status {
+    font-weight: 600;
+}
+
+/* Hidden until scripted state (JS overrides via inline display) */
+.thundy-hidden {
+    display: none;
+}
+
+.thundy-full-width {
+    width: 100%;
+}
+
+.thundy-strong {
+    font-weight: 600;
+}
+
+/* --- Severity badge (chip) -------------------------------------------------
+   Text is always present, so severity is never communicated by colour alone. */
+.thundy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-2);
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.thundy-badge--critical { color: var(--sev-critical); background-color: var(--sev-critical-bg); }
+.thundy-badge--high     { color: var(--sev-high);     background-color: var(--sev-high-bg); }
+.thundy-badge--medium   { color: var(--sev-medium);   background-color: var(--sev-medium-bg); }
+.thundy-badge--low      { color: var(--sev-low);      background-color: var(--sev-low-bg); }
+.thundy-badge--info     { color: var(--sev-info);     background-color: var(--sev-info-bg); }
+
+/* --- Verdict (score + label) ----------------------------------------------- */
+.thundy-verdict {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    min-width: 96px;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-2);
+    background-color: var(--card-bg);
+    text-align: center;
+}
+
+.thundy-verdict__score {
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.thundy-verdict__label {
+    font-size: var(--fs-s);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.thundy-verdict--critical { border-color: var(--sev-critical); background-color: var(--sev-critical-bg); }
+.thundy-verdict--high     { border-color: var(--sev-high);     background-color: var(--sev-high-bg); }
+.thundy-verdict--medium   { border-color: var(--sev-medium);   background-color: var(--sev-medium-bg); }
+.thundy-verdict--low      { border-color: var(--sev-low);      background-color: var(--sev-low-bg); }
+.thundy-verdict--info     { border-color: var(--sev-info);     background-color: var(--sev-info-bg); }
+
+.thundy-verdict--critical .thundy-verdict__score { color: var(--sev-critical); }
+.thundy-verdict--high     .thundy-verdict__score { color: var(--sev-high); }
+.thundy-verdict--medium   .thundy-verdict__score { color: var(--sev-medium); }
+.thundy-verdict--low      .thundy-verdict__score { color: var(--sev-low); }
+.thundy-verdict--info     .thundy-verdict__score { color: var(--sev-info); }
+
+/* --- Card (companion to the legacy .card) ---------------------------------- */
+.thundy-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-2);
+    margin-bottom: var(--space-4);
+    overflow: hidden;
+}
+
+.thundy-card__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--card-border);
+}
+
+.thundy-card__title {
+    flex: 1 1 auto;
+    margin: 0;
+    font-size: var(--fs-l);
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.thundy-card__body {
+    padding: var(--space-3) var(--space-4);
+}
+
+/* --- Definition grid (key/value) ------------------------------------------- */
+.thundy-kv {
+    display: grid;
+    grid-template-columns: minmax(120px, max-content) 1fr;
+    gap: var(--space-1) var(--space-3);
+    margin: 0;
+    font-size: var(--fs-s);
+}
+
+.thundy-kv__key {
+    margin: 0;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.thundy-kv__value {
+    margin: 0;
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+/* --- Compact data table ---------------------------------------------------- */
+.thundy-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-s);
+}
+
+.thundy-table caption {
+    padding-bottom: var(--space-1);
+    color: var(--text-muted);
+    font-size: var(--fs-xs);
+    text-align: left;
+}
+
+.thundy-table th,
+.thundy-table td {
+    padding: var(--space-1) var(--space-2);
+    border-bottom: 1px solid var(--card-border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.thundy-table th {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.thundy-table .is-numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- Monospace value + copy button ----------------------------------------- */
+.thundy-mono {
+    font-family: var(--font-mono);
+    font-size: var(--fs-s);
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    user-select: all;
+}
+
+.thundy-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-2);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-1);
+    background-color: transparent;
+    color: var(--text-color);
+    font-size: var(--fs-xs);
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.thundy-copy:hover:not(:disabled) {
+    filter: none;
+    background-color: var(--card-border);
+}
+
+/* --- Chips ----------------------------------------------------------------- */
+.thundy-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.thundy-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 1px var(--space-2);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-1);
+    background-color: var(--bg-color);
+    font-size: var(--fs-xs);
+    line-height: 1.5;
+}
+
+/* --- Collapsible research section (<details class="thundy-section">) -------- */
+.thundy-section {
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-2);
+    background-color: var(--card-bg);
+    margin-bottom: var(--space-3);
+}
+
+.thundy-section__summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--fs-m);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+
+.thundy-section__summary::-webkit-details-marker {
+    display: none;
+}
+
+.thundy-section__summary::before {
+    content: "\25B8"; /* ▸ */
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+}
+
+.thundy-section[open] > .thundy-section__summary::before {
+    content: "\25BE"; /* ▾ */
+}
+
+.thundy-section__body {
+    padding: 0 var(--space-3) var(--space-3) var(--space-3);
+}
+
+/* --- Risk bar (0-100) ------------------------------------------------------ */
+.thundy-riskbar {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background-color: var(--card-border);
+}
+
+.thundy-riskbar__fill {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--sev-info);
+    transition: width 0.25s ease;
+}
+
+.thundy-riskbar__fill--critical { background-color: var(--sev-critical); }
+.thundy-riskbar__fill--high     { background-color: var(--sev-high); }
+.thundy-riskbar__fill--medium   { background-color: var(--sev-medium); }
+.thundy-riskbar__fill--low      { background-color: var(--sev-low); }
+
+/* --- Notes ----------------------------------------------------------------- */
+.thundy-note {
+    padding: var(--space-2) var(--space-3);
+    margin: var(--space-2) 0;
+    border: 1px solid var(--card-border);
+    border-left: 4px solid var(--text-muted);
+    border-radius: var(--radius-1);
+    background-color: var(--card-bg);
+    font-size: var(--fs-s);
+    overflow-wrap: anywhere;
+}
+
+.thundy-note--info {
+    border-left-color: var(--sev-info);
+    background-color: var(--sev-info-bg);
+}
+
+.thundy-note--warn {
+    border-left-color: var(--sev-medium);
+    background-color: var(--sev-medium-bg);
+}
+
+.thundy-note--critical {
+    border-left-color: var(--sev-critical);
+    background-color: var(--sev-critical-bg);
+}
+
+/* --- Toolbar (wrapping button row) ----------------------------------------- */
+.thundy-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: var(--space-2) 0;
+}
+
+/* --- Tabs (styling only; api.js owns the behaviour) ------------------------ */
+.thundy-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-bottom: var(--space-3);
+    border-bottom: 1px solid var(--card-border);
+}
+
+.thundy-tab {
+    appearance: none;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-radius: var(--radius-1) var(--radius-1) 0 0;
+    background-color: transparent;
+    color: var(--text-muted);
+    font-size: var(--fs-s);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.thundy-tab:hover:not(:disabled) {
+    filter: none;
+    color: var(--text-color);
+    background-color: var(--card-bg);
+}
+
+.thundy-tab--active {
+    color: var(--link-color);
+    border-bottom-color: var(--link-color);
+    background-color: var(--card-bg);
+}
+
+/* --- Empty and loading states ---------------------------------------------- */
+.thundy-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-5) var(--space-3);
+    border: 1px dashed var(--card-border);
+    border-radius: var(--radius-2);
+    color: var(--text-muted);
+    font-size: var(--fs-s);
+    text-align: center;
+}
+
+.thundy-skeleton {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    min-height: 1em;
+    border-radius: var(--radius-1);
+    background-color: var(--card-border);
+    color: transparent;
+}
+
+.thundy-skeleton + .thundy-skeleton {
+    margin-top: var(--space-2);
+}
+
+.thundy-skeleton--short {
+    width: 60%;
+}
+
+.thundy-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+    transform: translateX(-100%);
+    animation: thundy-skeleton-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes thundy-skeleton-sweep {
+    to { transform: translateX(100%); }
+}
+
+/* --- Legacy support: api.js assigns the "card-warn" class ------------------- */
+.card-warn {
+    border-left: 5px solid var(--sev-medium);
+    background-color: var(--sev-medium-bg);
+}
+
+/* ==========================================================================
+   Research view helpers (v1.6.3)
+   Additive classes rendered by api.js in the researcher view. Every colour
+   resolves through the tokens above, so light and dark stay in sync and no
+   new colour value is introduced.
+   ========================================================================== */
+
+/* Muted secondary text ("keine Auffälligkeit", truncation hints, …). */
+.thundy-muted {
+    color: var(--text-muted);
+    font-size: var(--fs-s);
+}
+
+/* Sub-heading inside a card (e.g. "Received-Kette (3 Hops)"). */
+.thundy-subtitle {
+    margin: var(--space-3) 0 var(--space-1);
+    font-size: var(--fs-l);
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+/* Compact bullet list of scoring reasons. */
+.thundy-reason-list {
+    margin: var(--space-2) 0;
+    padding-left: var(--space-4);
+    font-size: var(--fs-s);
+    line-height: 1.4;
+}
+
+.thundy-reason-list > li {
+    margin-bottom: var(--space-1);
+}
+
+.thundy-reason-list > li:last-child {
+    margin-bottom: 0;
+}
+
+/* Monospace value + copy button on a single wrapping row. */
+.thundy-value-copy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Let the mono value shrink/wrap instead of overflowing the row. */
+.thundy-value-copy > .thundy-mono {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* Vertical list of copyable IOC values. */
+.thundy-ioc-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: var(--space-1) 0 var(--space-2);
+    overflow-wrap: anywhere;
+}
+
+/* Popup header: title + status badge, wrapping, spaced from the cards below. */
+.thundy-popup__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+/* Keep the card header/body stacked inside the wrapping flex shell. */
+.thundy-popup__header > .thundy-card__header,
+.thundy-popup__header > .thundy-card__body {
+    flex: 1 1 100%;
+}
+
+/* Report container: stacks the report cards with a uniform vertical gap. */
+.thundy-report {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.thundy-report > .thundy-card {
+    margin-bottom: 0;
+}
+
+/* Mount point for api.js inside the report (spacing comes from the container). */
+.thundy-report__mount {
+    display: block;
+}
+
+/* Research container: block flow, separated from the report above. */
+.thundy-research {
+    display: block;
+    margin-top: var(--space-3);
+}
+
+/* Long researcher tables stay readable: subtle zebra rows + header row. */
+.thundy-table thead th {
+    background-color: var(--bg-color);
+}
+
+.thundy-table tbody tr:nth-child(even) {
+    background-color: var(--bg-color);
+}
+
+/* Severity badges inside a table cell must not wrap. */
+.thundy-table .thundy-badge {
+    white-space: nowrap;
+}
+
+/* --- Visible focus ring for the new interactive elements ------------------- */
+summary.thundy-section__summary:focus-visible,
+.thundy-tab:focus-visible,
+.thundy-copy:focus-visible {
+    outline: 2px solid var(--link-color);
+    outline-offset: 2px;
+}
+
+/* --- Print styles for the research view ------------------------------------ */
+@media print {
+    body {
+        background-color: #ffffff;
+        color: #000000;
+    }
+
+    .thundy-toolbar,
+    .thundy-copy,
+    .thundy-tabs,
+    .thundy-skeleton {
+        display: none !important;
+    }
+
+    .thundy-card,
+    .thundy-section,
+    .thundy-verdict {
+        box-shadow: none;
+        break-inside: avoid;
+    }
+
+    .thundy-section {
+        border: 1px solid #000000;
+    }
+
+    .thundy-section__summary::before {
+        content: "";
+    }
+
+    .thundy-badge {
+        border-color: #000000;
+        background-color: transparent !important;
+        color: #000000 !important;
+    }
+}
+
+/* --- Respect the user's motion preference ---------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .thundy-skeleton::after {
+        animation: none;
+    }
+
+    .thundy-section__summary::before,
+    .thundy-riskbar__fill,
+    .thundy-tab {
+        transition: none;
+    }
 }

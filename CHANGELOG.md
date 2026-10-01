@@ -10,6 +10,45 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 - Nothing yet.
 
+## [1.6.3] – 2026-10-01
+
+Forscher-Release: Analysesicht für IT-Sicherheitsforscher, gebündelte Benachrichtigungen und ein
+durchgängiges Design-System. Keine neuen Berechtigungen – alles arbeitet lokal über `messagesRead`,
+`storage`, `notifications` und `downloads`.
+
+### Added
+
+- **Forscher-Ansicht im Popup** (Message-Display-Action), zusätzlich zur Ergebnisanzeige:
+  Kopfbereich mit Risiko-Score, Verdikt, Zustimmungsstatus, Datenschutz-Stufe, Zeitstempel und
+  Datenherkunft; Header-Forensik (Absender/Reply-To/Return-Path, SPF/DKIM/DMARC aus
+  `Authentication-Results`, `Received`-Kette mit Hops, IPs und Zeitdifferenzen); Anhang-Forensik mit
+  kopierbarem SHA-256; Link-Anatomie (Schema, Host, registrierbare Domain, TLD, Punycode-/Homoglyph-
+  Verdacht, Tracking-Parameter, Kurz-URL-Erkennung); IOC-Block (URLs, Domains, IPs, Hashes,
+  E-Mail-Adressen); Risiko-Aufschlüsselung je Regel; heuristische MITRE-ATT&CK-Zuordnung; Zeitleiste.
+- **Exporte:** JSON-Bericht, CSV-Tabelle und minimales STIX-2.1-Bundle über den Download-Manager sowie
+  „IOC-Liste kopieren“ – vollständig lokal erzeugt.
+- **Risiko-Aufschlüsselung:** Der Score wird jetzt je Regel mit Punkten und Begründung geführt
+  (`breakdown`, `rawScore`), statt nur als Summe.
+- **Design-System:** Farb-/Abstands-/Typografie-Tokens inkl. Schweregrad-Skala, Chips, Verdikt-Badge,
+  Risikobalken, Tabellen, Monospace-Werte mit Kopierknopf, aufklappbare Sektionen, Tabs „Übersicht“ /
+  „Forscher“, hell/dunkel und tastaturbedienbar.
+
+### Changed
+
+- **Benachrichtigungen** laufen jetzt über eine stabile ID je Scan-Vorgang und **aktualisieren** die
+  bestehende Meldung (läuft → übermittelt/Job-ID → Ergebnis mit Verdikt und Score) statt neue Meldungen
+  zu stapeln; ein Klick auf die Benachrichtigung öffnet die Nachricht; Meldungen nennen nur den Host
+  der geprüften URL (kein vollständiger URL-Text, keine Betreffzeile in voller Länge).
+- **Banner in der Nachrichtenansicht** folgen der Schweregrad-Skala (Farbbalken, Score-Badge, Verdikt)
+  und verweisen auf die Forscher-Ansicht; das grüne Authentifizierungs-Badge nutzt dieselbe Skala.
+
+### Fixed
+
+- `Authentication-Results`-Auswertung: DMARC wurde als Liste initialisiert und dadurch mit einem
+  führenden Komma angezeigt – jetzt korrekt als Einzelwert.
+- Lint-Allow-Liste um die Thunderbird-APIs `messages.get` und `messageDisplay.open` erweitert; die
+  i18n-Kataloge deklarieren die Platzhalter der neuen Benachrichtigungstexte.
+
 ## [1.6.2] – 2026-10-01
 
 Store-readiness release: behebt die Blocker der Problemanalyse (siehe

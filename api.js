@@ -296,6 +296,11 @@ try {
         container.appendChild(errDiv);
     }
 }
+
+// Forscher-Ansicht erst laden, wenn feststeht, welche Nachricht offen ist.
+if (message) {
+    initResearchView(message.id);
+}
 })();
 
 function createEl(tag, className = '', textContent = '') {
@@ -1018,3 +1023,634 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
         document.getElementById('hybrid_analysis_api_content').appendChild(card);
     }
 }
+// ---------------------------------------------------------------------------
+// Forscher-Ansicht (lokales Dossier)
+//
+// Alle Daten kommen aus dem Hintergrundskript (`getResearchDossier`) und werden
+// dort ausschließlich lokal aus der geöffneten Nachricht abgeleitet. Das Popup
+// rendert nur; Netzwerkzugriffe entstehen hier nicht. Exporte werden über den
+// Download-Manager gespeichert (`saveResearchExport`).
+// ---------------------------------------------------------------------------
+
+const SEVERITY_LABELS = {
+    critical: 'Kritisch',
+    high: 'Hoch',
+    medium: 'Mittel',
+    low: 'Niedrig',
+    info: 'Info'
+};
+
+const VERDICT_LABELS = {
+    clean: 'geprüft, keine Auffälligkeiten',
+    unclear: 'unklar, bitte prüfen',
+    suspicious: 'verdächtig',
+    malicious: 'bösartige Indikatoren'
+};
+
+function severityForScore(score) {
+    if (score >= 75) return 'critical';
+    if (score >= 50) return 'high';
+    if (score >= 20) return 'medium';
+    return 'low';
+}
+
+function createBadge(severity, text) {
+    return createEl('span', 'thundy-badge thundy-badge--' + severity, text);
+}
+
+/** Baut eine zweispaltige Schlüssel/Wert-Liste (dl.thundy-kv). */
+function createKeyValueList(rows) {
+    const list = createEl('dl', 'thundy-kv');
+    for (const [key, value] of rows) {
+        if (value === undefined || value === null || value === '') continue;
+        list.appendChild(createEl('dt', 'thundy-kv__key', key));
+        const dd = createEl('dd', 'thundy-kv__value');
+        if (value instanceof Node) {
+            dd.appendChild(value);
+        } else {
+            dd.textContent = String(value);
+        }
+        list.appendChild(dd);
+    }
+    return list;
+}
+
+/** Baut eine kompakte Tabelle mit Kopfzeile. */
+function createTable(headers, rows) {
+    const table = createEl('table', 'thundy-table');
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    for (const header of headers) {
+        headRow.appendChild(createEl('th', '', header));
+    }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    for (const row of rows) {
+        const tr = document.createElement('tr');
+        for (const cell of row) {
+            const td = document.createElement('td');
+            if (cell instanceof Node) td.appendChild(cell);
+            else td.textContent = cell === undefined || cell === null ? '–' : String(cell);
+            tr.appendChild(td);
+        }
+        tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+    return table;
+}
+
+/** Kopierbarer Monospace-Wert (Hash, IOC, …). */
+function createCopyableValue(value, label) {
+    const wrapper = createEl('span', 'thundy-value-copy');
+    wrapper.appendChild(createEl('code', 'thundy-mono', value));
+    const button = createEl('button', 'thundy-copy', 'Kopieren');
+    button.type = 'button';
+    button.setAttribute('aria-label', (label || 'Wert') + ' kopieren');
+    button.addEventListener('click', async () => {
+        const ok = await writeToClipboard(value);
+        button.textContent = ok ? 'Kopiert' : 'Fehlgeschlagen';
+        setTimeout(() => { button.textContent = 'Kopieren'; }, 2000);
+    });
+    wrapper.appendChild(button);
+    return wrapper;
+}
+
+async function writeToClipboard(text) {
+    try {
+        if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch (e) { /* Fallback unten */ }
+    try {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', 'readonly');
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        const ok = document.execCommand && document.execCommand('copy');
+        area.remove();
+        return !!ok;
+    } catch (e) {
+        return false;
+    }
+}
+
+function createSection(id, title, open = true) {
+    const section = document.createElement('details');
+    section.className = 'thundy-section';
+    section.id = id;
+    if (open) section.open = true;
+    const summary = createEl('summary', 'thundy-section__summary', title);
+    section.appendChild(summary);
+    const body = createEl('div', 'thundy-section__body');
+    section.appendChild(body);
+    return { section, body };
+}
+
+
+/** Kopfbereich: Verdikt, Score, Zustimmung, Datenherkunft. */
+function renderResearchVerdict(dossier) {
+    const card = createEl('section', 'thundy-card');
+    const header = createEl('div', 'thundy-card__header');
+    header.appendChild(createEl('h2', 'thundy-card__title', 'Risikobewertung'));
+    card.appendChild(header);
+    const body = createEl('div', 'thundy-card__body');
+    card.appendChild(body);
+
+    const risk = dossier.risk || {};
+    const severity = severityForScore(risk.score || 0);
+    const verdictBox = createEl('div', 'thundy-verdict thundy-verdict--' + severity);
+    verdictBox.appendChild(createEl('span', 'thundy-verdict__score', String(risk.score || 0)));
+    verdictBox.appendChild(createEl('span', 'thundy-verdict__label',
+        'von 100 – ' + (VERDICT_LABELS[risk.verdict] || risk.verdict || 'unbekannt')));
+    body.appendChild(verdictBox);
+
+    const bar = createEl('div', 'thundy-riskbar');
+    bar.setAttribute('role', 'img');
+    bar.setAttribute('aria-label', 'Risiko-Score ' + String(risk.score || 0) + ' von 100');
+    const fill = createEl('div', 'thundy-riskbar__fill thundy-riskbar__fill--' + severity);
+    fill.style.width = Math.max(0, Math.min(100, risk.score || 0)) + '%';
+    bar.appendChild(fill);
+    body.appendChild(bar);
+
+    const chips = createEl('div', 'thundy-chip-row');
+    chips.appendChild(createBadge(severity, SEVERITY_LABELS[severity]));
+    if (risk.rawScore !== undefined && risk.rawScore > (risk.score || 0)) {
+        chips.appendChild(createBadge('info', 'Rohsumme ' + risk.rawScore + ' (auf 100 begrenzt)'));
+    }
+    if (dossier.provenance) {
+        chips.appendChild(createBadge(dossier.provenance.consentGiven ? 'low' : 'medium',
+            dossier.provenance.consentGiven ? 'Externe Analyse erlaubt' : 'Externe Analyse aus'));
+        chips.appendChild(createBadge('info', 'Datenschutz-Stufe: ' + (dossier.provenance.privacyTier || '–')));
+        chips.appendChild(createBadge('info', 'lokal berechnet'));
+    }
+    body.appendChild(chips);
+
+    body.appendChild(createKeyValueList([
+        ['Erhoben am', new Date(dossier.generatedAt).toLocaleString('de-DE')],
+        ['Nachrichtendatum', dossier.message && dossier.message.date ? new Date(dossier.message.date).toLocaleString('de-DE') : ''],
+        ['Ordner', dossier.message ? dossier.message.folder : ''],
+        ['Größe', dossier.message && dossier.message.size ? dossier.message.size + ' Bytes' : ''],
+        ['Authentifizierung', risk.authStatus || '']
+    ]));
+
+    if (Array.isArray(risk.reasons) && risk.reasons.length > 0) {
+        const list = createEl('ul', 'thundy-reason-list');
+        for (const reason of risk.reasons) list.appendChild(createEl('li', '', reason));
+        body.appendChild(list);
+    }
+    return card;
+}
+
+
+/** Risiko-Aufschlüsselung: welcher Regelbeitrag erklärt den Score. */
+function renderResearchBreakdown(dossier) {
+    const { section, body } = createSection('research-breakdown', 'Risiko-Aufschlüsselung');
+    const breakdown = (dossier.risk && dossier.risk.breakdown) || [];
+    if (breakdown.length === 0) {
+        body.appendChild(createEl('p', 'thundy-empty', 'Keine Regel hat zum Score beigetragen.'));
+        return section;
+    }
+    body.appendChild(createTable(
+        ['Regel', 'Punkte', 'Begründung'],
+        breakdown.map((rule) => [
+            rule.label || rule.id,
+            (rule.points > 0 ? '+' : '') + String(rule.points),
+            (rule.reasons || []).join(' ') || '–'
+        ])
+    ));
+    body.appendChild(createEl('p', 'thundy-note thundy-note--info',
+        'Die Punkte sind die Beiträge der lokalen Regeln; angezeigt wird der auf 100 begrenzte Score.'));
+    return section;
+}
+
+/** Header-Forensik: Authentifizierung, Received-Kette, Sicherheits-Header. */
+function renderResearchHeaders(dossier) {
+    const { section, body } = createSection('research-headers', 'Header-Forensik');
+    const auth = dossier.authentication || {};
+    const sender = dossier.sender || {};
+    const securityHeaders = dossier.securityHeaders || {};
+
+    body.appendChild(createKeyValueList([
+        ['Absender', sender.address || ''],
+        ['Anzeigename', sender.displayName || ''],
+        ['Antwortadresse (Reply-To)', sender.replyTo || ''],
+        ['Reply-To weicht ab', sender.replyToMismatch ? 'ja' : 'nein'],
+        ['Anzeigename ≠ Adresse', sender.displayNameMismatch ? 'ja' : 'nein'],
+        ['Erstkontakt', sender.firstContact ? 'ja' : 'nein'],
+        ['SPF', auth.spf || 'nicht im Header'],
+        ['DKIM', (auth.dkim || []).join(', ') || 'nicht im Header'],
+        ['DMARC', auth.dmarc || 'nicht im Header'],
+        ['Rückpfad (Return-Path)', securityHeaders.returnPath || ''],
+        ['Message-ID', securityHeaders.messageId || ''],
+        ['X-Mailer', securityHeaders.xMailer || ''],
+        ['List-Unsubscribe', securityHeaders.listUnsubscribe || '']
+    ]));
+
+    if (auth.spoofingSuspect) {
+        body.appendChild(createEl('p', 'thundy-note thundy-note--critical',
+            'Mindestens eine Authentifizierungsprüfung (SPF/DKIM/DMARC) ist fehlgeschlagen – typisch für Spoofing.'));
+    }
+
+    const hops = dossier.receivedChain || [];
+    if (hops.length > 0) {
+        body.appendChild(createEl('h3', 'thundy-subtitle', 'Received-Kette (' + hops.length + ' Hops)'));
+        body.appendChild(createTable(
+            ['#', 'von', 'an', 'IP', 'Protokoll', 'Zeit', 'Verzögerung'],
+            hops.map((hop) => [
+                String(hop.index + 1),
+                hop.from || '–',
+                hop.by || '–',
+                hop.ip || '–',
+                hop.protocol || '–',
+                hop.timestamp ? new Date(hop.timestamp).toLocaleString('de-DE') : '–',
+                hop.delaySeconds === undefined ? '–'
+                    : hop.delaySeconds + ' s' + (hop.delaySuspicious ? ' ⚠ ungewöhnlich' : '')
+            ])
+        ));
+    }
+    return section;
+}
+
+
+/** Anhang-Forensik: Hash, Typ, Größe, Risikokennzeichnung. */
+function renderResearchAttachments(dossier) {
+    const { section, body } = createSection('research-attachments', 'Anhang-Forensik');
+    const attachments = dossier.attachments || [];
+    if (attachments.length === 0) {
+        body.appendChild(createEl('p', 'thundy-empty', 'Keine Anhänge in dieser Nachricht.'));
+        return section;
+    }
+    const rows = attachments.map((attachment) => {
+        const nameCell = createEl('span', '', attachment.name || '(ohne Namen)');
+        if (attachment.riskyExtension) {
+            nameCell.appendChild(createBadge('high', 'riskant'));
+        }
+        if (attachment.archive) {
+            nameCell.appendChild(createBadge('medium', 'Archiv'));
+        }
+        return [
+            nameCell,
+            attachment.contentType || '–',
+            attachment.size !== undefined && attachment.size !== null ? attachment.size + ' B' : '–',
+            attachment.sha256 ? createCopyableValue(attachment.sha256, 'SHA-256') : 'nicht gehasht'
+        ];
+    });
+    body.appendChild(createTable(['Datei', 'MIME-Typ', 'Größe', 'SHA-256'], rows));
+    return section;
+}
+
+/** Link-Anatomie: Domain, TLD, Punycode, Tracker, Kurz-URLs. */
+function renderResearchLinks(dossier) {
+    const { section, body } = createSection('research-links', 'Link-Anatomie');
+    const links = dossier.links || [];
+    if (links.length === 0) {
+        body.appendChild(createEl('p', 'thundy-empty', 'Keine Links in dieser Nachricht.'));
+        return section;
+    }
+    body.appendChild(createTable(
+        ['Host', 'Domain', 'TLD', 'Hinweise'],
+        links.map((link) => {
+            const hints = createEl('span', 'thundy-chip-row');
+            if (link.isHttps === false) hints.appendChild(createBadge('medium', 'kein HTTPS'));
+            if (link.isPunycode) hints.appendChild(createBadge('high', 'Punycode/Homoglyph'));
+            if (link.brandLookalike) hints.appendChild(createBadge('high', 'ähnelt ' + link.brandLookalike));
+            if (link.isShortener) hints.appendChild(createBadge('medium', 'Kurz-URL'));
+            if (link.hasCredentials) hints.appendChild(createBadge('critical', 'Zugangsdaten in URL'));
+            if ((link.trackingParameters || []).length > 0) {
+                hints.appendChild(createBadge('info', 'Tracking: ' + link.trackingParameters.join(', ')));
+            }
+            if (hints.childNodes.length === 0) hints.appendChild(createEl('span', 'thundy-muted', 'keine Auffälligkeit'));
+            return [link.host || '–', link.registrableDomain || '–', link.tld || '–', hints];
+        })
+    ));
+    return section;
+}
+
+
+/** IOC-Block: URLs, Domains, IPs, Hashes, Adressen – kopierbar. */
+function renderResearchIocs(dossier) {
+    const { section, body } = createSection('research-iocs', 'Indikatoren (IOC)');
+    const iocs = dossier.iocs || {};
+    const groups = [
+        ['URLs', iocs.urls || []],
+        ['Domains', iocs.domains || []],
+        ['IP-Adressen', iocs.ips || []],
+        ['Hashes (SHA-256)', iocs.hashes || []],
+        ['E-Mail-Adressen', iocs.emails || []]
+    ];
+    let total = 0;
+    for (const [label, values] of groups) {
+        if (values.length === 0) continue;
+        total += values.length;
+        body.appendChild(createEl('h3', 'thundy-subtitle', label + ' (' + values.length + ')'));
+        const list = createEl('div', 'thundy-ioc-list');
+        for (const value of values.slice(0, 25)) {
+            list.appendChild(createCopyableValue(value, label));
+        }
+        if (values.length > 25) {
+            list.appendChild(createEl('p', 'thundy-muted', '… ' + (values.length - 25) + ' weitere im Export'));
+        }
+        body.appendChild(list);
+    }
+    if (total === 0) {
+        body.appendChild(createEl('p', 'thundy-empty', 'Keine Indikatoren erkannt.'));
+    }
+    return section;
+}
+
+/** MITRE-ATT&CK-Zuordnung – ausdrücklich heuristisch. */
+function renderResearchMitre(dossier) {
+    const { section, body } = createSection('research-mitre', 'MITRE ATT&CK (heuristisch)');
+    const techniques = dossier.mitre || [];
+    body.appendChild(createEl('p', 'thundy-note thundy-note--warn',
+        'Heuristische Zuordnung lokaler Indikatoren zu MITRE-ATT&CK-Techniken. Das ist kein Nachweis eines Angriffs und keine Attribuierung.'));
+    if (techniques.length === 0) {
+        body.appendChild(createEl('p', 'thundy-empty', 'Keine Techniken aus den lokalen Indikatoren abgeleitet.'));
+        return section;
+    }
+    body.appendChild(createTable(
+        ['ID', 'Technik', 'Taktik', 'Belegindikator'],
+        techniques.map((technique) => [
+            technique.id,
+            technique.name,
+            technique.tactic,
+            (technique.evidence || []).join('; ') || '–'
+        ])
+    ));
+    return section;
+}
+
+/** Zeitleiste: Nachrichtendatum, Received-Hops, lokale Bewertung. */
+function renderResearchTimeline(dossier) {
+    const { section, body } = createSection('research-timeline', 'Zeitleiste', false);
+    const entries = dossier.timeline || [];
+    if (entries.length === 0) {
+        body.appendChild(createEl('p', 'thundy-empty', 'Keine Zeitangaben verfügbar.'));
+        return section;
+    }
+    body.appendChild(createTable(
+        ['Zeitpunkt', 'Ereignis', 'Detail'],
+        entries.map((entry) => [
+            new Date(entry.at).toLocaleString('de-DE'),
+            entry.event,
+            entry.detail || '–'
+        ])
+    ));
+    return section;
+}
+
+
+
+/** Reiter „Übersicht“ / „Forscher“. */
+function createResearchTabs(onSelect) {
+    const tabs = createEl('div', 'thundy-tabs');
+    tabs.setAttribute('role', 'tablist');
+    const definitions = [
+        { id: 'overview', label: 'Übersicht' },
+        { id: 'research', label: 'Forscher' }
+    ];
+    const buttons = new Map();
+    for (const definition of definitions) {
+        const button = createEl('button', 'thundy-tab', definition.label);
+        button.type = 'button';
+        button.setAttribute('role', 'tab');
+        button.dataset.tab = definition.id;
+        button.addEventListener('click', () => {
+            for (const [id, other] of buttons) {
+                const active = id === definition.id;
+                other.classList.toggle('thundy-tab--active', active);
+                other.setAttribute('aria-selected', active ? 'true' : 'false');
+            }
+            onSelect(definition.id);
+        });
+        buttons.set(definition.id, button);
+        tabs.appendChild(button);
+    }
+    return { tabs, buttons };
+}
+
+/** CSV-Export der wichtigsten Dossier-Felder (Excel-freundlich, Semikolon). */
+function buildDossierCsv(dossier) {
+    const escape = (value) => '"' + String(value === undefined || value === null ? '' : value).replace(/"/g, '""') + '"';
+    const lines = [];
+    lines.push(['Kategorie', 'Feld', 'Wert'].map(escape).join(';'));
+    const push = (category, field, value) => lines.push([category, field, value].map(escape).join(';'));
+
+    const message = dossier.message || {};
+    push('Nachricht', 'Betreff', message.subject);
+    push('Nachricht', 'Datum', message.date);
+    push('Nachricht', 'Absender', dossier.sender && dossier.sender.address);
+    push('Nachricht', 'Reply-To', dossier.sender && dossier.sender.replyTo);
+    push('Bewertung', 'Score', dossier.risk && dossier.risk.score);
+    push('Bewertung', 'Rohsumme', dossier.risk && dossier.risk.rawScore);
+    push('Bewertung', 'Verdikt', dossier.risk && dossier.risk.verdict);
+
+    for (const rule of (dossier.risk && dossier.risk.breakdown) || []) {
+        push('Regel', rule.label || rule.id,
+            (rule.points > 0 ? '+' : '') + rule.points + ' – ' + (rule.reasons || []).join(' '));
+    }
+    for (const attachment of dossier.attachments || []) {
+        push('Anhang', attachment.name, attachment.sha256 || 'kein Hash');
+    }
+    for (const link of dossier.links || []) {
+        push('Link', link.host, link.registrableDomain);
+    }
+    const iocs = dossier.iocs || {};
+    for (const [bucket, values] of Object.entries(iocs)) {
+        for (const value of values || []) push('IOC:' + bucket, value, '');
+    }
+    for (const technique of dossier.mitre || []) {
+        push('MITRE', technique.id + ' ' + technique.name, (technique.evidence || []).join('; '));
+    }
+    return lines.join('\r\n') + '\r\n';
+}
+
+/** Minimales STIX-2.1-Bundle mit den IOCs des Dossiers (offline erzeugt). */
+function buildDossierStix(dossier) {
+    const now = new Date().toISOString();
+    const objects = [];
+    const identityId = 'identity--thundy-av-local';
+    objects.push({
+        type: 'identity',
+        spec_version: '2.1',
+        id: identityId,
+        created: now,
+        modified: now,
+        name: 'Thundy AV (local analysis)',
+        identity_class: 'tool'
+    });
+    const iocs = dossier.iocs || {};
+    let counter = 0;
+    const addPattern = (pattern, kind) => {
+        counter += 1;
+        objects.push({
+            type: 'indicator',
+            spec_version: '2.1',
+            id: 'indicator--thundy-' + kind + '-' + counter,
+            created: now,
+            modified: now,
+            created_by_ref: identityId,
+            name: 'Thundy AV observed ' + kind,
+            pattern: pattern,
+            pattern_type: 'stix',
+            valid_from: now,
+            labels: ['thundy-av', 'heuristic']
+        });
+    };
+    const quote = (value) => String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    for (const url of (iocs.urls || []).slice(0, 50)) addPattern("[url:value = '" + quote(url) + "']", 'url');
+    for (const domain of (iocs.domains || []).slice(0, 50)) addPattern("[domain-name:value = '" + quote(domain) + "']", 'domain');
+    for (const ip of (iocs.ips || []).slice(0, 50)) addPattern("[ipv4-addr:value = '" + quote(ip) + "']", 'ipv4');
+    for (const hash of (iocs.hashes || []).slice(0, 50)) addPattern("[file:hashes.'SHA-256' = '" + quote(hash) + "']", 'file');
+    for (const email of (iocs.emails || []).slice(0, 50)) addPattern("[email-addr:value = '" + quote(email) + "']", 'email');
+    return JSON.stringify({
+        type: 'bundle',
+        id: 'bundle--thundy-av-local',
+        objects: objects
+    }, null, 2);
+}
+
+/** Speichert einen Export über den Hintergrund (Download-Manager). */
+async function saveResearchExport(kind, dossier) {
+    const now = new Date().toISOString().slice(0, 10);
+    let payload;
+    if (kind === 'csv') {
+        payload = { filename: 'thundy-av-' + now + '.csv', content: buildDossierCsv(dossier), mimeType: 'text/csv' };
+    } else if (kind === 'stix') {
+        payload = { filename: 'thundy-av-stix-' + now + '.json', content: buildDossierStix(dossier), mimeType: 'application/json' };
+    } else {
+        payload = { filename: 'thundy-av-' + now + '.json', content: JSON.stringify(dossier, null, 2), mimeType: 'application/json' };
+    }
+    const response = await browser.runtime.sendMessage(Object.assign({ action: 'saveResearchExport' }, payload));
+    if (!response || response.status !== 'success') {
+        throw new Error(response && response.message ? response.message : 'Export fehlgeschlagen');
+    }
+    return response.data;
+}
+
+/** Kopiert alle IOCs als Textblock in die Zwischenablage. */
+function formatIocsAsText(dossier) {
+    const iocs = dossier.iocs || {};
+    const lines = [];
+    const labels = { urls: 'URLs', domains: 'Domains', ips: 'IP-Adressen', hashes: 'SHA-256', emails: 'E-Mail-Adressen' };
+    for (const [bucket, label] of Object.entries(labels)) {
+        const values = iocs[bucket] || [];
+        if (values.length === 0) continue;
+        lines.push('# ' + label);
+        for (const value of values) lines.push(value);
+        lines.push('');
+    }
+    return lines.join('\n').trim();
+}
+
+
+/** Baut die Forscher-Ansicht aus dem Dossier. */
+function renderResearchDossier(dossier) {
+    const root = document.getElementById('research-root');
+    if (!root) return;
+    root.textContent = '';
+
+    const tabs = createResearchTabs((selected) => {
+        const overview = document.getElementById('report-root');
+        if (overview) overview.classList.toggle('thundy-hidden', selected !== 'overview');
+        root.classList.toggle('thundy-hidden', selected !== 'research');
+    });
+    root.appendChild(tabs.tabs);
+    tabs.buttons.get('research').classList.add('thundy-tab--active');
+    tabs.buttons.get('research').setAttribute('aria-selected', 'true');
+
+    const container = createEl('div', 'thundy-research__content');
+    container.appendChild(renderResearchVerdict(dossier));
+    container.appendChild(renderResearchBreakdown(dossier));
+    container.appendChild(renderResearchHeaders(dossier));
+    container.appendChild(renderResearchAttachments(dossier));
+    container.appendChild(renderResearchLinks(dossier));
+    container.appendChild(renderResearchIocs(dossier));
+    container.appendChild(renderResearchMitre(dossier));
+    container.appendChild(renderResearchTimeline(dossier));
+    root.appendChild(container);
+
+    // Reiter „Übersicht“ ist beim Öffnen aktiv; die Forscheransicht hängt direkt darunter.
+    const overview = document.getElementById('report-root');
+    if (overview) overview.classList.remove('thundy-hidden');
+}
+
+async function requestResearchDossier(messageId) {
+    const response = await browser.runtime.sendMessage({ action: 'getResearchDossier', messageId: messageId });
+    if (!response || response.status !== 'success') {
+        throw new Error(response && response.message ? response.message : 'Dossier konnte nicht erstellt werden');
+    }
+    return response.data;
+}
+
+let currentResearchDossier = null;
+
+/**
+ * Reiter „Übersicht“ / „Forscher“ benötigen denselben Toolbar-Bereich; der
+ * STIX-Export-Knopf wird hier ergänzt, damit die Exportleiste vollständig ist,
+ * auch wenn das Markup (noch) keinen eigenen Knopf vorsieht.
+ */
+function ensureStixExportButton() {
+    if (document.getElementById('btn-export-stix')) return;
+    const csvButton = document.getElementById('btn-export-csv');
+    if (!csvButton || !csvButton.parentNode) return;
+    const button = createEl('button', 'btn-primary', 'STIX-Bundle exportieren');
+    button.type = 'button';
+    button.id = 'btn-export-stix';
+    csvButton.parentNode.insertBefore(button, csvButton.nextSibling);
+}
+
+/** Lädt das Dossier, rendert die Forscheransicht und verdrahtet die Exporte. */
+async function initResearchView(messageId) {
+    const root = document.getElementById('research-root');
+    const statusEl = document.getElementById('status_message');
+    ensureStixExportButton();
+    try {
+        const dossier = await requestResearchDossier(messageId);
+        currentResearchDossier = dossier;
+        renderResearchDossier(dossier);
+        const exportJson = document.getElementById('btn-export-json');
+        if (exportJson) exportJson.addEventListener('click', async () => {
+            try {
+                const result = await saveResearchExport('json', currentResearchDossier);
+                if (statusEl) statusEl.textContent = 'Export gespeichert: ' + result.filename;
+            } catch (e) {
+                if (statusEl) statusEl.textContent = 'Export fehlgeschlagen: ' + e.message;
+            }
+        });
+        const exportCsv = document.getElementById('btn-export-csv');
+        if (exportCsv) exportCsv.addEventListener('click', async () => {
+            try {
+                const result = await saveResearchExport('csv', currentResearchDossier);
+                if (statusEl) statusEl.textContent = 'CSV gespeichert: ' + result.filename;
+            } catch (e) {
+                if (statusEl) statusEl.textContent = 'CSV-Export fehlgeschlagen: ' + e.message;
+            }
+        });
+        const copyIocs = document.getElementById('btn-copy-iocs');
+        if (copyIocs) copyIocs.addEventListener('click', async () => {
+            const ok = await writeToClipboard(formatIocsAsText(currentResearchDossier));
+            if (statusEl) statusEl.textContent = ok ? 'IOC-Liste kopiert.' : 'Kopieren fehlgeschlagen.';
+        });
+        const exportStix = document.getElementById('btn-export-stix');
+        if (exportStix) exportStix.addEventListener('click', async () => {
+            try {
+                const result = await saveResearchExport('stix', currentResearchDossier);
+                if (statusEl) statusEl.textContent = 'STIX-Bundle gespeichert: ' + result.filename;
+            } catch (e) {
+                if (statusEl) statusEl.textContent = 'STIX-Export fehlgeschlagen: ' + e.message;
+            }
+        });    } catch (e) {
+        if (root) {
+            root.textContent = '';
+            root.appendChild(createEl('p', 'thundy-note thundy-note--warn',
+                'Forscheransicht nicht verfügbar: ' + e.message));
+        }
+    }
+}
+

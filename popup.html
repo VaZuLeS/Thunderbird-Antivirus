@@ -7,39 +7,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thunderbird Security Antivirus aka Thundy AV</title>
     <link rel="stylesheet" href="theme.css">
-    <style>
-        body {
-            font-size: 14px;
-            margin: 10px;
-            width: 600px;
-        }
-        h1 {
-            font-size: 18px;
-        }
-        #hybrid_analysis_api_content {
-            grid-column: 1 / -1;
-            margin-top: 15px;
-        }
-    </style>
 </head>
 
-<body>
-    <h1>Thunderbird Security Antivirus aka Thundy AV</h1>
-    <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer" aria-label="Alle Übertragungen zu Hybrid Analysis aufrufen (öffnet in einem neuen Tab)">Alle Übertragungen zu Hybrid Analysis aufrufen <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>
+<body class="thundy-popup">
+    <header class="thundy-card thundy-popup__header">
+        <div class="thundy-card__header">
+            <h1 class="thundy-card__title">Thunderbird Security Antivirus aka Thundy AV</h1>
+            <span id="consent-status-badge" class="thundy-badge thundy-badge--info" role="status" aria-live="polite">Zustimmung wird geprüft …</span>
+        </div>
+        <div class="thundy-card__body">
+            <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer" aria-label="Alle Übertragungen zu Hybrid Analysis aufrufen (öffnet in einem neuen Tab)">Alle Übertragungen zu Hybrid Analysis aufrufen <span class="thundy-exticon" aria-hidden="true">↗</span></a>
+        </div>
+    </header>
 
-    <div class="grid-container">
-        <div class="grid-header">Betreff:</div>
-        <div id="subject" class="grid-content"></div>
+    <section class="thundy-card" aria-label="Metadaten der Nachricht">
+        <div class="thundy-card__body">
+            <dl class="thundy-kv">
+                <dt class="thundy-kv__key">Betreff:</dt>
+                <dd id="subject" class="thundy-kv__value"></dd>
 
-        <div class="grid-header">Von:</div>
-        <div id="from" class="grid-content"></div>
+                <dt class="thundy-kv__key">Von:</dt>
+                <dd id="from" class="thundy-kv__value"></dd>
 
-        <div class="grid-header">MessageHeaderID:</div>
-        <div id="MessageHeaderID" class="grid-content"></div>
+                <dt class="thundy-kv__key">MessageHeaderID:</dt>
+                <dd id="MessageHeaderID" class="thundy-kv__value"></dd>
+            </dl>
+        </div>
+    </section>
+
+    <div id="status_message" class="thundy-status mt-2" aria-live="polite" role="status"></div>
+
+    <div class="thundy-toolbar" role="group" aria-label="Bericht exportieren">
+        <button type="button" id="btn-export-json" class="btn-primary">Bericht als JSON exportieren</button>
+        <button type="button" id="btn-export-csv" class="btn-primary">Ergebnisse als CSV exportieren</button>
+        <button type="button" id="btn-copy-iocs" class="btn-primary">IOC-Liste kopieren</button>
     </div>
 
-    <div id="status_message" class="grid-content mt-2" style="font-weight: bold;" aria-live="polite" role="status"></div>
-    <div id="hybrid_analysis_api_content" class="grid-content mt-3"></div>
+    <div id="report-root" class="thundy-report">
+        <div id="report-skeleton" class="thundy-card" aria-hidden="true">
+            <div class="thundy-card__body">
+                <span class="thundy-skeleton"></span>
+                <span class="thundy-skeleton thundy-skeleton--short"></span>
+            </div>
+        </div>
+        <div id="hybrid_analysis_api_content" class="thundy-report__mount"></div>
+    </div>
+
+    <div id="research-root" class="thundy-research" aria-label="Forscheransicht"></div>
 
     <script src="db.js"></script>
     <script type="module" src="api.js"></script>

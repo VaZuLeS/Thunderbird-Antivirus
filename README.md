@@ -13,12 +13,12 @@ submits the minimum data required to external analysis services.
 | Add-on name | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.2 – see [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.3 – see [CHANGELOG.md](CHANGELOG.md) |
 | License | MIT – see [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.2 |
+| Release (unsigned XPI for testing) | v1.6.2 – https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.2; the 1.6.3 release is in preparation (see [docs/STATUS.md](docs/STATUS.md)) |
 | Requires | Thunderbird 140.0 or newer (Manifest V3) |
 | Strings | Manifest strings and banners are localized (English, German – `_locales/`); the options page and the popup are currently German only |
 
@@ -36,9 +36,40 @@ submits the minimum data required to external analysis services.
 - **Popup** (message display action): message metadata, stored scan results, manual upload of an attachment, a URL
   scan and **"download disarmed HTML"** (an HTML attachment is sanitized locally before it is saved via the
   browser's download manager).
-- **Notifications** report scan progress and results.
+- **Notifications** report each scan as a single notification with a stable ID: it is **updated**
+  (running → submitted/job ID → result with verdict and score) instead of producing new messages, a
+  click on the notification opens the related message, and only the host is shown (never the full
+  URL). Errors are still reported separately.
 - **IP reputation (optional):** the sending mail servers extracted from `Received` headers can be checked against
   VirusTotal or AbuseIPDB.
+
+## For security researchers
+
+The button in the message display action (popup) offers a **researcher view** for IT security
+analysts next to the normal result view. It consolidates what the local analysis already knows about
+the opened message; the researcher view itself transmits nothing external.
+
+- **A1 – Header area.** Risk score (0–100) as a badge, verdict, consent status, privacy tier, the
+  collection timestamp and the data origin ("computed locally" vs. "delivered by provider X").
+- **A2 – Header forensics.** From / Reply-To / Return-Path, display name vs. address, Message-ID,
+  date, the SPF/DKIM/DMARC results from `Authentication-Results`, and the `Received` chain with its
+  hops, the time differences between the hops and the IP addresses named in each hop.
+- **A3 – Attachment forensics.** File name, MIME type, size, SHA-256 (copyable), the
+  VirusTotal/Hybrid Analysis status and the existing **"disarm HTML"** button.
+- **A4 – Link anatomy.** URL, scheme, host, registrable domain, TLD, punycode/homoglyph suspicion,
+  tracking parameters, short-URL detection and the URLhaus/urlscan.io status.
+- **A5 – IOC block.** Automatically extracted URLs, domains, IP addresses, hashes and e-mail
+  addresses — all copyable.
+- **A6 – Risk breakdown.** For each rule, its contribution to the score and the reason.
+- **A7 – MITRE ATT&CK mapping (heuristic).** Technique ID, name, tactic and the supporting indicator,
+  together with the explicit note *"heuristic mapping of local indicators, not evidence of an
+  attack"*.
+- **A8 – Timeline.** Message date, the scan timestamps and the job submission/retrieval times.
+- **A9 – Export.** JSON, CSV and a minimal STIX 2.1 bundle, produced locally and saved through the
+  browser's download manager.
+
+The **MITRE ATT&CK mapping is heuristic**: it links locally observed indicators to techniques and is
+a hint for manual triage — it is not proof that an attack took place.
 
 ## Consent model (new in 1.6)
 
