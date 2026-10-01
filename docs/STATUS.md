@@ -18,6 +18,28 @@
 Ablauf und Begründung: D11 in [decisions.md](decisions.md). ATN kennt weiterhin keine Version dieses
 Add-ons (API-Abfrage → 404); die Einreichung dort ist noch offen (siehe „Remaining“).
 
+## Release 1.6.5 (veröffentlicht)
+
+Security-Release: „HTML entschärfen“ erzeugt eine netzwerk-untätige Datei, die Nachrichten-Grenze ist
+validiert, Exporte sind begrenzt; dazu Bedrohungsmodell und Themen-Roadmap.
+
+| Feld | Wert |
+|---|---|
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.5 (kein Pre-Release → „Latest“) |
+| Commit / Tag | `821aafc` / `v1.6.5` |
+| Asset | `thundy-av-1.6.5.xpi`, 87.044 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `9311dbd9166a7c644e4dc5dd920b71737cc7814d2768a31605e128f571d781f3` |
+| Gates | 468 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 30 kuratierte Warnungen · Paket 17 Dateien / 329.550 Bytes „valid“ |
+| Dokumente | [threat_model.md](threat_model.md) · [ROADMAP.md](ROADMAP.md) |
+
+### Funktionsumfang 1.6.5
+
+- **Inertes Disarm:** Remote-Referenzen in Ressourcen-Attributen, `url(...)` in Inline-Styles und
+  `@import` in `<style>` werden entfernt bzw. ersetzt; der blockierte Zielpfad bleibt in
+  `data-thundy-blocked-*` lesbar. `<a href>`-Ziele bleiben erhalten (Analysewert).
+- **Nachrichten-Grenze:** `validateRequest()` prüft Aktion und Nutzlasttypen vor jedem Handler.
+- **Export-Schranken:** 5 MB Obergrenze, MIME-Whitelist; keine API-Schlüssel in Berichten (Test).
+
 ## Release 1.6.4 (veröffentlicht)
 
 Diagnose-Release: Der Live-Test lässt sich jetzt in der echten Installation in weiten Teilen

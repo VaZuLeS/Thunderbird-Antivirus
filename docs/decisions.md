@@ -260,3 +260,30 @@ Anbieter-Zustände in der Forscher-Ansicht und ein Hash-Cache für Anhänge.
 | SHA-256 | `f7455ae4ea25c11ca9c6308f962a9d0a53b55abcb3ec38800ec883a4e12b98d8` |
 | Paketinhalt | 17 Dateien, 322.256 Bytes entpackt |
 | Gates | 459 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 30 kuratierte Warnungen |
+
+## D14 — Version 1.6.5: inertes „Entschärfen“, validierte Nachrichtengrenze, Exportgrenzen
+**Bezug:** Runde 5 (Thema T2 „Security & Robustheit“ in [ROADMAP.md](ROADMAP.md)) · **Aufgabe:** S2-01 … S2-04
+
+**Bewusste Entscheidungen.**
+1. **Entschärfen heißt ab jetzt auch: keine Netzwerkaktivität.** Eine geöffnete Kopie darf weder
+   Skripte ausführen noch zum Absender zurückfunken (Tracking-Pixel, CSS-Import). Remote-Ziele werden
+   entfernt, aber im Attribut `data-thundy-blocked-*` **lesbar** gehalten — Analysewert ohne Risiko.
+2. **`<a href>` bleibt erhalten.** Die Datei ist inert, nicht interaktionsfrei; das ist in README und
+   Bedrohungsmodell ausdrücklich benannt (Restrisiko 3).
+3. **Die Nachrichtengrenze validiert Typen, nicht nur Aktionen.** Unbekannte Aktionen und falsche
+   Payload-Typen werden mit einem Fehlercode beantwortet, statt in die Analytik zu laufen.
+4. **Exporte sind begrenzt** (5 MB, MIME-Whitelist) — unabhängig davon, ob sie über die Nachrichtengrenze
+   oder direkt (Selbsttest-Bericht) entstehen.
+5. **Keine neuen Berechtigungen**; alle Prüfungen bleiben lokal.
+
+**Veröffentlichtes Artefakt**
+
+| Feld | Wert |
+|---|---|
+| Version | 1.6.5 (`manifest.json`, `package.json`, `package-lock.json`) |
+| Commit / Tag | `821aafc` / `v1.6.5` (annotiert) |
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.5 (kein Pre-Release → „Latest“) |
+| Asset | `thundy-av-1.6.5.xpi`, 87.044 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `9311dbd9166a7c644e4dc5dd920b71737cc7814d2768a31605e128f571d781f3` |
+| Paketinhalt | 17 Dateien, 329.550 Bytes entpackt |
+| Gates | 468 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 30 kuratierte Warnungen |

@@ -341,3 +341,31 @@ beheben — ohne neue Berechtigungen.
 **Wirkung auf das Store-Gate:** C6 bleibt formal offen (visuelle Prüfung), ist aber jetzt in wenigen
 Minuten reproduzierbar: Selbsttest ausführen, Bericht anhängen, verbleibende manuelle Schritte abarbeiten.
 
+---
+
+## 15. Runde 5 — Thema T2 „Security & Robustheit“ (Version 1.6.5)
+
+Neue Befunde **S2-1 … S2-4** (Bezug: §0.5 der Problemanalyse) und die thematische Einordnung in
+[ROADMAP.md](ROADMAP.md). Ziel: die Sicherheitszusagen belastbar machen („entschärft“ = wirklich inert),
+die Nachrichtengrenze validieren und die Angriffsflächen dokumentieren.
+
+| ID | Aufgabe | Bezug | DoD (Nachweis) | Aufwand | Abhängig von |
+|---|---|---|---|---|---|
+| **S2-01** | **Inertes Disarm:** Remote-Ziele aus Ressourcen-Attributen entfernen, `url(...)`/`@import` in CSS neutralisieren, Originalpfad in `data-thundy-blocked-*` erhalten | S2-1 | Tests: Tracking-Pixel/srcset/post/`style`/`<style>`, unveränderte relative Referenzen, `cid:` bleibt, `javascript:`/`data:` weiter entfernt | 4 h | — |
+| **S2-02** | **Nachrichtengrenze validieren:** `validateRequest()` mit Aktions-Whitelist und Typprüfung, Fehlercodes im Listener | S2-2 | Tests für unbekannte Aktionen und jeden Payload-Fall | 3 h | — |
+| **S2-03** | **Exportgrenzen:** 5 MB und MIME-Whitelist, auch außerhalb der Nachrichtengrenze | S2-3 | Tests (zu groß, falscher Typ, gültiger Export) | 1 h | — |
+| **S2-04** | **Bedrohungsmodell und Roadmap:** Schutzgüter, Vertrauensgrenzen, 10 Szenarien mit Fundstelle, Restrisiken, Nachweistabelle; Themen T1–T7 mit Reihenfolge | S2-4 | `docs/threat_model.md`, `docs/ROADMAP.md`; in README/Reviewer-Notes/Index verlinkt | 3 h | S2-01 … S2-03 |
+| **S2-05** | **Release 1.6.5:** Version, Changelog, Docs, Tag, Asset mit Hash; Gate erneut ausführen | alle | `npm run check` Exit 0; Store-Gate C1–C4 + C7 PASS; Asset-Hash dokumentiert | 2 h | S2-01 … S2-04 |
+
+**Summe:** ≈ 13 h (1,5 Personentage).
+
+### Ausführungsstand Runde 5 (2026-10-01)
+
+| ID | Status | Nachweis |
+|---|---|---|
+| S2-01 | **erledigt** | `resourceAttributes`, `CSS_URL_REGEX`, `data-thundy-blocked-*`; `test/security-hardening.test.js` |
+| S2-02 | **erledigt** | `validateRequest()`, `MESSAGE_ACTIONS`; Tests für alle Aktionen |
+| S2-03 | **erledigt** | `MAX_EXPORT_BYTES`, `ALLOWED_EXPORT_MIME_TYPES`; Tests |
+| S2-04 | **erledigt** | `docs/threat_model.md` (10 Szenarien, Nachweistabelle), `docs/ROADMAP.md` (T1–T7) |
+| S2-05 | **erledigt** | Version 1.6.5, Tag `v1.6.5`, Release mit `thundy-av-1.6.5.xpi` (SHA-256 `9311dbd9…`), D14 |
+

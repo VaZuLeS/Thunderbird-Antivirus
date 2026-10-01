@@ -224,6 +224,43 @@ offen bleiben C5/C6). Details: §14 des Aufgabenplans, D13 in [decisions.md](dec
 
 ---
 
+## 0.5 Update 2026-10-01 (Runde 5) — Security & Robustheit (Thema T2)
+
+Die verbleibenden Store-Blocker (Screenshots, Live-Test) sind nicht in dieser Umgebung lösbar. Deshalb
+konzentrierte sich diese Runde auf das Thema mit dem zweitgrößten Review-Risiko: **Sicherheit und
+Robustheit** — inklusive einer thematischen Roadmap ([ROADMAP.md](ROADMAP.md)) und eines
+Bedrohungsmodells ([threat_model.md](threat_model.md)).
+
+### S2-1 — „Entschärfte“ HTML-Anhänge konnten weiter zum Absender funken (hoch)
+**Belege (vorher):** `disarmHTML()` entfernte aktive Inhalte, ließ aber Ressourcen-Attribute wie `src`,
+`srcset`, `poster`, `background` sowie `url(...)`/`@import` in CSS unangetastet (Whitelist
+`dangerousAttributes` prüfte nur auf `javascript:`/`data:`/`vbscript:`). Eine geöffnete Kopie lud damit
+weiterhin Remote-Bilder — Tracking-Pixel, IP-Preisgabe, „Lesebestätigung“ ohne Wissen des Nutzers.
+**Fix:** Remote-Ziele werden aus Ressourcen-Attributen entfernt und in CSS durch einen inerten
+Platzhalter ersetzt; der Originalpfad bleibt in `data-thundy-blocked-*` lesbar.
+
+### S2-2 — Nachrichtengrenze prüfte nur die Aktion (mittel)
+**Belege (vorher):** Der `runtime.onMessage`-Listener schaltete über `request.action`, ohne die
+Nutzlasttypen zu prüfen; ein präparierter Aufruf (z. B. `messageId: "1"` oder ein `scanUrl` mit
+`file://`) lief in die Analytik und erzeugte schwer deutbare Fehler.
+**Fix:** `validateRequest()` mit Aktions-Whitelist und Typprüfung; klare Fehlercodes.
+
+### S2-3 — Exporte ohne Obergrenze (mittel)
+**Belege (vorher):** `handleSaveResearchExport()` nahm beliebig große Inhalte und jeden MIME-Typ an.
+**Fix:** 5 MB Obergrenze, MIME-Whitelist (`application/json`, `text/csv`, `text/plain`), unabhängig vom
+Nachrichtenweg.
+
+### S2-4 — Kein Bedrohungsmodell (niedrig, Review-Wirkung hoch)
+**Belege (vorher):** Sicherheitsaussagen standen verstreut in README/Reviewer-Notes; es gab kein
+Dokument, das Schutzgüter, Angreifer und Restrisiken zusammenführt.
+**Fix:** `docs/threat_model.md` mit 10 Szenarien (Maßnahme + Fundstelle) und den zugehörigen
+Testnachweisen; `docs/ROADMAP.md` ordnet die Themen T1–T7.
+
+**Status:** S2-1 … S2-4 umgesetzt und mit **1.6.5** veröffentlicht (468 Tests, Store-Gate C1–C4 + C7 PASS,
+offen bleiben C5/C6). Details: §15 des Aufgabenplans, D14 in [decisions.md](decisions.md).
+
+---
+
 ## 1. Zielbild „store-ready“
 
 „Store-ready“ heißt hier: das Add-on erfüllt die ATN-Einreichungsanforderungen und ist in der deklarierten
