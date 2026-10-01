@@ -44,6 +44,27 @@ Nachweise. Sieben Blocker sind inhaltlich neu bzw. bisher nicht belegt:
 
 ---
 
+## 0.1 Update 2026-10-01 — Umsetzungsstand nach dem Arbeitslauf
+
+Der Aufgabenplan wurde abgearbeitet (Details und Nachweise: §11 des Aufgabenplans, Entscheidungen in
+[decisions.md](decisions.md)). Kurzfassung:
+
+- **behoben:** P0-1, P0-2, P0-6, P0-7, P0-8, P0-9, P1-7 (Spiegel), P1-8, P1-9, P1-10, P1-11, P1-12,
+  P1-14 (Spiegel), P1-15 (Spiegel) sowie die meisten P2-/P3-Befunde.
+- **entschieden:** P0-5 (Einreichungskandidat = dieser Zweig, Version 1.6).
+- **offen und nur manuell zu erledigen:** P0-3 (Live-Test in Thunderbird 140 ESR), P0-4 (echte
+  Screenshots) und der Tag-/Artefaktschritt aus P1-13.
+
+Gemessene Gates in diesem Zustand: Pre-Submit-Checks 0 Fehler / 1 Warnung, `npm test` 427 Tests / 0 Fehler,
+`npm run lint:filtered` 0 Fehler / 19 kuratierte Warnungen, `npm run package` 17 Dateien / 196.505 Bytes
+(„valid“), `npm run store-gate` = **NO-GO** mit C1–C4 PASS und C5/C6/C7 offen.
+
+**Das Gesamturteil bleibt damit NO-GO** — allerdings nicht mehr wegen der Daten-/Consent-/Paket-Blocker,
+sondern ausschließlich wegen der drei Nachweise, die eine echte Thunderbird-Installation bzw. ein
+ATN-Konto erfordern.
+
+---
+
 ## 1. Zielbild „store-ready“
 
 „Store-ready“ heißt hier: das Add-on erfüllt die ATN-Einreichungsanforderungen und ist in der deklarierten

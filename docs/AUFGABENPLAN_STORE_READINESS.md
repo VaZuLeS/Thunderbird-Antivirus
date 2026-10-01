@@ -185,3 +185,50 @@ A-06 (Live-Test) blockiert A-11 (Screenshots) und A-16 (Injektionsumbau).
    die Antwort auf die Kernfrage „funktioniert es in Thunderbird?“).
 
 
+
+---
+
+## 11. Ausführungsstand (Arbeitslauf 2026-10-01)
+
+Der Plan wurde in diesem Arbeitslauf abgearbeitet, soweit es diese Umgebung zulässt. Jede
+Statusangabe nennt den Nachweis; „✋ offen“ bedeutet: Aufgabe ist vorbereitet, benötigt aber
+Thunderbird-GUI, Screenshots oder ein ATN-Konto.
+
+| ID | Aufgabe | Status | Nachweis |
+|---|---|---|---|
+| A-01 | Einreichungskandidat festlegen | **erledigt** | D1 in [decisions.md](decisions.md); dieser Branch, Version 1.6 |
+| A-02 | Consent-/Deklarationsmodell entscheiden | **erledigt** | D2 in [decisions.md](decisions.md) mit Quellenzitaten und Validator-Gegenprobe |
+| A-03 | Testumgebung/Testdaten aufsetzen | **teilweise ✋** | `testdata/` mit 5 validierten `.eml` + Erwartungen; TB-140-ESR-Installation fehlt hier |
+| A-04 | Daten-Deklaration korrigieren | **erledigt** | `manifest.json`, `options.js` (`permissions.request({data_collection})`), Pre-Submit-Check, Tests |
+| A-05 | Datenschutz-Stufe auf alle Pfade | **erledigt** | Tier-Gates in `background.js`, Policy/Listing/Notes, Tests |
+| A-06 | Live-Test TB 140 ESR | **✋ offen (manuell)** | Protokoll vollständig vorbereitet: `docs/live_test_protocol.md` |
+| A-07 | Paket bereinigen, Gate grün | **erledigt** | `npm run package` → 17 Dateien, 196.505 B, „valid“; `tools/*.dev.js` |
+| A-08 | Fehler-/Rechtepfade sichtbar | **erledigt** | `requireHostPermission`, Banner-Hinweis + Options-Button, Cache-Fix, Tests |
+| A-09 | Popup reparieren + Konsent binden | **erledigt** | `api.js`, `test/consent-and-tier.test.js`, `api.test.js` (P0-7/P0-9-Regressionstests) |
+| A-10 | `menus`-Permission + Kontextmenü | **erledigt (Live-Test offen)** | `manifest.json`, Pre-Submit-Check, Invariantentest |
+| A-11 | Screenshots aufnehmen | **✋ offen (manuell)** | Gate-Kriterium C5 → `NO-GO` |
+| A-12 | CI-Gate scharf schalten | **erledigt (Spiegel)** | `docs/ci/ci.yml`; Push unter `.github/workflows/` vom Token abgelehnt (reproduziert) |
+| A-13 | Doku-Drift bereinigen | **erledigt** | Privacy-Policy, Listing, Reviewer-Notes, READMEs, Quickstart, Assets, Index |
+| A-14 | Reviewer-Testmittel | **erledigt** | `testdata/*.eml` + `testdata/README.md` mit Erwartung je Stufe |
+| A-15 | Release-/Repo-Hygiene, Artefakt | **teilweise** | 2024-Release nicht mehr „Latest“; XPI gebaut; Tag auf dem Commit offen (C7) |
+| A-16 | MV2-Altpfade/Injektion bereinigen | **erledigt** | Code bereinigt, Fehler sichtbar, Pre-Submit-Check als Rückfallschutz |
+| A-17 | Go/No-Go-Gate | **erledigt** | `npm run store-gate` (C1–C7 mit Nachweis, Exit-Code) + `scripts/submission-gate.test.js` |
+| A-18 | ATN-Listung anlegen | **✋ offen (manuell)** | Listing-Felder final in `docs/store_listing.md` inkl. Kategorie „Privacy and Security“ |
+| A-19 | Signieren mit korrektem Endpunkt | **erledigt (Spiegel)** | `docs/ci/release.yml` mit `--amo-base-url` + `--approval-timeout` |
+| A-20 | Review-Betreuung/Statuspflege | **laufend** | `docs/STATUS.md` auf dem aktuellen Stand; Antwortvorlagen in den Reviewer-Notes |
+| A-21 | Prozesspflege | **teilweise** | `pnpm-lock.yaml` entfernt, Dev-Skripte unter `tools/`, i18n der Oberfläche: offen |
+
+**Verifikation dieses Laufs**
+
+```bash
+npm run pre-submit-checks   # 0 Fehler, 1 Warnung (Screenshots)      -> Exit 0
+npm test                    # 427 Tests, 0 Fehler                     -> Exit 0
+npm run lint:filtered       # 0 Fehler, 19 kuratierte Warnungen       -> Exit 0
+npm run package            # 17 Dateien, 196.505 B, „valid“          -> Exit 0
+npm run store-gate         # NO-GO: C1–C4 PASS, C5/C6/C7 offen        -> Exit 1
+```
+
+**Nächste drei Schritte** (nach wie vor offen): Screenshots (A-11), Live-Test in Thunderbird 140 ESR
+(A-06), Release-Tag auf dem eingereichten Commit (A-15) — danach `npm run store-gate` erneut ausführen
+und bei `GO` signieren und einreichen (A-18/A-19).
+

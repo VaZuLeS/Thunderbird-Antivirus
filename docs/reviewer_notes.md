@@ -32,6 +32,7 @@ disabled by default.
 | `scripting` | Injects the UI banners into the message view: the per-message opt-in banner with its two buttons, the threat/warning banner, and the Time-of-Click marker on links. All injected code is bundled with the add-on (`scripting.executeScript({ func })` / `files`); no remote code is fetched or evaluated. |
 | `notifications` | Shows short system notifications for actions that are not visible in the message pane, e.g. "scan started", "scan submitted (job ID …)" and error messages for the context-menu link scan. This gives feedback when the scan is triggered from an entry point without its own result area. |
 | `downloads` | Used for the "disarm HTML attachment" action: when the user asks for it, the add-on saves a sanitized copy of an HTML attachment through `browser.downloads.download()`. The user triggers this explicitly; nothing is downloaded automatically in the background. |
+| `menus` | Adds the two context-menu entries ("Scan link with Thundy AV" on a link, "Scan all links of this message" in the message display action context). Both entries only trigger the same consent-gated scan paths as the other entry points; the permission is required for `browser.menus.create()` / `onClicked`. |
 
 ### 2.2 Optional host permissions
 
@@ -42,11 +43,16 @@ made in direct response to that user action.
 
 | Provider | Requested origin(s) | Requested when |
 |---|---|---|
-| Hybrid Analysis | `https://hybrid-analysis.com/*`, `https://*.hybrid-analysis.com/*` | the user saves a Hybrid Analysis API key |
-| VirusTotal | `https://virustotal.com/*`, `https://*.virustotal.com/*` | the user saves a VirusTotal API key |
-| urlscan.io | `https://urlscan.io/*`, `https://*.urlscan.io/*` | the user saves an urlscan.io API key |
+| Hybrid Analysis | `https://hybrid-analysis.com/*` | the user saves a Hybrid Analysis API key |
+| VirusTotal | `https://www.virustotal.com/*` | the user saves a VirusTotal API key, or selects VirusTotal for IP reputation |
+| urlscan.io | `https://urlscan.io/*` | the user saves an urlscan.io API key |
 | URLhaus (abuse.ch) | `https://urlhaus-api.abuse.ch/*` | the user saves a URLhaus Auth-Key |
 | AbuseIPDB | `https://api.abuseipdb.com/*` | the user configures IP reputation with AbuseIPDB |
+
+These are exactly the origins requested at runtime (`options.js`, in response to the **Save** button).
+The manifest's `optional_host_permissions` additionally declares the sub-domain wildcards
+`https://*.hybrid-analysis.com/*`, `https://*.virustotal.com/*` and `https://*.urlscan.io/*`, but the
+runtime request uses the concrete origin listed above.
 
 There is no `<all_urls>`, no `webRequest`, no `tabs` and no `cookies` permission.
 
@@ -63,10 +69,18 @@ There is no `<all_urls>`, no `webRequest`, no `tabs` and no `cookies` permission
    - "Scan this message only" → one-off scan, the sender is not stored permanently;
    - "Scan this sender permanently" → the sender is added to the persistent list and future messages
      from that sender are scanned automatically (while the global consent is enabled).
-3. **Privacy tier (`privacyTier`)** — selectable in the options dialog, **default `strict`**:
-   - `strict`: only SHA-256 hashes of attachments are transmitted;
-   - `balanced`: additionally full attachments of *unknown* files are uploaded to Hybrid Analysis;
-   - `max`: additionally URLs from the message are submitted to Hybrid Analysis.
+3. **Privacy tier (`privacyTier`)** — selectable in the options dialog, **default `strict`**. The tier
+   limits **every** transmission path, not only the automatic scan:
+   - `strict`: only SHA-256 hashes of attachments are transmitted; the manual attachment upload and the
+     manual URL scan in the popup are disabled and show a notice to switch to `balanced`/`max` in the
+     options;
+   - `balanced`: additionally full attachments of *unknown* files are uploaded to Hybrid Analysis
+     (automatic scan and manual upload);
+   - `max`: additionally URLs from the message are submitted to Hybrid Analysis (automatic scan and
+     manual URL scan).
+
+   Hash lookups (SHA-256), URLhaus/urlscan.io checks and IP reputation lookups remain possible in all
+   tiers as long as a key is configured and the global consent is enabled.
 
 ### 3.2 Why the add-on implements its own consent dialog
 
@@ -77,6 +91,27 @@ own options dialog (checkbox "Allow external analysis") together with the per-se
 message-view banner. No data is transmitted before the user has enabled both the global consent and
 triggered a scan.
 
+### 3.3 Data-collection declaration and `sensitiveDataUpload`
+
+`manifest.json` declares the data-collection permission as:
+
+```json
+"data_collection_permissions": { "required": ["none"], "optional": ["personalCommunications"] }
+```
+
+`required: "none"` means that the add-on collects and transmits none of the declared categories unless
+the user grants the optional consent. `personalCommunications` is **optional** and only becomes
+relevant once the user enables external analysis.
+
+The consent itself is still the options-page checkbox "Allow external analysis" (default off). In the
+same user gesture the add-on additionally requests Thunderbird's optional permission
+`sensitiveDataUpload`, declared in the manifest as `optional_permissions: ["sensitiveDataUpload"]`
+(Thunderbird labels it "transfer sensitive user data to a remote server"), via
+`browser.permissions.request({ data_collection: ['personalCommunications'], permissions: ['sensitiveDataUpload'] })`.
+When the consent is switched off, the permission is removed again via
+`browser.permissions.remove(...)`. Without this optional permission nothing is transmitted to third
+parties.
+
 ## 4. Data flows per provider and tier
 
 All transmissions below require the global consent (section 3.1). A scan also has to be triggered,
@@ -84,13 +119,17 @@ either automatically (sender opted in) or manually ("Scan this message only" / c
 
 | Data | Trigger / tier | Provider | Purpose |
 |---|---|---|---|
-| SHA-256 hash of an attachment | attachment scan, all tiers (`strict`, `balanced`, `max`); only if a VirusTotal key is configured | VirusTotal (`virustotal.com`) | check whether the file is already known |
+| SHA-256 hash of an attachment | attachment scan, all tiers (`strict`, `balanced`, `max`); only if a VirusTotal key is configured | VirusTotal (`www.virustotal.com`) | check whether the file is already known |
 | SHA-256 hash of an attachment | attachment scan, all tiers | Hybrid Analysis (`hybrid-analysis.com`) | check whether the file is already analysed (hash overview) |
-| Complete attachment (file content, file name, MIME type, size) | tier `balanced` and `max`, only when the hash lookup returned no match | Hybrid Analysis (`hybrid-analysis.com`, `api.hybrid-analysis.com`) | static and dynamic analysis in the Falcon Sandbox |
-| URLs from the message | tier `max` | Hybrid Analysis (`hybrid-analysis.com/api/v2/quick-scan/url`) | URL analysis |
-| URLs when the user clicks/checks a link, and links marked for review | whenever an urlscan.io key is configured | urlscan.io (`urlscan.io`) | link/phishing analysis (screenshot-based) |
+| Complete attachment (file content, file name, MIME type, size) | tier `balanced` and `max`; automatic scan (hash lookup returned no match) or manual attachment upload in the popup | Hybrid Analysis (`hybrid-analysis.com`) | static and dynamic analysis in the Falcon Sandbox |
+| URLs from the message | tier `max`; automatic scan or manual URL scan in the popup | Hybrid Analysis (`hybrid-analysis.com/api/v2/quick-scan/url`) | URL analysis |
+| URLs when the user clicks/checks a link, and links marked for review | whenever an urlscan.io key is configured (in all tiers) | urlscan.io (`urlscan.io`) | link/phishing analysis (screenshot-based) |
 | Domains extracted from the message body | whenever a URLhaus key is configured | URLhaus (`urlhaus-api.abuse.ch`) | check the domain against malware URL lists |
-| IP addresses found in the `Received` headers | only when a provider + key for IP reputation are configured | AbuseIPDB (`api.abuseipdb.com`) or VirusTotal (`virustotal.com`) | IP reputation |
+| IP addresses found in the `Received` headers | only when a provider + key for IP reputation are configured | AbuseIPDB (`api.abuseipdb.com`) or VirusTotal (`www.virustotal.com`) | IP reputation |
+
+In the `strict` tier the manual attachment upload and the manual URL scan in the popup are disabled
+(they require `balanced`/`max` respectively); only the hash lookups and the reputation lookups above
+remain available.
 
 Inherent to HTTP, each request also reveals the requesting IP address and a user-agent string to the
 respective provider.
@@ -155,6 +194,10 @@ No other hosts are contacted. All requests are HTTPS.
 3. Alternative: `npx web-ext run --firefox=/path/to/thunderbird` (web-ext has no `--target
    thunderbird`; `--firefox` takes the Thunderbird binary path).
 
+Sample messages for the test steps are in `testdata/` (a harmless attachment, an HTML attachment, a
+sender-domain mismatch, a spoofed display name and an urgency link). Import those `.eml` files into
+a test account instead of using real mail.
+
 ### 8.2 Obtain a free API key
 
 4. Register for free at https://www.hybrid-analysis.com/signup, log in, open the profile menu
@@ -171,7 +214,9 @@ No other hosts are contacted. All requests are HTTPS.
    `balanced` or `max` for a second run if you want to verify uploads.
 9. Click **Save**. Because a key is now stored, Thunderbird asks for the optional host permission
    for `hybrid-analysis.com` — grant it. Without this grant no request is made and the add-on
-   reports that the permission is missing.
+   reports that the permission is missing ("host permission missing"). If you enabled the global
+   consent, Thunderbird also asks for the optional `sensitiveDataUpload` permission in the same
+   step — grant it as well (section 3.3).
 10. Optional negative test: leave the consent checkbox off, save, open a message with an attachment
     and confirm that **no** network request to a provider occurs (Thunderbird Developer Tools →
     Network, or a local proxy).
@@ -204,6 +249,25 @@ No other hosts are contacted. All requests are HTTPS.
     `hybridanalysis` (database `thunderbird_av`, version 3) is emptied; the confirmation
     "Cache erfolgreich geleert." is shown. The stored consent and settings are not affected.
 
+### 8.6 Test the tier gate, the popup and the context menu
+
+18. **Tier `strict` — manual paths disabled.** Keep the privacy tier at `strict` and open the popup
+    (the Thundy AV button in the message display action). The manual attachment upload and the manual
+    URL scan are disabled and show a notice telling you to switch to *balanced*/*max* in the options.
+19. **Tier `balanced` — manual attachment upload.** Switch the tier to `balanced`, save and re-open the
+    popup; the manual attachment upload becomes available. With the global consent on it sends
+    `POST https://hybrid-analysis.com/api/v2/quick-scan/file`.
+20. **Tier `max` — manual URL scan.** Switch the tier to `max` and use the manual URL scan in the popup;
+    it sends `POST https://hybrid-analysis.com/api/v2/quick-scan/url`.
+21. **Popup consent.** With the global consent switched off, the popup shows a notice and transmits
+    nothing, regardless of the tier; no manual upload or URL scan is possible from the popup.
+22. **Context menu.** Right-click a link in the message → **"Scan link with Thundy AV"**, and use
+    **"Scan all links of this message"** from the message display action context menu. Both entries
+    must be present (they require the `menus` permission) and must only transmit with the global
+    consent active.
+
+The full end-to-end protocol for the live test is described in `docs/live_test_protocol.md`.
+
 ## 9. Known open items
 
 These points are deliberately documented as not yet complete and are **not** claims of finished work:
@@ -212,7 +276,7 @@ These points are deliberately documented as not yet complete and are **not** cla
   is done, the in-message banners (opt-in banner, threat banner, Time-of-Click marker) are the parts
   of the add-on that are least verified in a real Thunderbird installation.
 - There are **no real screenshots** yet; the repository only contains SVG placeholders
-  (`docs/screenshot-*.svg`, `docs/screenshots/*.svg`). See `docs/store_assets.md`.
+  (`docs/screenshots/*.svg`). See `docs/store_assets.md`.
 - The add-on has **not** been submitted to the Thunderbird Add-ons Store; there is no store URL and
   no store download button.
 - No dedicated reviewer test key is included: the API key required for a full end-to-end run is the
@@ -225,5 +289,7 @@ These points are deliberately documented as not yet complete and are **not** cla
   https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
 - Store listing texts: `docs/store_listing.md`
 - Asset status: `docs/store_assets.md`, capture guide: `docs/screenshot_capture.md`
+- Reviewer test data: `testdata/` (sample `.eml` messages for the test steps in section 8)
+- Live test protocol: `docs/live_test_protocol.md`
 - Maintainer and support: Jan Bludau (VaZuLeS), bludau.it.services@gmail.com
 - Repository and issue tracker: https://github.com/VaZuLeS/Thunderbird-Antivirus

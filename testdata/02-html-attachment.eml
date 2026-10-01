@@ -1,0 +1,56 @@
+Return-Path: <newsletter@example.com>
+Received: from smtp.example.com (smtp.example.com [198.51.100.77])
+	by mx.test.example.com (Postfix) with ESMTPS id 2A7B9C1D4E
+	for <test@example.com>; Wed, 01 Oct 2025 10:05:41 +0200 (CEST)
+From: "Team Beispiel" <newsletter@example.com>
+To: test@example.com
+Subject: =?utf-8?q?Ihre_Rechnung_=E2=80=93_bitte_pr=C3=BCfen?=
+Date: Wed, 01 Oct 2025 10:05:41 +0200
+Message-ID: <testdata-02-html@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----=_ThundyTest02"
+Content-Language: de-DE
+
+This is a multi-part message in MIME format.
+
+------=_ThundyTest02
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+Hallo,
+
+im Anhang finden Sie das Dokument als HTML-Datei. Bitte prüfen Sie es sorgfältig.
+
+Viele Grüße
+Team Beispiel
+
+------=_ThundyTest02
+Content-Type: text/html; charset="UTF-8"; name="bericht.html"
+Content-Transfer-Encoding: 8bit
+Content-Disposition: attachment; filename="bericht.html"
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="0; url=http://example.com/redirect">
+<base href="http://evil.example.net/">
+<title>Ihr Dokument</title>
+<script>alert('Thundy-Test: dieses Skript darf NICHT ausgefuehrt werden');</script>
+</head>
+<body onload="alert('onload darf nicht ausgefuehrt werden')">
+<h1>Ihr Dokument</h1>
+<p onclick="alert('onclick')">
+Bitte <a href="javascript:alert('xss')">hier klicken</a>
+oder <a href="http://example.com/track?uid=123">dort weiter</a>.
+</p>
+<object data="flash.swf"></object>
+<embed src="test.swf">
+<iframe src="http://evil.example.net/frame"></iframe>
+<form action="http://evil.example.net/submit" method="post">
+<input type="text" name="q" value="">
+<button type="submit">Senden</button>
+</form>
+</body>
+</html>
+------=_ThundyTest02--

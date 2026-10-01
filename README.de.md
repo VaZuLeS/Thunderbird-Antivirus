@@ -54,9 +54,9 @@ minimal notwendigen Daten an externe Analysedienste.
 
 | Datenschutz-Stufe | Anhänge | Links/URLs |
 | --- | --- | --- |
-| `strict` (Standard) | Nur SHA-256-Hashes und Metadaten | Nur Hashes/Domains an Reputationsdienste |
-| `balanced` | Zusätzlich Upload von Anhängen, die keinem Anbieter bekannt sind | Weiterhin keine vollständigen URLs |
-| `max` | Upload unbekannter Anhänge | Zusätzlich Upload von URLs zur Analyse |
+| `strict` (Standard) | Nur SHA-256-Hashes und Metadaten; manueller Anhang-Upload im Popup deaktiviert | Nur Hashes/Domains an Reputationsdienste; manueller URL-Scan im Popup deaktiviert |
+| `balanced` | Zusätzlich Upload von Anhängen, die keinem Anbieter bekannt sind (automatischer Scan und manueller Upload) | Weiterhin keine vollständigen URLs |
+| `max` | Upload unbekannter Anhänge | Zusätzlich Upload von URLs zur Analyse (automatischer Scan und manueller URL-Scan) |
 
 ## Daten und Datenschutz
 
@@ -130,9 +130,8 @@ Hinweis: Eine lokal gebaute XPI ist unsigniert. Release-Versionen von Thunderbir
 sofern die Signaturprüfung nicht deaktiviert ist (`about:config` → `xpinstall.signatures.required = false`, nicht in
 allen Builds verfügbar); für die Verteilung `npx web-ext sign --channel listed`/`--channel unlisted` oder die
 Store-Signierung nutzen. Release-Pakete entstehen mit `web-ext build --source-dir .` und werden über die
-`ignoreFiles`-Regeln aus `web-ext-config.mjs` (ergänzt durch `.webextignore`) bereinigt, sodass Testdateien,
-`docs/`, `scripts/`, `examples/` und Lockfiles nicht
-mitgeliefert werden.
+`ignoreFiles`-Regeln aus `web-ext-config.mjs` bereinigt, sodass Testdateien, `tools/`, `testdata/`, `docs/`,
+`scripts/`, `examples/` und Lockfiles nicht mitgeliefert werden.
 
 ## Bauen, Lint und Tests
 
@@ -142,15 +141,28 @@ npm test                                              # alle node:test-Dateien a
 node ./scripts/pre-submit-checks.js                   # Manifest-, Datenschutz- und Rechte-Checks
 npx web-ext lint                                      # addons-linter
 npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
+node ./scripts/verify-package.js ./build              # Inhalt und Größe des Pakets prüfen
+npm run store-gate                                    # Submission-Gate (vom Maintainer ergänzt)
 ```
 
-- `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** Testdateien des
-  Repositorys aus, nicht nur `background.test.js`.
+- `npm test` nutzt das Skript aus der `package.json` (`node --test`) und führt damit **alle** dort definierten
+  Testdateien aus (die vollständige Suite), nicht nur `background.test.js`.
+- `npm run check` verkettet Pre-Submit-Checks, Tests, Lint-Filter, Build und Paketprüfung.
 - `web-ext lint` meldet derzeit **0 Fehler**. Die verbleibenden Warnungen sind fast ausschließlich
   `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-spezifische APIs wie
   `messages.*` oder `messageDisplay.*` nicht kennt. Vor einem Release die Liste durchsehen.
+- `web-ext build` erzeugt das XPI nur aus den Laufzeitdateien; die `ignoreFiles`-Regeln in `web-ext-config.mjs`
+  halten Tests, `tools/`, `testdata/`, `docs/`, `scripts/`, `examples/` und Lockfiles aus dem Paket, und
+  `scripts/verify-package.js` prüft das Ergebnis. (`web-ext` liest keine `.webextignore`-Datei; `web-ext-config.mjs`
+  ist die einzige Quelle.)
 - Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
-  `node ./scripts/pre-submit-checks.js`, Unit-Tests und `npx web-ext lint`.
+  `node ./scripts/pre-submit-checks.js`, `node --test background.test.js` und `npx web-ext lint`. Ausführlichere
+  Workflow-Definitionen (vollständiges `npm test`, Lint-Filter für die bekannten Thunderbird-Fehlerpositive,
+  XPI-Build mit Paketprüfung und ein manueller Signier-Job) liegen in [docs/ci/](docs/ci/README.md); sie konnten in
+  dieser Umgebung nicht unter `.github/workflows/` eingereicht werden, weil dem Token die nötige
+  `workflows`-Berechtigung fehlt.
+- Der manuelle Live-Test in Thunderbird 140 ESR ist in [docs/live_test_protocol.md](docs/live_test_protocol.md)
+  beschrieben.
 - Ausführlicher: [docs/quickstart.md](docs/quickstart.md).
 
 ## Berechtigungen im Überblick
@@ -162,6 +174,13 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 | `notifications` | Systembenachrichtigungen zu Scan-Start, Einreichung und Fehlern. |
 | `scripting` | Banner, Warnhinweis und Time-of-Click-Hinweis in die Nachrichtenansicht einfügen (nur mitgelieferter Code, kein Remote-Code). |
 | `downloads` | Einen lokal bereinigten („entschärften“) HTML-Anhang über den Download-Manager speichern. |
+| `menus` | Die beiden Kontextmenü-Einträge („diesen Link scannen“, „alle Links dieser Nachricht scannen“) anlegen. Sie lösen nur die ohnehin zustimmungsgebundenen Scan-Pfade aus. |
+
+Optionale, zur Laufzeit und nur als Reaktion auf eine Nutzeraktion angefragte Berechtigung:
+
+| Berechtigung | Wann / warum |
+| --- | --- |
+| `sensitiveDataUpload` (`optional_permissions` in der `manifest.json`) | Wird zusammen mit der globalen Zustimmung angefragt, damit Nachrichtendaten an einen Remote-Server übertragen werden dürfen; beim Abschalten der Zustimmung wieder entfernt. Thunderbird-Bezeichnung: „sensible Nutzerdaten an einen Remote-Server übertragen“. |
 
 Optionale Host-Berechtigungen (`optional_host_permissions` in der `manifest.json`) – jede wird erst zur Laufzeit
 angefragt, wenn der passende Anbieter genutzt wird:
@@ -174,10 +193,11 @@ angefragt, wenn der passende Anbieter genutzt wird:
 | `https://urlhaus-api.abuse.ch/*` | URLhaus (abuse.ch) |
 | `https://api.abuseipdb.com/*` | AbuseIPDB |
 
-Zusätzlich deklariert die `manifest.json` unter `browser_specific_settings.gecko.data_collection_permissions` die
-**verpflichtende** Kategorie `personalCommunications`. Sie dokumentiert, dass das Add-on Nachrichteninhalte
-verarbeiten kann; übertragen wird nur nach globaler Zustimmung und einer Nutzeraktion und nur an Anbieter, denen Sie
-den Zugriff gewährt haben.
+Zusätzlich deklariert die `manifest.json` unter `browser_specific_settings.gecko.data_collection_permissions`
+`{ "required": ["none"], "optional": ["personalCommunications"] }`: Ohne die optionale Zustimmung werden keine der
+deklarierten Datenkategorien erhoben oder übertragen, und die optionale Kategorie `personalCommunications` wird erst
+relevant, wenn die externe Analyse aktiviert ist. Übertragen wird nur nach globaler Zustimmung und einer Nutzeraktion
+und nur an Anbieter, denen Sie den Zugriff gewährt haben.
 
 ## Einen weiteren Analysedienst ergänzen
 
@@ -200,8 +220,9 @@ den Zugriff gewährt haben.
   müssen echte Screenshots erstellt werden.
 - **Noch nicht im Add-ons-Store eingereicht** – es gibt kein öffentliches Listing und keine Store-URL.
 - Options- und Popup-Oberfläche gibt es derzeit nur auf Deutsch; Manifest-Strings und Banner sind lokalisiert.
-- In der Standard-Stufe `strict` werden unbekannte Anhänge nicht automatisch hochgeladen; dafür auf `balanced`/`max`
-  umstellen oder einen manuellen Upload im Popup starten.
+- In der Standard-Stufe `strict` werden unbekannte Anhänge gar nicht hochgeladen – weder automatisch noch im Popup
+  (dort sind manueller Upload und manueller URL-Scan deaktiviert und zeigen einen Hinweis). Dafür in den Einstellungen
+  auf `balanced` (Anhänge) oder `max` (Anhänge und URLs) umstellen.
 - Erkennungsqualität und Ratenlimits hängen von den konfigurierten Anbietern und Ihren eigenen API-Schlüsseln ab.
 - API-Schlüssel liegen unverschlüsselt im Thunderbird-Profil (`browser.storage.local`) – wer Zugriff auf das Profil
   hat, kann sie lesen.

@@ -54,9 +54,9 @@ submits the minimum data required to external analysis services.
 
 | Privacy tier | Attachments | Links/URLs |
 | --- | --- | --- |
-| `strict` (default) | Only SHA-256 hashes and metadata | Only hashes/domains to reputation services |
-| `balanced` | Additionally uploads attachments that are unknown to all providers | Still no full URLs |
-| `max` | Uploads unknown attachments | Additionally uploads URLs for analysis |
+| `strict` (default) | Only SHA-256 hashes and metadata; the manual attachment upload in the popup is disabled | Only hashes/domains to reputation services; the manual URL scan in the popup is disabled |
+| `balanced` | Additionally uploads attachments unknown to all providers (automatic scan and manual upload) | Still no full URLs |
+| `max` | Uploads unknown attachments | Additionally uploads URLs for analysis (automatic scan and manual URL scan) |
 
 ## Data & privacy
 
@@ -129,8 +129,8 @@ Note: a locally built XPI is unsigned. Release builds of Thunderbird refuse unsi
 enforcement is disabled (`about:config` → `xpinstall.signatures.required = false`, not available in all builds); for
 distribution use `npx web-ext sign --channel listed` / `--channel unlisted` or the Add-ons Store signing. Release
 packages are produced with `web-ext build --source-dir .` and cleaned up by the `ignoreFiles` rules in
-`web-ext-config.mjs` (supplemented by `.webextignore`), so that test
-files, `docs/`, `scripts/`, `examples/` and lockfiles are not shipped.
+`web-ext-config.mjs`, so that test files, `tools/`, `testdata/`, `docs/`, `scripts/`, `examples/` and lock files are
+not shipped.
 
 ## Build, lint and test
 
@@ -140,19 +140,26 @@ npm test                                              # run all node:test files
 node ./scripts/pre-submit-checks.js                   # manifest / privacy policy / permission checks
 npx web-ext lint                                      # addons-linter
 npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
+node ./scripts/verify-package.js ./build              # verify the packaged runtime files and size
+npm run store-gate                                    # submission readiness gate (added by the maintainer)
 ```
 
-- `npm test` uses the script from `package.json` (`node --test`) and therefore executes **all** test files of the
-  repository, not just `background.test.js`.
+- `npm test` uses the script from `package.json` (`node --test`) and therefore executes **all** test files defined
+  there (the full suite), not just `background.test.js`.
+- `npm run check` chains the pre-submit checks, the tests, the lint filter, the build and the package verification.
 - `web-ext lint` currently reports **0 errors**. The remaining warnings are almost exclusively `UNSUPPORTED_API`
   notices, because the linter validates against a Firefox target and does not know Thunderbird-only APIs such as
   `messages.*` or `messageDisplay.*`. Review the list before releasing.
+- `web-ext build` produces the XPI from the runtime files only; the `ignoreFiles` rules in `web-ext-config.mjs`
+  keep tests, `tools/`, `testdata/`, `docs/`, `scripts/`, `examples/` and lock files out of the package, and
+  `scripts/verify-package.js` checks the result. (`web-ext` does not read a `.webextignore` file, so
+  `web-ext-config.mjs` is the single source of truth.)
 - CI (`.github/workflows/ci.yml`) runs on every push and pull request with Node 22: `npm ci`, the pre-submit
-  checks (real exit code), `node --test background.test.js` and `npx web-ext lint`.
-- Extended workflow definitions (full `npm test`, lint filter for the known Thunderbird false positives,
-  XPI build with package verification and a manual signing job) are ready in [docs/ci/](docs/ci/README.md);
-  they could not be committed under `.github/workflows/` in this environment because the token lacks the
-  required `workflows` permission. See [docs/ci/README.md](docs/ci/README.md) for how to apply them.
+  checks (real exit code), `node --test background.test.js` and `npx web-ext lint`. Extended workflow definitions
+  (full `npm test`, lint filter for the known Thunderbird false positives, XPI build with package verification and
+  a manual signing job) are ready in [docs/ci/](docs/ci/README.md); they could not be committed under
+  `.github/workflows/` in this environment because the token lacks the required `workflows` permission.
+- The manual live test in Thunderbird 140 ESR is described in [docs/live_test_protocol.md](docs/live_test_protocol.md).
 - More details: [docs/quickstart.md](docs/quickstart.md).
 
 ## Permissions overview
@@ -164,6 +171,13 @@ npx web-ext build --source-dir . --artifacts-dir ./build --overwrite-dest
 | `notifications` | Report scan start, submission and errors in a system notification. |
 | `scripting` | Inject the banner, the threat warning and the time-of-click hover notice into the message view (extension-bundled code only, no remote code). |
 | `downloads` | Save a locally sanitized ("disarmed") HTML attachment through the browser download manager. |
+| `menus` | Add the two context-menu entries ("scan this link", "scan all links of this message"). They only feed the same consent-gated scan paths. |
+
+Optional permissions requested at runtime, only in response to a user action:
+
+| Permission | When / why |
+| --- | --- |
+| `sensitiveDataUpload` (`optional_permissions` in `manifest.json`) | Requested together with the global consent so message data may be sent to a remote server; removed again when the consent is switched off. Thunderbird labels it "transfer sensitive user data to a remote server". |
 
 Optional host permissions (`optional_host_permissions` in `manifest.json`) – each one is requested at runtime, only
 when the matching provider is used:
@@ -176,9 +190,11 @@ when the matching provider is used:
 | `https://urlhaus-api.abuse.ch/*` | URLhaus (abuse.ch) |
 | `https://api.abuseipdb.com/*` | AbuseIPDB |
 
-`manifest.json` also declares `browser_specific_settings.gecko.data_collection_permissions` with the **required**
-category `personalCommunications`. It documents that the add-on can process message content; data is only transmitted
-after the global consent and a user action, and only to providers you have granted access to.
+`manifest.json` also declares `browser_specific_settings.gecko.data_collection_permissions` as
+`{ "required": ["none"], "optional": ["personalCommunications"] }`: nothing is collected or transmitted unless the
+user grants the optional consent, and the optional category `personalCommunications` only becomes relevant once
+external analysis is enabled. Data is transmitted only after the global consent and a user action, and only to
+providers you have granted access to.
 
 ## Adding another analysis service
 
@@ -201,8 +217,9 @@ after the global consent and a user action, and only to providers you have grant
 - **Not submitted to the Add-ons Store yet** – there is no public listing and no store URL.
 - The options page and the popup are currently available in German only; the manifest strings and the banners are
   localized (English/German).
-- With the default tier `strict`, unknown attachments are not uploaded automatically; you have to switch to
-  `balanced`/`max` or start a manual upload from the popup.
+- With the default tier `strict`, unknown attachments are not uploaded at all — neither automatically nor via the
+  popup (the manual upload and the manual URL scan are disabled there and show a hint). Switch to `balanced`
+  (attachments) or `max` (attachments and URLs) in the options to enable those paths.
 - Detection quality and rate limits depend on the configured providers and on your own API keys.
 - API keys are stored unencrypted in the Thunderbird profile (`browser.storage.local`) – anyone with access to your
   profile can read them.

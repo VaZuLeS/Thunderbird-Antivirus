@@ -1,0 +1,35 @@
+Return-Path: <anna.beispiel@example.org>
+Received: from mail.example.org (mail.example.org [198.51.100.24])
+	by mx.test.example.com (Postfix) with ESMTPS id 8F4C1A2B3D
+	for <test@example.com>; Wed, 01 Oct 2025 09:12:03 +0200 (CEST)
+From: "Anna Beispiel" <anna.beispiel@example.org>
+To: test@example.com
+Subject: Monatsbericht September (harmlos)
+Date: Wed, 01 Oct 2025 09:12:03 +0200
+Message-ID: <testdata-01-harmless@example.org>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----=_ThundyTest01"
+Content-Language: de-DE
+
+This is a multi-part message in MIME format.
+
+------=_ThundyTest01
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+Hallo,
+
+anbei der Monatsbericht als einfache Textdatei. Keine Links, keine Auffälligkeiten.
+
+Viele Grüße
+Anna Beispiel
+
+------=_ThundyTest01
+Content-Type: text/plain; charset="UTF-8"; name="notizen.txt"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="notizen.txt"
+
+Zeilen aus dem Thundy-AV-Testdatensatz 01.
+Diese Datei enthaelt ausschliesslich Klartext und ist voellig harmlos.
+Kein aktives Markup, kein Skript, kein Makro, keine ausfuehrbare Datei.
+------=_ThundyTest01--

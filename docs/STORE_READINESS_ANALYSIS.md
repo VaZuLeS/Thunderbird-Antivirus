@@ -384,7 +384,7 @@ als manuelle Schritte dokumentiert (siehe `docs/STATUS.md`).
 | H4 Trademark-Name | **behoben** | „Thundy AV – Email Scanner for Thunderbird“ (+ `short_name`), Pre-Submit-Check lehnt `Thunderbird*` als Namenspräfix ab |
 | H5 stilles Dauer-Opt-in | **behoben** | Banner mit zwei Buttons („Nur diese Nachricht scannen“ / „Absender dauerhaft scannen“); `requestScan` persistiert nur mit `persist: true` (durch Tests abgedeckt) |
 | H6 Reviewer-Testbarkeit | **behoben** | `docs/reviewer_notes.md` mit Permission-Begründungen (inkl. `notifications`, `downloads`), Datenfluss-Matrix, Netzwerkzielen und Schritt-für-Schritt-Testweg |
-| H7 Beschreibung/Positionierung | **behoben** | Manifest-Beschreibung lokalisiert (`_locales/en|de`), Feature-Umfang an die tatsächlich funktionierenden Funktionen angepasst |
+| H7 Beschreibung/Positionierung | **behoben** | Manifest-Beschreibung lokalisiert (`_locales/en` und `_locales/de`), Feature-Umfang an die tatsächlich funktionierenden Funktionen angepasst |
 | H8 Icon-Pfade | **behoben** | `notify()` nutzt `runtime.getURL('img/icon-64px.png')`; Icons 16/32/48/64/128 deklariert und vorhanden |
 | H9 MV3-inkonforme Keys | **behoben** | `browser_style` entfernt, `open_in_tab: true`, `optional_permissions`/`content_scripts` werden vom Pre-Submit-Check verboten |
 | H10 CI | **behoben (Spiegel)** | Workflow: `npm ci` → Pre-Submit-Checks → `npm test` (alle Testdateien) → Lint mit Filter unerwarteter Warnungen → Build + Paketprüfung, zusätzlich Signier-Job (`web-ext sign --channel`). Die Definitionen liegen unter `docs/ci/` (Push nach `.github/workflows/` scheitert an der fehlenden `workflows`-Berechtigung des Tokens, siehe `docs/ci/README.md`); alle referenzierten Skripte sind aktiv im Repository |

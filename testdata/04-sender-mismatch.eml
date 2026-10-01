@@ -1,0 +1,24 @@
+Return-Path: <bounce@mailsender.example.com>
+Received: from unknown (unknown [203.0.113.7])
+	by mx.test.example.com (Postfix) with ESMTP id 7C1D2E3F4A
+	for <test@example.com>; Wed, 01 Oct 2025 12:33:59 +0200 (CEST)
+Received: from localhost (localhost [127.0.0.1])
+	by mailsender.example.com (Postfix) with ESMTP id 0A1B2C3D
+	for <test@example.com>; Wed, 01 Oct 2025 12:33:57 +0200 (CEST)
+From: "Service Team" <service@example.com>
+Reply-To: "Kontakt" <kontakt@other-mail.example.net>
+To: test@example.com
+Subject: =?utf-8?q?Ihre_Anfrage_=E2=80=93_bitte_antworten?=
+Date: Wed, 01 Oct 2025 12:33:59 +0200
+Message-ID: <testdata-04-mismatch@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+Guten Tag,
+
+vielen Dank für Ihre Nachricht. Bitte antworten Sie zur Bearbeitung direkt auf diese
+E-Mail an unsere Kontaktadresse.
+
+Mit freundlichen Grüßen
+Service Team

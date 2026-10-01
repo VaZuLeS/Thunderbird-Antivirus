@@ -111,9 +111,10 @@ describe('packaging and test discovery (P0-6, P2-16, P3-23, P3-24)', () => {
       assert.ok(fs.existsSync(path.join(ROOT, file)), `the test script references a missing file: ${file}`);
       assert.match(file, /(\.test\.js|_test\.js|^test\/)/, `${file} does not look like a test file`);
     }
-    // Developer scripts must not match the Node test discovery patterns any more.
+    // Developer scripts (JS or Python) must not match the Node test discovery
+    // patterns any more.
     for (const name of fs.readdirSync(path.join(ROOT, 'tools'))) {
-      assert.ok(/\.dev\.js$/.test(name), `${name} would be picked up by the Node test runner`);
+      assert.ok(/\.dev\.(js|py|mjs|cjs)$/.test(name), `${name} would be picked up by the Node test runner`);
     }
   });
 
