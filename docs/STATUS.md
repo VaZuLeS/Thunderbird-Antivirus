@@ -18,6 +18,28 @@
 Ablauf und Begründung: D11 in [decisions.md](decisions.md). ATN kennt weiterhin keine Version dieses
 Add-ons (API-Abfrage → 404); die Einreichung dort ist noch offen (siehe „Remaining“).
 
+## Release 1.6.6 (veröffentlicht)
+
+Forscher-Werkzeuge: lokaler Indikator-Index mit **Pivot** und **Verlaufssuche** — Triage über
+Nachrichten hinweg, ohne neue Berechtigungen und ohne zusätzliche Netzwerkzugriffe.
+
+| Feld | Wert |
+|---|---|
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.6 (kein Pre-Release → „Latest“) |
+| Commit / Tag | `f2924fe` / `v1.6.6` |
+| Asset | `thundy-av-1.6.6.xpi`, 92.202 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `738739f0f3304cec160885c1e7668a50f777bdd8ba7720c95a4bc003b46005f7` |
+| Gates | 474 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 35 kuratierte Warnungen · Paket 17 Dateien / 354.203 Bytes „valid“ |
+
+### Funktionsumfang 1.6.6
+
+- **Indikator-Index** (DB-Version 4, Store `iocs`): je gescannter Nachricht URLs, Domains, IPs, Hashes
+  und E-Mail-Adressen mit Betreff, Datum, Verdikt und Score — lokal, max. 300 Einträge je Nachricht.
+- **Pivot** je IOC im Popup (Trefferliste, Öffnen-Aktion) und **Verlaufssuche** in den Einstellungen
+  (Text, Indikatorart, Verdikt).
+- **Löschweg:** „Cache leeren“ entfernt Index und Nachweis-Cache; Datenschutzerklärung §4.1 (DE/EN).
+- **Selbsttest** prüft den Index-Roundtrip und damit die Datenbankmigration.
+
 ## Release 1.6.5 (veröffentlicht)
 
 Security-Release: „HTML entschärfen“ erzeugt eine netzwerk-untätige Datei, die Nachrichten-Grenze ist

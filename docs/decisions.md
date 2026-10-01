@@ -287,3 +287,31 @@ Anbieter-Zustände in der Forscher-Ansicht und ein Hash-Cache für Anhänge.
 | SHA-256 | `9311dbd9166a7c644e4dc5dd920b71737cc7814d2768a31605e128f571d781f3` |
 | Paketinhalt | 17 Dateien, 329.550 Bytes entpackt |
 | Gates | 468 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 30 kuratierte Warnungen |
+
+## D15 — Version 1.6.6: lokaler Indikator-Index, Pivot, Verlaufssuche
+**Bezug:** Thema T8 in [ROADMAP.md](ROADMAP.md) · **Aufgabe:** F-01 … F-07
+
+**Bewusste Entscheidungen.**
+1. **Triage über Nachrichten hinweg statt Einzelbewertung.** Der Index beantwortet die Analystenfrage
+   „wo kommt dieser Indikator sonst vor?“ — die Datenbasis sind ausschließlich **selbst gescannte**
+   Nachrichten (kein Nachladen, keine Ordnerdurchläufe ohne Scan).
+2. **Keine neuen Berechtigungen.** Der Index lebt in der vorhandenen IndexedDB (`messagesRead`+`storage`);
+   das Öffnen eines Treffers nutzt `messageDisplay.open({ headerMessageId })`.
+3. **Nur Indikatoren, keine Inhalte** und harte Obergrenze (300 Einträge je Nachricht).
+4. **Löschbarkeit ist Teil der Funktion:** „Cache leeren“ entfernt `hybridanalysis` **und** `iocs`; die
+   Datenschutzerklärung beschreibt Inhalt, Zweck, Datenbasis und Löschweg (DE §4.1, EN „Local indicator
+   index“).
+5. **Migration wird geprüft, nicht angenommen:** Der Selbsttest führt einen Index-Roundtrip
+   (Schreiben → Pivot → Löschen) in der laufenden Installation aus (DB-Version 3 → 4).
+
+**Veröffentlichtes Artefakt**
+
+| Feld | Wert |
+|---|---|
+| Version | 1.6.6 (`manifest.json`, `package.json`, `package-lock.json`) |
+| Commit / Tag | `f2924fe` / `v1.6.6` (annotiert) |
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.6 (kein Pre-Release → „Latest“) |
+| Asset | `thundy-av-1.6.6.xpi`, 92.202 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `738739f0f3304cec160885c1e7668a50f777bdd8ba7720c95a4bc003b46005f7` |
+| Paketinhalt | 17 Dateien, 354.203 Bytes entpackt |
+| Gates | 474 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 35 kuratierte Warnungen |
