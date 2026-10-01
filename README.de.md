@@ -18,6 +18,7 @@ minimal notwendigen Daten an externe Analysedienste.
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
+| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.2 |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
 | Sprachen | Manifest-Strings und Banner lokalisiert (Englisch, Deutsch – `_locales/`); Options- und Popup-Oberfläche derzeit nur auf Deutsch |
 
