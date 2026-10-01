@@ -13,6 +13,7 @@
 | Asset | `thundy-av-1.6.2.xpi`, 53.277 Bytes (byte-identisch mit dem geprüften web-ext-Build) |
 | SHA-256 | `12cd335b140cb745c158dacb69db2105c253716f7d4d4f0a5bb242b89689cdee` |
 | Release-Notes | im Release + [CHANGELOG.md](../CHANGELOG.md) + [store_listing.md](store_listing.md) §6 |
+| Pull Request | https://github.com/VaZuLeS/Thunderbird-Antivirus/pull/641 (Zusammenführen nach `main` empfohlen) |
 
 Ablauf und Begründung: D11 in [decisions.md](decisions.md). ATN kennt weiterhin keine Version dieses
 Add-ons (API-Abfrage → 404); die Einreichung dort ist noch offen (siehe „Remaining“).
