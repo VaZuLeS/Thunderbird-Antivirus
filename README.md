@@ -18,7 +18,7 @@ submits the minimum data required to external analysis services.
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigned XPI for testing) | v1.6.2 – https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.2; the 1.6.3 release is in preparation (see [docs/STATUS.md](docs/STATUS.md)) |
+| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.3 |
 | Requires | Thunderbird 140.0 or newer (Manifest V3) |
 | Strings | Manifest strings and banners are localized (English, German – `_locales/`); the options page and the popup are currently German only |
 

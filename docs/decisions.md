@@ -185,3 +185,46 @@ Merge erreichbar.
 **Nicht Bestandteil dieses Releases:** ATN-Upload/Signierung (benötigt die ATN-API-Schlüssel des
 Maintainers), echte Screenshots und der Live-Test in Thunderbird 140 ESR.
 
+
+## D12 — Version 1.6.3 (Forscher-Ansicht, Benachrichtigungen, Design)
+**Bezug:** Runde 3 der Problemanalyse · **Aufgabe:** S-01 … S-08
+
+**Umfang.** Analysesicht für IT-Sicherheitsforscher im Popup, gebündelte Benachrichtigungen und ein
+durchgängiges Design-System (Details in [STATUS.md](STATUS.md) und [CHANGELOG.md](../CHANGELOG.md)).
+
+**Bewusste Entscheidungen.**
+1. **Keine neuen Berechtigungen.** Alles wird lokal aus der geöffneten Nachricht abgeleitet;
+   `messagesRead`, `storage`, `notifications` und `downloads` genügen. Damit bleibt die
+   Berechtigungsbegründung im Review unverändert.
+2. **Dossier im Hintergrund, Rendern im Popup.** Die Analytik (Header-Parsing, IOC-Extraktion,
+   MITRE-Zuordnung, Score-Aufschlüsselung) bleibt im Hintergrundskript; das Popup ruft es über
+   `getResearchDossier` ab. So gibt es genau eine Implementierung und das Popup bleibt schlank.
+3. **MITRE-Zuordnung ist ausdrücklich heuristisch.** Jede Technik trägt `confidence: 'heuristic'` und
+   einen Belegindikator; die Oberfläche kennzeichnet das („kein Nachweis eines Angriffs, keine
+   Attribuierung“). Ein Automatismus, der Techniken als Tatsache darstellt, wäre fachlich falsch.
+4. **Benachrichtigungen aktualisieren statt stapeln.** Eine stabile ID je Scan-Vorgang
+   (`scan-message-<id>`, `scan-links-<id>`, `scan-url-<host>`); `notifications.create(id, options)`
+   ersetzt die bestehende Meldung. Thunderbird markiert `buttons` als **nicht unterstützt**, deshalb
+   ist der Klick auf die Meldung die einzige Aktion — er öffnet die Nachricht (`messageDisplay.open`).
+5. **Export rein lokal.** JSON/CSV/STIX-2.1 werden im Popup erzeugt und über den Download-Manager
+   gespeichert (`saveResearchExport`); das STIX-Bundle ist bewusst minimal (Identity + Indikatoren) und
+   als heuristisch gelabelt.
+6. **Versionierung:** 1.6.3 als nächster Patch der Linie, die `main` repräsentiert (gleiche Begründung
+   wie D11; die Tag-Nummern 1.7.0–1.18.0 bleiben der unveröffentlichten Nebenlinie vorbehalten).
+
+**Veröffentlichtes Artefakt**
+
+| Feld | Wert |
+|---|---|
+| Version | 1.6.3 (`manifest.json`, `package.json`, `package-lock.json`) |
+| Commit / Tag | `2afddd7` / `v1.6.3` (annotiert) |
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.3 (kein Pre-Release → „Latest“) |
+| Asset | `thundy-av-1.6.3.xpi`, 75.640 Bytes (byte-identisch mit dem web-ext-Build, per `cmp` geprüft) |
+| SHA-256 | `d2a57233ba5ae962b76f58a7ea33f3f6b33e893ce92849907d77f1981df2c108` |
+| Paketinhalt | 17 Dateien, 284.739 Bytes entpackt |
+| Gates | 452 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 26 kuratierte Warnungen |
+
+**Nicht in dieser Runde:** Screenshots und der Live-Test in Thunderbird 140 ESR (beide manuell,
+Kriterien C5/C6 im Store-Gate); die ATN-Einreichung braucht weiterhin die API-Schlüssel des
+Maintainers.
+

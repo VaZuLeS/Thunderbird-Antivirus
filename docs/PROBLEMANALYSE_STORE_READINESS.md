@@ -118,6 +118,73 @@ nicht-Pre-Release; ein `make_latest=false` ändert daran nichts (in Runde 1 repr
 
 ---
 
+## 0.3 Update 2026-10-01 (Runde 3) — Forscher-Ansicht, Benachrichtigungen, Design
+
+Auftrag dieser Runde: Design und Benachrichtigungen intelligent fortführen und die Ansicht des
+Toolbar-Buttons für IT-Sicherheitsforscher erweitern. Aus Sicht eines Senior Security Researchers
+fehlten dafür folgende Fähigkeiten (Aufgaben S-01 … S-08 in §13 des Aufgabenplans):
+
+### S-1 — Keine Header-Forensik (hoch)
+**Belege (vorher):** `background.js` las `Authentication-Results` nur als Score-Eingabe
+(`evaluateAuthHeaders`, `background.js:539`), die `Received`-Kette nur zur IP-Extraktion
+(`extractPublicIPs`, `:368`). Für einen Analysten sind aber genau diese Felder entscheidend
+(Spoofing, Hops, Auffälligkeiten in der Zustellkette, Absender-/Reply-To-Abweichung).
+**Fix:** `parseAuthenticationResults()` (SPF/DKIM/DMARC inkl. `Received-SPF`), `parseReceivedChain()`
+(Hops, IP, Protokoll, Zeitdifferenzen, Markierung auffälliger Verzögerungen) und ein
+Sicherheits-Header-Block (Return-Path, Message-ID, X-Mailer, List-Unsubscribe) im Dossier.
+
+### S-2 — Keine IOC-Extraktion und kein maschinenlesbarer Export (hoch)
+**Belege (vorher):** Indikatoren mussten manuell aus der Nachricht kopiert werden; es gab keinen
+Export. Für Triage/Weitergabe an SIEM/TIP fehlte jede Schnittstelle.
+**Fix:** `extractIocs()` (URLs, Domains, IPs, SHA-256, E-Mail-Adressen, dedupliziert und begrenzt),
+Anzeige mit Kopierknopf sowie Export als **JSON**, **CSV** und minimales **STIX-2.1-Bundle**.
+
+### S-3 — Score ohne nachvollziehbare Aufschlüsselung (mittel)
+**Belege (vorher):** `calculateThreatScore()` addierte Punkte über mehrere Evaluatoren und lieferte
+nur `score` + Freitext-`reasons`; welcher Regelbeitrag wie hoch war, ließ sich nicht rekonstruieren.
+**Fix:** Scoring-Ledger (`breakdown` je Regel mit Punkten und Begründung), plus `rawScore`, damit die
+Begrenzung auf 100 transparent wird.
+
+### S-4 — Keine MITRE-ATT&CK-Einordnung (mittel)
+**Belege (vorher):** Es gab keine Zuordnung lokaler Indikatoren zu Taktiken/Techniken — bei
+Phishing-Triage die erwartete Sprache für Reports.
+**Fix:** `mapMitreTechniques()` mit Belegindikator je Technik, ausdrücklich als **heuristisch**
+gekennzeichnet (kein Angriffsnachweis, keine Attribuierung).
+
+### S-5 — Benachrichtigungen ohne Lebenszyklus (mittel)
+**Belege (vorher):** `notify()` erzeugte je Ereignis eine neue Meldung (Start, Job-ID, Fehler); es gab
+keine Ergebnis-Meldung, kein Aktualisieren, kein Klick-Ziel und damit Spam-Potenzial ohne
+Rückverfolgbarkeit.
+**Fix:** Meldung mit stabiler ID je Scan-Vorgang, die aktualisiert wird (läuft → geprüft/Job-ID →
+Ergebnis mit Verdikt und Score); Klick öffnet die Nachricht. Thunderbirds `notifications.buttons` ist
+laut API-Doku **nicht unterstützt** — deshalb ist der Klick die einzige Aktion, keine Fake-Buttons.
+
+### S-6 — Design ohne System (mittel)
+**Belege (vorher):** Banner nutzten eigene Farben („#ffeeee/#ff0000“), Großbuchstaben-Deko und eine
+andere Typografie als Optionsseite/Popup; die Schweregrade waren weder skaliert noch in hell/dunkel
+konsistent.
+**Fix:** Design-Tokens (Farb-/Abstands-/Typografie-Skala) in `theme.css`, Schweregrad-Chips,
+Verdikt-Badge, Risikobalken, Tabellen, Monospace-Werte mit Kopierknopf, aufklappbare Sektionen,
+Tabs „Übersicht“/„Forscher“; die injizierten Banner nutzen dieselbe Skala (Palette gespiegelt in
+`BANNER_PALETTE`).
+
+### S-7 — Keine Provenienz/Zeitleiste (niedrig)
+**Belege (vorher):** Nicht erkennbar, wann eine Bewertung entstand, mit welcher Datenschutz-Stufe und
+welchen konfigurierten Anbietern — Reproduzierbarkeit fehlte.
+**Fix:** `provenance` (lokal berechnet, Stufe, Zustimmung, konfigurierte Anbieter, URLhaus-/IP-Treffer)
+und `timeline` (Nachrichtendatum, Received-Hops mit Verzögerung, lokale Bewertung).
+
+### S-8 — Detailtiefe bei Anhängen und Links (niedrig)
+**Belege (vorher):** Anhänge zeigten nur Name/Hash-Status; Links wurden nicht anatomisiert
+(kein TLD, kein Punycode-/Homoglyph-Hinweis, keine Tracking-Parameter, keine Kurz-URL-Erkennung).
+**Fix:** `analyseLinkAnatomy()` und eine Anhangstabelle mit MIME-Typ, Größe, kopierbarem SHA-256 und
+Risiko-Kennzeichnung (riskante Endung, Archiv).
+
+**Status:** S-1 … S-8 in Version 1.6.3 umgesetzt, veröffentlicht und getestet (452 Tests,
+Store-Gate C1–C4 + C7 PASS). Details: §13 des Aufgabenplans, D12 in [decisions.md](decisions.md).
+
+---
+
 ## 1. Zielbild „store-ready“
 
 „Store-ready“ heißt hier: das Add-on erfüllt die ATN-Einreichungsanforderungen und ist in der deklarierten

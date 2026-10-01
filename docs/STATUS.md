@@ -1,6 +1,6 @@
 # Status – Thundy AV (Stand: 1. Oktober 2026)
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6.3 (in Vorbereitung)** · **ID** `thundy-av@bludau-it-services.de`
+**Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6.3** · **ID** `thundy-av@bludau-it-services.de`
 **Zielplattform:** Thunderbird 140.0 oder neuer (Manifest V3) · **Lizenz:** MIT
 **Snapshot:** Branch `cline/k0d34w90` (Einreichungskandidat, Entscheidung D1 in [decisions.md](decisions.md))
 
@@ -18,19 +18,19 @@
 Ablauf und Begründung: D11 in [decisions.md](decisions.md). ATN kennt weiterhin keine Version dieses
 Add-ons (API-Abfrage → 404); die Einreichung dort ist noch offen (siehe „Remaining“).
 
-## Release 1.6.3 (in Vorbereitung)
+## Release 1.6.3 (veröffentlicht)
 
 Version 1.6.3 bringt die Forscher-Funktionalität (Researcher-Ansicht im Popup, gebündelte
-Benachrichtigungen und ein durchgängiges Design-System). Die folgenden Angaben sind **Platzhalter**;
-die Messwerte (Tag, Commit, Asset-Hash, URL) trägt der Lead nach Build und Tag ein.
+Benachrichtigungen und ein durchgängiges Design-System). Alle Angaben sind gemessen; das Asset wurde
+heruntergeladen und per `cmp` mit dem geprüften Build verglichen.
 
 | Feld | Wert |
 |---|---|
-| Release | __(noch zu füllen)__ |
-| Commit / Tag | __(noch zu füllen)__ |
-| Asset | __(noch zu füllen)__ |
-| SHA-256 | __(noch zu füllen)__ |
-| Pull Request | __(noch zu füllen)__ |
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.3 (kein Pre-Release → „Latest“) |
+| Commit / Tag | `2afddd7` / `v1.6.3` |
+| Asset | `thundy-av-1.6.3.xpi`, 75.640 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `d2a57233ba5ae962b76f58a7ea33f3f6b33e893ce92849907d77f1981df2c108` |
+| Pull Request | https://github.com/VaZuLeS/Thunderbird-Antivirus/pull/641 |
 | Release-Notes | [store_listing.md](store_listing.md) §6 + [CHANGELOG.md](../CHANGELOG.md) |
 
 ### Funktionsumfang 1.6.3

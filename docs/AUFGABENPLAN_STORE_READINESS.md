@@ -274,3 +274,39 @@ Thunderbird 140 ESR (C6). Beide bleiben als manuelle Schritte dokumentiert.
 (`gh api repos/…/releases/latest` → `v1.6.2`), damit ist Befund R-6 ohne destruktive Eingriffe gelöst.
 
 
+
+---
+
+## 13. Runde 3 — Forscher-Ansicht, Benachrichtigungen, Design (Version 1.6.3)
+
+Neue Befunde **S-1 … S-8** (Bezug: §0.3 der Problemanalyse) und die zugehörigen Aufgaben. Ziel: die
+Sicht des Toolbar-Buttons für IT-Sicherheitsforscher nutzbar machen, Benachrichtigungen zu einem
+Statuskanal je Scan bündeln und die Oberfläche auf ein Design-System stellen — ohne neue Berechtigungen.
+
+| ID | Aufgabe | Bezug | DoD (Nachweis) | Aufwand | Abhängig von |
+|---|---|---|---|---|---|
+| **S-01** | **Dossier-Engine im Hintergrund:** `buildResearchDossier(messageId)` mit Nachricht, Provenienz, Authentifizierung, Received-Kette, Absender, Anhängen (SHA-256), Links, IOCs, Risiko, MITRE und Zeitleiste; neue Message-Action `getResearchDossier` | S-1, S-7 | Test: Dossier aus gemockten Headern enthält alle Abschnitte; Pre-Submit-Check unverändert grün | 4 h | — |
+| **S-02** | **Header-/Auth-Parser:** `parseAuthenticationResults()` (SPF/DKIM/DMARC + `Received-SPF`) und `parseReceivedChain()` (Hop, IP, Protokoll, Zeitdifferenz, auffällige Verzögerung) | S-1 | Tests für Pass/Fail-Kombinationen, Mehrfach-DKIM und Verzögerungen (2 h/1 h) | 2 h | — |
+| **S-03** | **IOC-Extraktion und MITRE-Zuordnung:** `extractIocs()` (dedupliziert, begrenzt) und `mapMitreTechniques()` mit `confidence: 'heuristic'` + Belegindikator | S-2, S-4 | Tests: IOC-Buckets korrekt, Techniken für Anhang/Link/Spoofing/Auth-Fail, leere Liste bei harmloser Nachricht | 3 h | S-01 |
+| **S-04** | **Score-Ledger:** `calculateThreatScore()` liefert `breakdown` je Regel und `rawScore` | S-3 | Test: Summe der Regelpunkte = Rohsumme, `score` = min(Rohsumme, 100) | 2 h | — |
+| **S-05** | **Benachrichtigungs-Engine:** stabile ID je Scan-Vorgang, Aktualisierung statt Stapelung, Klick öffnet die Nachricht (`messageDisplay.open`), Host-only-Texte, Betreffkürzung | S-5 | Tests: gleiche ID für Statusfolge, Kontext-Map, Klick öffnet Nachricht, Kürzung; bestehende `notify()`-Tests bleiben grün | 3 h | — |
+| **S-06** | **Design-System:** Tokens (Farb-/Abstands-/Typografie-Skala, Schweregrade), Chips, Verdikt-Badge, Risikobalken, Tabellen, Monospace+Kopierknopf, aufklappbare Sektionen, Tabs, hell/dunkel, Fokusring, Druckstile | S-6 | `theme.css` enthält die Klassen; `web-ext lint` 0 Fehler; bestehende Klassen unverändert nutzbar | 3 h | — |
+| **S-07** | **Popup-Forscheransicht + Exporte:** Rendern aller Dossier-Abschnitte, IOC-Kopierknopf, Export als JSON/CSV/STIX-2.1 über `saveResearchExport`, Tab-Umschaltung Übersicht/Forscher | S-2, S-8 | Tests in `test/researcher-view.test.js`: Sektionen im DOM, CSV/STIX-Inhalte, Buttons verdrahtet, Fehlerhinweis statt Silent-Fail | 5 h | S-01, S-06 |
+| **S-08** | **Doku, Gates, Release:** README (EN/DE), Reviewer-Notes, Listing, Privacy-Policy, STATUS; Version 1.6.3, CHANGELOG, Tag und Release mit Asset + Hash | alle | `npm run check` → Exit 0; Store-Gate C1–C4 + C7 PASS; Release mit byte-identischem Asset | 3 h | S-01 … S-07 |
+
+**Summe:** ≈ 25 h (3 Personentage). Nicht Teil der Runde: Screenshots (C5) und Live-Test (C6) — beide
+bleiben manuelle Schritte.
+
+### Ausführungsstand Runde 3 (2026-10-01)
+
+| ID | Status | Nachweis |
+|---|---|---|
+| S-01 | **erledigt** | `buildResearchDossier()` + Message-Action `getResearchDossier`; Dossier-Test in `background.test.js` |
+| S-02 | **erledigt** | `parseAuthenticationResults()`, `parseReceivedChain()` + 3 Tests |
+| S-03 | **erledigt** | `extractIocs()`, `mapMitreTechniques()` + 2 Tests |
+| S-04 | **erledigt** | `breakdown`/`rawScore` + Summen-Test |
+| S-05 | **erledigt** | `notifyScanStatus()`, `clearNotification()`, Klick-Handler + 4 Tests |
+| S-06 | **erledigt** | `theme.css` (101 `thundy-*`-Klassen, hell/dunkel), Banner-Palette gespiegelt; Lint 0 Fehler |
+| S-07 | **erledigt** | `test/researcher-view.test.js` (8 Tests), Exporte JSON/CSV/STIX + IOC-Kopie |
+| S-08 | **erledigt** | Version 1.6.3, Changelog, Tag `v1.6.3`, Release mit `thundy-av-1.6.3.xpi` (SHA-256 `d2a57233…`), D12 |
+
