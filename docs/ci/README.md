@@ -1,56 +1,58 @@
-# CI-Workflows (Spiegel)
+# CI-Workflows (übernahmefähige Definitionen)
 
-Dieses Verzeichnis enthält die **vorgeschlagenen Workflow-Definitionen** für das Repository:
+Dieses Verzeichnis enthält die **fertigen Workflow-Definitionen** für das Repository:
 
 | Datei | Ziel im Repository | Zweck |
 |---|---|---|
-| `ci.yml` | `.github/workflows/ci.yml` | `npm ci`, Pre-Submit-Checks, vollständige Unit-Tests, `web-ext lint` mit Filter bekannter Thunderbird-False-Positives, XPI-Build und Paketprüfung |
-| `release.yml` | `.github/workflows/release.yml` | manueller Signier-/Release-Job (`web-ext sign --channel listed|unlisted`) über die Secrets `ATN_API_KEY` und `ATN_API_SECRET` |
+| `ci.yml` | `.github/workflows/ci.yml` | `npm ci`, Pre-Submit-Checks, vollständige Testsuite (`npm test`), `web-ext lint` mit kuratiertem Thunderbird-Filter (`npm run lint:filtered`), XPI-Build + Paketprüfung (`npm run package`), Upload des XPI als Artefakt |
+| `release.yml` | `.github/workflows/release.yml` | manueller Signier-/Einreichungsjob für **addons.thunderbird.net** (`web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/`), Secrets `ATN_API_KEY`/`ATN_API_SECRET`, `approval-timeout` als Eingabe |
 
 ## Warum liegen sie hier und nicht direkt unter `.github/workflows/`?
 
-GitHub lehnt Pushes ab, die Workflow-Dateien anlegen oder ändern, wenn das verwendete Token
-(App/CI-Token) nicht die Berechtigung **Workflows** besitzt:
+GitHub lehnt Pushes ab, die Workflow-Dateien anlegen oder ändern, wenn das verwendete
+Token keine **Workflows**-Berechtigung besitzt. Das ist in dieser Umgebung reproduzierbar:
 
 ```
-refusing to allow a GitHub App to create or update workflow `.github/workflows/ci.yml`
-without `workflows` permission
+! [remote rejected] cline/k0d34w90 -> cline/k0d34w90
+  (refusing to allow a GitHub App to create or update workflow `.github/workflows/ci.yml`
+   without `workflows` permission)
 ```
 
-Die inhaltliche Arbeit an den Workflows ist abgeschlossen, die Dateien konnten in dieser Umgebung
-aber nicht in den Branch geschrieben werden. Alle referenzierten Skripte liegen bereits im
-Repository:
+Der **aktive** Workflow im Repository ist deshalb weiterhin die reduzierte Variante
+(`npm ci`, Pre-Submit-Checks, `node --test background.test.js`, `web-ext lint` ohne Filter,
+kein Build/Paketcheck). Genau dieser Umstand ist Befund **P1-7** der Problemanalyse und wird
+erst mit der Übernahme behoben.
 
-- `scripts/pre-submit-checks.js` (echter Exit-Code, testbar)
-- `scripts/filter-lint-warnings.js` (nur bekannte Thunderbird-False-Positives werden toleriert)
-- `scripts/verify-package.js` (Paketinhalt und -größe)
+Alle referenzierten Skripte liegen im Repository und sind getestet:
+
+- `scripts/pre-submit-checks.js` (Manifest, Daten-Deklaration, Rechte, Assets)
+- `scripts/lint-with-filter.js` + `scripts/filter-lint-warnings.js` (nur dokumentierte Thunderbird-False-Positives werden toleriert)
+- `scripts/build-and-verify-package.js` + `scripts/verify-package.js` (Build, Paketinhalt, Artefaktwahl)
+- `scripts/submission-gate.js` (Go/No-Go-Gate, siehe unten)
 
 ## Übernehmen
 
-1. Datei an die Zielstelle kopieren:
+1. Workflow-Dateien kopieren (mit einem Token, das `workflows` darf):
 
    ```bash
-   cp docs/ci/ci.yml      .github/workflows/ci.yml
+   cp docs/ci/ci.yml .github/workflows/ci.yml
    cp docs/ci/release.yml .github/workflows/release.yml
+   git add .github/workflows && git commit -m "ci: activate full store-readiness gates"
+   git push
    ```
 
-2. Mit einem Token committen und pushen, das die Berechtigung `workflows` hat (z. B. ein
-   persönliches Zugriffstoken mit `workflow`-Scope oder über die GitHub-Weboberfläche).
+2. Für `release.yml` die Secrets `ATN_API_KEY` und `ATN_API_SECRET` setzen (ATN →
+   Developer Hub → API-Schlüssel; `web-ext sign` liest sie über `WEB_EXT_API_KEY` /
+   `WEB_EXT_API_SECRET`).
 
-3. Für `release.yml` im Repository unter *Settings → Secrets and variables → Actions* die Secrets
-   `ATN_API_KEY` und `ATN_API_SECRET` anlegen (API-Schlüssel unter
-   https://addons.thunderbird.net/en-US/developers/addon/api/key/).
-
-## Lokale Entsprechung
-
-Alle Schritte lassen sich ohne GitHub Actions nachvollziehen:
+## Lokale Entsprechung (ohne GitHub Actions)
 
 ```bash
 npm ci
-npm run pre-submit-checks
-npm test
-npx web-ext lint --source-dir . --output json > /tmp/lint.json
-node scripts/filter-lint-warnings.js /tmp/lint.json
-npx web-ext build --source-dir . --artifacts-dir ./build
-node scripts/verify-package.js ./build
+npm run check          # Pre-Submit-Checks + Tests + Lint mit Filter + Build/Paketprüfung
+npm run store-gate     # Go/No-Go-Protokoll mit Nachweis je Kriterium
 ```
+
+`npm run check` entspricht inhaltlich exakt dem `ci.yml`-Job; `npm run store-gate` ergänzt die
+nicht automatisch prüfbaren Kriterien (Live-Test-Protokoll, Screenshots, Release-Tag) und
+liefert Exit-Code 0 nur bei vollständigem GO.

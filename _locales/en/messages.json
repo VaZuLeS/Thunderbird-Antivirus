@@ -96,5 +96,23 @@
   },
   "notificationNoLinks": {
     "message": "No links found in this message."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "The host permission for the analysis service is missing. Please grant it in the add-on options."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Host permission for the analysis service is missing. Please grant it in the add-on options."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Uploading attachments is disabled in the privacy tier \"Strict\". Switch to \"Balanced\" or \"Maximum\" in the add-on options."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Submitting URLs is only allowed in the privacy tier \"Maximum\". Change the tier in the add-on options."
+  },
+  "notificationInjectionFailed": {
+    "message": "The banner could not be inserted into the message view. Please report this with your Thunderbird version."
+  },
+  "bannerTierBlocked": {
+    "message": "This action is not allowed by the current privacy tier. See the add-on options."
   }
 }

@@ -404,6 +404,9 @@ describe('background.js', () => {
 
     it('handleUrlScan successfully uploads and updates DB', async () => {
         context.set_apikey('test-key');
+        // Submitting a full URL is a "max" tier feature (the tier applies to the
+        // manual paths too, see P0-2).
+        context.set_privacyTier('max');
 
         let fetchCalledWith = null;
         context.fetch = async (url, options) => {
@@ -552,6 +555,7 @@ describe('background.js', () => {
 
     it('handleManualUpload successfully uploads and updates DB', async () => {
         context.set_apikey('test-key');
+        context.set_privacyTier('balanced');
 
         let fetchCalledWith = null;
         context.fetch = async (url, options) => {
@@ -595,6 +599,7 @@ describe('background.js', () => {
 
     it('handleManualUpload throws error on failed upload', async () => {
         context.set_apikey('test-key');
+        context.set_privacyTier('balanced');
 
         context.fetch = async () => ({
             status: 500,
@@ -3215,13 +3220,17 @@ describe('background.js', () => {
             assert.strictEqual(context.messageListToArray(null).length, 0);
         });
 
-        it('getFirstDisplayedMessage prefers getDisplayedMessages and falls back to getDisplayedMessage', async () => {
+        it('getFirstDisplayedMessage returns the first entry of a MessageList (MV3 API only)', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 11, headerMessageId: 'h11' }] });
             assert.strictEqual((await context.getFirstDisplayedMessage(1)).headerMessageId, 'h11');
 
-            delete context.browser.messageDisplay.getDisplayedMessages;
+            // The removed MV2 function must be ignored even if a legacy
+            // Thunderbird build still offers it.
             context.browser.messageDisplay.getDisplayedMessage = async () => ({ id: 12, headerMessageId: 'h12' });
-            assert.strictEqual((await context.getFirstDisplayedMessage(1)).headerMessageId, 'h12');
+            assert.strictEqual((await context.getFirstDisplayedMessage(1)).headerMessageId, 'h11');
+
+            delete context.browser.messageDisplay.getDisplayedMessages;
+            assert.strictEqual(await context.getFirstDisplayedMessage(1), null);
         });
 
         it('tab_mail_open_display processes every message of a MessageList', async () => {
@@ -3237,18 +3246,32 @@ describe('background.js', () => {
             assert.deepStrictEqual(processed, [101, 102]);
         });
 
-        it('injectIntoMessageDisplay uses scripting.messageDisplay when available', async () => {
+        it('injectIntoMessageDisplay always uses browser.scripting.executeScript', async () => {
             const calls = [];
+            // Even if a Thunderbird build exposed scripting.messageDisplay.executeScript
+            // (it does not - the namespace only offers register/unregister), the
+            // add-on must use the documented call.
             context.browser.scripting.messageDisplay = {
-                executeScript: async (injection) => { calls.push(['messageDisplay', injection.target.tabId]); }
+                executeScript: async () => { calls.push('messageDisplay'); }
             };
             const genericCalls = [];
             context.browser.scripting.executeScript = async (injection) => { genericCalls.push(injection.target.tabId); };
 
             await context.injectIntoMessageDisplay(5, function () {});
 
-            assert.deepStrictEqual(calls, [['messageDisplay', 5]]);
-            assert.strictEqual(genericCalls.length, 0);
+            assert.deepStrictEqual(calls, []);
+            assert.deepStrictEqual(genericCalls, [5]);
+        });
+
+        it('injectIntoMessageDisplay reports a failure through a notification (once)', async () => {
+            const notifications = [];
+            context.browser.notifications.create = async (options) => { notifications.push(options); };
+            context.browser.scripting.executeScript = async () => { throw new Error('No such tab'); };
+
+            assert.strictEqual(await context.injectIntoMessageDisplay(5, function () {}), null);
+            assert.strictEqual(await context.injectIntoMessageDisplay(6, function () {}), null);
+
+            assert.strictEqual(notifications.length, 1, 'the failure must be reported exactly once per session');
         });
 
         it('injectIntoMessageDisplay falls back to scripting.executeScript and swallows errors', async () => {
@@ -3341,6 +3364,95 @@ describe('background.js', () => {
                 assert.doesNotThrow(() => context.notify('notificationTitle', 'notificationScanStarted', ['https://example.com']));
             } finally {
                 context.browser.notifications = originalNotifications;
+            }
+        });
+    });
+
+    describe('Store-readiness gates: privacy tier, host permission, IP cache (P0-2, P1-12, P2-24)', () => {
+        it('handleManualUpload refuses to upload the full file in the strict tier', async () => {
+            context.set_apikey('test-key');
+            context.set_externalAnalysisConsent(true);
+            context.set_privacyTier('strict');
+            let fetchCalled = false;
+            context.fetch = async () => { fetchCalled = true; return { status: 200, json: async () => ({}) }; };
+
+            await assert.rejects(
+                () => context.handleManualUpload(1, '1.2', 'test.txt', 'hash', 'header-1'),
+                (error) => error.code === 'TIER_BLOCKS_UPLOAD'
+            );
+            assert.strictEqual(fetchCalled, false, 'nothing may be uploaded in the strict tier');
+        });
+
+        it('handleUrlScan only submits URLs in the max tier', async () => {
+            context.set_apikey('test-key');
+            context.set_externalAnalysisConsent(true);
+            context.set_privacyTier('balanced');
+            let fetchCalled = false;
+            context.fetch = async () => { fetchCalled = true; return { status: 200, json: async () => ({}) }; };
+
+            await assert.rejects(
+                () => context.handleUrlScan('https://example.com/', 'header-1'),
+                (error) => error.code === 'TIER_REQUIRES_MAX'
+            );
+            assert.strictEqual(fetchCalled, false, 'nothing may be submitted in the balanced tier');
+        });
+
+        it('provider calls fail with HOST_PERMISSION_MISSING when the user never granted the origin', async () => {
+            context.set_externalAnalysisConsent(true);
+            context.browser.permissions = { contains: async () => false, request: async () => false };
+            const originalFetch = context.fetch;
+            let fetchCalled = false;
+            context.fetch = async () => { fetchCalled = true; return { status: 200, json: async () => ({}) }; };
+            try {
+                await assert.rejects(() => context.checkURLhaus('example.com', 'key'), /host permission/i);
+                assert.strictEqual(fetchCalled, false);
+            } finally {
+                context.fetch = originalFetch;
+                context.browser.permissions = { contains: async () => true, request: async () => true };
+            }
+        });
+
+        it('does not cache IP reputation results while the consent is missing (P2-24)', async () => {
+            context.set_externalAnalysisConsent(false);
+            context.set_ipReputationProvider('abuseipdb');
+            context.set_ipReputationApiKey('ip-key');
+            let fetchCalled = false;
+            const originalFetch = context.fetch;
+            context.fetch = async () => { fetchCalled = true; return { status: 200, json: async () => ({ data: { abuseConfidenceScore: 99 } }) }; };
+            try {
+                const result = await context.checkIPReputation(['Received: from mail.example.com (203.0.113.5)']);
+                assert.strictEqual(result.length, 0, 'without consent nothing is checked');
+                assert.strictEqual(fetchCalled, false);
+                assert.strictEqual(context.ipReputationCache.size, 0, 'nothing may be cached without consent');
+            } finally {
+                context.fetch = originalFetch;
+                context.set_externalAnalysisConsent(true);
+                context.set_ipReputationProvider('none');
+                context.set_ipReputationApiKey('');
+            }
+        });
+
+        it('caches a real IP reputation hit once the consent is granted', async () => {
+            context.set_externalAnalysisConsent(true);
+            context.set_ipReputationProvider('abuseipdb');
+            context.set_ipReputationApiKey('ip-key');
+            let fetchCount = 0;
+            const originalFetch = context.fetch;
+            context.fetch = async () => {
+                fetchCount += 1;
+                return { status: 200, json: async () => ({ data: { abuseConfidenceScore: 99 } }) };
+            };
+            try {
+                const headers = ['Received: from mail.example.com (203.0.113.5)'];
+                const first = await context.checkIPReputation(headers);
+                const second = await context.checkIPReputation(headers);
+                assert.deepEqual(first, ['203.0.113.5']);
+                assert.deepEqual(second, ['203.0.113.5']);
+                assert.strictEqual(fetchCount, 1, 'the second lookup must come from the cache');
+            } finally {
+                context.fetch = originalFetch;
+                context.set_ipReputationProvider('none');
+                context.set_ipReputationApiKey('');
             }
         });
     });

@@ -96,5 +96,23 @@
   },
   "notificationNoLinks": {
     "message": "In dieser Nachricht wurden keine Links gefunden."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Die Host-Berechtigung für den Analyse-Dienst fehlt. Bitte in den Einstellungen des Add-ons erteilen."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Die Host-Berechtigung für den Analyse-Dienst fehlt. Bitte in den Einstellungen des Add-ons erteilen."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Der Upload von Anhängen ist in der Datenschutz-Stufe „Strikt“ deaktiviert. In den Einstellungen auf „Ausgewogen“ oder „Maximal“ umstellen."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Das Übermitteln von URLs ist nur in der Datenschutz-Stufe „Maximal“ erlaubt. Stufe in den Einstellungen ändern."
+  },
+  "notificationInjectionFailed": {
+    "message": "Das Banner konnte nicht in die Nachrichtenansicht eingefügt werden. Bitte mit Angabe der Thunderbird-Version melden."
+  },
+  "bannerTierBlocked": {
+    "message": "Diese Aktion ist in der aktuellen Datenschutz-Stufe nicht erlaubt. Siehe Einstellungen des Add-ons."
   }
 }

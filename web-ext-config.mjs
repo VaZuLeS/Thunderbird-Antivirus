@@ -3,7 +3,11 @@
  *
  * The add-on package must only contain files that are actually loaded at
  * runtime. Tests, developer scripts, documentation and store assets live in the
- * repository but are excluded from the XPI (see store readiness analysis, H2).
+ * repository but are excluded from the XPI (see docs/PROBLEMANALYSE_STORE_READINESS.md, P0-6).
+ *
+ * NOTE: web-ext does not read a `.webextignore` file (verified: `grep -r webextignore
+ * node_modules/web-ext/lib` finds nothing; `web-ext build --no-config-discovery` packs
+ * 60+ files). Therefore this list is the single source of truth for packaging.
  */
 export default {
   build: {
@@ -15,11 +19,13 @@ export default {
     '**/*_test.js',
     'test',
     'test/**',
+    'tools',
+    'tools/**',
     'scripts',
     'scripts/**',
-    'benchmark_compare.js',
-    'form_test.js',
-    'vt_test.js',
+    // reviewer test data (kept in the repository only)
+    'testdata',
+    'testdata/**',
     // documentation and store assets (kept in the repository only)
     'docs',
     'docs/**',
@@ -35,12 +41,10 @@ export default {
     '.Jules',
     '.Jules/**',
     '.gitignore',
-    '.webextignore',
     'web-ext-config.mjs',
     // package metadata / lock files
     'package.json',
     'package-lock.json',
-    'pnpm-lock.yaml',
     'node_modules',
     'build',
     'web-ext-artifacts',
@@ -49,7 +53,8 @@ export default {
   ],
   lint: {
     // Thunderbird-only permissions and APIs are unknown to the Firefox oriented
-    // linter; the CI job filters those known false positives.
+    // linter; scripts/filter-lint-warnings.js checks every warning against a
+    // curated allow-list and fails on anything unexpected.
     warningsAsErrors: false,
   },
   run: {

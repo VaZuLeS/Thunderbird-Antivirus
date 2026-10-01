@@ -12,10 +12,21 @@ const path = require('path');
 const DEFAULT_LOCALES = ['en', 'de'];
 const REQUIRED_MDM_KEYS = ['gecko'];
 const FORBIDDEN_PERMISSIONS = ['webRequest', '<all_urls>', 'management'];
-const MV3_UNSUPPORTED_KEYS = ['content_scripts', 'optional_permissions', 'user_scripts', 'web_accessible_resources'];
+const MV3_UNSUPPORTED_KEYS = ['content_scripts', 'user_scripts', 'web_accessible_resources'];
 
 // Match patterns: <scheme>://<host><path> (path is mandatory, e.g. "/*")
 const MATCH_PATTERN_RE = /^(https?|wss?|ftp):\/\/(\*|\*\.[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*|[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*)\/.*$/;
+
+/**
+ * Removes comments so the API guards below only look at real code. Comments may
+ * legitimately mention removed APIs (e.g. to explain why they are gone), and
+ * `://` inside URLs must survive.
+ */
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+}
 
 function collectFiles(rootDir, relative) {
   const target = path.join(rootDir, relative);
@@ -124,21 +135,46 @@ function runChecks(rootDir) {
   if (!gecko.strict_min_version) warn('strict_min_version is not set');
 
   // --- data collection declaration ----------------------------------------
+  // The declaration must mirror what the code does: nothing is transmitted
+  // without the user's explicit consent, therefore the categories are declared
+  // as `optional` (with `required: ["none"]`) and requested at runtime. The
+  // official validator (addons-linter) accepts exactly that combination; this
+  // check used to reject it, which made the correct declaration impossible.
   const dcp = gecko.data_collection_permissions;
   if (!dcp) {
     fail('browser_specific_settings.gecko.data_collection_permissions is missing: the add-on transmits message data to third parties');
   } else {
     const requiredTypes = Array.isArray(dcp.required) ? dcp.required : [];
     const optionalTypes = Array.isArray(dcp.optional) ? dcp.optional : [];
-    if (requiredTypes.length === 0) fail('data_collection_permissions.required must list at least one data type');
-    if (requiredTypes.includes('none')) {
-      if (optionalTypes.length > 0) fail('data_collection_permissions is contradictory: "none" cannot be combined with optional data types');
-      else fail('data_collection_permissions declares "none" although the add-on transmits message data to analysis providers');
+    if (requiredTypes.length === 0) {
+      fail('data_collection_permissions.required must list at least one data type (use ["none"] when nothing is mandatory)');
+    }
+    if (requiredTypes.includes('none') && requiredTypes.length > 1) {
+      fail('data_collection_permissions.required combines "none" with other data types');
+    }
+    if (!requiredTypes.includes('none') && optionalTypes.length === 0) {
+      warn('data_collection_permissions has no optional data types; check whether the transmission is really mandatory');
+    }
+    if (requiredTypes.includes('none') && optionalTypes.length === 0) {
+      fail('data_collection_permissions declares "none" although the add-on transmits message data to analysis providers');
     }
     const allowed = ['authenticationInfo', 'bookmarksInfo', 'browsingActivity', 'financialAndPaymentInfo', 'healthInfo',
       'locationInfo', 'personalCommunications', 'personallyIdentifyingInfo', 'searchTerms', 'websiteActivity', 'websiteContent', 'technicalAndInteraction', 'none'];
     for (const type of requiredTypes.concat(optionalTypes)) {
       if (!allowed.includes(type)) fail('unknown data_collection_permissions value: ' + type);
+    }
+    // An optional data type only is honest if the add-on really asks for it.
+    for (const type of optionalTypes) {
+      if (type === 'none') continue;
+      const optionsSource = fs.existsSync(path.join(rootDir, 'options.js'))
+        ? fs.readFileSync(path.join(rootDir, 'options.js'), 'utf8')
+        : '';
+      if (!optionsSource.includes('data_collection') || !optionsSource.includes(type)) {
+        fail('optional data collection type "' + type + '" is declared in manifest.json but never requested in options.js');
+      }
+    }
+    if (optionalTypes.length > 0 && requiredTypes.includes('none')) {
+      ok('data collection is declared as opt-in ("none" required, optional: ' + optionalTypes.join(', ') + ')');
     }
   }
 
@@ -152,8 +188,22 @@ function runChecks(rootDir) {
       fail('host patterns must not be listed in permissions (Manifest V3): ' + entry);
     }
   }
-  for (const entry of manifest.optional_permissions || []) {
-    fail('optional_permissions is not supported in Thunderbird Manifest V3, use optional_host_permissions: ' + entry);
+  // Manifest V3 keeps `optional_permissions` for API permissions; host patterns
+  // must use `optional_host_permissions` instead. The old rule forbade the key
+  // completely, which made the Thunderbird permission `sensitiveDataUpload`
+  // (used for uploading attachment content) impossible to declare.
+  const optionalPermissions = manifest.optional_permissions || [];
+  for (const entry of optionalPermissions) {
+    if (typeof entry !== 'string') {
+      fail('optional_permissions must contain strings');
+      continue;
+    }
+    if (entry.includes('://') || entry.startsWith('*') || entry.includes('/*')) {
+      fail('host patterns must not be listed in optional_permissions, use optional_host_permissions: ' + entry);
+    }
+  }
+  if (optionalPermissions.length > 0) {
+    ok('optional API permissions declared (' + optionalPermissions.join(', ') + ')');
   }
 
   const optionalHosts = manifest.optional_host_permissions || [];
@@ -187,6 +237,42 @@ function runChecks(rootDir) {
   else if (!fs.existsSync(path.join(rootDir, optionsPage))) fail('options page is missing on disk: ' + optionsPage);
   const popup = manifest.message_display_action && manifest.message_display_action.default_popup;
   if (popup && !fs.existsSync(path.join(rootDir, popup))) fail('message_display_action popup is missing on disk: ' + popup);
+
+  // --- Manifest V3 API regression guards -----------------------------------
+  // These APIs do not exist in Manifest V3 / in Thunderbird at all:
+  //   * messageDisplay.onMessageDisplayed and getDisplayedMessage() are marked
+  //     `max_manifest_version: 2` in Thunderbird's schema,
+  //   * scripting.messageDisplay only offers register/unregister (no executeScript),
+  //   * messageDisplayScripts was replaced by scripting.messageDisplay.
+  // The lint allow-list deliberately does not hide them (they used to be listed
+  // as "known false positives", which would mask this exact regression).
+  const runtimeFiles = ['background.js', 'api.js', 'options.js', 'db.js', 'api_gateway.js'];
+  const removedApiPatterns = [
+    [/messageDisplay\.onMessageDisplayed/g, 'messageDisplay.onMessageDisplayed is removed in MV3 - use onMessagesDisplayed'],
+    [/messageDisplay\.getDisplayedMessage\s*\(/g, 'messageDisplay.getDisplayedMessage() is removed in MV3 - use getDisplayedMessages()'],
+    [/scripting\.messageDisplay\.executeScript/g, 'scripting.messageDisplay.executeScript does not exist in Thunderbird'],
+    [/browser\.messageDisplayScripts/g, 'messageDisplayScripts was replaced by scripting.messageDisplay']
+  ];
+  for (const file of runtimeFiles) {
+    const absolute = path.join(rootDir, file);
+    if (!fs.existsSync(absolute)) continue;
+    const source = stripComments(fs.readFileSync(absolute, 'utf8'));
+    for (const [pattern, message] of removedApiPatterns) {
+      if (pattern.test(source)) fail(file + ': ' + message);
+    }
+  }
+  // Using an API without its permission means the API namespace is undefined at
+  // runtime and the feature silently does nothing (that was the case for the
+  // context menus before the "menus" permission was added).
+  const menusUsers = runtimeFiles.filter((file) => {
+    const absolute = path.join(rootDir, file);
+    return fs.existsSync(absolute) && /browser\.menus\s*\./.test(stripComments(fs.readFileSync(absolute, 'utf8')));
+  });
+  if (menusUsers.length > 0 && !permissions.includes('menus')) {
+    fail('browser.menus is used in ' + menusUsers.join(', ') + ' but the "menus" permission is missing in manifest.json');
+  } else if (menusUsers.length > 0) {
+    ok('context menus are covered by the "menus" permission');
+  }
 
   // --- repository / store assets ------------------------------------------
   if (fs.existsSync(path.join(rootDir, 'install.rdf'))) fail('install.rdf is a legacy Manifest V2 leftover and must be removed');

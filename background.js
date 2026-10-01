@@ -18,17 +18,24 @@ const I18N_FALLBACKS = {
     bannerScanDone: 'Scan finished',
     bannerScanFailed: 'Scan failed',
     bannerPermissionDenied: 'Required host permission was denied',
+    bannerPermissionDeniedHint: 'The host permission for the analysis service is missing. Please grant it in the add-on options.',
     bannerConsentMissing: 'External analysis is disabled in the options – nothing was transmitted.',
     bannerThreatTitle: 'Thundy AV warning',
     bannerThreatScore: 'Risk score: $SCORE$ of 100',
     bannerAuthPass: 'Sender verified (SPF/DKIM/DMARC passed)',
     bannerOpenOptions: 'Open options',
     bannerSenderOptIn: 'This sender is now scanned automatically.',
+    errorHostPermissionMissing: 'Host permission for the analysis service is missing. Please grant it in the add-on options.',
+    errorTierUploadBlocked: 'Uploading attachments is disabled in the privacy tier "Strict". Switch to "Balanced" or "Maximum" in the add-on options.',
+    errorTierUrlScanBlocked: 'Submitting URLs is only allowed in the privacy tier "Maximum". Change the tier in the add-on options.',
+    notificationInjectionFailed: 'The banner could not be inserted into the message view. Please report this with your Thunderbird version.',
+    bannerTierBlocked: 'This action is not allowed by the current privacy tier. See the add-on options.',
     notificationScanStarted: 'Scan started for: $URL$',
     notificationScanSubmitted: 'Scan submitted successfully. Job ID: $JOBID$',
     notificationScanError: 'Scan error: $ERROR$',
     notificationTitle: 'Thundy AV Scanner',
-    notificationTitleError: 'Thundy AV Scanner error'
+    notificationTitleError: 'Thundy AV Scanner error',
+    notificationNoLinks: 'No links found in this message.'
 };
 
 function msg(key, subs) {
@@ -53,6 +60,19 @@ function iconUrl() {
     return 'img/icon-64px.png';
 }
 
+/**
+ * Notifications are shown by the operating system (and may appear on a lock
+ * screen), so they must not contain the full URL with its query parameters
+ * (tracking IDs, tokens). The host is enough to tell the user what was scanned.
+ */
+function describeUrlForUser(url) {
+    try {
+        return new URL(url).hostname || String(url);
+    } catch (e) {
+        return String(url);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // External analysis consent
 // Thunderbird has no built-in data collection consent prompt, therefore the
@@ -60,6 +80,15 @@ function iconUrl() {
 // without consent nothing is sent to any third party service.
 // ---------------------------------------------------------------------------
 const EXTERNAL_ANALYSIS_DISABLED = 'EXTERNAL_ANALYSIS_DISABLED';
+const HOST_PERMISSION_MISSING = 'HOST_PERMISSION_MISSING';
+const TIER_BLOCKS_UPLOAD = 'TIER_BLOCKS_UPLOAD';
+const TIER_REQUIRES_MAX = 'TIER_REQUIRES_MAX';
+
+function typedError(code, message) {
+    const error = new Error(message);
+    error.code = code;
+    return error;
+}
 
 function mayTransmitExternally() {
     return externalAnalysisConsent === true;
@@ -71,6 +100,27 @@ function assertExternalAnalysisAllowed() {
         error.code = EXTERNAL_ANALYSIS_DISABLED;
         throw error;
     }
+}
+
+// Privacy tiers are ordered: strict < balanced < max. The tier limits what may
+// leave the machine, and it applies to the automatic scans as well as to the
+// manual actions in the popup/context menu (see docs/privacy_policy.md §3.3).
+const TIER_ORDER = { strict: 0, balanced: 1, max: 2 };
+
+function tierAtLeast(minimumTier) {
+    const current = TIER_ORDER[privacyTier] === undefined ? 0 : TIER_ORDER[privacyTier];
+    const required = TIER_ORDER[minimumTier] === undefined ? 0 : TIER_ORDER[minimumTier];
+    return current >= required;
+}
+
+/**
+ * Every provider request must be covered by a host permission the user granted
+ * when saving that provider's key (options.js). Without it the request would fail
+ * with an opaque network error, so we raise a typed error that the UI can explain.
+ */
+async function requireHostPermission(url) {
+    if (await hasHostPermissionFor(url)) return;
+    throw typedError(HOST_PERMISSION_MISSING, msg('errorHostPermissionMissing'));
 }
 
 // Host origins that are declared in manifest.json -> optional_host_permissions
@@ -107,20 +157,30 @@ async function hasHostPermissionFor(url) {
 
 /**
  * Injects a function into the message display document of a tab.
- * Thunderbird's generic scripting API is used; if a future Thunderbird
- * release exposes scripting.messageDisplay.executeScript, it is preferred.
+ *
+ * `browser.scripting.executeScript({ target: { tabId } })` is the documented way
+ * to reach an already displayed message: Thunderbird's own browser test
+ * `browser_ext_messageDisplayScripts_mv3.js` uses exactly this call for `mail`
+ * tabs and requires the `messagesRead` host permission, which this add-on
+ * declares. `scripting.messageDisplay` only offers register/unregister (no
+ * executeScript), so a "preferred" branch for it would be dead code (P1-9).
+ *
+ * Failures are reported to the user once per session: silently missing banners
+ * were one of the store-readiness findings (P1-9/AUD-09).
  */
+let injectionFailureReported = false;
+
 async function injectIntoMessageDisplay(tabId, func, args = []) {
     if (tabId === undefined || tabId === null) return null;
     const injection = { target: { tabId }, func, args };
     try {
-        if (browser.scripting && browser.scripting.messageDisplay &&
-            typeof browser.scripting.messageDisplay.executeScript === 'function') {
-            return await browser.scripting.messageDisplay.executeScript(injection);
-        }
         return await browser.scripting.executeScript(injection);
     } catch (e) {
         Logger.warn('Injecting into the message display failed (please report with your Thunderbird version):', e);
+        if (!injectionFailureReported) {
+            injectionFailureReported = true;
+            notify('notificationTitleError', 'notificationInjectionFailed');
+        }
         return null;
     }
 }
@@ -336,6 +396,7 @@ function extractPublicIPs(receivedHeaders) {
 
 async function checkAbuseIPDB(ip, apikey) {
     if (!mayTransmitExternally()) return false;
+    await requireHostPermission('https://api.abuseipdb.com/api/v2/check');
     try {
         const response = await apiGateway.fetchWithTimeout(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, {
             method: 'GET',
@@ -356,6 +417,7 @@ async function checkAbuseIPDB(ip, apikey) {
 
 async function checkVirusTotalIP(ip, apikey) {
     if (!mayTransmitExternally()) return false;
+    await requireHostPermission('https://www.virustotal.com/api/v3/ip_addresses/' + ip);
     try {
         const response = await apiGateway.fetchWithTimeout(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`, {
             method: 'GET',
@@ -778,6 +840,12 @@ function calculateThreatScore(author, urls, options = {}) {
 
 async function processAndUploadUrls(message, filteredUrls) {
     if (privacyTier === 'max' && mayTransmitExternally()) {
+        try {
+            await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/url');
+        } catch (e) {
+            Logger.warn('Skipping URL upload: host permission missing', e);
+            return;
+        }
         const urlResults = [];
         const concurrencyLimit = 5;
         let i = 0;
@@ -841,6 +909,22 @@ async function injectTimeOfClickProtection(tabId, filteredUrls) {
 async function checkIPReputation(receivedHeaders) {
     let maliciousIps = [];
     if (ipReputationProvider !== "none" && ipReputationApiKey) {
+        // Without consent or without the host permission nothing is transmitted -
+        // and, importantly, nothing is cached either: a cached "not malicious"
+        // from the un-consented period would hide results forever (see P2-24 in
+        // docs/PROBLEMANALYSE_STORE_READINESS.md).
+        if (!mayTransmitExternally()) return maliciousIps;
+        const providerOrigin = ipReputationProvider === "abuseipdb"
+            ? PROVIDER_ORIGINS.abuseipdb
+            : PROVIDER_ORIGINS.virustotal;
+        let providerAllowed = false;
+        try {
+            providerAllowed = await browser.permissions.contains({ origins: [providerOrigin] });
+        } catch (e) {
+            Logger.error('permissions.contains failed for IP reputation', e);
+        }
+        if (!providerAllowed) return maliciousIps;
+
         let publicIps = extractPublicIPs(receivedHeaders);
 
         let ipChecks = [];
@@ -858,15 +942,16 @@ async function checkIPReputation(receivedHeaders) {
             }
 
             let promise = (async () => {
-                let isMalicious = false;
                 try {
                     if (ipReputationProvider === "abuseipdb") {
-                        isMalicious = await checkAbuseIPDB(ip, ipReputationApiKey);
+                        return await checkAbuseIPDB(ip, ipReputationApiKey);
                     } else if (ipReputationProvider === "virustotal") {
-                        isMalicious = await checkVirusTotalIP(ip, ipReputationApiKey);
+                        return await checkVirusTotalIP(ip, ipReputationApiKey);
                     }
                 } catch(e) { Logger.error(e); }
-                return isMalicious;
+                // null = "not checked" (error, missing permission, ...) - must not
+                // be remembered as a clean result.
+                return null;
             })();
 
             if (ipReputationCache.size >= MAX_IP_CACHE) {
@@ -875,8 +960,12 @@ async function checkIPReputation(receivedHeaders) {
             ipReputationCache.set(ip, promise);
 
             ipChecks.push(promise.then(isMalicious => {
-                ipReputationCache.set(ip, isMalicious);
-                return { ip, isMalicious };
+                if (isMalicious === null) {
+                    ipReputationCache.delete(ip);
+                } else {
+                    ipReputationCache.set(ip, isMalicious);
+                }
+                return { ip, isMalicious: isMalicious === true };
             }));
         }
 
@@ -1158,6 +1247,23 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
                 }
               } else if (resp && resp.error === 'permission_denied') {
                 btn.textContent = t('bannerPermissionDenied', 'Required host permission was denied');
+                // A request triggered from the banner travels over
+                // runtime.sendMessage, so it has no user gesture in the context
+                // that calls permissions.request; if it is rejected, the options
+                // page is the reliable path (P2-23).
+                setNote(t('bannerPermissionDeniedHint', 'The host permission for the analysis service is missing. Please grant it in the add-on options.'));
+                addOptionsButton();
+                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
+              } else if (resp && (resp.error === 'HOST_PERMISSION_MISSING' || resp.code === 'HOST_PERMISSION_MISSING')) {
+                btn.textContent = t('bannerScanFailed', 'Scan failed');
+                setNote(t('bannerPermissionDeniedHint', 'The host permission for the analysis service is missing. Please grant it in the add-on options.'));
+                addOptionsButton();
+                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
+              } else if (resp && (resp.error === 'TIER_BLOCKS_UPLOAD' || resp.code === 'TIER_BLOCKS_UPLOAD' ||
+                                  resp.error === 'TIER_REQUIRES_MAX' || resp.code === 'TIER_REQUIRES_MAX')) {
+                btn.textContent = t('bannerScanFailed', 'Scan failed');
+                setNote(t('bannerTierBlocked', 'This action is not allowed by the current privacy tier. See the add-on options.'));
+                addOptionsButton();
                 buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
               } else if (resp && (resp.error === 'EXTERNAL_ANALYSIS_DISABLED' || resp.code === 'EXTERNAL_ANALYSIS_DISABLED')) {
                 setNote(t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.'));
@@ -1214,23 +1320,21 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
 
 /**
  * Returns the first message displayed in the given tab.
- * Manifest V3 in Thunderbird removed messageDisplay.getDisplayedMessage();
- * getDisplayedMessages() returns a MessageList instead.
+ *
+ * Manifest V3 removed `messageDisplay.getDisplayedMessage()`; the replacement
+ * `getDisplayedMessages()` returns a `MessageList` (see the Thunderbird MV3
+ * migration guide and mail/components/extensions/schemas/messageDisplay.json,
+ * where the old API is marked `max_manifest_version: 2`). There is deliberately
+ * no legacy fallback any more: `strict_min_version` is 140.0.
  */
 async function getFirstDisplayedMessage(tabId, { throwOnError = false } = {}) {
   if (tabId === undefined || tabId === null) return null;
   try {
     if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages === 'function') {
       const list = await browser.messageDisplay.getDisplayedMessages(tabId);
-      if (!list) return null;
-      if (Array.isArray(list)) return list[0] || null;
-      if (Array.isArray(list.messages)) return list.messages[0] || null;
-      return list || null;
+      return messageListToArray(list)[0] || null;
     }
-    // Legacy fallback (Manifest V2)
-    if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessage === 'function') {
-      return await browser.messageDisplay.getDisplayedMessage(tabId);
-    }
+    Logger.error('messageDisplay.getDisplayedMessages() is unavailable in this Thunderbird version');
   } catch (e) {
     Logger.error('Failed to determine the displayed message', e);
     if (throwOnError) throw e;
@@ -1441,6 +1545,10 @@ class HybridDataBuilder {
 async function handle_unknown_attachment({ attachment, content_of_attachment, local_hash, virustotal_stats, privacyTier, fileType }) {
     if ((privacyTier === 'balanced' || privacyTier === 'max') && mayTransmitExternally()) {
         try {
+            // The upload must be covered by the host permission the user granted
+            // when saving the key, and it must go through the shared gateway so
+            // the timeout/rate-limit handling applies (P1-12).
+            await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/file');
             const file_to_submit = new File([content_of_attachment], attachment.name, { type: fileType || 'application/octet-stream' });
             const formData = new FormData();
             formData.append('scan_type', 'all');
@@ -1448,7 +1556,7 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
 
             const uploadOptions = getHybridAnalysisOptions('POST', formData);
             uploadOptions.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
-            const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
+            const uploadResponse = await apiGateway.fetchWithTimeout(uploadOptions.url, uploadOptions, 60000);
             if (uploadResponse.status === 200 || uploadResponse.status === 201) {
                 const uploadData = await uploadResponse.json();
                 const hybridData = HybridDataBuilder.create(
@@ -1732,13 +1840,12 @@ async function indexedDB_save_links_to_db(message, urls) {
 // Listener registrieren
 // Manifest V3 removed messageDisplay.onMessageDisplayed in favour of
 // onMessagesDisplayed (which delivers a MessageList).
-if (browser.messageDisplay) {
-    if (browser.messageDisplay.onMessagesDisplayed) {
-        browser.messageDisplay.onMessagesDisplayed.addListener(tab_mail_open_display);
-    } else if (browser.messageDisplay.onMessageDisplayed) {
-        // Legacy fallback (Manifest V2 / Thunderbird < 121)
-        browser.messageDisplay.onMessageDisplayed.addListener(tab_mail_open_display);
-    }
+// Manifest V3 removed messageDisplay.onMessageDisplayed; onMessagesDisplayed
+// delivers a MessageList. `strict_min_version` is 140.0, so no MV2 fallback.
+if (browser.messageDisplay && browser.messageDisplay.onMessagesDisplayed) {
+    browser.messageDisplay.onMessagesDisplayed.addListener(tab_mail_open_display);
+} else {
+    Logger.error('messageDisplay.onMessagesDisplayed is unavailable in this Thunderbird version');
 }
 
 function createContextMenus() {
@@ -1757,9 +1864,13 @@ function createContextMenus() {
     ];
     for (const menu of menus) {
         try {
-            browser.menus.create(menu);
+            // menus.create is asynchronous: a synchronous try/catch cannot catch
+            // duplicate-ID errors, so the returned promise is handled as well.
+            const created = browser.menus.create(menu);
+            if (created && typeof created.catch === 'function') {
+                created.catch((e) => Logger.warn('Could not create context menu entry', menu.id, e));
+            }
         } catch (e) {
-            // Duplicate ids can occur if the background page is restarted.
             Logger.warn('Could not create context menu entry', menu.id, e);
         }
     }
@@ -1825,7 +1936,7 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             return;
         }
 
-        notify('notificationTitle', 'notificationScanStarted', [url]);
+        notify('notificationTitle', 'notificationScanStarted', [describeUrlForUser(url)]);
 
         try {
             // Need a dummy headerMessageId as context menu might be clicked outside standard flow
@@ -1902,6 +2013,7 @@ async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
         const overviewOptions = getHybridAnalysisOptions('GET');
         overviewOptions.url = 'https://hybrid-analysis.com/api/v2/overview/' + hybrid_sha256;
         try {
+            await requireHostPermission(overviewOptions.url);
             const response = await apiGateway.fetchWithTimeout(overviewOptions.url, overviewOptions);
             const json_data = await response.json();
             if (json_data.verdict) {
@@ -1963,22 +2075,30 @@ async function handleRequestScan(request, sender) {
         return { success: true, persisted: request.persist === true };
     } catch (e) {
         Logger.error('requestScan failed', e);
-        return { success: false, error: e && e.message ? e.message : String(e) };
+        return { success: false, error: e && e.message ? e.message : String(e), code: e && e.code ? e.code : undefined };
     }
 }
 
 browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    switch (request && request.action) {
+    // Harden the message boundary: only our own extension contexts may drive the
+    // background script (P3-25 in docs/PROBLEMANALYSE_STORE_READINESS.md).
+    if (sender && sender.id && sender.id !== browser.runtime.id) {
+        Logger.warn('Ignoring a message from a foreign sender', sender.id);
+        return false;
+    }
+    if (!request || typeof request !== 'object') return false;
+
+    switch (request.action) {
         case "uploadAttachment":
             handleManualUpload(request.messageId, request.partName, request.attachmentName, request.hash, request.headerMessageId)
                 .then(res => sendResponse({status: 'success', data: res}))
-                .catch(err => sendResponse({status: 'error', message: err.message}));
+                .catch(err => sendResponse({status: 'error', message: err.message, code: err.code}));
             return true;
 
         case "scanUrl":
             handleUrlScan(request.url, request.headerMessageId)
                 .then(res => sendResponse({status: 'success', data: res}))
-                .catch(err => sendResponse({status: 'error', message: err.message}));
+                .catch(err => sendResponse({status: 'error', message: err.message, code: err.code}));
             return true;
 
         case "checkLinkState":
@@ -2158,6 +2278,12 @@ function disarmHTML(htmlString) {
 async function handleUrlScan(url, headerMessageId) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
     assertExternalAnalysisAllowed();
+    // Submitting the full URL to the sandbox is a "max" tier feature (see
+    // docs/privacy_policy.md §3.3/§5); the host permission must be granted too.
+    if (!tierAtLeast('max')) {
+        throw typedError(TIER_REQUIRES_MAX, msg('errorTierUrlScanBlocked'));
+    }
+    await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/url');
 
     const formBody = new URLSearchParams();
     formBody.append('scan_type', 'all');
@@ -2206,6 +2332,12 @@ async function handleUrlScan(url, headerMessageId) {
 async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
     if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
     assertExternalAnalysisAllowed();
+    // Uploading the full file is only allowed from "balanced" upwards; the tier
+    // applies to manual actions as well (see docs/privacy_policy.md §3.3/§5).
+    if (!tierAtLeast('balanced')) {
+        throw typedError(TIER_BLOCKS_UPLOAD, msg('errorTierUploadBlocked'));
+    }
+    await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/file');
 
     let file = await browser.messages.getAttachmentFile(messageId, partName);
     const content_of_atachment = file.slice();
@@ -2271,6 +2403,7 @@ async function checkVirusTotal(hash, apikey) {
             }
         };
         try {
+            await requireHostPermission(url);
             const response = await apiGateway.fetchWithTimeout(url, options);
             if (response.status === 200) {
                 const data = await response.json();
@@ -2302,6 +2435,7 @@ async function checkVirusTotal(hash, apikey) {
 async function checkURLhaus(domain, apikey) {
     if (!apikey) return false;
     if (!mayTransmitExternally()) return false;
+    await requireHostPermission('https://urlhaus-api.abuse.ch/v1/host/');
     try {
         const body = new URLSearchParams();
         body.append('host', domain);
@@ -2327,6 +2461,7 @@ async function checkUrlscanIo(url, apikey) {
     if (!apikey) return null;
     if (!mayTransmitExternally()) return null;
     try {
+        await requireHostPermission('https://urlscan.io/api/v1/scan/');
         // Start Scan
         // 🛡️ Sentinel: Prevent sensitive URL leakage by defaulting to 'unlisted' instead of 'public' visibility
         const scanRes = await apiGateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/', {

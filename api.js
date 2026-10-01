@@ -28,6 +28,10 @@ function escapeHTML(str) {
 
 let apikey_hybridanalysis;
 
+// Global consent for external analysis. Declared outside the startup IIFE so it
+// is always defined, kept in sync while the popup is open.
+let externalAnalysisConsent = false;
+
 (async () => {
 let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
@@ -70,17 +74,24 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Manifest V3 in Thunderbird: getDisplayedMessages() liefert eine MessageList.
 let message = null;
 if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages === 'function') {
+    // Manifest V3: getDisplayedMessages() returns a MessageList; the removed
+    // getDisplayedMessage() has no fallback (strict_min_version 140.0).
     const messageList = await browser.messageDisplay.getDisplayedMessages(tabs[0].id);
     const messages = Array.isArray(messageList) ? messageList : (messageList && messageList.messages) || [];
     message = messages[0] || null;
-} else if (browser.messageDisplay) {
-    message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
 }
 
 // Ohne Zustimmung zu externer Analyse wird nichts übertragen - das muss im
 // Popup sichtbar sein, bevor der Nutzer Uploads auslöst.
 const settings = await browser.storage.local.get(['externalAnalysisConsent']);
-const externalAnalysisConsent = settings.externalAnalysisConsent === true;
+externalAnalysisConsent = settings && settings.externalAnalysisConsent === true;
+try {
+    browser.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes.externalAnalysisConsent) {
+            externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
+        }
+    });
+} catch (e) { /* storage.onChanged is optional in tests */ }
 
 if (!message) {
     let container = document.getElementById('hybrid_analysis_api_content');
@@ -182,7 +193,12 @@ try {
             const hasLinks = record && record.links && record.links.length > 0;
 
             if (hasAttachments || hasLinks) {
-                document.getElementById('hybrid_analysis_api_content').textContent = ''; // clear
+                // Single live container for everything we render below. The old
+                // code passed an undefined identifier (`syncFragment`) and used an
+                // undeclared `container`, which threw a ReferenceError and left the
+                // report area empty (P0-9).
+                const liveContainer = apiContainer || document.getElementById('hybrid_analysis_api_content');
+                if (liveContainer) liveContainer.textContent = ''; // clear
 
                 let fetchTasks = [];
 
@@ -190,8 +206,8 @@ try {
                     for (const att of record.attachments) {
                         const hash256 = att.hybrid_sha256;
                         if (att.state === 'UNKNOWN') {
-                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, syncFragment);
-                        } else {
+                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, liveContainer);
+                        } else if (externalAnalysisConsent) {
                             fetchTasks.push((frag) =>
                                 get_hybrid_report_by_sha256({
                                     hybrid_sha: hash256,
@@ -202,20 +218,28 @@ try {
                                     virustotal_stats: att.virustotal_stats
                                 }, frag)
                             );
+                        } else {
+                            renderStoredResultWithoutConsent(att.attachment_name, hash256, liveContainer);
                         }
                     }
                 }
 
                 if (hasLinks) {
-                    processRecordLinks(record.links, message.headerMessageId, syncFragment, fetchTasks);
+                    if (externalAnalysisConsent) {
+                        processRecordLinks(record.links, message.headerMessageId, liveContainer, fetchTasks);
+                    } else {
+                        for (const linkObj of record.links) {
+                            renderStoredResultWithoutConsent(linkObj.url, linkObj.hybrid_sha256, liveContainer);
+                        }
+                    }
                 }
 
                 if (fetchTasks.length > 0) {
                     await Promise.all(fetchTasks.map(async task => {
                         let taskFragment = document.createDocumentFragment();
                         await task(taskFragment);
-                        if (taskFragment.hasChildNodes()) {
-                            container.appendChild(taskFragment);
+                        if (taskFragment.hasChildNodes() && liveContainer) {
+                            liveContainer.appendChild(taskFragment);
                         }
                     }));
                 }
@@ -512,7 +536,48 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
 
 const hybrid_report_cache = new Map();
 
+/**
+ * Renders a locally stored result without contacting any provider. This is what
+ * the popup shows when the global consent is off: the data was already on the
+ * machine, so displaying it is fine, only the network lookup is skipped (P0-7).
+ */
+function renderStoredResultWithoutConsent(name, hash, targetContainer) {
+    const container = targetContainer || document.getElementById('hybrid_analysis_api_content');
+    if (!container) return null;
+
+    const card = document.createElement('div');
+    card.className = 'card card-info mb-3';
+    card.setAttribute('role', 'status');
+
+    const h2 = document.createElement('h2');
+    h2.textContent = `Lokales Ergebnis: ${name || 'Unbekannt'}`;
+    card.appendChild(h2);
+
+    const p = document.createElement('p');
+    p.className = 'text-info';
+    p.textContent = hash
+        ? `SHA-256: ${hash} – keine externe Abfrage, da "Externe Analyse erlauben" ausgeschaltet ist.`
+        : 'Keine externe Abfrage, da "Externe Analyse erlauben" ausgeschaltet ist.';
+    card.appendChild(p);
+
+    container.appendChild(card);
+    return card;
+}
+
+/**
+ * Defense in depth for the consent rule: this is the single place in the popup
+ * that talks to a provider, so it refuses to send anything without the global
+ * consent (P0-7). `externalAnalysisConsent` is filled from browser.storage.local
+ * at startup and refreshed through storage.onChanged.
+ */
+function hasExternalAnalysisConsent() {
+    return externalAnalysisConsent === true;
+}
+
 async function fetch_hybrid_report(hybrid_sha) {
+    if (!hasExternalAnalysisConsent()) {
+        throw new Error('external-analysis-disabled');
+    }
     if (hybrid_report_cache.has(hybrid_sha)) {
         return hybrid_report_cache.get(hybrid_sha);
     }

@@ -110,13 +110,14 @@ describe('options.js', () => {
         const changeEvent = context.document.createEvent('Event');
         changeEvent.initEvent('change', true, true);
 
-        // Check alwaysManual disables privacyTier
+        // The privacy tier stays selectable: it governs the manual actions
+        // (popup upload / URL scan) as well, see P0-2.
         const alwaysManualCheckbox = context.document.getElementById('alwaysManual');
         const privacyTierSelect = context.document.getElementById('privacyTier');
 
         // Initial is checked (true) in mock setup
-        assert.strictEqual(privacyTierSelect.disabled, true);
-        assert.strictEqual(privacyTierSelect.title, 'Datenschutz-Stufe ist bei manuellem Scan irrelevant');
+        assert.strictEqual(privacyTierSelect.disabled, false);
+        assert.ok(privacyTierSelect.title.includes('Immer manuell'));
 
         alwaysManualCheckbox.checked = false;
         alwaysManualCheckbox.dispatchEvent(changeEvent);
