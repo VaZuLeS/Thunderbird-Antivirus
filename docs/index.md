@@ -1,7 +1,7 @@
 # Thundy AV – Documentation
 
 Landing page for the documentation of **Thundy AV – Email Scanner for Thunderbird**
-(short name "Thundy AV"), version 1.6, MIT license.
+(short name "Thundy AV"), version 1.6.2, MIT license.
 
 - Language selection page (GitHub Pages root): [index.html](index.html) ·
   [English](index_en.html) · [Deutsch](index_de.html)

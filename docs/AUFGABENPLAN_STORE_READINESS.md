@@ -232,3 +232,28 @@ npm run store-gate         # NO-GO: C1–C4 PASS, C5/C6/C7 offen        -> Exit 
 (A-06), Release-Tag auf dem eingereichten Commit (A-15) — danach `npm run store-gate` erneut ausführen
 und bei `GO` signieren und einreichen (A-18/A-19).
 
+
+---
+
+## 12. Runde 2 — Veröffentlichung der Version 1.6.2
+
+Neue Befunde **R-1 … R-6** und die zugehörigen Aufgaben (Bezug: §0.2 der Problemanalyse). Ziel dieser
+Runde: eine neue, eindeutig einem Commit zuordenbare Version veröffentlichen und die Store-Reife-Kriterien
+so weit bringen, wie es ohne echte Thunderbird-Instanz geht.
+
+| ID | Aufgabe | Bezug | DoD (Nachweis) | Aufwand | Abhängig von |
+|---|---|---|---|---|---|
+| **R-01** | **Versionsentscheidung und Bump:** ATN auf bestehende Versionen prüfen (404 → keine), Version 1.6.2 festlegen, `manifest.json`, `package.json` und `package-lock.json` angleichen | R-1 | Pre-Submit-Check meldet „package.json and manifest.json versions match (1.6.2)“ | 1 h | — |
+| **R-02** | **Release-Hinweise:** `CHANGELOG.md`-Eintrag 1.6.2 (Fixed/Changed) und englischer Release-Notes-Block im Store-Listing | R-3 | CHANGELOG enthält 1.6.2 mit Datum; Listing §6 hat einen 1.6.2-Block fürs ATN-Dialogfeld | 1 h | R-01 |
+| **R-03** | **Versionskonsistenz der Doku:** README (EN/DE), STATUS, index, store_listing, store_assets, screenshot_capture, privacy_policy (DE/EN-Kopf), live_test_protocol, quickstart auf 1.6.2; Snapshot-Dokumente bleiben unverändert | R-4 | `grep` findet keine Versionsangabe „1.6“ mehr außerhalb der gekennzeichneten Snapshots | 1 h | R-01 |
+| **R-04** | **Gates und Artefakt:** `npm run check` (Pre-Submit, 427 Tests, Lint, Build+Paketprüfung) und SHA-256 des XPI ermitteln | R-2, R-5 | `check` → Exit 0; XPI `thundy_av_email_scanner_for_thunderbird-1.6.2.zip` mit Hash dokumentiert | 2 h | R-01 |
+| **R-05** | **Release veröffentlichen:** Tag `v1.6.2` auf den Commit, GitHub-Release (kein Pre-Release) mit XPI als Asset und den Release-Notes als Text | R-2, R-6 | `gh release view v1.6.2` zeigt Tag, Asset und Notes; `releases/latest` ist dieses Release | 1 h | R-04 |
+| **R-06** | **Nachverifikation und Doku:** Download des Assets prüfen (Hash), Release-URL + Hash in STATUS/decisions (D11) eintragen, Aufgabenstand aktualisieren | R-5, R-6 | Hash des heruntergeladenen Assets == lokaler Hash; STATUS/decisions nennen Version, Tag, Release-URL | 1 h | R-05 |
+| **R-07** | **Store-Gate erneut ausführen:** `npm run store-gate` — C7 muss nun PASS sein, offen bleiben nur C5 (Screenshots) und C6 (Live-Test) | R-2 | Gate-Protokoll zeigt C1–C4 + C7 PASS, C5/C6 FAIL (bewusst, manuell) | 0,5 h | R-05 |
+| **R-08** | **ATN-Signierung dokumentieren (nicht ausführbar):** Kommandozeile mit `--amo-base-url`/`--approval-timeout` in STATUS/decisions verlinken; Hinweis, dass der Upload die ATN-API-Schlüssel des Maintainers braucht | R-2 | Befehl steht in STATUS „Remaining“; Gate-Kriterienliste nennt die Verantwortlichkeit | 0,5 h | R-05 |
+
+**Summe:** ≈ 8 h (1 Personentag) — überwiegend Dokumentation und Verifikation, kein Produktivcode.
+
+**Nicht in dieser Runde möglich:** ATN-Upload (keine API-Schlüssel), echte Screenshots (C5), Live-Test in
+Thunderbird 140 ESR (C6). Beide bleiben als manuelle Schritte dokumentiert.
+

@@ -10,6 +10,55 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 - Nothing yet.
 
+## [1.6.2] – 2026-10-01
+
+Store-readiness release: behebt die Blocker der Problemanalyse (siehe
+[docs/PROBLEMANALYSE_STORE_READINESS.md](docs/PROBLEMANALYSE_STORE_READINESS.md) und
+[docs/decisions.md](docs/decisions.md)). Keine übertragene Version dieses Add-ons existiert bisher bei
+addons.thunderbird.net (`api/v4/.../thundy-av@bludau-it-services.de` → 404), deshalb ist 1.6.2 die erste
+veröffentlichte Version dieses Zweigs.
+
+### Fixed
+
+- **Datenübermittlung ohne Zustimmung im Popup:** `api.js` fragte Hybrid Analysis direkt ab, obwohl die
+  globale Zustimmung ausgeschaltet war. Das Popup prüft jetzt vor jedem Netzwerkzugriff die Zustimmung und
+  zeigt sonst ausschließlich das **lokal** gespeicherte Ergebnis.
+- **Popup-Berichtsanzeige:** zwei undefinierte Bezeichner (`syncFragment`, `container`) warfen einen
+  `ReferenceError`, sodass der Analysebereich nie gerendert wurde.
+- **Kontextmenüs ohne Wirkung:** die Berechtigung `menus` fehlte im Manifest; beide Einträge
+  („Link scannen“, „Alle Links dieser Nachricht scannen“) wurden stillschweigend nie erzeugt.
+- **Datenschutz-Stufe umgangen:** der manuelle Anhang-Upload und der manuelle URL-Scan übergingen die
+  Stufe. Jetzt gilt: Anhang-Upload ab `balanced`, URL-Upload nur `max`; in `strict` erscheint ein Hinweis
+  mit Link in die Einstellungen.
+- **Fehlende Host-Berechtigung** führte zu undurchsichtigen Netzwerkfehlern. Jeder Provider-Aufruf prüft
+  jetzt vorab (`HOST_PERMISSION_MISSING` mit klarem Text und Weg in die Einstellungen); der automatische
+  Anhang-Upload läuft zusätzlich über das zentrale Gateway mit Timeout.
+- **IP-Reputations-Cache** speicherte „nicht auffällig“-Ergebnisse aus der Zeit **ohne** Zustimmung und
+  verhinderte so spätere echte Abfragen.
+- **Injektionsfehler** in der Nachrichtenansicht wurden nur ins Log geschrieben; sie werden jetzt einmal
+  pro Sitzung als Benachrichtigung gemeldet.
+- **Paket enthielt Entwicklerdateien** (`test_regex_escape*.js`), die Paketprüfung schlug fehl.
+- **Manifest V3:** die MV2-Fallbacks (`onMessageDisplayed`, `getDisplayedMessage`) und der nicht
+  existierende Zweig `scripting.messageDisplay.executeScript` sind entfernt.
+
+### Changed
+
+- **Daten-Deklaration:** `data_collection_permissions` jetzt
+  `{ "required": ["none"], "optional": ["personalCommunications"] }`; die Zustimmung wird zusätzlich über
+  `browser.permissions.request({ data_collection: ['personalCommunications'], permissions: ['sensitiveDataUpload'] })`
+  in der Nutzergeste eingeholt und beim Abschalten zurückgegeben. Neue optionale Berechtigung
+  `sensitiveDataUpload` (Thunderbird-Signal für das Hochladen sensibler Nutzerdaten), Berechtigung `menus`
+  ergänzt.
+- **Repository-Hygiene:** `pnpm-lock.yaml` entfernt (npm ist der alleinige Paketmanager),
+  Entwickler-Skripte liegen unter `tools/*.dev.js`, `.webextignore` entfernt (wird von `web-ext` nicht
+  gelesen), Testlauf arbeitet mit expliziter Dateiliste statt Discovery.
+- **Gates:** Pre-Submit-Checks erzwingen Daten-Deklaration samt Laufzeit-Anfrage, `menus`-Berechtigung und
+  verbieten MV3-entfernte APIs in Laufzeitdateien; der Lint-Filter verbirgt entfernte APIs nicht mehr.
+  Neu: `npm run check` (voller Gate) und `npm run store-gate` (Go/No-Go mit Nachweis je Kriterium).
+- **Dokumentation:** Datenschutzerklärung, Store-Listing, Reviewer-Notes, READMEs, Quickstart und
+  Screenshot-Anleitung auf den geprüften Stand gebracht; Testdaten (`testdata/`) und Live-Test-Protokoll
+  (`docs/live_test_protocol.md`) ergänzt.
+
 ## [1.6.0] – 2026-09-28
 
 ### Added

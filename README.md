@@ -13,7 +13,7 @@ submits the minimum data required to external analysis services.
 | Add-on name | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6 – see [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.2 – see [CHANGELOG.md](CHANGELOG.md) |
 | License | MIT – see [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |

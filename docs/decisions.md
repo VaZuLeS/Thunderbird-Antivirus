@@ -2,7 +2,7 @@
 
 **Bezug:** [PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md) ·
 [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md)
-**Snapshot:** Branch `cline/k0d34w90`, Version 1.6, Stand 2026-10-01
+**Snapshot:** Branch `cline/k0d34w90`, Version 1.6.2, Stand 2026-10-01
 
 Dieses Dokument hält die Entscheidungen fest, die den Code- und Doku-Änderungen dieses
 Arbeitslaufs zugrunde liegen. Jede Entscheidung nennt den Befund, die Begründung mit Belegquelle

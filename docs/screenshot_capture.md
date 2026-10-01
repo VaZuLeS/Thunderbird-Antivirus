@@ -1,6 +1,6 @@
 # Screenshot-Aufnahmeanleitung — Thundy AV (Thunderbird-WebExtension)
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird, Version 1.6
+**Add-on:** Thundy AV – Email Scanner for Thunderbird, Version 1.6.2
 **Status:** Es existieren noch **keine** echten Screenshots; im Repository liegen nur
 SVG-Platzhalter (`docs/screenshots/*.svg`). Dieses Dokument beschreibt,
 wie die realen Aufnahmen erstellt werden.

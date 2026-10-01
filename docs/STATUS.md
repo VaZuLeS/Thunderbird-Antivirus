@@ -1,6 +1,6 @@
 # Status – Thundy AV (Stand: 1. Oktober 2026)
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6** · **ID** `thundy-av@bludau-it-services.de`
+**Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6.2** · **ID** `thundy-av@bludau-it-services.de`
 **Zielplattform:** Thunderbird 140.0 oder neuer (Manifest V3) · **Lizenz:** MIT
 **Snapshot:** Branch `cline/k0d34w90` (Einreichungskandidat, Entscheidung D1 in [decisions.md](decisions.md))
 

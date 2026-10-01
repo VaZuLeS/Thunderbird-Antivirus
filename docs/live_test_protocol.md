@@ -20,7 +20,7 @@
 | Betriebssystem + Version | |
 | Datum des Tests | |
 | Tester (Name/Kürzel) | |
-| Add-on-Version | 1.6 |
+| Add-on-Version | 1.6.2 |
 | Add-on-ID | thundy-av@bludau-it-services.de |
 | Bezugs-Commit (Repo) | `b5734b6` (HEAD zum Erstellzeitpunkt dieses Protokolls) |
 | Testprofil (Name/Pfad) | |

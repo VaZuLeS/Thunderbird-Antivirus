@@ -61,7 +61,7 @@ npm run store-gate
 - `npx web-ext lint` (addons-linter) muss **0 Fehler** melden. Die verbleibenden Warnungen sind überwiegend
   `UNSUPPORTED_API`-Hinweise, weil der Linter gegen ein Firefox-Ziel prüft und Thunderbird-APIs wie `messages.*`
   oder `messageDisplay.*` nicht kennt (`npm run lint:filtered` prüft sie gegen eine Allow-Liste).
-- `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.zip` (Dateiname aus dem
+- `npx web-ext build …` erzeugt `./build/thundy_av_email_scanner_for_thunderbird-1.6.2.zip` (Dateiname aus dem
   Add-on-Namen). Die Ausschlüsse für Testdateien, `tools/`, `testdata/`, `docs/`, `scripts/`, `examples/`, Lockfiles,
   `install.rdf` und Build-Artefakte stehen in `web-ext-config.mjs` (`ignoreFiles`); `web-ext` liest keine
   `.webextignore`-Datei, diese Konfiguration ist also die einzige Quelle. `node scripts/verify-package.js ./build`

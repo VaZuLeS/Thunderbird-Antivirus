@@ -1,6 +1,6 @@
 # Store-Assets — Status
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird (Version 1.6)
+**Add-on:** Thundy AV – Email Scanner for Thunderbird (Version 1.6.2)
 **Stand dieses Dokuments:** September 2026
 **Ziel:** Thunderbird Add-ons Store (ATN) — Listung mit Screenshots und Icon
 

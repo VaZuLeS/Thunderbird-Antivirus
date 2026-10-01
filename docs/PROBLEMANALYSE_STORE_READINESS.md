@@ -65,6 +65,59 @@ ATN-Konto erfordern.
 
 ---
 
+## 0.2 Update 2026-10-01 (Runde 2) — Release 1.6.2
+
+Der Auftrag „veröffentliche eine neue Version“ wird mit diesem Abschnitt als eigene, kleine
+Analyse-/Planrunde geführt (Aufgaben R-01 … R-08 in §12 des Aufgabenplans). Neue Befunde, die
+**das Veröffentlichen** betreffen:
+
+### R-1 — Mehrdeutige Versionslage (Blocker für ein Release)
+**Belege:** `manifest.json` stand auf `1.6` (pre-submit-konsistent mit `package.json` `1.6.0`), während im
+Repository die Tags `v1.6`, `v1.6.1`, `v1.7.0` … `v1.18.0` existieren — alle mit derselben Add-on-ID
+(`thundy-av@bludau-it-services.de`). `v1.6` zeigt auf einen **älteren** Commit (`351001f`), ein Tag
+„1.6“ auf dem aktuellen Stand ist also unmöglich, ohne einen bestehenden Tag umzuschreiben.
+**ATN-Abfrage (entscheidend):** `api/v4/addons/addon/thundy-av@bludau-it-services.de/` → **HTTP 404**,
+d. h. es ist **keine** Version dieses Add-ons veröffentlicht; es gibt keine Monotonie-Vorgabe von ATN.
+**Entscheidung (D11):** Version **1.6.2** — nächster Patch auf der Linie, die `main` repräsentiert; Tag
+`v1.6.2` ist frei; keine Aussage über die nie veröffentlichte 1.7–1.18-Linie. (Bewusst nicht 1.19.0: das
+würde eine Produkthistorie suggerieren, die es nicht gibt.)
+**Fix:** `manifest.json` `1.6.2`, `package.json`/`package-lock.json` `1.6.2`, Tag `v1.6.2`, Release.
+
+### R-2 — Kein Release-Artefakt für den Kandidaten (hoch)
+**Belege:** Der einzige XPI-Anhang mit dem Fix-Stand existierte als Pre-Release `v1.6`
+(`thundy-av-1.6.xpi`, Basis `351001f`); das Store-Gate meldete genau deshalb `FAIL C7` („v1.6 points at
+351001f9 but the submitted commit is …“). Ohne Tag + Release ist nicht belegbar, welcher Commit
+eingereicht wurde.
+**Fix:** Release mit dem aus dem aktuellen Commit gebauten XPI **und** dessen SHA-256.
+
+### R-3 — Release-Hinweise fehlten für den Fix-Stand (mittel)
+**Belege:** `CHANGELOG.md` endete bei `[1.6.0] – 2026-09-28`; `[Unreleased]` war leer; die ATN-Release-Notes
+im Listing beschrieben nur 1.6. Ein Release ohne sichtbare Änderungsliste ist für Reviewer und Nutzer
+unvollständig.
+**Fix:** `CHANGELOG.md` 1.6.2 (Fixed/Changed) und ein englischer Release-Notes-Block im Store-Listing.
+
+### R-4 — Versionsdrift in der Dokumentation (mittel)
+**Belege:** Nach dem Bump nannten README (EN/DE), `docs/STATUS.md`, `docs/index.md`,
+`docs/store_listing.md`, `docs/store_assets.md`, `docs/screenshot_capture.md`, `docs/privacy_policy.md`
+(DE/EN-Kopf), `docs/live_test_protocol.md` und `docs/quickstart.md` weiterhin „Version 1.6“ — darunter
+Dateien, die Reviewern als Nachweis dienen.
+**Fix:** Versionsangaben auf 1.6.2 angeglichen; historische Snapshot-Dokumente (Problemanalyse Runde 1,
+`STORE_READINESS_ANALYSIS.md`, `docs/audits/`) bleiben unverändert und sind als Snapshot gekennzeichnet.
+
+### R-5 — Release-Ablauf war nicht dokumentiert (mittel)
+**Belege:** Weder Tag noch Build noch Anhängen des XPI waren als Ablauf festgehalten; `docs/ci/release.yml`
+beschreibt nur das Signieren bei ATN. Der Build ist zudem **nicht byte-reproduzierbar** (P2-21: wechselnde
+Eintragsreihenfolge/Zeitstempel), ein Hash ist deshalb nur für genau dieses Artefakt gültig.
+**Fix:** Ablauf + Hash in `docs/decisions.md` (D11) und `docs/STATUS.md` dokumentieren.
+
+### R-6 — „Latest“-Release bleibt das von 2024 (niedrig, Rest aus P1-13)
+**Belege:** `gh api repos/…/releases/latest` → `Thunderbird` (2024). GitHub definiert „latest“ als jüngstes
+nicht-Pre-Release; ein `make_latest=false` ändert daran nichts (in Runde 1 reproduziert).
+**Fix:** Sobald dieses Release regulär (nicht als Pre-Release) veröffentlicht ist, ist es automatisch
+„Latest“ — damit ist der Befund ohne destructive Eingriffe gelöst.
+
+---
+
 ## 1. Zielbild „store-ready“
 
 „Store-ready“ heißt hier: das Add-on erfüllt die ATN-Einreichungsanforderungen und ist in der deklarierten
