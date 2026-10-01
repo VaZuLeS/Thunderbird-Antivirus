@@ -55,6 +55,37 @@ const I18N_FALLBACKS = {
     timelineSuspiciousDelay: 'unusual delay',
     timelineLocalAssessment: 'Local assessment',
     timelineLocalAssessmentDetail: 'risk score $SCORE$ of 100 – $VERDICT$',
+    selftestApiLabel: 'API available',
+    selftestApiMissingDetail: 'This Thunderbird build does not expose the API – please report the version.',
+    selftestConsentBlocked: 'Consent gate blocks transmission',
+    selftestConsentBlockedDetail: 'without consent every transmission path must abort with EXTERNAL_ANALYSIS_DISABLED',
+    selftestTierGates: 'Privacy tier gates work',
+    selftestTierGatesDetail: 'strict blocks upload and URL scan, balanced allows upload, max allows both',
+    selftestVerdictThresholds: 'Verdict thresholds',
+    selftestAuthParser: 'Authentication-Results parser',
+    selftestReceivedParser: 'Received chain parser (hops and delays)',
+    selftestLinkAnatomy: 'Link anatomy (shortener, tracking, look-alike)',
+    selftestIocs: 'IOC extraction',
+    selftestAttachments: 'Attachment classification',
+    selftestLedger: 'Risk score ledger',
+    selftestMitre: 'MITRE ATT&CK mapping (heuristic)',
+    selftestTimeline: 'Dossier timeline',
+    selftestEntries: 'entries',
+    selftestInjection: 'Banner injection into the message view',
+    selftestInjectionNoMessage: 'No message is open – open a message and run the self-test again for this check.',
+    selftestInjectionOkDetail: 'A probe script was injected into the open message and returned its result.',
+    selftestInjectionFailedDetail: 'Injection failed – please report this together with the Thunderbird version.',
+    selftestNotifications: 'Notification round-trip',
+    selftestNotificationTitle: 'Thundy AV self-test',
+    selftestNotificationMessage: 'Test notification created and removed again.',
+    selftestProviderPermission: 'Host permission granted for',
+    selftestProviderPermissionMissing: 'Host permission missing for',
+    selftestConsentNotice: 'External analysis is switched off',
+    selftestConsentNoticeDetail: 'Provider keys are configured but the global consent is off – nothing is transmitted.',
+    selftestNote: 'All checks run locally on synthetic data; nothing is transmitted. The visual appearance of the banners and the permission dialogs still have to be checked by hand (docs/live_test_protocol.md).',
+    selftestReportTitle: 'Self-test report',
+    selftestReportStarted: 'Started',
+    selftestReportResult: 'Result',
     notificationTitle: 'Thundy AV Scanner',
     notificationTitleError: 'Thundy AV Scanner error',
     notificationNoLinks: 'No links found in this message.'
@@ -2311,6 +2342,85 @@ function buildDossierTimeline(header, receivedChain, threat) {
 }
 
 /**
+ * Attachment hashes are cached per message part: the popup can be opened several
+ * times for the same message and hashing large attachments twice is pointless.
+ */
+const ATTACHMENT_HASH_CACHE = new Map();
+const MAX_ATTACHMENT_HASH_CACHE = 200;
+
+async function cachedAttachmentHash(messageId, partName) {
+    const key = messageId + '|' + partName;
+    if (ATTACHMENT_HASH_CACHE.has(key)) return ATTACHMENT_HASH_CACHE.get(key);
+    let sha256 = null;
+    try {
+        const file = await browser.messages.getAttachmentFile(messageId, partName);
+        sha256 = await get_sha256_hash(file);
+    } catch (e) {
+        sha256 = null;
+    }
+    while (ATTACHMENT_HASH_CACHE.size >= MAX_ATTACHMENT_HASH_CACHE) {
+        ATTACHMENT_HASH_CACHE.delete(ATTACHMENT_HASH_CACHE.keys().next().value);
+    }
+    ATTACHMENT_HASH_CACHE.set(key, sha256);
+    return sha256;
+}
+
+/**
+ * Reads the locally stored provider states for a message so the dossier can show
+ * what was already analysed without triggering another request (rate limits and
+ * the user's quota are respected).
+ */
+async function readStoredScanRecord(headerMessageId) {
+    if (!headerMessageId) return null;
+    try {
+        const db = await getSharedDB();
+        const record = await getFromStore(db, 'hybridanalysis', headerMessageId);
+        return record || null;
+    } catch (e) {
+        Logger.warn('Could not read the stored scan record for the dossier', e);
+        return null;
+    }
+}
+
+/** Merge der gespeicherten Anbieter-Zustände in die Anhangsliste. */
+function mergeStoredAttachmentState(attachments, storedRecord) {
+    const stored = new Map();
+    for (const entry of (storedRecord && storedRecord.attachments) || []) {
+        if (entry && entry.partName) stored.set(entry.partName, entry);
+    }
+    return attachments.map((attachment) => {
+        const entry = stored.get(attachment.partName);
+        if (!entry) return attachment;
+        return Object.assign({}, attachment, {
+            hybridState: (entry.hybrid_data && entry.hybrid_data.state) || entry.state || null,
+            hybridJobId: (entry.hybrid_data && entry.hybrid_data.job_id) || entry.hybrid_job_id || null,
+            storedSha256: entry.hybrid_sha256 || null,
+            virustotalStats: entry.virustotal_stats || null,
+            stateSource: 'stored'
+        });
+    });
+}
+
+/** Merge der gespeicherten Anbieter-Zustände in die Linkliste. */
+function mergeStoredLinkState(links, storedRecord) {
+    const stored = new Map();
+    for (const entry of (storedRecord && storedRecord.links) || []) {
+        if (entry && entry.url) stored.set(entry.url, entry);
+    }
+    return links.map((link) => {
+        const entry = stored.get(link.url);
+        if (!entry) return link;
+        return Object.assign({}, link, {
+            hybridState: entry.state || null,
+            hybridJobId: entry.hybrid_job_id || null,
+            storedSha256: entry.hybrid_sha256 || null,
+            urlhausMatch: (storedRecord.urlhausMatches || []).includes(link.host),
+            stateSource: 'stored'
+        });
+    });
+}
+
+/**
  * Builds the researcher dossier for one message. Everything is local: headers,
  * body, attachments and the states already stored in the local cache database.
  * The only network activity is the same consent-gated reputation check the
@@ -2330,15 +2440,10 @@ async function buildResearchDossier(messageId) {
     } catch (e) {
         Logger.warn('listAttachments failed for the dossier', e);
     }
+    const storedRecord = await readStoredScanRecord(header.headerMessageId);
     const attachments = [];
     for (const attachment of listedAttachments.slice(0, 25)) {
-        let sha256 = null;
-        try {
-            const file = await browser.messages.getAttachmentFile(messageId, attachment.partName);
-            sha256 = await get_sha256_hash(file);
-        } catch (e) {
-            sha256 = null;
-        }
+        const sha256 = await cachedAttachmentHash(messageId, attachment.partName);
         attachments.push({
             partName: attachment.partName,
             name: attachment.name,
@@ -2360,6 +2465,8 @@ async function buildResearchDossier(messageId) {
     const authentication = parseAuthenticationResults(headers['authentication-results'] || [], headers['received-spf'] || []);
     const receivedChain = parseReceivedChain(headers['received'] || []);
     const links = urls.map(analyseLinkAnatomy);
+    const enrichedAttachments = mergeStoredAttachmentState(attachments, storedRecord);
+    const enrichedLinks = mergeStoredLinkState(links, storedRecord);
 
     let isFirstCommunication = false;
     try {
@@ -2429,13 +2536,16 @@ async function buildResearchDossier(messageId) {
                 ipReputation: ipReputationProvider !== 'none'
             },
             urlhausMatches: urlhausDomains,
-            maliciousIps: maliciousIps
+            maliciousIps: maliciousIps,
+            storedScanRecord: !!storedRecord,
+            storedAttachments: ((storedRecord && storedRecord.attachments) || []).length,
+            storedLinks: ((storedRecord && storedRecord.links) || []).length
         },
         authentication: authentication,
         receivedChain: receivedChain,
         sender: sender,
-        attachments: attachments,
-        links: links,
+        attachments: enrichedAttachments,
+        links: enrichedLinks,
         iocs: extractIocs(messageText, urls),
         risk: {
             score: threat.score,
@@ -2842,6 +2952,26 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         case "saveResearchExport":
             handleSaveResearchExport(request)
+                .then(res => sendResponse({ status: 'success', data: res }))
+                .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
+            return true;
+
+        case "runSelfTest":
+            runSelfTest()
+                .then(report => sendResponse({ status: 'success', data: report }))
+                .catch(error => {
+                    Logger.error('Self-test failed', error);
+                    sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) });
+                });
+            return true;
+
+        case "saveSelfTestReport":
+            runSelfTest()
+                .then((report) => handleSaveResearchExport({
+                    filename: 'thundy-av-selftest-' + new Date().toISOString().slice(0, 10) + '.txt',
+                    content: formatSelfTestReport(report),
+                    mimeType: 'text/plain'
+                }))
                 .then(res => sendResponse({ status: 'success', data: res }))
                 .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
             return true;
@@ -3299,3 +3429,304 @@ async function pollUrlscanIoResult(uuid) {
 
     return { status: 'TIMEOUT' }; // Took too long
 }
+
+// ---------------------------------------------------------------------------
+// Selbsttest / Diagnose
+//
+// Der Selbsttest prüft die lokale Engine und die Laufzeitumgebung im echten
+// Thunderbird. Er überträgt **nichts** an Dritte: alle Eingaben sind synthetisch
+// (keine echten Nachrichteninhalte), es werden keine Anbieter-Endpunkte
+// aufgerufen. Er ersetzt nicht die visuelle Prüfung der Banner und die
+// Berechtigungsdialoge (docs/live_test_protocol.md), macht diese aber schneller
+// reproduzierbar.
+// ---------------------------------------------------------------------------
+
+const SELFTEST_SCHEMA = 'thundy-av/selftest@1';
+
+function selftestCheck(id, title, condition, detail, status) {
+    return {
+        id: id,
+        title: title,
+        status: status || (condition ? 'pass' : 'fail'),
+        detail: detail || ''
+    };
+}
+
+function selftestEnvironment() {
+    return {
+        apiAvailability: {
+            messageDisplayOnMessagesDisplayed: !!(browser.messageDisplay && browser.messageDisplay.onMessagesDisplayed),
+            messageDisplayGetDisplayedMessages: !!(browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages === 'function'),
+            messageDisplayOpen: !!(browser.messageDisplay && typeof browser.messageDisplay.open === 'function'),
+            scriptingExecuteScript: !!(browser.scripting && typeof browser.scripting.executeScript === 'function'),
+            notificationsCreate: !!(browser.notifications && typeof browser.notifications.create === 'function'),
+            notificationsClear: !!(browser.notifications && typeof browser.notifications.clear === 'function'),
+            permissionsRequest: !!(browser.permissions && typeof browser.permissions.request === 'function'),
+            permissionsContains: !!(browser.permissions && typeof browser.permissions.contains === 'function'),
+            permissionsGetAll: !!(browser.permissions && typeof browser.permissions.getAll === 'function'),
+            downloadsDownload: !!(browser.downloads && typeof browser.downloads.download === 'function'),
+            menusCreate: !!(browser.menus && typeof browser.menus.create === 'function'),
+            messagesGet: !!(browser.messages && typeof browser.messages.get === 'function'),
+            indexedDb: typeof indexedDB !== 'undefined'
+        },
+        runtimeVersion: (browser.runtime && browser.runtime.getManifest)
+            ? (browser.runtime.getManifest().version || null)
+            : null,
+        privacyTier: privacyTier,
+        consentGiven: mayTransmitExternally(),
+        providersConfigured: {
+            hybridAnalysis: !!apikey_hybridanalysis,
+            virusTotal: !!apikey_virustotal,
+            urlscan: !!urlscanApikey,
+            urlhaus: !!urlhausApikey,
+            ipReputation: ipReputationProvider !== 'none'
+        }
+    };
+}
+
+/** Synthetische Nachricht für die Engine-Prüfungen (keine echten Inhalte). */
+function selftestSyntheticMessage() {
+    return {
+        author: 'Buchhaltung <buchhaltung@paypa1.com>',
+        subject: 'Dringend: offene Rechnung',
+        text: 'Bitte sofort zahlen: https://bit.ly/3xY und https://paypa1.com/login?uid=7 . Hash ' +
+            'a'.repeat(64) + ' IP 203.0.113.5',
+        authHeaders: ['mx.test; spf=fail smtp.mailfrom=paypa1.com; dkim=fail header.d=paypa1.com; dmarc=fail header.from=paypa1.com'],
+        received: [
+            'from mx.test (mx.test [203.0.113.9]) by inbox.test with ESMTPS; Thu, 1 Oct 2026 12:00:00 +0000',
+            'from sender.test (sender.test [198.51.100.4]) by mx.test with ESMTP; Thu, 1 Oct 2026 06:00:00 +0000'
+        ],
+        replyTo: 'kontakt@other-mail.example',
+        attachmentName: 'rechnung.docm'
+    };
+}
+
+
+/**
+ * Führt alle lokalen Prüfungen aus. Rückgabe ist ein Bericht, der kopiert,
+ * exportiert und in das Live-Test-Protokoll übernommen werden kann.
+ */
+async function runSelfTest() {
+    const startedAt = new Date().toISOString();
+    const startTime = Date.now();
+    const checks = [];
+    const sample = selftestSyntheticMessage();
+    const environment = selftestEnvironment();
+
+    for (const [key, present] of Object.entries(environment.apiAvailability)) {
+        checks.push(selftestCheck('api.' + key,
+            msg('selftestApiLabel') + ': ' + key, present,
+            present ? '' : msg('selftestApiMissingDetail')));
+    }
+
+    // Zustimmungs-Regel
+    const consentBefore = externalAnalysisConsent;
+    externalAnalysisConsent = false;
+    let consentBlocked = false;
+    try { assertExternalAnalysisAllowed(); } catch (e) { consentBlocked = e && e.code === EXTERNAL_ANALYSIS_DISABLED; }
+    const mayNotTransmit = mayTransmitExternally() === false;
+    externalAnalysisConsent = consentBefore;
+    checks.push(selftestCheck('consent.blocked', msg('selftestConsentBlocked'), consentBlocked && mayNotTransmit,
+        msg('selftestConsentBlockedDetail')));
+
+    // Datenschutz-Stufen
+    const tierBefore = privacyTier;
+    privacyTier = 'strict';
+    const strictBlocksUpload = !tierAtLeast('balanced');
+    const strictBlocksUrl = !tierAtLeast('max');
+    privacyTier = 'balanced';
+    const balancedAllowsUpload = tierAtLeast('balanced') && !tierAtLeast('max');
+    privacyTier = 'max';
+    const maxAllowsBoth = tierAtLeast('balanced') && tierAtLeast('max');
+    privacyTier = tierBefore;
+    checks.push(selftestCheck('tier.gates', msg('selftestTierGates'),
+        strictBlocksUpload && strictBlocksUrl && balancedAllowsUpload && maxAllowsBoth,
+        msg('selftestTierGatesDetail')));
+
+    // Verdikt-Schwellen
+    const verdictOk = verdictForScore(10) === 'clean' && verdictForScore(30) === 'unclear'
+        && verdictForScore(60) === 'suspicious' && verdictForScore(90) === 'malicious';
+    checks.push(selftestCheck('verdict.thresholds', msg('selftestVerdictThresholds'), verdictOk,
+        '0–19 clean, 20–49 unclear, 50–74 suspicious, >=75 malicious'));
+
+    // Header-/Auth-Parser
+    const auth = parseAuthenticationResults(sample.authHeaders, []);
+    const authOk = auth.spf === 'fail' && auth.dmarc === 'fail' && auth.dkim.includes('fail') && auth.spoofingSuspect === true;
+    checks.push(selftestCheck('parser.authentication', msg('selftestAuthParser'), authOk,
+        JSON.stringify({ spf: auth.spf, dmarc: auth.dmarc, dkim: auth.dkim })));
+
+    const chain = parseReceivedChain(sample.received);
+    const newestHop = chain.find((hop) => hop.ip === '203.0.113.9');
+    const chainOk = chain.length === 2 && !!newestHop && newestHop.delaySeconds === 21600 && newestHop.delaySuspicious === true;
+    checks.push(selftestCheck('parser.received', msg('selftestReceivedParser'), chainOk,
+        JSON.stringify(chain.map((hop) => ({ ip: hop.ip, delay: hop.delaySeconds })))));
+
+    // Link-Anatomie
+    const shortener = analyseLinkAnatomy('https://bit.ly/3xY?uid=7');
+    const lookalike = analyseLinkAnatomy('https://paypa1.com/login');
+    const linkOk = shortener.isShortener === true && shortener.trackingParameters.includes('uid')
+        && lookalike.brandLookalike === 'paypal.com';
+    checks.push(selftestCheck('parser.links', msg('selftestLinkAnatomy'), linkOk,
+        JSON.stringify({ shortener: shortener.isShortener, tracking: shortener.trackingParameters, lookalike: lookalike.brandLookalike })));
+
+    // IOC-Extraktion
+    const iocs = extractIocs(sample.text, ['https://bit.ly/3xY', 'https://paypa1.com/login?uid=7']);
+    const iocOk = iocs.urls.length === 2 && iocs.ips.includes('203.0.113.5')
+        && iocs.hashes.length === 1 && iocs.domains.includes('paypa1.com');
+    checks.push(selftestCheck('parser.iocs', msg('selftestIocs'), iocOk,
+        JSON.stringify({ urls: iocs.urls.length, ips: iocs.ips.length, hashes: iocs.hashes.length, domains: iocs.domains.length })));
+
+    // Anhangs-Erkennung
+    const attachmentOk = isRiskyAttachmentName(sample.attachmentName) && isArchiveAttachmentName('paket.zip')
+        && !isRiskyAttachmentName('notizen.txt') && getFileExtension('a.b.C') === 'c';
+    checks.push(selftestCheck('parser.attachments', msg('selftestAttachments'), attachmentOk, sample.attachmentName));
+
+
+    // Score-Ledger
+    const threat = calculateThreatScore(sample.author, ['https://bit.ly/3xY', 'https://paypa1.com/login?uid=7'], {
+        authHeaders: sample.authHeaders,
+        urlhausDomains: [],
+        isFirstCommunication: true,
+        messageText: sample.text,
+        subject: sample.subject,
+        replyTo: sample.replyTo,
+        parsedUrlCache: new Map()
+    });
+    const ledgerSum = threat.breakdown.reduce((total, rule) => total + rule.points, 0);
+    const ledgerOk = ledgerSum === threat.rawScore && threat.score === Math.min(threat.rawScore, 100) && threat.breakdown.length > 0;
+    checks.push(selftestCheck('scoring.ledger', msg('selftestLedger'), ledgerOk,
+        JSON.stringify({ raw: threat.rawScore, capped: threat.score, rules: threat.breakdown.length })));
+
+    // MITRE-Zuordnung
+    const techniques = mapMitreTechniques({
+        breakdown: threat.breakdown,
+        attachments: [{ name: sample.attachmentName }],
+        links: [shortener, lookalike],
+        authentication: auth,
+        sender: { replyToMismatch: true, displayNameMismatch: true }
+    });
+    const techniqueIds = techniques.map((technique) => technique.id);
+    const mitreOk = techniqueIds.includes('T1566.001') && techniqueIds.includes('T1566.002') && techniqueIds.includes('T1656')
+        && techniques.every((technique) => technique.confidence === 'heuristic' && technique.evidence.length > 0);
+    checks.push(selftestCheck('mitre.mapping', msg('selftestMitre'), mitreOk, techniqueIds.join(', ')));
+
+    // Zeitleiste
+    const timeline = buildDossierTimeline({ date: Date.parse('2026-10-01T06:00:00Z') }, chain, threat);
+    const timelineOk = timeline.length >= 3
+        && Date.parse(timeline[0].at) <= Date.parse(timeline[timeline.length - 1].at);
+    checks.push(selftestCheck('dossier.timeline', msg('selftestTimeline'), timelineOk,
+        timeline.length + ' ' + msg('selftestEntries')));
+
+    // Injektion in die Nachrichtenansicht - genau der Pfad, den der Live-Test
+    // visuell prüft. Ohne geöffnete Nachricht ist das ein Hinweis, kein Fehler.
+    let injectionDetail = '';
+    let injectionStatus = 'fail';
+    let tabs = [];
+    try {
+        tabs = await browser.tabs.query({});
+    } catch (e) {
+        tabs = [];
+    }
+    try {
+        const messageTabs = await browser.tabs.query({ type: ['mail', 'messageDisplay'] });
+        if (messageTabs && messageTabs.length > 0) tabs = messageTabs;
+    } catch (e) { /* andere Signatur: erste Abfrage behalten */ }
+    const activeTab = tabs && tabs.length > 0 ? tabs[0] : null;
+    const displayed = activeTab ? await getFirstDisplayedMessage(activeTab.id) : null;
+    if (!activeTab || !displayed) {
+        injectionStatus = 'warn';
+        injectionDetail = msg('selftestInjectionNoMessage');
+    } else {
+        const result = await injectIntoMessageDisplay(activeTab.id, function() {
+            return 'thundy-selftest-probe';
+        });
+        const ok = Array.isArray(result) && result.length > 0
+            && result[0] && result[0].result === 'thundy-selftest-probe';
+        injectionStatus = ok ? 'pass' : 'fail';
+        injectionDetail = ok ? msg('selftestInjectionOkDetail') : msg('selftestInjectionFailedDetail');
+    }
+    checks.push(selftestCheck('injection.messageDisplay', msg('selftestInjection'),
+        injectionStatus === 'pass', injectionDetail, injectionStatus));
+
+
+    // Benachrichtigungen wirklich anlegen und wieder entfernen
+    const notificationId = 'thundy-selftest-' + Date.now();
+    let notificationOk = false;
+    try {
+        const created = browser.notifications.create(notificationId, {
+            type: 'basic',
+            iconUrl: iconUrl(),
+            title: msg('selftestNotificationTitle'),
+            message: msg('selftestNotificationMessage')
+        });
+        if (created && typeof created.catch === 'function') await created.catch(() => {});
+        notificationOk = true;
+    } catch (e) {
+        notificationOk = false;
+    }
+    try {
+        if (browser.notifications && typeof browser.notifications.clear === 'function') {
+            browser.notifications.clear(notificationId);
+        }
+    } catch (e) { /* die Meldung ist nur ein Test */ }
+    checks.push(selftestCheck('notifications.roundtrip', msg('selftestNotifications'), notificationOk, notificationId));
+
+    // Anbieter: Schlüssel gesetzt, aber Host-Berechtigung (noch) nicht erteilt?
+    for (const [provider, origin] of Object.entries(PROVIDER_ORIGINS)) {
+        const configured = (provider === 'hybridanalysis' && !!apikey_hybridanalysis)
+            || (provider === 'virustotal' && (!!apikey_virustotal || ipReputationProvider === 'virustotal'))
+            || (provider === 'urlscan' && !!urlscanApikey)
+            || (provider === 'urlhaus' && !!urlhausApikey)
+            || (provider === 'abuseipdb' && ipReputationProvider === 'abuseipdb');
+        if (!configured) continue;
+        let granted = false;
+        try {
+            granted = await browser.permissions.contains({ origins: [origin] });
+        } catch (e) {
+            granted = false;
+        }
+        checks.push(selftestCheck('provider.' + provider, msg('selftestProviderPermission') + ' ' + provider,
+            granted, granted ? origin : msg('selftestProviderPermissionMissing') + ' ' + origin,
+            granted ? 'pass' : 'warn'));
+    }
+
+    if (!environment.consentGiven && Object.values(environment.providersConfigured).some(Boolean)) {
+        checks.push(selftestCheck('consent.notice', msg('selftestConsentNotice'), false,
+            msg('selftestConsentNoticeDetail'), 'warn'));
+    }
+
+    const summary = {
+        pass: checks.filter((check) => check.status === 'pass').length,
+        fail: checks.filter((check) => check.status === 'fail').length,
+        warn: checks.filter((check) => check.status === 'warn').length
+    };
+    summary.verdict = summary.fail > 0 ? 'failed' : (summary.warn > 0 ? 'attention' : 'ok');
+
+    return {
+        schema: SELFTEST_SCHEMA,
+        startedAt: startedAt,
+        durationMs: Date.now() - startTime,
+        environment: environment,
+        checks: checks,
+        summary: summary,
+        note: msg('selftestNote')
+    };
+}
+
+/** Formatiert einen Selbsttest-Bericht als Text für Protokoll oder Issue. */
+function formatSelfTestReport(report) {
+    const lines = [];
+    lines.push('Thundy AV ' + (report.environment.runtimeVersion || '?') + ' – ' + msg('selftestReportTitle'));
+    lines.push(msg('selftestReportStarted') + ': ' + report.startedAt + ' (' + report.durationMs + ' ms)');
+    lines.push(msg('selftestReportResult') + ': ' + String(report.summary.verdict).toUpperCase() +
+        ' (' + report.summary.pass + ' pass / ' + report.summary.fail + ' fail / ' + report.summary.warn + ' warn)');
+    lines.push('');
+    for (const check of report.checks) {
+        lines.push('[' + String(check.status).toUpperCase() + '] ' + check.id + ' – ' + check.title +
+            (check.detail ? ' :: ' + check.detail : ''));
+    }
+    lines.push('');
+    lines.push(report.note);
+    return lines.join('\n');
+}
+

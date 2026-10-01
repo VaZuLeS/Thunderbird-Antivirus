@@ -251,6 +251,163 @@ document.addEventListener('DOMContentLoaded', function() {
         saveBtn.textContent = 'Speichern';
     });
   });
+  // ---------------------------------------------------------------------------
+  // Selbsttest / Diagnose
+  // ---------------------------------------------------------------------------
+  const selfTestButton = document.getElementById('runSelfTest');
+  const selfTestReport = document.getElementById('selfTestReport');
+  const selfTestStatus = document.getElementById('selfTestStatus');
+  const copySelfTestButton = document.getElementById('copySelfTestReport');
+  const saveSelfTestButton = document.getElementById('saveSelfTestReport');
+  let lastSelfTestReport = null;
+
+  function selfTestBadge(status) {
+    const badge = document.createElement('span');
+    badge.className = 'thundy-badge thundy-badge--' +
+      (status === 'pass' ? 'low' : (status === 'warn' ? 'medium' : 'critical'));
+    badge.textContent = status === 'pass' ? 'PASS' : (status === 'warn' ? 'HINWEIS' : 'FEHLER');
+    return badge;
+  }
+
+  function selfTestReportAsText(report) {
+    const lines = ['Thundy AV Selbsttest-Bericht (' + report.startedAt + ')'];
+    lines.push('Ergebnis: ' + String(report.summary.verdict).toUpperCase() +
+      ' (' + report.summary.pass + ' bestanden / ' + report.summary.fail + ' Fehler / ' +
+      report.summary.warn + ' Hinweise)');
+    lines.push('');
+    for (const check of report.checks) {
+      lines.push('[' + String(check.status).toUpperCase() + '] ' + check.id + ' – ' + check.title +
+        (check.detail ? ' :: ' + check.detail : ''));
+    }
+    lines.push('');
+    lines.push(report.note);
+    return lines.join('\n');
+  }
+
+  function renderSelfTestReport(report) {
+    if (!selfTestReport) return;
+    selfTestReport.textContent = '';
+
+    const summary = document.createElement('div');
+    summary.className = 'thundy-chip-row';
+    const verdictBadge = document.createElement('span');
+    const verdictSeverity = report.summary.verdict === 'ok' ? 'low'
+      : (report.summary.verdict === 'attention' ? 'medium' : 'critical');
+    verdictBadge.className = 'thundy-badge thundy-badge--' + verdictSeverity;
+    verdictBadge.textContent = 'Ergebnis: ' + String(report.summary.verdict).toUpperCase();
+    summary.appendChild(verdictBadge);
+    summary.appendChild(document.createTextNode(' ' + report.summary.pass + ' bestanden, ' +
+      report.summary.fail + ' Fehler, ' + report.summary.warn + ' Hinweise'));
+    selfTestReport.appendChild(summary);
+
+    const table = document.createElement('table');
+    table.className = 'thundy-table';
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    for (const label of ['Status', 'Prüfung', 'Detail']) {
+      const th = document.createElement('th');
+      th.textContent = label;
+      headRow.appendChild(th);
+    }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    for (const check of report.checks) {
+      const row = document.createElement('tr');
+      const statusCell = document.createElement('td');
+      statusCell.appendChild(selfTestBadge(check.status));
+      row.appendChild(statusCell);
+      const titleCell = document.createElement('td');
+      titleCell.textContent = check.title;
+      const code = document.createElement('code');
+      code.className = 'thundy-mono';
+      code.textContent = check.id;
+      titleCell.appendChild(document.createTextNode(' '));
+      titleCell.appendChild(code);
+      row.appendChild(titleCell);
+      const detailCell = document.createElement('td');
+      detailCell.textContent = check.detail || '';
+      row.appendChild(detailCell);
+      tbody.appendChild(row);
+    }
+    table.appendChild(tbody);
+    selfTestReport.appendChild(table);
+
+    const note = document.createElement('p');
+    note.className = 'thundy-note thundy-note--info';
+    note.textContent = report.note;
+    selfTestReport.appendChild(note);
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // Selbsttest / Diagnose (Fortsetzung: Ausführung und Export)
+  // ---------------------------------------------------------------------------
+  async function runSelfTestFromOptions() {
+    if (!selfTestButton) return;
+    selfTestButton.disabled = true;
+    selfTestButton.setAttribute('aria-busy', 'true');
+    const previousLabel = selfTestButton.textContent;
+    selfTestButton.textContent = 'Selbsttest läuft …';
+    if (selfTestStatus) selfTestStatus.classList.remove('thundy-hidden');
+    try {
+      const response = await browser.runtime.sendMessage({ action: 'runSelfTest' });
+      if (!response || response.status !== 'success') {
+        throw new Error(response && response.message ? response.message : 'Selbsttest fehlgeschlagen');
+      }
+      lastSelfTestReport = response.data;
+      renderSelfTestReport(lastSelfTestReport);
+      if (copySelfTestButton) copySelfTestButton.disabled = false;
+      if (saveSelfTestButton) saveSelfTestButton.disabled = false;
+      if (selfTestStatus) {
+        selfTestStatus.textContent = 'Selbsttest abgeschlossen (' + lastSelfTestReport.checks.length + ' Prüfungen).';
+      }
+    } catch (error) {
+      if (selfTestStatus) selfTestStatus.textContent = 'Selbsttest fehlgeschlagen: ' + error.message;
+    } finally {
+      selfTestButton.disabled = false;
+      selfTestButton.removeAttribute('aria-busy');
+      selfTestButton.textContent = previousLabel;
+    }
+  }
+
+  if (selfTestButton) {
+    selfTestButton.addEventListener('click', runSelfTestFromOptions);
+  }
+
+  if (copySelfTestButton) {
+    copySelfTestButton.addEventListener('click', async () => {
+      if (!lastSelfTestReport) return;
+      const text = selfTestReportAsText(lastSelfTestReport);
+      let copied = false;
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          copied = true;
+        }
+      } catch (error) {
+        copied = false;
+      }
+      if (selfTestStatus) selfTestStatus.textContent = copied ? 'Bericht kopiert.' : 'Kopieren nicht möglich.';
+    });
+  }
+
+  if (saveSelfTestButton) {
+    saveSelfTestButton.addEventListener('click', async () => {
+      saveSelfTestButton.disabled = true;
+      try {
+        const response = await browser.runtime.sendMessage({ action: 'saveSelfTestReport' });
+        if (!response || response.status !== 'success') {
+          throw new Error(response && response.message ? response.message : 'Speichern fehlgeschlagen');
+        }
+        if (selfTestStatus) selfTestStatus.textContent = 'Bericht gespeichert: ' + response.data.filename;
+      } catch (error) {
+        if (selfTestStatus) selfTestStatus.textContent = 'Speichern fehlgeschlagen: ' + error.message;
+      } finally {
+        saveSelfTestButton.disabled = false;
+      }
+    });
+  }
 
   document.getElementById('clearCache').addEventListener('click', async function() {
     if (!confirm('Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse.')) {

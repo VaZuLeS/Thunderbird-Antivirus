@@ -167,6 +167,28 @@
         </div>
     </section>
 
+    <section class="thundy-card" aria-labelledby="secDiagnoseTitle">
+        <div class="thundy-card__header">
+            <h2 class="thundy-card__title" id="secDiagnoseTitle">Selbsttest &amp; Diagnose</h2>
+        </div>
+        <div class="thundy-card__body">
+            <p>Der Selbsttest prüft die installierte Version: verfügbare Thunderbird-Schnittstellen, die
+               Zustimmungs- und Stufen-Sperren, die Analyse-Parser (Header, Links, IOCs, MITRE) sowie die
+               Banner-Injektion in eine geöffnete Nachricht. Er arbeitet ausschließlich lokal mit
+               synthetischen Daten und überträgt <strong>nichts</strong>.</p>
+            <p class="thundy-note thundy-note--info">Optik der Banner und die Berechtigungsdialoge bleiben
+               manuell zu prüfen (Anleitung: <code>docs/live_test_protocol.md</code>). Öffnen Sie für die
+               Injektionsprüfung eine Nachricht und führen Sie den Selbsttest dann erneut aus.</p>
+            <div class="thundy-toolbar">
+                <button id="runSelfTest" type="button" class="btn-primary">Selbsttest ausführen</button>
+                <button id="copySelfTestReport" type="button" class="btn-primary" disabled>Bericht kopieren</button>
+                <button id="saveSelfTestReport" type="button" class="btn-primary" disabled>Bericht speichern</button>
+                <span id="selfTestStatus" class="thundy-status thundy-hidden" aria-live="polite" role="status"></span>
+            </div>
+            <div id="selfTestReport" class="thundy-selftest" aria-live="polite"></div>
+        </div>
+    </section>
+
     <script src="db.js"></script>
     <script src="options.js"></script>
 </body>

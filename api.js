@@ -1293,14 +1293,32 @@ function renderResearchAttachments(dossier) {
         if (attachment.archive) {
             nameCell.appendChild(createBadge('medium', 'Archiv'));
         }
+        const stateCell = createEl('span', 'thundy-chip-row');
+        if (attachment.hybridState) {
+            const stateSeverity = attachment.hybridState === 'KNOWN' ? 'info' : 'low';
+            stateCell.appendChild(createBadge(stateSeverity,
+                'Hybrid Analysis: ' + attachment.hybridState + (attachment.stateSource === 'stored' ? ' (gespeichert)' : '')));
+        }
+        if (attachment.hybridJobId) {
+            stateCell.appendChild(createEl('code', 'thundy-mono', attachment.hybridJobId));
+        }
+        if (attachment.virustotalStats && typeof attachment.virustotalStats.malicious === 'number') {
+            const malicious = attachment.virustotalStats.malicious;
+            stateCell.appendChild(createBadge(malicious > 0 ? 'high' : 'low',
+                'VirusTotal: ' + malicious + ' Treffer'));
+        }
+        if (stateCell.childNodes.length === 0) {
+            stateCell.appendChild(createEl('span', 'thundy-muted', 'nicht analysiert'));
+        }
         return [
             nameCell,
             attachment.contentType || '–',
             attachment.size !== undefined && attachment.size !== null ? attachment.size + ' B' : '–',
-            attachment.sha256 ? createCopyableValue(attachment.sha256, 'SHA-256') : 'nicht gehasht'
+            attachment.sha256 ? createCopyableValue(attachment.sha256, 'SHA-256') : 'nicht gehasht',
+            stateCell
         ];
     });
-    body.appendChild(createTable(['Datei', 'MIME-Typ', 'Größe', 'SHA-256'], rows));
+    body.appendChild(createTable(['Datei', 'MIME-Typ', 'Größe', 'SHA-256', 'Anbieter-Status'], rows));
     return section;
 }
 
@@ -1321,6 +1339,11 @@ function renderResearchLinks(dossier) {
             if (link.brandLookalike) hints.appendChild(createBadge('high', 'ähnelt ' + link.brandLookalike));
             if (link.isShortener) hints.appendChild(createBadge('medium', 'Kurz-URL'));
             if (link.hasCredentials) hints.appendChild(createBadge('critical', 'Zugangsdaten in URL'));
+            if (link.urlhausMatch) hints.appendChild(createBadge('high', 'URLhaus-Treffer'));
+            if (link.hybridState) {
+                hints.appendChild(createBadge('info',
+                    'Hybrid Analysis: ' + link.hybridState + (link.stateSource === 'stored' ? ' (gespeichert)' : '')));
+            }
             if ((link.trackingParameters || []).length > 0) {
                 hints.appendChild(createBadge('info', 'Tracking: ' + link.trackingParameters.join(', ')));
             }

@@ -10,6 +10,34 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 - Nothing yet.
 
+## [1.6.4] – 2026-10-01
+
+Diagnose-Release: Der Live-Test lässt sich jetzt in der echten Installation in weiten Teilen
+automatisiert nachweisen, und die Forscher-Ansicht nutzt bereits gespeicherte Anbieter-Ergebnisse.
+
+### Added
+
+- **Selbsttest / Diagnose in den Einstellungen:** prüft in der laufenden Installation die verfügbaren
+  Thunderbird-Schnittstellen, die Sperren für Zustimmung und Datenschutz-Stufe, die Parser
+  (`Authentication-Results`, `Received`-Kette, Link-Anatomie, IOC-Extraktion, Anhangsklassifizierung),
+  die Risiko-Aufschlüsselung, die MITRE-Zuordnung, eine echte Benachrichtigung sowie die
+  **Banner-Injektion in eine geöffnete Nachricht**. Der Bericht erscheint als Tabelle mit
+  PASS/HINWEIS/FEHLER, lässt sich kopieren und als Textdatei speichern.
+  Alle Prüfungen laufen lokal mit synthetischen Daten; es wird **nichts** übertragen.
+
+### Changed
+
+- **Forscher-Ansicht zeigt gespeicherte Anbieter-Zustände:** Anhänge und Links erhalten ihre bereits
+  lokal abgelegten Hybrid-Analysis-/VirusTotal-Ergebnisse mit Kennzeichnung „(gespeichert)" — ohne
+  dadurch eine neue Anfrage auszulösen.
+
+### Fixed
+
+- **Anhang-Hashes werden zwischengespeichert** (je Nachricht und Nachrichtenteil): wiederholtes Öffnen
+  des Popups hasht große Anhänge nicht erneut.
+- Anbieter-Prüfungen im Selbsttest melden fehlende Host-Berechtigungen als Hinweis, wenn zu einem
+  Schlüssel noch kein Zugriff erteilt wurde.
+
 ## [1.6.3] – 2026-10-01
 
 Forscher-Release: Analysesicht für IT-Sicherheitsforscher, gebündelte Benachrichtigungen und ein

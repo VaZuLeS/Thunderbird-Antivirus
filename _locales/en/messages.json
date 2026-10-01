@@ -217,5 +217,98 @@
         "content": "$2"
       }
     }
+  },
+  "selftestApiLabel": {
+    "message": "API available"
+  },
+  "selftestApiMissingDetail": {
+    "message": "This Thunderbird build does not expose the API – please report the version."
+  },
+  "selftestConsentBlocked": {
+    "message": "Consent gate blocks transmission"
+  },
+  "selftestConsentBlockedDetail": {
+    "message": "Without consent every transmission path must abort with EXTERNAL_ANALYSIS_DISABLED."
+  },
+  "selftestTierGates": {
+    "message": "Privacy tier gates work"
+  },
+  "selftestTierGatesDetail": {
+    "message": "strict blocks upload and URL scan, balanced allows upload, max allows both"
+  },
+  "selftestVerdictThresholds": {
+    "message": "Verdict thresholds"
+  },
+  "selftestAuthParser": {
+    "message": "Authentication-Results parser"
+  },
+  "selftestReceivedParser": {
+    "message": "Received chain parser (hops and delays)"
+  },
+  "selftestLinkAnatomy": {
+    "message": "Link anatomy (shortener, tracking, look-alike)"
+  },
+  "selftestIocs": {
+    "message": "IOC extraction"
+  },
+  "selftestAttachments": {
+    "message": "Attachment classification"
+  },
+  "selftestLedger": {
+    "message": "Risk score ledger"
+  },
+  "selftestMitre": {
+    "message": "MITRE ATT&CK mapping (heuristic)"
+  },
+  "selftestTimeline": {
+    "message": "Dossier timeline"
+  },
+  "selftestEntries": {
+    "message": "entries"
+  },
+  "selftestInjection": {
+    "message": "Banner injection into the message view"
+  },
+  "selftestInjectionNoMessage": {
+    "message": "No message is open – open a message and run the self-test again for this check."
+  },
+  "selftestInjectionOkDetail": {
+    "message": "A probe script was injected into the open message and returned its result."
+  },
+  "selftestInjectionFailedDetail": {
+    "message": "Injection failed – please report this together with the Thunderbird version."
+  },
+  "selftestNotifications": {
+    "message": "Notification round-trip"
+  },
+  "selftestNotificationTitle": {
+    "message": "Thundy AV self-test"
+  },
+  "selftestNotificationMessage": {
+    "message": "Test notification created and removed again."
+  },
+  "selftestProviderPermission": {
+    "message": "Host permission granted for"
+  },
+  "selftestProviderPermissionMissing": {
+    "message": "Host permission missing for"
+  },
+  "selftestConsentNotice": {
+    "message": "External analysis is switched off"
+  },
+  "selftestConsentNoticeDetail": {
+    "message": "Provider keys are configured but the global consent is off – nothing is transmitted."
+  },
+  "selftestNote": {
+    "message": "All checks run locally on synthetic data; nothing is transmitted. The visual appearance of the banners and the permission dialogs still have to be checked by hand (docs/live_test_protocol.md)."
+  },
+  "selftestReportTitle": {
+    "message": "Self-test report"
+  },
+  "selftestReportStarted": {
+    "message": "Started"
+  },
+  "selftestReportResult": {
+    "message": "Result"
   }
 }

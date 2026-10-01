@@ -37,6 +37,7 @@ describe('background.js', () => {
                 messageDisplay: {
                     getDisplayedMessages: async () => ({ messages: [{ headerMessageId: 'test-msg-id' }] }),
                     getDisplayedMessage: async () => ({ headerMessageId: 'test-msg-id' }),
+                    open: async () => ({}),
                     onMessagesDisplayed: {
                         addListener: (listener) => {
                             context.browser.messageDisplay.onMessagesDisplayed.listeners.push(listener);
@@ -52,7 +53,8 @@ describe('background.js', () => {
                 },
                 permissions: {
                     contains: async () => true,
-                    request: async () => true
+                    request: async () => true,
+                    getAll: async () => ({ permissions: [], origins: [], data_collection: ['personalCommunications'] })
                 },
                 runtime: {
                     onMessage: {
@@ -72,7 +74,8 @@ describe('background.js', () => {
                     }
                 },
                 notifications: {
-                    create: () => {}
+                    create: () => {},
+                    clear: () => Promise.resolve(true)
                 },
                 downloads: {
                     download: async () => {}
@@ -227,6 +230,15 @@ describe('background.js', () => {
             globalThis.handleSaveResearchExport = handleSaveResearchExport;
             globalThis.BANNER_PALETTE = BANNER_PALETTE;
             globalThis.calculateThreatScore = calculateThreatScore;
+
+            // Selbsttest / Diagnose (Runde 4)
+            globalThis.runSelfTest = runSelfTest;
+            globalThis.formatSelfTestReport = formatSelfTestReport;
+            globalThis.selftestEnvironment = selftestEnvironment;
+            globalThis.cachedAttachmentHash = cachedAttachmentHash;
+            globalThis.ATTACHMENT_HASH_CACHE = ATTACHMENT_HASH_CACHE;
+            globalThis.mergeStoredAttachmentState = mergeStoredAttachmentState;
+            globalThis.mergeStoredLinkState = mergeStoredLinkState;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -3687,6 +3699,104 @@ describe('background.js', () => {
             assert.strictEqual(downloads[0].filename, 'passwd.json');
             assert.strictEqual(downloads[0].saveAs, true);
             await assert.rejects(() => context.handleSaveResearchExport({ filename: 'x.json', content: '' }), /empty export/);
+        });
+    });
+
+    describe('Self-test / diagnostics (round 4)', () => {
+        it('reports a passing self-test in the mocked environment', async () => {
+            context.browser.tabs = { query: async () => ([{ id: 1, type: 'mail' }]) };
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 5 }] });
+            context.browser.scripting.executeScript = async () => ([{ result: 'thundy-selftest-probe' }]);
+            context.browser.messages.get = async () => ({ id: 5, subject: 'Test', author: 'a@b.example' });
+
+            const report = await context.runSelfTest();
+
+            assert.strictEqual(report.schema, 'thundy-av/selftest@1');
+            assert.ok(report.checks.length >= 15, 'expected a substantial check list');
+            assert.ok(report.summary.pass > 0);
+            const failed = report.checks.filter((check) => check.status === 'fail');
+            assert.deepEqual(failed.map((check) => check.id), [], 'no check may fail in the mocked environment');
+            assert.strictEqual(report.summary.verdict, report.summary.warn > 0 ? 'attention' : 'ok');
+
+            const injection = report.checks.find((check) => check.id === 'injection.messageDisplay');
+            assert.strictEqual(injection.status, 'pass');
+            const consent = report.checks.find((check) => check.id === 'consent.blocked');
+            assert.strictEqual(consent.status, 'pass');
+            const ledger = report.checks.find((check) => check.id === 'scoring.ledger');
+            assert.strictEqual(ledger.status, 'pass');
+            const mitre = report.checks.find((check) => check.id === 'mitre.mapping');
+            assert.strictEqual(mitre.status, 'pass');
+        });
+
+        it('marks the injection check as a hint when no message is open', async () => {
+            context.browser.tabs = { query: async () => ([]) };
+            const report = await context.runSelfTest();
+            const injection = report.checks.find((check) => check.id === 'injection.messageDisplay');
+            assert.strictEqual(injection.status, 'warn');
+            assert.match(injection.detail, /open a message|Nachricht/i);
+        });
+
+        it('fails a check when a required API is missing', async () => {
+            const original = context.browser.permissions;
+            context.browser.permissions = { contains: original.contains, request: original.request };
+            try {
+                const report = await context.runSelfTest();
+                const check = report.checks.find((entry) => entry.id === 'api.permissionsGetAll');
+                assert.strictEqual(check.status, 'fail');
+                assert.strictEqual(report.summary.verdict, 'failed');
+            } finally {
+                context.browser.permissions = original;
+            }
+        });
+
+        it('restores the consent and tier settings after the self-test', async () => {
+            context.set_externalAnalysisConsent(true);
+            context.set_privacyTier('max');
+            await context.runSelfTest();
+            assert.strictEqual(context.get_externalAnalysisConsent(), true);
+            assert.strictEqual(context.get_privacyTier(), 'max');
+        });
+
+        it('formats the report as a copyable text block', async () => {
+            const report = await context.runSelfTest();
+            const text = context.formatSelfTestReport(report);
+            assert.match(text, /Self-test report/);
+            assert.match(text, /\[PASS\] consent\.blocked/);
+            assert.match(text, /Result: (OK|ATTENTION|FAILED)/);
+            assert.match(text, /nothing is transmitted/);
+        });
+
+        it('caches attachment hashes per message part', async () => {
+            let calls = 0;
+            context.browser.messages.getAttachmentFile = async () => {
+                calls += 1;
+                return new File([new Uint8Array([1, 2, 3])], 'a.bin');
+            };
+            context.ATTACHMENT_HASH_CACHE.clear();
+            const first = await context.cachedAttachmentHash(9, '1.2');
+            const second = await context.cachedAttachmentHash(9, '1.2');
+            assert.strictEqual(first, second);
+            assert.strictEqual(calls, 1, 'the file must be hashed only once');
+            assert.strictEqual(context.ATTACHMENT_HASH_CACHE.size, 1);
+        });
+
+        it('merges stored provider states into attachments and links', () => {
+            const stored = {
+                attachments: [{ partName: '1.2', state: 'UPLOADED', hybrid_sha256: 'abc', virustotal_stats: { malicious: 3 } }],
+                links: [{ url: 'https://bit.ly/3xY', state: 'KNOWN', hybrid_job_id: 'job-1' }]
+            };
+            const attachments = context.mergeStoredAttachmentState([{ partName: '1.2', name: 'a.bin' }], stored);
+            assert.strictEqual(attachments[0].hybridState, 'UPLOADED');
+            assert.strictEqual(attachments[0].storedSha256, 'abc');
+            assert.deepEqual(attachments[0].virustotalStats, { malicious: 3 });
+            assert.strictEqual(attachments[0].stateSource, 'stored');
+
+            const links = context.mergeStoredLinkState([{ url: 'https://bit.ly/3xY', host: 'bit.ly' }], stored);
+            assert.strictEqual(links[0].hybridState, 'KNOWN');
+            assert.strictEqual(links[0].hybridJobId, 'job-1');
+
+            const untouched = context.mergeStoredAttachmentState([{ partName: '9.9' }], stored);
+            assert.strictEqual(untouched[0].hybridState, undefined, 'unknown parts stay untouched');
         });
     });
 });

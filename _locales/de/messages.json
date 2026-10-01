@@ -217,5 +217,98 @@
         "content": "$2"
       }
     }
+  },
+  "selftestApiLabel": {
+    "message": "API verfügbar"
+  },
+  "selftestApiMissingDetail": {
+    "message": "Diese Thunderbird-Version stellt die API nicht bereit – bitte mit Versionsangabe melden."
+  },
+  "selftestConsentBlocked": {
+    "message": "Zustimmungs-Sperre greift"
+  },
+  "selftestConsentBlockedDetail": {
+    "message": "Ohne Zustimmung muss jeder Übertragungsweg mit EXTERNAL_ANALYSIS_DISABLED abbrechen."
+  },
+  "selftestTierGates": {
+    "message": "Datenschutz-Stufen greifen"
+  },
+  "selftestTierGatesDetail": {
+    "message": "Strikt blockiert Upload und URL-Scan, Ausgewogen erlaubt Upload, Maximal beides"
+  },
+  "selftestVerdictThresholds": {
+    "message": "Verdikt-Schwellen"
+  },
+  "selftestAuthParser": {
+    "message": "Parser für Authentication-Results"
+  },
+  "selftestReceivedParser": {
+    "message": "Parser der Received-Kette (Hops und Verzögerungen)"
+  },
+  "selftestLinkAnatomy": {
+    "message": "Link-Anatomie (Kurz-URL, Tracking, Marken-Ähnlichkeit)"
+  },
+  "selftestIocs": {
+    "message": "IOC-Extraktion"
+  },
+  "selftestAttachments": {
+    "message": "Anhangs-Klassifizierung"
+  },
+  "selftestLedger": {
+    "message": "Risiko-Aufschlüsselung"
+  },
+  "selftestMitre": {
+    "message": "MITRE-ATT&CK-Zuordnung (heuristisch)"
+  },
+  "selftestTimeline": {
+    "message": "Zeitleiste des Dossiers"
+  },
+  "selftestEntries": {
+    "message": "Einträge"
+  },
+  "selftestInjection": {
+    "message": "Banner-Injektion in die Nachrichtenansicht"
+  },
+  "selftestInjectionNoMessage": {
+    "message": "Keine Nachricht geöffnet – bitte eine Nachricht öffnen und den Selbsttest erneut ausführen."
+  },
+  "selftestInjectionOkDetail": {
+    "message": "Ein Prüfskript wurde in die geöffnete Nachricht injiziert und hat sein Ergebnis zurückgegeben."
+  },
+  "selftestInjectionFailedDetail": {
+    "message": "Injektion fehlgeschlagen – bitte mit Angabe der Thunderbird-Version melden."
+  },
+  "selftestNotifications": {
+    "message": "Benachrichtigung (Anlegen und Entfernen)"
+  },
+  "selftestNotificationTitle": {
+    "message": "Thundy AV Selbsttest"
+  },
+  "selftestNotificationMessage": {
+    "message": "Testbenachrichtigung angelegt und wieder entfernt."
+  },
+  "selftestProviderPermission": {
+    "message": "Host-Berechtigung erteilt für"
+  },
+  "selftestProviderPermissionMissing": {
+    "message": "Host-Berechtigung fehlt für"
+  },
+  "selftestConsentNotice": {
+    "message": "Externe Analyse ist ausgeschaltet"
+  },
+  "selftestConsentNoticeDetail": {
+    "message": "Es sind Anbieter-Schlüssel hinterlegt, aber die globale Zustimmung ist aus – es wird nichts übertragen."
+  },
+  "selftestNote": {
+    "message": "Alle Prüfungen laufen lokal mit synthetischen Daten; es wird nichts übertragen. Die Optik der Banner und die Berechtigungsdialoge sind weiterhin manuell zu prüfen (docs/live_test_protocol.md)."
+  },
+  "selftestReportTitle": {
+    "message": "Selbsttest-Bericht"
+  },
+  "selftestReportStarted": {
+    "message": "Gestartet"
+  },
+  "selftestReportResult": {
+    "message": "Ergebnis"
   }
 }
