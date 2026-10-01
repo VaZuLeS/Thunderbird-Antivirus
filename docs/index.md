@@ -20,6 +20,8 @@ Landing page for the documentation of **Thundy AV – Email Scanner for Thunderb
 - Raw audit reports of that analysis: [audits/](audits/) (code, documentation/policy, build/pipeline)
 - Live test protocol (manual test in Thunderbird 140 ESR): [live_test_protocol.md](live_test_protocol.md)
 - Decisions log (binding decisions for the current submission candidate): [decisions.md](decisions.md)
+- Thematic roadmap (what comes next, why, and what blocks it): [ROADMAP.md](ROADMAP.md)
+- Threat model (assets, trust boundaries, attacker scenarios, residual risks): [threat_model.md](threat_model.md)
 - Reviewer test data (sample `.eml` messages): [../testdata/](../testdata/)
 
 ## Data processing in one sentence

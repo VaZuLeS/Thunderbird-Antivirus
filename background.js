@@ -2912,7 +2912,12 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         Logger.warn('Ignoring a message from a foreign sender', sender.id);
         return false;
     }
-    if (!request || typeof request !== 'object') return false;
+    const invalidReason = validateRequest(request);
+    if (invalidReason) {
+        Logger.warn('Rejected an invalid message', invalidReason);
+        sendResponse({ status: 'error', error: invalidReason, code: invalidReason });
+        return true;
+    }
 
     switch (request.action) {
         case "uploadAttachment":
@@ -2989,8 +2994,10 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function handleSaveResearchExport(request) {
     const content = String((request && request.content) || '');
     if (!content) throw new Error('empty export');
+    if (content.length > MAX_EXPORT_BYTES) throw new Error('export too large');
 
     const mimeType = (request && request.mimeType) || 'application/json';
+    if (!ALLOWED_EXPORT_MIME_TYPES.has(mimeType)) throw new Error('mime type not allowed');
     const rawName = String((request && request.filename) || 'thundy-export.json');
     const safeName = rawName.split(/[\/\\]/).pop().replace(/[^a-zA-Z0-9_.-]/g, '_') || 'thundy-export.json';
 
@@ -3061,7 +3068,21 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
 
 const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xlink:href']);
 
+// Attributes that only load a resource. A disarmed copy must not beacon back to
+// the sender (tracking pixels, IP disclosure, read receipts), so remote URLs in
+// these attributes are replaced by a marker instead of being kept.
+const resourceAttributes = new Set(['src', 'srcset', 'poster', 'background', 'data', 'longdesc',
+    'dynsrc', 'lowsrc', 'ping', 'manifest', 'icon', 'codebase', 'profile']);
+
 const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link', 'math', 'svg', 'noscript']);
+
+// Remote reference: http(s):// or protocol relative (//host/...). Everything else
+// (relative paths, cid:, mailto:, tel:) stays untouched.
+const REMOTE_URL_REGEX = /^(?:https?:)?\/\//i;
+// url(...) inside inline styles or <style> blocks.
+const CSS_URL_REGEX = /url\(\s*(['"]?)([^'")]*)\1\s*\)/gi;
+const BLOCKED_PLACEHOLDER = 'about:blank#thundy-blocked';
+
 
 // ⚡ Bolt: Use a direct precompiled regex with bounds and no capturing groups for peak performance
 const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\xA0\u1680\u180E\u2000-\u2029\u202F\u205F\u3000\u200B-\u200D\uFEFF\uFFFD]/g;
@@ -3139,6 +3160,34 @@ function disarmHTML(htmlString) {
                                 let cleanVal = DANGEROUS_URI_CHARS_TEST_REGEX.test(val) ? val.replace(DANGEROUS_URI_CHARS_REGEX, '') : val;
                                 if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
                                     safeRemoveAttribute.call(el, attrName);
+                                    continue;
+                                }
+                            }
+                            if (resourceAttributes.has(attrName)) {
+                                const rawValue = attrs[j].value || '';
+                                const stripped = rawValue.replace(DANGEROUS_URI_CHARS_REGEX, '').trim();
+                                const candidates = attrName === 'srcset'
+                                    ? stripped.split(',').map((part) => part.trim().split(/\s+/)[0])
+                                    : [stripped];
+                                const hasRemote = candidates.some((candidate) => REMOTE_URL_REGEX.test(candidate));
+                                if (hasRemote) {
+                                    // Keep the target visible for the analyst, but never load it.
+                                    el.setAttribute('data-thundy-blocked-' + attrName, rawValue);
+                                    safeRemoveAttribute.call(el, attrName);
+                                    continue;
+                                }
+                            }
+                            if (attrName === 'style') {
+                                const styleValue = attrs[j].value || '';
+                                const rewritten = styleValue.replace(CSS_URL_REGEX, (match, quote, target) => {
+                                    if (REMOTE_URL_REGEX.test(String(target).trim())) {
+                                        return 'url("' + BLOCKED_PLACEHOLDER + '")';
+                                    }
+                                    return match;
+                                });
+                                if (rewritten !== styleValue) {
+                                    el.setAttribute('data-thundy-blocked-style', styleValue);
+                                    el.setAttribute('style', rewritten);
                                 }
                             }
                         }
@@ -3147,6 +3196,20 @@ function disarmHTML(htmlString) {
                         const content = safeGetContent.call(el);
                         if (content) {
                             processRoot(content);
+                        }
+                    }
+                    if (tagName === 'style') {
+                        // CSS can load remote resources (@import, background-image).
+                        const css = el.textContent || '';
+                        const rewrittenCss = css.replace(CSS_URL_REGEX, (match, quote, target) => {
+                            if (REMOTE_URL_REGEX.test(String(target).trim())) {
+                                return 'url("' + BLOCKED_PLACEHOLDER + '")';
+                            }
+                            return match;
+                        }).replace(/@import[^;]*;/gi, '/* @import removed by Thundy AV (remote reference) */');
+                        if (rewrittenCss !== css) {
+                            el.setAttribute('data-thundy-blocked-style', css);
+                            el.textContent = rewrittenCss;
                         }
                     }
                 }
@@ -3428,6 +3491,74 @@ async function pollUrlscanIoResult(uuid) {
     }
 
     return { status: 'TIMEOUT' }; // Took too long
+}
+
+// ---------------------------------------------------------------------------
+// Message boundary hardening
+//
+// Everything the popup, the options page and the injected banners send goes
+// through runtime.onMessage. The listener validates the envelope (action and
+// payload types) before any handler runs, so a malformed or unexpected message
+// cannot reach the analysis code with surprising types.
+// ---------------------------------------------------------------------------
+const MESSAGE_ACTIONS = new Set([
+    'uploadAttachment', 'scanUrl', 'checkLinkState', 'downloadDisarmed',
+    'requestScan', 'getResearchDossier', 'saveResearchExport',
+    'runSelfTest', 'saveSelfTestReport'
+]);
+const MAX_EXPORT_BYTES = 5 * 1024 * 1024;
+const ALLOWED_EXPORT_MIME_TYPES = new Set(['application/json', 'text/csv', 'text/plain']);
+
+function isPlainObject(value) {
+    return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isPositiveInteger(value) {
+    return Number.isInteger(value) && value > 0;
+}
+
+/**
+ * Returns an error code for an invalid message envelope, or null when the
+ * request may be dispatched.
+ */
+function validateRequest(request) {
+    if (!isPlainObject(request)) return 'invalid_request';
+    if (typeof request.action !== 'string' || !MESSAGE_ACTIONS.has(request.action)) return 'unknown_action';
+
+    const optionalString = (value) => value === undefined || value === null || typeof value === 'string';
+    switch (request.action) {
+        case 'uploadAttachment':
+            if (!isPositiveInteger(request.messageId)) return 'invalid_message_id';
+            if (typeof request.partName !== 'string' || request.partName === '') return 'invalid_part_name';
+            if (!optionalString(request.attachmentName)) return 'invalid_attachment_name';
+            return null;
+        case 'scanUrl':
+            if (typeof request.url !== 'string' || !/^https?:\/\//i.test(request.url)) return 'invalid_url';
+            return null;
+        case 'downloadDisarmed':
+            if (!isPositiveInteger(request.messageId)) return 'invalid_message_id';
+            if (typeof request.partName !== 'string' || request.partName === '') return 'invalid_part_name';
+            return null;
+        case 'requestScan':
+            if (!isPositiveInteger(request.messageId)) return 'invalid_message_id';
+            if (request.persist !== undefined && typeof request.persist !== 'boolean') return 'invalid_persist';
+            if (!optionalString(request.senderEmail)) return 'invalid_sender';
+            return null;
+        case 'getResearchDossier':
+            if (!isPositiveInteger(request.messageId)) return 'invalid_message_id';
+            return null;
+        case 'saveResearchExport':
+            if (typeof request.content !== 'string' || request.content.length === 0) return 'invalid_content';
+            if (request.content.length > MAX_EXPORT_BYTES) return 'export_too_large';
+            if (typeof request.filename !== 'string' || request.filename === '') return 'invalid_filename';
+            if (request.mimeType !== undefined && !ALLOWED_EXPORT_MIME_TYPES.has(request.mimeType)) return 'invalid_mime_type';
+            return null;
+        case 'checkLinkState':
+            if (typeof request.url !== 'string' || request.url === '') return 'invalid_url';
+            return null;
+        default:
+            return null;
+    }
 }
 
 // ---------------------------------------------------------------------------

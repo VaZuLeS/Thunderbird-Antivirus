@@ -13,12 +13,12 @@ minimal notwendigen Daten an externe Analysedienste.
 | Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.4 – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.5 – siehe [CHANGELOG.md](CHANGELOG.md) |
 | Lizenz | MIT – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.4 |
+| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.5 |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
 | Sprachen | Manifest-Strings und Banner lokalisiert (Englisch, Deutsch – `_locales/`); Options- und Popup-Oberfläche derzeit nur auf Deutsch |
 
@@ -35,7 +35,7 @@ minimal notwendigen Daten an externe Analysedienste.
   (Time-of-Click-Schutz mit Hinweis beim Überfahren). Ein Kontextmenü-Eintrag scannt einen Link mit Thundy AV.
 - **Popup** (Button in der Nachrichtenansicht): Nachrichten-Metadaten, gespeicherte Scan-Ergebnisse, manueller
   Upload eines Anhangs, URL-Scan und **„HTML entschärfen“** (ein HTML-Anhang wird lokal bereinigt und über den
-  Download-Manager gespeichert).
+  Download-Manager gespeichert). Die entschärfte Kopie enthält keine aktiven Inhalte **und** keine Remote-Verweise: Bilder, CSS-`url()`/`@import` und Ähnliches werden ersetzt, damit das Öffnen der Datei nicht zum Absender „zurückfunken“ kann.
 - **Benachrichtigungen** fassen jeden Scan-Vorgang in **einer** Meldung mit stabiler ID zusammen:
   Sie wird **aktualisiert** (läuft → übermittelt/Job-ID → Ergebnis mit Verdikt und Score), statt neue
   Meldungen zu erzeugen; ein Klick auf die Benachrichtigung öffnet die zugehörige Nachricht, und es

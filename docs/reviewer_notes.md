@@ -268,6 +268,22 @@ a test account instead of using real mail.
 
 The full end-to-end protocol for the live test is described in `docs/live_test_protocol.md`.
 
+### 8.7a What "disarm HTML" does (and does not do)
+
+The button sanitises an HTML attachment **locally** and saves the result through the download manager:
+
+- active content is removed: `<script>`, `<object>`, `<embed>`, `<iframe>`, `<base>`, `<meta>`, `<link>`,
+  `<svg>`, `<math>`, `<noscript>`, `on*` event handlers, and `javascript:`/`data:`/`vbscript:` URLs
+  (including control-character obfuscation and mXSS via `<template>`);
+- **remote references are neutralised** so that opening the saved file cannot contact the sender:
+  `src`/`srcset`/`poster`/`background`/`data`/`ping`/… are removed, `url(...)` in inline styles and
+  `@import` in `<style>` blocks are replaced by an inert placeholder. The blocked target stays readable
+  in the attribute `data-thundy-blocked-*` for analysis purposes.
+- `<a href>` targets are **kept** (analytical value) — the file is inert, not interaction-free. Do not
+  click links in a disarmed file unless you intend to visit the target.
+
+Details and the full threat model: `docs/threat_model.md`.
+
 ### 8.7 Built-in self-test (fastest way to verify a review machine)
 
 The options page contains a **"Selbsttest & Diagnose"** section. One click runs a local diagnostic and

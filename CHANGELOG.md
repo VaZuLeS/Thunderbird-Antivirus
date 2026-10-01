@@ -10,6 +10,36 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 - Nothing yet.
 
+## [1.6.5] – 2026-10-01
+
+Security-Release: „HTML entschärfen“ erzeugt jetzt eine wirklich inerte Datei, die Nachrichten-Grenze ist
+validiert, Exporte sind begrenzt. Dazu ein Bedrohungsmodell und eine Themen-Roadmap.
+
+### Added
+
+- **Bedrohungsmodell** (`docs/threat_model.md`): Schutzgüter, Vertrauensgrenzen, Angreifer-Szenarien mit
+  Maßnahme und Fundstelle, bewusste Restrisiken und die zugehörigen Nachweise.
+- **Themen-Roadmap** (`docs/ROADMAP.md`): T1 Einreichung, T2 Security (dieses Release), T3 Barrierefreiheit,
+  T4 Lokalisierung, T5 Performance, T6 Release-Automatisierung, T7 Store-Pflege — mit Reihenfolge.
+
+### Changed
+
+- **Entschärfte HTML-Anhänge sind netzwerk-untätig.** Remote-Referenzen (`src`, `srcset`, `poster`,
+  `background`, `data`, `ping`, `manifest`, …) in Ressourcen-Attributen, `url(...)` in Inline-Styles und
+  `@import` in `<style>`-Blöcken werden entfernt bzw. durch einen inerten Platzhalter ersetzt. Der
+  blockierte Zielpfad bleibt im Attribut `data-thundy-blocked-*` für die Analyse lesbar. Damit kann eine
+  geöffnete Kopie nicht mehr zum Absender „zurückfunken“ (Tracking-Pixel, IP-Preisgabe).
+- **Nachrichten-Grenze:** `runtime.onMessage` validiert Aktion und Nutzlasttypen (`validateRequest()`),
+  bevor ein Handler läuft; unbekannte Aktionen und falsche Typen werden mit einem Fehlercode beantwortet.
+- **Exporte sind begrenzt:** 5 MB Obergrenze und Whitelist der MIME-Typen (`application/json`, `text/csv`,
+  `text/plain`) — auch außerhalb des Nachrichtenwegs.
+
+### Security
+
+- Tests in `test/security-hardening.test.js`: Tracking-Pixel/srcset, CSS-`url()`/`@import`, unveränderte
+  relative Referenzen, aktive Inhalte, fehlerhaftes/nested Markup, Nachrichten-Validierung, Exportgrenzen
+  und der Nachweis, dass Berichte keine API-Schlüssel enthalten.
+
 ## [1.6.4] – 2026-10-01
 
 Diagnose-Release: Der Live-Test lässt sich jetzt in der echten Installation in weiten Teilen

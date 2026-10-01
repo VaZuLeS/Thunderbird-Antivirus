@@ -13,12 +13,12 @@ submits the minimum data required to external analysis services.
 | Add-on name | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.4 – see [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.5 – see [CHANGELOG.md](CHANGELOG.md) |
 | License | MIT – see [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.4 |
+| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.5 |
 | Requires | Thunderbird 140.0 or newer (Manifest V3) |
 | Strings | Manifest strings and banners are localized (English, German – `_locales/`); the options page and the popup are currently German only |
 
@@ -35,7 +35,7 @@ submits the minimum data required to external analysis services.
   protection, with an on-hover notice). A context-menu entry scans a link with Thundy AV.
 - **Popup** (message display action): message metadata, stored scan results, manual upload of an attachment, a URL
   scan and **"download disarmed HTML"** (an HTML attachment is sanitized locally before it is saved via the
-  browser's download manager).
+  browser's download manager). The disarmed copy contains no active content *and* no remote references: images, CSS `url()`/`@import` and similar are replaced so that opening the file cannot "call home".
 - **Notifications** report each scan as a single notification with a stable ID: it is **updated**
   (running → submitted/job ID → result with verdict and score) instead of producing new messages, a
   click on the notification opens the related message, and only the host is shown (never the full
