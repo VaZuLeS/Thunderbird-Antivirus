@@ -136,6 +136,24 @@ Angriffs). Die Exporte der Forscher-Ansicht (JSON, CSV, minimales STIX-2.1-Bundl
 erzeugt** und über den Download-Manager von Thunderbird auf dem Gerät der Nutzerin bzw. des Nutzers
 gespeichert; dabei findet **keine** Übermittlung an Dritte statt.
 
+## 4.1 Lokaler Indikator-Index (ab Version 1.6.6)
+
+Für die Forscher-Werkzeuge (Pivot und Verlaufssuche) speichert die Erweiterung **lokal** in der
+IndexedDB-Datenbank `thunderbird_av` (Store `iocs`) zu jeder gescannten Nachricht die darin erkannten
+Indikatoren:
+
+- URLs, Domains, IP-Adressen, SHA-256-Hashes und E-Mail-Adressen aus der Nachricht,
+- dazu Betreff, Nachrichtendatum, Verdikt und Risiko-Score der lokalen Bewertung.
+
+**Zweck:** Beantwortung der Frage „in welchen anderen erfassten Nachrichten kommt dieser Indikator vor?“
+(Pivot) und die Verlaufssuche. **Datenbasis:** ausschließlich Nachrichten, die diese Erweiterung bereits
+selbst gescannt hat — es werden keine Nachrichten nachgeladen.
+**Keine Übermittlung:** Der Index wird niemals an Dritte übertragen und ist nicht Teil der Abfragen an
+Analyse-Dienste.
+**Löschen:** Der Knopf „Cache leeren“ im Optionsdialog entfernt den Index vollständig (gemeinsam mit dem
+Nachweis-Cache `hybridanalysis`). Es werden keine vollständigen Nachrichteninhalte gespeichert, sondern
+nur die genannten Indikatoren und Metadaten (maximal 300 Einträge je Nachricht).
+
 ## 5. Übermittlung an Dritte — nur bei aktiver globaler Zustimmung
 
 Die folgende Übersicht nennt jede Datenart, die übermittelt werden kann, den Auslöser und den
@@ -293,6 +311,22 @@ Repository und Issue-Tracker: https://github.com/VaZuLeS/Thunderbird-Antivirus
 ---
 
 ## Privacy Policy (English)
+
+### Local indicator index (since version 1.6.6)
+
+For the researcher tools (pivot and history search) the add-on stores **locally** in the IndexedDB
+database `thunderbird_av` (store `iocs`) the indicators it found in every message it scanned:
+
+- URLs, domains, IP addresses, SHA-256 hashes and e-mail addresses taken from the message,
+- plus the subject, message date, verdict and risk score of the local assessment.
+
+**Purpose:** answering "in which other recorded messages does this indicator appear?" (pivot) and the
+history search. **Data basis:** only messages this add-on has scanned itself - no messages are fetched.
+**Never transmitted:** the index is not sent to third parties and is not part of any provider request.
+**Deletion:** the "Clear cache" button in the options removes the index completely (together with the
+`hybridanalysis` evidence cache). No full message bodies are stored, only the indicators and metadata
+listed above (at most 300 entries per message).
+
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird (short name "Thundy AV"), version 1.6.2
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (MIT License)

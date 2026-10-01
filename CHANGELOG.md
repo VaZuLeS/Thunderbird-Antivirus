@@ -10,6 +10,34 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 - Nothing yet.
 
+## [1.6.6] – 2026-10-01
+
+Forscher-Werkzeuge: lokaler Indikator-Index mit Pivot und Verlaufssuche — Triage über Nachrichten
+hinweg, ohne neue Berechtigungen und ohne zusätzliche Netzwerkzugriffe.
+
+### Added
+
+- **Lokaler Indikator-Index (DB-Version 4, Store `iocs`):** Jeder Scan/Dossier-Aufruf indiziert die
+  Indikatoren der Nachricht (URLs, Domains, IP-Adressen, Hashes, E-Mail-Adressen) zusammen mit Betreff,
+  Datum, Verdikt und Score — ausschließlich lokal.
+- **Pivot:** Zu jedem Indikator zeigt ein Knopf im Popup, in welchen anderen erfassten Nachrichten er
+  vorkommt (neueste zuerst); ein Klick öffnet die Nachricht.
+- **Verlaufssuche:** Neuer Abschnitt „Verlauf & Pivot“ in den Einstellungen mit Suche nach Text,
+  Indikatorart und Verdikt, Ergebnistabelle und Öffnen-Aktion.
+- **Selbsttest** prüft jetzt auch den Index-Roundtrip (Schreiben, Pivot, Löschen) und damit die
+  Datenbankmigration in der laufenden Installation.
+
+### Changed
+
+- **„Cache leeren“ entfernt auch den Indikator-Index** und meldet das entsprechend.
+- Datenschutzerklärung, Reviewer-Notes und README beschreiben die neue lokale Datenhaltung, ihre
+  Datenbasis (nur selbst gescannte Nachrichten) und den Löschweg.
+
+### Security
+
+- Der Index enthält ausschließlich Indikatoren, keine vollständigen Nachrichteninhalte; er ist pro
+  Nachricht auf 300 Einträge begrenzt und wird nie übertragen.
+
 ## [1.6.5] – 2026-10-01
 
 Security-Release: „HTML entschärfen“ erzeugt jetzt eine wirklich inerte Datei, die Nachrichten-Grenze ist

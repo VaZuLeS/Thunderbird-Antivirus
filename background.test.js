@@ -239,10 +239,31 @@ describe('background.js', () => {
             globalThis.ATTACHMENT_HASH_CACHE = ATTACHMENT_HASH_CACHE;
             globalThis.mergeStoredAttachmentState = mergeStoredAttachmentState;
             globalThis.mergeStoredLinkState = mergeStoredLinkState;
+
+            // Forscher-Werkzeuge: Indikator-Index (Runde 6)
+            globalThis.indexMessageIndicators = indexMessageIndicators;
+            globalThis.pivotIndicator = pivotIndicator;
+            globalThis.searchHistory = searchHistory;
+            globalThis.clearIndicatorIndex = clearIndicatorIndex;
+            globalThis.indicatorKey = indicatorKey;
+            globalThis.IOC_KINDS = IOC_KINDS;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
         context.URLSearchParams = URLSearchParams;
+        // In-Memory-Ersatz für die db.js-Helfer: Der Selbsttest prüft einen
+        // echten Index-Roundtrip, ohne dass IndexedDB vorhanden sein muss.
+        context.__storeData = new Map();
+        context.openDB = async () => ({ name: 'fakeDB', objectStoreNames: { contains: () => true } });
+        context.putToStore = async (db, storeName, item) => {
+            context.__storeData.set(storeName + '|' + item.key, item);
+            return item.key;
+        };
+        context.getAllFromStore = async (db, storeName) => Array.from(context.__storeData.entries())
+            .filter(([key]) => key.startsWith(storeName + '|'))
+            .map(([, value]) => value);
+        context.deleteFromStore = async (db, storeName, key) => context.__storeData.delete(storeName + '|' + key);
+        context.clearStore = async () => true;
         vm.runInContext(wrappedCode, context);
 
         // Default für Tests: Zustimmung zur externen Analyse erteilt.
@@ -2510,7 +2531,7 @@ describe('background.js', () => {
             context.openDB = (name, version) => {
                 openDBCalls++;
                 assert.strictEqual(name, 'thunderbird_av');
-                assert.strictEqual(version, 3);
+                assert.strictEqual(version, 4);
                 return Promise.resolve(fakeDB);
             };
 
@@ -3799,5 +3820,101 @@ describe('background.js', () => {
             assert.strictEqual(untouched[0].hybridState, undefined, 'unknown parts stay untouched');
         });
     });
+
+    describe('Researcher tools: indicator index, pivot and history (round 6)', () => {
+        beforeEach(() => {
+            context.__storeData.clear();
+        });
+
+        it('indexes the indicators of a message idempotently', async () => {
+            const iocs = { urls: ['https://evil.example/a'], domains: ['evil.example'], ips: ['203.0.113.5'], hashes: ['a'.repeat(64)], emails: ['a@b.example'] };
+            const first = await context.indexMessageIndicators({
+                headerMessageId: '<m1@example>', messageId: 1, subject: 'Test 1', date: '2026-10-01T10:00:00.000Z',
+                verdict: 'suspicious', score: 55, iocs: iocs
+            });
+            assert.strictEqual(first, 5);
+            const second = await context.indexMessageIndicators({
+                headerMessageId: '<m1@example>', messageId: 1, subject: 'Test 1', iocs: iocs
+            });
+            assert.strictEqual(second, 5);
+            assert.strictEqual(context.__storeData.size, 5, 're-indexing the same message overwrites instead of duplicating');
+        });
+
+        it('skips messages without header id or without indicators', async () => {
+            assert.strictEqual(await context.indexMessageIndicators({ headerMessageId: null, iocs: { domains: ['x.example'] } }), 0);
+            assert.strictEqual(await context.indexMessageIndicators({ headerMessageId: '<m2@x>', iocs: {} }), 0);
+            assert.strictEqual(context.__storeData.size, 0);
+        });
+
+        it('pivots one indicator across several messages, newest first', async () => {
+            await context.indexMessageIndicators({
+                headerMessageId: '<old@x>', messageId: 1, subject: 'Alte Nachricht', date: '2026-09-01T10:00:00.000Z',
+                verdict: 'clean', score: 0, iocs: { domains: ['evil.example'] }
+            });
+            await context.indexMessageIndicators({
+                headerMessageId: '<new@x>', messageId: 2, subject: 'Neue Nachricht', date: '2026-10-01T10:00:00.000Z',
+                verdict: 'malicious', score: 90, iocs: { domains: ['evil.example'], ips: ['203.0.113.5'] }
+            });
+            await context.indexMessageIndicators({
+                headerMessageId: '<other@x>', messageId: 3, subject: 'Anderes', date: '2026-10-02T10:00:00.000Z',
+                verdict: 'clean', score: 0, iocs: { domains: ['harmless.example'] }
+            });
+
+            const pivot = await context.pivotIndicator({ value: 'EVIL.example' });
+            assert.strictEqual(pivot.total, 2);
+            assert.deepEqual(pivot.matches.map((match) => match.messageHeader), ['<new@x>', '<old@x>']);
+            assert.deepStrictEqual(pivot.matches[0].kinds, ['domains'], 'the pivot reports the kind of the matched indicator');
+            assert.strictEqual(pivot.matches[0].verdict, 'malicious');
+
+            const unknown = await context.pivotIndicator({ value: 'not-seen.example' });
+            assert.strictEqual(unknown.total, 0);
+            assert.strictEqual((await context.pivotIndicator({ value: '   ' })).matches.length, 0);
+        });
+
+        it('searches the history by text, kind and verdict', async () => {
+            await context.indexMessageIndicators({
+                headerMessageId: '<h1@x>', messageId: 1, subject: 'Rechnung offen', date: '2026-10-01T09:00:00.000Z',
+                verdict: 'malicious', score: 88, iocs: { domains: ['paypa1.com'], hashes: ['b'.repeat(64)] }
+            });
+            await context.indexMessageIndicators({
+                headerMessageId: '<h2@x>', messageId: 2, subject: 'Newsletter', date: '2026-10-02T09:00:00.000Z',
+                verdict: 'clean', score: 0, iocs: { domains: ['news.example'] }
+            });
+
+            const all = await context.searchHistory({});
+            assert.strictEqual(all.totalMessages, 2, 'both messages are in the history');
+
+            const byText = await context.searchHistory({ query: 'paypa1' });
+            assert.strictEqual(byText.totalMessages, 1);
+            assert.strictEqual(byText.messages[0].messageHeader, '<h1@x>');
+            assert.ok(byText.messages[0].indicators.includes('paypa1.com'));
+
+            const bySubject = await context.searchHistory({ query: 'newsletter' });
+            assert.strictEqual(bySubject.totalMessages, 1);
+
+            const byVerdict = await context.searchHistory({ verdict: 'malicious' });
+            assert.strictEqual(byVerdict.totalMessages, 1);
+
+            const byKind = await context.searchHistory({ kind: 'hashes' });
+            assert.strictEqual(byKind.totalMessages, 1);
+            assert.strictEqual(byKind.messages[0].messageHeader, '<h1@x>');
+
+            const empty = await context.searchHistory({ query: 'gibt-es-nicht' });
+            assert.strictEqual(empty.totalMessages, 0);
+        });
+
+        it('clears the indicator index', async () => {
+            await context.indexMessageIndicators({ headerMessageId: '<c@x>', iocs: { domains: ['a.example'] } });
+            assert.strictEqual(context.__storeData.size, 1);
+            assert.strictEqual(await context.clearIndicatorIndex(), true);
+        });
+
+        it('keeps the index bounded per message', async () => {
+            const many = { domains: Array.from({ length: 500 }, (_, i) => 'd' + i + '.example') };
+            const written = await context.indexMessageIndicators({ headerMessageId: '<big@x>', iocs: many });
+            assert.strictEqual(written, 300, 'at most 300 indicators per message');
+        });
+    });
 });
+
 });

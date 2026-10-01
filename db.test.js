@@ -13,6 +13,9 @@ describe('db.js module', () => {
             objectStoreNames: { contains: () => false },
             createObjectStore: (name, options) => {
                 createObjectStoreCalled = true;
+                // The real API returns the new store, so the schema upgrade can add
+                // indexes to it (DB version 4: local indicator index).
+                return { createIndex: () => {} };
             }
         };
         context = {

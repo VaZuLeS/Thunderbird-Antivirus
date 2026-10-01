@@ -310,5 +310,11 @@
   },
   "selftestReportResult": {
     "message": "Result"
+  },
+  "selftestIndex": {
+    "message": "Local indicator index (write, pivot, delete)"
+  },
+  "selftestIndexSubject": {
+    "message": "Self-test probe"
   }
 }

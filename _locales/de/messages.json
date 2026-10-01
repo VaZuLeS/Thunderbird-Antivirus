@@ -310,5 +310,11 @@
   },
   "selftestReportResult": {
     "message": "Ergebnis"
+  },
+  "selftestIndex": {
+    "message": "Lokaler Indikator-Index (Schreiben, Pivot, Löschen)"
+  },
+  "selftestIndexSubject": {
+    "message": "Selbsttest-Sonde"
   }
 }

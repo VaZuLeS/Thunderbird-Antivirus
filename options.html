@@ -189,6 +189,41 @@
         </div>
     </section>
 
+    <section class="thundy-card" aria-labelledby="secHistoryTitle">
+        <div class="thundy-card__header">
+            <h2 class="thundy-card__title" id="secHistoryTitle">Verlauf &amp; Pivot (lokal)</h2>
+        </div>
+        <div class="thundy-card__body">
+            <p>Durchsucht den <strong>lokalen Indikator-Index</strong>: welche Nachrichten dieses Add-on bereits
+               gescannt hat, welche Indikatoren darin vorkamen und mit welchem Verdikt. Alles bleibt auf dem
+               Rechner; es werden keine Anfragen an Analyse-Dienste ausgelöst.</p>
+            <div class="thundy-toolbar">
+                <label for="historyQuery">Suche</label>
+                <input type="search" id="historyQuery" placeholder="Indikator oder Betreff" autocomplete="off">
+                <label for="historyKind">Art</label>
+                <select id="historyKind">
+                    <option value="any">alle</option>
+                    <option value="urls">URLs</option>
+                    <option value="domains">Domains</option>
+                    <option value="ips">IP-Adressen</option>
+                    <option value="hashes">Hashes</option>
+                    <option value="emails">E-Mail-Adressen</option>
+                </select>
+                <label for="historyVerdict">Verdikt</label>
+                <select id="historyVerdict">
+                    <option value="any">alle</option>
+                    <option value="clean">geprüft</option>
+                    <option value="unclear">unklar</option>
+                    <option value="suspicious">verdächtig</option>
+                    <option value="malicious">bösartig</option>
+                </select>
+                <button id="runHistorySearch" type="button" class="btn-primary">Suchen</button>
+                <span id="historyStatus" class="thundy-status thundy-hidden" aria-live="polite" role="status"></span>
+            </div>
+            <div id="historyResults" class="thundy-history" aria-live="polite"></div>
+        </div>
+    </section>
+
     <script src="db.js"></script>
     <script src="options.js"></script>
 </body>

@@ -409,6 +409,122 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Verlauf & Pivot (lokaler Indikator-Index)
+  // ---------------------------------------------------------------------------
+  const historyButton = document.getElementById('runHistorySearch');
+  const historyResults = document.getElementById('historyResults');
+  const historyStatus = document.getElementById('historyStatus');
+
+  function renderHistoryResults(result) {
+    if (!historyResults) return;
+    historyResults.textContent = '';
+    if (!result.messages || result.messages.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'thundy-empty';
+      empty.textContent = result.totalIndicators === 0
+        ? 'Der lokale Index ist noch leer – er füllt sich, während Nachrichten gescannt werden.'
+        : 'Keine Treffer für diese Suche.';
+      historyResults.appendChild(empty);
+      return;
+    }
+    const caption = document.createElement('p');
+    caption.className = 'thundy-note thundy-note--info';
+    caption.textContent = result.messages.length + ' Nachricht(en) von ' + result.totalMessages +
+      ' Treffern (Index: ' + result.totalIndicators + ' Indikatoren, lokal)';
+    historyResults.appendChild(caption);
+
+    const table = document.createElement('table');
+    table.className = 'thundy-table';
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    for (const label of ['Betreff', 'Datum', 'Verdikt', 'Indikatoren', 'Öffnen']) {
+      const th = document.createElement('th');
+      th.textContent = label;
+      headRow.appendChild(th);
+    }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    for (const message of result.messages) {
+      const row = document.createElement('tr');
+      const subjectCell = document.createElement('td');
+      subjectCell.textContent = message.subject || '(ohne Betreff)';
+      row.appendChild(subjectCell);
+      const dateCell = document.createElement('td');
+      dateCell.textContent = message.date ? new Date(message.date).toLocaleString('de-DE') : '–';
+      row.appendChild(dateCell);
+      const verdictCell = document.createElement('td');
+      const severity = message.verdict === 'malicious' ? 'critical'
+        : (message.verdict === 'suspicious' ? 'high' : (message.verdict === 'unclear' ? 'medium' : 'low'));
+      const badge = document.createElement('span');
+      badge.className = 'thundy-badge thundy-badge--' + severity;
+      badge.textContent = (message.verdict || 'unbekannt') + ' (' + (message.score || 0) + ')';
+      verdictCell.appendChild(badge);
+      row.appendChild(verdictCell);
+      const indicatorCell = document.createElement('td');
+      indicatorCell.className = 'thundy-mono';
+      indicatorCell.textContent = (message.indicators || []).join(', ');
+      row.appendChild(indicatorCell);
+      const actionCell = document.createElement('td');
+      const openButton = document.createElement('button');
+      openButton.type = 'button';
+      openButton.className = 'thundy-copy';
+      openButton.textContent = 'Öffnen';
+      openButton.addEventListener('click', async () => {
+        try {
+          if (browser.messageDisplay && typeof browser.messageDisplay.open === 'function' && message.messageHeader) {
+            await browser.messageDisplay.open({ headerMessageId: message.messageHeader });
+          }
+        } catch (error) {
+          openButton.textContent = 'Nicht möglich';
+        }
+      });
+      actionCell.appendChild(openButton);
+      row.appendChild(actionCell);
+      tbody.appendChild(row);
+    }
+    table.appendChild(tbody);
+    historyResults.appendChild(table);
+  }
+
+  async function runHistorySearch() {
+    if (!historyButton) return;
+    const query = document.getElementById('historyQuery') ? document.getElementById('historyQuery').value : '';
+    const kind = document.getElementById('historyKind') ? document.getElementById('historyKind').value : 'any';
+    const verdict = document.getElementById('historyVerdict') ? document.getElementById('historyVerdict').value : 'any';
+    historyButton.disabled = true;
+    if (historyStatus) {
+      historyStatus.classList.remove('thundy-hidden');
+      historyStatus.textContent = 'Suche läuft …';
+    }
+    try {
+      const response = await browser.runtime.sendMessage({ action: 'searchHistory', query: query, kind: kind, verdict: verdict });
+      if (!response || response.status !== 'success') {
+        throw new Error(response && response.message ? response.message : 'Suche fehlgeschlagen');
+      }
+      renderHistoryResults(response.data);
+      if (historyStatus) historyStatus.textContent = response.data.totalMessages + ' Nachricht(en) gefunden.';
+    } catch (error) {
+      if (historyStatus) historyStatus.textContent = 'Suche fehlgeschlagen: ' + error.message;
+    } finally {
+      historyButton.disabled = false;
+    }
+  }
+
+  if (historyButton) {
+    historyButton.addEventListener('click', runHistorySearch);
+  }
+  const historyQueryField = document.getElementById('historyQuery');
+  if (historyQueryField) {
+    historyQueryField.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        runHistorySearch();
+      }
+    });
+  }
+
   document.getElementById('clearCache').addEventListener('click', async function() {
     if (!confirm('Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse.')) {
         return;
@@ -424,11 +540,14 @@ document.addEventListener('DOMContentLoaded', function() {
     statusSpan.className = 'text-success ml-2';
 
     try {
-        const db = await openDB('thunderbird_av', 3);
+        const db = await openDB('thunderbird_av', 4);
         const cleared = await clearStore(db, 'hybridanalysis');
+        // Der lokale Indikator-Index (Pivot/Verlauf) enthält Nachrichtenbezug und
+        // wird beim Leeren des Caches mit entfernt.
+        const indexCleared = await clearStore(db, 'iocs');
 
-        if (cleared) {
-            statusSpan.textContent = 'Cache erfolgreich geleert.';
+        if (cleared || indexCleared) {
+            statusSpan.textContent = 'Cache und lokaler Indikator-Index erfolgreich geleert.';
         } else {
             statusSpan.textContent = 'Datenbank existiert noch nicht oder ist bereits leer.';
         }

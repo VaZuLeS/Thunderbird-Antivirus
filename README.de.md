@@ -13,12 +13,12 @@ minimal notwendigen Daten an externe Analysedienste.
 | Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.5 – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.6 – siehe [CHANGELOG.md](CHANGELOG.md) |
 | Lizenz | MIT – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.5 |
+| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.6 |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
 | Sprachen | Manifest-Strings und Banner lokalisiert (Englisch, Deutsch – `_locales/`); Options- und Popup-Oberfläche derzeit nur auf Deutsch |
 
@@ -40,6 +40,10 @@ minimal notwendigen Daten an externe Analysedienste.
   Sie wird **aktualisiert** (läuft → übermittelt/Job-ID → Ergebnis mit Verdikt und Score), statt neue
   Meldungen zu erzeugen; ein Klick auf die Benachrichtigung öffnet die zugehörige Nachricht, und es
   wird nur der Host genannt (kein vollständiger URL-Text). Fehler werden weiterhin separat gemeldet.
+- **Forscher-Werkzeuge (ab 1.6.6).** Jeder Scan füllt einen **lokalen Indikator-Index** (URLs, Domains, IPs,
+  Hashes, E-Mail-Adressen mit Betreff, Datum, Verdikt und Score). Von jedem IOC aus lässt sich ein **Pivot**
+  starten: In welchen anderen erfassten Nachrichten kommt er vor? Zusätzlich bietet die Optionsseite eine
+  **Verlaufssuche** nach Text, Indikatorart und Verdikt. Alles bleibt lokal; „Cache leeren“ entfernt den Index.
 - **IP-Reputation (optional):** Die aus den `Received`-Headern extrahierten Mailserver-IPs können über VirusTotal
   oder AbuseIPDB geprüft werden.
 

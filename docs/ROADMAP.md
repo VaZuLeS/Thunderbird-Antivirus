@@ -20,6 +20,8 @@ nicht, sondern ordnet sie: **was zuerst, warum, und was daran blockiert**.
 | T5 | **Performance/Inkrementalität der Analyse** | ⚪ offen | weniger Anbieter-Anfragen, schnellere Dossiers | 1 Tag |
 | T6 | **Release-Automatisierung** | 🟡 teilweise (Workflow-Spiegel) | wiederholbare Releases, weniger Handgriffe | 0,5 Tage |
 | T7 | **Nach der Freigabe** (Review-Betreuung, Versionen, Store-Pflege) | ⚪ laufend | hält die Listung gesund | laufend |
+| T8 | **Forscher-Werkzeuge I** (Pivot, Verlaufssuche, lokaler Indikator-Index) | 🟢 in 1.6.6 umgesetzt | Triage über Nachrichten hinweg | 1 Tag |
+| T9 | **Forscher-Werkzeuge II** (Sammel-Scan, Case-Notizen, ZIP-Innenansicht, Evidence-Hash) | ⚪ geplant | nächster Ausbauschritt des Funktionsumfangs | 2–3 Tage |
 
 Legende: 🟢 erledigt · 🟡 teilweise · ⚪ offen
 
@@ -96,9 +98,34 @@ unveröffentlicht bleibt) und Doku-Drift regelmäßig prüfen (`test/manifest.te
 
 ---
 
+## 8a. T8 — Forscher-Werkzeuge I (umgesetzt in 1.6.6)
+
+- **Lokaler Indikator-Index** (DB-Version 4, Store `iocs`): pro gescannter Nachricht werden URLs,
+  Domains, IP-Adressen, Hashes und E-Mail-Adressen mit Betreff, Datum, Verdikt und Score abgelegt —
+  ausschließlich lokal, maximal 300 Einträge je Nachricht.
+- **Pivot:** Zu jedem IOC im Popup zeigt ein Knopf, in welchen anderen erfassten Nachrichten derselbe
+  Indikator vorkommt; ein Klick öffnet die Nachricht.
+- **Verlaufssuche:** eigener Abschnitt in den Einstellungen (Text, Indikatorart, Verdikt) mit
+  Ergebnistabelle und Öffnen-Aktion.
+- **Löschweg:** „Cache leeren“ entfernt Index und Nachweis-Cache; der Selbsttest prüft den
+  Index-Roundtrip und damit die Datenbankmigration in der echten Installation.
+
+## 8b. T9 — Forscher-Werkzeuge II (geplant, nächster Ausbau)
+
+| Aufgabe | Inhalt | Nutzen | Aufwand |
+|---|---|---|---|
+| T9-1 | **Sammel-Scan** markierter Nachrichten aus der Threadliste (Kontextmenü `message_list`), Fortschritt per Benachrichtigung, Ergebnisübersicht | Triage ganzer Ordner/Auswahlen statt einzeln | 1 Tag |
+| T9-2 | **Case-Notizen & Bewertung** je Nachricht (lokal, DB-Version 5) inkl. Export | Nachvollziehbarkeit der Triage-Entscheidung | 0,5 Tage |
+| T9-3 | **ZIP-Innenansicht** (Zentralverzeichnis lesen: Dateinamen, Größen, verschlüsselt?) ohne Auspacken | verschachtelte Anhänge bewerten, ohne sie zu öffnen | 1 Tag |
+| T9-4 | **Evidence-Hash**: kanonischer JSON-Hash des Dossiers im Bericht und im STIX-Bundle | Reproduzierbarkeit/Chain of Custody | 0,5 Tage |
+
+Randbedingung für alle: **keine neuen Berechtigungen** (T9-1 nutzt `messages.*` + `menus`, T9-2 die
+vorhandene DB, T9-3 reine Parser, T9-4 nur Hashing) und weiterhin ausschließlich lokale Verarbeitung.
+
 ## 9. Empfohlene Reihenfolge
 
 1. **T1 Schritte 1–3** (manuell, sobald eine Thunderbird-Instanz verfügbar ist) → GO.
+   Danach **T9** als nächster funktionaler Ausbau (Sammel-Scan, Case-Notizen, ZIP-Ansicht, Evidence-Hash).
 2. **T3 a11y** (klein, macht die Forscher-Ansicht für alle bedienbar).
 3. **T4 i18n** (größter Einzelposten, hebt die Reichweite).
 4. **T5 Performance** (Feinschliff nach dem ersten Store-Feedback).

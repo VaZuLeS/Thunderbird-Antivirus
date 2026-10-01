@@ -369,3 +369,34 @@ die Nachrichtengrenze validieren und die Angriffsflächen dokumentieren.
 | S2-04 | **erledigt** | `docs/threat_model.md` (10 Szenarien, Nachweistabelle), `docs/ROADMAP.md` (T1–T7) |
 | S2-05 | **erledigt** | Version 1.6.5, Tag `v1.6.5`, Release mit `thundy-av-1.6.5.xpi` (SHA-256 `9311dbd9…`), D14 |
 
+---
+
+## 16. Runde 6 — Thema T8 „Funktionsumfang aus Forschersicht“ (Version 1.6.6)
+
+Neue Befunde **T8-1 … T8-4** (Bezug: §0.6 der Problemanalyse). Ziel: Triage **über Nachrichten hinweg**
+ermöglichen (Pivot, Verlauf) — ohne neue Berechtigungen und ohne zusätzliche Netzwerkzugriffe.
+
+| ID | Aufgabe | Bezug | DoD (Nachweis) | Aufwand | Abhängig von |
+|---|---|---|---|---|---|
+| **F-01** | **Datenbankmigration:** DB-Version 4 mit Store `iocs` (Schlüssel aus Art, Wert und Nachrichten-ID, Indizes auf Art/Wert/Nachricht); alle `openDB`-Aufrufe angeglichen | T8-1 | `db.test.js` grün; Selbsttest prüft die Migration | 2 h | — |
+| **F-02** | **Indexierung:** `indexMessageIndicators()` bei jedem Scan (`evaluateAndInjectThreats`) und beim Dossier-Aufbau; Begrenzung auf 300 Einträge je Nachricht | T8-1 | Tests: idempotent, ohne Kopf-ID/ohne Indikatoren übersprungen, Obergrenze greift | 2 h | F-01 |
+| **F-03** | **Pivot:** `pivotIndicator()` (gruppiert nach Nachricht, neueste zuerst) + Knopf je IOC im Popup + Trefferliste mit Öffnen-Aktion | T8-1 | Tests für mehrere Nachrichten, Groß-/Kleinschreibung, unbekannter Wert; UI-Test in `test/researcher-view.test.js`-Umfeld | 3 h | F-02 |
+| **F-04** | **Verlaufssuche:** `searchHistory()` (Text/Art/Verdikt) + Optionsabschnitt „Verlauf & Pivot“ mit Ergebnistabelle | T8-2 | Tests für alle Filter; Options-Tests bleiben grün | 3 h | F-02 |
+| **F-05** | **Löschweg & Datenschutz:** „Cache leeren“ entfernt `hybridanalysis` **und** `iocs`; Datenschutzerklärung §4.1 (DE) + EN-Abschnitt | T8-3 | Test (beide Stores), Doku ergänzt | 2 h | F-01 |
+| **F-06** | **Selbsttest-Erweiterung:** Index-Roundtrip (Schreiben → Pivot → Löschen) als Nachweis der Migration | T8-4 | Neuer Check `index.roundtrip`; Test im Hintergrund-Suite | 1 h | F-01 |
+| **F-07** | **Doku & Release 1.6.6:** Roadmap T8/T9, Reviewer-Notes §8.7b, README (EN/DE), CHANGELOG, STATUS, D15, Tag/Asset | alle | `npm run check` Exit 0; Store-Gate C1–C4 + C7 PASS | 2 h | F-01 … F-06 |
+
+**Summe:** ≈ 15 h (2 Personentage).
+
+### Ausführungsstand Runde 6 (2026-10-01)
+
+| ID | Status | Nachweis |
+|---|---|---|
+| F-01 | **erledigt** | `db.js` (Version 4, `iocs`), alle Aufrufer; Selbsttest-Check |
+| F-02 | **erledigt** | `indexMessageIndicators()` in `evaluateAndInjectThreats` + Dossier; 3 Tests |
+| F-03 | **erledigt** | `pivotIndicator()`, Pivot-Knöpfe und Trefferliste im Popup; 2 Tests |
+| F-04 | **erledigt** | `searchHistory()`, Optionsabschnitt; 1 Test mit allen Filtern |
+| F-05 | **erledigt** | `clearIndicatorIndex()` + Options-Handler (Test erwartet beide Stores); Policy DE/EN |
+| F-06 | **erledigt** | Check `index.roundtrip` im Selbsttest |
+| F-07 | **erledigt** | Roadmap §8a/§8b, Reviewer-Notes §8.7b, READMEs, CHANGELOG, STATUS, D15, Tag `v1.6.6` |
+

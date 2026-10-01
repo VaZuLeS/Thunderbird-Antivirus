@@ -211,13 +211,14 @@ describe('options.js', () => {
         context.openDB = async (name, version) => {
             openDBCalled = true;
             assert.strictEqual(name, 'thunderbird_av');
-            assert.strictEqual(version, 3);
+            assert.strictEqual(version, 4);
             return { db: true };
         };
 
+        const clearedStores = [];
         context.clearStore = async (db, storeName) => {
             clearStoreCalled = true;
-            assert.strictEqual(storeName, 'hybridanalysis');
+            clearedStores.push(storeName);
             return true;
         };
 
@@ -230,12 +231,13 @@ describe('options.js', () => {
         await new Promise(resolve => setTimeout(resolve, 10));
 
         assert.strictEqual(openDBCalled, true);
+        assert.deepStrictEqual(clearedStores, ['hybridanalysis', 'iocs'], 'cache and indicator index are cleared');
         assert.strictEqual(clearStoreCalled, true);
         assert.strictEqual(clearBtn.disabled, false);
         assert.strictEqual(clearBtn.textContent, 'Cache leeren');
 
         const statusSpan = context.document.getElementById('clearCacheStatus');
-        assert.strictEqual(statusSpan.textContent, 'Cache erfolgreich geleert.');
+        assert.strictEqual(statusSpan.textContent, 'Cache und lokaler Indikator-Index erfolgreich geleert.');
         assert.strictEqual(statusSpan.className, 'text-success ml-2');
         assert.strictEqual(statusSpan.style.display, 'none');
     });

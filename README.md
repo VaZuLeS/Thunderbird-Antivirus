@@ -13,12 +13,12 @@ submits the minimum data required to external analysis services.
 | Add-on name | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.5 – see [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.6 – see [CHANGELOG.md](CHANGELOG.md) |
 | License | MIT – see [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.5 |
+| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.6 |
 | Requires | Thunderbird 140.0 or newer (Manifest V3) |
 | Strings | Manifest strings and banners are localized (English, German – `_locales/`); the options page and the popup are currently German only |
 
@@ -40,6 +40,10 @@ submits the minimum data required to external analysis services.
   (running → submitted/job ID → result with verdict and score) instead of producing new messages, a
   click on the notification opens the related message, and only the host is shown (never the full
   URL). Errors are still reported separately.
+- **Researcher tools (since 1.6.6).** Every scan feeds a **local indicator index** (URLs, domains, IPs, hashes,
+  e-mail addresses together with subject, date, verdict and score). From any IOC you can **pivot**: which other
+  recorded messages contain it? The options page adds a **history search** by text, indicator kind and verdict.
+  Everything stays on the machine; "Clear cache" removes the index.
 - **IP reputation (optional):** the sending mail servers extracted from `Received` headers can be checked against
   VirusTotal or AbuseIPDB.
 

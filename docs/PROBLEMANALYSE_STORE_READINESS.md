@@ -261,6 +261,43 @@ offen bleiben C5/C6). Details: §15 des Aufgabenplans, D14 in [decisions.md](dec
 
 ---
 
+## 0.6 Update 2026-10-01 (Runde 6) — Funktionsumfang aus Forschersicht (Thema T8)
+
+Der Auftrag war, den **Funktionsumfang** aus Sicht eines IT-Sicherheitsforschers zu erweitern. Die Runde
+priorisierte die Lücke mit dem größten Analyse-Nutzen bei **null neuen Berechtigungen**: Nachrichten
+ließen sich bisher nur einzeln bewerten; es gab keine Verbindung zwischen Nachrichten.
+
+### T8-1 — Keine Triage über Nachrichten hinweg (hoch)
+**Belege (vorher):** Indikatoren wurden je Nachricht berechnet und im Dossier angezeigt, aber nirgends
+verknüpft. Auf die zentrale Analystenfrage „in welchen anderen Nachrichten kommt diese Domain/dieser Hash
+vor?“ gab es keine Antwort; jede Nachricht wurde isoliert bewertet.
+**Fix:** Lokaler **Indikator-Index** (DB-Version 4, Store `iocs`), gefüllt bei jedem Scan und beim
+Dossier-Aufbau; **Pivot** je Indikator im Popup mit Trefferliste und Öffnen-Aktion.
+
+### T8-2 — Keine Verlaufssuche (mittel)
+**Belege (vorher):** Es gab keine Möglichkeit, frühere Bewertungen zu durchsuchen (z. B. „alles
+Verdächtige der letzten Woche“, „wo kam diese IP vor?“).
+**Fix:** Abschnitt **„Verlauf & Pivot“** in den Einstellungen mit Suche nach Text, Indikatorart
+(URLs/Domains/IPs/Hashes/Adressen) und Verdikt, Ergebnistabelle und Öffnen-Aktion.
+
+### T8-3 — Index ohne Löschweg wäre ein Datenschutzproblem (mittel)
+**Belege (vorher):** „Cache leeren“ leerte nur den Nachweis-Cache; ein neuer Index hätte sonst dauerhaft
+Nachrichtenbezug behalten, ohne dass der Nutzer ihn entfernen kann.
+**Fix:** Das Leeren entfernt **beide** Stores und meldet das; die Datenschutzerklärung beschreibt Inhalt,
+Zweck, Datenbasis (nur selbst gescannte Nachrichten) und Löschweg (neue Abschnitte §4.1 bzw. EN).
+
+### T8-4 — Migration nicht überprüfbar (mittel)
+**Belege (vorher):** Eine Schema-Erhöhung (Version 3 auf 4) lässt sich statisch nicht belegen; ein Fehler
+würde erst beim Nutzer auftreten.
+**Fix:** Der **Selbsttest** prüft jetzt den Index-Roundtrip (Schreiben, Pivot, Löschen) und damit die
+Migration in der laufenden Installation.
+
+**Status:** T8-1 … T8-4 umgesetzt und mit **1.6.6** veröffentlicht (474 Tests, Store-Gate C1–C4 + C7 PASS,
+offen bleiben C5/C6). Nächster funktionaler Ausbau als **T9** geplant (Sammel-Scan, Case-Notizen,
+ZIP-Innenansicht, Evidence-Hash — siehe Roadmap §8b). Details: §16 des Aufgabenplans, D15.
+
+---
+
 ## 1. Zielbild „store-ready“
 
 „Store-ready“ heißt hier: das Add-on erfüllt die ATN-Einreichungsanforderungen und ist in der deklarierten

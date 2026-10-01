@@ -268,6 +268,24 @@ a test account instead of using real mail.
 
 The full end-to-end protocol for the live test is described in `docs/live_test_protocol.md`.
 
+### 8.7b Local indicator index, pivot and history search (since 1.6.6)
+
+For every message it scans, the add-on writes the indicators it found (URLs, domains, IP addresses,
+SHA-256 hashes, e-mail addresses) plus subject, date, verdict and score into a **local** IndexedDB store
+(`thunderbird_av` -> `iocs`, database version 4). Message bodies are never stored, and the index is
+limited to 300 entries per message.
+
+- **Pivot:** each IOC in the popup has a "Pivot" button that lists the other recorded messages
+  containing that indicator (newest first); "Open" uses `messageDisplay.open({ headerMessageId })`.
+- **History search:** options page section "Verlauf & Pivot" with text, kind and verdict filters.
+- **Data basis:** only messages this add-on has scanned itself - nothing is fetched from the network.
+- **Deletion:** the "Clear cache" button empties both stores (`hybridanalysis` and `iocs`).
+- **No new permissions:** everything uses `messagesRead` and `storage`.
+
+Reviewer test: open two messages from `testdata/` that share a domain, scan both, then pivot on that
+domain in the popup or search for it in the options - both must be listed. Afterwards clear the cache and
+repeat: the history must be empty.
+
 ### 8.7a What "disarm HTML" does (and does not do)
 
 The button sanitises an HTML attachment **locally** and saves the result through the download manager:

@@ -169,13 +169,20 @@ if (!externalAnalysisConsent && apiContainer) {
 try {
 
     // Öffnen Sie die Datenbank
-    let openRequest = indexedDB.open("thunderbird_av", 3);
+    let openRequest = indexedDB.open("thunderbird_av", 4);
 
     openRequest.onupgradeneeded = function (e) {
         let db = e.target.result;
 
         if (!db.objectStoreNames.contains('hybridanalysis')) {
             db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
+        }
+        // Same schema as db.js (version 4): local indicator index + case notes.
+        if (!db.objectStoreNames.contains('iocs')) {
+            const store = db.createObjectStore('iocs', { keyPath: 'key' });
+            store.createIndex('value', 'value', { unique: false });
+            store.createIndex('kind', 'kind', { unique: false });
+            store.createIndex('messageHeader', 'messageHeader', { unique: false });
         }
     };
 
@@ -1366,14 +1373,25 @@ function renderResearchIocs(dossier) {
         ['Hashes (SHA-256)', iocs.hashes || []],
         ['E-Mail-Adressen', iocs.emails || []]
     ];
+    const bucketKinds = { 'URLs': 'urls', 'Domains': 'domains', 'IP-Adressen': 'ips', 'Hashes (SHA-256)': 'hashes', 'E-Mail-Adressen': 'emails' };
+    const pivotContainer = createEl('div', 'thundy-pivot-results');
+    pivotContainer.id = 'pivot-results';
+    pivotContainer.setAttribute('aria-live', 'polite');
     let total = 0;
     for (const [label, values] of groups) {
+        const bucketKind = bucketKinds[label] || null;
         if (values.length === 0) continue;
         total += values.length;
         body.appendChild(createEl('h3', 'thundy-subtitle', label + ' (' + values.length + ')'));
         const list = createEl('div', 'thundy-ioc-list');
         for (const value of values.slice(0, 25)) {
             list.appendChild(createCopyableValue(value, label));
+            const pivotButton = createEl('button', 'thundy-copy', 'Pivot');
+            pivotButton.type = 'button';
+            pivotButton.title = 'Andere Nachrichten mit diesem Indikator suchen (lokal)';
+            pivotButton.setAttribute('aria-label', 'Pivot für ' + value + ' starten');
+            pivotButton.addEventListener('click', () => { runIndicatorPivot(value, bucketKind, pivotContainer); });
+            list.appendChild(pivotButton);
         }
         if (values.length > 25) {
             list.appendChild(createEl('p', 'thundy-muted', '… ' + (values.length - 25) + ' weitere im Export'));
@@ -1382,11 +1400,73 @@ function renderResearchIocs(dossier) {
     }
     if (total === 0) {
         body.appendChild(createEl('p', 'thundy-empty', 'Keine Indikatoren erkannt.'));
+    } else {
+        body.appendChild(createEl('p', 'thundy-muted',
+            'Pivot durchsucht den lokalen Index (nur Nachrichten, die dieses Add-on bereits gescannt hat).'));
     }
+    body.appendChild(pivotContainer);
     return section;
 }
 
-/** MITRE-ATT&CK-Zuordnung – ausdrücklich heuristisch. */
+/**
+ * Pivot: zeigt, in welchen anderen Nachrichten ein Indikator vorkommt.
+ * Rein lokal (Indikator-Index im Hintergrundskript).
+ */
+async function runIndicatorPivot(value, kind, container) {
+    if (!container) return;
+    container.textContent = '';
+    container.appendChild(createEl('p', 'thundy-muted', 'Suche nach „' + value + '“ im lokalen Index …'));
+    try {
+        const response = await browser.runtime.sendMessage({ action: 'pivotIndicator', value: value, kind: kind || null });
+        if (!response || response.status !== 'success') {
+            throw new Error(response && response.message ? response.message : 'Pivot fehlgeschlagen');
+        }
+        renderPivotResults(response.data, container);
+    } catch (e) {
+        container.textContent = '';
+        container.appendChild(createEl('p', 'thundy-note thundy-note--warn', 'Pivot nicht möglich: ' + e.message));
+    }
+}
+
+function renderPivotResults(result, container) {
+    container.textContent = '';
+    if (!result.matches || result.matches.length === 0) {
+        container.appendChild(createEl('p', 'thundy-empty',
+            'Dieser Indikator kommt in keiner anderen erfassten Nachricht vor (Datenbasis: lokal indexierte Scans).'));
+        return;
+    }
+    container.appendChild(createEl('p', 'thundy-note thundy-note--info',
+        result.matches.length + ' Nachricht(en) mit diesem Indikator (lokal, neueste zuerst):'));
+    container.appendChild(createTable(
+        ['Betreff', 'Datum', 'Verdikt', 'Score', 'Art', 'Aktion'],
+        result.matches.map((match) => {
+            const openButton = createEl('button', 'thundy-copy', 'Öffnen');
+            openButton.type = 'button';
+            openButton.addEventListener('click', async () => {
+                try {
+                    if (browser.messageDisplay && typeof browser.messageDisplay.open === 'function' && match.messageHeader) {
+                        await browser.messageDisplay.open({ headerMessageId: match.messageHeader });
+                    }
+                } catch (e) {
+                    openButton.textContent = 'Nicht möglich';
+                }
+            });
+            const verdictSeverity = match.verdict === 'malicious' ? 'critical'
+                : (match.verdict === 'suspicious' ? 'high' : (match.verdict === 'unclear' ? 'medium' : 'low'));
+            const verdictCell = createEl('span', 'thundy-chip-row');
+            verdictCell.appendChild(createBadge(verdictSeverity, VERDICT_LABELS[match.verdict] || match.verdict || 'unbekannt'));
+            return [
+                match.subject || '(ohne Betreff)',
+                match.date ? new Date(match.date).toLocaleString('de-DE') : '–',
+                verdictCell,
+                String(match.score || 0),
+                (match.kinds || []).join(', '),
+                openButton
+            ];
+        })
+    ));
+}
+
 function renderResearchMitre(dossier) {
     const { section, body } = createSection('research-mitre', 'MITRE ATT&CK (heuristisch)');
     const techniques = dossier.mitre || [];

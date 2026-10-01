@@ -82,6 +82,8 @@ const I18N_FALLBACKS = {
     selftestProviderPermissionMissing: 'Host permission missing for',
     selftestConsentNotice: 'External analysis is switched off',
     selftestConsentNoticeDetail: 'Provider keys are configured but the global consent is off – nothing is transmitted.',
+    selftestIndex: 'Local indicator index (write, pivot, delete)',
+    selftestIndexSubject: 'Self-test probe',
     selftestNote: 'All checks run locally on synthetic data; nothing is transmitted. The visual appearance of the banners and the permission dialogs still have to be checked by hand (docs/live_test_protocol.md).',
     selftestReportTitle: 'Self-test report',
     selftestReportStarted: 'Started',
@@ -259,7 +261,7 @@ let sharedDBPromise = null;
 
 function getSharedDB() {
     if (!sharedDBPromise) {
-        sharedDBPromise = openDB("thunderbird_av", 3);
+        sharedDBPromise = openDB("thunderbird_av", 4);
     }
     return sharedDBPromise;
 }
@@ -1362,6 +1364,26 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
 async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
   const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache });
   const threat = calculateThreatScore(message.author, urls, options);
+  // Lokaler Indikator-Index für Pivot/Verlauf (kein Netzwerkzugriff).
+  try {
+    let header = message;
+    if (!header || header.headerMessageId === undefined) {
+      try { header = await browser.messages.get(message.id); } catch (e) { header = null; }
+    }
+    if (header && header.headerMessageId) {
+      await indexMessageIndicators({
+        headerMessageId: header.headerMessageId,
+        messageId: header.id !== undefined ? header.id : message.id,
+        subject: header.subject || '',
+        date: header.date ? new Date(header.date).toISOString() : null,
+        verdict: threat.verdict,
+        score: threat.score,
+        iocs: extractIocs(messageText, filteredUrls)
+      });
+    }
+  } catch (e) {
+    Logger.warn('Indicator indexing failed', e);
+  }
   await injectThreatBanner(tab.id, threat);
   return threat;
 }
@@ -2491,6 +2513,22 @@ async function buildResearchDossier(messageId) {
         parsedUrlCache: parseCache
     });
 
+    const iocs = extractIocs(messageText, urls);
+    // Auch der Dossier-Aufruf pflegt den lokalen Indikator-Index.
+    try {
+      await indexMessageIndicators({
+        headerMessageId: header.headerMessageId,
+        messageId: header.id,
+        subject: header.subject || '',
+        date: header.date ? new Date(header.date).toISOString() : null,
+        verdict: threat.verdict,
+        score: threat.score,
+        iocs: iocs
+      });
+    } catch (e) {
+      Logger.warn('Indicator indexing failed for the dossier', e);
+    }
+
     const sender = {
         address: senderEmail,
         domain: senderDomain,
@@ -2546,7 +2584,7 @@ async function buildResearchDossier(messageId) {
         sender: sender,
         attachments: enrichedAttachments,
         links: enrichedLinks,
-        iocs: extractIocs(messageText, urls),
+        iocs: iocs,
         risk: {
             score: threat.score,
             rawScore: threat.rawScore,
@@ -2978,6 +3016,24 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     mimeType: 'text/plain'
                 }))
                 .then(res => sendResponse({ status: 'success', data: res }))
+                .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
+            return true;
+
+        case "pivotIndicator":
+            pivotIndicator({ value: request.value, kind: request.kind || null })
+                .then(result => sendResponse({ status: 'success', data: result }))
+                .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
+            return true;
+
+        case "searchHistory":
+            searchHistory({ query: request.query, kind: request.kind, verdict: request.verdict })
+                .then(result => sendResponse({ status: 'success', data: result }))
+                .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
+            return true;
+
+        case "clearIndicatorIndex":
+            clearIndicatorIndex()
+                .then(result => sendResponse({ status: 'success', data: { cleared: result } }))
                 .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
             return true;
 
@@ -3494,6 +3550,150 @@ async function pollUrlscanIoResult(uuid) {
 }
 
 // ---------------------------------------------------------------------------
+// Lokaler Indikator-Index: Pivot und Verlaufssuche
+//
+// Alles bleibt lokal (IndexedDB, Store `iocs`, DB-Version 4). Ein Eintrag pro
+// Indikator und Nachricht, damit derselbe Indikator in vielen Nachrichten
+// gefunden werden kann. Es werden nur Indikatoren indiziert, die das Add-on
+// ohnehin beim Scannen sieht; kein Netzwerkzugriff.
+// ---------------------------------------------------------------------------
+const IOC_KINDS = ['urls', 'domains', 'ips', 'hashes', 'emails'];
+const MAX_INDEXED_INDICATORS_PER_MESSAGE = 300;
+
+function indicatorKey(kind, value, headerMessageId) {
+    return kind + '|' + value + '|' + (headerMessageId || 'unknown');
+}
+
+/**
+ * Schreibt die Indikatoren einer Nachricht in den lokalen Index (idempotent).
+ */
+async function indexMessageIndicators({ headerMessageId, messageId = null, subject = '', date = null, verdict = null, score = 0, iocs = {} }) {
+    if (!headerMessageId) return 0;
+    const entries = [];
+    for (const kind of IOC_KINDS) {
+        for (const value of (iocs[kind] || [])) {
+            if (entries.length >= MAX_INDEXED_INDICATORS_PER_MESSAGE) break;
+            entries.push({
+                key: indicatorKey(kind, value, headerMessageId),
+                kind: kind,
+                value: String(value),
+                messageHeader: headerMessageId,
+                messageId: messageId,
+                subject: subject || '',
+                date: date || null,
+                verdict: verdict || null,
+                score: score || 0,
+                indexedAt: new Date().toISOString()
+            });
+        }
+    }
+    if (entries.length === 0) return 0;
+    try {
+        const db = await getSharedDB();
+        for (const entry of entries) {
+            await putToStore(db, 'iocs', entry);
+        }
+        return entries.length;
+    } catch (e) {
+        Logger.warn('Could not write the local indicator index', e);
+        return 0;
+    }
+}
+
+/** Liest alle indizierten Indikatoren (Pivot/Verlauf). */
+async function readIndicatorIndex() {
+    try {
+        const db = await getSharedDB();
+        return await getAllFromStore(db, 'iocs');
+    } catch (e) {
+        Logger.warn('Could not read the local indicator index', e);
+        return [];
+    }
+}
+
+/**
+ * Pivot: „Wo kommt dieser Indikator sonst noch vor?" — gruppiert nach Nachricht.
+ */
+async function pivotIndicator({ value, kind = null, limit = 50 } = {}) {
+    const needle = String(value || '').trim().toLowerCase();
+    if (!needle) return { value: needle, kind: kind, matches: [], total: 0 };
+    const entries = await readIndicatorIndex();
+    const matches = new Map();
+    for (const entry of entries) {
+        if (kind && entry.kind !== kind) continue;
+        if (String(entry.value).toLowerCase() !== needle) continue;
+        const key = entry.messageHeader || 'unknown';
+        if (!matches.has(key)) {
+            matches.set(key, {
+                messageHeader: entry.messageHeader,
+                messageId: entry.messageId,
+                subject: entry.subject,
+                date: entry.date,
+                verdict: entry.verdict,
+                score: entry.score,
+                kinds: new Set()
+            });
+        }
+        matches.get(key).kinds.add(entry.kind);
+    }
+    const results = Array.from(matches.values())
+        .map((match) => Object.assign({}, match, { kinds: Array.from(match.kinds) }))
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    return { value: needle, kind: kind, matches: results.slice(0, limit), total: results.length };
+}
+
+/**
+ * Verlaufssuche: filtert den Index nach Suchtext, Indikatorart und Verdikt.
+ */
+async function searchHistory({ query = '', kind = 'any', verdict = 'any', limit = 100 } = {}) {
+    const needle = String(query || '').trim().toLowerCase();
+    const entries = await readIndicatorIndex();
+    const grouped = new Map();
+    for (const entry of entries) {
+        if (kind !== 'any' && entry.kind !== kind) continue;
+        if (verdict !== 'any' && (entry.verdict || '') !== verdict) continue;
+        const haystack = (entry.value + ' ' + entry.subject).toLowerCase();
+        if (needle && !haystack.includes(needle)) continue;
+        const key = entry.messageHeader || 'unknown';
+        if (!grouped.has(key)) {
+            grouped.set(key, {
+                messageHeader: entry.messageHeader,
+                messageId: entry.messageId,
+                subject: entry.subject,
+                date: entry.date,
+                verdict: entry.verdict,
+                score: entry.score,
+                indicators: []
+            });
+        }
+        const record = grouped.get(key);
+        if (record.indicators.length < 10) record.indicators.push(entry.value);
+    }
+    const results = Array.from(grouped.values())
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    return {
+        query: needle,
+        kind: kind,
+        verdict: verdict,
+        messages: results.slice(0, limit),
+        totalMessages: results.length,
+        totalIndicators: entries.length
+    };
+}
+
+/** Leert den Indikator-Index (Teil von „Cache leeren“). */
+async function clearIndicatorIndex() {
+    try {
+        const db = await getSharedDB();
+        await clearStore(db, 'iocs');
+        return true;
+    } catch (e) {
+        Logger.warn('Could not clear the local indicator index', e);
+        return false;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Message boundary hardening
 //
 // Everything the popup, the options page and the injected banners send goes
@@ -3504,7 +3704,8 @@ async function pollUrlscanIoResult(uuid) {
 const MESSAGE_ACTIONS = new Set([
     'uploadAttachment', 'scanUrl', 'checkLinkState', 'downloadDisarmed',
     'requestScan', 'getResearchDossier', 'saveResearchExport',
-    'runSelfTest', 'saveSelfTestReport'
+    'runSelfTest', 'saveSelfTestReport',
+    'pivotIndicator', 'searchHistory', 'clearIndicatorIndex'
 ]);
 const MAX_EXPORT_BYTES = 5 * 1024 * 1024;
 const ALLOWED_EXPORT_MIME_TYPES = new Set(['application/json', 'text/csv', 'text/plain']);
@@ -3555,6 +3756,18 @@ function validateRequest(request) {
             return null;
         case 'checkLinkState':
             if (typeof request.url !== 'string' || request.url === '') return 'invalid_url';
+            return null;
+        case 'pivotIndicator':
+            if (typeof request.value !== 'string' || request.value.trim() === '') return 'invalid_indicator';
+            if (request.kind !== undefined && request.kind !== null && !IOC_KINDS.includes(request.kind)) return 'invalid_kind';
+            return null;
+        case 'searchHistory':
+            if (request.query !== undefined && typeof request.query !== 'string') return 'invalid_query';
+            if (request.kind !== undefined && request.kind !== 'any' && !IOC_KINDS.includes(request.kind)) return 'invalid_kind';
+            if (request.verdict !== undefined && request.verdict !== 'any'
+                && !['clean', 'unclear', 'suspicious', 'malicious'].includes(request.verdict)) return 'invalid_verdict';
+            return null;
+        case 'clearIndicatorIndex':
             return null;
         default:
             return null;
@@ -3820,6 +4033,31 @@ async function runSelfTest() {
             granted, granted ? origin : msg('selftestProviderPermissionMissing') + ' ' + origin,
             granted ? 'pass' : 'warn'));
     }
+
+    // Indikator-Index: Schreiben -> Pivot -> Aufräumen. Prüft zugleich die
+    // Datenbankmigration (Version 4) in der echten Installation.
+    let indexOk = false;
+    let indexDetail = '';
+    try {
+        const probeValue = 'selftest-' + Date.now() + '.example';
+        const probeHeader = '<thundy-selftest-' + Date.now() + '@local>';
+        const written = await indexMessageIndicators({
+            headerMessageId: probeHeader,
+            subject: msg('selftestIndexSubject'),
+            verdict: 'clean',
+            score: 0,
+            iocs: { domains: [probeValue] }
+        });
+        const pivot = await pivotIndicator({ value: probeValue });
+        indexOk = written === 1 && pivot.total === 1 && pivot.matches.length === 1
+            && pivot.matches[0].subject === msg('selftestIndexSubject');
+        indexDetail = JSON.stringify({ written: written, matches: pivot.total });
+        const db = await getSharedDB();
+        await deleteFromStore(db, 'iocs', indicatorKey('domains', probeValue, probeHeader));
+    } catch (e) {
+        indexDetail = String(e && e.message ? e.message : e);
+    }
+    checks.push(selftestCheck('index.roundtrip', msg('selftestIndex'), indexOk, indexDetail));
 
     if (!environment.consentGiven && Object.values(environment.providersConfigured).some(Boolean)) {
         checks.push(selftestCheck('consent.notice', msg('selftestConsentNotice'), false,
