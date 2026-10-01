@@ -20,12 +20,31 @@
 | Betriebssystem + Version | |
 | Datum des Tests | |
 | Tester (Name/Kürzel) | |
-| Add-on-Version | 1.6.2 |
+| Add-on-Version | 1.6.4 |
 | Add-on-ID | thundy-av@bludau-it-services.de |
-| Bezugs-Commit (Repo) | `b5734b6` (HEAD zum Erstellzeitpunkt dieses Protokolls) |
+| Bezugs-Commit (Repo) | `7b92d58` / Tag `v1.6.4` |
 | Testprofil (Name/Pfad) | |
 | Verwendeter API-Schlüssel (Anbieter/Art) | |
 | Datenschutz-Stufe(n) im Test | ☐ strict ☐ balanced ☐ max |
+
+## 1.1 Schritt 0 (neu, 5 Minuten): Selbsttest ausführen
+
+Vor der manuellen Prüfung den eingebauten Selbsttest laufen lassen. Er deckt in der echten Installation
+ab, was sonst nur mit gemockten APIs geprüft wäre:
+
+1. Add-on laden (Abschnitt 2), Optionen öffnen (☰ → Add-ons und Themes → Thundy AV → Einstellungen).
+2. Abschnitt **„Selbsttest & Diagnose“** → **„Selbsttest ausführen“**.
+3. Erwartet: Tabelle mit **PASS** je Prüfung; „HINWEIS“ ist zulässig (z. B. keine Nachricht geöffnet,
+   fehlende Host-Berechtigung bei hinterlegtem Schlüssel). **FEHLER** ist ein Live-Test-Fehlschlag und
+   im Abschnitt „Gefundene Fehler“ zu erfassen.
+4. Für die Prüfung `injection.messageDisplay` eine Nachricht öffnen und den Selbsttest erneut ausführen —
+   sie muss dann `PASS` melden (Prüfskript wurde injiziert und hat sein Ergebnis zurückgegeben).
+5. Bericht mit **„Bericht kopieren“** oder **„Bericht speichern“** sichern und unten unter
+   „Selbsttest-Bericht“ einfügen.
+
+Der Selbsttest überträgt nichts (synthetische Daten, keine Anbieter-Anfragen). Er ersetzt **nicht** die
+visuelle Prüfung der Banner, der Kontextmenüeinträge und der Berechtigungsdialoge — dafür gelten die
+Schritte in Abschnitt 3.
 
 ## 2. Zweck und Referenzstand
 
@@ -173,3 +192,9 @@ Stufe `strict`, `scanningEnabledSenders` leer. „Erwartung" = Soll; „Ist" tr�
   prüfbaren Punkte ab. Die reinen Datei-/Parsing-Eigenschaften der Testdaten sind in
   `testdata/README.md` §4 (technische Validierung) nachgewiesen.
 - **Version/Commit dieses Protokolls:** Bezug `b5734b6` (siehe §1/§2); bei abweichendem Test-Commit dort aktualisieren.
+
+## 8. Selbsttest-Bericht (aus Schritt 0 einfügen)
+
+```text
+(hier den kopierten Bericht einfügen)
+```

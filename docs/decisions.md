@@ -228,3 +228,35 @@ durchgängiges Design-System (Details in [STATUS.md](STATUS.md) und [CHANGELOG.m
 Kriterien C5/C6 im Store-Gate); die ATN-Einreichung braucht weiterhin die API-Schlüssel des
 Maintainers.
 
+## D13 — Version 1.6.4: Selbsttest und wiederverwendete Anbieter-Zustände
+**Bezug:** Runde 4 der Problemanalyse (Q-1 … Q-4) · **Aufgabe:** Q-01 … Q-05
+
+**Umfang.** Eingebauter Selbsttest/Diagnose in den Einstellungen, Anzeige gespeicherter
+Anbieter-Zustände in der Forscher-Ansicht und ein Hash-Cache für Anhänge.
+
+**Bewusste Entscheidungen.**
+1. **Der Selbsttest ersetzt den Live-Test nicht.** Er prüft API-Verfügbarkeit, Sperren, Parser und die
+   Injektionskette programmatisch — die **visuelle** Banner-Optik, die Kontextmenüeinträge und die
+   Berechtigungsdialoge bleiben manuell (Kriterium C6 des Store-Gates bleibt deshalb offen).
+2. **Keine Übertragung im Selbsttest.** Alle Eingaben sind synthetisch; es werden keine Anbieter-Endpunkte
+   aufgerufen. Nur die Benachrichtigungs-Prüfung erzeugt eine sichtbare Testmeldung, die sofort wieder
+   entfernt wird — das ist gewollt, weil genau dieser Pfad geprüft werden soll.
+3. **Keine neuen Berechtigungen** (weiterhin `messagesRead`, `storage`, `notifications`, `downloads`,
+   `scripting`, `menus`; optional `sensitiveDataUpload`).
+4. **Gespeicherte Anbieter-Zustände statt neuer Anfragen.** Das Dossier liest den lokalen Datensatz
+   (IndexedDB, Store `hybridanalysis`) und kennzeichnet übernommene Werte mit `stateSource: 'stored'`,
+   damit Rate-Limits und das eigene Kontingent geschont werden.
+5. **Hash-Cache je Nachricht und Nachrichtenteil** (`ATTACHMENT_HASH_CACHE`, Obergrenze 200 Einträge):
+   wiederholtes Öffnen des Popups hasht große Anhänge nicht erneut.
+
+**Veröffentlichtes Artefakt**
+
+| Feld | Wert |
+|---|---|
+| Version | 1.6.4 (`manifest.json`, `package.json`, `package-lock.json`) |
+| Commit / Tag | `7b92d58` / `v1.6.4` (annotiert) |
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.4 (kein Pre-Release → „Latest“) |
+| Asset | `thundy-av-1.6.4.xpi`, 85.318 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `f7455ae4ea25c11ca9c6308f962a9d0a53b55abcb3ec38800ec883a4e12b98d8` |
+| Paketinhalt | 17 Dateien, 322.256 Bytes entpackt |
+| Gates | 459 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 30 kuratierte Warnungen |

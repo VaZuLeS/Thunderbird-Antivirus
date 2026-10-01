@@ -18,6 +18,34 @@
 Ablauf und Begründung: D11 in [decisions.md](decisions.md). ATN kennt weiterhin keine Version dieses
 Add-ons (API-Abfrage → 404); die Einreichung dort ist noch offen (siehe „Remaining“).
 
+## Release 1.6.4 (veröffentlicht)
+
+Diagnose-Release: Der Live-Test lässt sich jetzt in der echten Installation in weiten Teilen
+automatisiert nachweisen; die Forscher-Ansicht nutzt bereits gespeicherte Anbieter-Ergebnisse.
+
+| Feld | Wert |
+|---|---|
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.4 (kein Pre-Release → „Latest“) |
+| Commit / Tag | `7b92d58` / `v1.6.4` |
+| Asset | `thundy-av-1.6.4.xpi`, 85.318 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `f7455ae4ea25c11ca9c6308f962a9d0a53b55abcb3ec38800ec883a4e12b98d8` |
+| Gates | 459 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 30 kuratierte Warnungen · Paket 17 Dateien / 322.256 Bytes „valid“ |
+
+### Funktionsumfang 1.6.4
+
+- **Selbsttest & Diagnose** in den Einstellungen: prüft die verfügbaren Thunderbird-APIs, die Zustimmungs-
+  und Stufen-Sperren, alle lokalen Parser (Auth-Header, Received-Kette, Link-Anatomie, IOCs, Anhänge),
+  die Risiko-Aufschlüsselung, die MITRE-Zuordnung, eine echte Benachrichtigung und die
+  **Banner-Injektion in eine geöffnete Nachricht**; Bericht als Tabelle, kopier- und speicherbar.
+  Rein lokal, synthetische Daten, keine Übertragung.
+- **Gespeicherte Anbieter-Zustände** in der Forscher-Ansicht (Hybrid Analysis/VirusTotal je Anhang und
+  Link, als „gespeichert“ gekennzeichnet) ohne neue Anfragen.
+- **Hash-Cache** für Anhänge je Nachricht und Nachrichtenteil.
+
+Damit ist der Live-Test (Kriterium C6) deutlich schlanker: Schritt 0 im Protokoll führt den Selbsttest
+aus und hängt den Bericht an; manuell bleiben nur die visuelle Banner-Optik, die Kontextmenüeinträge und
+die Berechtigungsdialoge.
+
 ## Release 1.6.3 (veröffentlicht)
 
 Version 1.6.3 bringt die Forscher-Funktionalität (Researcher-Ansicht im Popup, gebündelte

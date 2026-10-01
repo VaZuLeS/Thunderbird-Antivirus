@@ -185,6 +185,45 @@ Store-Gate C1–C4 + C7 PASS). Details: §13 des Aufgabenplans, D12 in [decision
 
 ---
 
+## 0.4 Update 2026-10-01 (Runde 4) — Diagnose und Robustheit
+
+Der verbleibende Store-Blocker **C6 (Live-Test in Thunderbird 140 ESR)** lässt sich in dieser Umgebung
+nicht ausführen. Diese Runde macht ihn deshalb so weit wie möglich **maschinell nachweisbar** und behebt
+zwei Schwächen der Forscher-Ansicht aus Runde 3.
+
+### Q-1 — Live-Prüfung nicht reproduzierbar (hoch)
+**Belege (vorher):** `docs/live_test_protocol.md` beschrieb ausschließlich manuelle Schritte; ob die
+verwendeten Thunderbird-APIs in der installierten Version überhaupt vorhanden sind, war erst nach dem
+Test bekannt. Ein Fehlschlag ließ sich nicht ohne Weiteres von einem Umgebungsproblem unterscheiden.
+**Fix:** Eingebauter **Selbsttest** (Einstellungen → „Selbsttest & Diagnose“) mit 20+ Prüfungen:
+API-Verfügbarkeit, Zustimmungs- und Stufen-Sperren, alle Parser, Risiko-Ledger, MITRE, echte
+Benachrichtigung und eine **Injektionssonde** in die geöffnete Nachricht. Bericht als Tabelle,
+kopier- und exportierbar; Schritt 0 im Protokoll.
+
+### Q-2 — Popup hashte Anhänge bei jedem Öffnen erneut (mittel)
+**Belege (vorher):** `buildResearchDossier()` rief je Anhang `getAttachmentFile()` + `get_sha256_hash()`
+auf, ohne Ergebnis zu behalten — bei großen Nachrichten unnötige Arbeit bei jedem Öffnen.
+**Fix:** `cachedAttachmentHash()` mit Cache je Nachricht/Nachrichtenteil (`ATTACHMENT_HASH_CACHE`,
+Obergrenze 200).
+
+### Q-3 — Anbieter-Ergebnisse wurden ignoriert (mittel)
+**Belege (vorher):** Das Dossier zeigte nur den lokalen Hash, obwohl der lokale Datensatz bereits
+Hybrid-Analysis-Zustände, Job-IDs und VirusTotal-Statistiken enthielt; ein Analyst musste sie im
+Berichtsteil suchen.
+**Fix:** `readStoredScanRecord()` + Merge in Anhänge und Links (`stateSource: 'stored'`, `hybridState`,
+`hybridJobId`, `virustotalStats`, `urlhausMatch`) — ohne neue Anfragen.
+
+### Q-4 — Keine Diagnose für Reviewer (niedrig)
+**Belege (vorher):** Reviewer-Notes erklärten den Testweg, aber es gab kein Werkzeug, mit dem ein
+Reviewer die Engine auf seinem System in einem Schritt verifizieren konnte.
+**Fix:** Selbsttest ist in den Reviewer-Notes dokumentiert (Abschnitt 8.7) und im Optionsdialog ohne
+Vorwissen ausführbar.
+
+**Status:** Q-1 … Q-4 umgesetzt und mit **1.6.4** veröffentlicht (459 Tests, Store-Gate C1–C4 + C7 PASS,
+offen bleiben C5/C6). Details: §14 des Aufgabenplans, D13 in [decisions.md](decisions.md).
+
+---
+
 ## 1. Zielbild „store-ready“
 
 „Store-ready“ heißt hier: das Add-on erfüllt die ATN-Einreichungsanforderungen und ist in der deklarierten

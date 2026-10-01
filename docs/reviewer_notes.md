@@ -268,6 +268,27 @@ a test account instead of using real mail.
 
 The full end-to-end protocol for the live test is described in `docs/live_test_protocol.md`.
 
+### 8.7 Built-in self-test (fastest way to verify a review machine)
+
+The options page contains a **"Selbsttest & Diagnose"** section. One click runs a local diagnostic and
+prints a PASS / NOTICE / ERROR table:
+
+- availability of every Thunderbird API the add-on uses (`messageDisplay.onMessagesDisplayed`,
+  `getDisplayedMessages`, `open`, `scripting.executeScript`, `notifications`, `permissions`, `downloads`,
+  `menus`, `messages.get`, IndexedDB);
+- the consent gate (without consent every transmission path must abort with `EXTERNAL_ANALYSIS_DISABLED`);
+- the privacy-tier gates (strict blocks upload/URL scan, balanced allows upload, max allows both);
+- the analysis parsers (`Authentication-Results`, `Received` chain with hop delays, link anatomy,
+  IOC extraction, attachment classification, risk-score ledger, MITRE mapping);
+- a real **banner injection probe** into the currently open message (open a message first - otherwise the
+  check reports a notice instead of a failure);
+- a notification round-trip (created and removed again);
+- for every configured provider key: whether the matching host permission is granted.
+
+All checks use synthetic data and run locally; nothing is transmitted. The report can be copied or saved
+as a text file (step 0 in `docs/live_test_protocol.md`). It does **not** replace the visual inspection of
+the banners and the permission dialogs, which stay manual.
+
 ## 9. Researcher view and notifications
 
 The popup button in the message display action has a second tab, the **researcher view**, aimed at

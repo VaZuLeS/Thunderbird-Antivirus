@@ -310,3 +310,34 @@ bleiben manuelle Schritte.
 | S-07 | **erledigt** | `test/researcher-view.test.js` (8 Tests), Exporte JSON/CSV/STIX + IOC-Kopie |
 | S-08 | **erledigt** | Version 1.6.3, Changelog, Tag `v1.6.3`, Release mit `thundy-av-1.6.3.xpi` (SHA-256 `d2a57233…`), D12 |
 
+---
+
+## 14. Runde 4 — Diagnose und Robustheit (Version 1.6.4)
+
+Neue Befunde **Q-1 … Q-4** (Bezug: §0.4 der Problemanalyse). Ziel: den letzten offenen Store-Blocker
+(C6, Live-Test) so weit wie möglich maschinell nachweisbar machen und zwei Schwächen der Forscher-Ansicht
+beheben — ohne neue Berechtigungen.
+
+| ID | Aufgabe | Bezug | DoD (Nachweis) | Aufwand | Abhängig von |
+|---|---|---|---|---|---|
+| **Q-01** | **Selbsttest-Engine:** `runSelfTest()` mit API-Verfügbarkeit, Sperren, Parsern, Ledger, MITRE, Benachrichtigung und Injektionssonde; Message-Action `runSelfTest` und `saveSelfTestReport`; Textformatierung `formatSelfTestReport()` | Q-1 | Test: Bericht enthält alle Prüfungen, kein Fehler in der gemockten Umgebung, Warnung statt Fehler ohne geöffnete Nachricht, Einstellungen (Zustimmung/Stufe) werden wiederhergestellt | 5 h | — |
+| **Q-02** | **Diagnose in der Oberfläche:** Abschnitt „Selbsttest & Diagnose“ in den Optionen mit Tabelle (PASS/HINWEIS/FEHLER), „Bericht kopieren“ und „Bericht speichern“ | Q-1, Q-4 | `options.html`/`options.js` erweitert; DOM-Aufbau ohne `innerHTML`; bestehende Options-Tests bleiben grün | 3 h | Q-01 |
+| **Q-03** | **Hash-Cache:** `cachedAttachmentHash()` je Nachricht/Nachrichtenteil mit Obergrenze | Q-2 | Test: zweiter Aufruf hasht nicht erneut (Zähler), Cache-Größe begrenzt | 2 h | — |
+| **Q-04** | **Gespeicherte Anbieter-Zustände einbinden:** `readStoredScanRecord()`, Merge in Anhänge/Links inkl. `stateSource`, `hybridState`, `hybridJobId`, `virustotalStats`, `urlhausMatch`; Anzeige im Popup | Q-3 | Tests für Merge (gespeichert/unbekannt) und Anzeige; keine zusätzlichen Provider-Aufrufe | 3 h | — |
+| **Q-05** | **Doku/Gate/Release:** Reviewer-Notes §8.7, Live-Test-Protokoll Schritt 0 + Berichtsfeld, STATUS/D12/D13, Version 1.6.4 mit Tag und Asset | Q-4 | `npm run check` Exit 0; Store-Gate C1–C4 + C7 PASS; Asset-Hash dokumentiert | 3 h | Q-01 … Q-04 |
+
+**Summe:** ≈ 16 h (2 Personentage).
+
+### Ausführungsstand Runde 4 (2026-10-01)
+
+| ID | Status | Nachweis |
+|---|---|---|
+| Q-01 | **erledigt** | `runSelfTest()`, `formatSelfTestReport()`; 6 neue Tests in `background.test.js` |
+| Q-02 | **erledigt** | Abschnitt in `options.html`/`options.js`; Options-Tests grün |
+| Q-03 | **erledigt** | `cachedAttachmentHash()` + Test (1 Hash-Aufruf für 2 Anfragen) |
+| Q-04 | **erledigt** | `mergeStoredAttachmentState()`/`mergeStoredLinkState()` + Tests; Anzeige in der Forscher-Ansicht |
+| Q-05 | **erledigt** | Reviewer-Notes §8.7, Protokoll Schritt 0, STATUS/D13, Tag `v1.6.4`, Release mit `thundy-av-1.6.4.xpi` (SHA-256 `f7455ae4…`) |
+
+**Wirkung auf das Store-Gate:** C6 bleibt formal offen (visuelle Prüfung), ist aber jetzt in wenigen
+Minuten reproduzierbar: Selbsttest ausführen, Bericht anhängen, verbleibende manuelle Schritte abarbeiten.
+
