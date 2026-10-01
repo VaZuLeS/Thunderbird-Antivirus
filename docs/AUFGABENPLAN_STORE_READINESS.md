@@ -257,3 +257,20 @@ so weit bringen, wie es ohne echte Thunderbird-Instanz geht.
 **Nicht in dieser Runde möglich:** ATN-Upload (keine API-Schlüssel), echte Screenshots (C5), Live-Test in
 Thunderbird 140 ESR (C6). Beide bleiben als manuelle Schritte dokumentiert.
 
+### Ausführungsstand Runde 2 (2026-10-01)
+
+| ID | Status | Nachweis |
+|---|---|---|
+| R-01 | **erledigt** | `manifest.json`/`package.json`/`package-lock.json` = 1.6.2; Pre-Submit: „package.json and manifest.json versions match“ |
+| R-02 | **erledigt** | `CHANGELOG.md` §1.6.2 (Fixed/Changed); `docs/store_listing.md` §6 mit englischem 1.6.2-Block |
+| R-03 | **erledigt** | README (EN/DE), STATUS, index, listing, assets, screenshot-guide, policy (DE/EN), protocol, quickstart auf 1.6.2 |
+| R-04 | **erledigt** | `npm run check` → Exit 0; XPI 53.277 Bytes, SHA-256 `12cd335b…cdee`, 17 Dateien / 196.507 B entpackt |
+| R-05 | **erledigt** | Tag `v1.6.2` auf `a94c9ec`; Release https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.2 mit Asset `thundy-av-1.6.2.xpi`, kein Pre-Release |
+| R-06 | **erledigt** | Asset heruntergeladen, `cmp` gegen den geprüften Build → identisch; Hash/URL in `docs/STATUS.md` und `docs/decisions.md` (D11) |
+| R-07 | **erledigt** | `npm run store-gate`: C1–C4 **und C7** PASS, offen nur C5 (Screenshots) und C6 (Live-Test) |
+| R-08 | **erledigt (dokumentiert)** | Signierkommando mit `--amo-base-url`/`--approval-timeout` in STATUS „Remaining“ und Release-Notes; Ausführung benötigt die ATN-Schlüssel des Maintainers |
+
+**Nebeneffekt:** Mit dem regulären Release ist der 2024er-Eintrag nicht mehr „Latest“
+(`gh api repos/…/releases/latest` → `v1.6.2`), damit ist Befund R-6 ohne destruktive Eingriffe gelöst.
+
+

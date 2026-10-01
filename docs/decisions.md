@@ -140,3 +140,48 @@ und die Konsequenz für den Code.
 - Nachweis: Regressionstest in `api.test.js` und `test/consent-and-tier.test.js` (kein `fetch`,
   kein Cache-Eintrag ohne Zustimmung).
 
+
+## D11 — Version 1.6.2 und Release-Ablauf
+**Bezug:** R-1, R-2, R-5, R-6 · **Aufgabe:** R-01 … R-08
+
+**Versionsentscheidung.** Vor dem Bump geprüft: `api/v4/addons/addon/thundy-av@bludau-it-services.de/`
+antwortet **HTTP 404** — es existiert **keine** veröffentlichte Version, ATN stellt also keine
+Monotonie-Anforderung. Im Repository sind `v1.6` (Commit `351001f`) und `v1.6.1` … `v1.18.0` (divergierte
+Linie) bereits belegt. Gewählt: **1.6.2**, weil
+1. der Tag `v1.6.2` frei ist und der Tag damit genau den veröffentlichten Commit bezeichnet,
+2. es der nächste Patch der Linie ist, die `main` repräsentiert (keine Aussage über die nie
+   veröffentlichte 1.7–1.18-Linie),
+3. die Add-on-Version bei ATN unabhängig von Git-Tags ist: die erste Einreichung darf 1.6.2 sein.
+Bewusst **nicht** 1.19.0 (würde eine Produkthistorie suggerieren, die es nicht gibt) und **nicht**
+`v1.6` auf den neuen Commit umschreiben (bestehende Tags werden nicht verändert).
+
+**Release-Ablauf (nachvollziehbar).**
+```bash
+npm ci
+npm run check                        # Pre-Submit + 427 Tests + Lint-Filter + Build/Paketprüfung
+sha256sum build/thundy_av_email_scanner_for_thunderbird-1.6.2.zip
+git tag -a v1.6.2 -m 'Thundy AV 1.6.2 - Store-Readiness-Release' && git push origin refs/tags/v1.6.2
+gh release create v1.6.2 --verify-tag --notes-file <notes> ./thundy-av-1.6.2.xpi
+gh release download v1.6.2 -p thundy-av-1.6.2.xpi -D /tmp/dl && sha256sum /tmp/dl/thundy-av-1.6.2.xpi
+```
+Der Build ist **nicht byte-reproduzierbar** (P2-21: wechselnde Eintragsreihenfolge/Zeitstempel), deshalb
+gilt der Hash nur für dieses konkrete Artefakt und wird im Release mitgeführt.
+
+**Veröffentlichtes Artefakt**
+
+| Feld | Wert |
+|---|---|
+| Version | 1.6.2 (`manifest.json`, `package.json`, `package-lock.json`) |
+| Commit / Tag | `a94c9ec` / `v1.6.2` (annotiert) |
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.2 (kein Pre-Release → automatisch „Latest“) |
+| Asset | `thundy-av-1.6.2.xpi`, 53.277 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `12cd335b140cb745c158dacb69db2105c253716f7d4d4f0a5bb242b89689cdee` |
+| Paketinhalt | 17 Dateien, 196.507 Bytes entpackt |
+
+**Hinweis zur Branch-Lage:** Der Tag zeigt auf einen Commit des Arbeitszweigs `cline/k0d34w90`. Für ein
+konsistentes `main` sollte dieser Zweig zusammengeführt werden; der Release bleibt über den Tag auch ohne
+Merge erreichbar.
+
+**Nicht Bestandteil dieses Releases:** ATN-Upload/Signierung (benötigt die ATN-API-Schlüssel des
+Maintainers), echte Screenshots und der Live-Test in Thunderbird 140 ESR.
+
