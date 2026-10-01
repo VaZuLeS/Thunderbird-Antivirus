@@ -1197,6 +1197,15 @@ function renderResearchVerdict(dossier) {
     }
     body.appendChild(chips);
 
+    if (dossier.evidence && dossier.evidence.hash) {
+        const evidenceRow = createEl('div', 'thundy-chip-row');
+        evidenceRow.appendChild(createBadge('info', 'Evidence-Hash (' + dossier.evidence.algorithm + ')'));
+        evidenceRow.appendChild(createCopyableValue(dossier.evidence.hash, 'Evidence-Hash'));
+        body.appendChild(evidenceRow);
+        body.appendChild(createEl('p', 'thundy-muted',
+            'Hash über die kanonischen Berichtsfelder – gleicher Inhalt ergibt denselben Hash (ohne Erhebungszeitpunkt).'));
+    }
+
     body.appendChild(createKeyValueList([
         ['Erhoben am', new Date(dossier.generatedAt).toLocaleString('de-DE')],
         ['Nachrichtendatum', dossier.message && dossier.message.date ? new Date(dossier.message.date).toLocaleString('de-DE') : ''],
@@ -1213,6 +1222,132 @@ function renderResearchVerdict(dossier) {
     return card;
 }
 
+
+/**
+ * Case-Notiz: lokale Bewertung/Notiz des Analysten zur Nachricht.
+ */
+function renderCaseNote(dossier) {
+    const { section, body } = createSection('research-case', 'Bewertung / Case-Notiz');
+    const headerMessageId = dossier.message ? dossier.message.headerMessageId : null;
+    const textarea = document.createElement('textarea');
+    textarea.id = 'case-note';
+    textarea.setAttribute('rows', '3');
+    textarea.setAttribute('maxlength', '4000');
+    textarea.setAttribute('aria-label', 'Notiz zu dieser Nachricht');
+    textarea.value = dossier.caseNote || '';
+    body.appendChild(textarea);
+
+    const status = createEl('span', 'thundy-status', '');
+    status.setAttribute('aria-live', 'polite');
+    const saveButton = createEl('button', 'btn-primary', 'Notiz speichern');
+    saveButton.type = 'button';
+    saveButton.addEventListener('click', async () => {
+        saveButton.disabled = true;
+        try {
+            const response = await browser.runtime.sendMessage({
+                action: 'saveCaseNote', headerMessageId: headerMessageId, note: textarea.value
+            });
+            if (!response || response.status !== 'success') {
+                throw new Error(response && response.message ? response.message : 'Speichern fehlgeschlagen');
+            }
+            status.textContent = 'Notiz gespeichert (' + new Date().toLocaleTimeString('de-DE') + ').';
+        } catch (e) {
+            status.textContent = 'Notiz konnte nicht gespeichert werden: ' + e.message;
+        } finally {
+            saveButton.disabled = false;
+        }
+    });
+    const toolbar = createEl('div', 'thundy-toolbar');
+    toolbar.appendChild(saveButton);
+    toolbar.appendChild(status);
+    body.appendChild(toolbar);
+    body.appendChild(createEl('p', 'thundy-muted',
+        'Die Notiz bleibt lokal (IndexedDB) und wird beim Leeren des Caches entfernt.'));
+    return section;
+}
+
+/** ZIP-Innenansicht: verschachtelte Anhänge ohne Auspacken bewerten. */
+function renderArchiveInspection(dossier) {
+    const candidates = dossier.archiveCandidates || [];
+    if (candidates.length === 0) return null;
+    const { section, body } = createSection('research-archive', 'Archiv-Innenansicht (' + candidates.length + ')');
+    body.appendChild(createEl('p', 'thundy-muted',
+        'Liest nur das ZIP-Zentralverzeichnis (Dateinamen, Größen, Verschlüsselung) – der Inhalt wird weder entpackt noch ausgeführt.'));
+
+    const renderResult = (result, target) => {
+        target.textContent = '';
+        if (!result.valid) {
+            target.appendChild(createEl('p', 'thundy-note thundy-note--warn',
+                result.reason === 'too_large'
+                    ? 'Archiv zu groß für die Innenansicht (' + Math.round(result.size / 1024 / 1024) + ' MB).'
+                    : 'Kein gültiges ZIP-Archiv (Zentralverzeichnis nicht gefunden).'));
+            return;
+        }
+        if (result.truncated) {
+            target.appendChild(createEl('p', 'thundy-note thundy-note--info',
+                'Es werden die ersten ' + result.entries.length + ' von ' + result.totalEntries + ' Einträgen angezeigt.'));
+        }
+        if (result.comment) {
+            target.appendChild(createEl('p', 'thundy-muted', 'ZIP-Kommentar: ' + result.comment));
+        }
+        target.appendChild(createTable(
+            ['Datei', 'Größe', 'Komprimiert', 'Verfahren', 'Hinweise'],
+            result.entries.map((entry) => {
+                const nameCell = createEl('span', '', entry.name);
+                const hints = createEl('span', 'thundy-chip-row');
+                if (entry.riskyExtension) hints.appendChild(createBadge('high', 'riskant'));
+                if (entry.nestedArchive) hints.appendChild(createBadge('medium', 'Archiv'));
+                if (entry.encrypted) hints.appendChild(createBadge('critical', 'verschlüsselt'));
+                if (hints.childNodes.length === 0) hints.appendChild(createEl('span', 'thundy-muted', '–'));
+                return [
+                    nameCell,
+                    String(entry.uncompressedSize) + ' B',
+                    String(entry.compressedSize) + ' B',
+                    entry.compressionMethod === 0 ? 'unverschlüsselt (stored)' : '#' + entry.compressionMethod,
+                    hints
+                ];
+            })
+        ));
+    };
+
+    for (const candidate of candidates) {
+        const card = createEl('div', 'thundy-card');
+        const head = createEl('div', 'thundy-card__header');
+        head.appendChild(createEl('h3', 'thundy-card__title', candidate.name || candidate.partName));
+        card.appendChild(head);
+        const cardBody = createEl('div', 'thundy-card__body');
+        const button = createEl('button', 'thundy-copy', 'Inhalt auflisten');
+        button.type = 'button';
+        button.addEventListener('click', async () => {
+            button.disabled = true;
+            button.textContent = 'Lese Zentralverzeichnis …';
+            try {
+                const response = await browser.runtime.sendMessage({
+                    action: 'inspectZip', messageId: dossier.message ? dossier.message.id : null, partName: candidate.partName
+                });
+                if (!response || response.status !== 'success') {
+                    throw new Error(response && response.message ? response.message : 'Archiv konnte nicht gelesen werden');
+                }
+                renderResult(response.data, resultArea);
+            } catch (e) {
+                resultArea.textContent = '';
+                resultArea.appendChild(createEl('p', 'thundy-note thundy-note--warn', 'Fehler: ' + e.message));
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Inhalt auflisten';
+            }
+        });
+        const toolbar = createEl('div', 'thundy-toolbar');
+        toolbar.appendChild(button);
+        cardBody.appendChild(toolbar);
+        const resultArea = createEl('div', 'thundy-archive-result');
+        resultArea.setAttribute('aria-live', 'polite');
+        cardBody.appendChild(resultArea);
+        card.appendChild(cardBody);
+        body.appendChild(card);
+    }
+    return section;
+}
 
 /** Risiko-Aufschlüsselung: welcher Regelbeitrag erklärt den Score. */
 function renderResearchBreakdown(dossier) {
@@ -1669,11 +1804,14 @@ function renderResearchDossier(dossier) {
 
     const container = createEl('div', 'thundy-research__content');
     container.appendChild(renderResearchVerdict(dossier));
+    container.appendChild(renderCaseNote(dossier));
     container.appendChild(renderResearchBreakdown(dossier));
     container.appendChild(renderResearchHeaders(dossier));
     container.appendChild(renderResearchAttachments(dossier));
     container.appendChild(renderResearchLinks(dossier));
     container.appendChild(renderResearchIocs(dossier));
+    const archiveSection = renderArchiveInspection(dossier);
+    if (archiveSection) container.appendChild(archiveSection);
     container.appendChild(renderResearchMitre(dossier));
     container.appendChild(renderResearchTimeline(dossier));
     root.appendChild(container);

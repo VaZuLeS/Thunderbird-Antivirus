@@ -10,6 +10,29 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 - Nothing yet.
 
+## [1.6.7] – 2026-10-01
+
+Forscher-Werkzeuge II (Thema T9): Sammel-Scan, Case-Notizen, ZIP-Innenansicht und Evidence-Hash —
+weiterhin ohne neue Berechtigungen und ohne zusätzliche Netzwerkzugriffe.
+
+### Added
+
+- **Sammel-Scan:** Kontextmenü-Eintrag „Ausgewählte Nachrichten mit Thundy AV scannen“ (Nachrichtenliste)
+  und Knopf in den Einstellungen; Fortschritt und Ergebnis als Benachrichtigung, Ergebnisliste nach Score
+  sortiert. Obergrenze 100 Nachrichten je Lauf, Ergebnisse fließen in den Indikator-Index.
+- **Case-Notizen:** lokale Bewertung/Notiz je Nachricht im Popup (max. 4000 Zeichen), gespeichert im
+  lokalen Datensatz, entfernt mit „Cache leeren“.
+- **ZIP-Innenansicht:** liest das Zentralverzeichnis verschachtelter Archive (Dateinamen, Größen,
+  Kompressionsverfahren, Verschlüsselungsflag, Risikoendungen) – **ohne** Auspacken und ohne Ausführen.
+- **Evidence-Hash:** SHA-256 über die kanonischen Berichtsfelder des Dossiers (ohne flüchtige Felder wie
+  den Erhebungszeitpunkt); gleicher Inhalt ergibt denselben Hash, im Popup kopierbar.
+- **Selbsttest** prüft zusätzlich ZIP-Zentralverzeichnis, Evidence-Hash und Case-Notiz-Roundtrip.
+
+### Fixed
+
+- `extractTextFromParts()` akzeptiert jetzt auch Teil-Listen als Eingabe (robuster für Aufrufer, die
+  `fullMessage.parts` direkt übergeben).
+
 ## [1.6.6] – 2026-10-01
 
 Forscher-Werkzeuge: lokaler Indikator-Index mit Pivot und Verlaufssuche — Triage über Nachrichten

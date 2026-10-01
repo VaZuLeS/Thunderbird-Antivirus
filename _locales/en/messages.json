@@ -316,5 +316,53 @@
   },
   "selftestIndexSubject": {
     "message": "Self-test probe"
+  },
+  "notificationBulkStarted": {
+    "message": "Bulk scan of $COUNT$ message(s) started …",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationBulkProgress": {
+    "message": "Bulk scan: $DONE$ of $TOTAL$ messages …",
+    "placeholders": {
+      "done": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "notificationBulkFinished": {
+    "message": "Bulk scan finished: $COUNT$ message(s), $NOTEWORTHY$ noteworthy.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "noteworthy": {
+        "content": "$2"
+      }
+    }
+  },
+  "menuBulkScan": {
+    "message": "Scan selected messages with Thundy AV"
+  },
+  "notificationNoMessagesSelected": {
+    "message": "No messages selected – please select messages in the message list first."
+  },
+  "selftestZip": {
+    "message": "ZIP central directory reader (names, sizes, no extraction)"
+  },
+  "selftestEvidence": {
+    "message": "Evidence hash (canonical dossier fields)"
+  },
+  "selftestCaseNote": {
+    "message": "Case note round-trip (write, read, delete)"
+  },
+  "selftestCaseNoteText": {
+    "message": "self-test note"
   }
 }

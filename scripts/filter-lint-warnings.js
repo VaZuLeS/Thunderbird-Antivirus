@@ -24,6 +24,7 @@ const KNOWN_THUNDERBIRD_FALSE_POSITIVES = [
   'messages.listAttachments',
   'messages.getAttachmentFile',
   'messages.query',
+  'mailTabs.getSelectedMessages',
   'scripting.messageDisplay',
   // Thunderbird-only optional permission for uploading user data
   'sensitiveDataUpload'

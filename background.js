@@ -32,6 +32,11 @@ const I18N_FALLBACKS = {
     bannerTierBlocked: 'This action is not allowed by the current privacy tier. See the add-on options.',
     notificationScanStarted: 'Scan started for: $URL$',
     notificationScanRunning: 'Scanning "$SUBJECT$" …',
+    notificationNoMessagesSelected: 'No messages selected – please select messages in the message list first.',
+    notificationBulkStarted: 'Bulk scan of $COUNT$ message(s) started …',
+    notificationBulkProgress: 'Bulk scan: $DONE$ of $TOTAL$ messages …',
+    notificationBulkFinished: 'Bulk scan finished: $COUNT$ message(s), $NOTEWORTHY$ noteworthy.',
+    menuBulkScan: 'Scan selected messages with Thundy AV',
     notificationScanProgress: 'Link $DONE$ of $TOTAL$ submitted …',
     notificationScanLinksChecked: '$COUNT$ link(s) checked, analysis running …',
     notificationFallbackSubject: 'the open message',
@@ -82,6 +87,10 @@ const I18N_FALLBACKS = {
     selftestProviderPermissionMissing: 'Host permission missing for',
     selftestConsentNotice: 'External analysis is switched off',
     selftestConsentNoticeDetail: 'Provider keys are configured but the global consent is off – nothing is transmitted.',
+    selftestZip: 'ZIP central directory reader (names, sizes, no extraction)',
+    selftestEvidence: 'Evidence hash (canonical dossier fields)',
+    selftestCaseNote: 'Case note round-trip (write, read, delete)',
+    selftestCaseNoteText: 'self-test note',
     selftestIndex: 'Local indicator index (write, pivot, delete)',
     selftestIndexSubject: 'Self-test probe',
     selftestNote: 'All checks run locally on synthetic data; nothing is transmitted. The visual appearance of the banners and the permission dialogs still have to be checked by hand (docs/live_test_protocol.md).',
@@ -1596,6 +1605,16 @@ function extractTextFromParts(part, outObj) {
   if (isRoot) {
       outObj = { text: "" };
   }
+  // Arrays werden als Teil-Listen behandelt (MessagePart.parts kann ein Array sein).
+  if (Array.isArray(part)) {
+      for (const subPart of part) {
+          extractTextFromParts(subPart, outObj);
+      }
+      return isRoot ? outObj.text : undefined;
+  }
+  if (!part) {
+      return isRoot ? outObj.text : undefined;
+  }
 
   if (part.contentType === "text/plain" || part.contentType === "text/html") {
       if (part.body) {
@@ -2059,6 +2078,11 @@ function createContextMenus() {
             id: "scan-message-links-thundy",
             title: msg('menuScanMessageLinks', 'Scan all links of this message'),
             contexts: ["message_display_action"]
+        },
+        {
+            id: "bulk-scan-thundy",
+            title: msg('menuBulkScan', 'Scan selected messages with Thundy AV'),
+            contexts: ["message_list"]
         }
     ];
     for (const menu of menus) {
@@ -2450,7 +2474,9 @@ function mergeStoredLinkState(links, storedRecord) {
  */
 async function buildResearchDossier(messageId) {
     const header = await browser.messages.get(messageId);
+    if (!header) throw new Error('message_not_found');
     const fullMessage = await browser.messages.getFull(messageId);
+    if (!fullMessage) throw new Error('message_not_found');
     const headers = fullMessage.headers || {};
     const parseCache = new Map();
     const messageText = extractTextFromParts(fullMessage.parts || fullMessage);
@@ -2543,7 +2569,10 @@ async function buildResearchDossier(messageId) {
         firstContact: isFirstCommunication
     };
 
-    return {
+    // Hinweise für Archive im Anhang (ZIP-Innenansicht ist ein eigener Aufruf).
+    const archiveAttachments = enrichedAttachments.filter((attachment) => attachment.archive);
+
+    const dossier = {
         schema: 'thundy-av/research-dossier@1',
         generatedAt: new Date().toISOString(),
         message: {
@@ -2594,8 +2623,19 @@ async function buildResearchDossier(messageId) {
             breakdown: threat.breakdown
         },
         mitre: mapMitreTechniques({ breakdown: threat.breakdown, attachments, links, authentication, sender }),
-        timeline: buildDossierTimeline(header, receivedChain, threat)
+        timeline: buildDossierTimeline(header, receivedChain, threat),
+        caseNote: storedRecord ? (storedRecord.caseNote || null) : null,
+        archiveCandidates: archiveAttachments.map((attachment) => ({ name: attachment.name, partName: attachment.partName }))
     };
+
+    // Evidence-Hash über die kanonischen Felder (Chain of Custody).
+    dossier.evidence = {
+        algorithm: 'SHA-256',
+        scope: 'canonical-dossier-fields',
+        hash: await computeEvidenceHash(dossier),
+        computedAt: new Date().toISOString()
+    };
+    return dossier;
 }
 
 // ---------------------------------------------------------------------------
@@ -2761,6 +2801,21 @@ createContextMenus();
 if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === "scan-message-links-thundy") {
         await scanLinksOfDisplayedMessage(tab && tab.id);
+        return;
+    }
+
+    if (info.menuItemId === "bulk-scan-thundy") {
+        // Der Kontextklick liefert die angeklickten Nachrichten mit; sonst werden
+        // die aktuell markierten Nachrichten aus der Nachrichtenliste geholt.
+        let ids = (info.selectedMessages ? messageListToArray(info.selectedMessages) : [])
+            .map((message) => message && message.id)
+            .filter((id) => Number.isInteger(id));
+        if (ids.length === 0) ids = await getSelectedMessageIds();
+        if (ids.length === 0) {
+            notify('notificationTitleError', 'notificationScanError', [msg('notificationNoMessagesSelected')]);
+            return;
+        }
+        await runBulkScan(ids);
         return;
     }
 
@@ -3034,6 +3089,35 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case "clearIndicatorIndex":
             clearIndicatorIndex()
                 .then(result => sendResponse({ status: 'success', data: { cleared: result } }))
+                .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
+            return true;
+
+        case "bulkScan":
+            (async () => {
+                const ids = Array.isArray(request.messageIds) && request.messageIds.length > 0
+                    ? request.messageIds
+                    : await getSelectedMessageIds();
+                return await runBulkScan(ids);
+            })()
+                .then(result => sendResponse({ status: 'success', data: result }))
+                .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
+            return true;
+
+        case "saveCaseNote":
+            saveCaseNote(request.headerMessageId, request.note)
+                .then(result => sendResponse({ status: 'success', data: result }))
+                .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
+            return true;
+
+        case "readCaseNote":
+            readCaseNote(request.headerMessageId)
+                .then(note => sendResponse({ status: 'success', data: { note: note } }))
+                .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
+            return true;
+
+        case "inspectZip":
+            inspectZipAttachment(request.messageId, request.partName)
+                .then(result => sendResponse({ status: 'success', data: result }))
                 .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
             return true;
 
@@ -3694,7 +3778,305 @@ async function clearIndicatorIndex() {
 }
 
 // ---------------------------------------------------------------------------
-// Message boundary hardening
+// Sammel-Scan und Case-Notizen (Forscher-Werkzeuge II)
+//
+// Der Sammel-Scan läuft ausschließlich lokal: es werden die Indikatoren der
+// ausgewählten Nachrichten gesammelt und bewertet. Reputationsabfragen laufen
+// nur, wenn die globale Zustimmung aktiv ist (dieselben Gates wie beim
+// Einzel-Scan). Fortschritt und Ergebnis erscheinen in einer Benachrichtigung.
+// ---------------------------------------------------------------------------
+const BULK_SCAN_LIMIT = 100;
+
+async function runBulkScan(messageIds) {
+    const ids = (messageIds || []).filter((id) => Number.isInteger(id) && id > 0).slice(0, BULK_SCAN_LIMIT);
+    if (ids.length === 0) return { scanned: 0, results: [], aborted: 'no_messages' };
+
+    const notificationKey = 'bulk-' + Date.now();
+    const results = [];
+    let scanned = 0;
+    const verdictCounts = { clean: 0, unclear: 0, suspicious: 0, malicious: 0 };
+
+    notifyScanStatus(notificationKey, 'notificationTitle', 'notificationBulkStarted', [String(ids.length)]);
+
+    for (const messageId of ids) {
+        let header = null;
+        try {
+            header = await browser.messages.get(messageId);
+        } catch (e) {
+            continue;
+        }
+        try {
+            const fullMessage = await browser.messages.getFull(messageId);
+            const parseCache = new Map();
+            // `extractTextFromParts` erwartet einen Teil mit `parts` bzw. `contentType`;
+            // die Nachricht selbst kann direkt ein Text-/HTML-Teil sein.
+            const messageText = fullMessage.parts
+                ? extractTextFromParts(fullMessage.parts)
+                : extractTextFromParts(fullMessage);
+            const urls = filterUrls(extractUrls(messageText), parseCache);
+            const headers = fullMessage.headers || {};
+            const senderEmail = extractEmailAddress(header.author || '');
+            let isFirstCommunication = false;
+            try {
+                isFirstCommunication = await checkFirstCommunication(senderEmail);
+            } catch (e) { /* best effort */ }
+            let urlhausDomains = [];
+            try {
+                urlhausDomains = await checkURLhausDomains(urls, parseCache);
+            } catch (e) { /* nur mit Schlüssel und Zustimmung */ }
+            let maliciousIps = [];
+            try {
+                maliciousIps = await checkIPReputation(headers['received'] || []);
+            } catch (e) { /* nur mit Anbieter und Zustimmung */ }
+
+            const threat = calculateThreatScore(header.author, urls, {
+                authHeaders: headers['authentication-results'] || [],
+                urlhausDomains: urlhausDomains,
+                isFirstCommunication: isFirstCommunication,
+                messageText: messageText,
+                subject: header.subject || '',
+                replyTo: (headers['reply-to'] || [''])[0],
+                parsedUrlCache: parseCache
+            });
+            const iocs = extractIocs(messageText, urls);
+            await indexMessageIndicators({
+                headerMessageId: header.headerMessageId,
+                messageId: header.id,
+                subject: header.subject || '',
+                date: header.date ? new Date(header.date).toISOString() : null,
+                verdict: threat.verdict,
+                score: threat.score,
+                iocs: iocs
+            });
+            verdictCounts[threat.verdict] = (verdictCounts[threat.verdict] || 0) + 1;
+            results.push({
+                messageId: header.id,
+                headerMessageId: header.headerMessageId || null,
+                subject: header.subject || '',
+                date: header.date ? new Date(header.date).toISOString() : null,
+                score: threat.score,
+                verdict: threat.verdict,
+                topReason: (threat.reasons || [])[0] || '',
+                indicatorCount: IOC_KINDS.reduce((sum, kind) => sum + (iocs[kind] || []).length, 0)
+            });
+        } catch (e) {
+            Logger.warn('Bulk scan failed for message ' + messageId, e);
+            results.push({
+                messageId: messageId,
+                subject: (header && header.subject) || '',
+                error: e && e.message ? e.message : String(e)
+            });
+        }
+        scanned += 1;
+        if (scanned % 5 === 0 || scanned === ids.length) {
+            notifyScanStatus(notificationKey, 'notificationTitle', 'notificationBulkProgress',
+                [String(scanned), String(ids.length)]);
+        }
+    }
+
+    const noteworthy = results.filter((r) => r.verdict === 'suspicious' || r.verdict === 'malicious');
+    notifyScanStatus(notificationKey, 'notificationTitle', 'notificationBulkFinished',
+        [String(scanned), String(noteworthy.length)]);
+
+    return {
+        scanned: scanned,
+        requested: ids.length,
+        verdictCounts: verdictCounts,
+        results: results,
+        noteworthy: noteworthy.length,
+        limit: BULK_SCAN_LIMIT,
+        generatedAt: new Date().toISOString()
+    };
+}
+
+// ---------------------------------------------------------------------------
+
+/** Ausgewählte Nachrichten aus der Nachrichtenliste (für den Kontextmenü-Eintrag). */
+async function getSelectedMessageIds() {
+    const ids = [];
+    try {
+        if (browser.mailTabs && typeof browser.mailTabs.getSelectedMessages === 'function') {
+            const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            const tab = tabs && tabs.length > 0 ? tabs[0] : null;
+            if (tab) {
+                const list = await browser.mailTabs.getSelectedMessages(tab.id);
+                for (const message of messageListToArray(list)) {
+                    if (message && message.id !== undefined) ids.push(message.id);
+                }
+            }
+        }
+    } catch (e) {
+        Logger.warn('Could not read the selected messages', e);
+    }
+    return ids.slice(0, BULK_SCAN_LIMIT);
+}
+
+/** Case-Notiz je Nachricht (lokal im hybridanalysis-Datensatz). */
+async function saveCaseNote(headerMessageId, note) {
+    if (!headerMessageId) throw new Error('missing headerMessageId');
+    const text = String(note || '').slice(0, 4000);
+    const db = await getSharedDB();
+    await updateStore(db, 'hybridanalysis', headerMessageId, (existing) => Object.assign({}, existing || {}, {
+        messageHeader: headerMessageId,
+        caseNote: text,
+        caseNoteUpdatedAt: new Date().toISOString()
+    }));
+    return { headerMessageId: headerMessageId, note: text };
+}
+
+/** Liest die Case-Notiz einer Nachricht. */
+async function readCaseNote(headerMessageId) {
+    if (!headerMessageId) return null;
+    const record = await readStoredScanRecord(headerMessageId);
+    return record ? (record.caseNote || null) : null;
+}
+
+/**
+ * Liest das ZIP-Zentralverzeichnis eines Anhangs, ohne ihn auszupacken. Genau
+/**
+ * Liest das ZIP-Zentralverzeichnis eines Anhangs, ohne ihn auszupacken. Genau
+ * das, was ein Analyst für verschachtelte Anhänge braucht: Dateinamen, Größen,
+ * komprimierte Größen, Verschlüsselungsflag — ohne die enthaltenen Dateien zu
+ * schreiben oder auszuführen.
+ */
+function readZipCentralDirectory(buffer) {
+    const view = new DataView(buffer);
+    const bytes = new Uint8Array(buffer);
+    const findEndOfCentralDirectory = () => {
+        const maxBack = Math.min(bytes.length, 66000);
+        for (let i = bytes.length - 22; i >= bytes.length - maxBack && i >= 0; i--) {
+            if (view.getUint32(i, true) === 0x06054b50) return i;
+        }
+        return -1;
+    };
+    const eocd = findEndOfCentralDirectory();
+    if (eocd === -1) return { valid: false, entries: [], comment: null };
+
+    const totalEntries = view.getUint16(eocd + 10, true);
+    let offset = view.getUint32(eocd + 16, true);
+    const commentLength = view.getUint16(eocd + 20, true);
+    const comment = commentLength > 0 && eocd + 22 + commentLength <= bytes.length
+        ? new TextDecoder('utf-8', { fatal: false })
+            .decode(bytes.subarray(eocd + 22, eocd + 22 + commentLength)).slice(0, 200)
+        : null;
+
+    const entries = [];
+    for (let i = 0; i < totalEntries && offset + 46 <= bytes.length; i++) {
+        if (view.getUint32(offset, true) !== 0x02014b50) break;
+        const flags = view.getUint16(offset + 8, true);
+        const method = view.getUint16(offset + 10, true);
+        const compressedSize = view.getUint32(offset + 20, true);
+        const uncompressedSize = view.getUint32(offset + 24, true);
+        const nameLength = view.getUint16(offset + 28, true);
+        const extraLength = view.getUint16(offset + 30, true);
+        const entryCommentLength = view.getUint16(offset + 32, true);
+        const nameBytes = bytes.subarray(offset + 46, offset + 46 + nameLength);
+        let name = '';
+        try {
+            name = new TextDecoder('utf-8', { fatal: false }).decode(nameBytes);
+        } catch (e) {
+            name = '';
+        }
+        const isDirectory = name.endsWith('/');
+        entries.push({
+            name: name,
+            directory: isDirectory,
+            encrypted: (flags & 0x0001) === 0x0001,
+            compressionMethod: method,
+            compressedSize: compressedSize,
+            uncompressedSize: uncompressedSize,
+            extension: getFileExtension(name),
+            riskyExtension: !isDirectory && isRiskyAttachmentName(name),
+            nestedArchive: !isDirectory && isArchiveAttachmentName(name),
+            ratio: uncompressedSize > 0 ? Math.round((compressedSize / uncompressedSize) * 100) / 100 : null
+        });
+        offset += 46 + nameLength + extraLength + entryCommentLength;
+    }
+
+    return {
+        valid: true,
+        entries: entries.slice(0, 200),
+        totalEntries: totalEntries,
+        truncated: totalEntries > 200,
+        comment: comment
+    };
+}
+
+/** Liest einen Anhang und liefert die ZIP-Struktur (begrenzt auf 32 MB). */
+async function inspectZipAttachment(messageId, partName) {
+    const file = await browser.messages.getAttachmentFile(messageId, partName);
+    if (file.size > 32 * 1024 * 1024) {
+        return { valid: false, reason: 'too_large', size: file.size };
+    }
+    const buffer = await file.arrayBuffer();
+    return Object.assign(readZipCentralDirectory(buffer), { size: file.size });
+}
+
+/**
+ * Kanonischer Hash über die *aussagekräftigen* Dossier-Felder. Damit ist ein
+ * Bericht reproduzierbar/prüfbar (Chain of Custody), ohne dass flüchtige Felder
+ * wie der Erhebungszeitpunkt das Ergebnis verändern.
+ */
+function canonicalDossierPayload(dossier) {
+    const sortStrings = (list) => (list || []).map((value) => String(value)).sort();
+    const payload = {
+        schema: dossier.schema || null,
+        message: {
+            headerMessageId: dossier.message ? dossier.message.headerMessageId : null,
+            subject: dossier.message ? dossier.message.subject : null,
+            date: dossier.message ? dossier.message.date : null
+        },
+        sender: dossier.sender ? {
+            address: dossier.sender.address || null,
+            replyTo: dossier.sender.replyTo || null,
+            replyToMismatch: !!dossier.sender.replyToMismatch,
+            firstContact: !!dossier.sender.firstContact
+        } : null,
+        authentication: dossier.authentication ? {
+            spf: dossier.authentication.spf || null,
+            dkim: sortStrings(dossier.authentication.dkim),
+            dmarc: dossier.authentication.dmarc || null
+        } : null,
+        receivedChain: (dossier.receivedChain || []).map((hop) => ({
+            from: hop.from || null, by: hop.by || null, ip: hop.ip || null, timestamp: hop.timestamp || null
+        })),
+        attachments: (dossier.attachments || []).map((attachment) => ({
+            name: attachment.name || null,
+            sha256: attachment.sha256 || null,
+            riskyExtension: !!attachment.riskyExtension
+        })).sort((a, b) => String(a.name).localeCompare(String(b.name))),
+        links: (dossier.links || []).map((link) => ({
+            host: link.host || null,
+            registrableDomain: link.registrableDomain || null,
+            brandLookalike: link.brandLookalike || null,
+            isShortener: !!link.isShortener
+        })).sort((a, b) => String(a.host).localeCompare(String(b.host))),
+        iocs: Object.keys(dossier.iocs || {}).sort().reduce((acc, kind) => {
+            acc[kind] = sortStrings(dossier.iocs[kind]);
+            return acc;
+        }, {}),
+        risk: {
+            score: dossier.risk ? dossier.risk.score : null,
+            verdict: dossier.risk ? dossier.risk.verdict : null,
+            breakdown: (dossier.risk && dossier.risk.breakdown ? dossier.risk.breakdown : [])
+                .map((rule) => ({ id: rule.id, points: rule.points }))
+                .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+        },
+        mitre: (dossier.mitre || []).map((technique) => technique.id).sort()
+    };
+    return JSON.stringify(payload);
+}
+
+/** Evidence-Hash des Dossiers (SHA-256 über die kanonischen Felder). */
+async function computeEvidenceHash(dossier) {
+    const payload = canonicalDossierPayload(dossier);
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
+        return Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    }
+    return null;
+}
+
 //
 // Everything the popup, the options page and the injected banners send goes
 // through runtime.onMessage. The listener validates the envelope (action and
@@ -3705,7 +4087,8 @@ const MESSAGE_ACTIONS = new Set([
     'uploadAttachment', 'scanUrl', 'checkLinkState', 'downloadDisarmed',
     'requestScan', 'getResearchDossier', 'saveResearchExport',
     'runSelfTest', 'saveSelfTestReport',
-    'pivotIndicator', 'searchHistory', 'clearIndicatorIndex'
+    'pivotIndicator', 'searchHistory', 'clearIndicatorIndex',
+    'bulkScan', 'saveCaseNote', 'readCaseNote', 'inspectZip'
 ]);
 const MAX_EXPORT_BYTES = 5 * 1024 * 1024;
 const ALLOWED_EXPORT_MIME_TYPES = new Set(['application/json', 'text/csv', 'text/plain']);
@@ -3769,6 +4152,25 @@ function validateRequest(request) {
             return null;
         case 'clearIndicatorIndex':
             return null;
+        case 'inspectZip':
+            if (!isPositiveInteger(request.messageId)) return 'invalid_message_id';
+            if (typeof request.partName !== 'string' || request.partName === '') return 'invalid_part_name';
+            return null;
+        case 'saveCaseNote':
+            if (typeof request.headerMessageId !== 'string' || request.headerMessageId === '') return 'invalid_header_id';
+            if (typeof request.note !== 'string') return 'invalid_note';
+            if (request.note.length > 4000) return 'note_too_long';
+            return null;
+        case 'readCaseNote':
+            if (typeof request.headerMessageId !== 'string' || request.headerMessageId === '') return 'invalid_header_id';
+            return null;
+        case 'bulkScan':
+            if (request.messageIds !== undefined) {
+                if (!Array.isArray(request.messageIds)) return 'invalid_message_ids';
+                if (request.messageIds.length > BULK_SCAN_LIMIT) return 'too_many_messages';
+                if (request.messageIds.some((id) => !isPositiveInteger(id))) return 'invalid_message_ids';
+            }
+            return null;
         default:
             return null;
     }
@@ -3826,6 +4228,98 @@ function selftestEnvironment() {
             ipReputation: ipReputationProvider !== 'none'
         }
     };
+}
+
+/**
+ * Erzeugt ein minimales, gültiges ZIP-Archiv im Speicher (zwei Einträge, ohne
+ * Kompression), damit der Selbsttest die Zentralverzeichnis-Auswertung prüfen
+ * kann — ohne externe Bibliothek und ohne Datei.
+ */
+function selftestZipBytes() {
+    const entries = [
+        { name: 'readme.txt', content: 'hello' },
+        { name: 'invoice.docm', content: 'MZ' }
+    ];
+    const chunks = [];
+    const central = [];
+    let offset = 0;
+    const encoder = new TextEncoder();
+
+    const crc32 = (bytes) => {
+        let crc = 0xffffffff;
+        for (const byte of bytes) {
+            crc ^= byte;
+            for (let i = 0; i < 8; i++) {
+                crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+            }
+        }
+        return (crc ^ 0xffffffff) >>> 0;
+    };
+
+    for (const entry of entries) {
+        const nameBytes = encoder.encode(entry.name);
+        const dataBytes = encoder.encode(entry.content);
+        const crc = crc32(dataBytes);
+        const local = new Uint8Array(30 + nameBytes.length);
+        const localView = new DataView(local.buffer);
+        localView.setUint32(0, 0x04034b50, true);
+        localView.setUint16(4, 20, true);
+        localView.setUint16(6, 0, true);
+        localView.setUint16(8, 0, true);           // keine Kompression
+        localView.setUint16(10, 0, true);
+        localView.setUint16(12, 0, true);
+        localView.setUint32(14, crc, true);
+        localView.setUint32(18, dataBytes.length, true);
+        localView.setUint32(22, dataBytes.length, true);
+        localView.setUint16(26, nameBytes.length, true);
+        localView.setUint16(28, 0, true);
+        local.set(nameBytes, 30);
+        chunks.push(local, dataBytes);
+
+        const centralEntry = new Uint8Array(46 + nameBytes.length);
+        const centralView = new DataView(centralEntry.buffer);
+        centralView.setUint32(0, 0x02014b50, true);
+        centralView.setUint16(4, 20, true);
+        centralView.setUint16(6, 20, true);
+        centralView.setUint16(8, 0, true);
+        centralView.setUint16(10, 0, true);
+        centralView.setUint16(12, 0, true);
+        centralView.setUint16(14, 0, true);
+        centralView.setUint32(16, crc, true);
+        centralView.setUint32(20, dataBytes.length, true);
+        centralView.setUint32(24, dataBytes.length, true);
+        centralView.setUint16(28, nameBytes.length, true);
+        centralView.setUint16(30, 0, true);
+        centralView.setUint16(32, 0, true);
+        centralView.setUint16(34, 0, true);
+        centralView.setUint16(36, 0, true);
+        centralView.setUint32(38, 0, true);
+        centralView.setUint32(42, offset, true);
+        centralEntry.set(nameBytes, 46);
+        central.push(centralEntry);
+
+        offset += local.length + dataBytes.length;
+    }
+
+    const centralSize = central.reduce((sum, entry) => sum + entry.length, 0);
+    const eocd = new Uint8Array(22);
+    const eocdView = new DataView(eocd.buffer);
+    eocdView.setUint32(0, 0x06054b50, true);
+    eocdView.setUint16(8, entries.length, true);
+    eocdView.setUint16(10, entries.length, true);
+    eocdView.setUint32(12, centralSize, true);
+    eocdView.setUint32(16, offset, true);
+    eocdView.setUint16(20, 0, true);
+
+    const all = chunks.concat(central, [eocd]);
+    const total = all.reduce((sum, part) => sum + part.length, 0);
+    const out = new Uint8Array(total);
+    let position = 0;
+    for (const part of all) {
+        out.set(part, position);
+        position += part.length;
+    }
+    return out;
 }
 
 /** Synthetische Nachricht für die Engine-Prüfungen (keine echten Inhalte). */
@@ -4058,6 +4552,52 @@ async function runSelfTest() {
         indexDetail = String(e && e.message ? e.message : e);
     }
     checks.push(selftestCheck('index.roundtrip', msg('selftestIndex'), indexOk, indexDetail));
+
+    // ZIP-Innenansicht: synthetisches Archiv mit zwei Einträgen prüfen.
+    let zipOk = false;
+    let zipDetail = '';
+    try {
+        const zipBytes = selftestZipBytes();
+        const parsed = readZipCentralDirectory(zipBytes.buffer.slice(zipBytes.byteOffset, zipBytes.byteOffset + zipBytes.byteLength));
+        const names = parsed.entries.map((entry) => entry.name);
+        zipOk = parsed.valid === true && names.includes('readme.txt') && names.includes('invoice.docm')
+            && parsed.entries.some((entry) => entry.riskyExtension === true);
+        zipDetail = JSON.stringify({ valid: parsed.valid, entries: names });
+    } catch (e) {
+        zipDetail = String(e && e.message ? e.message : e);
+    }
+    checks.push(selftestCheck('zip.centralDirectory', msg('selftestZip'), zipOk, zipDetail));
+
+    // Evidence-Hash: gleich bei gleichen Feldern, verschieden bei Änderung.
+    let evidenceOk = false;
+    let evidenceDetail = '';
+    try {
+        const base = { schema: 'selftest', message: { headerMessageId: '<a@b>', subject: 's', date: null }, iocs: { domains: ['b.example', 'a.example'] }, risk: { score: 10, verdict: 'clean' } };
+        const first = await computeEvidenceHash(base);
+        const second = await computeEvidenceHash(JSON.parse(JSON.stringify(base)));
+        const changed = await computeEvidenceHash(Object.assign({}, base, { risk: { score: 11, verdict: 'clean' } }));
+        evidenceOk = !!first && first === second && first !== changed && first.length === 64;
+        evidenceDetail = first ? first.slice(0, 16) + '…' : 'not computed';
+    } catch (e) {
+        evidenceDetail = String(e && e.message ? e.message : e);
+    }
+    checks.push(selftestCheck('evidence.hash', msg('selftestEvidence'), evidenceOk, evidenceDetail));
+
+    // Case-Notiz: schreiben, lesen, wieder entfernen (lokale Datenhaltung).
+    let caseOk = false;
+    let caseDetail = '';
+    try {
+        const headerId = '<thundy-selftest-case-' + Date.now() + '@local>';
+        await saveCaseNote(headerId, msg('selftestCaseNoteText'));
+        const read = await readCaseNote(headerId);
+        caseOk = read === msg('selftestCaseNoteText');
+        const db = await getSharedDB();
+        await deleteFromStore(db, 'hybridanalysis', headerId);
+        caseDetail = caseOk ? 'ok' : String(read);
+    } catch (e) {
+        caseDetail = String(e && e.message ? e.message : e);
+    }
+    checks.push(selftestCheck('case.noteRoundtrip', msg('selftestCaseNote'), caseOk, caseDetail));
 
     if (!environment.consentGiven && Object.values(environment.providersConfigured).some(Boolean)) {
         checks.push(selftestCheck('consent.notice', msg('selftestConsentNotice'), false,

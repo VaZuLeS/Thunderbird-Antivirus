@@ -247,10 +247,26 @@ describe('background.js', () => {
             globalThis.clearIndicatorIndex = clearIndicatorIndex;
             globalThis.indicatorKey = indicatorKey;
             globalThis.IOC_KINDS = IOC_KINDS;
+
+            // Forscher-Werkzeuge II (Runde 7)
+            globalThis.runBulkScan = runBulkScan;
+            globalThis.readZipCentralDirectory = readZipCentralDirectory;
+            globalThis.selftestZipBytes = selftestZipBytes;
+            globalThis.canonicalDossierPayload = canonicalDossierPayload;
+            globalThis.computeEvidenceHash = computeEvidenceHash;
+            globalThis.saveCaseNote = saveCaseNote;
+            globalThis.readCaseNote = readCaseNote;
+            globalThis.BULK_SCAN_LIMIT = BULK_SCAN_LIMIT;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
         context.URLSearchParams = URLSearchParams;
+        // TextEncoder/TextDecoder/DataView/crypto für ZIP-, Hash- und Case-Prüfungen
+        context.TextEncoder = TextEncoder;
+        context.TextDecoder = TextDecoder;
+        context.DataView = DataView;
+        context.Uint8Array = Uint8Array;
+        context.crypto = crypto;
         // In-Memory-Ersatz für die db.js-Helfer: Der Selbsttest prüft einen
         // echten Index-Roundtrip, ohne dass IndexedDB vorhanden sein muss.
         context.__storeData = new Map();
@@ -264,6 +280,12 @@ describe('background.js', () => {
             .map(([, value]) => value);
         context.deleteFromStore = async (db, storeName, key) => context.__storeData.delete(storeName + '|' + key);
         context.clearStore = async () => true;
+        // readStoredScanRecord liest über getFromStore; im Test aus dem In-Memory-Store.
+        context.getFromStore = async (db, storeName, key) => context.__storeData.get(storeName + '|' + key) || null;
+        context.updateStore = async (db, storeName, key, updateFn) => {
+            context.__storeData.set(storeName + '|' + key, updateFn(context.__storeData.get(storeName + '|' + key)));
+            return true;
+        };
         vm.runInContext(wrappedCode, context);
 
         // Default für Tests: Zustimmung zur externen Analyse erteilt.
@@ -3917,4 +3939,107 @@ describe('background.js', () => {
     });
 });
 
+    describe('Researcher tools II: bulk scan, ZIP view, evidence hash, case notes (round 7)', () => {
+        beforeEach(() => {
+            context.__storeData.clear();
+        });
+
+        it('reads a synthetic ZIP central directory without extracting it', () => {
+            const bytes = context.selftestZipBytes();
+            const result = context.readZipCentralDirectory(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+            assert.strictEqual(result.valid, true);
+            assert.strictEqual(result.totalEntries, 2);
+            const names = result.entries.map((entry) => entry.name);
+            assert.deepEqual(names, ['readme.txt', 'invoice.docm']);
+            const risky = result.entries.find((entry) => entry.name === 'invoice.docm');
+            assert.strictEqual(risky.riskyExtension, true, 'macro-enabled document is flagged');
+            assert.strictEqual(risky.encrypted, false);
+            assert.strictEqual(result.entries[0].uncompressedSize, 5);
+        });
+
+        it('reports invalid data instead of throwing', () => {
+            const invalid = new Uint8Array([1, 2, 3, 4]).buffer;
+            const result = context.readZipCentralDirectory(invalid);
+            assert.strictEqual(result.valid, false);
+            assert.strictEqual(result.entries.length, 0);
+        });
+
+        it('flags encrypted entries', () => {
+            const bytes = context.selftestZipBytes();
+            const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+            const centralOffset = view.getUint32(bytes.length - 22 + 16, true);
+            view.setUint16(centralOffset + 8, 0x0001, true);
+            const result = context.readZipCentralDirectory(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+            assert.strictEqual(result.entries[0].encrypted, true);
+            assert.strictEqual(result.entries[1].encrypted, false);
+        });
+
+        it('computes a stable evidence hash that changes with the content', async () => {
+            const base = {
+                schema: 'thundy-av/research-dossier@1',
+                message: { headerMessageId: '<a@b>', subject: 'Test', date: '2026-10-01T10:00:00.000Z' },
+                iocs: { domains: ['b.example', 'a.example'], urls: [] },
+                risk: { score: 55, verdict: 'suspicious', breakdown: [{ id: 'auth', points: 30, reasons: ['x'] }] },
+                mitre: [{ id: 'T1566' }]
+            };
+            const first = await context.computeEvidenceHash(base);
+            const reordered = Object.assign({}, base, {
+                iocs: { urls: [], domains: ['a.example', 'b.example'] },
+                generatedAt: 'ignored-by-design'
+            });
+            const reorderedHash = await context.computeEvidenceHash(reordered);
+            const changed = await context.computeEvidenceHash(Object.assign({}, base, { risk: { score: 56, verdict: 'suspicious' } }));
+            assert.strictEqual(first.length, 64);
+            assert.strictEqual(first, reorderedHash, 'order and volatile fields must not change the hash');
+            assert.notStrictEqual(first, changed, 'a different score must change the hash');
+        });
+    });
+
+    describe('Bulk scan and case notes (round 7, part 2)', () => {
+        beforeEach(() => {
+            context.__storeData.clear();
+            context.set_externalAnalysisConsent(false);
+            context.browser.notifications = { create: () => Promise.resolve('id'), clear: () => Promise.resolve(true) };
+        });
+
+        it('runs a bulk scan over several messages and counts verdicts', async () => {
+            const headers = {
+                1: { id: 1, headerMessageId: '<m1@x>', author: 'Anna <anna@example.org>', subject: 'Normal', date: Date.parse('2026-10-01T09:00:00Z') },
+                2: { id: 2, headerMessageId: '<m2@x>', author: 'Buchhaltung <buchhaltung@paypa1.com>', subject: 'Dringend: Zahlung', date: Date.parse('2026-10-01T10:00:00Z') }
+            };
+            context.browser.messages.get = async (id) => headers[id];
+            context.browser.messages.getFull = async (id) => ({
+                headers: id === 2
+                    ? { 'authentication-results': ['mx; spf=fail smtp.mailfrom=paypa1.com; dmarc=fail'], 'reply-to': ['andere@other.example'] }
+                    : {},
+                parts: [{ contentType: 'text/plain', body: id === 2 ? 'Bitte sofort zahlen: https://paypa1.com/login' : 'Alles gut.' }]
+            });
+            const result = await context.runBulkScan([1, 2]);
+            assert.strictEqual(result.scanned, 2);
+            assert.strictEqual(result.results.length, 2);
+            const suspicious = result.results.find((entry) => entry.messageId === 2);
+            assert.ok(['suspicious', 'malicious'].includes(suspicious.verdict),
+                'spoofed mail must be flagged, got: ' + suspicious.verdict);
+            assert.strictEqual(result.noteworthy >= 1, true);
+            assert.strictEqual(result.verdictCounts.clean >= 1, true);
+            assert.ok(context.__storeData.size > 0, 'the bulk scan feeds the indicator index: ' + context.__storeData.size);
+        });
+
+        it('ignores invalid ids and caps the batch size', async () => {
+            assert.strictEqual((await context.runBulkScan([])).aborted, 'no_messages');
+            assert.strictEqual((await context.runBulkScan(['x', -1])).aborted, 'no_messages');
+            const many = Array.from({ length: context.BULK_SCAN_LIMIT + 20 }, (_, i) => i + 1);
+            context.browser.messages.get = async (id) => ({ id: id, headerMessageId: '<m' + id + '@x>', author: 'a@b.example', subject: 's' });
+            context.browser.messages.getFull = async () => ({ headers: {}, parts: [{ contentType: 'text/plain', body: '' }] });
+            const result = await context.runBulkScan(many);
+            assert.strictEqual(result.requested, context.BULK_SCAN_LIMIT, 'the batch is capped');
+        });
+
+        it('stores and reads a case note per message', async () => {
+            await context.saveCaseNote('<case@x>', 'Verdächtig, Rücksprache mit Fachbereich.');
+            assert.strictEqual(await context.readCaseNote('<case@x>'), 'Verdächtig, Rücksprache mit Fachbereich.');
+            assert.strictEqual(await context.readCaseNote('<unbekannt@x>'), null);
+            await assert.rejects(() => context.saveCaseNote('', 'x'), /missing headerMessageId/);
+        });
+    });
 });

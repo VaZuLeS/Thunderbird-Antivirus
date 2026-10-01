@@ -316,5 +316,53 @@
   },
   "selftestIndexSubject": {
     "message": "Selbsttest-Sonde"
+  },
+  "notificationBulkStarted": {
+    "message": "Sammel-Scan über $COUNT$ Nachricht(en) gestartet …",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationBulkProgress": {
+    "message": "Sammel-Scan: $DONE$ von $TOTAL$ Nachrichten …",
+    "placeholders": {
+      "done": {
+        "content": "$1"
+      },
+      "total": {
+        "content": "$2"
+      }
+    }
+  },
+  "notificationBulkFinished": {
+    "message": "Sammel-Scan abgeschlossen: $COUNT$ Nachricht(en), $NOTEWORTHY$ auffällig.",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "noteworthy": {
+        "content": "$2"
+      }
+    }
+  },
+  "menuBulkScan": {
+    "message": "Ausgewählte Nachrichten mit Thundy AV scannen"
+  },
+  "notificationNoMessagesSelected": {
+    "message": "Keine Nachrichten ausgewählt – bitte zuerst in der Nachrichtenliste markieren."
+  },
+  "selftestZip": {
+    "message": "ZIP-Zentralverzeichnis (Dateinamen, Größen, kein Auspacken)"
+  },
+  "selftestEvidence": {
+    "message": "Evidence-Hash (kanonische Dossier-Felder)"
+  },
+  "selftestCaseNote": {
+    "message": "Case-Notiz (Schreiben, Lesen, Löschen)"
+  },
+  "selftestCaseNoteText": {
+    "message": "Selbsttest-Notiz"
   }
 }

@@ -512,6 +512,104 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  const bulkButton = document.getElementById('runBulkScan');
+  const bulkResults = document.getElementById('bulkScanResults');
+
+  function renderBulkResults(result) {
+    if (!bulkResults) return;
+    bulkResults.textContent = '';
+    if (!result.scanned) {
+      bulkResults.appendChild(Object.assign(document.createElement('p'), {
+        className: 'thundy-empty',
+        textContent: 'Keine Nachrichten ausgewählt – bitte in der Nachrichtenliste markieren und erneut starten.'
+      }));
+      return;
+    }
+    const caption = document.createElement('p');
+    caption.className = 'thundy-note thundy-note--info';
+    caption.textContent = result.scanned + ' von ' + result.requested + ' Nachricht(en) bewertet – ' +
+      result.noteworthy + ' auffällig (verdächtig/bösartig).' +
+      (result.requested > result.scanned ? ' (Obergrenze ' + result.limit + ' je Lauf)' : '');
+    bulkResults.appendChild(caption);
+
+    const table = document.createElement('table');
+    table.className = 'thundy-table';
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    for (const label of ['Betreff', 'Verdikt', 'Score', 'Indikatoren', 'Hauptgrund']) {
+      const th = document.createElement('th');
+      th.textContent = label;
+      headRow.appendChild(th);
+    }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    const ordered = result.results.slice().sort((a, b) => (b.score || 0) - (a.score || 0));
+    for (const entry of ordered) {
+      const row = document.createElement('tr');
+      const subjectCell = document.createElement('td');
+      subjectCell.textContent = entry.subject || '(ohne Betreff)';
+      row.appendChild(subjectCell);
+      const verdictCell = document.createElement('td');
+      if (entry.error) {
+        verdictCell.textContent = 'Fehler: ' + entry.error;
+      } else {
+        const severity = entry.verdict === 'malicious' ? 'critical'
+          : (entry.verdict === 'suspicious' ? 'high' : (entry.verdict === 'unclear' ? 'medium' : 'low'));
+        const badge = document.createElement('span');
+        badge.className = 'thundy-badge thundy-badge--' + severity;
+        badge.textContent = entry.verdict;
+        verdictCell.appendChild(badge);
+      }
+      row.appendChild(verdictCell);
+      const scoreCell = document.createElement('td');
+      scoreCell.textContent = entry.score === undefined ? '–' : String(entry.score);
+      row.appendChild(scoreCell);
+      const iocCell = document.createElement('td');
+      iocCell.textContent = entry.indicatorCount === undefined ? '–' : String(entry.indicatorCount);
+      row.appendChild(iocCell);
+      const reasonCell = document.createElement('td');
+      reasonCell.textContent = entry.topReason || '–';
+      row.appendChild(reasonCell);
+      tbody.appendChild(row);
+    }
+    table.appendChild(tbody);
+    bulkResults.appendChild(table);
+    bulkResults.appendChild(Object.assign(document.createElement('p'), {
+      className: 'thundy-muted',
+      textContent: 'Ergebnisse sind auch im lokalen Indikator-Index (Pivot/Verlauf) verfügbar.'
+    }));
+  }
+
+  async function runBulkScanFromOptions() {
+    if (!bulkButton) return;
+    bulkButton.disabled = true;
+    bulkButton.setAttribute('aria-busy', 'true');
+    const previous = bulkButton.textContent;
+    bulkButton.textContent = 'Sammel-Scan läuft …';
+    try {
+      const response = await browser.runtime.sendMessage({ action: 'bulkScan' });
+      if (!response || response.status !== 'success') {
+        throw new Error(response && response.message ? response.message : 'Sammel-Scan fehlgeschlagen');
+      }
+      renderBulkResults(response.data);
+    } catch (error) {
+      if (bulkResults) {
+        bulkResults.textContent = '';
+        bulkResults.appendChild(Object.assign(document.createElement('p'), {
+          className: 'thundy-note thundy-note--warn', textContent: 'Sammel-Scan fehlgeschlagen: ' + error.message
+        }));
+      }
+    } finally {
+      bulkButton.disabled = false;
+      bulkButton.removeAttribute('aria-busy');
+      bulkButton.textContent = previous;
+    }
+  }
+
+  if (bulkButton) {
+    bulkButton.addEventListener('click', runBulkScanFromOptions);
+  }
   if (historyButton) {
     historyButton.addEventListener('click', runHistorySearch);
   }
