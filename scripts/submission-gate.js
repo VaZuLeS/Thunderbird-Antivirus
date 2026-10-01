@@ -52,17 +52,28 @@ function liveTestSummary(rootDir) {
 }
 
 /**
- * A release tag must exist for the exact commit that is submitted - an older tag
- * with the same version number is not enough.
+ * Checks the release tag for a version.
+ *
+ * A tag alone is not enough: the published artifact must correspond to the
+ * current package content. The criterion therefore passes only if the tag exists
+ * and no **artifact-relevant** file changed since that tag (documentation
+ * commits after the release are fine, a changed manifest/background script is
+ * not - that would require a new release).
  */
+const ARTIFACT_RELEVANT = /^(manifest\.json|background\.js|db\.js|api\.js|api_gateway\.js|options\.(html|js)|popup\.html|theme\.css|img\/|_locales\/|LICENSE)/;
+
 function releaseTagState(version) {
   const tag = 'v' + version;
   const tagCommit = spawnSync('git', ['rev-list', '-n', '1', tag], { cwd: ROOT, encoding: 'utf8' });
   const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' });
   const tagSha = (tagCommit.stdout || '').trim();
   const headSha = (head.stdout || '').trim();
-  if (!tagSha) return { exists: false, atHead: false, tag, tagSha, headSha };
-  return { exists: true, atHead: tagSha === headSha, tag, tagSha, headSha };
+  if (!tagSha) return { exists: false, atHead: false, tag, tagSha, headSha, changedArtifacts: [] };
+
+  const diff = spawnSync('git', ['diff', '--name-only', tag + '..HEAD'], { cwd: ROOT, encoding: 'utf8' });
+  const changed = (diff.stdout || '').split('\n').map((line) => line.trim()).filter(Boolean);
+  const changedArtifacts = changed.filter((file) => ARTIFACT_RELEVANT.test(file));
+  return { exists: true, atHead: tagSha === headSha, tag, tagSha, headSha, changedArtifacts };
 }
 
 /**
@@ -110,16 +121,17 @@ function evaluateGate({ rootDir = ROOT, commandRunner = runCommand, tagLookup = 
 
   const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'manifest.json'), 'utf8'));
   const tag = tagLookup(manifest.version);
-  if (tag && tag.exists && tag.atHead) {
-    add('C7', 'release tag for version ' + manifest.version + ' points at the submitted commit', 'pass',
-      tag.tag + ' -> ' + String(tag.tagSha).slice(0, 8));
+  const title = 'release for version ' + manifest.version + ' matches the package content';
+  if (tag && tag.exists && (tag.atHead || (tag.changedArtifacts || []).length === 0)) {
+    add('C7', title, 'pass',
+      tag.tag + ' -> ' + String(tag.tagSha).slice(0, 8) +
+      (tag.atHead ? ' (at the submitted commit)' : ' (no artifact-relevant changes since the release)'));
   } else if (tag && tag.exists) {
-    add('C7', 'release tag for version ' + manifest.version + ' points at the submitted commit', 'fail',
-      tag.tag + ' points at ' + String(tag.tagSha).slice(0, 8) + ' but the submitted commit is ' +
-      String(tag.headSha).slice(0, 8) + ' (re-tag deliberately or bump the version)');
+    add('C7', title, 'fail',
+      tag.tag + ' -> ' + String(tag.tagSha).slice(0, 8) + ' but these packaged files changed afterwards: ' +
+      (tag.changedArtifacts || []).join(', ') + ' (publish a new version)');
   } else {
-    add('C7', 'release tag for version ' + manifest.version + ' points at the submitted commit', 'fail',
-      'no git tag ' + (tag ? tag.tag : 'v' + manifest.version) + ' yet');
+    add('C7', title, 'fail', 'no git tag ' + (tag ? tag.tag : 'v' + manifest.version) + ' yet');
   }
 
   const go = criteria.every((criterion) => criterion.status === 'pass');

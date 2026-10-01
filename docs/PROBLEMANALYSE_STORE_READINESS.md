@@ -797,7 +797,25 @@ Benachrichtigung, fehlende Absenderprüfung) berühren Datenschutz/Härtung.
     konsistent (P0-5, P1-13).
 12. Signierweg geprüft: `--amo-base-url https://addons.thunderbird.net/api/v5/`, bei `listed`
     `--approval-timeout 0` (P1-14, P1-15).
-10. Doku-Drift bereinigt: keine Aussage in README/Listing/Reviewer-Notes/Policy widerspricht dem Code (P1-11).
+13. Doku-Drift bereinigt: keine Aussage in README/Listing/Reviewer-Notes/Policy widerspricht dem Code (P1-11).
+
+### 9.1 Ausführbares Gate (Kriterien C1 … C7)
+
+`npm run store-gate` (`scripts/submission-gate.js`) prüft die Kriterien maschinell und liefert Exit-Code 0
+nur bei vollständigem GO:
+
+| ID | Kriterium | Automatisiert |
+|---|---|---|
+| C1 | Pre-Submit-Checks (Manifest, Daten-Deklaration, Rechte, Assets) | ja |
+| C2 | vollständige Testsuite (`npm test`) | ja |
+| C3 | `web-ext lint` mit kuratierter Thunderbird-Allow-Liste | ja |
+| C4 | Build + Paketinhalt (`scripts/build-and-verify-package.js`) | ja |
+| C5 | echte PNG-Screenshots vorhanden | ja (Artefaktprüfung) |
+| C6 | Live-Test-Protokoll ausgefüllt („Summe“-Zeile, kein FAIL, ≥ 10 OK) | ja (Artefaktprüfung) |
+| C7 | Release für die Version passt zum Paketinhalt: Tag existiert **und** seit dem Tag hat sich **keine paketrelevante** Datei geändert (Doku-Commits sind unschädlich) | ja (Git-Prüfung) |
+
+Stand 2026-10-01 (Version 1.6.2): C1–C4 und C7 **PASS**, C5 und C6 **FAIL** — beides sind manuelle
+Nachweise, die eine echte Thunderbird-Installation bzw. Bildschirmaufnahmen erfordern.
 
 ---
 

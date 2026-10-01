@@ -52,7 +52,7 @@ describe('submission gate', () => {
     const { criteria, go } = evaluateGate({
       rootDir: complete,
       commandRunner: () => ({ ok: true, output: 'ok' }),
-      tagLookup: () => ({ exists: true, atHead: true, tag: 'v1.6', tagSha: 'abc12345', headSha: 'abc12345' })
+      tagLookup: () => ({ exists: true, atHead: true, tag: 'v1.6', tagSha: 'abc12345', headSha: 'abc12345', changedArtifacts: [] })
     });
     assert.strictEqual(go, true);
     assert.deepStrictEqual(criteria.map((criterion) => criterion.status), Array(7).fill('pass'));
@@ -63,7 +63,7 @@ describe('submission gate', () => {
     const { criteria, go } = evaluateGate({
       rootDir: incomplete,
       commandRunner: () => ({ ok: true, output: 'ok' }),
-      tagLookup: () => ({ exists: true, atHead: false, tag: 'v1.6', tagSha: 'aaaaaaaa', headSha: 'bbbbbbbb' })
+      tagLookup: () => ({ exists: true, atHead: false, tag: 'v1.6', tagSha: 'aaaaaaaa', headSha: 'bbbbbbbb', changedArtifacts: ['manifest.json'] })
     });
     assert.strictEqual(go, false);
     const failed = criteria.filter((criterion) => criterion.status === 'fail').map((criterion) => criterion.id);
@@ -76,7 +76,7 @@ describe('submission gate', () => {
     const { criteria, go } = evaluateGate({
       rootDir: complete,
       commandRunner: (command, args) => ({ ok: !args.includes('scripts/lint-with-filter.js'), output: 'lint failed' }),
-      tagLookup: () => ({ exists: true, atHead: true, tag: 'v1.6', tagSha: 'abc12345', headSha: 'abc12345' })
+      tagLookup: () => ({ exists: true, atHead: true, tag: 'v1.6', tagSha: 'abc12345', headSha: 'abc12345', changedArtifacts: [] })
     });
     assert.strictEqual(go, false);
     const lint = criteria.find((criterion) => criterion.id === 'C3');
@@ -99,5 +99,29 @@ describe('submission gate', () => {
     const unfilled = createRoot({ 'docs/live_test_protocol.md': '**Summe:** __ OK / __ FAIL / __ N/A / __ OFFEN\n' });
     assert.strictEqual(liveTestSummary(unfilled).filled, false);
     assert.strictEqual(liveTestSummary(createRoot({})).present, false);
+  });
+
+  it('passes C7 when only documentation changed since the release tag', () => {
+    const { criteria, go } = evaluateGate({
+      rootDir: complete,
+      commandRunner: () => ({ ok: true, output: 'ok' }),
+      tagLookup: () => ({ exists: true, atHead: false, tag: 'v1.6', tagSha: 'aaaaaaaa', headSha: 'bbbbbbbb', changedArtifacts: [] })
+    });
+    assert.strictEqual(go, true);
+    const c7 = criteria.find((criterion) => criterion.id === 'C7');
+    assert.strictEqual(c7.status, 'pass');
+    assert.match(c7.evidence, /no artifact-relevant changes/);
+  });
+
+  it('fails C7 when a packaged file changed after the release tag', () => {
+    const { criteria, go } = evaluateGate({
+      rootDir: complete,
+      commandRunner: () => ({ ok: true, output: 'ok' }),
+      tagLookup: () => ({ exists: true, atHead: false, tag: 'v1.6', tagSha: 'aaaaaaaa', headSha: 'bbbbbbbb', changedArtifacts: ['background.js'] })
+    });
+    assert.strictEqual(go, false);
+    const c7 = criteria.find((criterion) => criterion.id === 'C7');
+    assert.strictEqual(c7.status, 'fail');
+    assert.match(c7.evidence, /background\.js/);
   });
 });
