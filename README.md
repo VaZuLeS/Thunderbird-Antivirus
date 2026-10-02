@@ -13,12 +13,12 @@ submits the minimum data required to external analysis services.
 | Add-on name | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.7 – see [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.8 – see [CHANGELOG.md](CHANGELOG.md) |
 | License | MIT – see [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.7 |
+| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.8 |
 | Requires | Thunderbird 140.0 or newer (Manifest V3) |
 | Strings | Manifest strings and banners are localized (English, German – `_locales/`); the options page and the popup are currently German only |
 
@@ -49,6 +49,11 @@ submits the minimum data required to external analysis services.
   Archive attachments are assessed through their **ZIP central directory** (names, sizes, encryption
   flag) without being extracted, and every dossier carries an **evidence hash** (SHA-256 over its
   canonical fields) so a report can be verified later.
+- **Risk indicator and link guard (since 1.6.8).** The message toolbar button shows the risk score as a
+  badge (colour by severity) and a status strip above the message shows score, verdict, authentication
+  state and the top reasons - also below the warning threshold. Links are **checked before they open**:
+  the first click is intercepted and shows the result, and only a confirmation hands the URL to your
+  default browser.
 - **IP reputation (optional):** the sending mail servers extracted from `Received` headers can be checked against
   VirusTotal or AbuseIPDB.
 

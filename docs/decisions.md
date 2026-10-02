@@ -346,3 +346,37 @@ Anbieter-Zustände in der Forscher-Ansicht und ein Hash-Cache für Anhänge.
 | SHA-256 | `3d1db952d8309b218c6e5b7ebaafaa53ae65faaa35bff5cce52c58cf78ddb268` |
 | Paketinhalt | 17 Dateien, 392.882 Bytes entpackt |
 | Gates | 481 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 40 kuratierte Warnungen |
+
+## D17 — Version 1.6.8: Toolbar-Indikator, Inline-Status, Link-Prüfung vor dem Öffnen
+**Bezug:** Auftrag „Gefährdungsindikator in der Toolbar, Inline-Darstellung/Informationsgehalt verbessern,
+Links nicht mehr ungeprüft extern öffnen"
+
+**Bewusste Entscheidungen.**
+1. **Der Badge-Text ist der Score, nicht ein Symbol.** Wer den Button sieht, kennt sofort die Zahl; die
+   Farbe liefert die Schweregrad-Klasse. Bei „clean“ und Score 0 bleibt das Badge leer, damit das Add-on
+   nicht dauerhaft Alarm signalisiert.
+2. **Inline-Kopfzeile auch unterhalb der Warnschwelle.** Der bisherige Warnbanner erschien erst ab
+   Score ≥ 50; damit war eine „mittlere“ Nachricht unsichtbar. Die neue Statusleiste zeigt Score,
+   Schweregrad, Auth-Status und die Top-Gründe immer — der Warnbanner bleibt für ≥ 50 erhalten.
+3. **Link-Prüfung ist ein Gate, kein Verbot.** Der erste Klick prüft und zeigt das Ergebnis; geöffnet wird
+   erst nach Bestätigung („Jetzt öffnen“ oder zweiter Klick). Ohne Zustimmung/urlscan-Schlüssel lautet das
+   Ergebnis „ungeprüft“ — die Entscheidung bleibt beim Nutzer, es wird nichts blockiert.
+4. **Übergabe an den Standardbrowser über `tabs.create`** (bestehender Berechtigungsumfang), nicht über
+   einen Umweg aus dem Nachrichtendokument heraus. Keine neuen Berechtigungen.
+5. **Weiterhin nur gebündelter Code** in den Injektionen (Funktion + Argumente, keine Code-Strings); der
+   Link-Guard bekommt die angereicherten Linkdaten statt reiner URLs.
+
+**Veröffentlichtes Artefakt**
+
+| Feld | Wert |
+|---|---|
+| Version | 1.6.8 |
+| Commit / Tag | `cbbdfb5` / `v1.6.8` (annotiert) |
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.8 (kein Pre-Release → „Latest“) |
+| Asset | `thundy-av-1.6.8.xpi`, 104.580 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `5631238afd329962d492b94f8d8d11ca612414a0a2054aad20b9957caba4cb41` |
+| Paketinhalt | 17 Dateien, 407.827 Bytes entpackt |
+| Gates | 489 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 46 kuratierte Warnungen |
+
+**Bitte im Live-Test prüfen:** Optik/Position von Badge und Inline-Statusleiste, das Banner beim Link-Klick
+und der zweistufige Öffnungsweg (das Verhalten ist mit gemockten APIs getestet, die Optik nicht).

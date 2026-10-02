@@ -13,12 +13,12 @@ minimal notwendigen Daten an externe Analysedienste.
 | Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.7 – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.8 – siehe [CHANGELOG.md](CHANGELOG.md) |
 | Lizenz | MIT – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.7 |
+| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.8 |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
 | Sprachen | Manifest-Strings und Banner lokalisiert (Englisch, Deutsch – `_locales/`); Options- und Popup-Oberfläche derzeit nur auf Deutsch |
 
@@ -49,6 +49,11 @@ minimal notwendigen Daten an externe Analysedienste.
   **Case-Notiz** festhalten. Archive werden über ihr **ZIP-Zentralverzeichnis** bewertet (Namen, Größen,
   Verschlüsselungsflag), ohne ausgepackt zu werden; jeder Bericht trägt einen **Evidence-Hash**
   (SHA-256 über die kanonischen Felder), damit er später nachprüfbar ist.
+- **Gefährdungsindikator und Link-Schutz (ab 1.6.8).** Der Button in der Nachrichtenleiste zeigt den
+  Risiko-Score als Badge (Farbe je Schweregrad); eine Statusleiste über der Nachricht nennt Score,
+  Verdikt, Authentifizierungszustand und die wichtigsten Gründe – auch unterhalb der Warnschwelle.
+  Links werden **vor dem Öffnen geprüft**: Der erste Klick wird abgefangen und zeigt das Ergebnis,
+  erst eine Bestätigung übergibt die Adresse an den Standardbrowser.
 - **IP-Reputation (optional):** Die aus den `Received`-Headern extrahierten Mailserver-IPs können über VirusTotal
   oder AbuseIPDB geprüft werden.
 

@@ -20,7 +20,7 @@
 | Betriebssystem + Version | |
 | Datum des Tests | |
 | Tester (Name/Kürzel) | |
-| Add-on-Version | 1.6.4 |
+| Add-on-Version | 1.6.8 |
 | Add-on-ID | thundy-av@bludau-it-services.de |
 | Bezugs-Commit (Repo) | `7b92d58` / Tag `v1.6.4` |
 | Testprofil (Name/Pfad) | |
@@ -192,6 +192,19 @@ Stufe `strict`, `scanningEnabledSenders` leer. „Erwartung" = Soll; „Ist" tr�
   prüfbaren Punkte ab. Die reinen Datei-/Parsing-Eigenschaften der Testdaten sind in
   `testdata/README.md` §4 (technische Validierung) nachgewiesen.
 - **Version/Commit dieses Protokolls:** Bezug `b5734b6` (siehe §1/§2); bei abweichendem Test-Commit dort aktualisieren.
+
+## 7a. Zusatzprüfungen 1.6.8 (Toolbar-Indikator, Inline-Status, Link-Prüfung)
+
+| Schritt | Erwartung | Ist | Status (OK/FAIL) | Nachweis |
+|---|---|---|---|---|
+| 1 | Der Thundy-AV-Button in der Nachrichtenleiste zeigt einen Badge mit dem Score und eine Farbe je Schweregrad (grün/gelb/orange/rot). | | | |
+| 2 | Tooltip des Buttons nennt Score, Verdikt und Betreff der Nachricht. | | | |
+| 3 | Über der Nachricht erscheint die Inline-Statusleiste mit Score, Schweregrad, Verdikt, Auth-Status und den wichtigsten Gründen – **auch bei niedrigem Score**. | | | |
+| 4 | Ein Klick auf einen Link öffnet **nicht** sofort den Browser, sondern zeigt ein Banner mit Host, Status und den Schaltflächen „Jetzt öffnen“/„Abbrechen“. | | | |
+| 5 | Ohne urlscan-Schlüssel bzw. ohne Zustimmung meldet das Banner „ungeprüft“ und blockiert nicht. | | | |
+| 6 | „Jetzt öffnen“ (oder ein zweiter Klick) übergibt die Adresse an den Standardbrowser. | | | |
+| 7 | Ein verdächtiger Link (Marken-Ähnlichkeit, Kurz-URL) ist bereits vor dem Klick erkennbar (Tooltip + gestrichelte farbige Unterstreichung). | | | |
+| 8 | Der Kontextmenü-Eintrag „Link mit Thundy AV scannen“ funktioniert weiterhin unabhängig vom Link-Guard. | | | |
 
 ## 8. Selbsttest-Bericht (aus Schritt 0 einfügen)
 

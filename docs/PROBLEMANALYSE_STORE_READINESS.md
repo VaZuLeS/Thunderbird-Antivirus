@@ -337,6 +337,44 @@ Nachrichtenvergleich, Berichts-PDF — Roadmap §8c). Details: §17 des Aufgaben
 
 ---
 
+## 0.8 Update 2026-10-01 (Runde 8) — Sichtbarkeit und Link-Sicherheit (Auftrag des Maintainers)
+
+Drei konkrete Aufträge: **Gefährdungsgrad in der Toolbar**, **Inline-Darstellung/Informationsgehalt** und
+**Links nicht mehr ungeprüft extern öffnen**.
+
+### U-1 — Gefährdungsgrad war nur im Popup sichtbar (hoch)
+**Belege (vorher):** `browser.messageDisplayAction.setBadgeText`/`setBadgeBackgroundColor` wurden nie
+aufgerufen; der Button war stumm, der Score erst nach Öffnen des Popups oder im Banner (ab Score 50)
+erkennbar.
+**Fix:** `updateActionIndicator()` setzt Badge-Text (Score), Badge-Farbe je Schweregrad und einen Tooltip
+mit Score/Verdikt/Betreff; Aufruf bei jeder Bewertung in `evaluateAndInjectThreats()`.
+
+### U-2 — Kein Gesamtbild in der Nachrichtenansicht (hoch)
+**Belege (vorher):** Der Threat-Banner erscheint nur bei `score >= 50` oder bestandener Auth-Prüfung; eine
+Nachricht mit mittlerem Risiko (20–49) war in der Ansicht nicht als auffällig erkennbar.
+**Fix:** `injectInlineStatus()` rendert eine Statusleiste mit Score, Schweregrad, Verdikt,
+Auth-Zustand und den Top-Gründen — **immer**, unabhängig von der Schwelle; der Warnbanner bleibt für ≥ 50.
+
+### U-3 — Links wurden ungeprüft an den Standardbrowser übergeben (hoch, Sicherheitslücke im Ablauf)
+**Belege (vorher):** `injectTimeOfClickProtection()` markierte Links lediglich (Title +
+gestrichelte Unterstreichung). Ein Klick führte direkt zur Navigation; die bestehende Prüfung
+(`checkLinkState`, lokal gespeicherter Status + optionaler urlscan.io-Live-Scan) wurde **nie** aufgerufen.
+**Fix:** `injectLinkGuard()` fängt den ersten Klick ab (`preventDefault`), prüft die Adresse, zeigt das
+Ergebnis in einem Banner mit „Jetzt öffnen“/„Abbrechen“ und lässt erst den zweiten Klick (bzw. die
+Bestätigung) zu. Die Übergabe an den Standardbrowser läuft über die neue Message-Action `openLink`
+(`tabs.create`); `checkLinkState` ist damit erstmals im Klickpfad wirksam.
+
+### U-4 — Link-Zustand ohne Datenbasis (mittel)
+**Belege (vorher):** Der Link-Pfad kannte nur die URL-Liste; Anatomie (Marken-Ähnlichkeit, Kurz-URL,
+Tracking) und der lokal gespeicherte Provider-Status waren dort nicht verfügbar.
+**Fix:** `buildLinkSummaries()` reichert die Links an und übergibt sie als Argument an den Guard; die
+Inline-Darstellung zeigt je Link Status-Tooltip und farbige Unterstreichung.
+
+**Status:** U-1 … U-4 umgesetzt und mit **1.6.8** veröffentlicht (489 Tests, Store-Gate C1–C4 + C7 PASS;
+offen bleiben C5/C6). Details: §18 des Aufgabenplans, D17 in [decisions.md](decisions.md).
+
+---
+
 ## 1. Zielbild „store-ready“
 
 „Store-ready“ heißt hier: das Add-on erfüllt die ATN-Einreichungsanforderungen und ist in der deklarierten

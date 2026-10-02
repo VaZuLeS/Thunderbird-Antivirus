@@ -18,6 +18,27 @@
 Ablauf und Begründung: D11 in [decisions.md](decisions.md). ATN kennt weiterhin keine Version dieses
 Add-ons (API-Abfrage → 404); die Einreichung dort ist noch offen (siehe „Remaining“).
 
+## Release 1.6.8 (veröffentlicht)
+
+Gefährdungsgrad in der Toolbar, Inline-Statusleiste und **Link-Prüfung vor dem Öffnen**.
+
+| Feld | Wert |
+|---|---|
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.8 (kein Pre-Release → „Latest“) |
+| Commit / Tag | `cbbdfb5` / `v1.6.8` |
+| Asset | `thundy-av-1.6.8.xpi`, 104.580 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `5631238afd329962d492b94f8d8d11ca612414a0a2054aad20b9957caba4cb41` |
+| Gates | 489 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 46 kuratierte Warnungen · Paket 17 Dateien / 407.827 Bytes „valid“ |
+
+### Funktionsumfang 1.6.8
+
+- **Toolbar-Indikator:** Badge mit Score und Schweregrad-Farbe, Tooltip mit Score/Verdikt/Betreff.
+- **Inline-Statusleiste** über der Nachricht (Score, Schweregrad, Verdikt, Auth-Status, Top-Gründe) – auch
+  unterhalb der Warnschwelle.
+- **Link-Prüfung vor dem Öffnen:** Klick wird abgefangen, Prüfung läuft (lokal/urlscan.io), Ergebnis im
+  Banner mit „Jetzt öffnen“/„Abbrechen“; Übergabe an den Standardbrowser erst nach Bestätigung
+  (`tabs.create`). Lint-Allow-Liste um die `messageDisplayAction`-APIs ergänzt.
+
 ## Release 1.6.7 (veröffentlicht)
 
 Forscher-Werkzeuge II (Thema T9): Sammel-Scan, Case-Notizen, ZIP-Innenansicht und Evidence-Hash —

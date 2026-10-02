@@ -431,3 +431,32 @@ Neue Befunde **T9-1 … T9-4** (Bezug: §0.7 der Problemanalyse; Aufgaben aus Ro
 **Nebenfix:** `extractTextFromParts()` akzeptiert jetzt zusätzlich Teil-Listen als Eingabe (der Sammel-Scan
 nutzt `fullMessage.parts` direkt) — ein stiller Robustheitsgewinn für alle künftigen Aufrufer.
 
+---
+
+## 18. Runde 8 — Auftrag „Sichtbarkeit und Link-Sicherheit“ (Version 1.6.8)
+
+Neue Befunde **U-1 … U-4** (Bezug: §0.8 der Problemanalyse).
+
+| ID | Aufgabe | Bezug | DoD (Nachweis) | Aufwand | Abhängig von |
+|---|---|---|---|---|---|
+| **H-01** | **Toolbar-Indikator:** `updateActionIndicator()`/`clearActionIndicator()` mit Badge-Text, Schweregrad-Farbe und Tooltip; Aufruf bei jeder Bewertung | U-1 | 5 Tests (Badge-Text/Farbe/Tooltip, Reset, fehlende API), Aufruf in `evaluateAndInjectThreats` | 3 h | — |
+| **H-02** | **Inline-Statusleiste:** `injectInlineStatus()` mit Score, Schweregrad, Verdikt, Auth-Status und Top-Gründen; unabhängig von der Warnschwelle | U-2 | Test (Injektion mit Score/Gründen/Auth), bestehende Banner-Tests angepasst | 3 h | — |
+| **H-03** | **Link-Guard:** `injectLinkGuard()` fängt den ersten Klick ab, prüft über `checkLinkState`, zeigt Ergebnis + „Jetzt öffnen“/„Abbrechen“; zweiter Klick öffnet | U-3 | 2 Tests (Injektion mit Zusammenfassung, keine Injektion ohne Time-of-Click), Nachweis `openLink`-Action | 4 h | — |
+| **H-04** | **Link-Anreicherung:** `buildLinkSummaries()` (Anatomie + gespeicherter Provider-Status) als Argument; Status-Tooltip/Farbunterstreichung je Link | U-4 | Test (Host, `hybridState`, Marken-Ähnlichkeit) | 2 h | H-03 |
+| **H-05** | **Gates/Doku/Release:** Lint-Allow-Liste um `messageDisplayAction.*`, Doku (STATUS/D17/CHANGELOG/Reviewer-Notes), Tag `v1.6.8` mit Asset | alle | `npm run check` Exit 0; Store-Gate C1–C4 + C7 PASS | 2 h | H-01 … H-04 |
+
+**Summe:** ≈ 14 h (2 Personentage).
+
+### Ausführungsstand Runde 8 (2026-10-01)
+
+| ID | Status | Nachweis |
+|---|---|---|
+| H-01 | **erledigt** | `ACTION_BADGE_COLORS`, `actionBadgeText()`, `updateActionIndicator()`; 5 Tests |
+| H-02 | **erledigt** | `SEVERITY_LABELS`, `injectInlineStatus()`; Test + angepasste Banner-Tests |
+| H-03 | **erledigt** | `injectLinkGuard()` (Klick-Gate, Banner, zweiter Klick), Message-Action `openLink`; 2 Tests |
+| H-04 | **erledigt** | `buildLinkSummaries()` + Anreicherung im Link-Pfad; Test |
+| H-05 | **erledigt** | Lint 0 Fehler / 46 kuratierte Warnungen; STATUS/D17/CHANGELOG/Release-Notes; Tag `v1.6.8` |
+
+**Offen (manuell):** Optik von Badge und Inline-Leiste, das Banner beim Link-Klick und der zweistufige
+Öffnungsweg sind mit gemockten APIs getestet — die visuelle Prüfung gehört in den Live-Test (C6).
+

@@ -268,6 +268,28 @@ a test account instead of using real mail.
 
 The full end-to-end protocol for the live test is described in `docs/live_test_protocol.md`.
 
+### 8.7d Risk indicator in the toolbar and link checking before opening (since 1.6.8)
+
+- **Toolbar indicator.** The message display action carries a badge with the risk score and a colour per
+  severity (critical/high/medium/low), plus a tooltip naming score, verdict and subject. A "clean" mail
+  with score 0 leaves the badge empty on purpose (no permanent alarm). Implemented with
+  `messageDisplayAction.setBadgeText/setBadgeBackgroundColor/setTitle`.
+- **Inline status strip.** Above the message a strip shows score, severity, verdict, the authentication
+  state (SPF/DKIM/DMARC) and the top reasons - **always**, independent of the warning threshold. The
+  warning banner still appears for score >= 50.
+- **Link checking before opening.** The first click on a link is intercepted (`preventDefault`), the
+  address is checked (locally stored state; additionally urlscan.io if a key is configured and the global
+  consent is on) and the result is shown in a banner with "Open now" / "Cancel". Only the confirmation
+  (or a second click) hands the URL to the default browser via the `openLink` message action
+  (`tabs.create`). Without a urlscan key/consent the result is reported as "not checked" - nothing is
+  presented as verified that was not verified.
+- **Per-link status.** Each link gets a tooltip with host and state plus a coloured dashed underline
+  (look-alike domains, shorteners, URLhaus matches are flagged).
+- **No new permissions**, no code strings in injections (function + arguments only).
+
+Reviewer test: open a test message from `testdata/` with links; check the badge and the inline strip; click
+a link and confirm that the banner appears first and that navigation only happens after "Open now".
+
 ### 8.7c Bulk scan, case notes, ZIP inspection and evidence hash (since 1.6.7)
 
 - **Bulk scan.** Context menu entry "Scan selected messages with Thundy AV" in the message list
