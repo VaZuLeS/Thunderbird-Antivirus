@@ -1221,9 +1221,7 @@ function renderThreatLevelHeader(threat, target) {
     const badge = document.createElement('span');
     badge.id = 'threatLevelBadge';
     badge.style.fontWeight = 'bold';
-    badge.textContent = style.icon + ' ' + (evaluated
-        ? popupLevelLabel(level)
-        : popupI18nMessage('bannerNotEvaluated', 'Nicht bewertet'));
+    badge.textContent = style.icon + ' ' + popupLevelLabel(evaluated ? level : 'unknown');
     container.appendChild(badge);
 
     const scoreEl = document.createElement('span');

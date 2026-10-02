@@ -1,36 +1,53 @@
 /**
- * Thundy AV - Message-Display-Skript (Link-Gate).
+ * Thundy AV - Message-Display-Skript (Klick-Gate, Befund F-1).
  *
  * Injiziert von background.js via
  *   browser.scripting.executeScript({ target: { tabId },
- *     files: [link_gate.js, msg_display.js] })
- * (identisch zum Weg, den die Banner bereits nutzen).
+ *     files: ['link_gate.js', 'msg_display.js'] })
+ * (identisch zum Weg, den die Banner bereits nutzen). link_gate.js wird zuerst
+ * geladen; ist die Engine aus irgendeinem Grund nicht vorhanden, arbeitet dieses
+ * Skript konservativ (Warnung statt stiller Freigabe).
  *
- * Befund F-1: Links wurden ungeprueft an den Standardbem Browser uebergeben.
- * Dieses Skript entzieht daher jedem Link das href-Attribut (der Link bleibt
+ * Befund F-1: Links wurden ungeprueft an den Standardbrowser uebergeben. Dieses
+ * Skript entzieht daher jedem http(s)-Link das href-Attribut (der Link bleibt
  * sichtbar, ist aber inert) und registriert einen Capture-Phase-Click-Handler.
- * Erst nach einem Verdikt aus dem Hintergrund wird das href fuer genau diesen
- * Link wieder gesetzt und der Klick erneut ausgeloest.
+ * Erst nach einem Verdikt aus dem Hintergrund (oder der lokalen Engine) wird das
+ * href fuer genau diesen Link wieder gesetzt und der Klick erneut ausgeloest.
  *
  * Sicherheitsgrundsaetze:
- *  - Faellt der Hintergrund aus, entscheidet die lokal geladene Engine
- *    (link_gate.js); der Nutzer sieht dann "unbekannt" statt "sicher".
  *  - "block" ist keine Sackgasse: nach ausdruecklicher Bestaetigung darf der
- *    Nutzer oeffnen; die Entscheidung wird im Audit-Log vermerkt.
- *  - Kein innerHTML mit Daten aus der Nachricht - ausschliesslich textContent.
+ *    Nutzer oeffnen; die Entscheidung wird mit override:true im Audit-Log
+ *    vermerkt (Nachvollziehbarkeit, F-8).
+ *  - Faellt der Hintergrund aus, entscheidet die lokal geladene Engine
+ *    (link_gate.js); fehlt auch die, wird gewarnt statt still freigegeben.
+ *  - Kein innerHTML/outerHTML/insertAdjacentHTML mit Daten aus der Nachricht oder
+ *    aus dem Hintergrund - ausschliesslich createElement/textContent.
+ *  - Kein top-level await; jede browser.*-Nutzung ist in try/catch gekapselt.
+ *
+ * Debug-/Test-Hook: window.__thundyLinkGateApi (siehe unten). Der Hook ist
+ * ausschliesslich eine Test-/Debug-Oberflaeche und schwaecht das Gate NICHT: er
+ * ruft dieselben Funktionen auf, die auch der Click-Handler verwendet.
  */
 (function () {
   'use strict';
 
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   if (window.__thundyLinkGateInstalled) return;
-  const LOG_PREFIX = '[Thundy AV Link-Gate]';
-  const TOAST_TIMEOUT_MS = 4000;
+  window.__thundyLinkGateInstalled = true;
+
+  const TOAST_ID = 'thundy-linkgate-toast';
+  const DIALOG_ID = 'thundy-linkgate-dialog';
+  const DIALOG_BOX_ID = 'thundy-linkgate-dialog-box';
+  const REPORT_STATUS_ID = 'thundy-linkgate-report-status';
+  const OPEN_BUTTON_ID = 'thundy-linkgate-open';
+  const CANCEL_BUTTON_ID = 'thundy-linkgate-cancel';
+  const REPORT_BUTTON_ID = 'thundy-linkgate-report';
+  const OBSERVER_DELAY_MS = 100;
   const MAX_REASONS = 8;
 
   // Fallback-Texte (deutsch). Der Hintergrund liefert die uebersetzten Texte
   // ueber 'linkGateConfig' nach; ohne Hintergrund bleibt die Warnung lesbar.
-  const TEXTS = {
+  const FALLBACK_TEXTS = {
     gateChecking: 'Thundy AV prüft diesen Link …',
     gateBlocked: 'Link blockiert: Die Prüfung hat ein hohes Risiko ergeben.',
     gateWarning: 'Link geprüft: auffällig – bitte Ziel und Absender prüfen.',
@@ -44,15 +61,7 @@
     gateHost: 'Zielhost',
     gateReasonTitle: 'Gründe',
     gateReportSent: 'Bericht an den Administrator vorbereitet.',
-    gateReportFailed: 'Bericht konnte nicht erstellt werden (kein Administrator-Kontakt hinterlegt?).'
-  high: { color: '#8a3400', background: '#fff0e6', border: '#e8620c', icon: '🟠' },
-    critical: { color: '#8a1010', background: '#ffeeee', border: '#c81e1e', icon: '🔴' },
-    unknown: { color: '#333333', background: '#f2f2f2', border: '#999999', icon: '⚪' }
+    gateReportFailed: 'Bericht konnte nicht erstellt werden (kein Administrator-Kontakt hinterlegt?).',
+    gateLoading: 'Wird geladen …'
   };
-
-  // Farbwelt je Stufe: identisch zu ThundyLinkGate.levelStyle(), damit Toolbar,
-  // Banner und Dialog dieselbe Sprache sprechen.
-  const STYLES = {
-    clean: { color: '#145c14', background: '#e6ffe6', border: '#2e8b2e', icon: '🟢' },
-    low: { color: '#4d6b00', background: '#f6ffe6', border: '#8ebe2d', icon: '🟢' },
-    medium: { color: '#7a5200', background: '#fff6e6', border: '#f0a500', icon: '🟡' },
+})();

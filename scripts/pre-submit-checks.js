@@ -246,7 +246,7 @@ function runChecks(rootDir) {
   //   * messageDisplayScripts was replaced by scripting.messageDisplay.
   // The lint allow-list deliberately does not hide them (they used to be listed
   // as "known false positives", which would mask this exact regression).
-  const runtimeFiles = ['background.js', 'api.js', 'options.js', 'db.js', 'api_gateway.js'];
+  const runtimeFiles = ['background.js', 'api.js', 'options.js', 'db.js', 'api_gateway.js', 'link_gate.js', 'report.js', 'msg_display.js'];
   const removedApiPatterns = [
     [/messageDisplay\.onMessageDisplayed/g, 'messageDisplay.onMessageDisplayed is removed in MV3 - use onMessagesDisplayed'],
     [/messageDisplay\.getDisplayedMessage\s*\(/g, 'messageDisplay.getDisplayedMessage() is removed in MV3 - use getDisplayedMessages()'],
@@ -272,6 +272,55 @@ function runChecks(rootDir) {
     fail('browser.menus is used in ' + menusUsers.join(', ') + ' but the "menus" permission is missing in manifest.json');
   } else if (menusUsers.length > 0) {
     ok('context menus are covered by the "menus" permission');
+  }
+
+  // --- 1.7: link gate, report engine and compose --------------------------
+  // background.js loads link_gate.js and report.js as background scripts and
+  // injects msg_display.js into the message display. A missing entry silently
+  // breaks the feature, so it is enforced here.
+  const backgroundScripts = (manifest.background && Array.isArray(manifest.background.scripts)) ? manifest.background.scripts : [];
+  const backgroundPath = path.join(rootDir, 'background.js');
+  const backgroundSource = fs.existsSync(backgroundPath)
+    ? stripComments(fs.readFileSync(backgroundPath, 'utf8')) : '';
+  // Nur pruefen, was background.js wirklich benutzt: die Engine (ThundyLinkGate)
+  // und die Report-Engine (ThundyReport) werden als eigene Dateien geladen.
+  const engineDependencies = [
+    ['ThundyLinkGate', 'link_gate.js'],
+    ['ThundyReport', 'report.js']
+  ];
+  for (const [symbol, dependency] of engineDependencies) {
+    if (!backgroundSource.includes(symbol)) continue;
+    if (!backgroundScripts.includes(dependency)) {
+      fail(dependency + ' must be listed in manifest.background.scripts (background.js uses ' + symbol + ')');
+    } else if (!fs.existsSync(path.join(rootDir, dependency))) {
+      fail('background script is missing on disk: ' + dependency);
+    } else {
+      ok(dependency + ' is loaded as a background script');
+    }
+  }
+
+  if (/msg_display\.js/.test(backgroundSource)) {
+    if (!fs.existsSync(path.join(rootDir, 'msg_display.js'))) {
+      fail('background.js injects msg_display.js but the file is missing on disk');
+    } else {
+      ok('msg_display.js (link gate) is present and injected by background.js');
+    }
+    if (!backgroundSource.includes('link_gate.js')) {
+      fail('the link gate must be injected together with link_gate.js (msg_display.js uses the local engine)');
+    }
+  }
+
+  // browser.compose is only available with the "compose" permission. Without it
+  // the admin report silently does nothing (the same class of bug as the
+  // missing "menus" permission before).
+  const composeUsers = runtimeFiles.filter((file) => {
+    const absolute = path.join(rootDir, file);
+    return fs.existsSync(absolute) && /browser\.compose\s*\./.test(stripComments(fs.readFileSync(absolute, 'utf8')));
+  });
+  if (composeUsers.length > 0 && !permissions.includes('compose')) {
+    fail('browser.compose is used in ' + composeUsers.join(', ') + ' but the "compose" permission is missing in manifest.json');
+  } else if (composeUsers.length > 0) {
+    ok('the compose API is covered by the "compose" permission');
   }
 
   // --- repository / store assets ------------------------------------------

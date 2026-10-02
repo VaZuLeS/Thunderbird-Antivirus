@@ -114,5 +114,128 @@
   },
   "bannerTierBlocked": {
     "message": "Diese Aktion ist in der aktuellen Datenschutz-Stufe nicht erlaubt. Siehe Einstellungen des Add-ons."
+  },
+  "bannerLevelClean": {
+    "message": "Unauffällig"
+  },
+  "bannerLevelLow": {
+    "message": "Geringes Risiko"
+  },
+  "bannerLevelMedium": {
+    "message": "Auffällig"
+  },
+  "bannerLevelHigh": {
+    "message": "Hohes Risiko"
+  },
+  "bannerLevelCritical": {
+    "message": "Kritisch"
+  },
+  "bannerLevelUnknown": {
+    "message": "Nicht bewertet"
+  },
+  "bannerLevelTitle": {
+    "message": "Thundy-AV-Bewertung: $LEVEL$ (Risiko-Score $SCORE$ von 100)"
+  },
+  "bannerLevelScoreShort": {
+    "message": "Score $SCORE$"
+  },
+  "bannerLinksTitle": {
+    "message": "Links in dieser Nachricht"
+  },
+  "bannerLinksNone": {
+    "message": "Keine Links gefunden"
+  },
+  "bannerAttachmentsTitle": {
+    "message": "Anhänge"
+  },
+  "bannerAuthTitle": {
+    "message": "Absender-Authentifizierung"
+  },
+  "bannerAuthNone": {
+    "message": "Kein SPF/DKIM/DMARC-Ergebnis in den Kopfzeilen"
+  },
+  "bannerAuthFail": {
+    "message": "Absender-Authentifizierung fehlgeschlagen (SPF/DKIM/DMARC)"
+  },
+  "bannerFirstContact": {
+    "message": "Erstkontakt mit diesem Absender"
+  },
+  "bannerReplyToMismatch": {
+    "message": "Reply-To zeigt auf eine andere Domain"
+  },
+  "bannerDetailsToggle": {
+    "message": "Details anzeigen"
+  },
+  "bannerDetailsHide": {
+    "message": "Details ausblenden"
+  },
+  "bannerReportAdmin": {
+    "message": "An Administrator melden"
+  },
+  "bannerGateNote": {
+    "message": "Links in dieser Nachricht werden erst nach einer Prüfung an den Browser übergeben."
+  },
+  "gateChecking": {
+    "message": "Thundy AV prüft diesen Link …"
+  },
+  "gateBlocked": {
+    "message": "Link blockiert: Die Prüfung hat ein hohes Risiko ergeben."
+  },
+  "gateWarning": {
+    "message": "Link geprüft: auffällig – bitte Ziel und Absender prüfen."
+  },
+  "gateAllowed": {
+    "message": "Link geprüft: keine Auffälligkeit gefunden."
+  },
+  "gateUnknown": {
+    "message": "Link geprüft: keine externe Quelle verfügbar, Bewertung nur lokal."
+  },
+  "gateOpenAnyway": {
+    "message": "Trotzdem öffnen"
+  },
+  "gateCancel": {
+    "message": "Abbrechen"
+  },
+  "gateDetails": {
+    "message": "Details anzeigen"
+  },
+  "gateReportAdmin": {
+    "message": "An Administrator melden"
+  },
+  "gateConfirmOverride": {
+    "message": "Sie öffnen einen als riskant bewerteten Link. Diese Entscheidung wird im Thundy-AV-Audit-Log vermerkt. Fortfahren?"
+  },
+  "gateHost": {
+    "message": "Zielhost"
+  },
+  "gateReasonTitle": {
+    "message": "Gründe"
+  },
+  "gateReportSent": {
+    "message": "Bericht an den Administrator wurde vorbereitet."
+  },
+  "gateReportFailed": {
+    "message": "Der Bericht konnte nicht erstellt werden (kein Administrator-Kontakt hinterlegt?)."
+  },
+  "gateLoading": {
+    "message": "Die Link-Prüfung ist in dieser Nachrichtenansicht nicht verfügbar."
+  },
+  "notificationGateActive": {
+    "message": "Link-Gate: Links in dieser Nachricht werden vor dem Öffnen geprüft."
+  },
+  "notificationGateBlocked": {
+    "message": "Riskanten Link blockiert: $URL$"
+  },
+  "notificationReportStarted": {
+    "message": "Bericht zu $URL$ für den Administrator vorbereitet."
+  },
+  "notificationReportNoContact": {
+    "message": "Kein Administrator-Kontakt hinterlegt. Bitte in den Einstellungen ergänzen."
+  },
+  "notificationReportComposeFailed": {
+    "message": "Das Verfassen-Fenster konnte nicht geöffnet werden. Der Berichtstext steht in den Einstellungen bereit."
+  },
+  "actionTitleLevel": {
+    "message": "Thundy AV: $LEVEL$ ($SCORE$ von 100)"
   }
 }

@@ -191,6 +191,7 @@ describe('background.js', () => {
             // 1.7: Bedrohungsindikator, Link-Gate, Admin-Report
             globalThis.updateThreatIndicator = updateThreatIndicator;
             globalThis.applyThreatIndicator = applyThreatIndicator;
+            globalThis.installLinkGate = installLinkGate;
             globalThis.injectThreatBanner = injectThreatBanner;
             globalThis.renderThreatPanelInPage = renderThreatPanelInPage;
             globalThis.levelFromScore = levelFromScore;
@@ -3388,4 +3389,102 @@ describe('background.js', () => {
             }
         });
     });
+
+    describe('threat level indicator (1.7)', () => {
+        let calls;
+        let originalAction;
+
+        beforeEach(() => {
+            calls = [];
+            originalAction = context.browser.messageDisplayAction;
+            context.browser.messageDisplayAction = {
+                setBadgeText: async (options) => { calls.push(['badge', options.text]); },
+                setBadgeBackgroundColor: async (options) => { calls.push(['color', options.color]); },
+                setIcon: async (options) => { calls.push(['icon', options.path[16]]); },
+                setTitle: async (options) => { calls.push(['title', options.title]); }
+            };
+        });
+
+        afterEach(() => {
+            context.browser.messageDisplayAction = originalAction;
+        });
+
+        it('maps the score to the documented levels', () => {
+            assert.strictEqual(context.levelFromScore(0), 'clean');
+            assert.strictEqual(context.levelFromScore(14), 'clean');
+            assert.strictEqual(context.levelFromScore(15), 'low');
+            assert.strictEqual(context.levelFromScore(39), 'low');
+            assert.strictEqual(context.levelFromScore(40), 'medium');
+            assert.strictEqual(context.levelFromScore(59), 'medium');
+            assert.strictEqual(context.levelFromScore(60), 'high');
+            assert.strictEqual(context.levelFromScore(79), 'high');
+            assert.strictEqual(context.levelFromScore(80), 'critical');
+            assert.strictEqual(context.levelFromScore(100), 'critical');
+        });
+
+        it('sets badge, colour, icon and title for an evaluated message', async () => {
+            const applied = await context.updateThreatIndicator(7, { score: 90, level: 'critical', evaluated: true });
+            assert.strictEqual(applied, true);
+            assert.deepStrictEqual(calls.map((entry) => entry[0]), ['badge', 'color', 'icon', 'title']);
+            assert.strictEqual(calls[0][1], '90');
+            assert.strictEqual(calls[1][1], '#c81e1e');
+            assert.strictEqual(calls[2][1], 'img/levels/level-critical-16px.png');
+            assert.ok(calls[3][1].includes('Critical'));
+        });
+
+        it('resets the indicator to the neutral state when nothing was evaluated', async () => {
+            await context.updateThreatIndicator(7, null);
+            assert.strictEqual(calls[0][1], '', 'no score means no badge text');
+            // Der Farbaufruf entfaellt ohne Badge-Text, das neutrale Icon bleibt.
+            assert.deepStrictEqual(calls.map((entry) => entry[0]), ['badge', 'icon', 'title']);
+            assert.strictEqual(calls[1][1], 'img/levels/level-unknown-16px.png');
+        });
+
+        it('degrades gracefully when the message display action has no badge API', async () => {
+            context.browser.messageDisplayAction = {
+                setIcon: async (options) => { calls.push(['icon', options.path[16]]); }
+            };
+            const applied = await context.updateThreatIndicator(7, { score: 20, level: 'low', evaluated: true });
+            assert.strictEqual(applied, true);
+            assert.deepStrictEqual(calls, [['icon', 'img/levels/level-low-16px.png']]);
+        });
+
+        it('returns false without a message display action and without a tab id', async () => {
+            context.browser.messageDisplayAction = null;
+            assert.strictEqual(await context.updateThreatIndicator(7, { score: 5 }), false);
+            context.browser.messageDisplayAction = originalAction;
+            assert.strictEqual(await context.updateThreatIndicator(null, { score: 5 }), false);
+        });
+    });
+
+    describe('link gate wiring (1.7)', () => {
+        it('injects link_gate.js and msg_display.js into the message display', async () => {
+            const injected = [];
+            context.browser.scripting.executeScript = async (options) => { injected.push(options); };
+            context.set_linkGateEnabled(true);
+            context.set_linkGateMode('strict');
+            await context.installLinkGate(11);
+            assert.strictEqual(injected.length, 1);
+            assert.strictEqual(injected[0].files.join(','), 'link_gate.js,msg_display.js');
+            assert.strictEqual(injected[0].target.tabId, 11);
+        });
+
+        it('does not inject the gate when it is disabled or in mode off', async () => {
+            const injected = [];
+            context.browser.scripting.executeScript = async (options) => { injected.push(options); };
+            context.set_linkGateMode('off');
+            await context.installLinkGate(11);
+            context.set_linkGateMode('strict');
+            context.set_linkGateEnabled(false);
+            await context.installLinkGate(11);
+            assert.strictEqual(injected.length, 0);
+        });
+
+        it('swallows injection failures', async () => {
+            context.browser.scripting.executeScript = async () => { throw new Error('blocked'); };
+            context.set_linkGateEnabled(true);
+            assert.strictEqual(await context.installLinkGate(11), null);
+        });
+    });
+
 });

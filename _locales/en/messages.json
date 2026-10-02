@@ -114,5 +114,128 @@
   },
   "bannerTierBlocked": {
     "message": "This action is not allowed by the current privacy tier. See the add-on options."
+  },
+  "bannerLevelClean": {
+    "message": "Harmless"
+  },
+  "bannerLevelLow": {
+    "message": "Low risk"
+  },
+  "bannerLevelMedium": {
+    "message": "Noticeable"
+  },
+  "bannerLevelHigh": {
+    "message": "High risk"
+  },
+  "bannerLevelCritical": {
+    "message": "Critical"
+  },
+  "bannerLevelUnknown": {
+    "message": "Not evaluated"
+  },
+  "bannerLevelTitle": {
+    "message": "Thundy AV assessment: $LEVEL$ (risk score $SCORE$ of 100)"
+  },
+  "bannerLevelScoreShort": {
+    "message": "Score $SCORE$"
+  },
+  "bannerLinksTitle": {
+    "message": "Links in this message"
+  },
+  "bannerLinksNone": {
+    "message": "No links found"
+  },
+  "bannerAttachmentsTitle": {
+    "message": "Attachments"
+  },
+  "bannerAuthTitle": {
+    "message": "Sender authentication"
+  },
+  "bannerAuthNone": {
+    "message": "No SPF/DKIM/DMARC result in the headers"
+  },
+  "bannerAuthFail": {
+    "message": "Sender authentication failed (SPF/DKIM/DMARC)"
+  },
+  "bannerFirstContact": {
+    "message": "First contact with this sender"
+  },
+  "bannerReplyToMismatch": {
+    "message": "Reply-To points to a different domain"
+  },
+  "bannerDetailsToggle": {
+    "message": "Show details"
+  },
+  "bannerDetailsHide": {
+    "message": "Hide details"
+  },
+  "bannerReportAdmin": {
+    "message": "Report to administrator"
+  },
+  "bannerGateNote": {
+    "message": "Links in this message are only handed to the browser after a check."
+  },
+  "gateChecking": {
+    "message": "Thundy AV is checking this link …"
+  },
+  "gateBlocked": {
+    "message": "Link blocked: the check found a high risk."
+  },
+  "gateWarning": {
+    "message": "Link checked: noticeable – verify target and sender."
+  },
+  "gateAllowed": {
+    "message": "Link checked: nothing suspicious found."
+  },
+  "gateUnknown": {
+    "message": "Link checked: no external source available, local assessment only."
+  },
+  "gateOpenAnyway": {
+    "message": "Open anyway"
+  },
+  "gateCancel": {
+    "message": "Cancel"
+  },
+  "gateDetails": {
+    "message": "Show details"
+  },
+  "gateReportAdmin": {
+    "message": "Report to administrator"
+  },
+  "gateConfirmOverride": {
+    "message": "You are about to open a link that was rated as risky. This decision is written to the Thundy AV audit log. Continue?"
+  },
+  "gateHost": {
+    "message": "Target host"
+  },
+  "gateReasonTitle": {
+    "message": "Reasons"
+  },
+  "gateReportSent": {
+    "message": "Report to the administrator has been prepared."
+  },
+  "gateReportFailed": {
+    "message": "The report could not be created (no administrator contact configured?)."
+  },
+  "gateLoading": {
+    "message": "Link check is not available in this message view."
+  },
+  "notificationGateActive": {
+    "message": "Link gate: links in this message are checked before opening."
+  },
+  "notificationGateBlocked": {
+    "message": "Blocked a risky link: $URL$"
+  },
+  "notificationReportStarted": {
+    "message": "Report for $URL$ prepared for the administrator."
+  },
+  "notificationReportNoContact": {
+    "message": "No administrator contact configured. Please add it in the add-on options."
+  },
+  "notificationReportComposeFailed": {
+    "message": "The compose window could not be opened. The report text is available in the add-on options."
+  },
+  "actionTitleLevel": {
+    "message": "Thundy AV: $LEVEL$ ($SCORE$ of 100)"
   }
 }

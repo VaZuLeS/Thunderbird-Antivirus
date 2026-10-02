@@ -71,6 +71,52 @@ describe('manifest invariants (store readiness)', () => {
   });
 });
 
+describe('link gate and admin report invariants (1.7)', () => {
+  it('declares the compose permission because the admin report opens a compose window', () => {
+    assert.ok(manifest.permissions.includes('compose'));
+    assert.match(read('background.js'), /browser\.compose\s*\./);
+  });
+
+  it('loads the detection and report engines as background scripts', () => {
+    const scripts = manifest.background.scripts;
+    for (const dependency of ['link_gate.js', 'report.js']) {
+      assert.ok(scripts.includes(dependency), `${dependency} must be a background script`);
+      assert.ok(fs.existsSync(path.join(ROOT, dependency)), `${dependency} must exist`);
+    }
+    assert.ok(scripts.indexOf('link_gate.js') < scripts.indexOf('background.js'));
+    assert.ok(scripts.indexOf('report.js') < scripts.indexOf('background.js'));
+  });
+
+  it('injects the message display script together with the local engine', () => {
+    const background = stripComments(read('background.js'));
+    assert.ok(background.includes("'link_gate.js', 'msg_display.js'"),
+      'the link gate must be injected as files: [link_gate.js, msg_display.js]');
+    assert.ok(fs.existsSync(path.join(ROOT, 'msg_display.js')));
+  });
+
+  it('keeps the link gate out of the "always open externally" path: a click handler must preventDefault', () => {
+    const source = stripComments(read('msg_display.js'));
+    assert.match(source, /preventDefault\s*\(/);
+    assert.match(source, /addEventListener\s*\(\s*'click'/);
+  });
+
+  it('ships the threat-level icon set for the toolbar indicator', () => {
+    for (const level of ['clean', 'low', 'medium', 'high', 'critical']) {
+      for (const size of [16, 32, 64]) {
+        const icon = path.join(ROOT, 'img', 'levels', `level-${level}-${size}px.png`);
+        assert.ok(fs.existsSync(icon), `missing indicator icon ${icon}`);
+      }
+    }
+  });
+
+  it('never uses innerHTML with message data in the injected UI', () => {
+    for (const file of ['msg_display.js', 'background.js']) {
+      const source = stripComments(read(file));
+      assert.ok(!/\.innerHTML\s*=/.test(source), `${file} must not assign innerHTML`);
+    }
+  });
+});
+
 describe('locale coverage', () => {
   const en = JSON.parse(read('_locales/en/messages.json'));
   const de = JSON.parse(read('_locales/de/messages.json'));
