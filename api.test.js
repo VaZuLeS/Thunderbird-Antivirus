@@ -3452,3 +3452,290 @@ describe('createCdrButton', () => {
         assert.strictEqual(btn.innerText, 'Erneut versuchen');
     });
 });
+
+// ===========================================================================
+// 1.7 - Popup: Bedrohungsstufe, Link-Verdikte, Admin-Bericht
+// ===========================================================================
+
+function buildPopupContext(options) {
+    const opts = options || {};
+    const mockElements = {};
+    const context = {
+        console: { log() {}, error() {}, warn() {} },
+        setTimeout: setTimeout,
+        clearTimeout: clearTimeout,
+        Promise: Promise,
+        String: String,
+        Array: Array,
+        Number: Number,
+        isFinite: isFinite,
+        URL: typeof URL !== 'undefined' ? URL : undefined,
+        browser: {
+            storage: {
+                local: { get: async () => ({}), onChanged: { addListener() {} } }
+            },
+            runtime: {
+                sendMessage: opts.sendMessage || (async () => ({ success: true, recipients: ['admin@example.com'] })),
+                openOptionsPage: opts.openOptionsPage || (function () { context.optionsOpened = true; })
+            }
+        },
+        document: {
+            getElementById(id) { return mockElements[id] || null; },
+            createElement(tag) {
+                return {
+                    tagName: tag,
+                    className: '',
+                    id: '',
+                    textContent: '',
+                    style: {},
+                    attributes: {},
+                    children: [],
+                    listeners: {},
+                    disabled: false,
+                    setAttribute(k, v) { this.attributes[k] = v; },
+                    getAttribute(k) { return this.attributes[k]; },
+                    removeAttribute(k) { delete this.attributes[k]; },
+                    appendChild(node) {
+                        this.children.push(node);
+                        if (node && node.id) mockElements[node.id] = node;
+                        return node;
+                    },
+                    addEventListener(evt, cb) { this.listeners[evt] = cb; },
+                    click() { if (this.listeners.click) return this.listeners.click.call(this); }
+                };
+            }
+        }
+    };
+    context.messenger = context.browser;
+    vm.createContext(context);
+
+    if (opts.loadEngine) {
+        const engineCode = fs.readFileSync(path.join(__dirname, 'link_gate.js'), 'utf8');
+        vm.runInContext(engineCode, context);
+    }
+
+    const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+    let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
+    wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
+    wrappedCode += '\n; externalAnalysisConsent = true;\n';
+    vm.runInContext(wrappedCode, context);
+
+    return { context: context, mockElements: mockElements };
+}
+
+describe('1.7 popup level mapping and fallback', () => {
+    it('falls back to the local level mapping when ThundyLinkGate is absent', () => {
+        const { context } = buildPopupContext();
+        assert.strictEqual(context.getLinkGateEngine(), null);
+        assert.strictEqual(context.resolvePopupLevelStyle('critical').color, '#8a1010');
+        assert.strictEqual(context.resolvePopupLevelStyle('clean').background, '#e6ffe6');
+        assert.strictEqual(context.popupLevelFromScore(85), 'critical');
+        assert.strictEqual(context.popupLevelFromScore(15), 'low');
+        assert.strictEqual(context.popupLevelLabel('clean'), 'Clean');
+    });
+
+    it('never maps unknown/missing levels to a green clean state', () => {
+        const { context } = buildPopupContext();
+        assert.strictEqual(context.resolvePopupLevelStyle('unknown').color, '#444444');
+        assert.strictEqual(context.resolvePopupLevelStyle('unknown').background, '#f0f0f0');
+        assert.strictEqual(context.resolvePopupLevelStyle(undefined).background, '#f0f0f0');
+        assert.notStrictEqual(context.resolvePopupLevelStyle('unknown').background, '#e6ffe6');
+    });
+
+    it('uses ThundyLinkGate.levelStyle when the engine is loaded', () => {
+        const { context } = buildPopupContext({ loadEngine: true });
+        assert.ok(context.getLinkGateEngine());
+        assert.strictEqual(context.resolvePopupLevelStyle('high').color, '#8a3400');
+        // unknown must still stay neutral even with the engine present
+        assert.strictEqual(context.resolvePopupLevelStyle('unknown').background, '#f0f0f0');
+    });
+});
+
+
+describe('1.7 popup "not evaluated" state', () => {
+    it('extractStoredThreat returns evaluated=false when no score is stored', () => {
+        const { context } = buildPopupContext();
+        const empty = context.extractStoredThreat(undefined);
+        assert.strictEqual(empty.evaluated, false);
+        assert.strictEqual(empty.score, null);
+        assert.strictEqual(empty.level, null);
+        assert.strictEqual(context.extractStoredThreat({ links: [{ url: 'https://example.com' }] }).evaluated, false);
+        assert.strictEqual(context.extractStoredThreat({ threat: {} }).evaluated, false);
+    });
+
+    it('extractStoredThreat reads a stored score (0 is a real evaluation)', () => {
+        const { context } = buildPopupContext();
+        const threat = context.extractStoredThreat({ threat: { score: 0, level: 'clean', reasons: ['ok'] } });
+        assert.strictEqual(threat.evaluated, true);
+        assert.strictEqual(threat.score, 0);
+        assert.strictEqual(threat.level, 'clean');
+    });
+
+    it('renders the neutral "nicht bewertet" header without inventing a score', () => {
+        const { context, mockElements } = buildPopupContext();
+        const header = context.document.createElement('div');
+        mockElements['threatLevelHeader'] = header;
+
+        context.renderThreatLevelHeader({ evaluated: false });
+
+        const badge = mockElements['threatLevelBadge'];
+        const score = mockElements['threatLevelScore'];
+        assert.ok(badge.textContent.includes('Nicht bewertet'));
+        assert.ok(score.textContent.includes('Keine gespeicherte Bewertung'));
+        assert.strictEqual(header.style.background, '#f0f0f0');
+        assert.notStrictEqual(header.style.background, '#e6ffe6');
+    });
+
+    it('renders level and score when a real evaluation is stored', () => {
+        const { context, mockElements } = buildPopupContext();
+        const header = context.document.createElement('div');
+        mockElements['threatLevelHeader'] = header;
+
+        context.renderThreatLevelHeader({ evaluated: true, score: 85, level: 'critical' });
+
+        assert.ok(mockElements['threatLevelBadge'].textContent.includes('Critical'));
+        assert.ok(mockElements['threatLevelScore'].textContent.includes('85'));
+        assert.strictEqual(header.style.background, '#ffeeee');
+    });
+
+    it('initializeThreatPanel starts in the neutral state', () => {
+        const { context, mockElements } = buildPopupContext();
+        mockElements['threatLevelHeader'] = context.document.createElement('div');
+        mockElements['linkVerdictTable'] = context.document.createElement('div');
+        mockElements['requestAdminReport'] = context.document.createElement('button');
+        mockElements['adminReportStatus'] = context.document.createElement('div');
+
+        context.initializeThreatPanel({ messageId: 'msg-1' });
+
+        assert.ok(mockElements['threatLevelBadge'].textContent.includes('Nicht bewertet'));
+        assert.ok(mockElements['linkVerdictEmpty']);
+    });
+});
+
+
+describe('1.7 popup link verdict table', () => {
+    it('shows only the host when reportIncludeUrls is false', () => {
+        const { context, mockElements } = buildPopupContext();
+        const container = context.document.createElement('div');
+        mockElements['linkVerdictTable'] = container;
+
+        context.renderLinkVerdictTable([
+            { url: 'https://evil.example.com/login/very/long/path', host: 'evil.example.com', level: 'high', action: 'block', reasons: ['Markenname im Host.'] }
+        ], { includeUrls: false });
+
+        const row = mockElements['link-verdict-row-0'];
+        const hostCell = row.children[0];
+        assert.strictEqual(hostCell.textContent, 'evil.example.com');
+        assert.ok(!hostCell.textContent.includes('/login'));
+        const badge = row.children[1].children[0];
+        assert.ok(badge.textContent.includes('High'));
+        assert.strictEqual(row.children[2].textContent, 'Blockiert');
+    });
+
+    it('shows a shortened URL when reportIncludeUrls is true', () => {
+        const { context, mockElements } = buildPopupContext();
+        const container = context.document.createElement('div');
+        mockElements['linkVerdictTable'] = container;
+
+        const longUrl = 'https://evil.example.com/' + 'a'.repeat(120);
+        context.renderLinkVerdictTable([
+            { url: longUrl, host: 'evil.example.com', level: 'medium', action: 'warn', reasons: [] }
+        ], { includeUrls: true });
+
+        const hostCell = mockElements['link-verdict-row-0'].children[0];
+        assert.ok(hostCell.textContent.startsWith('https://evil.example.com/'));
+        assert.ok(hostCell.textContent.length <= 60);
+        assert.ok(hostCell.textContent.endsWith('\u2026'));
+    });
+
+    it('exposes reasons behind a Details toggle', () => {
+        const { context, mockElements } = buildPopupContext();
+        const container = context.document.createElement('div');
+        mockElements['linkVerdictTable'] = container;
+
+        context.renderLinkVerdictTable([
+            { url: 'https://evil.example.com', host: 'evil.example.com', level: 'critical', action: 'block', reasons: ['URLhaus-Treffer.', 'IDN-Homograph.'] }
+        ], { includeUrls: false });
+
+        const toggle = mockElements['link-details-toggle-0'];
+        const panel = mockElements['link-details-panel-0'];
+        assert.strictEqual(panel.style.display, 'none');
+        assert.strictEqual(toggle.attributes['aria-expanded'], 'false');
+        assert.strictEqual(panel.children[0].children.length, 2);
+
+        toggle.click();
+        assert.strictEqual(panel.style.display, 'block');
+        assert.strictEqual(toggle.attributes['aria-expanded'], 'true');
+
+        toggle.click();
+        assert.strictEqual(panel.style.display, 'none');
+    });
+
+    it('shows a neutral empty state for a record without links', () => {
+        const { context, mockElements } = buildPopupContext();
+        const container = context.document.createElement('div');
+        mockElements['linkVerdictTable'] = container;
+
+        context.renderLinkVerdictTable([], { includeUrls: true });
+
+        assert.ok(mockElements['linkVerdictEmpty']);
+        assert.ok(mockElements['linkVerdictEmpty'].textContent.includes('Keine Links gespeichert'));
+    });
+});
+
+
+describe('1.7 popup admin report button', () => {
+    it('sends requestAdminReport and renders the success path', async () => {
+        let sent = null;
+        const { context, mockElements } = buildPopupContext({
+            sendMessage: async (msg) => { sent = msg; return { success: true, recipients: ['admin@example.com', 'soc@example.org'] }; }
+        });
+        const button = context.document.createElement('button');
+        const status = context.document.createElement('div');
+        mockElements['requestAdminReport'] = button;
+        mockElements['adminReportStatus'] = status;
+
+        context.setupAdminReportButton('msg-42');
+        button.click();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+
+        assert.strictEqual(sent.action, 'requestAdminReport');
+        assert.strictEqual(sent.messageId, 'msg-42');
+        assert.ok(mockElements['adminReportSuccess'].textContent.includes('vorbereitet'));
+        assert.ok(mockElements['adminReportRecipients'].textContent.includes('admin@example.com'));
+        assert.strictEqual(button.disabled, false);
+        assert.strictEqual(button.attributes['aria-busy'], undefined);
+    });
+
+    it('renders the no_admin_contact path with an options button', () => {
+        const { context, mockElements } = buildPopupContext();
+        const status = context.document.createElement('div');
+
+        context.renderAdminReportResult({ success: false, reason: 'no_admin_contact' }, status);
+
+        assert.ok(mockElements['adminReportErrorMsg'].textContent.includes('Kein Administrator-Kontakt konfiguriert - bitte in den Einstellungen hinterlegen.'));
+        const optionsButton = mockElements['adminReportOptionsButton'];
+        assert.ok(optionsButton);
+        optionsButton.click();
+        assert.strictEqual(context.optionsOpened, true);
+    });
+
+    it('renders no_message and compose_failed reasons distinctly', () => {
+        const { context, mockElements } = buildPopupContext();
+
+        context.renderAdminReportResult({ success: false, reason: 'no_message' }, context.document.createElement('div'));
+        assert.ok(mockElements['adminReportErrorMsg'].textContent.includes('Keine Nachricht ausgewaehlt'));
+
+        context.renderAdminReportResult({ success: false, reason: 'compose_failed' }, context.document.createElement('div'));
+        assert.ok(mockElements['adminReportErrorMsg'].textContent.includes('Compose-Fenster'));
+    });
+
+    it('handles a missing runtime API without throwing', async () => {
+        const { context } = buildPopupContext();
+        context.browser.runtime.sendMessage = undefined;
+        const result = await context.requestAdminReportFromPopup('msg-1');
+        assert.strictEqual(result.success, false);
+        assert.strictEqual(result.reason, 'compose_failed');
+    });
+});
+

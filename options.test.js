@@ -8,6 +8,7 @@ const { JSDOM } = require('jsdom');
 describe('options.js', () => {
     let context;
     let dom;
+    let storageData;
 
     beforeEach(() => {
         // Create mock environment
@@ -29,6 +30,21 @@ describe('options.js', () => {
                     <select id="ipReputationProvider"><option value="none">none</option><option value="abuseipdb">abuseipdb</option><option value="virustotal">virustotal</option></select>
                     <input id="ipReputationApiKey" value="">
 
+                    <input id="adminEmails" value="">
+                    <span id="adminEmailsStatus"></span>
+                    <input id="adminPhone" value="">
+                    <span id="adminPhoneStatus"></span>
+                    <input id="adminContactName" value="">
+                    <input id="adminOrganization" value="">
+                    <input type="checkbox" id="reportIncludeUrls">
+                    <input type="checkbox" id="linkGateEnabled">
+                    <select id="linkGateMode"><option value="strict">strict</option><option value="balanced">balanced</option><option value="off">off</option></select>
+                    <textarea id="reportPreview"></textarea>
+                    <span id="templateStatus" style="display: none;"></span>
+                    <button id="requestHelpTemplate">Hilfe-Vorlage anfordern</button>
+                    <button id="previewTemplate">Vorlage anzeigen</button>
+                    <button id="copyTemplate">In Zwischenablage kopieren</button>
+
                     <button id="save">Speichern</button>
                     <span id="saveStatus" style="display: none;">Erfolgreich gespeichert.</span>
 
@@ -38,26 +54,35 @@ describe('options.js', () => {
             </html>
         `);
 
+        storageData = {
+            apikey: 'test-api-key',
+            urlhausApikey: 'test-urlhaus',
+            urlscanApikey: 'test-urlscan',
+            virustotalApikey: 'test-vt',
+            privacyTier: 'high',
+            customWhitelist: ['example.com', 'test.com'],
+            customBlacklist: ['bad.com'],
+            alwaysManual: true,
+            autoScanLinks: true,
+            timeOfClickProtection: false,
+            externalAnalysisConsent: true,
+            ipReputationProvider: 'abuseipdb',
+            ipReputationApiKey: 'ip-key',
+            adminEmails: ['soc@example.com', 'it-security@example.com'],
+            adminPhone: '+49 30 1234567',
+            adminContactName: 'SOC Team',
+            adminOrganization: 'Example Corp',
+            reportIncludeUrls: false,
+            linkGateMode: 'balanced',
+            linkGateEnabled: false
+        };
+
         context = {
             document: dom.window.document,
             browser: {
                 storage: {
                     local: {
-                        get: async () => ({
-                            apikey: 'test-api-key',
-                            urlhausApikey: 'test-urlhaus',
-                            urlscanApikey: 'test-urlscan',
-                            virustotalApikey: 'test-vt',
-                            privacyTier: 'high',
-                            customWhitelist: ['example.com', 'test.com'],
-                            customBlacklist: ['bad.com'],
-                            alwaysManual: true,
-                            autoScanLinks: true,
-                            timeOfClickProtection: false,
-                            externalAnalysisConsent: true,
-                            ipReputationProvider: 'abuseipdb',
-                            ipReputationApiKey: 'ip-key'
-                        }),
+                        get: async () => storageData,
                         set: async (data) => {
                             context.browser.storage.local.lastSetData = data;
                         },
@@ -69,6 +94,43 @@ describe('options.js', () => {
                     request: async () => true
                 }
             },
+            // Reine Engine aus report.js (Abschnitt 6.2) - hier als Mock.
+            ThundyReport: {
+                parseAdminEmails: (raw) => {
+                    const list = Array.isArray(raw) ? raw : String(raw == null ? '' : raw).split(';');
+                    const emails = [];
+                    const invalid = [];
+                    for (const part of list) {
+                        const value = String(part).trim();
+                        if (value.length === 0) continue;
+                        const normalized = value.toLowerCase();
+                        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+                            if (emails.indexOf(normalized) === -1) emails.push(normalized);
+                        } else {
+                            invalid.push(value);
+                        }
+                    }
+                    return { emails, invalid };
+                },
+                parseAdminPhone: (raw) => {
+                    const value = String(raw == null ? '' : raw).trim();
+                    const valid = value.length === 0 || /^[+()0-9][0-9 ()\/-]{2,}$/.test(value);
+                    return { phone: value, valid };
+                },
+                buildHelpRequest: (input) => ({
+                    to: (input && input.contacts && input.contacts.emails) || [],
+                    subject: 'Hilfeanforderung',
+                    body: 'Bitte um Unterstützung bei einem Sicherheitsvorfall.'
+                })
+            },
+            navigator: {
+                clipboard: {
+                    writeText: async (text) => {
+                        context.copiedText = text;
+                    }
+                }
+            },
+            copiedText: null,
             openDB: async (name, version) => ({ name, version }),
             clearStore: async (db, storeName) => true,
             console: {
@@ -292,6 +354,132 @@ describe('options.js', () => {
         assert.strictEqual(statusSpan.textContent, 'Fehler beim Leeren des Caches.');
         assert.strictEqual(statusSpan.className, 'text-danger ml-2');
         assert.strictEqual(statusSpan.style.display, 'none');
+    });
+
+    it('should load administrator contact and link-gate settings on DOMContentLoaded', async () => {
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(context.document.getElementById('adminEmails').value, 'soc@example.com; it-security@example.com');
+        assert.strictEqual(context.document.getElementById('adminPhone').value, '+49 30 1234567');
+        assert.strictEqual(context.document.getElementById('adminContactName').value, 'SOC Team');
+        assert.strictEqual(context.document.getElementById('adminOrganization').value, 'Example Corp');
+        assert.strictEqual(context.document.getElementById('reportIncludeUrls').checked, false);
+        assert.strictEqual(context.document.getElementById('linkGateMode').value, 'balanced');
+        assert.strictEqual(context.document.getElementById('linkGateEnabled').checked, false);
+    });
+
+    it('should apply sane defaults when administrator settings are missing', async () => {
+        storageData = {}; // simulate fresh install / no stored values
+
+        const event = context.document.createEvent('Event');
+        event.initEvent('DOMContentLoaded', true, true);
+        context.document.dispatchEvent(event);
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.strictEqual(context.document.getElementById('adminEmails').value, '');
+        assert.strictEqual(context.document.getElementById('adminPhone').value, '');
+        assert.strictEqual(context.document.getElementById('adminContactName').value, '');
+        assert.strictEqual(context.document.getElementById('adminOrganization').value, '');
+        assert.strictEqual(context.document.getElementById('reportIncludeUrls').checked, true);
+        assert.strictEqual(context.document.getElementById('linkGateMode').value, 'strict');
+        assert.strictEqual(context.document.getElementById('linkGateEnabled').checked, true);
+    });
+
+    it('should save the parsed admin e-mail array and report invalid entries', async () => {
+        context.document.getElementById('adminEmails').value = 'soc@example.com; IT-Security@Example.com; bad-entry';
+        context.document.getElementById('adminPhone').value = '+49 30 999888';
+        context.document.getElementById('adminContactName').value = '  SOC Team  ';
+        context.document.getElementById('adminOrganization').value = 'Example Corp';
+        context.document.getElementById('reportIncludeUrls').checked = true;
+        context.document.getElementById('linkGateMode').value = 'strict';
+        context.document.getElementById('linkGateEnabled').checked = true;
+
+        context.document.getElementById('save').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const savedData = context.browser.storage.local.lastSetData;
+        assert.deepStrictEqual(savedData.adminEmails, ['soc@example.com', 'it-security@example.com']);
+        assert.strictEqual(savedData.adminPhone, '+49 30 999888');
+        assert.strictEqual(savedData.adminContactName, 'SOC Team');
+        assert.strictEqual(savedData.adminOrganization, 'Example Corp');
+        assert.strictEqual(savedData.reportIncludeUrls, true);
+        assert.strictEqual(savedData.linkGateMode, 'strict');
+        assert.strictEqual(savedData.linkGateEnabled, true);
+
+        const status = context.document.getElementById('adminEmailsStatus');
+        assert.ok(status.textContent.includes('bad-entry'), 'invalid entry must be reported, not silently dropped');
+        assert.strictEqual(status.className, 'text-danger ml-2');
+    });
+
+    it('should report invalid admin e-mail entries on input', async () => {
+        const input = context.document.getElementById('adminEmails');
+        input.value = 'valid@example.com; nope';
+
+        const event = context.document.createEvent('Event');
+        event.initEvent('input', true, true);
+        input.dispatchEvent(event);
+
+        const status = context.document.getElementById('adminEmailsStatus');
+        assert.ok(status.textContent.includes('nope'));
+        assert.strictEqual(status.className, 'text-danger ml-2');
+
+        input.value = 'valid@example.com';
+        input.dispatchEvent(event);
+        assert.strictEqual(status.textContent, '');
+    });
+
+    it('should open a compose window with the help template', async () => {
+        context.document.getElementById('adminEmails').value = 'soc@example.com; it-security@example.com';
+        context.browser.compose = {
+            beginNew: async (options) => {
+                context.composeArgs = options;
+                return {};
+            }
+        };
+
+        context.document.getElementById('requestHelpTemplate').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.ok(context.composeArgs, 'compose.beginNew must be called');
+        assert.deepStrictEqual(context.composeArgs.to, ['soc@example.com', 'it-security@example.com']);
+        assert.strictEqual(context.composeArgs.subject, 'Hilfeanforderung');
+        assert.strictEqual(context.composeArgs.body, 'Bitte um Unterstützung bei einem Sicherheitsvorfall.');
+        assert.strictEqual(context.composeArgs.isPlainText, true);
+
+        const status = context.document.getElementById('templateStatus');
+        assert.ok(status.textContent.includes('Compose-Fenster'));
+        assert.strictEqual(status.style.display, 'inline');
+    });
+
+    it('should fall back to preview + clipboard when compose is unavailable', async () => {
+        assert.strictEqual(context.browser.compose, undefined);
+        context.document.getElementById('adminEmails').value = 'soc@example.com';
+
+        context.document.getElementById('requestHelpTemplate').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        const preview = context.document.getElementById('reportPreview');
+        assert.ok(preview.value.includes('An: soc@example.com'));
+        assert.ok(preview.value.includes('Hilfeanforderung'));
+
+        const status = context.document.getElementById('templateStatus');
+        assert.ok(status.textContent.includes('Compose ist nicht verfügbar'));
+        assert.strictEqual(status.className, 'text-warning ml-2');
+        assert.ok(context.copiedText && context.copiedText.includes('soc@example.com'));
+    });
+
+    it('should render the preview and copy it to the clipboard', async () => {
+        context.document.getElementById('adminEmails').value = 'soc@example.com';
+
+        context.document.getElementById('previewTemplate').click();
+        const preview = context.document.getElementById('reportPreview');
+        assert.ok(preview.value.includes('An: soc@example.com'));
+
+        context.document.getElementById('copyTemplate').click();
+        await new Promise(resolve => setTimeout(resolve, 10));
+
+        assert.ok(context.copiedText.includes('An: soc@example.com'));
+        assert.ok(context.document.getElementById('templateStatus').textContent.includes('Zwischenablage'));
     });
 
     it('should enforce security attributes on all API key input fields in options.html', () => {

@@ -20,11 +20,35 @@
             grid-column: 1 / -1;
             margin-top: 15px;
         }
+        #linkVerdictTable table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #linkVerdictTable th,
+        #linkVerdictTable td {
+            text-align: left;
+            padding: 4px;
+            vertical-align: top;
+        }
+        #linkVerdictTable th {
+            border-bottom: 1px solid var(--card-border);
+        }
+        .link-level-badge {
+            display: inline-block;
+            border-radius: 10px;
+            padding: 1px 8px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 
 <body>
     <h1>Thunderbird Security Antivirus aka Thundy AV</h1>
+
+    <!-- Bedrohungsstufe der angezeigten Nachricht. Wird von api.js gefuellt;
+         ohne gespeicherte Bewertung bleibt der neutrale Zustand stehen. -->
+    <div id="threatLevelHeader" class="card mt-3" role="status" aria-live="polite"></div>
+
     <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer" aria-label="Alle Übertragungen zu Hybrid Analysis aufrufen (öffnet in einem neuen Tab)">Alle Übertragungen zu Hybrid Analysis aufrufen <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>
 
     <div class="grid-container">
@@ -38,10 +62,25 @@
         <div id="MessageHeaderID" class="grid-content"></div>
     </div>
 
+    <!-- Link-Verdikte aus der lokalen IndexedDB-Bewertung. Wird von api.js
+         gefuellt (nur textContent/createElement, kein innerHTML). -->
+    <section id="linkVerdictSection" class="mt-3" aria-labelledby="linkVerdictHeading">
+        <h2 id="linkVerdictHeading" style="font-size: 16px;">Link-Bewertung</h2>
+        <div id="linkVerdictTable" class="grid-content"></div>
+    </section>
+
+    <!-- Bericht an den Administrator. Sendet requestAdminReport an den
+         Hintergrund und zeigt Erfolg/Fehler in #adminReportStatus. -->
+    <div class="mt-3">
+        <button type="button" id="requestAdminReport" class="btn-primary">Bericht an den Administrator</button>
+    </div>
+    <div id="adminReportStatus" class="grid-content mt-2" role="status" aria-live="polite"></div>
+
     <div id="status_message" class="grid-content mt-2" style="font-weight: bold;" aria-live="polite" role="status"></div>
     <div id="hybrid_analysis_api_content" class="grid-content mt-3"></div>
 
     <script src="db.js"></script>
+    <script src="link_gate.js"></script>
     <script type="module" src="api.js"></script>
 </body>
 

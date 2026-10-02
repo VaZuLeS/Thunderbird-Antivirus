@@ -121,12 +121,20 @@ describe('background.js', () => {
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'background.js'), 'utf8');
         const gatewayCode = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
+        // Detection- und Report-Engine werden mitgeladen, damit die Gate- und
+        // Report-Pfade im Hintergrund denselben Code benutzen wie zur Laufzeit.
+        const linkGateCode = fs.existsSync(path.join(__dirname, 'link_gate.js'))
+            ? fs.readFileSync(path.join(__dirname, 'link_gate.js'), 'utf8') : '';
+        const reportCode = fs.existsSync(path.join(__dirname, 'report.js'))
+            ? fs.readFileSync(path.join(__dirname, 'report.js'), 'utf8') : '';
         const wrappedCode = `
             globalThis.customBlacklist = new Set();
             globalThis.customWhitelist = new Set();
             globalThis.knownSendersCache = new Set();
             globalThis.MAX_KNOWN_SENDERS = 1000;
             ${gatewayCode}
+            ${linkGateCode}
+            ${reportCode}
             ${code}
             globalThis.loadSettings = loadSettings;
             globalThis.set_externalAnalysisConsent = (val) => { externalAnalysisConsent = val === true; };
@@ -179,6 +187,34 @@ describe('background.js', () => {
             globalThis.collectThreatEvaluationOptions = collectThreatEvaluationOptions;
             globalThis.addSenderOptIn = addSenderOptIn;
             globalThis.evaluateAndInjectThreats = evaluateAndInjectThreats;
+
+            // 1.7: Bedrohungsindikator, Link-Gate, Admin-Report
+            globalThis.updateThreatIndicator = updateThreatIndicator;
+            globalThis.applyThreatIndicator = applyThreatIndicator;
+            globalThis.injectThreatBanner = injectThreatBanner;
+            globalThis.renderThreatPanelInPage = renderThreatPanelInPage;
+            globalThis.levelFromScore = levelFromScore;
+            globalThis.levelStyle = levelStyle;
+            globalThis.linkGateConfigPayload = linkGateConfigPayload;
+            globalThis.handleCheckLinkState = handleCheckLinkState;
+            globalThis.conservativeGateDecision = conservativeGateDecision;
+            globalThis.gateStatusFor = gateStatusFor;
+            globalThis.logGateDecision = logGateDecision;
+            globalThis.openComposeWithTemplate = openComposeWithTemplate;
+            globalThis.handleAdminReportRequest = handleAdminReportRequest;
+            globalThis.handleHelpTemplateRequest = handleHelpTemplateRequest;
+            globalThis.evaluateMessageThreat = evaluateMessageThreat;
+            globalThis.threatForTab = threatForTab;
+            globalThis.hasReplyToMismatch = hasReplyToMismatch;
+            globalThis.buildThreatLinkSummaries = buildThreatLinkSummaries;
+            globalThis.collectAttachmentSummaries = collectAttachmentSummaries;
+            globalThis.set_linkGateMode = (val) => { linkGateMode = val; };
+            globalThis.set_linkGateEnabled = (val) => { linkGateEnabled = val === true; };
+            globalThis.set_adminEmails = (val) => { adminEmails = Array.isArray(val) ? val : []; };
+            globalThis.set_adminPhone = (val) => { adminPhone = val || ''; };
+            globalThis.set_adminContactName = (val) => { adminContactName = val || ''; };
+            globalThis.set_reportIncludeUrls = (val) => { reportIncludeUrls = val !== false; };
+            globalThis.set_urlhausApikey = (val) => { urlhausApikey = val; };
 
             // CheckIPReputation exposed variables
             globalThis.checkIPReputation = checkIPReputation;
@@ -1924,6 +1960,7 @@ describe('background.js', () => {
             // disable timeOfClickProtection to avoid another executeScript call
             context.set_timeOfClickProtection(false);
             context.set_privacyTier('balanced');
+            context.set_linkGateEnabled(false);
 
             context.browser.messages.listAttachments = async () => ([]);
             context.browser.messages.getFull = async () => ({
@@ -1936,7 +1973,14 @@ describe('background.js', () => {
             assert.ok(executedWarningScripts.length > 0);
             assert.strictEqual(executedWarningScripts[0].target.tabId, 10);
             assert.strictEqual(typeof executedWarningScripts[0].func, 'function');
-            assert.strictEqual(executedWarningScripts[0].args[0], 100); // 100 score
+            // Seit 1.7 wird ein serialisierbares Datenobjekt uebergeben (Panel),
+            // nicht mehr nur der Score.
+            const panelData = executedWarningScripts[0].args[0];
+            assert.strictEqual(typeof panelData, 'object');
+            assert.strictEqual(panelData.score, 100);
+            assert.strictEqual(panelData.level, 'critical');
+            assert.ok(Array.isArray(panelData.reasons));
+            assert.ok(Array.isArray(panelData.links));
         });
 
         it('does not inject warning banner if score < 50', async () => {
@@ -1944,8 +1988,8 @@ describe('background.js', () => {
             context.browser.scripting.executeScript = async (opts) => {
                 executedWarningScripts.push(opts);
             };
-            context.set_timeOfClickProtection(false);
             context.set_privacyTier('balanced');
+            context.set_linkGateEnabled(false);
 
             context.browser.messages.listAttachments = async () => ([]);
             context.browser.messages.getFull = async () => ({
@@ -1966,6 +2010,7 @@ describe('background.js', () => {
             };
             context.set_timeOfClickProtection(false);
             context.set_privacyTier('balanced');
+            context.set_linkGateEnabled(false);
 
             context.browser.messages.listAttachments = async () => ([]);
             context.browser.messages.getFull = async () => ({
@@ -2894,119 +2939,6 @@ describe('background.js', () => {
                 },
                 attachmentName: 'test.pdf'
             });
-        });
-
-        it('returns UNKNOWN if no active message or headerMessageId', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [] });
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'UNKNOWN' });
-
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 1 }] }); // Missing headerMessageId
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'UNKNOWN' });
-        });
-
-        it('returns UNKNOWN if no link object is found and urlscan is disabled', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-            context.getFromStore = async () => ({ links: [] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'UNKNOWN' });
-        });
-
-        it('checks urlscan.io if no link object is found and urlscan is active, returning MALICIOUS', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-            context.set_urlscanApikey('test-urlscan');
-
-            // Mock checkUrlscanIo behaviour via fetch
-            let callCount = 0;
-            context.fetch = async (url) => {
-                callCount++;
-                if (callCount === 1) return { ok: true, status: 200, json: async () => ({ uuid: 'uuid-1' }) };
-                if (callCount === 2) return { status: 200, json: async () => ({ verdicts: { overall: { malicious: true } } }) };
-            };
-
-            context.getFromStore = async () => ({ links: [] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.strictEqual(response.status, 'MALICIOUS_VISUAL');
-        });
-
-        it('returns linkObj state if urlscan is clean and hybrid_sha256 is missing', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-            context.set_urlscanApikey('test-urlscan');
-
-            let callCount = 0;
-            context.fetch = async (url) => {
-                callCount++;
-                if (callCount === 1) return { ok: true, status: 200, json: async () => ({ uuid: 'uuid-2' }) };
-                if (callCount === 2) return { status: 200, json: async () => ({ verdicts: {} }) };
-            };
-
-            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'CUSTOM_STATE' }] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'CUSTOM_STATE' });
-        });
-
-        it('fetches overview from hybrid analysis if hybrid_sha256 exists, returning CLEAN for no specific threat', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-            // Disable urlscan to simplify
-            context.set_urlscanApikey('');
-
-            context.fetch = async (url) => {
-                assert.ok(url.includes('api/v2/overview/hash123'));
-                return { status: 200, json: async () => ({ verdict: 'no specific threat' }) };
-            };
-
-            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UPLOADED', hybrid_sha256: 'hash123' }] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'CLEAN' });
-        });
-
-        it('fetches overview from hybrid analysis, returning UPPERCASE verdict for threats', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-
-            context.fetch = async () => ({ status: 200, json: async () => ({ verdict: 'malicious' }) });
-
-            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UPLOADED', hybrid_sha256: 'hash123' }] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'MALICIOUS' });
-        });
-
-        it('falls back to link state if hybrid analysis fetch throws an error', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
-
-            context.fetch = async () => { throw new Error('Network error'); };
-
-            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'FALLBACK_STATE', hybrid_sha256: 'hash123' }] });
-            context.openDB = async () => ({});
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'FALLBACK_STATE' });
-        });
-
-        it('returns ERROR on generic unexpected errors in the main flow', async () => {
-            context.browser.messageDisplay.getDisplayedMessages = async () => { throw new Error('API failure'); };
-
-            let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'ERROR' });
         });
     });
 

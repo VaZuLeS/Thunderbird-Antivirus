@@ -23,6 +23,7 @@ const I18N_FALLBACKS = {
     bannerThreatTitle: 'Thundy AV warning',
     bannerThreatScore: 'Risk score: $SCORE$ of 100',
     bannerAuthPass: 'Sender verified (SPF/DKIM/DMARC passed)',
+    bannerAuthFail: 'Sender authentication failed (SPF/DKIM/DMARC)',
     bannerOpenOptions: 'Open options',
     bannerSenderOptIn: 'This sender is now scanned automatically.',
     errorHostPermissionMissing: 'Host permission for the analysis service is missing. Please grant it in the add-on options.',
@@ -35,7 +36,48 @@ const I18N_FALLBACKS = {
     notificationScanError: 'Scan error: $ERROR$',
     notificationTitle: 'Thundy AV Scanner',
     notificationTitleError: 'Thundy AV Scanner error',
-    notificationNoLinks: 'No links found in this message.'
+    notificationNoLinks: 'No links found in this message.',
+    // --- 1.7: threat level indicator, link gate, admin report ---
+    bannerLevelClean: 'Harmless',
+    bannerLevelLow: 'Low risk',
+    bannerLevelMedium: 'Noticeable',
+    bannerLevelHigh: 'High risk',
+    bannerLevelCritical: 'Critical',
+    bannerLevelUnknown: 'Not evaluated',
+    bannerLevelTitle: 'Thundy AV assessment: $LEVEL$ (risk score $SCORE$ of 100)',
+    bannerLevelScoreShort: 'Score $SCORE$',
+    bannerLinksTitle: 'Links in this message',
+    bannerLinksNone: 'No links found',
+    bannerAttachmentsTitle: 'Attachments',
+    bannerAuthTitle: 'Sender authentication',
+    bannerAuthNone: 'No SPF/DKIM/DMARC result in the headers',
+    bannerFirstContact: 'First contact with this sender',
+    bannerReplyToMismatch: 'Reply-To points to a different domain',
+    bannerDetailsToggle: 'Show details',
+    bannerDetailsHide: 'Hide details',
+    bannerReportAdmin: 'Report to administrator',
+    bannerGateNote: 'Links in this message are only handed to the browser after a check.',
+    gateChecking: 'Thundy AV is checking this link …',
+    gateBlocked: 'Link blocked: the check found a high risk.',
+    gateWarning: 'Link checked: noticeable – verify target and sender.',
+    gateAllowed: 'Link checked: nothing suspicious found.',
+    gateUnknown: 'Link checked: no external source available, local assessment only.',
+    gateOpenAnyway: 'Open anyway',
+    gateCancel: 'Cancel',
+    gateDetails: 'Show details',
+    gateReportAdmin: 'Report to administrator',
+    gateConfirmOverride: 'You are about to open a link that was rated as risky. This decision is written to the Thundy AV audit log. Continue?',
+    gateHost: 'Target host',
+    gateReasonTitle: 'Reasons',
+    gateReportSent: 'Report to the administrator has been prepared.',
+    gateReportFailed: 'The report could not be created (no administrator contact configured?).',
+    gateLoading: 'Link check is not available in this message view.',
+    notificationGateBlocked: 'Blocked a risky link: $URL$',
+    notificationReportStarted: 'Report for $URL$ prepared for the administrator.',
+    notificationReportNoContact: 'No administrator contact configured. Please add it in the add-on options.',
+    notificationReportComposeFailed: 'The compose window could not be opened. The report text is available in the add-on options.',
+    notificationGateActive: 'Link gate: links in this message are checked before opening.',
+    actionTitleLevel: 'Thundy AV: $LEVEL$ ($SCORE$ of 100)'
 };
 
 function msg(key, subs) {
@@ -47,7 +89,7 @@ function msg(key, subs) {
     } catch (e) { /* fall through to the fallback string */ }
     let text = I18N_FALLBACKS[key] || key;
     const values = Array.isArray(subs) ? subs.slice() : (subs === undefined ? [] : [subs]);
-    text = text.replace(/\$(SCORE|URL|JOBID|ERROR)\$/g, () => (values.length ? String(values.shift()) : ''));
+    text = text.replace(/\$(SCORE|LEVEL|URL|JOBID|ERROR)\$/g, () => (values.length ? String(values.shift()) : ''));
     return text;
 }
 
@@ -200,6 +242,66 @@ let ipReputationProvider = "none";
 let ipReputationApiKey = "";
 let externalAnalysisConsent = false;
 
+// --- 1.7: link gate, threat indicator and administrator contacts -----------
+// The link gate blocks the hand-off of an http(s) link to the default browser
+// until the link has been assessed (finding F-1). `linkGateMode` is the policy
+// (strict/balanced/off), `adminEmails`/`adminPhone` feed the incident report.
+let linkGateEnabled = true;
+let linkGateMode = "strict";
+let adminEmails = [];
+let adminPhone = "";
+let adminContactName = "";
+let adminOrganization = "";
+let reportIncludeUrls = true;
+
+const LINK_GATE_AUDIT_LIMIT = 100;
+const LINK_GATE_LIVE_SCAN_BUDGET_MS = 6000;
+const THREAT_LEVELS = ['clean', 'low', 'medium', 'high', 'critical'];
+
+// The detection engine lives in link_gate.js (loaded before this file in the
+// manifest). It is feature-detected so that a partially loaded package (or a
+// unit test that only loads background.js) degrades instead of crashing.
+function gateEngine() {
+    return (typeof ThundyLinkGate !== 'undefined' && ThundyLinkGate) ? ThundyLinkGate : null;
+}
+
+function levelFromScore(score) {
+    const engine = gateEngine();
+    if (engine && typeof engine.levelFromScore === 'function') {
+        return engine.levelFromScore(score);
+    }
+    const value = Number(score) || 0;
+    if (value >= 80) return 'critical';
+    if (value >= 60) return 'high';
+    if (value >= 40) return 'medium';
+    if (value >= 15) return 'low';
+    return 'clean';
+}
+
+function levelStyle(level) {
+    const engine = gateEngine();
+    if (engine && typeof engine.levelStyle === 'function') {
+        try {
+            const style = engine.levelStyle(level);
+            if (style) return style;
+        } catch (e) { /* fall through to the local table */ }
+    }
+    const styles = {
+        clean: { color: '#145c14', background: '#e6ffe6', border: '#2e8b2e', icon: '🟢', labelKey: 'bannerLevelClean', labelFallback: 'Harmless' },
+        low: { color: '#4d6b00', background: '#f6ffe6', border: '#8ebe2d', icon: '🟢', labelKey: 'bannerLevelLow', labelFallback: 'Low risk' },
+        medium: { color: '#7a5200', background: '#fff6e6', border: '#f0a500', icon: '🟡', labelKey: 'bannerLevelMedium', labelFallback: 'Noticeable' },
+        high: { color: '#8a3400', background: '#fff0e6', border: '#e8620c', icon: '🟠', labelKey: 'bannerLevelHigh', labelFallback: 'High risk' },
+        critical: { color: '#8a1010', background: '#ffeeee', border: '#c81e1e', icon: '🔴', labelKey: 'bannerLevelCritical', labelFallback: 'Critical' },
+        unknown: { color: '#333333', background: '#f2f2f2', border: '#999999', icon: '⚪', labelKey: 'bannerLevelUnknown', labelFallback: 'Not evaluated' }
+    };
+    return styles[level] || styles.unknown;
+}
+
+function levelLabel(level) {
+    const style = levelStyle(level);
+    return msg(style.labelKey, []) || style.labelFallback;
+}
+
 let sharedDBPromise = null;
 
 function getSharedDB() {
@@ -251,7 +353,7 @@ const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join(
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent']);
+    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent', 'linkGateEnabled', 'linkGateMode', 'adminEmails', 'adminPhone', 'adminContactName', 'adminOrganization', 'reportIncludeUrls']);
     if (result.virustotalApikey !== undefined) {
       apikey_virustotal = result.virustotalApikey;
     }
@@ -288,6 +390,29 @@ async function loadSettings() {
     }
     if (result.ipReputationApiKey !== undefined) {
       ipReputationApiKey = result.ipReputationApiKey;
+    }
+    if (result.linkGateEnabled !== undefined) {
+      linkGateEnabled = result.linkGateEnabled !== false;
+    }
+    if (result.linkGateMode !== undefined) {
+      linkGateMode = ['strict', 'balanced', 'off'].includes(result.linkGateMode) ? result.linkGateMode : 'strict';
+    }
+    if (Array.isArray(result.adminEmails)) {
+      adminEmails = result.adminEmails.filter((entry) => typeof entry === 'string' && entry.length > 0);
+    } else if (typeof result.adminEmails === 'string') {
+      adminEmails = result.adminEmails.split(';').map((entry) => entry.trim()).filter((entry) => entry.length > 0);
+    }
+    if (typeof result.adminPhone === 'string') {
+      adminPhone = result.adminPhone;
+    }
+    if (typeof result.adminContactName === 'string') {
+      adminContactName = result.adminContactName;
+    }
+    if (typeof result.adminOrganization === 'string') {
+      adminOrganization = result.adminOrganization;
+    }
+    if (result.reportIncludeUrls !== undefined) {
+      reportIncludeUrls = result.reportIncludeUrls !== false;
     }
   } catch (error) {
     Logger.error("Fehler beim Laden der Einstellungen:", error);
@@ -346,6 +471,27 @@ browser.storage.onChanged.addListener((changes, area) => {
   }
   if (area === 'local' && changes.externalAnalysisConsent !== undefined) {
     externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
+  }
+  if (area === 'local' && changes.linkGateEnabled !== undefined) {
+    linkGateEnabled = changes.linkGateEnabled.newValue !== false;
+  }
+  if (area === 'local' && changes.linkGateMode !== undefined) {
+    linkGateMode = ['strict', 'balanced', 'off'].includes(changes.linkGateMode.newValue) ? changes.linkGateMode.newValue : 'strict';
+  }
+  if (area === 'local' && changes.adminEmails !== undefined) {
+    adminEmails = Array.isArray(changes.adminEmails.newValue) ? changes.adminEmails.newValue.filter((e) => typeof e === 'string' && e.length > 0) : [];
+  }
+  if (area === 'local' && changes.adminPhone !== undefined) {
+    adminPhone = typeof changes.adminPhone.newValue === 'string' ? changes.adminPhone.newValue : '';
+  }
+  if (area === 'local' && changes.adminContactName !== undefined) {
+    adminContactName = typeof changes.adminContactName.newValue === 'string' ? changes.adminContactName.newValue : '';
+  }
+  if (area === 'local' && changes.adminOrganization !== undefined) {
+    adminOrganization = typeof changes.adminOrganization.newValue === 'string' ? changes.adminOrganization.newValue : '';
+  }
+  if (area === 'local' && changes.reportIncludeUrls !== undefined) {
+    reportIncludeUrls = changes.reportIncludeUrls.newValue !== false;
   }
 });
 
@@ -1063,9 +1209,136 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
     return urlhausDomains;
 }
 
+/**
+ * Injiziert das Link-Gate in das Nachrichtenansicht-Dokument.
+ *
+ * `files` statt `func`: msg_display.js braucht die Engine (link_gate.js) im
+ * selben Kontext, damit die lokale Vorabanalyse auch ohne Hintergrund greift.
+ * Beide Dateien liegen im Paket (siehe scripts/verify-package.js).
+ */
+async function installLinkGate(tabId) {
+    if (tabId === undefined || tabId === null) return null;
+    if (linkGateEnabled !== true || linkGateMode === 'off') return null;
+    try {
+        return await browser.scripting.executeScript({
+            target: { tabId },
+            files: ['link_gate.js', 'msg_display.js']
+        });
+    } catch (e) {
+        Logger.warn('Could not install the link gate in the message display', e);
+        return null;
+    }
+}
+
+/**
+ * Toolbar-Indikator (message_display_action) fuer die gerade gelesene Nachricht.
+ *
+ * Befund F-2 aus docs/plan_1.7_threat_indicator_link_gate.md: Das Icon war
+ * statisch, die Stufe nur im Popup sichtbar. Hier werden Badge (Score),
+ * Hintergrundfarbe, Icon-Set und Tooltip an die Stufe gebunden.
+ *
+ * Feature-Detection ist Pflicht: `messageDisplayAction` ist in Thunderbird zwar
+ * vorhanden, die Badge-Methoden sind es je nach Version aber nicht. Fehlt eine
+ * Methode, bleiben die uebrigen Indikatoren aktiv (kein Totalausfall).
+ */
+async function updateThreatIndicator(tabId, threat) {
+    if (tabId === undefined || tabId === null) return false;
+    let action = null;
+    try {
+        action = browser.messageDisplayAction || browser.action || null;
+    } catch (e) { /* older build without message_display_action */ }
+    if (!action) return false;
+
+    const evaluated = !!(threat && (threat.evaluated !== false));
+    const score = evaluated ? Math.max(0, Math.min(100, Number(threat.score) || 0)) : null;
+    const level = evaluated ? (threat.level || levelFromScore(score)) : 'unknown';
+    const style = level === 'unknown' ? levelStyle('unknown') : levelStyle(level);
+    const badgeText = score === null ? '' : String(score);
+    const title = msg('actionTitleLevel', [levelLabel(level), score === null ? '?' : String(score)]);
+    return await applyThreatIndicator(action, tabId, { level, score, style, badgeText, title });
+}
+
+/**
+ * Setzt die einzelnen messageDisplayAction-Eigenschaften. Jede Methode ist
+ * optional und wird einzeln abgesichert, damit ein fehlendes Badge nicht das
+ * Icon verhindert. Rueckgabe: true, wenn mindestens ein Indikator gesetzt wurde.
+ */
+async function applyThreatIndicator(action, tabId, { level, score, style, badgeText, title }) {
+    let applied = false;
+    void score;
+
+    if (typeof action.setBadgeText === 'function') {
+        try {
+            await action.setBadgeText({ tabId, text: badgeText });
+            applied = true;
+        } catch (e) { Logger.warn('setBadgeText failed', e); }
+    }
+
+    if (typeof action.setBadgeBackgroundColor === 'function' && badgeText) {
+        try {
+            await action.setBadgeBackgroundColor({ tabId, color: style.border || '#999999' });
+            applied = true;
+        } catch (e) { Logger.warn('setBadgeBackgroundColor failed', e); }
+    }
+
+    if (typeof action.setIcon === 'function') {
+        try {
+            await action.setIcon({
+                tabId,
+                path: {
+                    16: 'img/levels/level-' + level + '-16px.png',
+                    32: 'img/levels/level-' + level + '-32px.png',
+                    64: 'img/levels/level-' + level + '-64px.png'
+                }
+            });
+            applied = true;
+        } catch (e) { Logger.warn('setIcon failed', e); }
+    }
+
+    if (typeof action.setTitle === 'function') {
+        try {
+            await action.setTitle({ tabId, title });
+            applied = true;
+        } catch (e) { Logger.warn('setTitle failed', e); }
+    }
+
+    return applied;
+}
+
+/**
+ * Warnbanner in der Nachrichtenansicht.
+ */
 async function injectThreatBanner(tabId, threat) {
-    if (threat.score >= 50 || threat.authStatus === 'pass') {
-        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus) {
+    const links = (threat && Array.isArray(threat.links)) ? threat.links : [];
+    const attachments = (threat && Array.isArray(threat.attachments)) ? threat.attachments : [];
+    if (!threat || threat.evaluated === false) return;
+    const score = Math.max(0, Math.min(100, Number(threat.score) || 0));
+    const hasContent = score >= 50 || threat.authStatus === 'pass' || links.length > 0 || attachments.length > 0;
+    if (!hasContent) return;
+
+    // Nur serialisierbare Daten an die injizierte Funktion uebergeben.
+    const data = {
+        score: score,
+        level: threat.level || levelFromScore(score),
+        reasons: (threat.reasons || []).slice(0, 12),
+        authStatus: threat.authStatus || 'neutral',
+        firstContact: threat.firstContact === true,
+        replyToMismatch: threat.replyToMismatch === true,
+        links: links.slice(0, 20).map(function (link) {
+            return {
+                host: link.host || '',
+                level: link.level || 'unknown',
+                reasons: (link.reasons || []).slice(0, 3),
+                action: link.action || null
+            };
+        }),
+        attachments: attachments.slice(0, 10).map(function (item) {
+            return { name: item.name || '', verdict: item.verdict || '', hash: item.hash || '' };
+        }),
+        messageId: threat.messageId
+    };
+    if (score < 50 && threat.authStatus === 'pass') {
+        await injectIntoMessageDisplay(tabId, function (authStatus) {
                 const t = (key, fallback, subs) => {
                     try {
                         return browser.i18n.getMessage(key, subs) || fallback;
@@ -1073,41 +1346,7 @@ async function injectThreatBanner(tabId, threat) {
                         return fallback;
                     }
                 };
-                if (score >= 50) {
-                    // Sichere DOM-Manipulation ohne innerHTML
-                    const banner = document.createElement('div');
-                    banner.id = 'thundy-threat-banner';
-                    banner.style.backgroundColor = '#ffeeee';
-                    banner.style.border = '1px solid #ff0000';
-                    banner.style.color = '#ff0000';
-                    banner.style.padding = '10px';
-                    banner.style.margin = '10px';
-                    banner.style.borderRadius = '4px';
-                    banner.style.fontWeight = 'bold';
-                    banner.style.fontFamily = 'Arial, sans-serif';
-                    banner.style.zIndex = '9999';
-
-                    const title = document.createElement('div');
-                    title.textContent = '🔴 ⚠️ ' + t('bannerThreatTitle', 'Thundy AV warning') +
-                        ' (' + t('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
-                    title.style.fontSize = '16px';
-                    title.style.marginBottom = '5px';
-                    banner.appendChild(title);
-
-                    const reasonList = document.createElement('ul');
-                    reasonList.style.margin = '0';
-                    reasonList.style.paddingLeft = '20px';
-                    reasonList.style.fontSize = '14px';
-
-                    for (const reason of reasons) {
-                        const li = document.createElement('li');
-                        li.textContent = reason;
-                        reasonList.appendChild(li);
-                    }
-                    banner.appendChild(reasonList);
-
-                    document.body.prepend(banner);
-                } else if (authStatus === 'pass') {
+                if (authStatus === "pass") {
                     const badge = document.createElement('div');
                     badge.id = 'thundy-auth-badge';
                     badge.style.display = 'inline-block';
@@ -1125,11 +1364,212 @@ async function injectThreatBanner(tabId, threat) {
 
                     document.body.prepend(badge);
                 }
-        }, [threat.score, threat.reasons, threat.authStatus]);
+        }, ['pass']);
+        return;
     }
+
+    await injectIntoMessageDisplay(tabId, renderThreatPanelInPage, [data]);
 }
 
+/**
+ * Rendert das Inline-Panel in der Nachrichtenansicht (Befund F-3/F-6).
+ *
+ * Diese Funktion laeuft im Message-Display-Dokument (executeScript serialisiert
+ * sie), darf also nur browser.i18n und das DOM benutzen und keine Variablen des
+ * Hintergrund-Skopes referenzieren. Alle dynamischen Werte werden mit
+ * textContent gesetzt - kein innerHTML.
+ */
+function renderThreatPanelInPage(d) {
+    if (!d || typeof document === 'undefined' || !document.body) return;
+    if (document.getElementById('thundy-threat-banner') || document.getElementById('thundy-status-panel')) return;
+
+    const fmt = function (template, values) {
+        let index = 0;
+        return String(template === null || template === undefined ? '' : template)
+            .replace(/\$[A-Z_]+\$/g, function () { return index < values.length ? String(values[index++]) : ''; });
+    };
+    const t = function (key, fallback, values) {
+        let raw = fallback;
+        try {
+            raw = browser.i18n.getMessage(key) || fallback;
+        } catch (e) { raw = fallback; }
+        return fmt(raw, values || []);
+    };
+    const styles = {
+        clean: { color: '#145c14', background: '#e6ffe6', border: '#2e8b2e', icon: '🟢' },
+        low: { color: '#4d6b00', background: '#f6ffe6', border: '#8ebe2d', icon: '🟢' },
+        medium: { color: '#7a5200', background: '#fff6e6', border: '#f0a500', icon: '🟡' },
+        high: { color: '#8a3400', background: '#fff0e6', border: '#e8620c', icon: '🟠' },
+        critical: { color: '#8a1010', background: '#ffeeee', border: '#c81e1e', icon: '🔴' },
+        unknown: { color: '#333333', background: '#f2f2f2', border: '#999999', icon: '⚪' }
+    };
+    const style = styles[d.level] || styles.unknown;
+    const levelNames = {
+        clean: 'Harmless', low: 'Low risk', medium: 'Noticeable',
+        high: 'High risk', critical: 'Critical', unknown: 'Not evaluated'
+    };
+    const levelLabel = t('bannerLevel' + d.level.charAt(0).toUpperCase() + d.level.slice(1), levelNames[d.level] || levelNames.unknown);
+    const isWarning = d.score >= 50;
+    const panel = document.createElement('div');
+    panel.id = isWarning ? 'thundy-threat-banner' : 'thundy-status-panel';
+    panel.setAttribute('role', 'status');
+    panel.style.backgroundColor = style.background;
+    panel.style.border = '1px solid ' + style.border;
+    panel.style.color = style.color;
+    panel.style.padding = '10px';
+    panel.style.margin = '10px';
+    panel.style.borderRadius = '4px';
+    panel.style.fontFamily = 'Arial, sans-serif';
+    panel.style.fontSize = '13px';
+    panel.style.zIndex = '9999';
+
+    const head = document.createElement('div');
+    head.style.fontWeight = 'bold';
+    head.style.fontSize = '14px';
+    head.style.marginBottom = '6px';
+    head.textContent = style.icon + ' ' + t('bannerLevelTitle', 'Thundy AV assessment: $LEVEL$ (risk score $SCORE$ of 100)', [levelLabel, String(d.score)]);
+    panel.appendChild(head);
+
+    const summary = document.createElement('div');
+    const bits = [];
+    bits.push(d.links.length > 0
+        ? t('bannerLinksTitle', 'Links in this message') + ': ' + d.links.length
+        : t('bannerLinksNone', 'No links found'));
+    if (d.attachments.length > 0) bits.push(t('bannerAttachmentsTitle', 'Attachments') + ': ' + d.attachments.length);
+    if (d.firstContact) bits.push(t('bannerFirstContact', 'First contact with this sender'));
+    if (d.replyToMismatch) bits.push(t('bannerReplyToMismatch', 'Reply-To points to a different domain'));
+    summary.textContent = bits.join(' · ');
+    panel.appendChild(summary);
+
+    const auth = document.createElement('div');
+    auth.style.marginTop = '4px';
+    if (d.authStatus === 'pass') {
+        auth.textContent = '🛡️ ' + t('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
+    } else if (d.authStatus === 'fail') {
+        auth.textContent = '⚠️ ' + t('bannerAuthFail', 'Sender authentication failed (SPF/DKIM/DMARC)');
+    } else {
+        auth.textContent = 'ℹ️ ' + t('bannerAuthNone', 'No SPF/DKIM/DMARC result in the headers');
+    }
+    panel.appendChild(auth);
+
+    const details = document.createElement('div');
+    details.id = 'thundy-panel-details';
+    details.style.display = isWarning ? 'block' : 'none';
+    details.style.marginTop = '8px';
+    details.style.fontSize = '13px';
+    panel.appendChild(details);
+
+    const listHeading = document.createElement('div');
+    listHeading.style.fontWeight = 'bold';
+    listHeading.textContent = t('gateReasonTitle', 'Reasons');
+    details.appendChild(listHeading);
+
+    const reasonList = document.createElement('ul');
+    reasonList.style.margin = '2px 0 6px 0';
+    reasonList.style.paddingLeft = '20px';
+    for (let i = 0; i < d.reasons.length; i++) {
+        const li = document.createElement('li');
+        li.textContent = d.reasons[i];
+        reasonList.appendChild(li);
+    }
+    details.appendChild(reasonList);
+
+    if (d.links.length > 0) {
+        const linkHeading = document.createElement('div');
+        linkHeading.style.fontWeight = 'bold';
+        linkHeading.textContent = t('bannerLinksTitle', 'Links in this message');
+        details.appendChild(linkHeading);
+
+        const linkList = document.createElement('ul');
+        linkList.style.margin = '2px 0 6px 0';
+        linkList.style.paddingLeft = '20px';
+        for (let i = 0; i < d.links.length; i++) {
+            const item = d.links[i];
+            const li = document.createElement('li');
+            const icon = (styles[item.level] || styles.unknown).icon;
+            li.textContent = icon + ' ' + item.host +
+                (item.action === 'block' ? ' [' + t('gateBlocked', 'Link blocked: the check found a high risk.') + ']' : '');
+            if (item.reasons.length > 0) {
+                const sub = document.createElement('div');
+                sub.style.opacity = '0.8';
+                sub.style.fontSize = '12px';
+                sub.textContent = item.reasons.join(' | ');
+                li.appendChild(sub);
+            }
+            linkList.appendChild(li);
+        }
+        details.appendChild(linkList);
+    }
+
+
+
+    if (d.attachments.length > 0) {
+        const attHeading = document.createElement('div');
+        attHeading.style.fontWeight = 'bold';
+        attHeading.textContent = t('bannerAttachmentsTitle', 'Attachments');
+        details.appendChild(attHeading);
+
+        const attList = document.createElement('ul');
+        attList.style.margin = '2px 0 6px 0';
+        attList.style.paddingLeft = '20px';
+        for (let i = 0; i < d.attachments.length; i++) {
+            const item = d.attachments[i];
+            const li = document.createElement('li');
+            let line = item.name || '';
+            if (item.verdict) line += ' — ' + item.verdict;
+            if (item.hash) line += ' (SHA-256: ' + item.hash.slice(0, 16) + '…)';
+            li.textContent = line;
+            attList.appendChild(li);
+        }
+        details.appendChild(attList);
+    }
+
+
+    const actions = document.createElement('div');
+    actions.style.marginTop = '8px';
+
+    const detailsButton = document.createElement('button');
+    detailsButton.type = 'button';
+    detailsButton.textContent = isWarning
+        ? t('bannerDetailsHide', 'Hide details')
+        : t('bannerDetailsToggle', 'Show details');
+    detailsButton.addEventListener('click', function () {
+        const open = details.style.display !== 'none';
+        details.style.display = open ? 'none' : 'block';
+        detailsButton.textContent = open
+            ? t('bannerDetailsToggle', 'Show details')
+            : t('bannerDetailsHide', 'Hide details');
+    });
+    actions.appendChild(detailsButton);
+
+    const reportButton = document.createElement('button');
+    reportButton.type = 'button';
+    reportButton.id = 'thundy-report-admin';
+    reportButton.style.marginLeft = '8px';
+    reportButton.textContent = t('bannerReportAdmin', 'Report to administrator');
+    reportButton.addEventListener('click', async function () {
+        reportButton.disabled = true;
+        reportButton.setAttribute('aria-busy', 'true');
+        let message = t('gateReportFailed', 'The report could not be created (no administrator contact configured?).');
+        try {
+            const response = await browser.runtime.sendMessage({ action: 'requestAdminReport', messageId: d.messageId });
+            if (response && response.success) {
+                message = t('gateReportSent', 'Report to the administrator has been prepared.');
+            }
+        } catch (e) { /* keep the failure text */ }
+        reportButton.textContent = message;
+        reportButton.disabled = false;
+        reportButton.removeAttribute('aria-busy');
+    });
+    actions.appendChild(reportButton);
+    panel.appendChild(actions);
+
+    document.body.prepend(panel);
+}
+
+
 async function processAttachments(message) {
+
   let attachments = await browser.messages.listAttachments(message.id);
 
   if (attachments.length > 0) {
@@ -1186,7 +1626,129 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
 async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
   const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache });
   const threat = calculateThreatScore(message.author, urls, options);
-  await injectThreatBanner(tab.id, threat);
+  const senderEmail = extractEmailAddress(message.author || '');
+  const senderDomain = extractEmailDomain(senderEmail);
+
+  threat.level = levelFromScore(threat.score);
+  threat.evaluated = true;
+  threat.messageId = message.id;
+  threat.firstContact = options.isFirstCommunication === true;
+  threat.replyToMismatch = hasReplyToMismatch(options.replyTo, senderEmail);
+  threat.links = buildThreatLinkSummaries(filteredUrls, senderDomain);
+  threat.attachments = await collectAttachmentSummaries(message);
+
+  const tabId = tab ? tab.id : null;
+  await updateThreatIndicator(tabId, threat);
+  await injectThreatBanner(tabId, threat);
+  rememberThreatForTab(tabId, threat);
+  return threat;
+}
+
+/**
+ * Reply-To auf einer anderen Domain als der Absender ist ein klassisches
+ * BEC-Muster (Antworten landen beim Angreifer). Reiner String-Vergleich, damit
+ * die Auswertung ohne Netzwerkzugriff auskommt.
+ */
+function hasReplyToMismatch(replyTo, senderEmail) {
+  try {
+    if (!replyTo || !senderEmail) return false;
+    const replyEmail = extractEmailAddress(String(replyTo));
+    const replyDomain = extractEmailDomain(replyEmail);
+    const senderDomain = extractEmailDomain(senderEmail);
+    if (!replyDomain || !senderDomain) return false;
+    return replyDomain !== senderDomain;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Pro-Link-Zusammenfassung fuer das Inline-Panel: Host, Stufe, Gruende. Die
+ * Bewertung kommt aus der lokalen Engine (link_gate.js); ohne Engine bleibt die
+ * Stufe "unknown", damit das Panel nichts vortaeuscht.
+ */
+function buildThreatLinkSummaries(filteredUrls, senderDomain) {
+  const urls = Array.isArray(filteredUrls) ? filteredUrls.slice(0, 20) : [];
+  const engine = gateEngine();
+  const summaries = [];
+  for (let i = 0; i < urls.length; i++) {
+    const url = urls[i];
+    let host = '';
+    try { host = new URL(url).hostname; } catch (e) { host = String(url); }
+    if (!engine || typeof engine.inspectUrl !== 'function') {
+      summaries.push({ url: url, host: host, level: 'unknown', reasons: [], action: null });
+      continue;
+    }
+    try {
+      const local = engine.inspectUrl(url, { senderDomain: senderDomain, whitelist: Array.from(customWhitelist) });
+      summaries.push({
+        url: url,
+        host: host,
+        level: local.level || 'unknown',
+        score: local.score || 0,
+        reasons: (local.reasons || []).slice(0, 3),
+        action: null
+      });
+    } catch (e) {
+      summaries.push({ url: url, host: host, level: 'unknown', reasons: [], action: null });
+    }
+  }
+  return summaries;
+}
+
+/**
+ * Anhang-Metadaten (Name, Groesse, Typ, SHA-256 falls schon berechnet). Es werden
+ * bewusst keine Anhangsinhalte gelesen - der Report soll forensisch nutzbar, aber
+ * datensparsam sein.
+ */
+async function collectAttachmentSummaries(message) {
+  if (!message || message.id === undefined || message.id === null) return [];
+  let attachments = [];
+  try {
+    attachments = await browser.messages.listAttachments(message.id);
+  } catch (e) {
+    return [];
+  }
+  if (!Array.isArray(attachments)) return [];
+
+  let hashes = {};
+  try {
+    const db = await getSharedDB();
+    const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
+    if (record && Array.isArray(record.attachments)) {
+      for (const entry of record.attachments) {
+        if (entry && entry.name && entry.local_hash) hashes[entry.name] = entry.local_hash;
+      }
+    }
+  } catch (e) { /* Cache ist optional */ }
+
+  return attachments.slice(0, 10).map(function (item) {
+    const name = item && item.name ? item.name : '';
+    return {
+      name: name,
+      size: item && item.size ? item.size : 0,
+      contentType: item && item.contentType ? item.contentType : '',
+      hash: hashes[name] || '',
+      verdict: ''
+    };
+  });
+}
+
+// Letzte Bewertung je Tab, damit das Popup und das Message-Display-Panel den
+// gleichen Stand sehen (kein erneutes Scannen noetig).
+const lastThreatByTab = new Map();
+
+function rememberThreatForTab(tabId, threat) {
+  if (tabId === undefined || tabId === null) return;
+  if (lastThreatByTab.size > 20) {
+    lastThreatByTab.delete(lastThreatByTab.keys().next().value);
+  }
+  lastThreatByTab.set(tabId, threat);
+}
+
+function threatForTab(tabId) {
+  if (tabId === undefined || tabId === null) return null;
+  return lastThreatByTab.get(tabId) || null;
 }
 
 /**
@@ -1379,6 +1941,10 @@ async function handleDisplayedMessage(tab, message) {
 
     let parsedUrlCache = new Map();
     let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage, parsedUrlCache);
+
+    // Klick-Gate: erst installieren, dann bewerten. Ohne diese Injektion wuerde
+    // Thunderbird Links ungeprueft an den Standardbrowser geben (Befund F-1).
+    await installLinkGate(tab.id);
 
     await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
 
@@ -1952,61 +2518,328 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
         }
     }
 });
+/**
+ * Konfiguration fuer das Link-Gate im Message-Display-Skript. Texte kommen aus
+ * der Locale-Datei, damit die Gate-UI dieselbe Sprache spricht wie die Banner;
+ * die Farben stammen aus levelStyle(), damit Toolbar und Dialog zusammenpassen.
+ */
+function linkGateConfigPayload() {
+    const texts = {};
+    for (const key of Object.keys(I18N_FALLBACKS)) {
+        if (key.indexOf('gate') === 0 || key.indexOf('bannerLevel') === 0) {
+            texts[key] = msg(key, []);
+        }
+    }
+    const styles = {};
+    for (const level of THREAT_LEVELS.concat(['unknown'])) {
+        const style = levelStyle(level);
+        styles[level] = {
+            color: style.color,
+            background: style.background,
+            border: style.border,
+            icon: style.icon
+        };
+    }
+    return {
+        enabled: linkGateEnabled === true && linkGateMode !== 'off',
+        mode: linkGateMode,
+        whitelist: Array.from(customWhitelist),
+        texts: texts,
+        styles: styles
+    };
+}
 
-async function handleCheckLinkState(request, sender, sendResponse) {
+/**
+ * Audit-Log des Link-Gates: Ringpuffer in storage.local, damit eine Entscheidung
+ * ("trotzdem geoeffnet") nachvollziehbar bleibt. Bewusst lokal und begrenzt -
+ * keine Telemetrie, kein Server (F-8).
+ */
+async function logGateDecision(entry) {
     try {
-        // Need to find the active message to get headerMessageId
-        const message = await getFirstDisplayedMessage(sender && sender.tab && sender.tab.id, { throwOnError: true });
-        if (!message || !message.headerMessageId) {
-            sendResponse({status: 'UNKNOWN'});
-            return;
-        }
-
-        const db = await getSharedDB();
-        const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
-
-        let linkObj = null;
-        if (record && record.links) {
-            // ⚡ Optimize URL normalization: Move requestUrl processing out of loop and use fast string methods over Regex
-            const reqUrl = request.url.endsWith("/") ? request.url.slice(0, -1) : request.url;
-            const reqUrlSlash = reqUrl + "/";
-            // ⚡ Bolt Optimization: Replace .find() with for loop to avoid callback overhead
-            linkObj = undefined; // Reset to match .find() semantics
-            const links = record.links;
-            const len = links.length;
-            for (let i = 0; i < len; i++) {
-                const u = links[i].url;
-                if (u === reqUrl || u === reqUrlSlash) {
-                    linkObj = links[i];
-                    break;
-                }
-            }
-        }
-
-        // Time-of-Click Live Scan via urlscan.io
-        if (urlscanApikey && (!linkObj || linkObj.state === 'UNKNOWN')) {
-            try {
-                const res = await checkUrlscanIo(request.url, urlscanApikey);
-                if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT') {
-                    // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
-                    sendResponse({ status: res.status, reasons: res.reasons });
-                    return;
-                }
-            } catch (e) {
-                Logger.error("Fehler bei Time-of-Click Live-Scan:", e);
-            }
-        }
-
-        if (linkObj) {
-            const status = await checkHybridAnalysisVerdict(linkObj.hybrid_sha256, linkObj.state);
-            sendResponse({status: status});
-        } else {
-            sendResponse({status: 'UNKNOWN'});
-        }
-    } catch (err) {
-        sendResponse({status: 'ERROR'});
+        const stored = await browser.storage.local.get('threatAuditLog');
+        const log = Array.isArray(stored.threatAuditLog) ? stored.threatAuditLog : [];
+        log.push({
+            at: new Date().toISOString(),
+            url: entry && entry.url ? describeUrlForUser(entry.url) : '',
+            host: entry && entry.host ? entry.host : '',
+            action: entry && entry.action ? entry.action : 'unknown',
+            level: entry && entry.level ? entry.level : 'unknown',
+            override: entry && entry.override === true,
+            source: entry && entry.source ? entry.source : 'link-gate'
+        });
+        while (log.length > LINK_GATE_AUDIT_LIMIT) log.shift();
+        await browser.storage.local.set({ threatAuditLog: log });
+        return true;
+    } catch (e) {
+        Logger.warn('Could not write the link-gate audit log', e);
+        return false;
     }
 }
+
+/**
+ * Klick-Gate im Hintergrund.
+ *
+ * Der Message-Display-Kontext liefert die lokale Vorabanalyse mit (`local`), hier
+ * kommen nur die externen Quellen dazu. Bewusst schnell: URLhaus (eine Anfrage)
+ * und der bereits gespeicherte Hybrid-Analysis-Befund aus IndexedDB; der
+ * urlscan.io-Live-Scan laeuft nur bei auffaelligen Links und mit Zeitbudget
+ * (LINK_GATE_LIVE_SCAN_BUDGET_MS), damit ein Klick nie "haengt".
+ */
+async function handleCheckLinkState(request) {
+    const url = request && typeof request.url === 'string' ? request.url : '';
+    if (!url) return { status: 'ERROR', action: 'warn', level: 'unknown', score: 0, reasons: [], sources: {} };
+
+    const engine = gateEngine();
+    let local = request.local || null;
+    if (!local && engine && typeof engine.inspectUrl === 'function') {
+        try {
+            local = engine.inspectUrl(url, {
+                displayText: request.displayText || '',
+                whitelist: Array.from(customWhitelist)
+            });
+        } catch (e) { local = null; }
+    }
+    if (!local) {
+        local = { url: url, host: describeUrlForUser(url), level: 'unknown', score: 0, reasons: [], indicators: [] };
+    }
+
+    let host = local.host || '';
+    let domain = host;
+    try { domain = new URL(url).hostname; } catch (e) { /* keep the local host */ }
+
+    const sources = { urlhaus: null, urlscan: null, hybrid: null, unknown: true };
+
+    // Whitelist-Treffer: kein externer Aufruf, sofort freigeben.
+    const whitelisted = (local.indicators || []).some(function (item) { return item && item.code === 'whitelisted'; });
+
+    if (!whitelisted && urlhausApikey && mayTransmitExternally()) {
+        try {
+            sources.urlhaus = await checkURLhaus(domain, urlhausApikey);
+            sources.unknown = false;
+        } catch (e) { Logger.warn('URLhaus check at click time failed', e); }
+    }
+
+    if (!whitelisted && urlscanApikey && mayTransmitExternally() && local.level !== 'clean') {
+        try {
+            const result = await checkUrlscanIo(url, urlscanApikey, LINK_GATE_LIVE_SCAN_BUDGET_MS);
+            if (result && result.status !== 'ERROR' && result.status !== 'TIMEOUT') {
+                sources.urlscan = result;
+                sources.unknown = false;
+            }
+        } catch (e) { Logger.warn('urlscan.io check at click time failed', e); }
+    }
+
+    // Gespeicherter Hybrid-Analysis-Befund (schnell, offline): der Hintergrund
+    // Scan fuellt diesen Cache bereits.
+    try {
+        const message = await getFirstDisplayedMessage(request.tabId || null);
+        if (message && message.headerMessageId) {
+            const db = await getSharedDB();
+            const record = await getFromStore(db, "hybridanalysis", message.headerMessageId);
+            if (record && Array.isArray(record.links)) {
+                for (const link of record.links) {
+                    if (link && link.url === url && link.state && link.state !== 'UNKNOWN') {
+                        sources.hybrid = link.state;
+                        sources.unknown = false;
+                        break;
+                    }
+                }
+            }
+        }
+    } catch (e) { /* Cache ist optional */ }
+
+    const decision = engine && typeof engine.decide === 'function'
+        ? engine.decide({ local: local, urlhaus: sources.urlhaus, urlscan: sources.urlscan, hybrid: sources.hybrid, mode: linkGateMode })
+        : conservativeGateDecision(local, sources);
+
+    await logGateDecision({ url: url, host: domain, action: decision.action, level: decision.level, override: false, source: 'check' });
+
+    return {
+        status: gateStatusFor(decision),
+        action: decision.action,
+        level: decision.level,
+        score: decision.score,
+        reasons: decision.reasons,
+        sources: sources
+    };
+}
+
+/**
+ * Rueckwaerts-kompatibler Status (das Popup und aeltere Aufrufer kennen diese
+ * Werte), abgeleitet aus der Entscheidung.
+ */
+function gateStatusFor(decision) {
+    if (!decision) return 'UNKNOWN';
+    if (decision.action === 'block') return 'MALICIOUS';
+    if (decision.action === 'warn') return 'SUSPICIOUS';
+    if (decision.action === 'allow' && decision.level === 'clean') return 'CLEAN';
+    return 'UNKNOWN';
+}
+
+/**
+ * Fallback, wenn die Engine fehlt: im Zweifel warnen, aber nie stillschweigend
+ * freigeben (fail-safe statt fail-open).
+ */
+function conservativeGateDecision(local, sources) {
+    const reasons = (local && local.reasons) ? local.reasons.slice() : [];
+    if (sources && sources.urlhaus === true) {
+        return { action: 'block', level: 'critical', score: 100, reasons: reasons.concat(['Die Domain steht auf der URLhaus-Malware-Liste.']), sources: sources };
+    }
+    return { action: 'warn', level: (local && local.level) || 'unknown', score: (local && local.score) || 0, reasons: reasons, sources: sources };
+}
+
+
+/**
+ * Oeffnet ein Compose-Fenster mit der fertigen Vorlage. `compose` ist eine
+ * eigene Manifest-Berechtigung; fehlt sie oder die API, wird das dem Aufrufer
+ * gemeldet, damit die Oberflaeche den Text zum Kopieren anbieten kann.
+ */
+async function openComposeWithTemplate(template) {
+    const to = (template && Array.isArray(template.to)) ? template.to.filter(Boolean) : [];
+    if (to.length === 0) return { success: false, reason: 'no_admin_contact' };
+    try {
+        if (!browser.compose || typeof browser.compose.beginNew !== 'function') {
+            return { success: false, reason: 'compose_failed' };
+        }
+        await browser.compose.beginNew({
+            to: to,
+            subject: template.subject || '',
+            body: template.body || '',
+            isPlainText: true
+        });
+        return { success: true, recipients: to };
+    } catch (e) {
+        Logger.error('Could not open the compose window', e);
+        return { success: false, reason: 'compose_failed' };
+    }
+}
+
+function adminContactPayload() {
+    return {
+        emails: Array.isArray(adminEmails) ? adminEmails.slice() : [],
+        phone: adminPhone || '',
+        name: adminContactName || '',
+        organization: adminOrganization || ''
+    };
+}
+
+
+/**
+ * Erzeugt die ausfuehrliche Erstbewertung fuer den Administrator und oeffnet die
+ * Vorlage. Quelle ist die zuletzt berechnete Bewertung des Tabs bzw. eine
+ * frische Auswertung der angezeigten Nachricht.
+ */
+async function handleAdminReportRequest(request, sender) {
+    const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (request && request.tabId) || null;
+    if (!Array.isArray(adminEmails) || adminEmails.length === 0) {
+        notify('notificationTitleError', 'notificationReportNoContact');
+        return { success: false, reason: 'no_admin_contact' };
+    }
+    const report = (typeof ThundyReport !== 'undefined' && ThundyReport) ? ThundyReport : null;
+    if (!report || typeof report.buildIncidentReport !== 'function') {
+        return { success: false, reason: 'compose_failed' };
+    }
+
+    let threat = threatForTab(tabId);
+    let message = null;
+    try {
+        message = await getFirstDisplayedMessage(tabId);
+    } catch (e) { message = null; }
+
+    if (!threat && message) {
+        threat = await evaluateMessageThreat(message);
+    }
+
+    const template = report.buildIncidentReport({
+        message: {
+            headerMessageId: message ? message.headerMessageId : '',
+            subject: message ? message.subject : '',
+            author: message ? message.author : '',
+            recipient: message ? (message.recipients || []).join(', ') : '',
+            date: message ? message.date : ''
+        },
+        threat: {
+            score: threat ? threat.score : 0,
+            level: threat ? threat.level : 'unknown',
+            reasons: threat ? threat.reasons : [],
+            authStatus: threat ? threat.authStatus : 'neutral'
+        },
+        links: (threat && threat.links) ? threat.links : [],
+        attachments: (threat && threat.attachments) ? threat.attachments : [],
+        contacts: adminContactPayload(),
+        meta: {
+            version: browser.runtime.getManifest ? browser.runtime.getManifest().version : '',
+            generatedAt: new Date().toISOString(),
+            privacyTier: privacyTier,
+            consent: externalAnalysisConsent === true,
+            gateMode: linkGateMode,
+            includeUrls: reportIncludeUrls === true
+        }
+    });
+
+    const result = await openComposeWithTemplate(template);
+    if (!result.success) {
+        notify('notificationTitleError', 'notificationReportComposeFailed');
+    } else {
+        notify('notificationTitle', 'notificationReportStarted', [describeUrlForUser((message && message.subject) || '')]);
+    }
+    return result;
+}
+
+/**
+ * Hilfeanforderung aus den Einstellungen ("Template-Hilfe"): der Nutzer fordert
+ * mit einem Klick eine Vorlage an, die an den Administrator geht und die
+ * Kontaktdaten inklusive Telefonnummer enthaelt.
+ */
+async function handleHelpTemplateRequest() {
+    const report = (typeof ThundyReport !== 'undefined' && ThundyReport) ? ThundyReport : null;
+    if (!report || typeof report.buildHelpRequest !== 'function') {
+        return { success: false, reason: 'compose_failed' };
+    }
+    const template = report.buildHelpRequest({
+        contacts: adminContactPayload(),
+        meta: {
+            version: browser.runtime.getManifest ? browser.runtime.getManifest().version : '',
+            generatedAt: new Date().toISOString(),
+            privacyTier: privacyTier,
+            consent: externalAnalysisConsent === true,
+            gateMode: linkGateMode
+        }
+    });
+    const result = await openComposeWithTemplate(template);
+    return { success: result.success, reason: result.reason, recipients: result.recipients, template: template };
+}
+
+/**
+ * Vollstaendige Auswertung einer Nachricht ohne UI (fuer den Report, wenn fuer
+ * den Tab noch keine Bewertung vorliegt).
+ */
+async function evaluateMessageThreat(message) {
+    try {
+        const fullMessage = await browser.messages.getFull(message.id);
+        const parsedUrlCache = new Map();
+        const messageText = extractTextFromParts(fullMessage.parts || fullMessage);
+        const urls = extractUrls(messageText);
+        const filteredUrls = filterUrls(urls, parsedUrlCache);
+        const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache });
+        const threat = calculateThreatScore(message.author, urls, options);
+        const senderEmail = extractEmailAddress(message.author || '');
+        threat.level = levelFromScore(threat.score);
+        threat.evaluated = true;
+        threat.messageId = message.id;
+        threat.firstContact = options.isFirstCommunication === true;
+        threat.replyToMismatch = hasReplyToMismatch(options.replyTo, senderEmail);
+        threat.links = buildThreatLinkSummaries(filteredUrls, extractEmailDomain(senderEmail));
+        threat.attachments = await collectAttachmentSummaries(message);
+        return threat;
+    } catch (e) {
+        Logger.error('Could not evaluate the message for the report', e);
+        return null;
+    }
+}
+
+
+
 
 async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
     if (hybrid_sha256 && apikey_hybridanalysis && mayTransmitExternally()) {
@@ -2102,7 +2935,41 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
 
         case "checkLinkState":
-            handleCheckLinkState(request, sender, sendResponse);
+            handleCheckLinkState(Object.assign({}, request, {
+                tabId: (sender && sender.tab && sender.tab.id) ? sender.tab.id : null
+            }))
+                .then(res => sendResponse(res))
+                .catch(err => sendResponse({ status: 'ERROR', action: 'warn', level: 'unknown', score: 0, reasons: [err.message], sources: {} }));
+            return true;
+
+        case "linkGateConfig":
+            sendResponse(linkGateConfigPayload());
+            return true;
+
+        case "linkGateDecision":
+            logGateDecision({
+                url: request.url,
+                action: request.action,
+                level: request.level,
+                override: request.override === true,
+                source: request.source || 'message-display'
+            }).then(logged => sendResponse({ logged: logged === true }));
+            return true;
+
+        case "requestAdminReport":
+            handleAdminReportRequest(request, sender)
+                .then(res => sendResponse(res))
+                .catch(err => sendResponse({ success: false, reason: 'compose_failed', message: err.message }));
+            return true;
+
+        case "requestHelpTemplate":
+            handleHelpTemplateRequest()
+                .then(res => sendResponse(res))
+                .catch(err => sendResponse({ success: false, reason: 'compose_failed', message: err.message }));
+            return true;
+
+        case "requestThreatSummary":
+            sendResponse({ threat: threatForTab(sender && sender.tab ? sender.tab.id : null) });
             return true;
 
         case "downloadDisarmed":
@@ -2457,7 +3324,7 @@ async function checkURLhaus(domain, apikey) {
     return false;
 }
 
-async function checkUrlscanIo(url, apikey) {
+async function checkUrlscanIo(url, apikey, maxWaitMs) {
     if (!apikey) return null;
     if (!mayTransmitExternally()) return null;
     try {
@@ -2485,17 +3352,19 @@ async function checkUrlscanIo(url, apikey) {
 
         if (!uuid) throw new Error("Keine UUID von urlscan.io erhalten.");
 
-        return await pollUrlscanIoResult(uuid);
+        return await pollUrlscanIoResult(uuid, maxWaitMs);
     } catch (e) {
         Logger.error("Fehler bei urlscan.io Abfrage", e);
         return { status: 'ERROR', details: e.message };
     }
 }
 
-async function pollUrlscanIoResult(uuid) {
+async function pollUrlscanIoResult(uuid, maxWaitMs) {
     let waitTime = 2000;
     let elapsed = 0;
-    const maxTime = 30000;
+    // Klick-Gate: kurzes Budget, damit ein Link-Klick nicht 30 Sekunden haengt.
+    const budget = (typeof maxWaitMs === 'number' && maxWaitMs > 0) ? maxWaitMs : 30000;
+    const maxTime = budget;
 
     while (elapsed < maxTime) {
         await new Promise(r => setTimeout(r, waitTime));

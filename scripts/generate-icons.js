@@ -7,12 +7,21 @@
  * Draws a shield with an exclamation mark - the visual language of the add-on
  * ("attachment/link scanner") - and writes PNG files for the sizes referenced in
  * manifest.json. Rendering is done with 4x supersampling for smooth edges.
+ *
+ * Since 1.7 it additionally renders the threat-level indicator set
+ * (img/levels/level-<level>-<size>px.png) that background.js uses for the
+ * message_display_action icon: green shield with a check for a harmless message,
+ * amber/orange/red shields with an exclamation mark for rising risk. The
+ * palettes are duplicated nowhere else, so the toolbar indicator, the banners and
+ * the popup stay visually consistent (see docs/plan_1.7_threat_indicator_link_gate.md).
  */
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 
 const SIZES = [16, 32, 48, 64, 128];
+const LEVEL_SIZES = [16, 32, 64];
+const LEVELS = ['clean', 'low', 'medium', 'high', 'critical'];
 const SUPERSAMPLE = 4;
 
 const SHIELD_POLYGON = [
@@ -26,6 +35,17 @@ const SHIELD_POLYGON = [
 const SHIELD_FILL = [11, 95, 165, 255];
 const SHIELD_EDGE = [7, 61, 107, 255];
 const MARK_FILL = [255, 255, 255, 255];
+
+// Threat-level palettes: [fill, edge, mark shape]
+const LEVEL_PALETTES = {
+  clean: { fill: [34, 139, 34, 255], edge: [20, 92, 20, 255], mark: 'check' },
+  low: { fill: [142, 190, 45, 255], edge: [92, 126, 26, 255], mark: 'check' },
+  medium: { fill: [240, 165, 0, 255], edge: [163, 111, 0, 255], mark: 'exclamation' },
+  high: { fill: [232, 98, 12, 255], edge: [158, 62, 4, 255], mark: 'exclamation' },
+  critical: { fill: [200, 30, 30, 255], edge: [132, 16, 16, 255], mark: 'exclamation' }
+};
+
+const DEFAULT_PALETTE = { fill: SHIELD_FILL, edge: SHIELD_EDGE, mark: 'exclamation' };
 
 function pointInPolygon(x, y, polygon) {
   let inside = false;
@@ -55,22 +75,44 @@ function distanceToPolygonEdge(x, y, polygon) {
   return best;
 }
 
-function sampleColor(x, y) {
+function distanceToSegment(x, y, x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lengthSquared = dx * dx + dy * dy;
+  let t = lengthSquared === 0 ? 0 : ((x - x1) * dx + (y - y1) * dy) / lengthSquared;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(x - (x1 + t * dx), y - (y1 + t * dy));
+}
+
+function isExclamationMark(x, y) {
+  const bar = x > 0.45 && x < 0.555 && y > 0.28 && y < 0.62;
+  const dot = Math.hypot(x - 0.502, y - 0.75) < 0.062 && y > 0.66;
+  return bar || dot;
+}
+
+function isCheckMark(x, y) {
+  const thickness = 0.055;
+  return distanceToSegment(x, y, 0.28, 0.53, 0.44, 0.70) < thickness ||
+    distanceToSegment(x, y, 0.44, 0.70, 0.74, 0.31) < thickness;
+}
+
+function sampleColor(x, y, palette) {
+  const colors = palette || DEFAULT_PALETTE;
   const inShield = pointInPolygon(x, y, SHIELD_POLYGON);
   if (!inShield) return [0, 0, 0, 0];
 
   const edgeDistance = distanceToPolygonEdge(x, y, SHIELD_POLYGON);
   const edgeWidth = 0.035;
 
-  // Exclamation mark: bar plus dot, only inside the shield.
-  const bar = x > 0.45 && x < 0.555 && y > 0.28 && y < 0.62;
-  const dot = Math.hypot(x - 0.502, y - 0.75) < 0.062 && y > 0.66;
-  if (bar || dot) return MARK_FILL;
+  // Risk mark: exclamation mark (attention) or check (harmless).
+  const hasMark = colors.mark === 'check' ? isCheckMark(x, y) : isExclamationMark(x, y);
+  if (hasMark) return MARK_FILL;
 
-  return edgeDistance < edgeWidth ? SHIELD_EDGE : SHIELD_FILL;
+  return edgeDistance < edgeWidth ? colors.edge : colors.fill;
 }
 
-function renderIcon(size) {
+function renderIcon(size, palette) {
+  const colors = palette || DEFAULT_PALETTE;
   const big = size * SUPERSAMPLE;
   const data = Buffer.alloc(size * size * 4);
 
@@ -81,7 +123,7 @@ function renderIcon(size) {
         for (let sx = 0; sx < SUPERSAMPLE; sx++) {
           const x = (px * SUPERSAMPLE + sx + 0.5) / big;
           const y = (py * SUPERSAMPLE + sy + 0.5) / big;
-          const [cr, cg, cb, ca] = sampleColor(x, y);
+          const [cr, cg, cb, ca] = sampleColor(x, y, colors);
           r += cr * ca;
           g += cg * ca;
           b += cb * ca;
@@ -149,14 +191,27 @@ function encodePng(size, rgba) {
   ]);
 }
 
+function writeIcon(targetDir, name, size, palette) {
+  const png = encodePng(size, renderIcon(size, palette));
+  const target = path.join(targetDir, name);
+  fs.writeFileSync(target, png);
+  console.log('wrote ' + path.relative(process.cwd(), target) + ' (' + png.length + ' bytes)');
+}
+
 function main() {
   const targetDir = path.resolve(__dirname, '..', 'img');
   fs.mkdirSync(targetDir, { recursive: true });
   for (const size of SIZES) {
-    const png = encodePng(size, renderIcon(size));
-    const target = path.join(targetDir, `icon-${size}px.png`);
-    fs.writeFileSync(target, png);
-    console.log('wrote ' + path.relative(process.cwd(), target) + ' (' + png.length + ' bytes)');
+    writeIcon(targetDir, `icon-${size}px.png`, size, DEFAULT_PALETTE);
+  }
+
+  // Threat-level indicator set for the message_display_action icon (1.7).
+  const levelDir = path.join(targetDir, 'levels');
+  fs.mkdirSync(levelDir, { recursive: true });
+  for (const level of LEVELS) {
+    for (const size of LEVEL_SIZES) {
+      writeIcon(levelDir, `level-${level}-${size}px.png`, size, LEVEL_PALETTES[level]);
+    }
   }
 }
 
@@ -164,4 +219,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { renderIcon, encodePng, SIZES };
+module.exports = { renderIcon, encodePng, SIZES, LEVELS, LEVEL_SIZES, LEVEL_PALETTES, DEFAULT_PALETTE };

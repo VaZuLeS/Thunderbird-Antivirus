@@ -32,6 +32,10 @@ let apikey_hybridanalysis;
 // is always defined, kept in sync while the popup is open.
 let externalAnalysisConsent = false;
 
+// 1.7: Datensparsamkeits-Schalter aus den Einstellungen. Ist er false, zeigt die
+// Link-Tabelle nur den Host statt der vollstaendigen URL (analog zum Report).
+let reportIncludeUrls = true;
+
 (async () => {
 let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
@@ -83,8 +87,9 @@ if (browser.messageDisplay && typeof browser.messageDisplay.getDisplayedMessages
 
 // Ohne Zustimmung zu externer Analyse wird nichts übertragen - das muss im
 // Popup sichtbar sein, bevor der Nutzer Uploads auslöst.
-const settings = await browser.storage.local.get(['externalAnalysisConsent']);
+const settings = await browser.storage.local.get(['externalAnalysisConsent', 'reportIncludeUrls']);
 externalAnalysisConsent = settings && settings.externalAnalysisConsent === true;
+reportIncludeUrls = !settings || settings.reportIncludeUrls !== false;
 try {
     browser.storage.onChanged.addListener((changes, area) => {
         if (area === 'local' && changes.externalAnalysisConsent) {
@@ -92,6 +97,11 @@ try {
         }
     });
 } catch (e) { /* storage.onChanged is optional in tests */ }
+
+// 1.7: Kopfzeile, Link-Tabelle und Admin-Bericht initial aufbauen. Bewusst vor
+// dem "keine Nachricht"-Abbruch, damit der neutrale Zustand ("nicht bewertet")
+// immer sichtbar ist und nie faelschlich "clean" erscheint.
+initializeThreatPanel({ messageId: message ? message.id : null });
 
 if (!message) {
     let container = document.getElementById('hybrid_analysis_api_content');
@@ -189,6 +199,10 @@ try {
         let getRequest = store.get(message.headerMessageId);
         getRequest.onsuccess = async function (e) {
             const record = getRequest.result;
+
+            // 1.7: gespeicherte Bedrohungsstufe und Link-Verdikte anzeigen.
+            renderThreatPanelFromRecord(record);
+
             const hasAttachments = record && record.attachments && record.attachments.length > 0;
             const hasLinks = record && record.links && record.links.length > 0;
 
@@ -1017,4 +1031,475 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     } else {
         document.getElementById('hybrid_analysis_api_content').appendChild(card);
     }
+}
+
+// ===========================================================================
+// 1.7 - Bedrohungsstufe, Link-Verdikte und Admin-Bericht im Popup
+//
+// Sicherheitsregel: Eine Nachricht ohne gespeicherte Bewertung wird NIEMALS als
+// "clean"/gruen dargestellt. Fehlt der Score, zeigt der Kopf "Nicht bewertet"
+// mit neutraler (grauer) Farbe. Die Engine ThundyLinkGate wird nur benutzt,
+// wenn sie geladen ist (Feature-Detection); sonst greift eine lokale Kopie der
+// Farb-/Label-Zuordnung (identisch zu link_gate.js).
+// ===========================================================================
+
+// Lokaler Fallback der Stil-Zuordnung. Absichtlich identisch zu LEVEL_STYLES in
+// link_gate.js, damit das Popup auch ohne geladene Engine korrekt aussieht.
+const POPUP_LEVEL_STYLE_FALLBACK = {
+    clean: { color: '#145c14', background: '#e6ffe6', border: '#2e8b2e', icon: '\uD83D\uDFE2', labelKey: 'bannerLevelClean', labelFallback: 'Clean' },
+    low: { color: '#4d6b00', background: '#f6ffe6', border: '#8ebe2d', icon: '\uD83D\uDFE2', labelKey: 'bannerLevelLow', labelFallback: 'Low' },
+    medium: { color: '#7a5200', background: '#fff6e6', border: '#f0a500', icon: '\uD83D\uDFE1', labelKey: 'bannerLevelMedium', labelFallback: 'Medium' },
+    high: { color: '#8a3400', background: '#fff0e6', border: '#e8620c', icon: '\uD83D\uDFE0', labelKey: 'bannerLevelHigh', labelFallback: 'High' },
+    critical: { color: '#8a1010', background: '#ffeeee', border: '#c81e1e', icon: '\uD83D\uDD34', labelKey: 'bannerLevelCritical', labelFallback: 'Critical' }
+};
+
+// Neutraler Zustand fuer "nicht bewertet" - bewusst grau, nie gruen.
+const POPUP_UNKNOWN_LEVEL_STYLE = {
+    color: '#444444', background: '#f0f0f0', border: '#999999', icon: '\u2753',
+    labelKey: 'bannerLevelUnknown', labelFallback: 'Nicht bewertet'
+};
+
+function getLinkGateEngine() {
+    try {
+        if (typeof ThundyLinkGate !== 'undefined' && ThundyLinkGate) return ThundyLinkGate;
+    } catch (e) { /* Engine nicht geladen */ }
+    try {
+        if (typeof globalThis !== 'undefined' && globalThis.ThundyLinkGate) return globalThis.ThundyLinkGate;
+    } catch (e) { /* Engine nicht geladen */ }
+    return null;
+}
+
+// i18n mit deutschem Fallback: fehlt browser.i18n oder der Schluessel, bleibt
+// der uebergebene Text stehen. Wirft nie.
+function popupI18nMessage(key, fallback, substitutions) {
+    try {
+        if (typeof browser !== 'undefined' && browser && browser.i18n && typeof browser.i18n.getMessage === 'function') {
+            const value = browser.i18n.getMessage(key, substitutions);
+            if (value) return value;
+        }
+    } catch (e) { /* Fallback unten */ }
+    // Fallback-Platzhalter ($SCORE$, $LEVEL$, ...) auch ohne i18n aufloesen,
+    // damit der deutsche Text nie rohe Platzhalter zeigt.
+    const values = Array.isArray(substitutions) ? substitutions.slice() : (substitutions === undefined ? [] : [substitutions]);
+    return String(fallback).replace(/\$(SCORE|LEVEL|URL|LIST|COUNT)\$/g, function () {
+        return values.length ? String(values.shift()) : '';
+    });
+}
+
+function popupNormalizeScore(value) {
+    if (typeof value === 'number' && isFinite(value)) return Math.round(value);
+    if (typeof value === 'string' && value.trim() !== '') {
+        const num = Number(value);
+        if (isFinite(num)) return Math.round(num);
+    }
+    return null;
+}
+
+function popupLevelFromScore(score) {
+    const engine = getLinkGateEngine();
+    if (engine && typeof engine.levelFromScore === 'function') {
+        try {
+            const level = engine.levelFromScore(score);
+            if (typeof level === 'string' && level) return level;
+        } catch (e) { /* Fallback unten */ }
+    }
+    const value = Number(score) || 0;
+    if (value >= 80) return 'critical';
+    if (value >= 60) return 'high';
+    if (value >= 40) return 'medium';
+    if (value >= 15) return 'low';
+    return 'clean';
+}
+
+// Stil fuer eine Stufe. Unbekannte Stufen bekommen den neutralen (grauen) Stil,
+// damit "unknown" nie als "clean"/gruen erscheint.
+function resolvePopupLevelStyle(level) {
+    const name = (typeof level === 'string') ? level.trim().toLowerCase() : '';
+    const fallback = POPUP_LEVEL_STYLE_FALLBACK[name];
+    if (!fallback) return POPUP_UNKNOWN_LEVEL_STYLE;
+
+    const engine = getLinkGateEngine();
+    if (engine && typeof engine.levelStyle === 'function') {
+        try {
+            const style = engine.levelStyle(name);
+            if (style && typeof style === 'object' && style.color) {
+                return {
+                    color: style.color,
+                    background: style.background || fallback.background,
+                    border: style.border || fallback.border,
+                    icon: style.icon || fallback.icon,
+                    labelKey: style.labelKey || fallback.labelKey,
+                    labelFallback: style.labelFallback || fallback.labelFallback
+                };
+            }
+        } catch (e) { /* Fallback unten */ }
+    }
+    return fallback;
+}
+
+function popupLevelLabel(level) {
+    const style = resolvePopupLevelStyle(level);
+    return popupI18nMessage(style.labelKey, style.labelFallback);
+}
+
+
+// Liest die gespeicherte Bewertung aus dem IndexedDB-Record. Es wird bewusst
+// KEIN Score erfunden: fehlt ein gespeicherter Wert, bleibt evaluated=false.
+function extractStoredThreat(record) {
+    const empty = { evaluated: false, score: null, level: null, reasons: [] };
+    if (!record || typeof record !== 'object') return empty;
+
+    const candidates = [record.threat, record.evaluation, record];
+    for (let i = 0; i < candidates.length; i++) {
+        const candidate = candidates[i];
+        if (!candidate || typeof candidate !== 'object') continue;
+
+        let rawScore = candidate.score;
+        if (rawScore === undefined || rawScore === null) rawScore = candidate.threatScore;
+        const score = popupNormalizeScore(rawScore);
+        if (score === null) continue;
+
+        let level = candidate.level;
+        if (typeof level !== 'string' || !level) level = candidate.threatLevel;
+        const reasons = Array.isArray(candidate.reasons)
+            ? candidate.reasons.filter(function (reason) { return typeof reason === 'string' && reason; })
+            : [];
+        return {
+            evaluated: true,
+            score: score,
+            level: (typeof level === 'string' && level) ? level : null,
+            reasons: reasons
+        };
+    }
+    return empty;
+}
+
+function deriveHostFromUrl(url) {
+    if (typeof url !== 'string' || !url) return '';
+    try {
+        const parsed = new URL(url);
+        return parsed.hostname || String(url);
+    } catch (e) {
+        return String(url);
+    }
+}
+
+function shortenUrl(url, maxLength) {
+    const text = (typeof url === 'string') ? url : String(url === undefined || url === null ? '' : url);
+    const limit = (typeof maxLength === 'number' && maxLength > 8) ? maxLength : 60;
+    if (text.length <= limit) return text;
+    return text.slice(0, limit - 1) + '\u2026';
+}
+
+function popupActionLabel(action) {
+    // Kurze Badge-Texte bewusst als Klartext: die bestehenden Gate-Keys
+    // (gateBlocked/gateWarning/gateAllowed) sind ganze Saetze und fuer eine
+    // Tabellenzelle zu lang. Neue Keys siehe Abschlussbericht.
+    if (action === 'block') return 'Blockiert';
+    if (action === 'warn') return 'Warnung';
+    if (action === 'allow') return 'Erlaubt';
+    return 'Nicht bewertet';
+}
+
+// Kompakte Kopfzeile: Stufe + Score. Ohne gespeicherte Bewertung erscheint der
+// neutrale "Nicht bewertet"-Zustand (grau).
+function renderThreatLevelHeader(threat, target) {
+    const container = target || (typeof document !== 'undefined' ? document.getElementById('threatLevelHeader') : null);
+    if (!container) return null;
+
+    const evaluated = !!(threat && threat.evaluated === true && threat.score !== null && threat.score !== undefined);
+    const level = evaluated ? (threat.level || popupLevelFromScore(threat.score)) : null;
+    const style = evaluated ? resolvePopupLevelStyle(level) : POPUP_UNKNOWN_LEVEL_STYLE;
+
+    container.textContent = '';
+    container.className = 'card mt-3';
+    container.style.borderLeft = '6px solid ' + style.border;
+    container.style.background = style.background;
+    container.style.color = style.color;
+    container.style.padding = '8px 12px';
+
+    const badge = document.createElement('span');
+    badge.id = 'threatLevelBadge';
+    badge.style.fontWeight = 'bold';
+    badge.textContent = style.icon + ' ' + (evaluated
+        ? popupLevelLabel(level)
+        : popupI18nMessage('bannerNotEvaluated', 'Nicht bewertet'));
+    container.appendChild(badge);
+
+    const scoreEl = document.createElement('span');
+    scoreEl.id = 'threatLevelScore';
+    scoreEl.className = 'ml-2';
+    scoreEl.textContent = evaluated
+        ? popupI18nMessage('bannerThreatScore', 'Risikobewertung: $SCORE$ von 100', [String(threat.score)])
+        : popupI18nMessage('bannerNotEvaluatedHint', 'Keine gespeicherte Bewertung fuer diese Nachricht.');
+    container.appendChild(scoreEl);
+
+    return container;
+}
+
+
+// Link-Tabelle mit Host/URL, Stufen-Badge, Gate-Aktion und aufklappbaren
+// Gruenden. Ausschliesslich textContent/createElement - kein innerHTML.
+function renderLinkVerdictTable(links, options) {
+    const opts = options || {};
+    const container = opts.container || (typeof document !== 'undefined' ? document.getElementById('linkVerdictTable') : null);
+    if (!container) return null;
+
+    const includeUrls = opts.includeUrls === true;
+    const list = Array.isArray(links) ? links : [];
+
+    container.textContent = '';
+
+    if (list.length === 0) {
+        const empty = document.createElement('p');
+        empty.id = 'linkVerdictEmpty';
+        empty.className = 'text-info';
+        empty.textContent = popupI18nMessage('bannerLinksNone', 'Keine Links gespeichert.');
+        container.appendChild(empty);
+        return container;
+    }
+
+    const table = document.createElement('table');
+    table.id = 'linkVerdictTableInner';
+    table.style.width = '100%';
+    table.style.borderCollapse = 'collapse';
+
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    const headings = [
+        popupI18nMessage('popupColumnHost', 'Ziel-Host'),
+        popupI18nMessage('popupColumnLevel', 'Stufe'),
+        popupI18nMessage('popupColumnAction', 'Aktion'),
+        popupI18nMessage('bannerDetailsToggle', 'Details')
+    ];
+    for (let h = 0; h < headings.length; h++) {
+        const th = document.createElement('th');
+        th.textContent = headings[h];
+        th.style.textAlign = 'left';
+        th.style.borderBottom = '1px solid var(--card-border)';
+        th.style.padding = '4px';
+        headRow.appendChild(th);
+    }
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    for (let i = 0; i < list.length; i++) {
+        const link = list[i];
+        if (!link || typeof link !== 'object') continue;
+
+        const row = document.createElement('tr');
+        row.id = 'link-verdict-row-' + i;
+
+        const host = link.host || deriveHostFromUrl(link.url);
+        const level = (typeof link.level === 'string' && link.level) ? link.level : 'unknown';
+        const style = resolvePopupLevelStyle(level);
+
+        const hostCell = document.createElement('td');
+        hostCell.style.padding = '4px';
+        hostCell.style.verticalAlign = 'top';
+        hostCell.textContent = (includeUrls && link.url) ? shortenUrl(link.url) : host;
+        row.appendChild(hostCell);
+
+        const levelCell = document.createElement('td');
+        levelCell.style.padding = '4px';
+        levelCell.style.verticalAlign = 'top';
+        const badge = document.createElement('span');
+        badge.className = 'link-level-badge';
+        badge.style.color = style.color;
+        badge.style.background = style.background;
+        badge.style.border = '1px solid ' + style.border;
+        badge.style.borderRadius = '10px';
+        badge.style.padding = '1px 8px';
+        badge.style.whiteSpace = 'nowrap';
+        badge.textContent = style.icon + ' ' + popupLevelLabel(level);
+        levelCell.appendChild(badge);
+        row.appendChild(levelCell);
+
+        const actionCell = document.createElement('td');
+        actionCell.style.padding = '4px';
+        actionCell.style.verticalAlign = 'top';
+        actionCell.textContent = popupActionLabel(link.action);
+        row.appendChild(actionCell);
+
+        const detailsCell = document.createElement('td');
+        detailsCell.style.padding = '4px';
+        detailsCell.style.verticalAlign = 'top';
+        const reasons = Array.isArray(link.reasons)
+            ? link.reasons.filter(function (reason) { return typeof reason === 'string' && reason; })
+            : [];
+        if (reasons.length > 0) {
+            const detailsId = 'link-details-panel-' + i;
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.id = 'link-details-toggle-' + i;
+            toggle.className = 'btn-primary';
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-controls', detailsId);
+            toggle.textContent = popupI18nMessage('bannerDetailsToggle', 'Details');
+            detailsCell.appendChild(toggle);
+
+            const panel = document.createElement('div');
+            panel.id = detailsId;
+            panel.style.display = 'none';
+            panel.style.marginTop = '4px';
+            panel.style.fontSize = '12px';
+            const reasonList = document.createElement('ul');
+            reasonList.style.margin = '0';
+            reasonList.style.paddingLeft = '18px';
+            for (let r = 0; r < reasons.length; r++) {
+                const li = document.createElement('li');
+                li.textContent = reasons[r];
+                reasonList.appendChild(li);
+            }
+            panel.appendChild(reasonList);
+            detailsCell.appendChild(panel);
+
+            toggle.addEventListener('click', function () {
+                const isHidden = panel.style.display === 'none';
+                panel.style.display = isHidden ? 'block' : 'none';
+                toggle.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+            });
+        } else {
+            detailsCell.textContent = '\u2014';
+        }
+        row.appendChild(detailsCell);
+
+        tbody.appendChild(row);
+    }
+    table.appendChild(tbody);
+    container.appendChild(table);
+    return container;
+}
+
+
+// Aufbau aus dem IndexedDB-Record: Stufe/Score + Link-Verdikte.
+function renderThreatPanelFromRecord(record) {
+    const threat = extractStoredThreat(record);
+    renderThreatLevelHeader(threat, null);
+    const links = (record && Array.isArray(record.links)) ? record.links : [];
+    renderLinkVerdictTable(links, { includeUrls: reportIncludeUrls === true, container: null });
+    return { threat: threat, links: links };
+}
+
+// Sendet exakt {action:'requestAdminReport', messageId}. Ohne runtime-API gibt
+// es einen sauberen Fehlerzustand statt einer Ausnahme.
+function requestAdminReportFromPopup(messageId) {
+    if (typeof browser === 'undefined' || !browser.runtime || typeof browser.runtime.sendMessage !== 'function') {
+        return Promise.resolve({ success: false, reason: 'compose_failed' });
+    }
+    try {
+        return Promise.resolve(browser.runtime.sendMessage({ action: 'requestAdminReport', messageId: messageId }));
+    } catch (e) {
+        return Promise.resolve({ success: false, reason: 'compose_failed' });
+    }
+}
+
+// Stellt das Ergebnis des Berichts im Statusbereich dar. Erfolg -> Empfaenger,
+// sonst eine klare deutsche Meldung je Grund (inkl. Einstellungen-Button).
+function renderAdminReportResult(response, statusEl) {
+    const status = statusEl || (typeof document !== 'undefined' ? document.getElementById('adminReportStatus') : null);
+    if (!status) return null;
+
+    status.textContent = '';
+    status.className = 'grid-content mt-2';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+
+    if (response && response.success === true) {
+        const recipients = Array.isArray(response.recipients)
+            ? response.recipients.filter(function (entry) { return typeof entry === 'string' && entry; })
+            : [];
+        const p = document.createElement('p');
+        p.id = 'adminReportSuccess';
+        p.className = 'text-success';
+        p.textContent = popupI18nMessage('notificationReportStarted', 'Bericht an den Administrator wurde vorbereitet.');
+        status.appendChild(p);
+        if (recipients.length > 0) {
+            const rp = document.createElement('p');
+            rp.id = 'adminReportRecipients';
+            rp.textContent = popupI18nMessage('popupReportRecipients', 'Empfaenger: $LIST$', [recipients.join(', ')]);
+            status.appendChild(rp);
+        }
+        return status;
+    }
+
+    const reason = (response && typeof response.reason === 'string') ? response.reason : '';
+    const alert = document.createElement('div');
+    alert.className = 'alert-error';
+    alert.setAttribute('role', 'alert');
+
+    const msg = document.createElement('p');
+    msg.id = 'adminReportErrorMsg';
+
+    if (reason === 'no_admin_contact') {
+        msg.textContent = popupI18nMessage('notificationReportNoContact', 'Kein Administrator-Kontakt konfiguriert - bitte in den Einstellungen hinterlegen.');
+        alert.appendChild(msg);
+
+        const optionsButton = document.createElement('button');
+        optionsButton.type = 'button';
+        optionsButton.id = 'adminReportOptionsButton';
+        optionsButton.className = 'btn-primary mt-2';
+        optionsButton.textContent = popupI18nMessage('bannerOpenOptions', 'Einstellungen öffnen');
+        optionsButton.addEventListener('click', function () {
+            if (typeof browser !== 'undefined' && browser.runtime && typeof browser.runtime.openOptionsPage === 'function') {
+                browser.runtime.openOptionsPage();
+            }
+        });
+        alert.appendChild(optionsButton);
+    } else if (reason === 'no_message') {
+        msg.textContent = popupI18nMessage('popupReportNoMessage', 'Keine Nachricht ausgewaehlt - bitte waehlen Sie eine E-Mail aus.');
+        alert.appendChild(msg);
+    } else if (reason === 'compose_failed') {
+        msg.textContent = popupI18nMessage('notificationReportComposeFailed', 'Der Bericht konnte nicht erstellt werden (kein Compose-Fenster verfuegbar). Bitte versuchen Sie es erneut.');
+        alert.appendChild(msg);
+    } else {
+        msg.textContent = popupI18nMessage('popupReportFailed', 'Der Bericht konnte nicht erstellt werden. Bitte versuchen Sie es erneut.');
+        alert.appendChild(msg);
+    }
+
+    status.appendChild(alert);
+    return status;
+}
+
+// Verdrahtet den Button "#requestAdminReport". Sendet genau die vereinbarte
+// Nachricht und stellt Erfolg/Fehler im Statusbereich dar.
+function setupAdminReportButton(messageId, options) {
+    const opts = options || {};
+    const button = opts.button || (typeof document !== 'undefined' ? document.getElementById('requestAdminReport') : null);
+    const statusEl = opts.status || (typeof document !== 'undefined' ? document.getElementById('adminReportStatus') : null);
+    if (!button) return null;
+
+    button.textContent = popupI18nMessage('bannerReportAdmin', 'Bericht an den Administrator');
+    button.addEventListener('click', function () {
+        const self = this;
+        if (self) {
+            self.disabled = true;
+            self.setAttribute('aria-busy', 'true');
+        }
+        if (statusEl) {
+            statusEl.textContent = popupI18nMessage('popupReportSending', 'Bericht wird vorbereitet...');
+        }
+        requestAdminReportFromPopup(messageId).then(function (response) {
+            renderAdminReportResult(response, statusEl);
+        }).catch(function () {
+            renderAdminReportResult({ success: false, reason: 'compose_failed' }, statusEl);
+        }).then(function () {
+            if (self) {
+                self.disabled = false;
+                self.removeAttribute('aria-busy');
+            }
+        });
+    });
+    return button;
+}
+
+// Initialer Aufbau des Popup-Panels. Setzt IMMER den neutralen Zustand, damit
+// vor dem Laden des Records kein "clean" vorgetaeuscht wird.
+function initializeThreatPanel(options) {
+    const opts = options || {};
+    renderThreatLevelHeader({ evaluated: false }, null);
+    renderLinkVerdictTable([], { includeUrls: reportIncludeUrls === true, container: null });
+    setupAdminReportButton(opts.messageId, {});
+    return true;
 }

@@ -71,7 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
         'alwaysManual', 'autoScanLinks', 'timeOfClickProtection',
         'privacyTier', 'customWhitelist', 'customBlacklist',
-        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey'
+        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey',
+        'adminEmails', 'adminPhone', 'adminContactName', 'adminOrganization',
+        'reportIncludeUrls', 'linkGateMode', 'linkGateEnabled'
     ]).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
@@ -88,6 +90,18 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('externalAnalysisConsent').checked = result.externalAnalysisConsent === true;
       document.getElementById('ipReputationProvider').value = result.ipReputationProvider || "none";
       document.getElementById('ipReputationApiKey').value = result.ipReputationApiKey || "";
+
+      // Administrator-Kontakte / Link-Gate / Report-Datenschutz (Plan 1.7, Abschnitt 6.4)
+      document.getElementById('adminEmails').value = (result.adminEmails || []).join('; ');
+      document.getElementById('adminPhone').value = result.adminPhone || "";
+      document.getElementById('adminContactName').value = result.adminContactName || "";
+      document.getElementById('adminOrganization').value = result.adminOrganization || "";
+      // reportIncludeUrls default: true (Plan 6.4)
+      document.getElementById('reportIncludeUrls').checked = result.reportIncludeUrls !== undefined ? result.reportIncludeUrls : true;
+      document.getElementById('linkGateMode').value = result.linkGateMode || "strict";
+      document.getElementById('linkGateEnabled').checked = result.linkGateEnabled !== undefined ? result.linkGateEnabled : true;
+      updateAdminEmailsStatus();
+      updateAdminPhoneStatus();
 
       const alwaysManualCheckbox = document.getElementById('alwaysManual');
       const privacyTierSelect = document.getElementById('privacyTier');
@@ -168,6 +182,17 @@ document.addEventListener('DOMContentLoaded', function() {
     let externalAnalysisConsentSetting = document.getElementById('externalAnalysisConsent').checked;
     let ipReputationProviderSetting = document.getElementById('ipReputationProvider').value;
     let ipReputationApiKeySetting = document.getElementById('ipReputationApiKey').value.trim().replace(/\r|\n/g, '');
+
+    // Administrator-Kontakte validieren (ungültige Einträge werden gemeldet,
+    // nicht stillschweigend verworfen) und Report-/Gate-Einstellungen lesen.
+    const adminEmailsParsed = updateAdminEmailsStatus();
+    const adminPhoneParsed = updateAdminPhoneStatus();
+    const adminContactNameSetting = document.getElementById('adminContactName').value.trim();
+    const adminOrganizationSetting = document.getElementById('adminOrganization').value.trim();
+    const reportIncludeUrlsSetting = document.getElementById('reportIncludeUrls').checked;
+    const linkGateModeSetting = document.getElementById('linkGateMode').value;
+    const linkGateEnabledSetting = document.getElementById('linkGateEnabled').checked;
+
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
@@ -181,7 +206,14 @@ document.addEventListener('DOMContentLoaded', function() {
         timeOfClickProtection: timeOfClickProtectionSetting,
         externalAnalysisConsent: externalAnalysisConsentSetting,
         ipReputationProvider: ipReputationProviderSetting,
-        ipReputationApiKey: ipReputationApiKeySetting
+        ipReputationApiKey: ipReputationApiKeySetting,
+        adminEmails: adminEmailsParsed.emails,
+        adminPhone: adminPhoneParsed.phone,
+        adminContactName: adminContactNameSetting,
+        adminOrganization: adminOrganizationSetting,
+        reportIncludeUrls: reportIncludeUrlsSetting,
+        linkGateMode: linkGateModeSetting,
+        linkGateEnabled: linkGateEnabledSetting
     }).then(async () => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';
@@ -298,3 +330,275 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 3000);
         }
   });
+
+// ---------------------------------------------------------------------------
+// Administrator-Kontakt, Link-Gate und Report-Vorlagen (Plan 1.7, Workstream C)
+//
+// report.js stellt die reine Engine `ThundyReport` bereit (parseAdminEmails,
+// parseAdminPhone, buildHelpRequest). Sie wird in options.html vor options.js
+// geladen. Damit diese Seite auch dann funktioniert, wenn die Engine fehlt
+// (z. B. alter Zwischenstand), werden alle Aufrufe feature-detected und durch
+// minimale lokale Fallbacks abgesichert.
+// ---------------------------------------------------------------------------
+
+function getReportEngine() {
+    return (typeof ThundyReport !== 'undefined' && ThundyReport) ? ThundyReport : null;
+}
+
+/**
+ * Validiert Administrator-E-Mail-Adressen. Bevorzugt ThundyReport.parseAdminEmails
+ * (Abschnitt 6.2), fällt sonst auf eine lokale Minimalprüfung zurück.
+ * @returns {{emails: string[], invalid: string[]}}
+ */
+function parseAdminEmailsSafe(raw) {
+    const engine = getReportEngine();
+    if (engine && typeof engine.parseAdminEmails === 'function') {
+        try {
+            return engine.parseAdminEmails(raw);
+        } catch (e) { /* fall through to local fallback */ }
+    }
+    const emails = [];
+    const invalid = [];
+    const parts = String(raw == null ? '' : raw).split(';');
+    for (const part of parts) {
+        const value = part.trim();
+        if (value.length === 0) continue;
+        const normalized = value.toLowerCase();
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+            if (emails.indexOf(normalized) === -1) emails.push(normalized);
+        } else {
+            invalid.push(value);
+        }
+    }
+    return { emails: emails, invalid: invalid };
+}
+
+/**
+ * Validiert die Telefonnummer. Bevorzugt ThundyReport.parseAdminPhone.
+ * @returns {{phone: string, valid: boolean}}
+ */
+function parseAdminPhoneSafe(raw) {
+    const engine = getReportEngine();
+    if (engine && typeof engine.parseAdminPhone === 'function') {
+        try {
+            return engine.parseAdminPhone(raw);
+        } catch (e) { /* fall through to local fallback */ }
+    }
+    const value = String(raw == null ? '' : raw).trim();
+    const valid = value.length === 0 || /^[+()0-9][0-9 ()\/-]{2,}$/.test(value);
+    return { phone: value, valid: valid };
+}
+
+/**
+ * Zeigt ungültige Administrator-E-Mail-Adressen in einem aria-live-Status an
+ * (kein stilles Verwerfen). Gibt das Validierungsergebnis zurück.
+ */
+function updateAdminEmailsStatus() {
+    const input = document.getElementById('adminEmails');
+    const status = document.getElementById('adminEmailsStatus');
+    const parsed = parseAdminEmailsSafe(input ? input.value : '');
+    if (status) {
+        if (parsed.invalid.length > 0) {
+            status.textContent = 'Ungültige E-Mail-Adresse(n) – nicht gespeichert: ' + parsed.invalid.join('; ');
+            status.className = 'text-danger ml-2';
+        } else {
+            status.textContent = '';
+            status.className = 'text-success ml-2';
+        }
+    }
+    return parsed;
+}
+
+/**
+ * Zeigt eine ungültige Telefonnummer im aria-live-Status an.
+ */
+function updateAdminPhoneStatus() {
+    const input = document.getElementById('adminPhone');
+    const status = document.getElementById('adminPhoneStatus');
+    const parsed = parseAdminPhoneSafe(input ? input.value : '');
+    if (status) {
+        if (!parsed.valid && parsed.phone.length > 0) {
+            status.textContent = 'Telefonnummer nicht erkannt – bitte prüfen (z. B. +49 30 1234567).';
+            status.className = 'text-danger ml-2';
+        } else {
+            status.textContent = '';
+            status.className = 'text-success ml-2';
+        }
+    }
+    return parsed;
+}
+
+/**
+ * Liest die aktuellen Administrator-Kontaktdaten aus dem Formular.
+ */
+function collectAdminContacts() {
+    const emailInput = document.getElementById('adminEmails');
+    const phoneInput = document.getElementById('adminPhone');
+    const nameInput = document.getElementById('adminContactName');
+    const orgInput = document.getElementById('adminOrganization');
+    return {
+        emails: parseAdminEmailsSafe(emailInput ? emailInput.value : '').emails,
+        phone: parseAdminPhoneSafe(phoneInput ? phoneInput.value : '').phone,
+        name: nameInput ? nameInput.value.trim() : '',
+        organization: orgInput ? orgInput.value.trim() : ''
+    };
+}
+
+/**
+ * Erzeugt aus den aktuellen Formularwerten eine Hilfe-Vorlage.
+ * Primär über ThundyReport.buildHelpRequest (Abschnitt 6.2).
+ * @returns {{to: string[]|string, subject: string, body: string}}
+ */
+function buildCurrentHelpTemplate() {
+    const contacts = collectAdminContacts();
+    const gateModeEl = document.getElementById('linkGateMode');
+    const gateEnabledEl = document.getElementById('linkGateEnabled');
+    const includeUrlsEl = document.getElementById('reportIncludeUrls');
+    const input = {
+        contacts: contacts,
+        reporter: { email: '', name: '' },
+        meta: {
+            version: '1.7.0',
+            generatedAt: new Date().toISOString(),
+            linkGateMode: gateModeEl ? gateModeEl.value : 'strict',
+            linkGateEnabled: gateEnabledEl ? gateEnabledEl.checked : true,
+            reportIncludeUrls: includeUrlsEl ? includeUrlsEl.checked : true
+        }
+    };
+
+    const engine = getReportEngine();
+    if (engine && typeof engine.buildHelpRequest === 'function') {
+        try {
+            const template = engine.buildHelpRequest(input);
+            if (template && typeof template === 'object') return template;
+        } catch (e) { /* fall through to local fallback */ }
+    }
+
+    // Lokaler Fallback, falls report.js nicht geladen werden konnte.
+    const toLine = contacts.emails.join('; ');
+    const body = [
+        'Hallo,',
+        '',
+        'ich benötige Unterstützung bei der Bewertung einer verdächtigen E-Mail.',
+        '',
+        'Kontaktdaten des Administrator-Kontakts:',
+        '  E-Mail: ' + (toLine || '(nicht hinterlegt)'),
+        '  Telefon: ' + (contacts.phone || '(nicht hinterlegt)'),
+        '  Name: ' + (contacts.name || '(nicht hinterlegt)'),
+        '  Organisation: ' + (contacts.organization || '(nicht hinterlegt)'),
+        '',
+        'Bitte prüfen Sie den Vorgang. Die Details liefere ich auf Anforderung nach.',
+        '',
+        'Hinweis: Diese Vorlage wurde lokal vom Add-on Thundy AV erzeugt; es wurden keine Daten übertragen.'
+    ].join('\n');
+
+    return {
+        to: contacts.emails,
+        subject: 'Thundy AV: Hilfeanforderung – verdächtige E-Mail',
+        body: body
+    };
+}
+
+/**
+ * Formatiert eine Vorlage für das Vorschaufeld / die Zwischenablage.
+ */
+function formatTemplateText(template) {
+    const to = Array.isArray(template.to) ? template.to.join('; ') : (template.to || '');
+    return 'An: ' + to + '\nBetreff: ' + (template.subject || '') + '\n\n' + (template.body || '');
+}
+
+/**
+ * Rendert die aktuelle Vorlage in das readonly-Vorschaufeld.
+ * @returns {object} die erzeugte Vorlage
+ */
+function renderTemplatePreview() {
+    const template = buildCurrentHelpTemplate();
+    const preview = document.getElementById('reportPreview');
+    if (preview) preview.value = formatTemplateText(template);
+    return template;
+}
+
+function setTemplateStatus(message, className) {
+    const status = document.getElementById('templateStatus');
+    if (!status) return;
+    status.textContent = message;
+    status.className = className + ' ml-2';
+    status.style.display = 'inline';
+}
+
+function templateHasRecipients(template) {
+    if (Array.isArray(template.to)) return template.to.length > 0;
+    return !!(template.to && String(template.to).trim().length > 0);
+}
+
+document.getElementById('requestHelpTemplate').addEventListener('click', async function() {
+    const template = renderTemplatePreview();
+
+    if (!templateHasRecipients(template)) {
+        setTemplateStatus('Kein Administrator-Kontakt hinterlegt. Bitte oben eine gültige E-Mail-Adresse eintragen und speichern.', 'text-danger');
+        return;
+    }
+
+    const composeAvailable = typeof browser !== 'undefined' && browser.compose &&
+        typeof browser.compose.beginNew === 'function';
+
+    if (composeAvailable) {
+        try {
+            await browser.compose.beginNew({
+                to: template.to,
+                subject: template.subject,
+                body: template.body,
+                isPlainText: true
+            });
+            setTemplateStatus('Compose-Fenster mit der Hilfe-Vorlage geöffnet.', 'text-success');
+            return;
+        } catch (e) {
+            console.error('Compose-Fenster konnte nicht geöffnet werden', e);
+        }
+    }
+
+    // Fallback: Vorlage steht im Vorschaufeld bereit und wird nach Möglichkeit
+    // in die Zwischenablage kopiert.
+    setTemplateStatus('Compose ist nicht verfügbar. Die Vorlage steht im Vorschaufeld – bitte den Text manuell kopieren.', 'text-warning');
+    try {
+        const preview = document.getElementById('reportPreview');
+        if (typeof navigator !== 'undefined' && navigator.clipboard &&
+            typeof navigator.clipboard.writeText === 'function') {
+            await navigator.clipboard.writeText(preview ? preview.value : '');
+        }
+    } catch (e) { /* Clipboard kann blockiert sein - kein Absturz */ }
+});
+
+document.getElementById('previewTemplate').addEventListener('click', function() {
+    const template = renderTemplatePreview();
+    if (!templateHasRecipients(template)) {
+        setTemplateStatus('Vorlage erzeugt – aber es ist kein Administrator-Kontakt hinterlegt.', 'text-warning');
+    } else {
+        setTemplateStatus('Vorlage erzeugt.', 'text-success');
+    }
+});
+
+document.getElementById('copyTemplate').addEventListener('click', async function() {
+    const preview = document.getElementById('reportPreview');
+    let text = preview ? preview.value : '';
+    if (!text) {
+        text = formatTemplateText(buildCurrentHelpTemplate());
+        if (preview) preview.value = text;
+    }
+    try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard &&
+            typeof navigator.clipboard.writeText === 'function') {
+            await navigator.clipboard.writeText(text);
+            setTemplateStatus('Vorlage in die Zwischenablage kopiert.', 'text-success');
+        } else {
+            setTemplateStatus('Zwischenablage nicht verfügbar. Bitte den Text manuell markieren und kopieren.', 'text-warning');
+        }
+    } catch (e) {
+        setTemplateStatus('Kopieren fehlgeschlagen. Bitte den Text manuell markieren und kopieren.', 'text-danger');
+    }
+});
+
+// Live-Validierung der Kontaktfelder (kein stilles Verwerfen ungültiger Werte).
+document.getElementById('adminEmails').addEventListener('input', updateAdminEmailsStatus);
+document.getElementById('adminPhone').addEventListener('input', updateAdminPhoneStatus);
+

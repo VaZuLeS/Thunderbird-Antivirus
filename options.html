@@ -121,6 +121,93 @@
         <br><small id="tocHelp">Zeigt beim Überfahren von Links mit der Maus einen Hinweis an, dass die URL in Echtzeit geprüft wird.</small>
     </div>
 
+    <br>
+    <hr>
+
+    <h3 id="adminSectionTitle">Administrator-Kontakt (Incident Response)</h3>
+    <p>Hinterlegen Sie hier die Kontaktdaten Ihrer IT-Sicherheit bzw. Ihres SOC. Diese Angaben werden
+        <strong>ausschließlich lokal</strong> in der hier erzeugten E-Mail-Vorlage verwendet – das Add-on
+        überträgt sie nicht selbst. Telefonnummer und Kontaktdaten erscheinen nur im Vorlagentext, den Sie
+        selbst versenden.</p>
+
+    <div class="mb-3">
+        <label for="adminEmails">Administrator-E-Mail-Adressen (mehrere durch „;“ getrennt):</label>
+        <input type="text" id="adminEmails" style="width: 100%;"
+            placeholder="soc@example.com; it-security@example.com"
+            aria-describedby="adminEmailsHelp adminEmailsStatus" autocomplete="off" spellcheck="false">
+        <br><small id="adminEmailsHelp">Mehrere Adressen mit Semikolon trennen. Ungültige Einträge werden nicht
+            gespeichert und unten gemeldet.</small>
+        <br><span id="adminEmailsStatus" class="ml-2" role="status" aria-live="polite"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="adminPhone">Telefonnummer des Administrator-Kontakts:</label>
+        <input type="tel" id="adminPhone" style="width: 100%;" placeholder="z.B. +49 30 1234567"
+            aria-describedby="adminPhoneHelp adminPhoneStatus" autocomplete="off" spellcheck="false">
+        <br><small id="adminPhoneHelp">Formate z.B. „+49 30 1234567“, „030/123456“ oder „(030) 123-456“. Wird nur
+            in der lokal erzeugten Vorlage verwendet.</small>
+        <br><span id="adminPhoneStatus" class="ml-2" role="status" aria-live="polite"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="adminContactName">Name des Ansprechpartners (optional):</label>
+        <input type="text" id="adminContactName" style="width: 100%;" placeholder="z.B. Max Mustermann"
+            autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="mb-3">
+        <label for="adminOrganization">Organisation / SOC (optional):</label>
+        <input type="text" id="adminOrganization" style="width: 100%;"
+            placeholder="z.B. Beispiel GmbH – IT-Sicherheit" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="mb-3">
+        <input type="checkbox" id="reportIncludeUrls" aria-describedby="reportIncludeUrlsHelp">
+        <label for="reportIncludeUrls" style="display: inline; margin-bottom: 0;">Vollständige URLs in den
+            Incident-Report aufnehmen</label>
+        <br><small id="reportIncludeUrlsHelp">Aktiviert: der Report enthält die vollständigen Link-URLs.
+            Deaktiviert: es wird nur der Hostname (Domain) aufgenommen (datensparsamer). Standard: aktiviert.</small>
+    </div>
+
+    <div class="mb-3">
+        <input type="checkbox" id="linkGateEnabled" aria-describedby="linkGateEnabledHelp">
+        <label for="linkGateEnabled" style="display: inline; margin-bottom: 0;">Link-Gate aktivieren (Links vor dem
+            Öffnen prüfen)</label>
+        <br><small id="linkGateEnabledHelp">Das Link-Gate prüft jeden Klick auf einen http(s)-Link,
+            <strong>bevor</strong> die URL an den Standardbrowser übergeben wird. Ohne das Gate öffnen Links (im
+            älteren Thunderbird-Verhalten) ungeprüft. Ist das Gate aus, wird kein Link zurückgehalten.</small>
+    </div>
+
+    <div class="mb-3">
+        <label for="linkGateMode">Link-Gate-Modus:</label>
+        <select id="linkGateMode" aria-describedby="linkGateHelp">
+            <option value="strict">Strikt (Standard – unbekannte Links werden gewarnt/blockiert)</option>
+            <option value="balanced">Ausgewogen (nur klare Treffer blockieren, sonst warnen)</option>
+            <option value="off">Aus (keine Blockade, nur Hinweis)</option>
+        </select>
+        <br><small id="linkGateHelp">Steuert, wie streng ein geprüfter Link behandelt wird. „Block“ und „Warn“ sind
+            keine Endzustände: Nach ausdrücklicher Bestätigung können Sie den Link weiterhin öffnen (wird im lokalen
+            Audit-Log vermerkt).</small>
+    </div>
+
+    <div class="mb-3">
+        <label for="reportPreview">Vorlagen-Vorschau:</label>
+        <textarea id="reportPreview" rows="10" style="width: 100%;" readonly
+            aria-describedby="reportPreviewHelp" spellcheck="false"></textarea>
+        <br><small id="reportPreviewHelp">Zeigt die aktuell aus den Formularwerten erzeugte
+            Hilfe-/Incident-Vorlage.</small>
+        <br><span id="templateStatus" class="ml-2" role="status" aria-live="polite" style="display: none;"></span>
+    </div>
+
+    <button id="requestHelpTemplate" class="btn-primary" aria-describedby="templateHelp">Hilfe-Vorlage
+        anfordern</button>
+    <button id="previewTemplate" class="btn-primary ml-2" aria-describedby="templateHelp">Vorlage anzeigen</button>
+    <button id="copyTemplate" class="btn-primary ml-2" aria-describedby="templateHelp">In Zwischenablage
+        kopieren</button>
+    <br><small id="templateHelp">„Hilfe-Vorlage anfordern“ öffnet ein Compose-Fenster mit den oben hinterlegten
+        Empfängern. Ist Compose nicht verfügbar, wird die Vorlage in das Vorschaufeld geschrieben und – wenn möglich
+        – in die Zwischenablage kopiert.</small>
+
     <br><br>
     <hr>
 
@@ -138,6 +225,7 @@
     <span id="clearCacheStatus" class="text-success ml-2" style="display: none;" aria-live="polite" role="status"></span>
 
     <script src="db.js"></script>
+    <script src="report.js"></script>
     <script src="options.js"></script>
 </body>
 
