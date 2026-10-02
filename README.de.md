@@ -13,12 +13,12 @@ minimal notwendigen Daten an externe Analysedienste.
 | Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.6 – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.7 – siehe [CHANGELOG.md](CHANGELOG.md) |
 | Lizenz | MIT – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.6 |
+| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.7 |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
 | Sprachen | Manifest-Strings und Banner lokalisiert (Englisch, Deutsch – `_locales/`); Options- und Popup-Oberfläche derzeit nur auf Deutsch |
 
@@ -44,6 +44,11 @@ minimal notwendigen Daten an externe Analysedienste.
   Hashes, E-Mail-Adressen mit Betreff, Datum, Verdikt und Score). Von jedem IOC aus lässt sich ein **Pivot**
   starten: In welchen anderen erfassten Nachrichten kommt er vor? Zusätzlich bietet die Optionsseite eine
   **Verlaufssuche** nach Text, Indikatorart und Verdikt. Alles bleibt lokal; „Cache leeren“ entfernt den Index.
+- **Forscher-Werkzeuge II (ab 1.6.7).** Die Auswahl in der Nachrichtenliste lässt sich per Kontextmenü
+  oder Optionsseite **sammel-scannen** (bis zu 100 Nachrichten je Lauf) und je Nachricht eine
+  **Case-Notiz** festhalten. Archive werden über ihr **ZIP-Zentralverzeichnis** bewertet (Namen, Größen,
+  Verschlüsselungsflag), ohne ausgepackt zu werden; jeder Bericht trägt einen **Evidence-Hash**
+  (SHA-256 über die kanonischen Felder), damit er später nachprüfbar ist.
 - **IP-Reputation (optional):** Die aus den `Received`-Headern extrahierten Mailserver-IPs können über VirusTotal
   oder AbuseIPDB geprüft werden.
 

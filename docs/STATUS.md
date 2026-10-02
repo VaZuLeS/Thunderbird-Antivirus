@@ -18,6 +18,29 @@
 Ablauf und Begründung: D11 in [decisions.md](decisions.md). ATN kennt weiterhin keine Version dieses
 Add-ons (API-Abfrage → 404); die Einreichung dort ist noch offen (siehe „Remaining“).
 
+## Release 1.6.7 (veröffentlicht)
+
+Forscher-Werkzeuge II (Thema T9): Sammel-Scan, Case-Notizen, ZIP-Innenansicht und Evidence-Hash —
+ohne neue Berechtigungen.
+
+| Feld | Wert |
+|---|---|
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.7 (kein Pre-Release → „Latest“) |
+| Commit / Tag | `55b346b` / `v1.6.7` |
+| Asset | `thundy-av-1.6.7.xpi`, 100.842 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `3d1db952d8309b218c6e5b7ebaafaa53ae65faaa35bff5cce52c58cf78ddb268` |
+| Gates | 481 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 40 kuratierte Warnungen · Paket 17 Dateien / 392.882 Bytes „valid“ |
+
+### Funktionsumfang 1.6.7
+
+- **Sammel-Scan** markierter Nachrichten (Kontextmenü in der Nachrichtenliste + Knopf in den Optionen),
+  eine Benachrichtigung je Lauf, Ergebnisliste nach Score, Obergrenze 100 Nachrichten.
+- **Case-Notizen** je Nachricht (lokal, max. 4000 Zeichen, Löschung über „Cache leeren“).
+- **ZIP-Innenansicht:** Zentralverzeichnis lesen (Dateinamen, Größen, Verschlüsselung, Risikoendungen),
+  kein Auspacken, Grenze 32 MB / 200 Einträge.
+- **Evidence-Hash:** SHA-256 über die kanonischen Berichtsfelder, im Popup kopierbar.
+- **Selbsttest** prüft zusätzlich ZIP-Parser, Evidence-Hash und Case-Notiz-Roundtrip.
+
 ## Release 1.6.6 (veröffentlicht)
 
 Forscher-Werkzeuge: lokaler Indikator-Index mit **Pivot** und **Verlaufssuche** — Triage über

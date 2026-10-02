@@ -13,12 +13,12 @@ submits the minimum data required to external analysis services.
 | Add-on name | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.6 – see [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.6.7 – see [CHANGELOG.md](CHANGELOG.md) |
 | License | MIT – see [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.6 |
+| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.7 |
 | Requires | Thunderbird 140.0 or newer (Manifest V3) |
 | Strings | Manifest strings and banners are localized (English, German – `_locales/`); the options page and the popup are currently German only |
 
@@ -44,6 +44,11 @@ submits the minimum data required to external analysis services.
   e-mail addresses together with subject, date, verdict and score). From any IOC you can **pivot**: which other
   recorded messages contain it? The options page adds a **history search** by text, indicator kind and verdict.
   Everything stays on the machine; "Clear cache" removes the index.
+- **Researcher tools II (since 1.6.7).** The selection in the message list can be **bulk scanned**
+  (context menu or options page, up to 100 messages per run) and each message can carry a **case note**.
+  Archive attachments are assessed through their **ZIP central directory** (names, sizes, encryption
+  flag) without being extracted, and every dossier carries an **evidence hash** (SHA-256 over its
+  canonical fields) so a report can be verified later.
 - **IP reputation (optional):** the sending mail servers extracted from `Received` headers can be checked against
   VirusTotal or AbuseIPDB.
 

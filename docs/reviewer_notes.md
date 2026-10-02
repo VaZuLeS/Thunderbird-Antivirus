@@ -268,6 +268,28 @@ a test account instead of using real mail.
 
 The full end-to-end protocol for the live test is described in `docs/live_test_protocol.md`.
 
+### 8.7c Bulk scan, case notes, ZIP inspection and evidence hash (since 1.6.7)
+
+- **Bulk scan.** Context menu entry "Scan selected messages with Thundy AV" in the message list
+  (`menus` context `message_list`) and a button in the options page. It evaluates up to 100 messages per
+  run, keeps the user informed through a single notification and lists the results sorted by score. The
+  same consent and privacy-tier gates apply as for a single scan; without consent the run still produces
+  the local assessment and feeds the local indicator index.
+- **Case notes.** Each message can carry a local note (max 4000 characters) stored in the local database
+  and removed by "Clear cache".
+- **ZIP inspection.** For archive attachments the options/popup can list the ZIP central directory
+  (entry names, sizes, compression method, encrypted flag, risky extensions) **without extracting or
+  executing anything**. Limits: 32 MB and 200 entries.
+- **Evidence hash.** Every dossier carries a SHA-256 over its canonical fields (message, sender, auth
+  results, Received chain, attachment hashes, links, IOCs, score breakdown, MITRE IDs). The hash is
+  stable for the same content and independent of volatile fields such as the collection timestamp, so a
+  report can be re-verified. It can be copied from the popup.
+
+Reviewer test: select two messages in the message list, use the context menu bulk scan, then open the
+options page and look for those messages in "Verlauf & Pivot". Afterwards add a case note to one of them,
+reload the popup and confirm the note persists; clear the cache and confirm both the index and the note
+are gone.
+
 ### 8.7b Local indicator index, pivot and history search (since 1.6.6)
 
 For every message it scans, the add-on writes the indicators it found (URLs, domains, IP addresses,

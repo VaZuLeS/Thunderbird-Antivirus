@@ -315,3 +315,34 @@ Anbieter-Zustände in der Forscher-Ansicht und ein Hash-Cache für Anhänge.
 | SHA-256 | `738739f0f3304cec160885c1e7668a50f777bdd8ba7720c95a4bc003b46005f7` |
 | Paketinhalt | 17 Dateien, 354.203 Bytes entpackt |
 | Gates | 474 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 35 kuratierte Warnungen |
+
+## D16 — Version 1.6.7: Sammel-Scan, Case-Notizen, ZIP-Innenansicht, Evidence-Hash
+**Bezug:** Thema T9 in [ROADMAP.md](ROADMAP.md) · **Aufgabe:** T9-1 … T9-4
+
+**Bewusste Entscheidungen.**
+1. **Sammel-Scan bleibt lokal und zustimmungsgebunden.** Die Bewertung je Nachricht nutzt dieselben
+   Pfade wie der Einzel-Scan; Reputationsabfragen laufen nur mit aktiver Zustimmung und erteiltem
+   Host-Recht. Ohne Zustimmung ist der Lauf trotzdem nützlich (lokale Heuristiken, Index).
+2. **Keine neuen Berechtigungen:** Der Sammel-Scan nutzt `messages.*` + `menus` (Kontext `message_list`),
+   die Case-Notiz die vorhandene IndexedDB, die ZIP-Ansicht einen eigenen Parser, der Evidence-Hash
+   `crypto.subtle`.
+3. **ZIP wird nicht entpackt.** Gelesen wird ausschließlich das Zentralverzeichnis; damit sieht der
+   Analyst Dateinamen, Größen, Kompressionsverfahren und Verschlüsselungsflag, ohne dass Inhalte
+   geschrieben oder ausgeführt werden. Grenzen: 32 MB, 200 Einträge.
+4. **Der Evidence-Hash ist kanonisch**, d. h. ohne flüchtige Felder (Erhebungszeitpunkt, Reihenfolge). Das
+   ist die Voraussetzung dafür, dass zwei Läufe über denselben Inhalt denselben Hash ergeben — nur so ist
+   er als Prüfsumme brauchbar.
+5. **Obergrenze 100 Nachrichten pro Sammel-Lauf**, damit ein versehentlicher Lauf über einen großen Ordner
+   weder Thunderbird noch Anbieter-Kontingente belastet.
+
+**Veröffentlichtes Artefakt**
+
+| Feld | Wert |
+|---|---|
+| Version | 1.6.7 |
+| Commit / Tag | `55b346b` / `v1.6.7` (annotiert) |
+| Release | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.7 (kein Pre-Release → „Latest“) |
+| Asset | `thundy-av-1.6.7.xpi`, 100.842 Bytes (byte-identisch mit dem web-ext-Build) |
+| SHA-256 | `3d1db952d8309b218c6e5b7ebaafaa53ae65faaa35bff5cce52c58cf78ddb268` |
+| Paketinhalt | 17 Dateien, 392.882 Bytes entpackt |
+| Gates | 481 Tests / 0 Fehler · Pre-Submit 0 Fehler / 1 Warnung · Lint 0 Fehler / 40 kuratierte Warnungen |

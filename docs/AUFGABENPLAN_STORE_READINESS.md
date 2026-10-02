@@ -400,3 +400,34 @@ ermöglichen (Pivot, Verlauf) — ohne neue Berechtigungen und ohne zusätzliche
 | F-06 | **erledigt** | Check `index.roundtrip` im Selbsttest |
 | F-07 | **erledigt** | Roadmap §8a/§8b, Reviewer-Notes §8.7b, READMEs, CHANGELOG, STATUS, D15, Tag `v1.6.6` |
 
+---
+
+## 17. Runde 7 — Thema T9 „Forscher-Werkzeuge II“ (Version 1.6.7)
+
+Neue Befunde **T9-1 … T9-4** (Bezug: §0.7 der Problemanalyse; Aufgaben aus Roadmap §8b).
+
+| ID | Aufgabe | Bezug | DoD (Nachweis) | Aufwand | Abhängig von |
+|---|---|---|---|---|---|
+| **G-01** | **Sammel-Scan:** `runBulkScan(ids)` mit Verdikt-Zählung, Index-Eintrag je Nachricht, Benachrichtigung je Lauf, Obergrenze 100; Kontextmenü `message_list` + Optionen-Knopf; Message-Action `bulkScan` | T9-1 | Tests (Verdikte, Kappung, ungültige IDs), Menüeintrag, Optionstabelle | 4 h | — |
+| **G-02** | **Case-Notizen:** `saveCaseNote()`/`readCaseNote()` im lokalen Datensatz, Textarea im Popup, Roundtrip-Test, Löschung über „Cache leeren“ | T9-2 | Tests (Schreiben/Lesen/Validierung), UI-Abschnitt | 3 h | — |
+| **G-03** | **ZIP-Innenansicht:** `readZipCentralDirectory()` (EOCD, Zentralverzeichnis, Flags), `inspectZipAttachment()` mit 32-MB-Grenze, UI mit „Inhalt auflisten“ | T9-3 | Tests (gültig/ungültig/verschlüsselt), Selbsttest-Check, UI | 4 h | — |
+| **G-04** | **Evidence-Hash:** `canonicalDossierPayload()` + `computeEvidenceHash()`, Einbindung ins Dossier, Anzeige mit Kopierknopf | T9-4 | Test (stabil bei Reihenfolge/volatilen Feldern, empfindlich bei Inhalt), UI | 2 h | — |
+| **G-05** | **Selbsttest + Lint-Allow-Liste:** Checks für ZIP, Evidence, Case-Notiz; `mailTabs.getSelectedMessages` als Thunderbird-False-Positive dokumentiert; i18n-Platzhalter der neuen Texte | alle | `npm run lint:filtered` grün; Selbsttest-Bericht enthält die drei neuen Checks | 2 h | G-01 … G-04 |
+| **G-06** | **Doku & Release 1.6.7:** Roadmap §8b/§8c, STATUS, D16, CHANGELOG, Tag/Asset | alle | `npm run check` Exit 0; Store-Gate C1–C4 + C7 PASS | 2 h | G-01 … G-05 |
+
+**Summe:** ≈ 17 h (2 Personentage).
+
+### Ausführungsstand Runde 7 (2026-10-01)
+
+| ID | Status | Nachweis |
+|---|---|---|
+| G-01 | **erledigt** | `runBulkScan()`, `getSelectedMessageIds()`, Menüeintrag, Optionen-Knopf und Ergebnistabelle; 2 Tests |
+| G-02 | **erledigt** | `saveCaseNote()`/`readCaseNote()`, Popup-Abschnitt „Bewertung / Case-Notiz“; 1 Test |
+| G-03 | **erledigt** | `readZipCentralDirectory()`/`inspectZipAttachment()`, UI „Archiv-Innenansicht“; 3 Tests + Selbsttest |
+| G-04 | **erledigt** | `canonicalDossierPayload()`/`computeEvidenceHash()`, Evidence-Badge im Popup; 1 Test + Selbsttest |
+| G-05 | **erledigt** | Selbsttest-Checks `zip.centralDirectory`, `evidence.hash`, `case.noteRoundtrip`; Lint 0 Fehler / 40 kuratierte Warnungen |
+| G-06 | **erledigt** | Roadmap §8b/§8c, STATUS 1.6.7, D16, CHANGELOG, Tag `v1.6.7`, Asset mit Hash |
+
+**Nebenfix:** `extractTextFromParts()` akzeptiert jetzt zusätzlich Teil-Listen als Eingabe (der Sammel-Scan
+nutzt `fullMessage.parts` direkt) — ein stiller Robustheitsgewinn für alle künftigen Aufrufer.
+

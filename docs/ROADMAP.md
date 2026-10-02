@@ -21,7 +21,7 @@ nicht, sondern ordnet sie: **was zuerst, warum, und was daran blockiert**.
 | T6 | **Release-Automatisierung** | 🟡 teilweise (Workflow-Spiegel) | wiederholbare Releases, weniger Handgriffe | 0,5 Tage |
 | T7 | **Nach der Freigabe** (Review-Betreuung, Versionen, Store-Pflege) | ⚪ laufend | hält die Listung gesund | laufend |
 | T8 | **Forscher-Werkzeuge I** (Pivot, Verlaufssuche, lokaler Indikator-Index) | 🟢 in 1.6.6 umgesetzt | Triage über Nachrichten hinweg | 1 Tag |
-| T9 | **Forscher-Werkzeuge II** (Sammel-Scan, Case-Notizen, ZIP-Innenansicht, Evidence-Hash) | ⚪ geplant | nächster Ausbauschritt des Funktionsumfangs | 2–3 Tage |
+| T9 | **Forscher-Werkzeuge II** (Sammel-Scan, Case-Notizen, ZIP-Innenansicht, Evidence-Hash) | 🟢 in 1.6.7 umgesetzt | Triage ganzer Auswahlen, Bewertungsnotizen, Archiv- und Beweiswert | 2–3 Tage |
 
 Legende: 🟢 erledigt · 🟡 teilweise · ⚪ offen
 
@@ -110,7 +110,25 @@ unveröffentlicht bleibt) und Doku-Drift regelmäßig prüfen (`test/manifest.te
 - **Löschweg:** „Cache leeren“ entfernt Index und Nachweis-Cache; der Selbsttest prüft den
   Index-Roundtrip und damit die Datenbankmigration in der echten Installation.
 
-## 8b. T9 — Forscher-Werkzeuge II (geplant, nächster Ausbau)
+## 8b. T9 — Forscher-Werkzeuge II (umgesetzt in 1.6.7)
+
+| Aufgabe | Umsetzung | Nachweis |
+|---|---|---|
+| T9-1 | **Sammel-Scan**: Kontextmenü `message_list` + Knopf in den Optionen, eine Benachrichtigung je Lauf, Ergebnisliste nach Score, Obergrenze 100 | Tests in `background.test.js` (Verdikt-Zählung, Kappung), Optionstabelle |
+| T9-2 | **Case-Notizen** je Nachricht (lokal, max. 4000 Zeichen) mit Roundtrip und Löschung über „Cache leeren“ | Test (Schreiben/Lesen/Validierung), UI im Popup |
+| T9-3 | **ZIP-Innenansicht** über das Zentralverzeichnis (Namen, Größen, Verfahren, Verschlüsselung), kein Auspacken | 3 Tests (gültig, ungültig, verschlüsselt), Selbsttest-Check |
+| T9-4 | **Evidence-Hash** über die kanonischen Dossier-Felder, im Popup kopierbar | Test (stabil bei Reihenfolge/volatilen Feldern, ändert sich mit Inhalt) |
+
+Alle vier bleiben ohne neue Berechtigungen und ohne zusätzliche Netzwerkzugriffe.
+
+## 8c. T10 — Kandidaten für den nächsten Ausbau (Skizze)
+
+| Aufgabe | Inhalt | Aufwand |
+|---|---|---|
+| T10-1 | **Ordner-/Suchlauf** (regelbasiert statt Auswahl): z. B. „alle Nachrichten der letzten 7 Tage im Ordner X“ | 1 Tag |
+| T10-2 | **Regel-Export/-Import** der eigenen Listen (JSON) für Team-Setups | 0,5 Tage |
+| T10-3 | **Vergleich zweier Nachrichten** (Header-/Indikator-Diff) für Kampagnenanalyse | 1 Tag |
+| T10-4 | **Berichts-PDF** (Druckansicht des Dossiers) für Ablage und Ticket-Anhang | 1 Tag |
 
 | Aufgabe | Inhalt | Nutzen | Aufwand |
 |---|---|---|---|

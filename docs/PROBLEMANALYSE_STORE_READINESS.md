@@ -298,6 +298,45 @@ ZIP-Innenansicht, Evidence-Hash — siehe Roadmap §8b). Details: §16 des Aufga
 
 ---
 
+## 0.7 Update 2026-10-01 (Runde 7) — Forscher-Werkzeuge II (Thema T9)
+
+Fortsetzung des Funktionsausbaus aus Forschersicht. Nach dem Indikator-Index (T8) fehlten für die tägliche
+Triage-Arbeit vier Fähigkeiten; alle vier sind **ohne neue Berechtigungen** umsetzbar und wurden in 1.6.7
+geliefert.
+
+### T9-1 — Triage nur Nachricht für Nachricht (hoch)
+**Belege (vorher):** Scannen war immer ein Vorgang pro Nachricht (Banner-Button, Popup, Kontextmenü im
+Nachrichtenfenster). Für eine Auswahl von 30 verdächtigen Mails bedeutete das 30 Einzelklicks.
+**Fix:** Kontextmenü-Eintrag im Kontext `message_list` („Ausgewählte Nachrichten … scannen“) plus Knopf in
+den Einstellungen; ein Lauf über bis zu 100 Nachrichten mit einer Benachrichtigung, Ergebnisliste nach
+Score sortiert. Die Ergebnisse fließen in den lokalen Index, sind also sofort pivotierbar.
+
+### T9-2 — Keine dokumentierbare Bewertungsentscheidung (mittel)
+**Belege (vorher):** Ein Analyst konnte eine Nachricht bewerten, aber nirgends festhalten, *warum* sie als
+harmlos eingestuft wurde („geprüft, Rücksprache erfolgt“). Für Übergaben/Nachvollziehbarkeit fehlte das.
+**Fix:** Case-Notiz je Nachricht (max. 4000 Zeichen), lokal gespeichert, über „Cache leeren“ entfernbar,
+im Popup editierbar.
+
+### T9-3 — Archive mussten extern geöffnet werden (mittel)
+**Belege (vorher):** Ein ZIP-Anhang wurde nur als „Archiv“ markiert; um zu sehen, was darin steckt, hätte
+der Analyst die Datei außerhalb des Add-ons öffnen müssen — genau der Schritt, den „Entschärfen“ vermeiden
+soll.
+**Fix:** ZIP-Innenansicht über das **Zentralverzeichnis** (Dateinamen, Größen, Kompressionsverfahren,
+Verschlüsselungsflag, Risikoendungen, verschachtelte Archive). Kein Auspacken, keine Ausführung; Grenzen:
+32 MB bzw. 200 Einträge.
+
+### T9-4 — Berichte ohne Beweiswert (mittel)
+**Belege (vorher):** Ein exportierter Bericht ließ sich nicht prüfen: es gab keine Prüfsumme, und ein
+erneuter Lauf erzeugte andere Zeitstempel.
+**Fix:** **Evidence-Hash** als SHA-256 über die *kanonischen* Berichtsfelder (ohne Erhebungszeitpunkt,
+ohne Reihenfolgeabhängigkeit), im Popup kopierbar. Gleicher Inhalt ⇒ gleicher Hash.
+
+**Status:** T9-1 … T9-4 umgesetzt und mit **1.6.7** veröffentlicht (481 Tests, Store-Gate C1–C4 + C7 PASS,
+offen bleiben C5/C6). Nächste Kandidaten als **T10** skizziert (Ordnerlauf, Regel-Export/Import,
+Nachrichtenvergleich, Berichts-PDF — Roadmap §8c). Details: §17 des Aufgabenplans, D16.
+
+---
+
 ## 1. Zielbild „store-ready“
 
 „Store-ready“ heißt hier: das Add-on erfüllt die ATN-Einreichungsanforderungen und ist in der deklarierten
