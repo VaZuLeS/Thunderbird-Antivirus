@@ -10,6 +10,33 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 - Nothing yet.
 
+## [1.6.8] – 2026-10-01
+
+Gefährdungsgrad in der Toolbar, aussagekräftigere Inline-Darstellung und **Link-Prüfung vor dem Öffnen**
+(Links werden nicht mehr ungeprüft an den Standardbrowser übergeben).
+
+### Added
+
+- **Toolbar-Indikator:** Der Nachrichten-Button zeigt Badge-Text (Score), Badge-Farbe je Schweregrad und
+  einen erklärenden Tooltip; er wird bei jeder Bewertung aktualisiert.
+- **Inline-Kopfzeile:** Über der Nachricht steht jetzt eine Statusleiste mit Score, Schweregrad, Verdikt,
+  Authentifizierungszustand und den wichtigsten Gründen – auch unterhalb der Warnschwelle.
+- **Link-Prüfung vor dem Öffnen:** Ein Klick auf einen Link wird abgefangen, die Adresse geprüft
+  (lokal gespeicherter Status bzw. urlscan.io, sofern konfiguriert und zugestimmt) und das Ergebnis
+  in einem Banner angezeigt; erst der zweite Klick bzw. „Jetzt öffnen“ übergibt die Adresse an den
+  Standardbrowser. Links tragen außerdem einen Prüfstatus als Tooltip und eine farbige Unterstreichung.
+- Message-Action `openLink` für den bestätigten Öffnungsweg über `tabs.create`.
+
+### Changed
+
+- Die frühere „Time-of-Click“-Markierung (nur Unterstreichung + Title) ist durch den vollständigen
+  Link-Guard ersetzt; die Einstellung „Time-of-Click-Schutz“ steuert ihn weiterhin.
+
+### Fixed
+
+- Der Link-Schutz erhält die **angereicherten** Linkdaten (Host, Anatomie, gespeicherter Provider-Status)
+  statt nur der URL-Liste, damit der Gefährdungsgrad je Link stimmt.
+
 ## [1.6.7] – 2026-10-01
 
 Forscher-Werkzeuge II (Thema T9): Sammel-Scan, Case-Notizen, ZIP-Innenansicht und Evidence-Hash —

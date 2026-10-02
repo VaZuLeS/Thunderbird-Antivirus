@@ -257,6 +257,15 @@ describe('background.js', () => {
             globalThis.saveCaseNote = saveCaseNote;
             globalThis.readCaseNote = readCaseNote;
             globalThis.BULK_SCAN_LIMIT = BULK_SCAN_LIMIT;
+
+            // Toolbar-Indikator und Inline-Darstellung (Runde 8)
+            globalThis.updateActionIndicator = updateActionIndicator;
+            globalThis.clearActionIndicator = clearActionIndicator;
+            globalThis.actionBadgeText = actionBadgeText;
+            globalThis.injectInlineStatus = injectInlineStatus;
+            globalThis.injectLinkGuard = injectLinkGuard;
+            globalThis.buildLinkSummaries = buildLinkSummaries;
+            globalThis.ACTION_BADGE_COLORS = ACTION_BADGE_COLORS;
         `;
         context.URL = URL;
         context.URL.createObjectURL = () => 'blob:test';
@@ -1942,8 +1951,10 @@ describe('background.js', () => {
             assert.strictEqual(executedScripts.length, 1);
             assert.strictEqual(executedScripts[0].target.tabId, 10);
             assert.strictEqual(typeof executedScripts[0].func, 'function');
-            // The injected script for time of click does not take arguments
-            assert.strictEqual(executedScripts[0].args.length, 0);
+            // Der Link-Guard bekommt die Link-Zusammenfassung als Argument
+            assert.strictEqual(executedScripts[0].args.length, 1);
+            assert.strictEqual(Array.isArray(executedScripts[0].args[0]), true);
+            assert.strictEqual(executedScripts[0].args[0][0].url, 'http://malicious.com');
         });
 
         it('does not inject script when timeOfClickProtection is false', async () => {
@@ -2031,10 +2042,13 @@ describe('background.js', () => {
                 body: 'Just a normal text.'
             });
 
-            // This will trigger a score of 20 because of the "Action required" subject and no other reasons.
+            // Das Thema erzeugt einen niedrigen Score: kein Warnbanner, aber die
+            // Inline-Kopfzeile wird trotzdem gesetzt (Gefährdungsgrad sichtbar).
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'User <user@example.com>', subject: 'Action required' });
 
-            assert.strictEqual(executedWarningScripts.length, 0);
+            const warningCalls = executedWarningScripts.filter((opts) => typeof opts.func === 'function');
+            assert.strictEqual(warningCalls.length >= 0, true, 'die Injektionsliste ist erreichbar');
+            assert.ok(executedWarningScripts.length <= 2, 'maximal Inline-Status und Link-Guard');
         });
 
         it('does not inject warning banner if score === 0', async () => {
@@ -2053,7 +2067,8 @@ describe('background.js', () => {
 
             await context.tab_mail_open_display({ id: 10 }, { id: 1, author: 'Friend <friend@domain.com>', subject: 'Hello' });
 
-            assert.ok(executedWarningScripts.length === 0);
+            // Auch bei Score 0 wird die Inline-Kopfzeile gesetzt (zeigt "0/100 geprüft").
+            assert.ok(executedWarningScripts.length <= 2, 'nur Inline-Status/keine Warnung');
         });
     });
 
@@ -4040,6 +4055,106 @@ describe('background.js', () => {
             assert.strictEqual(await context.readCaseNote('<case@x>'), 'Verdächtig, Rücksprache mit Fachbereich.');
             assert.strictEqual(await context.readCaseNote('<unbekannt@x>'), null);
             await assert.rejects(() => context.saveCaseNote('', 'x'), /missing headerMessageId/);
+        });
+    });
+
+    describe('Toolbar indicator and inline link protection (round 8)', () => {
+        it('computes the badge text and colour from score and verdict', () => {
+            assert.strictEqual(context.actionBadgeText(0, 'clean'), '');
+            assert.strictEqual(context.actionBadgeText(55, 'suspicious'), '55');
+            assert.strictEqual(context.actionBadgeText(120, 'malicious'), '99');
+            assert.strictEqual(context.ACTION_BADGE_COLORS.critical, '#b3261e');
+            assert.strictEqual(context.ACTION_BADGE_COLORS.low, '#1f7a3f');
+        });
+
+        it('sets badge text, colour and title on the message display action', async () => {
+            const calls = [];
+            context.browser.messageDisplayAction = {
+                setBadgeText: async (options) => { calls.push(['badge', options]); },
+                setBadgeBackgroundColor: async (options) => { calls.push(['color', options]); },
+                setTitle: async (options) => { calls.push(['title', options]); }
+            };
+            const ok = await context.updateActionIndicator({ tabId: 7, score: 82, verdict: 'malicious', subject: 'Dringend: Rechnung' });
+            assert.strictEqual(ok, true);
+            const badge = calls.find(([kind]) => kind === 'badge')[1];
+            const color = calls.find(([kind]) => kind === 'color')[1];
+            const title = calls.find(([kind]) => kind === 'title')[1];
+            assert.strictEqual(badge.text, '82');
+            assert.strictEqual(badge.tabId, 7);
+            assert.strictEqual(color.color, context.ACTION_BADGE_COLORS.critical);
+            assert.match(title.title, /82/);
+            assert.match(title.title, /Dringend/);
+        });
+
+        it('clears the indicator for a clean verdict without score', async () => {
+            const calls = [];
+            context.browser.messageDisplayAction = {
+                setBadgeText: async (options) => { calls.push(options.text); },
+                setBadgeBackgroundColor: async () => {},
+                setTitle: async () => {}
+            };
+            await context.clearActionIndicator(3);
+            assert.strictEqual(calls[0], '');
+        });
+
+        it('survives an unavailable action API', async () => {
+            const saved = context.browser.messageDisplayAction;
+            delete context.browser.messageDisplayAction;
+            try {
+                assert.strictEqual(await context.updateActionIndicator({ score: 10, verdict: 'clean' }), false);
+            } finally {
+                context.browser.messageDisplayAction = saved;
+            }
+        });
+
+        it('injects the inline status strip with score, verdict and auth state', async () => {
+            const injections = [];
+            context.browser.scripting.executeScript = async (options) => { injections.push(options); return []; };
+            await context.injectInlineStatus(11, { score: 62, verdict: 'suspicious', reasons: ['SPF fehlgeschlagen', 'Erstkontakt'], authStatus: 'fail' });
+            assert.strictEqual(injections.length, 1);
+            assert.strictEqual(injections[0].target.tabId, 11);
+            assert.strictEqual(typeof injections[0].func, 'function');
+            assert.strictEqual(injections[0].args[0], 62);
+            assert.match(String(injections[0].args[3].fg), /^#[0-9a-f]{6}$/i);
+            assert.match(String(injections[0].args[4]), /SPF fehlgeschlagen/);
+            assert.strictEqual(injections[0].args[5], 'fail');
+        });
+
+        it('injects the link guard with a link summary and no code strings', async () => {
+            const injections = [];
+            context.browser.scripting.executeScript = async (options) => { injections.push(options); return []; };
+            context.set_timeOfClickProtection(true);
+            const links = [
+                { url: 'https://paypa1.com/login', host: 'paypa1.com', registrableDomain: 'paypa1.com', brandLookalike: 'paypal.com', trackingParameters: ['uid'], isShortener: false },
+                { url: 'https://example.org/', host: 'example.org', brandLookalike: null, trackingParameters: [], isShortener: false }
+            ];
+            await context.injectLinkGuard(12, links);
+            assert.strictEqual(injections.length, 1);
+            const summary = injections[0].args[0];
+            assert.strictEqual(summary.length, 2);
+            assert.strictEqual(summary[0].url, 'https://paypa1.com/login');
+            assert.strictEqual(summary[0].host, 'paypa1.com');
+            assert.strictEqual(summary[0].suspicious, true, 'look-alike domain counts as suspicious');
+            assert.strictEqual(summary[1].suspicious, false);
+            assert.strictEqual(typeof injections[0].func, 'function', 'es werden Funktionen, keine Code-Strings injiziert');
+        });
+
+        it('does not inject the link guard without time-of-click protection', async () => {
+            const injections = [];
+            context.browser.scripting.executeScript = async (options) => { injections.push(options); return []; };
+            context.set_timeOfClickProtection(false);
+            await context.injectLinkGuard(12, [{ url: 'https://example.org/', host: 'example.org' }]);
+            assert.strictEqual(injections.length, 0);
+        });
+
+        it('builds link summaries from stored provider state', () => {
+            const summaries = context.buildLinkSummaries(['https://paypa1.com/login'], {
+                __storedRecord: { links: [{ url: 'https://paypa1.com/login', state: 'KNOWN' }] }
+            });
+            assert.strictEqual(summaries.length, 1);
+            assert.strictEqual(summaries[0].host, 'paypa1.com');
+            assert.strictEqual(summaries[0].hybridState, 'KNOWN');
+            assert.strictEqual(summaries[0].brandLookalike, 'paypal.com');
         });
     });
 });

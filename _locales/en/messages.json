@@ -364,5 +364,19 @@
   },
   "selftestCaseNoteText": {
     "message": "self-test note"
+  },
+  "actionTitleWithScore": {
+    "message": "Thundy AV – risk score $SCORE$ of 100 ($VERDICT$): $SUBJECT$",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      },
+      "verdict": {
+        "content": "$2"
+      },
+      "subject": {
+        "content": "$3"
+      }
+    }
   }
 }

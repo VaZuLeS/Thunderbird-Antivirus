@@ -10,6 +10,7 @@ const Logger = {
 // fallbacks, so unit tests and unusual environments never produce "undefined".
 // ---------------------------------------------------------------------------
 const I18N_FALLBACKS = {
+    actionTitleWithScore: 'Thundy AV – risk score $SCORE$ of 100 ($VERDICT$): $SUBJECT$',
     bannerScanOnce: 'Scan this message once',
     bannerScanSender: 'Always scan this sender',
     bannerTitleOptIn: 'Thundy AV: real-time scanning is not enabled for this message.',
@@ -998,17 +999,224 @@ async function processAndUploadUrls(message, filteredUrls) {
     }
 }
 
-async function injectTimeOfClickProtection(tabId, filteredUrls) {
-    if (timeOfClickProtection && filteredUrls.length > 0) {
-        await injectIntoMessageDisplay(tabId, function() {
-            // ⚡ Bolt Optimization: Use native CSS attribute selector instead of filtering all 'a' tags in JS
-            const links = document.querySelectorAll('a[href^="http"]');
-            links.forEach(link => {
-                link.title = "Protected by Thundy Time-of-Click";
-                link.style.borderBottom = "1px dashed #ff8c00";
-            });
-        });
-    }
+/**
+ * Inline-Kopfzeile in der Nachrichtenansicht (ab 1.6.8): zeigt den
+ * Gefährdungsgrad direkt über der Nachricht – auch unterhalb der Warnschwelle.
+ * Damit ist der Zustand sichtbar, ohne das Popup zu öffnen oder zu klicken.
+ */
+const SEVERITY_LABELS = {
+    critical: 'Kritisch',
+    high: 'Hoch',
+    medium: 'Mittel',
+    low: 'Niedrig',
+    info: 'Info'
+};
+
+async function injectInlineStatus(tabId, threat) {
+    const severity = severityForScore(threat.score);
+    const palette = BANNER_PALETTE[prefersDarkScheme() ? 'dark' : 'light'][severity];
+    const summary = (threat.reasons || []).slice(0, 3).join(' • ');
+    await injectIntoMessageDisplay(tabId, function(score, verdictText, severityLabel, colors, reasonSummary, authStatus) {
+        const existing = document.getElementById('thundy-inline-status');
+        if (existing) existing.remove();
+
+        const strip = document.createElement('div');
+        strip.id = 'thundy-inline-status';
+        strip.setAttribute('role', 'status');
+        strip.style.display = 'flex';
+        strip.style.alignItems = 'center';
+        strip.style.gap = '10px';
+        strip.style.flexWrap = 'wrap';
+        strip.style.margin = '8px 10px';
+        strip.style.padding = '6px 12px';
+        strip.style.borderRadius = '999px';
+        strip.style.border = '1px solid ' + colors.fg;
+        strip.style.backgroundColor = colors.bg;
+        strip.style.color = colors.fg;
+        strip.style.fontFamily = 'system-ui, Arial, sans-serif';
+        strip.style.fontSize = '12px';
+        strip.style.zIndex = '9998';
+
+        const scoreBadge = document.createElement('strong');
+        scoreBadge.textContent = String(score) + '/100';
+        scoreBadge.style.fontVariantNumeric = 'tabular-nums';
+        strip.appendChild(scoreBadge);
+
+        const verdictSpan = document.createElement('span');
+        verdictSpan.textContent = severityLabel + ' – ' + verdictText;
+        verdictSpan.style.fontWeight = '600';
+        strip.appendChild(verdictSpan);
+
+        const authSpan = document.createElement('span');
+        authSpan.textContent = authStatus === 'pass' ? 'Auth: bestanden'
+            : (authStatus === 'fail' ? 'Auth: fehlgeschlagen' : 'Auth: unbekannt');
+        authSpan.style.opacity = '0.85';
+        strip.appendChild(authSpan);
+
+        if (reasonSummary) {
+            const reasons = document.createElement('span');
+            reasons.textContent = reasonSummary;
+            reasons.style.opacity = '0.9';
+            strip.appendChild(reasons);
+        }
+
+        const hint = document.createElement('span');
+        hint.textContent = 'Details & Export über den Thundy-AV-Button';
+        hint.style.marginLeft = 'auto';
+        hint.style.opacity = '0.8';
+        strip.appendChild(hint);
+
+        document.body.prepend(strip);
+    }, [threat.score, verdictLabel(threat.verdict), SEVERITY_LABELS[severity] || severity, palette, summary, threat.authStatus]);
+}
+
+/**
+ * Inline-Schutz in der Nachrichtenansicht (ab 1.6.8).
+ *
+ * Links werden nicht mehr nur markiert, sondern **abgefangen**: Ein Klick löst
+ * zuerst die Prüfung aus (lokal gespeicherter Status bzw. urlscan.io, sofern
+ * konfiguriert und zugestimmt) und zeigt das Ergebnis im Banner. Erst der zweite
+ * Klick (bzw. „Jetzt öffnen“) öffnet die Adresse im Standardbrowser.
+ *
+ * Alles läuft mit gebündeltem Code (`scripting.executeScript` mit Funktion und
+ * Argumenten); es wird kein Fremdcode geladen.
+ */
+async function injectLinkGuard(tabId, links) {
+    if (!timeOfClickProtection || !Array.isArray(links) || links.length === 0) return;
+    const summary = links.slice(0, 200).map((link) => ({
+        url: link.url,
+        host: link.host || link.url,
+        state: link.hybridState || (link.urlhausMatch ? 'URLHAUS_MATCH' : 'UNKNOWN'),
+        suspicious: !!(link.brandLookalike || link.urlhausMatch || link.isShortener || (link.trackingParameters || []).length > 0)
+    }));
+
+    await injectIntoMessageDisplay(tabId, function(linkSummary) {
+        const stateStyles = {
+            MALICIOUS: { fg: '#b3261e', bg: '#fdecea', label: 'bösartig' },
+            SUSPICIOUS: { fg: '#b45309', bg: '#fdf3e3', label: 'verdächtig' },
+            URLHAUS_MATCH: { fg: '#b3261e', bg: '#fdecea', label: 'URLhaus-Treffer' },
+            CHECKED: { fg: '#1f7a3f', bg: '#eaf6ee', label: 'geprüft' },
+            UNKNOWN: { fg: '#a16207', bg: '#fdf8e3', label: 'ungeprüft' }
+        };
+
+        const existing = document.getElementById('thundy-link-guard-banner');
+        if (existing) existing.remove();
+
+        const banner = document.createElement('div');
+        banner.id = 'thundy-link-guard-banner';
+        banner.setAttribute('role', 'status');
+        banner.setAttribute('aria-live', 'polite');
+        banner.style.display = 'none';
+        banner.style.margin = '10px';
+        banner.style.padding = '10px 12px';
+        banner.style.borderRadius = '8px';
+        banner.style.fontFamily = 'system-ui, Arial, sans-serif';
+        banner.style.fontSize = '13px';
+        banner.style.lineHeight = '1.45';
+        banner.style.zIndex = '10000';
+
+        const text = document.createElement('div');
+        const actions = document.createElement('div');
+        actions.style.marginTop = '6px';
+        actions.style.display = 'flex';
+        actions.style.gap = '8px';
+        actions.style.flexWrap = 'wrap';
+        banner.appendChild(text);
+        banner.appendChild(actions);
+        document.body.prepend(banner);
+
+        const show = (style, message, buttons) => {
+            banner.style.display = 'block';
+            banner.style.backgroundColor = style.bg;
+            banner.style.border = '1px solid ' + style.fg;
+            banner.style.borderLeft = '6px solid ' + style.fg;
+            banner.style.color = style.fg;
+            text.textContent = message;
+            actions.textContent = '';
+            for (const button of buttons || []) {
+                const element = document.createElement('button');
+                element.type = 'button';
+                element.textContent = button.label;
+                element.style.cursor = 'pointer';
+                element.style.padding = '4px 10px';
+                element.style.borderRadius = '6px';
+                element.style.border = '1px solid ' + style.fg;
+                element.style.backgroundColor = style.bg;
+                element.style.color = style.fg;
+                element.addEventListener('click', button.action);
+                actions.appendChild(element);
+            }
+        };
+
+        const byUrl = new Map();
+        for (const entry of linkSummary) byUrl.set(entry.url, entry);
+
+        const findEntry = (anchor) => {
+            const href = anchor.getAttribute('href') || '';
+            if (byUrl.has(href)) return byUrl.get(href);
+            for (const entry of linkSummary) {
+                if (href.startsWith(entry.url) || entry.url.startsWith(href)) return entry;
+            }
+            return { url: href, host: href, state: 'UNKNOWN', suspicious: false };
+        };
+
+        const guardOne = async (anchor) => {
+            const entry = findEntry(anchor);
+            const initialStyle = stateStyles[entry.state] || stateStyles.UNKNOWN;
+            anchor.dataset.thundyState = entry.state;
+            anchor.title = 'Thundy AV: ' + entry.host + ' – ' + initialStyle.label +
+                (entry.suspicious ? ' (Auffälligkeiten im Link)' : '') +
+                '. Ein Klick prüft zuerst, der zweite öffnet.';
+            anchor.style.borderBottom = '1px dashed ' + initialStyle.fg;
+
+            anchor.addEventListener('click', async (event) => {
+                if (anchor.dataset.thundyConfirmed === 'yes') return;
+                event.preventDefault();
+                event.stopPropagation();
+                show(stateStyles.UNKNOWN, 'Thundy AV prüft: ' + entry.host + ' …', []);
+                let verdict = null;
+                try {
+                    verdict = await browser.runtime.sendMessage({ action: 'checkLinkState', url: entry.url });
+                } catch (error) {
+                    verdict = null;
+                }
+                const resolvedState = (verdict && (verdict.state || verdict.status)) || 'UNKNOWN';
+                const resolvedStyle = stateStyles[resolvedState] || stateStyles.UNKNOWN;
+                anchor.dataset.thundyState = resolvedState;
+                const reasons = (verdict && Array.isArray(verdict.reasons)) ? verdict.reasons.join(' ') : '';
+                const detail = (verdict && verdict.message)
+                    ? ' (' + verdict.message + ')'
+                    : (reasons ? ' – ' + reasons : '');
+                show(
+                    resolvedStyle,
+                    'Thundy AV: ' + entry.host + ' – ' + resolvedStyle.label + detail +
+                    '. Zum Öffnen im Browser erneut klicken.',
+                    [{
+                        label: 'Jetzt öffnen',
+                        action: () => {
+                            anchor.dataset.thundyConfirmed = 'yes';
+                            banner.style.display = 'none';
+                            anchor.click();
+                        }
+                    }, {
+                        label: 'Abbrechen',
+                        action: () => { banner.style.display = 'none'; }
+                    }]
+                );
+            }, true);
+        };
+
+        document.querySelectorAll('a[href^="http"]').forEach((anchor) => { guardOne(anchor); });
+    }, [summary]);
+}
+
+async function injectTimeOfClickProtection(tabId, filteredUrls, enrichedLinks = null) {
+    if (!timeOfClickProtection) return;
+    const links = Array.isArray(enrichedLinks) && enrichedLinks.length > 0
+        ? enrichedLinks.filter((link) => link && link.url)
+        : (filteredUrls || []).map((url) => ({ url: url, host: url }));
+    if (links.length === 0) return;
+    await injectLinkGuard(tabId, links);
 }
 
 async function checkIPReputation(receivedHeaders) {
@@ -1325,7 +1533,9 @@ async function processAttachments(message) {
 }
 
 async function processLinks(tab, message, fullMessage, parsedUrlCache = null) {
-  let messageText = extractTextFromParts(fullMessage.parts || fullMessage);
+  let messageText = fullMessage.parts
+      ? extractTextFromParts(fullMessage.parts)
+      : extractTextFromParts(fullMessage);
   let urls = extractUrls(messageText);
   let filteredUrls = filterUrls(urls, parsedUrlCache);
 
@@ -1333,10 +1543,31 @@ async function processLinks(tab, message, fullMessage, parsedUrlCache = null) {
     await processAndUploadUrls(message, filteredUrls);
   }
 
-  // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
-  await injectTimeOfClickProtection(tab.id, filteredUrls);
+  // Der Link-Schutz bekommt die angereicherten Links (Host, Provider-Status,
+  // Auffälligkeiten), damit die Inline-Ansicht den Gefährdungsgrad je Link zeigt.
+  await injectTimeOfClickProtection(tab.id, filteredUrls, buildLinkSummaries(filteredUrls, message));
 
   return { messageText, urls, filteredUrls };
+}
+
+/**
+ * Baut die Link-Zusammenfassung für die Inline-Ansicht: Anatomie je URL plus der
+ * lokal zuletzt gespeicherte Provider-Status (sofern vorhanden).
+ */
+function buildLinkSummaries(filteredUrls, message) {
+  const stored = message && message.__storedRecord ? message.__storedRecord : null;
+  const storedByUrl = new Map();
+  for (const entry of (stored && stored.links) || []) {
+    if (entry && entry.url) storedByUrl.set(entry.url, entry);
+  }
+  return (filteredUrls || []).map((url) => {
+    const anatomy = analyseLinkAnatomy(url);
+    const record = storedByUrl.get(url);
+    return Object.assign({}, anatomy, {
+      hybridState: record ? (record.state || null) : null,
+      urlhausMatch: false
+    });
+  });
 }
 
 async function extractBecProtectionData(message, fullMessage) {
@@ -1373,6 +1604,15 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
 async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
   const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache });
   const threat = calculateThreatScore(message.author, urls, options);
+  // Inline-Kopfzeile (Gefährdungsgrad direkt über der Nachricht).
+  await injectInlineStatus(tab.id, threat);
+  // Toolbar-Indikator: Gefährdungsgrad direkt am Button.
+  await updateActionIndicator({
+    tabId: tab && tab.id !== undefined ? tab.id : null,
+    score: threat.score,
+    verdict: threat.verdict,
+    subject: (fullMessage && fullMessage.headers && message && message.subject) || (message && message.subject) || ''
+  });
   // Lokaler Indikator-Index für Pivot/Verlauf (kein Netzwerkzugriff).
   try {
     let header = message;
@@ -3029,6 +3269,23 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             handleCheckLinkState(request, sender, sendResponse);
             return true;
 
+        case "openLink":
+            // Öffnet eine geprüfte Adresse im Standardbrowser. Der Kontextmenü-freie
+            // Weg: die Inline-Ansicht fragt hier an, nachdem der Nutzer bestätigt hat.
+            (async () => {
+                if (!request.url || !/^https?:\/\//i.test(request.url)) {
+                    throw new Error('ungültige URL');
+                }
+                if (typeof browser.tabs !== 'undefined' && typeof browser.tabs.create === 'function') {
+                    await browser.tabs.create({ url: request.url });
+                    return { opened: true };
+                }
+                return { opened: false, reason: 'tabs_api_unavailable' };
+            })()
+                .then(data => sendResponse({ status: 'success', data: data }))
+                .catch(error => sendResponse({ status: 'error', message: error && error.message ? error.message : String(error) }));
+            return true;
+
         case "downloadDisarmed":
             handleDownloadDisarmed(request.messageId, request.partName, request.attachmentName)
                 .then(res => sendResponse({status: 'success', data: res}))
@@ -3778,6 +4035,62 @@ async function clearIndicatorIndex() {
 }
 
 // ---------------------------------------------------------------------------
+// Toolbar-Indikator (Gefährdungsgrad)
+//
+// Der Button in der Nachrichtenleiste zeigt direkt den Gefährdungsgrad: Badge-Text
+// (Score) plus Badge-Farbe je Schweregrad, dazu ein erklärender Tooltip. Wird bei
+// jeder Bewertung aktualisiert, damit man den Zustand sieht, ohne das Popup zu
+// öffnen.
+// ---------------------------------------------------------------------------
+const ACTION_BADGE_COLORS = {
+    critical: '#b3261e',
+    high: '#b45309',
+    medium: '#a16207',
+    low: '#1f7a3f',
+    info: '#0b5fa5'
+};
+
+function actionBadgeText(score, verdict) {
+    if (verdict === 'clean' && score === 0) return '';
+    if (score <= 0) return '?';
+    return String(Math.min(99, score));
+}
+
+/**
+ * Setzt Badge, Farbe und Tooltip des Nachrichten-Buttons.
+ * `tabId` optional; ohne ihn gilt die Aktion für alle Nachrichten-Tabs.
+ */
+async function updateActionIndicator({ tabId = null, score = 0, verdict = 'clean', subject = '', reason = '' } = {}) {
+    if (!browser.messageDisplayAction) return false;
+    const severity = severityForScore(score);
+    const badgeText = actionBadgeText(score, verdict);
+    const color = ACTION_BADGE_COLORS[score > 0 ? severity : 'low'] || ACTION_BADGE_COLORS.info;
+    try {
+        if (typeof browser.messageDisplayAction.setBadgeText === 'function') {
+            await browser.messageDisplayAction.setBadgeText({ tabId: tabId, text: badgeText });
+        }
+        if (typeof browser.messageDisplayAction.setBadgeBackgroundColor === 'function') {
+            await browser.messageDisplayAction.setBadgeBackgroundColor({ tabId: tabId, color: color });
+        }
+        if (typeof browser.messageDisplayAction.setTitle === 'function') {
+            const title = subject
+                ? msg('actionTitleWithScore', [String(score), verdictLabel(verdict), truncateForNotification(subject)])
+                : msg('actionTitle');
+            await browser.messageDisplayAction.setTitle({ tabId: tabId, title: title });
+        }
+        return true;
+    } catch (e) {
+        Logger.warn('Could not update the toolbar indicator', e);
+        return false;
+    }
+}
+
+/** Setzt den Indikator zurück (z. B. beim Wechsel auf eine unbewertete Nachricht). */
+async function clearActionIndicator(tabId = null) {
+    return await updateActionIndicator({ tabId: tabId, score: 0, verdict: 'clean', subject: '' });
+}
+
+// ---------------------------------------------------------------------------
 // Sammel-Scan und Case-Notizen (Forscher-Werkzeuge II)
 //
 // Der Sammel-Scan läuft ausschließlich lokal: es werden die Indikatoren der
@@ -4088,7 +4401,8 @@ const MESSAGE_ACTIONS = new Set([
     'requestScan', 'getResearchDossier', 'saveResearchExport',
     'runSelfTest', 'saveSelfTestReport',
     'pivotIndicator', 'searchHistory', 'clearIndicatorIndex',
-    'bulkScan', 'saveCaseNote', 'readCaseNote', 'inspectZip'
+    'bulkScan', 'saveCaseNote', 'readCaseNote', 'inspectZip',
+    'openLink'
 ]);
 const MAX_EXPORT_BYTES = 5 * 1024 * 1024;
 const ALLOWED_EXPORT_MIME_TYPES = new Set(['application/json', 'text/csv', 'text/plain']);
@@ -4117,6 +4431,9 @@ function validateRequest(request) {
             if (!optionalString(request.attachmentName)) return 'invalid_attachment_name';
             return null;
         case 'scanUrl':
+            if (typeof request.url !== 'string' || !/^https?:\/\//i.test(request.url)) return 'invalid_url';
+            return null;
+        case 'openLink':
             if (typeof request.url !== 'string' || !/^https?:\/\//i.test(request.url)) return 'invalid_url';
             return null;
         case 'downloadDisarmed':
