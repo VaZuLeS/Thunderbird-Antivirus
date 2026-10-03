@@ -539,28 +539,33 @@ function checkLists(email, senderDomain) {
 function evaluateAuthHeaders(authHeaders, score, reasons) {
     let authStatus = 'neutral';
     if (authHeaders && authHeaders.length > 0) {
-        const headerStr = authHeaders.join(' ').toLowerCase();
+        const headerStr = authHeaders.join(' ');
         let fail = false;
 
-        if (headerStr.includes("spf=fail") || headerStr.includes("spf=softfail")) {
-            score += 50;
-            reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
-            fail = true;
-        }
-        if (headerStr.includes("dkim=fail")) {
-            score += 50;
-            reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
-            fail = true;
-        }
-        if (headerStr.includes("dmarc=fail")) {
-            score += 50;
-            reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
-            fail = true;
+        // ⚡ Bolt Optimization: Replace `.toLowerCase()` and `.includes()` with a case-insensitive regex fast-path
+        // This avoids allocating a new lowercased string for the entire set of headers, which can be large,
+        // improving memory usage and reducing CPU overhead during email evaluations.
+        if (/(?:spf=(?:fail|softfail)|dkim=fail|dmarc=fail)/i.test(headerStr)) {
+            if (/spf=(?:fail|softfail)/i.test(headerStr)) {
+                score += 50;
+                reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+                fail = true;
+            }
+            if (/dkim=fail/i.test(headerStr)) {
+                score += 50;
+                reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
+                fail = true;
+            }
+            if (/dmarc=fail/i.test(headerStr)) {
+                score += 50;
+                reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+                fail = true;
+            }
         }
 
         if (fail) {
             authStatus = 'fail';
-        } else if (headerStr.includes("spf=pass") && headerStr.includes("dkim=pass") && headerStr.includes("dmarc=pass")) {
+        } else if (/spf=pass/i.test(headerStr) && /dkim=pass/i.test(headerStr) && /dmarc=pass/i.test(headerStr)) {
             authStatus = 'pass';
         }
     }
