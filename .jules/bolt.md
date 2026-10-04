@@ -23,3 +23,6 @@
 ## 2026-06-15 - Optimize DOM querying with CSS attribute selectors
 **Learning:** When filtering DOM elements by attribute in frontend scripts, fetching all elements (e.g. `querySelectorAll('a')`) and filtering them in a JavaScript loop (e.g. `startsWith('http')`) is inefficient.
 **Action:** Relying on the browser's native C++ DOM querying via CSS attribute selectors (e.g., `document.querySelectorAll('a[href^="http"]')`) is significantly faster. Always prefer native CSS selectors over JS loops when possible.
+## 2026-06-25 - Avoid massive string allocations when parsing concatenated items
+**Learning:** When evaluating substrings across a large array of concatenated elements (such as joined HTTP authentication headers), allocating a completely new lowercased copy of the massive string via `.toLowerCase()` just to run multiple `.includes()` checks can cause severe performance bottlenecks.
+**Action:** Use a single, combined case-insensitive regular expression (e.g., `/(?:spf=fail|dkim=fail)/i.test(str)`) as a fast-path. It avoids the large allocation cost and can quickly bypass checks on the happy path, leading to significant execution time reduction.
