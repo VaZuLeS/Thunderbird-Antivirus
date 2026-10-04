@@ -1301,6 +1301,7 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
           optionsButton.type = 'button';
           optionsButton.textContent = t('bannerOpenOptions', 'Open options');
           optionsButton.style.marginLeft = '10px';
+          optionsButton.setAttribute('aria-describedby', 'thundy-optin-note');
           optionsButton.addEventListener('click', () => browser.runtime.openOptionsPage());
           note.appendChild(optionsButton);
         }
