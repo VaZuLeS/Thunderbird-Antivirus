@@ -246,6 +246,7 @@ const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?
 
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
 const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join('|') + ')(?![a-z0-9_äöüß])', 'g');
+const FAST_URGENCY_REGEX = new RegExp(URGENCY_WORDS.join('|'), 'i');
 
 
 // Einstellungen laden
@@ -591,26 +592,36 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
 }
 
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
-    let textToAnalyze = (subject + " " + messageText).toLowerCase();
-    let foundUrgencyWords = [];
+    let textToAnalyze = subject + " " + messageText;
 
-    let match;
-    URGENCY_REGEX.lastIndex = 0;
-    while ((match = URGENCY_REGEX.exec(textToAnalyze)) !== null) {
-        if (foundUrgencyWords.indexOf(match[2]) === -1) {
-            foundUrgencyWords.push(match[2]);
+    // ⚡ Bolt Optimization: Fast path to avoid unconditionally allocating lowercased copy of large texts
+    if (FAST_URGENCY_REGEX.test(textToAnalyze)) {
+        textToAnalyze = textToAnalyze.toLowerCase();
+        let foundUrgencyWords = [];
+
+        let match;
+        URGENCY_REGEX.lastIndex = 0;
+        while ((match = URGENCY_REGEX.exec(textToAnalyze)) !== null) {
+            let m = match[2];
+            // ⚡ Bolt Optimization: Replace O(N) array iteration with includes
+            if (!foundUrgencyWords.includes(m)) {
+                foundUrgencyWords.push(m);
+            }
+        }
+
+        if (foundUrgencyWords.length > 0) {
+            if (isFirstCommunication) {
+                score += 50;
+                reasons.push(`Mögliches BEC (Business Email Compromise): Erste Kommunikation mit diesem Absender und Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}).`);
+            } else {
+                score += 20;
+                reasons.push(`Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}). Bitte prüfen Sie die Anfrage sorgfältig.`);
+            }
+            return score;
         }
     }
 
-    if (foundUrgencyWords.length > 0) {
-        if (isFirstCommunication) {
-            score += 50;
-            reasons.push(`Mögliches BEC (Business Email Compromise): Erste Kommunikation mit diesem Absender und Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}).`);
-        } else {
-            score += 20;
-            reasons.push(`Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}). Bitte prüfen Sie die Anfrage sorgfältig.`);
-        }
-    } else if (isFirstCommunication) {
+    if (isFirstCommunication) {
         score += 10;
         reasons.push("Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.");
     }
