@@ -23,3 +23,6 @@
 ## 2026-06-15 - Optimize DOM querying with CSS attribute selectors
 **Learning:** When filtering DOM elements by attribute in frontend scripts, fetching all elements (e.g. `querySelectorAll('a')`) and filtering them in a JavaScript loop (e.g. `startsWith('http')`) is inefficient.
 **Action:** Relying on the browser's native C++ DOM querying via CSS attribute selectors (e.g., `document.querySelectorAll('a[href^="http"]')`) is significantly faster. Always prefer native CSS selectors over JS loops when possible.
+## 2026-06-25 - Fast-path regex avoids large string allocations
+**Learning:** When evaluating large strings (like concatenated email subjects and bodies) for specific keywords using multiple steps or regexes that require a normalized (lowercased) string, unconditionally allocating the `.toLowerCase()` copy for every message is an expensive operation that dominates the happy-path (clean emails) processing time.
+**Action:** Use a unified, case-insensitive `RegExp.test()` fast-path to quickly reject clean texts. Only perform the expensive `.toLowerCase()` allocation and detailed processing if the fast-path matches.
