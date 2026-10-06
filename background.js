@@ -537,31 +537,38 @@ function checkLists(email, senderDomain) {
     return null;
 }
 
+const AUTH_FAIL_REGEX = /(?:spf=fail|spf=softfail|dkim=fail|dmarc=fail)/i;
+
 function evaluateAuthHeaders(authHeaders, score, reasons) {
     let authStatus = 'neutral';
     if (authHeaders && authHeaders.length > 0) {
-        const headerStr = authHeaders.join(' ').toLowerCase();
+        const headerStr = authHeaders.join(' ');
         let fail = false;
 
-        if (headerStr.includes("spf=fail") || headerStr.includes("spf=softfail")) {
-            score += 50;
-            reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
-            fail = true;
-        }
-        if (headerStr.includes("dkim=fail")) {
-            score += 50;
-            reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
-            fail = true;
-        }
-        if (headerStr.includes("dmarc=fail")) {
-            score += 50;
-            reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
-            fail = true;
+        // ⚡ Bolt Optimization: Use a combined case-insensitive regular expression fast-path
+        // instead of allocating a massive lowercased copy of the entire string just to check substrings.
+        if (AUTH_FAIL_REGEX.test(headerStr)) {
+            const lowerHeader = headerStr.toLowerCase();
+            if (lowerHeader.includes("spf=fail") || lowerHeader.includes("spf=softfail")) {
+                score += 50;
+                reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+                fail = true;
+            }
+            if (lowerHeader.includes("dkim=fail")) {
+                score += 50;
+                reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
+                fail = true;
+            }
+            if (lowerHeader.includes("dmarc=fail")) {
+                score += 50;
+                reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+                fail = true;
+            }
         }
 
         if (fail) {
             authStatus = 'fail';
-        } else if (headerStr.includes("spf=pass") && headerStr.includes("dkim=pass") && headerStr.includes("dmarc=pass")) {
+        } else if (/spf=pass/i.test(headerStr) && /dkim=pass/i.test(headerStr) && /dmarc=pass/i.test(headerStr)) {
             authStatus = 'pass';
         }
     }
