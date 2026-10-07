@@ -537,31 +537,43 @@ function checkLists(email, senderDomain) {
     return null;
 }
 
+const AUTH_FAIL_REGEX = /(?:spf=fail|spf=softfail|dkim=fail|dmarc=fail)/i;
+const AUTH_PASS_REGEX_SPF = /spf=pass/i;
+const AUTH_PASS_REGEX_DKIM = /dkim=pass/i;
+const AUTH_PASS_REGEX_DMARC = /dmarc=pass/i;
+
 function evaluateAuthHeaders(authHeaders, score, reasons) {
     let authStatus = 'neutral';
     if (authHeaders && authHeaders.length > 0) {
-        const headerStr = authHeaders.join(' ').toLowerCase();
-        let fail = false;
+        const headerStr = authHeaders.join(' ');
 
-        if (headerStr.includes("spf=fail") || headerStr.includes("spf=softfail")) {
-            score += 50;
-            reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
-            fail = true;
-        }
-        if (headerStr.includes("dkim=fail")) {
-            score += 50;
-            reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
-            fail = true;
-        }
-        if (headerStr.includes("dmarc=fail")) {
-            score += 50;
-            reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
-            fail = true;
-        }
+        // ⚡ Bolt Optimization: Fast-path to avoid unconditionally allocating lowercased copy of large texts
+        if (AUTH_FAIL_REGEX.test(headerStr)) {
+            const headerStrLower = headerStr.toLowerCase();
+            let fail = false;
 
-        if (fail) {
-            authStatus = 'fail';
-        } else if (headerStr.includes("spf=pass") && headerStr.includes("dkim=pass") && headerStr.includes("dmarc=pass")) {
+            if (headerStrLower.includes("spf=fail") || headerStrLower.includes("spf=softfail")) {
+                score += 50;
+                reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+                fail = true;
+            }
+            if (headerStrLower.includes("dkim=fail")) {
+                score += 50;
+                reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
+                fail = true;
+            }
+            if (headerStrLower.includes("dmarc=fail")) {
+                score += 50;
+                reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
+                fail = true;
+            }
+
+            if (fail) {
+                authStatus = 'fail';
+            } else if (headerStrLower.includes("spf=pass") && headerStrLower.includes("dkim=pass") && headerStrLower.includes("dmarc=pass")) {
+                authStatus = 'pass';
+            }
+        } else if (AUTH_PASS_REGEX_SPF.test(headerStr) && AUTH_PASS_REGEX_DKIM.test(headerStr) && AUTH_PASS_REGEX_DMARC.test(headerStr)) {
             authStatus = 'pass';
         }
     }

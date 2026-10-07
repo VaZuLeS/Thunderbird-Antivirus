@@ -26,3 +26,6 @@
 ## 2026-06-25 - Fast-path regex avoids large string allocations
 **Learning:** When evaluating large strings (like concatenated email subjects and bodies) for specific keywords using multiple steps or regexes that require a normalized (lowercased) string, unconditionally allocating the `.toLowerCase()` copy for every message is an expensive operation that dominates the happy-path (clean emails) processing time.
 **Action:** Use a unified, case-insensitive `RegExp.test()` fast-path to quickly reject clean texts. Only perform the expensive `.toLowerCase()` allocation and detailed processing if the fast-path matches.
+## 2024-10-07 - Optimize evaluateAuthHeaders
+**Learning:** Adding a regex fast-path can actually make code slower if you still unconditionally allocate the string you were trying to avoid (e.g. `const headerStrLower = headerStr.toLowerCase();` in an `else` block). To properly optimize string parsing, you must avoid the allocation entirely on the happy path by using targeted regexes instead of lowercasing.
+**Action:** When adding a fast path to avoid `.toLowerCase()`, ensure that *all* branches that follow (including `else` and subsequent non-failing conditions) also avoid calling `.toLowerCase()`. Use individual regexes (e.g., `/spf=pass/i`) for those checks.
