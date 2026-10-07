@@ -2680,12 +2680,12 @@ describe('createUploadButton', () => {
         const status = card.childNodes[1];
 
         assert.strictEqual(btn.tagName, 'button');
-        assert.strictEqual(btn.id, 'btn-upload-hash1');
+        assert.strictEqual(btn.id, 'btn-upload-safeHash1');
         assert.strictEqual(btn.className, 'btn-primary mt-2');
         assert.strictEqual(btn.textContent, 'Datei jetzt scannen (Upload)');
 
         assert.strictEqual(status.tagName, 'p');
-        assert.strictEqual(status.id, 'upload-status-hash1');
+        assert.strictEqual(status.id, 'upload-status-safeHash1');
         assert.strictEqual(status.className, 'mt-2');
         assert.strictEqual(status['aria-live'], 'polite');
         assert.strictEqual(status['role'], 'status');
@@ -2705,8 +2705,8 @@ describe('createUploadButton', () => {
         };
 
         createUploadButton(card, { hash: 'hash2', safeHash: 'safeHash2', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
-        const btn = context.mockElements['btn-upload-hash2'];
-        const status = context.mockElements['upload-status-hash2'];
+        const btn = context.mockElements['btn-upload-safeHash2'];
+        const status = context.mockElements['upload-status-safeHash2'];
         context.mockElements['upload-status-safeHash2'] = status;
 
         // Initially enabled
@@ -2765,8 +2765,8 @@ describe('createUploadButton', () => {
         };
 
         createUploadButton(card, { hash: 'hash3', safeHash: 'safeHash3', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
-        const btn = context.mockElements['btn-upload-hash3'];
-        const status = context.mockElements['upload-status-hash3'];
+        const btn = context.mockElements['btn-upload-safeHash3'];
+        const status = context.mockElements['upload-status-safeHash3'];
         context.mockElements['upload-status-safeHash3'] = status;
 
         btn.click();
@@ -2790,8 +2790,8 @@ describe('createUploadButton', () => {
         };
 
         createUploadButton(card, { hash: 'hash4', safeHash: 'safeHash4', attachmentName: 'test.txt', messageId: 'msg1', partName: 'part1', headerMessageId: 'header1' });
-        const btn = context.mockElements['btn-upload-hash4'];
-        const status = context.mockElements['upload-status-hash4'];
+        const btn = context.mockElements['btn-upload-safeHash4'];
+        const status = context.mockElements['upload-status-safeHash4'];
         context.mockElements['upload-status-safeHash4'] = status;
 
         btn.click();

@@ -912,14 +912,14 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
 
 function createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
     let btnUpload = document.createElement('button');
-    btnUpload.id = `btn-upload-${hash}`;
+    btnUpload.id = `btn-upload-${safeHash}`;
     btnUpload.className = "btn-primary mt-2";
     btnUpload.textContent = `Datei jetzt scannen (Upload)`;
-    btnUpload.setAttribute('aria-describedby', `upload-status-${hash}`);
+    btnUpload.setAttribute('aria-describedby', `upload-status-${safeHash}`);
     card.appendChild(btnUpload);
 
     let pUploadStatus = document.createElement('p');
-    pUploadStatus.id = `upload-status-${hash}`;
+    pUploadStatus.id = `upload-status-${safeHash}`;
     pUploadStatus.className = "mt-2";
     pUploadStatus.setAttribute('aria-live', 'polite');
     pUploadStatus.setAttribute('role', 'status');
