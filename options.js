@@ -184,6 +184,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ipReputationApiKey: ipReputationApiKeySetting
     }).then(async () => {
         let statusSpan = document.getElementById('saveStatus');
+        statusSpan.className = 'text-success ml-2';
+        statusSpan.textContent = 'Erfolgreich gespeichert!';
         statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
@@ -246,6 +248,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }).catch(error => {
         console.error("Speichern fehlgeschlagen", error);
+        let statusSpan = document.getElementById('saveStatus');
+        statusSpan.className = 'text-danger ml-2';
+        statusSpan.textContent = 'Fehler beim Speichern der Einstellungen.';
+        statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
         saveBtn.textContent = 'Speichern';
