@@ -1,3 +1,30 @@
+'use strict';
+
+// Zentraler, schaltbarer Logger (Aufgabe 2.2):
+// Debug-Ausgaben erscheinen nur, wenn in den Optionen `debugLogging` aktiviert ist.
+// Sicherheit: Es werden niemals API-Keys, Datei-Hashes oder E-Mail-Inhalte geloggt.
+let debugLogging = false;
+const logger = {
+    log: (...args) => { if (debugLogging) console.log(...args); },
+    warn: (...args) => { if (debugLogging) console.warn(...args); },
+    error: (...args) => console.error(...args) // Fehler bleiben immer sichtbar
+};
+if (typeof globalThis !== 'undefined') {
+    globalThis.logger = logger;
+}
+try {
+    browser.storage.local.get('debugLogging').then(r => {
+        if (r && r.debugLogging !== undefined) debugLogging = !!r.debugLogging;
+    });
+    browser.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes.debugLogging !== undefined) {
+            debugLogging = !!changes.debugLogging.newValue;
+        }
+    });
+} catch (e) {
+    // Logger ist optional – z. B. in Testumgebungen ohne browser-API.
+}
+
 let customBlacklist = [];
 let customWhitelist = [];
 let authStatus = null;
@@ -9,12 +36,42 @@ let autoScanLinks = false;
 let timeOfClickProtection = true;
 let ipReputationProvider = "none";
 let ipReputationApiKey = "";
+let virustotalApikey = "";
+let privacyTier = "balanced";
+
+// Harte Validierung der API-Keys (Aufgabe 1.3):
+// Hybrid-Analysis-Keys sind 64 Hex-Zeichen; andere Anbieter werden nur auf
+// Nicht-Leere und Plausibilität (keine Zeilenumbrüche) geprüft.
+function validateApiKey(key, provider) {
+  if (!key || typeof key !== 'string' || !key.trim()) {
+    return { valid: false, message: `Kein API-Key für ${provider} hinterlegt. Bitte in den Einstellungen erfassen.` };
+  }
+  const trimmed = key.trim();
+  if (/\r|\n/.test(trimmed)) {
+    return { valid: false, message: `API-Key für ${provider} enthält ungültige Zeichen (Zeilenumbrüche).` };
+  }
+  if (provider === 'hybridanalysis' && !/^[0-9a-fA-F]{64}$/.test(trimmed)) {
+    return { valid: false, message: `Hybrid-Analysis-API-Key hat ein unerwartetes Format (erwartet: 64 Hex-Zeichen).` };
+  }
+  return { valid: true, message: '' };
+}
+
+// API-Keys an das zentrale Gateway übergeben (Aufgabe 1.2) – niemals loggen!
+function syncGatewayKeys() {
+  if (typeof globalThis.apiGateway === 'undefined') return;
+  globalThis.apiGateway.setApikey('hybridanalysis', apikey_hybridanalysis || '');
+  globalThis.apiGateway.setApikey('virustotal', virustotalApikey || '');
+  globalThis.apiGateway.setApikey('urlhaus', urlhausApikey || '');
+  globalThis.apiGateway.setApikey('urlscan', urlscanApikey || '');
+  globalThis.apiGateway.setApikey('abuseipdb', ipReputationApiKey || '');
+}
 
 const knownSendersCache = new Set();
 const MAX_KNOWN_SENDERS = 1000;
 
 function getHybridAnalysisOptions(method, body = null, isUrl = false) {
-    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+    const keyCheck = validateApiKey(apikey_hybridanalysis, 'hybridanalysis');
+    if (!keyCheck.valid) throw new Error(keyCheck.message);
     const options = {
         method: method,
         headers: {
@@ -43,7 +100,7 @@ const URGENCY_REGEX_COMBINED = new RegExp(`(?:^|[^\\wäöüßÄÖÜ])(${URGENCY_
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist']);
+    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'debugLogging', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist']);
     apikey_hybridanalysis = result.apikey;
     if (result.customBlacklist !== undefined) {
       customBlacklist = result.customBlacklist.map(s => s ? s.toLowerCase() : "");
@@ -72,6 +129,16 @@ async function loadSettings() {
     if (result.ipReputationApiKey !== undefined) {
       ipReputationApiKey = result.ipReputationApiKey;
     }
+    if (result.virustotalApikey !== undefined) {
+      virustotalApikey = result.virustotalApikey;
+    }
+    if (result.privacyTier !== undefined) {
+      privacyTier = result.privacyTier;
+    }
+    if (result.debugLogging !== undefined) {
+      debugLogging = !!result.debugLogging;
+    }
+    syncGatewayKeys();
   } catch (error) {
     console.error("Fehler beim Laden der Einstellungen:", error);
   }
@@ -104,6 +171,16 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.customWhitelist !== undefined) {
     customWhitelist = (changes.customWhitelist.newValue || []).map(s => s ? s.toLowerCase() : "");
   }
+  if (area === 'local' && changes.virustotalApikey !== undefined) {
+    virustotalApikey = changes.virustotalApikey.newValue || "";
+  }
+  if (area === 'local' && changes.privacyTier !== undefined) {
+    privacyTier = changes.privacyTier.newValue;
+  }
+  if (area === 'local' && changes.debugLogging !== undefined) {
+    debugLogging = !!changes.debugLogging.newValue;
+  }
+  syncGatewayKeys();
 });
 
 function extractPublicIPs(receivedHeaders) {
@@ -135,14 +212,10 @@ function extractPublicIPs(receivedHeaders) {
 
 async function checkAbuseIPDB(ip, apikey) {
     try {
-        const response = await fetch(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, {
-            method: 'GET',
-            headers: {
-                'Key': apikey,
-                'Accept': 'application/json'
-            }
-        });
-        const data = await response.json();
+        const { data } = await globalThis.apiGateway.fetchJson(
+            `https://api.abuseipdb.com/api/v2/check?ipAddress=${encodeURIComponent(ip)}&maxAgeInDays=90`,
+            { method: 'GET', headers: { 'Accept': 'application/json' } }
+        );
         if (data && data.data && data.data.abuseConfidenceScore > 50) {
             return true;
         }
@@ -154,14 +227,10 @@ async function checkAbuseIPDB(ip, apikey) {
 
 async function checkVirusTotalIP(ip, apikey) {
     try {
-        const response = await fetch(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`, {
-            method: 'GET',
-            headers: {
-                'x-apikey': apikey,
-                'Accept': 'application/json'
-            }
-        });
-        const data = await response.json();
+        const { data } = await globalThis.apiGateway.fetchJson(
+            `https://www.virustotal.com/api/v3/ip_addresses/${encodeURIComponent(ip)}`,
+            { method: 'GET', headers: { 'Accept': 'application/json' } }
+        );
         if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
             if (data.data.attributes.last_analysis_stats.malicious > 0) {
                 return true;
@@ -456,7 +525,7 @@ function calculateThreatScore(author, urls, options = {}) {
 
 async function processAndUploadUrls(message, filteredUrls) {
     if (privacyTier === 'max') {
-        console.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
+        logger.log('Maximaler Schutz aktiv. Lade URLs automatisch hoch...');
         const urlResults = await Promise.all(filteredUrls.map(async (url) => {
             try {
                 const formBody = new URLSearchParams();
@@ -464,8 +533,7 @@ async function processAndUploadUrls(message, filteredUrls) {
                 formBody.append('url', url);
 
                 const options = getHybridAnalysisOptions('POST', formBody, true);
-                options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url';
-                const response = await fetch(options.url, options);
+                const response = await globalThis.apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/url', options);
                 if (response.status === 200 || response.status === 201) {
                     const json_data = await response.json();
                     return {
@@ -501,7 +569,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls) {
                     }
                 });
             }
-        }).catch(e => console.log("Fehler beim Injecten von Time-of-Click Styles:", e));
+        }).catch(e => logger.log("Fehler beim Injecten von Time-of-Click Styles:", e));
     }
 }
 
@@ -548,7 +616,7 @@ async function checkFirstCommunication(senderEmail) {
             }
         }
     } catch (e) {
-        console.log("Fehler bei messages.query (Möglicherweise nicht unterstützt):", e);
+        logger.log("Fehler bei messages.query (Möglicherweise nicht unterstützt):", e);
     }
     return isFirstCommunication;
 }
@@ -580,7 +648,7 @@ async function checkURLhausDomains(filteredUrls) {
 
 async function injectThreatBanner(tabId, threat) {
     if (threat.score >= 50) {
-        console.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
+        logger.log(`Threat erkannt! Score: ${threat.score}, Gründe:`, threat.reasons);
         await browser.scripting.executeScript({
             target: { tabId: tabId },
             func: function(score, reasons, authStatus) {
@@ -641,13 +709,13 @@ async function injectThreatBanner(tabId, threat) {
 
 // Hauptfunktion: Wird ausgelöst, wenn eine Nachricht angezeigt wird
 async function tab_mail_open_display(tab, message) {
-  console.log(`Folgende Email Nachricht ist aktiv: ${message.author}: ${message.subject}`);
+  logger.log("Aktive Nachricht erkannt (Autor/Betreff nicht geloggt).");
 
   try {
     // Liste der Anhänge abrufen
     let attachments = await browser.messages.listAttachments(message.id);
 
-    console.log("Gefundene Anhänge:", attachments);
+    logger.log(`Gefundene Anhänge: ${attachments.length}`);
 
     if (attachments.length > 0) {
       await sent_to_hybrid_by_attachment(message, attachments);
@@ -659,7 +727,7 @@ async function tab_mail_open_display(tab, message) {
     let urls = extractUrls(messageText);
     let filteredUrls = filterUrls(urls);
 
-    console.log("Gefundene URLs:", filteredUrls);
+    logger.log(`Gefundene URLs: ${filteredUrls.length}`);
     if (filteredUrls.length > 0) {
       await processAndUploadUrls(message, filteredUrls);
     }
@@ -698,7 +766,7 @@ async function tab_mail_open_display(tab, message) {
     await injectThreatBanner(tab.id, threat);
 
   } catch (error) {
-    console.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
+    logger.log(`Fehler beim Laden der Anhänge oder Links: ${error}`);
   }
 }
 
@@ -756,9 +824,9 @@ async function get_sha256_hash(fileData) {
 }
 
 async function handle_unknown_attachment(attachment, content_of_atachment, local_hash, virustotal_stats, privacyTier, fileType) {
-    console.log('Datei ist der API unbekannt.');
+    logger.log('Datei ist der API unbekannt.');
     if (privacyTier === 'balanced' || privacyTier === 'max') {
-        console.log('Lade unbekannte Datei automatisch hoch...');
+        logger.log('Lade unbekannte Datei automatisch hoch...');
         try {
             const file_to_submit = new File([content_of_atachment], attachment.name, { type: fileType || 'application/octet-stream' });
             const formData = new FormData();
@@ -766,8 +834,7 @@ async function handle_unknown_attachment(attachment, content_of_atachment, local
             formData.append('file', file_to_submit);
 
             const uploadOptions = getHybridAnalysisOptions('POST', formData);
-            uploadOptions.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
-            const uploadResponse = await fetch(uploadOptions.url, uploadOptions);
+            const uploadResponse = await globalThis.apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/file', uploadOptions, 60000);
             if (uploadResponse.status === 200 || uploadResponse.status === 201) {
                 const uploadData = await uploadResponse.json();
                 return {
@@ -788,7 +855,7 @@ async function handle_unknown_attachment(attachment, content_of_atachment, local
         }
     }
 
-    console.log('Speichere Metadaten für manuellen Upload.');
+    logger.log('Speichere Metadaten für manuellen Upload.');
     return {
         hybrid_data: {
             submission_id: 'PENDING_UPLOAD',
@@ -809,7 +876,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
   }
 
   const results = await Promise.all(attachments.map(async (attachment) => {
-    console.log(`Prüfe Anhang: ${attachment.name} (${attachment.contentType}, ${attachment.size} bytes)`);
+    logger.log(`Prüfe Anhang (${attachment.contentType}, ${attachment.size} bytes)`);
 
     let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
 
@@ -822,17 +889,17 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
       case 'application/json':
       case 'application/xml':
       case 'application/xhtml+xml':
-        console.log(`Überspringe Datei vom Typ ${attachment.contentType}`);
+        logger.log(`Überspringe Datei vom Typ ${attachment.contentType}`);
         return null;
 
       default:
-        console.log(`Berechne lokalen Hash für Datei | Typ: ${attachment.contentType}`);
+        logger.log(`Berechne lokalen Hash für Datei | Typ: ${attachment.contentType}`);
 
         try {
             const content_of_atachment = file.slice();
             const arrayBuffer = await content_of_atachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
-            console.log("Lokaler SHA-256:", local_hash);
+            logger.log('Lokaler SHA-256 berechnet (Hash nicht geloggt).');
 
             let virustotal_stats = null;
             if (apikey_virustotal) {
@@ -840,7 +907,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
             }
 
             if (alwaysManual) {
-                console.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
+                logger.log('Immer manuell scannen ist aktiv. Speichere Metadaten für manuellen Hash-Check.');
                 return {
                     hybrid_data: {
                         submission_id: 'MANUAL_CHECK',
@@ -856,13 +923,11 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
 
             // First check if it exists using hash
             const optionsCheck = getHybridAnalysisOptions('GET');
-            optionsCheck.url = 'https://hybrid-analysis.com/api/v2/overview/' + local_hash;
-
-            const responseCheck = await fetch(optionsCheck.url, optionsCheck);
+            const responseCheck = await globalThis.apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/overview/' + local_hash, optionsCheck);
 
             if (responseCheck.status === 200) {
                 const json_data = await responseCheck.json();
-                console.log('Datei ist der API bereits bekannt.');
+                logger.log('Datei ist der API bereits bekannt.');
                 return {
                     hybrid_data: {
                         submission_id: json_data.submission_id || 'N/A',
@@ -937,7 +1002,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         }
         return recordToSave;
       });
-      console.log('Batch-Daten erfolgreich in DB gespeichert.');
+      logger.log('Batch-Daten erfolgreich in DB gespeichert.');
     }
   } catch (error) {
     console.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
@@ -1023,7 +1088,7 @@ async function indexedDB_save_links_to_db(message, urls) {
         }
         return recordToSave;
       });
-      console.log('URLs erfolgreich in DB gespeichert.');
+      logger.log('URLs erfolgreich in DB gespeichert.');
     }
   } catch (error) {
     console.error('Fehler bei der URL-Speicherung in der Datenbank:', error);
@@ -1108,17 +1173,15 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                     return;
                 }
             } catch (e) {
-                console.log("Fehler bei Time-of-Click Live-Scan:", e);
+                logger.log("Fehler bei Time-of-Click Live-Scan:", e);
             }
         }
 
         if (linkObj) {
             if (linkObj.hybrid_sha256 && apikey_hybridanalysis) {
                 const overviewOptions = getHybridAnalysisOptions('GET');
-                overviewOptions.url = 'https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256;
                 try {
-                    const response = await fetch(overviewOptions.url, overviewOptions);
-                    const json_data = await response.json();
+                    const { response, data: json_data } = await globalThis.apiGateway.fetchJson('https://hybrid-analysis.com/api/v2/overview/' + linkObj.hybrid_sha256, overviewOptions);
                     if (json_data.verdict) {
                         if (json_data.verdict === 'no specific threat') {
                             sendResponse({status: 'CLEAN'});
@@ -1267,13 +1330,12 @@ async function handleUrlScan(url, headerMessageId) {
     formBody.append('url', url);
 
     const options = getHybridAnalysisOptions('POST', formBody, true);
-    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url';
 
-    const response = await fetch(options.url, options);
+    const response = await globalThis.apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/url', options);
     const json_data = await response.json();
 
     if (response.status === 200 || response.status === 201) {
-        console.log('URL manuell an Hybrid Analysis gesendet.');
+        logger.log('URL manuell an Hybrid Analysis gesendet.');
 
         // Update DB record
         try {
@@ -1311,13 +1373,12 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
     formData.append('file', file_to_submit);
 
     const options = getHybridAnalysisOptions('POST', formData);
-    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/file';
 
-    const response = await fetch(options.url, options);
+    const response = await globalThis.apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/file', options, 60000);
     const json_data = await response.json();
 
     if (response.status === 200 || response.status === 201) {
-        console.log('Datei manuell an Hybrid Analysis gesendet.');
+        logger.log('Datei manuell an Hybrid Analysis gesendet.');
 
         // Update DB record
         try {
@@ -1353,7 +1414,7 @@ async function checkVirusTotal(hash, apikey) {
         }
     };
     try {
-        const response = await fetch(url, options);
+        const response = await globalThis.apiGateway.fetchWithTimeout(url, options);
         if (response.status === 200) {
             const data = await response.json();
             if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
@@ -1372,7 +1433,7 @@ async function checkURLhaus(domain, apikey) {
     try {
         const body = new URLSearchParams();
         body.append('host', domain);
-        const response = await fetch('https://urlhaus-api.abuse.ch/v1/host/', {
+        const { data } = await globalThis.apiGateway.fetchJson('https://urlhaus-api.abuse.ch/v1/host/', {
             method: 'POST',
             headers: {
                 'Auth-Key': apikey,
@@ -1380,7 +1441,6 @@ async function checkURLhaus(domain, apikey) {
             },
             body: body.toString()
         });
-        const data = await response.json();
         if (data.query_status === 'ok' && data.url_count > 0) {
             return true;
         }
@@ -1394,7 +1454,7 @@ async function checkUrlscanIo(url, apikey) {
     if (!apikey) return null;
     try {
         // Start Scan
-        const scanRes = await fetch('https://urlscan.io/api/v1/scan/', {
+        const scanRes = await globalThis.apiGateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/', {
             method: 'POST',
             headers: {
                 'API-Key': apikey,
@@ -1404,7 +1464,7 @@ async function checkUrlscanIo(url, apikey) {
         });
 
         if (scanRes.status === 400) {
-           console.log("urlscan.io API Error 400 (e.g. Domain not resolvable)", await scanRes.json());
+           logger.log("urlscan.io API Error 400 (e.g. Domain not resolvable)", await scanRes.json());
            return { status: 'ERROR', details: 'Domain not resolvable' };
         }
 
@@ -1425,7 +1485,7 @@ async function checkUrlscanIo(url, apikey) {
             elapsed += waitTime;
             waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
 
-            const resultRes = await fetch(`https://urlscan.io/api/v1/result/${uuid}/`);
+            const resultRes = await globalThis.apiGateway.fetchWithTimeout(`https://urlscan.io/api/v1/result/${uuid}/`);
             if (resultRes.status === 200) {
                 const resultData = await resultRes.json();
 
