@@ -1,3 +1,4 @@
+'use strict';
 // Event-Listener für das Laden der Seite
 document.addEventListener('DOMContentLoaded', function() {
     // Abrufen der gespeicherten Einstellung
@@ -20,6 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('autoScanLinks').checked = result.autoScanLinks || false;
       // Default für timeOfClickProtection ist true
       document.getElementById('timeOfClickProtection').checked = result.timeOfClickProtection !== undefined ? result.timeOfClickProtection : true;
+      document.getElementById('debugLogging').checked = !!result.debugLogging;
       document.getElementById('ipReputationProvider').value = result.ipReputationProvider || "none";
       document.getElementById('ipReputationApiKey').value = result.ipReputationApiKey || "";
     });
@@ -32,6 +34,19 @@ document.addEventListener('DOMContentLoaded', function() {
     saveBtn.textContent = 'Wird gespeichert...';
 
     let mySetting = document.getElementById('apikey').value.trim().replace(/\r|\n/g, '');
+
+    // Validierung (Aufgabe 1.3): Hybrid-Analysis-Key muss 64 Hex-Zeichen haben
+    if (mySetting && !/^[0-9a-fA-F]{64}$/.test(mySetting)) {
+      let statusSpanErr = document.getElementById('saveStatus');
+      statusSpanErr.classList.remove('text-success');
+      statusSpanErr.classList.add('text-danger');
+      statusSpanErr.textContent = 'Hybrid-Analysis-API-Key hat ein ungültiges Format (erwartet: 64 Hex-Zeichen).';
+      statusSpanErr.style.display = 'inline';
+      saveBtn.disabled = false;
+      saveBtn.removeAttribute('aria-busy');
+      saveBtn.textContent = 'Speichern';
+      return;
+    }
     let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
     let urlscanSetting = document.getElementById('urlscanApikey').value.trim().replace(/\r|\n/g, '');
     let virustotalSetting = document.getElementById('virustotalApikey').value.trim().replace(/\r|\n/g, '');
@@ -49,6 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let alwaysManualSetting = document.getElementById('alwaysManual').checked;
     let autoScanLinksSetting = document.getElementById('autoScanLinks').checked;
     let timeOfClickProtectionSetting = document.getElementById('timeOfClickProtection').checked;
+    let debugLoggingSetting = document.getElementById('debugLogging').checked;
     browser.storage.local.set({
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
@@ -61,7 +77,8 @@ document.addEventListener('DOMContentLoaded', function() {
         autoScanLinks: autoScanLinksSetting,
         timeOfClickProtection: timeOfClickProtectionSetting,
         ipReputationProvider: ipReputationProviderSetting,
-        ipReputationApiKey: ipReputationApiKeySetting
+        ipReputationApiKey: ipReputationApiKeySetting,
+        debugLogging: debugLoggingSetting
     }).then(() => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.style.display = 'inline';

@@ -1,3 +1,4 @@
+'use strict';
 class DatabaseDAO {
     constructor(dbName = "thunderbird_av", version = 3) {
         this.dbName = dbName;

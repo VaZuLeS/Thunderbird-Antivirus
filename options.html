@@ -118,6 +118,14 @@
         <small id="ipReputationHelp">Einen kostenlosen API-Schlüssel erhalten Sie unter <a href="https://www.abuseipdb.com/" target="_blank" rel="noopener noreferrer" aria-label="AbuseIPDB (öffnet in einem neuen Tab)">AbuseIPDB <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> (1.000 Abfragen/Tag) oder <a href="https://www.virustotal.com/gui/join-us" target="_blank" rel="noopener noreferrer" aria-label="VirusTotal (öffnet in einem neuen Tab)">VirusTotal <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> (500 Abfragen/Tag).</small>
     </div>
 
+    <div class="mb-3">
+        <input type="checkbox" id="debugLogging">
+        <label for="debugLogging" style="display: inline; margin-bottom: 0;">Debug-Logging aktivieren (nur für Fehleranalyse einschalten)</label>
+        <br><small id="debugLoggingHelp">Aus Sicherheitsgründen deaktiviert; es werden niemals API-Schlüssel, Datei-Hashes oder E-Mail-Inhalte geloggt.</small>
+    </div>
+
+    <p class="text-info"><strong>Hinweis zur Aufbewahrung der API-Schlüssel:</strong> Die Schlüssel werden lokal im Erweiterungsprofil (Klartext) gespeichert. Nutzen Sie möglichst Schlüssel mit minimierten Rechten und widerrufen Sie sie bei Geräteverlust. Bewahren Sie Backup-Kopien sicher (z.&nbsp;B. im Passwort-Manager) auf.</p>
+
     <br>
     <strong>Bitte nicht vergessen zu speichern.</strong>
     <button id="save" class="btn-primary mt-2">Speichern</button>

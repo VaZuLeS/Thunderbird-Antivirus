@@ -1,3 +1,23 @@
+'use strict';
+
+// Popup-seitiger, schaltbarer Logger (Aufgabe 2.2): Debug nur bei aktivem debugLogging.
+let debugLogging = false;
+const logger = {
+    log: (...args) => { if (debugLogging) console.log(...args); },
+    warn: (...args) => { if (debugLogging) console.warn(...args); },
+    error: (...args) => console.error(...args)
+};
+try {
+    browser.storage.local.get('debugLogging').then(r => {
+        if (r) debugLogging = !!r.debugLogging;
+    });
+} catch (e) { /* Testumgebung ohne browser-API */ }
+
+// Zentrales Gateway für alle Netzwerkanfragen des Popups (Aufgabe 1.2).
+const popupGateway = (typeof globalThis.apiGateway !== 'undefined')
+    ? globalThis.apiGateway
+    : new ApiGateway({ virustotal: { maxRequests: 4, windowMs: 60000 } });
+
 function escapeHTML(str) {
     if (!str) return '';
     return String(str).replace(/[&<>"']/g, function(match) {
@@ -15,11 +35,15 @@ function escapeHTML(str) {
 let apikey_hybridanalysis;
 
 (async () => {
-let result = await browser.storage.local.get('apikey');
+let result = await browser.storage.local.get(['apikey', 'debugLogging']);
+if (result.debugLogging) debugLogging = true;
 apikey_hybridanalysis = result.apikey;
 
+let container = document.getElementById('hybrid_analysis_api_content');
+if (container) container.removeAttribute('aria-busy');
+
 if (!apikey_hybridanalysis) {
-    let container = document.getElementById('hybrid_analysis_api_content');
+    if (container) {
     container.textContent = '';
     let alertDiv = document.createElement('div');
     alertDiv.className = 'alert-error';
@@ -29,6 +53,21 @@ if (!apikey_hybridanalysis) {
     alertDiv.appendChild(strong);
     alertDiv.appendChild(document.createTextNode(' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.'));
     container.appendChild(alertDiv);
+    return;
+    }
+    return;
+}
+
+// Format-Validierung des Keys (Aufgabe 1.3): verständliche Meldung statt stummer API-Fehler
+if (!/^[0-9a-fA-F]{64}$/.test(String(apikey_hybridanalysis).trim())) {
+    if (container) {
+        container.textContent = '';
+        let fmtDiv = document.createElement('div');
+        fmtDiv.className = 'alert-error';
+        fmtDiv.setAttribute('role', 'alert');
+        fmtDiv.textContent = 'Der gespeicherte Hybrid-Analysis-API-Key hat ein unerwartetes Format (erwartet: 64 Hex-Zeichen). Bitte Schlüssel in den Einstellungen prüfen.';
+        container.appendChild(fmtDiv);
+    }
     return;
 }
 
@@ -41,7 +80,7 @@ let tabs = await browser.tabs.query({ active: true, currentWindow: true });
 // Die zurückgegebene Nachricht ist ein MessageHeader-Objekt mit den relevantesten
 // Informationen.
 let message = await browser.messageDisplay.getDisplayedMessage(tabs[0].id);
-console.log(message.headerMessageId);
+logger.log('Popup für aktive Nachricht geladen (ID nicht geloggt).');
 
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
@@ -141,13 +180,16 @@ try {
     };
 
     openRequest.onerror = function(e) {
-        console.log("Kein Hash/Anhang gefunden.");
+        logger.log("Kein Hash/Anhang gefunden.");
         let p2 = document.createElement('p'); p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.'; document.getElementById('hybrid_analysis_api_content').appendChild(p2);
     }
 } catch (error) {
-    console.log('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
+    logger.error('Fehler beim Abrufen der Analyseergebnisse aus der Datenbank:', error);
 }
-})();
+})().catch(error => {
+    // Die Initialisierung darf das Popup nicht mit einem unhandled rejection crashen.
+    logger.error('Initialisierung des Popups fehlgeschlagen:', error);
+});
 
 function createEl(tag, className = '', textContent = '') {
     const el = document.createElement(tag);
@@ -358,13 +400,12 @@ function renderReport({ json_data, attachmentName, hybrid_sha, messageId, partNa
             renderVirusTotalStats(virustotal_stats, card);
         }
 
-    if (virustotal_stats) {
-        renderVirusTotalStats(virustotal_stats, card);
+        renderScannerResults(json_data.scanners, card);
+        renderFileDetails(json_data, card);
+        renderActionButtons(hybrid_sha, attachmentName, card);
     }
 
-    renderScannerResults(json_data.scanners, card);
-    renderFileDetails(json_data, card);
-    renderActionButtons(hybrid_sha, attachmentName, card);
+    return card;
 }
 
 async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null) {
@@ -381,16 +422,13 @@ async function get_hybrid_report_by_sha256(hybrid_sha, attachmentName, messageId
 
     };
 
-    // Send the request and handle the response
+    // Send the request and handle the response (via zentrales ApiGateway)
     try {
-        const response = await fetch(options.url, options);
-        console.log(response);
-        const json_data = await response.json();
-        console.log(json_data);
+        const { response, data: json_data } = await popupGateway.fetchJson(options.url, options);
 
         if (response.status === 200) {
             let container = document.getElementById('hybrid_analysis_api_content');
-            let reportNode = renderReport(json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats);
+            const reportNode = renderReport({ json_data, attachmentName, hybrid_sha, messageId, partName, headerMessageId, virustotal_stats });
             container.appendChild(reportNode);
 
             let rescanBtn = document.getElementById(`btn-rescan-${hybrid_sha}`);
