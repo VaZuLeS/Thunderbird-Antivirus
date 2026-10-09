@@ -930,7 +930,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls) {
             const links = document.querySelectorAll('a[href^="http"]');
             links.forEach(link => {
                 link.title = "Protected by Thundy Time-of-Click";
-                link.style.borderBottom = "1px dashed #ff8c00";
+                link.style.borderBottom = "1px dashed #b26000";
             });
         });
     }
@@ -1103,30 +1103,49 @@ async function injectThreatBanner(tabId, threat) {
                         return fallback;
                     }
                 };
+                const dark = (() => {
+                    try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); }
+                    catch (e) { return false; }
+                })();
+                const fontStack = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+                const dangerFg = dark ? '#ffd9d9' : '#a30000';
+                const dangerBg = dark ? '#4a1c1c' : '#ffeeee';
+                const dangerBorder = dark ? '#ff6b6b' : '#cc0000';
+                const successFg = dark ? '#a8e6bd' : '#1b5e20';
+                const successBg = dark ? '#16351f' : '#e6ffe6';
+                const successBorder = dark ? '#4cc26c' : '#1b5e20';
+
                 if (score >= 50) {
                     // Sichere DOM-Manipulation ohne innerHTML
                     const banner = document.createElement('div');
                     banner.id = 'thundy-threat-banner';
-                    banner.style.backgroundColor = '#ffeeee';
-                    banner.style.border = '1px solid #ff0000';
-                    banner.style.color = '#ff0000';
-                    banner.style.padding = '10px';
+                    banner.setAttribute('role', 'alert');
+                    banner.style.backgroundColor = dangerBg;
+                    banner.style.border = '1px solid ' + dangerBorder;
+                    banner.style.borderLeft = '5px solid ' + dangerBorder;
+                    banner.style.color = dangerFg;
+                    banner.style.padding = '12px 14px';
                     banner.style.margin = '10px';
-                    banner.style.borderRadius = '4px';
-                    banner.style.fontWeight = 'bold';
-                    banner.style.fontFamily = 'Arial, sans-serif';
+                    banner.style.borderRadius = '6px';
+                    banner.style.fontWeight = '600';
+                    banner.style.fontFamily = fontStack;
+                    banner.style.fontSize = '14px';
+                    banner.style.lineHeight = '1.5';
+                    banner.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.2)';
                     banner.style.zIndex = '9999';
 
                     const title = document.createElement('div');
                     title.textContent = '🔴 ⚠️ ' + t('bannerThreatTitle', 'Thundy AV warning') +
                         ' (' + t('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
                     title.style.fontSize = '16px';
-                    title.style.marginBottom = '5px';
+                    title.style.fontWeight = '700';
+                    title.style.marginBottom = '6px';
                     banner.appendChild(title);
 
                     const reasonList = document.createElement('ul');
                     reasonList.style.margin = '0';
                     reasonList.style.paddingLeft = '20px';
+                    reasonList.style.fontWeight = '400';
                     reasonList.style.fontSize = '14px';
 
                     for (const reason of reasons) {
@@ -1140,16 +1159,17 @@ async function injectThreatBanner(tabId, threat) {
                 } else if (authStatus === 'pass') {
                     const badge = document.createElement('div');
                     badge.id = 'thundy-auth-badge';
+                    badge.setAttribute('role', 'status');
                     badge.style.display = 'inline-block';
-                    badge.style.backgroundColor = '#e6ffe6';
-                    badge.style.border = '1px solid #008000';
-                    badge.style.color = '#008000';
-                    badge.style.padding = '5px 10px';
+                    badge.style.backgroundColor = successBg;
+                    badge.style.border = '1px solid ' + successBorder;
+                    badge.style.color = successFg;
+                    badge.style.padding = '5px 12px';
                     badge.style.margin = '10px';
-                    badge.style.borderRadius = '20px';
-                    badge.style.fontWeight = 'bold';
-                    badge.style.fontFamily = 'Arial, sans-serif';
-                    badge.style.fontSize = '12px';
+                    badge.style.borderRadius = '999px';
+                    badge.style.fontWeight = '600';
+                    badge.style.fontFamily = fontStack;
+                    badge.style.fontSize = '12.5px';
                     badge.style.zIndex = '9999';
                     badge.textContent = '🟢 🛡️ ' + t('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
 
@@ -1237,26 +1257,56 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
         const existing = document.getElementById('thundy-optin-banner');
         if (existing) return;
 
+        // Design tokens for the injected banner. The message view has no access to
+        // theme.css, so the values mirror it and adapt to Thunderbird's theme.
+        const dark = (() => {
+          try { return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); }
+          catch (e) { return false; }
+        })();
+        const bannerBg = dark ? '#4a3a12' : '#fff8e1';
+        const bannerBorder = dark ? '#ffb84d' : '#ffcc80';
+        const bannerText = dark ? '#ffe8bf' : '#333333';
+        const buttonBg = dark ? '#1f6fb2' : '#005a9e';
+        const fontStack = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+
         const banner = document.createElement('div');
         banner.id = 'thundy-optin-banner';
-        banner.style.backgroundColor = '#fff8e1';
-        banner.style.border = '1px solid #ffcc80';
-        banner.style.color = '#333';
-        banner.style.padding = '8px';
+        banner.setAttribute('role', 'status');
+        banner.style.backgroundColor = bannerBg;
+        banner.style.border = '1px solid ' + bannerBorder;
+        banner.style.borderLeft = '4px solid ' + bannerBorder;
+        banner.style.color = bannerText;
+        banner.style.padding = '10px 12px';
         banner.style.margin = '8px';
-        banner.style.borderRadius = '4px';
-        banner.style.fontFamily = 'Arial, sans-serif';
+        banner.style.borderRadius = '6px';
+        banner.style.fontFamily = fontStack;
+        banner.style.fontSize = '14px';
+        banner.style.lineHeight = '1.5';
+        banner.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.15)';
         banner.style.zIndex = '9999';
 
         const text = document.createElement('span');
         text.textContent = t('bannerTitleOptIn', 'Thundy AV: real-time scanning is not enabled for this message.');
         banner.appendChild(text);
 
+        const styleButton = (btn) => {
+          btn.style.marginLeft = '10px';
+          btn.style.padding = '6px 12px';
+          btn.style.border = '1px solid transparent';
+          btn.style.borderRadius = '4px';
+          btn.style.backgroundColor = buttonBg;
+          btn.style.color = '#ffffff';
+          btn.style.fontFamily = fontStack;
+          btn.style.fontSize = '13px';
+          btn.style.fontWeight = '600';
+          btn.style.cursor = 'pointer';
+        };
+
         const createButton = (label, persist) => {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.textContent = label;
-          btn.style.marginLeft = '10px';
+          styleButton(btn);
           btn.addEventListener('click', async () => {
             const buttons = banner.querySelectorAll('button');
             buttons.forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
@@ -1313,8 +1363,10 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
 
         const note = document.createElement('div');
         note.id = 'thundy-optin-note';
-        note.style.fontSize = '12px';
+        note.style.fontSize = '12.5px';
         note.style.marginTop = '6px';
+        note.style.lineHeight = '1.5';
+        note.style.opacity = '0.9';
         note.textContent = t('bannerNoteOptIn', 'Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you gave your consent. See the add-on options.');
         if (!consentGiven) {
           note.textContent = t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.');
@@ -1330,7 +1382,7 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
           optionsButton.id = 'thundy-open-options';
           optionsButton.type = 'button';
           optionsButton.textContent = t('bannerOpenOptions', 'Open options');
-          optionsButton.style.marginLeft = '10px';
+          styleButton(optionsButton);
           optionsButton.setAttribute('aria-describedby', 'thundy-optin-note');
           optionsButton.addEventListener('click', () => browser.runtime.openOptionsPage());
           note.appendChild(optionsButton);

@@ -1,3 +1,12 @@
+## 2026-06-02 - Completed the design system: warn cards, sections and a sticky save bar
+**Learning:** `api.js` already rendered the consent notice with `class="card card-warn"`, but `theme.css` never defined `.card-warn` - the most important privacy hint looked like a plain info card and its warning accent was silently lost. In the same pass, the options page was a flat wall of ungrouped fields with its only save button at the very bottom of the page, so users had to scroll the whole page to persist a change.
+**Action:** (1) Always cross-check the classes that the JavaScript applies against the design system and add the missing component states (`.card-warn`, `.card-danger`, `.card-success`, `.badge`). (2) Group long settings pages into labelled `<section class="card">` blocks with `<h2>` headings instead of relying on `<hr>` separators. (3) Keep the primary save action reachable through a sticky `.action-bar`. (4) Mirror the tokens in the banners that are injected into the message view (they have no access to `theme.css`) and verify WCAG AA contrast in both light and dark themes.
+
+## 2026-06-02 - Honour prefers-reduced-motion for loading spinners
+**Learning:** The `aria-busy` loading spinner runs an infinite CSS animation. Users who ask for reduced motion via their OS still get a continuously rotating element.
+**Action:** When adding CSS animations to a design system, always ship a `@media (prefers-reduced-motion: reduce)` fallback that stops the animation and leaves a static, still readable indicator.
+
+
 ## 2024-05-30 - Required Form Fields and Helper Text Links
 **Learning:** The primary API key field lacked visual distinction as a required field and its instructional text wasn't programmatically linked for screen readers. Using `aria-describedby` to link helper paragraphs and adding a visible `*` enhances both clarity and screen reader usability.
 **Action:** Always verify that critical configuration inputs have explicit required indicators and that any preceding setup instructions are linked via `aria-describedby` during UX/accessibility reviews.

@@ -5,28 +5,35 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="script-src 'self';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thunderbird Security Antivirus aka Thundy AV</title>
+    <title>Thundy AV – E-Mail-Scanner</title>
     <link rel="stylesheet" href="theme.css">
     <style>
         body {
-            font-size: 14px;
-            margin: 10px;
             width: 600px;
         }
-        h1 {
-            font-size: 18px;
-        }
+
         #hybrid_analysis_api_content {
-            grid-column: 1 / -1;
-            margin-top: 15px;
+            margin-top: 10px;
         }
     </style>
 </head>
 
 <body>
-    <h1>Thunderbird Security Antivirus aka Thundy AV</h1>
-    <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer" aria-label="Alle Übertragungen zu Hybrid Analysis aufrufen (öffnet in einem neuen Tab)">Alle Übertragungen zu Hybrid Analysis aufrufen <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>
+    <header class="page-header">
+        <img src="img/icon-48px.png" alt="" width="32" height="32">
+        <div>
+            <h1 class="page-title">Thundy AV</h1>
+            <p class="page-subtitle">Thunderbird Security Antivirus – E-Mail-Scanner</p>
+        </div>
+    </header>
 
+    <p class="mt-2">
+        <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer"
+            aria-label="Alle Übertragungen zu Hybrid Analysis aufrufen (öffnet in einem neuen Tab)">Alle Übertragungen zu
+            Hybrid Analysis aufrufen <span aria-hidden="true">↗</span></a>
+    </p>
+
+    <h2>Nachricht</h2>
     <div class="grid-container">
         <div class="grid-header">Betreff:</div>
         <div id="subject" class="grid-content"></div>
@@ -34,12 +41,14 @@
         <div class="grid-header">Von:</div>
         <div id="from" class="grid-content"></div>
 
-        <div class="grid-header">MessageHeaderID:</div>
+        <div class="grid-header">Message-ID:</div>
         <div id="MessageHeaderID" class="grid-content"></div>
     </div>
 
     <div id="status_message" class="grid-content mt-2" style="font-weight: bold;" aria-live="polite" role="status"></div>
-    <div id="hybrid_analysis_api_content" class="grid-content mt-3"></div>
+
+    <h2>Analyseergebnisse</h2>
+    <div id="hybrid_analysis_api_content" class="grid-content"></div>
 
     <script src="db.js"></script>
     <script type="module" src="api.js"></script>

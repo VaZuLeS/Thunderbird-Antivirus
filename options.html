@@ -8,137 +8,218 @@
     <link rel="stylesheet" href="theme.css">
     <style>
         body {
-            font-size: 1.2em;
-            margin: 10px;
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 20px 14px 0;
         }
-        label {
-            display: block;
-            margin-bottom: 10px;
-            cursor: pointer;
+
+        .hint-required {
+            font-weight: 400;
+            color: var(--text-muted);
         }
     </style>
 </head>
 
 <body>
-    <h1>Thundy AV Einstellungen</h1>
-    <h3>Was ist Hybrid-Analysis.com?</h3>
-    Hybrid-Analysis.com ist ein kostenloser Malware-Analyse-Service für die Community. Mit diesem Service können Sie
-    Dateien zur detaillierten statischen und dynamischen Analyse einreichen.<br />
-    <br />
-    Die Webseite verwendet eine einzigartige Hybrid-Analyse-Technologie, um unbekannte Bedrohungen zu erkennen und
-    zu analysieren. Sie wird von der Falcon Sandbox von CrowdStrike angetrieben.<br />
-    <br />
-    Die Falcon Sandbox ist ein hochmodernes Malware-Analyse-Framework mit einer sehr agilen Architektur. Sie wird
-    derzeit von SOCs, CERTs, DFIR-Teams, IT-Sicherheitsforensiklabors, Forschern und Anbietern von Bedrohungsdaten
-    auf der ganzen Welt genutzt.<br />
-    <div id="apiKeyInstructions">
-        <h3>Installationshinweise zum API Schlüssel</h3>
-        Sie benötigen einen kostenlosen API Schlüssel von <a
-            href="https://www.hybrid-analysis.com/" target="_blank" rel="noopener noreferrer" aria-label="hybrid-analysis.com (öffnet in einem neuen Tab)">hybrid-analysis.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a><br />
-        Nach der Anmeldung finden Sie diesen API Schlüssel unter "Nickname" -> "Profil" -> "API KEY".<br />
-        Diesen API Schlüssel hier einfügen.<br />
+    <header class="page-header">
+        <img src="img/icon-48px.png" alt="" width="32" height="32">
+        <div>
+            <h1 class="page-title">Thundy AV Einstellungen</h1>
+            <p class="page-subtitle">E-Mail-Scanner für Thunderbird – Anhänge, Links und Absender prüfen</p>
+        </div>
+    </header>
+
+    <section class="section card">
+        <h2>Was ist Hybrid-Analysis.com?</h2>
+        <p>
+            Hybrid-Analysis.com ist ein kostenloser Malware-Analyse-Service für die Community. Mit diesem Service
+            können Sie Dateien zur detaillierten statischen und dynamischen Analyse einreichen.
+        </p>
+        <p>
+            Die Webseite verwendet eine einzigartige Hybrid-Analyse-Technologie, um unbekannte Bedrohungen zu erkennen
+            und zu analysieren. Sie wird von der Falcon Sandbox von CrowdStrike angetrieben.
+        </p>
+        <p>
+            Die Falcon Sandbox ist ein hochmodernes Malware-Analyse-Framework mit einer sehr agilen Architektur. Sie
+            wird derzeit von SOCs, CERTs, DFIR-Teams, IT-Sicherheitsforensiklabors, Forschern und Anbietern von
+            Bedrohungsdaten auf der ganzen Welt genutzt.
+        </p>
+    </section>
+
+    <section class="section card">
+        <h2>Externe Analyse &amp; API-Schlüssel</h2>
+
+        <div class="field field-inline">
+            <input type="checkbox" id="externalAnalysisConsent" aria-describedby="externalAnalysisConsentHelp">
+            <div>
+                <label for="externalAnalysisConsent"><strong>Externe Analyse erlauben (Datenübermittlung an
+                        Drittanbieter)</strong></label>
+                <small id="externalAnalysisConsentHelp">Ohne diese Zustimmung werden <strong>keine</strong> Hashes,
+                    Dateien, Links oder IP-Adressen an externe Dienste übertragen. Erst nach der Zustimmung können
+                    Anhänge, Links und Metadaten zur Analyse an Hybrid Analysis, VirusTotal, urlscan.io, URLhaus oder
+                    AbuseIPDB gesendet werden – abhängig von der Datenschutz-Stufe. Die Zustimmung kann jederzeit durch
+                    Deaktivieren dieser Option widerrufen werden. Details: <a
+                        href="https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html" target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Datenschutzerklärung (öffnet in einem neuen Tab)">Datenschutzerklärung <span
+                            aria-hidden="true">↗</span></a></small>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="apikey">API Schlüssel (Hybrid-Analysis) <span aria-hidden="true"
+                    class="text-danger">*</span> <span class="hint-required">– erforderlich</span></label>
+            <!-- Security: type="password", autocomplete="off", maxlength="255", spellcheck="false" enforce confidential masking, disable autofill caching, limit input length, and disable spellcheck data leakage -->
+            <input type="password" id="apikey" required aria-describedby="apiKeyInstructions" maxlength="255"
+                autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
+        </div>
+
+        <div id="apiKeyInstructions">
+            <h3>Installationshinweise zum API-Schlüssel</h3>
+            <p>Sie benötigen einen kostenlosen API-Schlüssel von <a href="https://www.hybrid-analysis.com/"
+                    target="_blank" rel="noopener noreferrer"
+                    aria-label="hybrid-analysis.com (öffnet in einem neuen Tab)">hybrid-analysis.com <span
+                        aria-hidden="true">↗</span></a>. Nach der Anmeldung finden Sie diesen unter
+                <em>„Nickname“ → „Profil“ → „API KEY“</em>. Den Schlüssel anschließend hier einfügen.
+            </p>
+        </div>
+    </section>
+
+    <section class="section card">
+        <h2>Datenschutz-Stufe</h2>
+        <div class="field">
+            <label for="privacyTier">Datenschutz-Stufe (Privacy Tier):</label>
+            <select id="privacyTier" aria-describedby="privacyTierHelp">
+                <option value="strict">Strikt (Standard: nur Hashes senden, kein Upload)</option>
+                <option value="balanced">Ausgewogen (Unbekannte Dateien hochladen, keine URLs)</option>
+                <option value="max">Maximaler Schutz (Alles hochladen inkl. URLs)</option>
+            </select>
+            <small id="privacyTierHelp">Bestimmt, wie viele Daten an die Analyse-Dienste gesendet werden. Wirkt nur,
+                wenn „Externe Analyse erlauben“ aktiviert ist.</small>
+        </div>
+    </section>
+
+    <section class="section card">
+        <h2>Weitere Analyse-Dienste</h2>
+
+        <div class="field">
+            <label for="urlhausApikey">URLhaus API-Schlüssel (optional für Echtzeit-Domain-Checks):</label>
+            <input type="password" id="urlhausApikey" aria-describedby="urlhausHelp" maxlength="255"
+                autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
+            <small id="urlhausHelp">Sie können einen kostenlosen API-Schlüssel unter <a
+                    href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer"
+                    aria-label="urlhaus.abuse.ch (öffnet in einem neuen Tab)">urlhaus.abuse.ch <span
+                        aria-hidden="true">↗</span></a> erhalten.</small>
+        </div>
+
+        <div class="field">
+            <label for="urlscanApikey">urlscan.io API-Schlüssel (Computer-Vision-Erkennung, z.B. gefälschter
+                Logins):</label>
+            <input type="password" id="urlscanApikey" aria-describedby="urlscanHelp" maxlength="255"
+                autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
+            <small id="urlscanHelp">Einen kostenlosen API-Schlüssel erhalten Sie unter <a
+                    href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer"
+                    aria-label="urlscan.io (öffnet in einem neuen Tab)">urlscan.io <span
+                        aria-hidden="true">↗</span></a>.</small>
+        </div>
+
+        <div class="field">
+            <label for="virustotalApikey">VirusTotal API-Schlüssel (optional für Datei-Scanner-Engines):</label>
+            <input type="password" id="virustotalApikey" aria-describedby="virustotalHelp" maxlength="255"
+                autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
+            <small id="virustotalHelp">Sie können einen kostenlosen API-Schlüssel unter <a
+                    href="https://www.virustotal.com/" target="_blank" rel="noopener noreferrer"
+                    aria-label="virustotal.com (öffnet in einem neuen Tab)">virustotal.com <span
+                        aria-hidden="true">↗</span></a> erhalten.</small>
+        </div>
+
+        <div class="field">
+            <label for="ipReputationProvider">IP-Reputation (Received-Header prüfen):</label>
+            <select id="ipReputationProvider" aria-describedby="ipReputationHelp">
+                <option value="none">Deaktiviert</option>
+                <option value="virustotal">VirusTotal (benötigt VirusTotal-API-Schlüssel)</option>
+                <option value="abuseipdb">AbuseIPDB (benötigt AbuseIPDB-API-Schlüssel)</option>
+            </select>
+            <label for="ipReputationApiKey">API-Schlüssel für IP-Reputation:</label>
+            <input type="password" id="ipReputationApiKey" aria-describedby="ipReputationHelp" maxlength="255"
+                autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
+            <small id="ipReputationHelp">Sendet öffentliche IP-Adressen aus den „Received“-Kopfzeilen der Nachricht an
+                den gewählten Dienst. Nur aktiv, wenn „Externe Analyse erlauben“ aktiviert ist.</small>
+        </div>
+    </section>
+
+
+    <section class="section card">
+        <h2>Scan-Verhalten</h2>
+
+        <div class="field field-inline">
+            <input type="checkbox" id="alwaysManual" aria-describedby="alwaysManualHelp">
+            <div>
+                <label for="alwaysManual">Immer manuell scannen (kein Auto-Upload)</label>
+                <small id="alwaysManualHelp">Verhindert den automatischen Upload von Anhängen, unabhängig von der
+                    gewählten Datenschutz-Stufe.</small>
+            </div>
+        </div>
+
+        <div class="field field-inline">
+            <input type="checkbox" id="autoScanLinks" aria-describedby="autoScanHelp">
+            <div>
+                <label for="autoScanLinks">Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)</label>
+                <small id="autoScanHelp">Wenn deaktiviert, werden Links erst im Moment des Klickens gescannt
+                    (Time-of-Click Protection).</small>
+            </div>
+        </div>
+
+        <div class="field field-inline">
+            <input type="checkbox" id="timeOfClickProtection" checked aria-describedby="tocHelp">
+            <div>
+                <label for="timeOfClickProtection">Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo
+                    bei Hover)</label>
+                <small id="tocHelp">Zeigt beim Überfahren von Links mit der Maus einen Hinweis an, dass die URL in
+                    Echtzeit geprüft wird.</small>
+            </div>
+        </div>
+    </section>
+
+    <section class="section card">
+        <h2>Listen</h2>
+
+        <div class="field">
+            <label for="customWhitelist">Whitelist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
+            <textarea id="customWhitelist" rows="3" style="width: 100%;"
+                placeholder="z.B. example.com, test@example.com" aria-describedby="whitelistHelp"
+                spellcheck="false"></textarea>
+            <small id="whitelistHelp">Tragen Sie hier vertrauenswürdige Domains oder E-Mail-Adressen ein, um diese vom
+                Scan auszuschließen.</small>
+        </div>
+
+        <div class="field">
+            <label for="customBlacklist">Blacklist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
+            <textarea id="customBlacklist" rows="3" style="width: 100%;"
+                placeholder="z.B. example.com, test@example.com" aria-describedby="blacklistHelp"
+                spellcheck="false"></textarea>
+            <small id="blacklistHelp">Tragen Sie hier blockierte Domains oder E-Mail-Adressen ein.</small>
+        </div>
+    </section>
+
+    <section class="section card">
+        <h2>Datenmanagement</h2>
+        <p>Hier können Sie den lokalen Cache leeren, um Speicherplatz freizugeben und alte Metadaten zu löschen.</p>
+        <button id="clearCache" class="btn-secondary" aria-describedby="clearCacheStatus">Cache leeren</button>
+        <span id="clearCacheStatus" class="text-success ml-2" style="display: none;" aria-live="polite"
+            role="status"></span>
+    </section>
+
+    <div class="action-bar">
+        <button id="save" class="btn-primary" aria-describedby="saveStatus">Speichern</button>
+        <span id="saveStatus" class="text-success" style="display: none;" aria-live="polite" role="status">Erfolgreich
+            gespeichert!</span>
+        <span class="text-muted">Änderungen werden erst nach dem Speichern übernommen.</span>
     </div>
-
-    <div class="mb-3 mt-3">
-        <input type="checkbox" id="externalAnalysisConsent" aria-describedby="externalAnalysisConsentHelp">
-        <label for="externalAnalysisConsent" style="display: inline; margin-bottom: 0;"><strong>Externe Analyse erlauben (Datenübermittlung an Drittanbieter)</strong></label>
-        <br><small id="externalAnalysisConsentHelp">Ohne diese Zustimmung werden <strong>keine</strong> Hashes, Dateien, Links oder IP-Adressen an externe Dienste übertragen. Erst nach der Zustimmung können Anhänge, Links und Metadaten zur Analyse an Hybrid Analysis, VirusTotal, urlscan.io, URLhaus oder AbuseIPDB gesendet werden – abhängig von der Datenschutz-Stufe. Die Zustimmung kann jederzeit durch Deaktivieren dieser Option widerrufen werden. Details: <a href="https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html" target="_blank" rel="noopener noreferrer" aria-label="Datenschutzerklärung (öffnet in einem neuen Tab)">Datenschutzerklärung <span aria-hidden="true" style="margin-left: 4px;">↗</span></a></small>
-    </div>
-
-    <div class="mb-3 mt-3">
-        <label for="apikey">API Schlüssel (Hybrid-Analysis): <span aria-hidden="true" class="text-danger">*</span></label>
-        <!-- Security: type="password", autocomplete="off", maxlength="255", spellcheck="false" enforce confidential masking, disable autofill caching, limit input length, and disable spellcheck data leakage -->
-        <input type="password" id="apikey" required aria-describedby="apiKeyInstructions" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-    </div>
-
-    <div class="mb-3">
-        <label for="urlhausApikey">URLhaus API Schlüssel (Optional für Echtzeit-Domain-Checks):</label>
-        <input type="password" id="urlhausApikey" aria-describedby="urlhausHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-        <br><small id="urlhausHelp">Sie können einen kostenlosen API Schlüssel unter <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer" aria-label="urlhaus.abuse.ch (öffnet in einem neuen Tab)">urlhaus.abuse.ch <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
-    </div>
-
-    <div class="mb-3">
-        <label for="urlscanApikey">urlscan.io API Schlüssel (Computer Vision Erkennung von z.B. gefälschten Logins):</label>
-        <input type="password" id="urlscanApikey" aria-describedby="urlscanHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-        <br><small id="urlscanHelp">Einen kostenlosen API Schlüssel erhalten Sie unter <a href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer" aria-label="urlscan.io (öffnet in einem neuen Tab)">urlscan.io <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>.</small>
-    </div>
-
-    <div class="mb-3">
-        <label for="virustotalApikey">VirusTotal API Schlüssel (Optional für Datei-Scanner-Engines):</label>
-        <input type="password" id="virustotalApikey" aria-describedby="virustotalHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-        <br><small id="virustotalHelp">Sie können einen kostenlosen API Schlüssel unter <a href="https://www.virustotal.com/" target="_blank" rel="noopener noreferrer" aria-label="virustotal.com (öffnet in einem neuen Tab)">virustotal.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
-    </div>
-
-    <div class="mb-3">
-        <label for="privacyTier">Datenschutz-Stufe (Privacy Tier):</label>
-        <select id="privacyTier" aria-describedby="privacyTierHelp">
-            <option value="strict">Strikt (Standard: nur Hashes senden, kein Upload)</option>
-            <option value="balanced">Ausgewogen (Unbekannte Dateien hochladen, keine URLs)</option>
-            <option value="max">Maximaler Schutz (Alles hochladen inkl. URLs)</option>
-        </select>
-        <br><small id="privacyTierHelp">Bestimmt, wie viele Daten an Hybrid Analysis gesendet werden. Wirkt nur, wenn „Externe Analyse erlauben“ aktiviert ist.</small>
-    </div>
-
-    <div class="mb-3">
-        <label for="ipReputationProvider">IP-Reputation (Received-Header prüfen):</label>
-        <select id="ipReputationProvider" aria-describedby="ipReputationHelp">
-            <option value="none">Deaktiviert</option>
-            <option value="virustotal">VirusTotal (benötigt VirusTotal-API-Schlüssel)</option>
-            <option value="abuseipdb">AbuseIPDB (benötigt AbuseIPDB-API-Schlüssel)</option>
-        </select>
-        <label for="ipReputationApiKey">API-Schlüssel für IP-Reputation:</label>
-        <input type="password" id="ipReputationApiKey" aria-describedby="ipReputationHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-        <br><small id="ipReputationHelp">Sendet öffentliche IP-Adressen aus den „Received“-Kopfzeilen der Nachricht an den gewählten Dienst. Nur aktiv, wenn „Externe Analyse erlauben“ aktiviert ist.</small>
-    </div>
-
-    <div class="mb-3">
-        <label for="customWhitelist">Whitelist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
-        <textarea id="customWhitelist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com" aria-describedby="whitelistHelp" spellcheck="false"></textarea>
-        <br><small id="whitelistHelp">Tragen Sie hier vertrauenswürdige Domains oder E-Mail-Adressen ein, um diese vom Scan auszuschließen.</small>
-    </div>
-
-    <div class="mb-3">
-        <label for="customBlacklist">Blacklist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
-        <textarea id="customBlacklist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com" aria-describedby="blacklistHelp" spellcheck="false"></textarea>
-        <br><small id="blacklistHelp">Tragen Sie hier blockierte Domains oder E-Mail-Adressen ein.</small>
-    </div>
-
-    <div class="mb-3">
-        <input type="checkbox" id="alwaysManual" aria-describedby="alwaysManualHelp">
-        <label for="alwaysManual" style="display: inline; margin-bottom: 0;">Immer manuell scannen (Kein Auto-Upload)</label>
-        <br><small id="alwaysManualHelp">Verhindert den automatischen Upload von Anhängen, unabhängig von der gewählten Datenschutz-Stufe.</small>
-    </div>
-
-    <div class="mb-3">
-        <input type="checkbox" id="autoScanLinks" aria-describedby="autoScanHelp">
-        <label for="autoScanLinks" style="display: inline; margin-bottom: 0;">Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)</label>
-        <br><small id="autoScanHelp">Wenn deaktiviert, werden Links erst im Moment des Klickens gescannt (Time-of-Click Protection).</small>
-    </div>
-
-    <div class="mb-3">
-        <input type="checkbox" id="timeOfClickProtection" checked aria-describedby="tocHelp">
-        <label for="timeOfClickProtection" style="display: inline; margin-bottom: 0;">Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo bei Hover)</label>
-        <br><small id="tocHelp">Zeigt beim Überfahren von Links mit der Maus einen Hinweis an, dass die URL in Echtzeit geprüft wird.</small>
-    </div>
-
-    <br><br>
-    <hr>
-
-    <br>
-    <strong>Bitte nicht vergessen zu speichern.</strong>
-    <button id="save" class="btn-primary mt-2" aria-describedby="saveStatus">Speichern</button>
-    <span id="saveStatus" class="text-success ml-2" style="display: none;" aria-live="polite" role="status">Erfolgreich gespeichert!</span>
-
-    <br><br>
-    <hr>
-
-    <h3>Datenmanagement</h3>
-    <p>Hier können Sie den lokalen Cache leeren, um Speicherplatz freizugeben und alte Metadaten zu löschen.</p>
-    <button id="clearCache" class="btn-primary mt-2" aria-describedby="clearCacheStatus">Cache leeren</button>
-    <span id="clearCacheStatus" class="text-success ml-2" style="display: none;" aria-live="polite" role="status"></span>
 
     <script src="db.js"></script>
     <script src="options.js"></script>
 </body>
 
 </html>
+
