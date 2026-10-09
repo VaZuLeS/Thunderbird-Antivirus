@@ -259,7 +259,9 @@ button[aria-busy="true"]::after,
 .card h2,
 .card h3 {
     margin-top: 0;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--card-border);
 }
 
 .card-info {
@@ -289,7 +291,7 @@ button[aria-busy="true"]::after,
     display: grid;
     grid-template-columns: minmax(110px, 150px) 1fr;
     gap: 8px 12px;
-    margin-top: 12px;
+    margin: 12px 0 0;
     background-color: var(--card-bg);
     padding: 12px 14px;
     border-radius: var(--radius-md);
@@ -297,11 +299,14 @@ button[aria-busy="true"]::after,
 }
 
 .grid-header {
+    margin: 0;
     font-weight: 600;
     color: var(--text-muted);
 }
 
 .grid-content {
+    min-width: 0;
+    margin: 0;
     overflow-wrap: anywhere;
     word-break: normal;
 }
@@ -442,6 +447,12 @@ label {
 .field > label {
     display: block;
     margin-bottom: 4px;
+}
+
+.field > input:not([type="checkbox"]):not([type="radio"]),
+.field > select,
+.field > textarea {
+    width: 100%;
 }
 
 .action-bar {
