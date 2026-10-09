@@ -8,7 +8,16 @@ for the add-on version in `manifest.json`. Releases are cut from tags in the Git
 
 ## [Unreleased]
 
-- Nothing yet.
+### Changed
+
+- **Überarbeitetes UI-Design:** vollständiges Design-System in `theme.css` (fehlende `.card-warn`-Variante
+  für den Zustimmungshinweis im Popup, Karten-Varianten, Formular- und Fokus-Stile, Sticky-Aktionsleiste,
+  `prefers-reduced-motion`, `box-sizing`-Reset sowie neue Radius-/Schatten-/Bewegungs-Tokens).
+- **Optionsseite:** Einstellungen sind in beschriftete Karten-Abschnitte mit Überschriften gruppiert; die
+  Speichern-Schaltfläche sitzt in einer immer erreichbaren Sticky-Leiste.
+- **Popup:** Kopfbereich mit Symbol, Abschnittsüberschriften und semantische Metadaten-Liste (`<dl>`).
+- **In den Nachrichtenbereich injizierte Banner:** WCAG-AA-konforme Kontrastfarben, Dark-Mode-Unterstützung
+  und einheitliche Schaltflächen-Optik.
 
 ## [1.6.2] – 2026-10-01
 
