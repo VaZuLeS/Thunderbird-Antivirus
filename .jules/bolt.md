@@ -29,3 +29,6 @@
 ## 2024-10-07 - Optimize evaluateAuthHeaders
 **Learning:** Adding a regex fast-path can actually make code slower if you still unconditionally allocate the string you were trying to avoid (e.g. `const headerStrLower = headerStr.toLowerCase();` in an `else` block). To properly optimize string parsing, you must avoid the allocation entirely on the happy path by using targeted regexes instead of lowercasing.
 **Action:** When adding a fast path to avoid `.toLowerCase()`, ensure that *all* branches that follow (including `else` and subsequent non-failing conditions) also avoid calling `.toLowerCase()`. Use individual regexes (e.g., `/spf=pass/i`) for those checks.
+## 2024-05-17 - Avoid string allocation for IP address parsing
+**Learning:** When parsing delimited numbers (like IP addresses) in performance-critical hot paths, using `parseInt` on extracted substrings incurs hidden overhead from string allocation and coercion.
+**Action:** Use a manual string iteration loop with `charCodeAt` (e.g., `val = val * 10 + (c - 48)`) to extract octets without allocating any intermediate string objects.

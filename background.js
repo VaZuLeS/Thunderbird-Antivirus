@@ -245,7 +245,7 @@ function getHybridAnalysisOptions(method, body = null, isUrl = false) {
 const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
 
 const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
-const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join('|') + ')(?![a-z0-9_äöüß])', 'g');
+const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join('|') + ')(?![a-z0-9_äöüß])', 'gi');
 const FAST_URGENCY_REGEX = new RegExp(URGENCY_WORDS.join('|'), 'i');
 
 
@@ -366,17 +366,26 @@ function extractPublicIPs(receivedHeaders) {
                 // ⚡ Bolt Optimization: Fast path out common loopbacks early before any parsing
                 if (ip === "127.0.0.1" || ip === "0.0.0.0") continue;
 
-                // ⚡ Bolt Optimization: parseInt ignores trailing non-digits (like '.'), avoiding the need to allocate a substring for the first block
-                const part1 = parseInt(ip, 10);
+                // ⚡ Bolt Optimization: Manual charCodeAt calculation avoids substring allocation entirely
+                let part1 = 0;
+                let idx = 0;
+                for (; idx < ip.length; idx++) {
+                    let c = ip.charCodeAt(idx);
+                    if (c === 46) break;
+                    part1 = part1 * 10 + (c - 48);
+                }
 
                 if (part1 === 10 || part1 === 127 || part1 === 0) {
                     continue;
                 }
 
-                // ⚡ Bolt Optimization: Use indexOf and substring instead of split to avoid allocating intermediate arrays for string parts
-                const dot1 = ip.indexOf('.');
-                const dot2 = ip.indexOf('.', dot1 + 1);
-                const part2 = parseInt(ip.substring(dot1 + 1, dot2), 10);
+                idx++;
+                let part2 = 0;
+                for (; idx < ip.length; idx++) {
+                    let c = ip.charCodeAt(idx);
+                    if (c === 46) break;
+                    part2 = part2 * 10 + (c - 48);
+                }
 
                 if (
                     (part1 === 192 && part2 === 168) ||
@@ -604,17 +613,16 @@ function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
 }
 
 function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
-    let textToAnalyze = subject + " " + messageText;
+    let mixedCaseText = subject + " " + messageText;
 
     // ⚡ Bolt Optimization: Fast path to avoid unconditionally allocating lowercased copy of large texts
-    if (FAST_URGENCY_REGEX.test(textToAnalyze)) {
-        textToAnalyze = textToAnalyze.toLowerCase();
+    if (FAST_URGENCY_REGEX.test(mixedCaseText)) {
         let foundUrgencyWords = [];
 
         let match;
         URGENCY_REGEX.lastIndex = 0;
-        while ((match = URGENCY_REGEX.exec(textToAnalyze)) !== null) {
-            let m = match[2];
+        while ((match = URGENCY_REGEX.exec(mixedCaseText)) !== null) {
+            let m = match[2].toLowerCase();
             // ⚡ Bolt Optimization: Replace O(N) array iteration with includes
             if (!foundUrgencyWords.includes(m)) {
                 foundUrgencyWords.push(m);
