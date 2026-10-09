@@ -558,20 +558,19 @@ function evaluateAuthHeaders(authHeaders, score, reasons) {
 
         // ⚡ Bolt Optimization: Fast-path to avoid unconditionally allocating lowercased copy of large texts
         if (AUTH_FAIL_REGEX.test(headerStr)) {
-            const headerStrLower = headerStr.toLowerCase();
             let fail = false;
 
-            if (headerStrLower.includes("spf=fail") || headerStrLower.includes("spf=softfail")) {
+            if (/spf=(?:fail|softfail)/i.test(headerStr)) {
                 score += 50;
                 reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
                 fail = true;
             }
-            if (headerStrLower.includes("dkim=fail")) {
+            if (/dkim=fail/i.test(headerStr)) {
                 score += 50;
                 reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
                 fail = true;
             }
-            if (headerStrLower.includes("dmarc=fail")) {
+            if (/dmarc=fail/i.test(headerStr)) {
                 score += 50;
                 reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
                 fail = true;
@@ -579,7 +578,7 @@ function evaluateAuthHeaders(authHeaders, score, reasons) {
 
             if (fail) {
                 authStatus = 'fail';
-            } else if (headerStrLower.includes("spf=pass") && headerStrLower.includes("dkim=pass") && headerStrLower.includes("dmarc=pass")) {
+            } else if (AUTH_PASS_REGEX_SPF.test(headerStr) && AUTH_PASS_REGEX_DKIM.test(headerStr) && AUTH_PASS_REGEX_DMARC.test(headerStr)) {
                 authStatus = 'pass';
             }
         } else if (AUTH_PASS_REGEX_SPF.test(headerStr) && AUTH_PASS_REGEX_DKIM.test(headerStr) && AUTH_PASS_REGEX_DMARC.test(headerStr)) {
