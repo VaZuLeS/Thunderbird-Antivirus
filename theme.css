@@ -29,12 +29,12 @@
     --color-success: #008000;
     --color-warning: #b26000;
     --color-danger: #cc0000;
-    --color-info: #0000ff;
+    --color-info: #005a9e;
 
     /* Alert / card accents */
     --alert-error-bg: #ffeeee;
     --alert-error-border: #cc0000;
-    --alert-info-border: #0000ff;
+    --alert-info-border: #005a9e;
     --alert-warn-bg: #fff8e1;
     --alert-warn-border: #b26000;
     --alert-success-bg: #eefaf1;
@@ -312,7 +312,7 @@ button[aria-busy="true"]::after,
 }
 
 /* --------------------------------------------------------------------------
-   Alerts & badges
+   Alerts
    -------------------------------------------------------------------------- */
 
 .alert-error {
@@ -322,40 +322,6 @@ button[aria-busy="true"]::after,
     background-color: var(--alert-error-bg);
     border-radius: var(--radius-sm);
     margin-bottom: 15px;
-}
-
-.badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border: 1px solid transparent;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    line-height: 1.4;
-}
-
-.badge-success {
-    background-color: var(--alert-success-bg);
-    border-color: var(--alert-success-border);
-    color: var(--color-success);
-}
-
-.badge-warn {
-    background-color: var(--alert-warn-bg);
-    border-color: var(--alert-warn-border);
-    color: var(--color-warning);
-}
-
-.badge-danger {
-    background-color: var(--alert-error-bg);
-    border-color: var(--alert-error-border);
-    color: var(--color-danger);
-}
-
-.badge-info {
-    background-color: var(--card-bg);
-    border-color: var(--alert-info-border);
-    color: var(--color-info);
 }
 
 /* --------------------------------------------------------------------------
