@@ -648,8 +648,14 @@ function evaluateBehavior(subject, messageText, isFirstCommunication, score, rea
 }
 
 function getMainDomain(domain) {
-    const match = domain.match(KNOWN_BRANDS_REGEX);
-    if (match) {
+    // ⚡ Bolt Optimization: Fast path for exact brand matches avoids RegExp execution
+    if (KNOWN_BRANDS_SET.has(domain)) {
+        return domain;
+    }
+
+    // ⚡ Bolt Optimization: Use exec instead of match to prevent full array allocation on miss
+    const match = KNOWN_BRANDS_REGEX.exec(domain);
+    if (match !== null) {
         return match[1].toLowerCase();
     }
 
