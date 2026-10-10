@@ -32,3 +32,6 @@
 ## 2024-05-17 - Avoid string allocation for IP address parsing
 **Learning:** When parsing delimited numbers (like IP addresses) in performance-critical hot paths, using `parseInt` on extracted substrings incurs hidden overhead from string allocation and coercion.
 **Action:** Use a manual string iteration loop with `charCodeAt` (e.g., `val = val * 10 + (c - 48)`) to extract octets without allocating any intermediate string objects.
+## 2024-10-10 - Fast-path Set lookup before Regex execution
+**Learning:** When evaluating domains against a list of known brands using a Regex, parsing identical exact matches (like `paypal.com`) through the Regex engine is inefficient. Additionally, calling `.match()` on a string forces array allocation.
+**Action:** Add an O(1) early return `Set.has()` check for exact matches before invoking the Regex engine, and use `.exec()` instead of `.match()` to avoid allocating full match arrays on a miss.
