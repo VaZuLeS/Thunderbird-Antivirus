@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.19.0 — 2026-10-13
+
+- Bundle English, German, French, Spanish, Italian and Polish for options, popup, warnings, errors and local privacy information.
+- Require message/sender authorization for automatic external scans, enforce the URL privacy tier, and store consent only after the combined permission request succeeds.
+- Intercept link navigation with an accessible result dialog, including middle-click and keyboard handling.
+- Enable local checks without Hybrid Analysis credentials and process text/HTML attachments and MIME part arrays.
+- Add expiring reputation caches, bounded provider/attachment concurrency, safe GET retries, transaction-aware persistence and result retention.
+- Bundle a pinned Public Suffix List, require configured trusted authentication servers, separate risk/sanitizer modules and expand CI to every test and package check.
+- Pending: real Thunderbird 140 ESR/current-client verification and screenshots before release.
+
 All notable changes to this project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project uses semantic versioning

@@ -1,3 +1,5 @@
+> Update für den Entwicklungskandidaten 1.19.0: vollständige UI-Sprachen EN/DE/FR/ES/IT/PL; lokale Prüfungen ohne API-Schlüssel; externe Analysen nur mit Zustimmung und Nachrichten-/Absenderfreigabe. Diese Angaben sind für die nächste Einreichung vorbereitet. Der Kandidat wurde noch nicht eingereicht; historische Angaben zu 1.6.2 unten bleiben Release-Referenzen.
+
 # Store-Listing — Thundy AV (final copy package)
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird

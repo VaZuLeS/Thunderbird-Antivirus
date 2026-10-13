@@ -10,10 +10,7 @@ describe('ApiGateway module', () => {
     it('should fetch and return JSON correctly', async () => {
         let fetchCalledWith = null;
         context = {
-            AbortController: class AbortController {
-                constructor() { this.signal = {}; }
-                abort() {}
-            },
+            AbortController: globalThis.AbortController,
             setTimeout: setTimeout,
             clearTimeout: clearTimeout,
             fetch: async (url, options) => {
@@ -26,6 +23,7 @@ describe('ApiGateway module', () => {
             console: { log: () => {}, warn: () => {}, error: () => {} }
         };
 
+        context.URL = URL;
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
         vm.runInContext(code, context);
@@ -44,10 +42,7 @@ describe('ApiGateway module', () => {
     it('should catch 429 rate limit warning but return response', async () => {
         let warnMsg = null;
         context = {
-            AbortController: class AbortController {
-                constructor() { this.signal = {}; }
-                abort() {}
-            },
+            AbortController: globalThis.AbortController,
             setTimeout: setTimeout,
             clearTimeout: clearTimeout,
             fetch: async () => {
@@ -63,6 +58,7 @@ describe('ApiGateway module', () => {
             }
         };
 
+        context.URL = URL;
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
         vm.runInContext(code, context);
@@ -71,17 +67,14 @@ describe('ApiGateway module', () => {
         const apiGateway = context.apiGateway;
         const result = await apiGateway.fetchJson('https://example.com/api');
 
-        assert.ok(warnMsg.includes('Rate limit exceeded'));
+        assert.ok(warnMsg.includes('rate limit exceeded'));
         assert.strictEqual(result.data.error, 'Too Many Requests');
         assert.strictEqual(result.response.status, 429);
     });
 
     it('should throw timeout error', async () => {
         context = {
-            AbortController: class AbortController {
-                constructor() { this.signal = {}; }
-                abort() {}
-            },
+            AbortController: globalThis.AbortController,
             setTimeout: setTimeout,
             clearTimeout: clearTimeout,
             fetch: async () => {
@@ -92,6 +85,7 @@ describe('ApiGateway module', () => {
             console: { log: () => {}, warn: () => {}, error: () => {} }
         };
 
+        context.URL = URL;
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
         vm.runInContext(code, context);
@@ -112,10 +106,7 @@ describe('ApiGateway module', () => {
     it('should bubble up generic network errors', async () => {
         let loggedError = null;
         context = {
-            AbortController: class AbortController {
-                constructor() { this.signal = {}; }
-                abort() {}
-            },
+            AbortController: globalThis.AbortController,
             setTimeout: setTimeout,
             clearTimeout: clearTimeout,
             fetch: async () => {
@@ -129,6 +120,7 @@ describe('ApiGateway module', () => {
             Error: Error
         };
 
+        context.URL = URL;
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
         vm.runInContext(code, context);
@@ -148,10 +140,7 @@ describe('ApiGateway module', () => {
 
     it('should throw on invalid JSON', async () => {
         context = {
-            AbortController: class AbortController {
-                constructor() { this.signal = {}; }
-                abort() {}
-            },
+            AbortController: globalThis.AbortController,
             setTimeout: setTimeout,
             clearTimeout: clearTimeout,
             fetch: async () => {
@@ -164,6 +153,7 @@ describe('ApiGateway module', () => {
             Error: Error
         };
 
+        context.URL = URL;
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
         vm.runInContext(code, context);

@@ -9,7 +9,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DEFAULT_LOCALES = ['en', 'de'];
+const DEFAULT_LOCALES = ['en', 'de', 'fr', 'es', 'it', 'pl'];
 const REQUIRED_MDM_KEYS = ['gecko'];
 const FORBIDDEN_PERMISSIONS = ['webRequest', '<all_urls>', 'management'];
 const MV3_UNSUPPORTED_KEYS = ['content_scripts', 'user_scripts', 'web_accessible_resources'];
@@ -246,7 +246,7 @@ function runChecks(rootDir) {
   //   * messageDisplayScripts was replaced by scripting.messageDisplay.
   // The lint allow-list deliberately does not hide them (they used to be listed
   // as "known false positives", which would mask this exact regression).
-  const runtimeFiles = ['background.js', 'api.js', 'options.js', 'db.js', 'api_gateway.js'];
+  const runtimeFiles = ['background.js', 'api.js', 'options.js', 'db.js', 'api_gateway.js', 'i18n.js', 'runtime.js', 'risk.js', 'sanitize.js', 'scan_policy.js', 'providers.js', 'message_ui.js'];
   const removedApiPatterns = [
     [/messageDisplay\.onMessageDisplayed/g, 'messageDisplay.onMessageDisplayed is removed in MV3 - use onMessagesDisplayed'],
     [/messageDisplay\.getDisplayedMessage\s*\(/g, 'messageDisplay.getDisplayedMessage() is removed in MV3 - use getDisplayedMessages()'],

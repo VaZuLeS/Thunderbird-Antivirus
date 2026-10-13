@@ -1,0 +1,51 @@
+name: Publish GitHub release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Validate tag and release notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version="$(node -p 'require("./manifest.json").version')"
+          test "$RELEASE_TAG" = "v$version"
+          test -f "docs/releases/$version.md"
+      - run: npm ci
+      - name: Verify source, tests, lint and package
+        run: npm run check
+      - name: Prepare unsigned XPI and checksums
+        run: |
+          version="$(node -p 'require("./manifest.json").version')"
+          cp "build/thundy_av_email_scanner_for_thunderbird-$version.zip" "build/thundy-av-$version.xpi"
+          cd build
+          sha256sum "thundy-av-$version.xpi" > SHA256SUMS.txt
+      - name: Publish release with validated assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version="$(node -p 'require("./manifest.json").version')"
+          gh release create "$RELEASE_TAG" \
+            "build/thundy-av-$version.xpi" build/SHA256SUMS.txt \
+            --verify-tag --latest \
+            --title "Thundy AV $version — six languages and consent improvements" \
+            --notes-file "docs/releases/$version.md"

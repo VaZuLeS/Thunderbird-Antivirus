@@ -19,6 +19,8 @@ const KNOWN_THUNDERBIRD_FALSE_POSITIVES = [
   'messageDisplay.getDisplayedMessages',
   'messageDisplay.onMessagesDisplayed',
   'messages.getFull',
+  // Thunderbird messages.get(messageId) retrieves the authoritative MessageHeader.
+  'messages.get is not supported',
   'messages.listAttachments',
   'messages.getAttachmentFile',
   'messages.query',

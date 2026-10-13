@@ -13,14 +13,14 @@ minimal notwendigen Daten an externe Analysedienste.
 | Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.6.2 – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.19.0 – GitHub-Release (unsigniert) – siehe [CHANGELOG.md](CHANGELOG.md) |
 | Lizenz | MIT – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.6.2 |
+| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.0 |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
-| Sprachen | Manifest-Strings und Banner lokalisiert (Englisch, Deutsch – `_locales/`); Options- und Popup-Oberfläche derzeit nur auf Deutsch |
+| Sprachen | Englisch, Deutsch, Französisch, Spanisch, Italienisch und Polnisch; vollständige lokale UI-Kataloge mit englischem Fallback |
 
 ## Was das Add-on macht
 
@@ -156,15 +156,16 @@ npm run store-gate                                    # Submission-Gate (vom Mai
   halten Tests, `tools/`, `testdata/`, `docs/`, `scripts/`, `examples/` und Lockfiles aus dem Paket, und
   `scripts/verify-package.js` prüft das Ergebnis. (`web-ext` liest keine `.webextignore`-Datei; `web-ext-config.mjs`
   ist die einzige Quelle.)
-- Die CI (`.github/workflows/ci.yml`) läuft bei jedem Push und Pull Request mit Node 22: `npm ci`,
-  `node ./scripts/pre-submit-checks.js`, `node --test background.test.js` und `npx web-ext lint`. Ausführlichere
-  Workflow-Definitionen (vollständiges `npm test`, Lint-Filter für die bekannten Thunderbird-Fehlerpositive,
-  XPI-Build mit Paketprüfung und ein manueller Signier-Job) liegen in [docs/ci/](docs/ci/README.md); sie konnten in
-  dieser Umgebung nicht unter `.github/workflows/` eingereicht werden, weil dem Token die nötige
-  `workflows`-Berechtigung fehlt.
+- Die aktive CI (`.github/workflows/ci.yml`) prüft bei Push und Pull Request mit Node 22: Vorprüfung, englischen Fallback, mitgelieferte Domain-Daten, alle Tests, gefilterten Lint und das gebaute Paket.
 - Der manuelle Live-Test in Thunderbird 140 ESR ist in [docs/live_test_protocol.md](docs/live_test_protocol.md)
   beschrieben.
 - Ausführlicher: [docs/quickstart.md](docs/quickstart.md).
+
+## Version 1.19.0
+
+Die Umsetzung steht im [Optimierungsplan](docs/AUFGABENPLAN_OPTIMIERUNG_I18N.md). Externe Scans benötigen globale Zustimmung und eine Nachrichtenaktion oder Absenderfreigabe. Lokale Prüfungen funktionieren ohne API-Schlüssel; vollständige URL-Übermittlungen verlangen die Stufe Maximal. Absenderfreigaben sind in den Einstellungen bearbeitbar. Reputation-Caches verfallen nach 15 Minuten; gespeicherte Ergebnisse sind auf 1.000 Nachrichten begrenzt und werden beim Datenbankstart anhand einer Aufbewahrungsfrist von 30 Tagen bereinigt.
+
+Der [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.0) enthält ein unsigniertes XPI. Reale Thunderbird-Tests und Screenshots sind noch erforderlich; dafür gibt es das [Protokoll für 1.19.0](docs/live_test_1_19_0.md).
 
 ## Berechtigungen im Überblick
 
@@ -220,7 +221,7 @@ und nur an Anbieter, denen Sie den Zugriff gewährt haben.
 - **Noch keine echten Store-Screenshots.** In `docs/screenshots/` liegen nur SVG-Platzhalter; für das Store-Listing
   müssen echte Screenshots erstellt werden.
 - **Noch nicht im Add-ons-Store eingereicht** – es gibt kein öffentliches Listing und keine Store-URL.
-- Options- und Popup-Oberfläche gibt es derzeit nur auf Deutsch; Manifest-Strings und Banner sind lokalisiert.
+- Popup, Einstellungen, Benachrichtigungen und lokale Datenschutzhinweise werden in sechs Sprachen mitgeliefert.
 - In der Standard-Stufe `strict` werden unbekannte Anhänge gar nicht hochgeladen – weder automatisch noch im Popup
   (dort sind manueller Upload und manueller URL-Scan deaktiviert und zeigen einen Hinweis). Dafür in den Einstellungen
   auf `balanced` (Anhänge) oder `max` (Anhänge und URLs) umstellen.

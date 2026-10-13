@@ -1,95 +1,12 @@
 <!DOCTYPE html>
 <html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thundy AV – Email Scanner for Thunderbird</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
-        header { text-align: center; padding: 40px 0; border-bottom: 1px solid #eee; }
-        h1 { margin-bottom: 10px; color: #0a66c2; }
-        .btn { display: inline-block; background: #009688; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 4px; }
-        .btn:hover { background: #00796b; }
-        section { margin: 40px 0; }
-        code { background: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
-        .step { background: #f9f9f9; padding: 15px; border-left: 4px solid #009688; margin-bottom: 10px; }
-        .note { background: #fff8e1; border-left: 4px solid #ffcc80; padding: 15px; }
-        footer { text-align: center; font-size: 0.8em; color: #777; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; }
-        footer a { margin: 0 6px; }
-    </style>
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Lokale E-Mail-Prüfung mit optionaler externer Analyse"><title>Thundy AV – E-Mail-Scanner für Thunderbird – 1.19.0</title><style>body{font-family:system-ui,sans-serif;line-height:1.6;color:#263238;max-width:900px;margin:0 auto;padding:24px}header{text-align:center;padding:24px 0}h1{color:#075985}nav{display:flex;justify-content:center;flex-wrap:wrap;gap:12px}a{color:#075985}a:focus-visible{outline:3px solid #f59e0b;outline-offset:4px}.btn{display:inline-block;border-radius:8px;padding:12px 18px;background:#075985;color:white;text-decoration:none;margin:8px}.note{background:#fff8e1;border-left:4px solid #f59e0b;padding:16px}section{margin:32px 0}footer{border-top:1px solid #ddd;padding:16px 0}p{overflow-wrap:anywhere}@media(prefers-color-scheme:dark){body{background:#111827;color:#f3f4f6}a,h1{color:#7dd3fc}.note{background:#292524}.btn{background:#0369a1;color:white}}</style></head>
 <body>
-
-<header>
-    <h1>Thundy AV – Email Scanner for Thunderbird</h1>
-    <p>Lokale Prüfung verdächtiger Anhänge, Links und Absender in Thunderbird, mit optionaler externer Analyse erst nach Ihrer ausdrücklichen Zustimmung.</p>
-    <p><a href="index_en.html">English version</a></p>
-    <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus" class="btn">Quellcode auf GitHub</a>
-    <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases" class="btn">Releases</a>
-</header>
-
-<section id="about">
-    <h2>Über das Projekt</h2>
-    <p>Thundy AV ist ein Open-Source-Add-on für Thunderbird (MIT-Lizenz). Es analysiert die von Ihnen
-    geöffnete Nachricht innerhalb von Thunderbird: Kopfzeilen, Nachrichtentext, Links und Anhänge.
-    Bewertung und Heuristiken laufen lokal. Nur wenn Sie die externe Analyse aktivieren und einen Scan
-    auslösen, kann das Add-on Analyse-Dienste wie <strong>Hybrid Analysis</strong>, VirusTotal,
-    urlscan.io, URLhaus (abuse.ch) und AbuseIPDB abfragen.</p>
-</section>
-
-<section id="setup">
-    <h2>Einrichtung &amp; API-Schlüssel</h2>
-    <p>Für die externe Analyse benötigen Sie einen eigenen kostenlosen API-Schlüssel. Jeder Nutzer
-    arbeitet mit seinem eigenen Zugang (Fair Use).</p>
-
-    <div class="step">
-        <strong>Schritt 1:</strong> Registrieren Sie sich kostenlos auf <a href="https://www.hybrid-analysis.com/signup" target="_blank" rel="noopener noreferrer" aria-label="hybrid-analysis.com (öffnet in einem neuen Tab)">hybrid-analysis.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>.
-    </div>
-    <div class="step">
-        <strong>Schritt 2:</strong> Öffnen Sie nach der Anmeldung Ihr Profilmenü (oben rechts) → „Profile“ und kopieren Sie den API-Schlüssel aus den API-Einstellungen.
-    </div>
-    <div class="step">
-        <strong>Schritt 3:</strong> Öffnen Sie in Thunderbird den Optionsdialog des Add-ons und fügen Sie den Schlüssel ein.
-    </div>
-    <div class="step">
-        <strong>Schritt 4:</strong> Aktivieren Sie die Checkbox <em>„Externe Analyse erlauben“</em> (Standard: aus) und wählen Sie eine Datenschutz-Stufe: <em>strict</em> sendet nur SHA-256-Hashes, <em>balanced</em> lädt zusätzlich unbekannte Dateien hoch, <em>max</em> übermittelt zusätzlich URLs aus der Nachricht. Beim Speichern eines Schlüssels fragt Thunderbird die optionale Host-Berechtigung für den jeweiligen Anbieter an.
-    </div>
-</section>
-
-<section id="privacy">
-    <h2>Datenschutz &amp; Sicherheit</h2>
-    <ul>
-        <li>Das Add-on <strong>liest die von Ihnen geöffnete Nachricht</strong> in Thunderbird — Kopfzeilen, Text, Links und Anhänge. Das geschieht lokal auf Ihrem Rechner und wird nicht übermittelt.</li>
-        <li><strong>Nichts</strong> wird an Dritte übermittelt, bevor Sie <em>„Externe Analyse erlauben“</em> aktivieren <strong>und</strong> einen Scan auslösen (für eine einzelne Nachricht oder mit dauerhaftem Opt-in für diesen Absender). Solange die Zustimmung aus ist, gibt es keinen Upload, keine Hash-Abfrage, keine URL-/Domain-Abfrage und keine IP-Abfrage.</li>
-        <li>Abhängig von der Datenschutz-Stufe und den konfigurierten Schlüsseln können SHA-256-Hashes von Anhängen (Hybrid Analysis, VirusTotal), vollständige Anhänge unbekannter Dateien (Hybrid Analysis, Stufe balanced/max), URLs aus der Nachricht (Hybrid Analysis in Stufe max, urlscan.io) und Domains (URLhaus) übermittelt werden; IP-Adressen aus Received-Headern werden nur geprüft, wenn Sie dafür einen Anbieter konfigurieren.</li>
-        <li>Der Nachrichtentext als solcher, die Betreffzeile sowie Absender- und Empfängeradressen werden nicht übermittelt. Übermittelt werden können ausschließlich die einzelnen Links aus der Nachricht (siehe oben) – und das erst nach Ihrer Zustimmung. Es gibt <strong>keine Telemetrie</strong>, kein Analytics und keinen Server des Entwicklers; der Entwickler hat keinen Zugriff auf Ihre Daten.</li>
-        <li>Einstellungen, Zustimmungen und API-Schlüssel werden lokal in Thunderbird gespeichert (<code>browser.storage.local</code>, unverschlüsselt). Scan-Ergebnisse liegen in einer lokalen IndexedDB-Datenbank, die Sie über „Cache leeren“ in den Optionen entleeren können.</li>
-        <li>Host-Berechtigungen für die Analyse-Anbieter sind optional und werden erst angefragt, wenn Sie einen Schlüssel für den jeweiligen Anbieter speichern.</li>
-    </ul>
-    <p>Details: <a href="privacy_policy.html">Datenschutzerklärung</a> ·
-    <a href="reviewer_notes.html">Reviewer Notes</a></p>
-</section>
-
-<section id="status">
-    <h2>Projektstatus</h2>
-    <div class="note">
-        <p>Thundy AV ist <strong>noch nicht</strong> im Thunderbird Add-ons Store gelistet; es gibt
-        daher keinen Store-Download-Link. Das aktuelle XPI und die Quellen stehen in den
-        <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases">GitHub-Releases</a>
-        bereit. <strong>Screenshots existieren noch nicht</strong> (nur Platzhaltergrafiken), und die
-        manuelle Verifikation in Thunderbird 140 ESR steht noch aus.</p>
-    </div>
-</section>
-
-<footer>
-    <p>&copy; 2026 Jan Bludau. Veröffentlicht unter der MIT-Lizenz.</p>
-    <p>
-        <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus">Repository</a>
-        <a href="privacy_policy.html">Datenschutzerklärung</a>
-        <a href="reviewer_notes.html">Reviewer Notes</a>
-        <a href="index_en.html">English</a>
-    </p>
-</footer>
-
-</body>
-</html>
+<header><h1>Thundy AV – E-Mail-Scanner für Thunderbird</h1><p>Lokale E-Mail-Prüfung mit optionaler externer Analyse</p><p><strong>1.19.0 · Thunderbird 140+</strong></p><nav><a href="index_en.html" hreflang="en" lang="en">English</a> <a href="index_de.html" hreflang="de" lang="de">Deutsch</a> <a href="index_fr.html" hreflang="fr" lang="fr">Français</a> <a href="index_es.html" hreflang="es" lang="es">Español</a> <a href="index_it.html" hreflang="it" lang="it">Italiano</a> <a href="index_pl.html" hreflang="pl" lang="pl">Polski</a></nav><p><a class="btn" href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.19.0/thundy-av-1.19.0.xpi">Unsigniertes XPI herunterladen</a><a class="btn" href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.0">Release-Hinweise</a></p></header>
+<main>
+<section><h2>Lokale Prüfungen funktionieren ohne Konto oder API-Schlüssel.</h2><p>Thundy AV liest die angezeigte Nachricht mit Absender, Betreff, Kopfzeilen, Text und Anhängen für lokale Prüfungen. Diese funktionieren ohne API-Schlüssel. Es gibt keine Telemetrie und keinen Analyseserver des Entwicklers.</p><p>Lokale Prüfungen funktionieren ohne API-Schlüssel. Externe Scans benötigen deine Zustimmung und eine Nachrichten- oder Absenderfreigabe.</p></section>
+<section><h2>Datenschutz und Daten</h2><p>Ohne Zustimmung wird nichts extern übertragen. Nach Zustimmung werden nur ausdrücklich freigegebene Nachrichten oder Absender gescannt. Strikt erlaubt Hashes, Domains und öffentliche IPs; Ausgewogen zusätzlich unbekannte Dateien; Maximal zusätzlich vollständige URLs. Deaktiviere diese Option, um weitere Übermittlungen zu stoppen und wartende Anfragen abzubrechen. Bereits übertragene Daten lassen sich nicht zurückholen.</p><p>Freigegebene externe Anfragen gehen direkt an konfigurierte Anbieter: Hybrid Analysis für Dateihashes und Uploads, VirusTotal für Dateihashes oder IP-Reputation, URLhaus für Domains, urlscan.io für vollständige URLs und AbuseIPDB für öffentliche IPs. Hashes können bekannte Dateien identifizieren. Es gelten die Bedingungen und Datenschutzhinweise der Anbieter; übermittelte Daten können dort weitergegeben werden.</p><p>Übermittlungen an urlscan.io sind nicht gelistet, aber nicht privat. Vollständige URLs können personenbezogene Daten oder Zugriffstoken enthalten. Übermittle nur URLs, die du weitergeben darfst.</p><p>Einstellungen, Zustimmung, Absenderfreigaben und API-Schlüssel werden im Thunderbird-Profil gespeichert. API-Schlüssel sind dort nicht verschlüsselt. Lokale Scanergebnisse können Betreff, Absenderadressen, vollständige Links und Anhangmetadaten enthalten. Der Cache hält bis zu 1.000 Nachrichteneinträge für 30 Tage und wird beim Datenbankstart bereinigt. Reputationsergebnisse im Arbeitsspeicher verfallen nach 15 Minuten.</p><p>Deaktivieren Sie die externe Analyse, um neue Anfragen zu stoppen und wartende Anfragen abzubrechen. Bereits übertragene Daten lassen sich nicht zurückholen. „Cache leeren“ entfernt gespeicherte Analyseergebnisse und Reputation-Caches. Absenderfreigaben können in den Einstellungen einzeln entfernt werden.</p><a href="privacy_policy.html">Ausführliche Datenschutzerklärung (Englisch/Deutsch)</a></section>
+<section class="note"><h2>1.19.0</h2><p>Unsignierter GitHub-Release. Die Live-Abnahme in Thunderbird 140 ESR/aktueller Version und Screenshots stehen aus; dies ist keine Thunderbird-Add-ons-Store-Listung.</p><p>EN · DE · FR · ES · IT · PL</p><p><a href="live_test_1_19_0.html">Dokumentation</a> · <a href="AUFGABENPLAN_OPTIMIERUNG_I18N.html">Release-Hinweise</a></p></section>
+</main>
+<footer><a href="https://github.com/VaZuLeS/Thunderbird-Antivirus">Quellcode</a> · <a href="documentation.html">Dokumentation</a> · <a href="mailto:bludau.it.services@gmail.com">bludau.it.services@gmail.com</a><p>© 2026 Jan Bludau · MIT</p></footer>
+</body></html>

@@ -4,6 +4,41 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
+// Model transaction completion separately from request success.
+function eventful(db) {
+    if (!db.transaction) return db;
+    return { ...db, transaction(...args) {
+        const tx = db.transaction(...args);
+        const original = tx.objectStore;
+        let pending = 0;
+        tx.abort = () => { if (tx.onabort) tx.onabort(); };
+        tx.objectStore = (...storeArgs) => {
+            const store = original(...storeArgs);
+            const wrapped = { ...store };
+            for (const name of ['get', 'put', 'clear']) {
+                if (!store[name]) continue;
+                wrapped[name] = (...requestArgs) => {
+                    const request = store[name](...requestArgs);
+                    pending++;
+                    Object.defineProperty(request, 'onsuccess', {
+                        configurable: true,
+                        set(callback) {
+                            this.success = (...eventArgs) => {
+                                callback(...eventArgs);
+                                if (--pending === 0) queueMicrotask(() => { if (tx.oncomplete) tx.oncomplete(); });
+                            };
+                        },
+                        get() { return this.success; }
+                    });
+                    return request;
+                };
+            }
+            return wrapped;
+        };
+        return tx;
+    }};
+}
+
 describe('db.js module', () => {
     let context;
 
@@ -180,7 +215,7 @@ describe('db.js module', () => {
         vm.runInContext(code, context);
 
         const clearStore = context.clearStore;
-        const result = await clearStore(dbMock, 'hybridanalysis');
+        const result = await clearStore(eventful(dbMock), 'hybridanalysis');
         assert.strictEqual(result, true);
     });
 
@@ -217,7 +252,7 @@ describe('db.js module', () => {
         vm.runInContext(code, context);
 
         const getFromStore = context.getFromStore;
-        const result = await getFromStore(dbMock, 'hybridanalysis', 'some_key');
+        const result = await getFromStore(eventful(dbMock), 'hybridanalysis', 'some_key');
         assert.deepStrictEqual(result, expectedResult);
     });
 
@@ -253,7 +288,7 @@ describe('db.js module', () => {
         vm.runInContext(code, context);
 
         const getFromStore = context.getFromStore;
-        const result = await getFromStore(dbMock, 'hybridanalysis', 'missing_key');
+        const result = await getFromStore(eventful(dbMock), 'hybridanalysis', 'missing_key');
         assert.strictEqual(result, undefined);
     });
 
@@ -291,7 +326,7 @@ describe('db.js module', () => {
 
         const getFromStore = context.getFromStore;
         try {
-            await getFromStore(dbMock, 'hybridanalysis', 'some_key');
+            await getFromStore(eventful(dbMock), 'hybridanalysis', 'some_key');
             assert.fail('Should have rejected');
         } catch (e) {
             assert.strictEqual(e, expectedError);
@@ -323,7 +358,7 @@ describe('db.js module', () => {
         vm.runInContext(code, context);
 
         const getFromStore = context.getFromStore;
-        const result = await getFromStore(dbMock, 'hybridanalysis', 'some_key');
+        const result = await getFromStore(eventful(dbMock), 'hybridanalysis', 'some_key');
         assert.strictEqual(result, expectedResult);
     });
 
@@ -352,7 +387,7 @@ describe('db.js module', () => {
 
         const getFromStore = context.getFromStore;
         try {
-            await getFromStore(dbMock, 'hybridanalysis', 'some_key');
+            await getFromStore(eventful(dbMock), 'hybridanalysis', 'some_key');
             assert.fail('Should have rejected');
         } catch (e) {
             assert.strictEqual(e.message, 'Fehler beim Abrufen aus Store: hybridanalysis');
@@ -396,7 +431,7 @@ describe('db.js module', () => {
         vm.runInContext(code, context);
 
         const updateStore = context.updateStore;
-        const result = await updateStore(dbMock, 'hybridanalysis', 'some_key', (record) => {
+        const result = await updateStore(eventful(dbMock), 'hybridanalysis', 'some_key', (record) => {
             record.count += 1;
             return record;
         });
@@ -429,7 +464,7 @@ describe('db.js module', () => {
 
         const updateStore = context.updateStore;
         try {
-            await updateStore(dbMock, 'hybridanalysis', 'some_key', (r) => r);
+            await updateStore(eventful(dbMock), 'hybridanalysis', 'some_key', (r) => r);
             assert.fail('Should have rejected');
         } catch (e) {
             assert.strictEqual(e, expectedError);
@@ -471,7 +506,7 @@ describe('db.js module', () => {
 
         const updateStore = context.updateStore;
         try {
-            await updateStore(dbMock, 'hybridanalysis', 'some_key', (r) => r);
+            await updateStore(eventful(dbMock), 'hybridanalysis', 'some_key', (r) => r);
             assert.fail('Should have rejected');
         } catch (e) {
             assert.strictEqual(e, expectedError);
@@ -505,7 +540,7 @@ describe('db.js module', () => {
         vm.runInContext(code, context);
 
         const putToStore = context.putToStore;
-        const result = await putToStore(dbMock, 'hybridanalysis', itemToPut);
+        const result = await putToStore(eventful(dbMock), 'hybridanalysis', itemToPut);
         assert.strictEqual(result, expectedResult);
     });
 
@@ -537,7 +572,7 @@ describe('db.js module', () => {
 
         const putToStore = context.putToStore;
         try {
-            await putToStore(dbMock, 'hybridanalysis', itemToPut);
+            await putToStore(eventful(dbMock), 'hybridanalysis', itemToPut);
             assert.fail('Should have rejected');
         } catch (e) {
             assert.strictEqual(e, expectedError);

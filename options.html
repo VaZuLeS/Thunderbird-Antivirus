@@ -1,10 +1,8 @@
 <!DOCTYPE html>
-<html lang="de">
-
-<head>
+<html lang="en"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thundy AV Checker Einstellungen</title>
+    <title data-i18n="ui_112">Thundy AV settings</title>
     <link rel="stylesheet" href="theme.css">
     <style>
         body {
@@ -17,128 +15,135 @@
             cursor: pointer;
         }
     </style>
-</head>
+<script src="i18n.js"></script></head>
 
 <body>
-    <h1>Thundy AV Einstellungen</h1>
-    <h3>Was ist Hybrid-Analysis.com?</h3>
-    Hybrid-Analysis.com ist ein kostenloser Malware-Analyse-Service für die Community. Mit diesem Service können Sie
-    Dateien zur detaillierten statischen und dynamischen Analyse einreichen.<br />
-    <br />
-    Die Webseite verwendet eine einzigartige Hybrid-Analyse-Technologie, um unbekannte Bedrohungen zu erkennen und
-    zu analysieren. Sie wird von der Falcon Sandbox von CrowdStrike angetrieben.<br />
-    <br />
-    Die Falcon Sandbox ist ein hochmodernes Malware-Analyse-Framework mit einer sehr agilen Architektur. Sie wird
-    derzeit von SOCs, CERTs, DFIR-Teams, IT-Sicherheitsforensiklabors, Forschern und Anbietern von Bedrohungsdaten
-    auf der ganzen Welt genutzt.<br />
+    <h1><span data-i18n="ui_116">Thundy AV settings</span></h1><p data-i18n="localMode"></p>
+    <h3><span data-i18n="ui_117">What is Hybrid Analysis?</span></h3>
+    <span data-i18n="ui_113">Hybrid Analysis is a malware analysis service. You can submit files for static and dynamic analysis.</span><br>
+    <br>
+    <span data-i18n="ui_114">Hybrid Analysis uses CrowdStrike Falcon Sandbox to investigate unknown threats.</span><br>
+    <br>
+    <span data-i18n="ui_115">Provider accounts and service terms apply to external analysis. Local checks do not require an account.</span><br>
     <div id="apiKeyInstructions">
-        <h3>Installationshinweise zum API Schlüssel</h3>
-        Sie benötigen einen kostenlosen API Schlüssel von <a
-            href="https://www.hybrid-analysis.com/" target="_blank" rel="noopener noreferrer" aria-label="hybrid-analysis.com (öffnet in einem neuen Tab)">hybrid-analysis.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a><br />
-        Nach der Anmeldung finden Sie diesen API Schlüssel unter "Nickname" -> "Profil" -> "API KEY".<br />
-        Diesen API Schlüssel hier einfügen.<br />
+        <h3><span data-i18n="ui_121">API key setup</span></h3>
+        <span data-i18n="ui_118">For external file analysis, obtain an API key from</span> <a href="https://www.hybrid-analysis.com/" target="_blank" rel="noopener noreferrer" aria-label="hybrid-analysis.com (opens a new tab)" data-i18n-aria-label="ui_123"><span data-i18n="ui_122">hybrid-analysis.com</span> <span aria-hidden="true" style="margin-left: 4px;">↗</span></a><br>
+        <span data-i18n="ui_119">After signing in, go to your profile and find the API KEY section.</span><br>
+        <span data-i18n="ui_120">Paste the API key here. Local checks work without it.</span><br>
     </div>
 
     <div class="mb-3 mt-3">
         <input type="checkbox" id="externalAnalysisConsent" aria-describedby="externalAnalysisConsentHelp">
-        <label for="externalAnalysisConsent" style="display: inline; margin-bottom: 0;"><strong>Externe Analyse erlauben (Datenübermittlung an Drittanbieter)</strong></label>
-        <br><small id="externalAnalysisConsentHelp">Ohne diese Zustimmung werden <strong>keine</strong> Hashes, Dateien, Links oder IP-Adressen an externe Dienste übertragen. Erst nach der Zustimmung können Anhänge, Links und Metadaten zur Analyse an Hybrid Analysis, VirusTotal, urlscan.io, URLhaus oder AbuseIPDB gesendet werden – abhängig von der Datenschutz-Stufe. Die Zustimmung kann jederzeit durch Deaktivieren dieser Option widerrufen werden. Details: <a href="https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html" target="_blank" rel="noopener noreferrer" aria-label="Datenschutzerklärung (öffnet in einem neuen Tab)">Datenschutzerklärung <span aria-hidden="true" style="margin-left: 4px;">↗</span></a></small>
+        <label for="externalAnalysisConsent" style="display: inline; margin-bottom: 0;"><strong><span data-i18n="ui_124">Allow external analysis (send data to third-party providers)</span></strong></label>
+        <br><small id="externalAnalysisConsentHelp"><span data-i18n="consentHelp"></span> <a href="privacy.html" target="_blank" rel="noopener noreferrer" data-i18n="ui_128"></a></small>
     </div>
 
     <div class="mb-3 mt-3">
-        <label for="apikey">API Schlüssel (Hybrid-Analysis): <span aria-hidden="true" class="text-danger">*</span></label>
+        <label for="apikey"><span data-i18n="ui_130">Hybrid Analysis API key (optional):</span></label>
         <!-- Security: type="password", autocomplete="off", maxlength="255", spellcheck="false" enforce confidential masking, disable autofill caching, limit input length, and disable spellcheck data leakage -->
-        <input type="password" id="apikey" required aria-describedby="apiKeyInstructions" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
+        <input type="password" id="apikey" aria-describedby="apiKeyInstructions" maxlength="255" autocomplete="off" spellcheck="false" placeholder="e.g. abcdef123456…" data-i18n-placeholder="ui_131">
     </div>
 
     <div class="mb-3">
-        <label for="urlhausApikey">URLhaus API Schlüssel (Optional für Echtzeit-Domain-Checks):</label>
-        <input type="password" id="urlhausApikey" aria-describedby="urlhausHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-        <br><small id="urlhausHelp">Sie können einen kostenlosen API Schlüssel unter <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer" aria-label="urlhaus.abuse.ch (öffnet in einem neuen Tab)">urlhaus.abuse.ch <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
+        <label for="urlhausApikey"><span data-i18n="ui_132">URLhaus API key (optional domain reputation):</span></label>
+        <input type="password" id="urlhausApikey" aria-describedby="urlhausHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="e.g. abcdef123456…" data-i18n-placeholder="ui_131">
+        <br><small id="urlhausHelp"><span data-i18n="ui_133">You can obtain an API key at</span> <a href="https://urlhaus.abuse.ch/api/" target="_blank" rel="noopener noreferrer" aria-label="urlhaus.abuse.ch (opens a new tab)" data-i18n-aria-label="ui_136"><span data-i18n="ui_135">urlhaus.abuse.ch</span> <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> <span data-i18n="ui_134">.</span></small>
     </div>
 
     <div class="mb-3">
-        <label for="urlscanApikey">urlscan.io API Schlüssel (Computer Vision Erkennung von z.B. gefälschten Logins):</label>
-        <input type="password" id="urlscanApikey" aria-describedby="urlscanHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-        <br><small id="urlscanHelp">Einen kostenlosen API Schlüssel erhalten Sie unter <a href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer" aria-label="urlscan.io (öffnet in einem neuen Tab)">urlscan.io <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>.</small>
+        <label for="urlscanApikey"><span data-i18n="ui_137">urlscan.io API key (optional URL analysis):</span></label>
+        <input type="password" id="urlscanApikey" aria-describedby="urlscanHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="e.g. abcdef123456…" data-i18n-placeholder="ui_131">
+        <br><p data-i18n="urlscanVisibility"></p><small id="urlscanHelp"><span data-i18n="ui_138">You can obtain an API key at</span> <a href="https://urlscan.io/about/api/" target="_blank" rel="noopener noreferrer" aria-label="urlscan.io (opens a new tab)" data-i18n-aria-label="ui_140"><span data-i18n="ui_139">urlscan.io</span> <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>.</small>
     </div>
 
     <div class="mb-3">
-        <label for="virustotalApikey">VirusTotal API Schlüssel (Optional für Datei-Scanner-Engines):</label>
-        <input type="password" id="virustotalApikey" aria-describedby="virustotalHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-        <br><small id="virustotalHelp">Sie können einen kostenlosen API Schlüssel unter <a href="https://www.virustotal.com/" target="_blank" rel="noopener noreferrer" aria-label="virustotal.com (öffnet in einem neuen Tab)">virustotal.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> erhalten.</small>
+        <label for="virustotalApikey"><span data-i18n="ui_141">VirusTotal API key (optional file reputation):</span></label>
+        <input type="password" id="virustotalApikey" aria-describedby="virustotalHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="e.g. abcdef123456…" data-i18n-placeholder="ui_131">
+        <br><small id="virustotalHelp"><span data-i18n="ui_133">You can obtain an API key at</span> <a href="https://www.virustotal.com/" target="_blank" rel="noopener noreferrer" aria-label="virustotal.com (opens a new tab)" data-i18n-aria-label="ui_143"><span data-i18n="ui_142">virustotal.com</span> <span aria-hidden="true" style="margin-left: 4px;">↗</span></a> <span data-i18n="ui_134">.</span></small>
     </div>
 
     <div class="mb-3">
-        <label for="privacyTier">Datenschutz-Stufe (Privacy Tier):</label>
+        <label for="privacyTier"><span data-i18n="ui_144">Privacy tier:</span></label>
         <select id="privacyTier" aria-describedby="privacyTierHelp">
-            <option value="strict">Strikt (Standard: nur Hashes senden, kein Upload)</option>
-            <option value="balanced">Ausgewogen (Unbekannte Dateien hochladen, keine URLs)</option>
-            <option value="max">Maximaler Schutz (Alles hochladen inkl. URLs)</option>
+            <option value="strict" data-i18n="ui_145">Strict (default: hashes and domains only, no uploads)</option>
+            <option value="balanced" data-i18n="ui_146">Balanced (upload unknown files, no complete URLs)</option>
+            <option value="max" data-i18n="ui_147">Maximum analysis (upload unknown files and complete URLs)</option>
         </select>
-        <br><small id="privacyTierHelp">Bestimmt, wie viele Daten an Hybrid Analysis gesendet werden. Wirkt nur, wenn „Externe Analyse erlauben“ aktiviert ist.</small>
+        <br><small id="privacyTierHelp"><span data-i18n="ui_148">Limits the data sent to analysis providers. Applies only when external analysis is enabled.</span></small>
     </div>
 
     <div class="mb-3">
-        <label for="ipReputationProvider">IP-Reputation (Received-Header prüfen):</label>
+        <label for="ipReputationProvider"><span data-i18n="ui_149">IP reputation (check Received headers):</span></label>
         <select id="ipReputationProvider" aria-describedby="ipReputationHelp">
-            <option value="none">Deaktiviert</option>
-            <option value="virustotal">VirusTotal (benötigt VirusTotal-API-Schlüssel)</option>
-            <option value="abuseipdb">AbuseIPDB (benötigt AbuseIPDB-API-Schlüssel)</option>
+            <option value="none" data-i18n="ui_150">Disabled</option>
+            <option value="virustotal" data-i18n="ui_151">VirusTotal (requires a VirusTotal API key)</option>
+            <option value="abuseipdb" data-i18n="ui_152">AbuseIPDB (requires an AbuseIPDB API key)</option>
         </select>
-        <label for="ipReputationApiKey">API-Schlüssel für IP-Reputation:</label>
-        <input type="password" id="ipReputationApiKey" aria-describedby="ipReputationHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="z.B. abcdef123456...">
-        <br><small id="ipReputationHelp">Sendet öffentliche IP-Adressen aus den „Received“-Kopfzeilen der Nachricht an den gewählten Dienst. Nur aktiv, wenn „Externe Analyse erlauben“ aktiviert ist.</small>
+        <label for="ipReputationApiKey"><span data-i18n="ui_153">IP reputation API key:</span></label>
+        <input type="password" id="ipReputationApiKey" aria-describedby="ipReputationHelp" maxlength="255" autocomplete="off" spellcheck="false" placeholder="e.g. abcdef123456…" data-i18n-placeholder="ui_131">
+        <br><small id="ipReputationHelp"><span data-i18n="ui_154">Sends public IP addresses from the email's Received headers to the selected provider. Requires external analysis consent and a scan authorization.</span></small>
     </div>
 
     <div class="mb-3">
-        <label for="customWhitelist">Whitelist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
-        <textarea id="customWhitelist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com" aria-describedby="whitelistHelp" spellcheck="false"></textarea>
-        <br><small id="whitelistHelp">Tragen Sie hier vertrauenswürdige Domains oder E-Mail-Adressen ein, um diese vom Scan auszuschließen.</small>
+        <label for="scanningEnabledSenders" data-i18n="senderAuthorizationsLabel"></label>
+        <textarea id="scanningEnabledSenders" rows="4" aria-describedby="senderAuthorizationsHelp" spellcheck="false"></textarea>
+        <small id="senderAuthorizationsHelp" data-i18n="senderAuthorizationsHelp"></small>
     </div>
 
     <div class="mb-3">
-        <label for="customBlacklist">Blacklist (Domains oder E-Mail-Adressen, kommagetrennt):</label>
-        <textarea id="customBlacklist" rows="3" style="width: 100%;" placeholder="z.B. example.com, test@example.com" aria-describedby="blacklistHelp" spellcheck="false"></textarea>
-        <br><small id="blacklistHelp">Tragen Sie hier blockierte Domains oder E-Mail-Adressen ein.</small>
+        <label for="trustedAuthServers" data-i18n="trustedAuthLabel">Trusted authentication servers (comma-separated)</label>
+        <input id="trustedAuthServers" type="text" spellcheck="false" aria-describedby="trustedAuthHelp">
+        <small id="trustedAuthHelp" data-i18n="trustedAuthHelp">Only list recipient mail servers you administer or explicitly trust. Unconfigured header reports remain unverified.</small>
+    </div>
+
+    <div class="mb-3">
+        <label for="customWhitelist"><span data-i18n="ui_155">Allowlist (comma-separated domains or email addresses):</span></label>
+        <textarea id="customWhitelist" rows="3" style="width: 100%;" placeholder="e.g. example.com, test@example.com" aria-describedby="whitelistHelp" spellcheck="false" data-i18n-placeholder="ui_156"></textarea>
+        <br><small id="whitelistHelp"><span data-i18n="ui_157">Trusted sender entries suppress local sender warnings. They do not authorize external scans.</span></small>
+    </div>
+
+    <div class="mb-3">
+        <label for="customBlacklist"><span data-i18n="ui_158">Blocklist (comma-separated domains or email addresses):</span></label>
+        <textarea id="customBlacklist" rows="3" style="width: 100%;" placeholder="e.g. example.com, test@example.com" aria-describedby="blacklistHelp" spellcheck="false" data-i18n-placeholder="ui_156"></textarea>
+        <br><small id="blacklistHelp"><span data-i18n="ui_159">Enter blocked domains or email addresses.</span></small>
     </div>
 
     <div class="mb-3">
         <input type="checkbox" id="alwaysManual" aria-describedby="alwaysManualHelp">
-        <label for="alwaysManual" style="display: inline; margin-bottom: 0;">Immer manuell scannen (Kein Auto-Upload)</label>
-        <br><small id="alwaysManualHelp">Verhindert den automatischen Upload von Anhängen, unabhängig von der gewählten Datenschutz-Stufe.</small>
+        <label for="alwaysManual" style="display: inline; margin-bottom: 0;"><span data-i18n="ui_160">Always scan manually (no automatic uploads)</span></label>
+        <br><small id="alwaysManualHelp"><span data-i18n="ui_161">Prevents automatic external scans. Explicit manual actions still require consent and the appropriate privacy tier.</span></small>
     </div>
 
     <div class="mb-3">
         <input type="checkbox" id="autoScanLinks" aria-describedby="autoScanHelp">
-        <label for="autoScanLinks" style="display: inline; margin-bottom: 0;">Links in der E-Mail sofort beim Öffnen prüfen (Auto-Scan)</label>
-        <br><small id="autoScanHelp">Wenn deaktiviert, werden Links erst im Moment des Klickens gescannt (Time-of-Click Protection).</small>
+        <label for="autoScanLinks" style="display: inline; margin-bottom: 0;"><span data-i18n="ui_162">Scan email links when opening an authorized message</span></label>
+        <br><small id="autoScanHelp"><span data-i18n="ui_163">Link checks require consent, a scan authorization and the appropriate privacy tier.</span></small>
     </div>
 
     <div class="mb-3">
-        <input type="checkbox" id="timeOfClickProtection" checked aria-describedby="tocHelp">
-        <label for="timeOfClickProtection" style="display: inline; margin-bottom: 0;">Time-of-Click Protection optisch im E-Mail-Text anzeigen (Zusatzinfo bei Hover)</label>
-        <br><small id="tocHelp">Zeigt beim Überfahren von Links mit der Maus einen Hinweis an, dass die URL in Echtzeit geprüft wird.</small>
+        <input type="checkbox" id="timeOfClickProtection" checked="" aria-describedby="tocHelp">
+        <label for="timeOfClickProtection" style="display: inline; margin-bottom: 0;"><span data-i18n="ui_164">Check links before opening them</span></label>
+        <br><small id="tocHelp"><span data-i18n="ui_165">Pauses navigation to show the result. Unchecked links and errors are clearly identified. Full URL analysis requires the Maximum tier.</span></small>
     </div>
 
     <br><br>
     <hr>
 
     <br>
-    <strong>Bitte nicht vergessen zu speichern.</strong>
-    <button id="save" class="btn-primary mt-2" aria-describedby="saveStatus">Speichern</button>
-    <span id="saveStatus" class="text-success ml-2" style="display: none;" aria-live="polite" role="status">Erfolgreich gespeichert!</span>
+    <strong><span data-i18n="ui_166">Remember to save your settings.</span></strong>
+    <button id="save" class="btn-primary mt-2" aria-describedby="saveStatus"><span data-i18n="ui_075">Save</span></button>
+    <span id="saveStatus" class="text-success ml-2" style="display: none;" aria-live="polite" role="status"><span data-i18n="ui_074">Settings saved.</span></span>
 
     <br><br>
     <hr>
 
-    <h3>Datenmanagement</h3>
-    <p>Hier können Sie den lokalen Cache leeren, um Speicherplatz freizugeben und alte Metadaten zu löschen.</p>
-    <button id="clearCache" class="btn-primary mt-2" aria-describedby="clearCacheStatus">Cache leeren</button>
+    <h3><span data-i18n="ui_167">Data management</span></h3>
+    <p><span data-i18n="ui_168">Clear locally stored results and reputation caches.</span></p>
+    <button id="clearCache" class="btn-primary mt-2" aria-describedby="clearCacheStatus"><span data-i18n="ui_085">Clear cache</span></button>
     <span id="clearCacheStatus" class="text-success ml-2" style="display: none;" aria-live="polite" role="status"></span>
 
     <script src="db.js"></script>
     <script src="options.js"></script>
-</body>
 
-</html>
+
+</body></html>

@@ -1,3 +1,7 @@
+function uiText(key, fallback, params = []) {
+    return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
+}
+
 const Logger = {
     error: (...args) => console.error(...args),
     warn: (...args) => console.warn(...args),
@@ -22,7 +26,7 @@ const I18N_FALLBACKS = {
     bannerConsentMissing: 'External analysis is disabled in the options – nothing was transmitted.',
     bannerThreatTitle: 'Thundy AV warning',
     bannerThreatScore: 'Risk score: $SCORE$ of 100',
-    bannerAuthPass: 'Sender verified (SPF/DKIM/DMARC passed)',
+    bannerAuthPass: 'Trusted server reports SPF/DKIM/DMARC passed',
     bannerOpenOptions: 'Open options',
     bannerSenderOptIn: 'This sender is now scanned automatically.',
     errorHostPermissionMissing: 'Host permission for the analysis service is missing. Please grant it in the add-on options.',
@@ -30,6 +34,7 @@ const I18N_FALLBACKS = {
     errorTierUrlScanBlocked: 'Submitting URLs is only allowed in the privacy tier "Maximum". Change the tier in the add-on options.',
     notificationInjectionFailed: 'The banner could not be inserted into the message view. Please report this with your Thunderbird version.',
     bannerTierBlocked: 'This action is not allowed by the current privacy tier. See the add-on options.',
+    notificationScanCount: 'Submitted scans: $COUNT$',
     notificationScanStarted: 'Scan started for: $URL$',
     notificationScanSubmitted: 'Scan submitted successfully. Job ID: $JOBID$',
     notificationScanError: 'Scan error: $ERROR$',
@@ -39,6 +44,7 @@ const I18N_FALLBACKS = {
 };
 
 function msg(key, subs) {
+    if (typeof ThundyI18n !== 'undefined') return ThundyI18n.get(key, subs || []);
     try {
         if (typeof browser !== 'undefined' && browser.i18n && typeof browser.i18n.getMessage === 'function') {
             const value = browser.i18n.getMessage(key, subs);
@@ -79,82 +85,6 @@ function describeUrlForUser(url) {
 // add-on asks for consent explicitly (options page) and enforces it here:
 // without consent nothing is sent to any third party service.
 // ---------------------------------------------------------------------------
-const EXTERNAL_ANALYSIS_DISABLED = 'EXTERNAL_ANALYSIS_DISABLED';
-const HOST_PERMISSION_MISSING = 'HOST_PERMISSION_MISSING';
-const TIER_BLOCKS_UPLOAD = 'TIER_BLOCKS_UPLOAD';
-const TIER_REQUIRES_MAX = 'TIER_REQUIRES_MAX';
-
-function typedError(code, message) {
-    const error = new Error(message);
-    error.code = code;
-    return error;
-}
-
-function mayTransmitExternally() {
-    return externalAnalysisConsent === true;
-}
-
-function assertExternalAnalysisAllowed() {
-    if (!mayTransmitExternally()) {
-        const error = new Error(msg('bannerConsentMissing'));
-        error.code = EXTERNAL_ANALYSIS_DISABLED;
-        throw error;
-    }
-}
-
-// Privacy tiers are ordered: strict < balanced < max. The tier limits what may
-// leave the machine, and it applies to the automatic scans as well as to the
-// manual actions in the popup/context menu (see docs/privacy_policy.md §3.3).
-const TIER_ORDER = { strict: 0, balanced: 1, max: 2 };
-
-function tierAtLeast(minimumTier) {
-    const current = TIER_ORDER[privacyTier] === undefined ? 0 : TIER_ORDER[privacyTier];
-    const required = TIER_ORDER[minimumTier] === undefined ? 0 : TIER_ORDER[minimumTier];
-    return current >= required;
-}
-
-/**
- * Every provider request must be covered by a host permission the user granted
- * when saving that provider's key (options.js). Without it the request would fail
- * with an opaque network error, so we raise a typed error that the UI can explain.
- */
-async function requireHostPermission(url) {
-    if (await hasHostPermissionFor(url)) return;
-    throw typedError(HOST_PERMISSION_MISSING, msg('errorHostPermissionMissing'));
-}
-
-// Host origins that are declared in manifest.json -> optional_host_permissions
-const PROVIDER_ORIGINS = {
-    hybridanalysis: 'https://hybrid-analysis.com/*',
-    virustotal: 'https://www.virustotal.com/*',
-    urlscan: 'https://urlscan.io/*',
-    urlhaus: 'https://urlhaus-api.abuse.ch/*',
-    abuseipdb: 'https://api.abuseipdb.com/*'
-};
-
-function originForUrl(url) {
-    try {
-        const host = new URL(url).hostname;
-        if (host === 'hybrid-analysis.com' || host.endsWith('.hybrid-analysis.com')) return PROVIDER_ORIGINS.hybridanalysis;
-        if (host === 'virustotal.com' || host.endsWith('.virustotal.com')) return PROVIDER_ORIGINS.virustotal;
-        if (host === 'urlscan.io' || host.endsWith('.urlscan.io')) return PROVIDER_ORIGINS.urlscan;
-        if (host === 'urlhaus-api.abuse.ch') return PROVIDER_ORIGINS.urlhaus;
-        if (host === 'api.abuseipdb.com') return PROVIDER_ORIGINS.abuseipdb;
-    } catch (e) { /* invalid URL */ }
-    return null;
-}
-
-async function hasHostPermissionFor(url) {
-    const origin = originForUrl(url);
-    if (!origin) return false;
-    try {
-        return await browser.permissions.contains({ origins: [origin] });
-    } catch (e) {
-        Logger.error('permissions.contains failed', e);
-        return false;
-    }
-}
-
 /**
  * Injects a function into the message display document of a tab.
  *
@@ -170,20 +100,7 @@ async function hasHostPermissionFor(url) {
  */
 let injectionFailureReported = false;
 
-async function injectIntoMessageDisplay(tabId, func, args = []) {
-    if (tabId === undefined || tabId === null) return null;
-    const injection = { target: { tabId }, func, args };
-    try {
-        return await browser.scripting.executeScript(injection);
-    } catch (e) {
-        Logger.warn('Injecting into the message display failed (please report with your Thunderbird version):', e);
-        if (!injectionFailureReported) {
-            injectionFailureReported = true;
-            notify('notificationTitleError', 'notificationInjectionFailed');
-        }
-        return null;
-    }
-}
+
 
 let customBlacklist = new Set();
 let customWhitelist = new Set();
@@ -204,7 +121,10 @@ let sharedDBPromise = null;
 
 function getSharedDB() {
     if (!sharedDBPromise) {
-        sharedDBPromise = openDB("thunderbird_av", 3);
+        sharedDBPromise = openDB("thunderbird_av", 3).then(async db => {
+            if (typeof pruneStore === 'function') await pruneStore(db, 'hybridanalysis');
+            return db;
+        }).catch(error => { sharedDBPromise = null; throw error; });
     }
     return sharedDBPromise;
 }
@@ -212,42 +132,19 @@ function getSharedDB() {
 const knownSendersCache = new Set();
 const MAX_KNOWN_SENDERS = 1000;
 
-const urlhausCache = new Map();
+const urlhausCache = typeof ExpiringMap !== 'undefined' ? new ExpiringMap() : new Map();
 const MAX_URLHAUS_CACHE_SIZE = 1000;
 
-const ipReputationCache = new Map();
+const ipReputationCache = typeof ExpiringMap !== 'undefined' ? new ExpiringMap() : new Map();
 const MAX_IP_CACHE = 1000;
 
-const vtCache = new Map();
+const vtCache = typeof ExpiringMap !== 'undefined' ? new ExpiringMap() : new Map();
 const MAX_VT_CACHE_SIZE = 1000;
 
-function getHybridAnalysisOptions(method, body = null, isUrl = false) {
-    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
-    const options = {
-        method: method,
-        headers: {
-            accept: 'application/json',
-            'api-key': apikey_hybridanalysis,
-            'user-agent': 'Falcon'
-        }
-    };
-    if (body) {
-        options.body = body;
-        options.headers['scan_type'] = 'all';
-    }
-    if (isUrl) {
-        options.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-    }
-    return options;
-}
+
 
 // Precompiled Regexes for Performance
 const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
-
-const URGENCY_WORDS = ['überweisung', 'schnell', 'ceo', 'dringend', 'sofort', 'wichtig', 'payment', 'urgent', 'rechnung', 'fällig', 'passwort', 'konto', 'transfer', 'bank'];
-const URGENCY_REGEX = new RegExp('(^|[^a-z0-9_äöüß])(' + URGENCY_WORDS.join('|') + ')(?![a-z0-9_äöüß])', 'gi');
-const FAST_URGENCY_REGEX = new RegExp(URGENCY_WORDS.join('|'), 'i');
-
 
 // Einstellungen laden
 async function loadSettings() {
@@ -295,6 +192,7 @@ async function loadSettings() {
   }
 }
 loadSettings();
+apiGateway.beforeRequest = () => assertExternalAnalysisAllowed();
 
 // Opt-In helpers
 async function hasHybridPermission() {
@@ -315,6 +213,15 @@ async function addSenderOptIn(senderEmail) {
 
 // Listener für Änderungen an den Einstellungen (API Key)
 browser.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local') {
+    if (changes.externalAnalysisConsent && changes.externalAnalysisConsent.newValue !== true) {
+      if (typeof apiGateway.abortAll === 'function') apiGateway.abortAll();
+    }
+    if (['externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'apikey', 'virustotalApikey', 'urlhausApikey', 'urlscanApikey'].some(key => changes[key])) {
+      urlhausCache.clear(); ipReputationCache.clear(); vtCache.clear();
+    }
+  }
+
   if (area === 'local' && changes.apikey) {
     apikey_hybridanalysis = changes.apikey.newValue;
   }
@@ -404,478 +311,12 @@ function extractPublicIPs(receivedHeaders) {
     return ips;
 }
 
-async function checkAbuseIPDB(ip, apikey) {
-    if (!mayTransmitExternally()) return false;
-    await requireHostPermission('https://api.abuseipdb.com/api/v2/check');
-    try {
-        const response = await apiGateway.fetchWithTimeout(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, {
-            method: 'GET',
-            headers: {
-                'Key': apikey,
-                'Accept': 'application/json'
-            }
-        });
-        const data = await response.json();
-        if (data && data.data && data.data.abuseConfidenceScore > 50) {
-            return true;
-        }
-    } catch (e) {
-        Logger.error("Fehler bei AbuseIPDB Abfrage", e);
-    }
-    return false;
-}
 
-async function checkVirusTotalIP(ip, apikey) {
-    if (!mayTransmitExternally()) return false;
-    await requireHostPermission('https://www.virustotal.com/api/v3/ip_addresses/' + ip);
-    try {
-        const response = await apiGateway.fetchWithTimeout(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`, {
-            method: 'GET',
-            headers: {
-                'x-apikey': apikey,
-                'Accept': 'application/json'
-            }
-        });
-        const data = await response.json();
-        if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
-            if (data.data.attributes.last_analysis_stats.malicious > 0) {
-                return true;
-            }
-        }
-    } catch (e) {
-        Logger.error("Fehler bei VirusTotal IP Abfrage", e);
-    }
-    return false;
-}
 
-let lev_prevRow = new Uint16Array(64);
-let lev_currRow = new Uint16Array(64);
 
-function levenshteinDistance(a, b) {
-    // ⚡ Bolt Optimization: Fast-path for identical strings early
-    if (a === b) return 0;
-    if (a.length === 0) return b.length;
-    if (b.length === 0) return a.length;
 
-    if (a.length > b.length) {
-        let tmp = a; a = b; b = tmp;
-    }
-
-    // ⚡ Bolt Optimization: Cached string lengths and hoisted charCodeAt evaluation for the outer loop to eliminate repeated property lookups in the hot nested loop.
-    const aLen = a.length;
-    const bLen = b.length;
-
-    if (aLen + 1 > lev_prevRow.length) {
-        lev_prevRow = new Uint16Array(aLen + 1);
-        lev_currRow = new Uint16Array(aLen + 1);
-    }
-
-    let prevRow = lev_prevRow;
-    let currRow = lev_currRow;
-
-    for (let j = 0; j <= aLen; j++) prevRow[j] = j;
-
-    for (let i = 1; i <= bLen; i++) {
-        currRow[0] = i;
-        const bChar = b.charCodeAt(i - 1);
-        for (let j = 1; j <= aLen; j++) {
-            if (bChar === a.charCodeAt(j - 1)) {
-                currRow[j] = prevRow[j - 1];
-            } else {
-                // ⚡ Bolt Optimization: Use manual comparison instead of Math.min to avoid function call overhead
-                let sub = prevRow[j - 1];
-                let del = prevRow[j];
-                let ins = currRow[j - 1];
-                let min = sub < del ? sub : del;
-                if (ins < min) min = ins;
-
-                currRow[j] = 1 + min;
-            }
-        }
-        // Swap arrays to avoid allocating a new one next iteration
-        let tmp = prevRow; prevRow = currRow; currRow = tmp;
-    }
-    return prevRow[aLen];
-}
-
-const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'microsoft.com', 'google.com', 'facebook.com', 'netflix.com', 'dhl.de', 'postbank.de', 'sparkasse.de', 'volksbank.de'];
-const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
-const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\\\$&')).join('|')})$`, 'i');
-
-function checkLists(email, senderDomain) {
-    if (email) email = email.toLowerCase();
-    if (senderDomain) senderDomain = senderDomain.toLowerCase();
-
-    // Check Blacklist
-    if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.size > 0) {
-        if (customBlacklist.has(email)) {
-            return { score: 100, reasons: [`Absender-E-Mail (${email}) steht auf der Blacklist.`], listType: 'blacklist' };
-        }
-        // ⚡ Bolt Optimization: Replace O(n) array iteration with O(1) set lookups for domain checking
-        if (customBlacklist.has(senderDomain)) {
-            return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${senderDomain}).`], listType: 'blacklist' };
-        }
-        let dotIdx = senderDomain.indexOf('.');
-        while (dotIdx !== -1) {
-            let parentDomain = senderDomain.substring(dotIdx + 1);
-            if (customBlacklist.has(parentDomain)) {
-                return { score: 100, reasons: [`Absender-Domain (${senderDomain}) steht auf der Blacklist (${parentDomain}).`], listType: 'blacklist' };
-            }
-            dotIdx = senderDomain.indexOf('.', dotIdx + 1);
-        }
-    }
-
-    // Check Whitelist
-    if (typeof customWhitelist !== 'undefined' && customWhitelist && customWhitelist.size > 0) {
-        if (customWhitelist.has(email)) {
-            return { score: 0, reasons: [`Absender-E-Mail (${email}) steht auf der Whitelist.`], listType: 'whitelist' };
-        }
-        // ⚡ Bolt Optimization: Replace O(n) array iteration with O(1) set lookups for domain checking
-        if (customWhitelist.has(senderDomain)) {
-            return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${senderDomain}).`], listType: 'whitelist' };
-        }
-        let dotIdx = senderDomain.indexOf('.');
-        while (dotIdx !== -1) {
-            let parentDomain = senderDomain.substring(dotIdx + 1);
-            if (customWhitelist.has(parentDomain)) {
-                return { score: 0, reasons: [`Absender-Domain (${senderDomain}) steht auf der Whitelist (${parentDomain}).`], listType: 'whitelist' };
-            }
-            dotIdx = senderDomain.indexOf('.', dotIdx + 1);
-        }
-    }
-    return null;
-}
-
-const AUTH_FAIL_REGEX = /(?:spf=fail|spf=softfail|dkim=fail|dmarc=fail)/i;
-const AUTH_PASS_REGEX_SPF = /spf=pass/i;
-const AUTH_PASS_REGEX_DKIM = /dkim=pass/i;
-const AUTH_PASS_REGEX_DMARC = /dmarc=pass/i;
-
-function evaluateAuthHeaders(authHeaders, score, reasons) {
-    let authStatus = 'neutral';
-    if (authHeaders && authHeaders.length > 0) {
-        const headerStr = authHeaders.join(' ');
-
-        // ⚡ Bolt Optimization: Fast-path to avoid unconditionally allocating lowercased copy of large texts
-        if (AUTH_FAIL_REGEX.test(headerStr)) {
-            let fail = false;
-
-            if (/spf=(?:fail|softfail)/i.test(headerStr)) {
-                score += 50;
-                reasons.push("SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
-                fail = true;
-            }
-            if (/dkim=fail/i.test(headerStr)) {
-                score += 50;
-                reasons.push("DKIM-Signatur ungültig (Mögliches Spoofing).");
-                fail = true;
-            }
-            if (/dmarc=fail/i.test(headerStr)) {
-                score += 50;
-                reasons.push("DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
-                fail = true;
-            }
-
-            if (fail) {
-                authStatus = 'fail';
-            } else if (AUTH_PASS_REGEX_SPF.test(headerStr) && AUTH_PASS_REGEX_DKIM.test(headerStr) && AUTH_PASS_REGEX_DMARC.test(headerStr)) {
-                authStatus = 'pass';
-            }
-        } else if (AUTH_PASS_REGEX_SPF.test(headerStr) && AUTH_PASS_REGEX_DKIM.test(headerStr) && AUTH_PASS_REGEX_DMARC.test(headerStr)) {
-            authStatus = 'pass';
-        }
-    }
-    return { score, authStatus };
-}
-
-function evaluateUrlhaus(urlhausDomains, score, reasons) {
-    if (urlhausDomains && urlhausDomains.length > 0) {
-        for (let domain of urlhausDomains) {
-            score += 80;
-            reasons.push(`Domain (${domain}) ist auf URLhaus als bösartig gelistet.`);
-        }
-    }
-    return score;
-}
-
-function evaluateReplyTo(replyTo, senderDomain, score, reasons) {
-    if (replyTo && senderDomain) {
-        let replyToEmail = extractEmailAddress(replyTo);
-        const replyDomain = extractEmailDomain(replyToEmail);
-
-        if (replyDomain && replyDomain !== senderDomain) {
-            score += 50;
-            reasons.push(`Diskrepanz erkannt: "Reply-To" Domain (${replyDomain}) weicht von der Absender-Domain (${senderDomain}) ab.`);
-        }
-    }
-    return score;
-}
-
-function evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons) {
-    let mixedCaseText = subject + " " + messageText;
-
-    // ⚡ Bolt Optimization: Fast path to avoid unconditionally allocating lowercased copy of large texts
-    if (FAST_URGENCY_REGEX.test(mixedCaseText)) {
-        let foundUrgencyWords = [];
-
-        let match;
-        URGENCY_REGEX.lastIndex = 0;
-        while ((match = URGENCY_REGEX.exec(mixedCaseText)) !== null) {
-            let m = match[2].toLowerCase();
-            // ⚡ Bolt Optimization: Replace O(N) array iteration with includes
-            if (!foundUrgencyWords.includes(m)) {
-                foundUrgencyWords.push(m);
-            }
-        }
-
-        if (foundUrgencyWords.length > 0) {
-            if (isFirstCommunication) {
-                score += 50;
-                reasons.push(`Mögliches BEC (Business Email Compromise): Erste Kommunikation mit diesem Absender und Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}).`);
-            } else {
-                score += 20;
-                reasons.push(`Dringlichkeits-Signalwörter gefunden (${foundUrgencyWords.join(', ')}). Bitte prüfen Sie die Anfrage sorgfältig.`);
-            }
-            return score;
-        }
-    }
-
-    if (isFirstCommunication) {
-        score += 10;
-        reasons.push("Dies ist das erste Mal, dass Sie mit diesem Absender kommunizieren.");
-    }
-    return score;
-}
-
-function getMainDomain(domain) {
-    // ⚡ Bolt Optimization: Fast path for exact brand matches avoids RegExp execution
-    if (KNOWN_BRANDS_SET.has(domain)) {
-        return domain;
-    }
-
-    // ⚡ Bolt Optimization: Use exec instead of match to prevent full array allocation on miss
-    const match = KNOWN_BRANDS_REGEX.exec(domain);
-    if (match !== null) {
-        return match[1].toLowerCase();
-    }
-
-    const lastDot = domain.lastIndexOf('.');
-    if (lastDot !== -1) {
-        const secondLastDot = domain.lastIndexOf('.', lastDot - 1);
-        if (secondLastDot !== -1) {
-            return domain.substring(secondLastDot + 1);
-        }
-    }
-    return domain;
-}
-
-function evaluateSenderDomain(senderDomain, score, reasons) {
-    let senderMainDomain = "";
-    if (senderDomain) {
-        senderMainDomain = getMainDomain(senderDomain);
-        let isSenderKnownBrand = KNOWN_BRANDS_SET.has(senderMainDomain);
-
-        if (!isSenderKnownBrand) {
-            for (let brand of KNOWN_BRANDS) {
-                if (senderMainDomain.length < 4 || Math.abs(senderMainDomain.length - brand.length) > 2) continue;
-
-                let distance = levenshteinDistance(senderMainDomain, brand);
-                if (distance > 0 && distance <= 2) {
-                    score += 60;
-                    reasons.push(`Absender-Domain (${senderMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
-                    break;
-                }
-            }
-        }
-    }
-    return { score, senderMainDomain };
-}
-
-function getHostnameOptimized(url, cache = null) {
-    if (cache) {
-        let cached = cache.get(url);
-        if (cached !== undefined) return cached;
-    }
-    try {
-        let hostname = new URL(url).hostname;
-        if (cache) cache.set(url, hostname);
-        return hostname;
-    } catch (e) {
-        if (cache) cache.set(url, null);
-        return null;
-    }
-}
-
-function checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, reasonsDomainsSet) {
-    // ⚡ Bolt Optimization: Fast-path for exact brand matches early
-    if (KNOWN_BRANDS_SET.has(linkMainDomain)) {
-        return false;
-    }
-
-    let cachedBrandMatch = checkedMainDomains.get(linkMainDomain);
-    if (cachedBrandMatch !== undefined) {
-        if (cachedBrandMatch !== null) {
-            if (!reasonsDomainsSet.has(linkMainDomain)) {
-                reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${cachedBrandMatch}.`);
-                reasonsDomainsSet.add(linkMainDomain);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    for (let brand of KNOWN_BRANDS) {
-        if (linkMainDomain.length < 4 || Math.abs(linkMainDomain.length - brand.length) > 2) continue;
-
-        let distance = levenshteinDistance(linkMainDomain, brand);
-        if (distance > 0 && distance <= 2) {
-            checkedMainDomains.set(linkMainDomain, brand);
-            if (!reasonsDomainsSet.has(linkMainDomain)) {
-                reasons.push(`Link-Domain (${linkMainDomain}) ähnelt verdächtig der bekannten Marke ${brand}.`);
-                reasonsDomainsSet.add(linkMainDomain);
-            }
-            return true;
-        }
-    }
-
-    checkedMainDomains.set(linkMainDomain, null);
-    return false;
-}
-
-function evaluateLinks(options = {}) {
-    let {
-        urls = [],
-        senderDomain = '',
-        senderMainDomain = '',
-        score = 0,
-        reasons = [],
-        parsedUrlCache = null
-    } = options;
-    let linkDomainsSet = new Set();
-    // ⚡ Bolt Optimization: Use indexed loop and inline cache check to reduce function call overhead
-    for (let i = 0; i < urls.length; i++) {
-        try {
-            let url = urls[i];
-            let hostname;
-            if (parsedUrlCache) {
-                hostname = parsedUrlCache.get(url);
-                if (hostname === undefined) {
-                    hostname = getHostnameOptimized(url, parsedUrlCache);
-                }
-            } else {
-                hostname = getHostnameOptimized(url, parsedUrlCache);
-            }
-            if (hostname) linkDomainsSet.add(hostname);
-        } catch (e) { /* Ignore invalid URLs */ }
-    }
-    if (linkDomainsSet.size > 0 && senderDomain) {
-        let matchFound = false;
-        let typosquatLinkFound = false;
-        let checkedMainDomains = new Map();
-        let reasonsDomainsSet = new Set();
-
-        // ⚡ Bolt Optimization: Iterate directly over the Set to avoid Array.from() allocation overhead
-        const dotSenderDomain = '.' + senderDomain;
-        const dotSenderMainDomain = senderMainDomain ? '.' + senderMainDomain : '';
-        for (let ld of linkDomainsSet) {
-            if (!matchFound) {
-                if (ld === senderDomain || ld.endsWith(dotSenderDomain) || senderDomain.endsWith('.' + ld)) {
-                    matchFound = true;
-                } else if (senderMainDomain && (ld === senderMainDomain || ld.endsWith(dotSenderMainDomain))) {
-                     matchFound = true;
-                }
-            }
-
-            let linkMainDomain = getMainDomain(ld);
-            let isLinkKnownBrand = KNOWN_BRANDS_SET.has(linkMainDomain);
-
-            if (!isLinkKnownBrand) {
-                if (checkTyposquattingLink(linkMainDomain, checkedMainDomains, reasons, reasonsDomainsSet)) {
-                    typosquatLinkFound = true;
-                }
-            }
-        }
-
-        if (!matchFound) {
-            score += 40;
-            if (!reasons.some(r => r.includes('Keiner der Links'))) {
-                 reasons.push(`Keiner der Links im Text verweist auf die Absender-Domain (${senderDomain}).`);
-            }
-        }
-        if (typosquatLinkFound) {
-            score += 60;
-        }
-    }
-    return score;
-}
-
-function extractEmailAddress(rawAuthor) {
-    let email = rawAuthor;
-    // ⚡ Bolt Optimization: Use indexOf and substring to avoid regex allocation overhead
-    // 🛡️ Sentinel: Use lastIndexOf to prevent email spoofing via decoy display names
-    const start = rawAuthor.lastIndexOf('<');
-    if (start !== -1) {
-        const end = rawAuthor.indexOf('>', start + 1);
-        if (end !== -1) {
-            email = rawAuthor.substring(start + 1, end);
-        }
-    }
-    return email.toLowerCase();
-}
-
-function extractEmailDomain(emailAddress) {
-    // ⚡ Bolt Optimization: Use indexOf and substring instead of split for O(n) extraction without array allocation
-    const atIndex = emailAddress.indexOf('@');
-    return atIndex !== -1 ? emailAddress.substring(atIndex + 1).toLowerCase() : "";
-}
-
-function calculateThreatScore(author, urls, options = {}) {
-    const {
-        authHeaders = [],
-        urlhausDomains = [],
-        isFirstCommunication = false,
-        messageText = "",
-        subject = "",
-        replyTo = "",
-        parsedUrlCache = null
-    } = options;
-    let score = 0;
-    let reasons = [];
-
-    let email = extractEmailAddress(author);
-    let senderDomain = extractEmailDomain(email);
-
-    const listCheck = checkLists(email, senderDomain);
-    if (listCheck) {
-        return { score: listCheck.score, reasons: listCheck.reasons, authStatus: 'neutral' };
-    }
-
-    const authEval = evaluateAuthHeaders(authHeaders, score, reasons);
-    score = authEval.score;
-    let authStatus = authEval.authStatus;
-
-    score = evaluateUrlhaus(urlhausDomains, score, reasons);
-    score = evaluateReplyTo(replyTo, senderDomain, score, reasons);
-    score = evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons);
-
-    const senderEval = evaluateSenderDomain(senderDomain, score, reasons);
-    score = senderEval.score;
-    let senderMainDomain = senderEval.senderMainDomain;
-
-    score = evaluateLinks({
-        urls,
-        senderDomain,
-        senderMainDomain,
-        score,
-        reasons,
-        parsedUrlCache
-    });
-
-    return { score: Math.min(score, 100), reasons: reasons, authStatus: authStatus };
-}
-
-async function processAndUploadUrls(message, filteredUrls) {
-    if (privacyTier === 'max' && mayTransmitExternally()) {
+async function processAndUploadUrls(message, filteredUrls, allowExternal = true, manualAction = false) {
+    if (allowExternal && (manualAction || (!alwaysManual && autoScanLinks)) && privacyTier === 'max' && mayTransmitExternally()) {
         try {
             await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/url');
         } catch (e) {
@@ -911,7 +352,7 @@ async function processAndUploadUrls(message, filteredUrls) {
                         };
                     }
                 } catch (e) {
-                    Logger.error('Fehler beim automatischen URL-Upload', e);
+                    Logger.error('Automatic URL upload failed');
                 }
                 urlResults[index] = result;
             }
@@ -929,18 +370,7 @@ async function processAndUploadUrls(message, filteredUrls) {
     }
 }
 
-async function injectTimeOfClickProtection(tabId, filteredUrls) {
-    if (timeOfClickProtection && filteredUrls.length > 0) {
-        await injectIntoMessageDisplay(tabId, function() {
-            // ⚡ Bolt Optimization: Use native CSS attribute selector instead of filtering all 'a' tags in JS
-            const links = document.querySelectorAll('a[href^="http"]');
-            links.forEach(link => {
-                link.title = "Protected by Thundy Time-of-Click";
-                link.style.borderBottom = "1px dashed #ff8c00";
-            });
-        });
-    }
-}
+
 
 async function checkIPReputation(receivedHeaders) {
     let maliciousIps = [];
@@ -965,7 +395,7 @@ async function checkIPReputation(receivedHeaders) {
 
         let ipChecks = [];
 
-        for (let i = 0; i < publicIps.length; i++) {
+        for (let i = 0; i < Math.min(publicIps.length, 20); i++) {
             const ip = publicIps[i];
             if (ipReputationCache.has(ip)) {
                 const cached = ipReputationCache.get(ip);
@@ -1066,7 +496,7 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
         const domainChecks = [];
 
         // ⚡ Bolt Optimization: Iterate directly over the Set to avoid Array.from() allocation overhead
-        for (const domain of linkDomainsSet) {
+        for (const domain of Array.from(linkDomainsSet).slice(0, 100)) {
 
             if (urlhausCache.has(domain)) {
                 const cached = urlhausCache.get(domain);
@@ -1087,7 +517,8 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
             urlhausCache.set(domain, checkPromise);
 
             domainChecks.push(checkPromise.then(isMalicious => {
-                urlhausCache.set(domain, isMalicious);
+                if (isMalicious === null) urlhausCache.delete(domain);
+                else urlhausCache.set(domain, isMalicious);
                 if (isMalicious) urlhausDomains.push(domain);
             }));
         }
@@ -1099,91 +530,27 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
     return urlhausDomains;
 }
 
-async function injectThreatBanner(tabId, threat) {
-    if (threat.score >= 50 || threat.authStatus === 'pass') {
-        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus) {
-                const t = (key, fallback, subs) => {
-                    try {
-                        return browser.i18n.getMessage(key, subs) || fallback;
-                    } catch (e) {
-                        return fallback;
-                    }
-                };
-                if (score >= 50) {
-                    // Sichere DOM-Manipulation ohne innerHTML
-                    const banner = document.createElement('div');
-                    banner.id = 'thundy-threat-banner';
-                    banner.style.backgroundColor = '#ffeeee';
-                    banner.style.border = '1px solid #ff0000';
-                    banner.style.color = '#ff0000';
-                    banner.style.padding = '10px';
-                    banner.style.margin = '10px';
-                    banner.style.borderRadius = '4px';
-                    banner.style.fontWeight = 'bold';
-                    banner.style.fontFamily = 'Arial, sans-serif';
-                    banner.style.zIndex = '9999';
 
-                    const title = document.createElement('div');
-                    title.textContent = '🔴 ⚠️ ' + t('bannerThreatTitle', 'Thundy AV warning') +
-                        ' (' + t('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
-                    title.style.fontSize = '16px';
-                    title.style.marginBottom = '5px';
-                    banner.appendChild(title);
 
-                    const reasonList = document.createElement('ul');
-                    reasonList.style.margin = '0';
-                    reasonList.style.paddingLeft = '20px';
-                    reasonList.style.fontSize = '14px';
-
-                    for (const reason of reasons) {
-                        const li = document.createElement('li');
-                        li.textContent = reason;
-                        reasonList.appendChild(li);
-                    }
-                    banner.appendChild(reasonList);
-
-                    document.body.prepend(banner);
-                } else if (authStatus === 'pass') {
-                    const badge = document.createElement('div');
-                    badge.id = 'thundy-auth-badge';
-                    badge.style.display = 'inline-block';
-                    badge.style.backgroundColor = '#e6ffe6';
-                    badge.style.border = '1px solid #008000';
-                    badge.style.color = '#008000';
-                    badge.style.padding = '5px 10px';
-                    badge.style.margin = '10px';
-                    badge.style.borderRadius = '20px';
-                    badge.style.fontWeight = 'bold';
-                    badge.style.fontFamily = 'Arial, sans-serif';
-                    badge.style.fontSize = '12px';
-                    badge.style.zIndex = '9999';
-                    badge.textContent = '🟢 🛡️ ' + t('bannerAuthPass', 'Sender verified (SPF/DKIM/DMARC passed)');
-
-                    document.body.prepend(badge);
-                }
-        }, [threat.score, threat.reasons, threat.authStatus]);
-    }
-}
-
-async function processAttachments(message) {
+async function processAttachments(message, allowExternal = true, manualAction = false) {
   let attachments = await browser.messages.listAttachments(message.id);
 
   if (attachments.length > 0) {
-    await sent_to_hybrid_by_attachment(message, attachments);
+    await sent_to_hybrid_by_attachment(message, attachments, allowExternal, manualAction);
   }
 }
 
-async function processLinks(tab, message, fullMessage, parsedUrlCache = null) {
+async function processLinks(tab, message, fullMessage, parsedUrlCache = null, allowExternal = true, manualAction = false) {
   let messageText = extractTextFromParts(fullMessage.parts || fullMessage);
   let urls = extractUrls(messageText);
   let filteredUrls = filterUrls(urls, parsedUrlCache);
 
   if (filteredUrls.length > 0) {
-    await processAndUploadUrls(message, filteredUrls);
+    await processAndUploadUrls(message, filteredUrls, allowExternal, manualAction);
   }
 
   // Wenn timeOfClickProtection aktiv ist, senden wir eine Nachricht an den Content-Script
-  await injectTimeOfClickProtection(tab.id, filteredUrls);
+  await injectTimeOfClickProtection(tab.id, filteredUrls, message.id);
 
   return { messageText, urls, filteredUrls };
 }
@@ -1197,13 +564,18 @@ async function extractBecProtectionData(message, fullMessage) {
   return { senderEmail, isFirstCommunication, replyTo, subject };
 }
 
-async function collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache }) {
-  const authHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
+async function collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal = true }) {
+  const rawAuthHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
+  const settings = await browser.storage.local.get('trustedAuthServers');
+  const trusted = new Set((settings.trustedAuthServers || []).map(host => host.toLowerCase()));
+  const first = rawAuthHeaders[0] || '';
+  const authServer = first.split(';')[0].trim().toLowerCase();
+  const authHeaders = trusted.has(authServer) ? [first] : [];
   const receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
 
   const [maliciousIps, urlhausDomains, becData] = await Promise.all([
-    checkIPReputation(receivedHeaders),
-    checkURLhausDomains(filteredUrls, parsedUrlCache),
+    allowExternal ? checkIPReputation(receivedHeaders) : [],
+    allowExternal ? checkURLhausDomains(filteredUrls, parsedUrlCache) : [],
     extractBecProtectionData(message, fullMessage)
   ]);
 
@@ -1219,8 +591,8 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
   };
 }
 
-async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null }) {
-  const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache });
+async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null, allowExternal = true }) {
+  const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal });
   const threat = calculateThreatScore(message.author, urls, options);
   await injectThreatBanner(tab.id, threat);
 }
@@ -1230,130 +602,7 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
  * Two explicit actions: scan this message once (no persistent opt-in) or
  * enable scanning for this sender permanently.
  */
-async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
-  await injectIntoMessageDisplay(tabId, function(messageId, senderEmail, consentGiven) {
-        const t = (key, fallback, subs) => {
-          try {
-            return browser.i18n.getMessage(key, subs) || fallback;
-          } catch (e) {
-            return fallback;
-          }
-        };
 
-        const existing = document.getElementById('thundy-optin-banner');
-        if (existing) return;
-
-        const banner = document.createElement('div');
-        banner.id = 'thundy-optin-banner';
-        banner.style.backgroundColor = '#fff8e1';
-        banner.style.border = '1px solid #ffcc80';
-        banner.style.color = '#333';
-        banner.style.padding = '8px';
-        banner.style.margin = '8px';
-        banner.style.borderRadius = '4px';
-        banner.style.fontFamily = 'Arial, sans-serif';
-        banner.style.zIndex = '9999';
-
-        const text = document.createElement('span');
-        text.textContent = t('bannerTitleOptIn', 'Thundy AV: real-time scanning is not enabled for this message.');
-        banner.appendChild(text);
-
-        const createButton = (label, persist) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.textContent = label;
-          btn.style.marginLeft = '10px';
-          btn.addEventListener('click', async () => {
-            const buttons = banner.querySelectorAll('button');
-            buttons.forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
-            btn.textContent = t('bannerScanRunning', 'Scanning…');
-            try {
-              const resp = await browser.runtime.sendMessage({
-                action: 'requestScan',
-                messageId: messageId,
-                senderEmail: senderEmail,
-                persist: persist
-              });
-              if (resp && resp.success) {
-                btn.textContent = t('bannerScanDone', 'Scan finished');
-                btn.removeAttribute('aria-busy');
-                buttons.forEach(b => { b.disabled = false; });
-                if (persist) {
-                  setNote(t('bannerSenderOptIn', 'This sender is now scanned automatically.'));
-                }
-              } else if (resp && resp.error === 'permission_denied') {
-                btn.textContent = t('bannerPermissionDenied', 'Required host permission was denied');
-                // A request triggered from the banner travels over
-                // runtime.sendMessage, so it has no user gesture in the context
-                // that calls permissions.request; if it is rejected, the options
-                // page is the reliable path (P2-23).
-                setNote(t('bannerPermissionDeniedHint', 'The host permission for the analysis service is missing. Please grant it in the add-on options.'));
-                addOptionsButton();
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-              } else if (resp && (resp.error === 'HOST_PERMISSION_MISSING' || resp.code === 'HOST_PERMISSION_MISSING')) {
-                btn.textContent = t('bannerScanFailed', 'Scan failed');
-                setNote(t('bannerPermissionDeniedHint', 'The host permission for the analysis service is missing. Please grant it in the add-on options.'));
-                addOptionsButton();
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-              } else if (resp && (resp.error === 'TIER_BLOCKS_UPLOAD' || resp.code === 'TIER_BLOCKS_UPLOAD' ||
-                                  resp.error === 'TIER_REQUIRES_MAX' || resp.code === 'TIER_REQUIRES_MAX')) {
-                btn.textContent = t('bannerScanFailed', 'Scan failed');
-                setNote(t('bannerTierBlocked', 'This action is not allowed by the current privacy tier. See the add-on options.'));
-                addOptionsButton();
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-              } else if (resp && (resp.error === 'EXTERNAL_ANALYSIS_DISABLED' || resp.code === 'EXTERNAL_ANALYSIS_DISABLED')) {
-                setNote(t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.'));
-                addOptionsButton();
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); btn.textContent = label; });
-              } else {
-                btn.textContent = t('bannerScanFailed', 'Scan failed');
-                buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-              }
-            } catch (e) {
-              btn.textContent = t('bannerScanFailed', 'Scan failed');
-              buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
-            }
-          });
-          banner.appendChild(btn);
-        };
-
-        const note = document.createElement('div');
-        note.id = 'thundy-optin-note';
-        note.style.fontSize = '12px';
-        note.style.marginTop = '6px';
-        note.textContent = t('bannerNoteOptIn', 'Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you gave your consent. See the add-on options.');
-        if (!consentGiven) {
-          note.textContent = t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.');
-        }
-
-        function setNote(value) {
-          note.textContent = value;
-        }
-
-        function addOptionsButton() {
-          if (banner.querySelector('#thundy-open-options')) return;
-          const optionsButton = document.createElement('button');
-          optionsButton.id = 'thundy-open-options';
-          optionsButton.type = 'button';
-          optionsButton.textContent = t('bannerOpenOptions', 'Open options');
-          optionsButton.style.marginLeft = '10px';
-          optionsButton.setAttribute('aria-describedby', 'thundy-optin-note');
-          optionsButton.addEventListener('click', () => browser.runtime.openOptionsPage());
-          note.appendChild(optionsButton);
-        }
-
-        createButton(t('bannerScanOnce', 'Scan this message once'), false);
-        createButton(t('bannerScanSender', 'Always scan this sender'), true);
-
-        banner.appendChild(note);
-
-        if (!consentGiven) {
-          addOptionsButton();
-        }
-
-        document.body.prepend(banner);
-  }, [messageId, senderEmail, consentGiven === true]);
-}
 
 /**
  * Returns the first message displayed in the given tab.
@@ -1403,6 +652,7 @@ async function handleDisplayedMessage(tab, message) {
     const enabledSenders = stored.scanningEnabledSenders || [];
 
     const permission = await hasHybridPermission();
+    const allowExternal = await authorizeMessageScan(message);
     const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual &&
       !!apikey_hybridanalysis && mayTransmitExternally();
 
@@ -1412,12 +662,12 @@ async function handleDisplayedMessage(tab, message) {
       attachments = await browser.messages.listAttachments(message.id);
     } catch (e) { /* ignore */ }
 
-    await processAttachments(message);
+    await processAttachments(message, allowExternal);
 
     let parsedUrlCache = new Map();
-    let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage, parsedUrlCache);
+    let { messageText, urls, filteredUrls } = await processLinks(tab, message, fullMessage, parsedUrlCache, allowExternal);
 
-    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
+    await evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache, allowExternal });
 
     if (!canAutoUpload && ((attachments && attachments.length > 0) || (filteredUrls && filteredUrls.length > 0))) {
       await injectOptInBanner(tab.id, message.id, senderEmail, mayTransmitExternally());
@@ -1435,6 +685,11 @@ function extractTextFromParts(part, outObj) {
       outObj = { text: "" };
   }
 
+  if (Array.isArray(part)) {
+      for (const child of part) extractTextFromParts(child, outObj);
+      return isRoot ? outObj.text : undefined;
+  }
+  if (!part) return isRoot ? outObj.text : undefined;
   if (part.contentType === "text/plain" || part.contentType === "text/html") {
       if (part.body) {
          outObj.text += part.body + " ";
@@ -1634,29 +889,22 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
 }
 
 
-async function process_single_attachment(message, attachment) {
+async function process_single_attachment(message, attachment, allowExternal = true, manualAction = false) {
+    if (attachment.size > 25 * 1024 * 1024) {
+        const item = create_manual_check_hybrid_data('', attachment, null);
+        item.hybrid_data.state = 'SIZE_LIMIT';
+        return item;
+    }
     let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
 
-    switch (attachment.contentType) {
-      case 'text/plain':
-      case 'text/html':
-      case 'text/css':
-      case 'text/csv':
-      case 'text/javascript':
-      case 'application/json':
-      case 'application/xml':
-      case 'application/xhtml+xml':
-        return null;
-
-      default:
         try {
             const content_of_attachment = file.slice();
             const arrayBuffer = await content_of_attachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
 
-            const virustotal_stats = await fetch_virustotal_stats(local_hash, apikey_virustotal);
+            const virustotal_stats = allowExternal ? await fetch_virustotal_stats(local_hash, apikey_virustotal) : null;
 
-            if (alwaysManual || !mayTransmitExternally()) {
+            if (!allowExternal || (alwaysManual && !manualAction) || !apikey_hybridanalysis || !mayTransmitExternally()) {
                 return create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats);
             }
 
@@ -1672,21 +920,15 @@ async function process_single_attachment(message, attachment) {
           Logger.error('Netzwerk- oder Verarbeitungsfehler beim Überprüfen:', error);
           return null;
         }
-    }
 }
 
 
-async function sent_to_hybrid_by_attachment(message, attachments) {
-  if (!apikey_hybridanalysis) {
-      Logger.error("Kein API-Key gefunden. Bitte in den Einstellungen hinterlegen.");
-      return;
-  }
+async function sent_to_hybrid_by_attachment(message, attachments, allowExternal = true, manualAction = false) {
 
-  const promises = [];
-  for (const attachment of attachments) {
-    promises.push(process_single_attachment(message, attachment));
-  }
-  const results = await Promise.all(promises);
+  const selected = attachments.slice(0, 100);
+  const results = typeof mapWithLimit !== 'undefined'
+      ? await mapWithLimit(selected, 2, attachment => process_single_attachment(message, attachment, allowExternal, manualAction))
+      : await Promise.all(selected.map(attachment => process_single_attachment(message, attachment, allowExternal, manualAction)));
 
   const validResults = results.filter(r => r !== null);
   if (validResults.length > 0) {
@@ -1695,6 +937,7 @@ async function sent_to_hybrid_by_attachment(message, attachments) {
 }
 
 async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
+  if (!message.headerMessageId && message.id != null) message = { ...message, headerMessageId: 'message:' + message.id };
   try {
     const db = await getSharedDB();
 
@@ -1742,6 +985,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
             attachments: newAttachments
           };
         }
+        recordToSave.updatedAt = Date.now();
         return recordToSave;
       });
     }
@@ -1752,6 +996,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
 
 // Speicherung der Ergebnisse in IndexedDB
 async function indexedDB_save_links_objects_to_db(message, urlObjects) {
+  if (!message.headerMessageId && message.id != null) message = { ...message, headerMessageId: 'message:' + message.id };
   try {
     const db = await getSharedDB();
 
@@ -1785,6 +1030,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
             links: newLinks
           };
         }
+        recordToSave.updatedAt = Date.now();
         return recordToSave;
       });
     }
@@ -1794,6 +1040,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
 }
 
 async function indexedDB_save_links_to_db(message, urls) {
+  if (!message.headerMessageId && message.id != null) message = { ...message, headerMessageId: 'message:' + message.id };
   try {
     const db = await getSharedDB();
 
@@ -1826,6 +1073,7 @@ async function indexedDB_save_links_to_db(message, urls) {
             links: newLinks
           };
         }
+        recordToSave.updatedAt = Date.now();
         return recordToSave;
       });
     }
@@ -1891,7 +1139,7 @@ function notify(titleKey, messageKey, subs) {
 async function scanLinksOfDisplayedMessage(tabId) {
     const message = await getFirstDisplayedMessage(tabId);
     if (!message) {
-        notify('notificationTitleError', 'notificationScanError', ['No displayed message found']);
+        notify('notificationTitleError', 'notificationScanError', [uiText('noMessageFound', 'No displayed message found')]);
         return;
     }
     try {
@@ -1912,7 +1160,7 @@ async function scanLinksOfDisplayedMessage(tabId) {
                 Logger.error('Could not submit link for analysis', e);
             }
         }
-        notify('notificationTitle', 'notificationScanSubmitted', [String(submitted)]);
+        notify('notificationTitle', 'notificationScanCount', [String(submitted)]);
     } catch (e) {
         notify('notificationTitleError', 'notificationScanError', [e.message]);
     }
@@ -1954,7 +1202,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
     try {
         // Need to find the active message to get headerMessageId
         const message = await getFirstDisplayedMessage(sender && sender.tab && sender.tab.id, { throwOnError: true });
-        if (!message || !message.headerMessageId) {
+        if (!message || !message.headerMessageId || (request.messageId != null && request.messageId !== message.id)) {
             sendResponse({status: 'UNKNOWN'});
             return;
         }
@@ -1981,10 +1229,10 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         }
 
         // Time-of-Click Live Scan via urlscan.io
-        if (urlscanApikey && (!linkObj || linkObj.state === 'UNKNOWN')) {
+        if (request.userAction === true && urlscanApikey && tierAtLeast('max') && (!linkObj || linkObj.state === 'UNKNOWN')) {
             try {
                 const res = await checkUrlscanIo(request.url, urlscanApikey);
-                if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT') {
+                if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT' && res.status !== 'NOT_CHECKED') {
                     // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
                     sendResponse({ status: res.status, reasons: res.reasons });
                     return;
@@ -1995,7 +1243,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         }
 
         if (linkObj) {
-            const status = await checkHybridAnalysisVerdict(linkObj.hybrid_sha256, linkObj.state);
+            const status = request.userAction === true ? await checkHybridAnalysisVerdict(linkObj.hybrid_sha256, linkObj.state) : linkObj.state;
             sendResponse({status: status});
         } else {
             sendResponse({status: 'UNKNOWN'});
@@ -2045,7 +1293,7 @@ async function handleRequestScan(request, sender) {
     }
 
     // Ensure permission to contact the analysis service
-    let granted = await hasHybridPermission();
+    let granted = !apikey_hybridanalysis || await hasHybridPermission();
     if (!granted) {
         try {
             granted = await browser.permissions.request({ origins: [PROVIDER_ORIGINS.hybridanalysis] });
@@ -2056,18 +1304,17 @@ async function handleRequestScan(request, sender) {
         return { success: false, error: 'permission_denied' };
     }
 
-    if (request.persist === true && request.senderEmail) {
-        await addSenderOptIn(request.senderEmail.toLowerCase());
-    }
-
     try {
-        const messageObj = { id: request.messageId };
-        await processAttachments(messageObj);
+        const messageObj = await browser.messages.get(request.messageId);
+        if (request.persist === true && messageObj.author) {
+            await addSenderOptIn(extractEmailAddress(messageObj.author));
+        }
+        await processAttachments(messageObj, true, true);
         const fullMessage = await browser.messages.getFull(request.messageId);
         const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (request.tabId || null);
         const tab = { id: tabId };
         const parsedUrlCache = new Map();
-        const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache);
+        const { messageText, urls, filteredUrls } = await processLinks(tab, messageObj, fullMessage, parsedUrlCache, true, true);
         await evaluateAndInjectThreats({ tab, message: messageObj, fullMessage, urls, filteredUrls, messageText, parsedUrlCache });
         return { success: true, persisted: request.persist === true };
     } catch (e) {
@@ -2086,6 +1333,21 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!request || typeof request !== 'object') return false;
 
     switch (request.action) {
+        case "getLocalRisk":
+            (async () => {
+                const message = await browser.messages.get(request.messageId);
+                const fullMessage = await browser.messages.getFull(request.messageId);
+                const messageText = extractTextFromParts(fullMessage.parts || fullMessage);
+                const urls = filterUrls(extractUrls(messageText));
+                const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls: urls, messageText, allowExternal: false });
+                return calculateThreatScore(message.author, urls, options);
+            })().then(threat => sendResponse({ status: 'success', threat })).catch(() => sendResponse({ status: 'error' }));
+            return true;
+        case "clearMemoryCaches":
+            urlhausCache.clear(); ipReputationCache.clear(); vtCache.clear(); knownSendersCache.clear();
+            if (browser.runtime.sendMessage) browser.runtime.sendMessage({ action: 'memoryCachesCleared' }).catch(() => {});
+            sendResponse({ status: 'success' });
+            return false;
         case "uploadAttachment":
             handleManualUpload(request.messageId, request.partName, request.attachmentName, request.hash, request.headerMessageId)
                 .then(res => sendResponse({status: 'success', data: res}))
@@ -2163,117 +1425,8 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
     return { downloadId: downloadId };
 }
 
-const dangerousAttributes = new Set(['href', 'src', 'action', 'formaction', 'xlink:href']);
-
-const activeTags = new Set(['script', 'object', 'embed', 'iframe', 'base', 'meta', 'applet', 'link', 'math', 'svg', 'noscript']);
-
-// ⚡ Bolt: Use a direct precompiled regex with bounds and no capturing groups for peak performance
-const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\xA0\u1680\u180E\u2000-\u2029\u202F\u205F\u3000\u200B-\u200D\uFEFF\uFFFD]/g;
-const DANGEROUS_URI_CHARS_TEST_REGEX = /[\x00-\x20\x7F-\x9F\xA0\u1680\u180E\u2000-\u2029\u202F\u205F\u3000\u200B-\u200D\uFEFF\uFFFD]/;
-
-function disarmHTML(htmlString) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlString, 'text/html');
-
-    const nodesToRemove = [];
-
-    const safeEl = doc.createElement('div');
-    const safeHasAttributes = safeEl.hasAttributes;
-    const safeRemoveAttribute = safeEl.removeAttribute;
-
-    let protoForTagName = Object.getPrototypeOf(safeEl);
-    while (protoForTagName && !Object.getOwnPropertyDescriptor(protoForTagName, 'tagName')) {
-        protoForTagName = Object.getPrototypeOf(protoForTagName);
-    }
-    const safeGetTagName = Object.getOwnPropertyDescriptor(protoForTagName, 'tagName').get;
-
-    let protoForAttributes = Object.getPrototypeOf(safeEl);
-    while (protoForAttributes && !Object.getOwnPropertyDescriptor(protoForAttributes, 'attributes')) {
-        protoForAttributes = Object.getPrototypeOf(protoForAttributes);
-    }
-    const safeGetAttributes = Object.getOwnPropertyDescriptor(protoForAttributes, 'attributes').get;
-
-    let protoForNodeType = Object.getPrototypeOf(safeEl);
-    while (protoForNodeType && !Object.getOwnPropertyDescriptor(protoForNodeType, 'nodeType')) {
-        protoForNodeType = Object.getPrototypeOf(protoForNodeType);
-    }
-    const safeGetNodeType = Object.getOwnPropertyDescriptor(protoForNodeType, 'nodeType').get;
-
-    let protoForParentNode = Object.getPrototypeOf(safeEl);
-    while (protoForParentNode && !Object.getOwnPropertyDescriptor(protoForParentNode, 'parentNode')) {
-        protoForParentNode = Object.getPrototypeOf(protoForParentNode);
-    }
-    const safeGetParentNode = Object.getOwnPropertyDescriptor(protoForParentNode, 'parentNode').get;
-
-    let protoForRemoveChild = Object.getPrototypeOf(safeEl);
-    while (protoForRemoveChild && !Object.getOwnPropertyDescriptor(protoForRemoveChild, 'removeChild')) {
-        protoForRemoveChild = Object.getPrototypeOf(protoForRemoveChild);
-    }
-    const safeRemoveChild = Object.getOwnPropertyDescriptor(protoForRemoveChild, 'removeChild').value;
-
-    const safeTemplate = doc.createElement('template');
-    let protoForContent = Object.getPrototypeOf(safeTemplate);
-    while (protoForContent && !Object.getOwnPropertyDescriptor(protoForContent, 'content')) {
-        protoForContent = Object.getPrototypeOf(protoForContent);
-    }
-    const safeGetContent = Object.getOwnPropertyDescriptor(protoForContent, 'content').get;
-
-    function processRoot(root) {
-        const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
-        let el = walker.currentNode;
-        while (el) {
-            // For DocumentFragment, nodeType is 11, but SHOW_ELEMENT only shows elements (nodeType 1).
-            if (safeGetNodeType.call(el) === 1) {
-                const tagName = safeGetTagName.call(el).toLowerCase();
-                if (activeTags.has(tagName)) {
-                    nodesToRemove.push(el);
-                } else {
-                    if (safeHasAttributes.call(el)) {
-                        const attrs = safeGetAttributes.call(el);
-                        for (let j = attrs.length - 1; j >= 0; j--) {
-                            const attrName = attrs[j].name.toLowerCase();
-                            if (attrName.startsWith('on')) {
-                                safeRemoveAttribute.call(el, attrName);
-                                continue;
-                            }
-                            if (dangerousAttributes.has(attrName)) {
-                                let val = attrs[j].value.toLowerCase();
-                                // Remove control characters (like tabs/newlines) that might evade the check
-                                // ⚡ Bolt: Fast test before replacing avoids regex replace string allocation on clean values
-                                let cleanVal = DANGEROUS_URI_CHARS_TEST_REGEX.test(val) ? val.replace(DANGEROUS_URI_CHARS_REGEX, '') : val;
-                                if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                                    safeRemoveAttribute.call(el, attrName);
-                                }
-                            }
-                        }
-                    }
-                    if (tagName === 'template') {
-                        const content = safeGetContent.call(el);
-                        if (content) {
-                            processRoot(content);
-                        }
-                    }
-                }
-            }
-            el = walker.nextNode();
-        }
-    }
-
-    processRoot(doc.documentElement);
-
-    // Remove active tags collected during the pass
-    for (let i = nodesToRemove.length - 1; i >= 0; i--) {
-        const pNode = safeGetParentNode.call(nodesToRemove[i]);
-        if (pNode) {
-            safeRemoveChild.call(pNode, nodesToRemove[i]);
-        }
-    }
-
-    return doc.documentElement.outerHTML;
-}
-
 async function handleUrlScan(url, headerMessageId) {
-    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+    if (!apikey_hybridanalysis) throw new Error(uiText("ui_086", "API-Key fehlt."));
     assertExternalAnalysisAllowed();
     // Submitting the full URL to the sandbox is a "max" tier feature (see
     // docs/privacy_policy.md §3.3/§5); the host permission must be granted too.
@@ -2322,12 +1475,12 @@ async function handleUrlScan(url, headerMessageId) {
         }
         return json_data;
     } else {
-        throw new Error("Fehler beim URL-Scan: " + JSON.stringify(json_data));
+        throw new Error(uiText("ui_099", "Fehler beim URL-Scan: ") + String(response.status));
     }
 }
 
 async function handleManualUpload(messageId, partName, attachmentName, hash, headerMessageId) {
-    if (!apikey_hybridanalysis) throw new Error("API-Key fehlt.");
+    if (!apikey_hybridanalysis) throw new Error(uiText("ui_086", "API-Key fehlt."));
     assertExternalAnalysisAllowed();
     // Uploading the full file is only allowed from "balanced" upwards; the tier
     // applies to manual actions as well (see docs/privacy_policy.md §3.3/§5).
@@ -2379,157 +1532,6 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
         }
         return json_data;
     } else {
-        throw new Error("Fehler beim Upload: " + JSON.stringify(json_data));
+        throw new Error(uiText("ui_060", "Fehler beim Upload: ") + String(response.status));
     }
-}
-
-async function checkVirusTotal(hash, apikey) {
-    if (!apikey) return null;
-    if (!mayTransmitExternally()) return null;
-    if (vtCache.has(hash)) {
-        return await vtCache.get(hash);
-    }
-
-    let checkPromise = (async () => {
-        const url = `https://www.virustotal.com/api/v3/files/${hash}`;
-        const options = {
-            method: 'GET',
-            headers: {
-                'x-apikey': apikey,
-                'accept': 'application/json'
-            }
-        };
-        try {
-            await requireHostPermission(url);
-            const response = await apiGateway.fetchWithTimeout(url, options);
-            if (response.status === 200) {
-                const data = await response.json();
-                if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
-                    return data.data.attributes.last_analysis_stats;
-                }
-            }
-            return null;
-        } catch (e) {
-            Logger.error("Fehler bei VirusTotal Abfrage:", e);
-            return null;
-        }
-    })();
-
-    if (vtCache.size >= MAX_VT_CACHE_SIZE) {
-        const firstKey = vtCache.keys().next().value;
-        vtCache.delete(firstKey);
-    }
-    vtCache.set(hash, checkPromise);
-
-    let stats = await checkPromise;
-    if (stats === null) {
-        // Remove from cache on failure so it can be retried
-        vtCache.delete(hash);
-    }
-    return stats;
-}
-
-async function checkURLhaus(domain, apikey) {
-    if (!apikey) return false;
-    if (!mayTransmitExternally()) return false;
-    await requireHostPermission('https://urlhaus-api.abuse.ch/v1/host/');
-    try {
-        const body = new URLSearchParams();
-        body.append('host', domain);
-        const response = await apiGateway.fetchWithTimeout('https://urlhaus-api.abuse.ch/v1/host/', {
-            method: 'POST',
-            headers: {
-                'Auth-Key': apikey,
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: body.toString()
-        });
-        const data = await response.json();
-        if (data.query_status === 'ok' && data.url_count > 0) {
-            return true;
-        }
-    } catch (e) {
-        Logger.error("Fehler bei URLhaus Abfrage", e);
-    }
-    return false;
-}
-
-async function checkUrlscanIo(url, apikey) {
-    if (!apikey) return null;
-    if (!mayTransmitExternally()) return null;
-    try {
-        await requireHostPermission('https://urlscan.io/api/v1/scan/');
-        // Start Scan
-        // 🛡️ Sentinel: Prevent sensitive URL leakage by defaulting to 'unlisted' instead of 'public' visibility
-        const scanRes = await apiGateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/', {
-            method: 'POST',
-            headers: {
-                'API-Key': apikey,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url: url, visibility: 'unlisted' })
-        });
-
-        if (scanRes.status === 400) {
-           Logger.error("urlscan.io API Error 400 (e.g. Domain not resolvable)", await scanRes.json());
-           return { status: 'ERROR', details: 'Domain not resolvable' };
-        }
-
-        if (!scanRes.ok) throw new Error("Fehler beim Starten des Scans (urlscan.io): " + scanRes.status);
-
-        const scanData = await scanRes.json();
-        const uuid = scanData.uuid;
-
-        if (!uuid) throw new Error("Keine UUID von urlscan.io erhalten.");
-
-        return await pollUrlscanIoResult(uuid);
-    } catch (e) {
-        Logger.error("Fehler bei urlscan.io Abfrage", e);
-        return { status: 'ERROR', details: e.message };
-    }
-}
-
-async function pollUrlscanIoResult(uuid) {
-    let waitTime = 2000;
-    let elapsed = 0;
-    const maxTime = 30000;
-
-    while (elapsed < maxTime) {
-        await new Promise(r => setTimeout(r, waitTime));
-        elapsed += waitTime;
-        waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
-
-        const resultRes = await apiGateway.fetchWithTimeout(`https://urlscan.io/api/v1/result/${uuid}/`);
-        if (resultRes.status === 200) {
-            const resultData = await resultRes.json();
-
-            let isMalicious = false;
-            let reasons = [];
-
-            if (resultData.verdicts && resultData.verdicts.overall && resultData.verdicts.overall.malicious) {
-                isMalicious = true;
-                reasons.push("Die URL wurde von urlscan.io generell als bösartig eingestuft.");
-            }
-
-            if (resultData.verdicts && resultData.verdicts.urlscan && resultData.verdicts.urlscan.brands && resultData.verdicts.urlscan.brands.length > 0) {
-                 // Check if it's visually trying to spoof a brand
-                 if (resultData.verdicts.urlscan.malicious) {
-                    isMalicious = true;
-                    reasons.push("Visuelle Erkennung: Die Seite gibt sich als " + resultData.verdicts.urlscan.brands.join(', ') + " aus (Phishing-Verdacht).");
-                 }
-            }
-
-            if (isMalicious) {
-                return { status: 'MALICIOUS_VISUAL', reasons: reasons };
-            } else {
-                return { status: 'CLEAN' };
-            }
-        } else if (resultRes.status === 404) {
-            // Not ready yet, continue polling
-        } else {
-            throw new Error("Fehler beim Abrufen der Ergebnisse (urlscan.io): " + resultRes.status);
-        }
-    }
-
-    return { status: 'TIMEOUT' }; // Took too long
 }

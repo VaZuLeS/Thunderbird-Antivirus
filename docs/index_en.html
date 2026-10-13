@@ -1,95 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thundy AV – Email Scanner for Thunderbird</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
-        header { text-align: center; padding: 40px 0; border-bottom: 1px solid #eee; }
-        h1 { margin-bottom: 10px; color: #0a66c2; }
-        .btn { display: inline-block; background: #009688; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 4px; }
-        .btn:hover { background: #00796b; }
-        section { margin: 40px 0; }
-        code { background: #f4f4f4; padding: 2px 5px; border-radius: 3px; }
-        .step { background: #f9f9f9; padding: 15px; border-left: 4px solid #009688; margin-bottom: 10px; }
-        .note { background: #fff8e1; border-left: 4px solid #ffcc80; padding: 15px; }
-        footer { text-align: center; font-size: 0.8em; color: #777; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; }
-        footer a { margin: 0 6px; }
-    </style>
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Local email checks with optional external analysis"><title>Thundy AV – Email Scanner for Thunderbird – 1.19.0</title><style>body{font-family:system-ui,sans-serif;line-height:1.6;color:#263238;max-width:900px;margin:0 auto;padding:24px}header{text-align:center;padding:24px 0}h1{color:#075985}nav{display:flex;justify-content:center;flex-wrap:wrap;gap:12px}a{color:#075985}a:focus-visible{outline:3px solid #f59e0b;outline-offset:4px}.btn{display:inline-block;border-radius:8px;padding:12px 18px;background:#075985;color:white;text-decoration:none;margin:8px}.note{background:#fff8e1;border-left:4px solid #f59e0b;padding:16px}section{margin:32px 0}footer{border-top:1px solid #ddd;padding:16px 0}p{overflow-wrap:anywhere}@media(prefers-color-scheme:dark){body{background:#111827;color:#f3f4f6}a,h1{color:#7dd3fc}.note{background:#292524}.btn{background:#0369a1;color:white}}</style></head>
 <body>
-
-<header>
-    <h1>Thundy AV – Email Scanner for Thunderbird</h1>
-    <p>Local checks for suspicious attachments, links and senders in Thunderbird, with optional external analysis after your explicit consent.</p>
-    <p><a href="index_de.html">Deutsche Fassung</a></p>
-    <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus" class="btn">Source code on GitHub</a>
-    <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases" class="btn">Releases</a>
-</header>
-
-<section id="about">
-    <h2>About the project</h2>
-    <p>Thundy AV is an open-source Thunderbird add-on (MIT license). It analyses the message you open
-    inside Thunderbird: headers, message text, links and attachments. Scoring and heuristics run
-    locally. If — and only if — you enable external analysis and trigger a scan, the add-on can query
-    analysis services such as <strong>Hybrid Analysis</strong>, VirusTotal, urlscan.io, URLhaus
-    (abuse.ch) and AbuseIPDB.</p>
-</section>
-
-<section id="setup">
-    <h2>Setup &amp; API key</h2>
-    <p>External analysis requires your own free API key. Each user works with their own account
-    (fair use).</p>
-
-    <div class="step">
-        <strong>Step 1:</strong> Register for free at <a href="https://www.hybrid-analysis.com/signup" target="_blank" rel="noopener noreferrer" aria-label="hybrid-analysis.com (opens in a new tab)">hybrid-analysis.com <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>.
-    </div>
-    <div class="step">
-        <strong>Step 2:</strong> After logging in, open your profile menu (top right) → "Profile" and copy the API key from the API settings.
-    </div>
-    <div class="step">
-        <strong>Step 3:</strong> In Thunderbird, open the add-on's options dialog and paste the key.
-    </div>
-    <div class="step">
-        <strong>Step 4:</strong> Enable the checkbox <em>"Allow external analysis"</em> (default: off) and choose a privacy tier: <em>strict</em> sends only SHA-256 hashes, <em>balanced</em> additionally uploads unknown files, <em>max</em> additionally submits URLs from the message. When you save a key, Thunderbird asks for the optional host permission for that provider.
-    </div>
-</section>
-
-<section id="privacy">
-    <h2>Privacy &amp; security</h2>
-    <ul>
-        <li>The add-on <strong>reads the message you open</strong> in Thunderbird — headers, text, links and attachments. This happens locally on your computer and is not transmitted.</li>
-        <li><strong>Nothing</strong> is transmitted to third parties until you enable <em>"Allow external analysis"</em> <strong>and</strong> trigger a scan (per message or with a permanent opt-in for that sender). While the consent is off, there is no upload, no hash lookup, no URL/domain lookup and no IP lookup.</li>
-        <li>Depending on the privacy tier and the keys you configure, SHA-256 hashes of attachments (Hybrid Analysis, VirusTotal), complete attachments of unknown files (Hybrid Analysis, tier balanced/max), URLs from the message (Hybrid Analysis in tier max, urlscan.io) and domains (URLhaus) may be transmitted; IP addresses from Received headers are only checked if you configure a provider for that.</li>
-        <li>The message body, the subject line and the sender/recipient addresses are not transmitted as such. Only the individual links contained in the message can be submitted (see above), and never before you gave your consent. There is <strong>no telemetry</strong>, no analytics and no server operated by the developer; the developer has no access to your data.</li>
-        <li>Settings, consent flags and API keys are stored locally in Thunderbird (<code>browser.storage.local</code>, unencrypted). Scan results live in a local IndexedDB database that you can empty with "Clear cache" in the options.</li>
-        <li>Host permissions for the analysis providers are optional and are requested only when you save a key for that provider.</li>
-    </ul>
-    <p>Details: <a href="privacy_policy.html">Privacy Policy</a> ·
-    <a href="reviewer_notes.html">Reviewer Notes</a></p>
-</section>
-
-<section id="status">
-    <h2>Project status</h2>
-    <div class="note">
-        <p>Thundy AV is <strong>not yet listed</strong> in the Thunderbird Add-ons Store, so there is no
-        store download link. The current XPI and the sources are available in the
-        <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases">GitHub releases</a>.
-        <strong>Screenshots are not available yet</strong> (only placeholder graphics) and the manual
-        verification in Thunderbird 140 ESR is still outstanding.</p>
-    </div>
-</section>
-
-<footer>
-    <p>&copy; 2026 Jan Bludau. Released under the MIT License.</p>
-    <p>
-        <a href="https://github.com/VaZuLeS/Thunderbird-Antivirus">Repository</a>
-        <a href="privacy_policy.html">Privacy Policy</a>
-        <a href="reviewer_notes.html">Reviewer Notes</a>
-        <a href="index_de.html">Deutsch</a>
-    </p>
-</footer>
-
-</body>
-</html>
+<header><h1>Thundy AV – Email Scanner for Thunderbird</h1><p>Local email checks with optional external analysis</p><p><strong>1.19.0 · Thunderbird 140+</strong></p><nav><a href="index_en.html" hreflang="en" lang="en">English</a> <a href="index_de.html" hreflang="de" lang="de">Deutsch</a> <a href="index_fr.html" hreflang="fr" lang="fr">Français</a> <a href="index_es.html" hreflang="es" lang="es">Español</a> <a href="index_it.html" hreflang="it" lang="it">Italiano</a> <a href="index_pl.html" hreflang="pl" lang="pl">Polski</a></nav><p><a class="btn" href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.19.0/thundy-av-1.19.0.xpi">Download unsigned XPI</a><a class="btn" href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.0">Release notes</a></p></header>
+<main>
+<section><h2>Local checks work without an account or API key.</h2><p>Thundy AV reads the displayed message, its sender, subject, headers, text and attachments to perform local checks. Local checks work without API keys. There is no telemetry and no developer analysis server.</p><p>Local checks work without API keys. External scans require your consent and a message or sender authorization.</p></section>
+<section><h2>Privacy and data</h2><p>Without consent, nothing is sent externally. After consent, only explicitly authorized messages or senders are scanned. Hashes, domains and public IPs may be sent in Strict; Balanced also permits unknown file uploads; Maximum also permits complete URL uploads. Turn this option off to stop new transfers and cancel pending requests. Previously transmitted data cannot be recalled.</p><p>Authorized external requests go directly to configured providers: Hybrid Analysis for file hashes and uploads, VirusTotal for file hashes or IP reputation, URLhaus for domains, urlscan.io for complete URLs and AbuseIPDB for public IPs. Hashes can identify known files. Provider terms and privacy policies apply; submitted data may be shared by the provider.</p><p>urlscan.io submissions are unlisted, not private. A complete URL can contain personal data or access tokens. Submit only URLs you are allowed to share.</p><p>Settings, consent, sender authorizations and API keys are stored in your Thunderbird profile. API keys are not encrypted there. Local scan records can include subjects, sender addresses, complete links and attachment metadata. The cache retains up to 1,000 message records for 30 days and is cleaned on database startup. In-memory reputation results expire after 15 minutes.</p><p>Turn off external analysis to stop new requests and cancel pending requests. Already transmitted data cannot be recalled. Use Clear cache to delete stored analysis results and reputation caches. Individual sender authorizations can be removed in settings.</p><a href="privacy_policy.html">Detailed privacy policy (English/German)</a></section>
+<section class="note"><h2>1.19.0</h2><p>Unsigned GitHub release. Thunderbird 140 ESR/current-client live testing and screenshots remain pending; this is not a Thunderbird Add-ons Store listing.</p><p>EN · DE · FR · ES · IT · PL</p><p><a href="live_test_1_19_0.html">Documentation</a> · <a href="AUFGABENPLAN_OPTIMIERUNG_I18N.html">Release notes</a></p></section>
+</main>
+<footer><a href="https://github.com/VaZuLeS/Thunderbird-Antivirus">Source code</a> · <a href="documentation.html">Documentation</a> · <a href="mailto:bludau.it.services@gmail.com">bludau.it.services@gmail.com</a><p>© 2026 Jan Bludau · MIT</p></footer>
+</body></html>

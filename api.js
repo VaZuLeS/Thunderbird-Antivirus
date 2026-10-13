@@ -1,3 +1,7 @@
+function uiText(key, fallback, params = []) {
+    return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
+}
+
 const byteToHex = new Array(256);
 for (let n = 0; n <= 255; n++) {
     byteToHex[n] = n.toString(16).padStart(2, '0');
@@ -31,39 +35,16 @@ let apikey_hybridanalysis;
 // Global consent for external analysis. Declared outside the startup IIFE so it
 // is always defined, kept in sync while the popup is open.
 let externalAnalysisConsent = false;
+if (typeof apiGateway !== 'undefined') apiGateway.beforeRequest = async () => {
+    const current = await browser.storage.local.get('externalAnalysisConsent');
+    if (current.externalAnalysisConsent !== true) throw new Error(uiText('bannerConsentMissing', 'External analysis is disabled.'));
+    if (!await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] })) throw new Error(uiText('errorHostPermissionMissing', 'Host permission missing.'));
+};
+
 
 (async () => {
 let result = await browser.storage.local.get('apikey');
 apikey_hybridanalysis = result.apikey;
-
-if (!apikey_hybridanalysis) {
-    let container = document.getElementById('hybrid_analysis_api_content');
-    container.textContent = '';
-    let alertDiv = document.createElement('div');
-    alertDiv.className = 'alert-error';
-    alertDiv.setAttribute('role', 'alert');
-    let strong = document.createElement('strong');
-    strong.textContent = 'Warnung:';
-    alertDiv.appendChild(strong);
-
-    let messageSpan = document.createElement('span');
-    messageSpan.id = 'api-key-error-msg';
-    messageSpan.textContent = ' Kein API-Schlüssel für Hybrid-Analysis gefunden. Bitte hinterlegen Sie diesen in den Einstellungen der Erweiterung.';
-    alertDiv.appendChild(messageSpan);
-
-    let btnSettings = document.createElement('button');
-    btnSettings.className = 'btn-primary mt-2 ml-2';
-    btnSettings.textContent = 'Einstellungen öffnen';
-    btnSettings.setAttribute('aria-describedby', 'api-key-error-msg');
-    btnSettings.addEventListener('click', () => {
-        browser.runtime.openOptionsPage();
-    });
-    alertDiv.appendChild(document.createElement('br'));
-    alertDiv.appendChild(btnSettings);
-
-    container.appendChild(alertDiv);
-    return;
-}
 
 // Der Benutzer hat auf unseren Button geklickt, holen Sie sich den aktiven Tab im aktuellen Fenster mit
 // der Tabs API.
@@ -89,6 +70,7 @@ try {
     browser.storage.onChanged.addListener((changes, area) => {
         if (area === 'local' && changes.externalAnalysisConsent) {
             externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
+            if (!externalAnalysisConsent && typeof apiGateway !== 'undefined') { apiGateway.abortAll(); hybrid_report_cache.clear(); }
         }
     });
 } catch (e) { /* storage.onChanged is optional in tests */ }
@@ -101,11 +83,13 @@ if (!message) {
     emptyCard.setAttribute('role', 'status');
     let msg = document.createElement('p');
     msg.className = 'text-info';
-    msg.textContent = "Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.";
+    msg.textContent = uiText("ui_004", "Bitte wählen Sie eine E-Mail aus, um sie zu überprüfen.");
     emptyCard.appendChild(msg);
     container.appendChild(emptyCard);
     return;
 }
+
+if (!message.headerMessageId) message.headerMessageId = 'message:' + message.id;
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
 const updateGridField = (id, value, fallbackText) => {
@@ -121,9 +105,26 @@ const updateGridField = (id, value, fallbackText) => {
     }
 };
 
-updateGridField("subject", message.subject, "(Kein Betreff)");
-updateGridField("from", message.author, "(Unbekannter Absender)");
-updateGridField("MessageHeaderID", message.headerMessageId, "(Keine ID)");
+updateGridField("subject", message.subject, uiText('noSubject', "(Kein Betreff)"));
+updateGridField("from", message.author, uiText('noSender', "(Unbekannter Absender)"));
+updateGridField("MessageHeaderID", message.headerMessageId, uiText('noId', "(Keine ID)"));
+
+// The local assessment is independent of provider configuration and consent.
+try {
+    const local = await browser.runtime.sendMessage({ action: 'getLocalRisk', messageId: message.id });
+    if (local && local.threat) {
+        const card = document.createElement('div');
+        card.className = 'card card-info';
+        card.setAttribute('role', 'status');
+        const score = document.createElement('p');
+        score.textContent = uiText('bannerThreatScore', 'Risk score: $1 of 100', [local.threat.score]);
+        card.appendChild(score);
+        for (const reason of local.threat.reasons) {
+            const p = document.createElement('p'); p.textContent = reason; card.appendChild(p);
+        }
+        document.querySelector('.grid-container').before(card);
+    }
+} catch (e) { /* local assessment can be retried by reopening the popup */ }
 
 // Initialen Lade-Status für async Operationen setzen
 let apiContainer = document.getElementById('hybrid_analysis_api_content');
@@ -137,7 +138,7 @@ if (apiContainer) {
     loadingP.setAttribute('role', 'status');
         loadingP.setAttribute('aria-busy', 'true');
     loadingP.className = 'text-info';
-    loadingP.textContent = 'Lade Analyseergebnisse...';
+    loadingP.textContent = uiText("ui_005", "Lade Analyseergebnisse...");
 
     cardDiv.appendChild(loadingP);
     apiContainer.appendChild(cardDiv);
@@ -152,13 +153,13 @@ if (!externalAnalysisConsent && apiContainer) {
 
     let consentP = document.createElement('p');
     consentP.id = 'consent-notice-msg';
-    consentP.textContent = 'Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.';
+    consentP.textContent = uiText("ui_006", "Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen.");
     consentCard.appendChild(consentP);
 
     let consentButton = document.createElement('button');
     consentButton.type = 'button';
     consentButton.className = 'btn-primary mt-2';
-    consentButton.textContent = 'Einstellungen öffnen';
+    consentButton.textContent = uiText("ui_003", "Einstellungen öffnen");
     consentButton.setAttribute('aria-describedby', 'consent-notice-msg');
     consentButton.addEventListener('click', () => browser.runtime.openOptionsPage());
     consentCard.appendChild(consentButton);
@@ -168,27 +169,9 @@ if (!externalAnalysisConsent && apiContainer) {
 
 try {
 
-    // Öffnen Sie die Datenbank
-    let openRequest = indexedDB.open("thunderbird_av", 3);
-
-    openRequest.onupgradeneeded = function (e) {
-        let db = e.target.result;
-
-        if (!db.objectStoreNames.contains('hybridanalysis')) {
-            db.createObjectStore('hybridanalysis', { keyPath: 'messageHeader' });
-        }
-    };
-
-
-    openRequest.onsuccess = async function (e) {
-        let db = e.target.result;
-        // Erstellen Sie eine Transaktion und öffnen Sie den Object Store
-        let transaction = db.transaction(["hybridanalysis"], "readonly");
-        let store = transaction.objectStore("hybridanalysis");
-        // Führen Sie eine Anfrage aus, um den Hash für die angegebene MessageHeaderId zu finden.
-        let getRequest = store.get(message.headerMessageId);
-        getRequest.onsuccess = async function (e) {
-            const record = getRequest.result;
+    const db = await openDB('thunderbird_av', 3);
+    try {
+            const record = await getFromStore(db, 'hybridanalysis', message.headerMessageId);
             const hasAttachments = record && record.attachments && record.attachments.length > 0;
             const hasLinks = record && record.links && record.links.length > 0;
 
@@ -205,9 +188,11 @@ try {
                 if (hasAttachments) {
                     for (const att of record.attachments) {
                         const hash256 = att.hybrid_sha256;
-                        if (att.state === 'UNKNOWN') {
+                        if (att.state === 'SIZE_LIMIT') {
+                            const p = document.createElement('p'); p.textContent = uiText('sizeLimit', 'Attachment exceeds the local size limit.'); liveContainer.appendChild(p);
+                        } else if (['UNKNOWN', 'MANUAL_CHECK_PENDING', 'NOT_CHECKED'].includes(att.state)) {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, liveContainer);
-                        } else if (externalAnalysisConsent) {
+                        } else if (externalAnalysisConsent && apikey_hybridanalysis) {
                             fetchTasks.push((frag) =>
                                 get_hybrid_report_by_sha256({
                                     hybrid_sha: hash256,
@@ -225,7 +210,7 @@ try {
                 }
 
                 if (hasLinks) {
-                    if (externalAnalysisConsent) {
+                    if (externalAnalysisConsent && apikey_hybridanalysis) {
                         processRecordLinks(record.links, message.headerMessageId, liveContainer, fetchTasks);
                     } else {
                         for (const linkObj of record.links) {
@@ -251,25 +236,11 @@ try {
                 emptyCard.setAttribute('role', 'status');
                 let p1 = document.createElement('p');
                 p1.className = 'text-info';
-                p1.textContent = 'Keine Anhänge oder URLs für diese E-Mail gefunden.';
+                p1.textContent = uiText("ui_007", "Keine Anhänge oder URLs für diese E-Mail gefunden.");
                 emptyCard.appendChild(p1);
                 container.appendChild(emptyCard);
             }
-        };
-    };
-
-    openRequest.onerror = function(e) {
-        let container = document.getElementById('hybrid_analysis_api_content');
-        if (container) container.textContent = '';
-        let emptyCard = document.createElement('div');
-        emptyCard.className = 'card card-info mb-3';
-        emptyCard.setAttribute('role', 'status');
-        let p2 = document.createElement('p');
-        p2.className = 'text-info';
-        p2.textContent = 'Keine Analyseergebnisse für diese E-Mail vorhanden.';
-        emptyCard.appendChild(p2);
-        container.appendChild(emptyCard);
-    }
+    } finally { db.close(); }
 } catch (error) {
     let container = document.getElementById('hybrid_analysis_api_content');
     if (container) {
@@ -280,12 +251,12 @@ try {
 
         let errMsg = document.createElement('span');
         errMsg.id = 'unexpected-error-msg';
-        errMsg.textContent = 'Unerwarteter Fehler beim Laden der Analyseergebnisse.';
+        errMsg.textContent = uiText("ui_009", "Unerwarteter Fehler beim Laden der Analyseergebnisse.");
         errDiv.appendChild(errMsg);
 
         let btnSettings = document.createElement('button');
         btnSettings.className = 'btn-primary mt-2 ml-2';
-        btnSettings.textContent = 'Einstellungen öffnen';
+        btnSettings.textContent = uiText("ui_003", "Einstellungen öffnen");
         btnSettings.setAttribute('aria-describedby', 'unexpected-error-msg');
         btnSettings.addEventListener('click', () => {
             browser.runtime.openOptionsPage();
@@ -309,32 +280,32 @@ function renderInProgressStatus(json_data, hybrid_sha, card) {
     const pStatus = document.createElement('p');
     pStatus.className = "text-warning";
     const statusStrong = document.createElement('strong');
-    statusStrong.textContent = "Status:";
+    statusStrong.textContent = uiText("ui_010", "Status:");
     pStatus.appendChild(statusStrong);
-    pStatus.appendChild(document.createTextNode(" Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut."));
+    pStatus.appendChild(document.createTextNode(uiText("ui_011", " Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.")));
     card.appendChild(pStatus);
 
     const pHash = document.createElement('p');
-    pHash.textContent = `SHA-256: ${json_data.sha256 || hybrid_sha}`;
+    pHash.textContent = uiText("ui_012", "SHA-256: $1", [json_data.sha256 || hybrid_sha]);
     card.appendChild(pHash);
 }
 
 function renderThreatInfo(json_data, card) {
     let threatClass = "text-success";
-    let semanticLabel = " (Normal)";
+    let semanticLabel = uiText('statusNormal', " (Normal)");
     if (json_data.threat_score > 50) {
         threatClass = "text-warning";
-        semanticLabel = " (Suspicious)";
+        semanticLabel = uiText('statusSuspicious', " (Suspicious)");
     }
     if (json_data.threat_score > 80) {
         threatClass = "text-danger";
-        semanticLabel = " (Critical)";
+        semanticLabel = uiText('statusCritical', " (Critical)");
     }
 
     const pThreat = document.createElement('p');
     const threatStrong = document.createElement('strong');
     threatStrong.className = `head_line ${threatClass}`;
-    threatStrong.textContent = "Bedrohungsscore:";
+    threatStrong.textContent = uiText("ui_013", "Bedrohungsscore:");
     pThreat.appendChild(threatStrong);
     pThreat.appendChild(document.createTextNode(" "));
     const threatSpan = document.createElement('span');
@@ -346,38 +317,40 @@ function renderThreatInfo(json_data, card) {
     const pVerdict = document.createElement('p');
     const verdictStrong = document.createElement('strong');
     verdictStrong.className = `head_line ${threatClass}`;
-    verdictStrong.textContent = "Urteil:";
+    verdictStrong.textContent = uiText("ui_014", "Urteil:");
     pVerdict.appendChild(verdictStrong);
     pVerdict.appendChild(document.createTextNode(" "));
     const verdictSpan = document.createElement('span');
     verdictSpan.className = threatClass;
-    verdictSpan.textContent = json_data.verdict;
+    const verdictKeys = { 'no specific threat': 'providerNoDetection', 'clean': 'providerNoDetection', 'malicious': 'providerMalicious', 'suspicious': 'providerSuspicious', 'in progress': 'providerPending' };
+    const verdictKey = verdictKeys[String(json_data.verdict).toLowerCase()];
+    verdictSpan.textContent = verdictKey && typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(verdictKey) : json_data.verdict;
     pVerdict.appendChild(verdictSpan);
     card.appendChild(pVerdict);
 
     const pVxFamily = document.createElement('p');
     const vxStrong = document.createElement('strong');
-    vxStrong.textContent = "Vx-Familie:";
+    vxStrong.textContent = uiText("ui_015", "Vx-Familie:");
     pVxFamily.appendChild(vxStrong);
     pVxFamily.appendChild(document.createTextNode(` ${json_data.vx_family || 'N/A'}`));
     card.appendChild(pVxFamily);
 
     const pMulti = document.createElement('p');
-    pMulti.textContent = `Multiscan-Ergebnis: ${json_data.multiscan_result || 'N/A'}`;
+    pMulti.textContent = uiText("ui_016", "Multiscan-Ergebnis: $1", [json_data.multiscan_result || 'N/A']);
     card.appendChild(pMulti);
 
     const pAddInfo = document.createElement('p');
     const addInfoStrong = document.createElement('strong');
-    addInfoStrong.textContent = "Additional Information:";
+    addInfoStrong.textContent = uiText("ui_017", "Additional Information:");
     pAddInfo.appendChild(addInfoStrong);
     card.appendChild(pAddInfo);
 
     const pAnalysisTime = document.createElement('p');
-    pAnalysisTime.textContent = `Analysis start time: ${json_data.analysis_start_time || 'N/A'}`;
+    pAnalysisTime.textContent = uiText("ui_018", "Analysis start time: $1", [(typeof ThundyI18n !== 'undefined' && json_data.analysis_start_time ? ThundyI18n.date(json_data.analysis_start_time) : json_data.analysis_start_time) || 'N/A']);
     card.appendChild(pAnalysisTime);
 
     const pTags = document.createElement('p');
-    pTags.textContent = `Tags: ${json_data.tags ? json_data.tags.join(', ') : 'N/A'}`;
+    pTags.textContent = uiText("ui_019", "Tags: $1", [json_data.tags ? json_data.tags.join(', ') : 'N/A']);
     card.appendChild(pTags);
 }
 
@@ -385,30 +358,30 @@ function renderVirusTotalStats(virustotal_stats, card) {
     const pVtHead = document.createElement('p');
     pVtHead.className = "ml-2";
     const vtHeadStrong = document.createElement('strong');
-    vtHeadStrong.textContent = "VirusTotal Ergebnisse:";
+    vtHeadStrong.textContent = uiText("ui_020", "VirusTotal Ergebnisse:");
     pVtHead.appendChild(vtHeadStrong);
     card.appendChild(pVtHead);
 
     const pVtMal = document.createElement('p');
     const malCount = virustotal_stats.malicious || 0;
     pVtMal.className = `ml-4 ${malCount > 0 ? "text-danger" : ""}`;
-    pVtMal.textContent = `Malicious: ${malCount}${malCount > 0 ? " (Gefährlich)" : ""}`;
+    pVtMal.textContent = uiText("ui_021", "Malicious: $1$2", [malCount, malCount > 0 ? uiText('statusDangerous', " (Gef\u00e4hrlich)") : ""]);
     card.appendChild(pVtMal);
 
     const pVtUnd = document.createElement('p');
     pVtUnd.className = "ml-4";
-    pVtUnd.textContent = `Undetected: ${virustotal_stats.undetected || 0}`;
+    pVtUnd.textContent = uiText("ui_022", "Undetected: $1", [virustotal_stats.undetected || 0]);
     card.appendChild(pVtUnd);
 
     const pVtSus = document.createElement('p');
     const susCount = virustotal_stats.suspicious || 0;
     pVtSus.className = `ml-4 ${susCount > 0 ? "text-warning" : ""}`;
-    pVtSus.textContent = `Suspicious: ${susCount}${susCount > 0 ? " (Verdächtig)" : ""}`;
+    pVtSus.textContent = uiText("ui_023", "Suspicious: $1$2", [susCount, susCount > 0 ? uiText('statusSuspicious', " (Verd\u00e4chtig)") : ""]);
     card.appendChild(pVtSus);
 
     const pVtHarm = document.createElement('p');
     pVtHarm.className = "ml-4";
-    pVtHarm.textContent = `Harmless: ${virustotal_stats.harmless || 0}`;
+    pVtHarm.textContent = uiText("ui_024", "Harmless: $1", [virustotal_stats.harmless || 0]);
     card.appendChild(pVtHarm);
 }
 
@@ -419,26 +392,26 @@ function renderScannerResults(scanners, card) {
         for (const scanner of scanners) {
             const pScanner = document.createElement('p');
             pScanner.className = "ml-2";
-            pScanner.textContent = `Scanner: ${scanner.name}`;
+            pScanner.textContent = uiText("ui_025", "Scanner: $1", [scanner.name]);
             fragment.appendChild(pScanner);
 
             const pStatus = document.createElement('p');
             pStatus.className = "ml-4";
-            pStatus.textContent = `Status: ${scanner.status}`;
+            pStatus.textContent = uiText("ui_026", "Status: $1", [scanner.status]);
             fragment.appendChild(pStatus);
 
             const avResults = scanner.anti_virus_results;
             if (avResults) {
                 const pAvRes = document.createElement('p');
                 pAvRes.className = "ml-4";
-                pAvRes.textContent = `AV-Ergebnisse:`;
+                pAvRes.textContent = uiText("ui_027", "AV-Ergebnisse:");
                 fragment.appendChild(pAvRes);
 
                 for (const avResult of avResults) {
                     const { product, verdict } = avResult;
                     const pAv = document.createElement('p');
                     pAv.className = "ml-6";
-                    pAv.textContent = `AV: ${product} - Urteil: ${verdict}`;
+                    pAv.textContent = uiText("ui_028", "AV: $1 - Urteil: $2", [product, verdict]);
                     fragment.appendChild(pAv);
                 }
             }
@@ -450,7 +423,7 @@ function renderScannerResults(scanners, card) {
         emptyCard.setAttribute('role', 'status');
         const pNoScanners = document.createElement('p');
         pNoScanners.className = 'text-info';
-        pNoScanners.textContent = `Keine Scanner-Ergebnisse verfügbar.`;
+        pNoScanners.textContent = uiText("ui_029", "Keine Scanner-Ergebnisse verfügbar.");
         emptyCard.appendChild(pNoScanners);
         card.appendChild(emptyCard);
     }
@@ -458,19 +431,19 @@ function renderScannerResults(scanners, card) {
 
 function renderFileDetails(json_data, card) {
     const pHash256 = document.createElement('p');
-    pHash256.textContent = `SHA-256-Hashwert: ${json_data.sha256}`;
+    pHash256.textContent = uiText("ui_030", "SHA-256-Hashwert: $1", [json_data.sha256]);
     card.appendChild(pHash256);
 
     const pFileName = document.createElement('p');
-    pFileName.textContent = `Letzter Dateiname: ${json_data.last_file_name || 'N/A'}`;
+    pFileName.textContent = uiText("ui_031", "Letzter Dateiname: $1", [json_data.last_file_name || 'N/A']);
     card.appendChild(pFileName);
 
     const pSize = document.createElement('p');
-    pSize.textContent = `Größe: ${json_data.size || 'N/A'} Bytes`;
+    pSize.textContent = uiText("ui_032", "Größe: $1 Bytes", [(typeof ThundyI18n !== 'undefined' ? ThundyI18n.number(json_data.size) : json_data.size) || 'N/A']);
     card.appendChild(pSize);
 
     const pType = document.createElement('p');
-    pType.textContent = `Typ: ${json_data.type || 'N/A'}`;
+    pType.textContent = uiText("ui_033", "Typ: $1", [json_data.type || 'N/A']);
     card.appendChild(pType);
 }
 
@@ -478,7 +451,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
     const btnRescan = document.createElement('button');
     btnRescan.id = `btn-rescan-${hybrid_sha}`;
     btnRescan.className = "btn-success mt-2";
-    btnRescan.textContent = `Erneut scannen (Rescan)`;
+    btnRescan.textContent = uiText("ui_034", "Erneut scannen (Rescan)");
     btnRescan.setAttribute('aria-describedby', `rescan-status-${hybrid_sha}`);
     card.appendChild(btnRescan);
 
@@ -493,7 +466,7 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
         const btnCdr = document.createElement('button');
         btnCdr.id = `btn-cdr-${hybrid_sha}`;
         btnCdr.className = "btn-primary mt-2 ml-2";
-        btnCdr.textContent = `Bereinigen & Herunterladen (Lokales CDR)`;
+        btnCdr.textContent = uiText("ui_035", "Bereinigen & Herunterladen (Lokales CDR)");
         btnCdr.setAttribute('aria-describedby', `cdr-status-${hybrid_sha}`);
         card.appendChild(btnCdr);
 
@@ -511,7 +484,7 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
     card.className = "card mb-3";
 
     const h2 = document.createElement('h2');
-    h2.textContent = `Geprüftes Element: ${attachmentName || 'Unbekannt'}`;
+    h2.textContent = uiText("ui_036", "Geprüftes Element: $1", [attachmentName || uiText('unknownAttachment', "Unbekannt")]);
     card.appendChild(h2);
 
     if (json_data.state === 'IN_PROGRESS') {
@@ -520,7 +493,7 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
         renderThreatInfo(json_data, card);
 
         const pTags = document.createElement('p');
-        pTags.textContent = `Tags: ${json_data.tags ? json_data.tags.join(', ') : 'N/A'}`;
+        pTags.textContent = uiText("ui_019", "Tags: $1", [json_data.tags ? json_data.tags.join(', ') : 'N/A']);
         card.appendChild(pTags);
 
         if (virustotal_stats) {
@@ -534,7 +507,10 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
     return card;
 }
 
-const hybrid_report_cache = new Map();
+const hybrid_report_cache = typeof ExpiringMap !== 'undefined' ? new ExpiringMap() : new Map();
+if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.onMessage) browser.runtime.onMessage.addListener(request => {
+    if (request && request.action === 'memoryCachesCleared') hybrid_report_cache.clear();
+});
 
 /**
  * Renders a locally stored result without contacting any provider. This is what
@@ -550,14 +526,14 @@ function renderStoredResultWithoutConsent(name, hash, targetContainer) {
     card.setAttribute('role', 'status');
 
     const h2 = document.createElement('h2');
-    h2.textContent = `Lokales Ergebnis: ${name || 'Unbekannt'}`;
+    h2.textContent = uiText("ui_037", "Lokales Ergebnis: $1", [name || uiText('unknownAttachment', "Unbekannt")]);
     card.appendChild(h2);
 
     const p = document.createElement('p');
     p.className = 'text-info';
     p.textContent = hash
-        ? `SHA-256: ${hash} – keine externe Abfrage, da "Externe Analyse erlauben" ausgeschaltet ist.`
-        : 'Keine externe Abfrage, da "Externe Analyse erlauben" ausgeschaltet ist.';
+        ? uiText("ui_038", "SHA-256: $1 – keine externe Abfrage, da \"Externe Analyse erlauben\" ausgeschaltet ist.", [hash])
+        : uiText("ui_039", "Keine externe Abfrage, da \"Externe Analyse erlauben\" ausgeschaltet ist.");
     card.appendChild(p);
 
     container.appendChild(card);
@@ -578,6 +554,10 @@ async function fetch_hybrid_report(hybrid_sha) {
     if (!hasExternalAnalysisConsent()) {
         throw new Error('external-analysis-disabled');
     }
+    if (typeof apiGateway !== 'undefined') {
+        const current = await browser.storage.local.get('externalAnalysisConsent');
+        if (current.externalAnalysisConsent !== true || !await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] })) throw new Error(uiText('errorHostPermissionMissing', 'Host permission missing'));
+    }
     if (hybrid_report_cache.has(hybrid_sha)) {
         return hybrid_report_cache.get(hybrid_sha);
     }
@@ -594,7 +574,7 @@ async function fetch_hybrid_report(hybrid_sha) {
 
     const fetchPromise = (async () => {
         try {
-            const response = await fetch(options.url, options);
+            const response = typeof apiGateway !== 'undefined' ? await apiGateway.fetchWithTimeout(options.url, options) : await fetch(options.url, options);
             const json_data = await response.json();
 
             const result = { response, json_data };
@@ -621,8 +601,8 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
             let statusEl = document.getElementById(`rescan-status-${hybrid_sha}`);
             btn.disabled = true;
             btn.setAttribute('aria-busy', 'true');
-            btn.textContent = "Sende Rescan...";
-            statusEl.textContent = "Datei wird für Rescan hochgeladen...";
+            btn.textContent = uiText("ui_041", "Sende Rescan...");
+            statusEl.textContent = uiText("ui_042", "Datei wird für Rescan hochgeladen...");
 
             browser.runtime.sendMessage({
                 action: "uploadAttachment",
@@ -633,25 +613,25 @@ function setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, he
                 headerMessageId: headerMessageId
             }).then(res => {
                 if (res && res.status === 'success') {
-                    statusEl.innerText = "Rescan erfolgreich initiiert. Lade Seite neu...";
+                    statusEl.innerText = uiText("ui_043", "Rescan erfolgreich initiiert. Lade Seite neu...");
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2";
-                    btn.innerText = "Erfolgreich";
+                    btn.innerText = uiText("ui_044", "Erfolgreich");
                     if (btn.rescanTimeoutId) clearTimeout(btn.rescanTimeoutId);
                     btn.rescanTimeoutId = setTimeout(() => {
                         window.location.reload();
                     }, 2000);
                 } else {
-                    statusEl.innerText = "Fehler beim Rescan: " + (res ? res.message : "Unbekannter Fehler");
+                    statusEl.innerText = uiText("ui_045", "Fehler beim Rescan: ") + (res ? res.message : uiText("ui_046", "Unbekannter Fehler"));
                     btn.disabled = false;
                     btn.removeAttribute('aria-busy');
-                    btn.innerText = "Erneut versuchen";
+                    btn.innerText = uiText("ui_047", "Erneut versuchen");
                 }
             }).catch(err => {
-                statusEl.innerText = "Kommunikationsfehler: " + err;
+                statusEl.innerText = uiText("ui_048", "Kommunikationsfehler: ") + err;
                 btn.disabled = false;
                 btn.removeAttribute('aria-busy');
-                btn.innerText = "Erneut versuchen";
+                btn.innerText = uiText("ui_047", "Erneut versuchen");
             });
         });
     }
@@ -665,8 +645,8 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
             let statusEl = document.getElementById(`cdr-status-${hybrid_sha}`);
             btn.disabled = true;
             btn.setAttribute('aria-busy', 'true');
-            btn.innerText = "Bereinige...";
-            statusEl.innerText = "Lokales CDR wird durchgeführt...";
+            btn.innerText = uiText("ui_049", "Bereinige...");
+            statusEl.innerText = uiText("ui_050", "Lokales CDR wird durchgeführt...");
 
             browser.runtime.sendMessage({
                 action: "downloadDisarmed",
@@ -675,21 +655,21 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
                 attachmentName: attachmentName
             }).then(res => {
                 if (res && res.status === 'success') {
-                    statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                    statusEl.innerText = uiText("ui_051", "Herunterladen erfolgreich initiiert.");
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2 ml-2";
-                    btn.innerText = "Bereinigt";
+                    btn.innerText = uiText("ui_052", "Bereinigt");
                 } else {
-                    statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
+                    statusEl.innerText = uiText("ui_053", "Fehler beim Herunterladen: ") + (res ? res.message : uiText("ui_046", "Unbekannter Fehler"));
                     btn.disabled = false;
                     btn.removeAttribute('aria-busy');
-                    btn.innerText = "Erneut versuchen";
+                    btn.innerText = uiText("ui_047", "Erneut versuchen");
                 }
             }).catch(err => {
-                statusEl.innerText = "Kommunikationsfehler: " + err;
+                statusEl.innerText = uiText("ui_048", "Kommunikationsfehler: ") + err;
                 btn.disabled = false;
                 btn.removeAttribute('aria-busy');
-                btn.innerText = "Erneut versuchen";
+                btn.innerText = uiText("ui_047", "Erneut versuchen");
             });
         });
     }
@@ -712,14 +692,14 @@ function handle_hybrid_report_error(response, attachmentName, targetContainer) {
 
     let errMsg = document.createElement('span');
     errMsg.id = 'api-error-msg-key';
-    errMsg.textContent = `API Error: ${response.status} für Element ${attachmentName}`;
+    errMsg.textContent = uiText("ui_054", "API Error: $1 für Element $2", [response.status, attachmentName]);
     errDiv1.appendChild(errMsg);
 
     if (response.status === 401 || response.status === 403) {
-        errMsg.textContent += ' (Möglicherweise ungültiger oder fehlender API-Schlüssel).';
+        errMsg.textContent += uiText("ui_055", " (Möglicherweise ungültiger oder fehlender API-Schlüssel).");
         let btnSettings = document.createElement('button');
         btnSettings.className = 'btn-primary mt-2 ml-2';
-        btnSettings.textContent = 'Einstellungen öffnen';
+        btnSettings.textContent = uiText("ui_003", "Einstellungen öffnen");
         btnSettings.setAttribute('aria-describedby', 'api-error-msg-key');
         btnSettings.addEventListener('click', () => {
             browser.runtime.openOptionsPage();
@@ -737,7 +717,7 @@ function handle_hybrid_report_fetch_error(error, attachmentName, targetContainer
     let errDiv2 = document.createElement('div');
     errDiv2.className = 'alert-error';
     errDiv2.setAttribute('role', 'alert');
-    errDiv2.textContent = `Netzwerkfehler: ${error.message} für Element ${attachmentName}`;
+    errDiv2.textContent = uiText("ui_056", "Netzwerkfehler: $1 für Element $2", [error.message, attachmentName]);
     let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     container.appendChild(errDiv2);
 }
@@ -760,8 +740,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
     let statusEl = document.getElementById(`upload-status-${urlId}`);
     btn.disabled = true;
     btn.setAttribute('aria-busy', 'true');
-    btn.innerText = "Sende URL...";
-    statusEl.innerText = "URL wird an Hybrid Analysis übertragen...";
+    btn.innerText = uiText("ui_057", "Sende URL...");
+    statusEl.innerText = uiText("ui_058", "URL wird an Hybrid Analysis übertragen...");
 
     browser.runtime.sendMessage({
         action: "scanUrl",
@@ -769,10 +749,10 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
         headerMessageId: headerMessageId
     }).then(response => {
         if (response && response.status === 'success') {
-            statusEl.innerText = "Scan erfolgreich beauftragt! Lade Analyseergebnisse...";
+            statusEl.innerText = uiText("ui_059", "Scan erfolgreich beauftragt! Lade Analyseergebnisse...");
             btn.removeAttribute('aria-busy');
             btn.className = "btn-success mt-2";
-            btn.innerText = "Erfolgreich";
+            btn.innerText = uiText("ui_044", "Erfolgreich");
             if (btn.urlScanTimeoutId) clearTimeout(btn.urlScanTimeoutId);
             btn.urlScanTimeoutId = setTimeout(() => {
                 const el = document.getElementById(`upload-container-${urlId}`);
@@ -784,16 +764,16 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
                 });
             }, 3000);
         } else {
-            statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
+            statusEl.innerText = uiText("ui_060", "Fehler beim Upload: ") + (response ? response.message : uiText("ui_046", "Unbekannter Fehler"));
             btn.disabled = false;
             btn.removeAttribute('aria-busy');
-            btn.innerText = "Erneut versuchen";
+            btn.innerText = uiText("ui_047", "Erneut versuchen");
         }
     }).catch(err => {
-        statusEl.innerText = "Kommunikationsfehler: " + err;
+        statusEl.innerText = uiText("ui_048", "Kommunikationsfehler: ") + err;
         btn.disabled = false;
         btn.removeAttribute('aria-busy');
-        btn.innerText = "Erneut versuchen";
+        btn.innerText = uiText("ui_047", "Erneut versuchen");
     });
 }
 
@@ -825,14 +805,14 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
     card.setAttribute('role', 'status');
 
     let h2 = document.createElement('h2');
-    h2.textContent = `URL: ${url}`;
+    h2.textContent = uiText("ui_061", "URL: $1", [url]);
     card.appendChild(h2);
 
     let pInfo = document.createElement('p');
     pInfo.className = "text-info";
-    pInfo.appendChild(document.createTextNode("Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie "));
+    pInfo.appendChild(document.createTextNode(uiText("ui_062", "Diese URL wurde in der E-Mail gefunden. Aus Datenschutzgründen wurde sie ")));
     const infoStrong = document.createElement('strong');
-    infoStrong.textContent = "nicht automatisch hochgeladen";
+    infoStrong.textContent = uiText("ui_063", "nicht automatisch hochgeladen");
     pInfo.appendChild(infoStrong);
     pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
@@ -840,7 +820,7 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
     let btnUpload = document.createElement('button');
     btnUpload.id = `btn-upload-${urlId}`;
     btnUpload.className = "btn-primary mt-2";
-    btnUpload.textContent = "URL jetzt scannen";
+    btnUpload.textContent = uiText("ui_064", "URL jetzt scannen");
     btnUpload.setAttribute('aria-describedby', `upload-status-${urlId}`);
     card.appendChild(btnUpload);
 
@@ -865,8 +845,8 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
         let statusEl = document.getElementById(statusId);
         btn.disabled = true;
         btn.setAttribute('aria-busy', 'true');
-        btn.innerText = "Lade hoch...";
-        if (statusEl) statusEl.textContent = "Datei wird an Hybrid Analysis übertragen...";
+        btn.innerText = uiText("ui_065", "Lade hoch...");
+        if (statusEl) statusEl.textContent = uiText("ui_066", "Datei wird an Hybrid Analysis übertragen...");
 
         browser.runtime.sendMessage({
             action: "uploadAttachment",
@@ -877,10 +857,10 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
             headerMessageId: headerMessageId
         }).then(response => {
             if (response && response.status === 'success') {
-                if (statusEl) statusEl.innerText = "Upload erfolgreich! Lade Analyseergebnisse...";
+                if (statusEl) statusEl.innerText = uiText("ui_067", "Upload erfolgreich! Lade Analyseergebnisse...");
                 btn.removeAttribute('aria-busy');
                 btn.className = "btn-success mt-2";
-                btn.innerText = "Erfolgreich";
+                btn.innerText = uiText("ui_044", "Erfolgreich");
                 if (btn.uploadTimeoutId) clearTimeout(btn.uploadTimeoutId);
                 btn.uploadTimeoutId = setTimeout(() => {
                     let container = document.getElementById(`upload-container-${safeHash}`);
@@ -894,16 +874,16 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                     });
                 }, 3000);
             } else {
-                if (statusEl) statusEl.innerText = "Fehler beim Upload: " + (response ? response.message : "Unbekannter Fehler");
+                if (statusEl) statusEl.innerText = uiText("ui_060", "Fehler beim Upload: ") + (response ? response.message : uiText("ui_046", "Unbekannter Fehler"));
                 btn.disabled = false;
                 btn.removeAttribute('aria-busy');
-                btn.innerText = "Erneut versuchen";
+                btn.innerText = uiText("ui_047", "Erneut versuchen");
             }
         }).catch(err => {
-            if (statusEl) statusEl.innerText = "Kommunikationsfehler: " + err;
+            if (statusEl) statusEl.innerText = uiText("ui_048", "Kommunikationsfehler: ") + err;
             btn.disabled = false;
             btn.removeAttribute('aria-busy');
-            btn.innerText = "Erneut versuchen";
+            btn.innerText = uiText("ui_047", "Erneut versuchen");
         });
     };
 
@@ -914,7 +894,7 @@ function createUploadButton(card, { hash, safeHash, attachmentName, messageId, p
     let btnUpload = document.createElement('button');
     btnUpload.id = `btn-upload-${safeHash}`;
     btnUpload.className = "btn-primary mt-2";
-    btnUpload.textContent = `Datei jetzt scannen (Upload)`;
+    btnUpload.textContent = uiText("ui_068", "Datei jetzt scannen (Upload)");
     btnUpload.setAttribute('aria-describedby', `upload-status-${safeHash}`);
     card.appendChild(btnUpload);
 
@@ -936,7 +916,7 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
     let cdrBtn = document.createElement('button');
     cdrBtn.id = `btn-cdr-${safeHash}`;
     cdrBtn.className = "btn-primary mt-2 ml-2";
-    cdrBtn.textContent = "Bereinigen & Herunterladen (Lokales CDR)";
+    cdrBtn.textContent = uiText("ui_035", "Bereinigen & Herunterladen (Lokales CDR)");
     cdrBtn.setAttribute('aria-describedby', `cdr-status-${safeHash}`);
     card.appendChild(cdrBtn);
 
@@ -953,8 +933,8 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
         let statusEl = document.getElementById(statusId);
         btn.disabled = true;
         if (btn) btn.setAttribute('aria-busy', 'true');
-        btn.innerText = "Bereinige...";
-        if (statusEl) statusEl.textContent = "Lokales CDR wird durchgeführt...";
+        btn.innerText = uiText("ui_049", "Bereinige...");
+        if (statusEl) statusEl.textContent = uiText("ui_050", "Lokales CDR wird durchgeführt...");
 
         browser.runtime.sendMessage({
             action: "downloadDisarmed",
@@ -963,23 +943,23 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
             attachmentName: attachmentName
         }).then(res => {
             if (res && res.status === 'success') {
-                if (statusEl) statusEl.innerText = "Herunterladen erfolgreich initiiert.";
+                if (statusEl) statusEl.innerText = uiText("ui_051", "Herunterladen erfolgreich initiiert.");
                 if (btn) {
                     btn.removeAttribute('aria-busy');
                     btn.className = "btn-success mt-2 ml-2";
-                    btn.innerText = "Bereinigt";
+                    btn.innerText = uiText("ui_052", "Bereinigt");
                 }
             } else {
-                if (statusEl) statusEl.innerText = "Fehler beim Herunterladen: " + (res ? res.message : "Unbekannter Fehler");
+                if (statusEl) statusEl.innerText = uiText("ui_053", "Fehler beim Herunterladen: ") + (res ? res.message : uiText("ui_046", "Unbekannter Fehler"));
                 btn.disabled = false;
                 if (btn) btn.removeAttribute('aria-busy');
-                btn.innerText = "Erneut versuchen";
+                btn.innerText = uiText("ui_047", "Erneut versuchen");
             }
         }).catch(err => {
-            if (statusEl) statusEl.innerText = "Kommunikationsfehler: " + err;
+            if (statusEl) statusEl.innerText = uiText("ui_048", "Kommunikationsfehler: ") + err;
             btn.disabled = false;
             if (btn) btn.removeAttribute('aria-busy');
-            btn.innerText = "Erneut versuchen";
+            btn.innerText = uiText("ui_047", "Erneut versuchen");
         });
     });
 }
@@ -993,18 +973,18 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     card.setAttribute('role', 'status');
 
     let h2 = document.createElement('h2');
-    h2.textContent = `Anhang: ${attachmentName || 'Unbekannt'}`;
+    h2.textContent = uiText("ui_069", "Anhang: $1", [attachmentName || uiText('unknownAttachment', "Unbekannt")]);
     card.appendChild(h2);
 
     let pHash = document.createElement('p');
-    pHash.textContent = `SHA-256: ${hash}`;
+    pHash.textContent = uiText("ui_012", "SHA-256: $1", [hash]);
     card.appendChild(pHash);
 
     let pInfo = document.createElement('p');
     pInfo.className = "text-info";
-    pInfo.appendChild(document.createTextNode("Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie "));
+    pInfo.appendChild(document.createTextNode(uiText("ui_070", "Diese Datei ist der Datenbank von Hybrid Analysis unbekannt. Aus Datenschutzgründen wurde sie ")));
     const infoStrong = document.createElement('strong');
-    infoStrong.textContent = "nicht automatisch hochgeladen";
+    infoStrong.textContent = uiText("ui_063", "nicht automatisch hochgeladen");
     pInfo.appendChild(infoStrong);
     pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);

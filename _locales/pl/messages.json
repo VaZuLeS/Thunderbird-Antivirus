@@ -1,0 +1,950 @@
+{
+  "extensionName": {
+    "message": "Thundy AV – Skaner poczty dla Thunderbird"
+  },
+  "extensionDescription": {
+    "message": "Opcjonalne skanowanie załączników i linków. Nic nie jest wysyłane bez Twojej wyraźnej zgody."
+  },
+  "actionTitle": {
+    "message": "Thundy AV – stan skanowania wiadomości"
+  },
+  "bannerScanOnce": {
+    "message": "Skanuj tylko tę wiadomość"
+  },
+  "bannerScanSender": {
+    "message": "Zawsze skanuj tego nadawcę"
+  },
+  "bannerTitleOptIn": {
+    "message": "Thundy AV: automatyczne skanowanie tej wiadomości nie jest włączone."
+  },
+  "bannerNoteOptIn": {
+    "message": "Skanowanie wysyła dane do usług zewnętrznych tylko po udzieleniu zgody w ustawieniach i autoryzacji skanowania."
+  },
+  "bannerScanRunning": {
+    "message": "Skanowanie…"
+  },
+  "bannerScanDone": {
+    "message": "Skanowanie zakończone"
+  },
+  "bannerScanFailed": {
+    "message": "Błąd skanowania"
+  },
+  "bannerPermissionDenied": {
+    "message": "Odmówiono wymaganego uprawnienia do dostępu"
+  },
+  "bannerConsentMissing": {
+    "message": "Analiza zewnętrzna jest wyłączona w ustawieniach: nic nie zostało przesłane."
+  },
+  "bannerThreatTitle": {
+    "message": "Ostrzeżenie Thundy AV"
+  },
+  "bannerThreatScore": {
+    "message": "Ocena ryzyka: $SCORE$ na 100",
+    "placeholders": {
+      "score": {
+        "content": "$1"
+      }
+    }
+  },
+  "bannerSenderOptIn": {
+    "message": "Ten nadawca będzie teraz skanowany automatycznie."
+  },
+  "notificationScanStarted": {
+    "message": "Rozpoczęto skanowanie: $URL$",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanSubmitted": {
+    "message": "Analiza wysłana. Identyfikator: $JOBID$",
+    "placeholders": {
+      "jobid": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationScanError": {
+    "message": "Błąd skanowania: $ERROR$",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "notificationTitle": {
+    "message": "Skaner Thundy AV"
+  },
+  "notificationTitleError": {
+    "message": "Błąd skanera Thundy AV"
+  },
+  "bannerAuthPass": {
+    "message": "Zaufany serwer zgłasza poprawne wyniki SPF/DKIM/DMARC"
+  },
+  "bannerOpenOptions": {
+    "message": "Otwórz ustawienia"
+  },
+  "menuScanLink": {
+    "message": "Skanuj link za pomocą Thundy AV"
+  },
+  "menuScanMessageLinks": {
+    "message": "Skanuj wszystkie linki wiadomości"
+  },
+  "notificationNoLinks": {
+    "message": "Nie znaleziono linków w tej wiadomości."
+  },
+  "bannerPermissionDeniedHint": {
+    "message": "Brak uprawnienia do dostępu do usługi. Przyznaj je w ustawieniach."
+  },
+  "errorHostPermissionMissing": {
+    "message": "Brak uprawnienia do dostępu do usługi. Przyznaj je w ustawieniach."
+  },
+  "errorTierUploadBlocked": {
+    "message": "Poziom Ścisły blokuje przesyłanie plików. Wybierz Zrównoważony lub Maksymalny w ustawieniach."
+  },
+  "errorTierUrlScanBlocked": {
+    "message": "Przesyłanie pełnych adresów URL wymaga poziomu Maksymalnego. Zmień go w ustawieniach."
+  },
+  "notificationInjectionFailed": {
+    "message": "Nie udało się wyświetlić banera w wiadomości. Zgłoś problem wraz z wersją Thunderbird."
+  },
+  "bannerTierBlocked": {
+    "message": "Obecny poziom nie zezwala na tę czynność. Sprawdź ustawienia."
+  },
+  "ui_001": {
+    "message": "Ostrzeżenie:"
+  },
+  "ui_002": {
+    "message": " Brak klucza API Hybrid Analysis. Użyj kontroli lokalnych lub skonfiguruj dostawcę."
+  },
+  "ui_003": {
+    "message": "Otwórz ustawienia"
+  },
+  "ui_004": {
+    "message": "Wybierz wiadomość do sprawdzenia."
+  },
+  "ui_005": {
+    "message": "Wczytywanie wyników…"
+  },
+  "ui_006": {
+    "message": "Analiza zewnętrzna jest wyłączona: skróty, pliki i linki nie są wysyłane."
+  },
+  "ui_007": {
+    "message": "Nie znaleziono załączników ani adresów URL w tej wiadomości."
+  },
+  "ui_008": {
+    "message": "Brak wyników analizy tej wiadomości."
+  },
+  "ui_009": {
+    "message": "Nieoczekiwany błąd podczas wczytywania wyników."
+  },
+  "ui_010": {
+    "message": "Stan:"
+  },
+  "ui_011": {
+    "message": " Analiza trwa. Spróbuj ponownie później."
+  },
+  "ui_012": {
+    "message": "SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_013": {
+    "message": "Ocena zagrożenia:"
+  },
+  "ui_014": {
+    "message": "Werdykt:"
+  },
+  "ui_015": {
+    "message": "Rodzina złośliwego oprogramowania:"
+  },
+  "ui_016": {
+    "message": "Wynik wielu skanerów: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_017": {
+    "message": "Dodatkowe informacje:"
+  },
+  "ui_018": {
+    "message": "Początek analizy: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_019": {
+    "message": "Etykiety: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_020": {
+    "message": "Wyniki VirusTotal:"
+  },
+  "ui_021": {
+    "message": "Złośliwe: $P1$$P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_022": {
+    "message": "Niewykryte: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_023": {
+    "message": "Podejrzane: $P1$$P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_024": {
+    "message": "Nieszkodliwe: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_025": {
+    "message": "Skaner: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_026": {
+    "message": "Stan: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_027": {
+    "message": "Wyniki antywirusa:"
+  },
+  "ui_028": {
+    "message": "AV: $P1$ – werdykt: $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_029": {
+    "message": "Brak wyników skanera."
+  },
+  "ui_030": {
+    "message": "Skrót SHA-256: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_031": {
+    "message": "Ostatnia nazwa pliku: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_032": {
+    "message": "Rozmiar: $P1$ B",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_033": {
+    "message": "Typ: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_034": {
+    "message": "Skanuj ponownie"
+  },
+  "ui_035": {
+    "message": "Oczyść i pobierz lokalnie"
+  },
+  "ui_036": {
+    "message": "Sprawdzony element: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_037": {
+    "message": "Wynik lokalny: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_038": {
+    "message": "SHA-256: $P1$ – analiza zewnętrzna jest wyłączona.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_039": {
+    "message": "Brak zapytań zewnętrznych: analiza zewnętrzna jest wyłączona."
+  },
+  "ui_040": {
+    "message": "external-analysis-disabled"
+  },
+  "ui_041": {
+    "message": "Wysyłanie skanowania…"
+  },
+  "ui_042": {
+    "message": "Przesyłanie pliku do ponownej analizy…"
+  },
+  "ui_043": {
+    "message": "Analiza wysłana. Odświeżanie wyników…"
+  },
+  "ui_044": {
+    "message": "Powodzenie"
+  },
+  "ui_045": {
+    "message": "Błąd skanowania: "
+  },
+  "ui_046": {
+    "message": "Nieznany błąd"
+  },
+  "ui_047": {
+    "message": "Spróbuj ponownie"
+  },
+  "ui_048": {
+    "message": "Błąd komunikacji: "
+  },
+  "ui_049": {
+    "message": "Oczyszczanie…"
+  },
+  "ui_050": {
+    "message": "Lokalne oczyszczanie HTML…"
+  },
+  "ui_051": {
+    "message": "Pobieranie rozpoczęte."
+  },
+  "ui_052": {
+    "message": "Oczyszczono"
+  },
+  "ui_053": {
+    "message": "Błąd pobierania: "
+  },
+  "ui_054": {
+    "message": "Błąd API: $P1$ dla elementu $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_055": {
+    "message": " (Klucz API może być nieprawidłowy lub brakować.)"
+  },
+  "ui_056": {
+    "message": "Błąd sieci: $P1$ dla elementu $P2$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_057": {
+    "message": "Wysyłanie adresu URL…"
+  },
+  "ui_058": {
+    "message": "Wysyłanie adresu URL do Hybrid Analysis…"
+  },
+  "ui_059": {
+    "message": "Analiza wysłana. Wczytywanie wyników…"
+  },
+  "ui_060": {
+    "message": "Błąd przesyłania: "
+  },
+  "ui_061": {
+    "message": "URL: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_062": {
+    "message": "Ten adres URL znajduje się w wiadomości. Aby chronić prywatność, "
+  },
+  "ui_063": {
+    "message": "nie został przesłany automatycznie"
+  },
+  "ui_064": {
+    "message": "Skanuj adres URL teraz"
+  },
+  "ui_065": {
+    "message": "Przesyłanie…"
+  },
+  "ui_066": {
+    "message": "Wysyłanie pliku do Hybrid Analysis…"
+  },
+  "ui_067": {
+    "message": "Plik przesłany. Wczytywanie wyników…"
+  },
+  "ui_068": {
+    "message": "Skanuj plik teraz (przesyłanie)"
+  },
+  "ui_069": {
+    "message": "Załącznik: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_070": {
+    "message": "Brak zewnętrznego raportu dla tego pliku. Aby chronić prywatność, "
+  },
+  "ui_071": {
+    "message": "Automatyczne przesyłanie jest wyłączone; poziom prywatności nadal dotyczy skanowania ręcznego."
+  },
+  "ui_072": {
+    "message": "Ochrona linków działa również przy automatycznym skanowaniu."
+  },
+  "ui_073": {
+    "message": "Zapisywanie…"
+  },
+  "ui_074": {
+    "message": "Ustawienia zapisane."
+  },
+  "ui_075": {
+    "message": "Zapisz"
+  },
+  "ui_076": {
+    "message": "Nie udzielono zgody na przesyłanie danych. Nic nie zostanie wysłane."
+  },
+  "ui_077": {
+    "message": "Nie udzielono uprawnienia do dostępu dla: "
+  },
+  "ui_078": {
+    "message": ". Sprawdzanie przez tych dostawców wymaga tego uprawnienia."
+  },
+  "ui_079": {
+    "message": "Nie udało się zapisać ustawień."
+  },
+  "ui_080": {
+    "message": "Wyczyścić pamięć podręczną? Wszystkie wyniki lokalne zostaną usunięte."
+  },
+  "ui_081": {
+    "message": "Czyszczenie…"
+  },
+  "ui_082": {
+    "message": "Pamięć podręczna wyczyszczona."
+  },
+  "ui_083": {
+    "message": "Baza danych jeszcze nie istnieje lub jest pusta."
+  },
+  "ui_084": {
+    "message": "Nie udało się wyczyścić pamięci podręcznej."
+  },
+  "ui_085": {
+    "message": "Wyczyść pamięć podręczną"
+  },
+  "ui_086": {
+    "message": "Brak klucza API."
+  },
+  "ui_087": {
+    "message": "Kontrola SPF nie powiodła się (możliwe podszywanie się)."
+  },
+  "ui_088": {
+    "message": "Podpis DKIM jest nieprawidłowy (możliwe podszywanie się)."
+  },
+  "ui_089": {
+    "message": "Kontrola DMARC nie powiodła się (możliwe podszywanie się)."
+  },
+  "ui_090": {
+    "message": "URLhaus oznacza domenę ($P1$) jako złośliwą.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_091": {
+    "message": "Domena Reply-To ($P1$) różni się od domeny nadawcy ($P2$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_092": {
+    "message": "Możliwe oszustwo BEC: pierwszy kontakt i słowa wskazujące na pilność ($P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_093": {
+    "message": "Wykryto słowa wskazujące na pilność ($P1$). Dokładnie sprawdź tę prośbę.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_094": {
+    "message": "To pierwszy kontakt z tym nadawcą."
+  },
+  "ui_095": {
+    "message": "Domena nadawcy ($P1$) przypomina markę $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_096": {
+    "message": "Domena linku ($P1$) przypomina markę $P2$.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      }
+    }
+  },
+  "ui_097": {
+    "message": "Żaden link nie prowadzi do domeny nadawcy ($P1$).",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_098": {
+    "message": "CLEAN"
+  },
+  "ui_099": {
+    "message": "Błąd analizy adresu URL: "
+  },
+  "ui_100": {
+    "message": "Nie udało się rozpocząć analizy urlscan.io: "
+  },
+  "ui_101": {
+    "message": "urlscan.io nie zwrócił identyfikatora."
+  },
+  "ui_102": {
+    "message": "urlscan.io oznaczył adres URL jako złośliwy."
+  },
+  "ui_103": {
+    "message": "Wykrywanie wizualne: strona podszywa się pod "
+  },
+  "ui_104": {
+    "message": " (podejrzenie phishingu)."
+  },
+  "ui_105": {
+    "message": "Nie udało się pobrać wyników urlscan.io: "
+  },
+  "ui_106": {
+    "message": "Thundy AV – Skaner poczty"
+  },
+  "ui_107": {
+    "message": "Pokaż wszystkie zgłoszenia do Hybrid Analysis"
+  },
+  "ui_108": {
+    "message": "Pokaż wszystkie zgłoszenia do Hybrid Analysis (nowa karta)"
+  },
+  "ui_109": {
+    "message": "Temat:"
+  },
+  "ui_110": {
+    "message": "Od:"
+  },
+  "ui_111": {
+    "message": "Identyfikator wiadomości:"
+  },
+  "ui_112": {
+    "message": "Ustawienia Thundy AV"
+  },
+  "ui_113": {
+    "message": "Hybrid Analysis to usługa analizy złośliwego oprogramowania. Możesz przesyłać pliki do analizy statycznej i dynamicznej."
+  },
+  "ui_114": {
+    "message": "Hybrid Analysis korzysta z CrowdStrike Falcon Sandbox do badania nieznanych zagrożeń."
+  },
+  "ui_115": {
+    "message": "Analiza zewnętrzna podlega warunkom usług dostawców. Kontrole lokalne nie wymagają konta."
+  },
+  "ui_116": {
+    "message": "Ustawienia Thundy AV"
+  },
+  "ui_117": {
+    "message": "Czym jest Hybrid Analysis?"
+  },
+  "ui_118": {
+    "message": "Do zewnętrznej analizy plików uzyskaj klucz API od"
+  },
+  "ui_119": {
+    "message": "Po zalogowaniu otwórz profil i znajdź sekcję API KEY."
+  },
+  "ui_120": {
+    "message": "Wklej tutaj klucz API. Kontrole lokalne działają bez niego."
+  },
+  "ui_121": {
+    "message": "Konfiguracja klucza API"
+  },
+  "ui_122": {
+    "message": "hybrid-analysis.com"
+  },
+  "ui_123": {
+    "message": "hybrid-analysis.com (nowa karta)"
+  },
+  "ui_124": {
+    "message": "Zezwól na analizę zewnętrzną (wysyłanie danych do dostawców)"
+  },
+  "ui_125": {
+    "message": "Bez tej zgody"
+  },
+  "ui_126": {
+    "message": " skróty, pliki, linki ani adresy IP nie są wysyłane. Po udzieleniu zgody autoryzowane analizy mogą wysyłać dane zależnie od poziomu prywatności. Wyłącz tę opcję, aby cofnąć zgodę. Szczegóły:"
+  },
+  "ui_127": {
+    "message": "żadne"
+  },
+  "ui_128": {
+    "message": "Polityka prywatności"
+  },
+  "ui_129": {
+    "message": "Polityka prywatności (nowa karta)"
+  },
+  "ui_130": {
+    "message": "Klucz API Hybrid Analysis (opcjonalny):"
+  },
+  "ui_131": {
+    "message": "np. abcdef123456…"
+  },
+  "ui_132": {
+    "message": "Klucz API URLhaus (reputacja domen, opcjonalny):"
+  },
+  "ui_133": {
+    "message": "Klucz API możesz uzyskać na"
+  },
+  "ui_134": {
+    "message": "."
+  },
+  "ui_135": {
+    "message": "urlhaus.abuse.ch"
+  },
+  "ui_136": {
+    "message": "urlhaus.abuse.ch (nowa karta)"
+  },
+  "ui_137": {
+    "message": "Klucz API urlscan.io (analiza URL, opcjonalny):"
+  },
+  "ui_138": {
+    "message": "Klucz API możesz uzyskać na"
+  },
+  "ui_139": {
+    "message": "urlscan.io"
+  },
+  "ui_140": {
+    "message": "urlscan.io (nowa karta)"
+  },
+  "ui_141": {
+    "message": "Klucz API VirusTotal (reputacja plików, opcjonalny):"
+  },
+  "ui_142": {
+    "message": "virustotal.com"
+  },
+  "ui_143": {
+    "message": "virustotal.com (nowa karta)"
+  },
+  "ui_144": {
+    "message": "Poziom prywatności:"
+  },
+  "ui_145": {
+    "message": "Ścisły (tylko skróty i domeny, bez przesyłania plików)"
+  },
+  "ui_146": {
+    "message": "Zrównoważony (nieznane pliki, bez pełnych adresów URL)"
+  },
+  "ui_147": {
+    "message": "Maksymalna analiza (nieznane pliki i pełne adresy URL)"
+  },
+  "ui_148": {
+    "message": "Ogranicza dane wysyłane do dostawców. Dotyczy tylko włączonej analizy zewnętrznej."
+  },
+  "ui_149": {
+    "message": "Reputacja IP (nagłówki Received):"
+  },
+  "ui_150": {
+    "message": "Wyłączone"
+  },
+  "ui_151": {
+    "message": "VirusTotal (wymaga klucza API VirusTotal)"
+  },
+  "ui_152": {
+    "message": "AbuseIPDB (wymaga klucza API AbuseIPDB)"
+  },
+  "ui_153": {
+    "message": "Klucz API do reputacji IP:"
+  },
+  "ui_154": {
+    "message": "Wysyła publiczne adresy IP z nagłówków Received do wybranego dostawcy. Wymaga zgody i autoryzacji skanowania."
+  },
+  "ui_155": {
+    "message": "Lista zaufanych (domeny lub adresy oddzielone przecinkami):"
+  },
+  "ui_156": {
+    "message": "np. example.com, test@example.com"
+  },
+  "ui_157": {
+    "message": "Zaufane wpisy wyłączają lokalne ostrzeżenia o nadawcy. Nie zezwalają na analizy zewnętrzne."
+  },
+  "ui_158": {
+    "message": "Lista blokowanych (domeny lub adresy oddzielone przecinkami):"
+  },
+  "ui_159": {
+    "message": "Wpisz blokowane domeny lub adresy."
+  },
+  "ui_160": {
+    "message": "Zawsze skanuj ręcznie (bez automatycznego przesyłania)"
+  },
+  "ui_161": {
+    "message": "Zapobiega automatycznym analizom zewnętrznym. Działania ręczne nadal wymagają zgody i odpowiedniego poziomu."
+  },
+  "ui_162": {
+    "message": "Skanuj linki podczas otwierania autoryzowanej wiadomości"
+  },
+  "ui_163": {
+    "message": "Sprawdzanie linków wymaga zgody, autoryzacji i odpowiedniego poziomu."
+  },
+  "ui_164": {
+    "message": "Sprawdzaj linki przed otwarciem"
+  },
+  "ui_165": {
+    "message": "Wstrzymuje otwarcie i pokazuje wynik. Niesprawdzone linki i błędy są oznaczone. Analiza pełnych adresów URL wymaga poziomu maksymalnego."
+  },
+  "ui_166": {
+    "message": "Pamiętaj o zapisaniu ustawień."
+  },
+  "ui_167": {
+    "message": "Zarządzanie danymi"
+  },
+  "ui_168": {
+    "message": "Usuń lokalne wyniki i pamięć podręczną reputacji."
+  },
+  "linkChecking": {
+    "message": "Sprawdzanie linku…"
+  },
+  "linkWarning": {
+    "message": "Ten link został oznaczony jako podejrzany lub złośliwy."
+  },
+  "linkUnknown": {
+    "message": "Nie udało się sprawdzić tego linku. Jego otwarcie może być ryzykowne."
+  },
+  "linkNoDetection": {
+    "message": "Dostawca nie wykrył zagrożenia. Nie gwarantuje to bezpieczeństwa."
+  },
+  "linkProceed": {
+    "message": "Otwórz link mimo to"
+  },
+  "linkCancel": {
+    "message": "Anuluj"
+  },
+  "localMode": {
+    "message": "Kontrole lokalne działają bez kluczy API. Analizy zewnętrzne wymagają zgody i autoryzacji wiadomości lub nadawcy."
+  },
+  "statusNormal": {
+    "message": " (Brak wykryć)"
+  },
+  "statusSuspicious": {
+    "message": " (Podejrzane)"
+  },
+  "statusCritical": {
+    "message": " (Krytyczne)"
+  },
+  "noSubject": {
+    "message": "(Brak tematu)"
+  },
+  "noSender": {
+    "message": "(Nieznany nadawca)"
+  },
+  "noId": {
+    "message": "(Brak identyfikatora)"
+  },
+  "unknownAttachment": {
+    "message": "Nieznany"
+  },
+  "statusDangerous": {
+    "message": " (Niebezpieczne)"
+  },
+  "sizeLimit": {
+    "message": "Załącznik przekracza lokalny limit 25 MiB; nie został odczytany ani przesłany."
+  },
+  "trustedAuthLabel": {
+    "message": "Zaufane serwery uwierzytelniania (oddzielone przecinkami)"
+  },
+  "trustedAuthHelp": {
+    "message": "Wpisz tylko serwery odbierające, którymi zarządzasz lub które znasz. Bez konfiguracji raporty nagłówków pozostają niezweryfikowane."
+  },
+  "consentHelp": {
+    "message": "Bez zgody nic nie jest wysyłane. Po udzieleniu zgody dozwolone są tylko analizy autoryzowane dla wiadomości lub nadawcy. Ścisły zezwala na skróty, domeny i publiczne IP; Zrównoważony dodatkowo na nieznane pliki; Maksymalny dodatkowo na pełne adresy URL. Wyłącz tę opcję, aby zatrzymać nowe przesyłanie i anulować oczekujące żądania. Wysłanych danych nie można wycofać."
+  },
+  "visualImpersonation": {
+    "message": "Wykrywanie wizualne: strona podszywa się pod $BRANDS$ (podejrzenie phishingu).",
+    "placeholders": {
+      "brands": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedEmail": {
+    "message": "Adres nadawcy ($P1$) jest na liście blokowanych.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonBlockedDomain": {
+    "message": "Domena nadawcy ($P1$) jest na liście blokowanych ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedEmail": {
+    "message": "Adres nadawcy ($P1$) jest na liście zaufanych.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonAllowedDomain": {
+    "message": "Domena nadawcy ($P1$) jest na liście zaufanych ($P2$).",
+    "placeholders": {
+      "p2": {
+        "content": "$2"
+      },
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanVisibility": {
+    "message": "Zgłoszenia do urlscan.io nie są publicznie wymieniane, ale nie są prywatne. Pełny adres URL może zawierać dane osobowe lub tokeny dostępu. Wysyłaj tylko adresy, które możesz udostępniać."
+  },
+  "notificationScanCount": {
+    "message": "Liczba zgłoszonych analiz: $COUNT$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "gatewayRequestTimeout": {
+    "message": "Żądanie zostało anulowane lub przekroczyło limit czasu."
+  },
+  "gatewayInvalidJson": {
+    "message": "Dostawca zwrócił nieczytelną odpowiedź."
+  },
+  "gatewayNetworkError": {
+    "message": "Nie udało się połączyć z dostawcą."
+  },
+  "noMessageFound": {
+    "message": "Nie znaleziono wyświetlanej wiadomości."
+  },
+  "providerNoDetection": {
+    "message": "Nie wykryto zagrożenia"
+  },
+  "providerMalicious": {
+    "message": "Złośliwe"
+  },
+  "providerSuspicious": {
+    "message": "Podejrzane"
+  },
+  "providerPending": {
+    "message": "Analiza oczekująca"
+  },
+  "privacyLocalData": {
+    "message": "Thundy AV odczytuje wyświetlaną wiadomość, nadawcę, temat, nagłówki, tekst i załączniki do kontroli lokalnych. Działają one bez kluczy API. Nie ma telemetrii ani serwera analizy dewelopera."
+  },
+  "privacyProviders": {
+    "message": "Autoryzowane zapytania trafiają bezpośrednio do skonfigurowanych dostawców: Hybrid Analysis otrzymuje skróty i pliki, VirusTotal skróty lub dane reputacji IP, URLhaus domeny, urlscan.io pełne adresy URL, a AbuseIPDB publiczne IP. Skróty mogą identyfikować znane pliki. Obowiązują warunki i polityki dostawców; mogą oni udostępniać otrzymane dane."
+  },
+  "privacyRetention": {
+    "message": "Ustawienia, zgoda, autoryzacje nadawców i klucze API są przechowywane w profilu Thunderbird. Klucze nie są szyfrowane. Wyniki lokalne mogą zawierać tematy, adresy nadawców, pełne linki i metadane załączników. Pamięć podręczna przechowuje do 1000 wiadomości przez 30 dni i jest czyszczona przy uruchomieniu bazy. Reputacja w pamięci wygasa po 15 minutach."
+  },
+  "privacyControl": {
+    "message": "Wyłącz analizę zewnętrzną, aby zatrzymać nowe żądania i anulować oczekujące. Wysłanych danych nie można wycofać. Wyczyść pamięć podręczną usuwa wyniki lokalne i pamięć reputacji. Autoryzacje nadawców można usuwać pojedynczo w ustawieniach."
+  },
+  "privacyDetailed": {
+    "message": "Pełna polityka prywatności (angielski/niemiecki)"
+  },
+  "senderAuthorizationsLabel": {
+    "message": "Autoryzowani nadawcy (jeden adres w wierszu)"
+  },
+  "senderAuthorizationsHelp": {
+    "message": "Ci nadawcy mogą być skanowani automatycznie przy włączonej analizie zewnętrznej. Usuń adres, aby zatrzymać skanowanie przyszłych wiadomości. Lista nie omija poziomu prywatności ani trybu ręcznego."
+  },
+  "invalidSenderAddress": {
+    "message": "Wpisz same adresy email, po jednym w wierszu."
+  }
+}

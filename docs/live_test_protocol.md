@@ -1,3 +1,5 @@
+> Dieses Formular dokumentiert die frühere Store-Abnahme. Für den neuen Kandidaten 1.19.0 mit sechs Sprachen gilt zusätzlich [live_test_1_19_0.md](live_test_1_19_0.md); dessen Ergebnisse sind noch offen.
+
 # Live-Test-Protokoll — Thundy AV in Thunderbird 140 ESR
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird · Version **1.6** · ID `thundy-av@bludau-it-services.de`

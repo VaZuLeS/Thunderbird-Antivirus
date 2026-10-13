@@ -207,3 +207,11 @@ button[aria-busy="true"]::after,
     border-radius: 50%;
     animation: thundy-spin 0.8s linear infinite;
 }
+
+/* Long translated labels and results must fit narrow or zoomed views. */
+.grid-content, small, p, label, button { overflow-wrap: anywhere; }
+input, select, textarea { max-width: 100%; box-sizing: border-box; }
+@media (max-width: 480px) {
+    .grid-container { grid-template-columns: minmax(0, 1fr); }
+    button { white-space: normal; }
+}

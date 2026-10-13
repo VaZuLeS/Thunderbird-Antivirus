@@ -1705,7 +1705,7 @@ describe('handleUploadClick', () => {
 
         const vm = require('vm');
         const fs = require('fs');
-        const code = fs.readFileSync('api.js', 'utf8');
+        const code = fs.readFileSync('api.js', 'utf8').replace(/^\(async \(\) => \{/m, 'async function initAPI() {').replace(/\}\)\(\);/m, '}');
 
         // Wrap the code to extract handleUploadClick
         let wrappedCode = `(function() {
@@ -3046,7 +3046,7 @@ describe('renderActionButtons', () => {
         vm.createContext(context);
 
         const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
-        const modifiedCode = code + '\n; globalThis.renderActionButtons = renderActionButtons;';
+        const modifiedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {').replace(/\}\)\(\);/m, '}') + '\n; globalThis.renderActionButtons = renderActionButtons;';
 
         vm.runInContext(modifiedCode, context);
     });

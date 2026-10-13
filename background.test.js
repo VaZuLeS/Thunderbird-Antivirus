@@ -25,6 +25,7 @@ describe('background.js', () => {
                     }
                 },
                 messages: {
+                    get: async (id) => ({ id, headerMessageId: 'test-msg-id', author: 'sender@example.com', subject: 'Test' }),
                     getFull: async () => ({}),
                     listAttachments: async () => ([]),
                     getAttachmentFile: async () => ({
@@ -121,12 +122,18 @@ describe('background.js', () => {
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'background.js'), 'utf8');
         const gatewayCode = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
+        const riskCode = fs.readFileSync(path.join(__dirname, 'risk.js'), 'utf8');
+        const sanitizeCode = fs.readFileSync(path.join(__dirname, 'sanitize.js'), 'utf8');
+        const extraCode = ['scan_policy.js', 'providers.js', 'message_ui.js', 'vendor/tldts.js'].map(file => fs.readFileSync(path.join(__dirname, file), 'utf8')).join('\n');
         const wrappedCode = `
             globalThis.customBlacklist = new Set();
             globalThis.customWhitelist = new Set();
             globalThis.knownSendersCache = new Set();
             globalThis.MAX_KNOWN_SENDERS = 1000;
             ${gatewayCode}
+            ${riskCode}
+            ${sanitizeCode}
+            ${extraCode}
             ${code}
             globalThis.loadSettings = loadSettings;
             globalThis.set_externalAnalysisConsent = (val) => { externalAnalysisConsent = val === true; };
@@ -454,7 +461,7 @@ describe('background.js', () => {
         assert.strictEqual(fetchCalledWith.method, 'POST');
     });
 
-    it('sent_to_hybrid_by_attachment skips ignored content types', async () => {
+    it('sent_to_hybrid_by_attachment includes text and active HTML types', async () => {
         context.set_apikey('test-key');
         let dbSaved = false;
         context.indexedDB_save_batch_hybrid_data_to_db = () => { dbSaved = true; };
@@ -467,7 +474,7 @@ describe('background.js', () => {
         ];
 
         await context.sent_to_hybrid_by_attachment({ id: 1 }, attachments);
-        assert.strictEqual(dbSaved, false); // shouldn't save anything because they are ignored
+        assert.strictEqual(dbSaved, true); // text and HTML attachments must remain accessible
     });
 
     it('sent_to_hybrid_by_attachment processes valid attachments (known file)', async () => {
@@ -611,7 +618,7 @@ describe('background.js', () => {
                 await context.handleManualUpload(1, 'part1', 'file.exe', 'hash123', 'header123');
             },
             (err) => {
-                assert.strictEqual(err.message, 'Fehler beim Upload: {"error":"Internal Error"}');
+                assert.strictEqual(err.message, 'Fehler beim Upload: 500');
                 return true;
             }
         );
@@ -700,7 +707,7 @@ describe('background.js', () => {
         assert.strictEqual(response.success, true);
         assert.strictEqual(response.persisted, true);
         assert.ok(processed);
-        assert.ok(stored.scanningEnabledSenders && stored.scanningEnabledSenders.includes('user@example.com'));
+        assert.ok(stored.scanningEnabledSenders && stored.scanningEnabledSenders.includes('sender@example.com'));
     });
 
     it('runtime.onMessage requestScan without persist does not create a permanent opt-in', async () => {
@@ -740,6 +747,7 @@ describe('background.js', () => {
             const originalFetch = context.fetch;
             try {
                 context.fetch = async () => ({
+                    status: 200,
                     json: async () => ({
                         data: {
                             attributes: {
@@ -761,6 +769,7 @@ describe('background.js', () => {
             const originalFetch = context.fetch;
             try {
                 context.fetch = async () => ({
+                    status: 200,
                     json: async () => ({
                         data: {
                             attributes: {
@@ -778,20 +787,21 @@ describe('background.js', () => {
             }
         });
 
-        it('returns false if data is missing', async () => {
+        it('returns unknown if data is missing', async () => {
             const originalFetch = context.fetch;
             try {
                 context.fetch = async () => ({
+                    status: 200,
                     json: async () => ({})
                 });
                 const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
-                assert.strictEqual(result, false);
+                assert.strictEqual(result, null);
             } finally {
                 context.fetch = originalFetch;
             }
         });
 
-        it('returns false and logs error on fetch failure', async () => {
+        it('returns unknown and logs error on fetch failure', async () => {
             const originalFetch = context.fetch;
             const originalConsoleError = context.console.error;
             let errorLogged = false;
@@ -805,7 +815,7 @@ describe('background.js', () => {
                     }
                 };
                 const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
-                assert.strictEqual(result, false);
+                assert.strictEqual(result, null);
                 assert.strictEqual(errorLogged, true);
             } finally {
                 context.fetch = originalFetch;
@@ -819,6 +829,7 @@ describe('background.js', () => {
             const originalFetch = context.fetch;
             try {
                 context.fetch = async () => ({
+                    status: 200,
                     json: async () => ({
                         data: {
                             abuseConfidenceScore: 51
@@ -836,6 +847,7 @@ describe('background.js', () => {
             const originalFetch = context.fetch;
             try {
                 context.fetch = async () => ({
+                    status: 200,
                     json: async () => ({
                         data: {
                             abuseConfidenceScore: 50
@@ -849,7 +861,7 @@ describe('background.js', () => {
             }
         });
 
-        it('returns false and handles error gracefully on fetch network failure', async () => {
+        it('returns unknown and handles error gracefully on fetch network failure', async () => {
             const originalFetch = context.fetch;
             const originalConsoleError = context.console.error;
             let errorLogged = false;
@@ -863,7 +875,7 @@ describe('background.js', () => {
                     }
                 };
                 const result = await context.checkAbuseIPDB('1.2.3.4', 'dummykey');
-                assert.strictEqual(result, false);
+                assert.strictEqual(result, null);
                 assert.strictEqual(errorLogged, true);
             } finally {
                 context.fetch = originalFetch;
@@ -871,12 +883,13 @@ describe('background.js', () => {
             }
         });
 
-        it('returns false and handles error gracefully on fetch json parse failure', async () => {
+        it('returns unknown and handles error gracefully on fetch json parse failure', async () => {
             const originalFetch = context.fetch;
             const originalConsoleError = context.console.error;
             let errorLogged = false;
             try {
                 context.fetch = async () => ({
+                    status: 200,
                     json: async () => {
                         throw new Error("Invalid JSON");
                     }
@@ -887,7 +900,7 @@ describe('background.js', () => {
                     }
                 };
                 const result = await context.checkAbuseIPDB('1.2.3.4', 'dummykey');
-                assert.strictEqual(result, false);
+                assert.strictEqual(result, null);
                 assert.strictEqual(errorLogged, true);
             } finally {
                 context.fetch = originalFetch;
@@ -999,6 +1012,7 @@ describe('background.js', () => {
     });
 
     describe('checkUrlscanIo', () => {
+        beforeEach(() => context.set_privacyTier('max'));
         let originalFetch;
         let originalConsoleError;
         let originalConsoleLog;
@@ -1011,8 +1025,9 @@ describe('background.js', () => {
             originalSetTimeout = context.setTimeout;
             context.console.error = () => {};
             context.console.log = () => {};
-            context.setTimeout = (cb) => {
-                cb(); // execute instantly
+            context.setTimeout = (cb, ms) => {
+                if (ms < 15000) cb(); // Fast-forward polling waits, not request deadlines.
+                return 0;
             };
         });
 
@@ -1865,7 +1880,8 @@ describe('background.js', () => {
             assert.strictEqual(executedScripts[0].target.tabId, 10);
             assert.strictEqual(typeof executedScripts[0].func, 'function');
             // The injected script for time of click does not take arguments
-            assert.strictEqual(executedScripts[0].args.length, 0);
+            assert.strictEqual(executedScripts[0].args.length, 2);
+            assert.ok(executedScripts[0].args[0].waiting);
         });
 
         it('does not inject script when timeOfClickProtection is false', async () => {
@@ -1877,13 +1893,13 @@ describe('background.js', () => {
             assert.strictEqual(executedScripts.length, 0);
         });
 
-        it('does not inject script when filteredUrls is empty', async () => {
+        it('installs click interception even when text extraction found no URLs', async () => {
             context.set_timeOfClickProtection(true);
             const filteredUrls = [];
 
             await context.injectTimeOfClickProtection(10, filteredUrls);
 
-            assert.strictEqual(executedScripts.length, 0);
+            assert.strictEqual(executedScripts.length, 1);
         });
 
         it('handles executeScript error gracefully', async () => {
@@ -1998,7 +2014,8 @@ describe('background.js', () => {
 
         it('collectThreatEvaluationOptions aggregates options correctly', async () => {
             const message = { author: 'Bob <bob@example.com>', subject: 'Urgent' };
-            const fullMessage = { headers: { 'authentication-results': ['spf=pass'], 'received': [] } };
+            context.browser.storage.local.get = async () => ({ trustedAuthServers: ['mx.example.com'] });
+            const fullMessage = { headers: { 'authentication-results': ['mx.example.com; spf=pass'], 'received': [] } };
             const options = await context.collectThreatEvaluationOptions({
                 message,
                 fullMessage,
@@ -2006,7 +2023,7 @@ describe('background.js', () => {
                 messageText: 'Hello',
                 parsedUrlCache: new Map()
             });
-            assert.deepStrictEqual(options.authHeaders, ['spf=pass']);
+            assert.deepStrictEqual(Array.from(options.authHeaders), ['mx.example.com; spf=pass']);
             assert.strictEqual(options.subject, 'Urgent');
             assert.strictEqual(options.messageText, 'Hello');
         });
@@ -2065,7 +2082,7 @@ describe('background.js', () => {
             const result = context.disarmHTML(input);
             assert.ok(!result.includes('onclick'), 'onclick attribute should be removed');
             assert.ok(!result.includes('evil()'), 'Event handler content should be removed');
-            assert.ok(result.includes('<button>Click</button>'), 'Button element should remain');
+            assert.ok(!result.includes('<button'), 'Interactive button should be removed');
         });
 
         it('removes javascript URIs', () => {
@@ -2710,6 +2727,7 @@ describe('background.js', () => {
     });
 
     describe('handleCheckLinkState', () => {
+        beforeEach(() => context.set_privacyTier('max'));
         let originalFetch;
         let originalConsoleLog;
 
@@ -2900,11 +2918,11 @@ describe('background.js', () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [] });
 
             let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'UNKNOWN' });
 
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 1 }] }); // Missing headerMessageId
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'UNKNOWN' });
         });
 
@@ -2914,7 +2932,7 @@ describe('background.js', () => {
             context.openDB = async () => ({});
 
             let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'UNKNOWN' });
         });
 
@@ -2934,7 +2952,7 @@ describe('background.js', () => {
             context.openDB = async () => ({});
 
             let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.strictEqual(response.status, 'MALICIOUS_VISUAL');
         });
 
@@ -2953,7 +2971,7 @@ describe('background.js', () => {
             context.openDB = async () => ({});
 
             let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'CUSTOM_STATE' });
         });
 
@@ -2971,7 +2989,7 @@ describe('background.js', () => {
             context.openDB = async () => ({});
 
             let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'CLEAN' });
         });
 
@@ -2984,7 +3002,7 @@ describe('background.js', () => {
             context.openDB = async () => ({});
 
             let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'MALICIOUS' });
         });
 
@@ -2997,7 +3015,7 @@ describe('background.js', () => {
             context.openDB = async () => ({});
 
             let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'FALLBACK_STATE' });
         });
 
@@ -3005,7 +3023,7 @@ describe('background.js', () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => { throw new Error('API failure'); };
 
             let response;
-            await context.handleCheckLinkState({ url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
             assert.deepEqual(response, { status: 'ERROR' });
         });
     });
@@ -3309,8 +3327,8 @@ describe('background.js', () => {
             context.fetch = async () => { fetchCalls++; return { status: 200, json: async () => ({}) }; };
 
             assert.strictEqual(await context.checkVirusTotal('abc', 'vt-key'), null);
-            assert.strictEqual(await context.checkURLhaus('example.com', 'urlhaus-key'), false);
-            assert.strictEqual(await context.checkAbuseIPDB('1.1.1.1', 'ip-key'), false);
+            assert.strictEqual(await context.checkURLhaus('example.com', 'urlhaus-key'), null);
+            assert.strictEqual(await context.checkAbuseIPDB('1.1.1.1', 'ip-key'), null);
             assert.strictEqual(await context.checkUrlscanIo('https://example.com', 'scan-key'), null);
             assert.throws(() => context.assertExternalAnalysisAllowed());
 
@@ -3397,14 +3415,14 @@ describe('background.js', () => {
             assert.strictEqual(fetchCalled, false, 'nothing may be submitted in the balanced tier');
         });
 
-        it('provider calls fail with HOST_PERMISSION_MISSING when the user never granted the origin', async () => {
+        it('missing provider permission stays unknown and never sends a request', async () => {
             context.set_externalAnalysisConsent(true);
             context.browser.permissions = { contains: async () => false, request: async () => false };
             const originalFetch = context.fetch;
             let fetchCalled = false;
             context.fetch = async () => { fetchCalled = true; return { status: 200, json: async () => ({}) }; };
             try {
-                await assert.rejects(() => context.checkURLhaus('example.com', 'key'), /host permission/i);
+                assert.strictEqual(await context.checkURLhaus('example.com', 'key'), null);
                 assert.strictEqual(fetchCalled, false);
             } finally {
                 context.fetch = originalFetch;

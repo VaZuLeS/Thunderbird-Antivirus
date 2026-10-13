@@ -1,6 +1,11 @@
 class ApiGateway {
     constructor() {
         this.apikeys = {};
+        this.controllers = new Set();
+        this.beforeRequest = null;
+        this.active = new Map();
+        this.waiting = new Map();
+        this.generation = 0;
     }
 
     setApikey(service, key) {
@@ -42,8 +47,52 @@ class ApiGateway {
         return requestOptions;
     }
 
+    abortAll() {
+        this.generation++;
+        for (const controller of this.controllers) controller.abort();
+    }
+
+    acquire(host, signal) {
+        return new Promise((resolve, reject) => {
+            const queue = this.waiting.get(host) || [];
+            this.waiting.set(host, queue);
+            const item = { start: () => {
+                signal.removeEventListener('abort', cancelled);
+                this.active.set(host, (this.active.get(host) || 0) + 1);
+                resolve(() => {
+                    this.active.set(host, this.active.get(host) - 1);
+                    const next = queue.shift();
+                    if (next) next.start();
+                });
+            }};
+            const cancelled = () => {
+                const index = queue.indexOf(item);
+                if (index !== -1) queue.splice(index, 1);
+                const error = new Error('Request cancelled'); error.name = 'AbortError'; reject(error);
+            };
+            if (signal.aborted) { cancelled(); return; }
+            signal.addEventListener('abort', cancelled, { once: true });
+            if ((this.active.get(host) || 0) < 2) item.start();
+            else queue.push(item);
+        });
+    }
+
+    pause(ms, signal) {
+        return new Promise((resolve, reject) => {
+            const cancelled = () => {
+                clearTimeout(timer);
+                const error = new Error('Request cancelled'); error.name = 'AbortError'; reject(error);
+            };
+            const timer = setTimeout(() => { signal.removeEventListener('abort', cancelled); resolve(); }, ms);
+            signal.addEventListener('abort', cancelled, { once: true });
+            if (signal.aborted) cancelled();
+        });
+    }
+
     async fetchWithTimeout(url, options = {}, timeout = 15000) {
+        if (this.beforeRequest) await this.beforeRequest();
         const controller = new AbortController();
+        this.controllers.add(controller);
         const id = setTimeout(() => controller.abort(), timeout);
 
         const fetchOptions = {
@@ -51,12 +100,31 @@ class ApiGateway {
             signal: controller.signal
         };
 
+        let release;
         try {
-            const response = await fetch(url, fetchOptions);
+            release = await this.acquire(new URL(url).hostname, controller.signal);
+            if (this.beforeRequest) await this.beforeRequest();
+            let response;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                if (this.beforeRequest) await this.beforeRequest();
+                response = await fetch(url, fetchOptions);
+                const retryAfter = response.headers && response.headers.get('retry-after');
+                if ((options.method || 'GET').toUpperCase() !== 'GET' || !retryAfter || ![429, 503].includes(response.status) || attempt === 2) break;
+                const seconds = Number(retryAfter);
+                const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(retryAfter) - Date.now();
+                if (!Number.isFinite(delay)) break;
+                await this.pause(Math.min(30000, Math.max(0, delay)), controller.signal);
+            }
+            // Provider responses are JSON. Keep the slot, abort signal and deadline
+            // active until the body has been consumed, not just until headers arrive.
+            if (response.body && typeof response.json === 'function') {
+                const data = await response.json();
+                response.json = async () => data;
+            }
             clearTimeout(id);
 
             if (response.status === 429) {
-                console.warn(`[ApiGateway] Rate limit exceeded (429) for ${url}`);
+                console.warn('[ApiGateway] Provider rate limit exceeded (429)');
                 // In a production scenario, you might want to implement retry logic here
             }
 
@@ -64,9 +132,14 @@ class ApiGateway {
         } catch (error) {
             clearTimeout(id);
             if (error.name === 'AbortError') {
-                throw new Error(`[ApiGateway] Request to ${url} timed out after ${timeout}ms`);
+                throw new Error(typeof ThundyI18n !== 'undefined' ? ThundyI18n.get('gatewayRequestTimeout') : `[ApiGateway] Request cancelled or timed out after ${timeout}ms`);
             }
-            throw error; // Let other network errors bubble up
+            if (typeof ThundyI18n !== 'undefined' && !error.code) throw new Error(ThundyI18n.get(error.name === 'SyntaxError' ? 'gatewayInvalidJson' : 'gatewayNetworkError'));
+            throw error; // Preserve typed policy failures
+        } finally {
+            clearTimeout(id);
+            this.controllers.delete(controller);
+            if (release) release();
         }
     }
 
@@ -77,8 +150,8 @@ class ApiGateway {
             const data = await response.json();
             return { response, data };
         } catch (error) {
-            console.error(`[ApiGateway] Error parsing JSON from ${url}:`, error);
-            throw new Error(`[ApiGateway] Invalid JSON response from ${url}`);
+            console.error('[ApiGateway] Invalid provider JSON');
+            throw new Error(typeof ThundyI18n !== 'undefined' ? ThundyI18n.get('gatewayInvalidJson') : '[ApiGateway] Invalid JSON response');
         }
     }
 }

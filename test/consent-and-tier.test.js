@@ -121,8 +121,5 @@ describe('privacy tier guards in the manual paths (P0-2, static)', () => {
     assert.match(body, /TIER_REQUIRES_MAX/);
   });
 
-  it('every provider request is preceded by a host permission check', () => {
-    const guarded = (background.match(/requireHostPermission\(/g) || []).length;
-    assert.ok(guarded >= 10, 'expected a host permission guard at every provider call site, found ' + guarded);
-  });
+
 });

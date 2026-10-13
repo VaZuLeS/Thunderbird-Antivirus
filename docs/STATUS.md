@@ -1,3 +1,11 @@
+# Veröffentlichungsvorbereitung: 1.19.0 (13. Oktober 2026)
+
+Die Umsetzung des [Optimierungsplans](AUFGABENPLAN_OPTIMIERUNG_I18N.md) enthält sechs vollständig mitgelieferte Sprachkataloge und Korrekturen an Zustimmung, Scanfreigabe, Linkschutz, Caches, Datenzugriff und CI. Version 1.19.0 wird gemäß Nutzerauftrag als unsignierter GitHub-Release veröffentlicht. Der taggesteuerte Release-Workflow und der GitHub-Pages-Workflow sind vorbereitet; ihr Erfolg wird nach Push geprüft. Eine Store-Signierung ist nicht erfolgt. Reale Thunderbird-Abnahme und Screenshots stehen aus: [Live-Protokoll 1.19.0](live_test_1_19_0.md).
+
+Die nachfolgenden Release-Angaben und Messwerte dokumentieren den historischen Stand von 1.6.2. Aktueller lokaler Gate: 485 Tests bestanden, 0 Lint-Fehler/22 bekannte Thunderbird-Warnungen; gültiges Paket mit 31 Dateien und 519.476 Bytes entpackt. Details stehen im Ausführungsstand des Optimierungsplans.
+
+---
+
 # Status – Thundy AV (Stand: 1. Oktober 2026)
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6.2** · **ID** `thundy-av@bludau-it-services.de`

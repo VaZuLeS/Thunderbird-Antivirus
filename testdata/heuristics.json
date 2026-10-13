@@ -1,0 +1,14 @@
+[
+  {"language":"en","subject":"Monthly invoice","body":"The payment is due next month.","risky":false},
+  {"language":"de","subject":"Rechnung März","body":"Die Überweisung ist für nächsten Monat geplant.","risky":false},
+  {"language":"en","subject":"Team meeting","body":"We meet at ten tomorrow.","risky":false},
+  {"language":"de","subject":"Termin","body":"Wir treffen uns morgen um zehn.","risky":false},
+  {"language":"en","subject":"Urgent payment","body":"Transfer immediately to the new account.","risky":true},
+  {"language":"de","subject":"Dringend","body":"Bitte sofort überweisen.","risky":true},
+  {"language":"fr","subject":"Virement urgent","body":"Effectuez le paiement immédiatement.","risky":true},
+  {"language":"es","subject":"Pago urgente","body":"Transfiera el pago inmediatamente.","risky":true},
+  {"language":"it","subject":"Pagamento urgente","body":"Trasferisci il denaro subito.","risky":true},
+  {"language":"pl","subject":"Pilne","body":"Wykonaj przelew natychmiast.","risky":true},
+  {"language":"mixed","subject":"Payment","body":"Bitte sofort den Betrag überweisen.","risky":true},
+  {"language":"unicode","subject":"éurgenté","body":"Wichtiger Bestandteil einer Zeichenfolge, kein Signalwort.","risky":false}
+]

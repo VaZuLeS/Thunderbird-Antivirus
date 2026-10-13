@@ -1,0 +1,12 @@
+title: Thundy AV
+url: https://vazules.github.io
+baseurl: /Thunderbird-Antivirus
+markdown: kramdown
+plugins:
+  - jekyll-optional-front-matter
+  - jekyll-relative-links
+optional_front_matter:
+  remove_originals: true
+exclude:
+  - ci
+  - audits

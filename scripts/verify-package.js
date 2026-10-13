@@ -10,6 +10,21 @@ const { execFileSync } = require('child_process');
 
 const ALLOWED_FILES = [
   'manifest.json',
+  '_locales/en/messages.json',
+  '_locales/de/messages.json',
+  '_locales/fr/messages.json',
+  '_locales/es/messages.json',
+  '_locales/it/messages.json',
+  '_locales/pl/messages.json',
+  'i18n.js',
+  'runtime.js',
+  'risk.js',
+  'sanitize.js',
+  'scan_policy.js',
+  'providers.js',
+  'message_ui.js',
+  'vendor/tldts.js',
+  'vendor/tldts.LICENSE',
   'background.js',
   'db.js',
   'api.js',
@@ -17,12 +32,28 @@ const ALLOWED_FILES = [
   'options.html',
   'options.js',
   'popup.html',
+  'privacy.html',
   'theme.css',
   'LICENSE'
 ];
 // Runtime files that must be inside the package (otherwise the add-on is broken).
 const REQUIRED_FILES = [
   'manifest.json',
+  '_locales/en/messages.json',
+  '_locales/de/messages.json',
+  '_locales/fr/messages.json',
+  '_locales/es/messages.json',
+  '_locales/it/messages.json',
+  '_locales/pl/messages.json',
+  'i18n.js',
+  'runtime.js',
+  'risk.js',
+  'sanitize.js',
+  'scan_policy.js',
+  'providers.js',
+  'message_ui.js',
+  'vendor/tldts.js',
+  'vendor/tldts.LICENSE',
   'background.js',
   'db.js',
   'api.js',
@@ -30,10 +61,12 @@ const REQUIRED_FILES = [
   'options.html',
   'options.js',
   'popup.html',
+  'privacy.html',
   'theme.css'
 ];
 const ALLOWED_PREFIXES = ['img/', '_locales/'];
 const FORBIDDEN = [
+  /^benchmark_/,
   /install\.rdf$/,
   /\.test\.js$/,
   /_test\.js$/,
@@ -49,7 +82,8 @@ const FORBIDDEN = [
   /\.sh$/,
   /^\.webextignore$/
 ];
-const MAX_UNCOMPRESSED_BYTES = 400 * 1024;
+// Six complete catalogs and a bundled Public Suffix List require more than the former 400 KiB budget.
+const MAX_UNCOMPRESSED_BYTES = 600 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the

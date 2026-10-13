@@ -16,6 +16,7 @@ export default {
   ignoreFiles: [
     // tests and developer tooling
     '**/*.test.js',
+    'benchmark_*.js',
     '**/*_test.js',
     'test',
     'test/**',

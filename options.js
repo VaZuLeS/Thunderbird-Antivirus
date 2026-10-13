@@ -1,3 +1,7 @@
+function uiText(key, fallback, params = []) {
+    return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
+}
+
 // ---------------------------------------------------------------------------
 // Data collection consent
 //
@@ -10,6 +14,8 @@
 // gesture. Feature detection via permissions.getAll() keeps this working on
 // Thunderbird builds without the built-in data collection consent.
 // ---------------------------------------------------------------------------
+let collectionConsentSupported = true;
+
 const DATA_COLLECTION_REQUEST = {
     data_collection: ['personalCommunications'],
     permissions: ['sensitiveDataUpload']
@@ -28,28 +34,22 @@ async function dataCollectionConsentSupported() {
  * Requests the data collection consent (and the Thunderbird permission for
  * uploading sensitive data). Returns true if the add-on may transmit.
  */
-async function requestDataCollectionConsent() {
-    if (!(await dataCollectionConsentSupported())) {
-        // No built-in consent model: the checkbox on this page is the authority.
-        await requestSensitiveDataUploadPermission();
-        return true;
-    }
+async function requestDataCollectionConsent(origins = []) {
     try {
-        const granted = await browser.permissions.request(DATA_COLLECTION_REQUEST);
-        return granted === true;
+        if (collectionConsentSupported) {
+            return await browser.permissions.request({ ...DATA_COLLECTION_REQUEST, origins }) === true;
+        }
+        return await requestSensitiveDataUploadPermission(origins);
     } catch (e) {
-        // Older builds may not accept the combined request; try the permission alone.
-        await requestSensitiveDataUploadPermission();
-        return true;
+        return false;
     }
 }
 
-async function requestSensitiveDataUploadPermission() {
+async function requestSensitiveDataUploadPermission(origins = []) {
     try {
-        await browser.permissions.contains({ permissions: ['sensitiveDataUpload'] }) ||
-            await browser.permissions.request({ permissions: ['sensitiveDataUpload'] });
+        return await browser.permissions.request({ permissions: ['sensitiveDataUpload'], origins }) === true;
     } catch (e) {
-        // Best effort: the permission is a signal for reviewers, not a gate.
+        return false;
     }
 }
 
@@ -66,14 +66,19 @@ async function removeDataCollectionConsent() {
 let _saveTimeoutId = null;
 let _clearTimeoutId = null;
 document.addEventListener('DOMContentLoaded', function() {
+    dataCollectionConsentSupported().then(supported => { collectionConsentSupported = supported; });
     // Abrufen der gespeicherten Einstellung
     browser.storage.local.get([
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
         'alwaysManual', 'autoScanLinks', 'timeOfClickProtection',
         'privacyTier', 'customWhitelist', 'customBlacklist',
-        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey'
+        'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'trustedAuthServers', 'scanningEnabledSenders'
     ]).then((result) => {
       document.getElementById('apikey').value = result.apikey || "";
+      const trustedInput = document.getElementById('trustedAuthServers');
+      if (trustedInput) trustedInput.value = (result.trustedAuthServers || []).join(', ');
+      const senderInput = document.getElementById('scanningEnabledSenders');
+      if (senderInput) senderInput.value = (result.scanningEnabledSenders || []).join('\n');
       document.getElementById('urlhausApikey').value = result.urlhausApikey || "";
       document.getElementById('urlscanApikey').value = result.urlscanApikey || "";
       document.getElementById('virustotalApikey').value = result.virustotalApikey || "";
@@ -98,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
           // "strict" blocks those actions explicitly (see P0-2).
           privacyTierSelect.disabled = false;
           privacyTierSelect.title = alwaysManualCheckbox.checked
-              ? 'Automatische Uploads sind gesperrt ("Immer manuell scannen"); die Stufe gilt weiterhin für manuelle Scans.'
+              ? uiText("ui_071", "Automatische Uploads sind gesperrt (\"Immer manuell scannen\"); die Stufe gilt weiterhin für manuelle Scans.")
               : '';
       }
 
@@ -106,13 +111,8 @@ document.addEventListener('DOMContentLoaded', function() {
       const timeOfClickProtectionCheckbox = document.getElementById('timeOfClickProtection');
 
       function updateTimeOfClickProtectionStatus() {
-          if (autoScanLinksCheckbox.checked) {
-              timeOfClickProtectionCheckbox.disabled = true;
-              timeOfClickProtectionCheckbox.title = 'Time-of-Click Protection ist irrelevant, wenn Auto-Scan aktiv ist';
-          } else {
-              timeOfClickProtectionCheckbox.disabled = false;
-              timeOfClickProtectionCheckbox.title = '';
-          }
+          timeOfClickProtectionCheckbox.disabled = false;
+          timeOfClickProtectionCheckbox.title = '';
       }
 
       // Initiale Setzung
@@ -131,10 +131,17 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
+    const senderInput = document.getElementById('scanningEnabledSenders');
+    const senderEntries = (senderInput?.value || '').split(/[\r\n,]+/).map(address => address.trim().toLowerCase()).filter(Boolean);
+    if (senderInput) {
+        senderInput.setCustomValidity(senderEntries.every(address => /^[^\s@<>]+@[^\s@<>]+$/.test(address)) ? '' : uiText('invalidSenderAddress', 'Enter plain email addresses.'));
+        if (!senderInput.reportValidity()) return;
+    }
+
     const saveBtn = document.getElementById('save');
     saveBtn.disabled = true;
     saveBtn.setAttribute('aria-busy', 'true');
-    saveBtn.textContent = 'Wird gespeichert...';
+    saveBtn.textContent = uiText("ui_073", "Wird gespeichert...");
 
     let mySetting = apikeyInput.value.trim().replace(/\r|\n/g, '');
     let urlhausSetting = document.getElementById('urlhausApikey').value.trim().replace(/\r|\n/g, '');
@@ -168,7 +175,20 @@ document.addEventListener('DOMContentLoaded', function() {
     let externalAnalysisConsentSetting = document.getElementById('externalAnalysisConsent').checked;
     let ipReputationProviderSetting = document.getElementById('ipReputationProvider').value;
     let ipReputationApiKeySetting = document.getElementById('ipReputationApiKey').value.trim().replace(/\r|\n/g, '');
+    // Host-Berechtigungen nur für die tatsächlich konfigurierten Dienste
+    // anfragen (Nutzer-Geste = Klick auf "Speichern").
+    const requestedOrigins = [];
+    if (mySetting) requestedOrigins.push(['hybrid-analysis.com', 'https://hybrid-analysis.com/*']);
+    if (virustotalSetting || (ipReputationProviderSetting === 'virustotal' && ipReputationApiKeySetting)) requestedOrigins.push(['virustotal.com', 'https://www.virustotal.com/*']);
+    if (urlscanSetting && privacyTierSetting === 'max') requestedOrigins.push(['urlscan.io', 'https://urlscan.io/*']);
+    if (urlhausSetting) requestedOrigins.push(['urlhaus.abuse.ch', 'https://urlhaus-api.abuse.ch/*']);
+    if (ipReputationProviderSetting === 'abuseipdb' && ipReputationApiKeySetting) requestedOrigins.push(['abuseipdb.com', 'https://api.abuseipdb.com/*']);
+
+
+    const consentPromise = externalAnalysisConsentSetting ? requestDataCollectionConsent(requestedOrigins.map(([, origin]) => origin)) : Promise.resolve(false);
     browser.storage.local.set({
+        scanningEnabledSenders: [...new Set(senderEntries)],
+        trustedAuthServers: (document.getElementById('trustedAuthServers')?.value || '').split(',').map(host => host.trim().toLowerCase()).filter(host => /^[a-z0-9.-]+$/.test(host)),
         apikey: mySetting,
         urlhausApikey: urlhausSetting,
         urlscanApikey: urlscanSetting,
@@ -179,50 +199,40 @@ document.addEventListener('DOMContentLoaded', function() {
         alwaysManual: alwaysManualSetting,
         autoScanLinks: autoScanLinksSetting,
         timeOfClickProtection: timeOfClickProtectionSetting,
-        externalAnalysisConsent: externalAnalysisConsentSetting,
+        externalAnalysisConsent: false,
         ipReputationProvider: ipReputationProviderSetting,
         ipReputationApiKey: ipReputationApiKeySetting
     }).then(async () => {
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.className = 'text-success ml-2';
-        statusSpan.textContent = 'Erfolgreich gespeichert!';
+        statusSpan.textContent = uiText("ui_073", "Wird gespeichert...");
         statusSpan.style.display = 'inline';
-        saveBtn.disabled = false;
-        saveBtn.removeAttribute('aria-busy');
-        saveBtn.textContent = 'Speichern';
 
-        // Host-Berechtigungen nur für die tatsächlich konfigurierten Dienste
-        // anfragen (Nutzer-Geste = Klick auf "Speichern").
-        const requestedOrigins = [];
-        if (mySetting) requestedOrigins.push(['hybrid-analysis.com', 'https://hybrid-analysis.com/*']);
-        if (virustotalSetting || ipReputationProviderSetting === 'virustotal') requestedOrigins.push(['virustotal.com', 'https://www.virustotal.com/*']);
-        if (urlscanSetting) requestedOrigins.push(['urlscan.io', 'https://urlscan.io/*']);
-        if (urlhausSetting) requestedOrigins.push(['urlhaus.abuse.ch', 'https://urlhaus-api.abuse.ch/*']);
-        if (ipReputationProviderSetting === 'abuseipdb') requestedOrigins.push(['abuseipdb.com', 'https://api.abuseipdb.com/*']);
 
         // Daten-Deklaration und Konsent: das Manifest deklariert die Übermittlung
         // als optional, deshalb wird die Zustimmung hier eingeholt (Thunderbird
         // zeigt keinen eigenen Prompt). Lehnt der Nutzer den Dialog ab, wird die
         // Checkbox zurückgesetzt - ohne Zustimmung wird nichts übertragen.
         if (externalAnalysisConsentSetting) {
-            const consentGranted = await requestDataCollectionConsent();
+            const consentGranted = await consentPromise;
             if (!consentGranted) {
                 externalAnalysisConsentSetting = false;
                 await browser.storage.local.set({ externalAnalysisConsent: false });
                 const consentBox = document.getElementById('externalAnalysisConsent');
                 if (consentBox) consentBox.checked = false;
-                statusSpan.textContent = 'Zustimmung zur Datenübermittlung nicht erteilt – es wird nichts übertragen.';
+                statusSpan.textContent = uiText("ui_076", "Zustimmung zur Datenübermittlung nicht erteilt – es wird nichts übertragen.");
             }
         } else {
             await removeDataCollectionConsent();
         }
 
+        await browser.storage.local.set({ externalAnalysisConsent: externalAnalysisConsentSetting === true });
+
         if (externalAnalysisConsentSetting && requestedOrigins.length > 0) {
             const denied = [];
             for (const [label, origin] of requestedOrigins) {
                 try {
-                    const granted = await browser.permissions.contains({ origins: [origin] }) ||
-                        await browser.permissions.request({ origins: [origin] });
+                    const granted = await browser.permissions.contains({ origins: [origin] });
                     if (!granted) denied.push(label);
                 } catch (e) {
                     console.error('Permission request failed', e);
@@ -230,10 +240,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             if (denied.length > 0) {
-                alert('Host‑Berechtigung nicht erteilt für: ' + denied.join(', ') +
-                    '. Ohne diese Berechtigung sind die entsprechenden Prüfungen deaktiviert.');
+                alert(uiText("ui_077", "Host‑Berechtigung nicht erteilt für: ") + denied.join(', ') +
+                    uiText("ui_078", ". Ohne diese Berechtigung sind die entsprechenden Prüfungen deaktiviert."));
             }
         }
+
+        if (externalAnalysisConsentSetting || !document.getElementById('externalAnalysisConsent').checked) {
+            if (statusSpan.textContent === uiText('ui_073', 'Wird gespeichert...')) statusSpan.textContent = uiText('ui_074', 'Erfolgreich gespeichert!');
+        }
+        saveBtn.disabled = false;
+        saveBtn.removeAttribute('aria-busy');
+        saveBtn.textContent = uiText("ui_075", "Speichern");
 
         if (statusSpan.id === 'status') {
             if (_saveTimeoutId) clearTimeout(_saveTimeoutId);
@@ -250,22 +267,22 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error("Speichern fehlgeschlagen", error);
         let statusSpan = document.getElementById('saveStatus');
         statusSpan.className = 'text-danger ml-2';
-        statusSpan.textContent = 'Fehler beim Speichern!';
+        statusSpan.textContent = uiText("ui_079", "Fehler beim Speichern!");
         statusSpan.style.display = 'inline';
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
-        saveBtn.textContent = 'Speichern';
+        saveBtn.textContent = uiText("ui_075", "Speichern");
     });
   });
 
   document.getElementById('clearCache').addEventListener('click', async function() {
-    if (!confirm('Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse.')) {
+    if (!confirm(uiText("ui_080", "Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse."))) {
         return;
     }
     const clearBtn = document.getElementById('clearCache');
     clearBtn.disabled = true;
     clearBtn.setAttribute('aria-busy', 'true');
-    clearBtn.textContent = 'Wird geleert...';
+    clearBtn.textContent = uiText("ui_081", "Wird geleert...");
 
     let statusSpan = document.getElementById('clearCacheStatus');
     statusSpan.style.display = 'none';
@@ -275,20 +292,22 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         const db = await openDB('thunderbird_av', 3);
         const cleared = await clearStore(db, 'hybridanalysis');
+        await browser.runtime.sendMessage({ action: 'clearMemoryCaches' });
+        if (typeof db.close === 'function') db.close();
 
         if (cleared) {
-            statusSpan.textContent = 'Cache erfolgreich geleert.';
+            statusSpan.textContent = uiText("ui_082", "Cache erfolgreich geleert.");
         } else {
-            statusSpan.textContent = 'Datenbank existiert noch nicht oder ist bereits leer.';
+            statusSpan.textContent = uiText("ui_083", "Datenbank existiert noch nicht oder ist bereits leer.");
         }
     } catch (error) {
         statusSpan.className = 'text-danger ml-2';
-        statusSpan.textContent = 'Fehler beim Leeren des Caches.';
+        statusSpan.textContent = uiText("ui_084", "Fehler beim Leeren des Caches.");
         console.error(error);
     } finally {
         clearBtn.disabled = false;
         clearBtn.removeAttribute('aria-busy');
-        clearBtn.textContent = 'Cache leeren';
+        clearBtn.textContent = uiText("ui_085", "Cache leeren");
     }
 
     statusSpan.style.display = 'inline';

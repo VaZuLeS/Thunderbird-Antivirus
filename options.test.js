@@ -41,6 +41,7 @@ describe('options.js', () => {
         context = {
             document: dom.window.document,
             browser: {
+                runtime: { sendMessage: async () => ({ status: 'success' }) },
                 storage: {
                     local: {
                         get: async () => ({
@@ -59,7 +60,7 @@ describe('options.js', () => {
                             ipReputationApiKey: 'ip-key'
                         }),
                         set: async (data) => {
-                            context.browser.storage.local.lastSetData = data;
+                            context.browser.storage.local.lastSetData = { ...context.browser.storage.local.lastSetData, ...data };
                         },
                         lastSetData: null
                     }
@@ -129,8 +130,8 @@ describe('options.js', () => {
         const timeOfClickProtectionCheckbox = context.document.getElementById('timeOfClickProtection');
 
         // Initial is checked (true) in mock setup
-        assert.strictEqual(timeOfClickProtectionCheckbox.disabled, true);
-        assert.strictEqual(timeOfClickProtectionCheckbox.title, 'Time-of-Click Protection ist irrelevant, wenn Auto-Scan aktiv ist');
+        assert.strictEqual(timeOfClickProtectionCheckbox.disabled, false);
+        assert.strictEqual(timeOfClickProtectionCheckbox.title, '');
 
         autoScanLinksCheckbox.checked = false;
         autoScanLinksCheckbox.dispatchEvent(changeEvent);
@@ -307,5 +308,35 @@ describe('options.js', () => {
             assert.strictEqual(inputEl.getAttribute('maxlength'), '255', `#${id} must have maxlength="255"`);
             assert.strictEqual(inputEl.getAttribute('spellcheck'), 'false', `#${id} must have spellcheck="false"`);
         }
+    });
+});
+
+// Consent must not become true while the permission dialog is unresolved.
+describe('atomic consent save', () => {
+    it('keeps consent false while the dialog is pending and after rejection', async () => {
+        const { JSDOM } = require('jsdom');
+        const dom = new JSDOM(fs.readFileSync(path.join(__dirname, 'options.html'), 'utf8'));
+        let finish, saved = {};
+        const history = [];
+        const permission = new Promise(resolve => { finish = resolve; });
+        const context = vm.createContext({
+            document: dom.window.document, console, setTimeout, clearTimeout,
+            browser: {
+                storage: { local: { get: async () => ({}), set: async data => { history.push(data); Object.assign(saved, data); } } },
+                permissions: { getAll: async () => ({ data_collection: [] }), request: () => permission },
+                runtime: { sendMessage: async () => ({ status: 'success' }) }
+            }
+        });
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8'), context);
+        dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
+        await new Promise(resolve => setImmediate(resolve));
+        dom.window.document.getElementById('externalAnalysisConsent').checked = true;
+        dom.window.document.getElementById('save').click();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(saved.externalAnalysisConsent, false);
+        finish(false);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.strictEqual(saved.externalAnalysisConsent, false);
+        assert.ok(history.every(item => item.externalAnalysisConsent !== true));
     });
 });

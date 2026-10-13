@@ -19,9 +19,13 @@ jobs:
         run: npm ci
       - name: Pre-submit checks (manifest, privacy, permissions)
         run: node ./scripts/pre-submit-checks.js
+      - name: Verify bundled English fallback
+        run: npm run check:i18n
+      - name: Verify bundled Public Suffix List
+        run: npm run check:vendor
       - name: Run unit tests
-        run: node --test background.test.js
+        run: npm test
       - name: web-ext lint
-        run: npx web-ext lint
-
-# Optional: add web-ext build and XPI packing steps in release workflows
+        run: npm run lint:filtered
+      - name: Build and verify extension package
+        run: npm run package
