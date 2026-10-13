@@ -88,5 +88,8 @@ test('fresh popup without API credentials renders local risk and HTML actions wi
     assert.ok(text.includes('Risk score: 0 of 100'));
     assert.ok(text.includes('local.html'));
     assert.ok(text.includes('Sanitize and download'));
+    const notice = dom.window.document.getElementById('thundy-consent-notice');
+    assert.ok(notice, 'consent information survives rendering scan results');
+    assert.notEqual(notice.parentElement.id, 'hybrid_analysis_api_content');
     assert.equal(network, 0);
 });

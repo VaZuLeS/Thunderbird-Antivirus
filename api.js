@@ -114,13 +114,25 @@ try {
     const local = await browser.runtime.sendMessage({ action: 'getLocalRisk', messageId: message.id });
     if (local && local.threat) {
         const card = document.createElement('div');
-        card.className = 'card card-info';
+        const risk = Math.max(0, Math.min(100, Number(local.threat.score) || 0));
+        card.className = 'card local-risk ' + (risk >= 50 ? 'risk-high' : risk >= 25 ? 'risk-medium' : 'risk-low');
         card.setAttribute('role', 'status');
-        const score = document.createElement('p');
-        score.textContent = uiText('bannerThreatScore', 'Risk score: $1 of 100', [local.threat.score]);
-        card.appendChild(score);
-        for (const reason of local.threat.reasons) {
-            const p = document.createElement('p'); p.textContent = reason; card.appendChild(p);
+        const heading = document.createElement('div'); heading.className = 'risk-heading';
+        const title = document.createElement('h2'); title.textContent = uiText('popupLocalAssessment', 'Local risk assessment');
+        const score = document.createElement('span'); score.className = 'risk-score';
+        score.textContent = uiText('bannerThreatScore', 'Risk score: $1 of 100', [risk]);
+        heading.append(title, score); card.appendChild(heading);
+        const meter = document.createElement('progress'); meter.className = 'risk-meter'; meter.max = 100; meter.value = risk;
+        meter.setAttribute('aria-label', score.textContent); card.appendChild(meter);
+        const note = document.createElement('p'); note.className = 'risk-note';
+        note.textContent = uiText('popupLocalExplanation', 'Local indicators only. This score is not an antivirus verdict or a guarantee of safety.');
+        card.appendChild(note);
+        if (local.threat.reasons.length) {
+            const list = document.createElement('ul'); list.className = 'risk-reasons';
+            for (const reason of local.threat.reasons) {
+                const item = document.createElement('li'); item.textContent = reason; list.appendChild(item);
+            }
+            card.appendChild(list);
         }
         document.querySelector('.grid-container').before(card);
     }
@@ -164,7 +176,7 @@ if (!externalAnalysisConsent && apiContainer) {
     consentButton.addEventListener('click', () => browser.runtime.openOptionsPage());
     consentCard.appendChild(consentButton);
 
-    apiContainer.appendChild(consentCard);
+    apiContainer.before(consentCard);
 }
 
 try {
@@ -236,7 +248,7 @@ try {
                 emptyCard.setAttribute('role', 'status');
                 let p1 = document.createElement('p');
                 p1.className = 'text-info';
-                p1.textContent = uiText("ui_007", "Keine Anhänge oder URLs für diese E-Mail gefunden.");
+                p1.textContent = uiText("ui_007", "No stored attachment or link scan results are available for this message.");
                 emptyCard.appendChild(p1);
                 container.appendChild(emptyCard);
             }

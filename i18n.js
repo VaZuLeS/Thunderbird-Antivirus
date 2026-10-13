@@ -136,7 +136,7 @@ const ThundyI18n = (() => {
     "message": "External analysis is disabled: no hashes, files or links are sent to analysis services."
   },
   "ui_007": {
-    "message": "No attachments or URLs found in this email."
+    "message": "No stored attachment or link scan results are available for this message."
   },
   "ui_008": {
     "message": "No analysis results available for this email."
@@ -951,6 +951,39 @@ const ThundyI18n = (() => {
   },
   "invalidSenderAddress": {
     "message": "Enter plain email addresses, one per line."
+  },
+  "popupSubtitle": {
+    "message": "Message security overview"
+  },
+  "popupDetails": {
+    "message": "Technical message details"
+  },
+  "popupLocalAssessment": {
+    "message": "Local risk assessment"
+  },
+  "popupLocalExplanation": {
+    "message": "Local indicators only. This score is not an antivirus verdict or a guarantee of safety."
+  },
+  "linkDialogTitle": {
+    "message": "Check before opening"
+  },
+  "linkDestination": {
+    "message": "Destination website"
+  },
+  "linkUrlDetails": {
+    "message": "Show full link address"
+  },
+  "linkOpenBrowser": {
+    "message": "Open in browser"
+  },
+  "linkOpening": {
+    "message": "Opening…"
+  },
+  "linkOpenFailed": {
+    "message": "The link could not be opened. Try again or check your default browser settings."
+  },
+  "linkCheckLimited": {
+    "message": "Only available scan results can be shown. Missing checks do not mean a link is safe."
   }
 };
     function get(key, params = []) {

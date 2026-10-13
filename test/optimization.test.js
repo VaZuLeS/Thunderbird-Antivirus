@@ -19,12 +19,13 @@ function setup(settings = {}) {
             permissions: { contains: async () => true, request: async () => true },
             messages: { get: async () => message, getFull: async () => full, listAttachments: async () => [{ name: 'file.html', contentType: 'text/html', partName: '1', size: 4 }], getAttachmentFile: async () => new File(['test'], 'file.html') },
             messageDisplay: { getDisplayedMessages: async () => ({ messages: [message] }), onMessagesDisplayed: { addListener() {} } },
+            windows: { openDefaultBrowser: async () => {} },
             scripting: { executeScript: async script => { injections.push(script); } }, menus: { create() {}, onClicked: { addListener() {} } }, notifications: { create() {} }
         },
         fetch: async (url, options) => { requests.push({ url, options }); return { status: 200, ok: true, json: async () => ({ verdict: 'no specific threat', query_status: 'no_results', data: { attributes: { last_analysis_stats: { malicious: 0 } } } }) }; },
         openDB: async () => ({}), getFromStore: async () => null, updateStore: async () => {},
     });
-    vm.runInContext(runtime + '\n' + gateway + '\n' + fs.readFileSync('risk.js', 'utf8') + '\n' + fs.readFileSync('sanitize.js', 'utf8') + '\n' + ['scan_policy.js', 'providers.js', 'message_ui.js', 'vendor/tldts.js', 'background.js'].map(file => fs.readFileSync(file, 'utf8')).join('\n') + '\n globalThis.configure = async () => { await loadSettings(); }; globalThis.forceTier = value => { privacyTier = value; };', context);
+    vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\n' + runtime + '\n' + gateway + '\n' + fs.readFileSync('risk.js', 'utf8') + '\n' + fs.readFileSync('sanitize.js', 'utf8') + '\n' + ['scan_policy.js', 'providers.js', 'message_ui.js', 'vendor/tldts.js', 'background.js'].map(file => fs.readFileSync(file, 'utf8')).join('\n') + '\n globalThis.configure = async () => { await loadSettings(); }; globalThis.forceTier = value => { privacyTier = value; };', context);
     return { context, config, requests, injections, listeners, message, full };
 }
 
@@ -83,7 +84,7 @@ test('link protection intercepts normal and middle clicks and presents an explic
     for (const [type, button] of [['click', 0], ['auxclick', 1]]) {
         const dom = new JSDOM('<a href="https://example.com/">Open</a>', { url: 'https://mail.invalid/' });
         let payload;
-        const context = vm.createContext({ document: dom.window.document, window: dom.window, browser: { runtime: { sendMessage: async value => { payload = value; return { status: 'MALICIOUS' }; } } } });
+        const context = vm.createContext({ document: dom.window.document, window: dom.window, URL, browser: { runtime: { sendMessage: async value => { payload = value; return value.action === 'openCheckedLink' ? { success: true } : { status: 'MALICIOUS' }; } } } });
         context.args = injected.args;
         vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
         const event = new dom.window.MouseEvent(type, { button, bubbles: true, cancelable: true });
@@ -91,7 +92,12 @@ test('link protection intercepts normal and middle clicks and presents an explic
         assert.equal(event.defaultPrevented, true);
         await new Promise(resolve => setImmediate(resolve));
         assert.equal(payload.userAction, true); assert.equal(payload.messageId, 7);
-        assert.equal(dom.window.document.querySelectorAll('[role="alertdialog"] button').length, 2);
+        assert.equal(dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelectorAll('button').length, 2);
+        dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelector('.primary').click();
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(payload.action, 'openCheckedLink');
+        assert.equal(payload.url, 'https://example.com/');
+        assert.equal(dom.window.document.querySelector('[role="alertdialog"]'), null);
     }
 });
 
@@ -240,4 +246,120 @@ test('every configured provider stays offline without its host permission', asyn
         state.context.handleUrlScan('https://example.com/', 'mail-7')
     ]);
     assert.equal(state.requests.length, 0);
+});
+
+async function clickDialog(status = 'UNKNOWN', open = async () => ({ success: true })) {
+    const state = setup(); await state.context.configure();
+    await state.context.injectTimeOfClickProtection(1, [], 7);
+    const injected = state.injections.at(-1);
+    const dom = new JSDOM('<a href="https://example.com/path?token=secret">Visit</a>', { url: 'https://mail.invalid/' });
+    const sent = [];
+    const context = vm.createContext({ document: dom.window.document, URL, browser: { runtime: { sendMessage: async payload => {
+        sent.push(payload); return payload.action === 'checkLinkState' ? { status, reasons: ['Provider result'] } : open(payload);
+    } } }, args: injected.args });
+    vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
+    const link = dom.window.document.querySelector('a');
+    link.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    await new Promise(resolve => setImmediate(resolve));
+    const panel = dom.window.document.querySelector('[role="alertdialog"]');
+    return { dom, link, sent, panel, root: panel.shadowRoot };
+}
+
+test('confirmed links use the default browser without navigating the message', async () => {
+    const state = setup(); await state.context.configure();
+    const opened = []; state.context.browser.windows.openDefaultBrowser = async url => opened.push(url);
+    for (const protocol of ['https', 'http']) {
+        const result = await state.context.handleOpenCheckedLink({ url: protocol + '://example.com/path?q=1', messageId: 7 }, { tab: { id: 1 } });
+        assert.equal(result.success, true);
+    }
+    assert.equal(opened.length, 2);
+    const dialog = await clickDialog('CLEAN', async payload => state.context.handleOpenCheckedLink(payload, { tab: { id: 1 } }));
+    assert.match(dialog.root.textContent, /Thundy AV/);
+    assert.equal(dialog.root.querySelector('.destination').textContent, 'example.com');
+    dialog.root.querySelector('.primary').click(); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(dialog.panel.isConnected, false);
+    assert.equal(dialog.dom.window.location.href, 'https://mail.invalid/');
+    assert.equal(opened.at(-1), 'https://example.com/path?token=secret');
+    assert.equal(dialog.sent[1].action, 'openCheckedLink');
+});
+
+test('link opening rejects unsafe schemes, absent contexts and a changed message', async () => {
+    const state = setup(); await state.context.configure();
+    let opens = 0; state.context.browser.windows.openDefaultBrowser = async () => { opens++; };
+    for (const url of ['javascript:alert(1)', 'file:///tmp/test', 'data:text/html,test', 'not a url']) {
+        assert.equal((await state.context.handleOpenCheckedLink({ url, messageId: 7 }, { tab: { id: 1 } })).success, false);
+    }
+    assert.equal((await state.context.handleOpenCheckedLink({ url: 'https://example.com/', messageId: 8 }, { tab: { id: 1 } })).success, false);
+    assert.equal((await state.context.handleOpenCheckedLink({ url: 'https://example.com/', messageId: 7 }, {})).success, false);
+    assert.equal(opens, 0);
+});
+
+test('failed browser handoff keeps the dialog and supports retry without duplicate opens', async () => {
+    let attempts = 0;
+    const dialog = await clickDialog('UNKNOWN', async () => ({ success: ++attempts > 1 }));
+    const button = dialog.root.querySelector('.primary'); button.click(); button.click();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(attempts, 1); assert.equal(dialog.panel.isConnected, true);
+    assert.ok(dialog.root.querySelector('[role="alert"]').textContent.length > 0);
+    assert.equal(button.disabled, false); button.click(); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(attempts, 2); assert.equal(dialog.panel.isConnected, false);
+});
+
+test('cancel and Escape never open links; a changed destination cannot be confirmed', async () => {
+    for (const action of ['cancel', 'escape', 'changed']) {
+        const dialog = await clickDialog('MALICIOUS');
+        if (action === 'cancel') dialog.root.querySelector('button').click();
+        else if (action === 'escape') dialog.root.querySelector('button').dispatchEvent(new dialog.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+        else { dialog.link.href = 'https://changed.invalid/'; dialog.root.querySelector('.primary').click(); }
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(dialog.panel.isConnected, false); assert.equal(dialog.sent.length, 1);
+    }
+});
+
+test('context/right clicks and non-web links retain their native behavior', async () => {
+    const state = setup(); await state.context.configure(); await state.context.injectTimeOfClickProtection(1, [], 7);
+    const injected = state.injections.at(-1);
+    const dom = new JSDOM('<a href="https://example.com/">Web</a><a href="mailto:a@example.com">Mail</a>');
+    const context = vm.createContext({ document: dom.window.document, URL, browser: { runtime: { sendMessage: () => { throw new Error('unexpected'); } } }, args: injected.args });
+    vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
+    for (const [index, type, button] of [[0, 'click', 2], [0, 'auxclick', 2], [1, 'click', 0]]) {
+        const event = new dom.window.MouseEvent(type, { button, bubbles: true, cancelable: true });
+        dom.window.document.querySelectorAll('a')[index].dispatchEvent(event);
+        assert.equal(event.defaultPrevented, false);
+    }
+    assert.equal(dom.window.document.querySelector('[role="alertdialog"]'), null);
+});
+
+
+test('a rejected system browser call is reported as failure instead of false success', async () => {
+    const state = setup(); await state.context.configure();
+    state.context.browser.windows.openDefaultBrowser = async () => { throw new Error('OS browser launch failed'); };
+    assert.equal((await state.context.handleOpenCheckedLink({ url: 'https://example.com/', messageId: 7 }, { tab: { id: 1 } })).success, false);
+});
+
+test('cancelling a pending check cannot restore the dialog or open its URL', async () => {
+    const state = setup(); await state.context.configure(); await state.context.injectTimeOfClickProtection(1, [], 7);
+    const injected = state.injections.at(-1), dom = new JSDOM('<a href="https://example.com/">Web</a>');
+    let resolveCheck; const sent = [];
+    const context = vm.createContext({ document: dom.window.document, URL, args: injected.args, browser: { runtime: { sendMessage: value => { sent.push(value); return new Promise(resolve => { resolveCheck = resolve; }); } } } });
+    vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
+    dom.window.document.querySelector('a').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelector('button').click();
+    resolveCheck({ status: 'CLEAN' }); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(dom.window.document.querySelector('[role="alertdialog"]'), null); assert.equal(sent.length, 1);
+});
+
+
+test('a cancelled check finishing late cannot unlock a second active dialog', async () => {
+    const state = setup(); await state.context.configure(); await state.context.injectTimeOfClickProtection(1, [], 7);
+    const injected = state.injections.at(-1), dom = new JSDOM('<a href="https://example.com/">Web</a>');
+    const pending = [];
+    const context = vm.createContext({ document: dom.window.document, URL, args: injected.args, browser: { runtime: { sendMessage: () => new Promise(resolve => pending.push(resolve)) } } });
+    vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
+    const click = () => dom.window.document.querySelector('a').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    click(); dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelector('button').click(); click();
+    pending[0]({ status: 'CLEAN' }); await new Promise(resolve => setImmediate(resolve)); click();
+    assert.equal(pending.length, 2); assert.equal(dom.window.document.querySelectorAll('[role="alertdialog"]').length, 1);
+    pending[1]({ status: 'UNKNOWN' }); await new Promise(resolve => setImmediate(resolve));
+    dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelector('button').click();
 });

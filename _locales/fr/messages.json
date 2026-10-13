@@ -131,7 +131,7 @@
     "message": "Analyse externe désactivée : aucun hachage, fichier ou lien n’est transmis."
   },
   "ui_007": {
-    "message": "Aucune pièce jointe ni URL trouvée dans ce message."
+    "message": "Aucun résultat d’analyse des pièces jointes ou des liens n’est enregistré pour ce message."
   },
   "ui_008": {
     "message": "Aucun résultat d’analyse pour ce message."
@@ -946,5 +946,38 @@
   },
   "invalidSenderAddress": {
     "message": "Saisissez des adresses simples, une par ligne."
+  },
+  "popupSubtitle": {
+    "message": "Aperçu de la sécurité du message"
+  },
+  "popupDetails": {
+    "message": "Détails techniques du message"
+  },
+  "popupLocalAssessment": {
+    "message": "Évaluation locale du risque"
+  },
+  "popupLocalExplanation": {
+    "message": "Indicateurs locaux uniquement. Ce score ne constitue ni un verdict antivirus ni une garantie de sécurité."
+  },
+  "linkDialogTitle": {
+    "message": "Vérifier avant d’ouvrir"
+  },
+  "linkDestination": {
+    "message": "Site de destination"
+  },
+  "linkUrlDetails": {
+    "message": "Afficher l’adresse complète du lien"
+  },
+  "linkOpenBrowser": {
+    "message": "Ouvrir dans le navigateur"
+  },
+  "linkOpening": {
+    "message": "Ouverture…"
+  },
+  "linkOpenFailed": {
+    "message": "Le lien n’a pas pu être ouvert. Réessayez ou vérifiez les paramètres de votre navigateur par défaut."
+  },
+  "linkCheckLimited": {
+    "message": "Seuls les résultats disponibles peuvent être affichés. L’absence de vérification ne signifie pas qu’un lien est sûr."
   }
 }

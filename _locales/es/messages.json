@@ -131,7 +131,7 @@
     "message": "El análisis externo está desactivado: no se envían hashes, archivos ni enlaces."
   },
   "ui_007": {
-    "message": "No se encontraron archivos adjuntos ni URL en este correo."
+    "message": "No hay resultados de análisis de adjuntos o enlaces guardados para este mensaje."
   },
   "ui_008": {
     "message": "No hay resultados de análisis para este correo."
@@ -946,5 +946,38 @@
   },
   "invalidSenderAddress": {
     "message": "Introduce direcciones de correo, una por línea."
+  },
+  "popupSubtitle": {
+    "message": "Resumen de seguridad del mensaje"
+  },
+  "popupDetails": {
+    "message": "Detalles técnicos del mensaje"
+  },
+  "popupLocalAssessment": {
+    "message": "Evaluación local del riesgo"
+  },
+  "popupLocalExplanation": {
+    "message": "Solo indicadores locales. Esta puntuación no es un dictamen antivirus ni una garantía de seguridad."
+  },
+  "linkDialogTitle": {
+    "message": "Comprobar antes de abrir"
+  },
+  "linkDestination": {
+    "message": "Sitio web de destino"
+  },
+  "linkUrlDetails": {
+    "message": "Mostrar la dirección completa del enlace"
+  },
+  "linkOpenBrowser": {
+    "message": "Abrir en el navegador"
+  },
+  "linkOpening": {
+    "message": "Abriendo…"
+  },
+  "linkOpenFailed": {
+    "message": "No se pudo abrir el enlace. Inténtalo de nuevo o revisa la configuración del navegador predeterminado."
+  },
+  "linkCheckLimited": {
+    "message": "Solo se pueden mostrar los resultados disponibles. La ausencia de comprobaciones no significa que un enlace sea seguro."
   }
 }

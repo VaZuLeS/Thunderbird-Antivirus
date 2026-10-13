@@ -5,25 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="ui_106">Thundy AV – Email Scanner</title>
     <link rel="stylesheet" href="theme.css">
-    <style>
-        body {
-            font-size: 14px;
-            margin: 10px;
-            width: min(600px, calc(100vw - 20px));
-        }
-        h1 {
-            font-size: 18px;
-        }
-        #hybrid_analysis_api_content {
-            grid-column: 1 / -1;
-            margin-top: 15px;
-        }
-    </style>
+
 <script src="i18n.js"></script><script src="runtime.js"></script><script src="api_gateway.js"></script></head>
 
-<body>
-    <h1><span data-i18n="ui_106">Thundy AV – Email Scanner</span></h1>
-    <a href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer" aria-label="View all Hybrid Analysis submissions (opens a new tab)" data-i18n-aria-label="ui_108"><span data-i18n="ui_107">View all Hybrid Analysis submissions</span> <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>
+<body class="scanner-popup">
+    <header class="scanner-header">
+        <img src="img/icon-48px.png" width="40" height="40" alt="">
+        <div><strong class="scanner-brand">Thundy AV</strong><h1 data-i18n="popupSubtitle">Message security overview</h1></div>
+        <a class="scanner-settings" href="options.html" target="_blank" data-i18n="bannerOpenOptions">Open options</a>
+    </header>
+
 
     <div class="grid-container">
         <div class="grid-header"><span data-i18n="ui_109">Subject:</span></div>
@@ -32,9 +23,13 @@
         <div class="grid-header"><span data-i18n="ui_110">From:</span></div>
         <div id="from" class="grid-content"></div>
 
-        <div class="grid-header"><span data-i18n="ui_111">Message ID:</span></div>
-        <div id="MessageHeaderID" class="grid-content"></div>
+
     </div>
+
+    <details class="message-details"><summary data-i18n="popupDetails">Technical message details</summary>
+        <div data-i18n="ui_111">Message ID:</div><code id="MessageHeaderID" class="grid-content"></code>
+    <a class="provider-link" href="https://www.hybrid-analysis.com/my-submissions/all" target="_blank" rel="noopener noreferrer" aria-label="View all Hybrid Analysis submissions (opens a new tab)" data-i18n-aria-label="ui_108"><span data-i18n="ui_107">View all Hybrid Analysis submissions</span> <span aria-hidden="true" style="margin-left: 4px;">↗</span></a>
+    </details>
 
     <div id="status_message" class="grid-content mt-2" style="font-weight: bold;" aria-live="polite" role="status"></div>
     <div id="hybrid_analysis_api_content" class="grid-content mt-3"></div>

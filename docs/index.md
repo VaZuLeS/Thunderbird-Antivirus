@@ -6,7 +6,7 @@ permalink: /documentation.html
 # Thundy AV – Documentation
 
 Landing page for the documentation of **Thundy AV – Email Scanner for Thunderbird**
-(short name "Thundy AV"), version 1.19.0, MIT license.
+(short name "Thundy AV"), version 1.19.1, MIT license.
 
 - Language selection page (GitHub Pages root): [index.html](index.html) ·
   [English](index_en.html) · [Deutsch](index_de.html) · [Français](index_fr.html) · [Español](index_es.html) · [Italiano](index_it.html) · [Polski](index_pl.html)
@@ -46,5 +46,6 @@ without consent. There is no telemetry, no analytics and no developer-operated s
 - **No real screenshots** exist so far — only SVG placeholders (`docs/screenshots/*.svg`).
 - Manual verification in Thunderbird 140 ESR is still outstanding; the protocol and the test data are
   ready ([live_test_protocol.md](live_test_protocol.md), [../testdata/](../testdata/)).
+- Release 1.19.1: fixed popup sizing, default-browser link opening and redesigned security UI. [Release notes](releases/1.19.1.md).
 - Release 1.19.0: complete EN/DE/FR/ES/IT/PL, 485 passing tests, no lint errors, verified unsigned XPI. [Release notes](releases/1.19.0.md).
-- Real-client verification remains open: [live_test_1_19_0.md](live_test_1_19_0.md). GitHub publication is separate from Thunderbird Store signing and submission.
+- Real-client verification remains open: [live_test_1_19_1.md](live_test_1_19_1.md). GitHub publication is separate from Thunderbird Store signing and submission.

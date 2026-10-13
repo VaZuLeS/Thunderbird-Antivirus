@@ -131,7 +131,7 @@
     "message": "Analiza zewnętrzna jest wyłączona: skróty, pliki i linki nie są wysyłane."
   },
   "ui_007": {
-    "message": "Nie znaleziono załączników ani adresów URL w tej wiadomości."
+    "message": "Brak zapisanych wyników skanowania załączników lub odnośników dla tej wiadomości."
   },
   "ui_008": {
     "message": "Brak wyników analizy tej wiadomości."
@@ -946,5 +946,38 @@
   },
   "invalidSenderAddress": {
     "message": "Wpisz same adresy email, po jednym w wierszu."
+  },
+  "popupSubtitle": {
+    "message": "Przegląd bezpieczeństwa wiadomości"
+  },
+  "popupDetails": {
+    "message": "Szczegóły techniczne wiadomości"
+  },
+  "popupLocalAssessment": {
+    "message": "Lokalna ocena ryzyka"
+  },
+  "popupLocalExplanation": {
+    "message": "Tylko lokalne wskaźniki. Ten wynik nie jest werdyktem antywirusowym ani gwarancją bezpieczeństwa."
+  },
+  "linkDialogTitle": {
+    "message": "Sprawdź przed otwarciem"
+  },
+  "linkDestination": {
+    "message": "Docelowa witryna"
+  },
+  "linkUrlDetails": {
+    "message": "Pokaż pełny adres odnośnika"
+  },
+  "linkOpenBrowser": {
+    "message": "Otwórz w przeglądarce"
+  },
+  "linkOpening": {
+    "message": "Otwieranie…"
+  },
+  "linkOpenFailed": {
+    "message": "Nie udało się otworzyć odnośnika. Spróbuj ponownie lub sprawdź ustawienia domyślnej przeglądarki."
+  },
+  "linkCheckLimited": {
+    "message": "Można wyświetlić tylko dostępne wyniki. Brak sprawdzenia nie oznacza, że odnośnik jest bezpieczny."
   }
 }

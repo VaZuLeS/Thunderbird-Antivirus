@@ -16,60 +16,112 @@ async function injectIntoMessageDisplay(tabId, func, args = []) {
 
 async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null) {
     if (!timeOfClickProtection) return;
-    const labels = { waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel') };
+    const labels = { waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited') };
     await injectIntoMessageDisplay(tabId, function(labels, messageId) {
         if (document.documentElement.dataset.thundyClickProtection) return;
         document.documentElement.dataset.thundyClickProtection = 'true';
         let busy = false;
         async function onClick(event) {
             const link = event.target.closest && event.target.closest('a[href]');
-            if (!link || !/^https?:/i.test(link.href) || (event.type === 'auxclick' && event.button !== 1)) return;
+            if (!link || !/^https?:/i.test(link.href) || !((event.type === 'click' && event.button === 0) || (event.type === 'auxclick' && event.button === 1))) return;
             event.preventDefault();
             event.stopImmediatePropagation();
             if (busy) return;
             busy = true;
             const url = link.href;
-            const newTab = event.ctrlKey || event.metaKey || event.shiftKey || event.button === 1 || link.target === '_blank';
             const panel = document.createElement('div');
+            panel.id = 'thundy-link-dialog';
             panel.setAttribute('role', 'alertdialog');
             panel.setAttribute('aria-modal', 'true');
-            panel.style.cssText = 'position:fixed;top:10px;left:10px;right:10px;z-index:2147483647;background:#fff;color:#222;border:2px solid #555;padding:16px;font:16px sans-serif;';
-            const text = document.createElement('p');
-            text.textContent = labels.waiting;
-            panel.appendChild(text);
-            document.body.appendChild(panel);
-            const cancel = document.createElement('button');
-            cancel.textContent = labels.cancel;
-            const close = () => { panel.remove(); busy = false; link.focus(); };
-            cancel.addEventListener('click', close);
-            panel.appendChild(cancel);
-            panel.addEventListener('keydown', event => {
+            panel.setAttribute('aria-labelledby', 'thundy-link-title');
+            panel.setAttribute('aria-describedby', 'thundy-link-result');
+            panel.style.cssText = 'all:initial!important;position:fixed!important;inset:0!important;width:auto!important;height:auto!important;z-index:2147483647!important;background:rgba(15,23,42,.48)!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:16px!important;box-sizing:border-box!important;';
+            // Shadow DOM isolates the security UI from styles in the email.
+            const root = panel.attachShadow({ mode: 'open' });
+            const style = document.createElement('style');
+            style.textContent = `
+                :host { color-scheme:light dark; }
+                * { box-sizing:border-box; }
+                .dialog { width:520px;max-width:100%;max-height:calc(100vh - 32px);overflow:auto;background:#fff;color:#17243a;border:1px solid #cbd5e1;border-radius:16px;padding:24px;box-shadow:0 20px 70px #0004;font:14px/1.55 system-ui,sans-serif;text-align:left; }
+                header { display:flex;align-items:center;gap:12px;margin-bottom:20px; }
+                .brand { display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#075985;color:white;font-size:22px;font-weight:800; }
+                strong { font-size:18px; } h2 { margin:0;font-size:13px;font-weight:400;color:#475569; }
+                .label { color:#475569;font-size:12px;font-weight:600;margin:0 0 4px; }
+                .destination { font-size:18px;font-weight:650;overflow-wrap:anywhere;margin:0 0 12px; }
+                details { border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;margin-bottom:18px; } summary { cursor:pointer; } code { display:block;font-size:12px;overflow-wrap:anywhere;white-space:pre-wrap;margin-top:10px;user-select:text; }
+                .result { padding:14px;border-radius:10px;background:#eff6ff;border-left:4px solid #0369a1;margin:0 0 12px; }
+                .danger { background:#fff1f2;border-color:#be123c; } .unknown { background:#fff7ed;border-color:#b45309; }
+                .note { color:#475569;font-size:12px;margin:12px 0; } ul { padding-left:20px;overflow-wrap:anywhere; }
+                .error { color:#be123c;margin:12px 0; } .error:empty { display:none; }
+                footer { display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:20px; }
+                button { font:600 14px/1.4 system-ui,sans-serif;border:1px solid #94a3b8;border-radius:8px;padding:10px 16px;cursor:pointer;background:#fff;color:#17243a;max-width:100%;overflow-wrap:anywhere; }
+                .primary { background:#075985;color:#fff;border-color:#075985; } .warning { background:#9f1239;border-color:#9f1239; }
+                button:focus-visible,summary:focus-visible { outline:3px solid #0284c7;outline-offset:3px; } button:disabled { opacity:.6;cursor:wait; }
+                @media(prefers-color-scheme:dark) { .dialog { background:#17243a;color:#f1f5f9;border-color:#475569; } h2,.label,.note { color:#cbd5e1; } .result { background:#0c344f; } .danger { background:#4c182b; } .unknown { background:#422c13; } details { border-color:#475569; } button { background:#26364c;color:#f1f5f9; } .primary { background:#0369a1; } .warning { background:#9f1239; } .error { color:#fda4af; } }
+            `;
+            const card = document.createElement('section'); card.className = 'dialog';
+            const header = document.createElement('header');
+            const brand = document.createElement('span'); brand.className = 'brand'; brand.textContent = 'T'; brand.setAttribute('aria-hidden', 'true');
+            const headings = document.createElement('div');
+            const name = document.createElement('strong'); name.textContent = 'Thundy AV';
+            const title = document.createElement('h2'); title.id = 'thundy-link-title'; title.textContent = labels.title;
+            headings.append(name, title); header.append(brand, headings); card.appendChild(header);
+            // ARIA references must stay in the same tree as their targets.
+            panel.setAttribute('aria-label', 'Thundy AV · ' + labels.title);
+            panel.removeAttribute('aria-labelledby'); panel.removeAttribute('aria-describedby');
+            const label = document.createElement('p'); label.className = 'label'; label.textContent = labels.destination;
+            const host = document.createElement('p'); host.className = 'destination'; host.textContent = new URL(url).host;
+            const details = document.createElement('details');
+            const summary = document.createElement('summary'); summary.textContent = labels.details;
+            const address = document.createElement('code'); address.textContent = url;
+            details.append(summary, address); card.append(label, host, details);
+            const text = document.createElement('p'); text.id = 'thundy-link-result'; text.className = 'result'; text.setAttribute('role', 'status'); text.setAttribute('aria-live', 'polite'); text.textContent = labels.waiting;
+            const note = document.createElement('p'); note.className = 'note'; note.textContent = labels.limited;
+            const reasons = document.createElement('ul'); reasons.hidden = true;
+            const error = document.createElement('p'); error.className = 'error'; error.setAttribute('role', 'alert');
+            const footer = document.createElement('footer');
+            const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = labels.cancel;
+            const close = () => { if (!panel.isConnected) return; panel.remove(); busy = false; if (link.isConnected) link.focus(); };
+            cancel.addEventListener('click', close); footer.appendChild(cancel);
+            card.append(text, reasons, note, error, footer); root.append(style, card); document.body.appendChild(panel);
+            root.addEventListener('keydown', event => {
                 if (event.key === 'Escape') { event.preventDefault(); close(); }
                 if (event.key === 'Tab') {
-                    const buttons = Array.from(panel.querySelectorAll('button'));
-                    const index = buttons.indexOf(document.activeElement);
-                    event.preventDefault();
-                    buttons[(index + (event.shiftKey ? buttons.length - 1 : 1)) % buttons.length].focus();
+                    const controls = Array.from(root.querySelectorAll('button:not(:disabled),summary'));
+                    const index = controls.indexOf(root.activeElement);
+                    event.preventDefault(); controls[(index + (event.shiftKey ? controls.length - 1 : 1)) % controls.length].focus();
                 }
             });
             cancel.focus();
             let result;
-            try {
-                result = await browser.runtime.sendMessage({ action: 'checkLinkState', url, messageId, userAction: true });
-            } catch (e) { result = { status: 'ERROR' }; }
-            if (!link.isConnected || !panel.isConnected || link.href !== url) { busy = false; panel.remove(); return; }
+            try { result = await browser.runtime.sendMessage({ action: 'checkLinkState', url, messageId, userAction: true }); }
+            catch (e) { result = { status: 'ERROR' }; }
+            if (!panel.isConnected) return;
+            if (!link.isConnected || link.href !== url) { close(); return; }
             const dangerous = /MALICIOUS|SUSPICIOUS|MALICIOUS_VISUAL/.test(result && result.status || '');
-            text.textContent = dangerous ? labels.warning : result && result.status === 'CLEAN' ? labels.noDetection : labels.unknown;
-
-            const proceed = document.createElement('button');
-            proceed.textContent = labels.proceed;
-            proceed.addEventListener('click', () => {
-                panel.remove(); busy = false;
-                if (newTab) window.open(url, '_blank', 'noopener,noreferrer');
-                else window.location.assign(url);
+            const clean = result && result.status === 'CLEAN';
+            text.className = 'result ' + (dangerous ? 'danger' : clean ? '' : 'unknown');
+            text.textContent = dangerous ? labels.warning : clean ? labels.noDetection : labels.unknown;
+            if (result && Array.isArray(result.reasons)) {
+                for (const reason of result.reasons) { const item = document.createElement('li'); item.textContent = String(reason); reasons.appendChild(item); }
+                reasons.hidden = !reasons.childElementCount;
+            }
+            const proceed = document.createElement('button'); proceed.type = 'button'; proceed.className = 'primary' + (dangerous ? ' warning' : '');
+            const buttonLabel = clean ? labels.open : labels.proceed;
+            proceed.textContent = buttonLabel;
+            let opening = false;
+            proceed.addEventListener('click', async () => {
+                if (opening || !panel.isConnected) return;
+                if (!link.isConnected || link.href !== url) { close(); return; }
+                opening = true; proceed.disabled = true; proceed.setAttribute('aria-busy', 'true'); proceed.textContent = labels.opening; error.textContent = '';
+                // Keep the dialog on failure, so the user can retry or cancel.
+                try {
+                    const opened = await browser.runtime.sendMessage({ action: 'openCheckedLink', url, messageId });
+                    if (opened && opened.success) { close(); return; }
+                } catch (e) { /* show the localized error below */ }
+                opening = false; proceed.disabled = false; proceed.removeAttribute('aria-busy'); proceed.textContent = buttonLabel; error.textContent = labels.failed;
             });
-            panel.appendChild(proceed);
-            cancel.focus();
+            footer.appendChild(proceed); cancel.focus();
         }
         document.addEventListener('click', onClick, true);
         document.addEventListener('auxclick', onClick, true);
@@ -90,18 +142,10 @@ async function injectThreatBanner(tabId, threat) {
                     // Sichere DOM-Manipulation ohne innerHTML
                     const banner = document.createElement('div');
                     banner.id = 'thundy-threat-banner';
-                    banner.style.backgroundColor = '#ffeeee';
-                    banner.style.border = '1px solid #ff0000';
-                    banner.style.color = '#ff0000';
-                    banner.style.padding = '10px';
-                    banner.style.margin = '10px';
-                    banner.style.borderRadius = '4px';
-                    banner.style.fontWeight = 'bold';
-                    banner.style.fontFamily = 'Arial, sans-serif';
-                    banner.style.zIndex = '9999';
+                    banner.style.cssText = 'background:#fff1f2;border:1px solid #fda4af;border-left:4px solid #be123c;color:#881337;padding:16px;margin:12px;border-radius:12px;font:14px/1.55 system-ui,sans-serif;';
 
                     const title = document.createElement('div');
-                    title.textContent = '🔴 ⚠️ ' + t('bannerThreatTitle', 'Thundy AV warning') +
+                    title.textContent = t('bannerThreatTitle', 'Thundy AV warning') +
                         ' (' + t('bannerThreatScore', 'Risk score: $SCORE$ of 100', [String(score)]) + ')';
                     title.style.fontSize = '16px';
                     title.style.marginBottom = '5px';
@@ -119,6 +163,8 @@ async function injectThreatBanner(tabId, threat) {
                     }
                     banner.appendChild(reasonList);
 
+                    document.getElementById('thundy-threat-banner')?.remove();
+                    document.getElementById('thundy-auth-badge')?.remove();
                     document.body.prepend(banner);
                 } else if (authStatus === 'pass') {
                     const badge = document.createElement('div');
@@ -157,16 +203,10 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
 
         const banner = document.createElement('div');
         banner.id = 'thundy-optin-banner';
-        banner.style.backgroundColor = '#fff8e1';
-        banner.style.border = '1px solid #ffcc80';
-        banner.style.color = '#333';
-        banner.style.padding = '8px';
-        banner.style.margin = '8px';
-        banner.style.borderRadius = '4px';
-        banner.style.fontFamily = 'Arial, sans-serif';
-        banner.style.zIndex = '9999';
+        banner.style.cssText = 'background:#f0f7ff;border:1px solid #bfd6ee;border-left:4px solid #075985;color:#17243a;padding:16px;margin:12px;border-radius:12px;font:14px/1.55 system-ui,sans-serif;';
 
-        const text = document.createElement('span');
+        const text = document.createElement('p');
+        text.style.cssText = 'margin:0 0 12px;font-weight:600;';
         text.textContent = t('bannerTitleOptIn', 'Thundy AV: real-time scanning is not enabled for this message.');
         banner.appendChild(text);
 
@@ -174,7 +214,7 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.textContent = label;
-          btn.style.marginLeft = '10px';
+          btn.style.cssText = 'margin:0 8px 8px 0;padding:9px 13px;border:1px solid #075985;border-radius:8px;background:#075985;color:#fff;font:600 13px/1.4 system-ui,sans-serif;cursor:pointer;';
           btn.addEventListener('click', async () => {
             const buttons = banner.querySelectorAll('button');
             buttons.forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
@@ -232,7 +272,8 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
         const note = document.createElement('div');
         note.id = 'thundy-optin-note';
         note.style.fontSize = '12px';
-        note.style.marginTop = '6px';
+        note.style.marginTop = '8px';
+        note.style.color = '#334155';
         note.textContent = t('bannerNoteOptIn', 'Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you gave your consent. See the add-on options.');
         if (!consentGiven) {
           note.textContent = t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.');

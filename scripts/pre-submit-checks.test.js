@@ -292,6 +292,7 @@ describe('CI helper scripts', () => {
   it('filter-lint-warnings treats Thunderbird API false positives as known', () => {
     const { isKnownFalsePositive } = require('./filter-lint-warnings.js');
     assert.ok(isKnownFalsePositive({ code: 'UNSUPPORTED_API', message: 'messages.getFull is not supported' }));
+    assert.ok(isKnownFalsePositive({ code: 'UNSUPPORTED_API', message: 'windows.openDefaultBrowser is not supported' }));
     assert.ok(isKnownFalsePositive({ code: 'MANIFEST_PERMISSIONS', message: 'Invalid permissions "messagesRead" at 0.' }));
     assert.ok(isKnownFalsePositive({ code: 'KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION', message: 'Manifest key not supported' }));
     assert.ok(!isKnownFalsePositive({ code: 'INLINE_SCRIPT', message: 'Inline scripts blocked by default' }));

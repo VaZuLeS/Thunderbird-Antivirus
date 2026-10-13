@@ -1,3 +1,13 @@
+# Korrekturrelease 1.19.1 — 13. Oktober 2026
+
+Die gemeldeten Regressionen aus 1.19.0 sind korrigiert: stabile Popup-Breite, Linköffnung über Thunderbirds Standardbrowser-Schnittstelle, gebrandeter und gegen E-Mail-CSS isolierter Dialog sowie strukturierte Risiko-, Nachrichten- und Zustimmungsinformationen. Alle sechs Sprachkataloge wurden ergänzt.
+
+Prüfung: 493 automatisierte Tests, 0 Lint-Fehler/23 dokumentierte Thunderbird-Warnungen und gültiges Paket. 30 Chromium-Layoutfälle prüfen sechs Sprachen, helle/dunkle Darstellung, schmale Ansichten und 200 % Zoom. Browser-Vorschauen sind im [Regressionstest-Protokoll](live_test_1_19_1.md) ausdrücklich als simulierte Darstellung gekennzeichnet; echte Thunderbird-Abnahme bleibt offen.
+
+[Release 1.19.1](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.1) · [Release-Hinweise](releases/1.19.1.md) · [GitHub Pages](https://vazules.github.io/Thunderbird-Antivirus/)
+
+---
+
 # Veröffentlichter GitHub-Release: 1.19.0 (13. Oktober 2026)
 
 Die Umsetzung des [Optimierungsplans](AUFGABENPLAN_OPTIMIERUNG_I18N.md) enthält sechs vollständig mitgelieferte Sprachkataloge und Korrekturen an Zustimmung, Scanfreigabe, Linkschutz, Caches, Datenzugriff und CI. Version 1.19.0 ist als [unsignierter GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.0) veröffentlicht. Commit/Tag: `ea2b9a745531018c69d75f66617f5502f415ebbb` / `v1.19.0`. [CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38472152400), [Release-Workflow](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38472222591) und [GitHub-Pages-Deployment](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38472152582) waren erfolgreich. Eine Store-Signierung ist nicht erfolgt. Reale Thunderbird-Abnahme und Screenshots stehen aus: [Live-Protokoll 1.19.0](live_test_1_19_0.md).

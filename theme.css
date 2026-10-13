@@ -215,3 +215,30 @@ input, select, textarea { max-width: 100%; box-sizing: border-box; }
     .grid-container { grid-template-columns: minmax(0, 1fr); }
     button { white-space: normal; }
 }
+
+/* Extension action popups auto-size: never derive their width from 100vw. */
+body.scanner-popup { width: 600px; min-width: 600px; margin: 0; padding: 20px; box-sizing: border-box; font-family: system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+.scanner-popup * { box-sizing: border-box; }
+.scanner-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.scanner-brand { font-size: 22px; letter-spacing: -.5px; }
+.scanner-header h1 { font-size: 13px; font-weight: 400; color: var(--text-muted); margin: 0; }
+.scanner-settings { margin-left: auto; max-width: 140px; font-size: 12px; text-align: right; }
+.provider-link { display: block; font-size: 12px; margin-bottom: 16px; }
+.scanner-popup .grid-container { grid-template-columns: 95px minmax(0, 1fr); border-radius: 12px; padding: 16px; margin-top: 12px; }
+.scanner-popup .card { border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+.scanner-popup .card-info { border-left-color: var(--link-color); border-left-width: 3px; }
+.scanner-popup p { margin: 8px 0; }
+.scanner-popup h2, .scanner-popup h3 { line-height: 1.3; overflow-wrap: anywhere; }
+.scanner-popup button { line-height: 1.4; max-width: 100%; }
+.message-details { color: var(--text-muted); font-size: 12px; margin: 12px 2px 18px; }
+.message-details summary { cursor: pointer; }
+.message-details code { display: block; padding-top: 6px; user-select: text; }
+.risk-heading { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
+.risk-heading h2 { margin: 0; font-size: 16px; }
+.risk-score { font-weight: 700; font-variant-numeric: tabular-nums; }
+.risk-meter { display: block; width: 100%; height: 8px; margin: 12px 0; accent-color: var(--link-color); }
+.risk-high .risk-meter { accent-color: var(--color-danger); }
+.risk-medium .risk-meter { accent-color: var(--color-warning); }
+.risk-note { color: var(--text-muted); font-size: 12px; }
+.risk-reasons { margin: 10px 0 0; padding-left: 20px; }
+.risk-reasons li { margin: 6px 0; overflow-wrap: anywhere; }

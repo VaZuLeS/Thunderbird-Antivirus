@@ -1253,6 +1253,23 @@ async function handleCheckLinkState(request, sender, sendResponse) {
     }
 }
 
+// Message documents cannot navigate reliably. Use Thunderbird's external-browser API.
+async function handleOpenCheckedLink(request, sender) {
+    try {
+        const tabId = sender && sender.tab && sender.tab.id;
+        if (tabId == null || request.messageId == null || typeof request.url !== 'string') return { success: false };
+        const url = new URL(request.url);
+        if (!['http:', 'https:'].includes(url.protocol)) return { success: false };
+        const message = await getFirstDisplayedMessage(tabId, { throwOnError: true });
+        if (!message || message.id !== request.messageId) return { success: false };
+        await browser.windows.openDefaultBrowser(url.href);
+        return { success: true };
+    } catch (error) {
+        Logger.warn('Could not open confirmed link in the default browser', error);
+        return { success: false };
+    }
+}
+
 async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
     if (hybrid_sha256 && apikey_hybridanalysis && mayTransmitExternally()) {
         const overviewOptions = getHybridAnalysisOptions('GET');
@@ -1358,6 +1375,10 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             handleUrlScan(request.url, request.headerMessageId)
                 .then(res => sendResponse({status: 'success', data: res}))
                 .catch(err => sendResponse({status: 'error', message: err.message, code: err.code}));
+            return true;
+
+        case "openCheckedLink":
+            handleOpenCheckedLink(request, sender).then(sendResponse);
             return true;
 
         case "checkLinkState":

@@ -24,6 +24,9 @@ const KNOWN_THUNDERBIRD_FALSE_POSITIVES = [
   'messages.listAttachments',
   'messages.getAttachmentFile',
   'messages.query',
+  // Thunderbird API since TB 85; absent from Firefox's linter schema.
+  // https://webextension-api.thunderbird.net/en/mv3/windows.html#opendefaultbrowser-url
+  'windows.openDefaultBrowser',
   'scripting.messageDisplay',
   // Thunderbird-only optional permission for uploading user data
   'sensitiveDataUpload'

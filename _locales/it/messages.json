@@ -131,7 +131,7 @@
     "message": "Analisi esterna disattivata: non vengono inviati hash, file o link."
   },
   "ui_007": {
-    "message": "Nessun allegato o URL trovato in questo messaggio."
+    "message": "Non sono disponibili risultati salvati delle scansioni di allegati o link per questo messaggio."
   },
   "ui_008": {
     "message": "Nessun risultato di analisi per questo messaggio."
@@ -946,5 +946,38 @@
   },
   "invalidSenderAddress": {
     "message": "Inserisci indirizzi email semplici, uno per riga."
+  },
+  "popupSubtitle": {
+    "message": "Panoramica della sicurezza del messaggio"
+  },
+  "popupDetails": {
+    "message": "Dettagli tecnici del messaggio"
+  },
+  "popupLocalAssessment": {
+    "message": "Valutazione locale del rischio"
+  },
+  "popupLocalExplanation": {
+    "message": "Solo indicatori locali. Questo punteggio non è un verdetto antivirus né una garanzia di sicurezza."
+  },
+  "linkDialogTitle": {
+    "message": "Verifica prima di aprire"
+  },
+  "linkDestination": {
+    "message": "Sito web di destinazione"
+  },
+  "linkUrlDetails": {
+    "message": "Mostra l’indirizzo completo del link"
+  },
+  "linkOpenBrowser": {
+    "message": "Apri nel browser"
+  },
+  "linkOpening": {
+    "message": "Apertura…"
+  },
+  "linkOpenFailed": {
+    "message": "Impossibile aprire il link. Riprova o controlla le impostazioni del browser predefinito."
+  },
+  "linkCheckLimited": {
+    "message": "Vengono mostrati solo i risultati disponibili. L’assenza di verifiche non significa che un link sia sicuro."
   }
 }

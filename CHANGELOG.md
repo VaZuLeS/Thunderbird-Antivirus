@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.19.1 — 2026-10-13
+
+- Fix the message-action popup collapsing to a narrow strip by removing viewport-dependent auto-sizing.
+- Open confirmed links through Thunderbird’s `windows.openDefaultBrowser` API, validate the current message and HTTP(S) scheme, and keep failures visible with retry.
+- Redesign the link dialog with Thundy AV branding, destination domain, expandable full URL, clear warning/unknown states, dark mode and email-style isolation.
+- Preserve native right-click context menus; handle normal, modified and middle clicks, Escape, cancellation and changing link/message contexts.
+- Improve the popup hierarchy with a local risk meter, explanatory limits, collapsible technical metadata and persistent consent information. Empty cached results no longer imply that the message contains no attachments or links.
+- Translate all new labels into EN/DE/FR/ES/IT/PL and add opening/cancellation regression coverage.
+
+
 ## 1.19.0 — 2026-10-13
 
 - Bundle English, German, French, Spanish, Italian and Polish for options, popup, warnings, errors and local privacy information.

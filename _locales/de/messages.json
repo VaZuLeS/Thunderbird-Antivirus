@@ -134,7 +134,7 @@
     "message": "Externe Analyse ist nicht aktiviert: Es werden keine Hashes, Dateien oder Links an Analyse-Dienste übertragen."
   },
   "ui_007": {
-    "message": "Keine Anhänge oder URLs für diese E-Mail gefunden."
+    "message": "Für diese Nachricht liegen keine gespeicherten Prüfergebnisse zu Anhängen oder Links vor."
   },
   "ui_008": {
     "message": "Keine Analyseergebnisse für diese E-Mail vorhanden."
@@ -949,5 +949,38 @@
   },
   "invalidSenderAddress": {
     "message": "Geben Sie reine E-Mail-Adressen ein, eine pro Zeile."
+  },
+  "popupSubtitle": {
+    "message": "Sicherheitsübersicht der Nachricht"
+  },
+  "popupDetails": {
+    "message": "Technische Nachrichtendetails"
+  },
+  "popupLocalAssessment": {
+    "message": "Lokale Risikobewertung"
+  },
+  "popupLocalExplanation": {
+    "message": "Nur lokale Hinweise. Dieser Wert ist kein Antivirus-Urteil und keine Sicherheitsgarantie."
+  },
+  "linkDialogTitle": {
+    "message": "Vor dem Öffnen prüfen"
+  },
+  "linkDestination": {
+    "message": "Zielwebseite"
+  },
+  "linkUrlDetails": {
+    "message": "Vollständige Linkadresse anzeigen"
+  },
+  "linkOpenBrowser": {
+    "message": "Im Browser öffnen"
+  },
+  "linkOpening": {
+    "message": "Wird geöffnet…"
+  },
+  "linkOpenFailed": {
+    "message": "Der Link konnte nicht geöffnet werden. Versuche es erneut oder prüfe die Einstellungen deines Standardbrowsers."
+  },
+  "linkCheckLimited": {
+    "message": "Es werden nur verfügbare Prüfergebnisse angezeigt. Fehlende Prüfungen bedeuten nicht, dass ein Link sicher ist."
   }
 }

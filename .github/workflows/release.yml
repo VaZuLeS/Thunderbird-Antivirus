@@ -47,5 +47,5 @@ jobs:
           gh release create "$RELEASE_TAG" \
             "build/thundy-av-$version.xpi" build/SHA256SUMS.txt \
             --verify-tag --latest \
-            --title "Thundy AV $version — six languages and consent improvements" \
+            --title "Thundy AV $version" \
             --notes-file "docs/releases/$version.md"
