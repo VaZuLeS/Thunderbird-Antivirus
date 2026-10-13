@@ -16,7 +16,7 @@ async function injectIntoMessageDisplay(tabId, func, args = []) {
 
 async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null) {
     if (!timeOfClickProtection) return;
-    const labels = { waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited') };
+    const labels = { waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), auditFailed: msg('auditFailure') };
     await injectIntoMessageDisplay(tabId, function(labels, messageId) {
         if (document.documentElement.dataset.thundyClickProtection) return;
         document.documentElement.dataset.thundyClickProtection = 'true';
@@ -29,6 +29,8 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             if (busy) return;
             busy = true;
             const url = link.href;
+            const interactionId = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
+            let opening = false;
             const panel = document.createElement('div');
             panel.id = 'thundy-link-dialog';
             panel.setAttribute('role', 'alertdialog');
@@ -81,11 +83,19 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             const error = document.createElement('p'); error.className = 'error'; error.setAttribute('role', 'alert');
             const footer = document.createElement('footer');
             const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = labels.cancel;
-            const close = () => { if (!panel.isConnected) return; panel.remove(); busy = false; if (link.isConnected) link.focus(); };
-            cancel.addEventListener('click', close); footer.appendChild(cancel);
+            const close = (reason = 'cancel') => {
+                if (!panel.isConnected || (opening && reason !== 'opened' && reason !== 'context_closed')) return;
+                panel.remove(); busy = false; if (link.isConnected) link.focus();
+                document.defaultView.removeEventListener('pagehide', onPageHide);
+                if (reason !== 'opened') browser.runtime.sendMessage({ action: 'cancelLinkInteraction', interactionId, url, messageId, reason }).catch(() => {});
+            };
+            const onPageHide = () => close('context_closed');
+            document.defaultView.addEventListener('pagehide', onPageHide);
+
+            cancel.addEventListener('click', () => close('cancel')); footer.appendChild(cancel);
             card.append(text, reasons, note, error, footer); root.append(style, card); document.body.appendChild(panel);
             root.addEventListener('keydown', event => {
-                if (event.key === 'Escape') { event.preventDefault(); close(); }
+                if (event.key === 'Escape') { event.preventDefault(); close('escape'); }
                 if (event.key === 'Tab') {
                     const controls = Array.from(root.querySelectorAll('button:not(:disabled),summary'));
                     const index = controls.indexOf(root.activeElement);
@@ -94,10 +104,10 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             });
             cancel.focus();
             let result;
-            try { result = await browser.runtime.sendMessage({ action: 'checkLinkState', url, messageId, userAction: true }); }
+            try { result = await browser.runtime.sendMessage({ action: 'checkLinkState', url, messageId, interactionId, userAction: true }); }
             catch (e) { result = { status: 'ERROR' }; }
             if (!panel.isConnected) return;
-            if (!link.isConnected || link.href !== url) { close(); return; }
+            if (!link.isConnected || link.href !== url) { close('destination_changed'); return; }
             const dangerous = /MALICIOUS|SUSPICIOUS|MALICIOUS_VISUAL/.test(result && result.status || '');
             const clean = result && result.status === 'CLEAN';
             text.className = 'result ' + (dangerous ? 'danger' : clean ? '' : 'unknown');
@@ -106,20 +116,23 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 for (const reason of result.reasons) { const item = document.createElement('li'); item.textContent = String(reason); reasons.appendChild(item); }
                 reasons.hidden = !reasons.childElementCount;
             }
+            const score = document.createElement('p'); score.className = 'note';
+            score.textContent = labels.score + ': ' + (Number.isFinite(result && result.score) ? result.score + ' / 100' : labels.unavailable);
+            card.insertBefore(score, note);
+            if (result && result.auditSaved === false) { const auditNotice = document.createElement('p'); auditNotice.className = 'error'; auditNotice.textContent = labels.auditFailed; card.insertBefore(auditNotice, footer); }
             const proceed = document.createElement('button'); proceed.type = 'button'; proceed.className = 'primary' + (dangerous ? ' warning' : '');
             const buttonLabel = clean ? labels.open : labels.proceed;
             proceed.textContent = buttonLabel;
-            let opening = false;
             proceed.addEventListener('click', async () => {
                 if (opening || !panel.isConnected) return;
-                if (!link.isConnected || link.href !== url) { close(); return; }
-                opening = true; proceed.disabled = true; proceed.setAttribute('aria-busy', 'true'); proceed.textContent = labels.opening; error.textContent = '';
+                if (!link.isConnected || link.href !== url) { close('destination_changed'); return; }
+                opening = true; cancel.disabled = true; proceed.disabled = true; proceed.setAttribute('aria-busy', 'true'); proceed.textContent = labels.opening; error.textContent = '';
                 // Keep the dialog on failure, so the user can retry or cancel.
                 try {
-                    const opened = await browser.runtime.sendMessage({ action: 'openCheckedLink', url, messageId });
-                    if (opened && opened.success) { close(); return; }
+                    const opened = await browser.runtime.sendMessage({ action: 'openCheckedLink', url, messageId, interactionId });
+                    if (opened && opened.success) { close('opened'); return; }
                 } catch (e) { /* show the localized error below */ }
-                opening = false; proceed.disabled = false; proceed.removeAttribute('aria-busy'); proceed.textContent = buttonLabel; error.textContent = labels.failed;
+                opening = false; cancel.disabled = false; proceed.disabled = false; proceed.removeAttribute('aria-busy'); proceed.textContent = buttonLabel; error.textContent = labels.failed;
             });
             footer.appendChild(proceed); cancel.focus();
         }

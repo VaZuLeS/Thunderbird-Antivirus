@@ -1,3 +1,13 @@
+# Linkprotokoll und Admin-Prüfung — 1.20.0
+
+Version 1.20.0 ergänzt ein lokales Link-Entscheidungsprotokoll mit vollständiger URL, Score im Nachrichtenkontext, Anbieterurteil, Zeitstempeln und Entscheidungs-Snapshots. Filter, Seitenansicht, JSON-/CSV-Exporte und Hervorhebung risikoreicher Öffnungen sind in sechs Sprachen verfügbar. Das Protokoll ist separat vom Scan-Cache begrenzt und löschbar; es gibt keinen automatischen Upload oder manipulationssicheres zentrales Audit.
+
+Prüfung: 517 Tests, 0 Lint-Fehler/24 dokumentierte Thunderbird-Warnungen, gültiges Paket mit 34 Runtime-Dateien. 48 Chromium-Layoutfälle prüfen Admin-Ansicht, Popup und Linkdialog. Echte Thunderbird-Abnahme steht aus.
+
+[Release 1.20.0](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.20.0) · [Admin-Features und Roadmap](ADMIN_FEATURES.md) · [Live-Protokoll](live_test_1_20_0.md)
+
+---
+
 # Korrekturrelease 1.19.1 — 13. Oktober 2026
 
 Die gemeldeten Regressionen aus 1.19.0 sind korrigiert: stabile Popup-Breite, Linköffnung über Thunderbirds Standardbrowser-Schnittstelle, gebrandeter und gegen E-Mail-CSS isolierter Dialog sowie strukturierte Risiko-, Nachrichten- und Zustimmungsinformationen. Alle sechs Sprachkataloge wurden ergänzt.

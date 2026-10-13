@@ -13,12 +13,12 @@ submits the minimum data required to external analysis services.
 | Add-on name | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.19.1 – GitHub release (unsigned) – see [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.20.0 – GitHub release (unsigned) – see [CHANGELOG.md](CHANGELOG.md) |
 | License | MIT – see [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.1 |
+| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.20.0 |
 | Requires | Thunderbird 140.0 or newer (Manifest V3) |
 | Languages | English, German, French, Spanish, Italian and Polish; complete bundled UI catalogs with English fallback |
 
@@ -159,6 +159,12 @@ npm run store-gate                                    # submission readiness gat
 - The manual live test in Thunderbird 140 ESR is described in [docs/live_test_protocol.md](docs/live_test_protocol.md).
 - More details: [docs/quickstart.md](docs/quickstart.md).
 
+## Version 1.20.0 — Link decisions and review
+
+**Review link log** in settings or the message popup shows intercepted HTTP(S) clicks, full URLs, local context scores, provider verdicts and opened/aborted/error/pending decisions. Filters and JSON/CSV exports support administrator review; the decision-time assessment stays separate from late check results. High-risk openings are highlighted. Logs remain local, bounded to 30 days / 2,000 events / 2 MiB, and can be deleted independently of caches.
+
+This is not a central or tamper-proof enterprise audit service. Browser handoff does not prove a website visit, and native context-menu openings are not recorded. Full URLs and reasons may contain sensitive data. [Administrator capabilities and roadmap](docs/ADMIN_FEATURES.md) · [Release notes](docs/releases/1.20.0.md) · [Manual acceptance](docs/live_test_1_20_0.md).
+
 ## Version 1.19.1
 
 Fixes the collapsed message-action popup and confirmed links that failed to open. Confirmed HTTP(S) links now use Thunderbird’s default-browser API, with visible failure and retry handling. The branded link dialog isolates its styles from the email and shows the destination domain, full address and scan uncertainty. The popup separates local risk, message metadata, consent and stored scan results; technical details are collapsible. All six languages are included.
@@ -169,7 +175,7 @@ Fixes the collapsed message-action popup and confirmed links that failed to open
 
 The optimization work is documented in [the task plan](docs/AUFGABENPLAN_OPTIMIERUNG_I18N.md). External scans require both global consent and a message action or sender authorization. Local checks work without API keys; complete URL submissions require the Maximum tier. Sender authorizations can be edited in settings. Reputation caches expire after 15 minutes; persistent results are limited to 1,000 messages and cleaned against a 30-day retention period on database startup.
 
-The [GitHub release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.1) contains an unsigned XPI. Thunderbird live testing and real screenshots remain required; use [the 1.19.0 protocol](docs/live_test_1_19_0.md).
+The [GitHub release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.20.0) contains an unsigned XPI. Thunderbird live testing and real screenshots remain required; use [the 1.19.0 protocol](docs/live_test_1_19_0.md).
 
 ## Permissions overview
 

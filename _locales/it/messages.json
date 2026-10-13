@@ -979,5 +979,119 @@
   },
   "linkCheckLimited": {
     "message": "Vengono mostrati solo i risultati disponibili. L’assenza di verifiche non significa che un link sia sicuro."
+  },
+  "auditTitle": {
+    "message": "Registro delle decisioni sui link"
+  },
+  "auditOpen": {
+    "message": "Consulta il registro dei link"
+  },
+  "auditScope": {
+    "message": "Registra i clic HTTP(S) intercettati dalla protezione dei link. Aperto significa inoltrato al browser predefinito, senza confermare la visita al sito. Le aperture dal menu contestuale nativo non vengono registrate."
+  },
+  "auditPrivacy": {
+    "message": "Archiviazione locale: massimo 30 giorni, 2.000 voci o 2 MiB; le voci più vecchie vengono eliminate. Gli URL completi possono contenere dati personali o token. Nessun invio automatico. Gli utenti del profilo possono modificare o eliminare il registro; non è un audit centrale inalterabile. Il punteggio locale usa il link e il contesto del messaggio, non un punteggio del fornitore. I motivi della valutazione possono includere dati del mittente o del dominio."
+  },
+  "auditSearch": {
+    "message": "URL o dominio"
+  },
+  "auditOutcome": {
+    "message": "Decisione"
+  },
+  "auditAll": {
+    "message": "Tutte"
+  },
+  "auditOpened": {
+    "message": "Aperto"
+  },
+  "auditAborted": {
+    "message": "Annullato"
+  },
+  "auditOpenError": {
+    "message": "Apertura non riuscita"
+  },
+  "auditPending": {
+    "message": "Decisione non completata"
+  },
+  "auditMinScore": {
+    "message": "Punteggio locale minimo"
+  },
+  "auditFrom": {
+    "message": "Dal"
+  },
+  "auditTo": {
+    "message": "Al"
+  },
+  "auditRefresh": {
+    "message": "Aggiorna"
+  },
+  "auditJson": {
+    "message": "Esporta JSON"
+  },
+  "auditCsv": {
+    "message": "Esporta CSV"
+  },
+  "auditClear": {
+    "message": "Elimina il registro locale"
+  },
+  "auditExportHelp": {
+    "message": "Le esportazioni includono tutte le righe filtrate, non solo la pagina corrente. JSON include una somma SHA-256 per la verifica, senza provare l’autenticità. CSV neutralizza le formule. Le esportazioni contengono URL completi: condividile solo con revisori autorizzati."
+  },
+  "auditTime": {
+    "message": "Ora del clic / della decisione"
+  },
+  "auditLocalScore": {
+    "message": "Punteggio locale (link e messaggio)"
+  },
+  "auditVerdict": {
+    "message": "Risultato del fornitore"
+  },
+  "auditAddress": {
+    "message": "URL e dettagli"
+  },
+  "auditPrevious": {
+    "message": "Precedente"
+  },
+  "auditNext": {
+    "message": "Successivo"
+  },
+  "auditClearConfirm": {
+    "message": "Eliminare tutte le voci locali? Esporta prima le prove necessarie. Risultati e impostazioni vengono conservati."
+  },
+  "auditFailure": {
+    "message": "Impossibile leggere o salvare il registro locale."
+  },
+  "auditUnavailable": {
+    "message": "Non disponibile"
+  },
+  "auditScoreAtDecision": {
+    "message": "Punteggio alla decisione"
+  },
+  "auditRecords": {
+    "message": "Voci"
+  },
+  "auditDetails": {
+    "message": "Mostra URL e prove"
+  },
+  "auditEventId": {
+    "message": "ID evento"
+  },
+  "auditCancelReason": {
+    "message": "Motivo dell’annullamento"
+  },
+  "auditFinalResult": {
+    "message": "Ultimo risultato"
+  },
+  "auditProfile": {
+    "message": "ID del profilo locale"
+  },
+  "auditExported": {
+    "message": "Esportazione salvata."
+  },
+  "auditRiskyOpened": {
+    "message": "Aperto con rischio elevato"
+  },
+  "auditExportFailed": {
+    "message": "Esportazione non riuscita o annullata."
   }
 }

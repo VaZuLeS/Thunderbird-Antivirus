@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.20.0 — 2026-10-13
+
+- Persist intercepted link decisions with full URL, timestamp, local message/link score, provider verdict and decision-time snapshots. Distinguish successful browser handoff, cancellation, opening failure and pending interactions.
+- Add a six-language review page with URL/date/outcome/score filters, pagination, high-risk opened highlighting and complete filtered JSON/CSV exports.
+- Serialize local audit writes, apply 30-day/2,000-entry/2-MiB retention and separate audit deletion from cache clearing.
+- Add export checksum verification and spreadsheet formula protection; document local audit limits, privacy and enterprise feature priorities.
+- Verify 517 automated tests, 0 lint errors and 48 browser layout cases. Real Thunderbird acceptance remains pending.
+
+
 ## 1.19.1 — 2026-10-13
 
 - Fix the message-action popup collapsing to a narrow strip by removing viewport-dependent auto-sizing.

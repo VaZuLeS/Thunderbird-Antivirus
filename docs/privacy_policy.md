@@ -536,3 +536,14 @@ repository.
 Jan Bludau (VaZuLeS)
 Email: bludau.it.services@gmail.com
 Repository and issue tracker: https://github.com/VaZuLeS/Thunderbird-Antivirus
+
+
+## Local link-decision log (1.20.0)
+
+When link protection intercepts an HTTP(S) click, Thundy AV stores the full URL, timestamps, local risk score and reasons, provider verdict, decision, a local message ID and extension version in the Thunderbird profile. It records opened, aborted, opening-error and pending states. Assessment reasons may include sender or domain details. A pseudonymous local profile ID correlates manual exports. No automatic central collection or upload occurs. Browser handoff does not establish a website visit; native context-menu opens and clicks outside the protection are not recorded.
+
+Records are bounded to 30 days, 2,000 events and 2 MiB, with oldest records removed on extension startup and access/write. The log is separate from the scan cache and can be deleted in its review page after confirmation. Authorized reviewers may receive manual JSON/CSV exports containing full URLs; URLs may contain personal data or tokens. The JSON checksum detects changes but does not authenticate the source. Profile users can alter or delete local records. Further details and enterprise proposals: [Admin features](ADMIN_FEATURES.md).
+
+### Lokales Link-Entscheidungsprotokoll
+
+Bei abgefangenen HTTP(S)-Klicks speichert Thundy AV die vollständige URL, Zeitstempel, lokale Risikobewertung und Gründe, Anbieterurteil, Entscheidung, lokale Nachrichten-ID und Erweiterungsversion im Thunderbird-Profil. Eine pseudonyme Profil-ID verbindet manuelle Exporte. Kein automatischer Upload. Die Browserübergabe beweist keinen Webseitenbesuch; native Kontextmenü-Öffnungen werden nicht erfasst. Begrenzung: 30 Tage, 2.000 Ereignisse, 2 MiB. Separat vom Scan-Cache löschbar; JSON-/CSV-Exporte können personenbezogene URL-Daten und Zugriffstoken enthalten. Das lokale Protokoll ist veränderbar und kein manipulationssicheres zentrales Audit.

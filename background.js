@@ -1234,7 +1234,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                 const res = await checkUrlscanIo(request.url, urlscanApikey);
                 if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT' && res.status !== 'NOT_CHECKED') {
                     // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
-                    sendResponse({ status: res.status, reasons: res.reasons });
+                    sendResponse({ status: res.status, reasons: res.reasons, provider: 'urlscan.io' });
                     return;
                 }
             } catch (e) {
@@ -1244,7 +1244,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
 
         if (linkObj) {
             const status = request.userAction === true ? await checkHybridAnalysisVerdict(linkObj.hybrid_sha256, linkObj.state) : linkObj.state;
-            sendResponse({status: status});
+            sendResponse({status: status, provider: 'Hybrid Analysis'});
         } else {
             sendResponse({status: 'UNKNOWN'});
         }
@@ -1377,12 +1377,27 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 .catch(err => sendResponse({status: 'error', message: err.message, code: err.code}));
             return true;
 
+        case "cancelLinkInteraction":
+            handleCancelAuditedLink(request, sender).then(sendResponse);
+            return true;
+
+        case "getLinkAudit":
+            if (!isLinkAuditAdminPage(sender)) return false;
+            readLinkAudit().then(data => sendResponse({ success: true, ...data })).catch(() => sendResponse({ success: false }));
+            return true;
+
+        case "clearLinkAudit":
+            if (!isLinkAuditAdminPage(sender)) return false;
+            editLinkAudit(records => { records.length = 0; }).then(() => sendResponse({ success: true })).catch(() => sendResponse({ success: false }));
+            return true;
+
         case "openCheckedLink":
-            handleOpenCheckedLink(request, sender).then(sendResponse);
+            (request.interactionId ? handleOpenAuditedLink(request, sender) : handleOpenCheckedLink(request, sender)).then(sendResponse);
             return true;
 
         case "checkLinkState":
-            handleCheckLinkState(request, sender, sendResponse);
+            if (request.interactionId) handleAuditedLinkCheck(request, sender).then(sendResponse);
+            else handleCheckLinkState(request, sender, sendResponse);
             return true;
 
         case "downloadDisarmed":
@@ -1556,3 +1571,6 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
         throw new Error(uiText("ui_060", "Fehler beim Upload: ") + String(response.status));
     }
 }
+
+// Prune expired audit records when the extension starts as well as on access/write.
+if (typeof readLinkAudit === 'function') readLinkAudit().catch(() => Logger.warn('Could not prune local link audit at startup'));

@@ -979,5 +979,119 @@
   },
   "linkCheckLimited": {
     "message": "Można wyświetlić tylko dostępne wyniki. Brak sprawdzenia nie oznacza, że odnośnik jest bezpieczny."
+  },
+  "auditTitle": {
+    "message": "Dziennik decyzji dotyczących odnośników"
+  },
+  "auditOpen": {
+    "message": "Przejrzyj dziennik odnośników"
+  },
+  "auditScope": {
+    "message": "Zapisuje kliknięcia HTTP(S) przechwycone przez ochronę odnośników. Otwarto oznacza przekazanie do domyślnej przeglądarki, a nie potwierdzenie odwiedzin. Otwarcia z natywnego menu kontekstowego nie są rejestrowane."
+  },
+  "auditPrivacy": {
+    "message": "Zapis lokalny: maksymalnie 30 dni, 2000 wpisów lub 2 MiB; najstarsze wpisy są usuwane. Pełne adresy URL mogą zawierać dane osobowe lub tokeny dostępu. Brak automatycznego wysyłania. Użytkownicy profilu mogą zmieniać lub usuwać dziennik; nie jest to centralny audyt odporny na manipulacje. Lokalny wynik uwzględnia odnośnik i kontekst wiadomości, nie wynik dostawcy. Powody oceny mogą zawierać dane nadawcy lub domeny."
+  },
+  "auditSearch": {
+    "message": "URL lub domena"
+  },
+  "auditOutcome": {
+    "message": "Decyzja"
+  },
+  "auditAll": {
+    "message": "Wszystkie"
+  },
+  "auditOpened": {
+    "message": "Otwarto"
+  },
+  "auditAborted": {
+    "message": "Anulowano"
+  },
+  "auditOpenError": {
+    "message": "Nie udało się otworzyć"
+  },
+  "auditPending": {
+    "message": "Brak zakończonej decyzji"
+  },
+  "auditMinScore": {
+    "message": "Minimalny lokalny wynik"
+  },
+  "auditFrom": {
+    "message": "Od"
+  },
+  "auditTo": {
+    "message": "Do"
+  },
+  "auditRefresh": {
+    "message": "Odśwież"
+  },
+  "auditJson": {
+    "message": "Eksportuj JSON"
+  },
+  "auditCsv": {
+    "message": "Eksportuj CSV"
+  },
+  "auditClear": {
+    "message": "Usuń lokalny dziennik"
+  },
+  "auditExportHelp": {
+    "message": "Eksport obejmuje wszystkie filtrowane wpisy, nie tylko bieżącą stronę. JSON zawiera sumę SHA-256 do weryfikacji, która nie dowodzi autentyczności. CSV neutralizuje formuły arkusza. Eksport zawiera pełne adresy URL: udostępniaj go tylko uprawnionym osobom."
+  },
+  "auditTime": {
+    "message": "Czas kliknięcia / decyzji"
+  },
+  "auditLocalScore": {
+    "message": "Lokalny wynik (odnośnik i wiadomość)"
+  },
+  "auditVerdict": {
+    "message": "Wynik dostawcy"
+  },
+  "auditAddress": {
+    "message": "URL i szczegóły"
+  },
+  "auditPrevious": {
+    "message": "Poprzednia"
+  },
+  "auditNext": {
+    "message": "Następna"
+  },
+  "auditClearConfirm": {
+    "message": "Usunąć wszystkie lokalne wpisy? Najpierw wyeksportuj potrzebne dowody. Wyniki skanowania i ustawienia zostaną zachowane."
+  },
+  "auditFailure": {
+    "message": "Nie udało się odczytać lub zapisać lokalnego dziennika."
+  },
+  "auditUnavailable": {
+    "message": "Niedostępny"
+  },
+  "auditScoreAtDecision": {
+    "message": "Wynik w chwili decyzji"
+  },
+  "auditRecords": {
+    "message": "Wpisy"
+  },
+  "auditDetails": {
+    "message": "Pokaż URL i dowody"
+  },
+  "auditEventId": {
+    "message": "Identyfikator zdarzenia"
+  },
+  "auditCancelReason": {
+    "message": "Powód anulowania"
+  },
+  "auditFinalResult": {
+    "message": "Ostatni wynik sprawdzenia"
+  },
+  "auditProfile": {
+    "message": "Identyfikator lokalnego profilu"
+  },
+  "auditExported": {
+    "message": "Eksport zapisany."
+  },
+  "auditRiskyOpened": {
+    "message": "Otwarto przy wysokim ryzyku"
+  },
+  "auditExportFailed": {
+    "message": "Eksport nie powiódł się lub został anulowany."
   }
 }

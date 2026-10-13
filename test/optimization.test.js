@@ -12,9 +12,9 @@ function setup(settings = {}) {
     const full = { headers: {}, parts: [{ contentType: 'text/plain', body: 'Visit https://example.com/' }] };
     const context = vm.createContext({
         console: { error() {}, warn() {}, info() {} }, URL, URLSearchParams, Blob, File, FormData,
-        DOMParser: new JSDOM().window.DOMParser, crypto: globalThis.crypto, AbortController, setTimeout, clearTimeout,
+        DOMParser: new JSDOM().window.DOMParser, crypto: globalThis.crypto, AbortController, setTimeout, clearTimeout, TextEncoder,
         browser: {
-            runtime: { id: 'test', getURL: p => p, onMessage: { addListener: f => listeners.push(f) } },
+            runtime: { id: 'test', getURL: p => p, getManifest: () => ({ version: '1.20.0' }), onMessage: { addListener: f => listeners.push(f) } },
             storage: { local: { get: async () => ({ ...config }), set: async values => Object.assign(config, values) }, onChanged: { addListener() {} } },
             permissions: { contains: async () => true, request: async () => true },
             messages: { get: async () => message, getFull: async () => full, listAttachments: async () => [{ name: 'file.html', contentType: 'text/html', partName: '1', size: 4 }], getAttachmentFile: async () => new File(['test'], 'file.html') },
@@ -25,7 +25,7 @@ function setup(settings = {}) {
         fetch: async (url, options) => { requests.push({ url, options }); return { status: 200, ok: true, json: async () => ({ verdict: 'no specific threat', query_status: 'no_results', data: { attributes: { last_analysis_stats: { malicious: 0 } } } }) }; },
         openDB: async () => ({}), getFromStore: async () => null, updateStore: async () => {},
     });
-    vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\n' + runtime + '\n' + gateway + '\n' + fs.readFileSync('risk.js', 'utf8') + '\n' + fs.readFileSync('sanitize.js', 'utf8') + '\n' + ['scan_policy.js', 'providers.js', 'message_ui.js', 'vendor/tldts.js', 'background.js'].map(file => fs.readFileSync(file, 'utf8')).join('\n') + '\n globalThis.configure = async () => { await loadSettings(); }; globalThis.forceTier = value => { privacyTier = value; };', context);
+    vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\n' + runtime + '\n' + gateway + '\n' + fs.readFileSync('risk.js', 'utf8') + '\n' + fs.readFileSync('sanitize.js', 'utf8') + '\n' + ['scan_policy.js', 'providers.js', 'message_ui.js', 'vendor/tldts.js', 'link_audit.js', 'background.js'].map(file => fs.readFileSync(file, 'utf8')).join('\n') + '\n globalThis.configure = async () => { await loadSettings(); }; globalThis.forceTier = value => { privacyTier = value; };', context);
     return { context, config, requests, injections, listeners, message, full };
 }
 
@@ -111,7 +111,7 @@ test('reputation cache expires and workload stays bounded', async () => {
 });
 
 test('gateway cancels running and queued work on consent withdrawal', async () => {
-    const context = vm.createContext({ URL, AbortController, setTimeout, clearTimeout, console, fetch: (_, { signal }) => new Promise((resolve, reject) => {
+    const context = vm.createContext({ URL, AbortController, setTimeout, clearTimeout, TextEncoder, console, fetch: (_, { signal }) => new Promise((resolve, reject) => {
         signal.addEventListener('abort', () => { const error = new Error('cancelled'); error.name = 'AbortError'; reject(error); });
     }) });
     vm.runInContext(gateway + '\n globalThis.gateway = apiGateway;', context);
@@ -198,7 +198,7 @@ test('cache retention deletes expired records and keeps the newest 1000', async 
 
 test('provider retries honor Retry-After for GET and never repeat an upload', async () => {
     let calls = 0;
-    const context = vm.createContext({ URL, AbortController, setTimeout, clearTimeout, console: { warn() {} }, fetch: async () => {
+    const context = vm.createContext({ URL, AbortController, setTimeout, clearTimeout, TextEncoder, console: { warn() {} }, fetch: async () => {
         calls++; return { status: calls === 1 ? 429 : 200, headers: { get: () => '0' } };
     } });
     vm.runInContext(gateway + '\n globalThis.gateway = apiGateway;', context);
@@ -220,7 +220,7 @@ test('IP reputation failures are not stored as clean results', async () => {
 });
 
 test('request deadline also aborts a stalled JSON body', async () => {
-    const context = vm.createContext({ URL, AbortController, setTimeout, clearTimeout, console, fetch: async (_, { signal }) => ({
+    const context = vm.createContext({ URL, AbortController, setTimeout, clearTimeout, TextEncoder, console, fetch: async (_, { signal }) => ({
         status: 200, body: {}, headers: { get: () => null },
         json: () => new Promise((resolve, reject) => {
             const fail = () => { const error = new Error('cancelled body'); error.name = 'AbortError'; reject(error); };
@@ -312,7 +312,8 @@ test('cancel and Escape never open links; a changed destination cannot be confir
         else if (action === 'escape') dialog.root.querySelector('button').dispatchEvent(new dialog.dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
         else { dialog.link.href = 'https://changed.invalid/'; dialog.root.querySelector('.primary').click(); }
         await new Promise(resolve => setImmediate(resolve));
-        assert.equal(dialog.panel.isConnected, false); assert.equal(dialog.sent.length, 1);
+        assert.equal(dialog.panel.isConnected, false); assert.equal(dialog.sent.filter(value => value.action === 'openCheckedLink').length, 0);
+        assert.equal(dialog.sent.at(-1).action, 'cancelLinkInteraction');
     }
 });
 
@@ -341,12 +342,12 @@ test('cancelling a pending check cannot restore the dialog or open its URL', asy
     const state = setup(); await state.context.configure(); await state.context.injectTimeOfClickProtection(1, [], 7);
     const injected = state.injections.at(-1), dom = new JSDOM('<a href="https://example.com/">Web</a>');
     let resolveCheck; const sent = [];
-    const context = vm.createContext({ document: dom.window.document, URL, args: injected.args, browser: { runtime: { sendMessage: value => { sent.push(value); return new Promise(resolve => { resolveCheck = resolve; }); } } } });
+    const context = vm.createContext({ document: dom.window.document, URL, args: injected.args, browser: { runtime: { sendMessage: value => { sent.push(value); return value.action === 'checkLinkState' ? new Promise(resolve => { resolveCheck = resolve; }) : Promise.resolve({ success: true }); } } } });
     vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
     dom.window.document.querySelector('a').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
     dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelector('button').click();
     resolveCheck({ status: 'CLEAN' }); await new Promise(resolve => setImmediate(resolve));
-    assert.equal(dom.window.document.querySelector('[role="alertdialog"]'), null); assert.equal(sent.length, 1);
+    assert.equal(dom.window.document.querySelector('[role="alertdialog"]'), null); assert.equal(sent.length, 2); assert.equal(sent[1].action, 'cancelLinkInteraction');
 });
 
 
@@ -354,7 +355,7 @@ test('a cancelled check finishing late cannot unlock a second active dialog', as
     const state = setup(); await state.context.configure(); await state.context.injectTimeOfClickProtection(1, [], 7);
     const injected = state.injections.at(-1), dom = new JSDOM('<a href="https://example.com/">Web</a>');
     const pending = [];
-    const context = vm.createContext({ document: dom.window.document, URL, args: injected.args, browser: { runtime: { sendMessage: () => new Promise(resolve => pending.push(resolve)) } } });
+    const context = vm.createContext({ document: dom.window.document, URL, args: injected.args, browser: { runtime: { sendMessage: value => value.action === 'checkLinkState' ? new Promise(resolve => pending.push(resolve)) : Promise.resolve({ success: true }) } } });
     vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
     const click = () => dom.window.document.querySelector('a').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
     click(); dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelector('button').click(); click();
@@ -362,4 +363,113 @@ test('a cancelled check finishing late cannot unlock a second active dialog', as
     assert.equal(pending.length, 2); assert.equal(dom.window.document.querySelectorAll('[role="alertdialog"]').length, 1);
     pending[1]({ status: 'UNKNOWN' }); await new Promise(resolve => setImmediate(resolve));
     dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelector('button').click();
+});
+
+
+const auditRequest = (interactionId = 'event_1') => ({ interactionId, messageId: 7, url: 'https://example.com/private?token=abc', userAction: true });
+const auditSender = { id: 'test', tab: { id: 1 } };
+
+test('audited link decisions persist URL, local score and provider verdict independently without network', async () => {
+    const state = setup(); await state.context.configure();
+    const request = auditRequest(); const result = await state.context.handleAuditedLinkCheck(request, auditSender);
+    assert.equal(result.auditSaved, true); assert.equal(typeof result.score, 'number'); assert.equal(result.status, 'UNKNOWN');
+    const opened = await state.context.handleOpenAuditedLink(request, auditSender);
+    assert.equal(opened.success, true);
+    const data = await state.context.readLinkAudit(); assert.equal(data.records.length, 1);
+    const record = data.records[0]; assert.equal(record.outcome, 'OPENED'); assert.equal(record.url, request.url);
+    assert.equal(record.score, result.score); assert.equal(record.scoreSource, 'local-message-and-link');
+    assert.equal(record.verdictAtDecision, 'UNKNOWN'); assert.ok(record.decidedAt >= record.clickedAt);
+    assert.equal(state.requests.length, 0); assert.ok(data.profileId);
+    assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
+});
+
+test('cancellation during pending checks keeps the decision snapshot when a later malicious verdict arrives', async () => {
+    const state = setup(); await state.context.configure();
+    let resolveFull, verdict;
+    state.context.browser.messages.getFull = () => new Promise(resolve => { resolveFull = resolve; });
+    state.context.handleCheckLinkState = (_request, _sender, resolve) => { verdict = resolve; };
+    const request = auditRequest('pending_cancel'), check = state.context.handleAuditedLinkCheck(request, auditSender);
+    await new Promise(resolve => setImmediate(resolve));
+    const cancel = await state.context.handleCancelAuditedLink({ ...request, reason: 'escape' }, auditSender);
+    assert.equal(cancel.success, true);
+    resolveFull(state.full); verdict({ status: 'MALICIOUS', provider: 'test-provider' }); await check;
+    const record = (await state.context.readLinkAudit()).records[0];
+    assert.equal(record.outcome, 'ABORTED'); assert.equal(record.cancelReason, 'escape');
+    assert.equal(record.scoreAtDecision, null); assert.equal(record.verdictAtDecision, 'UNKNOWN');
+    assert.equal(record.verdict, 'MALICIOUS'); assert.equal(typeof record.score, 'number');
+    assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
+});
+
+test('an opening failure is never logged as opened and retries update one interaction', async () => {
+    const state = setup(); await state.context.configure(); const request = auditRequest();
+    await state.context.handleAuditedLinkCheck(request, auditSender);
+    state.context.browser.windows.openDefaultBrowser = async () => { throw new Error('offline'); };
+    assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
+    assert.equal((await state.context.readLinkAudit()).records[0].outcome, 'OPEN_ERROR');
+    state.context.browser.windows.openDefaultBrowser = async () => {};
+    assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, true);
+    const data = await state.context.readLinkAudit(); assert.equal(data.records.length, 1);
+    assert.equal(data.records[0].outcome, 'OPENED'); assert.equal(data.records[0].openAttempts, 2);
+});
+
+test('interaction IDs cannot be reused to change URL, tab, message or a terminal decision', async () => {
+    const state = setup(); await state.context.configure(); const request = auditRequest();
+    await state.context.handleAuditedLinkCheck(request, auditSender);
+    for (const altered of [{ ...request, url: 'https://changed.invalid/' }, { ...request, messageId: 8 }]) assert.equal((await state.context.handleOpenAuditedLink(altered, auditSender)).success, false);
+    assert.equal((await state.context.handleOpenAuditedLink(request, { tab: { id: 2 } })).success, false);
+    assert.equal((await state.context.handleAuditedLinkCheck(request, auditSender)).status, 'ERROR');
+    await state.context.handleCancelAuditedLink(request, auditSender);
+    assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
+});
+
+test('concurrent audit writes do not lose entries; retention enforces age, count and bytes', async () => {
+    const state = setup(); await state.context.configure();
+    await Promise.all(Array.from({ length: 30 }, (_, i) => state.context.editLinkAudit(records => records.unshift({ id: String(i), clickedAt: Date.now(), url: 'https://example.com/' }))));
+    assert.equal((await state.context.readLinkAudit()).records.length, 30);
+    const now = Date.now(), records = Array.from({ length: 2100 }, (_, i) => ({ id: i, clickedAt: now - i, url: 'x'.repeat(3000) }));
+    records.push({ id: 'expired', clickedAt: now - 31 * 86400000 });
+    const pruned = state.context.pruneLinkAudit(records, now);
+    assert.ok(pruned.length <= 2000); assert.ok(!pruned.some(record => record.id === 'expired'));
+    assert.ok(new TextEncoder().encode(JSON.stringify(pruned)).length <= 2 * 1024 * 1024);
+    assert.equal(pruned[0].id, 0);
+});
+
+test('audit access is limited to the extension review page and log deletion keeps settings', async () => {
+    const state = setup({ apikey: 'secret' }); await state.context.configure();
+    assert.equal(state.context.isLinkAuditAdminPage({ url: 'audit.html' }), true);
+    for (const url of ['https://mail.invalid/audit.html', 'popup.html', 'audit.html?spoof=true']) assert.equal(state.context.isLinkAuditAdminPage({ url }), false);
+    await state.context.handleAuditedLinkCheck(auditRequest(), auditSender);
+    await state.context.editLinkAudit(records => { records.length = 0; });
+    assert.equal((await state.context.readLinkAudit()).records.length, 0); assert.equal(state.config.apikey, 'secret');
+});
+
+test('a failed audit write is visible without falsely confirming that the decision was logged', async () => {
+    const state = setup(); await state.context.configure();
+    state.context.browser.storage.local.set = async () => { throw new Error('quota'); };
+    const request = auditRequest(), result = await state.context.handleAuditedLinkCheck(request, auditSender);
+    assert.equal(result.auditSaved, false); assert.equal(result.status, 'UNKNOWN');
+    const opened = await state.context.handleOpenAuditedLink(request, auditSender);
+    assert.equal(opened.success, true); assert.equal(opened.auditSaved, false);
+});
+
+
+test('injected dialogs and background auditing record both decisions with one event per click', async () => {
+    const state = setup({ customBlacklist: ['example.com'] }); await state.context.configure();
+    await state.context.injectTimeOfClickProtection(1, [], 7);
+    const injected = state.injections.at(-1), dom = new JSDOM('<a href="https://example.com/">Web</a>');
+    const route = value => new Promise(resolve => state.listeners[0](value, auditSender, resolve));
+    const context = vm.createContext({ document: dom.window.document, URL, args: injected.args, browser: { runtime: { sendMessage: route } } });
+    vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
+    const click = () => dom.window.document.querySelector('a').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
+    click(); await new Promise(resolve => setImmediate(resolve));
+    const panel = dom.window.document.querySelector('[role="alertdialog"]');
+    assert.ok(panel.shadowRoot.textContent.includes('100 / 100'));
+    panel.shadowRoot.querySelector('.primary').click(); await new Promise(resolve => setImmediate(resolve));
+    click(); await new Promise(resolve => setImmediate(resolve));
+    dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelector('button').click();
+    await new Promise(resolve => setImmediate(resolve));
+    const data = await state.context.readLinkAudit(); assert.equal(data.records.length, 2);
+    assert.equal(data.records.filter(record => record.outcome === 'OPENED').length, 1);
+    assert.equal(data.records.filter(record => record.outcome === 'ABORTED').length, 1);
+    assert.ok(data.records.every(record => record.score === 100)); assert.equal(state.requests.length, 0);
 });

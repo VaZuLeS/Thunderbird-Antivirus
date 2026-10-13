@@ -982,5 +982,119 @@
   },
   "linkCheckLimited": {
     "message": "Es werden nur verfügbare Prüfergebnisse angezeigt. Fehlende Prüfungen bedeuten nicht, dass ein Link sicher ist."
+  },
+  "auditTitle": {
+    "message": "Link-Entscheidungsprotokoll"
+  },
+  "auditOpen": {
+    "message": "Linkprotokoll prüfen"
+  },
+  "auditScope": {
+    "message": "Protokolliert HTTP(S)-Klicks, die der Linkschutz abfängt. Geöffnet bedeutet erfolgreiche Übergabe an den Standardbrowser, keine Bestätigung eines Webseitenbesuchs. Öffnen über native Kontextmenüs wird nicht erfasst."
+  },
+  "auditPrivacy": {
+    "message": "Lokal gespeichert: höchstens 30 Tage, 2.000 Einträge oder 2 MiB; ältere Einträge werden entfernt. Vollständige URLs können personenbezogene Daten oder Zugriffstoken enthalten. Kein automatischer Upload. Profilnutzer können das lokale Protokoll ändern oder löschen; es ist kein manipulationssicheres zentrales Audit. Der lokale Score berücksichtigt Link und Nachrichtenkontext, keinen Anbieter-Score. Bewertungsgründe können Absender- oder Domainangaben enthalten."
+  },
+  "auditSearch": {
+    "message": "URL oder Domain"
+  },
+  "auditOutcome": {
+    "message": "Entscheidung"
+  },
+  "auditAll": {
+    "message": "Alle"
+  },
+  "auditOpened": {
+    "message": "Geöffnet"
+  },
+  "auditAborted": {
+    "message": "Abgebrochen"
+  },
+  "auditOpenError": {
+    "message": "Öffnung fehlgeschlagen"
+  },
+  "auditPending": {
+    "message": "Keine abgeschlossene Entscheidung"
+  },
+  "auditMinScore": {
+    "message": "Lokaler Mindest-Score"
+  },
+  "auditFrom": {
+    "message": "Von"
+  },
+  "auditTo": {
+    "message": "Bis"
+  },
+  "auditRefresh": {
+    "message": "Aktualisieren"
+  },
+  "auditJson": {
+    "message": "JSON exportieren"
+  },
+  "auditCsv": {
+    "message": "CSV exportieren"
+  },
+  "auditClear": {
+    "message": "Lokales Protokoll löschen"
+  },
+  "auditExportHelp": {
+    "message": "Exporte enthalten alle gefilterten Einträge, nicht nur die aktuelle Seite. JSON enthält eine SHA-256-Prüfsumme zur Kontrolle; sie beweist keine Echtheit. CSV entschärft Tabellenformeln. Exporte enthalten vollständige URLs: nur an berechtigte Prüfer weitergeben."
+  },
+  "auditTime": {
+    "message": "Klick- / Entscheidungszeit"
+  },
+  "auditLocalScore": {
+    "message": "Lokaler Score (Link und Nachricht)"
+  },
+  "auditVerdict": {
+    "message": "Anbieterurteil"
+  },
+  "auditAddress": {
+    "message": "URL und Details"
+  },
+  "auditPrevious": {
+    "message": "Zurück"
+  },
+  "auditNext": {
+    "message": "Weiter"
+  },
+  "auditClearConfirm": {
+    "message": "Alle lokalen Linkprotokolle löschen? Benötigte Nachweise zuerst exportieren. Scanergebnisse und Einstellungen bleiben erhalten."
+  },
+  "auditFailure": {
+    "message": "Das lokale Linkprotokoll konnte nicht gelesen oder gespeichert werden."
+  },
+  "auditUnavailable": {
+    "message": "Nicht verfügbar"
+  },
+  "auditScoreAtDecision": {
+    "message": "Score bei Entscheidung"
+  },
+  "auditRecords": {
+    "message": "Einträge"
+  },
+  "auditDetails": {
+    "message": "URL und Nachweise anzeigen"
+  },
+  "auditEventId": {
+    "message": "Ereignis-ID"
+  },
+  "auditCancelReason": {
+    "message": "Abbruchgrund"
+  },
+  "auditFinalResult": {
+    "message": "Letztes Prüfergebnis"
+  },
+  "auditProfile": {
+    "message": "Lokale Profil-ID"
+  },
+  "auditExported": {
+    "message": "Export gespeichert."
+  },
+  "auditRiskyOpened": {
+    "message": "Geöffnet mit hohem Risiko"
+  },
+  "auditExportFailed": {
+    "message": "Export fehlgeschlagen oder abgebrochen."
   }
 }

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title data-i18n="auditTitle">Link decision log</title>
+<link rel="stylesheet" href="theme.css"><script src="i18n.js"></script>
+<script src="audit.js" defer></script>
+</head>
+<body class="audit-page">
+<header class="scanner-header"><img src="img/icon-48px.png" width="40" height="40" alt=""><div><strong class="scanner-brand">Thundy AV</strong><h1 data-i18n="auditTitle">Link decision log</h1></div><a href="options.html" data-i18n="bannerOpenOptions">Open options</a></header>
+<p data-i18n="auditScope"></p>
+<p class="card audit-disclosure" data-i18n="auditPrivacy"></p>
+<div class="audit-summary" id="auditSummary" aria-live="polite"></div>
+<form class="audit-filters" id="auditFilters">
+<label><span data-i18n="auditSearch">URL or domain</span><input id="auditSearch" type="search"></label>
+<label><span data-i18n="auditOutcome">Decision</span><select id="auditOutcome"><option value="" data-i18n="auditAll">All</option><option value="OPENED" data-i18n="auditOpened">Opened</option><option value="ABORTED" data-i18n="auditAborted">Aborted</option><option value="OPEN_ERROR" data-i18n="auditOpenError">Opening failed</option><option value="PENDING" data-i18n="auditPending">No completed decision</option></select></label>
+<label><span data-i18n="auditMinScore">Minimum local score</span><input id="auditMinScore" type="number" min="0" max="100"></label>
+<label><span data-i18n="auditFrom">From</span><input id="auditFrom" type="date"></label>
+<label><span data-i18n="auditTo">To</span><input id="auditTo" type="date"></label>
+</form>
+<div class="audit-actions"><button id="auditRefresh" data-i18n="auditRefresh">Refresh</button><button id="auditJson" class="btn-primary" data-i18n="auditJson">Export JSON</button><button id="auditCsv" class="btn-primary" data-i18n="auditCsv">Export CSV</button><button id="auditClear" data-i18n="auditClear">Delete local log</button></div>
+<p class="risk-note" data-i18n="auditExportHelp"></p>
+<p id="auditStatus" role="status" aria-live="polite"></p>
+<div class="audit-table-wrap"><table class="audit-table"><caption id="auditCount"></caption><thead><tr><th scope="col" data-i18n="auditTime">Click / decision time</th><th scope="col" data-i18n="auditOutcome">Decision</th><th scope="col" data-i18n="auditLocalScore">Local score</th><th scope="col" data-i18n="auditVerdict">Provider result</th><th scope="col" data-i18n="auditAddress">URL and details</th></tr></thead><tbody id="auditRows"></tbody></table></div>
+<div class="audit-actions"><button id="auditPrevious" data-i18n="auditPrevious">Previous</button><span id="auditPage" aria-live="polite"></span><button id="auditNext" data-i18n="auditNext">Next</button></div>
+<dialog id="auditConfirm"><p data-i18n="auditClearConfirm"></p><div class="audit-actions"><button id="auditKeep" data-i18n="linkCancel">Cancel</button><button id="auditDelete" data-i18n="auditClear">Delete local log</button></div></dialog>
+</body></html>

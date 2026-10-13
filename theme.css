@@ -242,3 +242,36 @@ body.scanner-popup { width: 600px; min-width: 600px; margin: 0; padding: 20px; b
 .risk-note { color: var(--text-muted); font-size: 12px; }
 .risk-reasons { margin: 10px 0 0; padding-left: 20px; }
 .risk-reasons li { margin: 6px 0; overflow-wrap: anywhere; }
+
+.audit-page { max-width: 1200px; margin: 0 auto; padding: 24px; font: 14px/1.55 system-ui, sans-serif; }
+.audit-page h1 { font-size: 16px; margin: 0; }
+.audit-page .scanner-header > a { margin-left: auto; }
+.audit-disclosure { border-left: 4px solid var(--color-warning); }
+.audit-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.audit-summary .card { margin-bottom: 12px; }
+.audit-filters { display: flex; flex-wrap: wrap; gap: 12px; margin: 14px 0; }
+.audit-filters label { display: flex; flex-direction: column; gap: 6px; flex: 1 1 150px; }
+.audit-filters input, .audit-filters select { padding: 9px; border: 1px solid var(--card-border); border-radius: 6px; background: var(--card-bg); color: var(--text-color); min-height: 40px; width: 100%; }
+.audit-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.audit-table-wrap { overflow-x: auto; }
+.audit-table { border-collapse: collapse; width: 100%; min-width: 780px; text-align: left; }
+.audit-table caption { text-align: left; padding: 12px 0; }
+.audit-table th, .audit-table td { padding: 12px; border-bottom: 1px solid var(--card-border); vertical-align: top; }
+.audit-table th { background: var(--card-bg); }
+.audit-table td:last-child { width: 40%; max-width: 450px; }
+.audit-table code { display: block; white-space: pre-wrap; overflow-wrap: anywhere; margin: 10px 0; }
+.audit-table small { color: var(--text-muted); }
+.audit-table summary { cursor: pointer; }
+.audit-opened { color: var(--link-color); } .audit-aborted { color: var(--text-muted); } .audit-open_error { color: var(--color-danger); }
+.audit-page dialog { color: var(--text-color); background: var(--bg-color); border: 1px solid var(--card-border); border-radius: 12px; max-width: 480px; }
+.audit-page dialog::backdrop { background: #0006; }
+.audit-entry { display: inline-block; padding: 10px 15px; border-radius: 8px; }
+.audit-page * { box-sizing: border-box; }
+.audit-page .scanner-header { flex-wrap: wrap; }
+.audit-page .scanner-header > div { flex: 1; min-width: 0; }
+@media (max-width: 600px) {
+    .audit-page { padding: 16px; }
+    .audit-page .scanner-header > a { flex-basis: 100%; }
+}
+
+.audit-risky .audit-opened { color: var(--color-danger); font-weight: 700; }

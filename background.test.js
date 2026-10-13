@@ -2972,7 +2972,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'CUSTOM_STATE' });
+            assert.deepEqual(response, { status: 'CUSTOM_STATE', provider: 'Hybrid Analysis' });
         });
 
         it('fetches overview from hybrid analysis if hybrid_sha256 exists, returning CLEAN for no specific threat', async () => {
@@ -2990,7 +2990,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'CLEAN' });
+            assert.deepEqual(response, { status: 'CLEAN', provider: 'Hybrid Analysis' });
         });
 
         it('fetches overview from hybrid analysis, returning UPPERCASE verdict for threats', async () => {
@@ -3003,7 +3003,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'MALICIOUS' });
+            assert.deepEqual(response, { status: 'MALICIOUS', provider: 'Hybrid Analysis' });
         });
 
         it('falls back to link state if hybrid analysis fetch throws an error', async () => {
@@ -3016,7 +3016,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'FALLBACK_STATE' });
+            assert.deepEqual(response, { status: 'FALLBACK_STATE', provider: 'Hybrid Analysis' });
         });
 
         it('returns ERROR on generic unexpected errors in the main flow', async () => {
