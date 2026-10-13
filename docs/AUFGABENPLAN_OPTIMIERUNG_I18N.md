@@ -110,7 +110,7 @@ Aufwand = grobe Entwicklungsschätzung in Personentagen (PT), einschließlich ge
 - Vorheriger Projektstand: [STATUS](STATUS.md), [Store-Aufgabenplan](AUFGABENPLAN_STORE_READINESS.md), [Datenschutzerklärung](privacy_policy.md).
 
 
-## Ausführungsstand: Entwicklungskandidat 1.19.0
+## Ausführungsstand: Version 1.19.0
 
 **Präzisierung des Auftrags:** Alle sechs Sprachen EN/DE/FR/ES/IT/PL werden vollständig mitgeliefert. Der optionale Sprachumfang der ursprünglichen Planung ist damit Teil der Umsetzung. Je Sprache liegen **241 Schlüssel** einschließlich Sicherheits-, Fehler- und Datenschutzhinweisen lokal im Paket. Oberflächensprache und Nachrichtensprache sind getrennt.
 
@@ -141,8 +141,8 @@ Aufwand = grobe Entwicklungsschätzung in Personentagen (PT), einschließlich ge
 - Synthetischer Lastvergleich (`node scripts/benchmark-scan-limits.js`): 40 simulierte Anhänge à 2 MiB. Begrenzte Verarbeitung: **2 gleichzeitig / 4 MiB Eingabepuffer**, 44 ms; vorheriges unbeschränktes Muster: **40 gleichzeitig / 80 MiB**, 43 ms. Das misst die geplante Eingabepufferlast in Node, nicht Thunderbird-RSS oder reale Scanlatenz.
 - Public-Suffix-Abhängigkeit ist als Entwicklungsabhängigkeit exakt auf `7.4.10` gepinnt. `scripts/update-vendor.js` prüft Bytegleichheit und Lizenz; keine Remote-Laufzeitbibliothek.
 - Das Paketbudget wurde begründet auf 600 KiB entpackt angehoben: sechs vollständige Sprachkataloge und lokale Public-Suffix-Daten. Benchmarks werden nun ausdrücklich aus dem Paket ausgeschlossen; alle sechs Kataloge sind Pflichtdateien.
-- Versionsstand von Manifest, npm-Metadaten und Lockfile ist **1.19.0**. Kandidat **nicht signiert oder veröffentlicht**. Historische Release-Angaben zu 1.6.2 bleiben als solche erhalten.
-- Die aktive CI-Datei ist lokal geändert; ein tatsächlicher GitHub-Workflow-Lauf ist ohne Push nicht belegt.
+- Versionsstand von Manifest, npm-Metadaten und Lockfile ist **1.19.0**. Als [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.0) veröffentlicht, **nicht für den Thunderbird Store signiert**. Historische Release-Angaben zu 1.6.2 bleiben als solche erhalten.
+- Die aktive CI-Datei ist gepusht; [CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38472152400) und [Release-Gate](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38472222591) sind auf dem Tag-Commit erfolgreich gelaufen.
 - Freigabe bleibt von T18 abhängig. Reale Berechtigungsdialoge, Nachrichtennavigation, Provider-Sichtbarkeit, Sprache/Layout bei 200 % Zoom und Dark Mode müssen im Client bestätigt werden.
 
 ### Testartefakt
@@ -152,3 +152,7 @@ Unsigniertes lokales Testpaket: `build/thundy-av-1.19.0.xpi` (149748 Bytes). SHA
 ### Veröffentlichung beauftragt (13. Oktober 2026)
 
 Der Nutzer hat Commit, Push, GitHub-Release und Aktualisierung der GitHub Pages ausdrücklich beauftragt. Version **1.19.0** vermeidet die bereits vorhandenen Tags bis v1.18.0. `.github/workflows/release.yml` veröffentlicht nach erfolgreichem Gate das unsignierte XPI samt Prüfsumme; `.github/workflows/pages.yml` baut die Dokumentation unter `docs/`. Die offene T18-Abnahme wird in Release-Hinweisen und Pages ausgewiesen.
+
+### Bestätigte Veröffentlichung
+
+Commit `ea2b9a745531018c69d75f66617f5502f415ebbb`, Tag `v1.19.0`; [öffentlicher GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.0) mit XPI und `SHA256SUMS.txt`. Heruntergeladenes XPI: 149.748 Bytes, SHA-256 `f0ca2ebf9b27be1a15b7efb5b106e96ddef4130a5089c482db9edbf4f6573371`. Alle entpackten Dateien stimmen mit dem lokalen geprüften Build überein; abweichende ZIP-Metadaten erklären unterschiedliche lokale/CI-Archivhashes. [Pages-Deployment](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38472152582) erfolgreich: sechs Landingpages und aktualisierte Datenschutz-/Release-Dokumentation. T18 bleibt als reale Client-Abnahme offen.

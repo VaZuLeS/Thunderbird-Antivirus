@@ -9,4 +9,3 @@ optional_front_matter:
   remove_originals: true
 exclude:
   - ci
-  - audits

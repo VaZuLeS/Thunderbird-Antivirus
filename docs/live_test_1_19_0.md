@@ -6,7 +6,7 @@ Dieses Protokoll ist vorbereitet, aber **nicht ausgeführt**. Der Arbeitsbereich
 
 | Feld | Wert |
 |---|---|
-| Kandidat | 1.19.0, lokales unsigniertes Paket |
+| Kandidat | 1.19.0, öffentliches unsigniertes GitHub-Release |
 | Thunderbird 140 ESR: genaue Version | |
 | Aktuelle unterstützte Thunderbird-Version | |
 | Betriebssystem und Skalierung | |
@@ -67,4 +67,4 @@ Polnische Zählanzeigen verwenden neutrale Beschriftungen, etwa „Rozmiar: … 
 
 Echte Screenshots des Clients unter `docs/screenshots/` ablegen: Einstellungen, lokales Popup, Consent-/Opt-in-Banner, Warnbanner und Linkdialog; mindestens EN/DE und die weiteren vier Sprachen für die Sprachabnahme. Keine DOM-Mockups oder SVG-Platzhalter als bestandene Live-Abnahme verwenden.
 
-Gesamtergebnis: **offen**. Datum, Befunde und Freigabeentscheidung erst nach Durchführung eintragen. Der Kandidat wurde noch nicht signiert, getaggt oder veröffentlicht.
+Gesamtergebnis: **offen**. Datum, Befunde und Freigabeentscheidung erst nach Durchführung eintragen. Version 1.19.0 wurde als unsignierter GitHub-Release getaggt und veröffentlicht. Die Store-Signierung und diese Live-Abnahme stehen weiter aus.

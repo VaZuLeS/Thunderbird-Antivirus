@@ -1,6 +1,8 @@
-# Veröffentlichungsvorbereitung: 1.19.0 (13. Oktober 2026)
+# Veröffentlichter GitHub-Release: 1.19.0 (13. Oktober 2026)
 
-Die Umsetzung des [Optimierungsplans](AUFGABENPLAN_OPTIMIERUNG_I18N.md) enthält sechs vollständig mitgelieferte Sprachkataloge und Korrekturen an Zustimmung, Scanfreigabe, Linkschutz, Caches, Datenzugriff und CI. Version 1.19.0 wird gemäß Nutzerauftrag als unsignierter GitHub-Release veröffentlicht. Der taggesteuerte Release-Workflow und der GitHub-Pages-Workflow sind vorbereitet; ihr Erfolg wird nach Push geprüft. Eine Store-Signierung ist nicht erfolgt. Reale Thunderbird-Abnahme und Screenshots stehen aus: [Live-Protokoll 1.19.0](live_test_1_19_0.md).
+Die Umsetzung des [Optimierungsplans](AUFGABENPLAN_OPTIMIERUNG_I18N.md) enthält sechs vollständig mitgelieferte Sprachkataloge und Korrekturen an Zustimmung, Scanfreigabe, Linkschutz, Caches, Datenzugriff und CI. Version 1.19.0 ist als [unsignierter GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.0) veröffentlicht. Commit/Tag: `ea2b9a745531018c69d75f66617f5502f415ebbb` / `v1.19.0`. [CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38472152400), [Release-Workflow](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38472222591) und [GitHub-Pages-Deployment](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38472152582) waren erfolgreich. Eine Store-Signierung ist nicht erfolgt. Reale Thunderbird-Abnahme und Screenshots stehen aus: [Live-Protokoll 1.19.0](live_test_1_19_0.md).
+
+Veröffentlichtes XPI: `thundy-av-1.19.0.xpi`, 149.748 Bytes; SHA-256: `f0ca2ebf9b27be1a15b7efb5b106e96ddef4130a5089c482db9edbf4f6573371`. Das heruntergeladene Asset stimmt mit der veröffentlichten Prüfsumme und allen Inhalten des lokal geprüften Pakets überein.
 
 Die nachfolgenden Release-Angaben und Messwerte dokumentieren den historischen Stand von 1.6.2. Aktueller lokaler Gate: 485 Tests bestanden, 0 Lint-Fehler/22 bekannte Thunderbird-Warnungen; gültiges Paket mit 31 Dateien und 519.476 Bytes entpackt. Details stehen im Ausführungsstand des Optimierungsplans.
 

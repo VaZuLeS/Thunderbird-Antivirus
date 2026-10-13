@@ -1,6 +1,6 @@
-> Entwicklungskandidat 1.19.0: Die lokal mitgelieferte `privacy.html` erläutert die Datenverarbeitung in EN/DE/FR/ES/IT/PL. Absenderfreigaben sind in den Einstellungen bearbeitbar. Lokale Ergebnisdaten werden beim Datenbankstart auf 30 Tage und 1.000 Nachrichten begrenzt; Reputation im Arbeitsspeicher verfällt nach 15 Minuten. Die GitHub-Pages-Dokumentation wird mit diesem Release aktualisiert.
+> Version 1.19.0: Die lokal mitgelieferte `privacy.html` erläutert die Datenverarbeitung in EN/DE/FR/ES/IT/PL. Absenderfreigaben sind in den Einstellungen bearbeitbar. Lokale Ergebnisdaten werden beim Datenbankstart auf 30 Tage und 1.000 Nachrichten begrenzt; Reputation im Arbeitsspeicher verfällt nach 15 Minuten. Die GitHub-Pages-Dokumentation wird mit diesem Release aktualisiert.
 >
-> Development candidate 1.19.0: bundled `privacy.html` describes data processing in EN/DE/FR/ES/IT/PL. Sender authorizations can be edited in settings. On database startup, local results are limited to 30 days and 1,000 messages; in-memory reputation expires after 15 minutes. The GitHub Pages documentation is updated with this release.
+> Version 1.19.0: bundled `privacy.html` describes data processing in EN/DE/FR/ES/IT/PL. Sender authorizations can be edited in settings. On database startup, local results are limited to 30 days and 1,000 messages; in-memory reputation expires after 15 minutes. The GitHub Pages documentation is updated with this release.
 
 # Datenschutzerklärung — Thundy AV – Email Scanner for Thunderbird
 
