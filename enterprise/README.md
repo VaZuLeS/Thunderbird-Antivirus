@@ -18,7 +18,7 @@ Prüfen: `npm ci` und `node --test enterprise/test/contracts.test.js`; die Suite
 
 Die Bibliothek nimmt den bereits authentifizierten Kontext von einem zukünftigen vertrauenswürdigen Broker/Backend entgegen. Eine beliebige vom UI gelieferte Schlüsselregistry oder `intentSealed: true` ist **keine** gültige Unternehmensauthentifizierung bzw. Empfangsquittung. Lokale Quittungsprüfung, Event-State-Machine und persistente Sequenzen sind inzwischen als separate Entwicklungsbausteine implementiert. Enrollment und geschützter Unternehmens-Schlüssel-/Versionsspeicher bleiben offen.
 
-Eine lokale Outbox, Loopback-Zustellung und optionale Storage-Prüfadapter sind inzwischen implementiert. Geräteverteilung, produktive Netzwerkübermittlung, SSO, Rollenprüfung, produktive Object Locks, Incidentlebenszyklus, Vault, Server-Retention und OS-/Thunderbird-Abnahme bleiben offen. Die Policy-ID-/Gruppen-/Schlüsselzuordnung muss aus dem späteren Unternehmenskanal stammen. `allow_intent` erlaubt nur einen geprüften Öffnungswunsch im Modell; es erzeugt kein `OPENED`-Ereignis und öffnet keinen Browser.
+Eine lokale Outbox, Loopback-Zustellung und optionale Storage-Prüfadapter sind inzwischen implementiert. Geräteverteilung, produktive Netzwerkübermittlung, SSO, Rollenprüfung, produktive Object Locks, produktiver Incidentlebenszyklus, Vault, Server-Retention und OS-/Thunderbird-Abnahme bleiben offen. Die Policy-ID-/Gruppen-/Schlüsselzuordnung muss aus dem späteren Unternehmenskanal stammen. `allow_intent` erlaubt nur einen geprüften Öffnungswunsch im Modell; es erzeugt kein `OPENED`-Ereignis und öffnet keinen Browser.
 
 **Kein Arbeitspaket gilt durch diese Vorbereitung insgesamt als abgeschlossen.** Vollständige Umsetzung/Abnahme bleibt an die Unternehmensentscheidungen und Freigaben aus F01–F04 gebunden. Der [Umsetzungsstand mit Blockern](../docs/ENTERPRISE_UMSETZUNGSSTAND.md) führt alle 30 Pakete auf.
 
@@ -73,3 +73,7 @@ Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbar
 `enterprise:connectors profile/enqueue/run/status/retry` erzeugt optionale SIEM-Dateien aus verifizierten Entscheidungen mit dauerhafter Deduplizierung/Backoff/Dead Letters. [Formate und Worker-Konfiguration](../docs/ENTERPRISE_SIEM_EXPORTQUEUE.md). Externe Zustellung bleibt deaktiviert.
 
 `enterprise:acceptance probe/draft/check` prüft lokale Verfügbarkeit und signierte, artefaktgebundene Abnahmeunterlagen. [Acht erforderliche Live-Nachweise und tatsächliche Blocker](../docs/ENTERPRISE_N06_ABNAHME.md). Auch vollständige Unterlagen autorisieren keine SEALED-Transition oder Produktivaktivierung.
+
+## Dauerhafte lokale Incidentfälle
+
+`enterprise:cases ingest/assign/ack/start/resolve/reopen` speichert Falllebenszyklus und Verlauf mit Revisionsprüfung. `verify` prüft das signierte Falljournal ausschließlich mit öffentlichen Schlüsseln, ohne Writer-Lock oder Journaländerung. [Bedienung, Provenienz und Grenzen](../docs/ENTERPRISE_INCIDENTFAELLE.md). Lokale Akteurskennungen sind keine bestätigten SSO-Identitäten; Original-Geräteevidenz wird beim Einlesen, nicht erneut beim Falljournal-Reader geprüft.

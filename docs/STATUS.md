@@ -1,3 +1,9 @@
+# Dauerhafte Incidentfälle — 14. Oktober 2026
+
+774 Tests im Gesamtgate. Verifizierte Entscheidungen lassen sich als dauerhafte Fälle aufnehmen, zuweisen, bestätigen, bearbeiten, abschließen und explizit wieder aufnehmen. Revisionen verhindern Änderungen aus veralteten Bearbeitungsständen. Public-Key-Prüfung funktioniert ohne Writer-Schlüssel und ohne Journal-/Lockänderung. Der Reader bestätigt den Fallwriter und die lokalen Übergänge, nicht erneut die Original-Geräteevidenz. Keine SSO-/Portal-/Ticketaktivierung oder SEALED-Freigabe; Extension 1.22.0 unverändert. [API und Recovery](ENTERPRISE_INCIDENTFAELLE.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).
+
+---
+
 # N03–N06 autonom fortgeführt — 14. Oktober 2026
 
 765 Tests im Gesamtgate und 24 Chromium-Layouts der neuen sechssprachigen Betriebsberichte. N03 erneut geprüft; N04 liefert minimierte Reports und dauerhafte Alarmdämpfung. N05 liefert vier optionale SIEM-Offlineformate mit signierter Exportqueue, Deduplizierung, Retry und Recovery. N06 wurde auf Ausführbarkeit geprüft: keine Unternehmenszugänge/Thunderbird-/Windows-/macOS-Systeme; produktive SEALED-/SSO-/OS-Pfade bleiben unimplementiert. Ein signatur- und artefaktgebundener Nachweisprüfer dokumentiert fehlende Unterlagen, erteilt aber keine Freigabe. Extension 1.22.0 unverändert. [Betriebsberichte](ENTERPRISE_BETRIEBSBERICHTE.md) · [SIEM-Queue](ENTERPRISE_SIEM_EXPORTQUEUE.md) · [N06-Abnahme](ENTERPRISE_N06_ABNAHME.md) · [Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).

@@ -35,6 +35,85 @@ function syncDirectory(directory, io = fs) {
   }
 }
 class DurableJournal {
+  static verify(
+    content,
+    {
+      signerKeyId,
+      signerPublicKey,
+      scope,
+      initialState,
+      reducer,
+      maxBytes = 32 * 1024 * 1024,
+      maxActions = 10000,
+      expectedHead,
+    },
+  ) {
+    need(
+      identifier(signerKeyId) &&
+        typeof reducer === "function" &&
+        Number.isSafeInteger(maxBytes) &&
+        maxBytes > 0 &&
+        maxBytes <= 128 * 1024 * 1024 &&
+        Number.isSafeInteger(maxActions) &&
+        maxActions > 0 &&
+        maxActions <= 100000,
+      "JOURNAL_CONFIG_INVALID",
+    );
+    need(
+      signerPublicKey?.type === "public" ||
+        (typeof signerPublicKey === "string" &&
+          /^-----BEGIN PUBLIC KEY-----\r?\n/.test(signerPublicKey) &&
+          !signerPublicKey.includes("PRIVATE KEY")),
+      "JOURNAL_PUBLIC_KEY_REQUIRED",
+    );
+    const publicKey =
+      signerPublicKey?.type === "public"
+        ? signerPublicKey
+        : crypto.createPublicKey(signerPublicKey);
+    need(publicKey.asymmetricKeyType === "ed25519", "JOURNAL_KEY_INVALID");
+    need(
+      typeof content === "string" || Buffer.isBuffer(content),
+      "JOURNAL_INPUT_INVALID",
+    );
+    need(Buffer.byteLength(content) <= maxBytes, "JOURNAL_CAPACITY");
+    const text = content.toString();
+    need(!text || text.endsWith("\n"), "JOURNAL_INCOMPLETE");
+    const replay = Object.create(DurableJournal.prototype);
+    Object.assign(replay, {
+      publicKey,
+      signerKeyId,
+      scopeHash: hash(scope),
+      state: clone(initialState),
+      reducer,
+      records: [],
+      maxActions,
+    });
+    try {
+      for (const line of text.split("\n").filter(Boolean)) {
+        const record = JSON.parse(line),
+          next = replay.check(record);
+        replay.records.push(record);
+        replay.state = next;
+      }
+    } catch (error) {
+      throw error instanceof JournalError
+        ? error
+        : new JournalError("JOURNAL_INVALID");
+    }
+    if (expectedHead !== undefined)
+      need(expectedHead === replay.head(), "JOURNAL_HEAD_MISMATCH");
+    return {
+      state: clone(replay.state),
+      head: replay.head(),
+      actionCount: replay.records.length,
+      headPinned: expectedHead !== undefined,
+      signerFingerprint: crypto
+        .createHash("sha256")
+        .update(publicKey.export({ type: "spki", format: "der" }))
+        .digest("hex"),
+      sealed: false,
+    };
+  }
   constructor({
     directory,
     signerKeyId,
