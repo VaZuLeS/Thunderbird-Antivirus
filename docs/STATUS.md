@@ -1,3 +1,11 @@
+# Enterprise-Umsetzungskonzept — 14. Oktober 2026
+
+Die sechs gewünschten Unternehmenspunkte sind im [vollständigen Umsetzungskonzept](ENTERPRISE_UMSETZUNGSKONZEPT.md) ausgearbeitet. Enthalten sind Zielarchitektur, Geräte-/Serververtrauen, Richtlinien und Ausnahmen, SSO-/Rechtematrix, Incidents, Flottenzustand, Datenschutz-/Retentionregeln, 30 Arbeitspakete und Abnahmekriterien. [Entwurfsverträge](enterprise/README.md) ergänzen die Spezifikation.
+
+Vertragsprüfung: 31 positive/negative Schemafälle bestanden; 30 eindeutig identifizierte Arbeitspakete und ihre Abhängigkeiten ohne Zyklen geprüft. Das sind Konzept-/Vertragsprüfungen, keine Implementierungs- oder Thunderbird-Abnahme. Version 1.20.0 bleibt der veröffentlichte lokale Funktionsstand; die Enterprise-Funktionen sind noch nicht implementiert.
+
+---
+
 # Linkprotokoll und Admin-Prüfung — 1.20.0
 
 Version 1.20.0 ergänzt ein lokales Link-Entscheidungsprotokoll mit vollständiger URL, Score im Nachrichtenkontext, Anbieterurteil, Zeitstempeln und Entscheidungs-Snapshots. Filter, Seitenansicht, JSON-/CSV-Exporte und Hervorhebung risikoreicher Öffnungen sind in sechs Sprachen verfügbar. Das Protokoll ist separat vom Scan-Cache begrenzt und löschbar; es gibt keinen automatischen Upload oder manipulationssicheres zentrales Audit.

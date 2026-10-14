@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "organizationId": "00000000-0000-4000-8000-000000000001",
+  "policyId": "00000000-0000-4000-8000-000000000002",
+  "version": 3,
+  "issuedAt": "2026-10-14T08:00:00Z",
+  "expiresAt": "2026-10-15T08:00:00Z",
+  "groupIds": [
+    "pilot"
+  ],
+  "minimumExtensionVersion": "1.20.0",
+  "linkProtectionRequired": true,
+  "providerRules": {
+    "maxPrivacyTier": "strict",
+    "fullUrlAnalysisAllowed": false,
+    "providersAllowed": [
+      "urlhaus"
+    ]
+  },
+  "openingRules": {
+    "warnScore": 50,
+    "blockScore": 80,
+    "malicious": "block",
+    "suspicious": "approval_required",
+    "unknown": "warn",
+    "warnOverride": "reason_required",
+    "auditMode": "requireSealedIntent",
+    "exceptionTtlSeconds": 900,
+    "exceptionMaxUses": 1
+  },
+  "auditData": {
+    "centralUrlMode": "domain_only",
+    "sensitiveEvidenceDays": 7,
+    "eventRetentionDays": 30,
+    "adminAuditRetentionDays": 180,
+    "identityResolutionEnabled": false
+  },
+  "outbox": {
+    "maxBytes": 104857600,
+    "maxEvents": 10000,
+    "maxAgeHours": 168
+  },
+  "health": {
+    "heartbeatSeconds": 300,
+    "lateAfterSeconds": 600,
+    "unknownAfterSeconds": 1200,
+    "policyRefreshSeconds": 300
+  },
+  "requiredCapabilities": [
+    "event-v2",
+    "policy-v1",
+    "broker-v1",
+    "sealed-receipts"
+  ]
+}

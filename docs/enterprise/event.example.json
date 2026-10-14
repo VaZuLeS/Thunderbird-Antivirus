@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "eventId": "00000000-0000-4000-8000-000000000003",
+  "interactionId": "00000000-0000-4000-8000-000000000004",
+  "deviceId": "00000000-0000-4000-8000-000000000005",
+  "streamEpoch": "00000000-0000-4000-8000-000000000006",
+  "sequence": 17,
+  "observedAt": "2026-10-14T08:01:00Z",
+  "kind": "DECISION",
+  "outcome": "ABORTED",
+  "attemptNumber": 0,
+  "policyId": "00000000-0000-4000-8000-000000000002",
+  "policyVersion": 3,
+  "extensionVersion": "1.20.0",
+  "urlMode": "domain_only",
+  "urlRedacted": "https://example.org",
+  "assessment": {
+    "localScore": null,
+    "modelVersion": null,
+    "providerVerdict": "UNKNOWN",
+    "provider": "none",
+    "observedAt": null,
+    "reasonCodes": []
+  },
+  "reason": "escape"
+}

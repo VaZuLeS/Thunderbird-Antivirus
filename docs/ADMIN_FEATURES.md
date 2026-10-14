@@ -28,6 +28,10 @@ Das Protokoll liegt ausschließlich im Thunderbird-Profil: höchstens 30 Tage, 2
 
 Dies ist ein lokal prüfbares Protokoll mit Export, keine manipulationssichere zentrale Unternehmenslösung. Bei Speicherfehlern werden Fehler gemeldet; die Browseröffnung wird dadurch nicht zu einer garantierten Protokollierung. Produktive Auditpflichten benötigen eine administrativ verwaltete, zentrale Lösung mit definierter Ausfallstrategie.
 
+## Vollständig ausgearbeitetes Umsetzungskonzept
+
+Die sechs nächsten Unternehmenspunkte sind im [Enterprise-Umsetzungskonzept](ENTERPRISE_UMSETZUNGSKONZEPT.md) vollständig ausgearbeitet: Architektur, Datenfluss, Geräte-/Adminidentität, Richtlinien, Nachweisgrenzen, Rollen, Incident-Prozess, Datenprofile, 30 Arbeitspakete, Aufwand und Abnahme. [Prüfbare Entwurfsverträge](enterprise/README.md) ergänzen den Plan. Dies ist ein Umsetzungskonzept; die Enterprise-Funktionen sind weiterhin nicht implementiert.
+
 ## Priorisierte zusätzliche Features
 
 | Priorität | Feature | Nutzen für Administratoren | Voraussetzung / konkrete Umsetzung |

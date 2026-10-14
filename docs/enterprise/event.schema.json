@@ -1,0 +1,222 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "interactionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "deviceId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "streamEpoch": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "CLICKED",
+        "ASSESSMENT",
+        "OPEN_INTENT",
+        "DECISION",
+        "ASSESSMENT_UPDATED"
+      ]
+    },
+    "outcome": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        null,
+        "OPENED",
+        "ABORTED",
+        "BLOCKED",
+        "OPEN_ERROR"
+      ]
+    },
+    "attemptNumber": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1000
+    },
+    "policyId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "policyVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "extensionVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "urlMode": {
+      "const": "domain_only"
+    },
+    "urlRedacted": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://[^/?#@\\s]+/?$",
+      "maxLength": 2048
+    },
+    "assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "localScore": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "modelVersion": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 80
+        },
+        "providerVerdict": {
+          "type": "string",
+          "enum": [
+            "UNKNOWN",
+            "CLEAN",
+            "SUSPICIOUS",
+            "MALICIOUS",
+            "MALICIOUS_VISUAL",
+            "ERROR",
+            "TIMEOUT",
+            "NOT_CHECKED"
+          ]
+        },
+        "provider": {
+          "type": "string",
+          "enum": [
+            "none",
+            "hybridanalysis",
+            "urlscan"
+          ]
+        },
+        "observedAt": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reasonCodes": {
+          "type": "array",
+          "maxItems": 20,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{0,79}$"
+          }
+        }
+      },
+      "required": [
+        "localScore",
+        "modelVersion",
+        "providerVerdict",
+        "provider",
+        "observedAt",
+        "reasonCodes"
+      ]
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        null,
+        "cancel",
+        "escape",
+        "destination_changed",
+        "context_closed",
+        "policy_block",
+        "browser_error"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "interactionId",
+    "deviceId",
+    "streamEpoch",
+    "sequence",
+    "observedAt",
+    "kind",
+    "outcome",
+    "attemptNumber",
+    "policyId",
+    "policyVersion",
+    "extensionVersion",
+    "urlMode",
+    "urlRedacted",
+    "assessment",
+    "reason"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:thundy:enterprise:event:2",
+  "title": "Proposed domain-only device event payload, unsigned draft",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "DECISION"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "OPENED",
+              "ABORTED",
+              "BLOCKED",
+              "OPEN_ERROR"
+            ]
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "outcome": {
+            "const": null
+          }
+        }
+      }
+    }
+  ]
+}

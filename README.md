@@ -159,6 +159,10 @@ npm run store-gate                                    # submission readiness gat
 - The manual live test in Thunderbird 140 ESR is described in [docs/live_test_protocol.md](docs/live_test_protocol.md).
 - More details: [docs/quickstart.md](docs/quickstart.md).
 
+## Enterprise implementation concept
+
+The six proposed enterprise capabilities are fully specified in [the implementation concept](docs/ENTERPRISE_UMSETZUNGSKONZEPT.md), including device/server trust, policies, OIDC roles, incidents, privacy, operational recovery, work packages and acceptance criteria. [Draft data contracts](docs/enterprise/README.md) include validated policy/event examples. This is a design and delivery plan; the enterprise capabilities are not implemented by version 1.20.0.
+
 ## Version 1.20.0 — Link decisions and review
 
 **Review link log** in settings or the message popup shows intercepted HTTP(S) clicks, full URLs, local context scores, provider verdicts and opened/aborted/error/pending decisions. Filters and JSON/CSV exports support administrator review; the decision-time assessment stays separate from late check results. High-risk openings are highlighted. Logs remain local, bounded to 30 days / 2,000 events / 2 MiB, and can be deleted independently of caches.

@@ -1,0 +1,313 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "organizationId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "policyId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2147483647
+    },
+    "issuedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "groupIds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      },
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true
+    },
+    "minimumExtensionVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "linkProtectionRequired": {
+      "const": true
+    },
+    "providerRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxPrivacyTier": {
+          "type": "string",
+          "enum": [
+            "strict",
+            "balanced",
+            "max"
+          ]
+        },
+        "fullUrlAnalysisAllowed": {
+          "type": "boolean"
+        },
+        "providersAllowed": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 5,
+          "items": {
+            "type": "string",
+            "enum": [
+              "hybridanalysis",
+              "virustotal",
+              "urlhaus",
+              "urlscan",
+              "abuseipdb"
+            ]
+          }
+        }
+      },
+      "required": [
+        "maxPrivacyTier",
+        "fullUrlAnalysisAllowed",
+        "providersAllowed"
+      ]
+    },
+    "openingRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "warnScore": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99
+        },
+        "blockScore": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "malicious": {
+          "const": "block"
+        },
+        "suspicious": {
+          "type": "string",
+          "enum": [
+            "block",
+            "approval_required"
+          ]
+        },
+        "unknown": {
+          "type": "string",
+          "enum": [
+            "block",
+            "warn",
+            "approval_required"
+          ]
+        },
+        "warnOverride": {
+          "type": "string",
+          "enum": [
+            "deny",
+            "reason_required",
+            "approval_required"
+          ]
+        },
+        "auditMode": {
+          "type": "string",
+          "enum": [
+            "requireSealedIntent",
+            "queueAllowed"
+          ]
+        },
+        "exceptionTtlSeconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600
+        },
+        "exceptionMaxUses": {
+          "const": 1
+        }
+      },
+      "required": [
+        "warnScore",
+        "blockScore",
+        "malicious",
+        "suspicious",
+        "unknown",
+        "warnOverride",
+        "auditMode",
+        "exceptionTtlSeconds",
+        "exceptionMaxUses"
+      ]
+    },
+    "auditData": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "centralUrlMode": {
+          "type": "string",
+          "enum": [
+            "domain_only",
+            "approved_path",
+            "encrypted_detail"
+          ]
+        },
+        "sensitiveEvidenceDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30
+        },
+        "eventRetentionDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 90
+        },
+        "adminAuditRetentionDays": {
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 365
+        },
+        "identityResolutionEnabled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "centralUrlMode",
+        "sensitiveEvidenceDays",
+        "eventRetentionDays",
+        "adminAuditRetentionDays",
+        "identityResolutionEnabled"
+      ]
+    },
+    "outbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "maxBytes": {
+          "type": "integer",
+          "minimum": 1048576,
+          "maximum": 1073741824
+        },
+        "maxEvents": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 100000
+        },
+        "maxAgeHours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 168
+        }
+      },
+      "required": [
+        "maxBytes",
+        "maxEvents",
+        "maxAgeHours"
+      ]
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "heartbeatSeconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 1800
+        },
+        "lateAfterSeconds": {
+          "type": "integer",
+          "minimum": 120,
+          "maximum": 3600
+        },
+        "unknownAfterSeconds": {
+          "type": "integer",
+          "minimum": 180,
+          "maximum": 7200
+        },
+        "policyRefreshSeconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 900
+        }
+      },
+      "required": [
+        "heartbeatSeconds",
+        "lateAfterSeconds",
+        "unknownAfterSeconds",
+        "policyRefreshSeconds"
+      ]
+    },
+    "requiredCapabilities": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "event-v2",
+          "policy-v1",
+          "broker-v1",
+          "sealed-receipts"
+        ]
+      },
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "organizationId",
+    "policyId",
+    "version",
+    "issuedAt",
+    "expiresAt",
+    "groupIds",
+    "minimumExtensionVersion",
+    "linkProtectionRequired",
+    "providerRules",
+    "openingRules",
+    "auditData",
+    "outbox",
+    "health",
+    "requiredCapabilities"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:thundy:enterprise:policy:1",
+  "title": "Proposed enterprise policy payload, unsigned draft",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "providerRules": {
+            "properties": {
+              "maxPrivacyTier": {
+                "enum": [
+                  "strict",
+                  "balanced"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "providerRules": {
+            "properties": {
+              "fullUrlAnalysisAllowed": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

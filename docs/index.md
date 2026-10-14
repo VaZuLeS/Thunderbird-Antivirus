@@ -50,3 +50,7 @@ without consent. There is no telemetry, no analytics and no developer-operated s
 - Release 1.19.1: fixed popup sizing, default-browser link opening and redesigned security UI. [Release notes](releases/1.19.1.md).
 - Release 1.19.0: complete EN/DE/FR/ES/IT/PL, 485 passing tests, no lint errors, verified unsigned XPI. [Release notes](releases/1.19.0.md).
 - Real-client verification remains open: [live_test_1_20_0.md](live_test_1_20_0.md). GitHub publication is separate from Thunderbird Store signing and submission.
+
+## Enterprise implementation concept
+
+[Complete six-feature implementation concept](ENTERPRISE_UMSETZUNGSKONZEPT.md) · [Draft schemas and examples](enterprise/README.md). These describe planned capabilities, not new functionality in the existing release.
