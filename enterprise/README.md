@@ -18,7 +18,7 @@ Prüfen: `npm ci` und `node --test enterprise/test/contracts.test.js`; die Suite
 
 Die Bibliothek nimmt den bereits authentifizierten Kontext von einem zukünftigen vertrauenswürdigen Broker/Backend entgegen. Eine beliebige vom UI gelieferte Schlüsselregistry oder `intentSealed: true` ist **keine** gültige Unternehmensauthentifizierung bzw. Empfangsquittung. Lokale Quittungsprüfung, Event-State-Machine und persistente Sequenzen sind inzwischen als separate Entwicklungsbausteine implementiert. Enrollment und geschützter Unternehmens-Schlüssel-/Versionsspeicher bleiben offen.
 
-Eine lokale Outbox, Loopback-Zustellung und optionale Storage-Prüfadapter sind inzwischen implementiert. Geräteverteilung, produktive Netzwerkübermittlung, SSO, Rollenprüfung, produktive Object Locks, Incidents, Vault, Server-Retention und OS-/Thunderbird-Abnahme bleiben offen. Die Policy-ID-/Gruppen-/Schlüsselzuordnung muss aus dem späteren Unternehmenskanal stammen. `allow_intent` erlaubt nur einen geprüften Öffnungswunsch im Modell; es erzeugt kein `OPENED`-Ereignis und öffnet keinen Browser.
+Eine lokale Outbox, Loopback-Zustellung und optionale Storage-Prüfadapter sind inzwischen implementiert. Geräteverteilung, produktive Netzwerkübermittlung, SSO, Rollenprüfung, produktive Object Locks, Incidentlebenszyklus, Vault, Server-Retention und OS-/Thunderbird-Abnahme bleiben offen. Die Policy-ID-/Gruppen-/Schlüsselzuordnung muss aus dem späteren Unternehmenskanal stammen. `allow_intent` erlaubt nur einen geprüften Öffnungswunsch im Modell; es erzeugt kein `OPENED`-Ereignis und öffnet keinen Browser.
 
 **Kein Arbeitspaket gilt durch diese Vorbereitung insgesamt als abgeschlossen.** Vollständige Umsetzung/Abnahme bleibt an die Unternehmensentscheidungen und Freigaben aus F01–F04 gebunden. Der [Umsetzungsstand mit Blockern](../docs/ENTERPRISE_UMSETZUNGSSTAND.md) führt alle 30 Pakete auf.
 
@@ -60,4 +60,8 @@ Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbar
 
 ## Dauerhafter Policystand
 
-`PolicyState` speichert angenommene Versionsstände und Schlüsselwiderrufe mit signierter Wiederaufnahme. Entscheidungen prüfen den aktuellen gespeicherten Stand; kein Extension-Hook aktiviert. [API, Trustwerte und Recovery](../docs/ENTERPRISE_POLICY_STATE.md). N01/N02 des Ausführungsplans sind lokal implementiert; als nächstes folgen versionierte Incidentregeln.
+`PolicyState` speichert angenommene Versionsstände und Schlüsselwiderrufe mit signierter Wiederaufnahme. Entscheidungen prüfen den aktuellen gespeicherten Stand; kein Extension-Hook aktiviert. [API, Trustwerte und Recovery](../docs/ENTERPRISE_POLICY_STATE.md). N01–N03 des Ausführungsplans sind lokal implementiert; als nächstes folgen minimierte Betriebsberichte.
+
+## Versionierte Incidentregeln
+
+`enterprise:incidents --export ... --rules ... --server-public-key ... --server-key-id ... --registry ... --out ...` leitet Incidentkandidaten aus vollständig geprüften signierten Entscheidungen ab. Damalige Scores, Policyversionen und Domain-URLs bleiben verbunden; wiederholte Verarbeitung erzeugt dieselben IDs. [Regelformat, Public-Key-CLI und Grenzen](../docs/ENTERPRISE_INCIDENTREGELN.md). Persistente Fälle, SSO-Rollen, Portal und Tickettransport bleiben offen.

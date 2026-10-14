@@ -54,3 +54,5 @@ without consent. There is no telemetry, no analytics and no developer-operated s
 ## Enterprise implementation concept
 
 [Complete six-feature implementation concept](ENTERPRISE_UMSETZUNGSKONZEPT.md) · [Draft schemas and examples](enterprise/README.md). These describe planned capabilities, not new functionality in the existing release.
+
+[Versioned incident rules and reproducible offline derivation](ENTERPRISE_INCIDENTREGELN.md) · [Prioritized execution plan](ENTERPRISE_NAECHSTE_SCHRITTE.md). Local backend preparation; persistent cases, enterprise roles and ticket delivery remain open.

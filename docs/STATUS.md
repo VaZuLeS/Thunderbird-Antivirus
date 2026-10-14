@@ -1,3 +1,9 @@
+# Versionierte Incidentregeln — 14. Oktober 2026
+
+730 Tests im Gesamtgate. Offline-Ableitung aus geprüften Server-/Gerätesignaturen: damaliger Score, Policyversion und Domain-URL bleiben an die Entscheidung gebunden. Stabile regelgebundene IDs erlauben Wiederverarbeitung; unbekannte Scores und spätere Neubewertungen werden ausdrücklich unterschieden. Public-Key-CLI ohne Writer-Lock oder Ticketversand. Persistente Fälle, SSO-Rollen und SEALED bleiben offen. [Regeln und API](ENTERPRISE_INCIDENTREGELN.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).
+
+---
+
 # Dauerhafter Policystand — 14. Oktober 2026
 
 721 Tests im Gesamtgate. Policyversionen und Schlüsselwiderrufe werden vor Bestätigung in einem signierten Journal synchronisiert und nach Neustart wieder geprüft. Rollback, gleiche Version mit anderem Inhalt, Uhr-Rücklauf und Schreibfehler autorisieren keine neue Entscheidung. Node-only; produktiver Policykanal, OS-/Rollenintegration und SEALED bleiben offen. [Verhalten und Recovery](ENTERPRISE_POLICY_STATE.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).
