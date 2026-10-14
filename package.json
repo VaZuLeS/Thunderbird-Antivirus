@@ -32,7 +32,8 @@
     "enterprise:broker": "node enterprise/broker.cjs",
     "enterprise:witness": "node enterprise/witness_cli.cjs",
     "enterprise:storage": "node enterprise/storage_cli.cjs",
-    "enterprise:storage-jobs": "node enterprise/storage_jobs_cli.cjs"
+    "enterprise:storage-jobs": "node enterprise/storage_jobs_cli.cjs",
+    "enterprise:storage-verify": "node enterprise/storage_verify.cjs"
   },
   "devDependencies": {
     "ajv": "8.20.0",

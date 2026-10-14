@@ -53,3 +53,7 @@ Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbar
 ## Offline-Adminübersicht der Speicheraufträge
 
 `enterprise:storage-jobs review --queue ... --config ... --lang de --out ...` erzeugt eine sechssprachige Ansicht mit Filtern, Kapazität, Fehlern, Wiederholungen, Versionen und Fristen. [Bedienung und Zugriffsgrenzen](../docs/ENTERPRISE_STORAGE_ADMIN.md). Die Ansicht enthält keine Schreibaktionen; HTML/JSON bleiben unsignierte Statuszusammenfassungen.
+
+## Öffentliche Schlüssel für unabhängige Jobprüfung
+
+`enterprise:storage-verify verify/review --journal ... --config ...` prüft ein Journal und erzeugt die bestehende sechssprachige Adminansicht ohne privaten Writer-Schlüssel. [Trustwerte, Kopfbindung und Grenzen](../docs/ENTERPRISE_PUBLIC_KEY_PRUEFUNG.md). [Priorisierte nächste Schritte](../docs/ENTERPRISE_NAECHSTE_SCHRITTE.md).

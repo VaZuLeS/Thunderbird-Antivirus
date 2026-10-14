@@ -845,3 +845,208 @@ test("cloud worker process exit after readback resumes the same conditional obje
   assert.equal(done.totalAttempts, 2);
   assert.equal(done.objectVersion, "version-1");
 });
+
+function verifyOptions(f, extra = {}) {
+  return {
+    signerKeyId: f.options.signerKeyId,
+    signerPublicKey: crypto.createPublicKey(f.options.signerPrivateKey),
+    trust: f.trust,
+    ...extra,
+  };
+}
+test("public-key replay matches writer status without changing files or lock", (t) => {
+  const f = context(t),
+    q = f.open();
+  f.enqueue(q);
+  q.runOne();
+  const content = fs.readFileSync(q.logPath),
+    before = fs.statSync(q.logPath),
+    lock = fs.readFileSync(q.lockPath);
+  const status = StorageJobs.verifyJournal(
+    content,
+    verifyOptions(f, { expectedHead: q.head() }),
+  );
+  assert.deepEqual(status.jobs, q.status().jobs);
+  assert.equal(status.verification.actionCount, 3);
+  assert.equal(status.verification.headPinned, true);
+  assert.equal(status.verification.sealed, false);
+  assert.deepEqual(fs.readFileSync(q.lockPath), lock);
+  assert.equal(fs.statSync(q.logPath).mtimeMs, before.mtimeMs);
+  assert.deepEqual(fs.readFileSync(q.logPath), content);
+});
+test("public-key verification rejects signatures, changed roots and incomplete journal tails", (t) => {
+  const f = context(t),
+    q = f.open();
+  f.enqueue(q);
+  const text = fs.readFileSync(q.logPath, "utf8");
+  assert.throws(() =>
+    StorageJobs.verifyJournal(
+      text.replace('"QUEUED"', '"WRITING"'),
+      verifyOptions(f),
+    ),
+  );
+  assert.throws(() =>
+    StorageJobs.verifyJournal(
+      text,
+      verifyOptions(f, {
+        signerPublicKey: crypto.generateKeyPairSync("ed25519").publicKey,
+      }),
+    ),
+  );
+  assert.throws(
+    () =>
+      StorageJobs.verifyJournal(
+        text,
+        verifyOptions(f, { trust: { ...f.trust, serverKeyId: "other" } }),
+      ),
+    { code: "JOBS_CHAIN_INVALID" },
+  );
+  assert.throws(
+    () => StorageJobs.verifyJournal(text.slice(0, -1), verifyOptions(f)),
+    { code: "JOBS_LOG_INCOMPLETE" },
+  );
+  assert.throws(
+    () =>
+      StorageJobs.verifyJournal(
+        text,
+        verifyOptions(f, { signerPublicKey: f.options.signerPrivateKey }),
+      ),
+    { code: "JOBS_PUBLIC_KEY_REQUIRED" },
+  );
+});
+test("public-key journal pin rejects valid-tail truncation; unpinned verification reports its limit", (t) => {
+  const f = context(t),
+    q = f.open();
+  f.enqueue(q);
+  const prefix = fs.readFileSync(q.logPath);
+  q.runOne();
+  assert.throws(
+    () =>
+      StorageJobs.verifyJournal(
+        prefix,
+        verifyOptions(f, { expectedHead: q.head() }),
+      ),
+    { code: "JOBS_HEAD_MISMATCH" },
+  );
+  assert.equal(
+    StorageJobs.verifyJournal(prefix, verifyOptions(f)).verification.headPinned,
+    false,
+  );
+});
+test("public-key replay validates state transitions even with valid writer signatures", (t) => {
+  const f = context(t),
+    q = f.open();
+  const id = f.enqueue(q).jobId;
+  const forged = signed(
+    {
+      schemaVersion: 1,
+      trustId: q.trustId,
+      index: 2,
+      previousHash: q.head(),
+      at: new Date().toISOString(),
+      kind: "SEALED",
+      jobId: id,
+      data: null,
+    },
+    q.signerKeyId,
+    f.options.signerPrivateKey,
+  );
+  assert.throws(
+    () =>
+      StorageJobs.verifyJournal(
+        fs.readFileSync(q.logPath, "utf8") + JSON.stringify(forged) + "\n",
+        verifyOptions(f),
+      ),
+    { code: "JOBS_ACTION_INVALID" },
+  );
+});
+test("verifier CLI works with public-only files and a live writer lock; preserves original inputs", (t) => {
+  const f = context(t),
+    q = f.open();
+  f.enqueue(q);
+  q.runOne();
+  const saved = files(f),
+    writerConfig = JSON.parse(fs.readFileSync(saved.configFile)),
+    publicFile = path.join(f.root, "jobs-public.pem"),
+    configFile = path.join(f.root, "public-config.json"),
+    out = path.join(f.root, "public-review.html");
+  fs.writeFileSync(
+    publicFile,
+    crypto
+      .createPublicKey(f.options.signerPrivateKey)
+      .export({ type: "spki", format: "pem" }),
+  );
+  const config = { ...writerConfig, signerPublicKeyFile: publicFile };
+  delete config.signerPrivateKeyFile;
+  fs.writeFileSync(configFile, JSON.stringify(config));
+  fs.unlinkSync(writerConfig.signerPrivateKeyFile);
+  const cli = path.resolve(__dirname, "../storage_verify.cjs"),
+    args = [
+      "--journal",
+      q.logPath,
+      "--config",
+      configFile,
+      "--expected-head",
+      q.head(),
+    ],
+    before = fs.readFileSync(q.logPath);
+  const verified = spawnSync(process.execPath, [cli, "verify", ...args], {
+    encoding: "utf8",
+  });
+  assert.equal(verified.status, 0, verified.stderr);
+  assert.equal(
+    JSON.parse(verified.stdout).verification.signaturesVerified,
+    true,
+  );
+  const reviewed = spawnSync(
+    process.execPath,
+    [cli, "review", ...args, "--lang", "pl", "--out", out],
+    { encoding: "utf8" },
+  );
+  assert.equal(reviewed.status, 0, reviewed.stderr);
+  assert.equal(fs.statSync(out).mode & 0o077, 0);
+  assert.equal(fs.readFileSync(out, "utf8").includes('lang="pl"'), true);
+  assert.deepEqual(fs.readFileSync(q.logPath), before);
+  assert.ok(fs.existsSync(q.lockPath));
+  const repeat = spawnSync(
+    process.execPath,
+    [cli, "review", ...args, "--out", out],
+    { encoding: "utf8" },
+  );
+  assert.equal(repeat.status, 1);
+  assert.match(repeat.stderr, /VERIFY_OUTPUT_EXISTS/);
+});
+test("verifier rejects private-key config fields, symlink journals and excessive bytes", (t) => {
+  const f = context(t),
+    q = f.open();
+  f.enqueue(q);
+  const saved = files(f),
+    {
+      loadConfig,
+      readJournal,
+      publicKeyFile,
+      parse,
+    } = require("../storage_verify.cjs");
+  assert.throws(() => loadConfig(saved.configFile), /VERIFY_CONFIG_INVALID/);
+  const cfg = JSON.parse(fs.readFileSync(saved.configFile));
+  assert.throws(
+    () => publicKeyFile(cfg.signerPrivateKeyFile),
+    /VERIFY_PUBLIC_KEY_REQUIRED/,
+  );
+  const link = path.join(f.root, "journal-link");
+  fs.symlinkSync(q.logPath, link);
+  assert.throws(() => readJournal(link), /VERIFY_JOURNAL_INVALID/);
+  assert.throws(() => readJournal(q.logPath, 1), /VERIFY_JOURNAL_INVALID/);
+  assert.throws(
+    () =>
+      parse("verify", [
+        "--journal",
+        q.logPath,
+        "--config",
+        saved.configFile,
+        "--lang",
+        "de",
+      ]),
+    /VERIFY_ARGUMENT_INVALID/,
+  );
+});

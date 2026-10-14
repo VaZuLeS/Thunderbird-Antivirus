@@ -45,7 +45,120 @@ const seal = (value) => {
   }
   return value;
 };
+function initializeReplay(
+  target,
+  {
+    signerKeyId,
+    signerPublicKey,
+    trust,
+    maxBytes = 128 * 1024 * 1024,
+    maxJobs = 1000,
+    maxAttempts = 5,
+  },
+) {
+  need(
+    typeof signerKeyId === "string" &&
+      /^[A-Za-z0-9_-]{1,80}$/.test(signerKeyId),
+    "JOBS_KEY_INVALID",
+  );
+  need(
+    signerPublicKey?.type !== "private" &&
+      !(
+        (typeof signerPublicKey === "string" ||
+          Buffer.isBuffer(signerPublicKey)) &&
+        String(signerPublicKey).includes("PRIVATE KEY")
+      ),
+    "JOBS_PUBLIC_KEY_REQUIRED",
+  );
+  target.publicKey =
+    signerPublicKey?.type === "public"
+      ? signerPublicKey
+      : crypto.createPublicKey(signerPublicKey);
+  need(
+    target.publicKey.type === "public" &&
+      target.publicKey.asymmetricKeyType === "ed25519",
+    "JOBS_KEY_INVALID",
+  );
+  need(
+    Number.isSafeInteger(maxBytes) &&
+      maxBytes > 0 &&
+      maxBytes <= 256 * 1024 * 1024 &&
+      Number.isSafeInteger(maxJobs) &&
+      maxJobs > 0 &&
+      maxJobs <= 10000 &&
+      Number.isSafeInteger(maxAttempts) &&
+      maxAttempts > 0 &&
+      maxAttempts <= 100,
+    "JOBS_LIMIT_INVALID",
+  );
+  // Roots come from the operator, never from an exported evidence bundle.
+  target.trust = seal({
+    serverPublicKey: pem(trust.serverPublicKey),
+    serverKeyId: trust.serverKeyId,
+    witnessPublicKey: pem(trust.witnessPublicKey),
+    registrations: clone(trust.registrations),
+  });
+  need(
+    typeof target.trust.serverKeyId === "string" &&
+      Array.isArray(target.trust.registrations) &&
+      target.trust.registrations.length > 0,
+    "JOBS_TRUST_REQUIRED",
+  );
+  deviceRegistry(target.trust.registrations);
+  need(
+    [target.trust.serverPublicKey, target.trust.witnessPublicKey].every(
+      (key) => crypto.createPublicKey(key).asymmetricKeyType === "ed25519",
+    ),
+    "JOBS_TRUST_INVALID",
+  );
+  target.trustId = hash(target.trust);
+  Object.assign(target, {
+    signerKeyId,
+    maxBytes,
+    maxJobs,
+    maxAttempts,
+  });
+  target.jobs = new Map();
+  target.records = [];
+  target.bytes = 0;
+  target.closed = false;
+  target.poisoned = false;
+  target.busy = false;
+}
 class StorageJobs {
+  static verifyJournal(content, options) {
+    need(
+      typeof content === "string" || Buffer.isBuffer(content),
+      "JOBS_LOG_INVALID",
+    );
+    const replay = Object.create(StorageJobs.prototype);
+    initializeReplay(replay, options);
+    need(
+      Buffer.byteLength(content) <= replay.maxBytes,
+      "JOBS_CAPACITY_EXCEEDED",
+    );
+    const text = Buffer.isBuffer(content) ? content.toString("utf8") : content;
+    need(!text || text.endsWith("\n"), "JOBS_LOG_INCOMPLETE");
+    for (const line of text.split("\n").filter(Boolean))
+      replay.apply(JSON.parse(line), true);
+    replay.bytes = Buffer.byteLength(content);
+    if (options.expectedHead !== undefined)
+      need(options.expectedHead === replay.head(), "JOBS_HEAD_MISMATCH");
+    return {
+      ...replay.status(),
+      verification: {
+        signaturesVerified: true,
+        headPinned: options.expectedHead !== undefined,
+        actionCount: replay.records.length,
+        signerKeyId: replay.signerKeyId,
+        signerFingerprint: crypto
+          .createHash("sha256")
+          .update(replay.publicKey.export({ type: "spki", format: "der" }))
+          .digest("hex"),
+        sealed: false,
+      },
+    };
+  }
   constructor({
     directory,
     signerKeyId,
@@ -70,53 +183,15 @@ class StorageJobs {
         : crypto.createPrivateKey(signerPrivateKey);
     this.publicKey = crypto.createPublicKey(this.privateKey);
     need(this.privateKey.asymmetricKeyType === "ed25519", "JOBS_KEY_INVALID");
-    need(
-      Number.isSafeInteger(maxBytes) &&
-        maxBytes > 0 &&
-        maxBytes <= 256 * 1024 * 1024 &&
-        Number.isSafeInteger(maxJobs) &&
-        maxJobs > 0 &&
-        maxJobs <= 10000 &&
-        Number.isSafeInteger(maxAttempts) &&
-        maxAttempts > 0 &&
-        maxAttempts <= 100,
-      "JOBS_LIMIT_INVALID",
-    );
-    // Roots come from the operator, never from an exported evidence bundle.
-    this.trust = seal({
-      serverPublicKey: pem(trust.serverPublicKey),
-      serverKeyId: trust.serverKeyId,
-      witnessPublicKey: pem(trust.witnessPublicKey),
-      registrations: clone(trust.registrations),
-    });
-    need(
-      typeof this.trust.serverKeyId === "string" &&
-        Array.isArray(this.trust.registrations) &&
-        this.trust.registrations.length > 0,
-      "JOBS_TRUST_REQUIRED",
-    );
-    deviceRegistry(this.trust.registrations);
-    need(
-      [this.trust.serverPublicKey, this.trust.witnessPublicKey].every(
-        (key) => crypto.createPublicKey(key).asymmetricKeyType === "ed25519",
-      ),
-      "JOBS_TRUST_INVALID",
-    );
-    this.trustId = hash(this.trust);
-    Object.assign(this, {
+    initializeReplay(this, {
       signerKeyId,
-      clock,
+      signerPublicKey: this.publicKey,
+      trust,
       maxBytes,
       maxJobs,
       maxAttempts,
-      io,
     });
-    this.jobs = new Map();
-    this.records = [];
-    this.bytes = 0;
-    this.closed = false;
-    this.poisoned = false;
-    this.busy = false;
+    Object.assign(this, { clock, io });
     this.directory = path.resolve(directory);
     fs.mkdirSync(this.directory, { recursive: true, mode: 0o700 });
     const stat = fs.lstatSync(this.directory);
