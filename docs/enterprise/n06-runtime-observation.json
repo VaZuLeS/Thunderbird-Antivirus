@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-local-acceptance-probe",
+  "observedAt": "2026-10-14T20:01:13.279Z",
+  "platform": "linux",
+  "architecture": "x64",
+  "nodeVersion": "v24.19.0",
+  "thunderbirdBinaryFound": false,
+  "thunderbirdLiveTestExecuted": false,
+  "windowsMacAcceptanceExecuted": false,
+  "cloudReadiness": "not_inspected",
+  "ssoReadiness": "not_inspected",
+  "productionAccepted": false,
+  "sealed": false,
+  "managedRuntimeObservation": {
+    "observationsCurrent": true,
+    "networkPolicyState": "enforced",
+    "secretBindings": 0,
+    "runtimeVariables": 0,
+    "outboundIdentities": 0,
+    "infrastructureCapabilities": 0
+  }
+}

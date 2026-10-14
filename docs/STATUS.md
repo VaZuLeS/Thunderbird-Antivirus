@@ -1,3 +1,9 @@
+# N03–N06 autonom fortgeführt — 14. Oktober 2026
+
+765 Tests im Gesamtgate und 24 Chromium-Layouts der neuen sechssprachigen Betriebsberichte. N03 erneut geprüft; N04 liefert minimierte Reports und dauerhafte Alarmdämpfung. N05 liefert vier optionale SIEM-Offlineformate mit signierter Exportqueue, Deduplizierung, Retry und Recovery. N06 wurde auf Ausführbarkeit geprüft: keine Unternehmenszugänge/Thunderbird-/Windows-/macOS-Systeme; produktive SEALED-/SSO-/OS-Pfade bleiben unimplementiert. Ein signatur- und artefaktgebundener Nachweisprüfer dokumentiert fehlende Unterlagen, erteilt aber keine Freigabe. Extension 1.22.0 unverändert. [Betriebsberichte](ENTERPRISE_BETRIEBSBERICHTE.md) · [SIEM-Queue](ENTERPRISE_SIEM_EXPORTQUEUE.md) · [N06-Abnahme](ENTERPRISE_N06_ABNAHME.md) · [Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).
+
+---
+
 # Versionierte Incidentregeln — 14. Oktober 2026
 
 730 Tests im Gesamtgate. Offline-Ableitung aus geprüften Server-/Gerätesignaturen: damaliger Score, Policyversion und Domain-URL bleiben an die Entscheidung gebunden. Stabile regelgebundene IDs erlauben Wiederverarbeitung; unbekannte Scores und spätere Neubewertungen werden ausdrücklich unterschieden. Public-Key-CLI ohne Writer-Lock oder Ticketversand. Persistente Fälle, SSO-Rollen und SEALED bleiben offen. [Regeln und API](ENTERPRISE_INCIDENTREGELN.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).

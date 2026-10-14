@@ -56,3 +56,5 @@ without consent. There is no telemetry, no analytics and no developer-operated s
 [Complete six-feature implementation concept](ENTERPRISE_UMSETZUNGSKONZEPT.md) · [Draft schemas and examples](enterprise/README.md). These describe planned capabilities, not new functionality in the existing release.
 
 [Versioned incident rules and reproducible offline derivation](ENTERPRISE_INCIDENTREGELN.md) · [Prioritized execution plan](ENTERPRISE_NAECHSTE_SCHRITTE.md). Local backend preparation; persistent cases, enterprise roles and ticket delivery remain open.
+
+[Local operational reports in six languages](ENTERPRISE_BETRIEBSBERICHTE.md) · [Optional SIEM formats and durable offline queue](ENTERPRISE_SIEM_EXPORTQUEUE.md) · [N06 live acceptance requirements](ENTERPRISE_N06_ABNAHME.md). Production integration remains incomplete; evidence readiness does not grant activation.

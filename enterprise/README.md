@@ -60,8 +60,16 @@ Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbar
 
 ## Dauerhafter Policystand
 
-`PolicyState` speichert angenommene Versionsstände und Schlüsselwiderrufe mit signierter Wiederaufnahme. Entscheidungen prüfen den aktuellen gespeicherten Stand; kein Extension-Hook aktiviert. [API, Trustwerte und Recovery](../docs/ENTERPRISE_POLICY_STATE.md). N01–N03 des Ausführungsplans sind lokal implementiert; als nächstes folgen minimierte Betriebsberichte.
+`PolicyState` speichert angenommene Versionsstände und Schlüsselwiderrufe mit signierter Wiederaufnahme. Entscheidungen prüfen den aktuellen gespeicherten Stand; kein Extension-Hook aktiviert. [API, Trustwerte und Recovery](../docs/ENTERPRISE_POLICY_STATE.md). N01–N05 des Ausführungsplans sind lokal implementiert; N06 bleibt wegen fehlender realer Systeme und produktiver Kernpfade blockiert.
 
 ## Versionierte Incidentregeln
 
 `enterprise:incidents --export ... --rules ... --server-public-key ... --server-key-id ... --registry ... --out ...` leitet Incidentkandidaten aus vollständig geprüften signierten Entscheidungen ab. Damalige Scores, Policyversionen und Domain-URLs bleiben verbunden; wiederholte Verarbeitung erzeugt dieselben IDs. [Regelformat, Public-Key-CLI und Grenzen](../docs/ENTERPRISE_INCIDENTREGELN.md). Persistente Fälle, SSO-Rollen, Portal und Tickettransport bleiben offen.
+
+## Betriebsberichte, optionale SIEM-Queue und N06-Nachweise
+
+`enterprise:health report/observe` erzeugt minimierte JSON-/sechssprachige HTML-Berichte und speichert lokale Alarmdämpfung dauerhaft. [API und Recovery](../docs/ENTERPRISE_BETRIEBSBERICHTE.md).
+
+`enterprise:connectors profile/enqueue/run/status/retry` erzeugt optionale SIEM-Dateien aus verifizierten Entscheidungen mit dauerhafter Deduplizierung/Backoff/Dead Letters. [Formate und Worker-Konfiguration](../docs/ENTERPRISE_SIEM_EXPORTQUEUE.md). Externe Zustellung bleibt deaktiviert.
+
+`enterprise:acceptance probe/draft/check` prüft lokale Verfügbarkeit und signierte, artefaktgebundene Abnahmeunterlagen. [Acht erforderliche Live-Nachweise und tatsächliche Blocker](../docs/ENTERPRISE_N06_ABNAHME.md). Auch vollständige Unterlagen autorisieren keine SEALED-Transition oder Produktivaktivierung.
