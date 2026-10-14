@@ -74,3 +74,7 @@ Noch erforderlich sind reale Anbieterabnahmen mit freigegebenen Identitäten, ne
 21 neue Tests prüfen volle Witness-/Gerätebindung, Aktivierungsschutz, Region/Owner/Endpoint, Versionierung, Locked/Compliance statt Governance, Generation und Verschlüsselung, zu kurze/abgelaufene Retention, GCP-Bucketfristen, Readback-Manipulation/Größenlimits, Conditional Retry, SDK-Mapping, unveränderte Settings während asynchroner Aufrufe, fehlerhafte Append-Blobs, redigierte Fehler sowie den gesamten lokalen CLI-Simulator. Die Cloudfälle verwenden Testdoubles, keine echten Anbieterzugänge.
 
 [Status aller Enterprise-Arbeitspakete](ENTERPRISE_UMSETZUNGSSTAND.md). Der nächste Schritt ist der transaktionale Storage-/SEALED-Workflow mit dauerhafter Server-Outbox und Recovery; produktive Aktivierung bleibt an reale Betriebsfreigaben gebunden.
+
+## Dauerhafte lokale Aufträge
+
+Der [Storage-Jobworkflow](ENTERPRISE_STORAGE_JOBS.md) ergänzt persistente, signierte Aufträge und Wiederaufnahme für den lokalen Simulator. Cloudadapter sind noch nicht an diese Queue angebunden; der Simulationsabschluss ist ausdrücklich kein SEALED-Nachweis.

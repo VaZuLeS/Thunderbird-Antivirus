@@ -1,3 +1,9 @@
+# Dauerhafte lokale Storage-Aufträge — 14. Oktober 2026
+
+659 Tests bestanden. Signierter Jobworkflow mit stabiler Evidenz-/Zielbindung, Wiederaufnahme nach Prozessabbruch, Retry/Dead Letters und prüfbarem CLI-Status ergänzt. Der Worker verarbeitet ausschließlich lokale Simulationen; Cloudadapter sind noch nicht dauerhaft angebunden. Kein SEALED oder Broker-Retirement. [Betrieb und Recovery](ENTERPRISE_STORAGE_JOBS.md).
+
+---
+
 # Optionale Storage-Adapter — 14. Oktober 2026
 
 639 Tests bestanden. S3-, Azure- und GCP-SDK-Adapter sowie lokaler Simulator implementiert. Profile bleiben deaktiviert; geprüft werden Identität/Region, Version, Schlüssel, Sperrfristen und tatsächlicher Readback. Cloudtests nutzen Testdoubles. Keine Cloudaktivierung, kein SEALED und kein Löschen von Brokerdaten. [Profile, Simulator und Abnahmegrenzen](ENTERPRISE_STORAGE_ADAPTER.md).

@@ -16,9 +16,9 @@ Prüfen: `npm ci` und `node --test enterprise/test/contracts.test.js`; die Suite
 
 ## Grenzen und noch fehlende Integration
 
-Die Bibliothek nimmt den bereits authentifizierten Kontext von einem zukünftigen vertrauenswürdigen Broker/Backend entgegen. Eine beliebige vom UI gelieferte Schlüsselregistry oder `intentSealed: true` ist **keine** gültige Unternehmensauthentifizierung bzw. Empfangsquittung. Enrollment, geschützter Schlüssel-/Versionsspeicher, serverseitige Quittungsprüfung, Event-State-Machine und persistente Sequenzen sind noch zu implementieren.
+Die Bibliothek nimmt den bereits authentifizierten Kontext von einem zukünftigen vertrauenswürdigen Broker/Backend entgegen. Eine beliebige vom UI gelieferte Schlüsselregistry oder `intentSealed: true` ist **keine** gültige Unternehmensauthentifizierung bzw. Empfangsquittung. Lokale Quittungsprüfung, Event-State-Machine und persistente Sequenzen sind inzwischen als separate Entwicklungsbausteine implementiert. Enrollment und geschützter Unternehmens-Schlüssel-/Versionsspeicher bleiben offen.
 
-Es gibt noch keine Geräteverteilung, Outbox, Netzwerkübermittlung, SSO, Rollenprüfung, Object Locks, Incidents, Vault, Server-Retention oder OS-/Thunderbird-Abnahme. Die Policy-ID-/Gruppen-/Schlüsselzuordnung muss aus dem späteren Unternehmenskanal stammen. `allow_intent` erlaubt nur einen geprüften Öffnungswunsch im Modell; es erzeugt kein `OPENED`-Ereignis und öffnet keinen Browser.
+Eine lokale Outbox, Loopback-Zustellung und optionale Storage-Prüfadapter sind inzwischen implementiert. Geräteverteilung, produktive Netzwerkübermittlung, SSO, Rollenprüfung, produktive Object Locks, Incidents, Vault, Server-Retention und OS-/Thunderbird-Abnahme bleiben offen. Die Policy-ID-/Gruppen-/Schlüsselzuordnung muss aus dem späteren Unternehmenskanal stammen. `allow_intent` erlaubt nur einen geprüften Öffnungswunsch im Modell; es erzeugt kein `OPENED`-Ereignis und öffnet keinen Browser.
 
 **Kein Arbeitspaket gilt durch diese Vorbereitung insgesamt als abgeschlossen.** Vollständige Umsetzung/Abnahme bleibt an die Unternehmensentscheidungen und Freigaben aus F01–F04 gebunden. Der [Umsetzungsstand mit Blockern](../docs/ENTERPRISE_UMSETZUNGSSTAND.md) führt alle 30 Pakete auf.
 
@@ -41,3 +41,7 @@ Der separate [Profilassistent](../docs/ENTERPRISE_SYSTEMPROFILE.md) ist ab 1.21.
 ## Optionale Storage-Adapter
 
 SDK-Adapter für AWS S3 Compliance Object Lock, Azure version-level Immutable Block Blobs und GCP Bucket Lock prüfen Versionsbindung, Identität/Region, Schlüssel, Retention und vollständigen Readback. `npm run enterprise:storage -- profile --provider aws-s3` liefert einen deaktivierten Entwurf; `simulate` prüft lokal ein vollständig bezeugtes Evidenzobjekt. [Schnellstart und Grenzen](../docs/ENTERPRISE_STORAGE_ADAPTER.md). Keine Cloudzugänge wurden verwendet; positive SDK-Metadaten allein erzeugen kein SEALED und kein Outbox-Retirement.
+
+## Dauerhafte lokale Storage-Aufträge
+
+`enterprise:storage-jobs enqueue/run/status/retry` speichert geprüfte Evidenzaufträge und signierte Bearbeitungszustände. Der Worker verarbeitet derzeit nur lokale Simulationen; Wiederaufnahme, Readback, Retry und Dead Letters sind geprüft. [Schnellstart, Grenzen und Recovery](../docs/ENTERPRISE_STORAGE_JOBS.md). Cloudworker, SEALED-Commit und Broker-Retirement bleiben offen.
