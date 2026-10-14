@@ -1165,5 +1165,113 @@
   },
   "profilesFailed": {
     "message": "Impossibile caricare, salvare o esportare la selezione, oppure l’operazione è stata annullata."
+  },
+  "wizardTitle": {
+    "message": "Configura Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Lingua della procedura guidata"
+  },
+  "wizardLanguageNote": {
+    "message": "L’estensione segue la lingua di Thunderbird. Questa scelta cambia solo la procedura guidata."
+  },
+  "wizardWelcome": {
+    "message": "Benvenuto"
+  },
+  "wizardProtection": {
+    "message": "Protezione dei link"
+  },
+  "wizardExternal": {
+    "message": "Analisi facoltativa"
+  },
+  "wizardIntro": {
+    "message": "Inizia con le verifiche locali. Per controllare un messaggio, usa il banner Thundy AV o l’azione di scansione. Potrai configurare i fornitori in seguito."
+  },
+  "wizardLocalNotice": {
+    "message": "Senza consenso all’analisi esterna non vengono inviati dati ai fornitori. Questa procedura non concede mai tale consenso."
+  },
+  "wizardPrivacy": {
+    "message": "Informazioni sulla privacy"
+  },
+  "wizardLinkChoice": {
+    "message": "Avvisa prima di aprire i link e registra le decisioni localmente"
+  },
+  "wizardLinkExplanation": {
+    "message": "Il dialogo mostra destinazione e valutazione disponibile. Aprire passa il link al browser, senza confermare una visita."
+  },
+  "wizardAuditNotice": {
+    "message": "Il registro locale può includere URL completi e motivi di valutazione. Limiti: 30 giorni, 2.000 voci o 2 MiB. Gli utenti del profilo possono leggerlo, modificarlo o eliminarlo; non è un audit aziendale protetto."
+  },
+  "wizardExternalExplanation": {
+    "message": "I fornitori esterni sono facoltativi e possono richiedere chiavi API. Secondo il livello di privacy possono essere trasmessi hash, domini, IP pubblici, file o URL completi. Configura fornitori e consenso nelle impostazioni."
+  },
+  "wizardNextAction": {
+    "message": "Come vuoi continuare?"
+  },
+  "wizardKeepLocal": {
+    "message": "Termina con le verifiche locali"
+  },
+  "wizardKeepExisting": {
+    "message": "Mantieni le impostazioni esterne esistenti"
+  },
+  "wizardExistingExternal": {
+    "message": "L’analisi esterna è già attiva in questo profilo. La procedura non cambia il consenso. Apri le impostazioni per disattivarla o verificare i permessi."
+  },
+  "wizardConfigure": {
+    "message": "Configura l’analisi esterna nelle impostazioni"
+  },
+  "wizardNoConsent": {
+    "message": "Questa scelta apre solo le impostazioni. La procedura non carica dati e non richiede permessi."
+  },
+  "wizardBack": {
+    "message": "Indietro"
+  },
+  "wizardNext": {
+    "message": "Avanti"
+  },
+  "wizardFinish": {
+    "message": "Salva configurazione"
+  },
+  "wizardFinishConfigure": {
+    "message": "Salva e apri impostazioni"
+  },
+  "wizardSkip": {
+    "message": "Non ora"
+  },
+  "wizardDone": {
+    "message": "Configurazione salvata"
+  },
+  "wizardDoneText": {
+    "message": "La scelta di protezione dei link è stata salvata localmente. Chiavi API, consenso esterno e mittenti autorizzati non sono cambiati. Puoi riaprire la procedura dalle impostazioni."
+  },
+  "wizardSettings": {
+    "message": "Apri impostazioni"
+  },
+  "wizardProfilesNotice": {
+    "message": "I profili aziendali sono bozze facoltative. Selezionarli non attiva connessioni aziendali."
+  },
+  "wizardDeferred": {
+    "message": "Configurazione rimandata"
+  },
+  "wizardDeferredText": {
+    "message": "Nessuna impostazione è cambiata. Riapri la procedura dalle impostazioni quando sei pronto."
+  },
+  "wizardSettingsOpened": {
+    "message": "Impostazioni aperte. Configura i fornitori e salva qui il consenso."
+  },
+  "wizardSettingsFailed": {
+    "message": "Impossibile aprire le impostazioni. La configurazione è salvata; riprova con Apri impostazioni."
+  },
+  "wizardSaveFailed": {
+    "message": "Impossibile salvare la configurazione. Le scelte restano qui; riprova."
+  },
+  "wizardLoadFailed": {
+    "message": "Impossibile caricare le impostazioni. Nulla è stato salvato. Ricarica questa pagina per riprovare."
+  },
+  "wizardLanguageFailed": {
+    "message": "Impossibile caricare la lingua. Rimane selezionata la lingua precedente."
+  },
+  "wizardReopen": {
+    "message": "Apri procedura guidata"
   }
 }

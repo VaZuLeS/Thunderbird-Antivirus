@@ -1168,5 +1168,113 @@
   },
   "profilesFailed": {
     "message": "The selection could not be loaded, saved or exported, or the operation was cancelled."
+  },
+  "wizardTitle": {
+    "message": "Set up Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Wizard language"
+  },
+  "wizardLanguageNote": {
+    "message": "The add-on follows the Thunderbird language. This selection changes only this wizard."
+  },
+  "wizardWelcome": {
+    "message": "Welcome"
+  },
+  "wizardProtection": {
+    "message": "Link protection"
+  },
+  "wizardExternal": {
+    "message": "Optional analysis"
+  },
+  "wizardIntro": {
+    "message": "Start with local checks. To inspect an email, use its Thundy AV banner or scan action. You can decide later whether to configure analysis providers."
+  },
+  "wizardLocalNotice": {
+    "message": "Without consent to external analysis, no data is sent to analysis providers. This wizard never grants that consent."
+  },
+  "wizardPrivacy": {
+    "message": "Privacy information"
+  },
+  "wizardLinkChoice": {
+    "message": "Warn before opening links and record decisions locally"
+  },
+  "wizardLinkExplanation": {
+    "message": "The link dialog shows the destination and available risk assessment. Opening hands the link to your browser; it does not prove a website visit."
+  },
+  "wizardAuditNotice": {
+    "message": "The local link log can include full URLs and assessment reasons. It keeps up to 30 days, 2,000 entries or 2 MiB. Profile users can read, change or delete it; it is not a protected corporate audit."
+  },
+  "wizardExternalExplanation": {
+    "message": "External providers are optional and may require API keys. Depending on your privacy tier, hashes, domains, public IPs, files or full URLs can be transmitted. Configure providers and grant consent in settings."
+  },
+  "wizardNextAction": {
+    "message": "What would you like to do next?"
+  },
+  "wizardKeepLocal": {
+    "message": "Finish with local checks"
+  },
+  "wizardKeepExisting": {
+    "message": "Keep existing external settings"
+  },
+  "wizardExistingExternal": {
+    "message": "External analysis is already enabled in this profile. The wizard does not change that consent. Use settings to disable it or review permissions."
+  },
+  "wizardConfigure": {
+    "message": "Configure external analysis in settings"
+  },
+  "wizardNoConsent": {
+    "message": "Choosing this option only opens settings. Nothing is uploaded and no permission is requested by this wizard."
+  },
+  "wizardBack": {
+    "message": "Back"
+  },
+  "wizardNext": {
+    "message": "Next"
+  },
+  "wizardFinish": {
+    "message": "Save setup"
+  },
+  "wizardFinishConfigure": {
+    "message": "Save and open settings"
+  },
+  "wizardSkip": {
+    "message": "Not now"
+  },
+  "wizardDone": {
+    "message": "Setup saved"
+  },
+  "wizardDoneText": {
+    "message": "Your link-protection choice was saved locally. No API key, external consent or sender approval was changed. You can reopen the wizard from settings."
+  },
+  "wizardSettings": {
+    "message": "Open settings"
+  },
+  "wizardProfilesNotice": {
+    "message": "Enterprise profiles are optional configuration drafts. Selecting them does not activate a corporate connection."
+  },
+  "wizardDeferred": {
+    "message": "Setup postponed"
+  },
+  "wizardDeferredText": {
+    "message": "No settings were changed. Reopen the wizard from settings when you are ready."
+  },
+  "wizardSettingsOpened": {
+    "message": "Settings opened. Configure providers and save your consent there."
+  },
+  "wizardSettingsFailed": {
+    "message": "Settings could not be opened. Your setup is saved; use Open settings to retry."
+  },
+  "wizardSaveFailed": {
+    "message": "Setup could not be saved. Your choices remain here; please retry."
+  },
+  "wizardLoadFailed": {
+    "message": "Settings could not be loaded. Nothing was saved. Reload this page to retry."
+  },
+  "wizardLanguageFailed": {
+    "message": "The language could not be loaded. The previous language remains selected."
+  },
+  "wizardReopen": {
+    "message": "Open setup wizard"
   }
 }

@@ -1,3 +1,9 @@
+# Einrichtungsassistent — 1.22.0
+
+705 Tests und 96 Chromium-Zustände bestanden; 0 Lint-Fehler / 24 bekannte Thunderbird-Warnungen. Dreistufiger, sechssprachiger Assistent nach Erstinstallation, keine automatische Öffnung bei Updates. Speichert nur Linkschutz und Abschlussmarker, keine Einwilligung oder API-Schlüssel. Paket: 40 Dateien / 693.352 Bytes entpackt, GPL-v3-Text enthalten. [Bedienung](EINRICHTUNGSASSISTENT.md) · [Release-Hinweise](releases/1.22.0.md) · [Offene Thunderbird-Live-Abnahme](live_test_1_22_0.md).
+
+---
+
 # GNU GPL v3 für den aktuellen Projektquelltext — 14. Oktober 2026
 
 Lizenztext, Paketmetadaten, README-Dateien, aktuelle Store-Unterlagen und alle sechs Sprachseiten auf `GPL-3.0-only` umgestellt. Drittanbieterlizenzen bleiben erhalten. Neue Pakete enthalten verpflichtend den vollständigen GPL-v3-Lizenztext; zuvor veröffentlichte Releases wurden nicht ersetzt. [Lizenz und Geltungsbereich](license.md).

@@ -1165,5 +1165,113 @@
   },
   "profilesFailed": {
     "message": "Impossible de charger, enregistrer ou exporter la sélection, ou l’opération a été annulée."
+  },
+  "wizardTitle": {
+    "message": "Configurer Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Langue de l’assistant"
+  },
+  "wizardLanguageNote": {
+    "message": "L’extension suit la langue de Thunderbird. Ce choix ne modifie que cet assistant."
+  },
+  "wizardWelcome": {
+    "message": "Bienvenue"
+  },
+  "wizardProtection": {
+    "message": "Protection des liens"
+  },
+  "wizardExternal": {
+    "message": "Analyse facultative"
+  },
+  "wizardIntro": {
+    "message": "Commencez par les vérifications locales. Pour vérifier un message, utilisez sa bannière Thundy AV ou son action d’analyse. Vous pourrez configurer les fournisseurs plus tard."
+  },
+  "wizardLocalNotice": {
+    "message": "Sans consentement à l’analyse externe, aucune donnée n’est envoyée aux fournisseurs. Cet assistant n’accorde jamais ce consentement."
+  },
+  "wizardPrivacy": {
+    "message": "Informations de confidentialité"
+  },
+  "wizardLinkChoice": {
+    "message": "Avertir avant d’ouvrir les liens et enregistrer les décisions localement"
+  },
+  "wizardLinkExplanation": {
+    "message": "Le dialogue affiche la destination et l’évaluation disponible. Ouvrir transmet le lien au navigateur, sans confirmer une visite."
+  },
+  "wizardAuditNotice": {
+    "message": "Le journal local peut contenir des URL complètes et des motifs d’évaluation. Limites : 30 jours, 2 000 entrées ou 2 Mio. Les utilisateurs du profil peuvent le lire, le modifier ou le supprimer ; ce n’est pas un audit d’entreprise protégé."
+  },
+  "wizardExternalExplanation": {
+    "message": "Les fournisseurs externes sont facultatifs et peuvent nécessiter des clés API. Selon le niveau de confidentialité, des empreintes, domaines, IP publiques, fichiers ou URL complètes peuvent être transmis. Configurez fournisseurs et consentement dans les paramètres."
+  },
+  "wizardNextAction": {
+    "message": "Comment souhaitez-vous continuer ?"
+  },
+  "wizardKeepLocal": {
+    "message": "Terminer avec les vérifications locales"
+  },
+  "wizardKeepExisting": {
+    "message": "Conserver les paramètres externes existants"
+  },
+  "wizardExistingExternal": {
+    "message": "L’analyse externe est déjà activée dans ce profil. L’assistant ne modifie pas ce consentement. Ouvrez les paramètres pour la désactiver ou vérifier les autorisations."
+  },
+  "wizardConfigure": {
+    "message": "Configurer l’analyse externe dans les paramètres"
+  },
+  "wizardNoConsent": {
+    "message": "Ce choix ouvre uniquement les paramètres. Cet assistant n’envoie aucun fichier et ne demande aucune autorisation."
+  },
+  "wizardBack": {
+    "message": "Retour"
+  },
+  "wizardNext": {
+    "message": "Suivant"
+  },
+  "wizardFinish": {
+    "message": "Enregistrer la configuration"
+  },
+  "wizardFinishConfigure": {
+    "message": "Enregistrer et ouvrir les paramètres"
+  },
+  "wizardSkip": {
+    "message": "Pas maintenant"
+  },
+  "wizardDone": {
+    "message": "Configuration enregistrée"
+  },
+  "wizardDoneText": {
+    "message": "Votre choix de protection des liens a été enregistré localement. Clés API, consentement externe et autorisations d’expéditeurs restent inchangés. Vous pouvez rouvrir l’assistant dans les paramètres."
+  },
+  "wizardSettings": {
+    "message": "Ouvrir les paramètres"
+  },
+  "wizardProfilesNotice": {
+    "message": "Les profils d’entreprise sont des brouillons facultatifs. Leur sélection n’active aucune connexion d’entreprise."
+  },
+  "wizardDeferred": {
+    "message": "Configuration reportée"
+  },
+  "wizardDeferredText": {
+    "message": "Aucun paramètre n’a été modifié. Rouvrez l’assistant dans les paramètres quand vous serez prêt."
+  },
+  "wizardSettingsOpened": {
+    "message": "Paramètres ouverts. Configurez les fournisseurs et enregistrez votre consentement ici."
+  },
+  "wizardSettingsFailed": {
+    "message": "Impossible d’ouvrir les paramètres. La configuration est enregistrée ; réessayez avec Ouvrir les paramètres."
+  },
+  "wizardSaveFailed": {
+    "message": "Impossible d’enregistrer la configuration. Vos choix restent affichés ; réessayez."
+  },
+  "wizardLoadFailed": {
+    "message": "Impossible de charger les paramètres. Rien n’a été enregistré. Rechargez cette page pour réessayer."
+  },
+  "wizardLanguageFailed": {
+    "message": "Impossible de charger la langue. La langue précédente reste sélectionnée."
+  },
+  "wizardReopen": {
+    "message": "Ouvrir l’assistant de configuration"
   }
 }

@@ -1574,3 +1574,19 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
 
 // Prune expired audit records when the extension starts as well as on access/write.
 if (typeof readLinkAudit === 'function') readLinkAudit().catch(() => Logger.warn('Could not prune local link audit at startup'));
+
+// First-install setup only. Updates never change existing preferences or reopen setup.
+let onboardingOpened = false;
+async function openInitialSetup(details) {
+    if (details?.reason !== 'install' || onboardingOpened) return;
+    onboardingOpened = true;
+    try {
+        const stored = await browser.storage.local.get('onboardingState');
+        if (stored.onboardingState?.status === 'completed') return;
+        await browser.tabs.create({ url: browser.runtime.getURL('onboarding.html') });
+    } catch (error) {
+        onboardingOpened = false;
+        Logger.error('Initial setup could not be opened; it remains available in settings', error);
+    }
+}
+if (browser.runtime?.onInstalled) browser.runtime.onInstalled.addListener(openInitialSetup);

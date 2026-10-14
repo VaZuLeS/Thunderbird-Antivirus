@@ -55,7 +55,10 @@ describe('background.js', () => {
                     contains: async () => true,
                     request: async () => true
                 },
+                tabs: {created:[],create:async options=>{context.browser.tabs.created.push(options);return {id:1};}},
                 runtime: {
+                    getURL:path=>"moz-extension://test/"+path,
+                    onInstalled:{listeners:[],addListener:listener=>context.browser.runtime.onInstalled.listeners.push(listener)},
                     onMessage: {
                         addListener: (listener) => {
                             context.browser.runtime.onMessage.listeners.push(listener);
@@ -226,6 +229,25 @@ describe('background.js', () => {
         if (context.ipReputationCache) context.ipReputationCache.clear();
     });
 
+    it('opens setup once on first install but never on updates', async()=>{
+        context.browser.storage.local.get=async()=>({});
+        const listener=context.browser.runtime.onInstalled.listeners[0];
+        await listener({reason:'update'});assert.equal(context.browser.tabs.created.length,0);
+        await listener({reason:'install'});await listener({reason:'install'});
+        assert.deepEqual(context.browser.tabs.created.map(x=>x.url),['moz-extension://test/onboarding.html']);
+    });
+    it('does not reopen completed setup after install',async()=>{
+        context.browser.storage.local.get=async()=>({onboardingState:{status:'completed'}});
+        await context.browser.runtime.onInstalled.listeners[0]({reason:'install'});
+        assert.equal(context.browser.tabs.created.length,0);
+    });
+    it('setup opening failures do not mutate settings and can be retried',async()=>{
+        context.browser.storage.local.get=async()=>{throw new Error('storage')};
+        const listener=context.browser.runtime.onInstalled.listeners[0];await listener({reason:'install'});
+        assert.equal(context.browser.tabs.created.length,0);
+        context.browser.storage.local.get=async()=>({});await listener({reason:'install'});
+        assert.equal(context.browser.tabs.created.length,1);
+    });
     it('should initialize successfully', () => {
         assert.ok(context.get_apikey() === undefined || context.get_apikey() === 'test-api-key');
     });

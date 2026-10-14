@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Thundy AV — Setup</title>
+    <link rel="stylesheet" href="onboarding.css" />
+    <script src="i18n.js"></script>
+    <script src="onboarding.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="img/icon-64px.png" width="64" height="64" alt="" />
+        <div>
+          <p class="brand">Thundy AV</p>
+          <h1 data-i18n="wizardTitle">Set up Thundy AV</h1>
+        </div>
+      </header>
+      <label class="language"
+        ><span data-i18n="wizardLanguage">Wizard language</span
+        ><select id="language">
+          <option value="en">English</option>
+          <option value="de">Deutsch</option>
+          <option value="fr">Français</option>
+          <option value="es">Español</option>
+          <option value="it">Italiano</option>
+          <option value="pl">Polski</option>
+        </select></label
+      >
+      <p class="muted" data-i18n="wizardLanguageNote"></p>
+      <ol id="progress" aria-label="Setup">
+        <li data-i18n="wizardWelcome">Welcome</li>
+        <li data-i18n="wizardProtection">Link protection</li>
+        <li data-i18n="wizardExternal">Optional analysis</li>
+      </ol>
+      <form id="setup">
+        <section class="step" id="step0">
+          <h2 tabindex="-1" data-i18n="wizardWelcome"></h2>
+          <p data-i18n="wizardIntro"></p>
+          <aside data-i18n="wizardLocalNotice"></aside>
+          <p>
+            <a
+              href="privacy.html"
+              target="_blank"
+              rel="noopener"
+              data-i18n="wizardPrivacy"
+              >Privacy information</a
+            >
+          </p>
+        </section>
+        <section class="step" id="step1" hidden>
+          <h2 tabindex="-1" data-i18n="wizardProtection"></h2>
+          <label class="choice"
+            ><input type="checkbox" id="linkProtection" checked /><span
+              data-i18n="wizardLinkChoice"
+            ></span
+          ></label>
+          <p data-i18n="wizardLinkExplanation"></p>
+          <aside data-i18n="wizardAuditNotice"></aside>
+        </section>
+        <section class="step" id="step2" hidden>
+          <h2 tabindex="-1" data-i18n="wizardExternal"></h2>
+          <p data-i18n="wizardExternalExplanation"></p>
+          <aside id="externalStatus"></aside>
+          <fieldset>
+            <legend data-i18n="wizardNextAction"></legend>
+            <label class="choice"
+              ><input type="radio" name="external" value="keep" checked /><span
+                id="keepLabel"
+              ></span></label
+            ><label class="choice"
+              ><input type="radio" name="external" value="configure" /><span
+                data-i18n="wizardConfigure"
+              ></span
+            ></label>
+          </fieldset>
+          <p class="muted" data-i18n="wizardNoConsent"></p>
+        </section>
+        <nav>
+          <button type="button" id="back" data-i18n="wizardBack">Back</button
+          ><button
+            type="button"
+            id="next"
+            class="primary"
+            data-i18n="wizardNext"
+          >
+            Next</button
+          ><button
+            type="submit"
+            id="finish"
+            class="primary"
+            hidden
+            data-i18n="wizardFinish"
+          >
+            Save setup</button
+          ><button type="button" id="skip" data-i18n="wizardSkip">
+            Not now
+          </button>
+        </nav>
+      </form>
+      <section id="done" hidden>
+        <h2 tabindex="-1" data-i18n="wizardDone">Setup saved</h2>
+        <p id="doneText"></p>
+        <p>
+          <button id="settings" data-i18n="wizardSettings">
+            Open settings
+          </button>
+          <a href="enterprise_setup.html" data-i18n="profilesOpen"
+            >Choose enterprise profiles</a
+          >
+        </p>
+        <p data-i18n="wizardProfilesNotice"></p>
+      </section>
+      <p id="status" role="status" aria-live="polite"></p>
+      <footer>
+        <span>GNU GPL v3</span> ·
+        <a href="options.html" data-i18n="wizardSettings">Open settings</a>
+      </footer>
+    </main>
+  </body>
+</html>

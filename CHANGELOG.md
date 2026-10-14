@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.22.0 — 2026-10-14
+
+- Open a dedicated setup wizard on first installation; updates never reopen it automatically.
+- Guide users through welcome, link protection/local audit and optional provider configuration in EN/DE/FR/ES/IT/PL.
+- Save only the chosen link-protection setting and completion marker; leave API keys, external consent, sender approvals and logs intact.
+- Reopen the wizard from settings, postpone without writing, and show retryable save/opening failures.
+- Distribute the current source under GPL version 3 only and require the full license text in the XPI.
+
+
 ## 1.21.0 — 2026-10-14
 
 - Add optional hosting, SSO, device-management, SIEM and ticket configuration profiles with editable vendor combinations.

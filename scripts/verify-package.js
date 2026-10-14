@@ -10,6 +10,9 @@ const { execFileSync } = require('child_process');
 
 const ALLOWED_FILES = [
   'manifest.json',
+  'onboarding.html',
+  'onboarding.js',
+  'onboarding.css',
   '_locales/en/messages.json',
   '_locales/de/messages.json',
   '_locales/fr/messages.json',
@@ -45,6 +48,9 @@ const ALLOWED_FILES = [
 // Runtime files and license notices that must be inside the package.
 const REQUIRED_FILES = [
   'manifest.json',
+  'onboarding.html',
+  'onboarding.js',
+  'onboarding.css',
   '_locales/en/messages.json',
   '_locales/de/messages.json',
   '_locales/fr/messages.json',
@@ -97,8 +103,8 @@ const FORBIDDEN = [
   /^\.webextignore$/
 ];
 // Six complete catalogs and a bundled Public Suffix List require more than the former 400 KiB budget.
-// Six-language optional profile assistant adds ~30 KiB to the 1.20 runtime.
-const MAX_UNCOMPRESSED_BYTES = 650 * 1024;
+// First-install wizard adds six-language instructions, UI and bundled fallback.
+const MAX_UNCOMPRESSED_BYTES = 750 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the

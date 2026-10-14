@@ -1165,5 +1165,113 @@
   },
   "profilesFailed": {
     "message": "Nie udało się wczytać, zapisać lub wyeksportować wyboru albo operacja została anulowana."
+  },
+  "wizardTitle": {
+    "message": "Skonfiguruj Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Język kreatora"
+  },
+  "wizardLanguageNote": {
+    "message": "Rozszerzenie używa języka Thunderbirda. Ten wybór zmienia tylko język kreatora."
+  },
+  "wizardWelcome": {
+    "message": "Witamy"
+  },
+  "wizardProtection": {
+    "message": "Ochrona linków"
+  },
+  "wizardExternal": {
+    "message": "Opcjonalna analiza"
+  },
+  "wizardIntro": {
+    "message": "Zacznij od sprawdzania lokalnego. Aby sprawdzić wiadomość, użyj jej banera Thundy AV lub akcji skanowania. Dostawców analizy możesz skonfigurować później."
+  },
+  "wizardLocalNotice": {
+    "message": "Bez zgody na analizę zewnętrzną dane nie są wysyłane do dostawców. Ten kreator nigdy nie udziela takiej zgody."
+  },
+  "wizardPrivacy": {
+    "message": "Informacje o prywatności"
+  },
+  "wizardLinkChoice": {
+    "message": "Ostrzegaj przed otwarciem linków i zapisuj decyzje lokalnie"
+  },
+  "wizardLinkExplanation": {
+    "message": "Okno pokazuje cel i dostępną ocenę ryzyka. Otwarcie przekazuje link do przeglądarki, ale nie potwierdza wizyty."
+  },
+  "wizardAuditNotice": {
+    "message": "Lokalny dziennik może zawierać pełne adresy URL i powody oceny. Limity: 30 dni, 2000 wpisów lub 2 MiB. Użytkownicy profilu mogą go czytać, zmieniać lub usuwać; nie jest chronionym audytem firmowym."
+  },
+  "wizardExternalExplanation": {
+    "message": "Dostawcy zewnętrzni są opcjonalni i mogą wymagać kluczy API. Zależnie od poziomu prywatności mogą być wysyłane skróty, domeny, publiczne adresy IP, pliki lub pełne URL. Dostawców i zgodę skonfiguruj w ustawieniach."
+  },
+  "wizardNextAction": {
+    "message": "Jak chcesz kontynuować?"
+  },
+  "wizardKeepLocal": {
+    "message": "Zakończ ze sprawdzaniem lokalnym"
+  },
+  "wizardKeepExisting": {
+    "message": "Zachowaj istniejące ustawienia zewnętrzne"
+  },
+  "wizardExistingExternal": {
+    "message": "Analiza zewnętrzna jest już włączona w tym profilu. Kreator nie zmienia zgody. Otwórz ustawienia, aby ją wyłączyć lub sprawdzić uprawnienia."
+  },
+  "wizardConfigure": {
+    "message": "Skonfiguruj analizę zewnętrzną w ustawieniach"
+  },
+  "wizardNoConsent": {
+    "message": "Ten wybór tylko otwiera ustawienia. Kreator nie wysyła danych ani nie żąda uprawnień."
+  },
+  "wizardBack": {
+    "message": "Wstecz"
+  },
+  "wizardNext": {
+    "message": "Dalej"
+  },
+  "wizardFinish": {
+    "message": "Zapisz konfigurację"
+  },
+  "wizardFinishConfigure": {
+    "message": "Zapisz i otwórz ustawienia"
+  },
+  "wizardSkip": {
+    "message": "Nie teraz"
+  },
+  "wizardDone": {
+    "message": "Konfiguracja zapisana"
+  },
+  "wizardDoneText": {
+    "message": "Wybór ochrony linków zapisano lokalnie. Klucze API, zgoda zewnętrzna i zatwierdzeni nadawcy nie zostały zmienione. Kreator można ponownie otworzyć w ustawieniach."
+  },
+  "wizardSettings": {
+    "message": "Otwórz ustawienia"
+  },
+  "wizardProfilesNotice": {
+    "message": "Profile firmowe są opcjonalnymi szkicami konfiguracji. Ich wybór nie aktywuje połączeń firmowych."
+  },
+  "wizardDeferred": {
+    "message": "Konfiguracja odłożona"
+  },
+  "wizardDeferredText": {
+    "message": "Nie zmieniono ustawień. Otwórz kreator w ustawieniach, gdy będziesz gotowy."
+  },
+  "wizardSettingsOpened": {
+    "message": "Ustawienia otwarte. Skonfiguruj tam dostawców i zapisz zgodę."
+  },
+  "wizardSettingsFailed": {
+    "message": "Nie udało się otworzyć ustawień. Konfiguracja jest zapisana; spróbuj przyciskiem Otwórz ustawienia."
+  },
+  "wizardSaveFailed": {
+    "message": "Nie udało się zapisać konfiguracji. Wybory pozostały tutaj; spróbuj ponownie."
+  },
+  "wizardLoadFailed": {
+    "message": "Nie udało się wczytać ustawień. Nic nie zapisano. Odśwież stronę, aby spróbować ponownie."
+  },
+  "wizardLanguageFailed": {
+    "message": "Nie udało się wczytać języka. Wybrany pozostaje poprzedni język."
+  },
+  "wizardReopen": {
+    "message": "Otwórz kreator konfiguracji"
   }
 }

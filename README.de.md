@@ -246,3 +246,7 @@ Code überprüfbar sein; bitte vor einem Pull Request `npm test` und `npx web-ex
 GNU General Public License, ausschließlich Version 3 (`GPL-3.0-only`) – siehe [LICENSE](LICENSE).
 
 Copyright © 2025–2026 Jan Bludau. Diese Lizenz gilt für den aktuellen Projektquelltext. Bereits veröffentlichte Releases behalten ihre ursprünglichen Lizenzbedingungen. Die eingebundene Bibliothek `tldts` behält ihre MIT-Lizenz; siehe [vendor/tldts.LICENSE](vendor/tldts.LICENSE). [Lizenzinformationen der Webseite](docs/license.md).
+
+## Einrichtung nach Installation
+
+Version 1.22.0 öffnet bei Erstinstallation einen [dreistufigen Einrichtungsassistenten](docs/EINRICHTUNGSASSISTENT.md). Updates öffnen ihn nicht erneut. Linkschutz kann eingerichtet werden; optionale Anbieter werden mit separater Einwilligung in den Einstellungen konfiguriert. Alle sechs Sprachen werden mitgeliefert; der Assistent lässt sich in den Einstellungen erneut öffnen oder ohne Speicherung verschieben.

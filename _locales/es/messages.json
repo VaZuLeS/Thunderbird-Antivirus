@@ -1165,5 +1165,113 @@
   },
   "profilesFailed": {
     "message": "No se pudo cargar, guardar o exportar la selección, o se canceló la operación."
+  },
+  "wizardTitle": {
+    "message": "Configurar Thundy AV"
+  },
+  "wizardLanguage": {
+    "message": "Idioma del asistente"
+  },
+  "wizardLanguageNote": {
+    "message": "La extensión usa el idioma de Thunderbird. Esta selección solo cambia el asistente."
+  },
+  "wizardWelcome": {
+    "message": "Bienvenido"
+  },
+  "wizardProtection": {
+    "message": "Protección de enlaces"
+  },
+  "wizardExternal": {
+    "message": "Análisis opcional"
+  },
+  "wizardIntro": {
+    "message": "Empiece con comprobaciones locales. Para revisar un mensaje, use su aviso Thundy AV o la acción de análisis. Puede configurar proveedores más adelante."
+  },
+  "wizardLocalNotice": {
+    "message": "Sin consentimiento para el análisis externo no se envían datos a proveedores. Este asistente nunca concede ese consentimiento."
+  },
+  "wizardPrivacy": {
+    "message": "Información de privacidad"
+  },
+  "wizardLinkChoice": {
+    "message": "Avisar antes de abrir enlaces y registrar decisiones localmente"
+  },
+  "wizardLinkExplanation": {
+    "message": "El diálogo muestra el destino y la evaluación disponible. Abrir entrega el enlace al navegador, sin confirmar una visita."
+  },
+  "wizardAuditNotice": {
+    "message": "El registro local puede incluir URL completas y motivos de evaluación. Límites: 30 días, 2.000 entradas o 2 MiB. Los usuarios del perfil pueden leerlo, cambiarlo o borrarlo; no es una auditoría empresarial protegida."
+  },
+  "wizardExternalExplanation": {
+    "message": "Los proveedores externos son opcionales y pueden necesitar claves API. Según el nivel de privacidad pueden enviarse hashes, dominios, IP públicas, archivos o URL completas. Configure proveedores y consentimiento en ajustes."
+  },
+  "wizardNextAction": {
+    "message": "¿Cómo desea continuar?"
+  },
+  "wizardKeepLocal": {
+    "message": "Terminar con comprobaciones locales"
+  },
+  "wizardKeepExisting": {
+    "message": "Mantener los ajustes externos existentes"
+  },
+  "wizardExistingExternal": {
+    "message": "El análisis externo ya está activado en este perfil. El asistente no cambia el consentimiento. Abra ajustes para desactivarlo o revisar permisos."
+  },
+  "wizardConfigure": {
+    "message": "Configurar el análisis externo en ajustes"
+  },
+  "wizardNoConsent": {
+    "message": "Esta selección solo abre ajustes. El asistente no sube datos ni solicita permisos."
+  },
+  "wizardBack": {
+    "message": "Atrás"
+  },
+  "wizardNext": {
+    "message": "Siguiente"
+  },
+  "wizardFinish": {
+    "message": "Guardar configuración"
+  },
+  "wizardFinishConfigure": {
+    "message": "Guardar y abrir ajustes"
+  },
+  "wizardSkip": {
+    "message": "Ahora no"
+  },
+  "wizardDone": {
+    "message": "Configuración guardada"
+  },
+  "wizardDoneText": {
+    "message": "Su elección de protección de enlaces se guardó localmente. No se cambiaron claves API, consentimiento externo ni remitentes autorizados. Puede reabrir el asistente desde ajustes."
+  },
+  "wizardSettings": {
+    "message": "Abrir ajustes"
+  },
+  "wizardProfilesNotice": {
+    "message": "Los perfiles empresariales son borradores opcionales. Elegirlos no activa conexiones empresariales."
+  },
+  "wizardDeferred": {
+    "message": "Configuración aplazada"
+  },
+  "wizardDeferredText": {
+    "message": "No se cambió ningún ajuste. Reabra el asistente desde ajustes cuando esté listo."
+  },
+  "wizardSettingsOpened": {
+    "message": "Ajustes abiertos. Configure proveedores y guarde su consentimiento allí."
+  },
+  "wizardSettingsFailed": {
+    "message": "No se pudieron abrir los ajustes. La configuración está guardada; reintente con Abrir ajustes."
+  },
+  "wizardSaveFailed": {
+    "message": "No se pudo guardar la configuración. Sus elecciones siguen aquí; reintente."
+  },
+  "wizardLoadFailed": {
+    "message": "No se pudieron cargar los ajustes. No se guardó nada. Recargue esta página para reintentar."
+  },
+  "wizardLanguageFailed": {
+    "message": "No se pudo cargar el idioma. Se mantiene el idioma anterior."
+  },
+  "wizardReopen": {
+    "message": "Abrir asistente de configuración"
   }
 }

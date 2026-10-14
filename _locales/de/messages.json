@@ -1168,5 +1168,113 @@
   },
   "profilesFailed": {
     "message": "Die Auswahl konnte nicht geladen, gespeichert oder exportiert werden, oder der Vorgang wurde abgebrochen."
+  },
+  "wizardTitle": {
+    "message": "Thundy AV einrichten"
+  },
+  "wizardLanguage": {
+    "message": "Sprache des Assistenten"
+  },
+  "wizardLanguageNote": {
+    "message": "Die Erweiterung verwendet die Thunderbird-Sprache. Diese Auswahl ändert nur den Assistenten."
+  },
+  "wizardWelcome": {
+    "message": "Willkommen"
+  },
+  "wizardProtection": {
+    "message": "Linkschutz"
+  },
+  "wizardExternal": {
+    "message": "Optionale Analyse"
+  },
+  "wizardIntro": {
+    "message": "Beginnen Sie mit lokalen Prüfungen. Nutzen Sie zum Prüfen einer Nachricht deren Thundy-AV-Banner oder Scanaktion. Analyseanbieter können Sie später einrichten."
+  },
+  "wizardLocalNotice": {
+    "message": "Ohne Einwilligung zur externen Analyse gehen keine Daten an Analyseanbieter. Dieser Assistent erteilt diese Einwilligung niemals."
+  },
+  "wizardPrivacy": {
+    "message": "Datenschutzinformationen"
+  },
+  "wizardLinkChoice": {
+    "message": "Vor dem Öffnen von Links warnen und Entscheidungen lokal protokollieren"
+  },
+  "wizardLinkExplanation": {
+    "message": "Der Linkdialog zeigt Ziel und verfügbare Risikobewertung. Öffnen übergibt den Link an Ihren Browser; es bestätigt keinen Webseitenbesuch."
+  },
+  "wizardAuditNotice": {
+    "message": "Das lokale Linkprotokoll kann vollständige URLs und Bewertungsgründe enthalten. Es hält höchstens 30 Tage, 2.000 Einträge oder 2 MiB. Profilnutzer können es lesen, ändern oder löschen; es ist kein geschütztes Unternehmensaudit."
+  },
+  "wizardExternalExplanation": {
+    "message": "Externe Anbieter sind optional und benötigen gegebenenfalls API-Schlüssel. Je nach Datenschutzstufe können Hashes, Domains, öffentliche IPs, Dateien oder vollständige URLs übermittelt werden. Anbieter und Einwilligung richten Sie in den Einstellungen ein."
+  },
+  "wizardNextAction": {
+    "message": "Wie möchten Sie fortfahren?"
+  },
+  "wizardKeepLocal": {
+    "message": "Mit lokalen Prüfungen abschließen"
+  },
+  "wizardKeepExisting": {
+    "message": "Vorhandene externe Einstellungen beibehalten"
+  },
+  "wizardExistingExternal": {
+    "message": "Die externe Analyse ist in diesem Profil bereits aktiviert. Der Assistent ändert diese Einwilligung nicht. Zum Deaktivieren oder Prüfen der Berechtigungen die Einstellungen öffnen."
+  },
+  "wizardConfigure": {
+    "message": "Externe Analyse in den Einstellungen einrichten"
+  },
+  "wizardNoConsent": {
+    "message": "Diese Auswahl öffnet nur die Einstellungen. Der Assistent lädt nichts hoch und fordert keine Berechtigungen an."
+  },
+  "wizardBack": {
+    "message": "Zurück"
+  },
+  "wizardNext": {
+    "message": "Weiter"
+  },
+  "wizardFinish": {
+    "message": "Einrichtung speichern"
+  },
+  "wizardFinishConfigure": {
+    "message": "Speichern und Einstellungen öffnen"
+  },
+  "wizardSkip": {
+    "message": "Nicht jetzt"
+  },
+  "wizardDone": {
+    "message": "Einrichtung gespeichert"
+  },
+  "wizardDoneText": {
+    "message": "Ihre Auswahl zum Linkschutz wurde lokal gespeichert. API-Schlüssel, externe Einwilligung und Absenderfreigaben wurden nicht geändert. Sie können den Assistenten in den Einstellungen erneut öffnen."
+  },
+  "wizardSettings": {
+    "message": "Einstellungen öffnen"
+  },
+  "wizardProfilesNotice": {
+    "message": "Unternehmensprofile sind optionale Konfigurationsentwürfe. Ihre Auswahl aktiviert keine Unternehmensverbindung."
+  },
+  "wizardDeferred": {
+    "message": "Einrichtung verschoben"
+  },
+  "wizardDeferredText": {
+    "message": "Keine Einstellungen wurden geändert. Öffnen Sie den Assistenten bei Bedarf erneut in den Einstellungen."
+  },
+  "wizardSettingsOpened": {
+    "message": "Einstellungen geöffnet. Anbieter und Einwilligung dort einrichten und speichern."
+  },
+  "wizardSettingsFailed": {
+    "message": "Einstellungen konnten nicht geöffnet werden. Ihre Einrichtung ist gespeichert; mit Einstellungen öffnen erneut versuchen."
+  },
+  "wizardSaveFailed": {
+    "message": "Einrichtung konnte nicht gespeichert werden. Ihre Auswahl bleibt erhalten; bitte erneut versuchen."
+  },
+  "wizardLoadFailed": {
+    "message": "Einstellungen konnten nicht geladen werden. Nichts wurde gespeichert. Zum erneuten Versuch diese Seite neu laden."
+  },
+  "wizardLanguageFailed": {
+    "message": "Die Sprache konnte nicht geladen werden. Die vorherige Sprache bleibt ausgewählt."
+  },
+  "wizardReopen": {
+    "message": "Einrichtungsassistent öffnen"
   }
 }
