@@ -1093,5 +1093,77 @@
   },
   "auditExportFailed": {
     "message": "L’export a échoué ou a été annulé."
+  },
+  "profilesTitle": {
+    "message": "Profils d’entreprise facultatifs"
+  },
+  "profilesIntro": {
+    "message": "Choisissez les systèmes indépendamment ou laissez les intégrations désactivées. Ces profils préparent la configuration ; ils ne connectent aucun service d’entreprise et n’activent pas de journalisation centrale."
+  },
+  "profilesOpen": {
+    "message": "Choisir les profils d’entreprise"
+  },
+  "profilesBundle": {
+    "message": "Combinaison proposée"
+  },
+  "profilesLocal": {
+    "message": "Préparation locale"
+  },
+  "profilesCustom": {
+    "message": "Sélection personnalisée"
+  },
+  "profilesHosting": {
+    "message": "Hébergement"
+  },
+  "profilesSso": {
+    "message": "Authentification unique (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Gestion des appareils"
+  },
+  "profilesSiem": {
+    "message": "Supervision de sécurité (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Système de tickets"
+  },
+  "profilesRequirements": {
+    "message": "Configuration requise"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Les paramètres des services et des comptes seront ajoutés lors de la configuration ultérieure. Les noms ci-dessous désignent les paramètres et références de secrets requis ; ne saisissez pas d’identifiants ici."
+  },
+  "profilesPreview": {
+    "message": "Brouillon de configuration"
+  },
+  "profilesPrivacy": {
+    "message": "Les connexions restent désactivées. Le brouillon ne contient ni clés API, ni jetons, ni URL cliquées, ni données de messages. Les données centrales sont prévues avec masquage limité au domaine."
+  },
+  "profilesSave": {
+    "message": "Enregistrer la sélection localement"
+  },
+  "profilesExport": {
+    "message": "Exporter le brouillon"
+  },
+  "profilesReset": {
+    "message": "Réinitialiser la sélection"
+  },
+  "profilesNone": {
+    "message": "Désactivé / non sélectionné"
+  },
+  "profilesSelfHosted": {
+    "message": "Auto-hébergé / sur site"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Aucun paramètre d’intégration externe n’est requis pour cette sélection."
+  },
+  "profilesSaved": {
+    "message": "Sélection enregistrée localement. Les connexions restent désactivées."
+  },
+  "profilesExported": {
+    "message": "Brouillon exporté. Aucune activation effectuée."
+  },
+  "profilesFailed": {
+    "message": "Impossible de charger, enregistrer ou exporter la sélection, ou l’opération a été annulée."
   }
 }

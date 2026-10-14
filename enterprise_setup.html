@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; object-src 'none'; connect-src 'none'">
+<title data-i18n="profilesTitle">Optional enterprise profiles</title>
+<link rel="stylesheet" href="theme.css"><script src="i18n.js"></script>
+<script src="enterprise_profiles.js"></script><script src="enterprise_setup.js" defer></script>
+</head>
+<body class="audit-page profile-page">
+<header class="scanner-header"><img src="img/icon-48px.png" width="40" height="40" alt=""><div><strong class="scanner-brand">Thundy AV</strong><h1 data-i18n="profilesTitle">Optional enterprise profiles</h1></div><a href="options.html" data-i18n="bannerOpenOptions">Open options</a></header>
+<p class="card audit-disclosure" data-i18n="profilesIntro"></p>
+<form id="profileForm" class="profile-form">
+<label for="profileBundle" data-i18n="profilesBundle">Suggested combination</label>
+<select id="profileBundle"><option value="local" data-i18n="profilesLocal">Local preparation</option><option value="microsoft">Microsoft</option><option value="openSource">Open Source</option><option value="cloud">AWS / Okta / Splunk / Jira</option><option value="custom" data-i18n="profilesCustom">Custom selection</option></select>
+<div class="audit-filters">
+<label><span data-i18n="profilesHosting">Hosting</span><select id="profileHosting"></select></label>
+<label><span data-i18n="profilesSso">SSO</span><select id="profileSso"></select></label>
+<label><span data-i18n="profilesDevices">Device management</span><select id="profileDevices"></select></label>
+<label><span data-i18n="profilesSiem">SIEM</span><select id="profileSiem"></select></label>
+<label><span data-i18n="profilesTickets">Ticket system</span><select id="profileTickets"></select></label>
+</div>
+</form>
+<section class="card"><h2 data-i18n="profilesRequirements">Required configuration</h2><p data-i18n="profilesRequirementsHelp"></p><ul id="profileRequirements"></ul></section>
+<section class="card"><h2 data-i18n="profilesPreview">Configuration draft</h2><p data-i18n="profilesPrivacy"></p><pre id="profilePreview" tabindex="0"></pre></section>
+<div class="audit-actions"><button id="profileSave" data-i18n="profilesSave">Save selection locally</button><button id="profileExport" class="btn-primary" data-i18n="profilesExport">Export configuration draft</button><button id="profileReset" data-i18n="profilesReset">Reset selection</button></div>
+<p id="profileStatus" role="status" aria-live="polite"></p>
+</body></html>

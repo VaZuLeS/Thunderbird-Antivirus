@@ -1093,5 +1093,77 @@
   },
   "auditExportFailed": {
     "message": "La exportación falló o se canceló."
+  },
+  "profilesTitle": {
+    "message": "Perfiles empresariales opcionales"
+  },
+  "profilesIntro": {
+    "message": "Elige los sistemas por separado o deja las integraciones desactivadas. Estos perfiles preparan la configuración; no conectan servicios empresariales ni activan registros centrales."
+  },
+  "profilesOpen": {
+    "message": "Elegir perfiles empresariales"
+  },
+  "profilesBundle": {
+    "message": "Combinación sugerida"
+  },
+  "profilesLocal": {
+    "message": "Preparación local"
+  },
+  "profilesCustom": {
+    "message": "Selección personalizada"
+  },
+  "profilesHosting": {
+    "message": "Alojamiento"
+  },
+  "profilesSso": {
+    "message": "Inicio de sesión único (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Gestión de dispositivos"
+  },
+  "profilesSiem": {
+    "message": "Supervisión de seguridad (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Sistema de tickets"
+  },
+  "profilesRequirements": {
+    "message": "Configuración necesaria"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Los ajustes de servicios y cuentas se completarán después. Los nombres siguientes indican ajustes y referencias de secretos necesarios; no introduzcas credenciales aquí."
+  },
+  "profilesPreview": {
+    "message": "Borrador de configuración"
+  },
+  "profilesPrivacy": {
+    "message": "Las conexiones siguen desactivadas. El borrador no contiene claves API, tokens, URL pulsadas ni datos de mensajes. Los datos centrales se prevén con redacción al dominio."
+  },
+  "profilesSave": {
+    "message": "Guardar selección localmente"
+  },
+  "profilesExport": {
+    "message": "Exportar borrador de configuración"
+  },
+  "profilesReset": {
+    "message": "Restablecer selección"
+  },
+  "profilesNone": {
+    "message": "Desactivado / sin seleccionar"
+  },
+  "profilesSelfHosted": {
+    "message": "Alojamiento propio / local"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Esta selección no necesita ajustes de integración externos."
+  },
+  "profilesSaved": {
+    "message": "Selección guardada localmente. Las conexiones siguen desactivadas."
+  },
+  "profilesExported": {
+    "message": "Borrador exportado. No se activó nada."
+  },
+  "profilesFailed": {
+    "message": "No se pudo cargar, guardar o exportar la selección, o se canceló la operación."
   }
 }

@@ -20,7 +20,7 @@ test('mandatory catalogs have complete nonempty keys and matching placeholders',
             assert.deepEqual(catalogs.en[key].placeholders || {}, catalogs[locale][key].placeholders || {}, locale + '/' + key);
         }
     }
-    for (const file of ['options.html', 'popup.html', 'privacy.html', 'api.js', 'options.js', 'background.js', 'risk.js', 'scan_policy.js', 'providers.js', 'message_ui.js', 'link_audit.js', 'audit.html', 'audit.js']) {
+    for (const file of ['options.html', 'popup.html', 'privacy.html', 'api.js', 'options.js', 'background.js', 'risk.js', 'scan_policy.js', 'providers.js', 'message_ui.js', 'link_audit.js', 'audit.html', 'audit.js', 'enterprise_setup.html', 'enterprise_setup.js']) {
         const text = fs.readFileSync(file, 'utf8');
         const keys = [...text.matchAll(/\b(?:uiText|msg|t)\(['"]([^'"]+)['"]/g)].map(match => match[1]);
         const domKeys = [...text.matchAll(/data-i18n(?:-(?:title|aria-label|placeholder))?="([^"]+)"/g)].map(match => match[1]);
@@ -29,7 +29,7 @@ test('mandatory catalogs have complete nonempty keys and matching placeholders',
 });
 
 for (const locale of ['en', 'de', 'en-GB', 'de-AT', 'fr', 'fr-CA', 'es', 'es-MX', 'it', 'pl', 'ja']) {
-    for (const file of ['options.html', 'popup.html', 'privacy.html', 'audit.html']) {
+    for (const file of ['options.html', 'popup.html', 'privacy.html', 'audit.html', 'enterprise_setup.html']) {
         test(`${file} renders ${locale} with bundled English fallback`, () => {
             const dom = new JSDOM(fs.readFileSync(file, 'utf8'));
             const language = catalogs[locale.split('-')[0]] ? locale.split('-')[0] : 'en';

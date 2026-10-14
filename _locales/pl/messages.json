@@ -1093,5 +1093,77 @@
   },
   "auditExportFailed": {
     "message": "Eksport nie powiódł się lub został anulowany."
+  },
+  "profilesTitle": {
+    "message": "Opcjonalne profile firmowe"
+  },
+  "profilesIntro": {
+    "message": "Wybierz systemy niezależnie lub pozostaw integracje wyłączone. Profile przygotowują konfigurację; nie łączą usług firmowych ani nie włączają centralnego rejestrowania."
+  },
+  "profilesOpen": {
+    "message": "Wybierz profile firmowe"
+  },
+  "profilesBundle": {
+    "message": "Proponowana kombinacja"
+  },
+  "profilesLocal": {
+    "message": "Przygotowanie lokalne"
+  },
+  "profilesCustom": {
+    "message": "Własny wybór"
+  },
+  "profilesHosting": {
+    "message": "Hosting"
+  },
+  "profilesSso": {
+    "message": "Logowanie jednokrotne (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Zarządzanie urządzeniami"
+  },
+  "profilesSiem": {
+    "message": "Monitorowanie bezpieczeństwa (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "System zgłoszeń"
+  },
+  "profilesRequirements": {
+    "message": "Wymagana konfiguracja"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Ustawienia usług i kont zostaną uzupełnione później. Poniższe nazwy wskazują wymagane ustawienia i odwołania do sekretów; nie wpisuj tutaj danych dostępu."
+  },
+  "profilesPreview": {
+    "message": "Projekt konfiguracji"
+  },
+  "profilesPrivacy": {
+    "message": "Połączenia pozostają wyłączone. Projekt nie zawiera kluczy API, tokenów, klikniętych adresów URL ani danych wiadomości. Dane centralne są planowane z ograniczeniem do domeny."
+  },
+  "profilesSave": {
+    "message": "Zapisz wybór lokalnie"
+  },
+  "profilesExport": {
+    "message": "Eksportuj projekt konfiguracji"
+  },
+  "profilesReset": {
+    "message": "Zresetuj wybór"
+  },
+  "profilesNone": {
+    "message": "Wyłączone / niewybrane"
+  },
+  "profilesSelfHosted": {
+    "message": "Własny hosting / lokalnie"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Ten wybór nie wymaga ustawień integracji zewnętrznych."
+  },
+  "profilesSaved": {
+    "message": "Wybór zapisany lokalnie. Połączenia pozostają wyłączone."
+  },
+  "profilesExported": {
+    "message": "Projekt wyeksportowany. Niczego nie włączono."
+  },
+  "profilesFailed": {
+    "message": "Nie udało się wczytać, zapisać lub wyeksportować wyboru albo operacja została anulowana."
   }
 }

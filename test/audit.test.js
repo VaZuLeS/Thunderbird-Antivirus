@@ -39,11 +39,12 @@ test('filters combine dates, URL, outcome and minimum score without treating unk
     assert.equal(api.filter(records, { from: '2026-10-12' }).length, 0);
 });
 
-test('review UI escapes evidence, paginates and exports all filtered rows', async () => {
+test('review UI escapes evidence, paginates and exports all filtered rows', { timeout: 10000 }, async () => {
     const dom = new JSDOM(fs.readFileSync('audit.html', 'utf8'));
     const entries = Array.from({ length: 57 }, (_, index) => ({ ...records[0], id: String(index), clickedAt: Date.now() - index }));
     const catalog = JSON.parse(fs.readFileSync('_locales/en/messages.json'));
-    let blob, download, revoked = false;
+    let blob, download, revoked = false, exportFinished;
+    const exported = new Promise(resolve => { exportFinished = resolve; });
     const context = vm.createContext({
         document: dom.window.document, TextEncoder, crypto: crypto.webcrypto, Blob,
         URL: { createObjectURL: data => { blob = data; return 'blob:test'; }, revokeObjectURL: () => { revoked = true; } },
@@ -51,7 +52,7 @@ test('review UI escapes evidence, paginates and exports all filtered rows', asyn
             downloads: { download: async data => { download = data; } }, i18n: { getUILanguage: () => 'en', getMessage: key => catalog[key]?.message || '' } }
     });
     // Preserve the native URL constructor while intercepting blob operations.
-    context.URL = class extends URL {}; context.URL.createObjectURL = data => { blob = data; return 'blob:test'; }; context.URL.revokeObjectURL = () => { revoked = true; };
+    context.URL = class extends URL {}; context.URL.createObjectURL = data => { blob = data; return 'blob:test'; }; context.URL.revokeObjectURL = () => { revoked = true; exportFinished(); };
     vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\n' + source, context);
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(dom.window.document.querySelectorAll('#auditRows tr').length, 50);
@@ -61,7 +62,7 @@ test('review UI escapes evidence, paginates and exports all filtered rows', asyn
     dom.window.document.getElementById('auditNext').click();
     assert.equal(dom.window.document.querySelectorAll('#auditRows tr').length, 7);
     dom.window.document.getElementById('auditJson').click();
-    for (let i = 0; i < 10 && !download; i++) await new Promise(resolve => setImmediate(resolve));
+    await exported;
     assert.equal(download.saveAs, true); assert.equal(revoked, true);
     assert.equal(JSON.parse(await blob.text()).payload.records.length, 57);
     dom.window.close();

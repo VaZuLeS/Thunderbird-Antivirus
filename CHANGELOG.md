@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.21.0 — 2026-10-14
+
+- Add optional hosting, SSO, device-management, SIEM and ticket configuration profiles with editable vendor combinations.
+- Provide a six-language offline settings assistant, local selection storage, JSON draft export and a matching Node CLI.
+- Keep every integration disabled and omit secret values and user activity; profile selection does not change existing scan consent.
+- Reject unknown profile inputs, refuse CLI file overwrites and test all 3,125 combinations plus save/export/reset in six languages.
+- Document activation prerequisites and remaining enterprise implementation work; profile selection does not deploy or connect services.
+
 ## 1.20.0 — 2026-10-13
 
 - Persist intercepted link decisions with full URL, timestamp, local message/link score, provider verdict and decision-time snapshots. Distinguish successful browser handoff, cancellation, opening failure and pending interactions.

@@ -275,3 +275,9 @@ body.scanner-popup { width: 600px; min-width: 600px; margin: 0; padding: 20px; b
 }
 
 .audit-risky .audit-opened { color: var(--color-danger); font-weight: 700; }
+
+.profile-form > select { width: 100%; padding: 10px; color: var(--text-color); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; }
+.profile-page h2 { font-size: 16px; }
+.profile-page .audit-filters select { min-width: 0; }
+.profile-page pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; max-height: 400px; overflow: auto; background: var(--bg-color); border-radius: 8px; padding: 12px; }
+.profile-page li { overflow-wrap: anywhere; }

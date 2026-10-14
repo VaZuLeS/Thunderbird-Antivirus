@@ -21,3 +21,7 @@ Die Bibliothek nimmt den bereits authentifizierten Kontext von einem zukünftige
 Es gibt noch keine Geräteverteilung, Outbox, Netzwerkübermittlung, SSO, Rollenprüfung, Object Locks, Incidents, Vault, Server-Retention oder OS-/Thunderbird-Abnahme. Die Policy-ID-/Gruppen-/Schlüsselzuordnung muss aus dem späteren Unternehmenskanal stammen. `allow_intent` erlaubt nur einen geprüften Öffnungswunsch im Modell; es erzeugt kein `OPENED`-Ereignis und öffnet keinen Browser.
 
 **Kein Arbeitspaket gilt durch diese Vorbereitung insgesamt als abgeschlossen.** Vollständige Umsetzung/Abnahme bleibt an die Unternehmensentscheidungen und Freigaben aus F01–F04 gebunden. Der [Umsetzungsstand mit Blockern](../docs/ENTERPRISE_UMSETZUNGSSTAND.md) führt alle 30 Pakete auf.
+
+## Optionale Systemprofile
+
+Der separate [Profilassistent](../docs/ENTERPRISE_SYSTEMPROFILE.md) ist ab 1.21.0 in der Extension enthalten. Die gemeinsam verwendete `enterprise_profiles.js` erzeugt ausschließlich deaktivierte Konfigurationsentwürfe. Die Node-CLI `npm run enterprise:profile -- --hosting azure --sso entra-id` arbeitet ohne Netzwerk; ihre Implementierung bleibt außerhalb des XPI. Auswahl und Export implementieren noch keine der externen Integrationen.

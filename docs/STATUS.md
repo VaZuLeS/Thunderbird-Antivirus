@@ -1,8 +1,14 @@
+# Optionale Unternehmensprofile — 1.21.0
+
+552 Tests bestanden, 0 Lint-Fehler / 24 bekannte Warnungen, 37 Runtime-Dateien / 616.949 Bytes entpackt und 24 Chromium-Layouts geprüft. Sechssprachiger Offline-Assistent unter Einstellungen, frei kombinierbare Hosting-/SSO-/MDM-/SIEM-/Ticketprofile, lokale Speicherung und JSON-Export sowie Node-CLI implementiert. Standard: lokale Vorbereitung ohne externe Verbindungen. Alle Profile sind deaktivierte Entwürfe, keine bereits funktionierenden Integrationen. [Profile und Bedienung](ENTERPRISE_SYSTEMPROFILE.md).
+
+---
+
 # Enterprise-Umsetzung — 14. Oktober 2026
 
 Ein vorbereitender Node-only-Vertragskern mit Policy-/Eventvalidierung, JCS/Ed25519-Prüfung, Scope-/Versions-/Widerrufsprüfung, Entscheidungsmodell und Domain-only-Redaktion wurde implementiert. 14 neue Tests; Gesamtgate 531 Tests, keine Lint-Fehler, geprüftes XPI ohne diese Entwicklungsbausteine.
 
-**Vollständiges Enterprise-Ziel blockiert:** Unternehmensvorgaben/Freigaben aus F01/F02, IdP-/Hosting-/SIEM-/Ticketzugänge und reale Zielsysteme für F03/Abnahme fehlen. Kein produktiver Unternehmensbetrieb und keine Integration in die Extension aktiviert. [Status aller 30 Arbeitspakete und benötigte Voraussetzungen](ENTERPRISE_UMSETZUNGSSTAND.md).
+**Enterprise-Entwicklung mit optionalen Profilen fortgesetzt:** Eine feste Herstellerwahl ist keine Voraussetzung für Entwicklung und synthetische Tests. Produktive Parameter/Freigaben und reale Zielsysteme für F03/Abnahme bleiben offen. Kein produktiver Unternehmensbetrieb und keine Integration in die Extension aktiviert. [Status aller 30 Arbeitspakete und benötigte Voraussetzungen](ENTERPRISE_UMSETZUNGSSTAND.md).
 
 ---
 
@@ -10,7 +16,7 @@ Ein vorbereitender Node-only-Vertragskern mit Policy-/Eventvalidierung, JCS/Ed25
 
 Die sechs gewünschten Unternehmenspunkte sind im [vollständigen Umsetzungskonzept](ENTERPRISE_UMSETZUNGSKONZEPT.md) ausgearbeitet. Enthalten sind Zielarchitektur, Geräte-/Serververtrauen, Richtlinien und Ausnahmen, SSO-/Rechtematrix, Incidents, Flottenzustand, Datenschutz-/Retentionregeln, 30 Arbeitspakete und Abnahmekriterien. [Entwurfsverträge](enterprise/README.md) ergänzen die Spezifikation.
 
-Vertragsprüfung: 31 positive/negative Schemafälle bestanden; 30 eindeutig identifizierte Arbeitspakete und ihre Abhängigkeiten ohne Zyklen geprüft. Das sind Konzept-/Vertragsprüfungen, keine Implementierungs- oder Thunderbird-Abnahme. Version 1.20.0 bleibt der veröffentlichte lokale Funktionsstand; die Enterprise-Funktionen sind noch nicht implementiert.
+Vertragsprüfung: 31 positive/negative Schemafälle bestanden; 30 eindeutig identifizierte Arbeitspakete und ihre Abhängigkeiten ohne Zyklen geprüft. Das sind Konzept-/Vertragsprüfungen, keine Implementierungs- oder Thunderbird-Abnahme. Version 1.21.0 ergänzt optionale Profilentwürfe; zentrale Enterprise-Dienste sind noch nicht implementiert.
 
 ---
 

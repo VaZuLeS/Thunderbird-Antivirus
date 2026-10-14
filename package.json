@@ -1,6 +1,6 @@
 {
   "name": "thundy-av",
-  "version": "1.20.0",
+  "version": "1.21.0",
   "description": "Thundy AV - opt-in email attachment and link scanner for Thunderbird (WebExtension, Manifest V3).",
   "license": "MIT",
   "private": true,
@@ -16,7 +16,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "NODE_PATH=node_modules node --test --test-reporter=spec api.test.js api_gateway.test.js background.test.js db.test.js options.test.js scripts/pre-submit-checks.test.js scripts/submission-gate.test.js test/consent-and-tier.test.js test/manifest.test.js test/i18n.test.js test/optimization.test.js test/audit.test.js enterprise/test/contracts.test.js",
+    "test": "NODE_PATH=node_modules node --test --test-reporter=spec api.test.js api_gateway.test.js background.test.js db.test.js options.test.js scripts/pre-submit-checks.test.js scripts/submission-gate.test.js test/consent-and-tier.test.js test/manifest.test.js test/i18n.test.js test/optimization.test.js test/audit.test.js enterprise/test/contracts.test.js enterprise/test/profiles.test.js",
     "lint": "web-ext lint --source-dir .",
     "lint:filtered": "node scripts/lint-with-filter.js",
     "build": "web-ext build --source-dir . --artifacts-dir ./build",
@@ -26,7 +26,8 @@
     "check": "npm run pre-submit-checks && npm run check:i18n && npm run check:vendor && npm test && npm run lint:filtered && npm run package",
     "store-gate": "node ./scripts/submission-gate.js",
     "check:i18n": "node scripts/generate-i18n-fallback.js --check",
-    "check:vendor": "node scripts/update-vendor.js"
+    "check:vendor": "node scripts/update-vendor.js",
+    "enterprise:profile": "node enterprise/configure.cjs"
   },
   "devDependencies": {
     "ajv": "8.20.0",

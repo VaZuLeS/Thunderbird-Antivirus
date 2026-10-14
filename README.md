@@ -13,12 +13,12 @@ submits the minimum data required to external analysis services.
 | Add-on name | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.20.0 – GitHub release (unsigned) – see [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.21.0 – GitHub release (unsigned) – see [CHANGELOG.md](CHANGELOG.md) |
 | License | MIT – see [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.20.0 |
+| Release (unsigned XPI for testing) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.21.0 |
 | Requires | Thunderbird 140.0 or newer (Manifest V3) |
 | Languages | English, German, French, Spanish, Italian and Polish; complete bundled UI catalogs with English fallback |
 
@@ -161,7 +161,7 @@ npm run store-gate                                    # submission readiness gat
 
 ## Enterprise implementation concept
 
-The six proposed enterprise capabilities are fully specified in [the implementation concept](docs/ENTERPRISE_UMSETZUNGSKONZEPT.md), including device/server trust, policies, OIDC roles, incidents, privacy, operational recovery, work packages and acceptance criteria. [Draft data contracts](docs/enterprise/README.md) include validated policy/event examples. A [preparatory Node-only contract core](enterprise/README.md) now validates signed policies, event semantics and URL redaction; it is excluded from the XPI. The [implementation status](docs/ENTERPRISE_UMSETZUNGSSTAND.md) identifies the missing organization decisions, credentials and real-client acceptance. Enterprise deployment/integration is not implemented by version 1.20.0.
+The six proposed enterprise capabilities are fully specified in [the implementation concept](docs/ENTERPRISE_UMSETZUNGSKONZEPT.md), including device/server trust, policies, OIDC roles, incidents, privacy, operational recovery, work packages and acceptance criteria. [Draft data contracts](docs/enterprise/README.md) include validated policy/event examples. A [preparatory Node-only contract core](enterprise/README.md) now validates signed policies, event semantics and URL redaction; it is excluded from the XPI. The [implementation status](docs/ENTERPRISE_UMSETZUNGSSTAND.md) identifies the missing organization decisions, credentials and real-client acceptance. Version 1.21.0 adds [optional system profiles](docs/ENTERPRISE_SYSTEMPROFILE.md): choose combinations in settings, save locally and export a disabled configuration draft. Azure/AWS/Google Cloud, Entra ID/Keycloak/Okta, Intune/Jamf/Ansible, Sentinel/Splunk/Elastic and Jira/ServiceNow/GitLab are available as preparation profiles. Enterprise deployment and integrations remain unimplemented.
 
 ## Version 1.20.0 — Link decisions and review
 
@@ -179,7 +179,7 @@ Fixes the collapsed message-action popup and confirmed links that failed to open
 
 The optimization work is documented in [the task plan](docs/AUFGABENPLAN_OPTIMIERUNG_I18N.md). External scans require both global consent and a message action or sender authorization. Local checks work without API keys; complete URL submissions require the Maximum tier. Sender authorizations can be edited in settings. Reputation caches expire after 15 minutes; persistent results are limited to 1,000 messages and cleaned against a 30-day retention period on database startup.
 
-The [GitHub release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.20.0) contains an unsigned XPI. Thunderbird live testing and real screenshots remain required; use [the 1.19.0 protocol](docs/live_test_1_19_0.md).
+The [GitHub release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.21.0) contains an unsigned XPI. Thunderbird live testing and real screenshots remain required; use [the 1.19.0 protocol](docs/live_test_1_19_0.md).
 
 ## Permissions overview
 

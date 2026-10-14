@@ -1093,5 +1093,77 @@
   },
   "auditExportFailed": {
     "message": "Esportazione non riuscita o annullata."
+  },
+  "profilesTitle": {
+    "message": "Profili aziendali facoltativi"
+  },
+  "profilesIntro": {
+    "message": "Scegli i sistemi separatamente o lascia le integrazioni disattivate. Questi profili preparano la configurazione; non collegano servizi aziendali né attivano registri centrali."
+  },
+  "profilesOpen": {
+    "message": "Scegli profili aziendali"
+  },
+  "profilesBundle": {
+    "message": "Combinazione suggerita"
+  },
+  "profilesLocal": {
+    "message": "Preparazione locale"
+  },
+  "profilesCustom": {
+    "message": "Selezione personalizzata"
+  },
+  "profilesHosting": {
+    "message": "Hosting"
+  },
+  "profilesSso": {
+    "message": "Accesso unico (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Gestione dei dispositivi"
+  },
+  "profilesSiem": {
+    "message": "Monitoraggio della sicurezza (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Sistema di ticket"
+  },
+  "profilesRequirements": {
+    "message": "Configurazione richiesta"
+  },
+  "profilesRequirementsHelp": {
+    "message": "I parametri dei servizi e degli account verranno aggiunti in seguito. I nomi sotto indicano impostazioni e riferimenti ai segreti richiesti; non inserire credenziali qui."
+  },
+  "profilesPreview": {
+    "message": "Bozza di configurazione"
+  },
+  "profilesPrivacy": {
+    "message": "Le connessioni restano disattivate. La bozza non contiene chiavi API, token, URL cliccati o dati dei messaggi. I dati centrali sono previsti con mascheramento al solo dominio."
+  },
+  "profilesSave": {
+    "message": "Salva la selezione localmente"
+  },
+  "profilesExport": {
+    "message": "Esporta la bozza"
+  },
+  "profilesReset": {
+    "message": "Reimposta la selezione"
+  },
+  "profilesNone": {
+    "message": "Disattivato / non selezionato"
+  },
+  "profilesSelfHosted": {
+    "message": "Gestione propria / in sede"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Questa selezione non richiede impostazioni di integrazione esterne."
+  },
+  "profilesSaved": {
+    "message": "Selezione salvata localmente. Le connessioni restano disattivate."
+  },
+  "profilesExported": {
+    "message": "Bozza esportata. Nessuna attivazione effettuata."
+  },
+  "profilesFailed": {
+    "message": "Impossibile caricare, salvare o esportare la selezione, oppure l’operazione è stata annullata."
   }
 }

@@ -18,6 +18,9 @@ const ALLOWED_FILES = [
   '_locales/pl/messages.json',
   'i18n.js',
   'runtime.js',
+  'enterprise_profiles.js',
+  'enterprise_setup.html',
+  'enterprise_setup.js',
   'link_audit.js',
   'audit.js',
   'audit.html',
@@ -50,6 +53,9 @@ const REQUIRED_FILES = [
   '_locales/pl/messages.json',
   'i18n.js',
   'runtime.js',
+  'enterprise_profiles.js',
+  'enterprise_setup.html',
+  'enterprise_setup.js',
   'link_audit.js',
   'audit.js',
   'audit.html',
@@ -90,7 +96,8 @@ const FORBIDDEN = [
   /^\.webextignore$/
 ];
 // Six complete catalogs and a bundled Public Suffix List require more than the former 400 KiB budget.
-const MAX_UNCOMPRESSED_BYTES = 600 * 1024;
+// Six-language optional profile assistant adds ~30 KiB to the 1.20 runtime.
+const MAX_UNCOMPRESSED_BYTES = 650 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the

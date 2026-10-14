@@ -1096,5 +1096,77 @@
   },
   "auditExportFailed": {
     "message": "Export fehlgeschlagen oder abgebrochen."
+  },
+  "profilesTitle": {
+    "message": "Optionale Unternehmensprofile"
+  },
+  "profilesIntro": {
+    "message": "Wähle verbreitete Systeme unabhängig voneinander oder lasse Anbindungen deaktiviert. Diese Profile bereiten die Konfiguration vor; sie verbinden keinen Unternehmensdienst und aktivieren kein zentrales Protokoll."
+  },
+  "profilesOpen": {
+    "message": "Unternehmensprofile wählen"
+  },
+  "profilesBundle": {
+    "message": "Vorgeschlagene Kombination"
+  },
+  "profilesLocal": {
+    "message": "Lokale Vorbereitung"
+  },
+  "profilesCustom": {
+    "message": "Eigene Auswahl"
+  },
+  "profilesHosting": {
+    "message": "Hosting"
+  },
+  "profilesSso": {
+    "message": "Zentrale Anmeldung (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Geräteverwaltung"
+  },
+  "profilesSiem": {
+    "message": "Sicherheitsauswertung (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Ticketsystem"
+  },
+  "profilesRequirements": {
+    "message": "Benötigte Konfiguration"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Endpunkt- und Kontoeinstellungen werden bei der späteren Einrichtung ergänzt. Die folgenden Namen bezeichnen benötigte Einstellungen und Secret-Referenzen; hier werden keine Zugangsdaten eingegeben."
+  },
+  "profilesPreview": {
+    "message": "Konfigurationsentwurf"
+  },
+  "profilesPrivacy": {
+    "message": "Verbindungen bleiben deaktiviert. Der Entwurf enthält keine API-Schlüssel, Tokens, angeklickten URLs oder Nachrichtendaten. Zentrale Daten sind mit Domain-Redaktion vorgesehen."
+  },
+  "profilesSave": {
+    "message": "Auswahl lokal speichern"
+  },
+  "profilesExport": {
+    "message": "Konfigurationsentwurf exportieren"
+  },
+  "profilesReset": {
+    "message": "Auswahl zurücksetzen"
+  },
+  "profilesNone": {
+    "message": "Deaktiviert / nicht ausgewählt"
+  },
+  "profilesSelfHosted": {
+    "message": "Eigenbetrieb / im Unternehmen"
+  },
+  "profilesNoExternalSettings": {
+    "message": "Für diese Auswahl sind keine externen Integrationseinstellungen nötig."
+  },
+  "profilesSaved": {
+    "message": "Auswahl lokal gespeichert. Verbindungen bleiben deaktiviert."
+  },
+  "profilesExported": {
+    "message": "Konfigurationsentwurf exportiert. Es wurde nichts aktiviert."
+  },
+  "profilesFailed": {
+    "message": "Die Auswahl konnte nicht geladen, gespeichert oder exportiert werden, oder der Vorgang wurde abgebrochen."
   }
 }

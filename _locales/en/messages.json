@@ -1096,5 +1096,77 @@
   },
   "auditExportFailed": {
     "message": "Export failed or was cancelled."
+  },
+  "profilesTitle": {
+    "message": "Optional enterprise profiles"
+  },
+  "profilesIntro": {
+    "message": "Choose common systems independently or leave integrations disabled. These profiles prepare configuration; they do not connect to a company service or activate central logging."
+  },
+  "profilesOpen": {
+    "message": "Choose enterprise profiles"
+  },
+  "profilesBundle": {
+    "message": "Suggested combination"
+  },
+  "profilesLocal": {
+    "message": "Local preparation"
+  },
+  "profilesCustom": {
+    "message": "Custom selection"
+  },
+  "profilesHosting": {
+    "message": "Hosting"
+  },
+  "profilesSso": {
+    "message": "Single sign-on (SSO)"
+  },
+  "profilesDevices": {
+    "message": "Device management"
+  },
+  "profilesSiem": {
+    "message": "Security monitoring (SIEM)"
+  },
+  "profilesTickets": {
+    "message": "Ticket system"
+  },
+  "profilesRequirements": {
+    "message": "Required configuration"
+  },
+  "profilesRequirementsHelp": {
+    "message": "Endpoint and account settings are supplied during later setup. The names below identify required settings and secret references; enter no credentials here."
+  },
+  "profilesPreview": {
+    "message": "Configuration draft"
+  },
+  "profilesPrivacy": {
+    "message": "Connections remain disabled. The draft contains no API keys, tokens, clicked URLs or message data. Central data is planned with domain-only redaction."
+  },
+  "profilesSave": {
+    "message": "Save selection locally"
+  },
+  "profilesExport": {
+    "message": "Export configuration draft"
+  },
+  "profilesReset": {
+    "message": "Reset selection"
+  },
+  "profilesNone": {
+    "message": "Disabled / not selected"
+  },
+  "profilesSelfHosted": {
+    "message": "Self-hosted / on-premises"
+  },
+  "profilesNoExternalSettings": {
+    "message": "No external integration settings required for this selection."
+  },
+  "profilesSaved": {
+    "message": "Selection saved locally. Connections remain disabled."
+  },
+  "profilesExported": {
+    "message": "Configuration draft exported. Nothing was activated."
+  },
+  "profilesFailed": {
+    "message": "The selection could not be loaded, saved or exported, or the operation was cancelled."
   }
 }
