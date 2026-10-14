@@ -4,7 +4,7 @@ Stand: 14. Oktober 2026. Bezug: [vollständiges Umsetzungskonzept](ENTERPRISE_UM
 
 **Entwicklung mit optionalen Systemprofilen fortgesetzt; vollständige Enterprise-Umsetzung noch offen.** Version 1.21.0 liefert einen sechssprachigen Offline-Profilassistenten und JSON-Export. Verbreitete Systeme sind frei kombinierbare Möglichkeiten; eine feste Herstellerwahl ist keine Entwicklungsvoraussetzung. Der Node-Vertragskern bleibt außerhalb des XPI. Ein [lokaler Entwicklungsservice mit signiertem Ingest, STAGED-Quittungen und sechssprachiger Offline-Adminprüfung](ENTERPRISE_LOKALER_SERVICE.md) wurde ergänzt. Produktive Enterprise-Verbindungen sind weiterhin nicht implementiert.
 
-Aktuelles Gesamtgate nach Service-Erweiterung: **598 Tests bestanden**, **0 Lint-Fehler / 24 bekannte Warnungen**. 24 weitere Chromium-Layouts der sechssprachigen Offline-Review bestanden. Der Prozessabbruchtest erhält die bestätigte Quittung nach geprüftem Neustart. Alle 37 ausgelieferten XPI-Dateien stimmen weiterhin mit Release 1.21.0 überein. Die [Broker-Outbox](ENTERPRISE_OUTBOX.md) ergänzt dauerhafte Sequenzen, signierte Queueaktionen, Retry/Dead Letters, geprüfte STAGED-Annahme und lokale Zustellung bis zur bestehenden Admin-Review. Kein vollständiges Enterprise-Arbeitspaket wird allein durch diese lokale Vorarbeit als abgenommen markiert.
+Aktuelles Gesamtgate nach Service-Erweiterung: **618 Tests bestanden**, **0 Lint-Fehler / 24 bekannte Warnungen**. 24 weitere Chromium-Layouts der sechssprachigen Offline-Review bestanden. Der Prozessabbruchtest erhält die bestätigte Quittung nach geprüftem Neustart. Alle 37 ausgelieferten XPI-Dateien stimmen weiterhin mit Release 1.21.0 überein. Die [Broker-Outbox](ENTERPRISE_OUTBOX.md) ergänzt dauerhafte Sequenzen, signierte Queueaktionen, Retry/Dead Letters, geprüfte STAGED-Annahme und lokale Zustellung bis zur bestehenden Admin-Review. Der [separate Witness und vollständige Offline-Evidenzprüfer](ENTERPRISE_EVIDENZPRUEFUNG.md) erkennen zusätzlich Forks und abgeschnittene Enden gegen einen extern gepinnten Checkpoint; STAGED bleibt ohne Payload-Retirement. Kein vollständiges Enterprise-Arbeitspaket wird allein durch diese lokale Vorarbeit als abgenommen markiert.
 
 [Verfügbare Profile, Export und CLI](ENTERPRISE_SYSTEMPROFILE.md). Standard: lokale Vorbereitung, externe Bereiche deaktiviert. Auswahl, Speicherung und Export aktivieren keine Datenübertragung.
 
@@ -55,7 +55,7 @@ Konfigurations- und Testzugänge über die ausführende Umgebung bereitstellen; 
 | P04 | Offen | Antrag, getrennte Freigabe und einmaliger Ticketverbrauch |
 | P05 | Vorarbeit | Unknown-/Warn-/Ack-Gates im Modell; echte Broker-/Quittungs-/Ausfallintegration fehlt |
 | E01 | Vorarbeit | Signierte Geräteevents und verkettete STAGED-Receipts vorhanden; echte STAGED→SEALED/Object-Lock-Ablage fehlt |
-| E02 | Vorarbeit | Offline-STAGED-Signatur-/Hashprüfer vorhanden; externe Checkpoints, Tail-Erkennung und Rotation fehlen |
+| E02 | Vorarbeit | Vollständiger Offline-Prüfer, Server-Checkpoints, separater Witness, Pin-/Präfix-/Tail-/Fork-Prüfung vorhanden; produktive unabhängige Verankerung, Rotation und Betriebsabnahme fehlen |
 | E03 | Offen | Object Locks, Rotation, Aufbewahrung und Restore auf gewählter Infrastruktur |
 | A01 | Offen | OIDC-BFF, Session-/CSRF-/MFA-/Logouttests mit tatsächlichem IdP |
 | A02 | Offen | Rollen-/Organisations-/Objektrechte und negative API-/Exporttests |

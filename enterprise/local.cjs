@@ -2,16 +2,30 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
-const { Ledger, signed, verifyEnvelope, hash } = require("./ledger.cjs");
+const { Ledger, signed } = require("./ledger.cjs");
 const { createService } = require("./service.cjs");
 const { reviewHtml } = require("./review.cjs");
+const { makeCheckpoint, verifyEvidence } = require("./evidence.cjs");
+const { readJson, readRegistry } = require("./witness_cli.cjs");
 function args(argv) {
   const options = {};
   for (let i = 0; i < argv.length; i += 2) {
     const name = argv[i]?.slice(2);
     if (
       !argv[i]?.startsWith("--") ||
-      !["data-dir", "port", "out", "lang", "public-key"].includes(name) ||
+      ![
+        "data-dir",
+        "port",
+        "out",
+        "lang",
+        "public-key",
+        "server-key-id",
+        "registry",
+        "witness-anchor",
+        "witness-public-key",
+        "expected-anchor-hash",
+        "coverage",
+      ].includes(name) ||
       !argv[i + 1] ||
       Object.hasOwn(options, name)
     )
@@ -47,6 +61,30 @@ async function main() {
   const command = process.argv[2],
     options = args(process.argv.slice(3)),
     directory = path.resolve(options["data-dir"] || "enterprise/.local");
+  const allowedOptions = {
+    init: ["data-dir"],
+    serve: ["data-dir", "port"],
+    demo: ["data-dir"],
+    review: ["data-dir", "out", "lang"],
+    export: ["data-dir", "out"],
+    checkpoint: ["data-dir", "out"],
+    verify: [
+      "out",
+      "public-key",
+      "server-key-id",
+      "registry",
+      "witness-anchor",
+      "witness-public-key",
+      "expected-anchor-hash",
+      "coverage",
+    ],
+  };
+  if (!Object.hasOwn(allowedOptions, command))
+    throw new Error("COMMAND_INVALID");
+  if (
+    Object.keys(options).some((key) => !allowedOptions[command].includes(key))
+  )
+    throw new Error("OPTION_NOT_SUPPORTED");
   if (command === "init") {
     // Atomic directory creation prevents accidental overwrites of existing operator data.
     fs.mkdirSync(directory, { mode: 0o700 });
@@ -233,34 +271,50 @@ async function main() {
     }
     return;
   }
+  if (command === "checkpoint") {
+    if (!options.out) throw new Error("OUTPUT_REQUIRED");
+    const ledger = open(directory);
+    try {
+      const data = {
+          kind: "thundy-staged-journal-export",
+          schemaVersion: 1,
+          records: ledger.exportRecords(),
+        },
+        config = load(directory);
+      const checkpoint = makeCheckpoint(data, {
+        serverPrivateKey: ledger.privateKey,
+        serverKeyId: ledger.serverKeyId,
+        registrations: config.registrations,
+      });
+      writePrivate(options.out, JSON.stringify(checkpoint, null, 2) + "\n");
+      process.stdout.write("STAGED_CHECKPOINT_WRITTEN\n");
+    } finally {
+      ledger.close();
+    }
+    return;
+  }
   if (command === "verify") {
     if (!options.out || !options["public-key"])
       throw new Error("EXPORT_AND_PUBLIC_KEY_REQUIRED");
-    const publicKey = crypto.createPublicKey(
-        fs.readFileSync(options["public-key"]),
-      ),
-      data = JSON.parse(fs.readFileSync(options.out, "utf8"));
-    let previous = null,
-      index = 0;
-    if (
-      data.kind !== "thundy-staged-journal-export" ||
-      data.schemaVersion !== 1 ||
-      !Array.isArray(data.records)
-    )
-      throw new Error("EXPORT_INVALID");
-    for (const record of data.records) {
-      const receipt = verifyEnvelope(record.receipt, publicKey);
-      if (
-        receipt.status !== "STAGED" ||
-        receipt.ingressIndex !== ++index ||
-        receipt.previousReceiptHash !== previous ||
-        receipt.payloadHash !== hash(record.eventEnvelope.payload) ||
-        receipt.envelopeHash !== hash(record.eventEnvelope)
-      )
-        throw new Error("EXPORT_INVALID");
-      previous = hash(record.receipt);
-    }
-    process.stdout.write("STAGED_EXPORT_SIGNATURES_VERIFIED " + index + "\n");
+    const trustOptions = {
+      serverPublicKey: fs.readFileSync(options["public-key"]),
+      serverKeyId: options["server-key-id"] || null,
+    };
+    if (options.registry)
+      trustOptions.registrations = readRegistry(options.registry);
+    if (options["witness-anchor"])
+      trustOptions.witnessAnchor = readJson(options["witness-anchor"], 65536);
+    if (options["witness-public-key"])
+      trustOptions.witnessPublicKey = fs.readFileSync(
+        options["witness-public-key"],
+      );
+    if (options["expected-anchor-hash"])
+      trustOptions.expectedAnchorHash = options["expected-anchor-hash"];
+    if (options.coverage && !["snapshot", "prefix"].includes(options.coverage))
+      throw new Error("COVERAGE_INVALID");
+    trustOptions.allowExtension = options.coverage === "prefix";
+    const report = verifyEvidence(readJson(options.out), trustOptions);
+    process.stdout.write(JSON.stringify(report, null, 2) + "\n");
     return;
   }
   throw new Error("COMMAND_INVALID");

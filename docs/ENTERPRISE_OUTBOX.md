@@ -84,4 +84,6 @@ Ein abgebrochener Writer hinterlässt `outbox.lock`. Alle zugehörigen Prozesse 
 
 22 neue Tests prüfen atomare Sequenzaufnahme/Recovery, 24 Stunden simulierte Offlinezeit, echten Prozessabbruch, fehlende Erfolgsbestätigungen, verlorene Antworten, Teilerfolge, Retry-After, Fristen/Versuchsgrenzen, Betreiber-Retry, Kapazität, Signaturen/Scope/Hash/SEALED, Origin-/Redirect-Sperren, Antwortgrenzen, konkurrierende Zustellung, Polling, private Dateirechte und die vollständige CLI-Zustellung an einen getrennten Service bis zur Admin-Review. Sie ersetzen keine reale 24-Stunden-Dauerabnahme oder Windows-/macOS-/Thunderbird-Prüfung.
 
-Nächste Stufe: unabhängige SEALED-/Checkpoint-Prüfung und sichere Payload-Freigabe, geschütztes Enrollment/Native Messaging sowie echte Unternehmens-Adapter und Rollen. [Status aller Arbeitspakete](ENTERPRISE_UMSETZUNGSSTAND.md).
+Ergänzung: [Server-Checkpoints und separater Witness mit extern gepinntem Kopf](ENTERPRISE_EVIDENZPRUEFUNG.md) sind jetzt verfügbar. Dies bleibt STAGED ohne Retirement.
+
+Nächste Stufe: echte SEALED-/Object-Lock-Prüfung und sichere Payload-Freigabe, geschütztes Enrollment/Native Messaging sowie echte Unternehmens-Adapter und Rollen. [Status aller Arbeitspakete](ENTERPRISE_UMSETZUNGSSTAND.md).

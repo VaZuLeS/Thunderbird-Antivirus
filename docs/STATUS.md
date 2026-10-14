@@ -1,3 +1,9 @@
+# Evidenzprüfung und Witness-Checkpoints — 14. Oktober 2026
+
+618 Tests bestanden. Vollständige Ereignis-/Quittungsprüfung, signierte STAGED-Checkpoints und separater Witness implementiert. Ein extern gepinnter Witness-Hash schützt den bekannten Snapshot gegen gültiges Abschneiden und Forks. Snapshot und nur bezeugter Präfix werden ausdrücklich unterschieden. Kein SEALED und kein Löschen von Broker-Payloads. [Schnellstart und Vertrauensmodell](ENTERPRISE_EVIDENZPRUEFUNG.md).
+
+---
+
 # Dauerhafte Broker-Outbox — 14. Oktober 2026
 
 598 Tests bestanden. Signierte Ereignisse und Sequenzen werden vor Zustellung dauerhaft gespeichert. Neustarts, verlorene Antworten, Rate-Limits, Dead Letters und Betreiber-Retry sind geprüft. STAGED-Quittungen löschen keine Daten; SEALED-Verifikation bleibt offen. [Schnellstart bis zur Admin-Review](ENTERPRISE_OUTBOX.md) · [Umsetzungsstand](ENTERPRISE_UMSETZUNGSSTAND.md).

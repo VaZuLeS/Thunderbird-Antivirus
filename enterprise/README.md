@@ -33,3 +33,7 @@ Der separate [Profilassistent](../docs/ENTERPRISE_SYSTEMPROFILE.md) ist ab 1.21.
 ## Dauerhafte Broker-Outbox
 
 `npm run enterprise:broker -- demo`, `status`, `deliver`, `poll`, `enqueue --input /tmp/event.json` und `retry --event-id UUID`. Der [Outbox-Leitfaden](../docs/ENTERPRISE_OUTBOX.md) beschreibt die separate Queue bis zur Admin-Review. Ereignisse/Sequenzen, Signaturen und Retryzustände überstehen Neustarts; STAGED-Inhalte bleiben erhalten. Dies ist ein lokaler POSIX-Prototyp, kein installierter Native-Messaging-Broker. SEALED-Verifikation und Payload-Retirement fehlen weiterhin.
+
+## Evidenzprüfung und separater Witness
+
+`enterprise:local checkpoint`, `enterprise:witness init/append` und `enterprise:local verify` mit explizitem Witness-Pin prüfen jetzt vollständige Snapshots und erkennen ein gültig abgeschnittenes Ende. [Schnellstart, Vertrauensmodell und Recovery](../docs/ENTERPRISE_EVIDENZPRUEFUNG.md). Dies bleibt STAGED; der Witness ist in der Demo separat gestartet, aber nicht unter unabhängigen OS-Unternehmensrollen. SEALED/Object Lock und Broker-Payload-Retirement bleiben unimplementiert.
