@@ -1,3 +1,9 @@
+# Optionale Storage-Adapter — 14. Oktober 2026
+
+639 Tests bestanden. S3-, Azure- und GCP-SDK-Adapter sowie lokaler Simulator implementiert. Profile bleiben deaktiviert; geprüft werden Identität/Region, Version, Schlüssel, Sperrfristen und tatsächlicher Readback. Cloudtests nutzen Testdoubles. Keine Cloudaktivierung, kein SEALED und kein Löschen von Brokerdaten. [Profile, Simulator und Abnahmegrenzen](ENTERPRISE_STORAGE_ADAPTER.md).
+
+---
+
 # Evidenzprüfung und Witness-Checkpoints — 14. Oktober 2026
 
 618 Tests bestanden. Vollständige Ereignis-/Quittungsprüfung, signierte STAGED-Checkpoints und separater Witness implementiert. Ein extern gepinnter Witness-Hash schützt den bekannten Snapshot gegen gültiges Abschneiden und Forks. Snapshot und nur bezeugter Präfix werden ausdrücklich unterschieden. Kein SEALED und kein Löschen von Broker-Payloads. [Schnellstart und Vertrauensmodell](ENTERPRISE_EVIDENZPRUEFUNG.md).

@@ -37,3 +37,7 @@ Der separate [Profilassistent](../docs/ENTERPRISE_SYSTEMPROFILE.md) ist ab 1.21.
 ## Evidenzprüfung und separater Witness
 
 `enterprise:local checkpoint`, `enterprise:witness init/append` und `enterprise:local verify` mit explizitem Witness-Pin prüfen jetzt vollständige Snapshots und erkennen ein gültig abgeschnittenes Ende. [Schnellstart, Vertrauensmodell und Recovery](../docs/ENTERPRISE_EVIDENZPRUEFUNG.md). Dies bleibt STAGED; der Witness ist in der Demo separat gestartet, aber nicht unter unabhängigen OS-Unternehmensrollen. SEALED/Object Lock und Broker-Payload-Retirement bleiben unimplementiert.
+
+## Optionale Storage-Adapter
+
+SDK-Adapter für AWS S3 Compliance Object Lock, Azure version-level Immutable Block Blobs und GCP Bucket Lock prüfen Versionsbindung, Identität/Region, Schlüssel, Retention und vollständigen Readback. `npm run enterprise:storage -- profile --provider aws-s3` liefert einen deaktivierten Entwurf; `simulate` prüft lokal ein vollständig bezeugtes Evidenzobjekt. [Schnellstart und Grenzen](../docs/ENTERPRISE_STORAGE_ADAPTER.md). Keine Cloudzugänge wurden verwendet; positive SDK-Metadaten allein erzeugen kein SEALED und kein Outbox-Retirement.

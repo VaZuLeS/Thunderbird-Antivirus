@@ -171,6 +171,8 @@ The [persistent broker outbox](docs/ENTERPRISE_OUTBOX.md) now queues signed even
 
 A [separate witness and offline evidence verifier](docs/ENTERPRISE_EVIDENZPRUEFUNG.md) now attest and check complete STAGED snapshots against an externally pinned witness hash. This detects valid tail truncation and forks beyond ordinary signature verification. It does not establish immutable SEALED storage or retire broker payloads.
 
+[Optional immutable-storage adapters](docs/ENTERPRISE_STORAGE_ADAPTER.md) now prepare S3, Azure Blob and GCP Bucket Lock storage with identity, version, retention and actual-byte readback checks. The local simulator requires no cloud account; all profiles default to disabled and no SEALED receipt is issued.
+
 ## Version 1.20.0 — Link decisions and review
 
 **Review link log** in settings or the message popup shows intercepted HTTP(S) clicks, full URLs, local context scores, provider verdicts and opened/aborted/error/pending decisions. Filters and JSON/CSV exports support administrator review; the decision-time assessment stays separate from late check results. High-risk openings are highlighted. Logs remain local, bounded to 30 days / 2,000 events / 2 MiB, and can be deleted independently of caches.
