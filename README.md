@@ -167,6 +167,8 @@ The six proposed enterprise capabilities are fully specified in [the implementat
 
 A [local ingestion service and six-language offline administrator review](docs/ENTERPRISE_LOKALER_SERVICE.md) are now available in the repository. Run `npm run enterprise:local -- init`, then `demo`, `review --lang en --out /tmp/review.html` or `serve --port 8766`. Signed device events receive durable local STAGED receipts, with replay/conflict checks and independent export verification. This development service is excluded from the XPI; corporate enrollment, SEALED storage, SSO roles and extension integration remain pending.
 
+The [persistent broker outbox](docs/ENTERPRISE_OUTBOX.md) now queues signed events and sequence numbers before delivery, resumes retries after restart, verifies pinned server receipts and retains all STAGED payloads. Use `npm run enterprise:broker -- status` or follow the isolated synthetic queue-to-review walkthrough.
+
 ## Version 1.20.0 — Link decisions and review
 
 **Review link log** in settings or the message popup shows intercepted HTTP(S) clicks, full URLs, local context scores, provider verdicts and opened/aborted/error/pending decisions. Filters and JSON/CSV exports support administrator review; the decision-time assessment stays separate from late check results. High-risk openings are highlighted. Logs remain local, bounded to 30 days / 2,000 events / 2 MiB, and can be deleted independently of caches.

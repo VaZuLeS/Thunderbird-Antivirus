@@ -29,3 +29,7 @@ Der separate [Profilassistent](../docs/ENTERPRISE_SYSTEMPROFILE.md) ist ab 1.21.
 ## Lokaler Aufnahme-Service und Offline-Adminansicht
 
 `npm run enterprise:local -- init`, dann `demo`, `review --lang de --out /tmp/review.html` oder `serve --port 8766`. Details zu signierten Gerätenachweisen, dauerhafter Aufnahme, STAGED-Quittungen, Grenzen und Recovery im [Service-Handbuch](../docs/ENTERPRISE_LOKALER_SERVICE.md). Der Service bindet ausschließlich Loopback. Er implementiert weder SEALED/Object Lock noch SSO/Unternehmensrollen oder die Extension-Anbindung. Die sechs Sprachansichten sind Offline-Exports mit OS-basierter Zugriffskontrolle.
+
+## Dauerhafte Broker-Outbox
+
+`npm run enterprise:broker -- demo`, `status`, `deliver`, `poll`, `enqueue --input /tmp/event.json` und `retry --event-id UUID`. Der [Outbox-Leitfaden](../docs/ENTERPRISE_OUTBOX.md) beschreibt die separate Queue bis zur Admin-Review. Ereignisse/Sequenzen, Signaturen und Retryzustände überstehen Neustarts; STAGED-Inhalte bleiben erhalten. Dies ist ein lokaler POSIX-Prototyp, kein installierter Native-Messaging-Broker. SEALED-Verifikation und Payload-Retirement fehlen weiterhin.

@@ -1,3 +1,9 @@
+# Dauerhafte Broker-Outbox — 14. Oktober 2026
+
+598 Tests bestanden. Signierte Ereignisse und Sequenzen werden vor Zustellung dauerhaft gespeichert. Neustarts, verlorene Antworten, Rate-Limits, Dead Letters und Betreiber-Retry sind geprüft. STAGED-Quittungen löschen keine Daten; SEALED-Verifikation bleibt offen. [Schnellstart bis zur Admin-Review](ENTERPRISE_OUTBOX.md) · [Umsetzungsstand](ENTERPRISE_UMSETZUNGSSTAND.md).
+
+---
+
 # Lokaler Enterprise-Service und Admin-Prüfung — 14. Oktober 2026
 
 576 Tests bestanden, keine Lint-Fehler, 24 neue Chromium-Reviewlayouts geprüft. Signierter Geräte-Ingest, dauerhaftes Journal, Teilergebnisse/Deduplizierung, verkettete STAGED-Quittungen, geschütztes Polling und sechssprachige Offline-Review/Exports implementiert. Score bei Entscheidung bleibt von späteren Bewertungen getrennt. Ausführbarer Repository-Baustein, kein aktivierter Unternehmensdienst und keine neue Extension-Runtime. [Start, Prüfung und Recovery](ENTERPRISE_LOKALER_SERVICE.md) · [Status aller Pakete](ENTERPRISE_UMSETZUNGSSTAND.md).

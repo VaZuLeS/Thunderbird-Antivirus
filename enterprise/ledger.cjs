@@ -115,6 +115,94 @@ function deviceRegistry(input) {
   return output;
 }
 
+function nextEventState(event, device, streams, interactions) {
+  const stream =
+    device.organizationId + ":" + event.deviceId + ":" + event.streamEpoch;
+  requireThat(
+    event.sequence === (streams.get(stream) || 0) + 1,
+    "SEQUENCE_GAP_OR_REPLAY",
+    409,
+  );
+  const key = stream + ":" + event.interactionId,
+    previous = interactions.get(key);
+  if (!previous) {
+    requireThat(
+      event.kind === "CLICKED" && event.attemptNumber === 0,
+      "INTERACTION_CLICK_REQUIRED",
+      409,
+    );
+    return {
+      stream,
+      key,
+      state: {
+        url: event.urlRedacted,
+        attempt: 0,
+        status: "PENDING",
+        lastKind: "CLICKED",
+        observedAt: event.observedAt,
+        policyId: event.policyId,
+        policyVersion: event.policyVersion,
+      },
+    };
+  }
+  requireThat(
+    event.urlRedacted === previous.url &&
+      event.policyId === previous.policyId &&
+      event.policyVersion === previous.policyVersion,
+    "INTERACTION_CONTEXT_CHANGED",
+    409,
+  );
+  requireThat(
+    Date.parse(event.observedAt) >= Date.parse(previous.observedAt),
+    "INTERACTION_TIME_REVERSED",
+    409,
+  );
+  const state = {
+    ...previous,
+    lastKind: event.kind,
+    observedAt: event.observedAt,
+  };
+  if (event.kind === "OPEN_INTENT") {
+    requireThat(
+      ["PENDING", "OPEN_ERROR"].includes(previous.status) &&
+        previous.lastKind !== "OPEN_INTENT" &&
+        event.attemptNumber === previous.attempt + 1,
+      "OPEN_INTENT_INVALID",
+      409,
+    );
+    state.attempt = event.attemptNumber;
+    state.status = "OPEN_INTENT";
+  } else if (event.kind === "DECISION") {
+    requireThat(
+      ["PENDING", "OPEN_INTENT", "OPEN_ERROR"].includes(previous.status) &&
+        event.attemptNumber === previous.attempt,
+      "DECISION_INVALID",
+      409,
+    );
+    if (["OPENED", "OPEN_ERROR"].includes(event.outcome))
+      requireThat(
+        previous.status === "OPEN_INTENT",
+        "OPEN_INTENT_REQUIRED",
+        409,
+      );
+    state.status = event.outcome;
+  } else {
+    requireThat(
+      ["ASSESSMENT", "ASSESSMENT_UPDATED"].includes(event.kind) &&
+        event.attemptNumber === previous.attempt,
+      "ASSESSMENT_INVALID",
+      409,
+    );
+    if (["OPENED", "ABORTED", "BLOCKED"].includes(previous.status))
+      requireThat(
+        event.kind === "ASSESSMENT_UPDATED",
+        "TERMINAL_INTERACTION",
+        409,
+      );
+  }
+  return { stream, key, state };
+}
+
 class Ledger {
   constructor({
     directory,
@@ -259,91 +347,7 @@ class Ledger {
     return event;
   }
   nextState(event, device) {
-    const stream =
-      device.organizationId + ":" + event.deviceId + ":" + event.streamEpoch;
-    requireThat(
-      event.sequence === (this.streams.get(stream) || 0) + 1,
-      "SEQUENCE_GAP_OR_REPLAY",
-      409,
-    );
-    const key = stream + ":" + event.interactionId,
-      previous = this.interactions.get(key);
-    if (!previous) {
-      requireThat(
-        event.kind === "CLICKED" && event.attemptNumber === 0,
-        "INTERACTION_CLICK_REQUIRED",
-        409,
-      );
-      return {
-        stream,
-        key,
-        state: {
-          url: event.urlRedacted,
-          attempt: 0,
-          status: "PENDING",
-          lastKind: "CLICKED",
-          observedAt: event.observedAt,
-          policyId: event.policyId,
-          policyVersion: event.policyVersion,
-        },
-      };
-    }
-    requireThat(
-      event.urlRedacted === previous.url &&
-        event.policyId === previous.policyId &&
-        event.policyVersion === previous.policyVersion,
-      "INTERACTION_CONTEXT_CHANGED",
-      409,
-    );
-    requireThat(
-      Date.parse(event.observedAt) >= Date.parse(previous.observedAt),
-      "INTERACTION_TIME_REVERSED",
-      409,
-    );
-    const state = {
-      ...previous,
-      lastKind: event.kind,
-      observedAt: event.observedAt,
-    };
-    if (event.kind === "OPEN_INTENT") {
-      requireThat(
-        ["PENDING", "OPEN_ERROR"].includes(previous.status) &&
-          previous.lastKind !== "OPEN_INTENT" &&
-          event.attemptNumber === previous.attempt + 1,
-        "OPEN_INTENT_INVALID",
-        409,
-      );
-      state.attempt = event.attemptNumber;
-      state.status = "OPEN_INTENT";
-    } else if (event.kind === "DECISION") {
-      requireThat(
-        ["PENDING", "OPEN_INTENT", "OPEN_ERROR"].includes(previous.status) &&
-          event.attemptNumber === previous.attempt,
-        "DECISION_INVALID",
-        409,
-      );
-      if (["OPENED", "OPEN_ERROR"].includes(event.outcome))
-        requireThat(
-          previous.status === "OPEN_INTENT",
-          "OPEN_INTENT_REQUIRED",
-          409,
-        );
-      state.status = event.outcome;
-    } else {
-      requireThat(
-        ["ASSESSMENT", "ASSESSMENT_UPDATED"].includes(event.kind) &&
-          event.attemptNumber === previous.attempt,
-        "ASSESSMENT_INVALID",
-        409,
-      );
-      if (["OPENED", "ABORTED", "BLOCKED"].includes(previous.status))
-        requireThat(
-          event.kind === "ASSESSMENT_UPDATED",
-          "TERMINAL_INTERACTION",
-          409,
-        );
-    }
-    return { stream, key, state };
+    return nextEventState(event, device, this.streams, this.interactions);
   }
   replay(record) {
     requireThat(this.records.length < this.maxEvents, "JOURNAL_CAPACITY", 503);
@@ -523,4 +527,5 @@ module.exports = {
   verifyEnvelope,
   hash,
   deviceRegistry,
+  nextEventState,
 };

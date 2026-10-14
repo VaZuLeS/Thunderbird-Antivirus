@@ -64,4 +64,6 @@ Die Synchronisation wurde mit kurzen Writes, Syncfehlern und echtem Prozessabbru
 
 24 neue Tests: 10.000 Duplikatzustellungen, Scope/Revocation, Konflikte, Sequenzlücken, voreiliges `OPENED`, Retry nach Öffnungsfehler, späte Bewertung, Abbruch, Writer-Lock, volle Ablage, kurze Writes, Syncfehler, beschädigte Journale, echter Prozessabbruch, fremde Geräte/Organisationen, private Dateirechte, Byte-/Batchgrenzen, Pagination, Receipt-Polling, reale Loopback-HTTP-Batches, sechssprachige Adminansicht und CLI-Evidenzprüfung. Ergänzend 24 Chromium-Layoutfälle über einen Loopback-Preview bei 360/1200 Pixeln und Light/Dark, mit echter Offline-CSP und synthetischen Daten.
 
-Nächste Schritte: geschützter Endpoint-Broker/Enrollment und persistente Outbox; transaktionaler Unternehmens-Ingest; signiertes SEALED nach tatsächlichem Object Lock; OIDC-/Rollenprüfung und laufendes Portal; optionale SIEM-/Ticketadapter. Die Herstellerprofile bleiben freie Optionen. [Status aller Arbeitspakete](ENTERPRISE_UMSETZUNGSSTAND.md).
+Ergänzung: Eine [persistente lokale Broker-Outbox mit Zustellung bis zur Admin-Review](ENTERPRISE_OUTBOX.md) ist jetzt implementiert.
+
+Nächste Schritte: geschützter OS-Endpoint-Broker/Enrollment und SEALED-Verifikation; transaktionaler Unternehmens-Ingest; signiertes SEALED nach tatsächlichem Object Lock; OIDC-/Rollenprüfung und laufendes Portal; optionale SIEM-/Ticketadapter. Die Herstellerprofile bleiben freie Optionen. [Status aller Arbeitspakete](ENTERPRISE_UMSETZUNGSSTAND.md).

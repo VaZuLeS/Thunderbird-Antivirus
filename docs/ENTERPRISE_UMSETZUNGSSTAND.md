@@ -4,7 +4,7 @@ Stand: 14. Oktober 2026. Bezug: [vollständiges Umsetzungskonzept](ENTERPRISE_UM
 
 **Entwicklung mit optionalen Systemprofilen fortgesetzt; vollständige Enterprise-Umsetzung noch offen.** Version 1.21.0 liefert einen sechssprachigen Offline-Profilassistenten und JSON-Export. Verbreitete Systeme sind frei kombinierbare Möglichkeiten; eine feste Herstellerwahl ist keine Entwicklungsvoraussetzung. Der Node-Vertragskern bleibt außerhalb des XPI. Ein [lokaler Entwicklungsservice mit signiertem Ingest, STAGED-Quittungen und sechssprachiger Offline-Adminprüfung](ENTERPRISE_LOKALER_SERVICE.md) wurde ergänzt. Produktive Enterprise-Verbindungen sind weiterhin nicht implementiert.
 
-Aktuelles Gesamtgate nach Service-Erweiterung: **576 Tests bestanden**, **0 Lint-Fehler / 24 bekannte Warnungen**. 24 weitere Chromium-Layouts der sechssprachigen Offline-Review bestanden. Der Prozessabbruchtest erhält die bestätigte Quittung nach geprüftem Neustart. Alle 37 ausgelieferten XPI-Dateien stimmen weiterhin mit Release 1.21.0 überein. Kein vollständiges Enterprise-Arbeitspaket wird allein durch diese lokale Vorarbeit als abgenommen markiert.
+Aktuelles Gesamtgate nach Service-Erweiterung: **598 Tests bestanden**, **0 Lint-Fehler / 24 bekannte Warnungen**. 24 weitere Chromium-Layouts der sechssprachigen Offline-Review bestanden. Der Prozessabbruchtest erhält die bestätigte Quittung nach geprüftem Neustart. Alle 37 ausgelieferten XPI-Dateien stimmen weiterhin mit Release 1.21.0 überein. Die [Broker-Outbox](ENTERPRISE_OUTBOX.md) ergänzt dauerhafte Sequenzen, signierte Queueaktionen, Retry/Dead Letters, geprüfte STAGED-Annahme und lokale Zustellung bis zur bestehenden Admin-Review. Kein vollständiges Enterprise-Arbeitspaket wird allein durch diese lokale Vorarbeit als abgenommen markiert.
 
 [Verfügbare Profile, Export und CLI](ENTERPRISE_SYSTEMPROFILE.md). Standard: lokale Vorbereitung, externe Bereiche deaktiviert. Auswahl, Speicherung und Export aktivieren keine Datenübertragung.
 
@@ -45,9 +45,9 @@ Konfigurations- und Testzugänge über die ausführende Umgebung bereitstellen; 
 | F03 | Reale Abnahme offen | Reale OS-/Thunderbird-/MDM-/Native-Messaging-Spikes |
 | F04 | Vorarbeit | Semantische Vertrags-/Signaturtests vorhanden; freigegebenes Bedrohungsmodell, Recovery und Unternehmensreview fehlen |
 | C01 | Vorarbeit | Lokale Testregistrierung/Signaturprüfung vorhanden; geschütztes Enrollment, Gerätebindung und Rotation fehlen |
-| C02 | Offen | Persistente, geschützte Broker-Outbox und Sequenzen |
+| C02 | Vorarbeit | Persistente signierte POSIX-Outbox, atomare Sequenzen, Kapazität/Recovery und Retry implementiert; geschützter OS-Broker, Rotation, echte Offline-/OS-Abnahme fehlen |
 | C03 | Vorarbeit | Signierter lokaler Ingest, dauerhafte Annahme, Deduplizierung und Teilergebnisse implementiert; Unternehmens-DB/Transport, Quarantäne und Betriebsabnahme fehlen |
-| C04 | Vorarbeit | Signierte STAGED-Quittungen und gerätegebundenes Polling vorhanden; SEALED, Brokerzustellung, Backlog und Dead Letters fehlen |
+| C04 | Vorarbeit | Lokale Brokerzustellung, geprüfte STAGED-Quittungen, Polling, Status/Dead Letters und protokollierter Retry vorhanden; SEALED, laufende Adminansicht und OS-/Enterprise-Integration fehlen |
 | C05 | Offen | SIEM-Ziel, Connector-Outbox, Wiederholungen und SSRF-/Credential-Tests |
 | P01 | Vorarbeit | Signatur-/Scope-/Zeit-/Versionsprüfung vorhanden; kein freigegebener Policykanal oder persistenter Vertrauens-/Rollback-Speicher |
 | P02 | Vorarbeit | Entscheidungsmodell vorhanden; keine Runtime-/UI-/Managed-Integration, Legacyroute noch unverändert |
