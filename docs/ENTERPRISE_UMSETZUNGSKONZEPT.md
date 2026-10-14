@@ -11,6 +11,8 @@ Stand: 14. Oktober 2026 · Grundlage: Extension 1.20.0, Commit `c70be55`.
 5. Warnungen, Incident-Tickets und Sicherheitsübersicht.
 6. Versions-/Zustandsüberwachung, Aufbewahrung und URL-Maskierung.
 
+Aktueller [Umsetzungsstand und Blocker](ENTERPRISE_UMSETZUNGSSTAND.md): vorbereitender Vertragskern implementiert; vollständige Umsetzung/Abnahme weiterhin offen.
+
 ## 1. Ziel, Umfang und belastbare Grenzen
 
 Administratoren sollen nachvollziehen können, welche **vom Linkschutz abgefangenen** Links mit welchem damaligen Kenntnisstand geöffnet, abgebrochen oder gesperrt wurden. Die Lösung muss Ausfälle sichtbar machen, Unternehmensrichtlinien durchsetzen und berechtigte Prüfer bei der Untersuchung unterstützen.

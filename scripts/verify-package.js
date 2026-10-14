@@ -78,6 +78,7 @@ const FORBIDDEN = [
   /_test\.js$/,
   /\.dev\.js$/,
   /^docs\//,
+  /^enterprise\//,
   /^test\//,
   /^testdata\//,
   /^tools\//,

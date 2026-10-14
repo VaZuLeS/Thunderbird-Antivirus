@@ -161,7 +161,7 @@ npm run store-gate                                    # submission readiness gat
 
 ## Enterprise implementation concept
 
-The six proposed enterprise capabilities are fully specified in [the implementation concept](docs/ENTERPRISE_UMSETZUNGSKONZEPT.md), including device/server trust, policies, OIDC roles, incidents, privacy, operational recovery, work packages and acceptance criteria. [Draft data contracts](docs/enterprise/README.md) include validated policy/event examples. This is a design and delivery plan; the enterprise capabilities are not implemented by version 1.20.0.
+The six proposed enterprise capabilities are fully specified in [the implementation concept](docs/ENTERPRISE_UMSETZUNGSKONZEPT.md), including device/server trust, policies, OIDC roles, incidents, privacy, operational recovery, work packages and acceptance criteria. [Draft data contracts](docs/enterprise/README.md) include validated policy/event examples. A [preparatory Node-only contract core](enterprise/README.md) now validates signed policies, event semantics and URL redaction; it is excluded from the XPI. The [implementation status](docs/ENTERPRISE_UMSETZUNGSSTAND.md) identifies the missing organization decisions, credentials and real-client acceptance. Enterprise deployment/integration is not implemented by version 1.20.0.
 
 ## Version 1.20.0 — Link decisions and review
 

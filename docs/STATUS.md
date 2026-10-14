@@ -1,3 +1,11 @@
+# Enterprise-Umsetzung — 14. Oktober 2026
+
+Ein vorbereitender Node-only-Vertragskern mit Policy-/Eventvalidierung, JCS/Ed25519-Prüfung, Scope-/Versions-/Widerrufsprüfung, Entscheidungsmodell und Domain-only-Redaktion wurde implementiert. 14 neue Tests; Gesamtgate 531 Tests, keine Lint-Fehler, geprüftes XPI ohne diese Entwicklungsbausteine.
+
+**Vollständiges Enterprise-Ziel blockiert:** Unternehmensvorgaben/Freigaben aus F01/F02, IdP-/Hosting-/SIEM-/Ticketzugänge und reale Zielsysteme für F03/Abnahme fehlen. Kein produktiver Unternehmensbetrieb und keine Integration in die Extension aktiviert. [Status aller 30 Arbeitspakete und benötigte Voraussetzungen](ENTERPRISE_UMSETZUNGSSTAND.md).
+
+---
+
 # Enterprise-Umsetzungskonzept — 14. Oktober 2026
 
 Die sechs gewünschten Unternehmenspunkte sind im [vollständigen Umsetzungskonzept](ENTERPRISE_UMSETZUNGSKONZEPT.md) ausgearbeitet. Enthalten sind Zielarchitektur, Geräte-/Serververtrauen, Richtlinien und Ausnahmen, SSO-/Rechtematrix, Incidents, Flottenzustand, Datenschutz-/Retentionregeln, 30 Arbeitspakete und Abnahmekriterien. [Entwurfsverträge](enterprise/README.md) ergänzen die Spezifikation.

@@ -14,6 +14,9 @@ export default {
     overwriteDest: true,
   },
   ignoreFiles: [
+    // Preparatory Node-only enterprise core is not an activated extension feature.
+    'enterprise',
+    'enterprise/**',
     // tests and developer tooling
     '**/*.test.js',
     'benchmark_*.js',
