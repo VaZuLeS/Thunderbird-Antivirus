@@ -478,3 +478,344 @@ test("different signing key cannot recover journal or create a new acceptance", 
     }),
   );
 });
+
+const {
+  s3Fixture,
+  azureFixture,
+  gcpFixture,
+} = require("./storage-fixtures.cjs");
+function cloudEnqueue(f, q, provider, settings) {
+  return q.enqueueCloud(f.data, {
+    witnessAnchor: f.trust.witnessAnchor,
+    expectedAnchorHash: f.trust.expectedAnchorHash,
+    provider,
+    settings,
+  });
+}
+const cloudOptions = (provider, port, extra = {}) => ({
+  ports: { [provider]: port },
+  authorization: { allowCloudWrite: true },
+  ...extra,
+});
+for (const [provider, makePort] of [
+  ["aws-s3", s3Fixture],
+  ["azure-blob", azureFixture],
+  ["gcp-bucket", gcpFixture],
+]) {
+  test(`${provider} durable job observes a version and replays without SEALED`, async (t) => {
+    const f = context(t),
+      q = f.open(),
+      cloud = makePort(),
+      id = cloudEnqueue(f, q, provider, cloud.config).jobId;
+    q.close();
+    const resumed = f.open();
+    const result = await resumed.runCloudOne(
+      cloudOptions(provider, cloud.port),
+    );
+    assert.equal(result.status, "CLOUD_OBSERVED");
+    assert.equal(result.provider, provider);
+    assert.ok(result.objectVersion);
+    assert.equal(result.sealed, false);
+    assert.equal(result.transportVerified, false);
+    assert.equal(result.simulated, null);
+    resumed.close();
+    const replay = f.open();
+    assert.equal(replay.status().jobs[0].jobId, id);
+    assert.equal(replay.status().jobs[0].status, "CLOUD_OBSERVED");
+    assert.equal(
+      (await replay.runCloudOne(cloudOptions(provider, cloud.port))).processed,
+      false,
+    );
+  });
+}
+test("cloud write authorization is checked before attempts; local runner skips cloud jobs", async (t) => {
+  const f = context(t),
+    q = f.open(),
+    cloud = s3Fixture();
+  cloudEnqueue(f, q, "aws-s3", cloud.config);
+  await assert.rejects(q.runCloudOne({ ports: { "aws-s3": cloud.port } }), {
+    code: "CLOUD_WRITE_DISABLED",
+  });
+  assert.equal(q.status().jobs[0].attempts, 0);
+  assert.equal(q.runOne().processed, false);
+  assert.equal(cloud.calls.length, 0);
+  await assert.rejects(
+    q.runCloudOne({ authorization: { allowCloudWrite: true }, ports: {} }),
+    { code: "JOBS_STORAGE_PORT_REQUIRED" },
+  );
+  assert.equal(q.status().jobs[0].attempts, 0);
+});
+test("cloud identity includes retention, region, encryption and owner; rejects secret fields", (t) => {
+  const f = context(t),
+    q = f.open(),
+    cloud = s3Fixture();
+  const first = cloudEnqueue(f, q, "aws-s3", cloud.config);
+  assert.equal(cloudEnqueue(f, q, "aws-s3", cloud.config).duplicate, true);
+  for (const changed of [
+    {
+      retainUntil: new Date(
+        Date.parse(cloud.config.retainUntil) + 1000,
+      ).toISOString(),
+    },
+    { bucket: "other-bucket" },
+    { kmsKeyArn: cloud.config.kmsKeyArn + "-2" },
+  ])
+    assert.notEqual(
+      cloudEnqueue(f, q, "aws-s3", { ...cloud.config, ...changed }).jobId,
+      first.jobId,
+    );
+  const before = q.bytes;
+  assert.throws(
+    () => cloudEnqueue(f, q, "aws-s3", { ...cloud.config, token: "secret" }),
+    { code: "STORAGE_CONFIG_INVALID" },
+  );
+  assert.equal(q.bytes, before);
+  const invalid = { ...cloud.config, region: "us-east-1" };
+  assert.throws(() => cloudEnqueue(f, q, "aws-s3", invalid), {
+    code: "S3_CONFIG_INVALID",
+  });
+  assert.equal(q.bytes, before);
+});
+test("timeout persists retry; late preflight cannot start an upload", async (t) => {
+  const f = context(t),
+    q = f.open();
+  let resolve,
+    uploads = 0;
+  const cloud = s3Fixture({
+    getBucketLocation: () =>
+      new Promise((r) => {
+        resolve = r;
+      }),
+    putObject: async () => {
+      uploads++;
+    },
+  });
+  cloudEnqueue(f, q, "aws-s3", cloud.config);
+  const result = await q.runCloudOne(
+    cloudOptions("aws-s3", cloud.port, { timeoutMs: 20 }),
+  );
+  assert.equal(result.status, "RETRY");
+  assert.equal(result.error, "STORAGE_TIMEOUT");
+  resolve({ LocationConstraint: cloud.config.region });
+  await new Promise((r) => setImmediate(r));
+  assert.equal(uploads, 0);
+  q.close();
+  const replay = f.open();
+  assert.equal(replay.status().jobs[0].error, "STORAGE_TIMEOUT");
+  assert.ok(replay.status().jobs[0].nextAttemptAt);
+});
+test("in-flight cloud worker rejects concurrent mutation and close", async (t) => {
+  const f = context(t),
+    q = f.open();
+  let resolve;
+  const cloud = s3Fixture({
+    getBucketLocation: () =>
+      new Promise((r) => {
+        resolve = r;
+      }),
+  });
+  cloudEnqueue(f, q, "aws-s3", cloud.config);
+  const pending = q.runCloudOne(
+    cloudOptions("aws-s3", cloud.port, { timeoutMs: 1000 }),
+  );
+  await new Promise((r) => setImmediate(r));
+  assert.equal(q.status().jobs[0].status, "WRITING");
+  assert.throws(() => q.close(), { code: "JOBS_BUSY" });
+  assert.throws(() => f.enqueue(q), { code: "JOBS_BUSY" });
+  assert.throws(() => q.retry(q.status().jobs[0].jobId), { code: "JOBS_BUSY" });
+  await assert.rejects(q.runCloudOne(cloudOptions("aws-s3", cloud.port)), {
+    code: "JOBS_BUSY",
+  });
+  resolve({ LocationConstraint: cloud.config.region });
+  assert.equal((await pending).status, "CLOUD_OBSERVED");
+});
+test("lost upload response restarts same conditional object and checks existing version", async (t) => {
+  let now = Date.now();
+  const f = context(t, { clock: () => now }),
+    q = f.open();
+  let exists = false,
+    objects = 0,
+    gets = 0;
+  const cloud = s3Fixture();
+  const originalPut = cloud.port.putObject;
+  cloud.port.putObject = async (args) => {
+    assert.equal(args.IfNoneMatch, "*");
+    if (exists) throw { $metadata: { httpStatusCode: 412 } };
+    await originalPut(args);
+    exists = true;
+    objects++;
+    throw new Error("lost response token=never-print");
+  };
+  cloud.port.headObject = async () => {
+    gets++;
+    return { VersionId: "version-1" };
+  };
+  cloudEnqueue(f, q, "aws-s3", cloud.config);
+  assert.equal(
+    (await q.runCloudOne(cloudOptions("aws-s3", cloud.port))).status,
+    "RETRY",
+  );
+  q.close();
+  now += 1001;
+  const replay = f.open();
+  const done = await replay.runCloudOne(cloudOptions("aws-s3", cloud.port));
+  assert.equal(done.status, "CLOUD_OBSERVED");
+  assert.equal(objects, 1);
+  assert.equal(gets, 1);
+  assert.equal(done.totalAttempts, 2);
+  assert.equal(JSON.stringify(replay.status()).includes("token="), false);
+});
+test("cloud completion fsync failure never acknowledges observation; replay preserves evidence", async (t) => {
+  const f = context(t),
+    q = f.open(),
+    cloud = s3Fixture();
+  cloudEnqueue(f, q, "aws-s3", cloud.config);
+  q.io = {
+    ...fs,
+    fsyncSync(fd) {
+      if (
+        fs.readFileSync(q.logPath, "utf8").includes('"kind":"CLOUD_OBSERVED"')
+      )
+        throw new Error("disk");
+      fs.fsyncSync(fd);
+    },
+  };
+  await assert.rejects(q.runCloudOne(cloudOptions("aws-s3", cloud.port)), {
+    code: "JOBS_PERSIST_FAILED",
+  });
+  assert.throws(() => q.status(), { code: "JOBS_UNAVAILABLE" });
+  q.close();
+  assert.equal(f.open().status().jobs[0].status, "CLOUD_OBSERVED");
+});
+test("cloud observation cannot alter destination, version or claim SEALED", async (t) => {
+  const f = context(t),
+    q = f.open(),
+    cloud = s3Fixture();
+  cloudEnqueue(f, q, "aws-s3", cloud.config);
+  await q.runCloudOne(cloudOptions("aws-s3", cloud.port));
+  const job = q.jobs.values().next().value,
+    writing = { ...job, status: "WRITING" };
+  for (const changes of [
+    { sealed: true },
+    { liveAcceptance: true },
+    { transportVerified: true },
+    { bucket: "other-bucket" },
+    { objectVersion: "null" },
+    { retainUntil: "2000-01-01T00:00:00.000Z" },
+  ])
+    assert.throws(
+      () =>
+        q.validateCloudObservation(writing, { ...job.observation, ...changes }),
+      { code: "JOBS_OBSERVATION_INVALID" },
+    );
+});
+
+test("cloud enqueue CLI saves an inactive destination without contacting provider", (t) => {
+  const f = context(t),
+    saved = files(f),
+    cloud = s3Fixture(),
+    destination = path.join(f.root, "destination.json"),
+    cli = path.resolve(__dirname, "../storage_jobs_cli.cjs");
+  fs.writeFileSync(
+    destination,
+    JSON.stringify({ provider: "aws-s3", settings: cloud.config }),
+  );
+  const r = spawnSync(
+    process.execPath,
+    [
+      cli,
+      "enqueue-cloud",
+      "--queue",
+      f.options.directory,
+      "--config",
+      saved.configFile,
+      "--export",
+      saved.exportFile,
+      "--witness-anchor",
+      saved.anchorFile,
+      "--expected-anchor-hash",
+      f.trust.expectedAnchorHash,
+      "--destination",
+      destination,
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(JSON.parse(r.stdout).status, "QUEUED");
+  const q = f.open();
+  assert.equal(q.runOne().processed, false);
+  assert.equal(q.status().jobs[0].provider, "aws-s3");
+  assert.equal(cloud.calls.length, 0);
+});
+test("expired cloud retention is rejected before accepting a new job", (t) => {
+  const f = context(t),
+    q = f.open(),
+    cloud = s3Fixture();
+  assert.throws(
+    () =>
+      cloudEnqueue(f, q, "aws-s3", {
+        ...cloud.config,
+        retainUntil: "2000-01-01T00:00:00.000Z",
+      }),
+    { code: "RETENTION_ALREADY_EXPIRED" },
+  );
+  assert.equal(q.bytes, 0);
+});
+test("cloud content mismatch retains snapshot as dead letter", async (t) => {
+  const f = context(t, { maxAttempts: 1 }),
+    q = f.open(),
+    cloud = s3Fixture({
+      getObject: async () => ({
+        VersionId: "version-1",
+        ServerSideEncryption: "aws:kms",
+        SSEKMSKeyId: "arn:aws:kms:eu-central-1:123456789012:key/test-key",
+        Body: Buffer.from("tampered"),
+      }),
+    });
+  cloudEnqueue(f, q, "aws-s3", cloud.config);
+  const failed = await q.runCloudOne(cloudOptions("aws-s3", cloud.port));
+  assert.equal(failed.status, "DEAD_LETTER");
+  assert.equal(failed.error, "STORAGE_CONTENT_MISMATCH");
+  q.close();
+  const replay = f.open();
+  assert.equal(
+    replay.jobs.values().next().value.input.evidence.records.length,
+    1,
+  );
+  assert.equal(replay.status().jobs[0].sealed, false);
+});
+test("cloud worker process exit after readback resumes the same conditional object", async (t) => {
+  const f = context(t),
+    q = f.open(),
+    cloud = s3Fixture();
+  cloudEnqueue(f, q, "aws-s3", cloud.config);
+  q.close();
+  const saved = files(f),
+    objectFile = path.join(f.root, "fake-remote-object.json");
+  const modulePath = path.resolve(__dirname, "../storage_jobs.cjs"),
+    cliPath = path.resolve(__dirname, "../storage_jobs_cli.cjs"),
+    fixturePath = path.resolve(__dirname, "storage-fixtures.cjs");
+  const script = `const fs=require('node:fs');const {StorageJobs}=require(${JSON.stringify(modulePath)});const {loadConfig}=require(${JSON.stringify(cliPath)});const {s3Fixture}=require(${JSON.stringify(fixturePath)});const q=new StorageJobs({...loadConfig(process.argv[1]),directory:process.argv[2]});const c=s3Fixture();Object.assign(c.config,q.jobs.values().next().value.input.destination.settings);c.port.putObject=async a=>{fs.writeFileSync(process.argv[3],a.Body,{flag:'wx',mode:0o600});return {VersionId:'version-1'}};c.port.getObject=async()=>({VersionId:'version-1',ServerSideEncryption:'aws:kms',SSEKMSKeyId:c.config.kmsKeyArn,Body:fs.readFileSync(process.argv[3])});const append=q.append.bind(q);q.append=(kind,...args)=>{if(kind==='CLOUD_OBSERVED')process.exit(23);return append(kind,...args)};q.runCloudOne({ports:{'aws-s3':c.port},authorization:{allowCloudWrite:true}}).catch(()=>process.exit(99));`;
+  const child = spawnSync(
+    process.execPath,
+    ["-e", script, saved.configFile, f.options.directory, objectFile],
+    { encoding: "utf8" },
+  );
+  assert.equal(child.status, 23, child.stderr);
+  fs.unlinkSync(path.join(f.options.directory, "storage-jobs.lock"));
+  const replay = f.open();
+  assert.equal(replay.status().jobs[0].status, "WRITING");
+  cloud.port.putObject = async () => {
+    throw { $metadata: { httpStatusCode: 412 } };
+  };
+  cloud.port.getObject = async () => ({
+    VersionId: "version-1",
+    ServerSideEncryption: "aws:kms",
+    SSEKMSKeyId: cloud.config.kmsKeyArn,
+    Body: fs.readFileSync(objectFile),
+  });
+  const done = await replay.runCloudOne(cloudOptions("aws-s3", cloud.port));
+  assert.equal(done.status, "CLOUD_OBSERVED");
+  assert.equal(done.totalAttempts, 2);
+  assert.equal(done.objectVersion, "version-1");
+});

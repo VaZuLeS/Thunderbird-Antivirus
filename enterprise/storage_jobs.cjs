@@ -12,6 +12,10 @@ const {
   prepareArtifact,
   simulateStorage,
   StorageError,
+  validateDestination,
+  storeS3,
+  storeAzure,
+  storeGcp,
 } = require("./immutable_storage.cjs");
 class JobError extends Error {
   constructor(code) {
@@ -112,6 +116,7 @@ class StorageJobs {
     this.bytes = 0;
     this.closed = false;
     this.poisoned = false;
+    this.busy = false;
     this.directory = path.resolve(directory);
     fs.mkdirSync(this.directory, { recursive: true, mode: 0o700 });
     const stat = fs.lstatSync(this.directory);
@@ -219,14 +224,10 @@ class StorageJobs {
             "expectedAnchorHash",
             "destination",
           ]) &&
-          exact(p.data.destination, ["provider", "directory"]) &&
-          p.data.destination.provider === "local-simulation" &&
-          typeof p.data.destination.directory === "string" &&
-          path.isAbsolute(p.data.destination.directory) &&
-          path.resolve(p.data.destination.directory) ===
-            p.data.destination.directory,
+          p.data.destination,
         "JOBS_INPUT_INVALID",
       );
+      validateDestination(p.data.destination);
       const artifact = this.artifact(p.data);
       need(
         p.jobId ===
@@ -265,11 +266,20 @@ class StorageJobs {
           nextAttemptAt: null,
           error: null,
         });
+      } else if (p.kind === "CLOUD_OBSERVED") {
+        this.validateCloudObservation(old, p.data);
+        Object.assign(next, {
+          status: "CLOUD_OBSERVED",
+          observation: p.data,
+          error: null,
+          nextAttemptAt: null,
+        });
       } else if (p.kind === "SIMULATION_COMPLETE") {
         const o = p.data,
           a = old.artifact;
         need(
           old.status === "WRITING" &&
+            old.input.destination.provider === "local-simulation" &&
             exact(o, [
               "schemaVersion",
               "kind",
@@ -382,6 +392,7 @@ class StorageJobs {
   }
   enqueue(evidence, { witnessAnchor, expectedAnchorHash, directory }) {
     this.ensure();
+    need(!this.busy, "JOBS_BUSY");
     const input = clone({
       evidence,
       witnessAnchor,
@@ -400,8 +411,10 @@ class StorageJobs {
   }
   runOne() {
     this.ensure();
+    need(!this.busy, "JOBS_BUSY");
     const job = [...this.jobs.values()].find(
       (j) =>
+        j.input.destination.provider === "local-simulation" &&
         ["QUEUED", "RETRY", "WRITING"].includes(j.status) &&
         (!j.nextAttemptAt || Date.parse(j.nextAttemptAt) <= this.clock()),
     );
@@ -440,7 +453,187 @@ class StorageJobs {
     this.append("SIMULATION_COMPLETE", job.jobId, report);
     return { processed: true, ...this.summary(this.jobs.get(job.jobId)) };
   }
+  enqueueCloud(
+    evidence,
+    { witnessAnchor, expectedAnchorHash, provider, settings },
+  ) {
+    this.ensure();
+    need(!this.busy, "JOBS_BUSY");
+    const input = clone({
+      evidence,
+      witnessAnchor,
+      expectedAnchorHash,
+      destination: { provider, settings },
+    });
+    validateDestination(input.destination);
+    need(provider !== "local-simulation", "JOBS_CLOUD_PROVIDER_REQUIRED");
+    const artifact = this.artifact(input),
+      jobId = hash({ sha256: artifact.sha256, destination: input.destination });
+    if (this.jobs.has(jobId))
+      return { jobId, duplicate: true, status: this.jobs.get(jobId).status };
+    need(
+      Date.parse(input.destination.settings.retainUntil) > this.clock(),
+      "RETENTION_ALREADY_EXPIRED",
+    );
+    this.append("QUEUED", jobId, input);
+    return { jobId, duplicate: false, status: "QUEUED" };
+  }
+  validateCloudObservation(job, o) {
+    const d = job.input.destination,
+      c = d.settings,
+      a = job.artifact;
+    const fields = {
+      "aws-s3": ["bucket", "ownerAccountId", "kmsKeyArn"],
+      "azure-blob": ["accountId", "container", "encryptionScope"],
+      "gcp-bucket": ["bucket", "projectNumber", "kmsKeyName"],
+    };
+    need(
+      job.status === "WRITING" &&
+        fields[d.provider] &&
+        exact(o, [
+          "schemaVersion",
+          "kind",
+          "provider",
+          "sourceId",
+          "entryCount",
+          "objectKey",
+          "objectVersion",
+          "sha256",
+          "byteLength",
+          "region",
+          "retainUntil",
+          "observedAt",
+          "immutablePropertiesObserved",
+          "simulated",
+          "transportVerified",
+          "liveAcceptance",
+          "sealed",
+          ...fields[d.provider],
+        ]) &&
+        o.schemaVersion === 1 &&
+        o.kind === "thundy-storage-observation" &&
+        o.provider === d.provider &&
+        o.sourceId === a.sourceId &&
+        o.entryCount === a.entryCount &&
+        o.objectKey === a.key &&
+        o.sha256 === a.sha256 &&
+        o.byteLength === a.byteLength &&
+        typeof o.objectVersion === "string" &&
+        o.objectVersion.length > 0 &&
+        o.objectVersion.length <= 1024 &&
+        o.objectVersion !== "null" &&
+        !/[\u0000-\u0020\u007f]/.test(o.objectVersion) &&
+        o.region === c.region &&
+        Number.isFinite(Date.parse(o.observedAt)) &&
+        Date.parse(o.retainUntil) >= Date.parse(c.retainUntil) &&
+        o.immutablePropertiesObserved === true &&
+        o.simulated === null &&
+        o.transportVerified === false &&
+        o.liveAcceptance === false &&
+        o.sealed === false,
+      "JOBS_OBSERVATION_INVALID",
+    );
+    if (d.provider === "aws-s3")
+      need(
+        o.bucket === c.bucket &&
+          o.ownerAccountId === c.ownerAccountId &&
+          o.kmsKeyArn === c.kmsKeyArn,
+        "JOBS_OBSERVATION_INVALID",
+      );
+    if (d.provider === "azure-blob")
+      need(
+        o.accountId ===
+          "/subscriptions/" +
+            c.subscriptionId +
+            "/resourceGroups/" +
+            c.resourceGroup +
+            "/providers/Microsoft.Storage/storageAccounts/" +
+            c.account &&
+          o.container === c.container &&
+          o.encryptionScope === c.encryptionScope,
+        "JOBS_OBSERVATION_INVALID",
+      );
+    if (d.provider === "gcp-bucket")
+      need(
+        o.bucket === c.bucket &&
+          o.projectNumber === c.projectNumber &&
+          typeof o.kmsKeyName === "string" &&
+          o.kmsKeyName.startsWith(c.kmsKeyName + "/cryptoKeyVersions/") &&
+          /^\d+$/.test(
+            o.kmsKeyName.slice((c.kmsKeyName + "/cryptoKeyVersions/").length),
+          ),
+        "JOBS_OBSERVATION_INVALID",
+      );
+  }
+  async runCloudOne({ ports, authorization, timeoutMs = 30000, signal } = {}) {
+    this.ensure();
+    need(!this.busy, "JOBS_BUSY");
+    need(authorization?.allowCloudWrite === true, "CLOUD_WRITE_DISABLED");
+    need(
+      Number.isSafeInteger(timeoutMs) && timeoutMs >= 10 && timeoutMs <= 300000,
+      "STORAGE_TIMEOUT_INVALID",
+    );
+    const job = [...this.jobs.values()].find(
+      (j) =>
+        j.input.destination.provider !== "local-simulation" &&
+        ["QUEUED", "RETRY", "WRITING"].includes(j.status) &&
+        (!j.nextAttemptAt || Date.parse(j.nextAttemptAt) <= this.clock()),
+    );
+    if (!job) return { processed: false, sealed: false };
+    const provider = job.input.destination.provider;
+    need(
+      ports && Object.hasOwn(ports, provider) && ports[provider],
+      "JOBS_STORAGE_PORT_REQUIRED",
+    );
+    this.busy = true;
+    try {
+      if (job.attempts >= this.maxAttempts) {
+        this.append("DEAD_LETTER", job.jobId, {
+          error: "JOBS_ATTEMPT_INTERRUPTED",
+          nextAttemptAt: null,
+        });
+        return { processed: true, ...this.summary(this.jobs.get(job.jobId)) };
+      }
+      this.append("ATTEMPT", job.jobId, null);
+      let observation;
+      try {
+        const operation = {
+          "aws-s3": storeS3,
+          "azure-blob": storeAzure,
+          "gcp-bucket": storeGcp,
+        }[provider];
+        observation = await operation(
+          this.artifact(job.input),
+          job.input.destination.settings,
+          ports[provider],
+          { allowCloudWrite: true },
+          { timeoutMs, signal },
+        );
+      } catch (error) {
+        const attempts = this.jobs.get(job.jobId).attempts,
+          final = attempts >= this.maxAttempts;
+        this.append(final ? "DEAD_LETTER" : "RETRY", job.jobId, {
+          error:
+            error instanceof StorageError
+              ? error.code
+              : "STORAGE_PROVIDER_UNAVAILABLE",
+          nextAttemptAt: final
+            ? null
+            : new Date(
+                this.clock() + Math.min(300000, 1000 * 2 ** (attempts - 1)),
+              ).toISOString(),
+        });
+        return { processed: true, ...this.summary(this.jobs.get(job.jobId)) };
+      }
+      this.append("CLOUD_OBSERVED", job.jobId, observation);
+      return { processed: true, ...this.summary(this.jobs.get(job.jobId)) };
+    } finally {
+      this.busy = false;
+    }
+  }
   retry(jobId) {
+    this.ensure();
+    need(!this.busy, "JOBS_BUSY");
     this.append("RETRY_RESET", jobId, null);
     return this.summary(this.jobs.get(jobId));
   }
@@ -452,7 +645,11 @@ class StorageJobs {
       updatedAt: job.updatedAt,
       observedAt: job.observation?.observedAt || null,
       evidenceStatus: "STAGED",
-      provider: "local-simulation",
+      provider: job.input.destination.provider,
+      objectVersion: job.observation?.objectVersion || null,
+      requestedRetainUntil: job.input.destination.settings?.retainUntil || null,
+      observedRetainUntil: job.observation?.retainUntil || null,
+      transportVerified: false,
       sourceId: job.artifact.sourceId,
       sha256: job.artifact.sha256,
       entryCount: job.artifact.entryCount,
@@ -460,7 +657,8 @@ class StorageJobs {
       totalAttempts: job.totalAttempts,
       nextAttemptAt: job.nextAttemptAt,
       error: job.error,
-      simulated: true,
+      simulated:
+        job.input.destination.provider === "local-simulation" ? true : null,
       sealed: false,
     };
   }
@@ -482,6 +680,7 @@ class StorageJobs {
     };
   }
   close() {
+    need(!this.busy, "JOBS_BUSY");
     if (this.fd !== undefined) {
       fs.closeSync(this.fd);
       this.fd = undefined;

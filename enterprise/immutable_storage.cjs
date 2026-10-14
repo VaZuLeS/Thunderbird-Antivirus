@@ -130,6 +130,85 @@ async function readBounded(body, limit) {
   }
   return Buffer.concat(chunks);
 }
+// One total deadline covers preflight, write, metadata and the complete body.
+function operationContext(runtime = {}) {
+  const timeoutMs = runtime.timeoutMs ?? 30000;
+  need(
+    Number.isSafeInteger(timeoutMs) && timeoutMs >= 10 && timeoutMs <= 300000,
+    "STORAGE_TIMEOUT_INVALID",
+  );
+  need(
+    !runtime.signal ||
+      (typeof runtime.signal.addEventListener === "function" &&
+        typeof runtime.signal.removeEventListener === "function" &&
+        typeof runtime.signal.aborted === "boolean"),
+    "STORAGE_SIGNAL_INVALID",
+  );
+  const controller = new AbortController(),
+    streams = new Set();
+  const expires = performance.now() + timeoutMs;
+  let failure, rejectDeadline;
+  const deadline = new Promise((_, reject) => {
+    rejectDeadline = reject;
+  });
+  // The deadline can expire before the first asynchronous request.
+  deadline.catch(() => {});
+  const stop = (code) => {
+    if (failure) return;
+    failure = new StorageError(code);
+    controller.abort();
+    for (const body of streams) body.destroy?.();
+    rejectDeadline(failure);
+  };
+  const abort = () => stop("STORAGE_ABORTED");
+  const timer = setTimeout(() => stop("STORAGE_TIMEOUT"), timeoutMs);
+  runtime.signal?.addEventListener("abort", abort, { once: true });
+  if (runtime.signal?.aborted) abort();
+  const check = () => {
+    if (performance.now() >= expires) stop("STORAGE_TIMEOUT");
+    if (failure) throw failure;
+  };
+  const call = async (thunk) => {
+    check();
+    const request = Promise.resolve().then(() => {
+      check();
+      return thunk();
+    });
+    request.then(
+      (value) => {
+        if (failure) {
+          value?.Body?.destroy?.();
+          value?.readableStreamBody?.destroy?.();
+        }
+      },
+      () => {},
+    );
+    const value = await Promise.race([request, deadline]);
+    check();
+    if (value?.Body) streams.add(value.Body);
+    if (value?.readableStreamBody) streams.add(value.readableStreamBody);
+    return value;
+  };
+  return {
+    signal: controller.signal,
+    check,
+    call,
+    async read(body, limit) {
+      streams.add(body);
+      try {
+        return await call(() => readBounded(body, limit));
+      } finally {
+        streams.delete(body);
+      }
+    },
+    close() {
+      for (const body of streams) body.destroy?.();
+      streams.clear();
+      clearTimeout(timer);
+      runtime.signal?.removeEventListener("abort", abort);
+    },
+  };
+}
 function until(value) {
   const time =
     value instanceof Date
@@ -194,7 +273,98 @@ function version(value) {
     !/[\u0000-\u0020\u007f]/.test(value)
   );
 }
-async function storeS3(artifact, config, port, authorization) {
+function validateDestination(destination) {
+  need(
+    destination &&
+      typeof destination === "object" &&
+      !Array.isArray(destination) &&
+      Object.hasOwn(destination, "provider"),
+    "STORAGE_DESTINATION_INVALID",
+  );
+  const { provider } = destination;
+  if (provider === "local-simulation") {
+    need(
+      Object.keys(destination).length === 2 &&
+        typeof destination.directory === "string" &&
+        path.isAbsolute(destination.directory) &&
+        path.resolve(destination.directory) === destination.directory,
+      "STORAGE_DESTINATION_INVALID",
+    );
+    return;
+  }
+  need(
+    ["aws-s3", "azure-blob", "gcp-bucket"].includes(provider) &&
+      Object.keys(destination).length === 2 &&
+      Object.hasOwn(destination, "settings"),
+    "STORAGE_DESTINATION_INVALID",
+  );
+  const config = destination.settings,
+    required = profiles[provider].requiredSettings;
+  need(
+    config &&
+      typeof config === "object" &&
+      !Array.isArray(config) &&
+      Object.keys(config).length === required.length &&
+      required.every(
+        (key) =>
+          Object.hasOwn(config, key) &&
+          typeof config[key] === "string" &&
+          config[key].length > 0 &&
+          config[key].length <= 1024,
+      ),
+    "STORAGE_CONFIG_INVALID",
+  );
+  need(
+    new Date(until(config.retainUntil)).toISOString() === config.retainUntil,
+    "RETENTION_TIME_INVALID",
+  );
+  if (provider === "aws-s3")
+    need(
+      bucketName(config.bucket) &&
+        /^\d{12}$/.test(config.ownerAccountId) &&
+        /^[a-z]{2}-[a-z]+-\d$/.test(config.region) &&
+        config.kmsKeyArn.startsWith(
+          "arn:aws:kms:" +
+            config.region +
+            ":" +
+            config.ownerAccountId +
+            ":key/",
+        ) &&
+        config.kmsKeyArn.length >
+          (
+            "arn:aws:kms:" +
+            config.region +
+            ":" +
+            config.ownerAccountId +
+            ":key/"
+          ).length,
+      "S3_CONFIG_INVALID",
+    );
+  if (provider === "azure-blob")
+    need(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        config.subscriptionId,
+      ) &&
+        /^[A-Za-z0-9_.()-]{1,90}$/.test(config.resourceGroup) &&
+        /^[a-z0-9]{3,24}$/.test(config.account) &&
+        /^[a-z0-9](?:[a-z0-9-]{1,61})[a-z0-9]$/.test(config.container) &&
+        !config.container.includes("--") &&
+        /^[a-z0-9]+$/.test(config.region) &&
+        /^[A-Za-z0-9_-]{1,63}$/.test(config.encryptionScope),
+      "AZURE_CONFIG_INVALID",
+    );
+  if (provider === "gcp-bucket")
+    need(
+      bucketName(config.bucket) &&
+        /^[1-9]\d{5,19}$/.test(config.projectNumber) &&
+        /^[A-Z0-9-]+$/.test(config.region) &&
+        /^projects\/[^/]+\/locations\/[^/]+\/keyRings\/[^/]+\/cryptoKeys\/[^/]+$/.test(
+          config.kmsKeyName,
+        ),
+      "GCP_CONFIG_INVALID",
+    );
+}
+async function storeS3(artifact, config, port, authorization, context) {
   const { bytes, retainUntil } = validateRequest(
     artifact,
     config,
@@ -215,14 +385,20 @@ async function storeS3(artifact, config, port, authorization) {
     Bucket: config.bucket,
     ExpectedBucketOwner: config.ownerAccountId,
   };
-  const location = await port.getBucketLocation(bucket),
+  const location = await context.call(() =>
+      port.getBucketLocation(bucket, { abortSignal: context.signal }),
+    ),
     region =
       location.LocationConstraint === "EU"
         ? "eu-west-1"
         : location.LocationConstraint || "us-east-1";
   need(region === config.region, "STORAGE_REGION_MISMATCH");
-  const versioning = await port.getBucketVersioning(bucket),
-    lock = await port.getObjectLockConfiguration(bucket);
+  const versioning = await context.call(() =>
+      port.getBucketVersioning(bucket, { abortSignal: context.signal }),
+    ),
+    lock = await context.call(() =>
+      port.getObjectLockConfiguration(bucket, { abortSignal: context.signal }),
+    );
   need(
     versioning.Status === "Enabled" &&
       lock.ObjectLockConfiguration?.ObjectLockEnabled === "Enabled",
@@ -230,39 +406,56 @@ async function storeS3(artifact, config, port, authorization) {
   );
   let id;
   try {
-    const written = await port.putObject({
-      ...bucket,
-      Key: artifact.key,
-      Body: bytes,
-      ContentType: "application/json",
-      IfNoneMatch: "*",
-      ChecksumSHA256: Buffer.from(artifact.sha256, "hex").toString("base64"),
-      ServerSideEncryption: "aws:kms",
-      SSEKMSKeyId: config.kmsKeyArn,
-      ObjectLockMode: "COMPLIANCE",
-      ObjectLockRetainUntilDate: new Date(retainUntil),
-    });
+    const written = await context.call(() =>
+      port.putObject(
+        {
+          ...bucket,
+          Key: artifact.key,
+          Body: bytes,
+          ContentType: "application/json",
+          IfNoneMatch: "*",
+          ChecksumSHA256: Buffer.from(artifact.sha256, "hex").toString(
+            "base64",
+          ),
+          ServerSideEncryption: "aws:kms",
+          SSEKMSKeyId: config.kmsKeyArn,
+          ObjectLockMode: "COMPLIANCE",
+          ObjectLockRetainUntilDate: new Date(retainUntil),
+        },
+        { abortSignal: context.signal },
+      ),
+    );
     id = written.VersionId;
   } catch (error) {
+    context.check();
     if (error?.$metadata?.httpStatusCode !== 412)
       throw new StorageError("STORAGE_WRITE_FAILED");
-    const existing = await port.headObject({ ...bucket, Key: artifact.key });
+    const existing = await context.call(() =>
+      port.headObject(
+        { ...bucket, Key: artifact.key },
+        { abortSignal: context.signal },
+      ),
+    );
     id = existing.VersionId;
   }
   need(version(id), "STORAGE_VERSION_MISSING");
   const target = { ...bucket, Key: artifact.key, VersionId: id };
-  const retention = await port.getObjectRetention(target);
+  const retention = await context.call(() =>
+    port.getObjectRetention(target, { abortSignal: context.signal }),
+  );
   need(retention.Retention?.Mode === "COMPLIANCE", "S3_COMPLIANCE_REQUIRED");
   const observedUntil = until(retention.Retention.RetainUntilDate);
   need(observedUntil >= retainUntil, "RETENTION_TOO_SHORT");
-  const object = await port.getObject(target);
+  const object = await context.call(() =>
+    port.getObject(target, { abortSignal: context.signal }),
+  );
   need(
     object.VersionId === id &&
       object.ServerSideEncryption === "aws:kms" &&
       object.SSEKMSKeyId === config.kmsKeyArn,
     "STORAGE_VERSION_OR_KEY_MISMATCH",
   );
-  checkRead(await readBounded(object.Body, artifact.byteLength), artifact);
+  checkRead(await context.read(object.Body, artifact.byteLength), artifact);
   return {
     ...report("aws-s3", artifact, config, id, observedUntil),
     bucket: config.bucket,
@@ -270,7 +463,7 @@ async function storeS3(artifact, config, port, authorization) {
     kmsKeyArn: config.kmsKeyArn,
   };
 }
-async function storeAzure(artifact, config, port, authorization) {
+async function storeAzure(artifact, config, port, authorization, context) {
   const { bytes, retainUntil } = validateRequest(
     artifact,
     config,
@@ -290,9 +483,10 @@ async function storeAzure(artifact, config, port, authorization) {
       /^[A-Za-z0-9_-]{1,63}$/.test(config.encryptionScope),
     "AZURE_CONFIG_INVALID",
   );
-  const account = await port.getAccountProperties(
-      config.resourceGroup,
-      config.account,
+  const account = await context.call(() =>
+      port.getAccountProperties(config.resourceGroup, config.account, {
+        abortSignal: context.signal,
+      }),
     ),
     expectedId =
       "/subscriptions/" +
@@ -317,7 +511,9 @@ async function storeAzure(artifact, config, port, authorization) {
       ".blob.core.windows.net/" +
       config.container;
   need(container.url === expectedUrl, "STORAGE_ENDPOINT_MISMATCH");
-  const properties = await container.getProperties();
+  const properties = await context.call(() =>
+    container.getProperties({ abortSignal: context.signal }),
+  );
   need(
     properties.isImmutableStorageWithVersioningEnabled === true,
     "AZURE_VERSION_WORM_REQUIRED",
@@ -329,20 +525,26 @@ async function storeAzure(artifact, config, port, authorization) {
   );
   let id;
   try {
-    const written = await blob.uploadData(bytes, {
-      conditions: { ifNoneMatch: "*" },
-      blobHTTPHeaders: { blobContentType: "application/json" },
-      encryptionScope: config.encryptionScope,
-      immutabilityPolicy: {
-        expiriesOn: new Date(retainUntil),
-        policyMode: "Locked",
-      },
-    });
+    const written = await context.call(() =>
+      blob.uploadData(bytes, {
+        abortSignal: context.signal,
+        conditions: { ifNoneMatch: "*" },
+        blobHTTPHeaders: { blobContentType: "application/json" },
+        encryptionScope: config.encryptionScope,
+        immutabilityPolicy: {
+          expiriesOn: new Date(retainUntil),
+          policyMode: "Locked",
+        },
+      }),
+    );
     id = written.versionId;
   } catch (error) {
+    context.check();
     if (error?.statusCode !== 412)
       throw new StorageError("STORAGE_WRITE_FAILED");
-    const existing = await blob.getProperties();
+    const existing = await context.call(() =>
+      blob.getProperties({ abortSignal: context.signal }),
+    );
     id = existing.versionId;
   }
   need(version(id), "STORAGE_VERSION_MISSING");
@@ -355,7 +557,9 @@ async function storeAzure(artifact, config, port, authorization) {
       [...url.searchParams.keys()].every((key) => key === "versionid"),
     "STORAGE_ENDPOINT_MISMATCH",
   );
-  const locked = await pinned.getProperties();
+  const locked = await context.call(() =>
+    pinned.getProperties({ abortSignal: context.signal }),
+  );
   need(
     locked.versionId === id &&
       locked.blobType === "BlockBlob" &&
@@ -366,10 +570,12 @@ async function storeAzure(artifact, config, port, authorization) {
   );
   const observedUntil = until(locked.immutabilityPolicyExpiresOn);
   need(observedUntil >= retainUntil, "RETENTION_TOO_SHORT");
-  const object = await pinned.download();
+  const object = await context.call(() =>
+    pinned.download(0, undefined, { abortSignal: context.signal }),
+  );
   need(object.versionId === id, "STORAGE_VERSION_OR_KEY_MISMATCH");
   checkRead(
-    await readBounded(object.readableStreamBody, artifact.byteLength),
+    await context.read(object.readableStreamBody, artifact.byteLength),
     artifact,
   );
   return {
@@ -379,7 +585,7 @@ async function storeAzure(artifact, config, port, authorization) {
     encryptionScope: config.encryptionScope,
   };
 }
-async function storeGcp(artifact, config, port, authorization) {
+async function storeGcp(artifact, config, port, authorization, context) {
   const { bytes, retainUntil } = validateRequest(
     artifact,
     config,
@@ -397,7 +603,7 @@ async function storeGcp(artifact, config, port, authorization) {
     "GCP_CONFIG_INVALID",
   );
   const bucket = port.bucket(config.bucket),
-    [metadata] = await bucket.getMetadata();
+    [metadata] = await context.call(() => bucket.getMetadata());
   need(
     metadata.name === config.bucket &&
       String(metadata.projectNumber) === String(config.projectNumber),
@@ -414,16 +620,19 @@ async function storeGcp(artifact, config, port, authorization) {
   const file = bucket.file(artifact.key, { kmsKeyName: config.kmsKeyName });
   let id;
   try {
-    await file.save(bytes, {
-      resumable: false,
-      validation: false,
-      preconditionOpts: { ifGenerationMatch: 0 },
-      metadata: { contentType: "application/json" },
-    });
+    await context.call(() =>
+      file.save(bytes, {
+        resumable: false,
+        validation: false,
+        preconditionOpts: { ifGenerationMatch: 0 },
+        metadata: { contentType: "application/json" },
+      }),
+    );
     id = file.metadata?.generation;
   } catch (error) {
+    context.check();
     if (error?.code !== 412) throw new StorageError("STORAGE_WRITE_FAILED");
-    const [existing] = await file.getMetadata();
+    const [existing] = await context.call(() => file.getMetadata());
     id = existing.generation;
   }
   need(
@@ -431,7 +640,7 @@ async function storeGcp(artifact, config, port, authorization) {
     "STORAGE_VERSION_MISSING",
   );
   const pinned = bucket.file(artifact.key, { generation: id }),
-    [object] = await pinned.getMetadata();
+    [object] = await context.call(() => pinned.getMetadata());
   need(
     object.name === artifact.key &&
       object.bucket === config.bucket &&
@@ -454,11 +663,11 @@ async function storeGcp(artifact, config, port, authorization) {
     "RETENTION_TOO_SHORT",
   );
   checkRead(
-    await readBounded(pinned.createReadStream(), artifact.byteLength),
+    await context.read(pinned.createReadStream(), artifact.byteLength),
     artifact,
   );
   // Recheck bucket identity/lock after the write, not just before it.
-  const [after] = await bucket.getMetadata();
+  const [after] = await context.call(() => bucket.getMetadata());
   need(
     after.name === config.bucket &&
       String(after.projectNumber) === String(config.projectNumber) &&
@@ -554,34 +763,42 @@ function createAwsSdkPort(client, sdk) {
   return Object.fromEntries(
     Object.entries(map).map(([method, command]) => [
       method,
-      (args) => client.send(new sdk[command](args)),
+      (args, options) => client.send(new sdk[command](args), options),
     ]),
   );
 }
 function createAzureSdkPort(blobServiceClient, managementClient) {
   return {
-    getAccountProperties: (group, account) =>
-      managementClient.storageAccounts.getProperties(group, account),
+    getAccountProperties: (group, account, options) =>
+      managementClient.storageAccounts.getProperties(group, account, options),
     getContainerClient: (name) => blobServiceClient.getContainerClient(name),
   };
 }
 function sanitized(operation) {
   return async (...args) => {
+    let context;
     try {
       need(
         args[1] && typeof args[1] === "object" && !Array.isArray(args[1]),
         "STORAGE_CONFIG_INVALID",
       );
       args[1] = { ...args[1] };
-      return await operation(...args);
+      context = operationContext(args[4]);
+      args[4] = context;
+      const result = await operation(...args);
+      context.check();
+      return result;
     } catch (error) {
       if (error instanceof StorageError) throw error;
       throw new StorageError("STORAGE_PROVIDER_UNAVAILABLE");
+    } finally {
+      context?.close();
     }
   };
 }
 module.exports = {
   StorageError,
+  validateDestination,
   profiles,
   prepareArtifact,
   readBounded,

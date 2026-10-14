@@ -1,3 +1,9 @@
+# Cloudjobs und begrenzte Storage-Aufrufe — 14. Oktober 2026
+
+679 Tests bestanden. S3/Azure/GCP an die persistente Job-API angebunden, Ziele/Schlüssel/Retention in Jobidentität gebunden. Gesamtzeitlimits, Abbruch, verlorene Antworten, Version-Readback und Cloudprozess-Recovery geprüft. Erfolgreiche SDK-Prüfungen bleiben CLOUD_OBSERVED mit SEALED=false; keine Cloudzugänge verwendet. [Bedienung, Grenzen und nächste Integration](ENTERPRISE_STORAGE_JOBS.md).
+
+---
+
 # Dauerhafte lokale Storage-Aufträge — 14. Oktober 2026
 
 659 Tests bestanden. Signierter Jobworkflow mit stabiler Evidenz-/Zielbindung, Wiederaufnahme nach Prozessabbruch, Retry/Dead Letters und prüfbarem CLI-Status ergänzt. Der Worker verarbeitet ausschließlich lokale Simulationen; Cloudadapter sind noch nicht dauerhaft angebunden. Kein SEALED oder Broker-Retirement. [Betrieb und Recovery](ENTERPRISE_STORAGE_JOBS.md).

@@ -73,8 +73,10 @@ Noch erforderlich sind reale Anbieterabnahmen mit freigegebenen Identitäten, ne
 
 21 neue Tests prüfen volle Witness-/Gerätebindung, Aktivierungsschutz, Region/Owner/Endpoint, Versionierung, Locked/Compliance statt Governance, Generation und Verschlüsselung, zu kurze/abgelaufene Retention, GCP-Bucketfristen, Readback-Manipulation/Größenlimits, Conditional Retry, SDK-Mapping, unveränderte Settings während asynchroner Aufrufe, fehlerhafte Append-Blobs, redigierte Fehler sowie den gesamten lokalen CLI-Simulator. Die Cloudfälle verwenden Testdoubles, keine echten Anbieterzugänge.
 
-[Status aller Enterprise-Arbeitspakete](ENTERPRISE_UMSETZUNGSSTAND.md). Der nächste Schritt ist der transaktionale Storage-/SEALED-Workflow mit dauerhafter Server-Outbox und Recovery; produktive Aktivierung bleibt an reale Betriebsfreigaben gebunden.
+[Status aller Enterprise-Arbeitspakete](ENTERPRISE_UMSETZUNGSSTAND.md). Der persistente Jobworkflow ist angebunden. Der nächste Schritt ist der unabhängige SEALED-Evidenzcommit mit produktiver Abnahme; produktive Aktivierung bleibt an reale Betriebsfreigaben gebunden.
 
 ## Dauerhafte lokale Aufträge
 
-Der [Storage-Jobworkflow](ENTERPRISE_STORAGE_JOBS.md) ergänzt persistente, signierte Aufträge und Wiederaufnahme für den lokalen Simulator. Cloudadapter sind noch nicht an diese Queue angebunden; der Simulationsabschluss ist ausdrücklich kein SEALED-Nachweis.
+Der [Storage-Jobworkflow](ENTERPRISE_STORAGE_JOBS.md) ergänzt persistente, signierte Aufträge und Wiederaufnahme für den lokalen Simulator sowie S3/Azure/GCP über eine explizite Backend-API. Gesamtzeitlimits und Abbruchsignale begrenzen die Adapter. CLI-Cloudjobs werden ausschließlich vorbereitet; SDK-Clients werden nicht automatisch geladen. Weder Simulationsabschluss noch CLOUD_OBSERVED ist ein SEALED-Nachweis.
+
+Das optionale fünfte Adapterargument `{ timeoutMs: 30000, signal }` begrenzt den gesamten Ablauf einschließlich Readback. AWS/Azure erhalten ein AbortSignal, GCP-Anfragen brauchen ergänzende SDK-Transportgrenzen. Die Bibliothek kann einen möglicherweise bereits erfolgten Remotewrite bei Timeout nicht ausschließen; Aufträge bleiben erhalten und werden mit derselben Ziel-/Versionsprüfung wiederholt. [Betrieb, Status und Recovery](ENTERPRISE_STORAGE_JOBS.md).

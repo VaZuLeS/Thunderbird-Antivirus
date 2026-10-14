@@ -270,4 +270,4 @@ verifiable against the code; please run `npm test` and `npx web-ext lint` before
 MIT – see [LICENSE](LICENSE).
 
 
-The [persistent local storage job workflow](docs/ENTERPRISE_STORAGE_JOBS.md) records verified evidence jobs, retries and simulation completion before acknowledging progress. `npm run enterprise:storage-jobs -- status` requires an explicit queue and trusted key configuration. The worker currently runs only local simulations; durable cloud delivery and SEALED commits remain pending.
+The [persistent local storage job workflow](docs/ENTERPRISE_STORAGE_JOBS.md) records verified evidence jobs, retries and simulation completion before acknowledging progress. `npm run enterprise:storage-jobs -- status` requires an explicit queue and trusted key configuration. The CLI worker runs local simulations; the explicit `runCloudOne` library API now processes optional S3/Azure/GCP jobs with total deadlines, cancellation and durable version-bound observations. Tests use SDK doubles; production cloud acceptance and SEALED commits remain pending.

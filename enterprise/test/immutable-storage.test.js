@@ -117,168 +117,11 @@ function fixture() {
 }
 const retainUntil = () => new Date(Date.now() + 86400000).toISOString();
 const permit = { allowCloudWrite: true };
-function s3Fixture(changes = {}) {
-  const config = {
-      bucket: "test-evidence-bucket",
-      ownerAccountId: "123456789012",
-      region: "eu-central-1",
-      kmsKeyArn: "arn:aws:kms:eu-central-1:123456789012:key/test-key",
-      retainUntil: retainUntil(),
-    },
-    calls = [];
-  let bytes;
-  const port = {
-    getBucketLocation: async (args) => {
-      calls.push(args);
-      return { LocationConstraint: "eu-central-1" };
-    },
-    getBucketVersioning: async () => ({ Status: "Enabled" }),
-    getObjectLockConfiguration: async () => ({
-      ObjectLockConfiguration: { ObjectLockEnabled: "Enabled" },
-    }),
-    putObject: async (args) => {
-      calls.push(args);
-      bytes = Buffer.from(args.Body);
-      return { VersionId: "version-1" };
-    },
-    headObject: async () => ({ VersionId: "version-1" }),
-    getObjectRetention: async (args) => {
-      calls.push(args);
-      return {
-        Retention: {
-          Mode: "COMPLIANCE",
-          RetainUntilDate: new Date(config.retainUntil),
-        },
-      };
-    },
-    getObject: async (args) => {
-      calls.push(args);
-      return {
-        VersionId: "version-1",
-        ServerSideEncryption: "aws:kms",
-        SSEKMSKeyId: config.kmsKeyArn,
-        Body: Readable.from([bytes]),
-      };
-    },
-    ...changes,
-  };
-  return { config, port, calls, getBytes: () => bytes };
-}
-function azureFixture(changes = {}) {
-  const config = {
-      subscriptionId: crypto.randomUUID(),
-      resourceGroup: "test-rg",
-      account: "testevidence",
-      container: "audit-evidence",
-      region: "westeurope",
-      encryptionScope: "audit-scope",
-      retainUntil: retainUntil(),
-    },
-    calls = [];
-  let bytes, key;
-  const root =
-    "https://" + config.account + ".blob.core.windows.net/" + config.container;
-  const blob = {
-    get url() {
-      return root + "/" + key;
-    },
-    uploadData: async (data, options) => {
-      bytes = Buffer.from(data);
-      calls.push(options);
-      return { versionId: "version-1" };
-    },
-    getProperties: async () => ({ versionId: "version-1" }),
-    withVersion: (id) => ({
-      url: root + "/" + key + "?versionid=" + id,
-      getProperties: async () => ({
-        versionId: id,
-        immutabilityPolicyMode: "Locked",
-        immutabilityPolicyExpiresOn: new Date(config.retainUntil),
-        serverEncrypted: true,
-        blobType: "BlockBlob",
-        encryptionScope: config.encryptionScope,
-      }),
-      download: async () => ({
-        versionId: id,
-        readableStreamBody: Readable.from([bytes]),
-      }),
-    }),
-    ...changes.blob,
-  };
-  const container = {
-    url: root,
-    getProperties: async () => ({
-      isImmutableStorageWithVersioningEnabled: true,
-    }),
-    getBlockBlobClient: (name) => {
-      key = name;
-      return blob;
-    },
-    ...changes.container,
-  };
-  const port = {
-    getAccountProperties: async () => ({
-      id:
-        "/subscriptions/" +
-        config.subscriptionId +
-        "/resourceGroups/" +
-        config.resourceGroup +
-        "/providers/Microsoft.Storage/storageAccounts/" +
-        config.account,
-      location: config.region,
-    }),
-    getContainerClient: () => container,
-    ...changes.port,
-  };
-  return { config, port, calls, blob, container };
-}
-function gcpFixture(changes = {}) {
-  const config = {
-      bucket: "test-evidence-bucket",
-      projectNumber: "123456789012",
-      region: "EUROPE-WEST1",
-      kmsKeyName:
-        "projects/test-project/locations/europe-west1/keyRings/audit/cryptoKeys/evidence",
-      retainUntil: retainUntil(),
-    },
-    calls = [];
-  let bytes, key;
-  const bucket = {
-    getMetadata: async () => [
-      {
-        name: config.bucket,
-        projectNumber: config.projectNumber,
-        location: config.region,
-        retentionPolicy: { isLocked: true, retentionPeriod: "172800" },
-      },
-    ],
-    file: (name, options) => {
-      key = name;
-      calls.push(options);
-      return {
-        metadata: { generation: "10001" },
-        save: async (data, settings) => {
-          bytes = Buffer.from(data);
-          calls.push(settings);
-        },
-        getMetadata: async () => [
-          {
-            name: key,
-            bucket: config.bucket,
-            generation: "10001",
-            kmsKeyName: config.kmsKeyName + "/cryptoKeyVersions/1",
-            retentionExpirationTime: config.retainUntil,
-            timeCreated: new Date().toISOString(),
-          },
-        ],
-        createReadStream: () => Readable.from([bytes]),
-        ...changes.file,
-      };
-    },
-    ...changes.bucket,
-  };
-  return { config, port: { bucket: () => bucket }, calls, bucket };
-}
+const {
+  s3Fixture,
+  azureFixture,
+  gcpFixture,
+} = require("./storage-fixtures.cjs");
 
 test("artifact construction requires a complete externally witnessed and device-verified snapshot", () => {
   const f = fixture();
@@ -951,6 +794,152 @@ test("destination settings are snapshotted before asynchronous SDK calls", async
       initialOwner,
     );
   } finally {
+    f.cleanup();
+  }
+});
+
+test("total deadline interrupts AWS preflight and forwards an aborted SDK signal", async () => {
+  const f = fixture();
+  let observed;
+  try {
+    const s = s3Fixture({
+      getBucketLocation: (_args, options) => {
+        observed = options.abortSignal;
+        return new Promise(() => {});
+      },
+    });
+    await assert.rejects(
+      storeS3(f.artifact, s.config, s.port, permit, { timeoutMs: 20 }),
+      { code: "STORAGE_TIMEOUT" },
+    );
+    assert.equal(observed.aborted, true);
+  } finally {
+    f.cleanup();
+  }
+});
+test("AWS readback stall times out and destroys the body", async () => {
+  const f = fixture(),
+    body = new Readable({ read() {} });
+  try {
+    const s = s3Fixture({
+      getObject: async () => ({
+        VersionId: "version-1",
+        ServerSideEncryption: "aws:kms",
+        SSEKMSKeyId: "arn:aws:kms:eu-central-1:123456789012:key/test-key",
+        Body: body,
+      }),
+    });
+    await assert.rejects(
+      storeS3(f.artifact, s.config, s.port, permit, { timeoutMs: 20 }),
+      { code: "STORAGE_TIMEOUT" },
+    );
+    assert.equal(body.destroyed, true);
+  } finally {
+    body.destroy();
+    f.cleanup();
+  }
+});
+test("Azure caller cancellation is forwarded to upload and no observation is emitted", async () => {
+  const f = fixture(),
+    controller = new AbortController();
+  let signal;
+  try {
+    const a = azureFixture({
+      blob: {
+        uploadData: (_bytes, options) => {
+          signal = options.abortSignal;
+          controller.abort();
+          return new Promise(() => {});
+        },
+      },
+    });
+    await assert.rejects(
+      storeAzure(f.artifact, a.config, a.port, permit, {
+        signal: controller.signal,
+        timeoutMs: 1000,
+      }),
+      { code: "STORAGE_ABORTED" },
+    );
+    assert.equal(signal.aborted, true);
+  } finally {
+    f.cleanup();
+  }
+});
+test("GCP non-cancellable metadata promise is bounded with no later write", async () => {
+  const f = fixture();
+  let resolve,
+    calls = 0;
+  try {
+    const g = gcpFixture({
+      bucket: {
+        getMetadata: () =>
+          new Promise((r) => {
+            resolve = r;
+          }),
+        file: () => {
+          calls++;
+          throw new Error("unexpected");
+        },
+      },
+    });
+    await assert.rejects(
+      storeGcp(f.artifact, g.config, g.port, permit, { timeoutMs: 20 }),
+      { code: "STORAGE_TIMEOUT" },
+    );
+    resolve([{}]);
+    await new Promise((r) => setImmediate(r));
+    assert.equal(calls, 0);
+  } finally {
+    f.cleanup();
+  }
+});
+test("pre-aborted caller and invalid timeout never contact providers", async () => {
+  const f = fixture(),
+    controller = new AbortController();
+  controller.abort();
+  let calls = 0;
+  try {
+    const s = s3Fixture({
+      getBucketLocation: async () => {
+        calls++;
+      },
+    });
+    await assert.rejects(
+      storeS3(f.artifact, s.config, s.port, permit, {
+        signal: controller.signal,
+      }),
+      { code: "STORAGE_ABORTED" },
+    );
+    await assert.rejects(
+      storeS3(f.artifact, s.config, s.port, permit, { timeoutMs: 0 }),
+      { code: "STORAGE_TIMEOUT_INVALID" },
+    );
+    assert.equal(calls, 0);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("late readback response after timeout disposes its stream", async () => {
+  const f = fixture();
+  let resolve;
+  const body = new Readable({ read() {} });
+  try {
+    const s = s3Fixture({
+      getObject: () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    });
+    await assert.rejects(
+      storeS3(f.artifact, s.config, s.port, permit, { timeoutMs: 20 }),
+      { code: "STORAGE_TIMEOUT" },
+    );
+    resolve({ Body: body });
+    await new Promise((r) => setImmediate(r));
+    assert.equal(body.destroyed, true);
+  } finally {
+    body.destroy();
     f.cleanup();
   }
 });

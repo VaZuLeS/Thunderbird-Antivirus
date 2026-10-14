@@ -6,6 +6,12 @@ const { readJson, readRegistry } = require("./witness_cli.cjs");
 function parse(command, argv) {
   const commands = {
     enqueue: ["export", "witness-anchor", "expected-anchor-hash", "directory"],
+    "enqueue-cloud": [
+      "export",
+      "witness-anchor",
+      "expected-anchor-hash",
+      "destination",
+    ],
     run: [],
     status: [],
     retry: ["job-id"],
@@ -93,7 +99,22 @@ function main() {
         expectedAnchorHash: o["expected-anchor-hash"],
         directory: o.directory,
       });
-    else if (command === "run") report = jobs.runOne();
+    else if (command === "enqueue-cloud") {
+      const destination = readJson(o.destination, 65536);
+      if (
+        !destination ||
+        Object.keys(destination).length !== 2 ||
+        !Object.hasOwn(destination, "provider") ||
+        !Object.hasOwn(destination, "settings")
+      )
+        throw new Error("STORAGE_DESTINATION_INVALID");
+      report = jobs.enqueueCloud(readJson(o.export), {
+        witnessAnchor: readJson(o["witness-anchor"], 65536),
+        expectedAnchorHash: o["expected-anchor-hash"],
+        provider: destination.provider,
+        settings: destination.settings,
+      });
+    } else if (command === "run") report = jobs.runOne();
     else if (command === "retry") report = jobs.retry(o["job-id"]);
     else report = jobs.status();
     process.stdout.write(JSON.stringify(report, null, 2) + "\n");
