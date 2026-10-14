@@ -57,3 +57,7 @@ Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbar
 ## Öffentliche Schlüssel für unabhängige Jobprüfung
 
 `enterprise:storage-verify verify/review --journal ... --config ...` prüft ein Journal und erzeugt die bestehende sechssprachige Adminansicht ohne privaten Writer-Schlüssel. [Trustwerte, Kopfbindung und Grenzen](../docs/ENTERPRISE_PUBLIC_KEY_PRUEFUNG.md). [Priorisierte nächste Schritte](../docs/ENTERPRISE_NAECHSTE_SCHRITTE.md).
+
+## Dauerhafter Policystand
+
+`PolicyState` speichert angenommene Versionsstände und Schlüsselwiderrufe mit signierter Wiederaufnahme. Entscheidungen prüfen den aktuellen gespeicherten Stand; kein Extension-Hook aktiviert. [API, Trustwerte und Recovery](../docs/ENTERPRISE_POLICY_STATE.md). N01/N02 des Ausführungsplans sind lokal implementiert; als nächstes folgen versionierte Incidentregeln.

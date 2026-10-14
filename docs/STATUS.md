@@ -1,3 +1,9 @@
+# Dauerhafter Policystand — 14. Oktober 2026
+
+721 Tests im Gesamtgate. Policyversionen und Schlüsselwiderrufe werden vor Bestätigung in einem signierten Journal synchronisiert und nach Neustart wieder geprüft. Rollback, gleiche Version mit anderem Inhalt, Uhr-Rücklauf und Schreibfehler autorisieren keine neue Entscheidung. Node-only; produktiver Policykanal, OS-/Rollenintegration und SEALED bleiben offen. [Verhalten und Recovery](ENTERPRISE_POLICY_STATE.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).
+
+---
+
 # Public-Key-Prüfung und priorisierte Fortsetzung — 14. Oktober 2026
 
 711 Tests im Gesamtgate. Speicherauftragsjournal und sechssprachiger Report sind nun mit öffentlichen Schlüsseln prüfbar, ohne Writer-Lock oder Journaländerung. Sechs neue negative/CLI-Prüfungen; kein SEALED-Nachweis. Extension-Release 1.22.0 bleibt unverändert. [Prüfung](ENTERPRISE_PUBLIC_KEY_PRUEFUNG.md) · [Ausführungsplan](ENTERPRISE_NAECHSTE_SCHRITTE.md).

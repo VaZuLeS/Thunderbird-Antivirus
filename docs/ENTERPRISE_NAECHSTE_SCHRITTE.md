@@ -5,7 +5,7 @@ Stand: 14. Oktober 2026. Ergänzung zum [Gesamtkonzept mit 30 Arbeitspaketen](EN
 | Reihenfolge | Zugeordnete Pakete | Konkretes Ergebnis | Prüfung / Abschlusskriterium | Status |
 |---|---|---|---|---|
 | N01 | E02, I02 | Separater Public-Key-Verifier und sechssprachiger Report ohne Writer-Schlüssel | Writer-/Readerstatus identisch; keine Journal-/Lockänderung; falsche Roots/Signaturen, abgeschnittene Enden, unzulässige Übergänge und private Config abweisen | **Implementiert und lokal geprüft**; reale Trust-/OS-Verteilung offen |
-| N02 | P01, F04 | Dauerhafter Policy-Versions-/Widerrufsstand im vorbereitenden Node-Kern | Vor Entscheidung synchronisieren; Neustart und konkurrierende Updates prüfen; Rollback und fremde Organisation ablehnen | Als nächster unabhängig ausführbarer Entwicklungsschritt offen |
+| N02 | P01, F04 | Dauerhafter Policy-Versions-/Widerrufsstand im vorbereitenden Node-Kern | Vor Entscheidung synchronisieren; Neustart und konkurrierende Updates prüfen; Rollback und fremde Organisation ablehnen | **Implementiert und lokal geprüft**; produktiver Policykanal/OS-Schlüsselschutz offen |
 | N03 | I01, I02 | Versionierte Incidentregeln aus verifizierten Entscheidungen, ohne Ticketversand | Score bei Entscheidung verwenden; spätere Neubewertung nicht rückwirkend als damaligen Score behandeln; Deduplizierung und wiederholte Verarbeitung prüfen | Offen; baut auf bestehender Ereignisprüfung auf |
 | N04 | H02, I04 | Minimierte lokale Betriebsberichte über Queuezustand, Fristen und Fehler mit Alarmdämpfung | Alte Snapshots kennzeichnen; keine erfundenen Geräte-Heartbeats, keine Secrets/URLs; wiederholte Fehler zusammenfassen | Offen; reale Flottenidentitäten noch nicht verfügbar |
 | N05 | C05, D01 | Optionale SIEM-Exportformate und dauerhafte Connector-Aufträge | Domain-only/Provenienz; keine Aktivierung durch Profilauswahl; Retry/Deduplizierung und Eingabe-/Credential-Lecks prüfen | Offen; Transport erst mit konkreten freigegebenen Zielen |
@@ -14,7 +14,7 @@ Stand: 14. Oktober 2026. Ergänzung zum [Gesamtkonzept mit 30 Arbeitspaketen](EN
 ## Automatische Arbeitsreihenfolge innerhalb weiterer Umsetzung
 
 1. Aktuellen Code, Aufgabenstand und CI lesen; lokale Benutzeränderungen erhalten.
-2. Den ersten offenen, ohne reale Zugänge ausführbaren Schritt auswählen. N02 folgt auf N01; ohne neue Priorisierung wird anschließend N03 vorbereitet.
+2. Den ersten offenen, ohne reale Zugänge ausführbaren Schritt auswählen. N01 und N02 sind lokal implementiert; ohne neue Priorisierung folgt N03 (Incidentregeln).
 3. Einen konkret nutzbaren Baustein mit negativen Prüfungen, Recoveryfällen und Dokumentation fertigstellen. Lokale Vorarbeit und produktive Abnahme im Status getrennt halten.
 4. Relevante Tests und Paketgate ausführen; Code committen/pushen und Pages-Veröffentlichung kontrollieren. Ein XPI-Release nur bei Extension-Änderungen erstellen.
 5. Den Plan nach dem tatsächlichen Ergebnis fortschreiben. Reale Aktivierung erst mit den passenden Unternehmensparametern und bereits vorhandener bzw. ausdrücklich erteilter Autorisierung.
@@ -27,4 +27,4 @@ Die Umsetzung wird nach dieser Reihenfolge innerhalb der jeweiligen Aufgabe fort
 - **Unternehmensbetrieb:** konkrete Betreiber, Datenregion, IdP, Geräteverwaltung und optional freigegebene SIEM-/Ticketsysteme. Verbreitete Anbieter bleiben wählbare Profile.
 - **Geschützte Ablage:** unabhängige Live-/Retention-/Schlüssel-/Restoreprüfungen und bestätigter Evidenzcommit. `CLOUD_OBSERVED` bleibt ohne SEALED-Freigabe.
 
-N01 schließt die konkrete Abhängigkeit des Reviewers vom privaten Job-Schlüssel. E02 und I02 gelten dadurch weiterhin insgesamt als Vorarbeit; Rotation, unabhängiger Betrieb, SSO und Gesamtintegration sind nicht abgeschlossen.
+N01 schließt die konkrete Abhängigkeit des Reviewers vom privaten Job-Schlüssel. N02 ergänzt den [dauerhaften Policystand](ENTERPRISE_POLICY_STATE.md). E02, I02 und P01 bleiben insgesamt Vorarbeit; Rotation, unabhängiger Betrieb, SSO, produktiver Policykanal und Gesamtintegration sind nicht abgeschlossen.
