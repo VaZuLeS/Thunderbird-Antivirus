@@ -1,3 +1,9 @@
+# Lokaler Enterprise-Service und Admin-Prüfung — 14. Oktober 2026
+
+576 Tests bestanden, keine Lint-Fehler, 24 neue Chromium-Reviewlayouts geprüft. Signierter Geräte-Ingest, dauerhaftes Journal, Teilergebnisse/Deduplizierung, verkettete STAGED-Quittungen, geschütztes Polling und sechssprachige Offline-Review/Exports implementiert. Score bei Entscheidung bleibt von späteren Bewertungen getrennt. Ausführbarer Repository-Baustein, kein aktivierter Unternehmensdienst und keine neue Extension-Runtime. [Start, Prüfung und Recovery](ENTERPRISE_LOKALER_SERVICE.md) · [Status aller Pakete](ENTERPRISE_UMSETZUNGSSTAND.md).
+
+---
+
 # Optionale Unternehmensprofile — 1.21.0
 
 552 Tests bestanden, 0 Lint-Fehler / 24 bekannte Warnungen, 37 Runtime-Dateien / 616.949 Bytes entpackt und 24 Chromium-Layouts geprüft. Sechssprachiger Offline-Assistent unter Einstellungen, frei kombinierbare Hosting-/SSO-/MDM-/SIEM-/Ticketprofile, lokale Speicherung und JSON-Export sowie Node-CLI implementiert. Standard: lokale Vorbereitung ohne externe Verbindungen. Alle Profile sind deaktivierte Entwürfe, keine bereits funktionierenden Integrationen. [Profile und Bedienung](ENTERPRISE_SYSTEMPROFILE.md).

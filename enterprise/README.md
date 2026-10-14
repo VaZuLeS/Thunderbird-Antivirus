@@ -1,6 +1,6 @@
 # Enterprise-Vertragsprüfung — vorbereitende Implementierung
 
-Diese Node-only-Bibliothek setzt einen unabhängig prüfbaren Teil des [Enterprise-Konzepts](../docs/ENTERPRISE_UMSETZUNGSKONZEPT.md) um. Sie ist **nicht in die Thunderbird-Extension eingebunden**, nicht im XPI enthalten und kein Server oder Endpoint-Broker.
+Dieser Node-only-Entwicklungsbereich setzt einen unabhängig prüfbaren Teil des [Enterprise-Konzepts](../docs/ENTERPRISE_UMSETZUNGSKONZEPT.md) um. Sie ist **nicht in die Thunderbird-Extension eingebunden**, nicht im XPI enthalten. Neben dem Vertragskern gibt es jetzt einen separat gestarteten lokalen Entwicklungsservice, weiterhin keinen Endpoint-Broker.
 
 Implementiert:
 
@@ -25,3 +25,7 @@ Es gibt noch keine Geräteverteilung, Outbox, Netzwerkübermittlung, SSO, Rollen
 ## Optionale Systemprofile
 
 Der separate [Profilassistent](../docs/ENTERPRISE_SYSTEMPROFILE.md) ist ab 1.21.0 in der Extension enthalten. Die gemeinsam verwendete `enterprise_profiles.js` erzeugt ausschließlich deaktivierte Konfigurationsentwürfe. Die Node-CLI `npm run enterprise:profile -- --hosting azure --sso entra-id` arbeitet ohne Netzwerk; ihre Implementierung bleibt außerhalb des XPI. Auswahl und Export implementieren noch keine der externen Integrationen.
+
+## Lokaler Aufnahme-Service und Offline-Adminansicht
+
+`npm run enterprise:local -- init`, dann `demo`, `review --lang de --out /tmp/review.html` oder `serve --port 8766`. Details zu signierten Gerätenachweisen, dauerhafter Aufnahme, STAGED-Quittungen, Grenzen und Recovery im [Service-Handbuch](../docs/ENTERPRISE_LOKALER_SERVICE.md). Der Service bindet ausschließlich Loopback. Er implementiert weder SEALED/Object Lock noch SSO/Unternehmensrollen oder die Extension-Anbindung. Die sechs Sprachansichten sind Offline-Exports mit OS-basierter Zugriffskontrolle.

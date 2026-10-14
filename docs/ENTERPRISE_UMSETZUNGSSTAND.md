@@ -2,7 +2,9 @@
 
 Stand: 14. Oktober 2026. Bezug: [vollständiges Umsetzungskonzept](ENTERPRISE_UMSETZUNGSKONZEPT.md).
 
-**Entwicklung mit optionalen Systemprofilen fortgesetzt; vollständige Enterprise-Umsetzung noch offen.** Version 1.21.0 liefert einen sechssprachigen Offline-Profilassistenten und JSON-Export. Verbreitete Systeme sind frei kombinierbare Möglichkeiten; eine feste Herstellerwahl ist keine Entwicklungsvoraussetzung. Der Node-Vertragskern bleibt außerhalb des XPI. Produktive Enterprise-Verbindungen sind weiterhin nicht implementiert.
+**Entwicklung mit optionalen Systemprofilen fortgesetzt; vollständige Enterprise-Umsetzung noch offen.** Version 1.21.0 liefert einen sechssprachigen Offline-Profilassistenten und JSON-Export. Verbreitete Systeme sind frei kombinierbare Möglichkeiten; eine feste Herstellerwahl ist keine Entwicklungsvoraussetzung. Der Node-Vertragskern bleibt außerhalb des XPI. Ein [lokaler Entwicklungsservice mit signiertem Ingest, STAGED-Quittungen und sechssprachiger Offline-Adminprüfung](ENTERPRISE_LOKALER_SERVICE.md) wurde ergänzt. Produktive Enterprise-Verbindungen sind weiterhin nicht implementiert.
+
+Aktuelles Gesamtgate nach Service-Erweiterung: **576 Tests bestanden**, **0 Lint-Fehler / 24 bekannte Warnungen**. 24 weitere Chromium-Layouts der sechssprachigen Offline-Review bestanden. Der Prozessabbruchtest erhält die bestätigte Quittung nach geprüftem Neustart. Alle 37 ausgelieferten XPI-Dateien stimmen weiterhin mit Release 1.21.0 überein. Kein vollständiges Enterprise-Arbeitspaket wird allein durch diese lokale Vorarbeit als abgenommen markiert.
 
 [Verfügbare Profile, Export und CLI](ENTERPRISE_SYSTEMPROFILE.md). Standard: lokale Vorbereitung, externe Bereiche deaktiviert. Auswahl, Speicherung und Export aktivieren keine Datenübertragung.
 
@@ -42,24 +44,24 @@ Konfigurations- und Testzugänge über die ausführende Umgebung bereitstellen; 
 | F02 | Aktivierungsfreigabe offen | Autorisierte Daten-/Retention-/Rechtematrix und Ausfallmodus |
 | F03 | Reale Abnahme offen | Reale OS-/Thunderbird-/MDM-/Native-Messaging-Spikes |
 | F04 | Vorarbeit | Semantische Vertrags-/Signaturtests vorhanden; freigegebenes Bedrohungsmodell, Recovery und Unternehmensreview fehlen |
-| C01 | Offen | Echtes Enrollment, geschützte Gerätebindung, Rotation/Widerruf |
+| C01 | Vorarbeit | Lokale Testregistrierung/Signaturprüfung vorhanden; geschütztes Enrollment, Gerätebindung und Rotation fehlen |
 | C02 | Offen | Persistente, geschützte Broker-Outbox und Sequenzen |
-| C03 | Vorarbeit | Payload-/Scope-Prüfung vorhanden; kein authentifizierter Ingest, Commit oder Deduplizierung |
-| C04 | Offen | Echte Quittungen, Polling, Backlog und Dead Letters |
+| C03 | Vorarbeit | Signierter lokaler Ingest, dauerhafte Annahme, Deduplizierung und Teilergebnisse implementiert; Unternehmens-DB/Transport, Quarantäne und Betriebsabnahme fehlen |
+| C04 | Vorarbeit | Signierte STAGED-Quittungen und gerätegebundenes Polling vorhanden; SEALED, Brokerzustellung, Backlog und Dead Letters fehlen |
 | C05 | Offen | SIEM-Ziel, Connector-Outbox, Wiederholungen und SSRF-/Credential-Tests |
 | P01 | Vorarbeit | Signatur-/Scope-/Zeit-/Versionsprüfung vorhanden; kein freigegebener Policykanal oder persistenter Vertrauens-/Rollback-Speicher |
 | P02 | Vorarbeit | Entscheidungsmodell vorhanden; keine Runtime-/UI-/Managed-Integration, Legacyroute noch unverändert |
 | P03 | Offen | Rollenberechtigter Editor, Diff, Simulation, Freigabe und Rollout |
 | P04 | Offen | Antrag, getrennte Freigabe und einmaliger Ticketverbrauch |
 | P05 | Vorarbeit | Unknown-/Warn-/Ack-Gates im Modell; echte Broker-/Quittungs-/Ausfallintegration fehlt |
-| E01 | Offen | Authentifizierte Geräteevents, signierte Receipts und echte STAGED→SEALED-Ablage |
-| E02 | Offen | Checkpoints, unabhängige Verankerung und Offline-Evidenzverifikation |
+| E01 | Vorarbeit | Signierte Geräteevents und verkettete STAGED-Receipts vorhanden; echte STAGED→SEALED/Object-Lock-Ablage fehlt |
+| E02 | Vorarbeit | Offline-STAGED-Signatur-/Hashprüfer vorhanden; externe Checkpoints, Tail-Erkennung und Rotation fehlen |
 | E03 | Offen | Object Locks, Rotation, Aufbewahrung und Restore auf gewählter Infrastruktur |
 | A01 | Offen | OIDC-BFF, Session-/CSRF-/MFA-/Logouttests mit tatsächlichem IdP |
 | A02 | Offen | Rollen-/Organisations-/Objektrechte und negative API-/Exporttests |
 | A03 | Offen | Reveal, Identity Resolve, Break Glass und Zugriffsaudit |
 | I01 | Offen | Incidentmodell, Regelversionen, Prioritäten und Lebenszyklus |
-| I02 | Offen | Sechssprachiges zentrales Portal und authentifizierte Exporte |
+| I02 | Vorarbeit | Sechssprachige Offline-Review/Exports mit Filtern, Pagination und Entscheidungs-Snapshot vorhanden; laufendes Portal und Unternehmensrollen fehlen |
 | I03 | Offen | Gewählter Ticketadapter und geprüfte Webhooks |
 | I04 | Offen | Zustellalarme, SLA, Eskalation und Alarmdämpfung |
 | H01 | Offen | Minimierter, authentifizierter Heartbeat und Flottenzustände |
