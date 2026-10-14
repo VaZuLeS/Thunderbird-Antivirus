@@ -67,3 +67,7 @@ Die Synchronisation wurde mit kurzen Writes, Syncfehlern und echtem Prozessabbru
 Ergänzung: Eine [persistente lokale Broker-Outbox mit Zustellung bis zur Admin-Review](ENTERPRISE_OUTBOX.md) ist jetzt implementiert.
 
 Nächste Schritte: geschützter OS-Endpoint-Broker/Enrollment und SEALED-Verifikation; transaktionaler Unternehmens-Ingest; signiertes SEALED nach tatsächlichem Object Lock; OIDC-/Rollenprüfung und laufendes Portal; optionale SIEM-/Ticketadapter. Die Herstellerprofile bleiben freie Optionen. [Status aller Arbeitspakete](ENTERPRISE_UMSETZUNGSSTAND.md).
+
+## Verständliche Speicherstatus
+
+Die sechssprachige Offline-Adminansicht zeigt nun „Lokal gespeichert · STAGED“ und eine aufklappbare Erklärung der Speicherstatus. „Geschützte Ablage bestätigt · SEALED“ ist ausdrücklich als zukünftiger, noch nicht implementierter Status beschrieben. Score und Öffnungsentscheidung sind davon unabhängig. [Erklärung und Beispiel](ENTERPRISE_SPEICHERSTATUS.md).

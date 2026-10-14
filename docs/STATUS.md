@@ -1,3 +1,9 @@
+# Verständliche Speicherstatus — 14. Oktober 2026
+
+679 Tests bestanden; 24 neue Chromium-Layouts für sechs Sprachen, zwei Breiten und helles/dunkles Design geprüft. Adminprüfung und Dokumentation erläutern jetzt „Lokal gespeichert“, „Speicher geprüft“ und „Geschützte Ablage bestätigt“ statt vorausgesetzter Fachkürzel. Die aufklappbare Adminhilfe ist vollständig sechssprachig. SEALED bleibt als noch nicht implementiert gekennzeichnet; Quellprotokolle, Signaturen und Extension-Runtime bleiben unverändert. [Erklärung mit Beispiel](ENTERPRISE_SPEICHERSTATUS.md).
+
+---
+
 # Cloudjobs und begrenzte Storage-Aufrufe — 14. Oktober 2026
 
 679 Tests bestanden. S3/Azure/GCP an die persistente Job-API angebunden, Ziele/Schlüssel/Retention in Jobidentität gebunden. Gesamtzeitlimits, Abbruch, verlorene Antworten, Version-Readback und Cloudprozess-Recovery geprüft. Erfolgreiche SDK-Prüfungen bleiben CLOUD_OBSERVED mit SEALED=false; keine Cloudzugänge verwendet. [Bedienung, Grenzen und nächste Integration](ENTERPRISE_STORAGE_JOBS.md).

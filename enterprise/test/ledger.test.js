@@ -524,6 +524,19 @@ for (const language of Object.keys(labels))
         assert.equal(dom.window.document.documentElement.lang, language);
         assert.equal($("rows").querySelectorAll("tr").length, 1);
         assert.ok($("rows").textContent.includes(labels[language].aborted));
+        assert.ok($("rows").textContent.includes(labels[language].staged));
+        assert.equal(
+          $("storage-status-title").textContent,
+          labels[language].storageTitle,
+        );
+        assert.equal(
+          $("storage-guide").querySelector("summary").textContent,
+          labels[language].statusGuide,
+        );
+        assert.equal($("storage-guide").querySelectorAll("dt").length, 3);
+        assert.ok(
+          $("storage-guide").textContent.includes(labels[language].sealedHelp),
+        );
         $("outcome").value = "OPENED";
         $("outcome").dispatchEvent(new dom.window.Event("input"));
         assert.ok($("rows").textContent.includes(labels[language].none));

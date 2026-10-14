@@ -45,3 +45,7 @@ SDK-Adapter für AWS S3 Compliance Object Lock, Azure version-level Immutable Bl
 ## Dauerhafte lokale Storage-Aufträge
 
 `enterprise:storage-jobs enqueue/enqueue-cloud/run/status/retry` speichert geprüfte Evidenzaufträge und signierte Bearbeitungszustände. Der CLI-Worker verarbeitet lokale Simulationen. Die explizite Bibliotheks-API `runCloudOne` bindet optional S3/Azure/GCP an die Queue, mit Ziel-/Retentionsbindung, Gesamtzeitlimit, Abbruch, Wiederaufnahme, Readback, Retry und Dead Letters. [Schnellstart, Grenzen und Recovery](../docs/ENTERPRISE_STORAGE_JOBS.md). Produktiver Cloudworkerbetrieb, unabhängiger SEALED-Commit und Broker-Retirement bleiben offen.
+
+## Speicherstatus verständlich erklärt
+
+Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbarer Statuserklärung. [STAGED, CLOUD_OBSERVED und SEALED mit Adminbeispiel](../docs/ENTERPRISE_SPEICHERSTATUS.md). SEALED ist weiterhin nicht implementiert; die UI-Hilfe verändert keine Quittungen oder Signaturen.

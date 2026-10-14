@@ -4,6 +4,8 @@ Stand: 14. Oktober 2026. Ausführbare lokale Ergänzung zu [Storage-Adaptern](EN
 
 **Der lokale CLI-Worker verarbeitet `local-simulation`; die Bibliotheks-API verarbeitet optional S3/Azure/GCP mit explizit übergebenen SDK-Clients.** Cloudjobs und Beobachtungen sind jetzt dauerhaft angebunden, aber es wurde kein Cloudzugang verwendet oder produktiver Worker installiert. Es gibt weiterhin keinen SEALED-Commit, keine Quittung an den Endpoint-Broker und keine Integration in Thunderbird. Ein vollständig verarbeiteter Simulationsauftrag meldet `SIMULATION_COMPLETE`, `simulated: true`, `sealed: false`. Originale in Broker und Service bleiben erhalten.
 
+[Speicherstatus erklärt: lokal gespeichert, Speicher geprüft, geschützte Ablage bestätigt](ENTERPRISE_SPEICHERSTATUS.md). Diese Status betreffen das Protokoll, nicht die Sicherheit eines Links.
+
 ## Gespeicherter Ablauf
 
 | Zustand | Bedeutung / nächste Aktion |

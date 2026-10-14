@@ -1,8 +1,12 @@
-# Optionale Storage-Adapter für die spätere SEALED-Ablage
+# Optionale Speicherschnittstellen für eine künftig geschützte Protokollablage
 
 Stand: 14. Oktober 2026. Die Node-Entwicklung besitzt jetzt SDK-Adapter für AWS S3 Object Lock, Azure Immutable Blob Storage und Google Cloud Bucket Lock sowie einen lokalen Dateisimulator. Alle Profile sind optional und standardmäßig deaktiviert. Es wurden **keine Cloudzugänge verwendet, keine Cloudobjekte geschrieben und keine Cloud-Retention aktiviert**.
 
 Die Adapter verbinden vorhandene, vom Betreiber initialisierte SDK-Clients mit überprüften Evidenzobjekten. Der Simulator und die Tests laufen ohne Cloud-SDK-Installation. Die Thunderbird-Extension lädt diese Entwicklungsmodule nicht; ihre Scanfreigaben und lokalen Logs bleiben unverändert.
+
+## Speicherstatus verständlich erklärt
+
+**SEALED bedeutet „geschützte Ablage bestätigt“.** Gemeint ist eine bis zu einem festgelegten Datum gegen Änderung und Löschung geschützte Protokollversion, deren Schutz und Inhalt unabhängig geprüft und verbindlich bestätigt wurden. Dieser Status ist noch nicht implementiert. STAGED heißt hier „lokal gespeichert“; CLOUD_OBSERVED heißt „Speicher geprüft“ und bestätigt noch keinen produktiven Ablageschutz. [Alle Status mit einem Adminbeispiel](ENTERPRISE_SPEICHERSTATUS.md).
 
 ## Ein Speichernachweis braucht mehr als einen Upload-Erfolg
 

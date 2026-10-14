@@ -4,7 +4,7 @@ const labels = {
   en: {
     title: "Enterprise event review",
     limit:
-      "Local development evidence. STAGED confirms local journal storage; it is not immutable SEALED evidence or proof of a website visit. Device keys were enrolled locally; no corporate identity or SSO role is established.",
+      "Local development data. The server has stored these records in a local journal; protection against changes and deletion has not been confirmed. A browser handoff is not proof of a website visit. Device keys were registered locally; corporate identities and SSO roles are not configured.",
     domain: "Domain",
     outcome: "Decision",
     score: "Minimum decision score",
@@ -35,7 +35,7 @@ const labels = {
   de: {
     title: "Enterprise-Ereignisprüfung",
     limit:
-      "Lokale Entwicklungsnachweise. STAGED bestätigt die lokale Journalablage; dies ist keine unveränderliche SEALED-Evidenz und kein Beweis eines Webseitenbesuchs. Geräteschlüssel wurden lokal registriert; Unternehmensidentitäten und SSO-Rollen sind nicht eingerichtet.",
+      "Lokale Entwicklungsdaten. Der Server hat diese Datensätze im lokalen Journal gespeichert; ein Schutz gegen Änderung und Löschung ist nicht bestätigt. Die Übergabe an den Browser beweist keinen Webseitenbesuch. Geräteschlüssel wurden lokal registriert; Unternehmensidentitäten und SSO-Rollen sind nicht eingerichtet.",
     domain: "Domain",
     outcome: "Entscheidung",
     score: "Mindestscore bei Entscheidung",
@@ -66,7 +66,7 @@ const labels = {
   fr: {
     title: "Contrôle des événements Enterprise",
     limit:
-      "Preuves de développement local. STAGED confirme le journal local, sans preuve SEALED immuable ni preuve de visite. Les clés des appareils sont enregistrées localement ; aucune identité d’entreprise ni aucun rôle SSO n’est établi.",
+      "Données de développement local. Le serveur a enregistré ces données dans un journal local ; leur protection contre la modification et la suppression n’est pas confirmée. La transmission au navigateur ne prouve pas une visite. Les clés des appareils sont enregistrées localement ; les identités d’entreprise et les rôles SSO ne sont pas configurés.",
     domain: "Domaine",
     outcome: "Décision",
     score: "Score minimal à la décision",
@@ -97,7 +97,7 @@ const labels = {
   es: {
     title: "Revisión de eventos Enterprise",
     limit:
-      "Evidencia de desarrollo local. STAGED confirma el diario local, sin evidencia SEALED inmutable ni prueba de visita. Las claves de dispositivos se registran localmente; no hay identidad empresarial ni roles SSO.",
+      "Datos de desarrollo local. El servidor ha guardado estos registros en un diario local; no se ha confirmado la protección contra cambios y eliminación. La entrega al navegador no demuestra una visita. Las claves de dispositivos se registraron localmente; las identidades empresariales y los roles SSO no están configurados.",
     domain: "Dominio",
     outcome: "Decisión",
     score: "Puntuación mínima al decidir",
@@ -128,7 +128,7 @@ const labels = {
   it: {
     title: "Revisione eventi Enterprise",
     limit:
-      "Evidenze di sviluppo locale. STAGED conferma il registro locale, senza evidenza SEALED immutabile né prova di visita. Le chiavi dei dispositivi sono registrate localmente; identità aziendali e ruoli SSO non sono configurati.",
+      "Dati di sviluppo locale. Il server ha salvato questi dati nel registro locale; la protezione da modifiche e cancellazione non è confermata. Il passaggio al browser non dimostra una visita. Le chiavi dei dispositivi sono registrate localmente; identità aziendali e ruoli SSO non sono configurati.",
     domain: "Dominio",
     outcome: "Decisione",
     score: "Punteggio minimo alla decisione",
@@ -159,7 +159,7 @@ const labels = {
   pl: {
     title: "Przegląd zdarzeń Enterprise",
     limit:
-      "Lokalne dane testowe. STAGED potwierdza zapis w lokalnym dzienniku, bez niezmiennego dowodu SEALED ani dowodu wizyty na stronie. Klucze urządzeń zarejestrowano lokalnie; brak tożsamości firmowej i ról SSO.",
+      "Lokalne dane testowe. Serwer zapisał te dane w lokalnym dzienniku; ochrona przed zmianą i usunięciem nie została potwierdzona. Przekazanie do przeglądarki nie dowodzi wizyty na stronie. Klucze urządzeń zarejestrowano lokalnie; tożsamości firmowe i role SSO nie są skonfigurowane.",
     domain: "Domena",
     outcome: "Decyzja",
     score: "Minimalna ocena przy decyzji",
@@ -186,6 +186,92 @@ const labels = {
     none: "Brak pasujących interakcji",
     check:
       "Dane i podpisy sprawdzono podczas generowania. Sprawdź ponownie z zaufanym kluczem publicznym serwera. Bez niezależnego punktu kontrolnego lokalny łańcuch nie wykrywa usunięcia końcowych wpisów.",
+  },
+};
+const storageLabels = {
+  en: {
+    storageTitle: "Storage status of this export",
+    statusGuide: "What do the storage statuses mean?",
+    staged: "Stored locally",
+    stagedHelp:
+      "The server has accepted the records and stored them durably in its local journal. This does not confirm protection against changes or deletion.",
+    cloud: "Storage checked",
+    cloudHelp:
+      "The adapter has checked the object version, content and retention conditions through its storage client. This is not independent confirmation of a live cloud service or protected storage.",
+    sealed: "Protected storage confirmed",
+    sealedHelp:
+      "Planned status: storage is protected against changes and deletion until a specified date and independently checked and confirmed. This status is not implemented yet.",
+    status: "Server storage",
+  },
+  de: {
+    storageTitle: "Speicherstatus dieses Exports",
+    statusGuide: "Was bedeuten die Speicherstatus?",
+    staged: "Lokal gespeichert",
+    stagedHelp:
+      "Der Server hat die Datensätze angenommen und dauerhaft in seinem lokalen Journal gespeichert. Ein Schutz gegen Änderung und Löschung ist damit nicht bestätigt.",
+    cloud: "Speicher geprüft",
+    cloudHelp:
+      "Der Adapter hat Objektversion, Inhalt und Aufbewahrungsbedingungen über seinen Speicherclient geprüft. Das bestätigt noch keinen unabhängig geprüften Cloudbetrieb oder Ablageschutz.",
+    sealed: "Geschützte Ablage bestätigt",
+    sealedHelp:
+      "Geplanter Status: Die Ablage ist bis zu einem festgelegten Datum gegen Änderung und Löschung geschützt und wurde unabhängig geprüft und bestätigt. Dieser Status ist noch nicht implementiert.",
+    status: "Serverablage",
+  },
+  fr: {
+    storageTitle: "État de stockage de cet export",
+    statusGuide: "Que signifient les états de stockage ?",
+    staged: "Enregistré localement",
+    stagedHelp:
+      "Le serveur a accepté les données et les a enregistrées durablement dans son journal local. Cela ne confirme pas leur protection contre la modification et la suppression.",
+    cloud: "Stockage vérifié",
+    cloudHelp:
+      "L’adaptateur a vérifié la version, le contenu et les conditions de conservation via son client de stockage. Cela ne confirme pas indépendamment le service cloud ni la protection du stockage.",
+    sealed: "Stockage protégé confirmé",
+    sealedHelp:
+      "État prévu : le stockage est protégé contre la modification et la suppression jusqu’à une date définie, puis vérifié et confirmé indépendamment. Cet état n’est pas encore implémenté.",
+    status: "Stockage serveur",
+  },
+  es: {
+    storageTitle: "Estado de almacenamiento de esta exportación",
+    statusGuide: "¿Qué significan los estados de almacenamiento?",
+    staged: "Guardado localmente",
+    stagedHelp:
+      "El servidor ha aceptado los registros y los ha guardado de forma duradera en su diario local. Esto no confirma la protección contra cambios y eliminación.",
+    cloud: "Almacenamiento comprobado",
+    cloudHelp:
+      "El adaptador ha comprobado la versión, el contenido y las condiciones de conservación mediante su cliente de almacenamiento. Esto no confirma de forma independiente el servicio en la nube ni la protección del almacenamiento.",
+    sealed: "Almacenamiento protegido confirmado",
+    sealedHelp:
+      "Estado previsto: el almacenamiento está protegido contra cambios y eliminación hasta una fecha definida, con verificación y confirmación independientes. Este estado aún no está implementado.",
+    status: "Almacenamiento del servidor",
+  },
+  it: {
+    storageTitle: "Stato di archiviazione di questa esportazione",
+    statusGuide: "Che cosa significano gli stati di archiviazione?",
+    staged: "Salvato localmente",
+    stagedHelp:
+      "Il server ha accettato i dati e li ha salvati in modo duraturo nel registro locale. Ciò non conferma la protezione da modifiche e cancellazione.",
+    cloud: "Archiviazione verificata",
+    cloudHelp:
+      "L’adattatore ha verificato versione, contenuto e condizioni di conservazione tramite il client di archiviazione. Ciò non conferma in modo indipendente il servizio cloud né la protezione dell’archiviazione.",
+    sealed: "Archiviazione protetta confermata",
+    sealedHelp:
+      "Stato previsto: l’archiviazione è protetta da modifiche e cancellazione fino a una data definita, con verifica e conferma indipendenti. Questo stato non è ancora implementato.",
+    status: "Archiviazione sul server",
+  },
+  pl: {
+    storageTitle: "Stan przechowywania tego eksportu",
+    statusGuide: "Co oznaczają stany przechowywania?",
+    staged: "Zapisano lokalnie",
+    stagedHelp:
+      "Serwer przyjął dane i trwale zapisał je w lokalnym dzienniku. Nie potwierdza to ochrony przed zmianą i usunięciem.",
+    cloud: "Sprawdzono przechowywanie",
+    cloudHelp:
+      "Adapter sprawdził wersję obiektu, zawartość i warunki przechowywania przez klienta magazynu. Nie potwierdza to niezależnie działania chmury ani ochrony przechowywanych danych.",
+    sealed: "Potwierdzono chronione przechowywanie",
+    sealedHelp:
+      "Planowany stan: dane są chronione przed zmianą i usunięciem do ustalonej daty, a ochrona została niezależnie sprawdzona i potwierdzona. Ten stan nie został jeszcze wdrożony.",
+    status: "Magazyn serwera",
   },
 };
 const paging = {
@@ -253,7 +339,7 @@ const verdicts = {
   ],
 };
 for (const language of Object.keys(labels)) {
-  Object.assign(labels[language], paging[language]);
+  Object.assign(labels[language], paging[language], storageLabels[language]);
   labels[language].verdicts = {
     UNKNOWN: labels[language].unknown,
     ...Object.fromEntries(
@@ -336,8 +422,19 @@ function reviewHtml(records, language = "en") {
       (c) => "\\u" + c.charCodeAt(0).toString(16).padStart(4, "0"),
     );
   return `<!doctype html><html lang="${language}"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'none'; base-uri 'none'; form-action 'none'"><title>Thundy AV — ${escape(text.title)}</title>
-<style nonce="${nonce}">body{font:16px/1.5 system-ui;margin:24px;color:#1f2937;background:#fff}h1{font-size:1.5rem;color:#075985}aside{padding:16px;background:#fffbeb;border-left:4px solid #b45309}form{display:flex;gap:16px;flex-wrap:wrap;margin:24px 0}label{display:grid;gap:6px}input,select,button{font:inherit;padding:8px;border:1px solid #9ca3af;border-radius:6px}input{max-width:100%;box-sizing:border-box}button{cursor:pointer}table{border-collapse:collapse;min-width:1600px;width:100%}td,th{padding:10px;text-align:left;border-bottom:1px solid #d1d5db;overflow-wrap:anywhere;max-width:250px}th{white-space:nowrap}td:nth-child(-n+8),td:nth-child(10),td:nth-child(11){white-space:nowrap}.table-scroll{overflow:auto}tr.risk{background:#fef2f2}.meta{font-size:.8rem}p{overflow-wrap:anywhere}@media(prefers-color-scheme:dark){body{background:#111827;color:#e5e7eb}h1{color:#7dd3fc}aside{background:#292524}input,select,button{background:#1f2937;color:#e5e7eb}tr.risk{background:#450a0a}}@media(max-width:500px){body{margin:12px}form,label{width:100%}}</style>
-<h1>Thundy AV — ${escape(text.title)}</h1><aside>${escape(text.limit)}</aside><form id="filters"><label>${escape(text.domain)}<input id="query" type="search"></label><label>${escape(text.outcome)}<select id="outcome"><option value="">${escape(text.all)}</option>${[
+<style nonce="${nonce}">body{font:16px/1.5 system-ui;margin:24px;color:#1f2937;background:#fff}h1{font-size:1.5rem;color:#075985}aside{padding:16px;background:#fffbeb;border-left:4px solid #b45309}form{display:flex;gap:16px;flex-wrap:wrap;margin:24px 0}label{display:grid;gap:6px}input,select,button{font:inherit;padding:8px;border:1px solid #9ca3af;border-radius:6px}input{max-width:100%;box-sizing:border-box}button{cursor:pointer}table{border-collapse:collapse;min-width:1600px;width:100%}td,th{padding:10px;text-align:left;border-bottom:1px solid #d1d5db;overflow-wrap:anywhere;max-width:250px}th{white-space:nowrap}td:nth-child(-n+8),td:nth-child(10),td:nth-child(11){white-space:nowrap}td:nth-child(9){min-width:180px}td:nth-child(11){min-width:160px;white-space:normal}.table-scroll{overflow:auto}tr.risk{background:#fef2f2}.meta{font-size:.8rem}p{overflow-wrap:anywhere}.storage-status{margin:24px 0;padding:16px;border:1px solid #9ca3af;border-radius:8px}.storage-status h2{font-size:1.1rem;margin:0 0 8px}.storage-status p{margin:8px 0}.storage-status code{font-size:.8rem;overflow-wrap:anywhere}summary{cursor:pointer;font-weight:600;padding:8px 0}summary:focus-visible{outline:3px solid #0ea5e9;outline-offset:3px}.status-guide{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:16px}.status-guide dt{font-weight:600}.status-guide code{display:block;font-weight:400}.status-guide dd{margin:8px 0 0}@media(prefers-color-scheme:dark){body{background:#111827;color:#e5e7eb}h1{color:#7dd3fc}aside{background:#292524}input,select,button{background:#1f2937;color:#e5e7eb}tr.risk{background:#450a0a}}@media(max-width:500px){body{margin:12px}form,label{width:100%}}</style>
+<h1>Thundy AV — ${escape(text.title)}</h1><aside>${escape(text.limit)}</aside><section class="storage-status" aria-labelledby="storage-status-title"><h2 id="storage-status-title">${escape(text.storageTitle)}</h2><p><strong>${escape(text.staged)}</strong> · <code>STAGED</code></p><p>${escape(text.stagedHelp)}</p><details id="storage-guide"><summary>${escape(text.statusGuide)}</summary><dl class="status-guide">${[
+    ["staged", "STAGED"],
+    ["cloud", "CLOUD_OBSERVED"],
+    ["sealed", "SEALED"],
+  ]
+    .map(
+      ([key, code]) =>
+        `<div><dt>${escape(text[key])}<code>${code}</code></dt><dd>${escape(text[key + "Help"])}</dd></div>`,
+    )
+    .join(
+      "",
+    )}</dl></details></section><form id="filters"><label>${escape(text.domain)}<input id="query" type="search"></label><label>${escape(text.outcome)}<select id="outcome"><option value="">${escape(text.all)}</option>${[
     ["PENDING", "pending"],
     ["OPENED", "opened"],
     ["ABORTED", "aborted"],
@@ -359,7 +456,7 @@ let page=0;function render(reset=true){if(reset)page=0;const query=$('query').va
  page=Math.min(page,Math.max(0,Math.ceil(items.length/50)-1));$('previous').disabled=page===0;$('next').disabled=(page+1)*50>=items.length;
  $('count').textContent=t.count+': '+items.length+' · '+(items.length?page*50+1:0)+'–'+Math.min((page+1)*50,items.length);$('rows').replaceChildren();
  for(const item of items.slice(page*50,(page+1)*50)){const tr=document.createElement('tr'),risky=item.outcome==='OPENED'&&(item.scoreAtDecision>=70||['MALICIOUS','MALICIOUS_VISUAL'].includes(item.verdictAtDecision));if(risky){tr.className='risk';tr.title=t.risk;}
- for(const value of [item.url,names[item.outcome],item.scoreAtDecision??t.unknown,item.latestScore??t.unknown,t.verdicts[item.verdictAtDecision],item.clickedAt,item.decisionAt??'—',item.receivedAt,item.deviceId,item.eventCount,item.receipt]){const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td);}$('rows').appendChild(tr);}
+ for(const value of [item.url,names[item.outcome],item.scoreAtDecision??t.unknown,item.latestScore??t.unknown,t.verdicts[item.verdictAtDecision],item.clickedAt,item.decisionAt??'—',item.receivedAt,item.deviceId,item.eventCount,item.receipt==='STAGED'?t.staged+' · STAGED':item.receipt]){const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td);}$('rows').appendChild(tr);}
  if(!items.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=11;td.textContent=t.none;tr.appendChild(td);$('rows').appendChild(tr);}}
  $('filters').addEventListener('submit',e=>e.preventDefault());for(const id of ['query','outcome','score'])$(id).addEventListener('input',()=>render());
  $('previous').addEventListener('click',()=>{page--;render(false);});$('next').addEventListener('click',()=>{page++;render(false);});
