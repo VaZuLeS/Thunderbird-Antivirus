@@ -1,5 +1,7 @@
 # Store-Readiness-Analyse — „Thundy AV“ (Thunderbird SECurity AntiVirus)
 
+> Historischer Prüfstand: MIT-Angaben in dieser Analyse beziehen sich auf die damalige Version. Der aktuelle Projektquelltext steht seit der Lizenzumstellung vom 14. Oktober 2026 unter GNU GPL v3 (`GPL-3.0-only`). [Aktuelle Lizenzinformationen](license.md).
+
 **Prüfgegenstand:** Repository `VaZuLeS/Thunderbird-Antivirus` (Thunderbird-WebExtension, MV3, Manifest-Version 1.5)
 **Zielplattform:** Thunderbird Add-ons Store (ATN, addons.thunderbird.net) — Listung + Signierung
 **Prüfmethode:** statische Code-Analyse, automatisierte Linter/Tests, XPI-Build-Inspektion, Abgleich mit Mozilla-Add-on-Policies, Thunderbird-Manifest-/MV3-Dokumentation, Prüfung der öffentlichen Projekt-/Rechtsseiten

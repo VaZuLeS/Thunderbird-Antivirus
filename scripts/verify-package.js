@@ -1,8 +1,8 @@
 /**
  * Verifies the content of the built XPI.
  *
- * The store package must contain the runtime files only - no tests, no
- * documentation, no lock files and no legacy Manifest V2 leftovers.
+ * The store package must contain runtime files and required license notices.
+ * Tests, documentation, lock files and legacy Manifest V2 leftovers are excluded.
  */
 const fs = require('fs');
 const path = require('path');
@@ -42,7 +42,7 @@ const ALLOWED_FILES = [
   'theme.css',
   'LICENSE'
 ];
-// Runtime files that must be inside the package (otherwise the add-on is broken).
+// Runtime files and license notices that must be inside the package.
 const REQUIRED_FILES = [
   'manifest.json',
   '_locales/en/messages.json',
@@ -74,7 +74,8 @@ const REQUIRED_FILES = [
   'options.js',
   'popup.html',
   'privacy.html',
-  'theme.css'
+  'theme.css',
+  'LICENSE'
 ];
 const ALLOWED_PREFIXES = ['img/', '_locales/'];
 const FORBIDDEN = [
@@ -174,7 +175,7 @@ function main() {
   }
   for (const required of REQUIRED_FILES) {
     if (!names.includes(required)) {
-      problems.push('runtime file is missing from the package: ' + required);
+      problems.push('required file is missing from the package: ' + required);
     }
   }
 

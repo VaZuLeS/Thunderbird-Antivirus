@@ -1,5 +1,7 @@
 # Problemanalyse Store-Readiness — „Thundy AV“ (Thunderbird Add-ons Store / ATN)
 
+> Historischer Prüfstand: MIT-Angaben in dieser Analyse beziehen sich auf die damalige Version. Der aktuelle Projektquelltext steht seit der Lizenzumstellung vom 14. Oktober 2026 unter GNU GPL v3 (`GPL-3.0-only`). [Aktuelle Lizenzinformationen](license.md).
+
 **Prüfgegenstand:** Repository `VaZuLeS/Thunderbird-Antivirus`
 **Snapshot:** Branch `cline/k0d34w90`, Basis-Commit `4c4898c` (= `origin/main` zum Prüfzeitpunkt)
 **Add-on:** Thundy AV – Email Scanner for Thunderbird, `manifest.json` Version **1.6** (MV3, `strict_min_version` 140.0)

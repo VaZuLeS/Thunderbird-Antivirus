@@ -5,7 +5,7 @@
 # Datenschutzerklärung — Thundy AV – Email Scanner for Thunderbird
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird (Kurzname „Thundy AV“), Version 1.6.2
-**Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (Lizenz: MIT)
+**Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (Lizenz: GNU GPL v3 (`GPL-3.0-only`))
 **Stand:** September 2026
 
 Diese Erklärung beschreibt, welche Daten die Thunderbird-Erweiterung „Thundy AV“ verarbeitet,
@@ -288,7 +288,7 @@ Repository und Issue-Tracker: https://github.com/VaZuLeS/Thunderbird-Antivirus
 ## Privacy Policy (English)
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird (short name "Thundy AV"), version 1.6.2
-**Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (MIT License)
+**Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus (GNU GPL v3 (`GPL-3.0-only`) License)
 **Last updated:** September 2026
 
 ### 1. Controller

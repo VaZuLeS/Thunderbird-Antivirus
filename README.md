@@ -14,7 +14,7 @@ submits the minimum data required to external analysis services.
 | Short name | Thundy AV |
 | Add-on ID | `thundy-av@bludau-it-services.de` |
 | Version | 1.21.0 – GitHub release (unsigned) – see [CHANGELOG.md](CHANGELOG.md) |
-| License | MIT – see [LICENSE](LICENSE) |
+| License | GNU GPL v3 (`GPL-3.0-only`, current source) – see [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
@@ -269,7 +269,9 @@ verifiable against the code; please run `npm test` and `npx web-ext lint` before
 
 ## License
 
-MIT – see [LICENSE](LICENSE).
+GNU General Public License, version 3 only (`GPL-3.0-only`) – see [LICENSE](LICENSE).
+
+Copyright © 2025–2026 Jan Bludau. This license applies to the current project source. Previously published releases retain their original terms. The bundled `tldts` library retains its MIT license; see [vendor/tldts.LICENSE](vendor/tldts.LICENSE). [Website license information](docs/license.md).
 
 
 The [persistent local storage job workflow](docs/ENTERPRISE_STORAGE_JOBS.md) records verified evidence jobs, retries and simulation completion before acknowledging progress. `npm run enterprise:storage-jobs -- status` requires an explicit queue and trusted key configuration. The CLI worker runs local simulations; the explicit `runCloudOne` library API now processes optional S3/Azure/GCP jobs with total deadlines, cancellation and durable version-bound observations. Tests use SDK doubles; production cloud acceptance and SEALED commits remain pending.

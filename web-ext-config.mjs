@@ -2,8 +2,8 @@
  * web-ext configuration for Thundy AV.
  *
  * The add-on package must only contain files that are actually loaded at
- * runtime. Tests, developer scripts, documentation and store assets live in the
- * repository but are excluded from the XPI (see docs/PROBLEMANALYSE_STORE_READINESS.md, P0-6).
+ * runtime, plus the project and third-party license notices. Tests, developer
+ * scripts, documentation and store assets live in the repository but are excluded from the XPI (see docs/PROBLEMANALYSE_STORE_READINESS.md, P0-6).
  *
  * NOTE: web-ext does not read a `.webextignore` file (verified: `grep -r webextignore
  * node_modules/web-ext/lib` finds nothing; `web-ext build --no-config-discovery` packs
@@ -37,7 +37,6 @@ export default {
     'examples/**',
     '*.md',
     'CODEOWNERS',
-    'LICENSE/**',
     // repository configuration
     '.github',
     '.github/**',

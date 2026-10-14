@@ -4,7 +4,7 @@
 **Add-on ID:** thundy-av@bludau-it-services.de
 **Version:** 1.6
 **Manifest:** MV3 (`manifest_version: 3`), `strict_min_version: 140.0`
-**License:** MIT
+**License:** GNU GPL v3 (`GPL-3.0-only`)
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus
 **Privacy policy (hosted):** https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
 **Support / maintainer contact:** Jan Bludau (VaZuLeS), bludau.it.services@gmail.com

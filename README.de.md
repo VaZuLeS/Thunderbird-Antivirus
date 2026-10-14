@@ -14,7 +14,7 @@ minimal notwendigen Daten an externe Analysedienste.
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
 | Version | 1.19.0 – GitHub-Release (unsigniert) – siehe [CHANGELOG.md](CHANGELOG.md) |
-| Lizenz | MIT – siehe [LICENSE](LICENSE) |
+| Lizenz | GNU GPL v3 (`GPL-3.0-only`, aktueller Quelltext) – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
@@ -243,4 +243,6 @@ Code überprüfbar sein; bitte vor einem Pull Request `npm test` und `npx web-ex
 
 ## Lizenz
 
-MIT – siehe [LICENSE](LICENSE).
+GNU General Public License, ausschließlich Version 3 (`GPL-3.0-only`) – siehe [LICENSE](LICENSE).
+
+Copyright © 2025–2026 Jan Bludau. Diese Lizenz gilt für den aktuellen Projektquelltext. Bereits veröffentlichte Releases behalten ihre ursprünglichen Lizenzbedingungen. Die eingebundene Bibliothek `tldts` behält ihre MIT-Lizenz; siehe [vendor/tldts.LICENSE](vendor/tldts.LICENSE). [Lizenzinformationen der Webseite](docs/license.md).

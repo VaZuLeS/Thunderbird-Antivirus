@@ -1,3 +1,9 @@
+# GNU GPL v3 für den aktuellen Projektquelltext — 14. Oktober 2026
+
+Lizenztext, Paketmetadaten, README-Dateien, aktuelle Store-Unterlagen und alle sechs Sprachseiten auf `GPL-3.0-only` umgestellt. Drittanbieterlizenzen bleiben erhalten. Neue Pakete enthalten verpflichtend den vollständigen GPL-v3-Lizenztext; zuvor veröffentlichte Releases wurden nicht ersetzt. [Lizenz und Geltungsbereich](license.md).
+
+---
+
 # Offline-Adminübersicht für Speicheraufträge — 14. Oktober 2026
 
 690 Tests und 24 Chromium-Layouts bestanden; vollständiger Browserdownload trotz aktivem Filter geprüft. Sechssprachige Betriebsübersicht mit Status-/Anbieter-/Prüfbedarfsfiltern, Pagination, Kapazitätswarnung, Fehler-/Retry-Erklärungen und Versions-/Schutzfristen ergänzt. HTML und JSON sind unsignierte Momentaufnahmen ohne Schreibaktionen; SEALED und zentrale SSO-Rollen bleiben offen. [Bedienung und Grenzen](ENTERPRISE_STORAGE_ADMIN.md).
@@ -101,7 +107,7 @@ Die nachfolgenden Release-Angaben und Messwerte dokumentieren den historischen S
 # Status – Thundy AV (Stand: 1. Oktober 2026)
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird · **Version 1.6.2** · **ID** `thundy-av@bludau-it-services.de`
-**Zielplattform:** Thunderbird 140.0 oder neuer (Manifest V3) · **Lizenz:** MIT
+**Zielplattform:** Thunderbird 140.0 oder neuer (Manifest V3) · **Lizenz zum damaligen Release:** MIT; aktueller Quelltext: GNU GPL v3 (`GPL-3.0-only`, siehe [Lizenzinformationen](license.md))
 **Snapshot:** Branch `cline/k0d34w90` (Einreichungskandidat, Entscheidung D1 in [decisions.md](decisions.md))
 
 ## Veröffentlichte Version 1.6.2
