@@ -60,3 +60,5 @@ without consent. There is no telemetry, no analytics and no developer-operated s
 [Local operational reports in six languages](ENTERPRISE_BETRIEBSBERICHTE.md) · [Optional SIEM formats and durable offline queue](ENTERPRISE_SIEM_EXPORTQUEUE.md) · [N06 live acceptance requirements](ENTERPRISE_N06_ABNAHME.md). Production integration remains incomplete; evidence readiness does not grant activation.
 
 [Durable local incident cases and public-key review](ENTERPRISE_INCIDENTFAELLE.md). Assignment and lifecycle use explicit revisions; enterprise authorization and a central portal remain open.
+
+[Signed policy comparison and conservative offline simulation](ENTERPRISE_POLICY_SIMULATION.md). Decision-time assessments are evaluated under explicit assumptions; rollout and activation remain unavailable.

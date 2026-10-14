@@ -77,3 +77,7 @@ Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbar
 ## Dauerhafte lokale Incidentfälle
 
 `enterprise:cases ingest/assign/ack/start/resolve/reopen` speichert Falllebenszyklus und Verlauf mit Revisionsprüfung. `verify` prüft das signierte Falljournal ausschließlich mit öffentlichen Schlüsseln, ohne Writer-Lock oder Journaländerung. [Bedienung, Provenienz und Grenzen](../docs/ENTERPRISE_INCIDENTFAELLE.md). Lokale Akteurskennungen sind keine bestätigten SSO-Identitäten; Original-Geräteevidenz wird beim Einlesen, nicht erneut beim Falljournal-Reader geprüft.
+
+## Policy-Diff und Offline-Simulation
+
+`enterprise:policy-simulate --baseline ... --candidate ... --export ... --config ... --out ...` vergleicht signierte Policies und modelliert Öffnungsregeln auf geprüften damaligen Assessments. Öffentliche Trustwerte genügen; kein Rollout oder SEALED-Signal. [Konfiguration, Szenarien und Grenzen](../docs/ENTERPRISE_POLICY_SIMULATION.md).

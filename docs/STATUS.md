@@ -1,3 +1,9 @@
+# Policy-Diff und konservative Simulation — 14. Oktober 2026
+
+783 Tests im Gesamtgate. Public-Key-Vergleich zweier signierter Policies und konservative Öffnungsmodellsimulation auf verifizierten damaligen Entscheidungs-Assessments. Spätere Neubewertungen verändern die Grundlage nicht. Szenarioannahmen, unvergleichbare Gates und ausgelassene Policyversionen werden ausgewiesen. Kein Rollout, keine Policyaktivierung oder SEALED-/Browserfreigabe; Extension 1.22.0 unverändert. [Bedienung und Modellgrenzen](ENTERPRISE_POLICY_SIMULATION.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).
+
+---
+
 # Dauerhafte Incidentfälle — 14. Oktober 2026
 
 774 Tests im Gesamtgate. Verifizierte Entscheidungen lassen sich als dauerhafte Fälle aufnehmen, zuweisen, bestätigen, bearbeiten, abschließen und explizit wieder aufnehmen. Revisionen verhindern Änderungen aus veralteten Bearbeitungsständen. Public-Key-Prüfung funktioniert ohne Writer-Schlüssel und ohne Journal-/Lockänderung. Der Reader bestätigt den Fallwriter und die lokalen Übergänge, nicht erneut die Original-Geräteevidenz. Keine SSO-/Portal-/Ticketaktivierung oder SEALED-Freigabe; Extension 1.22.0 unverändert. [API und Recovery](ENTERPRISE_INCIDENTFAELLE.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).
