@@ -3,6 +3,7 @@ const fs = require("node:fs"),
   path = require("node:path");
 const { IncidentCases } = require("./incident_cases.cjs");
 const { readJournal, publicKeyFile } = require("./storage_verify.cjs");
+const { reviewHtml, labels } = require("./cases_review.cjs");
 const { exact } = require("./durable_journal.cjs");
 function main() {
   const command = process.argv[2],
@@ -11,6 +12,7 @@ function main() {
     caseOptions = [...writer, "case-id", "expected-revision"],
     allowed = {
       verify: ["journal", "config", "out", "expected-head"],
+      review: ["journal", "config", "out", "expected-head", "lang"],
       ingest: [...writer, "export", "rules", "expected-head"],
       assign: [...caseOptions, "assignee-id"],
       ack: caseOptions,
@@ -34,10 +36,12 @@ function main() {
   }
   if (
     allowed[command]
-      .filter((k) => k !== "expected-head")
+      .filter((k) => !["expected-head", "lang"].includes(k))
       .some((k) => !options[k])
   )
     throw new Error("CASES_ARGUMENT_REQUIRED");
+  if (command === "review" && !Object.hasOwn(labels, options.lang || "en"))
+    throw new Error("CASES_REVIEW_LANGUAGE_INVALID");
   const json = (file, maxBytes) =>
       JSON.parse(readJournal(file, maxBytes).toString("utf8")),
     config = json(options.config, 65536);
@@ -72,7 +76,7 @@ function main() {
   const expectedHead = options["expected-head"];
   if (expectedHead !== undefined && !/^[a-f0-9]{64}$/.test(expectedHead))
     throw new Error("CASES_HEAD_INVALID");
-  if (command === "verify") {
+  if (["verify", "review"].includes(command)) {
     const report = IncidentCases.verifyJournal(
       readJournal(options.journal, 32 * 1024 * 1024),
       {
@@ -81,10 +85,16 @@ function main() {
         ...(expectedHead !== undefined ? { expectedHead } : {}),
       },
     );
-    fs.writeFileSync(options.out, JSON.stringify(report, null, 2) + "\n", {
-      flag: "wx",
-      mode: 0o600,
-    });
+    fs.writeFileSync(
+      options.out,
+      command === "review"
+        ? reviewHtml(report, options.lang || "en")
+        : JSON.stringify(report, null, 2) + "\n",
+      {
+        flag: "wx",
+        mode: 0o600,
+      },
+    );
     process.stdout.write("CASES_REPORT_CREATED\n");
     return;
   }

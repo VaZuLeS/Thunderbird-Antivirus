@@ -12,12 +12,13 @@ Stand: 14. Oktober 2026. Ergänzung zum [Gesamtkonzept mit 30 Arbeitspaketen](EN
 | N06 | E01–E03, A01–A03, F01–F03, Q01–Q02 | Produktive Cloudprüfung, SEALED-Evidenzcommit, SSO-Rollen und echte OS-/Thunderbird-Abnahme | Betreiberidentitäten, Region, Daten-/Retentionfreigaben, IAM/KMS/Restore und getrennte Rollen nachweisen | **Geprüft, produktiv blockiert**; lokale Nachweisprüfung implementiert, reale Systeme/Freigaben und produktive Kernpfade fehlen |
 | N07 | I01, I02 | Dauerhafte lokale Incidentfälle, Zuweisung, Revisionsprüfung und Lebenszyklus mit Public-Key-Reader | Neustart, Deduplizierung, ungültige Übergänge, veraltete Revisionen, Syncfehler und Journalmanipulation prüfen | **Implementiert und lokal geprüft**; SSO/Portal/Enterprise-Abnahme offen |
 | N08 | P03, P01 | Lokaler Policy-Diff und Simulation auf geprüften Entscheidungs-Snapshots, ohne Rollout | Signaturen/Scope, unbekannte Scores, damalige Assessments und risikostärkere Regeln vergleichen; keine Öffnungs-/SEALED-Freigabe | **Implementiert und lokal geprüft**; signierter Diff und konservative Modellvergleiche; Editor/Freigabe/Rollout offen |
-| N09 | I02, A02 | Sechssprachige lokale Fallübersicht mit Filtern und prüfbarem Verlauf | Keine ungeprüfte Evidenzannahme, keine Schreibaktionen, alle sechs Sprachen und kleine Layouts prüfen | Offen; zentrale Rollen bleiben separat erforderlich |
+| N09 | I02, A02 | Sechssprachige lokale Fallübersicht mit Filtern und prüfbarem Verlauf | Keine ungeprüfte Evidenzannahme, keine Schreibaktionen, alle sechs Sprachen und kleine Layouts prüfen | **Implementiert und lokal geprüft**; Public-Key-CLI, sechs Sprachen, Filter/Verlauf/Export; zentrale Rollen offen |
+| N10 | I04, H02 | Dauerhafte lokale Alarmkandidaten mit bestätigtem Abholen statt Verlust bei verlorener Rückgabe | Kandidaten nach Neustart erneut abrufbar; Bestätigung/Deduplizierung und Dämpfung prüfen; kein externer Versand | Offen; baut auf Betriebsmonitor auf und benötigt keine Produktivzugänge |
 
 ## Automatische Arbeitsreihenfolge innerhalb weiterer Umsetzung
 
 1. Aktuellen Code, Aufgabenstand und CI lesen; lokale Benutzeränderungen erhalten.
-2. Den ersten offenen, ohne reale Zugänge ausführbaren Schritt auswählen. N01 bis N05 sowie N07/N08 sind lokal implementiert. Als nächster unabhängig ausführbarer Schritt folgt N09. N06 wird anhand der [Abnahmevoraussetzungen](ENTERPRISE_N06_ABNAHME.md) fortgesetzt, sobald reale Systeme und Nachweise verfügbar sind; produktive Lücken bleiben offen.
+2. Den ersten offenen, ohne reale Zugänge ausführbaren Schritt auswählen. N01 bis N05 sowie N07/N08 sind lokal implementiert. N09 ist ebenfalls lokal implementiert. Als nächster unabhängig ausführbarer Schritt folgt N10. N06 wird anhand der [Abnahmevoraussetzungen](ENTERPRISE_N06_ABNAHME.md) fortgesetzt, sobald reale Systeme und Nachweise verfügbar sind; produktive Lücken bleiben offen.
 3. Einen konkret nutzbaren Baustein mit negativen Prüfungen, Recoveryfällen und Dokumentation fertigstellen. Lokale Vorarbeit und produktive Abnahme im Status getrennt halten.
 4. Relevante Tests und Paketgate ausführen; Code committen/pushen und Pages-Veröffentlichung kontrollieren. Ein XPI-Release nur bei Extension-Änderungen erstellen.
 5. Den Plan nach dem tatsächlichen Ergebnis fortschreiben. Reale Aktivierung erst mit den passenden Unternehmensparametern und bereits vorhandener bzw. ausdrücklich erteilter Autorisierung.
@@ -39,3 +40,5 @@ N04 ergänzt [minimierte sechssprachige Betriebsberichte](ENTERPRISE_BETRIEBSBER
 N07 ergänzt [dauerhafte Incidentfälle](ENTERPRISE_INCIDENTFAELLE.md), revisionsgebundene Bearbeitung und einen unabhängigen Public-Key-Reader. Der Reader bestätigt das signierte Falljournal; Original-Geräteevidenz wird separat geprüft.
 
 N08 ergänzt [signierten Policy-Diff und Offline-Simulation](ENTERPRISE_POLICY_SIMULATION.md) auf damaligen Entscheidungs-Assessments. Modellannahmen, ausgelassene Versionen und Grenzen sind im Report sichtbar; kein Rollout, keine Öffnungs- oder SEALED-Freigabe.
+
+N09 ergänzt die [sechssprachige lokale Fallübersicht](ENTERPRISE_FALLUEBERSICHT.md) direkt aus dem signaturgeprüften Journal. Filter, vollständiger minimierter Export und paginierter Verlauf verändern keine Fälle. SSO/Portal und Original-Geräteevidenzprüfung bleiben getrennte Voraussetzungen.

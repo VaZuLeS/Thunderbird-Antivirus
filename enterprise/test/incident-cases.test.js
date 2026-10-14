@@ -469,6 +469,20 @@ test("CLI reader requires only public config and can verify while writer is lock
     assert.notEqual(run([]).status, 0);
     assert.notEqual(run(["--private-key", "SECRET"]).status, 0);
     fs.unlinkSync(file("report.json"));
+    const review = spawnSync(
+      process.execPath,
+      [
+        ...argv.map((arg) => (arg === "verify" ? "review" : arg)),
+        "--lang",
+        "de",
+      ],
+      { encoding: "utf8" },
+    );
+    assert.equal(review.status, 0, review.stderr);
+    assert.ok(
+      fs.readFileSync(file("report.json"), "utf8").includes("Fallübersicht"),
+    );
+    fs.unlinkSync(file("report.json"));
     fs.writeFileSync(
       file("config.json"),
       JSON.stringify({ ...config, privateKey: "SECRET" }),

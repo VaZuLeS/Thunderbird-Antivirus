@@ -62,3 +62,5 @@ without consent. There is no telemetry, no analytics and no developer-operated s
 [Durable local incident cases and public-key review](ENTERPRISE_INCIDENTFAELLE.md). Assignment and lifecycle use explicit revisions; enterprise authorization and a central portal remain open.
 
 [Signed policy comparison and conservative offline simulation](ENTERPRISE_POLICY_SIMULATION.md). Decision-time assessments are evaluated under explicit assumptions; rollout and activation remain unavailable.
+
+[Incident review in six languages](ENTERPRISE_FALLUEBERSICHT.md). Public-key journal verification precedes HTML generation; filters and paginated histories preserve the complete minimized download.

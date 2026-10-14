@@ -1,3 +1,9 @@
+# Sechssprachige lokale Fallübersicht — 14. Oktober 2026
+
+794 Tests im Gesamtgate. EN/DE/FR/ES/IT/PL-Fallkarten verbinden Domain-URL, damaligen Score, Providerbefund, Ergebnis, Policy-/Regelversion und Bearbeitungsverlauf. Public-Key-CLI prüft das Falljournal vor HTML-Erstellung; Filter, 25-Fall-Pagination und lazy/paginierter Verlauf. Vollständiger minimierter JSON-Export unabhängig von Filtern. 24 Chromium-Layouts und echte Browserdownloads geprüft. Keine SSO-/Portal-/SEALED-Freigabe; Extension 1.22.0 unverändert. [Bedienung und Grenzen](ENTERPRISE_FALLUEBERSICHT.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).
+
+---
+
 # Policy-Diff und konservative Simulation — 14. Oktober 2026
 
 783 Tests im Gesamtgate. Public-Key-Vergleich zweier signierter Policies und konservative Öffnungsmodellsimulation auf verifizierten damaligen Entscheidungs-Assessments. Spätere Neubewertungen verändern die Grundlage nicht. Szenarioannahmen, unvergleichbare Gates und ausgelassene Policyversionen werden ausgewiesen. Kein Rollout, keine Policyaktivierung oder SEALED-/Browserfreigabe; Extension 1.22.0 unverändert. [Bedienung und Modellgrenzen](ENTERPRISE_POLICY_SIMULATION.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).

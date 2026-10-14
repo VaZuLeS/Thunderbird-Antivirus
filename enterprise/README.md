@@ -81,3 +81,7 @@ Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbar
 ## Policy-Diff und Offline-Simulation
 
 `enterprise:policy-simulate --baseline ... --candidate ... --export ... --config ... --out ...` vergleicht signierte Policies und modelliert Öffnungsregeln auf geprüften damaligen Assessments. Öffentliche Trustwerte genügen; kein Rollout oder SEALED-Signal. [Konfiguration, Szenarien und Grenzen](../docs/ENTERPRISE_POLICY_SIMULATION.md).
+
+## Sechssprachige lokale Fallübersicht
+
+`enterprise:cases review --journal ... --config ... --lang de --out ...` prüft das Falljournal mit öffentlichen Schlüsseln und erzeugt eine schreibgeschützte Ansicht mit Filtern, vollständigem minimiertem Download und paginiertem Verlauf. [Bedienung und Prüfgrenzen](../docs/ENTERPRISE_FALLUEBERSICHT.md). Keine SSO- oder SEALED-Abnahme; HTML/JSON bleiben unsignierte Momentaufnahmen.
