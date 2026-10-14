@@ -273,3 +273,5 @@ MIT – see [LICENSE](LICENSE).
 
 
 The [persistent local storage job workflow](docs/ENTERPRISE_STORAGE_JOBS.md) records verified evidence jobs, retries and simulation completion before acknowledging progress. `npm run enterprise:storage-jobs -- status` requires an explicit queue and trusted key configuration. The CLI worker runs local simulations; the explicit `runCloudOne` library API now processes optional S3/Azure/GCP jobs with total deadlines, cancellation and durable version-bound observations. Tests use SDK doubles; production cloud acceptance and SEALED commits remain pending.
+
+A [six-language offline storage job review](docs/ENTERPRISE_STORAGE_ADMIN.md) now shows processing states, retries, errors, capacity, object versions and retention dates. Generate it with `enterprise:storage-jobs review --queue ... --config ... --lang en --out ...`. It is a read-only, unsigned snapshot; it does not activate cloud storage, retry jobs or establish SEALED evidence.

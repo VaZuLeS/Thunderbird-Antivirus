@@ -1,3 +1,9 @@
+# Offline-Adminübersicht für Speicheraufträge — 14. Oktober 2026
+
+690 Tests und 24 Chromium-Layouts bestanden; vollständiger Browserdownload trotz aktivem Filter geprüft. Sechssprachige Betriebsübersicht mit Status-/Anbieter-/Prüfbedarfsfiltern, Pagination, Kapazitätswarnung, Fehler-/Retry-Erklärungen und Versions-/Schutzfristen ergänzt. HTML und JSON sind unsignierte Momentaufnahmen ohne Schreibaktionen; SEALED und zentrale SSO-Rollen bleiben offen. [Bedienung und Grenzen](ENTERPRISE_STORAGE_ADMIN.md).
+
+---
+
 # Verständliche Speicherstatus — 14. Oktober 2026
 
 679 Tests bestanden; 24 neue Chromium-Layouts für sechs Sprachen, zwei Breiten und helles/dunkles Design geprüft. Adminprüfung und Dokumentation erläutern jetzt „Lokal gespeichert“, „Speicher geprüft“ und „Geschützte Ablage bestätigt“ statt vorausgesetzter Fachkürzel. Die aufklappbare Adminhilfe ist vollständig sechssprachig. SEALED bleibt als noch nicht implementiert gekennzeichnet; Quellprotokolle, Signaturen und Extension-Runtime bleiben unverändert. [Erklärung mit Beispiel](ENTERPRISE_SPEICHERSTATUS.md).

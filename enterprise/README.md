@@ -49,3 +49,7 @@ SDK-Adapter für AWS S3 Compliance Object Lock, Azure version-level Immutable Bl
 ## Speicherstatus verständlich erklärt
 
 Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbarer Statuserklärung. [STAGED, CLOUD_OBSERVED und SEALED mit Adminbeispiel](../docs/ENTERPRISE_SPEICHERSTATUS.md). SEALED ist weiterhin nicht implementiert; die UI-Hilfe verändert keine Quittungen oder Signaturen.
+
+## Offline-Adminübersicht der Speicheraufträge
+
+`enterprise:storage-jobs review --queue ... --config ... --lang de --out ...` erzeugt eine sechssprachige Ansicht mit Filtern, Kapazität, Fehlern, Wiederholungen, Versionen und Fristen. [Bedienung und Zugriffsgrenzen](../docs/ENTERPRISE_STORAGE_ADMIN.md). Die Ansicht enthält keine Schreibaktionen; HTML/JSON bleiben unsignierte Statuszusammenfassungen.

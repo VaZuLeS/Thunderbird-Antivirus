@@ -425,6 +425,32 @@ test("CLI validates command-specific options and executes separate enqueue/run/s
   ]);
   assert.equal(run("run").status, "SIMULATION_COMPLETE");
   const status = run("status");
+  const out = path.join(f.root, "storage-review.html");
+  assert.equal(
+    run("review", [
+      "--out",
+      out,
+      "--lang",
+      "de",
+      "--expected-head",
+      status.head,
+    ]).jobCount,
+    1,
+  );
+  assert.equal(run("status").head, status.head);
+  assert.equal(fs.statSync(out).mode & 0o077, 0);
+  assert.ok(
+    fs.readFileSync(out, "utf8").includes("Prüfung der Speicheraufträge"),
+  );
+  assert.equal(fs.readFileSync(out, "utf8").includes("example.org"), false);
+  const repeated = spawnSync(
+    process.execPath,
+    [cli, "review", ...common, "--out", out],
+    { encoding: "utf8" },
+  );
+  assert.equal(repeated.status, 1);
+  assert.match(repeated.stderr, /JOBS_REVIEW_OUTPUT_EXISTS/);
+
   assert.equal(status.jobs[0].jobId, queued.jobId);
   assert.equal(
     run("status", ["--expected-head", status.head]).head,

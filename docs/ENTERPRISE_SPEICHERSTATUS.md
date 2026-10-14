@@ -26,6 +26,8 @@ Die Offline-Adminansicht erläutert die Speicherstatus in allen sechs unterstüt
 
 [Gesamter Umsetzungsstand](ENTERPRISE_UMSETZUNGSSTAND.md) · [Lokale Adminprüfung](ENTERPRISE_LOKALER_SERVICE.md)
 
+Die separate [Übersicht der Speicheraufträge](ENTERPRISE_STORAGE_ADMIN.md) zeigt außerdem Bearbeitung, Fehler, Wiederholungen und Schutzfristen; sie löst keine Schreibaktionen aus.
+
 ## Beispielansicht
 
 Synthetische Entwicklungsdaten, keine echten Mitarbeiterereignisse. Die Statuserklärung ist aufgeklappt; die Ereignistabelle bleibt horizontal scrollbar.

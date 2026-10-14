@@ -2,6 +2,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { StorageJobs } = require("./storage_jobs.cjs");
+const { reviewHtml, labels } = require("./storage_review.cjs");
 const { readJson, readRegistry } = require("./witness_cli.cjs");
 function parse(command, argv) {
   const commands = {
@@ -14,6 +15,7 @@ function parse(command, argv) {
     ],
     run: [],
     status: [],
+    review: ["out"],
     retry: ["job-id"],
   };
   if (!Object.hasOwn(commands, command))
@@ -24,7 +26,11 @@ function parse(command, argv) {
     const key = argv[i]?.slice(2);
     if (
       !argv[i]?.startsWith("--") ||
-      ![...allowed, "expected-head"].includes(key) ||
+      ![
+        ...allowed,
+        "expected-head",
+        ...(command === "review" ? ["lang"] : []),
+      ].includes(key) ||
       !argv[i + 1] ||
       Object.hasOwn(options, key)
     )
@@ -86,6 +92,11 @@ function loadConfig(file) {
 function main() {
   const command = process.argv[2],
     o = parse(command, process.argv.slice(3));
+  if (command === "review") {
+    if (!Object.hasOwn(labels, o.lang || "en"))
+      throw new Error("LANGUAGE_INVALID");
+    if (fs.existsSync(o.out)) throw new Error("JOBS_REVIEW_OUTPUT_EXISTS");
+  }
   const jobs = new StorageJobs({
     ...loadConfig(o.config),
     directory: o.queue,
@@ -116,7 +127,23 @@ function main() {
       });
     } else if (command === "run") report = jobs.runOne();
     else if (command === "retry") report = jobs.retry(o["job-id"]);
-    else report = jobs.status();
+    else if (command === "review") {
+      const status = jobs.status(),
+        language = o.lang || "en";
+      fs.writeFileSync(
+        o.out,
+        reviewHtml(status, language, {
+          headPinned: o["expected-head"] !== undefined,
+        }),
+        { flag: "wx", mode: 0o600 },
+      );
+      report = {
+        out: o.out,
+        language,
+        jobCount: status.jobs.length,
+        sealed: false,
+      };
+    } else report = jobs.status();
     process.stdout.write(JSON.stringify(report, null, 2) + "\n");
   } finally {
     jobs.close();
