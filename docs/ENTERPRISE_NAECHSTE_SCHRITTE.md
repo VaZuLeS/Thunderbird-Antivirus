@@ -26,7 +26,7 @@ Stand: 15. Oktober 2026. Ergänzung zum [Gesamtkonzept mit 30 Arbeitspaketen](EN
 ## Automatische Arbeitsreihenfolge innerhalb weiterer Umsetzung
 
 1. Aktuellen Code, Aufgabenstand und CI lesen; lokale Benutzeränderungen erhalten.
-2. Den ersten offenen, ohne reale Zugänge ausführbaren Schritt auswählen. N01 bis N05 und N07 bis N18 sind lokal implementiert. Der nächste Abnahmeschwerpunkt sind die realen UX05-/UX06- und N06-Nachweise; die dafür fehlenden Systeme bleiben offen. N06 wird anhand der [Abnahmevoraussetzungen](ENTERPRISE_N06_ABNAHME.md) fortgesetzt, sobald reale Systeme und Nachweise verfügbar sind; produktive Lücken bleiben offen.
+2. Den ersten offenen, ohne reale Zugänge ausführbaren Schritt auswählen. N01 bis N05 und N07 bis N18 sind lokal implementiert. Der nächste Abnahmeschwerpunkt sind die realen UX05-/UX06- und N06-Nachweise; eine [echte Linux-Teilabnahme](THUNDERBIRD_LINUX_ABNAHME.md) ist inzwischen erfolgreich, weitere Zielsysteme und Prüffälle bleiben offen. N06 wird anhand der [Abnahmevoraussetzungen](ENTERPRISE_N06_ABNAHME.md) fortgesetzt, sobald reale Systeme und Nachweise verfügbar sind; produktive Lücken bleiben offen.
 3. Einen konkret nutzbaren Baustein mit negativen Prüfungen, Recoveryfällen und Dokumentation fertigstellen. Lokale Vorarbeit und produktive Abnahme im Status getrennt halten.
 4. Relevante Tests und Paketgate ausführen; Code committen/pushen und Pages-Veröffentlichung kontrollieren. Ein XPI-Release nur bei Extension-Änderungen erstellen.
 5. Den Plan nach dem tatsächlichen Ergebnis fortschreiben. Reale Aktivierung erst mit den passenden Unternehmensparametern und bereits vorhandener bzw. ausdrücklich erteilter Autorisierung.
@@ -75,3 +75,7 @@ Für die vom Nutzer priorisierte Designkonsolidierung gilt zusätzlich der [UI-U
 N18 ergänzt [dauerhafte lokale Kapazitätswarnungen](ENTERPRISE_KAPAZITAETSALARME.md): erneut geprüfte Originaljournale oder Pakete, gebundene Warn-/Erholungsgrenzen, Dämpfung, sofortige 100-%-Eskalation, nachvollziehbare Kandidaten und ausdrückliches ACK. Backpressure weist die gesamte neue Beobachtung ohne Löschung ab. Die achte sechssprachige Offline-Ansicht verwendet denselben Designkern; ihre Public-Key-Prüfung wird klar von der Originalprüfung beim Beobachten unterschieden.
 
 Die UX05-Prüfung umfasst inzwischen auch den Nachrichten-Linkdialog und gefüllte Popup-/Auditansichten: 600 Browserfälle in sechs Sprachen. Historische Providerbefunde bleiben in der lokalen Auditansicht von späteren Ergebnissen und fehlenden damaligen Werten getrennt. Echte Thunderbird-/OS-/Screenreader- und produktive Enterprise-Abnahmen bleiben offen.
+
+## Fortsetzung: echte Linux-GUI statt weiterer Simulation
+
+15. Oktober 2026: Thunderbird 140.17.0 ESR wurde aus authentifizierten Debian-Paketen als isolierte Laufzeit verfügbar gemacht. [Teilabnahme mit echten Screenshots](THUNDERBIRD_LINUX_ABNAHME.md): Wizard in sechs Sprachen, tatsächliche Nachrichteninjektion, Link-Abbruch mit URL/Score im Audit, natives Popup mit 600 px Inhalt und persistente/native Themes bestanden. Der versionierte Runner wird auch in der CI ausgeführt. UX05 ist damit teilweise real geprüft. Priorität behalten externe Browserübergabe/Retry, Update, übrige native Sprachoberflächen sowie Windows/macOS/Screenreader; N06 und UX06 sind weiterhin nicht abgenommen.

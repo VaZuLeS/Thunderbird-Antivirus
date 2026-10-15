@@ -1,6 +1,6 @@
 # N06: Reale Abnahme und prüfbare Nachweise
 
-Stand: 14. Oktober 2026. N06 wurde autonom auf Ausführbarkeit geprüft. **Die produktive Umsetzung und Abnahme bleiben blockiert:** aktuell sind keine Unternehmensidentitäten, Cloud-/IdP-/MDM-Zugänge oder freigegebenen Unternehmensendpunkte bereitgestellt. Die Umgebung stellt Linux bereit, aber kein Thunderbird-Binary und keine Windows-/macOS-Testsysteme. Außerdem fehlen weiterhin der produktive SEALED-Evidenzcommit, OIDC-BFF, OS-Verteilung und zentrale Rollenintegration im Code. Diese Lücken werden nicht durch Unterlagen oder synthetische Tests geschlossen.
+Ausgangsprüfung: 14. Oktober 2026. Aktualisiert: 15. Oktober 2026. N06 wurde autonom auf Ausführbarkeit geprüft. **Die produktive Umsetzung und Abnahme bleiben blockiert:** aktuell sind keine Unternehmensidentitäten, Cloud-/IdP-/MDM-Zugänge oder freigegebenen Unternehmensendpunkte bereitgestellt. Bei der Ausgangsprüfung war kein Thunderbird im PATH vorhanden. Inzwischen wurde eine separate Thunderbird-140.17.0-Laufzeit für eine [echte Linux-Teilabnahme](THUNDERBIRD_LINUX_ABNAHME.md) bereitgestellt; Windows-/macOS-Testsysteme fehlen weiterhin. Außerdem fehlen weiterhin der produktive SEALED-Evidenzcommit, OIDC-BFF, OS-Verteilung und zentrale Rollenintegration im Code. Diese Lücken werden nicht durch Unterlagen oder synthetische Tests geschlossen.
 
 Implementiert ist eine ausführbare, lokale Nachweisprüfung. Sie bindet Prüfererklärungen an Organisation, ausgewählte Profile, Region, Extensionversion, vollständige Prüfliste und Dateien mit Inhalts-Hash. Sie autorisiert weder eine Produktivaktivierung noch SEALED.
 
@@ -13,6 +13,8 @@ npm run enterprise:acceptance -- probe --out /srv/review/runtime-probe.json
 ```
 
 Der CLI prüft lediglich das lokale Betriebssystem und die Verfügbarkeit eines Thunderbird-Binary im PATH. Er führt Thunderbird nicht aus, liest keine Credentials und kann die Cloud-/SSO-Zugänge nicht selbst bestätigen. Ergebnisse werden mit `not_inspected` bzw. `false` gekennzeichnet.
+
+Am 15. Oktober 2026 wurde die fehlende lokale Client-Laufzeit aufgelöst: tatsächliche Linux-GUI, Wizard in sechs Sprachen, Link-Abbruch/Audit, natives Popup und Themes erfolgreich geprüft. Dies ist kein signierter Operator-/Prüfernachweis und deckt die vollständige Check-ID `thunderbird-live-six-languages` nicht ab. Der historische Probebericht bleibt unverändert; er sucht nur im PATH und beschreibt den damaligen Zustand.
 
 ## Acht erforderliche Live-Nachweise
 

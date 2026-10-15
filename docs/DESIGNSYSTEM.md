@@ -129,3 +129,7 @@ N18 ergänzt die achte Offline-Adminansicht für [Kapazitätswarnungen](ENTERPRI
 ## UX05 reproduzierbar ausführen
 
 `npm run check:ui` prüft 600 synthetische Browserfälle über acht Adminansichten, sechs Add-on-Seiten und den Nachrichten-Linkdialog. Die CI prüft alle sechs Sprachen unabhängig und speichert Berichte sowie Fehlerscreenshots. [Umfang, Befehle, axe-Prüfumfang und verbleibende Live-Abnahmen](UI_BROWSERPRUEFUNG.md). Hauptbereiche, Linkkennzeichnung, Tabellenfokus und Dialogbeschriftung wurden anhand der gefundenen Befunde verbessert.
+
+## Reale Linux-Teilabnahme vom 15. Oktober 2026
+
+[Thunderbird 140.17.0 ESR mit echten Screenshots und wiederholbarem Runner](THUNDERBIRD_LINUX_ABNAHME.md): native Popupbreite, gebrandeter Nachrichten-Linkdialog, Fokus nach Abbruch, sichtbares URL-/Score-Audit, gespeicherte Darstellung und native Hell-/Dunkel-Themes geprüft. Wizard in sechs Sprachen, übrige Oberflächen englisch. Damit liegt für UX05 erstmals ein realer Linux-Teilnachweis vor; Windows/macOS, Screenreader, übrige native Sprachen und weitere Installations-/Öffnungsfälle bleiben offen. UX06 ist dadurch nicht erfüllt.

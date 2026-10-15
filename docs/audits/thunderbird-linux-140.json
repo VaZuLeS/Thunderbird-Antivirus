@@ -1,0 +1,117 @@
+{
+  "passed": true,
+  "scope": "Linux X11 GUI; synthetic plaintext; offline; no API mocks",
+  "startedAt": "2026-10-15T16:17:20Z",
+  "xpiSha256": "17349736c60f1f473123ffacd2937e3f4e222f7c15f8f6d721fe2cb2220a29b8",
+  "binarySha256": "66b785f363a085b99b1e44f4659147da77760e118dc1d81c06a9f449c087b038",
+  "extensionVersion": "1.23.0",
+  "client": {
+    "sessionId": "6f0d7e8b-1fe8-440c-898c-f00659405f8e",
+    "capabilities": {
+      "acceptInsecureCerts": false,
+      "browserName": "thunderbird",
+      "browserVersion": "140.17.0",
+      "platformName": "linux",
+      "unhandledPromptBehavior": "dismiss and notify",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+      "moz:buildID": "20260929234105",
+      "moz:headless": false,
+      "moz:platformVersion": "6.18.44",
+      "moz:shutdownTimeout": 60000,
+      "pageLoadStrategy": "normal",
+      "timeouts": {
+        "implicit": 0,
+        "pageLoad": 300000,
+        "script": 30000
+      },
+      "setWindowRect": true,
+      "strictFileInteractability": false,
+      "moz:accessibilityChecks": false,
+      "moz:webdriverClick": true,
+      "moz:windowless": false,
+      "capabilities": {
+        "alwaysMatch": {
+          "acceptInsecureCerts": false
+        }
+      },
+      "proxy": {}
+    }
+  },
+  "wizardLanguages": [
+    {
+      "language": "en",
+      "title": "Set up Thundy AV"
+    },
+    {
+      "language": "de",
+      "title": "Thundy AV einrichten"
+    },
+    {
+      "language": "fr",
+      "title": "Configurer Thundy AV"
+    },
+    {
+      "language": "es",
+      "title": "Configurar Thundy AV"
+    },
+    {
+      "language": "it",
+      "title": "Configura Thundy AV"
+    },
+    {
+      "language": "pl",
+      "title": "Skonfiguruj Thundy AV"
+    }
+  ],
+  "wizardSaved": {
+    "onboardingState": {
+      "schemaVersion": 1,
+      "status": "completed",
+      "completedAt": "2026-10-15T16:17:22.851Z"
+    },
+    "timeOfClickProtection": true
+  },
+  "linkDialog": {
+    "text": "T\nThundy AV\nCheck before opening\n\nDestination website\n\ndestination.example.invalid\n\nShow full link address\n\nThis link could not be checked. Opening it may be risky.\n\nLocal score (link and message): 0 / 100\n\nOnly available scan results can be shown. Missing checks do not mean a link is safe.\n\nCancel\nOpen link anyway",
+    "width": 520,
+    "focus": "Cancel",
+    "url": "https://destination.example.invalid/test?source=thundy"
+  },
+  "nativePopup": {
+    "panelWidth": 602,
+    "contentWidth": 600
+  },
+  "auditRecord": {
+    "id": "21e43867-4aff-41ea-be30-efce649346b0",
+    "clickedAt": 1792081043246,
+    "decidedAt": 1792081043447,
+    "messageId": 1,
+    "url": "https://destination.example.invalid/test?source=thundy",
+    "score": 0,
+    "scoreSource": "local-message-and-link",
+    "scoreAtDecision": 0,
+    "verdict": "UNKNOWN",
+    "verdictAtDecision": "UNKNOWN",
+    "providerAtDecision": "Hybrid Analysis",
+    "provider": "Hybrid Analysis",
+    "reasons": [],
+    "outcome": "ABORTED",
+    "cancelReason": "cancel",
+    "openAttempts": 0,
+    "extensionVersion": "1.23.0",
+    "scoredAt": 1792081043255,
+    "reasonDetails": [],
+    "checkedAt": 1792081043265,
+    "providerReasons": []
+  },
+  "appearanceSaved": {
+    "thundyAppearance": "dark",
+    "thundyAccent": "violet",
+    "thundyDensity": "compact"
+  },
+  "nativeThemes": [
+    "dark",
+    "light"
+  ],
+  "finishedAt": "2026-10-15T16:17:24Z"
+}
