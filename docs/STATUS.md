@@ -1,3 +1,9 @@
+# Historische Auditbefunde und Nachrichten-Dialogprüfung — 15. Oktober 2026
+
+946 Tests im Gesamtgate, 34 Browser-Kurzfälle, 24 Nachrichten-Dialogfälle und 48 Audit-Sprach-/Layoutfälle bestanden. Die lokale Auditansicht lokalisiert Providerbefunde in allen sechs Sprachen und kennzeichnet den Stand bei der Entscheidung. Fehlende damalige Befunde/Provider werden nicht durch spätere Werte ersetzt; spätere Befunde bleiben in den Details, Originalkennungen in den Exporten. Die Browser-CI ist auf 600 Fälle erweitert, einschließlich gefülltem Popup/Audit und der tatsächlich injizierten Linkdialogfunktion. Quellstand 1.23.0 und lokales unsigniertes XPI aktualisiert; reale Thunderbird-/OS-/Screenreader-Abnahme und getaggte Veröffentlichung bleiben offen. [Prüfumfang](UI_BROWSERPRUEFUNG.md) · [Auditbedeutung](ADMIN_FEATURES.md).
+
+---
+
 # Reproduzierbare UI-Prüfung und zugängliche Navigation — 15. Oktober 2026
 
 940 Tests im Gesamtgate und 28/28 korrigierte Browser-Kurzfälle bestanden. Hauptbereiche für die Screenreader-Navigation, sichtbare Linkkennzeichnung, fokussierbare Scrollbereiche und ein benannter Audit-Dialog ergänzt. Versionierter Playwright-/axe-Lauf für 528 Varianten über acht Adminansichten und sechs Add-on-Seiten; CI mit sechs unabhängigen Sprachläufen und Berichts-/Fehlerscreenshot-Artefakten. Quellstand 1.23.0, lokales unsigniertes XPI aktualisiert; getaggte Veröffentlichung und echte Thunderbird-/OS-/Screenreader-Abnahme bleiben separat offen. [Befehle, Prüfumfang und Grenzen](UI_BROWSERPRUEFUNG.md).

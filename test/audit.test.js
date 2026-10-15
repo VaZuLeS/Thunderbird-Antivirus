@@ -76,3 +76,34 @@ test('high-risk opened events use the decision snapshot rather than a later verd
     assert.equal(api.riskyOpened({ outcome: 'OPENED', scoreAtDecision: null, verdictAtDecision: 'UNKNOWN', verdict: 'MALICIOUS', score: 80 }), false);
     assert.equal(api.riskyOpened({ outcome: 'ABORTED', scoreAtDecision: 100, verdictAtDecision: 'MALICIOUS' }), false);
 });
+
+for (const lang of ['en', 'de', 'fr', 'es', 'it', 'pl']) test(`audit ${lang}: localized historical verdict stays separate from latest or missing decision evidence`, async () => {
+    const dom = new JSDOM(fs.readFileSync('audit.html', 'utf8'));
+    try {
+        const catalog = JSON.parse(fs.readFileSync('_locales/' + lang + '/messages.json'));
+        const entries = [
+            { ...records[0], score: 9, scoreAtDecision: 72, verdictAtDecision: 'MALICIOUS', providerAtDecision: 'snapshot-provider', verdict: 'CLEAN', provider: 'latest-provider', checkedAt: Date.parse('2026-10-12T08:00:00Z') },
+            { ...records[1], score: 80, scoreAtDecision: null, verdictAtDecision: null, providerAtDecision: null, verdict: 'MALICIOUS', provider: 'latest-provider' }
+        ];
+        const context = vm.createContext({ document: dom.window.document, browser: {
+            runtime: { sendMessage: async () => ({ success: true, records: entries, profileId: 'synthetic' }) },
+            i18n: { getUILanguage: () => lang, getMessage: key => catalog[key]?.message || '' }
+        }});
+        vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\n' + source, context);
+        await new Promise(resolve => setImmediate(resolve));
+        const rows = dom.window.document.querySelectorAll('#auditRows tr');
+        assert.equal(rows.length, 2);
+        const historical = rows[0].children[3], missing = rows[1].children[3];
+        assert.ok(historical.textContent.includes(catalog.auditVerdictAtDecision.message));
+        assert.ok(historical.textContent.includes(catalog.providerMalicious.message));
+        assert.ok(historical.textContent.includes('snapshot-provider'));
+        assert.ok(!historical.textContent.includes(catalog.providerNoDetection.message));
+        assert.ok(!historical.textContent.includes('latest-provider'));
+        assert.ok(missing.textContent.includes(catalog.auditUnavailable.message));
+        assert.ok(!missing.textContent.includes(catalog.providerMalicious.message));
+        assert.ok(!missing.textContent.includes('latest-provider'));
+        assert.ok(rows[0].querySelector('details').textContent.includes(catalog.providerNoDetection.message));
+        assert.ok(rows[0].children[2].textContent.includes('72'));
+        assert.equal(rows[0].querySelector('code').textContent, entries[0].url);
+    } finally { dom.window.close(); }
+});

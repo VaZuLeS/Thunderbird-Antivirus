@@ -1399,5 +1399,11 @@
   },
   "settingsUnsaved": {
     "message": "Modifiche non salvate"
+  },
+  "providerUnknown": {
+    "message": "Risultato sconosciuto"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Risultato al momento della decisione"
   }
 }

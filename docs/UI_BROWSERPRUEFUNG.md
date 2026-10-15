@@ -9,17 +9,20 @@ npm ci
 npx playwright install --with-deps chromium
 npm run check:ui
 
-# Kleiner Entwicklungslauf: 28 Fälle, EN/DE, schmale dunkle Ansichten
+# Kleiner Entwicklungslauf: 34 Fälle, EN/DE, schmale dunkle Ansichten
 npm run check:ui -- --matrix smoke
 
-# Eine Sprache: 88 Fälle, dieselben Regeln wie im vollständigen Lauf
+# Eine Sprache: 100 Fälle, dieselben Regeln wie im vollständigen Lauf
 npm run check:ui -- --lang pl
+
+# Einen Nutzerweg gezielt prüfen; unbekannte Ansichten werden abgewiesen
+npm run check:ui -- --view message
 
 # Bereits vorhandenes Chromium verwenden; Version wird im Bericht erfasst
 npm run check:ui -- --matrix smoke --browser /usr/bin/chromium
 ```
 
-`playwright` und `@axe-core/playwright` sind exakt gepinnte Entwicklungsabhängigkeiten. Der Playwright-Browserdownload findet nur bei der Einrichtung statt. Für den Prüflauf selbst werden die Seiten ausschließlich auf einer zufällig vergebenen Loopback-Adresse bereitgestellt. Unbekannte Argumente und Sprachen führen zum Abbruch. `--out <Verzeichnis>` bestimmt den Ausgabeordner; jeder Lauf erhält darin ein eigenes Unterverzeichnis.
+`playwright` und `@axe-core/playwright` sind exakt gepinnte Entwicklungsabhängigkeiten. Der Playwright-Browserdownload findet nur bei der Einrichtung statt. Für den Prüflauf selbst werden die Seiten ausschließlich auf einer zufällig vergebenen Loopback-Adresse bereitgestellt. Unbekannte Argumente, Sprachen und Ansichten führen zum Abbruch. `--view` akzeptiert eine vorhandene Ansicht, beispielsweise `message`, `audit.html` oder `popup.html`; auch dann muss mindestens ein Prüffall ausgeführt werden. `--out <Verzeichnis>` bestimmt den Ausgabeordner; jeder Lauf erhält darin ein eigenes Unterverzeichnis.
 
 `npm run check` bleibt das Browser-unabhängige Gesamtgate. Die CI führt daneben `check:ui` mit dem zum gepinnten Playwright gehörenden Chromium aus, getrennt für EN, DE, FR, ES, IT und PL. Ein Fehler in einer Sprache bricht die anderen Sprachprüfungen nicht ab. Generiertes Design-CSS und Referenz werden ebenfalls ausdrücklich in der CI geprüft.
 
@@ -28,8 +31,9 @@ npm run check:ui -- --matrix smoke --browser /usr/bin/chromium
 | Bereich | Prüffälle im vollständigen Lauf |
 | --- | --- |
 | Acht Offline-Adminansichten | Ereignisse, Storage, Fälle, Betriebszustand, Geräte, Heartbeat-Alarme, Kapazität und Kapazitätswarnungen; sechs Sprachen, gefüllte/leere bzw. nie gemeldete Zustände, 320/1280 CSS-Pixel und helles/dunkles Systemfarbschema: 384 Fälle |
-| Sechs Add-on-Seiten | Einstellungen, Einrichtung, optionale Unternehmensprofile, lokales Linkprotokoll, Datenschutz und Popup; sechs Sprachen, zwei Breiten und beide Systemfarbschemata: 144 Fälle |
-| Gesamt | 528 Fälle; je Sprache 88 |
+| Sechs Add-on-Seiten | Einstellungen, Einrichtung, optionale Unternehmensprofile, lokales Linkprotokoll, Datenschutz und Popup; sechs Sprachen, zwei Breiten und beide Systemfarbschemata sowie zusätzliche gefüllte Popup-/Auditansichten: 192 Fälle |
+| Nachrichten-Linkdialog | Tatsächlich serialisiertes Nachrichtenskript, sechs Sprachen, 320/1280 CSS-Pixel und beide Systemfarbschemata: 24 Fälle |
+| Gesamt | 600 Fälle; je Sprache 100 |
 
 Das Popup behält seinen bewusst festen Mindestplatz von 600 CSS-Pixeln. Seine schmale Prüfgröße ist daher 600 statt 320 Pixel; die tatsächliche Größe wird in jedem Ergebnis angegeben. Ein Browserdokument prüft diesen Größenvertrag, aber nicht die native Thunderbird-Popupvermessung. Das verhindert, dass ein generischer Responsive-Test die frühere Streifenregression durch Entfernen der Mindestbreite erneut einführt.
 
@@ -44,15 +48,19 @@ Zusätzlich werden auf passenden Seiten ausgeführt:
 - Einrichtungsnavigation mit Fokus auf die jeweilige Schrittüberschrift.
 - Löschdialog des lokalen Linkprotokolls mit automatischem Zugänglichkeitscheck, Escape und Fokusrückkehr, ohne Daten zu löschen.
 
-Popup und Linkprotokoll starten hier in einem ausdrücklich simulierten Leerzustand. Tatsächliche Nachrichten, Providerantworten, native Berechtigungsdialoge und Betriebssystemintegration gehören weiterhin zu den bestehenden Funktions- und Live-Prüfungen. Dieser Lauf ist keine vollständige End-to-End-Abnahme aller Nachrichtenaktionen.
+Popup und Linkprotokoll werden sowohl leer als auch mit synthetischen Daten geprüft. Das gefüllte Popup erhält eine ausgewählte Testnachricht und einen lokalen Score ohne externe Zustimmung. Die Auditansicht verbindet URL, damaligen Score und Entscheidung, filtert abgebrochene Einträge und exportiert diese mit unverändertem JSON-Schema und überprüfter Prüfsumme.
+
+Der Nachrichtenfall verwendet die tatsächlich von `message_ui.js` an `scripting.executeScript` übergebene Funktion; die Dialogoberfläche wird nicht im Test nachgebaut. Er prüft echte Klick-/Auxclick-/Tastaturereignisse, Shadow-DOM-Isolation gegen aggressive Nachrichten-CSS, Fokusführung, Abbrechen während der Prüfung, Escape, Öffnungsfehler, Wiederholen mit derselben Interaktions-ID und Verweigerung eines nachträglich geänderten Linkziels. `CLEAN`, `UNKNOWN` und `MALICIOUS` behalten getrennte Darstellungen. Hintergrundantworten und Browserübergabe bleiben simuliert; kein externes Ziel wird geöffnet und keine reale Audit-Persistenz damit bewiesen.
+
+Tatsächliche Nachrichten, Providerantworten, native Berechtigungsdialoge und Betriebssystemintegration gehören weiterhin zu den bestehenden Funktions- und Live-Prüfungen. Dieser Lauf ist keine vollständige End-to-End-Abnahme aller Nachrichtenaktionen.
 
 ## Automatische Zugänglichkeitsregeln und Grenzen
 
-axe prüft die sichtbare Ausgangsansicht jedes Falls mit `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa` und `best-practice`. Keine gefundene Verletzung wird durch eine projektspezifische Regel-Ausnahme ausgeblendet. Der Durchlauf meldet unter anderem fehlende Namen/Labels, bestimmte Kontrastfehler, Landmark-Probleme und fehlende Tastaturzugänglichkeit von Scrollbereichen. Manuell zu beurteilende axe-Ergebnisse bleiben als `incomplete` im JSON erhalten.
+axe prüft die sichtbare Ausgangsansicht jeder Add-on-/Adminansicht und den geöffneten Nachrichten-Linkdialog mit `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa` und `best-practice`. Keine gefundene Verletzung wird durch eine projektspezifische Regel-Ausnahme ausgeblendet. Im Nachrichtenfall ist der axe-Kontext auf den eigenen Linkdialog begrenzt: Die absichtlich aggressive CSS-Testnachricht ist fremder Inhalt und kein Produktbestandteil. Der Durchlauf meldet unter anderem fehlende Namen/Labels, bestimmte Kontrastfehler, Landmark-Probleme und fehlende Tastaturzugänglichkeit von Scrollbereichen. Manuell zu beurteilende axe-Ergebnisse bleiben als `incomplete` im JSON erhalten.
 
 Die Prüfung nach Darstellungswechseln kontrolliert Funktion und Layout. Der anfängliche automatische axe-Scan ist kein Scan sämtlicher kombinierbarer Akzent-/Dichte-/Themezustände; die Token-Kontraste werden zusätzlich durch die bestehenden Design-Unit-Tests geprüft. Das ist keine WCAG-Zertifizierung und kein Nachweis einer realen Screenreader-Nutzung.
 
-Reale Thunderbird-/OS- und Screenreader-Abnahme, 200-%-Zoom im Client, native High-Contrast-/Theme-Änderungen, Nachrichten-Linkdialoge sowie produktives SSO/RBAC bleiben offen. [UX05/UX06 und die produktiven Voraussetzungen](ENTERPRISE_NAECHSTE_SCHRITTE.md) werden dadurch nicht als abgeschlossen markiert.
+Reale Thunderbird-/OS- und Screenreader-Abnahme, 200-%-Zoom im Client, native High-Contrast-/Theme-Änderungen, Nachrichten-Linkdialoge in echtem Thunderbird sowie produktives SSO/RBAC bleiben offen. [UX05/UX06 und die produktiven Voraussetzungen](ENTERPRISE_NAECHSTE_SCHRITTE.md) werden dadurch nicht als abgeschlossen markiert.
 
 ## Nachweise und Fehler
 
@@ -62,4 +70,8 @@ Der erste Kurzlauf fand fehlende Hauptbereiche in zwei Offline-Renderern und vie
 
 ## Verifizierter Entwicklungsstand
 
-`npm run check`: 940 Tests bestanden, 0 Lintfehler und 24 bekannte Thunderbird-Warnungen; Paketprüfung mit 44 Runtime-Dateien / 770.652 Bytes bestanden. Korrigierter Kurzlauf: 28/28 Fälle bestanden mit Chromium 154.0.8037.57. Manuell zu beurteilende axe-Ergebnisse (`color-contrast`, `th-has-data-cells`) bleiben im Bericht erhalten. Der vollständige Matrixumfang beträgt 528 Fälle; Ergebnisse und jeweilige Werkzeugversionen werden durch lokale Berichte und die sechs CI-Artefakte nachgewiesen.
+`npm run check`: 946 Tests bestanden, 0 Lintfehler und 24 bekannte Thunderbird-Warnungen; Paketprüfung mit 44 Runtime-Dateien / 772.118 Bytes bestanden. Korrigierter Kurzlauf: 34/34 Fälle, zusätzlich alle 24 Nachrichten-Dialogfälle und 48 Audit-Sprach-/Layoutfälle bestanden mit Chromium 154.0.8037.57. Manuell zu beurteilende axe-Ergebnisse (`color-contrast`, `th-has-data-cells`) bleiben im Bericht erhalten. Der vollständige Matrixumfang beträgt inzwischen 600 Fälle; Ergebnisse und jeweilige Werkzeugversionen werden durch lokale Berichte und die sechs CI-Artefakte nachgewiesen.
+
+## Historische Befunde im lokalen Linkprotokoll
+
+Die gefüllten Browserfälle haben die Darstellung zum Entscheidungszeitpunkt zusätzlich überprüfbar gemacht. Die Auditansicht zeigt jetzt ausdrücklich den damaligen, sechssprachig lokalisierten Befund. Fehlt `verdictAtDecision` oder `providerAtDecision`, wird der spätere aktuelle Wert nicht als damaliger Wert eingesetzt. „Nicht verfügbar“ bleibt von „Ergebnis unbekannt“ und „Kein Fund“ getrennt. Der spätere Befund erscheint weiterhin mit seinem Prüfzeitpunkt in den Details. Exporte behalten ihre ursprünglichen technischen Kennungen und Werte. Sechs zusätzliche Regressionstests prüfen diese Trennung in EN/DE/FR/ES/IT/PL.

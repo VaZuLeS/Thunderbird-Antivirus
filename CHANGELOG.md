@@ -2,6 +2,8 @@
 
 ## 1.23.0 — 2026-10-15
 
+- Keep historical audit verdicts/providers separate from later checks, localize verdict labels in all six languages, and preserve raw export evidence. Cover populated audit/popup views and injected message-link flows in browser CI.
+
 - Add reproducible six-language browser/axe CI; fix main landmarks, inline-link identification, scroll-region keyboard focus and audit-dialog naming.
 
 - Share one design contract and generated component CSS across the add-on and all seven offline admin renderers; preserve CSP, signatures, filters and complete exports.

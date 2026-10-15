@@ -7,6 +7,11 @@ const fs = require("node:fs"),
 const { chromium } = require("playwright"),
   { AxeBuilder } = require("@axe-core/playwright"),
   { languages, createReviews, addonMock } = require("./ui-fixtures.dev.cjs");
+const {
+  messageHtml,
+  prepareMessage,
+  checkMessage,
+} = require("./message-flow.dev.cjs");
 const root = path.resolve(__dirname, ".."),
   addonFiles = [
     "options.html",
@@ -30,7 +35,7 @@ function options(args) {
     const key = args[i]?.slice(2);
     if (
       !args[i]?.startsWith("--") ||
-      !["matrix", "out", "browser", "lang"].includes(key) ||
+      !["matrix", "out", "browser", "lang", "view"].includes(key) ||
       !args[i + 1] ||
       Object.hasOwn(o, "provided-" + key)
     )
@@ -56,6 +61,10 @@ function startServer(reviews) {
     if (review !== undefined) {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       return res.end(review);
+    }
+    if (p === "/message-fixture") {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.end(messageHtml);
     }
     const file = p.slice(1);
     if (!allowed.has(file)) {
@@ -108,7 +117,35 @@ function matrix(o, kinds) {
             width: file === "popup.html" ? Math.max(600, width) : width,
             scheme,
           });
-  return cases;
+  for (const lang of langs)
+    for (const width of o.matrix === "smoke" ? [360] : [320, 1280])
+      for (const scheme of o.matrix === "smoke"
+        ? ["dark"]
+        : ["light", "dark"]) {
+        for (const file of ["popup.html", "audit.html"])
+          cases.push({
+            id: `addon-${file}-populated-${lang}-${file === "popup.html" ? Math.max(600, width) : width}-${scheme}`,
+            kind: "addon",
+            view: file,
+            url: "/" + file,
+            lang,
+            width: file === "popup.html" ? Math.max(600, width) : width,
+            scheme,
+            populated: true,
+          });
+        cases.push({
+          id: `message-${lang}-${width}-${scheme}`,
+          kind: "message",
+          view: "message",
+          url: "/message-fixture",
+          lang,
+          width,
+          scheme,
+        });
+      }
+  const selected = o.view ? cases.filter((c) => c.view === o.view) : cases;
+  if (selected.length === 0) throw Error("UI_VIEW_INVALID");
+  return selected;
 }
 async function ready(page, c) {
   await page.waitForFunction(
@@ -150,11 +187,13 @@ async function checks(page, c) {
   const theme = await page.evaluate(
     () => getComputedStyle(document.body).backgroundColor,
   );
-  assert.equal(
-    theme,
-    c.scheme === "dark" ? "rgb(16, 24, 33)" : "rgb(245, 247, 250)",
-    "system theme",
-  );
+  if (c.kind !== "message")
+    assert.equal(
+      theme,
+      c.scheme === "dark" ? "rgb(16, 24, 33)" : "rgb(245, 247, 250)",
+      "system theme",
+    );
+  if (c.kind === "message") return {};
   const axe = await new AxeBuilder({ page }).withTags(tags).analyze();
   if (axe.violations.length) {
     const error = new Error("UI_ACCESSIBILITY_VIOLATIONS");
@@ -178,6 +217,7 @@ async function checks(page, c) {
   };
 }
 async function interaction(page, c) {
+  if (c.kind === "message") return;
   if (c.kind === "review") {
     const summary = page.locator(".review-appearance>summary");
     await summary.focus();
@@ -265,7 +305,79 @@ async function interaction(page, c) {
       true,
       "failed save lost draft",
     );
+  } else if (c.view === "popup.html" && c.populated) {
+    assert.equal(
+      await page.locator(".local-risk .risk-meter").getAttribute("value"),
+      "72",
+    );
+    assert.equal(
+      await page.locator("#subject").innerText(),
+      "Synthetic message",
+    );
+    assert.equal(
+      await page.locator("#thundy-consent-notice").isVisible(),
+      true,
+    );
+    assert.equal(await page.evaluate(() => uiTest.permissionRequests), 0);
   } else if (c.view === "audit.html") {
+    if (c.populated) {
+      assert.equal(await page.locator("#auditRows tr").count(), 2);
+      const row = page.locator("#auditRows tr.audit-risky");
+      assert.ok(
+        (await row.innerText()).includes("72"),
+        "decision-time score disappeared",
+      );
+      const catalog = JSON.parse(
+        fs.readFileSync(path.join(root, "_locales", c.lang, "messages.json")),
+      );
+      const historical = await row.locator("td").nth(3).textContent();
+      assert.ok(historical.includes(catalog.auditVerdictAtDecision.message));
+      assert.ok(historical.includes(catalog.providerMalicious.message));
+      assert.ok(!historical.includes(catalog.providerNoDetection.message));
+      assert.equal(
+        await row.locator("code").textContent(),
+        "https://opened.example.invalid/path?x=1",
+      );
+      assert.equal(
+        await page.locator("#auditRows a").count(),
+        0,
+        "audit URL became navigable",
+      );
+      await page.locator("#auditOutcome").selectOption("ABORTED");
+      assert.equal(await page.locator("#auditRows tr").count(), 1);
+      await page.locator("#auditJson").click();
+      await page.waitForFunction(() => uiTest.downloads.length === 1);
+      const downloaded = JSON.parse(
+        await page.evaluate(() => uiTest.downloads[0].content),
+      );
+      assert.deepEqual(
+        downloaded.payload.records.map((r) => ({
+          id: r.id,
+          url: r.url,
+          score: r.scoreAtDecision,
+          outcome: r.outcome,
+          verdict: r.verdictAtDecision,
+        })),
+        [
+          {
+            id: "synthetic-abort",
+            url: "https://aborted.example.invalid/path",
+            score: 18,
+            outcome: "ABORTED",
+            verdict: "UNKNOWN",
+          },
+        ],
+      );
+      assert.equal(
+        downloaded.sha256,
+        require("node:crypto")
+          .createHash("sha256")
+          .update(JSON.stringify(downloaded.payload))
+          .digest("hex"),
+      );
+      await page.locator("#auditOutcome").selectOption("");
+      assert.equal(await page.locator("#auditRows tr").count(), 2);
+    }
     await page.locator("#auditClear").click();
     assert.equal(
       await page.locator("#auditConfirm").evaluate((el) => el.open),
@@ -329,6 +441,7 @@ async function main() {
     kind: "thundy-browser-ui-check",
     matrix: o.matrix,
     language: o.lang ?? "all",
+    view: o.view ?? "all",
     startedAt: new Date().toISOString(),
     commit: execFileSync("git", ["rev-parse", "HEAD"], {
       cwd: root,
@@ -380,7 +493,7 @@ async function main() {
             network.push(url);
             return route.abort("blockedbyclient");
           });
-          if (c.kind === "addon")
+          if (c.kind === "addon" || c.kind === "message")
             await context.addInitScript(addonMock, {
               catalog: JSON.parse(
                 fs.readFileSync(
@@ -389,14 +502,27 @@ async function main() {
               ),
               lang: c.lang,
               version: require("../manifest.json").version,
+              populated: c.populated === true,
             });
           page = await context.newPage();
           page.setDefaultTimeout(10000);
           page.on("pageerror", (e) => errors.push(e.message));
           await page.goto(origin + c.url);
+          if (c.kind === "message")
+            await prepareMessage(
+              page,
+              c,
+              JSON.parse(
+                fs.readFileSync(
+                  path.join(root, "_locales", c.lang, "messages.json"),
+                ),
+              ),
+            );
           await ready(page, c);
           Object.assign(result, await checks(page, c));
           await interaction(page, c);
+          if (c.kind === "message")
+            Object.assign(result, await checkMessage(page, c, tags));
           assert.deepEqual(errors, [], "page errors");
           assert.deepEqual(network, [], "external requests");
           result.status = "passed";

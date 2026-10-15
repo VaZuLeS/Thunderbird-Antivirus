@@ -14,6 +14,10 @@ In den Einstellungen oder im Nachrichten-Popup **„Linkprotokoll prüfen“** �
 
 Die Erfassung hängt vom aktivierten Linkschutz ab. Native „Im Browser öffnen“-Kontextmenüs und Browserbesuche außerhalb der abgefangenen Linkklicks werden nicht erfasst. Abmelden/Schließen/Client-Abstürze können offene Einträge hinterlassen. Rechte auf das Erweiterungsprofil ersetzen keine zentrale Admin-Authentifizierung.
 
+## Darstellung historischer Befunde im Quellstand 1.23.0
+
+Die Oberfläche kennzeichnet den **Befund bei der Entscheidung** ausdrücklich und lokalisiert bekannte Providerurteile in allen sechs Sprachen. Fehlen damaliger Befund oder damaliger Provider, erscheint „nicht verfügbar“; spätere Werte werden dafür nicht ersatzweise verwendet. Ein späterer Prüfbefund steht mit seinem Prüfzeitpunkt in den Details. „Ergebnis unbekannt“ ist kein unauffälliger Befund. JSON-/CSV-Exporte behalten die ursprünglichen technischen Werte. [Automatisierte Browser- und Regressionstests](UI_BROWSERPRUEFUNG.md).
+
 ## Export und Prüfung
 
 JSON enthält das vollständige Evidenzschema und eine SHA-256-Prüfsumme über `JSON.stringify(payload)`. Nach dem Export prüfbar:

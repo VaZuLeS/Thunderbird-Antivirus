@@ -1402,5 +1402,11 @@
   },
   "settingsUnsaved": {
     "message": "Unsaved changes"
+  },
+  "providerUnknown": {
+    "message": "Result unknown"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Result at decision"
   }
 }

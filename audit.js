@@ -34,6 +34,11 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
     let records = [], snapshot = null, page = 0;
     const pageSize = 50;
     const decisionKeys = { OPENED: 'auditOpened', ABORTED: 'auditAborted', OPEN_ERROR: 'auditOpenError', PENDING: 'auditPending' };
+    const verdictLabel = value => {
+        if (!value) return t('auditUnavailable');
+        const keys = { CLEAN: 'providerNoDetection', MALICIOUS: 'providerMalicious', MALICIOUS_VISUAL: 'providerMalicious', SUSPICIOUS: 'providerSuspicious', PENDING: 'providerPending', UNKNOWN: 'providerUnknown', ERROR: 'providerUnknown', NOT_CHECKED: 'providerUnknown' };
+        return Object.hasOwn(keys, value) ? t(keys[value]) : String(value);
+    };
     const selected = () => AuditExport.filter(records, { query: $('auditSearch').value, outcome: $('auditOutcome').value, minScore: $('auditMinScore').value, from: $('auditFrom').value, to: $('auditTo').value });
     const date = value => value == null ? '—' : new Intl.DateTimeFormat(document.documentElement.lang, { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(value));
     const node = (tag, value, className = '') => { const element = document.createElement(tag); element.textContent = value; element.className = className; return element; };
@@ -49,14 +54,14 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
             const time = document.createElement('td'); time.append(node('div', date(record.clickedAt)), node('small', date(record.decidedAt)));
             const decision = node('td', t(decisionKeys[record.outcome] || 'auditPending')); decision.className = 'audit-' + record.outcome.toLowerCase();
             const score = document.createElement('td'); score.append(node('div', record.score == null ? t('auditUnavailable') : record.score + ' / 100'), node('small', t('auditScoreAtDecision') + ': ' + (record.scoreAtDecision == null ? t('auditUnavailable') : record.scoreAtDecision)));
-            const verdict = document.createElement('td'); verdict.append(node('div', record.verdictAtDecision || record.verdict), node('small', (record.providerAtDecision || record.provider) === 'none' ? t('auditUnavailable') : record.providerAtDecision || record.provider));
+            const verdict = document.createElement('td'); verdict.append(node('div', t('auditVerdictAtDecision') + ': ' + verdictLabel(record.verdictAtDecision)), node('small', !record.providerAtDecision || record.providerAtDecision === 'none' ? t('auditUnavailable') : record.providerAtDecision));
             const address = document.createElement('td');
             let domain; try { domain = new URL(record.url).host; } catch (error) { domain = '—'; }
             address.appendChild(node('strong', domain));
             const details = document.createElement('details'); details.append(node('summary', t('auditDetails')), node('code', record.url));
             details.append(node('p', t('auditEventId') + ': ' + record.id));
             if (record.cancelReason) details.append(node('p', t('auditCancelReason') + ': ' + record.cancelReason));
-            if (record.checkedAt) details.append(node('p', t('auditFinalResult') + ': ' + record.verdict + ' · ' + date(record.checkedAt)));
+            if (record.checkedAt) details.append(node('p', t('auditFinalResult') + ': ' + verdictLabel(record.verdict) + ' · ' + date(record.checkedAt)));
             const reasons = document.createElement('ul');
             for (const reason of [...(record.reasons || []), ...(record.providerReasons || [])]) reasons.appendChild(node('li', reason));
             details.appendChild(reasons); address.appendChild(details); row.append(time, decision, score, verdict, address); $('auditRows').appendChild(row);

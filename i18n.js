@@ -1404,6 +1404,12 @@ const ThundyI18n = (() => {
   },
   "settingsUnsaved": {
     "message": "Unsaved changes"
+  },
+  "providerUnknown": {
+    "message": "Result unknown"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Result at decision"
   }
 };
     function get(key, params = []) {

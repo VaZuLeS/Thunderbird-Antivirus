@@ -1399,5 +1399,11 @@
   },
   "settingsUnsaved": {
     "message": "Cambios sin guardar"
+  },
+  "providerUnknown": {
+    "message": "Resultado desconocido"
+  },
+  "auditVerdictAtDecision": {
+    "message": "Resultado al decidir"
   }
 }

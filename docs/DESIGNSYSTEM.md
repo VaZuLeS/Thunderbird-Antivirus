@@ -128,4 +128,4 @@ N18 ergänzt die achte Offline-Adminansicht für [Kapazitätswarnungen](ENTERPRI
 
 ## UX05 reproduzierbar ausführen
 
-`npm run check:ui` prüft 528 synthetische Browserfälle über acht Adminansichten und sechs Add-on-Seiten. Die CI prüft alle sechs Sprachen unabhängig und speichert Berichte sowie Fehlerscreenshots. [Umfang, Befehle, axe-Prüfumfang und verbleibende Live-Abnahmen](UI_BROWSERPRUEFUNG.md). Hauptbereiche, Linkkennzeichnung, Tabellenfokus und Dialogbeschriftung wurden anhand der gefundenen Befunde verbessert.
+`npm run check:ui` prüft 600 synthetische Browserfälle über acht Adminansichten, sechs Add-on-Seiten und den Nachrichten-Linkdialog. Die CI prüft alle sechs Sprachen unabhängig und speichert Berichte sowie Fehlerscreenshots. [Umfang, Befehle, axe-Prüfumfang und verbleibende Live-Abnahmen](UI_BROWSERPRUEFUNG.md). Hauptbereiche, Linkkennzeichnung, Tabellenfokus und Dialogbeschriftung wurden anhand der gefundenen Befunde verbessert.

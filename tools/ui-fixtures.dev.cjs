@@ -84,7 +84,13 @@ function createReviews() {
   }
 }
 // Runs in an isolated browser context; only synthetic Thunderbird API responses.
-function addonMock({ catalog, lang, mode = "system", version }) {
+function addonMock({
+  catalog,
+  lang,
+  mode = "system",
+  version,
+  populated = false,
+}) {
   const state = {
       thundyAppearance: mode,
       thundyAccent: "ocean",
@@ -97,6 +103,7 @@ function addonMock({ catalog, lang, mode = "system", version }) {
     failSave: false,
     failLoad: false,
     permissionRequests: 0,
+    downloads: [],
   };
   const t = (key, values = []) => {
     const item = catalog[key];
@@ -146,7 +153,20 @@ function addonMock({ catalog, lang, mode = "system", version }) {
       contains: async () => false,
     },
     tabs: { query: async () => [{ id: 1 }] },
-    messageDisplay: { getDisplayedMessages: async () => ({ messages: [] }) },
+    messageDisplay: {
+      getDisplayedMessages: async () => ({
+        messages: populated
+          ? [
+              {
+                id: 42,
+                headerMessageId: "synthetic-message",
+                subject: "Synthetic message",
+                author: "sender@example.invalid",
+              },
+            ]
+          : [],
+      }),
+    },
     runtime: {
       getURL: (p) => new URL(p, location.origin).href,
       getManifest: () => ({ version }),
@@ -156,14 +176,61 @@ function addonMock({ catalog, lang, mode = "system", version }) {
         p.action === "getLinkAudit"
           ? {
               success: true,
-              records: [],
+              records: populated
+                ? [
+                    {
+                      id: "synthetic-open",
+                      checkedAt: Date.parse("2026-10-15T08:03:00Z"),
+                      clickedAt: Date.parse("2026-10-15T08:00:00Z"),
+                      decidedAt: Date.parse("2026-10-15T08:00:01Z"),
+                      outcome: "OPENED",
+                      url: "https://opened.example.invalid/path?x=1",
+                      score: 9,
+                      scoreAtDecision: 72,
+                      scoreSource: "local",
+                      verdict: "CLEAN",
+                      verdictAtDecision: "MALICIOUS",
+                      provider: "none",
+                      providerAtDecision: "none",
+                      reasons: [],
+                      providerReasons: [],
+                    },
+                    {
+                      id: "synthetic-abort",
+                      clickedAt: Date.parse("2026-10-15T08:02:00Z"),
+                      decidedAt: Date.parse("2026-10-15T08:02:01Z"),
+                      outcome: "ABORTED",
+                      url: "https://aborted.example.invalid/path",
+                      score: 18,
+                      scoreAtDecision: 18,
+                      scoreSource: "local",
+                      verdict: "UNKNOWN",
+                      verdictAtDecision: "UNKNOWN",
+                      provider: "none",
+                      providerAtDecision: "none",
+                      cancelReason: "escape",
+                      reasons: [],
+                      providerReasons: [],
+                    },
+                  ]
+                : [],
               profileId: "synthetic-local",
               retentionDays: 30,
               maxRecords: 1000,
             }
-          : { status: "success" },
+          : p.action === "getLocalRisk"
+            ? { threat: { score: 72, reasons: [] } }
+            : { status: "success" },
     },
-    downloads: { download: async () => 1 },
+    downloads: {
+      download: async (p) => {
+        uiTest.downloads.push({
+          filename: p.filename,
+          content: await (await fetch(p.url)).text(),
+        });
+        return 1;
+      },
+    },
   };
 }
 module.exports = { languages, createReviews, addonMock };
