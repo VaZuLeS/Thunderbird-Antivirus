@@ -444,6 +444,48 @@ class HeartbeatAlerts {
       },
     };
   }
+  static verifyWithSource(
+    content,
+    sourceContent,
+    { expectedSourceHead, ...options },
+  ) {
+    need(
+      expectedSourceHead === undefined ||
+        expectedSourceHead === null ||
+        hex(expectedSourceHead),
+      "HEARTBEAT_ALERT_HEAD_INVALID",
+    );
+    const report = HeartbeatAlerts.verifyJournal(content, options);
+    const checkpoints = content
+      .toString()
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => JSON.parse(line).payload)
+      .filter((p) => p.kind === "HEARTBEATS_OBSERVED")
+      .map((p) => ({
+        actionCount: p.data.sourceActionCount,
+        head: p.data.sourceHead,
+        evaluatedAt: p.data.evaluatedAt,
+        devices: p.data.devices,
+      }));
+    const sourceComparison = Heartbeats.verifyCheckpoints(sourceContent, {
+      ...options.source,
+      checkpoints,
+      ...(expectedSourceHead === undefined
+        ? {}
+        : { expectedHead: expectedSourceHead }),
+    });
+    return {
+      ...report,
+      sourceComparison,
+      verification: {
+        ...report.verification,
+        sourceDeviceEvidenceReverified:
+          sourceComparison.observationCount > 0 &&
+          sourceComparison.referencedSourceActionCount > 0,
+      },
+    };
+  }
   close() {
     this.journal.close();
   }

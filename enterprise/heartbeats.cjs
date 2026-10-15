@@ -7,6 +7,7 @@ const {
   exact,
   identifier,
   iso,
+  hex,
 } = require("./durable_journal.cjs");
 const { deviceRegistry, verifyEnvelope, hash } = require("./ledger.cjs");
 const { compareVersions } = require("./contracts.cjs");
@@ -354,6 +355,138 @@ class Heartbeats {
         signerFingerprint: verified.signerFingerprint,
         actionCount: verified.actionCount,
       },
+    };
+  }
+  static verifyCheckpoints(
+    content,
+    {
+      organizationId,
+      registrations,
+      minimumExtensionVersion,
+      lateAfterMs,
+      unknownAfterMs,
+      maxClockSkewMs,
+      checkpoints,
+      ...options
+    },
+  ) {
+    need(
+      Object.keys(options).every((k) =>
+        ["signerKeyId", "signerPublicKey", "expectedHead"].includes(k),
+      ),
+      "HEARTBEAT_OPTION_UNSUPPORTED",
+    );
+    need(
+      typeof content === "string" || Buffer.isBuffer(content),
+      "JOURNAL_INPUT_INVALID",
+    );
+    need(Buffer.byteLength(content) <= 32 * 1024 * 1024, "JOURNAL_CAPACITY");
+    need(
+      Array.isArray(checkpoints) && checkpoints.length <= 10000,
+      "HEARTBEAT_HISTORY_CAPACITY",
+    );
+    let comparisons = 0;
+    for (const c of checkpoints) {
+      need(
+        exact(c, "actionCount,head,evaluatedAt,devices") &&
+          Number.isSafeInteger(c.actionCount) &&
+          c.actionCount >= 0 &&
+          c.actionCount <= 10000 &&
+          (c.actionCount === 0 ? c.head === null : hex(c.head)) &&
+          iso(c.evaluatedAt) &&
+          Array.isArray(c.devices) &&
+          c.devices.length <= 1000,
+        "HEARTBEAT_HISTORY_CHECKPOINT_INVALID",
+      );
+      comparisons += c.devices.length;
+      need(comparisons <= 200000, "HEARTBEAT_HISTORY_CAPACITY");
+    }
+    const config = setup({
+      organizationId,
+      registrations,
+      minimumExtensionVersion,
+      lateAfterMs,
+      unknownAfterMs,
+      maxClockSkewMs,
+    });
+    const fields = [
+        "keyId",
+        "deviceId",
+        "status",
+        "receivedAt",
+        "observedAt",
+        "sequence",
+      ],
+      byIndex = new Map(),
+      heads = new Map([[0, null]]);
+    let previous = null,
+      checked = 0;
+    for (const c of checkpoints) {
+      need(
+        c.devices.length === config.registry.size &&
+          c.devices.every((d) => exact(d, fields.join(","))) &&
+          (!previous ||
+            (c.actionCount >= previous.actionCount &&
+              Date.parse(c.evaluatedAt) > Date.parse(previous.evaluatedAt))),
+        "HEARTBEAT_HISTORY_CHECKPOINT_INVALID",
+      );
+      if (!byIndex.has(c.actionCount)) byIndex.set(c.actionCount, []);
+      byIndex.get(c.actionCount).push(c);
+      previous = c;
+    }
+    const compare = (state, index) => {
+      for (const c of byIndex.get(index) || []) {
+        const devices = project(
+          state,
+          config,
+          Date.parse(c.evaluatedAt),
+          null,
+        ).devices.map((d) => Object.fromEntries(fields.map((k) => [k, d[k]])));
+        need(
+          hash(devices) === hash(c.devices),
+          "HEARTBEAT_HISTORY_DEVICE_MISMATCH",
+        );
+        checked++;
+      }
+    };
+    compare({ latest: {} }, 0);
+    const verified = DurableJournal.verify(content, {
+      ...options,
+      scope: config.scope,
+      initialState: { latest: {} },
+      reducer: (state, record) => {
+        // The next signed record binds the preceding envelope hash; no extra parsing or signature pass.
+        if (byIndex.has(record.index - 1))
+          heads.set(record.index - 1, record.previousHash);
+        const next = config.reducer(state, record);
+        compare(next, record.index);
+        return next;
+      },
+    });
+    heads.set(verified.actionCount, verified.head);
+    need(checked === checkpoints.length, "HEARTBEAT_HISTORY_PREFIX_MISSING");
+    for (const c of checkpoints)
+      need(
+        heads.get(c.actionCount) === c.head,
+        "HEARTBEAT_HISTORY_HEAD_MISMATCH",
+      );
+    const referencedSourceActionCount = previous?.actionCount ?? 0;
+    return {
+      schemaVersion: 1,
+      kind: "thundy-heartbeat-history-comparison",
+      comparisonComplete: true,
+      observationCount: checkpoints.length,
+      deviceComparisonCount: comparisons,
+      referencedSourceActionCount,
+      unreferencedSourceActions:
+        verified.actionCount - referencedSourceActionCount,
+      sourceJournalHead: verified.head,
+      sourceActionCount: verified.actionCount,
+      sourceHeadPinned: verified.headPinned,
+      sourceSignerFingerprint: verified.signerFingerprint,
+      sourceJournalSignaturesVerified: true,
+      sourceDeviceSignaturesVerified: true,
+      sealed: false,
     };
   }
   close() {

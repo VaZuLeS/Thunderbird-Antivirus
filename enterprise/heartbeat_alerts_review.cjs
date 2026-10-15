@@ -4,6 +4,23 @@ const { need, iso, hex, identifier } = require("./durable_journal.cjs");
 const base = require("./heartbeats_review.cjs").labels;
 const translations = {
   en: {
+    scopeProofVerified:
+      "Alert and original device journals verified; historical report states matched.",
+    proofVerified:
+      "Both original journals were verified and all historical report states matched. Device reports remain self-reports. HTML and JSON are unsigned snapshots; verify the original journals again for a new review.",
+    scopeProofEmpty:
+      "Source comparison complete; these observations reference no original device reports.",
+    proofEmpty:
+      "Both journals were verified; no original device reports are referenced. This proves no device contact or health. HTML and JSON are unsigned snapshots.",
+    sourceReview: "Independent source comparison",
+    sourceProvidedHead: "Supplied source journal head",
+    sourceFingerprint: "Source writer key fingerprint",
+    sourcePinStatus: "External source head check",
+    sourceObservations: "Matched observations",
+    sourceDeviceComparisons: "Device state comparisons",
+    sourceReferenced: "Referenced source actions",
+    sourceUnreferenced: "Additional verified source actions",
+
     scopeProof:
       "Alert journal verified; original device signatures were not rechecked here.",
     candidateAt: "Evaluation that generated candidate (UTC)",
@@ -55,6 +72,23 @@ const translations = {
     proofPin: "Alert journal head check",
   },
   de: {
+    scopeProofVerified:
+      "Alarm- und Original-Gerätejournal geprüft; historische Meldestände abgeglichen.",
+    proofVerified:
+      "Beide Originaljournale wurden geprüft und sämtliche historischen Meldestände abgeglichen. Gerätemeldungen bleiben Selbstauskünfte. HTML und JSON sind unsignierte Momentaufnahmen; für eine neue Review die Originaljournale erneut prüfen.",
+    scopeProofEmpty:
+      "Quellenabgleich vollständig; diese Beobachtungen referenzieren keine Original-Gerätemeldungen.",
+    proofEmpty:
+      "Beide Journale wurden geprüft; es sind keine Original-Gerätemeldungen referenziert. Dies belegt weder Gerätekontakt noch Gerätefunktion. HTML und JSON sind unsignierte Momentaufnahmen.",
+    sourceReview: "Unabhängiger Quellenabgleich",
+    sourceProvidedHead: "Endhash des mitgelieferten Quelljournals",
+    sourceFingerprint: "Fingerabdruck des Quellwriter-Schlüssels",
+    sourcePinStatus: "Externe Quell-Endhashprüfung",
+    sourceObservations: "Abgeglichene Beobachtungen",
+    sourceDeviceComparisons: "Vergleiche von Geräteständen",
+    sourceReferenced: "Referenzierte Quellaktionen",
+    sourceUnreferenced: "Zusätzliche geprüfte Quellaktionen",
+
     scopeProof:
       "Alarmjournal geprüft; Original-Gerätesignaturen wurden hier nicht erneut geprüft.",
     candidateAt: "Auswertung bei Kandidatenerzeugung (UTC)",
@@ -106,6 +140,23 @@ const translations = {
     proofPin: "Alarmjournal-Endhashprüfung",
   },
   fr: {
+    scopeProofVerified:
+      "Journaux des alertes et des appareils vérifiés ; états historiques des rapports concordants.",
+    proofVerified:
+      "Les deux journaux originaux ont été vérifiés et tous les états historiques concordent. Les rapports restent des autodéclarations. HTML et JSON sont des instantanés non signés ; revérifiez les journaux originaux pour une nouvelle analyse.",
+    scopeProofEmpty:
+      "Comparaison des sources terminée ; ces observations ne référencent aucun rapport original d’appareil.",
+    proofEmpty:
+      "Les deux journaux ont été vérifiés ; aucun rapport original d’appareil n’est référencé. Cela ne prouve ni contact ni bon fonctionnement. HTML et JSON sont des instantanés non signés.",
+    sourceReview: "Comparaison indépendante des sources",
+    sourceProvidedHead: "Empreinte du journal source fourni",
+    sourceFingerprint: "Empreinte de la clé du rédacteur source",
+    sourcePinStatus: "Vérification externe de l’empreinte source",
+    sourceObservations: "Observations concordantes",
+    sourceDeviceComparisons: "Comparaisons des états des appareils",
+    sourceReferenced: "Actions source référencées",
+    sourceUnreferenced: "Actions source supplémentaires vérifiées",
+
     scopeProof:
       "Journal d’alertes vérifié ; signatures originales des appareils non revérifiées ici.",
     candidateAt: "Évaluation ayant généré l’alerte (UTC)",
@@ -159,6 +210,23 @@ const translations = {
     proofPin: "Vérification de l’empreinte du journal d’alertes",
   },
   es: {
+    scopeProofVerified:
+      "Registros de alertas y de dispositivos originales verificados; estados históricos de informes contrastados.",
+    proofVerified:
+      "Se verificaron ambos registros originales y todos los estados históricos coincidieron. Los informes siguen siendo declaraciones propias. HTML y JSON son instantáneas sin firma; vuelva a verificar los registros originales para una nueva revisión.",
+    scopeProofEmpty:
+      "Comparación de fuentes completa; estas observaciones no hacen referencia a informes originales de dispositivos.",
+    proofEmpty:
+      "Se verificaron ambos registros; no hay informes originales de dispositivos referenciados. Esto no demuestra contacto ni buen funcionamiento. HTML y JSON son instantáneas sin firma.",
+    sourceReview: "Comparación independiente de fuentes",
+    sourceProvidedHead: "Hash del registro de origen proporcionado",
+    sourceFingerprint: "Huella de la clave del escritor de origen",
+    sourcePinStatus: "Verificación externa del hash de origen",
+    sourceObservations: "Observaciones contrastadas",
+    sourceDeviceComparisons: "Comparaciones de estados de dispositivos",
+    sourceReferenced: "Acciones de origen referenciadas",
+    sourceUnreferenced: "Acciones de origen adicionales verificadas",
+
     scopeProof:
       "Registro de alertas verificado; las firmas originales de dispositivos no se volvieron a verificar aquí.",
     candidateAt: "Evaluación que generó la alerta (UTC)",
@@ -211,6 +279,23 @@ const translations = {
     proofPin: "Verificación del hash del registro de alertas",
   },
   it: {
+    scopeProofVerified:
+      "Registri degli avvisi e dei dispositivi originali verificati; stati storici dei rapporti confrontati.",
+    proofVerified:
+      "Entrambi i registri originali sono stati verificati e tutti gli stati storici coincidono. I rapporti restano autodichiarazioni. HTML e JSON sono istantanee non firmate; verifica nuovamente i registri originali per una nuova analisi.",
+    scopeProofEmpty:
+      "Confronto delle fonti completato; queste osservazioni non fanno riferimento a rapporti originali dei dispositivi.",
+    proofEmpty:
+      "Entrambi i registri sono stati verificati; nessun rapporto originale dei dispositivi è referenziato. Ciò non prova contatto né buon funzionamento. HTML e JSON sono istantanee non firmate.",
+    sourceReview: "Confronto indipendente delle fonti",
+    sourceProvidedHead: "Hash del registro sorgente fornito",
+    sourceFingerprint: "Impronta della chiave del redattore sorgente",
+    sourcePinStatus: "Verifica esterna dell’hash sorgente",
+    sourceObservations: "Osservazioni confrontate",
+    sourceDeviceComparisons: "Confronti degli stati dei dispositivi",
+    sourceReferenced: "Azioni sorgente referenziate",
+    sourceUnreferenced: "Azioni sorgente aggiuntive verificate",
+
     scopeProof:
       "Registro degli avvisi verificato; firme originali dei dispositivi non ricontrollate qui.",
     candidateAt: "Valutazione che ha generato l’avviso (UTC)",
@@ -263,6 +348,23 @@ const translations = {
     proofPin: "Verifica dell’hash del registro degli avvisi",
   },
   pl: {
+    scopeProofVerified:
+      "Sprawdzono oryginalne dzienniki alertów i urządzeń; porównano historyczne stany raportów.",
+    proofVerified:
+      "Sprawdzono oba oryginalne dzienniki i potwierdzono zgodność wszystkich historycznych stanów. Raporty pozostają deklaracjami urządzeń. HTML i JSON są niepodpisanymi migawkami; przed kolejną analizą ponownie zweryfikuj oryginalne dzienniki.",
+    scopeProofEmpty:
+      "Porównanie źródeł zakończone; te obserwacje nie wskazują żadnych oryginalnych raportów urządzeń.",
+    proofEmpty:
+      "Sprawdzono oba dzienniki; brak wskazanych oryginalnych raportów urządzeń. Nie dowodzi to kontaktu ani sprawności urządzeń. HTML i JSON są niepodpisanymi migawkami.",
+    sourceReview: "Niezależne porównanie źródeł",
+    sourceProvidedHead: "Skrót dostarczonego dziennika źródłowego",
+    sourceFingerprint: "Odcisk klucza autora źródła",
+    sourcePinStatus: "Zewnętrzne sprawdzenie skrótu źródła",
+    sourceObservations: "Porównane obserwacje",
+    sourceDeviceComparisons: "Porównania stanów urządzeń",
+    sourceReferenced: "Wskazane działania źródłowe",
+    sourceUnreferenced: "Dodatkowe sprawdzone działania źródłowe",
+
     scopeProof:
       "Dziennik alertów sprawdzony; oryginalne podpisy urządzeń nie zostały tu ponownie zweryfikowane.",
     candidateAt: "Ocena, która utworzyła alert (UTC)",
@@ -360,7 +462,7 @@ function project(report) {
       report.externalDeliveryVerified === false &&
       report.sealed === false &&
       report.verification?.journalSignaturesVerified === true &&
-      report.verification.sourceDeviceEvidenceReverified === false &&
+      typeof report.verification.sourceDeviceEvidenceReverified === "boolean" &&
       typeof report.verification.headPinned === "boolean" &&
       hex(report.verification.signerFingerprint) &&
       (report.journalHead === null || hex(report.journalHead)) &&
@@ -379,6 +481,48 @@ function project(report) {
     report.devices.length <= 1000 && report.notifications.length <= 10000,
     "HEARTBEAT_ALERT_REVIEW_CAPACITY",
   );
+  let sourceComparison = null;
+  if (report.sourceComparison !== undefined) {
+    const c = report.sourceComparison;
+    need(
+      c?.schemaVersion === 1 &&
+        c.kind === "thundy-heartbeat-history-comparison" &&
+        c.comparisonComplete === true &&
+        c.sourceJournalSignaturesVerified === true &&
+        c.sourceDeviceSignaturesVerified === true &&
+        c.sealed === false &&
+        (c.sourceJournalHead === null || hex(c.sourceJournalHead)) &&
+        hex(c.sourceSignerFingerprint) &&
+        typeof c.sourceHeadPinned === "boolean" &&
+        [
+          c.observationCount,
+          c.deviceComparisonCount,
+          c.referencedSourceActionCount,
+          c.unreferencedSourceActions,
+          c.sourceActionCount,
+        ].every(count) &&
+        c.observationCount <= 10000 &&
+        c.deviceComparisonCount <= 200000 &&
+        c.sourceActionCount <= 10000 &&
+        c.referencedSourceActionCount === report.sourceActionCount &&
+        c.unreferencedSourceActions ===
+          c.sourceActionCount - c.referencedSourceActionCount &&
+        c.deviceComparisonCount ===
+          c.observationCount * report.registeredDevices &&
+        report.verification.sourceDeviceEvidenceReverified ===
+          (c.observationCount > 0 && c.referencedSourceActionCount > 0),
+      "HEARTBEAT_ALERT_REVIEW_INVALID",
+    );
+    sourceComparison = Object.fromEntries(
+      "schemaVersion,kind,comparisonComplete,observationCount,deviceComparisonCount,referencedSourceActionCount,unreferencedSourceActions,sourceJournalHead,sourceActionCount,sourceHeadPinned,sourceSignerFingerprint,sourceJournalSignaturesVerified,sourceDeviceSignaturesVerified,sealed"
+        .split(",")
+        .map((k) => [k, c[k]]),
+    );
+  } else
+    need(
+      report.verification.sourceDeviceEvidenceReverified === false,
+      "HEARTBEAT_ALERT_REVIEW_INVALID",
+    );
   const devices = report.devices.map((d) => {
     need(
       identifier(d.keyId) &&
@@ -473,10 +617,12 @@ function project(report) {
       headPinned: report.verification.headPinned,
       signerFingerprint: report.verification.signerFingerprint,
       journalSignaturesVerified: true,
-      sourceDeviceEvidenceReverified: false,
+      sourceDeviceEvidenceReverified:
+        report.verification.sourceDeviceEvidenceReverified,
     },
     sourceHead: report.sourceHead,
     sourceActionCount: report.sourceActionCount,
+    ...(sourceComparison === null ? {} : { sourceComparison }),
     devices,
     notifications,
   };
@@ -654,6 +800,39 @@ function reviewHtml(report, language = "en") {
   const data = project(report),
     l = labels[language],
     nonce = crypto.randomBytes(18).toString("base64");
+  const sourceChecked = data.sourceComparison !== undefined;
+  const scopeProof = sourceChecked
+    ? data.proof.sourceDeviceEvidenceReverified
+      ? l.scopeProofVerified
+      : l.scopeProofEmpty
+    : l.scopeProof;
+  const proof = sourceChecked
+    ? data.proof.sourceDeviceEvidenceReverified
+      ? l.proofVerified
+      : l.proofEmpty
+    : l.proof;
+  const sourceDetails = !sourceChecked
+    ? ""
+    : `<section><h2>${esc(l.sourceReview)}</h2><dl>${[
+        [
+          l.sourceProvidedHead,
+          data.sourceComparison.sourceJournalHead ?? l.notReported,
+        ],
+        [l.sourceFingerprint, data.sourceComparison.sourceSignerFingerprint],
+        [
+          l.sourcePinStatus,
+          data.sourceComparison.sourceHeadPinned ? l.pinned : l.unpinned,
+        ],
+        [l.sourceObservations, data.sourceComparison.observationCount],
+        [
+          l.sourceDeviceComparisons,
+          data.sourceComparison.deviceComparisonCount,
+        ],
+        [l.sourceReferenced, data.sourceComparison.referencedSourceActionCount],
+        [l.sourceUnreferenced, data.sourceComparison.unreferencedSourceActions],
+      ]
+        .map(([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`)
+        .join("")}</dl></section>`;
   const select = (id, label, values, text) =>
     `<label>${esc(label)}<select id="${id}"><option value="">${esc(l.all)}</option>${values.map((v, i) => `<option value="${v}">${esc(l[text[i]])}</option>`).join("")}</select></label>`;
   const deviceCounts =
@@ -664,6 +843,6 @@ function reviewHtml(report, language = "en") {
       )
       .join("") +
     `<li><strong>${data.notEvaluatedDevices}</strong> ${esc(l.notEvaluated)}</li>`;
-  return `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'"><title>Thundy AV · ${esc(l.title)}</title><style nonce="${nonce}">${css}</style></head><body><main><header><p class="brand">THUNDY AV</p><h1>${esc(l.title)}</h1><p>${esc(l.intro)}</p><p>${esc(l.caveat)}</p><p>${esc(l.scopeProof)}</p><dl><dt>${esc(l.reviewed)}</dt><dd>${esc(data.reviewedAt)}</dd><dt>${esc(l.snapshot)}</dt><dd>${esc(data.evaluatedAt ?? l.notEvaluated)}</dd><dt>${esc(l.registered)}</dt><dd>${data.registeredDevices}</dd></dl><ul><li><strong>${data.pending}</strong> ${esc(l.pending)}</li><li><strong>${data.acknowledged}</strong> ${esc(l.acknowledged)}</li></ul><h2>${esc(l.devices)}</h2><ul>${deviceCounts}</ul></header><section><h2>${esc(l.notifications)}</h2><div class="filters"><label>${esc(l.search)}<input id="search" type="search" autocomplete="off"></label>${select("delivery", l.delivery, delivery, deliveryLabels)}${select("kind", l.kind, codes, codeLabels)}${select("severity", l.severity, severities, severities)}${select("freshness", l.latest, states, stateLabels)}</div><p id="results" role="status" aria-live="polite"></p><div id="cards"></div><div class="actions"><button id="previous" type="button">${esc(l.previous)}</button><button id="next" type="button">${esc(l.next)}</button><button id="download" type="button">${esc(l.download)}</button></div></section><footer><p>${esc(l.proof)}</p><dl><dt>${esc(l.proofPin)}</dt><dd>${esc(data.proof.headPinned ? l.pinned : l.unpinned)}</dd><dt>${esc(l.head)}</dt><dd>${esc(data.proof.journalHead ?? l.notReported)}</dd><dt>${esc(l.fingerprint)}</dt><dd>${esc(data.proof.signerFingerprint)}</dd></dl></footer></main><script nonce="${nonce}">(${client.toString()})(${json(data)},${json(l)},${json(language)},${json(states)},${json(stateLabels)},${json(codes)},${json(codeLabels)},${json(delivery)},${json(deliveryLabels)});</script></body></html>`;
+  return `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'"><title>Thundy AV · ${esc(l.title)}</title><style nonce="${nonce}">${css}</style></head><body><main><header><p class="brand">THUNDY AV</p><h1>${esc(l.title)}</h1><p>${esc(l.intro)}</p><p>${esc(l.caveat)}</p><p>${esc(scopeProof)}</p><dl><dt>${esc(l.reviewed)}</dt><dd>${esc(data.reviewedAt)}</dd><dt>${esc(l.snapshot)}</dt><dd>${esc(data.evaluatedAt ?? l.notEvaluated)}</dd><dt>${esc(l.registered)}</dt><dd>${data.registeredDevices}</dd></dl><ul><li><strong>${data.pending}</strong> ${esc(l.pending)}</li><li><strong>${data.acknowledged}</strong> ${esc(l.acknowledged)}</li></ul><h2>${esc(l.devices)}</h2><ul>${deviceCounts}</ul></header><section><h2>${esc(l.notifications)}</h2><div class="filters"><label>${esc(l.search)}<input id="search" type="search" autocomplete="off"></label>${select("delivery", l.delivery, delivery, deliveryLabels)}${select("kind", l.kind, codes, codeLabels)}${select("severity", l.severity, severities, severities)}${select("freshness", l.latest, states, stateLabels)}</div><p id="results" role="status" aria-live="polite"></p><div id="cards"></div><div class="actions"><button id="previous" type="button">${esc(l.previous)}</button><button id="next" type="button">${esc(l.next)}</button><button id="download" type="button">${esc(l.download)}</button></div></section>${sourceDetails}<footer><p>${esc(proof)}</p><dl><dt>${esc(l.proofPin)}</dt><dd>${esc(data.proof.headPinned ? l.pinned : l.unpinned)}</dd><dt>${esc(l.head)}</dt><dd>${esc(data.proof.journalHead ?? l.notReported)}</dd><dt>${esc(l.fingerprint)}</dt><dd>${esc(data.proof.signerFingerprint)}</dd></dl></footer></main><script nonce="${nonce}">(${client.toString()})(${json(data)},${json(l)},${json(language)},${json(states)},${json(stateLabels)},${json(codes)},${json(codeLabels)},${json(delivery)},${json(deliveryLabels)});</script></body></html>`;
 }
 module.exports = { reviewHtml, project, labels };

@@ -130,3 +130,7 @@ Die Entwicklung verwendet synthetische Registrierungen und echte kryptografische
 ## Dauerhafte lokale Alarmkandidaten
 
 N13 ergänzt einen [getrennten Alarmworker](ENTERPRISE_HEARTBEAT_ALARME.md), der vor jeder Beobachtung das Originaljournal prüft. Er verarbeitet Meldungsfristen, Eskalation und Erholung und hält Kandidaten bis zur ausdrücklichen Bestätigung vor. Nie gemeldete Geräte erhalten keine erfundene Ausfallzeit; externe Zustellung und reale Flottenintegration bleiben offen.
+
+## Historische Quellenpräfixe unabhängig prüfen
+
+N15 ergänzt `Heartbeats.verifyCheckpoints` und den [gemeinsamen Alarm-/Originalquellenabgleich](ENTERPRISE_HEARTBEAT_QUELLENABGLEICH.md). Das Quelljournal wird einmal vollständig signaturgeprüft; historische Meldestände werden an den referenzierten Aktionspositionen zum damaligen Auswertungszeitpunkt verglichen. Alle historischen Hashes müssen passen, nicht nur der letzte. Explizite Vergleichsgrenzen verhindern unbegrenzte Wiederholungen.

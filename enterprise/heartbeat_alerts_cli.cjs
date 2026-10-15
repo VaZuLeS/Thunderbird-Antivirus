@@ -22,8 +22,8 @@ function main() {
     observe: ["expected-head", "expected-source-head"],
     pending: ["expected-head", "limit"],
     ack: ["expected-head"],
-    verify: ["expected-head"],
-    review: ["expected-head", "lang"],
+    verify: ["expected-head", "source-journal", "expected-source-head"],
+    review: ["expected-head", "lang", "source-journal", "expected-source-head"],
   };
   if (!Object.hasOwn(required, command))
     throw new Error("HEARTBEAT_ALERT_COMMAND_INVALID");
@@ -45,6 +45,12 @@ function main() {
       throw new Error("HEARTBEAT_ALERT_HEAD_INVALID");
   if (command === "review" && !Object.hasOwn(labels, options.lang || "en"))
     throw new Error("HEARTBEAT_ALERT_LANGUAGE_INVALID");
+  if (
+    ["verify", "review"].includes(command) &&
+    options["expected-source-head"] !== undefined &&
+    !options["source-journal"]
+  )
+    throw new Error("HEARTBEAT_ALERT_SOURCE_REQUIRED");
   const limit = options.limit === undefined ? 100 : Number(options.limit);
   if (
     options.limit !== undefined &&
@@ -108,10 +114,23 @@ function main() {
   let monitor, report;
   try {
     if (command === "verify" || command === "review")
-      report = HeartbeatAlerts.verifyJournal(
-        readJournal(options.journal, 32 * 1024 * 1024),
-        { ...context, signerPublicKey },
-      );
+      report =
+        options["source-journal"] === undefined
+          ? HeartbeatAlerts.verifyJournal(
+              readJournal(options.journal, 32 * 1024 * 1024),
+              { ...context, signerPublicKey },
+            )
+          : HeartbeatAlerts.verifyWithSource(
+              readJournal(options.journal, 32 * 1024 * 1024),
+              readJournal(options["source-journal"], 32 * 1024 * 1024),
+              {
+                ...context,
+                signerPublicKey,
+                ...(options["expected-source-head"] === undefined
+                  ? {}
+                  : { expectedSourceHead: options["expected-source-head"] }),
+              },
+            );
     else {
       const stat = fs.lstatSync(options["private-key"]);
       if (

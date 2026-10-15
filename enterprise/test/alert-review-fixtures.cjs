@@ -146,6 +146,11 @@ function fixture(empty = false) {
   });
   return {
     root,
+    deviceKeys: keys,
+    accept,
+    advance(ms) {
+      now += ms;
+    },
     report,
     journal,
     head,
