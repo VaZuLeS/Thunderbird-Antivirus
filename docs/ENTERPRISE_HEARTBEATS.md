@@ -122,3 +122,7 @@ CLI-Lesegrenzen: Konfiguration 64 KiB, Registry 1 MiB, signierte Meldung 16 KiB,
 Schreib-/Syncfehler bestätigen keine Annahme und sperren weitere Writeraktionen bis zur geprüften Wiederaufnahme. Vollständig geschriebene Aktionen können nach Neustart bereits vorliegen; Wiederholung liefert ihren ursprünglichen Beleg. Teilzeilen werden nicht automatisch repariert. Verwaiste Locks erst nach bestätigtem Ende des Writers entfernen. Vor Erreichen der Grenzen sind freigegebene Archivierung und Rotation erforderlich; diese sind weiterhin offen.
 
 Die Entwicklung verwendet synthetische Registrierungen und echte kryptografische Signaturen. Thunderbird-/OS-Brokeranbindung, Unternehmensidentitäten, zentraler Transport, SSO-/Objektrechte, Retention, N06-Live-Nachweise und produktive Flottenabnahme bleiben offen. H01/H02 sind deshalb Vorarbeit; Extension 1.22.0 bleibt unverändert.
+
+## Lokale sechssprachige Übersicht
+
+`review` erstellt nach derselben Public-Key-Prüfung eine [sechssprachige HTML-Übersicht](ENTERPRISE_HEARTBEAT_UEBERSICHT.md) mit Status-/Problemfiltern und vollständigem minimiertem JSON-Download (N12). Öffentliche Reports enthalten zusätzlich `criteria` mit `minimumExtensionVersion`, `lateAfterMs` und `unknownAfterMs`, damit die gebundenen Bewertungskriterien nachvollziehbar bleiben.

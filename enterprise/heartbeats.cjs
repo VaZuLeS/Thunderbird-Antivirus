@@ -227,6 +227,11 @@ function project(state, config, now, head) {
     kind: "thundy-local-heartbeat-status",
     evaluatedAt: new Date(now).toISOString(),
     coverage: "explicit-test-registry-only",
+    criteria: {
+      minimumExtensionVersion: config.minimumExtensionVersion,
+      lateAfterMs: config.lateAfterMs,
+      unknownAfterMs: config.unknownAfterMs,
+    },
     registeredDevices: devices.length,
     counts,
     devices,

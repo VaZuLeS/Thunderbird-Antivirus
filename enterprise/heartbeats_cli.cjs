@@ -3,6 +3,7 @@ const fs = require("node:fs"),
   path = require("node:path"),
   crypto = require("node:crypto");
 const { Heartbeats } = require("./heartbeats.cjs");
+const { reviewHtml, labels } = require("./heartbeats_review.cjs");
 const { exact } = require("./durable_journal.cjs");
 const { readJournal, publicKeyFile } = require("./storage_verify.cjs");
 function main() {
@@ -12,6 +13,7 @@ function main() {
     allowed = {
       accept: ["directory", "config", "private-key", "input"],
       verify: ["journal", "config", "out", "expected-head"],
+      review: ["journal", "config", "out", "expected-head", "lang"],
     };
   if (!Object.hasOwn(allowed, command))
     throw new Error("HEARTBEAT_COMMAND_INVALID");
@@ -28,10 +30,12 @@ function main() {
   }
   if (
     allowed[command]
-      .filter((k) => k !== "expected-head")
+      .filter((k) => !["expected-head", "lang"].includes(k))
       .some((k) => !options[k])
   )
     throw new Error("HEARTBEAT_ARGUMENT_REQUIRED");
+  if (command === "review" && !Object.hasOwn(labels, options.lang || "en"))
+    throw new Error("HEARTBEAT_LANGUAGE_INVALID");
   const json = (file, max) =>
       JSON.parse(readJournal(file, max).toString("utf8")),
     c = json(options.config, 65536);
@@ -59,7 +63,7 @@ function main() {
       unknownAfterMs: c.unknownAfterMs,
       maxClockSkewMs: c.maxClockSkewMs,
     };
-  if (command === "verify") {
+  if (command === "verify" || command === "review") {
     if (
       options["expected-head"] !== undefined &&
       !/^[a-f0-9]{64}$/.test(options["expected-head"])
@@ -75,10 +79,16 @@ function main() {
           : {}),
       },
     );
-    fs.writeFileSync(options.out, JSON.stringify(report, null, 2) + "\n", {
-      flag: "wx",
-      mode: 0o600,
-    });
+    fs.writeFileSync(
+      options.out,
+      command === "review"
+        ? reviewHtml(report, options.lang || "en")
+        : JSON.stringify(report, null, 2) + "\n",
+      {
+        flag: "wx",
+        mode: 0o600,
+      },
+    );
     process.stdout.write("HEARTBEAT_REPORT_CREATED\n");
     return;
   }
