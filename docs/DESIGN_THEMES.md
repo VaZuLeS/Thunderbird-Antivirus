@@ -2,6 +2,8 @@
 
 Die Einstellungen sind in Darstellung, Datenschutz, Schutz, Analysedienste, Absenderregeln sowie Daten und Werkzeuge gegliedert. Eine Seitennavigation, klar beschriftete Eingabefelder, ausklappbare Anbieterinformationen und eine dauerhaft erreichbare Speichern-Aktion ersetzen die bisherige fortlaufende Liste. Auf schmalen Ansichten wird die Navigation umgebrochen und das Formular einspaltig dargestellt.
 
+Die übergreifende Produktsprache und die noch offene Konsolidierung der Offline-Adminansichten sind im [Designsystem](DESIGNSYSTEM.md) mit [bedienbarer Referenz](UI_DESIGNSYSTEM.html) beschrieben.
+
 ## Darstellung auswählen
 
 Unter **Einstellungen → Darstellung** stehen drei Erscheinungsbilder zur Verfügung:

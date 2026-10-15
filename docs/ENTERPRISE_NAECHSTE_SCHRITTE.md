@@ -66,3 +66,7 @@ N15 ergänzt den [unabhängigen Quellenabgleich](ENTERPRISE_HEARTBEAT_QUELLENABG
 N16 ergänzt das [transportable lokale Reviewpaket](ENTERPRISE_REVIEWPAKET.md): Originalbytes beider Journale und öffentlicher Konfigurationssnapshot in einem festen Container, verpflichtender externer Trust-Abgleich, Dateihashes und erneute N15-Prüfung. Kein Entpacken, keine privaten Schlüssel und keine automatische Vertrauensübernahme eingebetteter Schlüssel. Das ist keine Archivierungs- oder SEALED-Freigabe.
 
 N17 ergänzt die [minimierte lokale Kapazitätsprüfung](ENTERPRISE_KAPAZITAET.md): neun Messwerte aus erneut geprüften Originaljournalen oder Reviewpaketen, echte Bytezahlen, Pending-Schwellen und sechssprachige Ansicht. Leselimits werden von signiert gebundenen bzw. externen Konfigurationsgrenzen unterschieden. Keine automatische Löschung, Rotation oder SEALED-Freigabe.
+
+## Aktuelle Priorität: einheitliche Oberfläche
+
+Für die vom Nutzer priorisierte Designkonsolidierung gilt zusätzlich der [UI-Umstellungsplan UX01–UX06](DESIGNSYSTEM.md). UX01 ist im Quellstand 1.23.0 implementiert; UX02 liefert Konzept und bedienbare Designreferenz. Als nächstes folgen UX03/UX04: gemeinsamer Token-/Komponentenkern und Konsolidierung der sieben Offline-Adminansichten. Die funktionale Enterprise-Aufgabe N18 bleibt offen; eine Designreferenz implementiert weder zusätzliche Backendfunktionen noch produktive Adminrechte.

@@ -23,7 +23,7 @@
     "verify-package": "node scripts/verify-package.js ./build",
     "package": "node scripts/build-and-verify-package.js",
     "pre-submit-checks": "node ./scripts/pre-submit-checks.js",
-    "check": "npm run pre-submit-checks && npm run check:i18n && npm run check:vendor && npm test && npm run lint:filtered && npm run package",
+    "check": "npm run pre-submit-checks && npm run check:i18n && npm run check:vendor && npm run check:design && npm test && npm run lint:filtered && npm run package",
     "store-gate": "node ./scripts/submission-gate.js",
     "check:i18n": "node scripts/generate-i18n-fallback.js --check",
     "check:vendor": "node scripts/update-vendor.js",
@@ -43,7 +43,9 @@
     "enterprise:heartbeats": "node enterprise/heartbeats_cli.cjs",
     "enterprise:heartbeat-alerts": "node enterprise/heartbeat_alerts_cli.cjs",
     "enterprise:review-package": "node enterprise/review_package_cli.cjs",
-    "enterprise:capacity": "node enterprise/capacity_cli.cjs"
+    "enterprise:capacity": "node enterprise/capacity_cli.cjs",
+    "design:reference": "node tools/design-reference.dev.cjs",
+    "check:design": "node tools/design-reference.dev.cjs --check"
   },
   "devDependencies": {
     "ajv": "8.20.0",
