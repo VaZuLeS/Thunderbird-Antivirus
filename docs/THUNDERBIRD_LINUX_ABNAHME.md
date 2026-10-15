@@ -71,3 +71,35 @@ Dies ist eine begrenzte Linux-Teilabnahme von 1.23.0, keine vollständige Freiga
 - Produktive SSO-/RBAC-, Cloud-/SEALED-, MDM- und unabhängige Prüfernachweise nach [N06](ENTERPRISE_N06_ABNAHME.md).
 
 [Designplan UX05/UX06](DESIGNSYSTEM.md) · [Browserprüfung](UI_BROWSERPRUEFUNG.md) · [Nächste Aufgaben](ENTERPRISE_NAECHSTE_SCHRITTE.md)
+
+## Fortsetzung: Sprachen, Upgrade und OS-Übergabe
+
+Am 15. Oktober 2026, 16:32–16:33 UTC, wurden sechs weitere Läufe mit Thunderbird 140.17.0 ESR erfolgreich abgeschlossen. [Berichte aller sechs Profile](audits/thunderbird-six-languages.json) enthalten die genauen Zeitpunkte, Hashes und Sprachangaben. Der obige erste Lauf bleibt als historischer Nachweis erhalten.
+
+- **Echte UI-Sprachen:** EN, DE, FR, ES, IT, PL über die entsprechenden Thunderbird-Sprachpakete und `Services.locale`. Die tatsächliche WebExtension-UI-Sprache wird geprüft. Popup und Linkdialog sowie die Überschriften von Einstellungen, Audit, Unternehmensprofilen und Datenschutz stimmen mit dem im XPI enthaltenen jeweiligen Sprachkatalog überein. Bei den Upgradeläufen durchläuft zunächst der Wizard der Vorversion 1.22.0 seine sechs Auswahlsprachen; der Bericht kennzeichnet seine Version separat. Ein zusätzlicher direkter Erstinstallationslauf prüft den aktuellen Wizard ohne Vorversion. Das ist eine funktionale Sprachprüfung, keine vollständige visuelle oder sprachwissenschaftliche Abnahme aller Texte.
+- **Paketupgrade:** Das veröffentlichte XPI 1.22.0 wird installiert, der Wizard abgeschlossen und danach das lokale XPI 1.23.0 über den echten Add-on-Manager installiert. Abschlussmarker, Linkschutz und fehlende externe Einwilligung bleiben erhalten; kein zusätzlicher Wizard wird geöffnet. Dies ist ein temporäres Add-on-Upgrade ohne Clientneustart; eine dauerhafte Store-/Profilmigration mit Neustart bleibt offen. Vorversion-SHA-256: `4d8003aed95719524524ae18a97be227991d551c2c23ae51e70f5dd85f3663cd`.
+- **Tatsächliche OS-Zustellung:** Ein ausschließlich für den Test registrierter XDG-Desktopempfänger erhält exakt die synthetische HTTPS-URL. Die echte Thunderbird-API wird verwendet; kein API-Mock ersetzt sie. Der Empfänger schreibt eine Quittung und ruft keine Webseite ab. Persönliche Standardbrowser-Einstellungen werden nicht geändert.
+- **Stiller Fehler:** Mit `network.protocol-handler.external.https=false` nimmt Thunderbird 140 die API-Anforderung weiterhin ohne Fehler an und schließt den Dialog. Innerhalb des einsekündigen Beobachtungsfensters erreicht keine weitere URL den Empfänger. Der zugehörige Eintrag lautet ebenfalls `OPENED`. Dieser bekannte Grenzfall ist nun Bestandteil des Prüflaufs.
+
+Daraus folgt eine Korrektur der Informationsdarstellung: `OPENED` heißt in der Oberfläche **„Öffnung angefordert“**, in allen sechs Sprachen auch in den Enterprise-Ereignis- und Fallansichten. Der Status belegt Thunderbirds Annahme ohne gemeldeten Fehler; er bestätigt weder den Browserstart durch das Betriebssystem noch einen Webseitenbesuch. Schemawerte, ursprüngliche Datensätze und Signaturen bleiben unverändert. `OPEN_ERROR` erfasst ausdrücklich zurückgemeldete Fehler; stille OS-Fehler können damit nicht zuverlässig erkannt werden.
+
+![Reales deutsches Popup nach dem Paketupgrade](screenshots/thunderbird-linux/native-popup-de.png)
+
+![Deutsche Auditansicht mit präziser Bedeutung der Öffnungsanforderung](screenshots/thunderbird-linux/audit-de.png)
+
+Für einen eigenen Sprach-/Upgrade-Lauf den bestehenden Befehl ergänzen:
+
+```sh
+# Beispiel Deutsch; Vorversion muss separat und überprüft bereitgestellt werden.
+python3 tools/thunderbird-live.dev.py \
+  --thunderbird /usr/lib/thunderbird/thunderbird-bin \
+  --xvfb /usr/bin/Xvfb --xpi build/thundy-av-1.23.0.xpi \
+  --locale de \
+  --langpack /usr/lib/thunderbird/extensions/langpack-de@thunderbird.mozilla.org.xpi \
+  --previous-xpi /path/to/thundy-av-1.22.0.xpi \
+  --out .audit/thunderbird-live-de
+```
+
+Für Spanisch lautet die Sprachpaketkennung `es-ES`, die Runner-Auswahl `--locale es`. Nichtenglische Läufe erfordern ein passendes Sprachpaket; fehlende Pakete werden nicht durch manipulierte Browserantworten ersetzt. Ohne `--previous-xpi` wird eine direkte Erstinstallation geprüft. Die CI installiert alle fünf zusätzlichen Sprachpakete, prüft den fest hinterlegten Hash der veröffentlichten Vorversion und erzeugt sechs unabhängige Upgrade-Profilberichte sowie einen zusätzlichen Erstinstallationsbericht im Artefakt `thunderbird-linux-live`.
+
+Weiterhin offen sind vollständiger Browserstart/-abruf mit unterschiedlichen Standardbrowsern, native Fehler-/Retry-Rückmeldungen auf allen Zielsystemen, dauerhafte Updateinstallation mit Neustart, DPI/Zoom, Screenreader, Windows/macOS sowie die produktiven N06-Kernfunktionen. Diese Erweiterung erteilt keine produktive Freigabe.

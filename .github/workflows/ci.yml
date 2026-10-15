@@ -77,14 +77,26 @@ jobs:
       - name: Install real Thunderbird and isolated X11 runtime
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends thunderbird xvfb python3 imagemagick libxtst6
+          apt-get install -y --no-install-recommends thunderbird thunderbird-l10n-de thunderbird-l10n-fr thunderbird-l10n-es-es thunderbird-l10n-it thunderbird-l10n-pl xvfb python3 imagemagick libxtst6 ca-certificates
           useradd --create-home thunderbird-test
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with:
           name: thunderbird-test-package
           path: build
-      - name: Check real wizard, link audit, native popup and themes
+      - name: Download pinned previous release for upgrade checks
+        run: |
+          python3 - <<'PYTHON'
+          import hashlib, pathlib, urllib.request
+          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.22.0/thundy-av-1.22.0.xpi'
+          with urllib.request.urlopen(url, timeout=30) as response:
+              data = response.read()
+          if hashlib.sha256(data).hexdigest() != '4d8003aed95719524524ae18a97be227991d551c2c23ae51e70f5dd85f3663cd':
+              raise SystemExit('Previous release hash mismatch')
+          pathlib.Path('build/previous.xpi').write_bytes(data)
+          PYTHON
+          chmod 644 build/previous.xpi
+      - name: Check real upgrade, OS dispatch and UI in all six languages
         run: |
           mkdir -p .audit
           chown thunderbird-test .audit
@@ -92,7 +104,16 @@ jobs:
           test "$#" -eq 1
           cp "$1" .audit/thundy-av.xpi
           chmod 644 .audit/thundy-av.xpi
-          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --out .audit/thunderbird-live
+          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --out .audit/thunderbird-live/install-en
+          for lang in en de fr es it pl; do
+            set -- --locale "$lang"
+            if test "$lang" != en; then
+              pack="$lang"
+              if test "$lang" = es; then pack=es-ES; fi
+              set -- "$@" --langpack "/usr/lib/thunderbird/extensions/langpack-$pack@thunderbird.mozilla.org.xpi"
+            fi
+            runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --previous-xpi build/previous.xpi "$@" --out ".audit/thunderbird-live/$lang"
+          done
       - name: Preserve real-client report, logs and screenshots
         if: always()
         uses: actions/upload-artifact@v4

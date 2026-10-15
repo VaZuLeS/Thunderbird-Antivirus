@@ -990,7 +990,7 @@
     "message": "Linkprotokoll prüfen"
   },
   "auditScope": {
-    "message": "Protokolliert HTTP(S)-Klicks, die der Linkschutz abfängt. Geöffnet bedeutet erfolgreiche Übergabe an den Standardbrowser, keine Bestätigung eines Webseitenbesuchs. Öffnen über native Kontextmenüs wird nicht erfasst."
+    "message": "Protokolliert HTTP(S)-Klicks, die der Linkschutz abfängt. OPENED bedeutet, dass Thunderbird die Öffnungsanforderung ohne gemeldeten Fehler angenommen hat. Das bestätigt weder einen Browserstart durch das Betriebssystem noch einen Webseitenbesuch. Öffnen über native Kontextmenüs wird nicht erfasst."
   },
   "auditPrivacy": {
     "message": "Lokal gespeichert: höchstens 30 Tage, 2.000 Einträge oder 2 MiB; ältere Einträge werden entfernt. Vollständige URLs können personenbezogene Daten oder Zugriffstoken enthalten. Kein automatischer Upload. Profilnutzer können das lokale Protokoll ändern oder löschen; es ist kein manipulationssicheres zentrales Audit. Der lokale Score berücksichtigt Link und Nachrichtenkontext, keinen Anbieter-Score. Bewertungsgründe können Absender- oder Domainangaben enthalten."
@@ -1005,7 +1005,7 @@
     "message": "Alle"
   },
   "auditOpened": {
-    "message": "Geöffnet"
+    "message": "Öffnung angefordert"
   },
   "auditAborted": {
     "message": "Abgebrochen"

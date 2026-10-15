@@ -987,7 +987,7 @@
     "message": "Consultar el registro de enlaces"
   },
   "auditScope": {
-    "message": "Registra los clics HTTP(S) interceptados por la protección de enlaces. Abierto significa entrega al navegador predeterminado, no confirmación de visita. Las aperturas desde el menú contextual nativo no se registran."
+    "message": "Registra los clics HTTP(S) interceptados por la protección de enlaces. OPENED significa que Thunderbird aceptó la solicitud de apertura sin informar de un error. No confirma que el sistema iniciara un navegador ni que se visitara el sitio. No se registran las aperturas desde los menús contextuales nativos."
   },
   "auditPrivacy": {
     "message": "Almacenamiento local: hasta 30 días, 2000 entradas o 2 MiB; se eliminan las más antiguas. Las URL completas pueden incluir datos personales o tokens. Sin carga automática. Los usuarios del perfil pueden modificar o borrar el registro; no es una auditoría central inalterable. La puntuación local usa el enlace y el contexto del mensaje, no una puntuación del proveedor. Los motivos de la evaluación pueden incluir datos del remitente o del dominio."
@@ -1002,7 +1002,7 @@
     "message": "Todas"
   },
   "auditOpened": {
-    "message": "Abierto"
+    "message": "Apertura solicitada"
   },
   "auditAborted": {
     "message": "Cancelado"

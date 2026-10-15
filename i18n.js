@@ -992,7 +992,7 @@ const ThundyI18n = (() => {
     "message": "Review link log"
   },
   "auditScope": {
-    "message": "Logs HTTP(S) clicks intercepted by link protection. Opened means successful handoff to the default browser, not confirmation that the website was visited. Native context-menu opens are not recorded."
+    "message": "Logs HTTP(S) clicks intercepted by link protection. OPENED means Thunderbird accepted the opening request without reporting an error. This does not confirm that the operating system started a browser or that the website was visited. Native context-menu opens are not recorded."
   },
   "auditPrivacy": {
     "message": "Stored locally for up to 30 days, 2,000 records or 2 MiB (oldest entries are removed). Full URLs may contain personal data or access tokens. Nothing is uploaded automatically. The local log can be changed or deleted by profile users; it is not a tamper-proof central audit trail. The local score uses the clicked link and message context, not a provider score. Assessment reasons may include sender or domain details."
@@ -1007,7 +1007,7 @@ const ThundyI18n = (() => {
     "message": "All"
   },
   "auditOpened": {
-    "message": "Opened"
+    "message": "Opening requested"
   },
   "auditAborted": {
     "message": "Aborted"

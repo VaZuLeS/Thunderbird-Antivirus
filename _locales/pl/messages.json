@@ -987,7 +987,7 @@
     "message": "Przejrzyj dziennik odnośników"
   },
   "auditScope": {
-    "message": "Zapisuje kliknięcia HTTP(S) przechwycone przez ochronę odnośników. Otwarto oznacza przekazanie do domyślnej przeglądarki, a nie potwierdzenie odwiedzin. Otwarcia z natywnego menu kontekstowego nie są rejestrowane."
+    "message": "Rejestruje kliknięcia HTTP(S) przechwycone przez ochronę linków. OPENED oznacza, że Thunderbird przyjął żądanie otwarcia bez zgłoszenia błędu. Nie potwierdza to uruchomienia przeglądarki przez system ani odwiedzenia witryny. Otwarcia z natywnych menu kontekstowych nie są rejestrowane."
   },
   "auditPrivacy": {
     "message": "Zapis lokalny: maksymalnie 30 dni, 2000 wpisów lub 2 MiB; najstarsze wpisy są usuwane. Pełne adresy URL mogą zawierać dane osobowe lub tokeny dostępu. Brak automatycznego wysyłania. Użytkownicy profilu mogą zmieniać lub usuwać dziennik; nie jest to centralny audyt odporny na manipulacje. Lokalny wynik uwzględnia odnośnik i kontekst wiadomości, nie wynik dostawcy. Powody oceny mogą zawierać dane nadawcy lub domeny."
@@ -1002,7 +1002,7 @@
     "message": "Wszystkie"
   },
   "auditOpened": {
-    "message": "Otwarto"
+    "message": "Żądanie otwarcia"
   },
   "auditAborted": {
     "message": "Anulowano"

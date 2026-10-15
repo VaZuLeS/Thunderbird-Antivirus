@@ -4,9 +4,9 @@
 
 In den Einstellungen oder im Nachrichten-Popup **„Linkprotokoll prüfen“** öffnen. Die Ansicht zeigt abgefangene HTTP(S)-Klicks mit Zeitstempel, vollständiger URL, lokaler Bewertung im Nachrichtenkontext, Anbieterurteil und Entscheidung. Filter: URL/Domain, geöffnet/abgebrochen/Öffnungsfehler/offen, Mindest-Score und Zeitraum. Pro Seite werden 50 Einträge angezeigt; Exporte enthalten **alle gefilterten Einträge**.
 
-- **Geöffnet (`OPENED`)**: Thunderbird hat die URL erfolgreich an den Standardbrowser übergeben. Das beweist keinen tatsächlichen Besuch oder das erfolgreiche Laden der Webseite.
+- **Öffnung angefordert (`OPENED`)**: Thunderbirds API hat die Öffnungsanforderung ohne gemeldeten Fehler angenommen. Das bestätigt weder den Browserstart durch das Betriebssystem noch einen Webseitenbesuch. Der reale Linux-Test zeigt auch bei deaktivierter HTTPS-Protokollübergabe eine erfolgreiche API-Rückgabe ohne OS-Zustellung; [Nachweis und Grenzen](THUNDERBIRD_LINUX_ABNAHME.md#fortsetzung-sprachen-upgrade-und-os-übergabe).
 - **Abgebrochen (`ABORTED`)**: Abbrechen, Escape, veränderte Zieladresse oder ein gemeldetes Schließen des Nachrichtenkontexts. Der Grund ist separat gespeichert.
-- **Öffnungsfehler (`OPEN_ERROR`)**: Die Browserübergabe scheiterte. Ein erneuter Versuch aktualisiert dieselbe Interaktion und erhöht `openAttempts`.
+- **Öffnungsfehler (`OPEN_ERROR`)**: Der Öffnungsaufruf wurde ausdrücklich als fehlgeschlagen gemeldet. Stille OS-Fehler werden von Thunderbird nicht zuverlässig zurückgemeldet. Ein erneuter Versuch aktualisiert dieselbe Interaktion und erhöht `openAttempts`.
 - **Offen (`PENDING`)**: Noch keine bestätigte Entscheidung, beispielsweise bei einem Client-Absturz. Aus offenen Einträgen wird kein Abbruch abgeleitet.
 - **`score`**: lokale Heuristik (0–100) für den angeklickten Link zusammen mit Nachrichtenkontext. Kein numerischer Anbieter-Score und keine Sicherheitsgarantie. `null` bedeutet nicht verfügbar, niemals 0.
 - **`scoreAtDecision`, `verdictAtDecision`, `providerAtDecision`**: Stand zum Entscheidungszeitpunkt. Später eingetroffene Ergebnisse ergänzen `score`/`verdict`/`checkedAt`, überschreiben aber nicht die Entscheidung. Gründe und maschinenlesbare Heuristikdetails bleiben exportierbar.

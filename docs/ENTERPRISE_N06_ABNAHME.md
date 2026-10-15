@@ -103,3 +103,7 @@ Auch bei Exit 0 bleiben `productionAccepted`, `sealed` und `extensionActivation`
 4. Offline-Nachweisprüfung ausführen; anschließend erst die fachliche Abnahme und Pilotfreigabe festhalten.
 
 Die autonome Arbeit hat N03–N05 lokal umgesetzt und für N06 diese prüfbare Vorbereitung geschaffen. N06 wird ausdrücklich **nicht als abgeschlossen** markiert.
+
+## Erweiterter lokaler Teilnachweis
+
+[Sechs native Sprachprofile, temporäres Paketupgrade und isolierter OS-Empfänger](THUNDERBIRD_LINUX_ABNAHME.md#fortsetzung-sprachen-upgrade-und-os-übergabe) wurden am 15. Oktober 2026 erfolgreich geprüft. Der stille HTTPS-Protokollsperrfall begrenzt die Aussage von `OPENED` auf die Annahme der Öffnungsanforderung durch Thunderbird. Dies ersetzt weiterhin weder vollständige OS-/Standardbrowser-Abnahme noch unabhängige signierte Operator-/Prüfererklärungen.

@@ -67,7 +67,7 @@ Für Symbole ist eine kleine lokal mitgelieferte Familie vorzusehen. Dekorative 
 
 Ein Risiko-Score ist eine lokale Einschätzung und kein Sicherheitsnachweis. „Keine Erkennung“ ist keine Garantie. Der Ergebnistext nennt immer Quelle und Prüfstand.
 
-Die primäre Ereignistabelle konzentriert sich auf Zeitpunkt, Domain, Entscheidung, damaligen Score und Prüfergebnis. Vollständige URL, aktuelle Neubewertung, technische IDs, Originaljournal-Köpfe und Signatur-/Pinstatus gehören in die Detailansicht. Beide Scores müssen ausdrücklich als damaliger bzw. aktueller Stand beschriftet werden. „Geöffnet“ bezeichnet die bestätigte Browserübergabe und belegt nicht den erfolgreichen Seitenabruf.
+Die primäre Ereignistabelle konzentriert sich auf Zeitpunkt, Domain, Entscheidung, damaligen Score und Prüfergebnis. Vollständige URL, aktuelle Neubewertung, technische IDs, Originaljournal-Köpfe und Signatur-/Pinstatus gehören in die Detailansicht. Beide Scores müssen ausdrücklich als damaliger bzw. aktueller Stand beschriftet werden. „Öffnung angefordert“ (`OPENED`) bezeichnet die von Thunderbird ohne Fehler angenommene Öffnungsanforderung. Das bestätigt weder den Browserstart durch das Betriebssystem noch einen erfolgreichen Seitenabruf.
 
 Die vollständige URL bleibt bei berechtigter Prüfung erreichbar und kopierbar. Ein zukünftiges Unternehmensportal benötigt dafür eine tatsächlich implementierte Berechtigungsprüfung und gegebenenfalls Reveal-/Zugriffsaudit. Die Designreferenz zeigt lediglich einen statischen Beispieldatensatz.
 
@@ -133,3 +133,5 @@ N18 ergänzt die achte Offline-Adminansicht für [Kapazitätswarnungen](ENTERPRI
 ## Reale Linux-Teilabnahme vom 15. Oktober 2026
 
 [Thunderbird 140.17.0 ESR mit echten Screenshots und wiederholbarem Runner](THUNDERBIRD_LINUX_ABNAHME.md): native Popupbreite, gebrandeter Nachrichten-Linkdialog, Fokus nach Abbruch, sichtbares URL-/Score-Audit, gespeicherte Darstellung und native Hell-/Dunkel-Themes geprüft. Wizard in sechs Sprachen, übrige Oberflächen englisch. Damit liegt für UX05 erstmals ein realer Linux-Teilnachweis vor; Windows/macOS, Screenreader, übrige native Sprachen und weitere Installations-/Öffnungsfälle bleiben offen. UX06 ist dadurch nicht erfüllt.
+
+Die anschließende [reale Sechssprachen-/Upgrade-Prüfung](THUNDERBIRD_LINUX_ABNAHME.md#fortsetzung-sprachen-upgrade-und-os-übergabe) bestätigt die nativen Sprachkataloge und OS-Zustellung an einen isolierten Empfänger. Ein stiller OS-Fehler wird von Thunderbird nicht zuverlässig zurückgemeldet. Darum verwenden lokale Audit-, Enterprise-Ereignis- und Fallansichten dieselbe präzise Bezeichnung „Öffnung angefordert“ für `OPENED`; gespeicherte Ereignisse werden nicht umgeschrieben.

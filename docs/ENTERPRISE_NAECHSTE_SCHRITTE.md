@@ -79,3 +79,7 @@ Die UX05-Prüfung umfasst inzwischen auch den Nachrichten-Linkdialog und gefüll
 ## Fortsetzung: echte Linux-GUI statt weiterer Simulation
 
 15. Oktober 2026: Thunderbird 140.17.0 ESR wurde aus authentifizierten Debian-Paketen als isolierte Laufzeit verfügbar gemacht. [Teilabnahme mit echten Screenshots](THUNDERBIRD_LINUX_ABNAHME.md): Wizard in sechs Sprachen, tatsächliche Nachrichteninjektion, Link-Abbruch mit URL/Score im Audit, natives Popup mit 600 px Inhalt und persistente/native Themes bestanden. Der versionierte Runner wird auch in der CI ausgeführt. UX05 ist damit teilweise real geprüft. Priorität behalten externe Browserübergabe/Retry, Update, übrige native Sprachoberflächen sowie Windows/macOS/Screenreader; N06 und UX06 sind weiterhin nicht abgenommen.
+
+## Fortsetzung: native Sprachen, Upgrade und tatsächliche Übergabe
+
+Sechs echte Thunderbird-Sprachprofile, temporäres Upgrade des veröffentlichten XPI 1.22.0 auf 1.23.0 und exakte URL-Zustellung an einen isolierten OS-Empfänger erfolgreich geprüft. Die CI wiederholt alle sechs Läufe. Eine stille OS-Sperre kann trotz erfolgreicher Thunderbird-API auftreten: `OPENED` wird deshalb einheitlich als Öffnungsanforderung erläutert, auch in den Adminansichten. [Nachweise und genaue Grenzen](THUNDERBIRD_LINUX_ABNAHME.md#fortsetzung-sprachen-upgrade-und-os-übergabe). Priorität haben nun dauerhafte Updateinstallation mit Neustart, vollständige Standardbrowser-/Fehler-/Retry-Prüfungen, Windows/macOS und Screenreader. N06/UX06 bleiben offen.

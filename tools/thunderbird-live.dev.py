@@ -11,6 +11,7 @@ from pathlib import Path
 import select
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 import zipfile
@@ -114,7 +115,7 @@ def native_click(display, x, y):
         x11.XCloseDisplay(connection)
 
 
-def run_checks(m, xpi, out, display, report):
+def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi):
     with zipfile.ZipFile(xpi) as package:
         manifest = json.loads(package.read('manifest.json'))
         catalogs = {lang: json.loads(package.read('_locales/' + lang + '/messages.json'))
@@ -124,12 +125,30 @@ def run_checks(m, xpi, out, display, report):
         'capabilities': {'alwaysMatch': {'acceptInsecureCerts': False}}})
     m.command('Marionette:SetContext', {'value': 'chrome'})
     assert m.js('return Services.io.offline;'), 'Client must be offline'
-    installed = m.command('Addon:Install', {'path': str(xpi), 'temporary': True})
+    requested = 'es-ES' if locale == 'es' else locale
+    if langpack:
+        with zipfile.ZipFile(langpack) as pack:
+            pack_manifest = json.loads(pack.read('manifest.json'))
+        assert pack_manifest['langpack_id'] == requested
+        m.command('Addon:Install', {'path': str(langpack), 'temporary': True})
+        wait_for(lambda: m.js('return Services.locale.availableLocales.includes(arguments[0]);', [requested]))
+        report['languagePackSha256'] = hashlib.sha256(langpack.read_bytes()).hexdigest()
+    m.js('Services.locale.requestedLocales=[arguments[0]];', [requested])
+    wait_for(lambda: m.js('return Services.locale.appLocaleAsBCP47.split("-")[0]===arguments[0];', [locale]))
+    report['appLocale'] = m.js('return Services.locale.appLocaleAsBCP47;')
+    installed = m.command('Addon:Install', {'path': str(previous_xpi or xpi), 'temporary': True})
     assert installed.get('value', installed) == ADDON_ID, installed
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.includes("/onboarding.html");'))
     wait_for(lambda: m.page('return !!document.getElementById("language") && !document.getElementById("next").disabled;'))
+    report['uiLanguage'] = m.page('return window.wrappedJSObject.browser.i18n.getUILanguage();')
+    assert report['uiLanguage'].split('-')[0] == locale
+    wizard_catalogs = catalogs
+    if previous_xpi:
+        with zipfile.ZipFile(previous_xpi) as previous:
+            wizard_catalogs = {lang: json.loads(previous.read('_locales/'+lang+'/messages.json')) for lang in catalogs}
+    report['wizardVersion'] = m.page('return window.wrappedJSObject.browser.runtime.getManifest().version;')
     report['wizardLanguages'] = []
-    for lang, catalog in catalogs.items():
+    for lang, catalog in wizard_catalogs.items():
         m.page('const e=document.getElementById("language");e.value=arguments[0];e.dispatchEvent(new Event("change",{bubbles:true}));', [lang])
         wait_for(lambda: m.page('return document.documentElement.lang===arguments[0] && !document.getElementById("next").disabled;', [lang]))
         title = m.page('return document.querySelector("h1").textContent;')
@@ -145,6 +164,25 @@ def run_checks(m, xpi, out, display, report):
     assert state.get('externalAnalysisConsent') is not True and state['timeOfClickProtection'] is True
     report['wizardSaved'] = state
     base = m.page('return window.wrappedJSObject.browser.runtime.getURL("");')
+    if previous_xpi:
+        with zipfile.ZipFile(previous_xpi) as previous:
+            previous_version = json.loads(previous.read('manifest.json'))['version']
+        assert tuple(map(int, previous_version.split('.'))) < tuple(map(int, manifest['version'].split('.')))
+        before = m.js('return window.gTabmail.tabInfo.filter(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html")).length;')
+        m.command('Addon:Install', {'path': str(xpi), 'temporary': True})
+        wait_for(lambda: m.js('''const done=arguments[arguments.length-1];
+            ChromeUtils.importESModule("resource://gre/modules/AddonManager.sys.mjs").AddonManager
+                .getAddonByID(arguments[0]).then(a=>done(a?.isActive && a.version===arguments[1]));''', [ADDON_ID, manifest['version']], asynchronous=True))
+        m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base+'options.html'])
+        wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.endsWith("/options.html");'))
+        wait_for(lambda: m.page('return !!document.querySelector(\'input[name="appearance"]\');'))
+        saved = m.page('return window.wrappedJSObject.browser.storage.local.get(["onboardingState","externalAnalysisConsent","timeOfClickProtection"]);')
+        assert saved == state
+        assert m.page('return window.wrappedJSObject.browser.runtime.getManifest().version;') == manifest['version']
+        assert m.js('return window.gTabmail.tabInfo.filter(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html")).length;') <= before
+        report['upgrade'] = {'from': previous_version, 'to': manifest['version'], 'statePreserved': True,
+                             'noExtraWizard': True, 'previousXpiSha256': hashlib.sha256(previous_xpi.read_bytes()).hexdigest()}
+
     mail = out / 'synthetic.eml'
     mail.write_text('From: sender@example.invalid\nTo: recipient@example.invalid\n'
                     'Date: Thu, 15 Oct 2026 12:00:00 +0000\n'
@@ -173,6 +211,8 @@ def run_checks(m, xpi, out, display, report):
         return {text:r.querySelector(".dialog").innerText,width:r.querySelector(".dialog").getBoundingClientRect().width,
             focus:r.activeElement?.textContent,url:r.querySelector("code").textContent};'''))
     assert dialog['width'] >= 500 and dialog['url'] == URL and 'Thundy AV' in dialog['text']
+    assert catalogs[locale]['linkDialogTitle']['message'] in dialog['text']
+    assert dialog['focus'] == catalogs[locale]['linkCancel']['message']
     report['linkDialog'] = dialog
     m.screenshot(out / 'link-dialog.png')
     m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelector("footer button").click();')
@@ -189,21 +229,53 @@ def run_checks(m, xpi, out, display, report):
             ? {panelWidth:p.getBoundingClientRect().width,contentWidth:b.getBoundingClientRect().width}:null;'''))
     popup_browser = 'document.querySelector(\'browser[webextension-view-type="popup"]\')'
     wait_for(lambda: m.page('return document.body.innerText.includes("Thundy AV") && document.body.innerText.includes("sender@example.invalid");', browser=popup_browser))
+    assert m.page('return document.documentElement.lang;', browser=popup_browser) == locale
+    assert m.page('return document.querySelector("h1").textContent;', browser=popup_browser) == catalogs[locale]['popupSubtitle']['message']
+    popup['language'] = locale
+    popup['heading'] = catalogs[locale]['popupSubtitle']['message']
     report['nativePopup'] = popup
     # X11 screenshot includes the separate native panel widget.
     subprocess.run(['import', '-window', 'root', str(out / 'native-popup.png')],
                    env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    # Real OS dispatch to a receiver registered only in this run's XDG directories.
+    m.page('document.querySelector("a[href^=https]").click();')
+    wait_for(lambda: m.page('return document.getElementById("thundy-link-dialog")?.shadowRoot.querySelectorAll("footer button").length===2;'))
+    m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelectorAll("footer button")[1].click();')
+    wait_for(lambda: m.page('return !document.getElementById("thundy-link-dialog");'))
+    receipt = out / 'os-handoff.json'
+    wait_for(lambda: receipt.exists())
+    report['osHandoff'] = json.loads(receipt.read_text())
+    assert report['osHandoff'] == {'argv': [URL]}, report['osHandoff']
+    # Thunderbird 140 resolves its API even when its protocol policy blocks dispatch.
+    # Preserve this observed limit: API acceptance alone cannot prove OS delivery.
+    delivered = receipt.read_text()
+    m.js('Services.prefs.setBoolPref("network.protocol-handler.external.https",false);')
+    m.page('document.querySelector("a[href^=https]").click();')
+    wait_for(lambda: m.page('return document.getElementById("thundy-link-dialog")?.shadowRoot.querySelectorAll("footer button").length===2;'))
+    m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelectorAll("footer button")[1].click();')
+    wait_for(lambda: m.page('return !document.getElementById("thundy-link-dialog");'))
+    time.sleep(1)
+    assert receipt.read_text() == delivered
+    m.js('Services.prefs.clearUserPref("network.protocol-handler.external.https");')
+    report['blockedOsDispatch'] = {'apiAccepted': True, 'additionalReceiverCalls': 0,
+                                   'observationSeconds': 1, 'protocolPolicy': False}
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'audit.html'])
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/audit.html");'))
-    wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===1 && document.querySelector("#auditRows").innerText.includes("destination.example.invalid");'))
+    wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===3 && document.querySelector("#auditRows").innerText.includes("destination.example.invalid");'))
     audit = m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getLinkAudit"});')
     records = audit.get('records', [])
-    assert audit['success'] and len(records) == 1, audit
-    record = records[0]
+    assert audit['success'] and len(records) == 3, audit
+    record = next(r for r in records if r['outcome'] == 'ABORTED')
     assert record['outcome'] == 'ABORTED' and record['url'] == URL and record['scoreAtDecision'] == 0
     assert record['openAttempts'] == 0 and record['cancelReason'] == 'cancel'
     report['auditRecord'] = record
+    opened_records = [r for r in records if r['outcome'] == 'OPENED']
+    assert len(opened_records) == 2
+    opened = min(opened_records, key=lambda r: r['clickedAt'])
+    assert opened['url'] == URL and opened['scoreAtDecision'] == 0 and opened['openAttempts'] == 1
+    report['openedAuditRecord'] = opened
+    report['blockedOsAuditRecord'] = max(opened_records, key=lambda r: r['clickedAt'])
     m.screenshot(out / 'audit.png')
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'options.html'])
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/options.html");'))
@@ -231,6 +303,15 @@ def run_checks(m, xpi, out, display, report):
         wait_for(lambda: m.page('return document.documentElement.dataset.theme===arguments[0];', [scheme]))
         report['nativeThemes'].append(scheme)
         m.screenshot(out / ('options-native-' + scheme + '.png'))
+    report['localizedPages'] = []
+    for page, key in [('options.html', 'ui_116'), ('audit.html', 'auditTitle'),
+                      ('enterprise_setup.html', 'profilesTitle'), ('privacy.html', 'ui_128')]:
+        m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + page])
+        wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.endsWith(arguments[0]);', [page]))
+        expected = catalogs[locale][key]['message']
+        wait_for(lambda: m.page('return document.documentElement.lang===arguments[0] && document.querySelector("h1")?.textContent===arguments[1];', [locale, expected]))
+        report['localizedPages'].append({'page': page, 'language': locale, 'heading': expected})
+        m.screenshot(out / (page.replace('.html', '') + '-' + locale + '.png'))
     report['passed'] = True
 
 
@@ -239,12 +320,21 @@ def main():
     parser.add_argument('--thunderbird', type=Path, required=True)
     parser.add_argument('--xvfb', type=Path, required=True)
     parser.add_argument('--xpi', type=Path, required=True)
+    parser.add_argument('--previous-xpi', type=Path)
+    parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
+    parser.add_argument('--langpack', type=Path)
     parser.add_argument('--out', type=Path, default=ROOT / '.audit/thunderbird-live')
     args = parser.parse_args()
     if not __debug__:
         parser.error("Run without Python optimization so assertions remain enabled")
     for name in ['thunderbird', 'xvfb', 'xpi']:
         setattr(args, name, getattr(args, name).resolve(strict=True))
+    if args.locale != 'en' and not args.langpack:
+        parser.error('Non-English runs require the corresponding Thunderbird --langpack')
+    if args.previous_xpi:
+        args.previous_xpi = args.previous_xpi.resolve(strict=True)
+    if args.langpack:
+        args.langpack = args.langpack.resolve(strict=True)
     out = args.out.resolve()
     # Fresh output prevents old reports/screenshots from being mistaken for new evidence.
     out.mkdir(parents=True, exist_ok=False, mode=0o700)
@@ -288,9 +378,27 @@ def main():
             display = ':' + xvfb.stdout.readline().strip()
             if not display[1:].isdigit():
                 raise RuntimeError('Invalid Xvfb display')
+            data_home = profile / 'xdg-data'
+            config_home = profile / 'xdg-config'
+            applications = data_home / 'applications'
+            applications.mkdir(parents=True)
+            config_home.mkdir()
+            receiver = profile / 'receive-url.py'
+            receiver.write_text('import json,sys\nfrom pathlib import Path\nPath(' +
+                                repr(str(out / 'os-handoff.json')) + ').open("a").write(json.dumps({"argv":sys.argv[1:]})+"\\n")\n')
+            # Desktop Entry Exec arguments use double quotes and escaped special characters.
+            def desktop_quote(value):
+                return '"' + str(value).replace('\\', '\\\\').replace('"', '\\"').replace('`', '\\`').replace('$', '\\$') + '"'
+            (applications / 'thundy-test.desktop').write_text(
+                '[Desktop Entry]\nType=Application\nName=Thundy integration receiver\n'
+                'NoDisplay=true\nTerminal=false\nExec=' + desktop_quote(sys.executable) + ' ' +
+                desktop_quote(receiver) + ' %u\nMimeType=x-scheme-handler/http;x-scheme-handler/https;\n')
+            (config_home / 'mimeapps.list').write_text('[Default Applications]\n'
+                'x-scheme-handler/http=thundy-test.desktop\nx-scheme-handler/https=thundy-test.desktop\n')
             tb = subprocess.Popen([str(args.thunderbird), '--no-remote', '--profile', str(profile),
                                    '--marionette', '--remote-allow-system-access', '-offline'],
-                                  env={**os.environ, 'DISPLAY': display}, stdout=log, stderr=subprocess.STDOUT)
+                                  env={**os.environ, 'DISPLAY': display, 'XDG_DATA_HOME': str(data_home),
+                                       'XDG_CONFIG_HOME': str(config_home)}, stdout=log, stderr=subprocess.STDOUT)
             cleanup.callback(stop, tb)
             def connect():
                 if tb.poll() is not None:
@@ -301,7 +409,13 @@ def main():
                     return None
             m = wait_for(connect, 30)
             try:
-                run_checks(m, args.xpi, out, display, report)
+                run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi)
+            except Exception:
+                try:
+                    m.screenshot(out / 'failure.png')
+                except (OSError, RuntimeError):
+                    pass
+                raise
             finally:
                 # Stop processes before TemporaryDirectory removes this run's profile.
                 if m:

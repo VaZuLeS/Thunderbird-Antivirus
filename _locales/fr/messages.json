@@ -987,7 +987,7 @@
     "message": "Consulter le journal des liens"
   },
   "auditScope": {
-    "message": "Enregistre les clics HTTP(S) interceptés par la protection des liens. Ouvert signifie transmis au navigateur par défaut, sans confirmer la visite du site. Les ouvertures par le menu contextuel natif ne sont pas enregistrées."
+    "message": "Consigne les clics HTTP(S) interceptés par la protection des liens. OPENED signifie que Thunderbird a accepté la demande d’ouverture sans signaler d’erreur. Cela ne confirme ni le lancement d’un navigateur par le système ni la visite du site. Les ouvertures via les menus contextuels natifs ne sont pas consignées."
   },
   "auditPrivacy": {
     "message": "Stockage local : 30 jours, 2 000 entrées ou 2 Mio maximum ; les plus anciennes sont supprimées. Les URL complètes peuvent contenir des données personnelles ou des jetons. Aucun envoi automatique. Les utilisateurs du profil peuvent modifier ou supprimer le journal ; ce n’est pas un audit central inviolable. Le score local utilise le lien et le contexte du message, pas un score fournisseur. Les motifs d’évaluation peuvent inclure des informations sur l’expéditeur ou le domaine."
@@ -1002,7 +1002,7 @@
     "message": "Toutes"
   },
   "auditOpened": {
-    "message": "Ouvert"
+    "message": "Ouverture demandée"
   },
   "auditAborted": {
     "message": "Annulé"

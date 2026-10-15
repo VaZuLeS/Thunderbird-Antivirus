@@ -1,3 +1,7 @@
+# Echte Sprach-, Upgrade- und OS-Prüfung — 15. Oktober 2026
+
+Sechs reale Thunderbird-140.17-ESR-Profile mit tatsächlicher EN-/DE-/FR-/ES-/IT-/PL-UI erfolgreich geprüft: Popup, Linkdialog, Audit, Einstellungen, Unternehmensprofile und Datenschutz; zusätzlich temporäres Paketupgrade 1.22.0 → 1.23.0 ohne Zustandsverlust oder zusätzlichen Wizard. Ein isolierter OS-Empfänger bestätigt die unveränderte URL. Der reale Negativfall zeigt: Thunderbirds API kann ohne OS-Zustellung erfolgreich zurückkehren. Deshalb heißt `OPENED` jetzt in allen sechs Sprachen „Öffnung angefordert“, auch in den Enterprise-Ansichten. Kein Nachweis eines Browserstarts oder Webseitenbesuchs. [Berichte, Screenshots, Wiederholung und Grenzen](THUNDERBIRD_LINUX_ABNAHME.md#fortsetzung-sprachen-upgrade-und-os-übergabe).
+
 # Reale Thunderbird-Linux-Teilabnahme — 15. Oktober 2026
 
 Thunderbird 140.17.0 ESR unter Xvfb tatsächlich gestartet und 1.23.0 im frischen Offlineprofil installiert. Wizard in sechs Sprachen, echte lokale Nachricht, gebrandeter Linkdialog, Abbrechen mit URL/Score im sichtbaren Audit, natives Popup (600 px Inhalt), gespeicherte Darstellung und native Hell-/Dunkel-Themes erfolgreich geprüft. Versionierter Python-Runner und eigener CI-Lauf ergänzt. [Messwerte, echte Screenshots und Grenzen](THUNDERBIRD_LINUX_ABNAHME.md). Windows/macOS, Screenreader, externe Browserübergabe, Update und produktive N06-Nachweise bleiben offen; keine neue getaggte Veröffentlichung.
