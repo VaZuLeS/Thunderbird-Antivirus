@@ -92,3 +92,7 @@ Die API `HeartbeatAlerts.verifyJournal(content, publicOptions)` und CLI `verify`
 Es werden keine URLs, Nachrichten, Zugangsdaten oder vollständigen Heartbeat-Envelopes ins Alarmjournal übernommen. Gerätekennungen und Verbrauchernamen können personenbezogen sein. Unternehmensrollen, Daten-/Aufbewahrungsfreigaben, produktive Rotation/Archivierung, tatsächliche Zustellung und reale Flottenabnahme bleiben offen. Der neue Node-Baustein liegt außerhalb des XPI; Extension 1.22.0 bleibt unverändert.
 
 Validierung: 836 Tests erfolgreich, darunter 13 neue Prüfungen für Fristgrenzen, Dämpfung/Eskalation/Erholung, Replay/Quellforks, Mehrgeräte-Atomizität, Kapazität, Uhrfehler, fsync-Recovery, Bestätigung und CLI/Public-Key-Reader. Vollständiges `npm run check` erfolgreich; 0 Lintfehler und 24 bestehende Thunderbird-Warnungen. Die 40 XPI-Dateien sind bytegleich mit v1.22.0.
+
+## Sechssprachige lokale Alarmreview
+
+N14 ergänzt `review --lang en|de|fr|es|it|pl` auf demselben Public-Key-Pfad. Die [Alarmreview](ENTERPRISE_HEARTBEAT_ALARMREVIEW.md) zeigt historischen Alarmzustand, letzten ausgewerteten Gerätemeldestand und Übernahmestatus getrennt, mit Filtern und vollständigem minimiertem Export. `verify` liefert dafür zusätzlich die letzten geprüften `devices` aus dem Alarmjournal. Dies ist keine erneute Prüfung der Original-Gerätesignaturen.

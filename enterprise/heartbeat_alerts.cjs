@@ -433,6 +433,7 @@ class HeartbeatAlerts {
         config.maxPending,
         config.source.registrations.length,
       ),
+      devices: Object.values(v.state.devices),
       notifications: Object.values(v.state.notifications),
       verification: {
         journalSignaturesVerified: true,

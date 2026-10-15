@@ -5,6 +5,7 @@ const fs = require("node:fs"),
 const { HeartbeatAlerts } = require("./heartbeat_alerts.cjs"),
   { exact } = require("./durable_journal.cjs"),
   { readJournal, publicKeyFile } = require("./storage_verify.cjs");
+const { reviewHtml, labels } = require("./heartbeat_alerts_review.cjs");
 function main() {
   const command = process.argv[2],
     args = process.argv.slice(3),
@@ -15,12 +16,14 @@ function main() {
       pending: [...worker, "out"],
       ack: [...worker, "notification-id", "consumer-id"],
       verify: ["config", "journal", "out"],
+      review: ["config", "journal", "out"],
     };
   const optional = {
     observe: ["expected-head", "expected-source-head"],
     pending: ["expected-head", "limit"],
     ack: ["expected-head"],
     verify: ["expected-head"],
+    review: ["expected-head", "lang"],
   };
   if (!Object.hasOwn(required, command))
     throw new Error("HEARTBEAT_ALERT_COMMAND_INVALID");
@@ -40,6 +43,8 @@ function main() {
   for (const k of ["expected-head", "expected-source-head"])
     if (options[k] !== undefined && !/^[a-f0-9]{64}$/.test(options[k]))
       throw new Error("HEARTBEAT_ALERT_HEAD_INVALID");
+  if (command === "review" && !Object.hasOwn(labels, options.lang || "en"))
+    throw new Error("HEARTBEAT_ALERT_LANGUAGE_INVALID");
   const limit = options.limit === undefined ? 100 : Number(options.limit);
   if (
     options.limit !== undefined &&
@@ -102,7 +107,7 @@ function main() {
     };
   let monitor, report;
   try {
-    if (command === "verify")
+    if (command === "verify" || command === "review")
       report = HeartbeatAlerts.verifyJournal(
         readJournal(options.journal, 32 * 1024 * 1024),
         { ...context, signerPublicKey },
@@ -156,10 +161,16 @@ function main() {
                 : { expectedSourceHead: options["expected-source-head"] },
             );
     }
-    fs.writeFileSync(options.out, JSON.stringify(report, null, 2) + "\n", {
-      flag: "wx",
-      mode: 0o600,
-    });
+    fs.writeFileSync(
+      options.out,
+      command === "review"
+        ? reviewHtml(report, options.lang || "en")
+        : JSON.stringify(report, null, 2) + "\n",
+      {
+        flag: "wx",
+        mode: 0o600,
+      },
+    );
     process.stdout.write("HEARTBEAT_ALERT_REPORT_CREATED\n");
   } finally {
     monitor?.close();
