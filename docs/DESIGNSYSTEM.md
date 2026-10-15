@@ -123,3 +123,5 @@ Chromium-Prüfung: 144 Panel-Layouts aus drei Ansichten und 48 Kombinationen von
 Die realen Profil-Einstellungen zeigen gespeicherte und ungespeicherte Auswahl, einen Feldvergleich, Verwerfen, Ladefehler und wiederholbares Speichern. Bestehende Auswahl wird nach Ladefehlern nicht mit Standardwerten überschrieben. Technische JSON-Vorschau und Prüfdaten sind gezielt aufklappbar; Daten- und Signaturwarnungen bleiben sichtbar.
 
 Automatisierte Gesamtprüfung: 919 Tests; keine Lintfehler, 24 bekannte Thunderbird-Warnungen. 324 wesentliche Browserlayouts über Einstellungen und Adminrenderer sowie zusätzliche Prüfungen der optimierten Assets. Echte SSO-/RBAC-/SEALED-Funktionen werden dadurch nicht ergänzt; UX06 bleibt von den bestehenden Enterprise-Kernaufgaben abhängig.
+
+N18 ergänzt die achte Offline-Adminansicht für [Kapazitätswarnungen](ENTERPRISE_KAPAZITAETSALARME.md). Sie bettet denselben Designkern ein und stellt Erholung, aktive Warnung und Übernahme getrennt dar; Originalhashes sind aufklappbar. Die ursprünglichen sieben Renderer und deren Prüfverträge bleiben erhalten.

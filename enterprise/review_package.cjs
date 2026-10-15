@@ -293,4 +293,4 @@ function verifyPackage(
     },
   };
 }
-module.exports = { createPackage, verifyPackage, MAX_BYTES };
+module.exports = { createPackage, verifyPackage, publicContext, MAX_BYTES };

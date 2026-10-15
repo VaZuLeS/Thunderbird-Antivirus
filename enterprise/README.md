@@ -93,3 +93,7 @@ Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbar
 ## Signierte minimale Testgeräte-Heartbeats
 
 `enterprise:heartbeats accept/verify` prüft Gerätebindung, Sequenzen und Zeitbeziehungen, nimmt minimale Meldungen dauerhaft an und erzeugt einen öffentlichen Statusreport. Der Reader prüft beide Signaturarten ohne Writer-Schlüssel. [Schema, Registry und Recovery](../docs/ENTERPRISE_HEARTBEATS.md). Explizite Testidentitäten; keine reale Flottenmessung oder Extension-/Brokerintegration.
+
+## Dauerhafte lokale Kapazitätswarnungen
+
+`enterprise:capacity-alerts observe/observe-package/pending/ack/verify/review` prüft Originaljournale oder Reviewpakete vor der Beobachtung und speichert minimierte Warnkandidaten mit Hysterese, Dämpfung, Erholung und bestätigter Übernahme. Die sechssprachige Public-Key-Ansicht nutzt den gemeinsamen Designkern. [CLI, Konfiguration, Wiederaufnahme und Prüfgrenzen](../docs/ENTERPRISE_KAPAZITAETSALARME.md). Keine automatische Löschung, externe Zustellung oder SEALED-Freigabe.

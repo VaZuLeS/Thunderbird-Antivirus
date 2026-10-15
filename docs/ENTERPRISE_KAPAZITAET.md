@@ -45,4 +45,4 @@ Die Berichtsdatei ist eine **unsignierte lokale Momentaufnahme**. Der Erstellung
 
 `npm run check` erfolgreich: 897 Tests, keine Lintfehler und 24 bekannte Lintwarnungen; Paketprüfung bestanden. Alle 40 Extension-Dateien (693.352 Bytes) sind bytegleich mit Tag v1.22.0.
 
-Der Baustein liegt außerhalb des XPI; Extension 1.22.0 bleibt unverändert. N18 sieht dauerhafte lokale Kapazitätswarnkandidaten mit Dämpfung, Erholung und bestätigter Übernahme vor. Produktive Archivierung und die [N06-Abnahme](ENTERPRISE_N06_ABNAHME.md) bleiben eigenständige offene Aufgaben.
+Der Baustein liegt außerhalb des XPI; Extension 1.22.0 bleibt unverändert. N18 ergänzt inzwischen [dauerhafte lokale Kapazitätswarnkandidaten](ENTERPRISE_KAPAZITAETSALARME.md) mit Dämpfung, Erholung, bestätigter Übernahme und sechssprachiger Public-Key-Adminansicht. Produktive Archivierung und die [N06-Abnahme](ENTERPRISE_N06_ABNAHME.md) bleiben eigenständige offene Aufgaben.
