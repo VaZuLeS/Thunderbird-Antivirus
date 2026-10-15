@@ -1,10 +1,9 @@
 "use strict";
 const fs = require("node:fs"),
-  path = require("node:path"),
   crypto = require("node:crypto");
 const { HeartbeatAlerts } = require("./heartbeat_alerts.cjs"),
-  { exact } = require("./durable_journal.cjs"),
-  { readJournal, publicKeyFile } = require("./storage_verify.cjs");
+  { readJournal } = require("./storage_verify.cjs");
+const { loadHeartbeatPublicConfig } = require("./heartbeat_public_config.cjs");
 const { reviewHtml, labels } = require("./heartbeat_alerts_review.cjs");
 function main() {
   const command = process.argv[2],
@@ -61,52 +60,11 @@ function main() {
     throw new Error("HEARTBEAT_ALERT_LIMIT_INVALID");
   if (options.out && fs.existsSync(options.out))
     throw new Error("HEARTBEAT_ALERT_OUTPUT_EXISTS");
-  const json = (file, max) =>
-    JSON.parse(readJournal(file, max).toString("utf8"));
-  const c = json(options.config, 65536);
-  if (
-    !exact(
-      c,
-      "schemaVersion,signerKeyId,signerPublicKeyFile,heartbeatConfigFile,cooldownMs,maxSnapshotAgeMs,maxPending",
-    ) ||
-    c.schemaVersion !== 1
-  )
-    throw new Error("HEARTBEAT_ALERT_CONFIG_INVALID");
-  for (const k of ["signerPublicKeyFile", "heartbeatConfigFile"])
-    if (typeof c[k] !== "string" || !path.isAbsolute(c[k]))
-      throw new Error("HEARTBEAT_ALERT_CONFIG_PATH_INVALID");
-  const h = json(c.heartbeatConfigFile, 65536);
-  if (
-    !exact(
-      h,
-      "schemaVersion,organizationId,signerKeyId,signerPublicKeyFile,registryFile,minimumExtensionVersion,lateAfterMs,unknownAfterMs,maxClockSkewMs",
-    ) ||
-    h.schemaVersion !== 1
-  )
-    throw new Error("HEARTBEAT_CONFIG_INVALID");
-  for (const k of ["signerPublicKeyFile", "registryFile"])
-    if (typeof h[k] !== "string" || !path.isAbsolute(h[k]))
-      throw new Error("HEARTBEAT_CONFIG_PATH_INVALID");
-  const registry = json(h.registryFile, 1024 * 1024);
-  if (!exact(registry, "registrations"))
-    throw new Error("HEARTBEAT_REGISTRY_INVALID");
-  const source = {
-    organizationId: h.organizationId,
-    registrations: registry.registrations,
-    minimumExtensionVersion: h.minimumExtensionVersion,
-    lateAfterMs: h.lateAfterMs,
-    unknownAfterMs: h.unknownAfterMs,
-    maxClockSkewMs: h.maxClockSkewMs,
-    signerKeyId: h.signerKeyId,
-    signerPublicKey: publicKeyFile(h.signerPublicKeyFile),
-  };
-  const signerPublicKey = publicKeyFile(c.signerPublicKeyFile),
+  const { signerPublicKey, ...baseContext } = loadHeartbeatPublicConfig(
+      options.config,
+    ),
     context = {
-      source,
-      signerKeyId: c.signerKeyId,
-      cooldownMs: c.cooldownMs,
-      maxSnapshotAgeMs: c.maxSnapshotAgeMs,
-      maxPending: c.maxPending,
+      ...baseContext,
       ...(options["expected-head"] === undefined
         ? {}
         : { expectedHead: options["expected-head"] }),

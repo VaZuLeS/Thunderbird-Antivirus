@@ -56,3 +56,7 @@ Die Seite arbeitet offline ohne externe Ressourcen, Tracking oder Netzwerkanfrag
 Die Ansicht liegt außerhalb des XPI; Extension 1.22.0 bleibt unverändert. Produktive Flottenintegration, SSO, Alarmtransport und SEALED bleiben offen.
 
 Validierung: 847 Tests erfolgreich, darunter 11 neue Prüfungen für alle sechs Sprachen, historische/letzte Meldestände, Filter/Pagination, Datenminimierung, leere Journale, Signatur-/Pinfehler und CLI-Schutz. 24 Chromium-Layouts einschließlich Tastaturdetails und vollständiger Downloads geprüft. Vollständiges `npm run check` erfolgreich; 0 Lintfehler und 24 bestehende Thunderbird-Warnungen. Alle 40 XPI-Dateien sind bytegleich mit v1.22.0.
+
+## Transportable Originaljournale
+
+N16 ergänzt ein [lokales Reviewpaket](ENTERPRISE_REVIEWPAKET.md). Die Paketreview prüft Dateihashes, eine separat vertrauenswürdige öffentliche Konfiguration und beide Originaljournale erneut. Die Ansicht zeigt Paket-/Manifesthash und externen Paket-Pinstatus in allen sechs Sprachen; der minimierte Download übernimmt keine Originaldateien.

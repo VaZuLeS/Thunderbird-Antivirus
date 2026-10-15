@@ -4,6 +4,18 @@ const { need, iso, hex, identifier } = require("./durable_journal.cjs");
 const base = require("./heartbeats_review.cjs").labels;
 const translations = {
   en: {
+    packageTitle: "Verified review package",
+    packageStatus:
+      "File hashes verified and public configuration matched against a separately trusted reference. Package files were not extracted.",
+    packageHash: "Package SHA-256",
+    packageManifest: "Manifest SHA-256",
+    packagePin: "External package hash check",
+    packagePinned: "Independently supplied package hash matches",
+    packageUnpinned: "No independent package hash supplied",
+    packageEntries: "Verified package entries",
+    packageHeadsPinned:
+      "No separate journal head pin; the external package hash binds the complete package content",
+
     scopeProofVerified:
       "Alert and original device journals verified; historical report states matched.",
     proofVerified:
@@ -72,6 +84,18 @@ const translations = {
     proofPin: "Alert journal head check",
   },
   de: {
+    packageTitle: "Geprüftes Reviewpaket",
+    packageStatus:
+      "Dateihashes geprüft und öffentliche Konfiguration mit einer separat vertrauenswürdigen Vorgabe abgeglichen. Paketdateien wurden nicht entpackt.",
+    packageHash: "Paket-SHA-256",
+    packageManifest: "Manifest-SHA-256",
+    packagePin: "Externe Paket-Hashprüfung",
+    packagePinned: "Unabhängig vorgegebener Paket-Hash stimmt überein",
+    packageUnpinned: "Kein unabhängiger Paket-Hash vorgegeben",
+    packageEntries: "Geprüfte Paketeinträge",
+    packageHeadsPinned:
+      "Kein separater Journal-Endhash-Pin; der externe Paket-Hash bindet den vollständigen Paketinhalt",
+
     scopeProofVerified:
       "Alarm- und Original-Gerätejournal geprüft; historische Meldestände abgeglichen.",
     proofVerified:
@@ -140,6 +164,18 @@ const translations = {
     proofPin: "Alarmjournal-Endhashprüfung",
   },
   fr: {
+    packageTitle: "Paquet de revue vérifié",
+    packageStatus:
+      "Empreintes des fichiers vérifiées et configuration publique comparée à une référence de confiance distincte. Aucun fichier du paquet n’a été extrait.",
+    packageHash: "SHA-256 du paquet",
+    packageManifest: "SHA-256 du manifeste",
+    packagePin: "Vérification externe de l’empreinte du paquet",
+    packagePinned: "L’empreinte indépendante fournie correspond au paquet",
+    packageUnpinned: "Aucune empreinte indépendante du paquet fournie",
+    packageEntries: "Entrées du paquet vérifiées",
+    packageHeadsPinned:
+      "Aucune empreinte de fin distincte ; l’empreinte externe du paquet lie tout son contenu",
+
     scopeProofVerified:
       "Journaux des alertes et des appareils vérifiés ; états historiques des rapports concordants.",
     proofVerified:
@@ -210,6 +246,19 @@ const translations = {
     proofPin: "Vérification de l’empreinte du journal d’alertes",
   },
   es: {
+    packageTitle: "Paquete de revisión verificado",
+    packageStatus:
+      "Hashes de archivos verificados y configuración pública contrastada con una referencia de confianza separada. No se extrajeron archivos del paquete.",
+    packageHash: "SHA-256 del paquete",
+    packageManifest: "SHA-256 del manifiesto",
+    packagePin: "Verificación externa del hash del paquete",
+    packagePinned:
+      "El hash independiente proporcionado coincide con el paquete",
+    packageUnpinned: "Sin hash independiente del paquete",
+    packageEntries: "Entradas del paquete verificadas",
+    packageHeadsPinned:
+      "Sin hash final separado del registro; el hash externo del paquete vincula todo su contenido",
+
     scopeProofVerified:
       "Registros de alertas y de dispositivos originales verificados; estados históricos de informes contrastados.",
     proofVerified:
@@ -279,6 +328,18 @@ const translations = {
     proofPin: "Verificación del hash del registro de alertas",
   },
   it: {
+    packageTitle: "Pacchetto di revisione verificato",
+    packageStatus:
+      "Hash dei file verificati e configurazione pubblica confrontata con un riferimento attendibile separato. Nessun file del pacchetto è stato estratto.",
+    packageHash: "SHA-256 del pacchetto",
+    packageManifest: "SHA-256 del manifesto",
+    packagePin: "Verifica esterna dell’hash del pacchetto",
+    packagePinned: "L’hash indipendente fornito corrisponde al pacchetto",
+    packageUnpinned: "Nessun hash indipendente del pacchetto fornito",
+    packageEntries: "Voci del pacchetto verificate",
+    packageHeadsPinned:
+      "Nessun hash finale separato del registro; l’hash esterno del pacchetto vincola tutto il contenuto",
+
     scopeProofVerified:
       "Registri degli avvisi e dei dispositivi originali verificati; stati storici dei rapporti confrontati.",
     proofVerified:
@@ -348,6 +409,18 @@ const translations = {
     proofPin: "Verifica dell’hash del registro degli avvisi",
   },
   pl: {
+    packageTitle: "Sprawdzony pakiet przeglądu",
+    packageStatus:
+      "Sprawdzono skróty plików i porównano konfigurację publiczną z osobnym zaufanym wzorcem. Nie wypakowano plików pakietu.",
+    packageHash: "SHA-256 pakietu",
+    packageManifest: "SHA-256 manifestu",
+    packagePin: "Zewnętrzne sprawdzenie skrótu pakietu",
+    packagePinned: "Podany niezależny skrót odpowiada pakietowi",
+    packageUnpinned: "Nie podano niezależnego skrótu pakietu",
+    packageEntries: "Sprawdzone wpisy pakietu",
+    packageHeadsPinned:
+      "Brak osobnego skrótu końcowego dziennika; zewnętrzny skrót pakietu wiąże całą jego zawartość",
+
     scopeProofVerified:
       "Sprawdzono oryginalne dzienniki alertów i urządzeń; porównano historyczne stany raportów.",
     proofVerified:
@@ -523,6 +596,30 @@ function project(report) {
       report.verification.sourceDeviceEvidenceReverified === false,
       "HEARTBEAT_ALERT_REVIEW_INVALID",
     );
+  let packageVerification = null;
+  if (report.packageVerification !== undefined) {
+    const p = report.packageVerification;
+    need(
+      sourceComparison !== null &&
+        p?.schemaVersion === 1 &&
+        p.kind === "thundy-review-package-verification" &&
+        hex(p.packageHash) &&
+        typeof p.packageHashPinned === "boolean" &&
+        p.externalConfigurationMatched === true &&
+        p.entryHashesVerified === true &&
+        p.entryCount === 3 &&
+        hex(p.manifestHash) &&
+        p.embeddedKeysTrustedAutomatically === false &&
+        p.extracted === false &&
+        p.sealed === false,
+      "HEARTBEAT_ALERT_REVIEW_INVALID",
+    );
+    packageVerification = Object.fromEntries(
+      "schemaVersion,kind,packageHash,packageHashPinned,externalConfigurationMatched,entryHashesVerified,entryCount,manifestHash,embeddedKeysTrustedAutomatically,extracted,sealed"
+        .split(",")
+        .map((k) => [k, p[k]]),
+    );
+  }
   const devices = report.devices.map((d) => {
     need(
       identifier(d.keyId) &&
@@ -623,6 +720,7 @@ function project(report) {
     sourceHead: report.sourceHead,
     sourceActionCount: report.sourceActionCount,
     ...(sourceComparison === null ? {} : { sourceComparison }),
+    ...(packageVerification === null ? {} : { packageVerification }),
     devices,
     notifications,
   };
@@ -821,7 +919,11 @@ function reviewHtml(report, language = "en") {
         [l.sourceFingerprint, data.sourceComparison.sourceSignerFingerprint],
         [
           l.sourcePinStatus,
-          data.sourceComparison.sourceHeadPinned ? l.pinned : l.unpinned,
+          data.sourceComparison.sourceHeadPinned
+            ? l.pinned
+            : data.packageVerification?.packageHashPinned
+              ? l.packageHeadsPinned
+              : l.unpinned,
         ],
         [l.sourceObservations, data.sourceComparison.observationCount],
         [
@@ -833,6 +935,24 @@ function reviewHtml(report, language = "en") {
       ]
         .map(([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`)
         .join("")}</dl></section>`;
+  const packageDetails =
+    data.packageVerification === undefined
+      ? ""
+      : `<section><h2>${esc(l.packageTitle)}</h2><p>${esc(l.packageStatus)}</p><dl>${[
+          [l.packageHash, data.packageVerification.packageHash],
+          [l.packageManifest, data.packageVerification.manifestHash],
+          [
+            l.packagePin,
+            data.packageVerification.packageHashPinned
+              ? l.packagePinned
+              : l.packageUnpinned,
+          ],
+          [l.packageEntries, data.packageVerification.entryCount],
+        ]
+          .map(
+            ([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`,
+          )
+          .join("")}</dl></section>`;
   const select = (id, label, values, text) =>
     `<label>${esc(label)}<select id="${id}"><option value="">${esc(l.all)}</option>${values.map((v, i) => `<option value="${v}">${esc(l[text[i]])}</option>`).join("")}</select></label>`;
   const deviceCounts =
@@ -843,6 +963,6 @@ function reviewHtml(report, language = "en") {
       )
       .join("") +
     `<li><strong>${data.notEvaluatedDevices}</strong> ${esc(l.notEvaluated)}</li>`;
-  return `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'"><title>Thundy AV · ${esc(l.title)}</title><style nonce="${nonce}">${css}</style></head><body><main><header><p class="brand">THUNDY AV</p><h1>${esc(l.title)}</h1><p>${esc(l.intro)}</p><p>${esc(l.caveat)}</p><p>${esc(scopeProof)}</p><dl><dt>${esc(l.reviewed)}</dt><dd>${esc(data.reviewedAt)}</dd><dt>${esc(l.snapshot)}</dt><dd>${esc(data.evaluatedAt ?? l.notEvaluated)}</dd><dt>${esc(l.registered)}</dt><dd>${data.registeredDevices}</dd></dl><ul><li><strong>${data.pending}</strong> ${esc(l.pending)}</li><li><strong>${data.acknowledged}</strong> ${esc(l.acknowledged)}</li></ul><h2>${esc(l.devices)}</h2><ul>${deviceCounts}</ul></header><section><h2>${esc(l.notifications)}</h2><div class="filters"><label>${esc(l.search)}<input id="search" type="search" autocomplete="off"></label>${select("delivery", l.delivery, delivery, deliveryLabels)}${select("kind", l.kind, codes, codeLabels)}${select("severity", l.severity, severities, severities)}${select("freshness", l.latest, states, stateLabels)}</div><p id="results" role="status" aria-live="polite"></p><div id="cards"></div><div class="actions"><button id="previous" type="button">${esc(l.previous)}</button><button id="next" type="button">${esc(l.next)}</button><button id="download" type="button">${esc(l.download)}</button></div></section>${sourceDetails}<footer><p>${esc(proof)}</p><dl><dt>${esc(l.proofPin)}</dt><dd>${esc(data.proof.headPinned ? l.pinned : l.unpinned)}</dd><dt>${esc(l.head)}</dt><dd>${esc(data.proof.journalHead ?? l.notReported)}</dd><dt>${esc(l.fingerprint)}</dt><dd>${esc(data.proof.signerFingerprint)}</dd></dl></footer></main><script nonce="${nonce}">(${client.toString()})(${json(data)},${json(l)},${json(language)},${json(states)},${json(stateLabels)},${json(codes)},${json(codeLabels)},${json(delivery)},${json(deliveryLabels)});</script></body></html>`;
+  return `<!doctype html><html lang="${language}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; base-uri 'none'; form-action 'none'"><title>Thundy AV · ${esc(l.title)}</title><style nonce="${nonce}">${css}</style></head><body><main><header><p class="brand">THUNDY AV</p><h1>${esc(l.title)}</h1><p>${esc(l.intro)}</p><p>${esc(l.caveat)}</p><p>${esc(scopeProof)}</p><dl><dt>${esc(l.reviewed)}</dt><dd>${esc(data.reviewedAt)}</dd><dt>${esc(l.snapshot)}</dt><dd>${esc(data.evaluatedAt ?? l.notEvaluated)}</dd><dt>${esc(l.registered)}</dt><dd>${data.registeredDevices}</dd></dl><ul><li><strong>${data.pending}</strong> ${esc(l.pending)}</li><li><strong>${data.acknowledged}</strong> ${esc(l.acknowledged)}</li></ul><h2>${esc(l.devices)}</h2><ul>${deviceCounts}</ul></header><section><h2>${esc(l.notifications)}</h2><div class="filters"><label>${esc(l.search)}<input id="search" type="search" autocomplete="off"></label>${select("delivery", l.delivery, delivery, deliveryLabels)}${select("kind", l.kind, codes, codeLabels)}${select("severity", l.severity, severities, severities)}${select("freshness", l.latest, states, stateLabels)}</div><p id="results" role="status" aria-live="polite"></p><div id="cards"></div><div class="actions"><button id="previous" type="button">${esc(l.previous)}</button><button id="next" type="button">${esc(l.next)}</button><button id="download" type="button">${esc(l.download)}</button></div></section>${sourceDetails}${packageDetails}<footer><p>${esc(proof)}</p><dl><dt>${esc(l.proofPin)}</dt><dd>${esc(data.proof.headPinned ? l.pinned : data.packageVerification?.packageHashPinned ? l.packageHeadsPinned : l.unpinned)}</dd><dt>${esc(l.head)}</dt><dd>${esc(data.proof.journalHead ?? l.notReported)}</dd><dt>${esc(l.fingerprint)}</dt><dd>${esc(data.proof.signerFingerprint)}</dd></dl></footer></main><script nonce="${nonce}">(${client.toString()})(${json(data)},${json(l)},${json(language)},${json(states)},${json(stateLabels)},${json(codes)},${json(codeLabels)},${json(delivery)},${json(deliveryLabels)});</script></body></html>`;
 }
 module.exports = { reviewHtml, project, labels };
