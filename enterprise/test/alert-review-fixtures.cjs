@@ -6,7 +6,7 @@ const fs = require("node:fs"),
 const { Heartbeats } = require("../heartbeats.cjs"),
   { HeartbeatAlerts } = require("../heartbeat_alerts.cjs"),
   { signed } = require("../ledger.cjs");
-function fixture(empty = false) {
+function fixture(empty = false, { maxPending = 1000 } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "thundy-alert-review-")),
     writer = crypto.generateKeyPairSync("ed25519"),
     alerts = crypto.generateKeyPairSync("ed25519"),
@@ -48,7 +48,7 @@ function fixture(empty = false) {
       signerKeyId: "alerts-writer",
       cooldownMs: 900000,
       maxSnapshotAgeMs: 300000,
-      maxPending: 1000,
+      maxPending,
     },
     monitor = new HeartbeatAlerts({
       ...context,

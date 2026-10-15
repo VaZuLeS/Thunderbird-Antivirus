@@ -1,7 +1,5 @@
 "use strict";
-const fs = require("node:fs"),
-  path = require("node:path"),
-  crypto = require("node:crypto");
+const fs = require("node:fs");
 const {
     createPackage,
     verifyPackage,
@@ -10,31 +8,7 @@ const {
   { loadHeartbeatPublicConfig } = require("./heartbeat_public_config.cjs"),
   { readJournal } = require("./storage_verify.cjs"),
   { reviewHtml, labels } = require("./heartbeat_alerts_review.cjs");
-function writeExclusive(file, content) {
-  const parent = path.dirname(path.resolve(file)),
-    temporary = path.join(
-      parent,
-      ".thundy-review-" + crypto.randomUUID() + ".tmp",
-    );
-  let fd;
-  try {
-    fd = fs.openSync(temporary, "wx", 0o600);
-    fs.writeFileSync(fd, content);
-    fs.fsyncSync(fd);
-    fs.closeSync(fd);
-    fd = undefined;
-    fs.linkSync(temporary, file);
-    const dir = fs.openSync(parent, "r");
-    try {
-      fs.fsyncSync(dir);
-    } finally {
-      fs.closeSync(dir);
-    }
-  } finally {
-    if (fd !== undefined) fs.closeSync(fd);
-    if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
-  }
-}
+const { writeExclusive } = require("./write_exclusive.cjs");
 function main() {
   const command = process.argv[2],
     args = process.argv.slice(3),

@@ -82,6 +82,6 @@ Die CLI schreibt neue Ausgaben zunächst in eine private temporäre Datei im Zie
 
 Gesamtpaket höchstens 92 MiB. Die Journalgrenzen aus N15 bleiben bestehen: 10.000 Aktionen je Journal, 10.000 Beobachtungen, 1.000 Geräte und insgesamt 200.000 Gerätestandsvergleiche. Die HTML-Grenze von 10.000 Kandidaten gilt zusätzlich. Überschreitung wird ausdrücklich abgewiesen; keine stille Kürzung.
 
-Der neue Baustein liegt außerhalb des XPI; Extension 1.22.0 bleibt unverändert. Unternehmensrollen, Live-Flottenmessung, Datentransfer-/Retentionfreigaben und SEALED bleiben offen. Als nächster lokaler Schritt ist N17 zur Kapazitätsprüfung vor den Journal-/Queuegrenzen geplant.
+Der neue Baustein liegt außerhalb des XPI; Extension 1.22.0 bleibt unverändert. Unternehmensrollen, Live-Flottenmessung, Datentransfer-/Retentionfreigaben und SEALED bleiben offen. N17 ergänzt die [lokale Kapazitätsprüfung](ENTERPRISE_KAPAZITAET.md) vor den Reader-/Paketgrenzen und der konfigurierten Pending-Grenze.
 
 Validierung: 883 Tests erfolgreich, darunter 18 neue Prüfungen für deterministische Originalbytes, verpflichtenden externen Trust-Abgleich, private/fremde Schlüssel, Traversal-/Duplikatpfade, kanonisches JSON/Base64, Dateihashes/Signaturen, Rollback-Pins, Limits, sechs Sprachen und CLI-Ausgabeschutz. 48 Chromium-Kombinationen einschließlich vollständiger minimierter Downloads erfolgreich. Vollständiges `npm run check` erfolgreich; 0 Lintfehler und 24 bestehende Thunderbird-Warnungen. Alle 40 XPI-Dateien sind bytegleich mit v1.22.0.

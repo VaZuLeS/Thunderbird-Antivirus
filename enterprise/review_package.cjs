@@ -3,13 +3,18 @@ const crypto = require("node:crypto"),
   canonicalize = require("canonicalize");
 const { need, exact, hex, clone } = require("./durable_journal.cjs"),
   { HeartbeatAlerts } = require("./heartbeat_alerts.cjs");
+const reviewLimits = require("./review_limits.cjs");
 const paths = [
     "alarms/actions.jsonl",
     "heartbeats/actions.jsonl",
     "trust/public-context.json",
   ],
-  limits = [32 * 1024 * 1024, 32 * 1024 * 1024, 2 * 1024 * 1024],
-  MAX_BYTES = 92 * 1024 * 1024;
+  limits = [
+    reviewLimits.journalBytes,
+    reviewLimits.journalBytes,
+    reviewLimits.contextBytes,
+  ],
+  MAX_BYTES = reviewLimits.packageBytes;
 const sha256 = (bytes) =>
   crypto.createHash("sha256").update(bytes).digest("hex");
 const encode = (value) => Buffer.from(canonicalize(value) + "\n");
@@ -279,6 +284,12 @@ function verifyPackage(
       embeddedKeysTrustedAutomatically: false,
       extracted: false,
       sealed: false,
+      verifiedBytes: {
+        package: raw.length,
+        alarm: decoded[0].length,
+        source: decoded[1].length,
+        publicContext: decoded[2].length,
+      },
     },
   };
 }

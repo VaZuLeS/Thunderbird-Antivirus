@@ -11,6 +11,7 @@ const {
 } = require("./durable_journal.cjs");
 const { deviceRegistry, verifyEnvelope, hash } = require("./ledger.cjs");
 const { compareVersions } = require("./contracts.cjs");
+const reviewLimits = require("./review_limits.cjs");
 const uuid = (v) =>
   typeof v === "string" &&
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
@@ -380,9 +381,13 @@ class Heartbeats {
       typeof content === "string" || Buffer.isBuffer(content),
       "JOURNAL_INPUT_INVALID",
     );
-    need(Buffer.byteLength(content) <= 32 * 1024 * 1024, "JOURNAL_CAPACITY");
     need(
-      Array.isArray(checkpoints) && checkpoints.length <= 10000,
+      Buffer.byteLength(content) <= reviewLimits.journalBytes,
+      "JOURNAL_CAPACITY",
+    );
+    need(
+      Array.isArray(checkpoints) &&
+        checkpoints.length <= reviewLimits.observations,
       "HEARTBEAT_HISTORY_CAPACITY",
     );
     let comparisons = 0;
@@ -391,7 +396,7 @@ class Heartbeats {
         exact(c, "actionCount,head,evaluatedAt,devices") &&
           Number.isSafeInteger(c.actionCount) &&
           c.actionCount >= 0 &&
-          c.actionCount <= 10000 &&
+          c.actionCount <= reviewLimits.journalActions &&
           (c.actionCount === 0 ? c.head === null : hex(c.head)) &&
           iso(c.evaluatedAt) &&
           Array.isArray(c.devices) &&
@@ -399,7 +404,10 @@ class Heartbeats {
         "HEARTBEAT_HISTORY_CHECKPOINT_INVALID",
       );
       comparisons += c.devices.length;
-      need(comparisons <= 200000, "HEARTBEAT_HISTORY_CAPACITY");
+      need(
+        comparisons <= reviewLimits.deviceComparisons,
+        "HEARTBEAT_HISTORY_CAPACITY",
+      );
     }
     const config = setup({
       organizationId,
@@ -452,6 +460,8 @@ class Heartbeats {
     compare({ latest: {} }, 0);
     const verified = DurableJournal.verify(content, {
       ...options,
+      maxBytes: reviewLimits.journalBytes,
+      maxActions: reviewLimits.journalActions,
       scope: config.scope,
       initialState: { latest: {} },
       reducer: (state, record) => {
