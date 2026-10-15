@@ -1089,7 +1089,7 @@
     "message": "Esportazione salvata."
   },
   "auditRiskyOpened": {
-    "message": "Aperto con rischio elevato"
+    "message": "Apertura richiesta con rischio elevato"
   },
   "auditExportFailed": {
     "message": "Esportazione non riuscita o annullata."

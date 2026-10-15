@@ -1,0 +1,2110 @@
+{
+  "scope": "Permanent profile installations; six locales; two clean restarts per locale; unsigned XPIs; isolated Linux profiles",
+  "reports": [
+    {
+      "passed": true,
+      "scope": "Linux X11 GUI; synthetic plaintext; offline; no API mocks",
+      "startedAt": "2026-10-15T16:50:01Z",
+      "xpiSha256": "036f8efc00e74e11217092df5ff71b3d0e6af25646e9b0c24fdba7fa3aa257be",
+      "binarySha256": "66b785f363a085b99b1e44f4659147da77760e118dc1d81c06a9f449c087b038",
+      "previousInstallation": {
+        "extensionVersion": "1.22.0",
+        "client": {
+          "sessionId": "a1b5319b-10e4-4521-9b9a-13b555a52fe6",
+          "capabilities": {
+            "acceptInsecureCerts": false,
+            "browserName": "thunderbird",
+            "browserVersion": "140.17.0",
+            "platformName": "linux",
+            "unhandledPromptBehavior": "dismiss and notify",
+            "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+            "moz:buildID": "20260929234105",
+            "moz:headless": false,
+            "moz:platformVersion": "6.18.44",
+            "moz:shutdownTimeout": 60000,
+            "pageLoadStrategy": "normal",
+            "timeouts": {
+              "implicit": 0,
+              "pageLoad": 300000,
+              "script": 30000
+            },
+            "setWindowRect": true,
+            "strictFileInteractability": false,
+            "moz:accessibilityChecks": false,
+            "moz:webdriverClick": true,
+            "moz:windowless": false,
+            "capabilities": {
+              "alwaysMatch": {
+                "acceptInsecureCerts": false
+              }
+            },
+            "proxy": {}
+          }
+        },
+        "appLocale": "en-US",
+        "uiLanguage": "en-US",
+        "wizardVersion": "1.22.0",
+        "wizardLanguages": [
+          {
+            "language": "en",
+            "title": "Set up Thundy AV"
+          },
+          {
+            "language": "de",
+            "title": "Thundy AV einrichten"
+          },
+          {
+            "language": "fr",
+            "title": "Configurer Thundy AV"
+          },
+          {
+            "language": "es",
+            "title": "Configurar Thundy AV"
+          },
+          {
+            "language": "it",
+            "title": "Configura Thundy AV"
+          },
+          {
+            "language": "pl",
+            "title": "Skonfiguruj Thundy AV"
+          }
+        ],
+        "wizardSaved": {
+          "onboardingState": {
+            "schemaVersion": 1,
+            "status": "completed",
+            "completedAt": "2026-10-15T16:50:04.219Z"
+          },
+          "timeOfClickProtection": true
+        },
+        "linkDialog": {
+          "text": "T\nThundy AV\nCheck before opening\n\nDestination website\n\ndestination.example.invalid\n\nShow full link address\n\nThis link could not be checked. Opening it may be risky.\n\nLocal score (link and message): 0 / 100\n\nOnly available scan results can be shown. Missing checks do not mean a link is safe.\n\nCancel\nOpen link anyway",
+          "width": 520,
+          "focus": "Cancel",
+          "url": "https://destination.example.invalid/test?source=thundy"
+        },
+        "nativePopup": {
+          "panelWidth": 602,
+          "contentWidth": 600,
+          "language": "en",
+          "heading": "Message security overview"
+        },
+        "osHandoff": {
+          "argv": [
+            "https://destination.example.invalid/test?source=thundy"
+          ]
+        },
+        "blockedOsDispatch": {
+          "apiAccepted": true,
+          "additionalReceiverCalls": 0,
+          "observationSeconds": 1,
+          "protocolPolicy": false
+        },
+        "auditRecord": {
+          "id": "db67d1cc-6310-430c-ac0c-1a7754bcf088",
+          "clickedAt": 1792083004765,
+          "decidedAt": 1792083004986,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083004788,
+          "reasonDetails": [],
+          "checkedAt": 1792083004793,
+          "providerReasons": []
+        },
+        "openedAuditRecord": {
+          "id": "d3b6a6b7-0133-4205-9532-8e0237630e71",
+          "clickedAt": 1792083005493,
+          "decidedAt": 1792083005636,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083005518,
+          "reasonDetails": [],
+          "checkedAt": 1792083005525,
+          "providerReasons": []
+        },
+        "blockedOsAuditRecord": {
+          "id": "ec0f2590-bafa-4f64-9ac9-d56625629095",
+          "clickedAt": 1792083005725,
+          "decidedAt": 1792083005840,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083005745,
+          "reasonDetails": [],
+          "checkedAt": 1792083005748,
+          "providerReasons": []
+        }
+      },
+      "client": {
+        "sessionId": "a1b5319b-10e4-4521-9b9a-13b555a52fe6",
+        "capabilities": {
+          "acceptInsecureCerts": false,
+          "browserName": "thunderbird",
+          "browserVersion": "140.17.0",
+          "platformName": "linux",
+          "unhandledPromptBehavior": "dismiss and notify",
+          "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+          "moz:buildID": "20260929234105",
+          "moz:headless": false,
+          "moz:platformVersion": "6.18.44",
+          "moz:shutdownTimeout": 60000,
+          "pageLoadStrategy": "normal",
+          "timeouts": {
+            "implicit": 0,
+            "pageLoad": 300000,
+            "script": 30000
+          },
+          "setWindowRect": true,
+          "strictFileInteractability": false,
+          "moz:accessibilityChecks": false,
+          "moz:webdriverClick": true,
+          "moz:windowless": false,
+          "capabilities": {
+            "alwaysMatch": {
+              "acceptInsecureCerts": false
+            }
+          },
+          "proxy": {}
+        }
+      },
+      "extensionVersion": "1.23.0",
+      "previousXpiSha256": "4d8003aed95719524524ae18a97be227991d551c2c23ae51e70f5dd85f3663cd",
+      "previousRestart": {
+        "addon": {
+          "version": "1.22.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "wizardAbsent": true,
+        "uiLanguage": "en-US"
+      },
+      "currentRestart": {
+        "addon": {
+          "version": "1.23.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "uiLanguage": "en-US",
+        "wizardAbsent": true,
+        "auditRecordsPreserved": 3
+      },
+      "dialogTitleAfterRestart": "Check before opening",
+      "newRecordAfterRestart": {
+        "id": "984f0bdc-2da7-4fe7-b4ee-c73f75d42161",
+        "clickedAt": 1792083012126,
+        "decidedAt": 1792083012239,
+        "messageId": 1,
+        "url": "https://destination.example.invalid/test?source=thundy",
+        "score": 0,
+        "scoreSource": "local-message-and-link",
+        "scoreAtDecision": 0,
+        "verdict": "UNKNOWN",
+        "verdictAtDecision": "UNKNOWN",
+        "providerAtDecision": "Hybrid Analysis",
+        "provider": "Hybrid Analysis",
+        "reasons": [],
+        "outcome": "ABORTED",
+        "cancelReason": "cancel",
+        "openAttempts": 0,
+        "extensionVersion": "1.23.0",
+        "scoredAt": 1792083012134,
+        "reasonDetails": [],
+        "checkedAt": 1792083012141,
+        "providerReasons": []
+      },
+      "finalAuditRecords": [
+        {
+          "id": "984f0bdc-2da7-4fe7-b4ee-c73f75d42161",
+          "clickedAt": 1792083012126,
+          "decidedAt": 1792083012239,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.23.0",
+          "scoredAt": 1792083012134,
+          "reasonDetails": [],
+          "checkedAt": 1792083012141,
+          "providerReasons": []
+        },
+        {
+          "id": "ec0f2590-bafa-4f64-9ac9-d56625629095",
+          "clickedAt": 1792083005725,
+          "decidedAt": 1792083005840,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083005745,
+          "reasonDetails": [],
+          "checkedAt": 1792083005748,
+          "providerReasons": []
+        },
+        {
+          "id": "d3b6a6b7-0133-4205-9532-8e0237630e71",
+          "clickedAt": 1792083005493,
+          "decidedAt": 1792083005636,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083005518,
+          "reasonDetails": [],
+          "checkedAt": 1792083005525,
+          "providerReasons": []
+        },
+        {
+          "id": "db67d1cc-6310-430c-ac0c-1a7754bcf088",
+          "clickedAt": 1792083004765,
+          "decidedAt": 1792083004986,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083004788,
+          "reasonDetails": [],
+          "checkedAt": 1792083004793,
+          "providerReasons": []
+        }
+      ],
+      "gracefulRestarts": 2,
+      "finishedAt": "2026-10-15T16:50:12Z"
+    },
+    {
+      "passed": true,
+      "scope": "Linux X11 GUI; synthetic plaintext; offline; no API mocks",
+      "startedAt": "2026-10-15T16:50:12Z",
+      "xpiSha256": "036f8efc00e74e11217092df5ff71b3d0e6af25646e9b0c24fdba7fa3aa257be",
+      "binarySha256": "66b785f363a085b99b1e44f4659147da77760e118dc1d81c06a9f449c087b038",
+      "previousInstallation": {
+        "extensionVersion": "1.22.0",
+        "client": {
+          "sessionId": "2a9986cc-c09f-479e-9e2e-bbd8a8241073",
+          "capabilities": {
+            "acceptInsecureCerts": false,
+            "browserName": "thunderbird",
+            "browserVersion": "140.17.0",
+            "platformName": "linux",
+            "unhandledPromptBehavior": "dismiss and notify",
+            "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+            "moz:buildID": "20260929234105",
+            "moz:headless": false,
+            "moz:platformVersion": "6.18.44",
+            "moz:shutdownTimeout": 60000,
+            "pageLoadStrategy": "normal",
+            "timeouts": {
+              "implicit": 0,
+              "pageLoad": 300000,
+              "script": 30000
+            },
+            "setWindowRect": true,
+            "strictFileInteractability": false,
+            "moz:accessibilityChecks": false,
+            "moz:webdriverClick": true,
+            "moz:windowless": false,
+            "capabilities": {
+              "alwaysMatch": {
+                "acceptInsecureCerts": false
+              }
+            },
+            "proxy": {}
+          }
+        },
+        "languagePackSha256": "f76a9cace58daba1b7a873712eb86e309f2ee9dbc6d1889ef3218868cecf63ab",
+        "appLocale": "de",
+        "uiLanguage": "de",
+        "wizardVersion": "1.22.0",
+        "wizardLanguages": [
+          {
+            "language": "en",
+            "title": "Set up Thundy AV"
+          },
+          {
+            "language": "de",
+            "title": "Thundy AV einrichten"
+          },
+          {
+            "language": "fr",
+            "title": "Configurer Thundy AV"
+          },
+          {
+            "language": "es",
+            "title": "Configurar Thundy AV"
+          },
+          {
+            "language": "it",
+            "title": "Configura Thundy AV"
+          },
+          {
+            "language": "pl",
+            "title": "Skonfiguruj Thundy AV"
+          }
+        ],
+        "wizardSaved": {
+          "onboardingState": {
+            "schemaVersion": 1,
+            "status": "completed",
+            "completedAt": "2026-10-15T16:50:14.498Z"
+          },
+          "timeOfClickProtection": true
+        },
+        "linkDialog": {
+          "text": "T\nThundy AV\nVor dem Öffnen prüfen\n\nZielwebseite\n\ndestination.example.invalid\n\nVollständige Linkadresse anzeigen\n\nDieser Link konnte nicht geprüft werden. Das Öffnen kann riskant sein.\n\nLokaler Score (Link und Nachricht): 0 / 100\n\nEs werden nur verfügbare Prüfergebnisse angezeigt. Fehlende Prüfungen bedeuten nicht, dass ein Link sicher ist.\n\nAbbrechen\nLink trotzdem öffnen",
+          "width": 520,
+          "focus": "Abbrechen",
+          "url": "https://destination.example.invalid/test?source=thundy"
+        },
+        "nativePopup": {
+          "panelWidth": 602,
+          "contentWidth": 600,
+          "language": "de",
+          "heading": "Sicherheitsübersicht der Nachricht"
+        },
+        "osHandoff": {
+          "argv": [
+            "https://destination.example.invalid/test?source=thundy"
+          ]
+        },
+        "blockedOsDispatch": {
+          "apiAccepted": true,
+          "additionalReceiverCalls": 0,
+          "observationSeconds": 1,
+          "protocolPolicy": false
+        },
+        "auditRecord": {
+          "id": "98160574-b731-4e08-a120-98171c9bf289",
+          "clickedAt": 1792083014902,
+          "decidedAt": 1792083015099,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083014912,
+          "reasonDetails": [],
+          "checkedAt": 1792083014918,
+          "providerReasons": []
+        },
+        "openedAuditRecord": {
+          "id": "ae6d047a-bf16-4707-b36d-8d42ff98b6ef",
+          "clickedAt": 1792083015366,
+          "decidedAt": 1792083015506,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083015377,
+          "reasonDetails": [],
+          "checkedAt": 1792083015380,
+          "providerReasons": []
+        },
+        "blockedOsAuditRecord": {
+          "id": "e0c098a6-5bb5-4911-8c6f-5b710d1323ae",
+          "clickedAt": 1792083015599,
+          "decidedAt": 1792083015714,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083015607,
+          "reasonDetails": [],
+          "checkedAt": 1792083015610,
+          "providerReasons": []
+        }
+      },
+      "client": {
+        "sessionId": "2a9986cc-c09f-479e-9e2e-bbd8a8241073",
+        "capabilities": {
+          "acceptInsecureCerts": false,
+          "browserName": "thunderbird",
+          "browserVersion": "140.17.0",
+          "platformName": "linux",
+          "unhandledPromptBehavior": "dismiss and notify",
+          "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+          "moz:buildID": "20260929234105",
+          "moz:headless": false,
+          "moz:platformVersion": "6.18.44",
+          "moz:shutdownTimeout": 60000,
+          "pageLoadStrategy": "normal",
+          "timeouts": {
+            "implicit": 0,
+            "pageLoad": 300000,
+            "script": 30000
+          },
+          "setWindowRect": true,
+          "strictFileInteractability": false,
+          "moz:accessibilityChecks": false,
+          "moz:webdriverClick": true,
+          "moz:windowless": false,
+          "capabilities": {
+            "alwaysMatch": {
+              "acceptInsecureCerts": false
+            }
+          },
+          "proxy": {}
+        }
+      },
+      "extensionVersion": "1.23.0",
+      "previousXpiSha256": "4d8003aed95719524524ae18a97be227991d551c2c23ae51e70f5dd85f3663cd",
+      "previousRestart": {
+        "addon": {
+          "version": "1.22.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "wizardAbsent": true,
+        "uiLanguage": "de"
+      },
+      "currentRestart": {
+        "addon": {
+          "version": "1.23.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "uiLanguage": "de",
+        "wizardAbsent": true,
+        "auditRecordsPreserved": 3
+      },
+      "dialogTitleAfterRestart": "Vor dem Öffnen prüfen",
+      "newRecordAfterRestart": {
+        "id": "83e6b771-0547-41fd-baee-d59c9a96a558",
+        "clickedAt": 1792083024165,
+        "decidedAt": 1792083024289,
+        "messageId": 1,
+        "url": "https://destination.example.invalid/test?source=thundy",
+        "score": 0,
+        "scoreSource": "local-message-and-link",
+        "scoreAtDecision": 0,
+        "verdict": "UNKNOWN",
+        "verdictAtDecision": "UNKNOWN",
+        "providerAtDecision": "Hybrid Analysis",
+        "provider": "Hybrid Analysis",
+        "reasons": [],
+        "outcome": "ABORTED",
+        "cancelReason": "cancel",
+        "openAttempts": 0,
+        "extensionVersion": "1.23.0",
+        "scoredAt": 1792083024184,
+        "reasonDetails": [],
+        "checkedAt": 1792083024194,
+        "providerReasons": []
+      },
+      "finalAuditRecords": [
+        {
+          "id": "83e6b771-0547-41fd-baee-d59c9a96a558",
+          "clickedAt": 1792083024165,
+          "decidedAt": 1792083024289,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.23.0",
+          "scoredAt": 1792083024184,
+          "reasonDetails": [],
+          "checkedAt": 1792083024194,
+          "providerReasons": []
+        },
+        {
+          "id": "e0c098a6-5bb5-4911-8c6f-5b710d1323ae",
+          "clickedAt": 1792083015599,
+          "decidedAt": 1792083015714,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083015607,
+          "reasonDetails": [],
+          "checkedAt": 1792083015610,
+          "providerReasons": []
+        },
+        {
+          "id": "ae6d047a-bf16-4707-b36d-8d42ff98b6ef",
+          "clickedAt": 1792083015366,
+          "decidedAt": 1792083015506,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083015377,
+          "reasonDetails": [],
+          "checkedAt": 1792083015380,
+          "providerReasons": []
+        },
+        {
+          "id": "98160574-b731-4e08-a120-98171c9bf289",
+          "clickedAt": 1792083014902,
+          "decidedAt": 1792083015099,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083014912,
+          "reasonDetails": [],
+          "checkedAt": 1792083014918,
+          "providerReasons": []
+        }
+      ],
+      "gracefulRestarts": 2,
+      "finishedAt": "2026-10-15T16:50:24Z"
+    },
+    {
+      "passed": true,
+      "scope": "Linux X11 GUI; synthetic plaintext; offline; no API mocks",
+      "startedAt": "2026-10-15T16:50:24Z",
+      "xpiSha256": "036f8efc00e74e11217092df5ff71b3d0e6af25646e9b0c24fdba7fa3aa257be",
+      "binarySha256": "66b785f363a085b99b1e44f4659147da77760e118dc1d81c06a9f449c087b038",
+      "previousInstallation": {
+        "extensionVersion": "1.22.0",
+        "client": {
+          "sessionId": "3854f01a-9dc1-4418-8ad6-3ff30d1344cf",
+          "capabilities": {
+            "acceptInsecureCerts": false,
+            "browserName": "thunderbird",
+            "browserVersion": "140.17.0",
+            "platformName": "linux",
+            "unhandledPromptBehavior": "dismiss and notify",
+            "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+            "moz:buildID": "20260929234105",
+            "moz:headless": false,
+            "moz:platformVersion": "6.18.44",
+            "moz:shutdownTimeout": 60000,
+            "pageLoadStrategy": "normal",
+            "timeouts": {
+              "implicit": 0,
+              "pageLoad": 300000,
+              "script": 30000
+            },
+            "setWindowRect": true,
+            "strictFileInteractability": false,
+            "moz:accessibilityChecks": false,
+            "moz:webdriverClick": true,
+            "moz:windowless": false,
+            "capabilities": {
+              "alwaysMatch": {
+                "acceptInsecureCerts": false
+              }
+            },
+            "proxy": {}
+          }
+        },
+        "languagePackSha256": "c33bfa11de944a2364db7b2ffff01df477b7c97a56b2178d27c9dd09cc1518ad",
+        "appLocale": "fr",
+        "uiLanguage": "fr",
+        "wizardVersion": "1.22.0",
+        "wizardLanguages": [
+          {
+            "language": "en",
+            "title": "Set up Thundy AV"
+          },
+          {
+            "language": "de",
+            "title": "Thundy AV einrichten"
+          },
+          {
+            "language": "fr",
+            "title": "Configurer Thundy AV"
+          },
+          {
+            "language": "es",
+            "title": "Configurar Thundy AV"
+          },
+          {
+            "language": "it",
+            "title": "Configura Thundy AV"
+          },
+          {
+            "language": "pl",
+            "title": "Skonfiguruj Thundy AV"
+          }
+        ],
+        "wizardSaved": {
+          "onboardingState": {
+            "schemaVersion": 1,
+            "status": "completed",
+            "completedAt": "2026-10-15T16:50:27.434Z"
+          },
+          "timeOfClickProtection": true
+        },
+        "linkDialog": {
+          "text": "T\nThundy AV\nVérifier avant d’ouvrir\n\nSite de destination\n\ndestination.example.invalid\n\nAfficher l’adresse complète du lien\n\nCe lien n’a pas pu être vérifié. Son ouverture peut présenter un risque.\n\nScore local (lien et message): 0 / 100\n\nSeuls les résultats disponibles peuvent être affichés. L’absence de vérification ne signifie pas qu’un lien est sûr.\n\nAnnuler\nOuvrir le lien quand même",
+          "width": 520,
+          "focus": "Annuler",
+          "url": "https://destination.example.invalid/test?source=thundy"
+        },
+        "nativePopup": {
+          "panelWidth": 602,
+          "contentWidth": 600,
+          "language": "fr",
+          "heading": "Aperçu de la sécurité du message"
+        },
+        "osHandoff": {
+          "argv": [
+            "https://destination.example.invalid/test?source=thundy"
+          ]
+        },
+        "blockedOsDispatch": {
+          "apiAccepted": true,
+          "additionalReceiverCalls": 0,
+          "observationSeconds": 1,
+          "protocolPolicy": false
+        },
+        "auditRecord": {
+          "id": "bdf74846-114f-4e38-811c-b4b5badb7091",
+          "clickedAt": 1792083028057,
+          "decidedAt": 1792083028219,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083028086,
+          "reasonDetails": [],
+          "checkedAt": 1792083028093,
+          "providerReasons": []
+        },
+        "openedAuditRecord": {
+          "id": "2249787d-f88e-4069-ad99-9f50e355ff3d",
+          "clickedAt": 1792083028558,
+          "decidedAt": 1792083028710,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083028568,
+          "reasonDetails": [],
+          "checkedAt": 1792083028582,
+          "providerReasons": []
+        },
+        "blockedOsAuditRecord": {
+          "id": "efe0a9fe-52e2-4023-b392-9b9f5ade33d7",
+          "clickedAt": 1792083028798,
+          "decidedAt": 1792083028921,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083028814,
+          "reasonDetails": [],
+          "checkedAt": 1792083028821,
+          "providerReasons": []
+        }
+      },
+      "client": {
+        "sessionId": "3854f01a-9dc1-4418-8ad6-3ff30d1344cf",
+        "capabilities": {
+          "acceptInsecureCerts": false,
+          "browserName": "thunderbird",
+          "browserVersion": "140.17.0",
+          "platformName": "linux",
+          "unhandledPromptBehavior": "dismiss and notify",
+          "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+          "moz:buildID": "20260929234105",
+          "moz:headless": false,
+          "moz:platformVersion": "6.18.44",
+          "moz:shutdownTimeout": 60000,
+          "pageLoadStrategy": "normal",
+          "timeouts": {
+            "implicit": 0,
+            "pageLoad": 300000,
+            "script": 30000
+          },
+          "setWindowRect": true,
+          "strictFileInteractability": false,
+          "moz:accessibilityChecks": false,
+          "moz:webdriverClick": true,
+          "moz:windowless": false,
+          "capabilities": {
+            "alwaysMatch": {
+              "acceptInsecureCerts": false
+            }
+          },
+          "proxy": {}
+        }
+      },
+      "extensionVersion": "1.23.0",
+      "previousXpiSha256": "4d8003aed95719524524ae18a97be227991d551c2c23ae51e70f5dd85f3663cd",
+      "previousRestart": {
+        "addon": {
+          "version": "1.22.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "wizardAbsent": true,
+        "uiLanguage": "fr"
+      },
+      "currentRestart": {
+        "addon": {
+          "version": "1.23.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "uiLanguage": "fr",
+        "wizardAbsent": true,
+        "auditRecordsPreserved": 3
+      },
+      "dialogTitleAfterRestart": "Vérifier avant d’ouvrir",
+      "newRecordAfterRestart": {
+        "id": "da49bba8-f9aa-420e-9264-7f6e16f2188e",
+        "clickedAt": 1792083037629,
+        "decidedAt": 1792083037753,
+        "messageId": 1,
+        "url": "https://destination.example.invalid/test?source=thundy",
+        "score": 0,
+        "scoreSource": "local-message-and-link",
+        "scoreAtDecision": 0,
+        "verdict": "UNKNOWN",
+        "verdictAtDecision": "UNKNOWN",
+        "providerAtDecision": "Hybrid Analysis",
+        "provider": "Hybrid Analysis",
+        "reasons": [],
+        "outcome": "ABORTED",
+        "cancelReason": "cancel",
+        "openAttempts": 0,
+        "extensionVersion": "1.23.0",
+        "scoredAt": 1792083037645,
+        "reasonDetails": [],
+        "checkedAt": 1792083037652,
+        "providerReasons": []
+      },
+      "finalAuditRecords": [
+        {
+          "id": "da49bba8-f9aa-420e-9264-7f6e16f2188e",
+          "clickedAt": 1792083037629,
+          "decidedAt": 1792083037753,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.23.0",
+          "scoredAt": 1792083037645,
+          "reasonDetails": [],
+          "checkedAt": 1792083037652,
+          "providerReasons": []
+        },
+        {
+          "id": "efe0a9fe-52e2-4023-b392-9b9f5ade33d7",
+          "clickedAt": 1792083028798,
+          "decidedAt": 1792083028921,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083028814,
+          "reasonDetails": [],
+          "checkedAt": 1792083028821,
+          "providerReasons": []
+        },
+        {
+          "id": "2249787d-f88e-4069-ad99-9f50e355ff3d",
+          "clickedAt": 1792083028558,
+          "decidedAt": 1792083028710,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083028568,
+          "reasonDetails": [],
+          "checkedAt": 1792083028582,
+          "providerReasons": []
+        },
+        {
+          "id": "bdf74846-114f-4e38-811c-b4b5badb7091",
+          "clickedAt": 1792083028057,
+          "decidedAt": 1792083028219,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083028086,
+          "reasonDetails": [],
+          "checkedAt": 1792083028093,
+          "providerReasons": []
+        }
+      ],
+      "gracefulRestarts": 2,
+      "finishedAt": "2026-10-15T16:50:37Z"
+    },
+    {
+      "passed": true,
+      "scope": "Linux X11 GUI; synthetic plaintext; offline; no API mocks",
+      "startedAt": "2026-10-15T16:50:37Z",
+      "xpiSha256": "036f8efc00e74e11217092df5ff71b3d0e6af25646e9b0c24fdba7fa3aa257be",
+      "binarySha256": "66b785f363a085b99b1e44f4659147da77760e118dc1d81c06a9f449c087b038",
+      "previousInstallation": {
+        "extensionVersion": "1.22.0",
+        "client": {
+          "sessionId": "3d01ed68-3040-4378-95e1-081b0457ccb5",
+          "capabilities": {
+            "acceptInsecureCerts": false,
+            "browserName": "thunderbird",
+            "browserVersion": "140.17.0",
+            "platformName": "linux",
+            "unhandledPromptBehavior": "dismiss and notify",
+            "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+            "moz:buildID": "20260929234105",
+            "moz:headless": false,
+            "moz:platformVersion": "6.18.44",
+            "moz:shutdownTimeout": 60000,
+            "pageLoadStrategy": "normal",
+            "timeouts": {
+              "implicit": 0,
+              "pageLoad": 300000,
+              "script": 30000
+            },
+            "setWindowRect": true,
+            "strictFileInteractability": false,
+            "moz:accessibilityChecks": false,
+            "moz:webdriverClick": true,
+            "moz:windowless": false,
+            "capabilities": {
+              "alwaysMatch": {
+                "acceptInsecureCerts": false
+              }
+            },
+            "proxy": {}
+          }
+        },
+        "languagePackSha256": "5cc1216053be79823ea8578b600a0897b1e1ed486d819e0f9c12e4f12df69887",
+        "appLocale": "es-ES",
+        "uiLanguage": "es-ES",
+        "wizardVersion": "1.22.0",
+        "wizardLanguages": [
+          {
+            "language": "en",
+            "title": "Set up Thundy AV"
+          },
+          {
+            "language": "de",
+            "title": "Thundy AV einrichten"
+          },
+          {
+            "language": "fr",
+            "title": "Configurer Thundy AV"
+          },
+          {
+            "language": "es",
+            "title": "Configurar Thundy AV"
+          },
+          {
+            "language": "it",
+            "title": "Configura Thundy AV"
+          },
+          {
+            "language": "pl",
+            "title": "Skonfiguruj Thundy AV"
+          }
+        ],
+        "wizardSaved": {
+          "onboardingState": {
+            "schemaVersion": 1,
+            "status": "completed",
+            "completedAt": "2026-10-15T16:50:41.020Z"
+          },
+          "timeOfClickProtection": true
+        },
+        "linkDialog": {
+          "text": "T\nThundy AV\nComprobar antes de abrir\n\nSitio web de destino\n\ndestination.example.invalid\n\nMostrar la dirección completa del enlace\n\nNo se pudo comprobar este enlace. Abrirlo puede ser arriesgado.\n\nPuntuación local (enlace y mensaje): 0 / 100\n\nSolo se pueden mostrar los resultados disponibles. La ausencia de comprobaciones no significa que un enlace sea seguro.\n\nCancelar\nAbrir enlace de todos modos",
+          "width": 520,
+          "focus": "Cancelar",
+          "url": "https://destination.example.invalid/test?source=thundy"
+        },
+        "nativePopup": {
+          "panelWidth": 602,
+          "contentWidth": 600,
+          "language": "es",
+          "heading": "Resumen de seguridad del mensaje"
+        },
+        "osHandoff": {
+          "argv": [
+            "https://destination.example.invalid/test?source=thundy"
+          ]
+        },
+        "blockedOsDispatch": {
+          "apiAccepted": true,
+          "additionalReceiverCalls": 0,
+          "observationSeconds": 1,
+          "protocolPolicy": false
+        },
+        "auditRecord": {
+          "id": "d815ca08-b400-46a3-8cfa-a215fe18f954",
+          "clickedAt": 1792083041542,
+          "decidedAt": 1792083041744,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083041568,
+          "reasonDetails": [],
+          "checkedAt": 1792083041571,
+          "providerReasons": []
+        },
+        "openedAuditRecord": {
+          "id": "59303929-0e3d-44f9-93e8-a853e889629a",
+          "clickedAt": 1792083042089,
+          "decidedAt": 1792083042243,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083042101,
+          "reasonDetails": [],
+          "checkedAt": 1792083042118,
+          "providerReasons": []
+        },
+        "blockedOsAuditRecord": {
+          "id": "c8f5bec5-fa3e-479d-a52b-a50db6407937",
+          "clickedAt": 1792083042327,
+          "decidedAt": 1792083042441,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083042338,
+          "reasonDetails": [],
+          "checkedAt": 1792083042341,
+          "providerReasons": []
+        }
+      },
+      "client": {
+        "sessionId": "3d01ed68-3040-4378-95e1-081b0457ccb5",
+        "capabilities": {
+          "acceptInsecureCerts": false,
+          "browserName": "thunderbird",
+          "browserVersion": "140.17.0",
+          "platformName": "linux",
+          "unhandledPromptBehavior": "dismiss and notify",
+          "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+          "moz:buildID": "20260929234105",
+          "moz:headless": false,
+          "moz:platformVersion": "6.18.44",
+          "moz:shutdownTimeout": 60000,
+          "pageLoadStrategy": "normal",
+          "timeouts": {
+            "implicit": 0,
+            "pageLoad": 300000,
+            "script": 30000
+          },
+          "setWindowRect": true,
+          "strictFileInteractability": false,
+          "moz:accessibilityChecks": false,
+          "moz:webdriverClick": true,
+          "moz:windowless": false,
+          "capabilities": {
+            "alwaysMatch": {
+              "acceptInsecureCerts": false
+            }
+          },
+          "proxy": {}
+        }
+      },
+      "extensionVersion": "1.23.0",
+      "previousXpiSha256": "4d8003aed95719524524ae18a97be227991d551c2c23ae51e70f5dd85f3663cd",
+      "previousRestart": {
+        "addon": {
+          "version": "1.22.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "wizardAbsent": true,
+        "uiLanguage": "es-ES"
+      },
+      "currentRestart": {
+        "addon": {
+          "version": "1.23.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "uiLanguage": "es-ES",
+        "wizardAbsent": true,
+        "auditRecordsPreserved": 3
+      },
+      "dialogTitleAfterRestart": "Comprobar antes de abrir",
+      "newRecordAfterRestart": {
+        "id": "e69022bc-d7b7-4a6e-a071-911266e41ed6",
+        "clickedAt": 1792083050713,
+        "decidedAt": 1792083050846,
+        "messageId": 1,
+        "url": "https://destination.example.invalid/test?source=thundy",
+        "score": 0,
+        "scoreSource": "local-message-and-link",
+        "scoreAtDecision": 0,
+        "verdict": "UNKNOWN",
+        "verdictAtDecision": "UNKNOWN",
+        "providerAtDecision": "Hybrid Analysis",
+        "provider": "Hybrid Analysis",
+        "reasons": [],
+        "outcome": "ABORTED",
+        "cancelReason": "cancel",
+        "openAttempts": 0,
+        "extensionVersion": "1.23.0",
+        "scoredAt": 1792083050728,
+        "reasonDetails": [],
+        "checkedAt": 1792083050734,
+        "providerReasons": []
+      },
+      "finalAuditRecords": [
+        {
+          "id": "e69022bc-d7b7-4a6e-a071-911266e41ed6",
+          "clickedAt": 1792083050713,
+          "decidedAt": 1792083050846,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.23.0",
+          "scoredAt": 1792083050728,
+          "reasonDetails": [],
+          "checkedAt": 1792083050734,
+          "providerReasons": []
+        },
+        {
+          "id": "c8f5bec5-fa3e-479d-a52b-a50db6407937",
+          "clickedAt": 1792083042327,
+          "decidedAt": 1792083042441,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083042338,
+          "reasonDetails": [],
+          "checkedAt": 1792083042341,
+          "providerReasons": []
+        },
+        {
+          "id": "59303929-0e3d-44f9-93e8-a853e889629a",
+          "clickedAt": 1792083042089,
+          "decidedAt": 1792083042243,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083042101,
+          "reasonDetails": [],
+          "checkedAt": 1792083042118,
+          "providerReasons": []
+        },
+        {
+          "id": "d815ca08-b400-46a3-8cfa-a215fe18f954",
+          "clickedAt": 1792083041542,
+          "decidedAt": 1792083041744,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083041568,
+          "reasonDetails": [],
+          "checkedAt": 1792083041571,
+          "providerReasons": []
+        }
+      ],
+      "gracefulRestarts": 2,
+      "finishedAt": "2026-10-15T16:50:50Z"
+    },
+    {
+      "passed": true,
+      "scope": "Linux X11 GUI; synthetic plaintext; offline; no API mocks",
+      "startedAt": "2026-10-15T16:50:50Z",
+      "xpiSha256": "036f8efc00e74e11217092df5ff71b3d0e6af25646e9b0c24fdba7fa3aa257be",
+      "binarySha256": "66b785f363a085b99b1e44f4659147da77760e118dc1d81c06a9f449c087b038",
+      "previousInstallation": {
+        "extensionVersion": "1.22.0",
+        "client": {
+          "sessionId": "5057d6b2-b2cd-40f2-8143-a2a86cbdfa8e",
+          "capabilities": {
+            "acceptInsecureCerts": false,
+            "browserName": "thunderbird",
+            "browserVersion": "140.17.0",
+            "platformName": "linux",
+            "unhandledPromptBehavior": "dismiss and notify",
+            "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+            "moz:buildID": "20260929234105",
+            "moz:headless": false,
+            "moz:platformVersion": "6.18.44",
+            "moz:shutdownTimeout": 60000,
+            "pageLoadStrategy": "normal",
+            "timeouts": {
+              "implicit": 0,
+              "pageLoad": 300000,
+              "script": 30000
+            },
+            "setWindowRect": true,
+            "strictFileInteractability": false,
+            "moz:accessibilityChecks": false,
+            "moz:webdriverClick": true,
+            "moz:windowless": false,
+            "capabilities": {
+              "alwaysMatch": {
+                "acceptInsecureCerts": false
+              }
+            },
+            "proxy": {}
+          }
+        },
+        "languagePackSha256": "1dab6ed8a436fe93b1e7b644f320db3431ba8917698c3c3cbd44fa825f364736",
+        "appLocale": "it",
+        "uiLanguage": "it",
+        "wizardVersion": "1.22.0",
+        "wizardLanguages": [
+          {
+            "language": "en",
+            "title": "Set up Thundy AV"
+          },
+          {
+            "language": "de",
+            "title": "Thundy AV einrichten"
+          },
+          {
+            "language": "fr",
+            "title": "Configurer Thundy AV"
+          },
+          {
+            "language": "es",
+            "title": "Configurar Thundy AV"
+          },
+          {
+            "language": "it",
+            "title": "Configura Thundy AV"
+          },
+          {
+            "language": "pl",
+            "title": "Skonfiguruj Thundy AV"
+          }
+        ],
+        "wizardSaved": {
+          "onboardingState": {
+            "schemaVersion": 1,
+            "status": "completed",
+            "completedAt": "2026-10-15T16:50:53.850Z"
+          },
+          "timeOfClickProtection": true
+        },
+        "linkDialog": {
+          "text": "T\nThundy AV\nVerifica prima di aprire\n\nSito web di destinazione\n\ndestination.example.invalid\n\nMostra l’indirizzo completo del link\n\nImpossibile controllare questo link. Aprirlo può essere rischioso.\n\nPunteggio locale (link e messaggio): 0 / 100\n\nVengono mostrati solo i risultati disponibili. L’assenza di verifiche non significa che un link sia sicuro.\n\nAnnulla\nApri comunque il link",
+          "width": 520,
+          "focus": "Annulla",
+          "url": "https://destination.example.invalid/test?source=thundy"
+        },
+        "nativePopup": {
+          "panelWidth": 602,
+          "contentWidth": 600,
+          "language": "it",
+          "heading": "Panoramica della sicurezza del messaggio"
+        },
+        "osHandoff": {
+          "argv": [
+            "https://destination.example.invalid/test?source=thundy"
+          ]
+        },
+        "blockedOsDispatch": {
+          "apiAccepted": true,
+          "additionalReceiverCalls": 0,
+          "observationSeconds": 1,
+          "protocolPolicy": false
+        },
+        "auditRecord": {
+          "id": "d26bad4f-fcaa-4fc6-a768-291501e2b277",
+          "clickedAt": 1792083054322,
+          "decidedAt": 1792083054537,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083054343,
+          "reasonDetails": [],
+          "checkedAt": 1792083054356,
+          "providerReasons": []
+        },
+        "openedAuditRecord": {
+          "id": "0b1e3d2b-47a4-4286-8cb6-36c8ed0dce48",
+          "clickedAt": 1792083054861,
+          "decidedAt": 1792083055029,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083054879,
+          "reasonDetails": [],
+          "checkedAt": 1792083054884,
+          "providerReasons": []
+        },
+        "blockedOsAuditRecord": {
+          "id": "5f84d4d4-cb8c-4121-b8f4-eefe67206741",
+          "clickedAt": 1792083055105,
+          "decidedAt": 1792083055235,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083055135,
+          "reasonDetails": [],
+          "checkedAt": 1792083055139,
+          "providerReasons": []
+        }
+      },
+      "client": {
+        "sessionId": "5057d6b2-b2cd-40f2-8143-a2a86cbdfa8e",
+        "capabilities": {
+          "acceptInsecureCerts": false,
+          "browserName": "thunderbird",
+          "browserVersion": "140.17.0",
+          "platformName": "linux",
+          "unhandledPromptBehavior": "dismiss and notify",
+          "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+          "moz:buildID": "20260929234105",
+          "moz:headless": false,
+          "moz:platformVersion": "6.18.44",
+          "moz:shutdownTimeout": 60000,
+          "pageLoadStrategy": "normal",
+          "timeouts": {
+            "implicit": 0,
+            "pageLoad": 300000,
+            "script": 30000
+          },
+          "setWindowRect": true,
+          "strictFileInteractability": false,
+          "moz:accessibilityChecks": false,
+          "moz:webdriverClick": true,
+          "moz:windowless": false,
+          "capabilities": {
+            "alwaysMatch": {
+              "acceptInsecureCerts": false
+            }
+          },
+          "proxy": {}
+        }
+      },
+      "extensionVersion": "1.23.0",
+      "previousXpiSha256": "4d8003aed95719524524ae18a97be227991d551c2c23ae51e70f5dd85f3663cd",
+      "previousRestart": {
+        "addon": {
+          "version": "1.22.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "wizardAbsent": true,
+        "uiLanguage": "it"
+      },
+      "currentRestart": {
+        "addon": {
+          "version": "1.23.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "uiLanguage": "it",
+        "wizardAbsent": true,
+        "auditRecordsPreserved": 3
+      },
+      "dialogTitleAfterRestart": "Verifica prima di aprire",
+      "newRecordAfterRestart": {
+        "id": "6b5a93ec-0284-49a9-bfe7-fa7a2d24d2bc",
+        "clickedAt": 1792083066148,
+        "decidedAt": 1792083066281,
+        "messageId": 1,
+        "url": "https://destination.example.invalid/test?source=thundy",
+        "score": 0,
+        "scoreSource": "local-message-and-link",
+        "scoreAtDecision": 0,
+        "verdict": "UNKNOWN",
+        "verdictAtDecision": "UNKNOWN",
+        "providerAtDecision": "Hybrid Analysis",
+        "provider": "Hybrid Analysis",
+        "reasons": [],
+        "outcome": "ABORTED",
+        "cancelReason": "cancel",
+        "openAttempts": 0,
+        "extensionVersion": "1.23.0",
+        "scoredAt": 1792083066174,
+        "reasonDetails": [],
+        "checkedAt": 1792083066176,
+        "providerReasons": []
+      },
+      "finalAuditRecords": [
+        {
+          "id": "6b5a93ec-0284-49a9-bfe7-fa7a2d24d2bc",
+          "clickedAt": 1792083066148,
+          "decidedAt": 1792083066281,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.23.0",
+          "scoredAt": 1792083066174,
+          "reasonDetails": [],
+          "checkedAt": 1792083066176,
+          "providerReasons": []
+        },
+        {
+          "id": "5f84d4d4-cb8c-4121-b8f4-eefe67206741",
+          "clickedAt": 1792083055105,
+          "decidedAt": 1792083055235,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083055135,
+          "reasonDetails": [],
+          "checkedAt": 1792083055139,
+          "providerReasons": []
+        },
+        {
+          "id": "0b1e3d2b-47a4-4286-8cb6-36c8ed0dce48",
+          "clickedAt": 1792083054861,
+          "decidedAt": 1792083055029,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083054879,
+          "reasonDetails": [],
+          "checkedAt": 1792083054884,
+          "providerReasons": []
+        },
+        {
+          "id": "d26bad4f-fcaa-4fc6-a768-291501e2b277",
+          "clickedAt": 1792083054322,
+          "decidedAt": 1792083054537,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083054343,
+          "reasonDetails": [],
+          "checkedAt": 1792083054356,
+          "providerReasons": []
+        }
+      ],
+      "gracefulRestarts": 2,
+      "finishedAt": "2026-10-15T16:51:06Z"
+    },
+    {
+      "passed": true,
+      "scope": "Linux X11 GUI; synthetic plaintext; offline; no API mocks",
+      "startedAt": "2026-10-15T16:51:06Z",
+      "xpiSha256": "036f8efc00e74e11217092df5ff71b3d0e6af25646e9b0c24fdba7fa3aa257be",
+      "binarySha256": "66b785f363a085b99b1e44f4659147da77760e118dc1d81c06a9f449c087b038",
+      "previousInstallation": {
+        "extensionVersion": "1.22.0",
+        "client": {
+          "sessionId": "266aa30c-29d6-4650-a5cd-5dee97918c91",
+          "capabilities": {
+            "acceptInsecureCerts": false,
+            "browserName": "thunderbird",
+            "browserVersion": "140.17.0",
+            "platformName": "linux",
+            "unhandledPromptBehavior": "dismiss and notify",
+            "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+            "moz:buildID": "20260929234105",
+            "moz:headless": false,
+            "moz:platformVersion": "6.18.44",
+            "moz:shutdownTimeout": 60000,
+            "pageLoadStrategy": "normal",
+            "timeouts": {
+              "implicit": 0,
+              "pageLoad": 300000,
+              "script": 30000
+            },
+            "setWindowRect": true,
+            "strictFileInteractability": false,
+            "moz:accessibilityChecks": false,
+            "moz:webdriverClick": true,
+            "moz:windowless": false,
+            "capabilities": {
+              "alwaysMatch": {
+                "acceptInsecureCerts": false
+              }
+            },
+            "proxy": {}
+          }
+        },
+        "languagePackSha256": "21a782701826e9a1618a39bf022a3604a5de678e7d15a3c0849237b341e6a854",
+        "appLocale": "pl",
+        "uiLanguage": "pl",
+        "wizardVersion": "1.22.0",
+        "wizardLanguages": [
+          {
+            "language": "en",
+            "title": "Set up Thundy AV"
+          },
+          {
+            "language": "de",
+            "title": "Thundy AV einrichten"
+          },
+          {
+            "language": "fr",
+            "title": "Configurer Thundy AV"
+          },
+          {
+            "language": "es",
+            "title": "Configurar Thundy AV"
+          },
+          {
+            "language": "it",
+            "title": "Configura Thundy AV"
+          },
+          {
+            "language": "pl",
+            "title": "Skonfiguruj Thundy AV"
+          }
+        ],
+        "wizardSaved": {
+          "onboardingState": {
+            "schemaVersion": 1,
+            "status": "completed",
+            "completedAt": "2026-10-15T16:51:14.163Z"
+          },
+          "timeOfClickProtection": true
+        },
+        "linkDialog": {
+          "text": "T\nThundy AV\nSprawdź przed otwarciem\n\nDocelowa witryna\n\ndestination.example.invalid\n\nPokaż pełny adres odnośnika\n\nNie udało się sprawdzić tego linku. Jego otwarcie może być ryzykowne.\n\nLokalny wynik (odnośnik i wiadomość): 0 / 100\n\nMożna wyświetlić tylko dostępne wyniki. Brak sprawdzenia nie oznacza, że odnośnik jest bezpieczny.\n\nAnuluj\nOtwórz link mimo to",
+          "width": 520,
+          "focus": "Anuluj",
+          "url": "https://destination.example.invalid/test?source=thundy"
+        },
+        "nativePopup": {
+          "panelWidth": 602,
+          "contentWidth": 600,
+          "language": "pl",
+          "heading": "Przegląd bezpieczeństwa wiadomości"
+        },
+        "osHandoff": {
+          "argv": [
+            "https://destination.example.invalid/test?source=thundy"
+          ]
+        },
+        "blockedOsDispatch": {
+          "apiAccepted": true,
+          "additionalReceiverCalls": 0,
+          "observationSeconds": 1,
+          "protocolPolicy": false
+        },
+        "auditRecord": {
+          "id": "20ba99b4-f769-4408-b925-65db34850ea9",
+          "clickedAt": 1792083075252,
+          "decidedAt": 1792083075484,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083075337,
+          "reasonDetails": [],
+          "checkedAt": 1792083075350,
+          "providerReasons": []
+        },
+        "openedAuditRecord": {
+          "id": "e733000a-3495-4ab8-8fd8-f738a78027b8",
+          "clickedAt": 1792083076561,
+          "decidedAt": 1792083076878,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083076642,
+          "reasonDetails": [],
+          "checkedAt": 1792083076661,
+          "providerReasons": []
+        },
+        "blockedOsAuditRecord": {
+          "id": "9daca3c4-c1af-4d13-8099-e7f0f0888e65",
+          "clickedAt": 1792083077156,
+          "decidedAt": 1792083077467,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083077240,
+          "reasonDetails": [],
+          "checkedAt": 1792083077269,
+          "providerReasons": []
+        }
+      },
+      "client": {
+        "sessionId": "266aa30c-29d6-4650-a5cd-5dee97918c91",
+        "capabilities": {
+          "acceptInsecureCerts": false,
+          "browserName": "thunderbird",
+          "browserVersion": "140.17.0",
+          "platformName": "linux",
+          "unhandledPromptBehavior": "dismiss and notify",
+          "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+          "moz:buildID": "20260929234105",
+          "moz:headless": false,
+          "moz:platformVersion": "6.18.44",
+          "moz:shutdownTimeout": 60000,
+          "pageLoadStrategy": "normal",
+          "timeouts": {
+            "implicit": 0,
+            "pageLoad": 300000,
+            "script": 30000
+          },
+          "setWindowRect": true,
+          "strictFileInteractability": false,
+          "moz:accessibilityChecks": false,
+          "moz:webdriverClick": true,
+          "moz:windowless": false,
+          "capabilities": {
+            "alwaysMatch": {
+              "acceptInsecureCerts": false
+            }
+          },
+          "proxy": {}
+        }
+      },
+      "extensionVersion": "1.23.0",
+      "previousXpiSha256": "4d8003aed95719524524ae18a97be227991d551c2c23ae51e70f5dd85f3663cd",
+      "previousRestart": {
+        "addon": {
+          "version": "1.22.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "wizardAbsent": true,
+        "uiLanguage": "pl"
+      },
+      "currentRestart": {
+        "addon": {
+          "version": "1.23.0",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "uiLanguage": "pl",
+        "wizardAbsent": true,
+        "auditRecordsPreserved": 3
+      },
+      "dialogTitleAfterRestart": "Sprawdź przed otwarciem",
+      "newRecordAfterRestart": {
+        "id": "62db4881-5b7c-49aa-a5f1-49d426030101",
+        "clickedAt": 1792083097775,
+        "decidedAt": 1792083097956,
+        "messageId": 1,
+        "url": "https://destination.example.invalid/test?source=thundy",
+        "score": 0,
+        "scoreSource": "local-message-and-link",
+        "scoreAtDecision": 0,
+        "verdict": "UNKNOWN",
+        "verdictAtDecision": "UNKNOWN",
+        "providerAtDecision": "Hybrid Analysis",
+        "provider": "Hybrid Analysis",
+        "reasons": [],
+        "outcome": "ABORTED",
+        "cancelReason": "cancel",
+        "openAttempts": 0,
+        "extensionVersion": "1.23.0",
+        "scoredAt": 1792083097846,
+        "reasonDetails": [],
+        "checkedAt": 1792083097862,
+        "providerReasons": []
+      },
+      "finalAuditRecords": [
+        {
+          "id": "62db4881-5b7c-49aa-a5f1-49d426030101",
+          "clickedAt": 1792083097775,
+          "decidedAt": 1792083097956,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.23.0",
+          "scoredAt": 1792083097846,
+          "reasonDetails": [],
+          "checkedAt": 1792083097862,
+          "providerReasons": []
+        },
+        {
+          "id": "9daca3c4-c1af-4d13-8099-e7f0f0888e65",
+          "clickedAt": 1792083077156,
+          "decidedAt": 1792083077467,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083077240,
+          "reasonDetails": [],
+          "checkedAt": 1792083077269,
+          "providerReasons": []
+        },
+        {
+          "id": "e733000a-3495-4ab8-8fd8-f738a78027b8",
+          "clickedAt": 1792083076561,
+          "decidedAt": 1792083076878,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "OPENED",
+          "cancelReason": null,
+          "openAttempts": 1,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083076642,
+          "reasonDetails": [],
+          "checkedAt": 1792083076661,
+          "providerReasons": []
+        },
+        {
+          "id": "20ba99b4-f769-4408-b925-65db34850ea9",
+          "clickedAt": 1792083075252,
+          "decidedAt": 1792083075484,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": 0,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": "UNKNOWN",
+          "providerAtDecision": "Hybrid Analysis",
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "ABORTED",
+          "cancelReason": "cancel",
+          "openAttempts": 0,
+          "extensionVersion": "1.22.0",
+          "scoredAt": 1792083075337,
+          "reasonDetails": [],
+          "checkedAt": 1792083075350,
+          "providerReasons": []
+        }
+      ],
+      "gracefulRestarts": 2,
+      "finishedAt": "2026-10-15T16:51:38Z"
+    }
+  ]
+}

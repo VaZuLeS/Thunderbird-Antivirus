@@ -21,10 +21,17 @@ ADDON_ID = 'thundy-av@bludau-it-services.de'
 URL = 'https://destination.example.invalid/test?source=thundy'
 
 
+class NavigationInProgress(RuntimeError):
+    """A read-only readiness query lost its document during navigation."""
+
+
 def wait_for(operation, timeout=20):
     deadline = time.monotonic() + timeout
     while True:
-        value = operation()
+        try:
+            value = operation()
+        except NavigationInProgress:
+            value = None
         if value:
             return value
         if time.monotonic() >= deadline:
@@ -81,7 +88,10 @@ class Marionette:
                 .then(done,e=>done({automationError:String(e)}));''',
                          [script, args or []], asynchronous=True)
         if isinstance(result, dict) and 'automationError' in result:
-            raise RuntimeError(result['automationError'])
+            error = result['automationError']
+            if error.startswith("AbortError: Actor 'MarionetteCommands' destroyed before query"):
+                raise NavigationInProgress(error)
+            raise RuntimeError(error)
         return result
 
     def screenshot(self, path):
@@ -115,7 +125,7 @@ def native_click(display, x, y):
         x11.XCloseDisplay(connection)
 
 
-def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi):
+def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, permanent=False, audit_only=False):
     with zipfile.ZipFile(xpi) as package:
         manifest = json.loads(package.read('manifest.json'))
         catalogs = {lang: json.loads(package.read('_locales/' + lang + '/messages.json'))
@@ -130,13 +140,13 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi):
         with zipfile.ZipFile(langpack) as pack:
             pack_manifest = json.loads(pack.read('manifest.json'))
         assert pack_manifest['langpack_id'] == requested
-        m.command('Addon:Install', {'path': str(langpack), 'temporary': True})
+        m.command('Addon:Install', {'path': str(langpack), 'temporary': not permanent})
         wait_for(lambda: m.js('return Services.locale.availableLocales.includes(arguments[0]);', [requested]))
         report['languagePackSha256'] = hashlib.sha256(langpack.read_bytes()).hexdigest()
     m.js('Services.locale.requestedLocales=[arguments[0]];', [requested])
     wait_for(lambda: m.js('return Services.locale.appLocaleAsBCP47.split("-")[0]===arguments[0];', [locale]))
     report['appLocale'] = m.js('return Services.locale.appLocaleAsBCP47;')
-    installed = m.command('Addon:Install', {'path': str(previous_xpi or xpi), 'temporary': True})
+    installed = m.command('Addon:Install', {'path': str(previous_xpi or xpi), 'temporary': not permanent})
     assert installed.get('value', installed) == ADDON_ID, installed
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.includes("/onboarding.html");'))
     wait_for(lambda: m.page('return !!document.getElementById("language") && !document.getElementById("next").disabled;'))
@@ -169,7 +179,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi):
             previous_version = json.loads(previous.read('manifest.json'))['version']
         assert tuple(map(int, previous_version.split('.'))) < tuple(map(int, manifest['version'].split('.')))
         before = m.js('return window.gTabmail.tabInfo.filter(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html")).length;')
-        m.command('Addon:Install', {'path': str(xpi), 'temporary': True})
+        m.command('Addon:Install', {'path': str(xpi), 'temporary': not permanent})
         wait_for(lambda: m.js('''const done=arguments[arguments.length-1];
             ChromeUtils.importESModule("resource://gre/modules/AddonManager.sys.mjs").AddonManager
                 .getAddonByID(arguments[0]).then(a=>done(a?.isActive && a.version===arguments[1]));''', [ADDON_ID, manifest['version']], asynchronous=True))
@@ -277,6 +287,8 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi):
     report['openedAuditRecord'] = opened
     report['blockedOsAuditRecord'] = max(opened_records, key=lambda r: r['clickedAt'])
     m.screenshot(out / 'audit.png')
+    if audit_only:
+        return
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'options.html'])
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/options.html");'))
     wait_for(lambda: m.page('return !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
@@ -315,12 +327,122 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi):
     report['passed'] = True
 
 
+def addon_state(m):
+    return m.js('''const done=arguments[arguments.length-1];
+        ChromeUtils.importESModule("resource://gre/modules/AddonManager.sys.mjs").AddonManager
+            .getAddonByID(arguments[0]).then(a=>done(a?{version:a.version,active:a.isActive,
+                temporary:a.temporarilyInstalled,appDisabled:a.appDisabled,
+                profileScoped:a.scope===ChromeUtils.importESModule("resource://gre/modules/AddonManager.sys.mjs").AddonManager.SCOPE_PROFILE}:null));''', [ADDON_ID], asynchronous=True)
+
+
+def open_page(m, url):
+    m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [url])
+    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec===arguments[0];', [url]))
+    wait_for(lambda: m.page('return document.readyState==="complete" && !!document.querySelector("h1");'))
+
+
+def storage_snapshot(m):
+    return m.page('return window.wrappedJSObject.browser.storage.local.get(null);')
+
+
+def close_extension_tabs(m):
+    m.js('''for(const tab of [...window.gTabmail.tabInfo]) {
+        if(tab.browser?.currentURI.spec.startsWith("moz-extension:"))window.gTabmail.closeTab(tab);
+    }''')
+
+
+def check_restart_upgrade(m, args, out, display, report, restart):
+    with zipfile.ZipFile(args.xpi) as package:
+        current_version = json.loads(package.read('manifest.json'))['version']
+        current_catalog = json.loads(package.read('_locales/'+args.locale+'/messages.json'))
+    old = {}
+    run_checks(m, args.previous_xpi, out, display, old, args.locale, args.langpack, None,
+               permanent=True, audit_only=True)
+    report['previousInstallation'] = old
+    report['client'] = old['client']
+    report['extensionVersion'] = current_version
+    report['previousXpiSha256'] = hashlib.sha256(args.previous_xpi.read_bytes()).hexdigest()
+    old_state = addon_state(m)
+    assert old_state['active'] and not old_state['temporary'] and not old_state['appDisabled'] and old_state['profileScoped']
+    assert tuple(map(int, old_state['version'].split('.'))) < tuple(map(int, current_version.split('.')))
+    base = m.page('return window.wrappedJSObject.browser.runtime.getURL("");')
+    before = storage_snapshot(m)
+    assert len(before['linkAuditLog']) == 3
+    close_extension_tabs(m)
+    m = restart()
+    assert addon_state(m) == old_state
+    assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
+    open_page(m, base+'audit.html')
+    assert storage_snapshot(m) == before
+    assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
+    language = m.page('return window.wrappedJSObject.browser.i18n.getUILanguage();')
+    assert language.split('-')[0] == args.locale
+    report['previousRestart'] = {'addon': addon_state(m), 'storagePreserved': True, 'wizardAbsent': True, 'uiLanguage': language}
+    m.screenshot(out/'previous-after-restart.png')
+    m.command('Addon:Install', {'path': str(args.xpi), 'temporary': False})
+    wait_for(lambda: (addon_state(m) or {}).get('version') == current_version)
+    current_state = addon_state(m)
+    assert current_state['active'] and not current_state['temporary'] and not current_state['appDisabled'] and current_state['profileScoped']
+    assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
+    open_page(m, base+'options.html')
+    saved = storage_snapshot(m)
+    assert all(saved.get(key) == value for key, value in before.items())
+    assert saved.get('externalAnalysisConsent') is not True
+    for name, value in [('appearance','dark'),('accent','violet'),('density','compact')]:
+        m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name,value])
+    wait_for(lambda: m.page('return document.documentElement.dataset.theme==="dark" && document.documentElement.dataset.accent==="violet" && document.documentElement.dataset.density==="compact";'))
+    after_upgrade = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance==="dark" && s.thundyAccent==="violet" && s.thundyDensity==="compact"?s:null);'))
+    close_extension_tabs(m)
+    m = restart()
+    assert addon_state(m) == current_state
+    assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
+    open_page(m, base+'audit.html')
+    assert storage_snapshot(m) == after_upgrade
+    wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===3;'))
+    assert current_catalog['auditRiskyOpened']['message'] in m.page('return document.getElementById("auditSummary").textContent;')
+    m.screenshot(out/'current-audit-after-restart.png')
+    language = m.page('return window.wrappedJSObject.browser.i18n.getUILanguage();')
+    assert language.split('-')[0] == args.locale
+    report['currentRestart'] = {'addon': addon_state(m), 'storagePreserved': True, 'uiLanguage': language,
+        'wizardAbsent': True, 'auditRecordsPreserved': len(before['linkAuditLog'])}
+    open_page(m, base+'options.html')
+    wait_for(lambda: m.page('return {theme:document.documentElement.dataset.theme,accent:document.documentElement.dataset.accent,density:document.documentElement.dataset.density};') == {'theme':'dark','accent':'violet','density':'compact'})
+    m.screenshot(out/'current-settings-after-restart.png')
+    # Reopen the persisted local message and use the real, newly injected link protection.
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+        const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+        const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+        MailUtils.displayMessage(Array.from(folder.messages)[0]);''')
+    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
+    wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+    m.page('document.querySelector("a[href^=https]").click();')
+    wait_for(lambda: m.page('return document.getElementById("thundy-link-dialog")?.shadowRoot.querySelectorAll("footer button").length===2;'))
+    with zipfile.ZipFile(args.xpi) as package:
+        catalog = json.loads(package.read('_locales/'+args.locale+'/messages.json'))
+    report['dialogTitleAfterRestart'] = m.page('return document.getElementById("thundy-link-dialog").shadowRoot.querySelector("h2").textContent;')
+    assert report['dialogTitleAfterRestart'] == catalog['linkDialogTitle']['message']
+    m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelector("footer button").click();')
+    open_page(m, base+'audit.html')
+    final = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get("linkAuditLog").then(s=>s.linkAuditLog?.length===4?s.linkAuditLog:null);'))
+    assert all(record in final for record in before['linkAuditLog'])
+    added = [r for r in final if r['id'] not in {r['id'] for r in before['linkAuditLog']}]
+    assert len(added)==1 and added[0]['outcome']=='ABORTED' and added[0]['url']==URL
+    assert added[0]['extensionVersion']==current_version and added[0]['scoreAtDecision']==0
+    assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
+    report['newRecordAfterRestart'] = added[0]
+    report['finalAuditRecords'] = final
+    report['gracefulRestarts'] = 2
+    report['passed'] = True
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--thunderbird', type=Path, required=True)
     parser.add_argument('--xvfb', type=Path, required=True)
     parser.add_argument('--xpi', type=Path, required=True)
     parser.add_argument('--previous-xpi', type=Path)
+    parser.add_argument('--restart-check', action='store_true',
+                        help='Permanent upgrade with two graceful restarts; requires --previous-xpi')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
     parser.add_argument('--langpack', type=Path)
     parser.add_argument('--out', type=Path, default=ROOT / '.audit/thunderbird-live')
@@ -331,6 +453,8 @@ def main():
         setattr(args, name, getattr(args, name).resolve(strict=True))
     if args.locale != 'en' and not args.langpack:
         parser.error('Non-English runs require the corresponding Thunderbird --langpack')
+    if args.restart_check and not args.previous_xpi:
+        parser.error('--restart-check requires --previous-xpi')
     if args.previous_xpi:
         args.previous_xpi = args.previous_xpi.resolve(strict=True)
     if args.langpack:
@@ -395,21 +519,46 @@ def main():
                 desktop_quote(receiver) + ' %u\nMimeType=x-scheme-handler/http;x-scheme-handler/https;\n')
             (config_home / 'mimeapps.list').write_text('[Default Applications]\n'
                 'x-scheme-handler/http=thundy-test.desktop\nx-scheme-handler/https=thundy-test.desktop\n')
-            tb = subprocess.Popen([str(args.thunderbird), '--no-remote', '--profile', str(profile),
-                                   '--marionette', '--remote-allow-system-access', '-offline'],
-                                  env={**os.environ, 'DISPLAY': display, 'XDG_DATA_HOME': str(data_home),
-                                       'XDG_CONFIG_HOME': str(config_home)}, stdout=log, stderr=subprocess.STDOUT)
-            cleanup.callback(stop, tb)
-            def connect():
-                if tb.poll() is not None:
-                    raise RuntimeError('Thunderbird exited during startup')
+            def start_client():
+                nonlocal tb
+                tb = subprocess.Popen([str(args.thunderbird), '--no-remote', '--profile', str(profile),
+                                       '--marionette', '--remote-allow-system-access', '-offline'],
+                                      env={**os.environ, 'DISPLAY': display, 'XDG_DATA_HOME': str(data_home),
+                                           'XDG_CONFIG_HOME': str(config_home)}, stdout=log, stderr=subprocess.STDOUT)
+                cleanup.callback(stop, tb)
+                def connect():
+                    if tb.poll() is not None:
+                        raise RuntimeError('Thunderbird exited during startup')
+                    try:
+                        return Marionette(port)
+                    except (ConnectionRefusedError, socket.timeout):
+                        return None
+                return wait_for(connect, 30)
+
+            m = start_client()
+            def restart_client():
+                nonlocal m
+                previous_pid = tb.pid
+                # eAttemptQuit allows Thunderbird to flush extension storage and session state.
                 try:
-                    return Marionette(port)
-                except (ConnectionRefusedError, socket.timeout):
-                    return None
-            m = wait_for(connect, 30)
+                    m.js('Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit); return true;')
+                except (OSError, RuntimeError):
+                    pass  # A clean shutdown may close Marionette before its reply.
+                m.socket.close()
+                if tb.wait(timeout=30) != 0:
+                    raise RuntimeError('Thunderbird did not exit cleanly')
+                m = start_client()
+                assert tb.pid != previous_pid
+                m.command('WebDriver:NewSession', {'capabilities': {'alwaysMatch': {'acceptInsecureCerts': False}}})
+                m.command('Marionette:SetContext', {'value': 'chrome'})
+                assert m.js('return Services.io.offline;')
+                return m
+
             try:
-                run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi)
+                if args.restart_check:
+                    check_restart_upgrade(m, args, out, display, report, restart_client)
+                else:
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi)
             except Exception:
                 try:
                     m.screenshot(out / 'failure.png')

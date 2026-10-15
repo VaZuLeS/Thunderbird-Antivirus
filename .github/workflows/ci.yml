@@ -96,7 +96,7 @@ jobs:
           pathlib.Path('build/previous.xpi').write_bytes(data)
           PYTHON
           chmod 644 build/previous.xpi
-      - name: Check real upgrade, OS dispatch and UI in all six languages
+      - name: Check real install, restart upgrades, OS dispatch and six languages
         run: |
           mkdir -p .audit
           chown thunderbird-test .audit
@@ -113,6 +113,7 @@ jobs:
               set -- "$@" --langpack "/usr/lib/thunderbird/extensions/langpack-$pack@thunderbird.mozilla.org.xpi"
             fi
             runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --previous-xpi build/previous.xpi "$@" --out ".audit/thunderbird-live/$lang"
+            runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --previous-xpi build/previous.xpi --restart-check "$@" --out ".audit/thunderbird-live/restart-$lang"
           done
       - name: Preserve real-client report, logs and screenshots
         if: always()

@@ -1092,7 +1092,7 @@
     "message": "Export gespeichert."
   },
   "auditRiskyOpened": {
-    "message": "Geöffnet mit hohem Risiko"
+    "message": "Öffnung mit hohem Risiko angefordert"
   },
   "auditExportFailed": {
     "message": "Export fehlgeschlagen oder abgebrochen."

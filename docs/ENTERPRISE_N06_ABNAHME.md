@@ -107,3 +107,5 @@ Die autonome Arbeit hat N03–N05 lokal umgesetzt und für N06 diese prüfbare V
 ## Erweiterter lokaler Teilnachweis
 
 [Sechs native Sprachprofile, temporäres Paketupgrade und isolierter OS-Empfänger](THUNDERBIRD_LINUX_ABNAHME.md#fortsetzung-sprachen-upgrade-und-os-übergabe) wurden am 15. Oktober 2026 erfolgreich geprüft. Der stille HTTPS-Protokollsperrfall begrenzt die Aussage von `OPENED` auf die Annahme der Öffnungsanforderung durch Thunderbird. Dies ersetzt weiterhin weder vollständige OS-/Standardbrowser-Abnahme noch unabhängige signierte Operator-/Prüfererklärungen.
+
+[Dauerhafte Profil-Upgrades und zwölf saubere Neustarts](THUNDERBIRD_LINUX_ABNAHME.md#dauerhafte-installation-und-saubere-neustarts) erweitern den lokalen Teilnachweis um den bislang offenen Linux-Neustartpfad. Historische Auditdatensätze und Profileinstellungen bleiben erhalten; neue Interaktionen funktionieren nach dem Update. Das ersetzt keine Store-/OS-Verteilungsprüfung oder unabhängige signierte Prüfererklärung; N06 bleibt offen.

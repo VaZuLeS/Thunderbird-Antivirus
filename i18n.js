@@ -1094,7 +1094,7 @@ const ThundyI18n = (() => {
     "message": "Export saved."
   },
   "auditRiskyOpened": {
-    "message": "Opened at high risk"
+    "message": "Opening requested at high risk"
   },
   "auditExportFailed": {
     "message": "Export failed or was cancelled."

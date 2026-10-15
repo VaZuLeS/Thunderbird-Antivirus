@@ -103,3 +103,40 @@ python3 tools/thunderbird-live.dev.py \
 Für Spanisch lautet die Sprachpaketkennung `es-ES`, die Runner-Auswahl `--locale es`. Nichtenglische Läufe erfordern ein passendes Sprachpaket; fehlende Pakete werden nicht durch manipulierte Browserantworten ersetzt. Ohne `--previous-xpi` wird eine direkte Erstinstallation geprüft. Die CI installiert alle fünf zusätzlichen Sprachpakete, prüft den fest hinterlegten Hash der veröffentlichten Vorversion und erzeugt sechs unabhängige Upgrade-Profilberichte sowie einen zusätzlichen Erstinstallationsbericht im Artefakt `thunderbird-linux-live`.
 
 Weiterhin offen sind vollständiger Browserstart/-abruf mit unterschiedlichen Standardbrowsern, native Fehler-/Retry-Rückmeldungen auf allen Zielsystemen, dauerhafte Updateinstallation mit Neustart, DPI/Zoom, Screenreader, Windows/macOS sowie die produktiven N06-Kernfunktionen. Diese Erweiterung erteilt keine produktive Freigabe.
+
+## Dauerhafte Installation und saubere Neustarts
+
+Am 15. Oktober 2026 wurden zusätzlich sechs **dauerhafte Profil-Upgrades** mit Thunderbird 140.17.0 ESR erfolgreich geprüft. [Berichte mit Originaleinträgen und Versions-/Sprachnachweisen](audits/thunderbird-permanent-upgrades.json) dokumentieren EN, DE, FR, ES, IT und PL. Jeder Lauf verwendet ein neues isoliertes Profil und zwei saubere Thunderbird-Neustarts, insgesamt zwölf. Profilpfade und Prozess-IDs sind aus der veröffentlichten Berichtskopie entfernt.
+
+| Phase | Tatsächliche Prüfung |
+| --- | --- |
+| Vorversion installieren | Veröffentlichtes XPI 1.22.0 über den echten Add-on-Manager dauerhaft installiert: aktiv, Profil-Scope, `temporarilyInstalled: false`. Keine Signaturvorgaben werden im Test gelockert. |
+| Vorherige Daten erzeugen | Wizard abschließen; echte lokale Nachricht importieren; Abbruch, erfolgreiche OS-Anforderung und stillen OS-Sperrfall ausführen. Drei tatsächliche Auditdatensätze mit URL, Score und ursprünglicher Extensionversion entstehen. |
+| Erster Neustart | Über `eAttemptQuit` normal beenden, Exitcode 0 abwarten und im selben Profil mit neuem Prozess starten. Ohne erneute Add-on-Installation sind 1.22.0 und alle vorherigen Storagewerte unverändert vorhanden. Kein zusätzlicher Wizard. |
+| Paketupdate | 1.23.0 dauerhaft installieren. Alle vorherigen Storagewerte bleiben erhalten; kein zusätzlicher Wizard. Dunkel/Violett/Kompakt über die tatsächlichen Einstellungen wählen. |
+| Zweiter Neustart | Wieder normal beenden und starten. 1.23.0 ist weiterhin aktiv und dauerhaft im Profil installiert. Der vollständige Storage-Snapshot einschließlich Einrichtungsstand, Linkschutz, Profilkennung, drei unveränderten Auditdatensätzen und Darstellungseinstellungen stimmt mit dem Stand vor dem Neustart überein. |
+| Erneut benutzen | Persistierte lokale Nachricht öffnen. Der neue Linkschutz injiziert sich, zeigt den richtigen Dialogtitel in der gewählten Sprache und erzeugt nach Abbruch einen vierten Datensatz mit Version 1.23.0. Alle drei ursprünglichen Datensätze bleiben unverändert enthalten. |
+
+Die tatsächlich von der WebExtension gemeldete Sprache bleibt nach beiden Neustarts erhalten. Die Risiko-Zusammenfassung ist ebenfalls in allen sechs Sprachen auf „Öffnung mit hohem Risiko angefordert“ präzisiert; der aktuelle Prüflauf vergleicht sie nach dem Neustart mit dem Sprachkatalog. Die neue Interaktion ist eine echte Bedienhandlung und wird nicht als vorgefertigter Datensatz in den Speicher geschrieben. Die Vorversionsdaten behalten ihre ursprüngliche Version und werden beim Upgrade nicht umgeschrieben. Eine externe Analyseeinwilligung wird weder durch Installation noch Update oder Neustart erteilt.
+
+![Drei erhaltene historische Datensätze nach dem zweiten Neustart](screenshots/thunderbird-linux/audit-de-after-restart.png)
+
+![Dunkel, Violett und Kompakt nach dem zweiten Neustart](screenshots/thunderbird-linux/settings-de-after-restart.png)
+
+Den obigen Sprach-/Upgrade-Befehl mit `--restart-check` ergänzen:
+
+```sh
+python3 tools/thunderbird-live.dev.py \
+  --thunderbird /usr/lib/thunderbird/thunderbird-bin \
+  --xvfb /usr/bin/Xvfb --xpi build/thundy-av-1.23.0.xpi \
+  --previous-xpi /path/to/thundy-av-1.22.0.xpi \
+  --restart-check --locale de \
+  --langpack /usr/lib/thunderbird/extensions/langpack-de@thunderbird.mozilla.org.xpi \
+  --out .audit/thunderbird-permanent-de
+```
+
+Der Modus benötigt zwingend eine ältere Vorversion. Er installiert beide Pakete sowie gegebenenfalls das Sprachpaket dauerhaft **ausschließlich im eigenen temporären Testprofil**. Nach dem Lauf werden nur die selbst gestarteten Prozesse beendet und das Testprofil entfernt; Berichte und Bilder bleiben im neuen Ausgabeordner. Ein fehlgeschlagener sauberer Neustart wird nicht durch einen erzwungenen Prozessabbruch als Erfolg ersetzt. Das Aufräumen darf fehlgeschlagene Prozesse anschließend beenden.
+
+Die CI führt neben der direkten Erstinstallation und sechs temporären Upgrades nun sechs dauerhafte Upgrades mit jeweils zwei sauberen Neustarts aus: **13 Profilberichte und zwölf Neustarts** im Artefakt `thunderbird-linux-live`. Nur lesende Bereitschaftsabfragen dürfen einen dokumentierten Marionette-Navigationsabbruch erneut versuchen; Klicks und Schreibaktionen werden nicht automatisch wiederholt.
+
+Dies schließt die bisher offene Linux-Teilprüfung für dauerhafte Paketupdates und saubere Neustarts. Nicht abgedeckt sind Store-Signierung und Berechtigungsdialoge der manuellen Installation, automatische Updateverteilung, erzwungener Absturz/Wiederherstellung, Rollback sowie andere Thunderbirdversionen und Betriebssysteme. Windows/macOS, Screenreader, DPI/Zoom, unterschiedliche Standardbrowser und produktive N06-Nachweise bleiben offen. Die unsignierten Pakete erhalten durch diesen Prüflauf keine Signierung oder Produktivfreigabe.

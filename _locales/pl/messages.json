@@ -1089,7 +1089,7 @@
     "message": "Eksport zapisany."
   },
   "auditRiskyOpened": {
-    "message": "Otwarto przy wysokim ryzyku"
+    "message": "Żądanie otwarcia przy wysokim ryzyku"
   },
   "auditExportFailed": {
     "message": "Eksport nie powiódł się lub został anulowany."

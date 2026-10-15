@@ -1089,7 +1089,7 @@
     "message": "Exportación guardada."
   },
   "auditRiskyOpened": {
-    "message": "Abierto con alto riesgo"
+    "message": "Apertura solicitada con riesgo alto"
   },
   "auditExportFailed": {
     "message": "La exportación falló o se canceló."

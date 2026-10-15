@@ -1089,7 +1089,7 @@
     "message": "Export enregistré."
   },
   "auditRiskyOpened": {
-    "message": "Ouvert avec un risque élevé"
+    "message": "Ouverture demandée avec risque élevé"
   },
   "auditExportFailed": {
     "message": "L’export a échoué ou a été annulé."
