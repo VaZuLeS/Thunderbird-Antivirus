@@ -31,7 +31,7 @@ const AuditExport = (() => {
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', () => {
     const t = key => ThundyI18n.get(key);
     const $ = id => document.getElementById(id);
-    let records = [], snapshot = null, page = 0;
+    let records = [], snapshot = null, page = 0, refreshGeneration = 0;
     const pageSize = 50;
     const decisionKeys = { OPENED: 'auditOpened', ABORTED: 'auditAborted', OPEN_ERROR: 'auditOpenError', PENDING: 'auditPending' };
     const verdictLabel = value => {
@@ -43,13 +43,17 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
     const date = value => value == null ? '—' : new Intl.DateTimeFormat(document.documentElement.lang, { dateStyle: 'short', timeStyle: 'medium' }).format(new Date(value));
     const node = (tag, value, className = '') => { const element = document.createElement(tag); element.textContent = value; element.className = className; return element; };
     function render() {
+        const rows = Array.from($('auditRows').children);
+        const expanded = new Set(rows.filter(row => row.querySelector('details[open]')).map(row => row.dataset.recordId));
+        const focusedId = document.activeElement?.localName === 'summary' ? document.activeElement.closest('tr')?.dataset.recordId : null;
+        let restoreFocus = null;
         const filtered = selected(); page = Math.min(page, Math.max(0, Math.ceil(filtered.length / pageSize) - 1));
         $('auditRows').replaceChildren(); $('auditSummary').replaceChildren();
         for (const [outcome, key] of Object.entries(decisionKeys)) $('auditSummary').appendChild(node('div', t(key) + ': ' + records.filter(record => record.outcome === outcome).length, 'card'));
         $('auditSummary').appendChild(node('div', t('auditRiskyOpened') + ': ' + records.filter(AuditExport.riskyOpened).length, 'card'));
         $('auditCount').textContent = t('auditRecords') + ': ' + filtered.length + ' / ' + records.length;
         for (const record of filtered.slice(page * pageSize, (page + 1) * pageSize)) {
-            const row = document.createElement('tr');
+            const row = document.createElement('tr'); row.dataset.recordId = record.id;
             if (AuditExport.riskyOpened(record)) row.className = 'audit-risky';
             const time = document.createElement('td'); time.append(node('div', date(record.clickedAt)), node('small', date(record.decidedAt)));
             const decision = node('td', t(decisionKeys[record.outcome] || 'auditPending')); decision.className = 'audit-' + record.outcome.toLowerCase();
@@ -58,26 +62,30 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
             const address = document.createElement('td');
             let domain; try { domain = new URL(record.url).host; } catch (error) { domain = '—'; }
             address.appendChild(node('strong', domain));
-            const details = document.createElement('details'); details.append(node('summary', t('auditDetails')), node('code', record.url));
+            const details = document.createElement('details'); details.open = expanded.has(String(record.id)); details.append(node('summary', t('auditDetails')), node('code', record.url));
             details.append(node('p', t('auditEventId') + ': ' + record.id));
             if (record.cancelReason) details.append(node('p', t('auditCancelReason') + ': ' + record.cancelReason));
             if (record.checkedAt) details.append(node('p', t('auditFinalResult') + ': ' + verdictLabel(record.verdict) + ' · ' + date(record.checkedAt)));
             const reasons = document.createElement('ul');
             for (const reason of [...(record.reasons || []), ...(record.providerReasons || [])]) reasons.appendChild(node('li', reason));
+            if (focusedId === String(record.id)) restoreFocus = details.querySelector('summary');
             details.appendChild(reasons); address.appendChild(details); row.append(time, decision, score, verdict, address); $('auditRows').appendChild(row);
         }
         $('auditPage').textContent = (page + 1) + ' / ' + Math.max(1, Math.ceil(filtered.length / pageSize));
         $('auditPrevious').disabled = page === 0; $('auditNext').disabled = (page + 1) * pageSize >= filtered.length;
         $('auditJson').disabled = !snapshot; $('auditCsv').disabled = !snapshot;
+        if (focusedId) (restoreFocus || document.querySelector('.audit-table-wrap')).focus();
     }
     async function refresh() {
+        const generation = ++refreshGeneration;
         $('auditStatus').textContent = t('linkChecking');
         try {
             const data = await browser.runtime.sendMessage({ action: 'getLinkAudit' });
+            if (generation !== refreshGeneration) return;
             if (!data || !data.success) throw new Error('Cannot read audit');
             records = data.records; snapshot = data; render();
             $('auditStatus').textContent = t('auditProfile') + ': ' + data.profileId;
-        } catch (error) { snapshot = null; render(); $('auditStatus').textContent = t('auditFailure'); }
+        } catch (error) { if (generation !== refreshGeneration) return; snapshot = null; render(); $('auditStatus').textContent = t('auditFailure'); }
     }
     async function download(format) {
         if (!snapshot) return;
@@ -92,6 +100,7 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
     }
     $('auditFilters').addEventListener('submit', event => event.preventDefault());
     $('auditFilters').addEventListener('input', () => { page = 0; render(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
     $('auditRefresh').addEventListener('click', refresh);
     $('auditJson').addEventListener('click', () => download('json')); $('auditCsv').addEventListener('click', () => download('csv'));
     $('auditPrevious').addEventListener('click', () => { page--; render(); }); $('auditNext').addEventListener('click', () => { page++; render(); });

@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import select
+import signal
 import socket
 import subprocess
 import sys
@@ -431,8 +432,77 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
     report['newRecordAfterRestart'] = added[0]
     report['finalAuditRecords'] = final
-    report['gracefulRestarts'] = 2
+    assert report.get('gracefulRestarts') == 2
+    if args.crash_check:
+        check_crash_recovery(m, args, out, report, restart, base, current_state)
     report['passed'] = True
+
+
+def open_test_link_dialog(m):
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+        const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+        const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+        MailUtils.displayMessage(Array.from(folder.messages)[0]);''')
+    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
+    wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+    m.page('document.querySelector("a[href^=https]").click();')
+    wait_for(lambda: m.page('return document.getElementById("thundy-link-dialog")?.shadowRoot.querySelectorAll("footer button").length===2;'))
+
+
+def check_crash_recovery(m, args, out, report, restart, base, installed):
+    before = storage_snapshot(m)
+    receipt = (out/'os-handoff.json').read_text()
+    assert len(before['linkAuditLog']) == 4
+    # No flush, artificial delay, or graceful shutdown between the acknowledged read and SIGKILL.
+    m = restart(abrupt=True)
+    assert addon_state(m) == installed
+    open_page(m, base+'audit.html')
+    assert storage_snapshot(m) == before
+    wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===4;'))
+    language = m.page('return window.wrappedJSObject.browser.i18n.getUILanguage();')
+    assert language.split('-')[0] == args.locale
+    assert (out/'os-handoff.json').read_text() == receipt
+    m.screenshot(out/'audit-after-first-crash.png')
+    report['acknowledgedCrashRecovery'] = {'recordsPreserved': 4, 'storagePreserved': True,
+        'addon': addon_state(m), 'uiLanguage': language, 'extraOsDispatches': 0}
+    open_test_link_dialog(m)
+    # Read the actual storage from the existing, inactive audit tab; leave the dialog open.
+    audit_browser = 'window.gTabmail.tabInfo.find(t=>t.browser?.currentURI.spec.endsWith("/audit.html")).browser'
+    pending_state = m.page('return window.wrappedJSObject.browser.storage.local.get(null);', browser=audit_browser)
+    pending = [r for r in pending_state['linkAuditLog'] if r['id'] not in {r['id'] for r in before['linkAuditLog']}]
+    assert len(pending)==1 and pending[0]['outcome']=='PENDING' and pending[0]['url']==URL
+    assert pending[0]['decidedAt'] is None and pending[0]['openAttempts']==0
+    m = restart(abrupt=True)
+    assert addon_state(m) == installed
+    open_page(m, base+'audit.html')
+    assert storage_snapshot(m) == pending_state
+    wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===5;'))
+    assert (out/'os-handoff.json').read_text() == receipt
+    m.screenshot(out/'audit-after-pending-crash.png')
+    report['pendingCrashRecovery'] = {'record': pending[0], 'storagePreserved': True,
+        'decisionNotInvented': True, 'extraOsDispatches': 0}
+    open_page(m, base+'options.html')
+    wait_for(lambda: m.page('return {theme:document.documentElement.dataset.theme,accent:document.documentElement.dataset.accent,density:document.documentElement.dataset.density};') == {'theme':'dark','accent':'violet','density':'compact'})
+    assert m.page('return window.wrappedJSObject.browser.i18n.getUILanguage();').split('-')[0] == args.locale
+    open_test_link_dialog(m)
+    with zipfile.ZipFile(args.xpi) as package:
+        catalog = json.loads(package.read('_locales/'+args.locale+'/messages.json'))
+    title = m.page('return document.getElementById("thundy-link-dialog").shadowRoot.querySelector("h2").textContent;')
+    assert title == catalog['linkDialogTitle']['message']
+    m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelector("footer button").click();')
+    open_page(m, base+'audit.html')
+    final = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get("linkAuditLog").then(s=>s.linkAuditLog?.length===6 && s.linkAuditLog.every(r=>r.outcome!=="PENDING" || r.decidedAt===null)?s.linkAuditLog:null);'))
+    added = [r for r in final if r['id'] not in {r['id'] for r in pending_state['linkAuditLog']}]
+    assert len(added)==1 and added[0]['outcome']=='ABORTED' and added[0]['url']==URL
+    assert added[0]['extensionVersion']==installed['version'] and added[0]['scoreAtDecision']==0
+    assert all(r in final for r in pending_state['linkAuditLog'])
+    assert (out/'os-handoff.json').read_text() == receipt
+    assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
+    wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===6;'))
+    m.screenshot(out/'audit-after-crash-new-decision.png')
+    report['newRecordAfterCrash'] = added[0]
+    report['finalAuditRecords'] = final
+    assert report.get('forcedRestarts') == 2
 
 
 def main():
@@ -443,6 +513,8 @@ def main():
     parser.add_argument('--previous-xpi', type=Path)
     parser.add_argument('--restart-check', action='store_true',
                         help='Permanent upgrade with two graceful restarts; requires --previous-xpi')
+    parser.add_argument('--crash-check', action='store_true',
+                        help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
     parser.add_argument('--langpack', type=Path)
     parser.add_argument('--out', type=Path, default=ROOT / '.audit/thunderbird-live')
@@ -453,6 +525,8 @@ def main():
         setattr(args, name, getattr(args, name).resolve(strict=True))
     if args.locale != 'en' and not args.langpack:
         parser.error('Non-English runs require the corresponding Thunderbird --langpack')
+    if args.crash_check and not args.restart_check:
+        parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
         parser.error('--restart-check requires --previous-xpi')
     if args.previous_xpi:
@@ -523,6 +597,7 @@ def main():
                 nonlocal tb
                 tb = subprocess.Popen([str(args.thunderbird), '--no-remote', '--profile', str(profile),
                                        '--marionette', '--remote-allow-system-access', '-offline'],
+                                      start_new_session=True,
                                       env={**os.environ, 'DISPLAY': display, 'XDG_DATA_HOME': str(data_home),
                                            'XDG_CONFIG_HOME': str(config_home)}, stdout=log, stderr=subprocess.STDOUT)
                 cleanup.callback(stop, tb)
@@ -536,17 +611,27 @@ def main():
                 return wait_for(connect, 30)
 
             m = start_client()
-            def restart_client():
+            def restart_client(abrupt=False):
                 nonlocal m
                 previous_pid = tb.pid
-                # eAttemptQuit allows Thunderbird to flush extension storage and session state.
-                try:
-                    m.js('Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit); return true;')
-                except (OSError, RuntimeError):
-                    pass  # A clean shutdown may close Marionette before its reply.
-                m.socket.close()
-                if tb.wait(timeout=30) != 0:
-                    raise RuntimeError('Thunderbird did not exit cleanly')
+                if abrupt:
+                    # This group belongs exclusively to this runner's Thunderbird launch.
+                    assert os.getpgid(tb.pid) == tb.pid
+                    os.killpg(tb.pid, signal.SIGKILL)
+                    m.socket.close()
+                    if tb.wait(timeout=15) != -signal.SIGKILL:
+                        raise RuntimeError('Expected an actual SIGKILL exit')
+                    report['forcedRestarts'] = report.get('forcedRestarts', 0) + 1
+                else:
+                    # eAttemptQuit allows Thunderbird to flush storage and session state.
+                    try:
+                        m.js('Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit); return true;')
+                    except (OSError, RuntimeError):
+                        pass  # A clean shutdown may close Marionette before its reply.
+                    m.socket.close()
+                    if tb.wait(timeout=30) != 0:
+                        raise RuntimeError('Thunderbird did not exit cleanly')
+                    report['gracefulRestarts'] = report.get('gracefulRestarts', 0) + 1
                 m = start_client()
                 assert tb.pid != previous_pid
                 m.command('WebDriver:NewSession', {'capabilities': {'alwaysMatch': {'acceptInsecureCerts': False}}})
@@ -577,6 +662,7 @@ def main():
                 stop(tb)
                 stop(xvfb)
     except Exception as error:
+        report['passed'] = False
         report['error'] = str(error)
         raise
     finally:
@@ -584,7 +670,9 @@ def main():
         stop(xvfb)
         report['finishedAt'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
         (out / 'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
-        print(json.dumps({'passed': report['passed'], 'report': str(out / 'report.json')}))
+        print(json.dumps({'passed': report['passed'], 'report': str(out / 'report.json'),
+                          'gracefulRestarts': report.get('gracefulRestarts', 0),
+                          'forcedRestarts': report.get('forcedRestarts', 0)}))
 
 
 def stop(process):

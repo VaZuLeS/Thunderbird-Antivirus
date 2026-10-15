@@ -107,3 +107,61 @@ for (const lang of ['en', 'de', 'fr', 'es', 'it', 'pl']) test(`audit ${lang}: lo
         assert.equal(rows[0].querySelector('code').textContent, entries[0].url);
     } finally { dom.window.close(); }
 });
+
+test('returning to audit refreshes data while retaining filters, expanded evidence and keyboard focus', async () => {
+    const dom = new JSDOM(fs.readFileSync('audit.html', 'utf8'), { pretendToBeVisual: true });
+    try {
+        const doc = dom.window.document, catalog = JSON.parse(fs.readFileSync('_locales/en/messages.json'));
+        let entries = [{ ...records[0], id: 'original', url: 'https://review.example.invalid/first' }], calls = 0;
+        const context = vm.createContext({ document: doc, browser: {
+            runtime: { sendMessage: async () => { calls++; return { success: true, records: entries, profileId: 'synthetic' }; } },
+            i18n: { getUILanguage: () => 'en', getMessage: key => catalog[key]?.message || '' }
+        }});
+        vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\n' + source, context);
+        await new Promise(resolve => setImmediate(resolve));
+        doc.getElementById('auditSearch').value = 'review.example.invalid';
+        const details = doc.querySelector('#auditRows details'); details.open = true;
+        details.querySelector('summary').focus();
+        entries = [...entries, { ...records[1], id: 'new', url: 'https://review.example.invalid/second' }];
+        doc.dispatchEvent(new dom.window.Event('visibilitychange'));
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(calls, 2);
+        assert.equal(doc.querySelectorAll('#auditRows tr').length, 2);
+        assert.equal(doc.getElementById('auditSearch').value, 'review.example.invalid');
+        assert.equal(doc.querySelector('#auditRows details').open, true);
+        assert.equal(doc.activeElement.localName, 'summary');
+        assert.equal(doc.activeElement.closest('tr').dataset.recordId, 'original');
+        Object.defineProperty(doc, 'hidden', { value: true });
+        doc.dispatchEvent(new dom.window.Event('visibilitychange'));
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(calls, 2, 'hiding the tab must not trigger background refreshes');
+    } finally { dom.window.close(); }
+});
+
+test('late audit responses and errors cannot replace the newest successful snapshot', async () => {
+    const dom = new JSDOM(fs.readFileSync('audit.html', 'utf8'));
+    try {
+        const doc = dom.window.document, pending = [];
+        const context = vm.createContext({ document: doc, ThundyI18n: { get: key => key }, browser: {
+            runtime: { sendMessage: () => new Promise((resolve, reject) => pending.push({resolve, reject})) }
+        }});
+        vm.runInContext(source, context);
+        await new Promise(resolve => setImmediate(resolve));
+        doc.getElementById('auditRefresh').click();
+        pending[1].resolve({ success: true, records: records.slice(0, 2), profileId: 'latest' });
+        await new Promise(resolve => setImmediate(resolve));
+        pending[0].resolve({ success: true, records: [], profileId: 'stale' });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(doc.querySelectorAll('#auditRows tr').length, 2);
+        assert.ok(doc.getElementById('auditStatus').textContent.includes('latest'));
+        doc.getElementById('auditRefresh').click();
+        doc.getElementById('auditRefresh').click();
+        pending[3].resolve({ success: true, records, profileId: 'newest' });
+        await new Promise(resolve => setImmediate(resolve));
+        pending[2].reject(new Error('late failure'));
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(doc.querySelectorAll('#auditRows tr').length, records.length);
+        assert.ok(doc.getElementById('auditStatus').textContent.includes('newest'));
+        assert.equal(doc.getElementById('auditJson').disabled, false);
+    } finally { dom.window.close(); }
+});

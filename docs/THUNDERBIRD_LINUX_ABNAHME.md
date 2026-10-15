@@ -140,3 +140,37 @@ Der Modus benötigt zwingend eine ältere Vorversion. Er installiert beide Paket
 Die CI führt neben der direkten Erstinstallation und sechs temporären Upgrades nun sechs dauerhafte Upgrades mit jeweils zwei sauberen Neustarts aus: **13 Profilberichte und zwölf Neustarts** im Artefakt `thunderbird-linux-live`. Nur lesende Bereitschaftsabfragen dürfen einen dokumentierten Marionette-Navigationsabbruch erneut versuchen; Klicks und Schreibaktionen werden nicht automatisch wiederholt.
 
 Dies schließt die bisher offene Linux-Teilprüfung für dauerhafte Paketupdates und saubere Neustarts. Nicht abgedeckt sind Store-Signierung und Berechtigungsdialoge der manuellen Installation, automatische Updateverteilung, erzwungener Absturz/Wiederherstellung, Rollback sowie andere Thunderbirdversionen und Betriebssysteme. Windows/macOS, Screenreader, DPI/Zoom, unterschiedliche Standardbrowser und produktive N06-Nachweise bleiben offen. Die unsignierten Pakete erhalten durch diesen Prüflauf keine Signierung oder Produktivfreigabe.
+
+## Wiederherstellung nach erzwungenem Prozessabbruch
+
+Der Prüflauf umfasst jetzt zusätzlich zwei tatsächliche `SIGKILL`-Abbrüche je Sprachprofil. Thunderbird und seine gemeinsam gestartete Prozessgruppe werden ohne reguläre Beendigung beendet und im selben Testprofil neu gestartet. Es werden weder ein Storage-Flush noch ein künstliches Abwarten vor dem Abbruch eingefügt. Persönliche Profile und andere Prozesse werden nicht angesprochen; der Runner prüft vor dem Signal die Zuordnung seiner eigenen Prozessgruppe.
+
+Die [Wiederherstellungsberichte](audits/thunderbird-crash-recovery.json) dokumentieren folgende Fälle:
+
+| Fall | Erwartung und Prüfung |
+| --- | --- |
+| Bestätigte Daten | Vier bereits über die echte Storage-Schnittstelle gelesene Auditdatensätze und sämtliche vorherigen lokalen Storagewerte bleiben nach dem ersten erzwungenen Abbruch unverändert erhalten. |
+| Offener Dialog | Während der Linkdialog auf eine Entscheidung wartet, wird erneut abgebrochen. Der gespeicherte fünfte Vorgang bleibt nach dem Neustart `PENDING`, mit unveränderter URL und Bewertung, ohne Entscheidungszeit oder Öffnungsversuch. |
+| Keine erfundene Entscheidung | Der Prüflauf akzeptiert weder eine nachträglich erzeugte Öffnung noch einen automatischen Abbruch für diesen offenen Vorgang. Ein Prozessverlust beweist keine Nutzerentscheidung. |
+| Keine erneute OS-Zustellung | Der isolierte Desktopempfänger erhält beim Wiederanlauf keine weitere URL. Die vorhandene Quittung bleibt unverändert. |
+| Weiterarbeiten | Sprache und Dunkel/Violett/Kompakt bleiben erhalten. Der echte Linkschutz erzeugt nach dem zweiten Wiederanlauf einen sechsten Vorgang mit Version 1.23.0; die fünf vorherigen Datensätze bleiben unverändert. |
+
+Die lokale Auditansicht hatte dabei einen tatsächlichen Darstellungsfehler: Ein bereits geöffneter Tab zeigte bei der Rückkehr weiterhin seinen alten Datenstand. Sie lädt nun beim Sichtbarwerden erneut. Filter, Seitenauswahl innerhalb der vorhandenen Ergebnisse, aufgeklappte Nachweise und der Tastaturfokus bleiben soweit die betreffenden Zeilen noch sichtbar sind erhalten. Späte Antworten oder Fehler älterer Leseanforderungen überschreiben keinen neueren Stand. Es gibt kein Hintergrund-Polling. Der Refresh-Button bleibt verfügbar. Zwei gezielte Regressionstests sichern diese Verhaltensweisen ab; der echte Thunderbird-Lauf prüft die aktualisierte Ansicht nach der neuen Entscheidung.
+
+![Audit nach Prozessabbruch und neuer Linkentscheidung](screenshots/thunderbird-linux/audit-de-after-crash.png)
+
+Den dauerhaften Upgradetest mit `--crash-check` ergänzen:
+
+```sh
+python3 tools/thunderbird-live.dev.py \
+  --thunderbird /usr/lib/thunderbird/thunderbird-bin \
+  --xvfb /usr/bin/Xvfb --xpi build/thundy-av-1.23.0.xpi \
+  --previous-xpi /path/to/thundy-av-1.22.0.xpi \
+  --restart-check --crash-check --locale de \
+  --langpack /usr/lib/thunderbird/extensions/langpack-de@thunderbird.mozilla.org.xpi \
+  --out .audit/thunderbird-recovery-de
+```
+
+`--crash-check` erfordert `--restart-check` und damit eine passende Vorversion. Die CI erweitert die bestehenden sechs dauerhaften Upgradeprofile um diese Fälle: insgesamt weiterhin 13 Profilberichte, dazu zwölf saubere Neustarts und zwölf Wiederanläufe nach `SIGKILL`. Die Zusammenfassung nennt die tatsächlich ausgeführten Neustartarten. Bei einem Fehler wird der Bericht ausdrücklich als fehlgeschlagen markiert, auch wenn die vorherigen Prüfschritte bestanden waren.
+
+Diese Prüfung betrifft Prozessverluste unter Linux nach bestätigten Storage-Lese-/Schreibantworten beziehungsweise bei einem gespeicherten offenen Vorgang. Sie simuliert keinen Stromausfall, keinen Datenträgerdefekt und keinen Abbruch während einer noch unbestätigten Speicheroperation. Automatische Updateverteilung, Rollback, Windows/macOS, Screenreader, weitere Standardbrowser und produktive N06-Nachweise bleiben offen.

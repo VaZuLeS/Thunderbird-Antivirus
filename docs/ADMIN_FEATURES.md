@@ -52,3 +52,9 @@ Die sechs nächsten Unternehmenspunkte sind im [Enterprise-Umsetzungskonzept](EN
 | P3 | Sichere Meldung verdächtiger Nachrichten | Mitarbeiter können Fälle an das Security-Team melden | Explizite Meldung, minimierte Anhang-/URL-Weitergabe, Unternehmens-Tickets und Statusrückmeldung. |
 
 Empfohlene nächste Ausbaustufe: **zentrale Sammlung + gesperrte Richtlinien + Risikowarnungs-Overrides mit Begründung**. Vor Umsetzung sind Endpunkt, Authentifizierung, Datenumfang, Rollen und Aufbewahrung festzulegen. Diese zusätzlichen Features sind Vorschläge, keine bereits implementierten Funktionen.
+
+## Aktualität und unterbrochene Vorgänge
+
+Beim Zurückkehren in die lokale Auditansicht wird der aktuelle Stand geladen. Filter, aufgeklappte Nachweise und der Fokus auf weiterhin sichtbaren Zeilen bleiben erhalten; ältere Antworten überschreiben keinen neueren Stand. Der Aktualisieren-Button bleibt verfügbar, es erfolgt kein Hintergrund-Polling.
+
+Ein nach einem Prozessverlust gespeicherter `PENDING`-Vorgang bleibt ohne abgeschlossene Entscheidung. Er wird nicht als Öffnung oder bewusster Abbruch gewertet. Der reale [Linux-Wiederherstellungstest](THUNDERBIRD_LINUX_ABNAHME.md#wiederherstellung-nach-erzwungenem-prozessabbruch) prüft diesen Fall einschließlich unveränderter URL, Score und fehlender erneuter OS-Zustellung. Der Status allein belegt keine bestimmte Absturzursache.
