@@ -1,3 +1,9 @@
+# Dauerhaft abrufbare Alarmkandidaten — 15. Oktober 2026
+
+802 Tests im Gesamtgate. Neue Monitorbeobachtungen speichern Alarmkandidaten atomar mit stabiler ID. Pending-Abholen entfernt nichts; ausdrückliches ACK ist nach Neustart idempotent. Kapazitätsüberschreitung verwirft keine alten Kandidaten, gesunde Snapshots bestätigen nichts automatisch. Alte Beobachtungen bleiben lesbar, frühere verlorene Rückgaben sind nicht rekonstruierbar. Keine externe Zustell-/SSO-/SEALED-Freigabe; Extension 1.22.0 unverändert. [Bedienung und Recovery](ENTERPRISE_ALARMKANDIDATEN.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).
+
+---
+
 # Sechssprachige lokale Fallübersicht — 14. Oktober 2026
 
 794 Tests im Gesamtgate. EN/DE/FR/ES/IT/PL-Fallkarten verbinden Domain-URL, damaligen Score, Providerbefund, Ergebnis, Policy-/Regelversion und Bearbeitungsverlauf. Public-Key-CLI prüft das Falljournal vor HTML-Erstellung; Filter, 25-Fall-Pagination und lazy/paginierter Verlauf. Vollständiger minimierter JSON-Export unabhängig von Filtern. 24 Chromium-Layouts und echte Browserdownloads geprüft. Keine SSO-/Portal-/SEALED-Freigabe; Extension 1.22.0 unverändert. [Bedienung und Grenzen](ENTERPRISE_FALLUEBERSICHT.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).

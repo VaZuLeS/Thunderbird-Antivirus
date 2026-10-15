@@ -85,3 +85,7 @@ Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbar
 ## Sechssprachige lokale Fallübersicht
 
 `enterprise:cases review --journal ... --config ... --lang de --out ...` prüft das Falljournal mit öffentlichen Schlüsseln und erzeugt eine schreibgeschützte Ansicht mit Filtern, vollständigem minimiertem Download und paginiertem Verlauf. [Bedienung und Prüfgrenzen](../docs/ENTERPRISE_FALLUEBERSICHT.md). Keine SSO- oder SEALED-Abnahme; HTML/JSON bleiben unsignierte Momentaufnahmen.
+
+## Dauerhafte Alarmkandidaten
+
+`enterprise:health pending/ack` ergänzt die Beobachtungen um beständige Kandidaten-IDs und ausdrückliche lokale Bestätigung. Neue Kandidaten bleiben nach Neustart bis zum ACK abrufbar; alte Beobachtungen werden nicht rückwirkend als wiederherstellbar ausgegeben. [CLI, API, Kapazität und Legacygrenzen](../docs/ENTERPRISE_ALARMKANDIDATEN.md). Kein externer Alarmversand oder bestätigte Unternehmensidentität.

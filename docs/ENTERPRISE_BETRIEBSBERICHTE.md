@@ -44,7 +44,7 @@ API: `new HealthMonitor({ directory, signerKeyId, signerPrivateKey, sourceId, cl
 - Veraltete Snapshots autorisieren keine Entwarnung alter Queuefehler und erzeugen ausschließlich Veraltungskandidaten. Die alten Queuezahlen bleiben sichtbar und als veraltet gekennzeichnet.
 - Konflikte unter derselben Aufnahmezeit, ältere Aufnahmen, zukünftige Zeitstempel, Uhr-Rücklauf, falsche Journal-Signaturen, Kapazitätsüberschreitung und Schreibfehler werden abgewiesen.
 
-`notifications` sind lokal erzeugte Kandidaten, keine zugestellten E-Mails, Tickets oder SIEM-Alarme. Ein verlorener Rückgabewert kann nach Neustart bereits als verarbeitet gelten; eine garantierte externe Zustellung benötigt eine eigene Zustellqueue. Dämpfung ist kein Eskalations- oder Bereitschaftsdienst.
+`notifications` sind lokal erzeugte Kandidaten, keine zugestellten E-Mails, Tickets oder SIEM-Alarme. Seit N10 werden neue Kandidaten mit ihrer Beobachtung dauerhaft aufgenommen und bleiben über `pending` bis zum ausdrücklichen `acknowledge` abrufbar. Für ältere Beobachtungsaktionen ist eine verlorene Rückgabe nicht rekonstruierbar. [Abholen, Bestätigung und Migration](ENTERPRISE_ALARMKANDIDATEN.md). Externe Zustellung benötigt weiterhin eine eigene Integration; Dämpfung ist kein Eskalations- oder Bereitschaftsdienst.
 
 ## Recovery und Grenzen
 

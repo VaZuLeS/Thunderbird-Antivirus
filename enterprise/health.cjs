@@ -5,6 +5,8 @@ const {
   exact,
   identifier,
   iso,
+  hex,
+  clone,
 } = require("./durable_journal.cjs");
 const { hash } = require("./ledger.cjs");
 const count = (n) => Number.isSafeInteger(n) && n >= 0;
@@ -266,11 +268,15 @@ class HealthMonitor {
     cooldownMs = 900000,
     staleAfterMs = 300000,
     deadlineWarningMs = 86400000,
+    maxPending = 1000,
     clock = Date.now,
     ...options
   }) {
     need(
       identifier(sourceId) &&
+        Number.isSafeInteger(maxPending) &&
+        maxPending > 0 &&
+        maxPending <= 10000 &&
         Number.isSafeInteger(cooldownMs) &&
         cooldownMs > 0 &&
         cooldownMs <= 86400000 &&
@@ -285,6 +291,7 @@ class HealthMonitor {
       cooldownMs,
       staleAfterMs,
       deadlineWarningMs,
+      maxPending,
     });
     this.journal = new DurableJournal({
       directory,
@@ -304,11 +311,37 @@ class HealthMonitor {
         lastSnapshotHash: null,
         lastStale: false,
         alerts: {},
+        notifications: {},
+        deliveryLimit: null,
+        legacyObservations: 0,
       },
       reducer: (state, p) => {
+        if (p.kind === "NOTIFICATION_ACKNOWLEDGED") {
+          need(
+            exact(p.data, "notificationId,consumerId") &&
+              hex(p.data.notificationId) &&
+              identifier(p.data.consumerId),
+            "HEALTH_ACK_INVALID",
+          );
+          const notification = state.notifications[p.data.notificationId];
+          need(
+            notification && notification.status === "PENDING",
+            "HEALTH_ACK_INVALID",
+          );
+          notification.status = "ACKNOWLEDGED";
+          notification.acknowledgedAt = p.at;
+          notification.consumerId = p.data.consumerId;
+          return state;
+        }
+        const queued = p.kind === "OBSERVED_QUEUED";
         need(
-          p.kind === "OBSERVED" &&
-            exact(p.data, "capturedAt,snapshotHash,conditions") &&
+          (p.kind === "OBSERVED" || queued) &&
+            exact(
+              p.data,
+              queued
+                ? "capturedAt,snapshotHash,conditions,maxPending"
+                : "capturedAt,snapshotHash,conditions",
+            ) &&
             iso(p.data.capturedAt) &&
             Date.parse(p.data.capturedAt) <= Date.parse(p.at) &&
             /^[a-f0-9]{64}$/.test(p.data.snapshotHash) &&
@@ -316,6 +349,18 @@ class HealthMonitor {
             p.data.conditions.length <= 10,
           "HEALTH_ACTION_INVALID",
         );
+        if (queued) {
+          need(
+            p.data.maxPending === maxPending &&
+              (state.deliveryLimit === null ||
+                state.deliveryLimit === maxPending),
+            "HEALTH_DELIVERY_LIMIT_MISMATCH",
+          );
+          state.deliveryLimit = maxPending;
+        } else {
+          need(state.deliveryLimit === null, "HEALTH_LEGACY_AFTER_QUEUE");
+          state.legacyObservations++;
+        }
         const stale = p.data.conditions.some(
           (c) => c.code === "SNAPSHOT_STALE",
         );
@@ -363,12 +408,38 @@ class HealthMonitor {
               !previous?.active ||
               Date.parse(p.at) - Date.parse(previous.lastEmittedAt) >=
                 cooldownMs;
+          if (emit && queued) {
+            const notificationId = hash({
+              sourceId,
+              observationIndex: p.index,
+              snapshotHash: p.data.snapshotHash,
+              code: c.code,
+            });
+            state.notifications[notificationId] = {
+              notificationId,
+              sourceId,
+              ...c,
+              capturedAt: p.data.capturedAt,
+              generatedAt: p.at,
+              observationIndex: p.index,
+              repeatedObservations: previous?.active ? previous.suppressed : 0,
+              status: "PENDING",
+              acknowledgedAt: null,
+              consumerId: null,
+            };
+          }
           state.alerts[c.code] = {
             active: true,
             lastEmittedAt: emit ? p.at : previous.lastEmittedAt,
             suppressed: emit ? 0 : previous.suppressed + 1,
           };
         }
+        need(
+          Object.values(state.notifications).filter(
+            (n) => n.status === "PENDING",
+          ).length <= maxPending,
+          "HEALTH_NOTIFICATION_CAPACITY",
+        );
         state.lastCapturedAt = p.data.capturedAt;
         state.lastSnapshotHash = p.data.snapshotHash;
         state.lastStale = stale;
@@ -396,27 +467,67 @@ class HealthMonitor {
       conditions = report.stale
         ? report.conditions.filter((c) => c.code === "SNAPSHOT_STALE")
         : report.conditions;
-    for (const c of conditions) {
-      const old = state.alerts[c.code];
-      if (
-        !old?.active ||
-        now - Date.parse(old.lastEmittedAt) >= this.cooldownMs
-      )
-        notifications.push({
-          ...c,
-          repeatedObservations: old?.active ? old.suppressed : 0,
-        });
-    }
-    this.journal.append("OBSERVED", {
+    const committed = this.journal.append("OBSERVED_QUEUED", {
       capturedAt: input.capturedAt,
       snapshotHash,
       conditions,
+      maxPending: this.maxPending,
     });
+    const durable = this.journal.snapshot();
+    notifications.push(
+      ...Object.values(durable.notifications).filter(
+        (n) => n.observationIndex === committed.payload.index,
+      ),
+    );
     return {
       ...report,
       duplicate: false,
       notifications,
       journalHead: this.journal.head(),
+    };
+  }
+  pending({ limit = 100 } = {}) {
+    need(
+      Number.isSafeInteger(limit) && limit > 0 && limit <= 1000,
+      "HEALTH_PENDING_LIMIT_INVALID",
+    );
+    const state = this.journal.snapshot();
+    return Object.values(state.notifications)
+      .filter((n) => n.status === "PENDING")
+      .slice(0, limit);
+  }
+  notificationStatus() {
+    const state = this.journal.snapshot(),
+      notifications = Object.values(state.notifications);
+    return {
+      schemaVersion: 1,
+      kind: "thundy-health-notification-status",
+      sourceId: this.sourceId,
+      pending: notifications.filter((n) => n.status === "PENDING").length,
+      acknowledged: notifications.filter((n) => n.status === "ACKNOWLEDGED")
+        .length,
+      maxPending: this.maxPending,
+      legacyObservations: state.legacyObservations,
+      journalHead: this.journal.head(),
+      externalDeliveryVerified: false,
+      sealed: false,
+    };
+  }
+  acknowledge(notificationId, { consumerId } = {}) {
+    need(hex(notificationId) && identifier(consumerId), "HEALTH_ACK_INVALID");
+    const n = this.journal.snapshot().notifications[notificationId];
+    need(n, "HEALTH_NOTIFICATION_UNKNOWN");
+    if (n.status === "ACKNOWLEDGED") {
+      need(n.consumerId === consumerId, "HEALTH_ACK_CONFLICT");
+      return { duplicate: true, notification: clone(n) };
+    }
+    this.journal.append("NOTIFICATION_ACKNOWLEDGED", {
+      notificationId,
+      consumerId,
+    });
+    return {
+      duplicate: false,
+      notification: this.journal.snapshot().notifications[notificationId],
     };
   }
   close() {

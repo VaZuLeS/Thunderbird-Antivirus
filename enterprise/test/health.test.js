@@ -360,3 +360,286 @@ test("HTML rejects unknown language and unsupported protected-storage claims", (
     /HEALTH_REVIEW_INVALID/,
   );
 });
+test("lost observe return is recoverable through durable pending IDs and idempotent acknowledgement", () => {
+  const f = fixture();
+  try {
+    const first = f.monitor.observe(input()),
+      id = first.notifications[0].notificationId;
+    assert.ok(id);
+    const original = f.monitor.pending();
+    f.restart();
+    assert.deepEqual(f.monitor.pending(), original);
+    assert.equal(f.monitor.observe(input()).notifications.length, 0);
+    const ack = f.monitor.acknowledge(id, { consumerId: "local-collector" });
+    assert.equal(ack.duplicate, false);
+    const head = f.monitor.journal.head();
+    assert.equal(
+      f.monitor.acknowledge(id, { consumerId: "local-collector" }).duplicate,
+      true,
+    );
+    assert.equal(f.monitor.journal.head(), head);
+    assert.throws(
+      () => f.monitor.acknowledge(id, { consumerId: "other" }),
+      /HEALTH_ACK_CONFLICT/,
+    );
+    f.restart();
+    assert.ok(!f.monitor.pending().some((n) => n.notificationId === id));
+    assert.equal(f.monitor.notificationStatus().acknowledged, 1);
+    assert.equal(
+      f.monitor.notificationStatus().externalDeliveryVerified,
+      false,
+    );
+  } finally {
+    f.cleanup();
+  }
+});
+test("queue capacity rejects entire observation without losing prior candidates or damping state", () => {
+  const f = fixture({ maxPending: 1 });
+  try {
+    const only = {
+      ...input(),
+      storage: null,
+      outbox: {
+        ...input().outbox,
+        counts: { PENDING: 1, RETRY: 0, STAGED: 0, DEAD_LETTER: 1 },
+      },
+    };
+    const id = f.monitor.observe(only).notifications[0].notificationId,
+      head = f.monitor.journal.head();
+    f.time(at + 1100);
+    const next = { ...only, capturedAt: iso(at + 1100) };
+    assert.throws(
+      () => f.monitor.observe(next),
+      /HEALTH_NOTIFICATION_CAPACITY/,
+    );
+    assert.equal(f.monitor.journal.head(), head);
+    assert.equal(f.monitor.pending().length, 1);
+    f.monitor.acknowledge(id, { consumerId: "collector" });
+    assert.equal(f.monitor.observe(next).notifications.length, 1);
+    assert.notEqual(f.monitor.pending()[0].notificationId, id);
+    f.monitor.close();
+    assert.throws(
+      () => new HealthMonitor({ ...f.options, maxPending: 2 }),
+      /HEALTH_DELIVERY_LIMIT_MISMATCH/,
+    );
+  } finally {
+    f.cleanup();
+  }
+});
+test("ack sync failure never confirms delivery; recovery retains an authenticated terminal acknowledgement", () => {
+  let fail = false;
+  const f = fixture({
+    io: {
+      ...fs,
+      fsyncSync(fd) {
+        if (fail) throw new Error("offline");
+        fs.fsyncSync(fd);
+      },
+    },
+  });
+  try {
+    const id = f.monitor.observe(input()).notifications[0].notificationId;
+    fail = true;
+    assert.throws(
+      () => f.monitor.acknowledge(id, { consumerId: "collector" }),
+      /JOURNAL_UNAVAILABLE/,
+    );
+    assert.throws(() => f.monitor.pending(), /JOURNAL_UNAVAILABLE/);
+    fail = false;
+    f.restart();
+    assert.equal(
+      f.monitor.acknowledge(id, { consumerId: "collector" }).duplicate,
+      true,
+    );
+    assert.ok(!f.monitor.pending().some((n) => n.notificationId === id));
+  } finally {
+    f.cleanup();
+  }
+});
+test("legacy OBSERVED records replay without inventing pending notifications", () => {
+  const f = fixture();
+  try {
+    const source = input(),
+      conditions = summarize(source, at).conditions;
+    f.monitor.journal.append("OBSERVED", {
+      capturedAt: source.capturedAt,
+      snapshotHash: require("../ledger.cjs").hash(source),
+      conditions,
+    });
+    f.restart();
+    assert.deepEqual(f.monitor.pending(), []);
+    assert.equal(f.monitor.notificationStatus().legacyObservations, 1);
+    f.time(at + 1100);
+    assert.ok(f.monitor.observe(input(at + 1100)).notifications.length > 0);
+    f.time(at + 1200);
+    assert.throws(
+      () =>
+        f.monitor.journal.append("OBSERVED", {
+          capturedAt: iso(at + 1200),
+          snapshotHash: "a".repeat(64),
+          conditions,
+        }),
+      /HEALTH_LEGACY_AFTER_QUEUE/,
+    );
+  } finally {
+    f.cleanup();
+  }
+});
+test("pending is bounded and non-destructive; invalid or unknown acknowledgements never append", () => {
+  const f = fixture();
+  try {
+    f.monitor.observe(input());
+    const head = f.monitor.journal.head();
+    assert.equal(f.monitor.pending({ limit: 1 }).length, 1);
+    assert.equal(f.monitor.journal.head(), head);
+    assert.throws(
+      () => f.monitor.pending({ limit: 1001 }),
+      /HEALTH_PENDING_LIMIT_INVALID/,
+    );
+    assert.throws(
+      () => f.monitor.acknowledge("a".repeat(64), { consumerId: "collector" }),
+      /HEALTH_NOTIFICATION_UNKNOWN/,
+    );
+    assert.throws(
+      () =>
+        f.monitor.acknowledge(f.monitor.pending()[0].notificationId, {
+          consumerId: "https://secret/",
+        }),
+      /HEALTH_ACK_INVALID/,
+    );
+    assert.equal(f.monitor.journal.head(), head);
+    assert.ok(!JSON.stringify(f.monitor.pending()).includes("secret.example"));
+  } finally {
+    f.cleanup();
+  }
+});
+test("CLI observe, pending and ack preserve candidates until explicit confirmation", () => {
+  const { spawnSync } = require("node:child_process"),
+    directory = fs.mkdtempSync(
+      path.join(os.tmpdir(), "thundy-health-delivery-cli-"),
+    ),
+    keys = crypto.generateKeyPairSync("ed25519");
+  try {
+    const file = (name) => path.join(directory, name);
+    fs.writeFileSync(
+      file("key.pem"),
+      keys.privateKey.export({ type: "pkcs8", format: "pem" }),
+      { mode: 0o600 },
+    );
+    fs.writeFileSync(
+      file("input.json"),
+      JSON.stringify(input(Date.now() - 1000)),
+    );
+    const worker = [
+        "--directory",
+        file("state"),
+        "--key-id",
+        "health",
+        "--private-key",
+        file("key.pem"),
+      ],
+      run = (command, extra) =>
+        spawnSync(
+          process.execPath,
+          ["enterprise/health_cli.cjs", command, ...worker, ...extra],
+          { encoding: "utf8" },
+        );
+    assert.equal(
+      run("observe", [
+        "--input",
+        file("input.json"),
+        "--out",
+        file("observation.json"),
+      ]).status,
+      0,
+    );
+    assert.equal(
+      run("pending", [
+        "--source-id",
+        "local-queue",
+        "--limit",
+        "1",
+        "--out",
+        file("pending.json"),
+      ]).status,
+      0,
+    );
+    const n = JSON.parse(fs.readFileSync(file("pending.json")))
+      .notifications[0];
+    assert.ok(n.notificationId);
+    const args = [
+      "--source-id",
+      "local-queue",
+      "--notification-id",
+      n.notificationId,
+      "--consumer-id",
+      "collector",
+    ];
+    assert.equal(JSON.parse(run("ack", args).stdout).duplicate, false);
+    assert.equal(JSON.parse(run("ack", args).stdout).duplicate, true);
+    assert.equal(fs.statSync(file("pending.json")).mode & 0o077, 0);
+    assert.notEqual(
+      run("pending", [
+        "--source-id",
+        "local-queue",
+        "--limit",
+        "0",
+        "--out",
+        file("bad.json"),
+      ]).status,
+      0,
+    );
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+test("later healthy observations or resolved faults never retire pending candidates implicitly", () => {
+  const f = fixture();
+  try {
+    const first = f.monitor.observe(input()),
+      ids = first.notifications.map((n) => n.notificationId);
+    f.time(at + 500);
+    const healthy = input(at + 500);
+    healthy.outbox.counts = { PENDING: 2, RETRY: 0, STAGED: 0, DEAD_LETTER: 0 };
+    healthy.storage = null;
+    f.monitor.observe(healthy);
+    assert.deepEqual(
+      f.monitor.pending().map((n) => n.notificationId),
+      ids,
+    );
+    f.restart();
+    assert.deepEqual(
+      f.monitor.pending().map((n) => n.notificationId),
+      ids,
+    );
+  } finally {
+    f.cleanup();
+  }
+});
+test("signed but invalid or repeated acknowledgement actions are rejected on replay rules", () => {
+  const f = fixture();
+  try {
+    const id = f.monitor.observe(input()).notifications[0].notificationId;
+    const head = f.monitor.journal.head();
+    assert.throws(
+      () =>
+        f.monitor.journal.append("NOTIFICATION_ACKNOWLEDGED", {
+          notificationId: "a".repeat(64),
+          consumerId: "collector",
+        }),
+      /HEALTH_ACK_INVALID/,
+    );
+    assert.equal(f.monitor.journal.head(), head);
+    f.monitor.acknowledge(id, { consumerId: "collector" });
+    assert.throws(
+      () =>
+        f.monitor.journal.append("NOTIFICATION_ACKNOWLEDGED", {
+          notificationId: id,
+          consumerId: "collector",
+        }),
+      /HEALTH_ACK_INVALID/,
+    );
+  } finally {
+    f.cleanup();
+  }
+});

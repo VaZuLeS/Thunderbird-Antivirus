@@ -64,3 +64,5 @@ without consent. There is no telemetry, no analytics and no developer-operated s
 [Signed policy comparison and conservative offline simulation](ENTERPRISE_POLICY_SIMULATION.md). Decision-time assessments are evaluated under explicit assumptions; rollout and activation remain unavailable.
 
 [Incident review in six languages](ENTERPRISE_FALLUEBERSICHT.md). Public-key journal verification precedes HTML generation; filters and paginated histories preserve the complete minimized download.
+
+[Durable local alert candidates and explicit acknowledgement](ENTERPRISE_ALARMKANDIDATEN.md). New observations retain candidates across restarts; external delivery and enterprise authorization remain open.
