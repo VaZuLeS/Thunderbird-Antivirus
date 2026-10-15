@@ -89,3 +89,7 @@ Die sechssprachige Adminansicht zeigt lokale Ablagebezeichnungen mit aufklappbar
 ## Dauerhafte Alarmkandidaten
 
 `enterprise:health pending/ack` ergänzt die Beobachtungen um beständige Kandidaten-IDs und ausdrückliche lokale Bestätigung. Neue Kandidaten bleiben nach Neustart bis zum ACK abrufbar; alte Beobachtungen werden nicht rückwirkend als wiederherstellbar ausgegeben. [CLI, API, Kapazität und Legacygrenzen](../docs/ENTERPRISE_ALARMKANDIDATEN.md). Kein externer Alarmversand oder bestätigte Unternehmensidentität.
+
+## Signierte minimale Testgeräte-Heartbeats
+
+`enterprise:heartbeats accept/verify` prüft Gerätebindung, Sequenzen und Zeitbeziehungen, nimmt minimale Meldungen dauerhaft an und erzeugt einen öffentlichen Statusreport. Der Reader prüft beide Signaturarten ohne Writer-Schlüssel. [Schema, Registry und Recovery](../docs/ENTERPRISE_HEARTBEATS.md). Explizite Testidentitäten; keine reale Flottenmessung oder Extension-/Brokerintegration.

@@ -66,3 +66,5 @@ without consent. There is no telemetry, no analytics and no developer-operated s
 [Incident review in six languages](ENTERPRISE_FALLUEBERSICHT.md). Public-key journal verification precedes HTML generation; filters and paginated histories preserve the complete minimized download.
 
 [Durable local alert candidates and explicit acknowledgement](ENTERPRISE_ALARMKANDIDATEN.md). New observations retain candidates across restarts; external delivery and enterprise authorization remain open.
+
+[Signed minimal test-device heartbeats](ENTERPRISE_HEARTBEATS.md). Device and journal signatures, sequence recovery and conservative freshness checks; no production fleet or runtime integration is claimed.
