@@ -298,7 +298,7 @@ describe('options.js', () => {
     it('should enforce security attributes on all API key input fields in options.html', () => {
         const html = fs.readFileSync(path.join(__dirname, 'options.html'), 'utf8');
         const optionsDom = new JSDOM(html);
-        const apiKeyIds = ['apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey'];
+        const apiKeyIds = ['apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey', 'ipReputationApiKey'];
 
         for (const id of apiKeyIds) {
             const inputEl = optionsDom.window.document.getElementById(id);
