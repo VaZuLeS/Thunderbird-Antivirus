@@ -70,8 +70,10 @@ Der erste Kurzlauf fand fehlende Hauptbereiche in zwei Offline-Renderern und vie
 
 ## Verifizierter Entwicklungsstand
 
-`npm run check`: 946 Tests bestanden, 0 Lintfehler und 24 bekannte Thunderbird-Warnungen; Paketprüfung mit 44 Runtime-Dateien / 772.118 Bytes bestanden. Korrigierter Kurzlauf: 34/34 Fälle, zusätzlich alle 24 Nachrichten-Dialogfälle und 48 Audit-Sprach-/Layoutfälle bestanden mit Chromium 154.0.8037.57. Manuell zu beurteilende axe-Ergebnisse (`color-contrast`, `th-has-data-cells`) bleiben im Bericht erhalten. Der vollständige Matrixumfang beträgt inzwischen 600 Fälle; Ergebnisse und jeweilige Werkzeugversionen werden durch lokale Berichte und die sechs CI-Artefakte nachgewiesen.
+`npm run check`: 947 Tests bestanden, 0 Lintfehler und 24 bekannte Thunderbird-Warnungen; Paketprüfung mit 44 Runtime-Dateien / 772.466 Bytes bestanden. Korrigierter Kurzlauf: 34/34 Fälle, zusätzlich alle 24 Nachrichten-Dialogfälle und 48 Audit-Sprach-/Layoutfälle bestanden mit Chromium 154.0.8037.57. Manuell zu beurteilende axe-Ergebnisse (`color-contrast`, `th-has-data-cells`) bleiben im Bericht erhalten. Der vollständige Matrixumfang beträgt inzwischen 600 Fälle; Ergebnisse und jeweilige Werkzeugversionen werden durch lokale Berichte und die sechs CI-Artefakte nachgewiesen.
 
 ## Historische Befunde im lokalen Linkprotokoll
 
 Die gefüllten Browserfälle haben die Darstellung zum Entscheidungszeitpunkt zusätzlich überprüfbar gemacht. Die Auditansicht zeigt jetzt ausdrücklich den damaligen, sechssprachig lokalisierten Befund. Fehlt `verdictAtDecision` oder `providerAtDecision`, wird der spätere aktuelle Wert nicht als damaliger Wert eingesetzt. „Nicht verfügbar“ bleibt von „Ergebnis unbekannt“ und „Kein Fund“ getrennt. Der spätere Befund erscheint weiterhin mit seinem Prüfzeitpunkt in den Details. Exporte behalten ihre ursprünglichen technischen Kennungen und Werte. Sechs zusätzliche Regressionstests prüfen diese Trennung in EN/DE/FR/ES/IT/PL.
+
+Der Linkdialog hält den Fokus auch während einer asynchronen Browserübergabe im Dialog. Bei einem Öffnungsfehler erhält die erneut aktivierte Öffnungsaktion den Fokus zurück; Tab/Shift+Tab funktionieren auch vom vorübergehend fokussierten Dialogbereich aus. Ein zusätzlicher Regressionstest prüft den schwebenden und den fehlgeschlagenen Öffnungsversuch.

@@ -401,3 +401,63 @@ test("information density saves independently and updates open document dimensio
     f.close();
   }
 });
+
+test("message opening keeps focus inside the dialog while pending and restores the retry button after failure", async () => {
+  const injected = [],
+    c = vm.createContext({
+      timeOfClickProtection: true,
+      msg: (key) => key,
+      browser: {
+        scripting: { executeScript: async (request) => injected.push(request) },
+      },
+    });
+  vm.runInContext(fs.readFileSync("message_ui.js", "utf8"), c);
+  await vm.runInContext("injectTimeOfClickProtection(1, [], 42)", c);
+  const dom = new JSDOM('<a href="https://example.invalid/">Open</a>', {
+      runScripts: "outside-only",
+    }),
+    w = dom.window;
+  try {
+    let resolveOpening;
+    w.args = injected[0].args;
+    w.browser = {
+      runtime: {
+        sendMessage: async (request) =>
+          request.action === "openCheckedLink"
+            ? new Promise((resolve) => {
+                resolveOpening = resolve;
+              })
+            : { status: "MALICIOUS", score: 72 },
+      },
+    };
+    w.eval("(" + injected[0].func.toString() + ")(...args)");
+    w.document
+      .querySelector("a")
+      .dispatchEvent(
+        new w.MouseEvent("click", {
+          button: 0,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    await tick();
+    const root = w.document.getElementById("thundy-link-dialog").shadowRoot,
+      proceed = root.querySelector(".primary"),
+      card = root.querySelector(".dialog");
+    proceed.click();
+    assert.equal(proceed.disabled, true);
+    assert.equal(root.activeElement, card);
+    resolveOpening({ success: false });
+    await tick();
+    assert.equal(proceed.disabled, false);
+    assert.equal(root.activeElement, proceed);
+    assert.equal(root.querySelector(".error").textContent, "linkOpenFailed");
+    proceed.dispatchEvent(
+      new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+    );
+    assert.equal(w.document.getElementById("thundy-link-dialog"), null);
+    assert.equal(w.document.activeElement, w.document.querySelector("a"));
+  } finally {
+    w.close();
+  }
+});

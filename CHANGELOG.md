@@ -2,6 +2,8 @@
 
 ## 1.23.0 — 2026-10-15
 
+- Keep link-dialog focus inside the modal during asynchronous browser handoff and restore the retry action on opening failure.
+
 - Keep historical audit verdicts/providers separate from later checks, localize verdict labels in all six languages, and preserve raw export evidence. Cover populated audit/popup views and injected message-link flows in browser CI.
 
 - Add reproducible six-language browser/axe CI; fix main landmarks, inline-link identification, scroll-region keyboard focus and audit-dialog naming.

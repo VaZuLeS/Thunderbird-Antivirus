@@ -63,7 +63,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 button:focus-visible,summary:focus-visible { outline:3px solid #0284c7;outline-offset:3px; } button:disabled { opacity:.6;cursor:wait; }
 
             `;
-            const card = document.createElement('section'); card.className = 'dialog';
+            const card = document.createElement('section'); card.className = 'dialog'; card.tabIndex = -1;
             const header = document.createElement('header');
             const brand = document.createElement('span'); brand.className = 'brand'; brand.textContent = 'T'; brand.setAttribute('aria-hidden', 'true');
             const headings = document.createElement('div');
@@ -107,7 +107,9 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 if (event.key === 'Tab') {
                     const controls = Array.from(root.querySelectorAll('button:not(:disabled),summary'));
                     const index = controls.indexOf(root.activeElement);
-                    event.preventDefault(); controls[(index + (event.shiftKey ? controls.length - 1 : 1)) % controls.length].focus();
+                    event.preventDefault();
+                    const next = index < 0 ? (event.shiftKey ? controls.length - 1 : 0) : (index + (event.shiftKey ? controls.length - 1 : 1)) % controls.length;
+                    controls[next].focus();
                 }
             });
             cancel.focus();
@@ -135,12 +137,15 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 if (opening || !panel.isConnected) return;
                 if (!link.isConnected || link.href !== url) { close('destination_changed'); return; }
                 opening = true; cancel.disabled = true; proceed.disabled = true; proceed.setAttribute('aria-busy', 'true'); proceed.textContent = labels.opening; error.textContent = '';
+                // Disabled buttons can lose focus before the asynchronous handoff finishes.
+                card.focus();
                 // Keep the dialog on failure, so the user can retry or cancel.
                 try {
                     const opened = await browser.runtime.sendMessage({ action: 'openCheckedLink', url, messageId, interactionId });
                     if (opened && opened.success) { close('opened'); return; }
                 } catch (e) { /* show the localized error below */ }
                 opening = false; cancel.disabled = false; proceed.disabled = false; proceed.removeAttribute('aria-busy'); proceed.textContent = buttonLabel; error.textContent = labels.failed;
+                if (!root.activeElement || root.activeElement === card) proceed.focus();
             });
             footer.appendChild(proceed); cancel.focus();
         }
