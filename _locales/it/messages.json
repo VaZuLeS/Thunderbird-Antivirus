@@ -1363,5 +1363,41 @@
   },
   "themeRetry": {
     "message": "Riprova a salvare l’aspetto"
+  },
+  "themeDensity": {
+    "message": "Densità delle informazioni"
+  },
+  "themeComfortable": {
+    "message": "Comoda"
+  },
+  "themeCompact": {
+    "message": "Compatta"
+  },
+  "themeDensityHelp": {
+    "message": "Regola gli spazi nelle impostazioni e negli strumenti locali di amministrazione."
+  },
+  "profilesChanges": {
+    "message": "Modifiche rispetto alla selezione salvata"
+  },
+  "profilesDiscard": {
+    "message": "Scarta le modifiche non salvate"
+  },
+  "profilesLoadRetry": {
+    "message": "Ricarica la selezione salvata"
+  },
+  "profilesNotLoaded": {
+    "message": "Selezione salvata non caricata"
+  },
+  "profilesUnsaved": {
+    "message": "Modifiche non salvate · bozza inattiva"
+  },
+  "profilesUnchanged": {
+    "message": "Selezione salvata · bozza inattiva"
+  },
+  "profilesSaving": {
+    "message": "Salvataggio della selezione locale…"
+  },
+  "settingsUnsaved": {
+    "message": "Modifiche non salvate"
   }
 }

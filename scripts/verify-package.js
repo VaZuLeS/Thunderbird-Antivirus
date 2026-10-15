@@ -44,6 +44,8 @@ const ALLOWED_FILES = [
   'privacy.html',
   'theme.css',
   'theme.js',
+  'design_system.js',
+  'design.css',
   'options.css',
   'LICENSE'
 ];
@@ -84,6 +86,8 @@ const REQUIRED_FILES = [
   'privacy.html',
   'theme.css',
   'theme.js',
+  'design_system.js',
+  'design.css',
   'options.css',
   'LICENSE'
 ];
@@ -108,7 +112,9 @@ const FORBIDDEN = [
 ];
 // Six complete catalogs and a bundled Public Suffix List require more than the former 400 KiB budget.
 // First-install wizard adds six-language instructions, UI and bundled fallback.
-const MAX_UNCOMPRESSED_BYTES = 750 * 1024;
+// 1.23.0 ships 44 allowlisted files including the shared design runtime/CSS.
+// Generator sources stay excluded; retain a small, explicit size budget.
+const MAX_UNCOMPRESSED_BYTES = 775 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the

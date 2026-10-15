@@ -66,6 +66,12 @@ async function removeDataCollectionConsent() {
 let _saveTimeoutId = null;
 let _clearTimeoutId = null;
 document.addEventListener('DOMContentLoaded', function() {
+    document.body.addEventListener('input', event => {
+        if (!event.target.closest('#appearance') && event.target.matches('input,select,textarea')) {
+            const dirty = document.getElementById('settingsDirty');
+            if (dirty) dirty.hidden = false;
+        }
+    });
     dataCollectionConsentSupported().then(supported => { collectionConsentSupported = supported; });
     // Abrufen der gespeicherten Einstellung
     browser.storage.local.get([
@@ -248,6 +254,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (externalAnalysisConsentSetting || !document.getElementById('externalAnalysisConsent').checked) {
             if (statusSpan.textContent === uiText('ui_073', 'Wird gespeichert...')) statusSpan.textContent = uiText('ui_074', 'Erfolgreich gespeichert!');
         }
+        const dirty = document.getElementById('settingsDirty');
+        if (dirty) dirty.hidden = true;
         saveBtn.disabled = false;
         saveBtn.removeAttribute('aria-busy');
         saveBtn.textContent = uiText("ui_075", "Speichern");

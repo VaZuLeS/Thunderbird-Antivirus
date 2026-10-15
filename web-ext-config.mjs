@@ -14,6 +14,8 @@ export default {
     overwriteDest: true,
   },
   ignoreFiles: [
+    // Source for generated design.css; shipped pages load the generated file.
+    'design_components.css',
     // Preparatory Node-only enterprise core is not an activated extension feature.
     'enterprise',
     'enterprise/**',

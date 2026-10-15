@@ -2,6 +2,12 @@
 
 ## 1.23.0 — 2026-10-15
 
+- Share one design contract and generated component CSS across the add-on and all seven offline admin renderers; preserve CSP, signatures, filters and complete exports.
+- Add document-local, script-free theme/accent/density controls to offline reports; add independently saved comfortable/compact density to the add-on.
+- Reduce the event review to five primary columns with chronological sorting, localized times and expandable original details.
+- Show admin profile changes against the saved selection, discard, loading retry and recoverable save failures; block writes/exports after failed loading.
+- Keep verification warnings visible while collapsing technical proof and JSON details; retain fixed scanner popup sizing.
+
 - Redesign settings with section navigation, clearer form groups, modern spacing and a persistent save action.
 - Add a shared local theme system: follow Thunderbird, light or dark, and four accent palettes, fully translated in EN/DE/FR/ES/IT/PL.
 - Save appearance independently, update open add-on pages, and apply themes to the wizard, scanner, local tools and isolated message security UI.

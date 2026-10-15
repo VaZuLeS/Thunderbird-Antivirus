@@ -271,16 +271,16 @@
   box-shadow: 0 0 0 1px #0002;
 }
 .ocean.accent-preview {
-  background: #14748a;
+  background: var(--accent-ocean);
 }
 .violet.accent-preview {
-  background: #7051c4;
+  background: var(--accent-violet);
 }
 .forest.accent-preview {
-  background: #257552;
+  background: var(--accent-forest);
 }
 .amber.accent-preview {
-  background: #985813;
+  background: var(--accent-amber);
 }
 .theme-status {
   font-size: 12px;
@@ -571,4 +571,21 @@
     flex: 1;
     min-width: 0;
   }
+}
+
+.theme-densities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+:root[data-density="compact"] .settings-section {
+  padding: 16px;
+}
+:root[data-density="compact"]
+  .settings-page
+  input:not([type="radio"]):not([type="checkbox"]),
+:root[data-density="compact"] .settings-page select,
+:root[data-density="compact"] .settings-page button {
+  min-height: 36px;
+  padding-block: 7px;
 }

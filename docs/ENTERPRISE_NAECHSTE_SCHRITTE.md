@@ -35,6 +35,7 @@ Die Umsetzung wird nach dieser Reihenfolge innerhalb der jeweiligen Aufgabe fort
 
 ## Noch benötigte reale Nachweise
 
+- **Thunderbird 1.23.0:** reale Theme-, Dichte-, Popup- und Admin-Einstellungsprüfung gemäß [Designabnahme](DESIGN_THEMES.md); Quellstand und unsigniertes Paket sind automatisiert geprüft.
 - **Thunderbird 1.22.0:** tatsächliche Erstinstallation, Update, Zustimmung/Ablehnung und UI in Thunderbird 140 ESR/aktueller Version auf den Zielsystemen; [Prüfliste](live_test_1_22_0.md).
 - **Unternehmensbetrieb:** konkrete Betreiber, Datenregion, IdP, Geräteverwaltung und optional freigegebene SIEM-/Ticketsysteme. Verbreitete Anbieter bleiben wählbare Profile.
 - **Geschützte Ablage:** unabhängige Live-/Retention-/Schlüssel-/Restoreprüfungen und bestätigter Evidenzcommit. `CLOUD_OBSERVED` bleibt ohne SEALED-Freigabe.
@@ -69,4 +70,4 @@ N17 ergänzt die [minimierte lokale Kapazitätsprüfung](ENTERPRISE_KAPAZITAET.m
 
 ## Aktuelle Priorität: einheitliche Oberfläche
 
-Für die vom Nutzer priorisierte Designkonsolidierung gilt zusätzlich der [UI-Umstellungsplan UX01–UX06](DESIGNSYSTEM.md). UX01 ist im Quellstand 1.23.0 implementiert; UX02 liefert Konzept und bedienbare Designreferenz. Als nächstes folgen UX03/UX04: gemeinsamer Token-/Komponentenkern und Konsolidierung der sieben Offline-Adminansichten. Die funktionale Enterprise-Aufgabe N18 bleibt offen; eine Designreferenz implementiert weder zusätzliche Backendfunktionen noch produktive Adminrechte.
+Für die vom Nutzer priorisierte Designkonsolidierung gilt zusätzlich der [UI-Umstellungsplan UX01–UX06](DESIGNSYSTEM.md). UX01 ist im Quellstand 1.23.0 implementiert; UX02 liefert Konzept und bedienbare Designreferenz. UX03/UX04 sind umgesetzt: gemeinsamer Token-/Komponentenkern und Konsolidierung der sieben Offline-Adminansichten. Für UX05 bleiben reale Thunderbird-/OS- und Screenreader-Prüfungen offen; die automatisierte Prüfung ist abgeschlossen. Die funktionale Enterprise-Aufgabe N18 bleibt offen; eine Designreferenz implementiert weder zusätzliche Backendfunktionen noch produktive Adminrechte.

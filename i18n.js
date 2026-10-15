@@ -1368,6 +1368,42 @@ const ThundyI18n = (() => {
   },
   "themeRetry": {
     "message": "Retry saving appearance"
+  },
+  "themeDensity": {
+    "message": "Information density"
+  },
+  "themeComfortable": {
+    "message": "Comfortable"
+  },
+  "themeCompact": {
+    "message": "Compact"
+  },
+  "themeDensityHelp": {
+    "message": "Adjust spacing in settings and local admin tools."
+  },
+  "profilesChanges": {
+    "message": "Changes compared with saved selection"
+  },
+  "profilesDiscard": {
+    "message": "Discard unsaved changes"
+  },
+  "profilesLoadRetry": {
+    "message": "Reload saved selection"
+  },
+  "profilesNotLoaded": {
+    "message": "Saved selection not loaded"
+  },
+  "profilesUnsaved": {
+    "message": "Unsaved changes · inactive draft"
+  },
+  "profilesUnchanged": {
+    "message": "Saved selection · inactive draft"
+  },
+  "profilesSaving": {
+    "message": "Saving local selection…"
+  },
+  "settingsUnsaved": {
+    "message": "Unsaved changes"
   }
 };
     function get(key, params = []) {

@@ -31,7 +31,7 @@ Die neue Add-on-Darstellung bildet die Grundlage: kühle neutrale Flächen, dunk
 | Breite | Inhaltsbereiche typischerweise 1.120–1.280 px; breite Admin-Datentabellen bei Bedarf größer |
 | Bewegung | Kurz und funktional; reduzierte Bewegung respektieren |
 
-Als einzige Farbdefinition für die kommende Konsolidierung dienen die geprüften Theme-Tokens. Die Designreferenz wird aus dem aktuellen Theme und den vorhandenen Styles generiert. Die sieben bestehenden Offline-Renderer sollen anschließend denselben Kern einbetten, damit exportierte HTML-Dateien weiterhin vollständig offline funktionieren. Eine HTML-Datei darf keine externe Schrift, Icon-Bibliothek oder CSS-CDN benötigen.
+Als einzige Farbdefinition für die kommende Konsolidierung dienen die geprüften Theme-Tokens. Die Designreferenz wird aus dem aktuellen Theme und den vorhandenen Styles generiert. Die sieben bestehenden Offline-Renderer betten denselben Kern ein, damit exportierte HTML-Dateien weiterhin vollständig offline funktionieren. Eine HTML-Datei darf keine externe Schrift, Icon-Bibliothek oder CSS-CDN benötigen.
 
 ## 2. Einheitlicher Seitenaufbau
 
@@ -99,12 +99,12 @@ EN, DE, FR, ES, IT und PL gehören zur Produktabnahme. Layouts dürfen keine eng
 | --- | --- | --- |
 | UX01 | Moderne Einstellungen und gemeinsame Themes für die sechs Add-on-Seiten einschließlich lokaler Adminwerkzeuge und Nachrichtendialoge | Implementiert im Quellstand 1.23.0; automatisiert und in Chromium geprüft, reale Thunderbird-Abnahme offen |
 | UX02 | Übergreifende Designprinzipien und bedienbare Referenz für Anwender, Adminübersicht und Admin-Einstellungen | Mit diesem Dokument ausgearbeitet; Beispieldaten, keine aktive Konsole |
-| UX03 | Gemeinsamen Token-/Komponentenkern als einzige Quelle für Add-on und sieben Offline-Adminrenderer extrahieren | Nächster Implementierungsschritt; CSP, Offline-Fähigkeit, Sprachen und Exporte erhalten |
-| UX04 | Renderer für Ereignisse, Storage, Fälle, Betriebszustand, Geräte, Alarme und Kapazität angleichen | Danach; gemeinsame Header, Formulare, Status, Tabellen und Detailhierarchie; paketbasierte Alarmreview mitprüfen |
-| UX05 | Einheitliche Navigation, Informationsdichte und Tastatur-/Screenreader-Abnahme über alle Oberflächen | Teil der Konsolidierung; echte Thunderbird-/OS-Abnahme erforderlich |
+| UX03 | Gemeinsamen Token-/Komponentenkern als einzige Quelle für Add-on und sieben Offline-Adminrenderer extrahieren | **Implementiert**; reiner gemeinsamer Designvertrag, generiertes CSS und Renderer-Einbettung; CSP, Offline-Fähigkeit, Sprachen und Exporte geprüft |
+| UX04 | Renderer für Ereignisse, Storage, Fälle, Betriebszustand, Geräte, Alarme und Kapazität angleichen | **Implementiert**; gemeinsame Header, Formulare, Status, Theme-/Dichteauswahl; Ereignistabelle mit fünf Kernspalten, Details und Sortierung; Paketreview nutzt denselben Alarmrenderer |
+| UX05 | Einheitliche Navigation, Informationsdichte und Tastatur-/Screenreader-Abnahme über alle Oberflächen | Automatisierte Layout-, Theme-, Tastatur-, Filter- und Exportprüfung umgesetzt; echte Thunderbird-/OS- und Screenreader-Abnahme bleibt offen |
 | UX06 | Authentifiziertes Unternehmensportal und produktive Admin-Einstellungen auf diese Komponenten aufsetzen | Abhängig von den offenen Enterprise-Kernfunktionen; UI allein erfüllt weder SSO/RBAC noch SEALED |
 
-Die Entwicklung soll UX03 und UX04 als gemeinsame Konsolidierung bearbeiten. Jeder umgestellte Renderer erhält Vergleiche für leere, volle, gefilterte, veraltete und fehlerhafte Zustände. Bestehende Signaturprüfung, Datenminimierung, Pagination und Exportbedeutung sind Abnahmekriterien. Neue Farben allein schließen diese Schritte nicht ab.
+UX03 und UX04 sind als gemeinsame Konsolidierung umgesetzt. Jeder umgestellte Renderer erhält Vergleiche für leere, volle, gefilterte, veraltete und fehlerhafte Zustände. Bestehende Signaturprüfung, Datenminimierung, Pagination und Exportbedeutung sind Abnahmekriterien. Neue Farben allein schließen diese Schritte nicht ab.
 
 Die automatische Vorarbeit bleibt getrennt von der [produktiven Enterprise-Abnahme](ENTERPRISE_N06_ABNAHME.md). Die [aktuelle Theme-Dokumentation](DESIGN_THEMES.md) beschreibt die bereits implementierten Funktionen.
 
@@ -113,3 +113,13 @@ Die automatische Vorarbeit bleibt getrennt von der [produktiven Enterprise-Abnah
 `npm run design:reference` erzeugt die eigenständige Referenz aus den implementierten Theme-Tokens und Styles. `npm run check:design` prüft den erzeugten Stand und ist Teil von `npm run check`. Die Vorschau benötigt weder Netzwerkressourcen noch persistente Einstellungen. Ihre Texte sind deutschsprachige Entwurfsdokumentation; die sechs Produktsprachen bleiben verbindliche Abnahmeanforderung der Umsetzung.
 
 Chromium-Prüfung: 144 Panel-Layouts aus drei Ansichten und 48 Kombinationen von Breite, Systemfarbschema, Erscheinungsbild und Akzent. Filter, Leerzustand, Tastaturwechsel und inaktive Demoaktionen geprüft; keine Seitenfehler oder externen Ressourcenabrufe.
+
+## Implementierter Kern und tatsächliche Admin-Einstellungen
+
+`design_system.js` enthält Farbpaletten, Kontrastprüfung, normalisierte Theme-/Dichtevorgaben und sichere native Farbauswertung. `design_components.css` enthält die gemeinsam genutzten Komponenten. `npm run design:build` erzeugt daraus `design.css`; `npm run check:design` verhindert veraltete generierte Assets. Die Generierung selbst bleibt außerhalb des XPI.
+
+`theme.js` bindet ausschließlich lokale Darstellungsvorgaben und native Thunderbird-Änderungen an diesen Kern. Die sieben Offline-Renderer verwenden `enterprise/design_system.cjs` zum Einbetten desselben CSS. Ihre bestehenden Datenprüfungen und Exportverträge bleiben bestehen. Die Auswahl in Offline-Dateien erfordert keine neuen Skripte; statische Berichte bleiben statisch.
+
+Die realen Profil-Einstellungen zeigen gespeicherte und ungespeicherte Auswahl, einen Feldvergleich, Verwerfen, Ladefehler und wiederholbares Speichern. Bestehende Auswahl wird nach Ladefehlern nicht mit Standardwerten überschrieben. Technische JSON-Vorschau und Prüfdaten sind gezielt aufklappbar; Daten- und Signaturwarnungen bleiben sichtbar.
+
+Automatisierte Gesamtprüfung: 919 Tests; keine Lintfehler, 24 bekannte Thunderbird-Warnungen. 324 wesentliche Browserlayouts über Einstellungen und Adminrenderer sowie zusätzliche Prüfungen der optimierten Assets. Echte SSO-/RBAC-/SEALED-Funktionen werden dadurch nicht ergänzt; UX06 bleibt von den bestehenden Enterprise-Kernaufgaben abhängig.

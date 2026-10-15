@@ -48,6 +48,7 @@
   "background": {
     "scripts": [
       "i18n.js",
+      "design_system.js",
       "theme.js",
       "runtime.js",
       "vendor/tldts.js",

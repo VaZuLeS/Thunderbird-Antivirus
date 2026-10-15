@@ -131,7 +131,7 @@ button:disabled {
   cursor: default;
 }
 :focus-visible {
-  outline: 3px solid #f59e0b;
+  outline: 3px solid var(--link-color);
   outline-offset: 3px;
 }
 h2:focus {

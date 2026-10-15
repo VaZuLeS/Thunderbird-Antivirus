@@ -199,11 +199,11 @@ The [GitHub release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/t
 
 ## Unified product design
 
-The [shared design system](docs/DESIGNSYSTEM.md) defines consistent user and admin patterns, with an [interactive offline reference](docs/UI_DESIGNSYSTEM.html) containing synthetic examples only. Existing offline enterprise reports still need consolidation; the reference does not provide SSO, RBAC or active integrations. Regenerate it with `npm run design:reference`; `npm run check:design` verifies that it matches the implemented theme.
+The [shared design system](docs/DESIGNSYSTEM.md) defines consistent user and admin patterns, with an [interactive offline reference](docs/UI_DESIGNSYSTEM.html) containing synthetic examples only. All seven offline enterprise renderers now share the generated design core, including document-local theme/density controls; the reference does not provide SSO, RBAC or active integrations. Regenerate it with `npm run design:reference`; `npm run check:design` verifies that it matches the implemented theme.
 
 ## Appearance and themes
 
-The redesigned settings organize appearance, privacy, protection, providers, sender rules and local tools into six sections. Choose automatic Thunderbird appearance, explicit light or dark, and Ocean, Violet, Forest or Amber accents. Appearance saves immediately and updates open add-on pages; other settings still use Save. Theme preferences never enable scans or change consent. See [theme behavior and manual acceptance](docs/DESIGN_THEMES.md).
+The redesigned settings organize appearance, privacy, protection, providers, sender rules and local tools into six sections. Choose automatic Thunderbird appearance, explicit light or dark, and Ocean, Violet, Forest or Amber accents. Appearance saves immediately and updates open add-on pages; other settings still use Save. Comfortable/compact density updates local admin tools as well. Theme preferences never enable scans or change consent. Local enterprise profile settings show unsaved changes, a comparison with the saved selection, discard and retryable loading/saving; saving never activates an integration. See [theme behavior and manual acceptance](docs/DESIGN_THEMES.md).
 
 ## Permissions overview
 

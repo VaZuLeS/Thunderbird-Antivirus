@@ -58,8 +58,8 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 .note { color:var(--text-muted,#475569);font-size:12px;margin:12px 0; } ul { padding-left:20px;overflow-wrap:anywhere; }
                 .error { color:var(--color-danger,#be123c);margin:12px 0; } .error:empty { display:none; }
                 footer { display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:20px; }
-                button { font:600 14px/1.4 system-ui,sans-serif;border:1px solid var(--input-border,#94a3b8);border-radius:8px;padding:10px 16px;cursor:pointer;background:var(--card-bg,#fff);color:var(--text-color,#17243a);max-width:100%;overflow-wrap:anywhere; }
-                .primary { background:var(--btn-primary-bg,#075985);color:#fff;border-color:var(--btn-primary-bg,#075985); } .warning { background:#9f1239;border-color:#9f1239; }
+                button { font:600 14px/1.4 system-ui,sans-serif;border:1px solid var(--input-border,#94a3b8);border-radius:8px;padding:10px 16px;min-height:var(--control-size,44px);cursor:pointer;background:var(--card-bg,#fff);color:var(--text-color,#17243a);max-width:100%;overflow-wrap:anywhere; }
+                .primary { background:var(--btn-primary-bg,#075985);color:#fff;border-color:var(--btn-primary-bg,#075985); } .warning { background:var(--btn-danger-bg,#9f1239);border-color:var(--btn-danger-bg,#9f1239); }
                 button:focus-visible,summary:focus-visible { outline:3px solid #0284c7;outline-offset:3px; } button:disabled { opacity:.6;cursor:wait; }
 
             `;

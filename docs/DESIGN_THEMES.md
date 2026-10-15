@@ -2,7 +2,7 @@
 
 Die Einstellungen sind in Darstellung, Datenschutz, Schutz, Analysedienste, Absenderregeln sowie Daten und Werkzeuge gegliedert. Eine Seitennavigation, klar beschriftete Eingabefelder, ausklappbare Anbieterinformationen und eine dauerhaft erreichbare Speichern-Aktion ersetzen die bisherige fortlaufende Liste. Auf schmalen Ansichten wird die Navigation umgebrochen und das Formular einspaltig dargestellt.
 
-Die übergreifende Produktsprache und die noch offene Konsolidierung der Offline-Adminansichten sind im [Designsystem](DESIGNSYSTEM.md) mit [bedienbarer Referenz](UI_DESIGNSYSTEM.html) beschrieben.
+Die übergreifende Produktsprache und die umgesetzte Konsolidierung der Offline-Adminansichten sind im [Designsystem](DESIGNSYSTEM.md) mit [bedienbarer Referenz](UI_DESIGNSYSTEM.html) beschrieben.
 
 ## Darstellung auswählen
 
@@ -14,7 +14,9 @@ Unter **Einstellungen → Darstellung** stehen drei Erscheinungsbilder zur Verf�
 
 Die Akzentfarben **Ozean, Violett, Wald und Bernstein** verändern Bedienelemente und Hervorhebungen. Automatisch übernommene native Farben haben für Oberflächen und Lesetext Vorrang. Die wichtigen Warn-, Fehler- und Erfolgsfarben behalten ihre semantische Bedeutung.
 
-Die Darstellung wird sofort lokal gespeichert. Der Speichern-Knopf ist weiterhin für die übrigen Einstellungen nötig. Gespeichert werden ausschließlich `thundyAppearance` und `thundyAccent`; Scanfreigaben, Provider-Schlüssel und Daten bleiben dabei unberührt. Bei Schreibfehlern bleiben die Auswahl und eine Schaltfläche zum erneuten Speichern sichtbar.
+Die Darstellung wird sofort lokal gespeichert. Der Speichern-Knopf ist weiterhin für die übrigen Einstellungen nötig. Gespeichert werden ausschließlich `thundyAppearance`, `thundyAccent` und `thundyDensity`; Scanfreigaben, Provider-Schlüssel und Daten bleiben dabei unberührt. Bei Schreibfehlern bleiben die Auswahl und eine Schaltfläche zum erneuten Speichern sichtbar.
+
+Unter **Informationsdichte** stehen „Komfortabel“ und „Kompakt“ zur Verfügung. Die Auswahl steuert Abstände und Kontrollhöhen in Einstellungen und lokalen Adminwerkzeugen, ohne die Textgröße der Datenansichten zu verkleinern.
 
 ## Gemeinsame Oberfläche
 
@@ -24,11 +26,19 @@ Die neue Berechtigung `theme` dient dem Lesen von `browser.theme.getCurrent()` u
 
 Alle neuen Texte sind vollständig in Englisch, Deutsch, Französisch, Spanisch, Italienisch und Polnisch enthalten. Die Auswahl ist mit der Tastatur bedienbar. Fokusmarkierungen, reduzierte Bewegung und System-Kontrastmodi werden berücksichtigt. Eigenes CSS und externe Theme-Dateien sind nicht Teil der Auswahl.
 
+## Offline-Adminberichte
+
+Alle sieben Renderer betten denselben generierten Design-Kern mit dem bestehenden CSP-Nonce ein. Unter „Darstellung“ lassen sich Farbschema, Akzent und Dichte ausschließlich mit nativen Radios und CSS auswählen. Die Auswahl gilt nur für das Dokument; es werden keine Einstellungen, Quelldaten oder Exportdaten geschrieben. Statische Betriebs- und Kapazitätsberichte bleiben ohne Skripte nutzbar.
+
+Die Ereignisreview zeigt fünf Kernspalten mit sortierbarem Zeitpunkt. Vollständige bereitgestellte URL, damaliger/letzter Score und technische Angaben sind in den Details enthalten; der Export bleibt vollständig. Die Fallübersicht hält wichtige Warnungen sichtbar und klappt technische Prüfdaten erst auf Wunsch auf.
+
+Die tatsächlichen Admin-Einstellungen für optionale Profile zeigen einen Änderungsvergleich, einen inaktiven Entwurfsstatus, Verwerfen und erneutes Laden. Ladefehler sperren Speichern, Zurücksetzen und Export; fehlgeschlagene Schreibvorgänge erhalten die Auswahl. Eine lokale Speicherung aktiviert keine Integration.
+
 ## Automatisierte Prüfung
 
-`npm run check`: 907 Tests bestanden, keine Lintfehler, 24 bekannte Thunderbird-Lintwarnungen. Nach dem letzten Feinschliff wurden die zehn Theme-Tests, Lint und Paketprüfung erneut erfolgreich ausgeführt. Paket: 42 Dateien, 744.873 Bytes unkomprimiert.
+`npm run check`: 919 Tests bestanden, keine Lintfehler und 24 bekannte Thunderbird-Lintwarnungen. Paket: 44 Dateien, 770.358 Bytes unkomprimiert; die letzte Paketprüfung vergleicht alle enthaltenen Dateien mit dem Arbeitsstand. Generator und CSS-Quelldatei werden nicht mitgeliefert. Das geprüfte Paketbudget beträgt 775 KiB.
 
-Chromium mit Test-APIs: 72 Einstellungsvarianten über sechs Sprachen, drei Erscheinungsbilder, zwei Breiten und beide Systemfarbschemata; zusätzlich 20 Layouts weiterer Add-on-Ansichten, zwei isolierte Linkdialoge und Live-Synchronisierung zwischen fünf Seiten. Die mobile Speicherleiste wird separat auf ausreichende Textbreite und kompakte Höhe geprüft.
+Chromium mit Test-APIs: 72 Einstellungsvarianten in sechs Sprachen sowie 252 Varianten der sieben Offline-Adminrenderer (gefüllte/leere bzw. nie gemeldete Zustände, zwei Breiten und beide Systemfarbschemata). Vollständige Exporte nach Theme-/Filterwechseln und Live-Synchronisierung zwischen fünf Add-on-Seiten geprüft. Nach der Asset-Optimierung wurden 48 CSS-Zustände einschließlich Tastaturwechsel und Druckmodus sowie zwölf Add-on-Layouts erneut geprüft.
 
 ## Prüfung und reale Thunderbird-Abnahme
 

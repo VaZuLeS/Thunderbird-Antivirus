@@ -1363,5 +1363,41 @@
   },
   "themeRetry": {
     "message": "Ponów zapis wyglądu"
+  },
+  "themeDensity": {
+    "message": "Gęstość informacji"
+  },
+  "themeComfortable": {
+    "message": "Wygodna"
+  },
+  "themeCompact": {
+    "message": "Zwarta"
+  },
+  "themeDensityHelp": {
+    "message": "Dostosuj odstępy w ustawieniach i lokalnych narzędziach administracji."
+  },
+  "profilesChanges": {
+    "message": "Zmiany względem zapisanego wyboru"
+  },
+  "profilesDiscard": {
+    "message": "Odrzuć niezapisane zmiany"
+  },
+  "profilesLoadRetry": {
+    "message": "Wczytaj ponownie zapisany wybór"
+  },
+  "profilesNotLoaded": {
+    "message": "Nie wczytano zapisanego wyboru"
+  },
+  "profilesUnsaved": {
+    "message": "Niezapisane zmiany · nieaktywny szkic"
+  },
+  "profilesUnchanged": {
+    "message": "Zapisany wybór · nieaktywny szkic"
+  },
+  "profilesSaving": {
+    "message": "Zapisywanie lokalnego wyboru…"
+  },
+  "settingsUnsaved": {
+    "message": "Niezapisane zmiany"
   }
 }

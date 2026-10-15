@@ -1363,5 +1363,41 @@
   },
   "themeRetry": {
     "message": "Reintentar guardar la apariencia"
+  },
+  "themeDensity": {
+    "message": "Densidad de información"
+  },
+  "themeComfortable": {
+    "message": "Cómoda"
+  },
+  "themeCompact": {
+    "message": "Compacta"
+  },
+  "themeDensityHelp": {
+    "message": "Ajusta el espaciado de los ajustes y las herramientas locales de administración."
+  },
+  "profilesChanges": {
+    "message": "Cambios respecto a la selección guardada"
+  },
+  "profilesDiscard": {
+    "message": "Descartar cambios sin guardar"
+  },
+  "profilesLoadRetry": {
+    "message": "Volver a cargar la selección guardada"
+  },
+  "profilesNotLoaded": {
+    "message": "Selección guardada no cargada"
+  },
+  "profilesUnsaved": {
+    "message": "Cambios sin guardar · borrador inactivo"
+  },
+  "profilesUnchanged": {
+    "message": "Selección guardada · borrador inactivo"
+  },
+  "profilesSaving": {
+    "message": "Guardando la selección local…"
+  },
+  "settingsUnsaved": {
+    "message": "Cambios sin guardar"
   }
 }

@@ -3,7 +3,10 @@ const { test } = require("node:test"),
   fs = require("node:fs"),
   vm = require("node:vm"),
   { JSDOM } = require("jsdom");
-const source = fs.readFileSync("theme.js", "utf8");
+const source =
+  fs.readFileSync("design_system.js", "utf8") +
+  "\n" +
+  fs.readFileSync("theme.js", "utf8");
 function setup({
   saved = {},
   native = {},
@@ -129,7 +132,8 @@ test("rapid appearance choices serialize writes and preserve unrelated scan cred
     assert.ok(
       f.calls.every(
         (p) =>
-          Object.keys(p).sort().join(",") === "thundyAccent,thundyAppearance",
+          Object.keys(p).sort().join(",") ===
+          "thundyAccent,thundyAppearance,thundyDensity",
       ),
     );
     assert.equal(f.w.document.documentElement.dataset.theme, "light");
@@ -369,5 +373,31 @@ test("an unavailable theme refresh never delays interception or the security res
     );
   } finally {
     w.close();
+  }
+});
+test("information density saves independently and updates open document dimensions without scan changes", async () => {
+  const f = await ready(
+    setup({ saved: { apikey: "secret", externalAnalysisConsent: true } }),
+  );
+  try {
+    select(f, "density", "compact");
+    await tick();
+    assert.equal(f.state.thundyDensity, "compact");
+    assert.equal(f.w.document.documentElement.dataset.density, "compact");
+    assert.equal(
+      f.w.document.documentElement.style.getPropertyValue("--control-size"),
+      "36px",
+    );
+    assert.equal(f.state.apikey, "secret");
+    assert.equal(f.state.externalAnalysisConsent, true);
+    for (const fn of f.changes)
+      fn({ thundyDensity: { newValue: "comfortable" } }, "local");
+    assert.equal(f.w.document.documentElement.dataset.density, "comfortable");
+    assert.equal(
+      f.w.document.documentElement.style.getPropertyValue("--control-size"),
+      "44px",
+    );
+  } finally {
+    f.close();
   }
 });

@@ -6,6 +6,7 @@
     <title data-i18n="ui_112">Thundy AV settings</title>
     <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="options.css" />
+    <script src="design_system.js"></script>
     <script src="theme.js"></script>
     <script src="i18n.js"></script>
   </head>
@@ -129,6 +130,25 @@
                 ><span data-i18n="themeAmber">Amber</span></label
               >
             </div>
+          </fieldset>
+          <fieldset class="theme-fieldset">
+            <legend data-i18n="themeDensity">Information density</legend>
+            <div class="theme-densities">
+              <label class="theme-choice"
+                ><input type="radio" name="density" value="comfortable" /><span
+                  data-i18n="themeComfortable"
+                  >Comfortable</span
+                ></label
+              ><label class="theme-choice"
+                ><input type="radio" name="density" value="compact" /><span
+                  data-i18n="themeCompact"
+                  >Compact</span
+                ></label
+              >
+            </div>
+            <p class="section-intro" data-i18n="themeDensityHelp">
+              Adjust spacing in settings and local admin tools.
+            </p>
           </fieldset>
           <button
             id="themeRetry"
@@ -642,6 +662,13 @@
           </div>
         </section>
         <footer class="settings-save">
+          <span
+            id="settingsDirty"
+            class="text-warning"
+            hidden
+            data-i18n="settingsUnsaved"
+            >Unsaved changes</span
+          >
           <p data-i18n="ui_166">Remember to save your settings.</p>
           <div>
             <span

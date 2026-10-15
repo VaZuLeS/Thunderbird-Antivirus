@@ -1363,5 +1363,41 @@
   },
   "themeRetry": {
     "message": "Réessayer d’enregistrer l’apparence"
+  },
+  "themeDensity": {
+    "message": "Densité des informations"
+  },
+  "themeComfortable": {
+    "message": "Confortable"
+  },
+  "themeCompact": {
+    "message": "Compacte"
+  },
+  "themeDensityHelp": {
+    "message": "Ajustez les espacements des paramètres et des outils locaux d’administration."
+  },
+  "profilesChanges": {
+    "message": "Modifications par rapport au choix enregistré"
+  },
+  "profilesDiscard": {
+    "message": "Annuler les modifications non enregistrées"
+  },
+  "profilesLoadRetry": {
+    "message": "Recharger le choix enregistré"
+  },
+  "profilesNotLoaded": {
+    "message": "Choix enregistré non chargé"
+  },
+  "profilesUnsaved": {
+    "message": "Modifications non enregistrées · brouillon inactif"
+  },
+  "profilesUnchanged": {
+    "message": "Choix enregistré · brouillon inactif"
+  },
+  "profilesSaving": {
+    "message": "Enregistrement du choix local…"
+  },
+  "settingsUnsaved": {
+    "message": "Modifications non enregistrées"
   }
 }
