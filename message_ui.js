@@ -17,7 +17,8 @@ async function injectIntoMessageDisplay(tabId, func, args = []) {
 async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null) {
     if (!timeOfClickProtection) return;
     const labels = { waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), auditFailed: msg('auditFailure') };
-    await injectIntoMessageDisplay(tabId, function(labels, messageId) {
+    const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
+    await injectIntoMessageDisplay(tabId, function(labels, messageId, theme) {
         if (document.documentElement.dataset.thundyClickProtection) return;
         document.documentElement.dataset.thundyClickProtection = 'true';
         let busy = false;
@@ -41,25 +42,26 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             // Shadow DOM isolates the security UI from styles in the email.
             const root = panel.attachShadow({ mode: 'open' });
             const style = document.createElement('style');
+            const themeStyle = document.createElement('style');
+            themeStyle.textContent = ':host {' + (theme?.css || '') + '}';
             style.textContent = `
-                :host { color-scheme:light dark; }
                 * { box-sizing:border-box; }
-                .dialog { width:520px;max-width:100%;max-height:calc(100vh - 32px);overflow:auto;background:#fff;color:#17243a;border:1px solid #cbd5e1;border-radius:16px;padding:24px;box-shadow:0 20px 70px #0004;font:14px/1.55 system-ui,sans-serif;text-align:left; }
+                .dialog { width:520px;max-width:100%;max-height:calc(100vh - 32px);overflow:auto;background:var(--card-bg,#fff);color:var(--text-color,#17243a);border:1px solid var(--card-border,#cbd5e1);border-radius:16px;padding:24px;box-shadow:0 20px 70px #0004;font:14px/1.55 system-ui,sans-serif;text-align:left; }
                 header { display:flex;align-items:center;gap:12px;margin-bottom:20px; }
-                .brand { display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:#075985;color:white;font-size:22px;font-weight:800; }
-                strong { font-size:18px; } h2 { margin:0;font-size:13px;font-weight:400;color:#475569; }
-                .label { color:#475569;font-size:12px;font-weight:600;margin:0 0 4px; }
+                .brand { display:grid;place-items:center;width:44px;height:44px;border-radius:12px;background:var(--btn-primary-bg,#075985);color:white;font-size:22px;font-weight:800; }
+                strong { font-size:18px; } h2 { margin:0;font-size:13px;font-weight:400;color:var(--text-muted,#475569); }
+                .label { color:var(--text-muted,#475569);font-size:12px;font-weight:600;margin:0 0 4px; }
                 .destination { font-size:18px;font-weight:650;overflow-wrap:anywhere;margin:0 0 12px; }
-                details { border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;margin-bottom:18px; } summary { cursor:pointer; } code { display:block;font-size:12px;overflow-wrap:anywhere;white-space:pre-wrap;margin-top:10px;user-select:text; }
-                .result { padding:14px;border-radius:10px;background:#eff6ff;border-left:4px solid #0369a1;margin:0 0 12px; }
-                .danger { background:#fff1f2;border-color:#be123c; } .unknown { background:#fff7ed;border-color:#b45309; }
-                .note { color:#475569;font-size:12px;margin:12px 0; } ul { padding-left:20px;overflow-wrap:anywhere; }
-                .error { color:#be123c;margin:12px 0; } .error:empty { display:none; }
+                details { border:1px solid var(--card-border,#cbd5e1);border-radius:8px;padding:10px 12px;margin-bottom:18px; } summary { cursor:pointer; } code { display:block;font-size:12px;overflow-wrap:anywhere;white-space:pre-wrap;margin-top:10px;user-select:text; }
+                .result { padding:14px;border-radius:10px;background:var(--accent-soft,#eff6ff);border-left:4px solid var(--link-color,#0369a1);margin:0 0 12px; }
+                .danger { background:var(--alert-error-bg,#fff1f2);border-color:var(--color-danger,#be123c); } .unknown { background:var(--warning-bg,#fff7ed);border-color:var(--color-warning,#b45309); }
+                .note { color:var(--text-muted,#475569);font-size:12px;margin:12px 0; } ul { padding-left:20px;overflow-wrap:anywhere; }
+                .error { color:var(--color-danger,#be123c);margin:12px 0; } .error:empty { display:none; }
                 footer { display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:20px; }
-                button { font:600 14px/1.4 system-ui,sans-serif;border:1px solid #94a3b8;border-radius:8px;padding:10px 16px;cursor:pointer;background:#fff;color:#17243a;max-width:100%;overflow-wrap:anywhere; }
-                .primary { background:#075985;color:#fff;border-color:#075985; } .warning { background:#9f1239;border-color:#9f1239; }
+                button { font:600 14px/1.4 system-ui,sans-serif;border:1px solid var(--input-border,#94a3b8);border-radius:8px;padding:10px 16px;cursor:pointer;background:var(--card-bg,#fff);color:var(--text-color,#17243a);max-width:100%;overflow-wrap:anywhere; }
+                .primary { background:var(--btn-primary-bg,#075985);color:#fff;border-color:var(--btn-primary-bg,#075985); } .warning { background:#9f1239;border-color:#9f1239; }
                 button:focus-visible,summary:focus-visible { outline:3px solid #0284c7;outline-offset:3px; } button:disabled { opacity:.6;cursor:wait; }
-                @media(prefers-color-scheme:dark) { .dialog { background:#17243a;color:#f1f5f9;border-color:#475569; } h2,.label,.note { color:#cbd5e1; } .result { background:#0c344f; } .danger { background:#4c182b; } .unknown { background:#422c13; } details { border-color:#475569; } button { background:#26364c;color:#f1f5f9; } .primary { background:#0369a1; } .warning { background:#9f1239; } .error { color:#fda4af; } }
+
             `;
             const card = document.createElement('section'); card.className = 'dialog';
             const header = document.createElement('header');
@@ -93,7 +95,13 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             document.defaultView.addEventListener('pagehide', onPageHide);
 
             cancel.addEventListener('click', () => close('cancel')); footer.appendChild(cancel);
-            card.append(text, reasons, note, error, footer); root.append(style, card); document.body.appendChild(panel);
+            card.append(text, reasons, note, error, footer); root.append(themeStyle, style, card); document.body.appendChild(panel);
+            // Refresh without delaying security UI if the background is unavailable.
+            if (theme) {
+                Promise.resolve(browser.runtime.sendMessage({ action: 'getUiTheme' })).then(latest => {
+                    if (panel.isConnected && latest && typeof latest.css === 'string') themeStyle.textContent = ':host {' + latest.css + '}';
+                }).catch(() => {});
+            }
             root.addEventListener('keydown', event => {
                 if (event.key === 'Escape') { event.preventDefault(); close('escape'); }
                 if (event.key === 'Tab') {
@@ -138,12 +146,13 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
         }
         document.addEventListener('click', onClick, true);
         document.addEventListener('auxclick', onClick, true);
-    }, [labels, messageId]);
+    }, [labels, messageId, theme]);
 }
 
 async function injectThreatBanner(tabId, threat) {
     if (threat.score >= 50 || threat.authStatus === 'pass') {
-        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus, localized) {
+        const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
+        await injectIntoMessageDisplay(tabId, function(score, reasons, authStatus, localized, theme) {
                 const t = (key, fallback, subs) => {
                     try {
                         return localized[key] || browser.i18n.getMessage(key, subs) || fallback;
@@ -155,7 +164,7 @@ async function injectThreatBanner(tabId, threat) {
                     // Sichere DOM-Manipulation ohne innerHTML
                     const banner = document.createElement('div');
                     banner.id = 'thundy-threat-banner';
-                    banner.style.cssText = 'background:#fff1f2;border:1px solid #fda4af;border-left:4px solid #be123c;color:#881337;padding:16px;margin:12px;border-radius:12px;font:14px/1.55 system-ui,sans-serif;';
+                    banner.style.cssText = (theme?.css || '') + 'background:var(--alert-error-bg,#fff1f2);border:1px solid var(--color-danger,#be123c);border-left:4px solid var(--color-danger,#be123c);color:var(--color-danger,#881337);padding:16px;margin:12px;border-radius:12px;font:14px/1.55 system-ui,sans-serif;';
 
                     const title = document.createElement('div');
                     title.textContent = t('bannerThreatTitle', 'Thundy AV warning') +
@@ -183,9 +192,10 @@ async function injectThreatBanner(tabId, threat) {
                     const badge = document.createElement('div');
                     badge.id = 'thundy-auth-badge';
                     badge.style.display = 'inline-block';
-                    badge.style.backgroundColor = '#e6ffe6';
-                    badge.style.border = '1px solid #008000';
-                    badge.style.color = '#008000';
+                    badge.style.cssText = theme?.css || '';
+                    badge.style.backgroundColor = 'var(--card-bg,#e6ffe6)';
+                    badge.style.border = '1px solid var(--color-success,#008000)';
+                    badge.style.color = 'var(--color-success,#008000)';
                     badge.style.padding = '5px 10px';
                     badge.style.margin = '10px';
                     badge.style.borderRadius = '20px';
@@ -197,12 +207,13 @@ async function injectThreatBanner(tabId, threat) {
 
                     document.body.prepend(badge);
                 }
-        }, [threat.score, threat.reasons, threat.authStatus, Object.fromEntries(Object.keys(I18N_FALLBACKS).map(key => [key, msg(key, key === 'bannerThreatScore' ? [String(threat.score)] : [])]))]);
+        }, [threat.score, threat.reasons, threat.authStatus, Object.fromEntries(Object.keys(I18N_FALLBACKS).map(key => [key, msg(key, key === 'bannerThreatScore' ? [String(threat.score)] : [])])), theme]);
     }
 }
 
 async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
-  await injectIntoMessageDisplay(tabId, function(messageId, senderEmail, consentGiven, localized) {
+  const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
+  await injectIntoMessageDisplay(tabId, function(messageId, senderEmail, consentGiven, localized, theme) {
         const t = (key, fallback, subs) => {
           try {
             return localized[key] || browser.i18n.getMessage(key, subs) || fallback;
@@ -216,7 +227,7 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
 
         const banner = document.createElement('div');
         banner.id = 'thundy-optin-banner';
-        banner.style.cssText = 'background:#f0f7ff;border:1px solid #bfd6ee;border-left:4px solid #075985;color:#17243a;padding:16px;margin:12px;border-radius:12px;font:14px/1.55 system-ui,sans-serif;';
+        banner.style.cssText = (theme?.css || '') + 'background:var(--card-bg,#f0f7ff);border:1px solid var(--card-border,#bfd6ee);border-left:4px solid var(--btn-primary-bg,#075985);color:var(--text-color,#17243a);padding:16px;margin:12px;border-radius:12px;font:14px/1.55 system-ui,sans-serif;';
 
         const text = document.createElement('p');
         text.style.cssText = 'margin:0 0 12px;font-weight:600;';
@@ -227,7 +238,7 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.textContent = label;
-          btn.style.cssText = 'margin:0 8px 8px 0;padding:9px 13px;border:1px solid #075985;border-radius:8px;background:#075985;color:#fff;font:600 13px/1.4 system-ui,sans-serif;cursor:pointer;';
+          btn.style.cssText = 'margin:0 8px 8px 0;padding:9px 13px;border:1px solid var(--btn-primary-bg,#075985);border-radius:8px;background:var(--btn-primary-bg,#075985);color:#fff;font:600 13px/1.4 system-ui,sans-serif;cursor:pointer;';
           btn.addEventListener('click', async () => {
             const buttons = banner.querySelectorAll('button');
             buttons.forEach(b => { b.disabled = true; b.setAttribute('aria-busy', 'true'); });
@@ -286,7 +297,7 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
         note.id = 'thundy-optin-note';
         note.style.fontSize = '12px';
         note.style.marginTop = '8px';
-        note.style.color = '#334155';
+        note.style.color = 'var(--text-muted,#334155)';
         note.textContent = t('bannerNoteOptIn', 'Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you gave your consent. See the add-on options.');
         if (!consentGiven) {
           note.textContent = t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.');
@@ -318,5 +329,5 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
         }
 
         document.body.prepend(banner);
-  }, [messageId, senderEmail, consentGiven === true, Object.fromEntries(Object.keys(I18N_FALLBACKS).map(key => [key, msg(key)]))]);
+  }, [messageId, senderEmail, consentGiven === true, Object.fromEntries(Object.keys(I18N_FALLBACKS).map(key => [key, msg(key)])), theme]);
 }

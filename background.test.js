@@ -1901,8 +1901,9 @@ describe('background.js', () => {
             assert.strictEqual(executedScripts.length, 1);
             assert.strictEqual(executedScripts[0].target.tabId, 10);
             assert.strictEqual(typeof executedScripts[0].func, 'function');
-            // The injected script for time of click does not take arguments
-            assert.strictEqual(executedScripts[0].args.length, 2);
+            // Labels, message identity and the isolated appearance snapshot.
+            assert.strictEqual(executedScripts[0].args.length, 3);
+            assert.strictEqual(executedScripts[0].args[2], null);
             assert.ok(executedScripts[0].args[0].waiting);
         });
 

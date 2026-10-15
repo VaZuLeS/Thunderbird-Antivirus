@@ -1,12 +1,12 @@
 :root {
   color-scheme: light dark;
-  --bg: #f1f5f9;
-  --surface: #fff;
-  --text: #1e293b;
-  --muted: #475569;
-  --line: #94a3b8;
-  --accent: #075985;
-  --note: #eff6ff;
+  --bg: var(--bg-color);
+  --surface: var(--card-bg);
+  --text: var(--text-color);
+  --muted: var(--text-muted);
+  --line: var(--input-border);
+  --accent: var(--link-color);
+  --note: var(--accent-soft);
 }
 * {
   box-sizing: border-box;
@@ -116,9 +116,9 @@ button {
   cursor: pointer;
 }
 .primary {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-color: var(--btn-primary-bg);
 }
 nav {
   display: flex;
@@ -148,21 +148,6 @@ p {
 }
 [hidden] {
   display: none !important;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f172a;
-    --surface: #111827;
-    --text: #f1f5f9;
-    --muted: #cbd5e1;
-    --line: #64748b;
-    --accent: #38bdf8;
-    --note: #172554;
-  }
-  .primary {
-    background: #075985;
-    border-color: #38bdf8;
-  }
 }
 @media (max-width: 600px) {
   main {

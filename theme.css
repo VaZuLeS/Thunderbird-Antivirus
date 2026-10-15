@@ -1,51 +1,26 @@
+/* Shared theme tokens. theme.js adds preferences and safe Thunderbird colors. */
 :root {
-    --bg-color: #ffffff;
-    --text-color: #333333;
-    --text-muted: #555555;
-    --link-color: #005a9e;
-    --link-hover-color: #003e6e;
-    --card-bg: #f9f9f9;
-    --card-border: #dddddd;
-    --btn-primary-bg: #005a9e;
-    --btn-primary-text: #ffffff;
-    --btn-success-bg: #008000;
-    --btn-success-text: #ffffff;
-    --alert-error-bg: #ffeeee;
-    --alert-error-border: #cc0000;
-    --alert-info-border: #0000ff;
-
-    --color-success: #008000;
-    --color-warning: #b26000;
-    --color-danger: #cc0000;
-    --color-info: #0000ff;
+    color-scheme: light dark;
+    --bg-color:#f5f7fa; --text-color:#192b40; --text-muted:#536579;
+    --link-color:#146b80; --link-hover-color:#146b80;
+    --card-bg:#ffffff; --card-border:#dce3ec; --input-bg:#f9fbfd; --input-border:#96a7ba;
+    --btn-primary-bg:#146b80; --btn-primary-text:#ffffff; --btn-success-bg:#246b4c; --btn-success-text:#ffffff;
+    --color-success:#216341; --color-warning:#92510d; --color-danger:#b32642; --color-info:#146b80;
+    --alert-error-bg:#fff0f3; --alert-error-border:#b32642; --alert-info-border:#146b80;
+    --accent-soft:#e9f5f7; --warning-bg:#fff4e5; --surface-shadow:0 4px 24px #12263b05;
 }
-
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme:dark) {
     :root {
-        --bg-color: #1e1e1e;
-        --text-color: #f0f0f0;
-        --text-muted: #aaaaaa;
-        --link-color: #66b3ff;
-        --link-hover-color: #99ccff;
-        --card-bg: #2d2d2d;
-        --card-border: #444444;
-        --btn-primary-bg: #005a9e;
-        --btn-primary-text: #ffffff;
-        --btn-success-bg: #28a745;
-        --btn-success-text: #ffffff;
-        --alert-error-bg: #4a1c1c;
-        --alert-error-border: #ff6b6b;
-        --alert-info-border: #3399ff;
-
-        --color-success: #28a745;
-        --color-warning: #ffb84d;
-        --color-danger: #ff6b6b;
-        --color-info: #66b3ff;
+        --bg-color:#101821; --text-color:#e7eef7; --text-muted:#afbed0;
+        --link-color:#82d6e9; --link-hover-color:#82d6e9;
+        --card-bg:#192532; --card-border:#35465a; --input-bg:#131e2a; --input-border:#697d95;
+        --color-success:#92ddb3; --color-warning:#f2c48a; --color-danger:#ffa5b6; --color-info:#82d6e9;
+        --alert-error-bg:#412333; --alert-error-border:#ffa5b6; --alert-info-border:#82d6e9;
+        --accent-soft:#193541; --warning-bg:#3c3021;
     }
 }
-
 body {
-    font-family: Arial, sans-serif;
+    font-family: system-ui, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
 }
@@ -136,7 +111,7 @@ button[aria-busy="true"]:disabled {
 .card {
     background-color: var(--card-bg);
     border: 1px solid var(--card-border);
-    border-radius: 5px;
+    border-radius: 12px;
     padding: 10px;
     margin-bottom: 20px;
 }
@@ -152,7 +127,7 @@ button[aria-busy="true"]:disabled {
     margin-top: 15px;
     background-color: var(--card-bg);
     padding: 10px;
-    border-radius: 5px;
+    border-radius: 12px;
     border: 1px solid var(--card-border);
 }
 
@@ -281,3 +256,21 @@ body.scanner-popup { width: 600px; min-width: 600px; margin: 0; padding: 20px; b
 .profile-page .audit-filters select { min-width: 0; }
 .profile-page pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; max-height: 400px; overflow: auto; background: var(--bg-color); border-radius: 8px; padding: 12px; }
 .profile-page li { overflow-wrap: anywhere; }
+
+/* Shared controls for every extension document. */
+button { background:var(--input-bg); color:var(--text-color); border:1px solid var(--input-border); }
+.btn-primary { border-color:var(--btn-primary-bg); }
+.btn-secondary { background:var(--input-bg); color:var(--text-color); border:1px solid var(--input-border); }
+input,select,textarea { accent-color:var(--btn-primary-bg); }
+[hidden] { display:none !important; }
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; transition:none !important; animation:none !important; } }
+@media(forced-colors:active) {
+    :root { --bg-color:Canvas !important; --card-bg:Canvas !important; --input-bg:Canvas !important; --text-color:CanvasText !important; --text-muted:CanvasText !important; --card-border:CanvasText !important; --input-border:ButtonText !important; --accent-soft:Canvas !important; --link-color:LinkText !important; --btn-primary-bg:ButtonFace !important; --btn-primary-text:ButtonText !important; }
+    button,a,.theme-choice { forced-color-adjust:auto; }
+    .theme-choice:has(:checked) { outline:2px solid Highlight; }
+}
+
+.privacy-page { max-width:800px; margin:0 auto; padding:32px 24px; font:15px/1.7 system-ui,sans-serif; }
+
+/* Long translated headings and addresses must reflow in every document. */
+h1,h2,h3,a { overflow-wrap:anywhere; }

@@ -197,11 +197,16 @@ The optimization work is documented in [the task plan](docs/AUFGABENPLAN_OPTIMIE
 
 The [GitHub release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.22.0) contains an unsigned XPI. Thunderbird live testing and real screenshots remain required; use [the 1.19.0 protocol](docs/live_test_1_19_0.md).
 
+## Appearance and themes
+
+The redesigned settings organize appearance, privacy, protection, providers, sender rules and local tools into six sections. Choose automatic Thunderbird appearance, explicit light or dark, and Ocean, Violet, Forest or Amber accents. Appearance saves immediately and updates open add-on pages; other settings still use Save. Theme preferences never enable scans or change consent. See [theme behavior and manual acceptance](docs/DESIGN_THEMES.md).
+
 ## Permissions overview
 
 | Permission | Why it is needed |
 | --- | --- |
 | `messagesRead` | Read the displayed message (subject, sender, body, attachments) so it can be analysed; used only for the message you open and when a scan is triggered. |
+| `theme` | Read Thunderbird theme colors and react to theme changes in automatic mode; never change Thunderbird’s theme. |
 | `storage` | Store settings, the consent flag, per-sender opt-in flags, provider API keys and the local scan cache. |
 | `notifications` | Report scan start, submission and errors in a system notification. |
 | `scripting` | Inject the banner, the threat warning and the time-of-click hover notice into the message view (extension-bundled code only, no remote code). |

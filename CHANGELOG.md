@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.23.0 — 2026-10-15
+
+- Redesign settings with section navigation, clearer form groups, modern spacing and a persistent save action.
+- Add a shared local theme system: follow Thunderbird, light or dark, and four accent palettes, fully translated in EN/DE/FR/ES/IT/PL.
+- Save appearance independently, update open add-on pages, and apply themes to the wizard, scanner, local tools and isolated message security UI.
+- Read native Thunderbird popup colors with the theme permission, validate contrast and fall back safely; preserve semantic warning colors and existing scan consent.
+
+
 ## 1.22.0 — 2026-10-14
 
 - Open a dedicated setup wizard on first installation; updates never reopen it automatically.

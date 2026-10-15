@@ -43,6 +43,8 @@ const ALLOWED_FILES = [
   'popup.html',
   'privacy.html',
   'theme.css',
+  'theme.js',
+  'options.css',
   'LICENSE'
 ];
 // Runtime files and license notices that must be inside the package.
@@ -81,6 +83,8 @@ const REQUIRED_FILES = [
   'popup.html',
   'privacy.html',
   'theme.css',
+  'theme.js',
+  'options.css',
   'LICENSE'
 ];
 const ALLOWED_PREFIXES = ['img/', '_locales/'];

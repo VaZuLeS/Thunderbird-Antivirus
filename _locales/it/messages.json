@@ -1273,5 +1273,95 @@
   },
   "wizardReopen": {
     "message": "Apri procedura guidata"
+  },
+  "settingsAppearance": {
+    "message": "Aspetto"
+  },
+  "settingsPrivacy": {
+    "message": "Privacy"
+  },
+  "settingsScanning": {
+    "message": "Protezione"
+  },
+  "settingsProviders": {
+    "message": "Servizi di analisi"
+  },
+  "settingsSenders": {
+    "message": "Regole dei mittenti"
+  },
+  "settingsData": {
+    "message": "Dati e strumenti"
+  },
+  "settingsWorkspace": {
+    "message": "IL TUO SPAZIO"
+  },
+  "settingsEyebrow": {
+    "message": "COME PIACE A TE"
+  },
+  "settingsSubtitle": {
+    "message": "Uno spazio più chiaro per la sicurezza delle tue email. Scegli il tuo stile e personalizza la protezione."
+  },
+  "settingsLocalBadge": {
+    "message": "Locale per impostazione predefinita"
+  },
+  "settingsLocalNote": {
+    "message": "Le tue preferenze. Salvate su questo dispositivo."
+  },
+  "settingsSkip": {
+    "message": "Vai alle impostazioni"
+  },
+  "settingsProviderGuide": {
+    "message": "Informazioni sui servizi e sulle chiavi API"
+  },
+  "settingsWizardHelp": {
+    "message": "Riavvia la configurazione guidata in qualsiasi momento."
+  },
+  "themeIntro": {
+    "message": "Personalizza Thundy AV. Le modifiche all’aspetto vengono salvate subito per tutto il componente aggiuntivo."
+  },
+  "themeMode": {
+    "message": "Aspetto"
+  },
+  "themeSystem": {
+    "message": "Segui Thunderbird"
+  },
+  "themeLight": {
+    "message": "Chiaro"
+  },
+  "themeDark": {
+    "message": "Scuro"
+  },
+  "themeAccent": {
+    "message": "Colore di accento"
+  },
+  "themeOcean": {
+    "message": "Oceano"
+  },
+  "themeViolet": {
+    "message": "Viola"
+  },
+  "themeForest": {
+    "message": "Foresta"
+  },
+  "themeAmber": {
+    "message": "Ambra"
+  },
+  "themeReady": {
+    "message": "L’aspetto si salva automaticamente. Usa Salva per le altre impostazioni."
+  },
+  "themeSaving": {
+    "message": "Salvataggio dell’aspetto…"
+  },
+  "themeSaved": {
+    "message": "Aspetto salvato."
+  },
+  "themeLoadError": {
+    "message": "Impossibile caricare l’aspetto. Riapri le impostazioni."
+  },
+  "themeSaveError": {
+    "message": "Impossibile salvare l’aspetto. Seleziona di nuovo la tua scelta per riprovare."
+  },
+  "themeRetry": {
+    "message": "Riprova a salvare l’aspetto"
   }
 }

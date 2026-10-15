@@ -1273,5 +1273,95 @@
   },
   "wizardReopen": {
     "message": "Ouvrir l’assistant de configuration"
+  },
+  "settingsAppearance": {
+    "message": "Apparence"
+  },
+  "settingsPrivacy": {
+    "message": "Confidentialité"
+  },
+  "settingsScanning": {
+    "message": "Protection"
+  },
+  "settingsProviders": {
+    "message": "Services d’analyse"
+  },
+  "settingsSenders": {
+    "message": "Règles des expéditeurs"
+  },
+  "settingsData": {
+    "message": "Données et outils"
+  },
+  "settingsWorkspace": {
+    "message": "VOTRE ESPACE"
+  },
+  "settingsEyebrow": {
+    "message": "À VOTRE IMAGE"
+  },
+  "settingsSubtitle": {
+    "message": "Un espace plus clair pour la sécurité de vos e-mails. Choisissez votre style et adaptez votre protection."
+  },
+  "settingsLocalBadge": {
+    "message": "Local par défaut"
+  },
+  "settingsLocalNote": {
+    "message": "Vos préférences. Enregistrées sur cet appareil."
+  },
+  "settingsSkip": {
+    "message": "Aller aux paramètres"
+  },
+  "settingsProviderGuide": {
+    "message": "À propos des services et des clés API"
+  },
+  "settingsWizardHelp": {
+    "message": "Relancez la configuration guidée à tout moment."
+  },
+  "themeIntro": {
+    "message": "Personnalisez Thundy AV. Les changements d’apparence sont enregistrés immédiatement pour toute l’extension."
+  },
+  "themeMode": {
+    "message": "Apparence"
+  },
+  "themeSystem": {
+    "message": "Suivre Thunderbird"
+  },
+  "themeLight": {
+    "message": "Clair"
+  },
+  "themeDark": {
+    "message": "Sombre"
+  },
+  "themeAccent": {
+    "message": "Couleur d’accent"
+  },
+  "themeOcean": {
+    "message": "Océan"
+  },
+  "themeViolet": {
+    "message": "Violet"
+  },
+  "themeForest": {
+    "message": "Forêt"
+  },
+  "themeAmber": {
+    "message": "Ambre"
+  },
+  "themeReady": {
+    "message": "L’apparence est enregistrée automatiquement. Utilisez Enregistrer pour les autres paramètres."
+  },
+  "themeSaving": {
+    "message": "Enregistrement de l’apparence…"
+  },
+  "themeSaved": {
+    "message": "Apparence enregistrée."
+  },
+  "themeLoadError": {
+    "message": "Impossible de charger l’apparence. Rouvrez les paramètres."
+  },
+  "themeSaveError": {
+    "message": "Impossible d’enregistrer l’apparence. Sélectionnez à nouveau votre choix pour réessayer."
+  },
+  "themeRetry": {
+    "message": "Réessayer d’enregistrer l’apparence"
   }
 }

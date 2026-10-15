@@ -1273,5 +1273,95 @@
   },
   "wizardReopen": {
     "message": "Otwórz kreator konfiguracji"
+  },
+  "settingsAppearance": {
+    "message": "Wygląd"
+  },
+  "settingsPrivacy": {
+    "message": "Prywatność"
+  },
+  "settingsScanning": {
+    "message": "Ochrona"
+  },
+  "settingsProviders": {
+    "message": "Usługi analizy"
+  },
+  "settingsSenders": {
+    "message": "Reguły nadawców"
+  },
+  "settingsData": {
+    "message": "Dane i narzędzia"
+  },
+  "settingsWorkspace": {
+    "message": "TWOJA PRZESTRZEŃ"
+  },
+  "settingsEyebrow": {
+    "message": "PO TWOJEMU"
+  },
+  "settingsSubtitle": {
+    "message": "Przejrzysta przestrzeń dla bezpieczeństwa poczty. Wybierz styl i dostosuj ochronę do swoich potrzeb."
+  },
+  "settingsLocalBadge": {
+    "message": "Domyślnie lokalnie"
+  },
+  "settingsLocalNote": {
+    "message": "Twoje preferencje. Zapisane na tym urządzeniu."
+  },
+  "settingsSkip": {
+    "message": "Przejdź do ustawień"
+  },
+  "settingsProviderGuide": {
+    "message": "O usługach i kluczach API"
+  },
+  "settingsWizardHelp": {
+    "message": "W każdej chwili uruchom ponownie kreator konfiguracji."
+  },
+  "themeIntro": {
+    "message": "Dostosuj Thundy AV do siebie. Zmiany wyglądu są od razu zapisywane dla całego dodatku."
+  },
+  "themeMode": {
+    "message": "Wygląd"
+  },
+  "themeSystem": {
+    "message": "Zgodnie z Thunderbirdem"
+  },
+  "themeLight": {
+    "message": "Jasny"
+  },
+  "themeDark": {
+    "message": "Ciemny"
+  },
+  "themeAccent": {
+    "message": "Kolor akcentu"
+  },
+  "themeOcean": {
+    "message": "Ocean"
+  },
+  "themeViolet": {
+    "message": "Fiolet"
+  },
+  "themeForest": {
+    "message": "Las"
+  },
+  "themeAmber": {
+    "message": "Bursztyn"
+  },
+  "themeReady": {
+    "message": "Wygląd zapisuje się automatycznie. Dla pozostałych ustawień użyj Zapisz."
+  },
+  "themeSaving": {
+    "message": "Zapisywanie wyglądu…"
+  },
+  "themeSaved": {
+    "message": "Wygląd zapisany."
+  },
+  "themeLoadError": {
+    "message": "Nie można wczytać wyglądu. Otwórz ustawienia ponownie."
+  },
+  "themeSaveError": {
+    "message": "Nie można zapisać wyglądu. Wybierz opcję ponownie, aby spróbować jeszcze raz."
+  },
+  "themeRetry": {
+    "message": "Ponów zapis wyglądu"
   }
 }

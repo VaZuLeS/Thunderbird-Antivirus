@@ -1278,6 +1278,96 @@ const ThundyI18n = (() => {
   },
   "wizardReopen": {
     "message": "Open setup wizard"
+  },
+  "settingsAppearance": {
+    "message": "Appearance"
+  },
+  "settingsPrivacy": {
+    "message": "Privacy"
+  },
+  "settingsScanning": {
+    "message": "Protection"
+  },
+  "settingsProviders": {
+    "message": "Analysis providers"
+  },
+  "settingsSenders": {
+    "message": "Sender rules"
+  },
+  "settingsData": {
+    "message": "Data & tools"
+  },
+  "settingsWorkspace": {
+    "message": "YOUR WORKSPACE"
+  },
+  "settingsEyebrow": {
+    "message": "MAKE IT YOURS"
+  },
+  "settingsSubtitle": {
+    "message": "A calmer space for your email security. Choose your look and fine-tune how you stay protected."
+  },
+  "settingsLocalBadge": {
+    "message": "Local by default"
+  },
+  "settingsLocalNote": {
+    "message": "Your preferences. Stored on this device."
+  },
+  "settingsSkip": {
+    "message": "Skip to settings"
+  },
+  "settingsProviderGuide": {
+    "message": "About providers and API keys"
+  },
+  "settingsWizardHelp": {
+    "message": "Revisit the guided setup at any time."
+  },
+  "themeIntro": {
+    "message": "Make Thundy AV feel like yours. Appearance changes are saved immediately across the add-on."
+  },
+  "themeMode": {
+    "message": "Appearance"
+  },
+  "themeSystem": {
+    "message": "Follow Thunderbird"
+  },
+  "themeLight": {
+    "message": "Light"
+  },
+  "themeDark": {
+    "message": "Dark"
+  },
+  "themeAccent": {
+    "message": "Accent color"
+  },
+  "themeOcean": {
+    "message": "Ocean"
+  },
+  "themeViolet": {
+    "message": "Violet"
+  },
+  "themeForest": {
+    "message": "Forest"
+  },
+  "themeAmber": {
+    "message": "Amber"
+  },
+  "themeReady": {
+    "message": "Appearance saves automatically. Other settings use the Save button."
+  },
+  "themeSaving": {
+    "message": "Saving appearance…"
+  },
+  "themeSaved": {
+    "message": "Appearance saved."
+  },
+  "themeLoadError": {
+    "message": "Appearance could not be loaded. Try reopening settings."
+  },
+  "themeSaveError": {
+    "message": "Appearance could not be saved. Select your choice again to retry."
+  },
+  "themeRetry": {
+    "message": "Retry saving appearance"
   }
 };
     function get(key, params = []) {

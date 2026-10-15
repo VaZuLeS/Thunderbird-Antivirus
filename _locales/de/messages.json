@@ -1276,5 +1276,95 @@
   },
   "wizardReopen": {
     "message": "Einrichtungsassistent öffnen"
+  },
+  "settingsAppearance": {
+    "message": "Darstellung"
+  },
+  "settingsPrivacy": {
+    "message": "Datenschutz"
+  },
+  "settingsScanning": {
+    "message": "Schutz"
+  },
+  "settingsProviders": {
+    "message": "Analysedienste"
+  },
+  "settingsSenders": {
+    "message": "Absenderregeln"
+  },
+  "settingsData": {
+    "message": "Daten & Werkzeuge"
+  },
+  "settingsWorkspace": {
+    "message": "DEIN ARBEITSBEREICH"
+  },
+  "settingsEyebrow": {
+    "message": "SO WIE DU ES MAGST"
+  },
+  "settingsSubtitle": {
+    "message": "Mehr Übersicht für deine E-Mail-Sicherheit. Wähle deinen Look und passe den Schutz an deinen Alltag an."
+  },
+  "settingsLocalBadge": {
+    "message": "Standardmäßig lokal"
+  },
+  "settingsLocalNote": {
+    "message": "Deine Einstellungen. Auf diesem Gerät gespeichert."
+  },
+  "settingsSkip": {
+    "message": "Zu den Einstellungen springen"
+  },
+  "settingsProviderGuide": {
+    "message": "Über Analysedienste und API-Schlüssel"
+  },
+  "settingsWizardHelp": {
+    "message": "Starte die geführte Einrichtung jederzeit erneut."
+  },
+  "themeIntro": {
+    "message": "Gestalte Thundy AV nach deinem Geschmack. Änderungen an der Darstellung werden sofort für das gesamte Add-on gespeichert."
+  },
+  "themeMode": {
+    "message": "Erscheinungsbild"
+  },
+  "themeSystem": {
+    "message": "Thunderbird folgen"
+  },
+  "themeLight": {
+    "message": "Hell"
+  },
+  "themeDark": {
+    "message": "Dunkel"
+  },
+  "themeAccent": {
+    "message": "Akzentfarbe"
+  },
+  "themeOcean": {
+    "message": "Ozean"
+  },
+  "themeViolet": {
+    "message": "Violett"
+  },
+  "themeForest": {
+    "message": "Wald"
+  },
+  "themeAmber": {
+    "message": "Bernstein"
+  },
+  "themeReady": {
+    "message": "Die Darstellung wird automatisch gespeichert. Für andere Einstellungen nutze „Speichern“."
+  },
+  "themeSaving": {
+    "message": "Darstellung wird gespeichert…"
+  },
+  "themeSaved": {
+    "message": "Darstellung gespeichert."
+  },
+  "themeLoadError": {
+    "message": "Die Darstellung konnte nicht geladen werden. Öffne die Einstellungen erneut."
+  },
+  "themeSaveError": {
+    "message": "Die Darstellung konnte nicht gespeichert werden. Wähle sie erneut aus, um es noch einmal zu versuchen."
+  },
+  "themeRetry": {
+    "message": "Darstellung erneut speichern"
   }
 }

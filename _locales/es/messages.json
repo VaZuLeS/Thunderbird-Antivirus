@@ -1273,5 +1273,95 @@
   },
   "wizardReopen": {
     "message": "Abrir asistente de configuración"
+  },
+  "settingsAppearance": {
+    "message": "Apariencia"
+  },
+  "settingsPrivacy": {
+    "message": "Privacidad"
+  },
+  "settingsScanning": {
+    "message": "Protección"
+  },
+  "settingsProviders": {
+    "message": "Servicios de análisis"
+  },
+  "settingsSenders": {
+    "message": "Reglas de remitentes"
+  },
+  "settingsData": {
+    "message": "Datos y herramientas"
+  },
+  "settingsWorkspace": {
+    "message": "TU ESPACIO"
+  },
+  "settingsEyebrow": {
+    "message": "A TU GUSTO"
+  },
+  "settingsSubtitle": {
+    "message": "Un espacio más claro para la seguridad de tu correo. Elige tu estilo y adapta la protección a tus necesidades."
+  },
+  "settingsLocalBadge": {
+    "message": "Local por defecto"
+  },
+  "settingsLocalNote": {
+    "message": "Tus preferencias. Guardadas en este dispositivo."
+  },
+  "settingsSkip": {
+    "message": "Ir a los ajustes"
+  },
+  "settingsProviderGuide": {
+    "message": "Sobre los servicios y las claves API"
+  },
+  "settingsWizardHelp": {
+    "message": "Vuelve a iniciar la configuración guiada cuando quieras."
+  },
+  "themeIntro": {
+    "message": "Personaliza Thundy AV. Los cambios de apariencia se guardan al instante en todo el complemento."
+  },
+  "themeMode": {
+    "message": "Apariencia"
+  },
+  "themeSystem": {
+    "message": "Seguir Thunderbird"
+  },
+  "themeLight": {
+    "message": "Claro"
+  },
+  "themeDark": {
+    "message": "Oscuro"
+  },
+  "themeAccent": {
+    "message": "Color de acento"
+  },
+  "themeOcean": {
+    "message": "Océano"
+  },
+  "themeViolet": {
+    "message": "Violeta"
+  },
+  "themeForest": {
+    "message": "Bosque"
+  },
+  "themeAmber": {
+    "message": "Ámbar"
+  },
+  "themeReady": {
+    "message": "La apariencia se guarda automáticamente. Usa Guardar para los demás ajustes."
+  },
+  "themeSaving": {
+    "message": "Guardando la apariencia…"
+  },
+  "themeSaved": {
+    "message": "Apariencia guardada."
+  },
+  "themeLoadError": {
+    "message": "No se pudo cargar la apariencia. Vuelve a abrir los ajustes."
+  },
+  "themeSaveError": {
+    "message": "No se pudo guardar la apariencia. Vuelve a seleccionar tu opción para reintentarlo."
+  },
+  "themeRetry": {
+    "message": "Reintentar guardar la apariencia"
   }
 }

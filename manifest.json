@@ -5,7 +5,7 @@
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "author": "Jan Bludau",
-  "version": "1.22.0",
+  "version": "1.23.0",
   "homepage_url": "https://vazules.github.io/Thunderbird-Antivirus/",
   "browser_specific_settings": {
     "gecko": {
@@ -27,7 +27,8 @@
     "notifications",
     "scripting",
     "downloads",
-    "menus"
+    "menus",
+    "theme"
   ],
   "optional_permissions": [
     "sensitiveDataUpload"
@@ -47,6 +48,7 @@
   "background": {
     "scripts": [
       "i18n.js",
+      "theme.js",
       "runtime.js",
       "vendor/tldts.js",
       "risk.js",

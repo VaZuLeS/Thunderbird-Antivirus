@@ -1350,6 +1350,9 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!request || typeof request !== 'object') return false;
 
     switch (request.action) {
+        case "getUiTheme":
+            ThundyTheme.snapshot().then(sendResponse).catch(() => sendResponse(null));
+            return true;
         case "getLocalRisk":
             (async () => {
                 const message = await browser.messages.get(request.messageId);
