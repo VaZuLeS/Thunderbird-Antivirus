@@ -53,3 +53,5 @@ Die automatisierten Prüfungen verwenden gemockte Thunderbird-APIs. Für die rea
 7. Einrichtungsassistent, Protokoll, Datenschutzhinweise und Unternehmensprofile mitlesen. Updates öffnen den Assistenten weiterhin nicht erneut.
 
 Die Ausführung dieser realen Abnahme bleibt offen; Browser-Screenshots belegen die gerenderte Oberfläche mit Test-APIs.
+
+Der [versionierte UX05-Browser-/axe-Prüflauf](UI_BROWSERPRUEFUNG.md) ergänzt `npm run check:ui` und unabhängige Sprachprüfungen in der CI. Gefundene Hauptbereichs-, Link- und Tabellenfokusprobleme wurden korrigiert. Reale Thunderbird-/OS-/Screenreader-Abnahme bleibt offen.

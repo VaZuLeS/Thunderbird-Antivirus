@@ -7,6 +7,7 @@
 <script src="audit.js" defer></script>
 </head>
 <body class="admin-page audit-page">
+<main>
 <header class="scanner-header"><img src="img/icon-48px.png" width="40" height="40" alt=""><div><strong class="scanner-brand">Thundy AV</strong><h1 data-i18n="auditTitle">Link decision log</h1></div><a href="options.html" data-i18n="bannerOpenOptions">Open options</a></header>
 <p data-i18n="auditScope"></p>
 <p class="card audit-disclosure" data-i18n="auditPrivacy"></p>
@@ -21,7 +22,8 @@
 <div class="audit-actions"><button id="auditRefresh" data-i18n="auditRefresh">Refresh</button><button id="auditJson" class="btn-primary" data-i18n="auditJson">Export JSON</button><button id="auditCsv" data-i18n="auditCsv">Export CSV</button><button id="auditClear" class="btn-danger" data-i18n="auditClear">Delete local log</button></div>
 <p class="risk-note" data-i18n="auditExportHelp"></p>
 <p id="auditStatus" role="status" aria-live="polite"></p>
-<div class="audit-table-wrap"><table class="audit-table"><caption id="auditCount"></caption><thead><tr><th scope="col" data-i18n="auditTime">Click / decision time</th><th scope="col" data-i18n="auditOutcome">Decision</th><th scope="col" data-i18n="auditLocalScore">Local score</th><th scope="col" data-i18n="auditVerdict">Provider result</th><th scope="col" data-i18n="auditAddress">URL and details</th></tr></thead><tbody id="auditRows"></tbody></table></div>
+<div class="audit-table-wrap" tabindex="0" role="region" aria-labelledby="auditCount"><table class="audit-table"><caption id="auditCount"></caption><thead><tr><th scope="col" data-i18n="auditTime">Click / decision time</th><th scope="col" data-i18n="auditOutcome">Decision</th><th scope="col" data-i18n="auditLocalScore">Local score</th><th scope="col" data-i18n="auditVerdict">Provider result</th><th scope="col" data-i18n="auditAddress">URL and details</th></tr></thead><tbody id="auditRows"></tbody></table></div>
 <div class="audit-actions"><button id="auditPrevious" data-i18n="auditPrevious">Previous</button><span id="auditPage" aria-live="polite"></span><button id="auditNext" data-i18n="auditNext">Next</button></div>
-<dialog id="auditConfirm"><p data-i18n="auditClearConfirm"></p><div class="audit-actions"><button id="auditKeep" data-i18n="linkCancel">Cancel</button><button id="auditDelete" data-i18n="auditClear">Delete local log</button></div></dialog>
+<dialog id="auditConfirm" aria-labelledby="auditConfirmText"><p id="auditConfirmText" data-i18n="auditClearConfirm"></p><div class="audit-actions"><button id="auditKeep" data-i18n="linkCancel">Cancel</button><button id="auditDelete" data-i18n="auditClear">Delete local log</button></div></dialog>
+</main>
 </body></html>

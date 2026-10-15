@@ -1,3 +1,9 @@
+# Reproduzierbare UI-Prüfung und zugängliche Navigation — 15. Oktober 2026
+
+940 Tests im Gesamtgate und 28/28 korrigierte Browser-Kurzfälle bestanden. Hauptbereiche für die Screenreader-Navigation, sichtbare Linkkennzeichnung, fokussierbare Scrollbereiche und ein benannter Audit-Dialog ergänzt. Versionierter Playwright-/axe-Lauf für 528 Varianten über acht Adminansichten und sechs Add-on-Seiten; CI mit sechs unabhängigen Sprachläufen und Berichts-/Fehlerscreenshot-Artefakten. Quellstand 1.23.0, lokales unsigniertes XPI aktualisiert; getaggte Veröffentlichung und echte Thunderbird-/OS-/Screenreader-Abnahme bleiben separat offen. [Befehle, Prüfumfang und Grenzen](UI_BROWSERPRUEFUNG.md).
+
+---
+
 # Signierte Testgeräte-Heartbeats — 15. Oktober 2026
 
 813 Tests im Gesamtgate. Minimaler lokaler Heartbeatkanal mit Geräte-/Organisations-/Epochenbindung, eigener lückenloser Sequenz, Clock-Skew-Prüfung und dauerhafter Annahme. Exakte Wiederholungen liefern den ursprünglichen Beleg ohne Kontaktauffrischung. Öffentlicher Prüfer validiert Geräte- und Writer-Signaturen; Zustände nie gemeldet/aktuell/verspätet/unbekannt/widerrufen werden konservativ abgeleitet. Keine reale Flottenmessung oder Runtime-/SSO-/SEALED-Integration; Extension 1.22.0 unverändert. [API, CLI und Grenzen](ENTERPRISE_HEARTBEATS.md) · [Fortgeschriebener Plan](ENTERPRISE_NAECHSTE_SCHRITTE.md).

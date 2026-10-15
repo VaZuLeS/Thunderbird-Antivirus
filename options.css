@@ -589,3 +589,9 @@
   min-height: 36px;
   padding-block: 7px;
 }
+
+.settings-page main p a,
+.settings-page main small a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}

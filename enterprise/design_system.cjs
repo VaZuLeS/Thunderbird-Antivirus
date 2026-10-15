@@ -154,6 +154,10 @@ function decorateHTML(html, language) {
     },
   );
   if (count !== 1) throw Error("DESIGN_STYLE_INVALID");
+  if (!html.includes("<main>"))
+    html = html
+      .replace("<body>", "<body><main>")
+      .replace("</body>", "</main></body>");
   html = html.replace("<body>", '<body class="admin-page">');
   if (html.includes("<main>"))
     html = html.replace("<main>", "<main>" + chrome(language));

@@ -47,13 +47,16 @@
     "design:reference": "node tools/design-reference.dev.cjs",
     "check:design": "node scripts/generate-design.js --check && node tools/design-reference.dev.cjs --check",
     "design:build": "node scripts/generate-design.js",
-    "enterprise:capacity-alerts": "node enterprise/capacity_alerts_cli.cjs"
+    "enterprise:capacity-alerts": "node enterprise/capacity_alerts_cli.cjs",
+    "check:ui": "node tools/browser-ui.dev.cjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "canonicalize": "2.1.0",
     "jsdom": "^30.1.1",
+    "playwright": "1.62.1",
     "tldts": "7.4.10",
     "web-ext": "^10.7.0"
   }

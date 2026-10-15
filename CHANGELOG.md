@@ -2,6 +2,8 @@
 
 ## 1.23.0 — 2026-10-15
 
+- Add reproducible six-language browser/axe CI; fix main landmarks, inline-link identification, scroll-region keyboard focus and audit-dialog naming.
+
 - Share one design contract and generated component CSS across the add-on and all seven offline admin renderers; preserve CSP, signatures, filters and complete exports.
 - Add document-local, script-free theme/accent/density controls to offline reports; add independently saved comfortable/compact density to the add-on.
 - Reduce the event review to five primary columns with chronological sorting, localized times and expandable original details.

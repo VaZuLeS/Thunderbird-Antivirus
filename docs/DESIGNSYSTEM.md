@@ -101,7 +101,7 @@ EN, DE, FR, ES, IT und PL gehören zur Produktabnahme. Layouts dürfen keine eng
 | UX02 | Übergreifende Designprinzipien und bedienbare Referenz für Anwender, Adminübersicht und Admin-Einstellungen | Mit diesem Dokument ausgearbeitet; Beispieldaten, keine aktive Konsole |
 | UX03 | Gemeinsamen Token-/Komponentenkern als einzige Quelle für Add-on und sieben Offline-Adminrenderer extrahieren | **Implementiert**; reiner gemeinsamer Designvertrag, generiertes CSS und Renderer-Einbettung; CSP, Offline-Fähigkeit, Sprachen und Exporte geprüft |
 | UX04 | Renderer für Ereignisse, Storage, Fälle, Betriebszustand, Geräte, Alarme und Kapazität angleichen | **Implementiert**; gemeinsame Header, Formulare, Status, Theme-/Dichteauswahl; Ereignistabelle mit fünf Kernspalten, Details und Sortierung; Paketreview nutzt denselben Alarmrenderer |
-| UX05 | Einheitliche Navigation, Informationsdichte und Tastatur-/Screenreader-Abnahme über alle Oberflächen | Automatisierte Layout-, Theme-, Tastatur-, Filter- und Exportprüfung umgesetzt; echte Thunderbird-/OS- und Screenreader-Abnahme bleibt offen |
+| UX05 | Einheitliche Navigation, Informationsdichte und Tastatur-/Screenreader-Abnahme über alle Oberflächen | Automatisierte Layout-, Theme-, Tastatur-, Filter- und Exportprüfung umgesetzt; versionierter [Browser-/axe-Prüflauf](UI_BROWSERPRUEFUNG.md) und sechssprachige CI ergänzt; echte Thunderbird-/OS- und Screenreader-Abnahme bleibt offen |
 | UX06 | Authentifiziertes Unternehmensportal und produktive Admin-Einstellungen auf diese Komponenten aufsetzen | Abhängig von den offenen Enterprise-Kernfunktionen; UI allein erfüllt weder SSO/RBAC noch SEALED |
 
 UX03 und UX04 sind als gemeinsame Konsolidierung umgesetzt. Jeder umgestellte Renderer erhält Vergleiche für leere, volle, gefilterte, veraltete und fehlerhafte Zustände. Bestehende Signaturprüfung, Datenminimierung, Pagination und Exportbedeutung sind Abnahmekriterien. Neue Farben allein schließen diese Schritte nicht ab.
@@ -125,3 +125,7 @@ Die realen Profil-Einstellungen zeigen gespeicherte und ungespeicherte Auswahl, 
 Automatisierte Gesamtprüfung: 919 Tests; keine Lintfehler, 24 bekannte Thunderbird-Warnungen. 324 wesentliche Browserlayouts über Einstellungen und Adminrenderer sowie zusätzliche Prüfungen der optimierten Assets. Echte SSO-/RBAC-/SEALED-Funktionen werden dadurch nicht ergänzt; UX06 bleibt von den bestehenden Enterprise-Kernaufgaben abhängig.
 
 N18 ergänzt die achte Offline-Adminansicht für [Kapazitätswarnungen](ENTERPRISE_KAPAZITAETSALARME.md). Sie bettet denselben Designkern ein und stellt Erholung, aktive Warnung und Übernahme getrennt dar; Originalhashes sind aufklappbar. Die ursprünglichen sieben Renderer und deren Prüfverträge bleiben erhalten.
+
+## UX05 reproduzierbar ausführen
+
+`npm run check:ui` prüft 528 synthetische Browserfälle über acht Adminansichten und sechs Add-on-Seiten. Die CI prüft alle sechs Sprachen unabhängig und speichert Berichte sowie Fehlerscreenshots. [Umfang, Befehle, axe-Prüfumfang und verbleibende Live-Abnahmen](UI_BROWSERPRUEFUNG.md). Hauptbereiche, Linkkennzeichnung, Tabellenfokus und Dialogbeschriftung wurden anhand der gefundenen Befunde verbessert.

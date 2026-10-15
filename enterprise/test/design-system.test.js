@@ -63,6 +63,8 @@ for (const lang of Object.keys(labels))
             }),
             d = dom.window.document;
           assert.equal(d.documentElement.dataset.designVersion, "1");
+          assert.equal(d.querySelectorAll("main").length, 1);
+          assert.ok(d.querySelector("main .review-toolbar"));
           assert.ok(d.body.classList.contains("admin-page"));
           assert.equal(d.querySelectorAll('[name="review-theme"]').length, 3);
           assert.equal(d.querySelectorAll('[name="review-accent"]').length, 4);

@@ -342,7 +342,7 @@ function reviewHtml(report, language = "en") {
   const l = labels[language],
     nonce = crypto.randomBytes(18).toString("base64");
   const table = (headers, rows) =>
-    `<div class="scroll"><table><thead><tr>${headers.map((h) => `<th scope="col">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((c, i) => `<td data-label="${esc(headers[i])}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+    `<div class="scroll" tabindex="0"><table><thead><tr>${headers.map((h) => `<th scope="col">${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr>${row.map((c, i) => `<td data-label="${esc(headers[i])}">${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
   const metrics = [];
   for (const name of ["outbox", "storage", "connectors"]) {
     const m = report.metrics[name];

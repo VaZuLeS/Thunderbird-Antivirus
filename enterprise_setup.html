@@ -8,6 +8,7 @@
 <script src="enterprise_profiles.js"></script><script src="enterprise_setup.js" defer></script>
 </head>
 <body class="admin-page audit-page profile-page">
+<main>
 <header class="scanner-header"><img src="img/icon-48px.png" width="40" height="40" alt=""><div><strong class="scanner-brand">Thundy AV</strong><h1 data-i18n="profilesTitle">Optional enterprise profiles</h1></div><a href="options.html" data-i18n="bannerOpenOptions">Open options</a></header>
 <p class="card audit-disclosure" data-i18n="profilesIntro"></p>
 <p id="profileChangeState" class="badge" role="status" aria-live="polite"></p><form id="profileForm" class="profile-form">
@@ -25,4 +26,5 @@
 <section class="card"><details><summary data-i18n="profilesPreview">Configuration draft</summary><p data-i18n="profilesPrivacy"></p><pre id="profilePreview" tabindex="0"></pre></details></section>
 <section class="card" id="profileChanges" hidden><h2 data-i18n="profilesChanges">Changes compared with saved selection</h2><ul id="profileDiff"></ul></section><div class="audit-actions"><button id="profileSave" class="btn-primary" data-i18n="profilesSave">Save selection locally</button><button id="profileExport" data-i18n="profilesExport">Export configuration draft</button><button id="profileDiscard" data-i18n="profilesDiscard">Discard unsaved changes</button><button id="profileLoadRetry" hidden data-i18n="profilesLoadRetry">Reload saved selection</button><button id="profileReset" data-i18n="profilesReset">Reset selection</button></div>
 <p id="profileStatus" role="status" aria-live="polite"></p>
+</main>
 </body></html>
