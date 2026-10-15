@@ -126,3 +126,7 @@ Die Entwicklung verwendet synthetische Registrierungen und echte kryptografische
 ## Lokale sechssprachige Übersicht
 
 `review` erstellt nach derselben Public-Key-Prüfung eine [sechssprachige HTML-Übersicht](ENTERPRISE_HEARTBEAT_UEBERSICHT.md) mit Status-/Problemfiltern und vollständigem minimiertem JSON-Download (N12). Öffentliche Reports enthalten zusätzlich `criteria` mit `minimumExtensionVersion`, `lateAfterMs` und `unknownAfterMs`, damit die gebundenen Bewertungskriterien nachvollziehbar bleiben.
+
+## Dauerhafte lokale Alarmkandidaten
+
+N13 ergänzt einen [getrennten Alarmworker](ENTERPRISE_HEARTBEAT_ALARME.md), der vor jeder Beobachtung das Originaljournal prüft. Er verarbeitet Meldungsfristen, Eskalation und Erholung und hält Kandidaten bis zur ausdrücklichen Bestätigung vor. Nie gemeldete Geräte erhalten keine erfundene Ausfallzeit; externe Zustellung und reale Flottenintegration bleiben offen.
