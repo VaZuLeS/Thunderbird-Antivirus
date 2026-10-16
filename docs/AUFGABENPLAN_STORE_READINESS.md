@@ -337,3 +337,44 @@ Die Fixes werden daher als **Version 1.24.0** veröffentlicht (Runde 4, §14); C
 | V-07 | Store-Gate final: C1–C5 + C7 PASS, offen nur C6 | Gate-Protokoll: C1–C5 **PASS**, C6 FAIL (manuell), C7 **PASS** | **erledigt** |
 | V-08 | ✋ ATN-Signierung/Einreichung (ATN-Schlüssel) + Live-Test C6/FA-A5 | Store-URL in README/Listing | **offen (manuell)** |
 
+
+## 15. Runde 5 — Nächste Aufgaben: Einreichungsfokus (Plan vom 16. Oktober 2026)
+
+**Vorgehen:** Deltalanalyse über alle Pläne (Store-Gate, Analyse-Protokoll-Runde §13/§14,
+[AUFGABENPLAN_OPTIMIERUNG_I18N.md](AUFGABENPLAN_OPTIMIERUNG_I18N.md) T01–T18,
+[ENTERPRISE_NAECHSTE_SCHRITTE.md](ENTERPRISE_NAECHSTE_SCHRITTE.md)). Ergebnis der Delta-Analyse:
+die Qualitätsaufgaben T01–T17 sind implementiert; die manuellen Freigabenachweise konvergieren in
+**einen** Live-Test (C6 = T18 = FA-A5). Der kritische Pfad zur Einreichung ist daher:
+Doku-Konsistenz → Live-Test → Store-Gate GO → ATN-Signierung/Einreichung.
+
+### Befunde (Doku-Drift vor der Einreichung)
+
+| ID | Schwere | Befund | Beleg |
+|---|---|---|---|
+| SL-1 | **P1** | Das Store-Listing ist auf dem Stand 1.6/1.19.0: Header-Version „1.6“, Einleitungstext nennt Kandidat 1.19.0, Checklist §7 verweist auf „version 1.6.2“/„MIT at that release“ und meldet Screenshots als offen — alles überholt (aktuell 1.24.0, GPL v3, 23 echte PNGs, Gate C5 PASS). | `docs/store_listing.md` Kopf, Einleitung, §7 |
+| SL-2 | **P2** | `store_assets.md` meldet Screenshots als „offen — nur SVG-Platzhalter“ und „nur deutsch lokalisiert“; beide Aussagen sind überholt (23 reale PNGs, Gate C5 PASS; sechs Sprachen seit 1.19.0). | `docs/store_assets.md` §1/§2/§4/§6 (vor dem Fix) |
+| SL-3 | **P2** | `reviewer_notes.md` Kopf nennt „**Version:** 1.6“ statt 1.24.0. | `docs/reviewer_notes.md` Kopf (vor dem Fix) |
+
+### Aufgaben
+
+| ID | Aufgabe | Befund | DoD | Aufwand | Status |
+|---|---|---|---|---|---|
+| N-01 | ✋ **Live-Test in Thunderbird 140 ESR ausführen** (deckt C6, T18 und FA-A5 ab): Protokoll `docs/live_test_protocol.md` abarbeiten **plus** Analyse-Protokoll-Abschnitt (Upload → `IN_PROGRESS`-Polling → fertiges Protokoll; Popup schließen/öffnen → Offline-Anzeige; Rescan-Invalidierung), Summe-Zeile füllen, optionale Banner-Motive aufnehmen. | C6, FA-A5, T18 | Gate C6 **PASS** (≥ 10 OK, 0 FAIL) → `npm run store-gate` → **GO** | 0,5–1 d | **offen (manuell)** |
+| N-02 | **Store-Listing auf 1.24.0 aktualisieren:** Header-Version, Einleitung (Kandidat 1.24.0 inkl. Analyse-Protokoll), Release-Notes-Block 1.24.0 in §6, Checklist §7 (Manifest 1.24.0/GPL v3, Screenshots done). | SL-1 | `grep` findet keine 1.6/1.19.0-Aktivbehauptungen mehr; §7 ehrlich (Live-Test weiter offen bis N-01) | 0,25 d | **erledigt** |
+| N-03 | **`store_assets.md` aktualisieren:** reale PNG-Inventare (23, fünf Gruppen), SVGs als Entwurfsskizzen gekennzeichnet, „Was fehlt“/„Offene Punkte“ korrigiert, Sprachangabe sechssprachig. | SL-2 | Dokument stimmt mit `find docs/screenshots -iname '*.png'` (23) und Gate C5 PASS überein | 0,25 d | **erledigt** |
+| N-04 | **`reviewer_notes.md` Kopf auf 1.24.0** setzen. | SL-3 | Kopf nennt 1.24.0 | 0,1 d | **erledigt** |
+| N-05 | **Einreichungspaket & Signier-Dry-Run vorbereiten:** finale Checkliste (Store-Gate GO nach N-01), Signierkommando (STATUS „Remaining“) gegenprüfen, ATN-Konto-Voraussetzungen listen, Reviewer-Notes/Listing/Testdata als Review-Paket verlinken, Doku-Drift-Check (`grep 1.23.0/1.6` in Aktivdokumenten). | SL-1–SL-3, V-08 | Checkliste im STATUS „Remaining“ ergänzt; alle Aktivdokumente nennen 1.24.0 | 0,25 d | **offen** |
+| N-06 | **CI-Verifikation FA-A6:** `browser-ui`-Job auf dem Release-Commit prüfen; `hybrid-stored-*`/`hybrid-poll-*` müssen grün sein, sonst Fix nachziehen. | FA-A6 | CI-Lauf grün oder dokumentierter Fix | 0,1 d | **offen** |
+| N-07 | **Post-Listung: Review-Monitoring** (nach Einreichung): ATN-Review-Status verfolgen, Feedback-Triage (Issues mit FA-/T-Labels), schnelle Punkt-Releases für Review-Fixes (Versionspolitik wie Runde 4). | V-08 | Prozessabschnitt in STATUS/decisions | 0,25 d | **offen (nach Einreichung)** |
+| N-08 | **Erweiterung (kein Freigabe-Blocker):** Enterprise-Track (SEALED/SSO/N06, produktive Policy-Kanäle) gemäß [ENTERPRISE_NAECHSTE_SCHRITTE.md](ENTERPRISE_NAECHSTE_SCHRITTE.md) separat planen und priorisieren. | — | Eigener Aufgabenplan-Status im Enterprise-Dok | — | **offen (Erweiterung)** |
+| N-09 | **Erweiterung (kein Freigabe-Blocker):** Erkennungsqualität — reale Korpora für FR/ES/IT/PL-Heuristiken und sprachübergreifende Gemischttext-Fälle (Fortsetzung T15/T16 aus dem i18n-Plan). | — | Dokumentierter Korpus mit Fehlalarm-/Treffer-Vergleich | 2–4 PT | **offen (Erweiterung)** |
+
+### Reihenfolge und GO-Pfad
+
+1. **N-02…N-04** (erledigt) — Doku-Konsistenz vor der Einreichung hergestellt.
+2. **N-05** — Einreichungspaket und Signier-Dry-Run (ohne ATN-Schlüssel dokumentierbar).
+3. **N-01** ✋ — manueller Live-Test (kritischer Pfad); danach `npm run store-gate` → **GO**
+   (C1–C7 PASS). Alle anderen Kriterien sind seit Runde 4 grün.
+4. **V-08** — ATN-Signierung (`--amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed
+   --approval-timeout 0`) und Einreichung; danach **N-06/N-07**.
+5. **N-08/N-09** — Erweiterungen nach der Listung, klar getrennt von Freigabe-Arbeit.

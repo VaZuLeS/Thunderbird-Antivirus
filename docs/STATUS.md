@@ -12,6 +12,19 @@ Protokoll-Lebenszyklus für die ATN-Begutachtung. `npm test` → 954 bestanden; 
 offen bleiben C6 (Live-Test-Protokoll, manuell) und C7 (Tag v1.23.0 + Release). Aufgabenstand:
 [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13.
 
+# Runde 5: Einreichungsfokus — Doku-Drift geschlossen, nächste Aufgaben geplant — 16. Oktober 2026
+
+Deltalanalyse über alle Pläne (Store-Gate, i18n-Plan T01–T18, Enterprise): Die Qualitätsaufgaben
+T01–T17 sind implementiert; die manuellen Freigabenachweise konvergieren in einen Live-Test
+(C6 = T18 = FA-A5). Doku-Drift vor der Einreichung geschlossen: Store-Listing auf 1.24.0 aktualisiert
+(Header, Einleitung, Release-Notes-Block 1.24.0 in §6, Checklist §7: Manifest 1.24.0/GPL v3,
+Screenshots done), [store_assets.md](store_assets.md) mit realem PNG-Inventar (23 Aufnahmen,
+Gate C5 PASS) und sechssprachiger UI-Angabe, Reviewer-Notes-Kopf auf 1.24.0. Neuer Aufgabenplan-§15
+mit den nächsten Aufgaben: N-01 ✋ Live-Test (kritischer Pfad, danach Store-Gate GO), N-05
+Einreichungspaket/Signier-Dry-Run, N-06 CI-Verifikation der Protokoll-Fälle, N-07 Review-Monitoring
+nach Einreichung, N-08/N-09 Erweiterungen (Enterprise, Heuristik-Korpora) — klar getrennt von
+Freigabe-Arbeit. [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §15.
+
 # Tag- und Release-Lage geklärt; Version 1.24.0 vorbereitet — 16. Oktober 2026
 
 Korrektur zur vorherigen Meldung: Der veröffentlichte Tag `v1.23.0` zeigt auf den Vorbereitungsstand

@@ -2,7 +2,7 @@
 
 **Add-on name:** Thundy AV – Email Scanner for Thunderbird (short name: "Thundy AV")
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.6
+**Version:** 1.24.0
 **Manifest:** MV3 (`manifest_version: 3`), `strict_min_version: 140.0`
 **License:** GNU GPL v3 (`GPL-3.0-only`)
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus
