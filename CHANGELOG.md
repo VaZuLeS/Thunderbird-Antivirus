@@ -2,6 +2,7 @@
 
 ## 1.23.0 — 2026-10-15
 
+- Deliver the finished Hybrid Analysis protocol to the popup: poll `IN_PROGRESS` results automatically, show job/submission ID, SHA-256 and retrieval time in every result card, store the finished protocol locally for offline display and invalidate it on new submissions.
 - Keep link-dialog focus inside the modal during asynchronous browser handoff and restore the retry action on opening failure.
 
 - Keep historical audit verdicts/providers separate from later checks, localize verdict labels in all six languages, and preserve raw export evidence. Cover populated audit/popup views and injected message-link flows in browser CI.
