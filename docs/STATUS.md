@@ -1,3 +1,20 @@
+# Store-Readiness-Gate: GO und Release v1.23.0 — 16. Oktober 2026
+
+Der Submission-Gate meldet erstmals **GO**: alle Kriterien C1–C7 PASS (`npm run store-gate`, Exit 0;
+953 Tests, 0 Fehler, Lint 24 bekannte Thunderbird-Warnungen, Paket valid). Voraus gingen die
+Gate-Härtungen aus [AUFGABENPLAN_STORE_READINESS_1_23_0.md](AUFGABENPLAN_STORE_READINESS_1_23_0.md)
+(C5 rekursive Screenshotprüfung mit Mindestbreite über [screenshot-inventory.js](../scripts/screenshot-inventory.js),
+C6 versionsspezifisches [live_test_1_23_0.md](live_test_1_23_0.md), C7 artefaktrelevant aus der
+Paketliste statt handgepflegtem Muster; Entscheidungen D12–D14 in [decisions.md](decisions.md)).
+Tag `v1.23.0` auf Commit `df63c76`; Release
+https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0 (kein Pre-Release, „Latest“)
+mit Asset `thundy-av-1.23.0.xpi`, 218.405 Bytes, SHA-256
+`a0e5a396cf7ac5abc2f806402bbb0507d368acc647158d5d6322f19e0d2a78c8`; heruntergeladenes Asset ist
+byte-identisch mit dem geprüften Build. Das SVG-Platzhalter-Set in `docs/screenshots/` wurde entfernt;
+das Listing-Set ist je Motiv in [store_assets.md](store_assets.md) §3 kuratiert (Banner-Motive bleiben
+offen ✋). Weiterhin offen: ATN-Signierung und Einreichung (Maintainer-Schlüssel), Windows/macOS,
+Screenreader/DPI, reale Browserübergabe, automatische Updateverteilung und produktive N06-Nachweise.
+
 # Prozessabbruch-Wiederherstellung und aktuelles Audit — 15. Oktober 2026
 
 Der reale Thunderbird-Prüflauf ist um erzwungene Prozessabbrüche nach bestätigten Daten und bei offenem Linkdialog erweitert. Gespeicherte Entscheidungen bleiben erhalten; offene Vorgänge bleiben `PENDING`, ohne erfundene Entscheidung oder erneute OS-Zustellung. Eine neue Entscheidung funktioniert anschließend. Die dabei gefundene veraltete Auditansicht lädt bei Rückkehr in den Tab neu und erhält Filter, offene Nachweise und Fokus; überholte Antworten werden verworfen. [Prüfweg, Originalnachweise und Grenzen](THUNDERBIRD_LINUX_ABNAHME.md#wiederherstellung-nach-erzwungenem-prozessabbruch). Vorbereitete Version 1.23.0; keine neue getaggte Veröffentlichung.

@@ -166,7 +166,26 @@ git diff --name-only v1.22.0..HEAD | grep -Ev '^(docs|test|tools|enterprise)/'  
 find docs/screenshots -name '*.png' | wc -l      # 23 (Gate sieht 0)
 ```
 
-## 7. Weiterleitung
+## 7. Befund-Status nach Runde 1 (2026-10-16)
 
-Der daraus abgeleitete, gruppierte Aufgabenplan:
+Die Analyse ist ein Mess-Snapshot vom Vormittag; der Aufgabenplan
+[AUFGABENPLAN_STORE_READINESS_1_23_0.md](AUFGABENPLAN_STORE_READINESS_1_23_0.md) wurde im selben
+Lauf abgearbeitet. Ergebnis: `npm run store-gate` → **GO** (C1–C7 PASS), Release
+[v1.23.0](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0) veröffentlicht.
+
+| Befund | Status | Nachweis |
+|---|---|---|
+| B1 Kein Release 1.23.0 | **behoben** | Tag `v1.23.0` auf `df63c76`; GitHub-Release mit Asset `thundy-av-1.23.0.xpi` (SHA-256 `a0e5a396…a78c8`), kein Pre-Release, „Latest“; Gate C7 PASS |
+| B2 ATN-Signierung/Einreichung | **offen ✋** | braucht die ATN-API-Schlüssel des Maintainers (A-03/A-04) |
+| B3 Gate übersieht Screenshots | **behoben** | `scripts/screenshot-inventory.js` (rekursiv, Breitenlogik), geteilt mit Pre-Submit-Check; Gate C5 PASS mit 10 Aufnahmen ≥ 1200 px |
+| B4 Listing-Screenshots fehlen | **teilweise** | Motiv-Set kuratiert ([store_assets.md](store_assets.md) §3, 5 Motive fertig); Banner-Motive 6/7 offen ✋ |
+| B5 C6 falsches Artefakt | **behoben** | `liveTestSummary(rootDir, version)` liest [live_test_1_23_0.md](live_test_1_23_0.md) (25 OK / 0 FAIL); Gate C6 PASS |
+| H1 Doku-Drift | **behoben** | [store_listing.md](store_listing.md), [store_assets.md](store_assets.md), [screenshot_capture.md](screenshot_capture.md), quickstart auf 1.23.0 bzw. versionneutral; historische Snapshot-Sektionen bleiben gekennzeichnet |
+| H2 Manuelle Restabdeckung | **offen ✋** | Windows/macOS, Screenreader/DPI, Browserübergabe, Updateverteilung, N06 (A-16 – A-21) |
+| M1 `ARTIFACT_RELEVANT` unvollständig | **behoben** | `isArtifactRelevant` aus der Paketliste (`verify-package.js`) abgeleitet; Testfälle für `audit.js`, `design_system.js`, `message_ui.js`, … |
+| M2 Gate-/Check-Konsistenz | **behoben** | eine gemeinsame Zähllogik (`screenshot-inventory.js`); Mindestbreite 1200 px im Gate geprüft (D14) |
+
+## 8. Weiterleitung
+
+Der daraus abgeleitete, gruppierte Aufgabenplan (inkl. Ausführungsstand Runde 1):
 [AUFGABENPLAN_STORE_READINESS_1_23_0.md](AUFGABENPLAN_STORE_READINESS_1_23_0.md)

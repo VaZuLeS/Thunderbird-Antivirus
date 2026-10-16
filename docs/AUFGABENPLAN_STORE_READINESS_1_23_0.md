@@ -6,7 +6,7 @@
 **Snapshot:** Branch `cline/rxk1fthv`, Basis `f9f1e95`, Add-on-Version 1.23.0
 **Ziel:** Vollständige, überprüfbare Freigabe („GO“ im Submission-Gate) und Einreichung bei
 addons.thunderbird.net (ATN)
-**Stand:** 2026-10-16
+**Stand:** 2026-10-16 (Runde 1 abgeschlossen: Gate-Ergebnis **GO**)
 
 ---
 
@@ -158,18 +158,35 @@ Maintainer-Schlüsseln.
 
 ---
 
-## 11. Runde 1 — Ausführungsstand
+## 11. Runde 1 — Ausführungsstand (abgeschlossen, 2026-10-16)
+
+**Ergebnis: `npm run store-gate` → GO, alle Kriterien C1–C7 PASS, Exit 0.**
+Release https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0 („Latest“).
 
 | ID | Status | Nachweis |
 |---|---|---|
-| E-01 – E-03 | **offen** | — |
-| A-01 – A-05 | **offen** | — |
-| A-06 – A-09 | **offen** | — |
-| A-10 – A-13 | **offen** | — |
-| A-14, A-15 | **offen** | — |
-| A-16 – A-21 | **offen (✋)** | — |
-| A-22, A-23 | **offen** | — |
-| A-24 – A-26 | **offen (nach GO)** | — |
+| E-01 | **erledigt** | D12 in [decisions.md](decisions.md) |
+| E-02 | **erledigt** | D14 in [decisions.md](decisions.md); Motiv-Zuordnung in [store_assets.md](store_assets.md) §3 |
+| E-03 | **erledigt** | D13 in [decisions.md](decisions.md) |
+| A-01 | **erledigt** | Tag `v1.23.0` auf `df63c76`; Release mit Asset `thundy-av-1.23.0.xpi` (218.405 Bytes, SHA-256 `a0e5a396…a78c8`), kein Pre-Release, „Latest“ |
+| A-02 | **erledigt** | `npm run store-gate` Exit 0 → C1–C7 PASS; heruntergeladenes Asset byte-identisch (SHA-256 gleich) |
+| A-03 | **offen ✋** | ATN-Signierung braucht die API-Schlüssel des Maintainers; Kommando in [STATUS.md](STATUS.md) „Remaining“ |
+| A-04 | **offen ✋** | ATN-Einreichung nach A-03 |
+| A-05 | **offen ✋** | Store-URL nach der Einreichung |
+| A-06 | **erledigt** | `git rm` der drei SVG-Platzhalter; `docs/screenshots/` enthält nur echte Aufnahmen |
+| A-07 | **erledigt** | Listing-Set je Motiv kuratiert ([store_assets.md](store_assets.md) §3); Motive 6/7 (Banner) bleiben offen ✋ — dokumentiert, blockiert C5 nicht |
+| A-08 | **erledigt** | [store_listing.md](store_listing.md): Kopf, Metadaten, Release-Notes-Block 1.23.0, Checkliste auf Ist-Stand |
+| A-09 | **erledigt** | [store_assets.md](store_assets.md): 23 echte Aufnahmen dokumentiert, „Was fehlt“ neu geschrieben |
+| A-10 | **erledigt** | `scripts/screenshot-inventory.js` (rekursiv, PNG/JPEG-Breitenlogik), geteilt mit Pre-Submit-Check; 11 Gate-Tests grün |
+| A-11 | **erledigt** | `liveTestSummary(rootDir, version)` liest `live_test_<version>.md` (Punkte → Unterstriche) vor dem Legacy-Protokoll |
+| A-12 | **erledigt** | `isArtifactRelevant` aus `verify-package.js` (`ALLOWED_FILES`/`ALLOWED_PREFIXES`) abgeleitet; Test deckt `audit.js`, `design_system.js`, `message_ui.js` … ab |
+| A-13 | **erledigt** | Gate-Kopf dokumentiert die C5/C6/C7-Artefaktquellen; [screenshot_capture.md](screenshot_capture.md) aktualisiert |
+| A-14 | **erledigt** | [live_test_1_23_0.md](live_test_1_23_0.md) mit Summe 25 OK / 0 FAIL / 0 N/A / 5 OFFEN, zeilenweise aus der Abnahme zitiert; Gate: C6 PASS |
+| A-15 | **erledigt** | `npm run check` Exit 0 (953 Tests, 0 Fehler, Lint ok, Paket valid); anschließend voller `store-gate` → GO |
+| A-16 – A-21 | **offen ✋** | Windows, macOS, Screenreader/DPI, Browserübergabe, Updateverteilung, produktive N06 — brauchen reale Umgebungen |
+| A-22 | **erledigt** | D12–D14 in [decisions.md](decisions.md), Kopf auf „Thundy AV“ ohne Alt-Version |
+| A-23 | **erledigt** | Versions-Grep: `store_listing.md`/`store_assets.md` nennen 1.23.0; verbleibende 1.6.x-Referenzen nur in als historisch markierten Snapshots (STATUS §„Stand: 1. Oktober 2026“) |
+| A-24 – A-26 | **offen (nach GO)** | Review-Rücklauf, Enterprise-Fahrplan, Support-Kanal — bewusst nach der Einreichung |
 
-**Ausgangslage gemessen (2026-10-16):** `npm run check` Exit 0 (949 Tests, 0 Fehler, Lint ok,
-Paket valid); `npm run store-gate -- --no-commands` → NO-GO, C5/C6/C7 FAIL (siehe Problemanalyse §2).
+**Verbleibende Blocker bis zur Store-Listung:** ausschließlich A-03/A-04 (Signierung + Einreichung,
+✋ Maintainer-Schlüssel) und danach A-05 (Store-URL). Alle automatisierbaren Kriterien sind PASS.
