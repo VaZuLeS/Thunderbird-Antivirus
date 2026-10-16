@@ -92,6 +92,11 @@ class Marionette:
             error = result['automationError']
             if error.startswith("AbortError: Actor 'MarionetteCommands' destroyed before query"):
                 raise NavigationInProgress(error)
+            if 'document.documentElement is null' in error:
+                # The evaluation landed in a document that is being replaced
+                # (message load/teardown race). Treat it like a navigation in
+                # progress so wait_for retries instead of aborting the run.
+                raise NavigationInProgress(error)
             raise RuntimeError(error)
         return result
 
