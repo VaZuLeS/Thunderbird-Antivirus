@@ -161,7 +161,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     report['wizardLanguages'] = []
     for lang, catalog in wizard_catalogs.items():
         m.page('const e=document.getElementById("language");e.value=arguments[0];e.dispatchEvent(new Event("change",{bubbles:true}));', [lang])
-        wait_for(lambda: m.page('return document.documentElement.lang===arguments[0] && !document.getElementById("next").disabled;', [lang]))
+        wait_for(lambda: m.page('return document.documentElement?.lang===arguments[0] && document.getElementById("next") && !document.getElementById("next").disabled;', [lang]))
         title = m.page('return document.querySelector("h1").textContent;')
         assert title == catalog['wizardTitle']['message'], title
         report['wizardLanguages'].append({'language': lang, 'title': title})
@@ -214,7 +214,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
         Services.prefs.setIntPref("mail.openMessageBehavior",2);MailUtils.displayMessage(Array.from(folder.messages)[0]);''')
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
-    wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+    wait_for(lambda: m.page('return document.documentElement?.dataset?.thundyClickProtection==="true";'))
     m.screenshot(out / 'message.png')
     m.page('document.querySelector("a[href^=https]").click();')
     dialog = wait_for(lambda: m.page('''const p=document.getElementById("thundy-link-dialog");
@@ -239,8 +239,8 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         return p?.state==="open" && b?.currentURI.spec.endsWith("/popup.html") && b.getBoundingClientRect().width>=500
             ? {panelWidth:p.getBoundingClientRect().width,contentWidth:b.getBoundingClientRect().width}:null;'''))
     popup_browser = 'document.querySelector(\'browser[webextension-view-type="popup"]\')'
-    wait_for(lambda: m.page('return document.body.innerText.includes("Thundy AV") && document.body.innerText.includes("sender@example.invalid");', browser=popup_browser))
-    assert m.page('return document.documentElement.lang;', browser=popup_browser) == locale
+    wait_for(lambda: m.page('return document.body?.innerText?.includes("Thundy AV") && document.body?.innerText?.includes("sender@example.invalid");', browser=popup_browser))
+    assert m.page('return document.documentElement?.lang;', browser=popup_browser) == locale
     assert m.page('return document.querySelector("h1").textContent;', browser=popup_browser) == catalogs[locale]['popupSubtitle']['message']
     popup['language'] = locale
     popup['heading'] = catalogs[locale]['popupSubtitle']['message']
@@ -297,23 +297,23 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name, value])
     theme = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance==="dark" && s.thundyAccent==="violet" && s.thundyDensity==="compact"?s:null);'))
     assert theme.get('externalAnalysisConsent') is not True
-    assert m.page('return document.documentElement.dataset.theme;') == 'dark'
+    assert m.page('return document.documentElement?.dataset?.theme;') == 'dark'
     report['appearanceSaved'] = {k: theme[k] for k in ['thundyAppearance', 'thundyAccent', 'thundyDensity']}
     m.screenshot(out / 'options-dark.png')
     previous = m.js('const b=window.gTabmail.currentTabInfo.browser;const id=b.browsingContext.currentWindowGlobal.innerWindowId;b.reload();return id;')
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.browsingContext.currentWindowGlobal?.innerWindowId!==arguments[0];', [previous]))
-    wait_for(lambda: m.page('return document.documentElement.dataset.theme==="dark" && document.documentElement.dataset.accent==="violet" && document.documentElement.dataset.density==="compact";'))
+    wait_for(lambda: m.page('return document.documentElement?.dataset?.theme==="dark" && document.documentElement?.dataset?.accent==="violet" && document.documentElement?.dataset?.density==="compact";'))
     assert m.js('return Services.io.offline;')
     wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="system"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="system"]\');'))
     report['nativeThemes'] = []
     m.page('document.querySelector(\'input[name="appearance"][value="system"]\').click();')
-    wait_for(lambda: m.page('return document.documentElement.dataset.appearance==="system";'))
+    wait_for(lambda: m.page('return document.documentElement?.dataset?.appearance==="system";'))
     for scheme in ['dark', 'light']:
         m.js('''const done=arguments[arguments.length-1];
             ChromeUtils.importESModule("resource://gre/modules/AddonManager.sys.mjs").AddonManager
                 .getAddonByID("thunderbird-compact-"+arguments[0]+"@mozilla.org")
                 .then(a=>a.enable()).then(()=>done(true),e=>done({error:String(e)}));''', [scheme], asynchronous=True)
-        wait_for(lambda: m.page('return document.documentElement.dataset.theme===arguments[0];', [scheme]))
+        wait_for(lambda: m.page('return document.documentElement?.dataset?.theme===arguments[0];', [scheme]))
         report['nativeThemes'].append(scheme)
         m.screenshot(out / ('options-native-' + scheme + '.png'))
     report['localizedPages'] = []
@@ -322,7 +322,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + page])
         wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.endsWith(arguments[0]);', [page]))
         expected = catalogs[locale][key]['message']
-        wait_for(lambda: m.page('return document.documentElement.lang===arguments[0] && document.querySelector("h1")?.textContent===arguments[1];', [locale, expected]))
+        wait_for(lambda: m.page('return document.documentElement?.lang===arguments[0] && document.querySelector("h1")?.textContent===arguments[1];', [locale, expected]))
         report['localizedPages'].append({'page': page, 'language': locale, 'heading': expected})
         m.screenshot(out / (page.replace('.html', '') + '-' + locale + '.png'))
     report['passed'] = True
@@ -392,7 +392,7 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="dark"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
     for name, value in [('appearance','dark'),('accent','violet'),('density','compact')]:
         m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name,value])
-    wait_for(lambda: m.page('return document.documentElement.dataset.theme==="dark" && document.documentElement.dataset.accent==="violet" && document.documentElement.dataset.density==="compact";'))
+    wait_for(lambda: m.page('return document.documentElement?.dataset?.theme==="dark" && document.documentElement?.dataset?.accent==="violet" && document.documentElement?.dataset?.density==="compact";'))
     after_upgrade = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance==="dark" && s.thundyAccent==="violet" && s.thundyDensity==="compact"?s:null);'))
     close_extension_tabs(m)
     m = restart()
@@ -408,7 +408,7 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     report['currentRestart'] = {'addon': addon_state(m), 'storagePreserved': True, 'uiLanguage': language,
         'wizardAbsent': True, 'auditRecordsPreserved': len(before['linkAuditLog'])}
     open_page(m, base+'options.html')
-    wait_for(lambda: m.page('return {theme:document.documentElement.dataset.theme,accent:document.documentElement.dataset.accent,density:document.documentElement.dataset.density};') == {'theme':'dark','accent':'violet','density':'compact'})
+    wait_for(lambda: m.page('return {theme:document.documentElement?.dataset?.theme,accent:document.documentElement?.dataset?.accent,density:document.documentElement?.dataset?.density};') == {'theme':'dark','accent':'violet','density':'compact'})
     m.screenshot(out/'current-settings-after-restart.png')
     # Reopen the persisted local message and use the real, newly injected link protection.
     m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
@@ -416,7 +416,7 @@ def check_restart_upgrade(m, args, out, display, report, restart):
         const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
         MailUtils.displayMessage(Array.from(folder.messages)[0]);''')
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
-    wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+    wait_for(lambda: m.page('return document.documentElement?.dataset?.thundyClickProtection==="true";'))
     m.page('document.querySelector("a[href^=https]").click();')
     wait_for(lambda: m.page('return document.getElementById("thundy-link-dialog")?.shadowRoot.querySelectorAll("footer button").length===2;'))
     with zipfile.ZipFile(args.xpi) as package:
@@ -445,7 +445,7 @@ def open_test_link_dialog(m):
         const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
         MailUtils.displayMessage(Array.from(folder.messages)[0]);''')
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
-    wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+    wait_for(lambda: m.page('return document.documentElement?.dataset?.thundyClickProtection==="true";'))
     m.page('document.querySelector("a[href^=https]").click();')
     wait_for(lambda: m.page('return document.getElementById("thundy-link-dialog")?.shadowRoot.querySelectorAll("footer button").length===2;'))
 
@@ -483,7 +483,7 @@ def check_crash_recovery(m, args, out, report, restart, base, installed):
     report['pendingCrashRecovery'] = {'record': pending[0], 'storagePreserved': True,
         'decisionNotInvented': True, 'extraOsDispatches': 0}
     open_page(m, base+'options.html')
-    wait_for(lambda: m.page('return {theme:document.documentElement.dataset.theme,accent:document.documentElement.dataset.accent,density:document.documentElement.dataset.density};') == {'theme':'dark','accent':'violet','density':'compact'})
+    wait_for(lambda: m.page('return {theme:document.documentElement?.dataset?.theme,accent:document.documentElement?.dataset?.accent,density:document.documentElement?.dataset?.density};') == {'theme':'dark','accent':'violet','density':'compact'})
     assert m.page('return window.wrappedJSObject.browser.i18n.getUILanguage();').split('-')[0] == args.locale
     open_test_link_dialog(m)
     with zipfile.ZipFile(args.xpi) as package:
