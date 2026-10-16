@@ -219,6 +219,10 @@ function matrix(o, kinds) {
         width: 1280,
         scheme: "dark",
         hybrid,
+        // The popup only resolves the stored hybrid record when a displayed
+        // message exists; without this flag the mock returns an empty
+        // message list and the startup path renders the empty-state card.
+        populated: true,
       });
   const selected = o.view ? cases.filter((c) => c.view === o.view) : cases;
   if (selected.length === 0) throw Error("UI_VIEW_INVALID");
