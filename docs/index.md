@@ -22,6 +22,8 @@ Landing page for the documentation of **Thundy AV – Email Scanner for Thunderb
   [PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md)
 - **Task plan derived from it (phases, traceability, DoD):**
   [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md)
+- Reusable prompt template for generating the problem analysis and grouped task plan:
+  [PROMPT_STORE_READINESS_ANALYSE.md](PROMPT_STORE_READINESS_ANALYSE.md)
 - Raw audit reports of that analysis: [audits/](audits/) (code, documentation/policy, build/pipeline)
 - Live test protocol (manual test in Thunderbird 140 ESR): [live_test_protocol.md](live_test_protocol.md)
 - Decisions log (binding decisions for the current submission candidate): [decisions.md](decisions.md)
