@@ -248,7 +248,10 @@ async function ready(page, c) {
         () => !document.getElementById("next").disabled,
       );
     if (c.view === "popup.html")
-      await page.locator("#hybrid_analysis_api_content .card").waitFor();
+      await page
+        .locator("#hybrid_analysis_api_content .card")
+        .first()
+        .waitFor();
     if (c.view === "audit.html")
       await page.waitForFunction(
         () => document.getElementById("auditJson").disabled === false,
@@ -400,7 +403,7 @@ async function interaction(page, c) {
     assert.ok(text.includes("sub-9"), "submission id shown in protocol");
     assert.ok(text.includes("2026-10-16"), "fetched-at shown in protocol");
     assert.equal(
-      await page.locator("#hybrid_analysis_api_content .card").count(),
+      await page.locator("#hybrid_analysis_api_content > .card").count(),
       1,
       "exactly one protocol card",
     );
