@@ -31,7 +31,19 @@ function runCommand(command, args) {
 function hasScreenshots(rootDir) {
   const dir = path.join(rootDir, 'docs', 'screenshots');
   if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter((name) => /\.(png|jpe?g)$/i.test(name));
+  // Real acceptance screenshots live in dated sub-directories as well
+  // (e.g. thunderbird-linux/), so scan recursively instead of only the
+  // top level (finding FA-4).
+  const found = [];
+  const walk = (current, prefix) => {
+    for (const name of fs.readdirSync(current)) {
+      const full = path.join(current, name);
+      if (fs.statSync(full).isDirectory()) walk(full, prefix + name + '/');
+      else if (/\.(png|jpe?g)$/i.test(name)) found.push(prefix + name);
+    }
+  };
+  walk(dir, '');
+  return found;
 }
 
 function liveTestSummary(rootDir) {

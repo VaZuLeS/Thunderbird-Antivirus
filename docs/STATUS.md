@@ -1,3 +1,17 @@
+# Store-Gate C5 behoben, Browser-Kurzfälle und Reviewer-Notes für Analyse-Protokoll — 16. Oktober 2026
+
+Fortsetzung der Analyse-Protokoll-Runde: Gate-Kriterium C5 suchte `docs/screenshots/` nur auf Top-Level
+und meldete die echten PNG-Screenshots der Thunderbird-140.17-ESR-Abnahme fälschlich als fehlend
+(Befund FA-4); `hasScreenshots()` durchsucht den Baum nun rekursiv — C5 ist **PASS** (8 PNGs in
+`thunderbird-linux/` u. a.), Gate-Unit-Tests 7/7. Die Browser-Kurzfälle (`check:ui`) decken die neuen
+Zustände ab: Offline-Protokollkarte ohne Zustimmung und ohne Netzaufrufe sowie Polling-Übergang
+`IN_PROGRESS` → fertiges Protokoll mit synthetischer Provider-Route und genau zwei Overview-Anfragen
+(Fälle `hybrid-stored-*`/`hybrid-poll-*` in EN/DE; Lauf verifiziert über den CI-Job `browser-ui`, in
+dieser Umgebung fehlen die Chromium-Systembibliotheken). Reviewer-Notes §4.1 dokumentiert den
+Protokoll-Lebenszyklus für die ATN-Begutachtung. `npm test` → 954 bestanden; Store-Gate C1–C5 PASS,
+offen bleiben C6 (Live-Test-Protokoll, manuell) und C7 (Tag v1.23.0 + Release). Aufgabenstand:
+[AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13.
+
 # Hybrid-Analysis-Strang: Analyse-Protokoll zustellen — 16. Oktober 2026
 
 Nutzermeldung „kein Analyse-Protokoll“ nachvollzogen und am Quellstand 1.23.0 behoben: Der Popup-Report

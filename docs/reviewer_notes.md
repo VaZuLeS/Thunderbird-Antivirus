@@ -134,6 +134,34 @@ remain available.
 Inherent to HTTP, each request also reveals the requesting IP address and a user-agent string to the
 respective provider.
 
+### 4.1 Analysis-protocol lifecycle (Hybrid Analysis results)
+
+The popup presents Hybrid Analysis results as an **analysis protocol** so every shown verdict is
+traceable:
+
+1. **Submission** (only with global consent + granted host permission): the background script
+   uploads an attachment/URL through the shared gateway and stores the returned `submission_id`,
+   `job_id` and `sha256` together with the attachment name in the local IndexedDB record
+   (`background.js`, store `hybridanalysis`).
+2. **Overview fetch:** the popup queries `GET https://hybrid-analysis.com/api/v2/overview/{sha256}`
+   (hash-only request, no message content). While the sandbox reports `state: IN_PROGRESS`, the
+   popup automatically re-checks the same hash endpoint (up to 3 attempts, 5 s apart) and replaces
+   the "analysis in progress" card with the finished report — the user does not have to reopen
+   the popup (`api.js`, `scheduleHybridReportPoll()`).
+3. **Local persistence:** the finished protocol (the provider's JSON response) is stored together
+   with `report_fetched_at` in the same local IndexedDB record (`api.js`, `persistHybridReport()`).
+   This write is purely local — the data is already on the machine, so it happens regardless of
+   the global consent. It contains the verdict metadata, not the message or attachment content.
+4. **Offline display:** on the next popup open, a stored finished protocol is rendered without any
+   provider request (`hasFinalStoredReport()`). A new submission (rescan, manual upload, URL scan
+   or automatic upload) invalidates the stored protocol (`report = null`), so a stale report can
+   never be presented as current.
+5. **Protocol metadata:** every result card shows the job ID, submission ID, SHA-256 and the time
+   the protocol was fetched, next to the verdict (threat score, scanners, tags).
+
+Deleting the store with **"Cache leeren"** (options) removes all stored protocols; the IndexedDB
+retention (30 days / 1,000 messages, `db.js` `pruneStore`) applies as well.
+
 What is **not** transmitted, regardless of tier:
 
 - the full message body and the subject line,

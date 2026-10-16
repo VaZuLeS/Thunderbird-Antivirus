@@ -90,12 +90,14 @@ function addonMock({
   mode = "system",
   version,
   populated = false,
+  hybrid = null,
 }) {
   const state = {
       thundyAppearance: mode,
       thundyAccent: "ocean",
       thundyDensity: "comfortable",
-      externalAnalysisConsent: false,
+      externalAnalysisConsent: hybrid === "poll" ? true : false,
+      ...(hybrid === "poll" ? { apikey: "synthetic-key" } : {}),
     },
     callbacks = [];
   window.uiTest = {
@@ -150,7 +152,10 @@ function addonMock({
         return false;
       },
       remove: async () => true,
-      contains: async () => false,
+      contains: async (p) =>
+        hybrid === "poll" &&
+        Array.isArray(p?.origins) &&
+        p.origins.includes("https://hybrid-analysis.com/*"),
     },
     tabs: { query: async () => [{ id: 1 }] },
     messageDisplay: {

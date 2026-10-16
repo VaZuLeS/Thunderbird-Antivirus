@@ -29,6 +29,71 @@ const root = path.resolve(__dirname, ".."),
     "wcag22aa",
     "best-practice",
   ];
+
+// Synthetic Hybrid-Analysis records for the analysis-protocol cases (FA-A6):
+// "stored" renders a finished protocol offline (consent off, no requests),
+// "poll" exercises the automatic IN_PROGRESS -> finished transition.
+const HYBRID_SHA = "a".repeat(64);
+const HYBRID_RECORD = {
+  stored: {
+    messageHeader: "synthetic-message",
+    attachments: [
+      {
+        hybrid_sha256: HYBRID_SHA,
+        attachment_name: "invoice.pdf",
+        state: "UPLOADED",
+        hybrid_job_id: "job-9",
+        hybrid_submission_id: "sub-9",
+        partName: "1",
+        report: {
+          state: "COMPLETE",
+          threat_score: 12,
+          verdict: "clean",
+          sha256: HYBRID_SHA,
+          tags: ["synthetic"],
+          analysis_start_time: "2026-10-16T09:00:00Z",
+        },
+        report_fetched_at: "2026-10-16T09:30:00.000Z",
+      },
+    ],
+  },
+  poll: {
+    messageHeader: "synthetic-message",
+    attachments: [
+      {
+        hybrid_sha256: HYBRID_SHA,
+        attachment_name: "invoice.pdf",
+        state: "UPLOADED",
+        hybrid_job_id: "job-9",
+        hybrid_submission_id: "sub-9",
+        partName: "1",
+      },
+    ],
+  },
+};
+// Node-side log of fulfilled overview requests per case id (poll assertions).
+const hybridPollLog = {};
+async function seedHybridStore(record) {
+  await new Promise((resolve, reject) => {
+    const openRequest = indexedDB.open("thunderbird_av", 3);
+    openRequest.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains("hybridanalysis"))
+        db.createObjectStore("hybridanalysis", { keyPath: "messageHeader" });
+    };
+    openRequest.onerror = () => reject(openRequest.error);
+    openRequest.onsuccess = () => {
+      const db = openRequest.result;
+      const tx = db.transaction(["hybridanalysis"], "readwrite");
+      tx.objectStore("hybridanalysis").put(record);
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onerror = () => reject(tx.error);
+    };
+  });
+}
 function options(args) {
   const o = { matrix: "full", out: path.join(root, ".audit/ui") };
   for (let i = 0; i < args.length; i += 2) {
@@ -143,6 +208,18 @@ function matrix(o, kinds) {
           scheme,
         });
       }
+  for (const hybrid of ["stored", "poll"])
+    for (const lang of o.lang ? [o.lang] : ["en", "de"])
+      cases.push({
+        id: `hybrid-${hybrid}-${lang}-1280-dark`,
+        kind: "addon",
+        view: "popup.html",
+        url: "/popup.html",
+        lang,
+        width: 1280,
+        scheme: "dark",
+        hybrid,
+      });
   const selected = o.view ? cases.filter((c) => c.view === o.view) : cases;
   if (selected.length === 0) throw Error("UI_VIEW_INVALID");
   return selected;
@@ -304,6 +381,40 @@ async function interaction(page, c) {
       await page.locator("#profileChanges").isVisible(),
       true,
       "failed save lost draft",
+    );
+  } else if (c.view === "popup.html" && c.hybrid === "stored") {
+    const catalog = JSON.parse(
+      fs.readFileSync(path.join(root, "_locales", c.lang, "messages.json")),
+    );
+    const label = catalog.ui_169.message.split("$")[0].trim();
+    const card = page
+      .locator("#hybrid_analysis_api_content .card")
+      .filter({ hasText: label });
+    assert.equal(await card.count(), 1, "stored protocol card rendered");
+    const text = await card.first().innerText();
+    assert.ok(text.includes("job-9"), "job id shown in protocol");
+    assert.ok(text.includes("sub-9"), "submission id shown in protocol");
+    assert.ok(text.includes("2026-10-16"), "fetched-at shown in protocol");
+    assert.equal(
+      await page.locator("#hybrid_analysis_api_content .card").count(),
+      1,
+      "exactly one protocol card",
+    );
+  } else if (c.view === "popup.html" && c.hybrid === "poll") {
+    const catalog = JSON.parse(
+      fs.readFileSync(path.join(root, "_locales", c.lang, "messages.json")),
+    );
+    const label = catalog.ui_170.message.split("$")[0].trim();
+    await page.waitForFunction(
+      ([selector, needle]) =>
+        (document.querySelector(selector)?.textContent ?? "").includes(needle),
+      ["#hybrid_analysis_api_content", `${label} job-9`],
+      { timeout: 15000 },
+    );
+    assert.equal(
+      hybridPollLog[c.id],
+      2,
+      "overview fetched once for IN_PROGRESS and once for the finished protocol",
     );
   } else if (c.view === "popup.html" && c.populated) {
     assert.equal(
@@ -503,11 +614,41 @@ async function main() {
               lang: c.lang,
               version: require("../manifest.json").version,
               populated: c.populated === true,
+              hybrid: c.hybrid ?? null,
             });
+          if (c.hybrid === "poll") {
+            // Fulfil the overview endpoint synthetically: first request
+            // IN_PROGRESS, second request the finished protocol. Registered
+            // after the catch-all route, so it takes precedence and the
+            // generic external-request guard never sees these requests.
+            hybridPollLog[c.id] = 0;
+            await context.route("https://hybrid-analysis.com/**", (route) => {
+              hybridPollLog[c.id] += 1;
+              const body =
+                hybridPollLog[c.id] === 1
+                  ? { state: "IN_PROGRESS", sha256: HYBRID_SHA }
+                  : {
+                      state: "COMPLETE",
+                      threat_score: 12,
+                      verdict: "clean",
+                      sha256: HYBRID_SHA,
+                      tags: ["synthetic"],
+                    };
+              return route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(body),
+              });
+            });
+          }
           page = await context.newPage();
           page.setDefaultTimeout(10000);
           page.on("pageerror", (e) => errors.push(e.message));
           await page.goto(origin + c.url);
+          if (c.hybrid) {
+            await page.evaluate(seedHybridStore, HYBRID_RECORD[c.hybrid]);
+            await page.reload();
+          }
           if (c.kind === "message")
             await prepareMessage(
               page,
