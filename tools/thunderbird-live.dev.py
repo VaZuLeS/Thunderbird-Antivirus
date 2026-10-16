@@ -292,7 +292,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         return
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'options.html'])
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/options.html");'))
-    wait_for(lambda: m.page('return !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
+    wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="dark"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
     for name, value in [('appearance', 'dark'), ('accent', 'violet'), ('density', 'compact')]:
         m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name, value])
     theme = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance==="dark" && s.thundyAccent==="violet" && s.thundyDensity==="compact"?s:null);'))
@@ -304,7 +304,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.browsingContext.currentWindowGlobal?.innerWindowId!==arguments[0];', [previous]))
     wait_for(lambda: m.page('return document.documentElement.dataset.theme==="dark" && document.documentElement.dataset.accent==="violet" && document.documentElement.dataset.density==="compact";'))
     assert m.js('return Services.io.offline;')
-    wait_for(lambda: m.page('return !!document.querySelector(\'input[name="appearance"][value="system"]\');'))
+    wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="system"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="system"]\');'))
     report['nativeThemes'] = []
     m.page('document.querySelector(\'input[name="appearance"][value="system"]\').click();')
     wait_for(lambda: m.page('return document.documentElement.dataset.appearance==="system";'))
@@ -389,6 +389,7 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     saved = storage_snapshot(m)
     assert all(saved.get(key) == value for key, value in before.items())
     assert saved.get('externalAnalysisConsent') is not True
+    wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="dark"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
     for name, value in [('appearance','dark'),('accent','violet'),('density','compact')]:
         m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name,value])
     wait_for(lambda: m.page('return document.documentElement.dataset.theme==="dark" && document.documentElement.dataset.accent==="violet" && document.documentElement.dataset.density==="compact";'))
