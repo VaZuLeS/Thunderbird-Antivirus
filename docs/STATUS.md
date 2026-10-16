@@ -12,16 +12,17 @@ Protokoll-Lebenszyklus für die ATN-Begutachtung. `npm test` → 954 bestanden; 
 offen bleiben C6 (Live-Test-Protokoll, manuell) und C7 (Tag v1.23.0 + Release). Aufgabenstand:
 [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13.
 
-# Release v1.23.0 verifiziert — 16. Oktober 2026
+# Tag- und Release-Lage geklärt; Version 1.24.0 vorbereitet — 16. Oktober 2026
 
-Kriterium C7 ist damit **PASS**: Tag `v1.23.0` zeigt auf den aktuellen Quellstand
-(`8a13cc2`), und das GitHub-Release
-[v1.23.0](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0)
-enthält `thundy-av-1.23.0.xpi` und `SHA256SUMS.txt`. Nachweis: Asset heruntergeladen und gegen den
-lokalen Build aus dem Tag-Quellstand verglichen — byte-identisch,
-SHA-256 `00ab882d7e90bda5b97850b6076afda9b9403f75ee1b593f97782830cd3e6234` (inkl. der
-Analyse-Protokoll-Fixes aus §13 und des CHANGELOG-Eintrags). Übrig bleibt als einziges Gate-Kriterium
-C6 (ausgefülltes Live-Test-Protokoll, manuell in Thunderbird 140 ESR; FA-A5).
+Korrektur zur vorherigen Meldung: Der veröffentlichte Tag `v1.23.0` zeigt auf den Vorbereitungsstand
+`df63c76` (vor den Analyse-Protokoll-Fixes); das Release-Asset `thundy-av-1.23.0.xpi`
+(SHA-256 `00ab882d…1cb39`) entspricht diesem Stand. Da `api.js`, `background.js` und die
+`_locales` nach dem Tag geändert wurden, verlangt Gate C7 zurecht eine neue Version. Daher:
+**Version 1.24.0** (manifest/package/lock), CHANGELOG-Eintrag mit den Analyse-Protokoll-Lieferungen,
+Release-Notes in `docs/releases/1.24.0.md`, Tag `v1.24.0` und GitHub-Release mit Assets
+`thundy-av-1.24.0.xpi` + `SHA256SUMS.txt`. Store-Gate danach: C1–C5 + C7 **PASS**; einziges offenes
+Kriterium C6 (Live-Test-Protokoll, manuell in Thunderbird 140 ESR; FA-A5).
+[AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13/§14.
 
 # Hybrid-Analysis-Strang: Analyse-Protokoll zustellen — 16. Oktober 2026
 

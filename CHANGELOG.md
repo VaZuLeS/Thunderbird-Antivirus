@@ -1,8 +1,14 @@
 # Changelog
 
+## 1.24.0 — 2026-10-16
+
+- Deliver the finished Hybrid Analysis protocol to the popup: poll `IN_PROGRESS` overview results automatically (3 attempts, 5 s apart), show job/submission ID, SHA-256 and retrieval time in every result card, store the finished protocol locally for offline display after reopening the popup, and invalidate stored protocols on new submissions (rescan, manual upload, URL scan, auto upload). Six new UI strings in EN/DE/FR/ES/IT/PL.
+- Extend the browser/axe CI with analysis-protocol cases (`hybrid-stored`, `hybrid-poll`): offline protocol card without consent or network requests and the `IN_PROGRESS` → finished transition with exactly two overview requests.
+- Document the analysis-protocol lifecycle in the reviewer notes (§4.1) and the local protocol storage in the privacy policy (§8).
+- Fix the store-readiness gate C5 screenshot scan to include sub-directories, so the real Thunderbird acceptance screenshots are recognized.
+
 ## 1.23.0 — 2026-10-15
 
-- Deliver the finished Hybrid Analysis protocol to the popup: poll `IN_PROGRESS` results automatically, show job/submission ID, SHA-256 and retrieval time in every result card, store the finished protocol locally for offline display and invalidate it on new submissions.
 - Keep link-dialog focus inside the modal during asynchronous browser handoff and restore the retry action on opening failure.
 
 - Keep historical audit verdicts/providers separate from later checks, localize verdict labels in all six languages, and preserve raw export evidence. Cover populated audit/popup views and injected message-link flows in browser CI.

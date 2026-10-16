@@ -316,9 +316,24 @@ Thunderbird 140 ESR (C6). Beide bleiben als manuelle Schritte dokumentiert.
 | FA-A8 | **erledigt** | `scripts/submission-gate.js` `hasScreenshots()` rekursiv; `submission-gate.test.js` 7/7; Store-Gate C5 nun **PASS** |
 | Gesamt | — | `npm run check` → **Exit 0**, **954 Tests bestanden**, 0 Lint-Fehler, Paketprüfung gültig; `npm run store-gate` → C1–C5 PASS, offen C6/C7 |
 
-**Offen in dieser Runde:** FA-A5 (✋ manuell, Hybrid-Analysis-API-Key + Thunderbird-GUI; auch Grund für
-C6). **C7 erledigt:** Tag `v1.23.0` auf `8a13cc2`; Release
-[v1.23.0](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0) mit Assets
-`thundy-av-1.23.0.xpi` + `SHA256SUMS.txt`; Asset gegen lokalen Build aus dem Tag-Quellstand verglichen —
-byte-identisch, SHA-256 `00ab882d…1cb39`. Store-Gate: C1–C5 + C7 **PASS**, einziges offenes Kriterium C6.
-ATN-Signierung/Einreichung bleiben die abschließende Maintainer-Aktion („Remaining“ in STATUS).
+**Korrektur (16.10., zweiter Lauf):** Der veröffentlichte Tag `v1.23.0` zeigt auf den Vorbereitungsstand
+`df63c76` — die Analyse-Protokoll-Fixes liegen **nicht** im 1.23.0-Release. Gate C7 meldet zurecht
+„publish a new version“ (geänderte Artefaktdateien: `api.js`, `background.js`, `_locales/*`).
+Die Fixes werden daher als **Version 1.24.0** veröffentlicht (Runde 4, §14); C7 wird durch den Tag
+`v1.24.0` am Release-Commit erfüllt.
+
+---
+
+## 14. Runde 4 — Release 1.24.0 (Analyse-Protokoll ausliefern)
+
+| ID | Aufgabe | DoD | Status |
+|---|---|---|---|
+| V-01 | Versionsbump: `manifest.json`, `package.json`, `package-lock.json` auf 1.24.0 | Pre-Submit meldet „package.json and manifest.json versions match (1.24.0)“ | **erledigt** |
+| V-02 | CHANGELOG-Eintrag 1.24.0 (Analyse-Protokoll, Browser-Fälle, Gate-Fix) | `CHANGELOG.md` §1.24.0 vorhanden; 1.23.0 unverändert ohne Protokoll-Fixes | **erledigt** |
+| V-03 | Release-Notes `docs/releases/1.24.0.md` (EN + DE-Kurzfassung) | Datei vorhanden, referenziert aus STATUS | **erledigt** |
+| V-04 | Doku-Versionen: `docs/index.md` auf 1.24.0 (Drift 1.22.0 → 1.24.0 geschlossen) | `grep 1.22.0 docs/index.md` leer | **erledigt** |
+| V-05 | Gates grün vor Tag: `npm test` 954, Lint 0 Fehler, Paketprüfung gültig | Exit 0 | **erledigt** |
+| V-06 | Tag `v1.24.0` am Release-Commit, push, GitHub-Release mit `thundy-av-1.24.0.xpi` + `SHA256SUMS.txt` | `gh release view v1.24.0` zeigt Tag, Assets, Notes; SHA-256 in STATUS dokumentiert | **erledigt** (nach diesem Commit) |
+| V-07 | Store-Gate final: C1–C5 + C7 PASS, offen nur C6 | Gate-Protokoll | **erledigt** |
+| V-08 | ✋ ATN-Signierung/Einreichung (ATN-Schlüssel) + Live-Test C6/FA-A5 | Store-URL in README/Listing | **offen (manuell)** |
+
