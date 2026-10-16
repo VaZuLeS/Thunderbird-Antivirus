@@ -16,7 +16,7 @@ als vorhanden bezeichnet, die es nicht gibt.
 | Icon 48 px | `img/icon-48px.png` | vorhanden — generiert (PNG, 48 × 48 px) |
 | Icon 64 px | `img/icon-64px.png` | vorhanden — generiert (PNG, 64 × 64 px) |
 | Icon 128 px | `img/icon-128px.png` | vorhanden — generiert (PNG, 128 × 128 px), für Listing/Promo nutzbar |
-| Echte Aufnahmen | `docs/screenshots/` | **23 PNG** in Unterverzeichnissen; 10 davon mit ≥ 1200 px Breite (geprüft vom Submission-Gate, Kriterium C5) |
+| Echte Aufnahmen | `docs/screenshots/` | **24 PNG** in Unterverzeichnissen; 11 davon mit ≥ 1200 px Breite (geprüft vom Submission-Gate, Kriterium C5) |
 
 Die Icons werden von `scripts/generate-icons.js` reproduzierbar erzeugt (Schild-Motiv mit
 Ausrufezeichen, 4-fache Supersampling-Kantenglättung, keine externen Abhängigkeiten). Die
@@ -46,8 +46,8 @@ Dateien bleiben an ihrem Ursprungsort (Provenienz), die Zuordnung steht hier:
 | 3 | Einstellungen mit Datenschutz-Stufen | `docs/screenshots/thunderbird-linux/options-native-dark.png` | 1152 × 1000 | **fertig** (unterhalb der 1200-px-Empfehlung; Ersatz ✋ offen) |
 | 4 | Lokale Auditansicht mit Protokolldaten | `docs/screenshots/thunderbird-linux/audit-de.png` | 1152 × 1000 | **fertig** (unterhalb der 1200-px-Empfehlung; Ersatz ✋ offen) |
 | 5 | Einrichtungsassistent (Schritt Linkschutz) | `docs/screenshots/1.22.0/wizard-links-de.png` | 1200 × 900 | **fertig** |
-| 6 | Opt-in-Banner mit beiden Buttons in der Nachrichtenansicht | — | — | **offen ✋** (Banner-Aufnahme existiert noch nicht; Motiv nur in echter Thunderbird-GUI aufnehmbar) |
-| 7 | Warn-/Bewertungs-Banner in der Nachrichtenansicht | — | — | **offen ✋** (wie Motiv 6) |
+| 6 | Opt-in-Banner mit beiden Buttons in der Nachrichtenansicht | `docs/screenshots/thunderbird-linux/optin-banner.png` | 1280 × 1000 | **fertig** — reale Aufnahme (Thunderbird 140.17.0 ESR, Xvfb), Banner vor der Aufnahme programmatisch verifiziert (`bannerProbe` in [thunderbird-140-repeat.json](audits/thunderbird-140-repeat.json): „Thundy AV: real-time scanning is not enabled for this message", 2 Scan-Buttons + „Open options") |
+| 7 | Warn-/Bewertungs-Banner in der Nachrichtenansicht | — | — | **offen ✋** (im Prüfflow des Runners wird der Threat-Banner bei Score 0/`UNKNOWN` nicht dargestellt; Aufnahme braucht einen Scan mit Warnbefund in der echten GUI) |
 
 Ergänzend nutzbar: `native-popup-de.png` (1280 × 1000) als deutschsprachige Popup-Variante.
 

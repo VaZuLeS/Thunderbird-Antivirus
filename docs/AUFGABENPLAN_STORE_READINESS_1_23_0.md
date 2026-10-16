@@ -174,7 +174,8 @@ Release https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0 (�
 | A-04 | **offen ✋** | ATN-Einreichung nach A-03 |
 | A-05 | **offen ✋** | Store-URL nach der Einreichung |
 | A-06 | **erledigt** | `git rm` der drei SVG-Platzhalter; `docs/screenshots/` enthält nur echte Aufnahmen |
-| A-07 | **erledigt** | Listing-Set je Motiv kuratiert ([store_assets.md](store_assets.md) §3); Motive 6/7 (Banner) bleiben offen ✋ — dokumentiert, blockiert C5 nicht |
+| A-07 | **erledigt** | Listing-Set je Motiv kuratiert ([store_assets.md](store_assets.md) §3); Motiv 6 (Opt-in-Banner) mit **realer Aufnahme** (`optin-banner.png`, 1280 × 1000, Banner programmatisch verifiziert) geschlossen; nur Motiv 7 (Threat-Banner) bleibt offen ✋ — dokumentiert, blockiert C5 nicht |
+| A-07-Nachtrag (Runde 2) | **erledigt** | Unabhängiger Wiederholungslauf der Live-Abnahme in einer zweiten Umgebung (Debian 12, Mozilla-Binary 140.17.0esr, identische Build-ID): `passed: true` mit OS-Übergabe-Beleg ([audits/thunderbird-140-repeat.json](audits/thunderbird-140-repeat.json)); Runner um optionales `--banner-root-shot` erweitert (CI-Verhalten unverändert), siehe [live_test_1_23_0.md](live_test_1_23_0.md) „Wiederholungslauf" |
 | A-08 | **erledigt** | [store_listing.md](store_listing.md): Kopf, Metadaten, Release-Notes-Block 1.23.0, Checkliste auf Ist-Stand |
 | A-09 | **erledigt** | [store_assets.md](store_assets.md): 23 echte Aufnahmen dokumentiert, „Was fehlt“ neu geschrieben |
 | A-10 | **erledigt** | `scripts/screenshot-inventory.js` (rekursiv, PNG/JPEG-Breitenlogik), geteilt mit Pre-Submit-Check; 11 Gate-Tests grün |

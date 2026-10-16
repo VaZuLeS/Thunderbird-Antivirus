@@ -45,6 +45,23 @@ neuen Ergebnisse.
 Die CI führt dieselben Prüfungen regelmäßig aus (13 Profilberichte, zwölf saubere Neustarts, zwölf
 Wiederanläufe nach `SIGKILL`); die Tabellenzeilen 17–25 fassen die dokumentierten Einzelfälle zusammen.
 
+## Wiederholungslauf in einer zweiten Umgebung (16. Oktober 2026)
+
+Unabhängig von der CI wurde dieselbe Prüfung in einer weiteren Umgebung wiederholt: Debian 12
+(bookworm) statt Trixie, Mozilla-Thunderbird-Binary **140.17.0esr** (`Build 20260929234105` —
+identische Build-ID zum Erstlauf), Mozilla-Tarball statt Debian-Paket, Xvfb 1280 × 1000.
+Ergebnis: **`passed: true`** — Wizard in sechs Sprachen gegen die XPI-Kataloge, Wizard gespeichert
+(`timeOfClickProtection: true`), Linkdialog (vollständiger Text, URL, lokaler Score 0/100, 520 px),
+natives Popup (602 px Inhalt), OS-Übergabe mit Beleg. Zusätzlich wurde erstmals der
+**Opt-in-Banner programmatisch verifiziert und als X11-Aufnahme gefangen** (`optin-banner.png`,
+1280 × 1000; Text „Thundy AV: real-time scanning is not enabled for this message" mit den zwei
+Scan-Buttons und „Open options"). Bericht:
+[audits/thunderbird-140-repeat.json](audits/thunderbird-140-repeat.json); XPI-SHA-256
+`0922e08947d4ef1d1a8f54f6f0dd91ffafb0d57531c14100dd3b20ad6bb897b1` (frischer Build des
+Quellstands, nicht das Release-Artefakt). Der Runner wurde dafür um das optionale Flag
+`--banner-root-shot` erweitert (Standard: aus; CI-Verhalten unverändert), siehe
+[THUNDERBIRD_LINUX_ABNAHME.md](THUNDERBIRD_LINUX_ABNAHME.md).
+
 ## Offene Punkte (bewusst nicht geprüft)
 
 - Windows und macOS, unterschiedliche DPI/Zoomwerte, Betriebssystem-Barrierefreiheit und echte Screenreader.

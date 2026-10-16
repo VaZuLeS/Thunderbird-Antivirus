@@ -1,0 +1,215 @@
+{
+  "passed": true,
+  "scope": "Linux X11 GUI; synthetic plaintext; offline; no API mocks",
+  "startedAt": "2026-10-16T18:14:48Z",
+  "xpiSha256": "0922e08947d4ef1d1a8f54f6f0dd91ffafb0d57531c14100dd3b20ad6bb897b1",
+  "binarySha256": "009bbb89bb990b23fe4e465a66649ed500c626b65c74ef1e1c6078d607ebe5d1",
+  "extensionVersion": "1.23.0",
+  "client": {
+    "sessionId": "a689c381-9887-4808-800f-30836abcf332",
+    "capabilities": {
+      "acceptInsecureCerts": false,
+      "browserName": "thunderbird",
+      "browserVersion": "140.17.0",
+      "platformName": "linux",
+      "unhandledPromptBehavior": "dismiss and notify",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Thunderbird/140.17.0",
+      "moz:buildID": "20260929234105",
+      "moz:headless": false,
+      "moz:platformVersion": "6.12.85+",
+      "moz:processID": 19784,
+      "moz:profile": "/tmp/thundy-tb-profile-kgciot3y",
+      "moz:shutdownTimeout": 60000,
+      "pageLoadStrategy": "normal",
+      "timeouts": {
+        "implicit": 0,
+        "pageLoad": 300000,
+        "script": 30000
+      },
+      "setWindowRect": true,
+      "strictFileInteractability": false,
+      "moz:accessibilityChecks": false,
+      "moz:webdriverClick": true,
+      "moz:windowless": false,
+      "capabilities": {
+        "alwaysMatch": {
+          "acceptInsecureCerts": false
+        }
+      },
+      "proxy": {}
+    }
+  },
+  "appLocale": "en-US",
+  "uiLanguage": "en-US",
+  "wizardVersion": "1.23.0",
+  "wizardLanguages": [
+    {
+      "language": "en",
+      "title": "Set up Thundy AV"
+    },
+    {
+      "language": "de",
+      "title": "Thundy AV einrichten"
+    },
+    {
+      "language": "fr",
+      "title": "Configurer Thundy AV"
+    },
+    {
+      "language": "es",
+      "title": "Configurar Thundy AV"
+    },
+    {
+      "language": "it",
+      "title": "Configura Thundy AV"
+    },
+    {
+      "language": "pl",
+      "title": "Skonfiguruj Thundy AV"
+    }
+  ],
+  "wizardSaved": {
+    "onboardingState": {
+      "schemaVersion": 1,
+      "status": "completed",
+      "completedAt": "2026-10-16T18:14:50.851Z"
+    },
+    "timeOfClickProtection": true
+  },
+  "bannerProbe": {
+    "optin": {
+      "text": "Thundy AV: real-time scanning is not enabled for this message.\n\nScan this message onceAlways scan this sender\nExternal analysis is disabled in the options – nothing was transmitted.Open options",
+      "buttons": 3,
+      "labels": [
+        "Scan this message once",
+        "Always scan this sender",
+        "Open options"
+      ]
+    },
+    "threat": null
+  },
+  "linkDialog": {
+    "text": "T\nThundy AV\nCheck before opening\n\nDestination website\n\ndestination.example.invalid\n\nShow full link address\n\nThis link could not be checked. Opening it may be risky.\n\nLocal score (link and message): 0 / 100\n\nOnly available scan results can be shown. Missing checks do not mean a link is safe.\n\nCancel\nOpen link anyway",
+    "width": 520,
+    "focus": "Cancel",
+    "url": "https://destination.example.invalid/test?source=thundy"
+  },
+  "nativePopup": {
+    "panelWidth": 602,
+    "contentWidth": 600,
+    "language": "en",
+    "heading": "Message security overview"
+  },
+  "osHandoff": {
+    "argv": [
+      "https://destination.example.invalid/test?source=thundy"
+    ]
+  },
+  "blockedOsDispatch": {
+    "apiAccepted": true,
+    "additionalReceiverCalls": 0,
+    "observationSeconds": 1,
+    "protocolPolicy": false
+  },
+  "auditRecord": {
+    "id": "df607326-99c4-4133-b331-5dccd97a80c0",
+    "clickedAt": 1792174491692,
+    "decidedAt": 1792174491874,
+    "messageId": 1,
+    "url": "https://destination.example.invalid/test?source=thundy",
+    "score": 0,
+    "scoreSource": "local-message-and-link",
+    "scoreAtDecision": 0,
+    "verdict": "UNKNOWN",
+    "verdictAtDecision": "UNKNOWN",
+    "providerAtDecision": "Hybrid Analysis",
+    "provider": "Hybrid Analysis",
+    "reasons": [],
+    "outcome": "ABORTED",
+    "cancelReason": "cancel",
+    "openAttempts": 0,
+    "extensionVersion": "1.23.0",
+    "scoredAt": 1792174491698,
+    "reasonDetails": [],
+    "checkedAt": 1792174491700,
+    "providerReasons": []
+  },
+  "openedAuditRecord": {
+    "id": "59f73458-2023-46b1-b1e6-81572bf2bdb0",
+    "clickedAt": 1792174492481,
+    "decidedAt": 1792174492620,
+    "messageId": 1,
+    "url": "https://destination.example.invalid/test?source=thundy",
+    "score": 0,
+    "scoreSource": "local-message-and-link",
+    "scoreAtDecision": 0,
+    "verdict": "UNKNOWN",
+    "verdictAtDecision": "UNKNOWN",
+    "providerAtDecision": "Hybrid Analysis",
+    "provider": "Hybrid Analysis",
+    "reasons": [],
+    "outcome": "OPENED",
+    "cancelReason": null,
+    "openAttempts": 1,
+    "extensionVersion": "1.23.0",
+    "scoredAt": 1792174492487,
+    "reasonDetails": [],
+    "checkedAt": 1792174492488,
+    "providerReasons": []
+  },
+  "blockedOsAuditRecord": {
+    "id": "69f103b3-e7c4-4a58-ae9c-507a5a6274de",
+    "clickedAt": 1792174492705,
+    "decidedAt": 1792174492817,
+    "messageId": 1,
+    "url": "https://destination.example.invalid/test?source=thundy",
+    "score": 0,
+    "scoreSource": "local-message-and-link",
+    "scoreAtDecision": 0,
+    "verdict": "UNKNOWN",
+    "verdictAtDecision": "UNKNOWN",
+    "providerAtDecision": "Hybrid Analysis",
+    "provider": "Hybrid Analysis",
+    "reasons": [],
+    "outcome": "OPENED",
+    "cancelReason": null,
+    "openAttempts": 1,
+    "extensionVersion": "1.23.0",
+    "scoredAt": 1792174492711,
+    "reasonDetails": [],
+    "checkedAt": 1792174492712,
+    "providerReasons": []
+  },
+  "appearanceSaved": {
+    "thundyAppearance": "dark",
+    "thundyAccent": "violet",
+    "thundyDensity": "compact"
+  },
+  "nativeThemes": [
+    "dark",
+    "light"
+  ],
+  "localizedPages": [
+    {
+      "page": "options.html",
+      "language": "en",
+      "heading": "Thundy AV settings"
+    },
+    {
+      "page": "audit.html",
+      "language": "en",
+      "heading": "Link decision log"
+    },
+    {
+      "page": "enterprise_setup.html",
+      "language": "en",
+      "heading": "Optional enterprise profiles"
+    },
+    {
+      "page": "privacy.html",
+      "language": "en",
+      "heading": "Privacy policy"
+    }
+  ],
+  "finishedAt": "2026-10-16T18:14:55Z"
+}

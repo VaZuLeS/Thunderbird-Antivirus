@@ -41,6 +41,15 @@ Der Providername im Protokoll bezeichnet die konfigurierte Zuordnung. `UNKNOWN` 
 
 Die Bilder stammen unverändert aus dem realen Testlauf. Weitere Ansichten, Logs und Bericht werden bei jedem Lauf lokal erzeugt und in der CI als zeitlich begrenztes Artefakt aufbewahrt.
 
+### Optionaler Banner-Nachweis im Runner
+
+`tools/thunderbird-live.dev.py` kennt das zusätzliche, standardmäßig ausgeschaltete Flag
+`--banner-root-shot`: Es wartet bis zu 60 Sekunden auf das Opt-in-Banner (`thundy-optin-banner`),
+verifiziert programmatisch den Branding-Text und die Buttons (2 Scan-Buttons, optional „Open options",
+wenn die externe Analyse deaktiviert ist), schreibt den Zustand als `bannerProbe` in den Bericht und
+fängt eine X11-Root-Aufnahme (`optin-banner.png`). Ohne das Flag verhält sich der Runner exakt wie
+zuvor; die CI-Abläufe ändern sich nicht.
+
 ## Wiederholen
 
 Benötigt werden Linux/X11, Python 3, Thunderbird 140+, Xvfb, `libX11`, `libXtst` sowie ImageMagicks `import` für das native Popupbild. Ein vollständiges Betriebssystempaket ist vorzuziehen. Der hier verwendete Lauf extrahiert authentifizierte Debian-Pakete nur in ein ignoriertes Arbeitsverzeichnis; die Systeminstallation wird nicht verändert.

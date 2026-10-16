@@ -14,6 +14,14 @@ GO bleibt bestehen (`npm run goal`, Exit 0, C1–C7 PASS nach den Runde-2-Änder
   reale Cloud-/IdP-/Flottenzugänge), blockiert die ATN-Einreichung nicht.
 - **A-26 Support-Kanal:** [support_faq.md](support_faq.md) (Kanäle, FAQ, Signaturprüfung über
   `SHA256SUMS.txt`, ehrliche Grenzen); verlinkt aus [store_listing.md](store_listing.md).
+- **Intelligente Abarbeitung der offenen Punkte:** Thunderbird 140.17.0 ESR wurde ohne Root in
+  dieser Umgebung lauffähig gemacht (lokales DEB-Prefix + Mozilla-Tarball, gepatchte Xvfb-Pfade)
+  und die **komplette reale Live-Abnahme hier wiederholt** — `passed: true` in einer zweiten
+  Umgebung ([audits/thunderbird-140-repeat.json](audits/thunderbird-140-repeat.json)). Damit war
+  erstmals der Opt-in-Banner programmatisch verifizierbar und als echte Listing-Aufnahme fangbar
+  ([optin-banner.png](screenshots/thunderbird-linux/optin-banner.png), 1280 × 1000) —
+  Store-Asset-Motiv 6 geschlossen; nur das Threat-Banner-Motiv (braucht einen Scan mit Warnbefund)
+  bleibt offen ✋. Runner-Flag `--banner-root-shot` (Standard aus, CI unverändert).
 
 Verbleibend sind ausschließlich Aufgaben, die reale Zugänge brauchen und deshalb hier nicht
 ausführbar sind: A-03/A-04/A-05 (ATN-Signierung, Einreichung, Store-URL — Maintainer-Schlüssel;
