@@ -59,10 +59,9 @@ const KNOWN_BRANDS = ['paypal.com', 'amazon.de', 'amazon.com', 'apple.com', 'mic
 const KNOWN_BRANDS_SET = new Set(KNOWN_BRANDS);
 const KNOWN_BRANDS_REGEX = new RegExp(`(?:^|\\.)(${KNOWN_BRANDS.map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\\\$&')).join('|')})$`, 'i');
 
+// ⚡ Bolt Optimization: Removed redundant .toLowerCase() calls. extractEmailAddress and extractEmailDomain already return lowercased strings.
+// Impact: Eliminates two string allocations per message evaluation on the hot path.
 function checkLists(email, senderDomain) {
-    if (email) email = email.toLowerCase();
-    if (senderDomain) senderDomain = senderDomain.toLowerCase();
-
     // Check Blacklist
     if (typeof customBlacklist !== 'undefined' && customBlacklist && customBlacklist.size > 0) {
         if (customBlacklist.has(email)) {
