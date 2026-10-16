@@ -411,11 +411,14 @@ async function interaction(page, c) {
     const catalog = JSON.parse(
       fs.readFileSync(path.join(root, "_locales", c.lang, "messages.json")),
     );
-    const label = catalog.ui_170.message.split("$")[0].trim();
+    // The finished protocol card is the only one that renders the threat
+    // score; the IN_PROGRESS card already shows the protocol metadata, so
+    // waiting on the score is what guarantees the poll completed.
+    const scoreLabel = catalog.ui_013.message.split("$")[0].trim();
     await page.waitForFunction(
       ([selector, needle]) =>
         (document.querySelector(selector)?.textContent ?? "").includes(needle),
-      ["#hybrid_analysis_api_content", `${label} job-9`],
+      ["#hybrid_analysis_api_content", `${scoreLabel} 12`],
       { timeout: 15000 },
     );
     assert.equal(
