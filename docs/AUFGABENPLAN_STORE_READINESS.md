@@ -320,7 +320,9 @@ Thunderbird 140 ESR (C6). Beide bleiben als manuelle Schritte dokumentiert.
 `df63c76` — die Analyse-Protokoll-Fixes liegen **nicht** im 1.23.0-Release. Gate C7 meldet zurecht
 „publish a new version“ (geänderte Artefaktdateien: `api.js`, `background.js`, `_locales/*`).
 Die Fixes werden daher als **Version 1.24.0** veröffentlicht (Runde 4, §14); C7 wird durch den Tag
-`v1.24.0` am Release-Commit erfüllt.
+`v1.24.0` am Release-Commit erfüllt. Hinweis: Der Workflow „Publish GitHub release“ schlug beim
+Tag-Push fehl, weil das Release bereits manuell (vor dem Workflow) erstellt war — harmlos, Assets
+verifiziert; künftig Release-Erstellung dem Workflow überlassen oder umgekehrt.
 
 ---
 
@@ -364,7 +366,7 @@ Doku-Konsistenz → Live-Test → Store-Gate GO → ATN-Signierung/Einreichung.
 | N-03 | **`store_assets.md` aktualisieren:** reale PNG-Inventare (23, fünf Gruppen), SVGs als Entwurfsskizzen gekennzeichnet, „Was fehlt“/„Offene Punkte“ korrigiert, Sprachangabe sechssprachig. | SL-2 | Dokument stimmt mit `find docs/screenshots -iname '*.png'` (23) und Gate C5 PASS überein | 0,25 d | **erledigt** |
 | N-04 | **`reviewer_notes.md` Kopf auf 1.24.0** setzen. | SL-3 | Kopf nennt 1.24.0 | 0,1 d | **erledigt** |
 | N-05 | **Einreichungspaket & Signier-Dry-Run vorbereiten:** finale Checkliste (Store-Gate GO nach N-01), Signierkommando (STATUS „Remaining“) gegenprüfen, ATN-Konto-Voraussetzungen listen, Reviewer-Notes/Listing/Testdata als Review-Paket verlinken, Doku-Drift-Check (`grep 1.23.0/1.6` in Aktivdokumenten). | SL-1–SL-3, V-08 | Checkliste im STATUS „Remaining“ ergänzt; alle Aktivdokumente nennen 1.24.0 | 0,25 d | **offen** |
-| N-06 | **CI-Verifikation FA-A6:** `browser-ui`-Job auf dem Release-Commit prüfen; `hybrid-stored-*`/`hybrid-poll-*` müssen grün sein, sonst Fix nachziehen. | FA-A6 | CI-Lauf grün oder dokumentierter Fix | 0,1 d | **offen** |
+| N-06 | **CI-Verifikation FA-A6:** `browser-ui`-Job auf dem Release-Commit prüfen; `hybrid-stored-*`/`hybrid-poll-*` müssen grün sein, sonst Fix nachziehen. Drei Testläufer-Fixes dafür nötig: (1) Hybrid-Fälle benötigen `populated: true` (sonst keine angezeigte Nachricht, Leerkarte statt Record-Auflösung); (2) `ready()`/Kartenzählung tolerant gegen die verschachtelte Scanner-Info-Karte (`.first()` bzw. Top-Level-Zählung `> .card`); (3) Poll-Case wartet auf das Bedrohungsscore-Feld der fertigen Karte (die IN_PROGRESS-Karte enthält die Protokoll-Metadaten bereits sofort). Außern Live-Runner gegen transienten Dokument-Teardown gehärtet (`documentElement is null` → Navigation-in-Progress-Retry). | FA-A6 | CI-Lauf [38982642985](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38982642985) auf `d6bd400`: **alle Jobs success** (test, Browser UI × 6, Thunderbird Linux GUI) | 0,1 d | **erledigt** |
 | N-07 | **Post-Listung: Review-Monitoring** (nach Einreichung): ATN-Review-Status verfolgen, Feedback-Triage (Issues mit FA-/T-Labels), schnelle Punkt-Releases für Review-Fixes (Versionspolitik wie Runde 4). | V-08 | Prozessabschnitt in STATUS/decisions | 0,25 d | **offen (nach Einreichung)** |
 | N-08 | **Erweiterung (kein Freigabe-Blocker):** Enterprise-Track (SEALED/SSO/N06, produktive Policy-Kanäle) gemäß [ENTERPRISE_NAECHSTE_SCHRITTE.md](ENTERPRISE_NAECHSTE_SCHRITTE.md) separat planen und priorisieren. | — | Eigener Aufgabenplan-Status im Enterprise-Dok | — | **offen (Erweiterung)** |
 | N-09 | **Erweiterung (kein Freigabe-Blocker):** Erkennungsqualität — reale Korpora für FR/ES/IT/PL-Heuristiken und sprachübergreifende Gemischttext-Fälle (Fortsetzung T15/T16 aus dem i18n-Plan). | — | Dokumentierter Korpus mit Fehlalarm-/Treffer-Vergleich | 2–4 PT | **offen (Erweiterung)** |

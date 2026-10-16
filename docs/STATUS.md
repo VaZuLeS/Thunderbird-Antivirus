@@ -12,6 +12,19 @@ Protokoll-Lebenszyklus für die ATN-Begutachtung. `npm test` → 954 bestanden; 
 offen bleiben C6 (Live-Test-Protokoll, manuell) und C7 (Tag v1.23.0 + Release). Aufgabenstand:
 [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13.
 
+# CI vollständig grün: Protokoll-Fälle und Live-Runner verifiziert — 16. Oktober 2026
+
+N-06 abgeschlossen. Die neuen Analyse-Protokoll-Browserfälle laufen in allen sechs Sprachen grün
+([CI 38982642985](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38982642985):
+test, Browser UI × 6 und Thunderbird Linux GUI success). Drei Läuferkorrekturen waren nötig:
+Hybrid-Fälle benötigen `populated: true` (Nachrichtenkontext), der Popup-`ready()`-Locator toleriert
+die verschachtelte Scanner-Info-Karte (`.first()`), und der Poll-Fall wartet auf das Bedrohungsscore-
+Feld der fertigen Karte statt auf die sofort sichtbaren Protokoll-Metadaten. Zusätzlich härtet
+`tools/thunderbird-live.dev.py` den realen Thunderbird-Lauf gegen einen flaky Dokument-Teardown-Race
+(`documentElement is null` → Retry statt Abbruch); der GUI-Job war damit erneut grün. Der
+„Publish GitHub release“-Workflow-Fehler beim Tag-Push war nur der Konflikt mit dem zuvor manuell
+erstellten Release (Assets verifiziert).
+
 # Runde 5: Einreichungsfokus — Doku-Drift geschlossen, nächste Aufgaben geplant — 16. Oktober 2026
 
 Deltalanalyse über alle Pläne (Store-Gate, i18n-Plan T01–T18, Enterprise): Die Qualitätsaufgaben
@@ -349,9 +362,16 @@ wurden abgearbeitet. Alle Zahlen unten sind in diesem Arbeitslauf **gemessen**:
 - ~~**Echte Screenshots**~~ **erledigt:** echte PNG-Screenshots liegen unter
   `docs/screenshots/thunderbird-linux/` u. a.; Pre-Submit-Check meldet 0 Warnungen, Gate-Kriterium
   C5 ist PASS (seit 16. Oktober 2026, rekursive Suche im Gate, FA-4/FA-A8).
-- **ATN-Listung, Signierung, Store-URL:** Listing-Felder aus [store_listing.md](store_listing.md);
-  signieren mit `npx web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed
-  --approval-timeout 0`; danach Store-URL in README/Listing/Landing-Page ergänzen.
+- **ATN-Listung, Signierung, Store-URL (Aufgabenplan §15, N-05):** Reihenfolge — (1) N-01 Live-Test
+  ausführen, Summe-Zeile füllen → `npm run store-gate` muss **GO** melden (C1–C7 PASS); (2) Review-Paket
+  bereitlegen: [store_listing.md](store_listing.md) (Version 1.24.0), [reviewer_notes.md](reviewer_notes.md)
+  inkl. §4.1 Analyse-Protokoll, [store_assets.md](store_assets.md) (23 PNG), Testdaten `testdata/`;
+  (3) signieren mit `npx web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/ --channel
+  listed --approval-timeout 0` (ATN-Schlüssel des Maintainers; `--approval-timeout 0`, weil die
+  manuelle ATN-Prüfung länger als 15 Minuten dauert); (4) Store-URL in README/Listing/Landing-Page
+  ergänzen; (5) nach Einreichung Review-Monitoring (N-07). Drift-Check 16.10.: README (EN/DE),
+  docs/index, Listing, Assets, Notes, Quickstart nennen 1.24.0; verbliebene 1.19.x/1.22.x-Angaben sind
+  historische Release-/Feature-Hinweise.
 - **Optional:** Lokalisierung der Options-/Popup-Oberfläche (derzeit deutsch; Manifest-Strings und Banner
   sind en/de lokalisiert).
 
