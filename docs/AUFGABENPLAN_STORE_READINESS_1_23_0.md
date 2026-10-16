@@ -168,7 +168,7 @@ Release https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0 (�
 | E-01 | **erledigt** | D12 in [decisions.md](decisions.md) |
 | E-02 | **erledigt** | D14 in [decisions.md](decisions.md); Motiv-Zuordnung in [store_assets.md](store_assets.md) §3 |
 | E-03 | **erledigt** | D13 in [decisions.md](decisions.md) |
-| A-01 | **erledigt** | Tag `v1.23.0` auf `df63c76`; Release mit Asset `thundy-av-1.23.0.xpi` (218.405 Bytes, SHA-256 `a0e5a396…a78c8`), kein Pre-Release, „Latest“ |
+| A-01 | **erledigt** | Tag `v1.23.0` auf `df63c76`; Release mit Asset `thundy-av-1.23.0.xpi` (218.405 Bytes, SHA-256 `00ab882d…e6234`), kein Pre-Release, „Latest“ |
 | A-02 | **erledigt** | `npm run store-gate` Exit 0 → C1–C7 PASS; heruntergeladenes Asset byte-identisch (SHA-256 gleich) |
 | A-03 | **offen ✋** | ATN-Signierung braucht die API-Schlüssel des Maintainers; Kommando in [STATUS.md](STATUS.md) „Remaining“ |
 | A-04 | **offen ✋** | ATN-Einreichung nach A-03 |
@@ -190,3 +190,50 @@ Release https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0 (�
 
 **Verbleibende Blocker bis zur Store-Listung:** ausschließlich A-03/A-04 (Signierung + Einreichung,
 ✋ Maintainer-Schlüssel) und danach A-05 (Store-URL). Alle automatisierbaren Kriterien sind PASS.
+
+---
+
+## 12. Die GO-Funktion einsetzen (Betrieb)
+
+Die „Goal-Funktion" des Plans ist das ausführbare Go/No-Go-Kriterium: `scripts/submission-gate.js`
+misst C1–C7 statt Meinungen. Sie ist an drei Stellen dauerhaft verdrahtet:
+
+### 12.1 Aufruf
+
+| Kommando | Bedeutung | Exit-Code |
+|---|---|---|
+| `npm run goal` (Alias: `npm run store-gate`) | Vollständige Messung: C1–C4 als echte Kommandos (Pre-Submit, 953 Tests, Lint, Build+Paketprüfung) und C5–C7 als Artefakte | **0 = GO**, 1 = NO-GO |
+| `npm run goal -- --no-commands` | Schneller Artefaktstand; C1–C4 werden SKIP gezählt und zählen bewusst **nicht** als PASS → Ergebnis ist dort immer NO-GO | 1 |
+| `npm run goal > gate.log; echo $?` | Maschinelle Auswertung (CI/Skripte): Exit-Code ist die GO-Entscheidung | 0/1 |
+
+Interpretation: Ein Kriterium FAIL nennt in der Ausgabe den fehlenden Nachweis und die zugehörige
+Aufgaben-ID; der fehlgeschlagene Gate-Lauf ist also direkt die Arbeitliste der nächsten Runde.
+
+### 12.2 Verdrahtung (seit Runde 1)
+
+Die GO-Funktion ist als `npm run goal` in den **übernahmefähigen Workflow-Definitionen**
+(`docs/ci/`, siehe [ci/README.md](ci/README.md)) dauerhaft verdrahtet; die Aktivierung im
+Repository braucht einen Token mit `workflows`-Berechtigung (deshalb der Spiegel-Mechanismus):
+
+- **CI (`docs/ci/ci.yml`):** nach Build+Paketprüfung läuft `npm run goal` — das GO wird bei jedem
+  Push neu gemessen. Ändert jemand eine paketierte Datei nach dem Release-Tag, fällt C7 aus und
+  der Lauf rotiert (M1-Schutz).
+- **ATN-Signierung (`docs/ci/release.yml`, `workflow_dispatch`):** `npm run goal` steht **vor**
+  `web-ext sign` — ein NO-GO bricht ab, bevor ein einziger ATN-API-Aufruf passiert; A-03/A-04
+  sind damit strukturell an das GO gebunden.
+- **GitHub-Release (`docs/ci/release-publish.yml`, Tag-Push `v*`):** publishes nur bei GO; der
+  Veröffentlichungsschritt ist idempotent (create → upload --clobber), damit ein manuell vorab
+  erzeugtes Release den Lauf nicht scheitern lässt (Runde-1-Erfahrung am Tag `v1.23.0`).
+- **Lokal** ist die Funktion sofort scharf: `npm run goal` (Exit 0 = GO) ohne jeden GitHub-Bezug.
+
+**Übernahme** (Token mit `workflows`-Berechtigung):
+`cp docs/ci/ci.yml .github/workflows/ci.yml && cp docs/ci/release-publish.yml .github/workflows/release.yml`
+
+### 12.3 Zyklus für Runde 2 (nach der Einreichung)
+
+1. ATN-Signierung/Einreichung (A-03/A-04) ausführen; danach `npm run goal` erneut — die Kriterien
+   bleiben unverändert, neue Erkenntnisse werden als neue Befunde in die Problemanalyse geschrieben.
+2. Reviewer-Rücklauf (A-24) landet als Befunde B6/H3/M3 … im Plan; jede Nachbesserung ändert
+   paketierte Dateien → Version bump → neuer Tag → GO neu messen (C7 erzwingt das).
+3. Die Runde-Tabelle in §11 wird fortgeschrieben (Status + Nachweis je ID), der Plan bleibt damit
+   das Ausführungsprotokoll.

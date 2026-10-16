@@ -175,7 +175,7 @@ Lauf abgearbeitet. Ergebnis: `npm run store-gate` → **GO** (C1–C7 PASS), Rel
 
 | Befund | Status | Nachweis |
 |---|---|---|
-| B1 Kein Release 1.23.0 | **behoben** | Tag `v1.23.0` auf `df63c76`; GitHub-Release mit Asset `thundy-av-1.23.0.xpi` (SHA-256 `a0e5a396…a78c8`), kein Pre-Release, „Latest“; Gate C7 PASS |
+| B1 Kein Release 1.23.0 | **behoben** | Tag `v1.23.0` auf `df63c76`; GitHub-Release mit Asset `thundy-av-1.23.0.xpi` (SHA-256 `00ab882d…e6234`), kein Pre-Release, „Latest“; Gate C7 PASS |
 | B2 ATN-Signierung/Einreichung | **offen ✋** | braucht die ATN-API-Schlüssel des Maintainers (A-03/A-04) |
 | B3 Gate übersieht Screenshots | **behoben** | `scripts/screenshot-inventory.js` (rekursiv, Breitenlogik), geteilt mit Pre-Submit-Check; Gate C5 PASS mit 10 Aufnahmen ≥ 1200 px |
 | B4 Listing-Screenshots fehlen | **teilweise** | Motiv-Set kuratiert ([store_assets.md](store_assets.md) §3, 5 Motive fertig); Banner-Motive 6/7 offen ✋ |

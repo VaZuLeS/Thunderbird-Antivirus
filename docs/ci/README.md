@@ -4,8 +4,9 @@ Dieses Verzeichnis enthält die **fertigen Workflow-Definitionen** für das Repo
 
 | Datei | Ziel im Repository | Zweck |
 |---|---|---|
-| `ci.yml` | `.github/workflows/ci.yml` | `npm ci`, Pre-Submit-Checks, vollständige Testsuite (`npm test`), `web-ext lint` mit kuratiertem Thunderbird-Filter (`npm run lint:filtered`), XPI-Build + Paketprüfung (`npm run package`), Upload des XPI als Artefakt |
-| `release.yml` | `.github/workflows/release.yml` | manueller Signier-/Einreichungsjob für **addons.thunderbird.net** (`web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/`), Secrets `ATN_API_KEY`/`ATN_API_SECRET`, `approval-timeout` als Eingabe |
+| `ci.yml` | `.github/workflows/ci.yml` | `npm ci`, Pre-Submit-Checks, vollständige Testsuite (`npm test`), `web-ext lint` mit kuratiertem Thunderbird-Filter (`npm run lint:filtered`), XPI-Build + Paketprüfung (`npm run package`), Submission-Gate (`npm run goal`), Upload des XPI als Artefakt |
+| `release.yml` | `.github/workflows/release.yml` | manueller Signier-/Einreichungsjob für **addons.thunderbird.net** (`web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/`), Submission-Gate (`npm run goal`) als Schranke **vor** dem Signieren, Secrets `ATN_API_KEY`/`ATN_API_SECRET`, `approval-timeout` als Eingabe |
+| `release-publish.yml` | `.github/workflows/release-publish.yml` (oder: aktive `release.yml` ersetzen) | Tag-Push `v*`: Validierung, `npm run check`, Submission-Gate (`npm run goal`), XPI + `SHA256SUMS.txt`, idempotentes Publish (create, sonst upload --clobber) |
 
 ## Warum liegen sie hier und nicht direkt unter `.github/workflows/`?
 

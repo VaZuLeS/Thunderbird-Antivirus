@@ -1,0 +1,68 @@
+# Übernahmefähige Definition für `.github/workflows/release.yml`
+# (Publish GitHub release, Trigger: Tag-Push `v*`).
+#
+# Aktivierung braucht ein Token mit `workflows`-Berechtigung
+# (siehe docs/ci/README.md): cp docs/ci/release-publish.yml .github/workflows/release.yml
+#
+# Gegenüber der aktiven Variante:
+#   - `npm run goal` (Submission-Gate) nach der Paketprüfung — der Release wird nur
+#     bei GO veröffentlicht (Kriterien C1–C7, docs/AUFGABENPLAN_STORE_READINESS_1_23_0.md §12).
+#   - idempotenter Veröffentlichungsschritt: existiert das Release bereits (z. B. weil es
+#     manuell vorab erzeugt wurde — Runde 1, Tag v1.23.0), werden nur die Assets
+#     hochgeladen/überschrieben, statt den Lauf als Fehler enden zu lassen.
+name: Publish GitHub release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Validate tag and release notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version="$(node -p 'require("./manifest.json").version')"
+          test "$RELEASE_TAG" = "v$version"
+          test -f "docs/releases/$version.md"
+      - run: npm ci
+      - name: Verify source, tests, lint and package
+        run: npm run check
+      - name: Store submission gate (GO required to publish)
+        run: npm run goal
+      - name: Prepare unsigned XPI and checksums
+        run: |
+          version="$(node -p 'require("./manifest.json").version')"
+          cp "build/thundy_av_email_scanner_for_thunderbird-$version.zip" "build/thundy-av-$version.xpi"
+          cd build
+          sha256sum "thundy-av-$version.xpi" > SHA256SUMS.txt
+      - name: Publish release with validated assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version="$(node -p 'require("./manifest.json").version')"
+          gh release create "$RELEASE_TAG" \
+            "build/thundy-av-$version.xpi" build/SHA256SUMS.txt \
+            --verify-tag --latest \
+            --title "Thundy AV $version" \
+            --notes-file "docs/releases/$version.md" \
+          || { echo "Release already exists - updating its assets instead"; \
+               gh release upload "$RELEASE_TAG" --clobber \
+                 "build/thundy-av-$version.xpi" build/SHA256SUMS.txt; }

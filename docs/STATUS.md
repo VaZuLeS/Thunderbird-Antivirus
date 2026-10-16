@@ -9,11 +9,24 @@ Paketliste statt handgepflegtem Muster; Entscheidungen D12–D14 in [decisions.m
 Tag `v1.23.0` auf Commit `df63c76`; Release
 https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0 (kein Pre-Release, „Latest“)
 mit Asset `thundy-av-1.23.0.xpi`, 218.405 Bytes, SHA-256
-`a0e5a396cf7ac5abc2f806402bbb0507d368acc647158d5d6322f19e0d2a78c8`; heruntergeladenes Asset ist
+`00ab882d7e90bda5b97850b6076afda9b9403f75ee1b593f97782830cd3e6234`; heruntergeladenes Asset ist
 byte-identisch mit dem geprüften Build. Das SVG-Platzhalter-Set in `docs/screenshots/` wurde entfernt;
 das Listing-Set ist je Motiv in [store_assets.md](store_assets.md) §3 kuratiert (Banner-Motive bleiben
 offen ✋). Weiterhin offen: ATN-Signierung und Einreichung (Maintainer-Schlüssel), Windows/macOS,
 Screenreader/DPI, reale Browserübergabe, automatische Updateverteilung und produktive N06-Nachweise.
+
+Nachbereitung der Runde: Der manuelle Release-Weg lief dem Tag-Push-Workflow (`release.yml`) auf
+`v1.23.0` zu und ließ den Lauf im Schritt „gh release create“ scheitern („a release with the same
+tag name already exists“). Der Release wurde mit workflow-identischen Inhalten wiederhergestellt
+(Notizen aus `docs/releases/1.23.0.md`, XPI + `SHA256SUMS.txt`); neuer Asset-Hash
+`00ab882d7e90bda5b97850b6076afda9b9403f75ee1b593f97782830cd3e6234` (Build nicht byte-reproduzierbar,
+der Hash gilt für dieses Artefakt und die angehängte Summendatei; heruntergeladenes Asset ist
+byte-identisch). Der Veröffentlichungsschritt des Workflows ist jetzt idempotent
+(create → upload --clobber). Die GO-Funktion ist dauerhaft als `npm run goal` in die
+übernahmefähigen Workflow-Definitionen (`docs/ci/`) verdrahtet — volle Messung in `ci.yml` nach dem
+Paketschritt, Schranke vor `web-ext sign` im ATN-Signier-Workflow und GO-Pflicht vor dem Publish
+in `release-publish.yml`; die Aktivierung der Spiegel braucht ein Token mit `workflows`-Berechtigung.
+Details: [Aufgabenplan §12](AUFGABENPLAN_STORE_READINESS_1_23_0.md).
 
 # Prozessabbruch-Wiederherstellung und aktuelles Audit — 15. Oktober 2026
 

@@ -46,6 +46,11 @@ jobs:
         run: npm test
       - name: Build XPI and verify the package content
         run: npm run package
+      - name: Submission gate (GO required before signing)
+        # The executable goal function: exits 1 on NO-GO and aborts the ATN
+        # submission before any API call is made (criteria C1-C7, see
+        # docs/AUFGABENPLAN_STORE_READINESS_1_23_0.md §12).
+        run: npm run goal
       - name: Sign and submit to addons.thunderbird.net
         env:
           WEB_EXT_API_KEY: ${{ secrets.ATN_API_KEY }}

@@ -25,6 +25,7 @@
     "pre-submit-checks": "node ./scripts/pre-submit-checks.js",
     "check": "npm run pre-submit-checks && npm run check:i18n && npm run check:vendor && npm run check:design && npm test && npm run lint:filtered && npm run package",
     "store-gate": "node ./scripts/submission-gate.js",
+    "goal": "node ./scripts/submission-gate.js",
     "check:i18n": "node scripts/generate-i18n-fallback.js --check",
     "check:vendor": "node scripts/update-vendor.js",
     "enterprise:profile": "node enterprise/configure.cjs",
