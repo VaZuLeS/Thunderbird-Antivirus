@@ -1,0 +1,175 @@
+# Aufgabenplan Store-Readiness 1.23.0 — „Thundy AV“ (Thunderbird Add-ons Store / ATN)
+
+**Bezug:** [PROBLEMANALYSE_STORE_READINESS_1_23_0.md](PROBLEMANALYSE_STORE_READINESS_1_23_0.md)
+(Befunde B1–B5, H1–H2, M1–M2) · erstellt mit
+[KI_PROMPT_STORE_READINESS.md](KI_PROMPT_STORE_READINESS.md)
+**Snapshot:** Branch `cline/rxk1fthv`, Basis `f9f1e95`, Add-on-Version 1.23.0
+**Ziel:** Vollständige, überprüfbare Freigabe („GO“ im Submission-Gate) und Einreichung bei
+addons.thunderbird.net (ATN)
+**Stand:** 2026-10-16
+
+---
+
+## 1. Vorgehen und Legende
+
+Der Plan ist in Gruppen G0–G6 gegliedert (Ausführungsreihenfolge) und strikt
+befund-zu-aufgabe-rückverfolgbar (Matrix in §2). Nach jeder Aufgabe existiert ein reproduzierbarer
+Nachweis (DoD) — Zustände werden gemessen, nicht behauptet.
+
+| Kürzel | Bedeutung |
+|---|---|
+| **B/H/M** | Schweregrad des Bezugs-Befunds (Blocker / hoch / mittel) aus der Problemanalyse 1.23.0 |
+| **Aufwand** | grobe Schätzung in Stunden (1 Personentag ≈ 8 h) |
+| **DoD** | Definition of Done: der Nachweis, der als erledigt gilt |
+| **✋** | Aufgabe braucht eine Umgebung, die hier nicht existiert (ATN-Konto, Thunderbird-GUI, Windows/macOS) |
+
+**Rollen:** *Entwicklung* (Code/Gate-Skripte), *Doku* (Policy/Listing/Assets), *QS* (Gates,
+Live-Test), *Release* (Tag/Signatur/Upload). Bei einer Einzelperson sind das Zeitfenster, keine Personen.
+
+---
+
+## 2. Traceability-Matrix (Befund → Aufgabe)
+
+| Befund | Kurztitel | Aufgaben |
+|---|---|---|
+| B1 | 1.23.0 nicht getaggt/veröffentlicht (C7 FAIL) | A-01, A-02, A-11 |
+| B2 | ATN-Signierung/Einreichung offen ✋ | A-03, A-04, A-05 |
+| B3 | Gate übersieht echte Screenshots (C5 Blindspot) | A-06, A-10 |
+| B4 | Listing-Screenshots im ATN-Format fehlen | A-07, A-08, A-09 |
+| B5 | Gate C6 wertet falsches Artefakt; kein 1.23-Protokoll | A-11, A-12 |
+| H1 | Doku-Drift (Listing, Assets, decisions) | A-13, A-14, A-15 |
+| H2 | Manuelle Restabdeckung (Plattformen/Betrieb) ✋ | A-16 – A-21 |
+| M1 | `ARTIFACT_RELEVANT` unvollständig | A-10 (Teil), A-22 |
+| M2 | Gate-/Check-Konsistenz Screenshots/Maße | A-10, A-23 |
+
+---
+
+## 3. Phase G0 — Entscheidungen & Vorbereitung
+
+| ID | Aufgabe | DoD | Aufwand | Rollen |
+|---|---|---|---|---|
+| **E-01** | **Release-Scope bestätigen:** 1.23.0 (Stand `f9f1e95`, CHANGELOG-Eintrag vorhanden) als Einreichungskandidat festlegen; keine weiteren Features vor dem Tag | Entscheidung in [decisions.md](decisions.md) notiert (D12) | 0,5 h | Doku/Release |
+| **E-02** | **Screenshot-Quelle festlegen:** finale Listing-Shots aus den vorhandenen echten Aufnahmen (≥ 1200 px Breite) ableiten oder neue Aufnahmen in der Thunderbird-GUI machen ✋ (falls neue nötig) | Entscheidung notiert; Motivliste aus [store_assets.md](store_assets.md) §3 zugeordnet | 0,5 h | Doku/QS |
+| **E-03** | **Gate-Artefakte festlegen:** welche Dokumente gelten als Live-Test-Nachweis für C6 (Serie `live_test_<version>.md` und/oder [THUNDERBIRD_LINUX_ABNAHME.md](THUNDERBIRD_LINUX_ABNAHME.md)) | Entscheidung notiert; A-11 implementiert sie | 0,5 h | QS |
+
+**Summe G0:** 1,5 h — reine Festlegungen, Vorbedingung für G1–G3.
+
+---
+
+## 4. Phase G1 — Blocker & Release
+
+| ID | Aufgabe | DoD | Aufwand | Abhängig | Rolle |
+|---|---|---|---|---|---|
+| **A-01** | **Tag & GitHub-Release 1.23.0:** Tag `v1.23.0` auf den freigegebenen Commit; GitHub-Release (kein Pre-Release) mit unsigniertem XPI als Asset und den 1.23.0-Release-Notes aus [CHANGELOG.md](CHANGELOG.md) | `gh release view v1.23.0` zeigt Tag, Asset, Notes; `releases/latest` → `v1.23.0` | 1 h | E-01, A-22* | Release |
+| **A-02** | **Gates erneut messen:** `npm run check` und `npm run store-gate` ausführen; C7 muss PASS melden | Gate-Protokoll: C7 PASS; XPI-SHA-256 dokumentiert | 0,5 h | A-01 | QS |
+| **A-03** | **ATN-Signierung** ✋: `npx web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed --approval-timeout 0` mit den ATN-API-Schlüsseln des Maintainers (Kommando steht in [STATUS.md](STATUS.md) „Remaining“ und `release.yml`) | Signiertes XPI vorliegend; Signier-Log dokumentiert | 1 h ✋ | A-02 | Release |
+| **A-04** | **ATN-Einreichung** ✋: Listing-Felder aus [store_listing.md](store_listing.md) ausfüllen, signiertes XPI hochreichen, Version zur Prüfung einreichen | ATN-Status „in review“; Einreichungs-Screenshot dokumentiert | 1 h ✋ | A-03, G2 | Release |
+| **A-05** | **Store-URL zurückführen** ✋: ATN-URL in README (EN/DE), [store_listing.md](store_listing.md), Landing-Page, [STATUS.md](STATUS.md) ergänzen | Kein „not submitted“ mehr; Gate-Doku erwähnt Store-URL | 1 h ✋ | A-04 | Doku |
+
+**Summe G1:** 4,5 h (davon 2 h ✋ manuell) — kritischer Pfad: E-01 → A-01 → A-02 → A-03 → A-04 → A-05.
+\* A-22 (Gate-Härtung M1) sollte **vor** dem Tag landen, damit C7 ab dem ersten Release korrekt wertet.
+
+---
+
+## 5. Phase G2 — Store-Assets & Listing
+
+| ID | Aufgabe | DoD | Aufwand | Abhängig | Rolle |
+|---|---|---|---|---|---|
+| **A-06** | **SVG-Platzhalter entfernen:** `inline_optin_banner.svg`, `warning_banner.svg`, `options_page.svg` aus `docs/screenshots/` Top-Level entfernen (ehemalige Skizzen, seit 1.19.1 überholt) | Kein `*.svg` mehr in `docs/screenshots/` Top-Level; Gate-Verzeichnis enthält nur echte Aufnahmen | 0,25 h | E-02 | Doku |
+| **A-07** | **Listing-Screenshot-Set kuratieren** ✋: pro Motiv aus [store_assets.md](store_assets.md) §3 genau ein PNG ablegen (`docs/screenshots/` Top-Level), Aufnahmen ≥ 1200 px Breite (Empfehlung 1280×800); falls keine Aufnahme ein Motiv abdeckt: neue Aufnahme in TB 140 ESR ✋ | `docs/screenshots/*.png` deckt jede Motiv-Zeile ab; Pre-Submit 0 Warnungen | 2 h ✋ | A-06 | QS/Doku |
+| **A-08** | **store_listing.md auf 1.23.0:** Kopf (Version, Lizenz GPL-3.0-only), Update-Hinweis, Release-Notes-Block 1.23.0 (EN) fürs ATN-Dialogfeld | Dateikopf nennt 1.23.0; §6 enthält 1.23.0-Block | 1 h | E-01 | Doku |
+| **A-09** | **store_assets.md auf Ist-Stand:** „Version 1.6.2“ → 1.23.0; Tabelle „Was existiert“ um die 23 echten PNGs erweitern; Abschnitt „Was fehlt“ neu schreiben | Dokument behauptet nichts Falsches mehr (Abgleich mit `find docs/screenshots`) | 1 h | A-07 | Doku |
+
+**Summe G2:** 4,25 h (davon 2 h ✋) — kritischer Pfad für C5: A-06 → A-07 → `store-gate` C5 PASS.
+
+---
+
+## 6. Phase G3 — Gate-/Tooling-Härtung
+
+| ID | Aufgabe | DoD | Aufwand | Abhängig | Rolle |
+|---|---|---|---|---|---|
+| **A-10** | **C5-Screenshotprüfung reparieren (B3/M2):** `hasScreenshots()` in `scripts/submission-gate.js` rekursiv machen; Mindestbreite (1200 px, PNG-Header-Lesen ohne neue Abhängigkeit) prüfen; dieselbe Logik im Pre-Submit-Check verwenden | `submission-gate.test.js` erweitert; Gate meldet die 23 vorhandenen PNGs; C5 FAIL nur noch bei fehlender Kuratierung (A-07) | 2 h | E-02 | Entwicklung |
+| **A-11** | **C6-Artefakte erweitern (B5/B1):** `liveTestSummary()` akzeptiert konfigurierbare Nachweisquellen: `live_test_<version>.md` (Summenzeile) und/oder Abnahme-Dokument mit Versionstoken `1.23.0` | Gate wertet [THUNDERBIRD_LINUX_ABNAHME.md](THUNDERBIRD_LINUX_ABNAHME.md) als 1.23.0-Nachweis → C6 PASS, sobald E-03 fixiert ist | 2 h | E-03 | Entwicklung |
+| **A-12** | **`ARTIFACT_RELEVANT` dynamisch machen (M1):** Muster aus `manifest.json` ableiten (`background.scripts`, `message_display_action.default_popup`, `options_ui.page`, alle im XPI liegenden CSS/HTML) statt handgepflegter Regex | `submission-gate.test.js` deckt `audit.js`/`design_system.js`/`message_ui.js` als artefaktrelevant ab | 1 h | — | Entwicklung |
+| **A-13** | **Gate-Kriterien-Doku aktualisieren:** [PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md) §9 / Gate-Kopftext an neue C5/C6-Quellen anpassen | Gate-Kopf beschreibt die tatsächlichen Kriterien | 0,5 h | A-10, A-11 | Doku |
+
+**Summe G3:** 5,5 h — kritischer Pfad für ein ehrliches GO: A-10 + A-11 + A-12 **vor** dem Tag (A-01).
+
+---
+
+## 7. Phase G4 — QS & Live-Test
+
+| ID | Aufgabe | DoD | Aufwand | Abhängig | Rolle |
+|---|---|---|---|---|---|
+| **A-14** | **Live-Test-Nachweis 1.23.0 formalisieren (B5):** `docs/live_test_1_23_0.md` anlegen (Serie fortsetzen) mit Summenzeile aus der realen Abnahme, oder — je nach E-03 — Abnahme-Dokument als Quelle konfigurieren | `store-gate` → C6 PASS mit benannter Quelle | 2 h | E-03, A-11 | QS |
+| **A-15** | **Regressionstest nach Gate-Härtung:** kompletter Lauf `npm run check` + `npm run store-gate` | Alle C1–C4 grün; C5/C6/C7-Status entspricht dem realen Stand | 0,5 h | A-10 – A-12 | QS |
+| **A-16** | **Windows-Abnahme** ✋: Installation, Wizard, Banner, Popup, Audit in TB 140 ESR auf Windows | Abnahme-Abschnitt + Screenshots wie Linux-Dokument | 4 h ✋ | A-02 | QS |
+| **A-17** | **macOS-Abnahme** ✋: wie A-16 auf macOS | Abnahme-Abschnitt + Screenshots | 4 h ✋ | A-02 | QS |
+| **A-18** | **Screenreader/DPI/Zoom** ✋: Navigation mit OS-Screenreader, DPI/Zoom-Matrix (dokumentierte Grenze aus [THUNDERBIRD_LINUX_ABNAHME.md](THUNDERBIRD_LINUX_ABNAHME.md)) | Berichtsabschnitt; offene Grenzen benannt | 4 h ✋ | A-16 | QS |
+| **A-19** | **Standardbrowser-Übergabe real** ✋: Time-of-Click-Übergabe mit Firefox/Chrome/Edge als Default (bislang nur OS-Empfänger-Isolation) | Berichtsabschnitt pro Browser | 3 h ✋ | A-16 | QS |
+| **A-20** | **Automatische Updateverteilung** ✋: Update-Pfad über ATN/em:updates mit Neustart, Rollback-Fall | Berichtsabschnitt | 3 h ✋ | A-03 | QS |
+| **A-21** | **Produktive N06-Nachweise** ✋: Kernfunktionen unter Produktivbedingungen (nicht nur Xvfb-Isolation) je [ENTERPRISE_NAECHSTE_SCHRITTE.md](ENTERPRISE_NAECHSTE_SCHRITTE.md) | Nachweispaket in `docs/enterprise/` | 8 h ✋ | A-16 | QS |
+
+**Summe G4:** 28,5 h (davon 26 h ✋ manuell) — A-14/A-15 blockieren das GO; A-16 – A-21 sind
+Produktiv-/Plattformqualität nach der Einreichung.
+
+---
+
+## 8. Phase G5 — Doku-Konsistenz
+
+| ID | Aufgabe | DoD | Aufwand | Abhängig | Rolle |
+|---|---|---|---|---|---|
+| **A-22** | **decisions.md fortführen:** D12 (Release-Scope 1.23.0, E-01), D13 (Gate-Artefakte E-03), D14 (Screenshot-Regel E-02) eintragen; Kopf „Thundy AV 1.6“ → laufende Version | [decisions.md](decisions.md) Kopf und Einträge stimmen | 0,5 h | G0 | Doku |
+| **A-23** | **Versionskonsistenz-Grep:** README (EN/DE), STATUS, store_listing, store_assets, decisions, quickstart auf 1.23.0 prüfen; Snapshots (`*_1_19_*`, historische Analysen) bleiben unverändert | `grep -rn "Version.*1\\.6\\b" docs/store_*.md` leer; alle Aktuals-Dokumente nennen 1.23.0 | 0,5 h | A-08, A-09 | Doku |
+
+**Summe G5:** 1 h — überwiegend Abgleich, kein Produktivcode.
+
+---
+
+## 9. Phase G6 — Erweiterungen & Ergänzungen (nach dem GO, nicht blockierend)
+
+| ID | Aufgabe | Beziehung | DoD |
+|---|---|---|---|
+| **A-24** | **ATN-Review-Rücklauf einrichten:** Prozess für Reviewer-Kommentare (Issue-Vorlage, Fristen, Nachbesserungs-Runde im Aufgabenplan fortgeschrieben) | H2/B2-Folge | Reviewer-Kommentare landen als neue Befunde im Plan |
+| **A-25** | **Enterprise-/N06-Fahrplan anbinden:** offene Enterprise-Punkte aus [ENTERPRISE_NAECHSTE_SCHRITTE.md](ENTERPRISE_NAECHSTE_SCHRITTE.md) in eine eigene Planrunde überführen | H2 | Eigener Aufgabenplan mit gleicher Struktur (G0–G6) |
+| **A-26** | **Update-/Support-Kanal:** FAQ/Support-Sektion für Store-Nutzer aus den Support-Kanälen speisen; Store-URL + Signaturprüfung in Doku | A-05 | Support-Abschnitt im Listing verlinkt |
+
+**Summe G6:** nach GO zu planen; bewusst von G1–G5 entkoppelt, damit der Freigabepfad kurz bleibt.
+
+---
+
+## 10. Gesamtbild und kritischer Pfad
+
+| Gruppe | Summe | davon ✋ |
+|---|---|---|
+| G0 Entscheidungen | 1,5 h | — |
+| G1 Blocker & Release | 4,5 h | 2 h |
+| G2 Store-Assets & Listing | 4,25 h | 2 h |
+| G3 Gate-/Tooling-Härtung | 5,5 h | — |
+| G4 QS & Live-Test | 28,5 h | 26 h |
+| G5 Doku-Konsistenz | 1 h | — |
+| **GO-Pfad (G0–G3 + A-14, A-15, A-23)** | **≈ 16 h** | **≈ 2 h** |
+
+**Kritischer Pfad zum GO:** E-01 → A-12 → A-10 → A-11 → A-01 (Tag) → A-02 → A-06 → A-07 →
+A-14 → A-15 → Gate GO → A-03 → A-04 (Einreichung) → A-05.
+Der GO-Pfad ist fast vollständig automatisierbar; die einzigen ✋-Schritte auf dem Pfad sind die
+Listing-Screenshot-Kuratierung (A-07) und die ATN-Signierung/Einreichung (A-03/A-04) mit den
+Maintainer-Schlüsseln.
+
+---
+
+## 11. Runde 1 — Ausführungsstand
+
+| ID | Status | Nachweis |
+|---|---|---|
+| E-01 – E-03 | **offen** | — |
+| A-01 – A-05 | **offen** | — |
+| A-06 – A-09 | **offen** | — |
+| A-10 – A-13 | **offen** | — |
+| A-14, A-15 | **offen** | — |
+| A-16 – A-21 | **offen (✋)** | — |
+| A-22, A-23 | **offen** | — |
+| A-24 – A-26 | **offen (nach GO)** | — |
+
+**Ausgangslage gemessen (2026-10-16):** `npm run check` Exit 0 (949 Tests, 0 Fehler, Lint ok,
+Paket valid); `npm run store-gate -- --no-commands` → NO-GO, C5/C6/C7 FAIL (siehe Problemanalyse §2).
