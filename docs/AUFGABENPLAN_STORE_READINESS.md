@@ -316,6 +316,9 @@ Thunderbird 140 ESR (C6). Beide bleiben als manuelle Schritte dokumentiert.
 | FA-A8 | **erledigt** | `scripts/submission-gate.js` `hasScreenshots()` rekursiv; `submission-gate.test.js` 7/7; Store-Gate C5 nun **PASS** |
 | Gesamt | — | `npm run check` → **Exit 0**, **954 Tests bestanden**, 0 Lint-Fehler, Paketprüfung gültig; `npm run store-gate` → C1–C5 PASS, offen C6/C7 |
 
-**Offen in dieser Runde:** FA-A5 (✋ manuell, Hybrid-Analysis-API-Key + Thunderbird-GUI; auch Grund für C6),
-C6 (ausgefülltes Live-Test-Protokoll) und C7 (Git-Tag `v1.23.0` + Release — Maintainer-Aktion mit
-ATN-Signierung, siehe „Remaining“ in STATUS).
+**Offen in dieser Runde:** FA-A5 (✋ manuell, Hybrid-Analysis-API-Key + Thunderbird-GUI; auch Grund für
+C6). **C7 erledigt:** Tag `v1.23.0` auf `8a13cc2`; Release
+[v1.23.0](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0) mit Assets
+`thundy-av-1.23.0.xpi` + `SHA256SUMS.txt`; Asset gegen lokalen Build aus dem Tag-Quellstand verglichen —
+byte-identisch, SHA-256 `00ab882d…1cb39`. Store-Gate: C1–C5 + C7 **PASS**, einziges offenes Kriterium C6.
+ATN-Signierung/Einreichung bleiben die abschließende Maintainer-Aktion („Remaining“ in STATUS).

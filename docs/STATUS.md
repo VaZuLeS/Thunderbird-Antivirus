@@ -12,6 +12,17 @@ Protokoll-Lebenszyklus für die ATN-Begutachtung. `npm test` → 954 bestanden; 
 offen bleiben C6 (Live-Test-Protokoll, manuell) und C7 (Tag v1.23.0 + Release). Aufgabenstand:
 [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13.
 
+# Release v1.23.0 verifiziert — 16. Oktober 2026
+
+Kriterium C7 ist damit **PASS**: Tag `v1.23.0` zeigt auf den aktuellen Quellstand
+(`8a13cc2`), und das GitHub-Release
+[v1.23.0](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0)
+enthält `thundy-av-1.23.0.xpi` und `SHA256SUMS.txt`. Nachweis: Asset heruntergeladen und gegen den
+lokalen Build aus dem Tag-Quellstand verglichen — byte-identisch,
+SHA-256 `00ab882d7e90bda5b97850b6076afda9b9403f75ee1b593f97782830cd3e6234` (inkl. der
+Analyse-Protokoll-Fixes aus §13 und des CHANGELOG-Eintrags). Übrig bleibt als einziges Gate-Kriterium
+C6 (ausgefülltes Live-Test-Protokoll, manuell in Thunderbird 140 ESR; FA-A5).
+
 # Hybrid-Analysis-Strang: Analyse-Protokoll zustellen — 16. Oktober 2026
 
 Nutzermeldung „kein Analyse-Protokoll“ nachvollzogen und am Quellstand 1.23.0 behoben: Der Popup-Report
@@ -316,9 +327,11 @@ wurden abgearbeitet. Alle Zahlen unten sind in diesem Arbeitslauf **gemessen**:
 - **Live-Test in Thunderbird 140 ESR (Pflicht vor der Einreichung):** Protokoll in
   [live_test_protocol.md](live_test_protocol.md) abarbeiten (Banner, Kontextmenü, Time-of-Click,
   Permission-Geste, Stufen-Gate, Popup, HTML-Entschärfen, Cache leeren) — Testdaten liegen in
-  `testdata/`.
-- **Echte Screenshots** (PNG, ≥ 1200 px breit) gemäß [screenshot_capture.md](screenshot_capture.md);
-  danach meldet der Pre-Submit-Check 0 Warnungen und Kriterium C5 wird grün.
+  `testdata/`; zusätzlich die Analyse-Protokoll-Verifikation aus Aufgabenplan §13 (FA-A5: Upload →
+  `IN_PROGRESS`-Polling → fertiges Protokoll, Popup zu/zu mit Offline-Anzeige, Rescan-Invalidierung).
+- ~~**Echte Screenshots**~~ **erledigt:** echte PNG-Screenshots liegen unter
+  `docs/screenshots/thunderbird-linux/` u. a.; Pre-Submit-Check meldet 0 Warnungen, Gate-Kriterium
+  C5 ist PASS (seit 16. Oktober 2026, rekursive Suche im Gate, FA-4/FA-A8).
 - **ATN-Listung, Signierung, Store-URL:** Listing-Felder aus [store_listing.md](store_listing.md);
   signieren mit `npx web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed
   --approval-timeout 0`; danach Store-URL in README/Listing/Landing-Page ergänzen.
