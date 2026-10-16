@@ -19,10 +19,13 @@ Korrektur zur vorherigen Meldung: Der veröffentlichte Tag `v1.23.0` zeigt auf d
 (SHA-256 `00ab882d…1cb39`) entspricht diesem Stand. Da `api.js`, `background.js` und die
 `_locales` nach dem Tag geändert wurden, verlangt Gate C7 zurecht eine neue Version. Daher:
 **Version 1.24.0** (manifest/package/lock), CHANGELOG-Eintrag mit den Analyse-Protokoll-Lieferungen,
-Release-Notes in `docs/releases/1.24.0.md`, Tag `v1.24.0` und GitHub-Release mit Assets
-`thundy-av-1.24.0.xpi` + `SHA256SUMS.txt`. Store-Gate danach: C1–C5 + C7 **PASS**; einziges offenes
-Kriterium C6 (Live-Test-Protokoll, manuell in Thunderbird 140 ESR; FA-A5).
-[AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13/§14.
+Release-Notes in `docs/releases/1.24.0.md`, Tag `v1.24.0` und GitHub-Release
+[v1.24.0](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.0) mit Assets
+`thundy-av-1.24.0.xpi` + `SHA256SUMS.txt`. Nachweis: Asset heruntergeladen und gegen den lokalen Build
+des Tag-Commits verglichen — byte-identisch,
+SHA-256 `c6dc5631b1a71e53f283c4bf6dfb5c5a513fb236d54bf5750c9a150fb8c3145d`. Store-Gate danach:
+C1–C5 + C7 **PASS**; einziges offenes Kriterium C6 (Live-Test-Protokoll, manuell in Thunderbird 140
+ESR; FA-A5). [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13/§14.
 
 # Hybrid-Analysis-Strang: Analyse-Protokoll zustellen — 16. Oktober 2026
 

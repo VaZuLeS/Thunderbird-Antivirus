@@ -333,7 +333,7 @@ Die Fixes werden daher als **Version 1.24.0** veröffentlicht (Runde 4, §14); C
 | V-03 | Release-Notes `docs/releases/1.24.0.md` (EN + DE-Kurzfassung) | Datei vorhanden, referenziert aus STATUS | **erledigt** |
 | V-04 | Doku-Versionen: `docs/index.md` auf 1.24.0 (Drift 1.22.0 → 1.24.0 geschlossen) | `grep 1.22.0 docs/index.md` leer | **erledigt** |
 | V-05 | Gates grün vor Tag: `npm test` 954, Lint 0 Fehler, Paketprüfung gültig | Exit 0 | **erledigt** |
-| V-06 | Tag `v1.24.0` am Release-Commit, push, GitHub-Release mit `thundy-av-1.24.0.xpi` + `SHA256SUMS.txt` | `gh release view v1.24.0` zeigt Tag, Assets, Notes; SHA-256 in STATUS dokumentiert | **erledigt** (nach diesem Commit) |
-| V-07 | Store-Gate final: C1–C5 + C7 PASS, offen nur C6 | Gate-Protokoll | **erledigt** |
+| V-06 | Tag `v1.24.0` am Release-Commit, push, GitHub-Release mit `thundy-av-1.24.0.xpi` + `SHA256SUMS.txt` | Release https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.0 mit beiden Assets; Asset heruntergeladen und gegen lokalen Build verglichen — byte-identisch, SHA-256 `c6dc5631…3145d`; Hash in STATUS dokumentiert | **erledigt** |
+| V-07 | Store-Gate final: C1–C5 + C7 PASS, offen nur C6 | Gate-Protokoll: C1–C5 **PASS**, C6 FAIL (manuell), C7 **PASS** | **erledigt** |
 | V-08 | ✋ ATN-Signierung/Einreichung (ATN-Schlüssel) + Live-Test C6/FA-A5 | Store-URL in README/Listing | **offen (manuell)** |
 
