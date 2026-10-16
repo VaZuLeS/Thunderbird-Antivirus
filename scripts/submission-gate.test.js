@@ -10,7 +10,7 @@ const path = require('path');
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert');
 
-const { evaluateGate, hasScreenshots, liveTestSummary } = require('./submission-gate.js');
+const { evaluateGate, hasScreenshots, liveTestSummary, isArtifactRelevant } = require('./submission-gate.js');
 
 function createRoot(files) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'thundy-gate-'));
@@ -24,6 +24,19 @@ function createRoot(files) {
 
 const manifest = JSON.stringify({ manifest_version: 3, version: '1.6' }, null, 2);
 
+/** Minimal real PNG buffer with the given dimensions (signature + IHDR). */
+function pngBuffer(width, height) {
+  const buffer = Buffer.alloc(8 + 4 + 4 + 13 + 4);
+  buffer.write('\x89PNG\r\n\x1a\n', 0, 'binary');
+  buffer.writeUInt32BE(13, 8);
+  buffer.write('IHDR', 12, 'ascii');
+  buffer.writeUInt32BE(width, 16);
+  buffer.writeUInt32BE(height, 20);
+  buffer.writeUInt8(8, 24);
+  buffer.writeUInt8(6, 25);
+  return buffer;
+}
+
 describe('submission gate', () => {
   let complete;
   let incomplete;
@@ -31,8 +44,8 @@ describe('submission gate', () => {
   before(() => {
     complete = createRoot({
       'manifest.json': manifest,
-      'docs/screenshots/01-options-consent.png': 'png',
-      'docs/screenshots/02-optin-banner.png': 'png',
+      'docs/screenshots/01-options-consent.png': pngBuffer(1280, 800),
+      'docs/screenshots/02-optin-banner.png': pngBuffer(1280, 800),
       'docs/live_test_protocol.md': '| Schritt | Erwartung | Ist | Status |\n' +
         Array.from({ length: 12 }, (_, i) => '| ' + i + ' | x | y | OK |').join('\n') +
         '\n**Summe:** 12 OK / 0 FAIL / 0 N/A / 0 OFFEN\n'
@@ -94,11 +107,75 @@ describe('submission gate', () => {
 
   it('detects screenshots and the protocol counters', () => {
     assert.deepStrictEqual(hasScreenshots(complete).sort(), ['01-options-consent.png', '02-optin-banner.png']);
-    assert.deepStrictEqual(liveTestSummary(complete), { present: true, filled: true, okCount: 12, failCount: 0 });
+    assert.deepStrictEqual(liveTestSummary(complete), {
+      present: true, filled: true, okCount: 12, failCount: 0, source: 'docs/live_test_protocol.md'
+    });
     assert.deepStrictEqual(liveTestSummary(incomplete).failCount, 1);
     const unfilled = createRoot({ 'docs/live_test_protocol.md': '**Summe:** __ OK / __ FAIL / __ N/A / __ OFFEN\n' });
     assert.strictEqual(liveTestSummary(unfilled).filled, false);
     assert.strictEqual(liveTestSummary(createRoot({})).present, false);
+  });
+
+  it('scans docs/screenshots recursively for real captures', () => {
+    const nested = createRoot({
+      'docs/screenshots/thunderbird-linux/native-popup.png': pngBuffer(1280, 1000),
+      'docs/screenshots/placeholder.svg': '<svg/>'
+    });
+    assert.deepStrictEqual(hasScreenshots(nested), ['thunderbird-linux/native-popup.png']);
+    fs.rmSync(nested, { recursive: true, force: true });
+  });
+
+  it('prefers the version-specific live test document over the legacy protocol', () => {
+    const versioned = createRoot({
+      'docs/live_test_1_6.md': '**Summe:** 25 OK / 0 FAIL / 0 N/A / 5 OFFEN\n',
+      'docs/live_test_protocol.md': '**Summe:** __ OK / __ FAIL\n'
+    });
+    const summary = liveTestSummary(versioned, '1.6');
+    assert.strictEqual(summary.present, true);
+    assert.strictEqual(summary.filled, true);
+    assert.strictEqual(summary.okCount, 25);
+    assert.strictEqual(summary.source, 'docs/live_test_1_6.md');
+    assert.strictEqual(liveTestSummary(versioned, '9.9').source, 'docs/live_test_protocol.md');
+    fs.rmSync(versioned, { recursive: true, force: true });
+  });
+
+  it('passes C5 only when a real capture reaches the minimum listing width', () => {
+    const extras = {
+      'manifest.json': manifest,
+      'docs/live_test_protocol.md': '**Summe:** 12 OK / 0 FAIL / 0 N/A / 0 OFFEN\n'
+    };
+    const narrow = createRoot({
+      ...extras,
+      'docs/screenshots/narrow.png': pngBuffer(1152, 1000)
+    });
+    const wide = createRoot({
+      ...extras,
+      'docs/screenshots/narrow.png': pngBuffer(1152, 1000),
+      'docs/screenshots/thunderbird-linux/wide.png': pngBuffer(1280, 1000)
+    });
+    for (const [root, expected] of [[narrow, false], [wide, true]]) {
+      const { criteria, go } = evaluateGate({
+        rootDir: root,
+        commandRunner: () => ({ ok: true, output: 'ok' }),
+        tagLookup: () => ({ exists: true, atHead: true, tag: 'v1.6', tagSha: 'abc12345', headSha: 'abc12345', changedArtifacts: [] })
+      });
+      const c5 = criteria.find((criterion) => criterion.id === 'C5');
+      assert.strictEqual(c5.status, expected ? 'pass' : 'fail');
+      assert.strictEqual(go, expected);
+    }
+    fs.rmSync(narrow, { recursive: true, force: true });
+    fs.rmSync(wide, { recursive: true, force: true });
+  });
+
+  it('treats every packaged file as artifact-relevant for C7', () => {
+    for (const file of ['audit.js', 'audit.html', 'design_system.js', 'i18n.js', 'theme.js',
+      'message_ui.js', 'privacy.html', 'onboarding.html', 'options.css', 'design.css',
+      'background.js', 'manifest.json', 'img/icon-16px.png', '_locales/de/messages.json']) {
+      assert.strictEqual(isArtifactRelevant(file), true, file);
+    }
+    for (const file of ['docs/store_listing.md', 'CHANGELOG.md', 'scripts/submission-gate.js', 'README.md']) {
+      assert.strictEqual(isArtifactRelevant(file), false, file);
+    }
   });
 
   it('passes C7 when only documentation changed since the release tag', () => {

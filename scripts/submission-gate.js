@@ -8,6 +8,16 @@
  * (live-test protocol, screenshots, release tag) and reported as unmet while
  * they are missing.
  *
+ * Artefact sources (decisions D13/D14 in docs/decisions.md, plan
+ * docs/AUFGABENPLAN_STORE_READINESS_1_23_0.md):
+ *   - C5 scans docs/screenshots/ recursively and requires at least one real
+ *     capture with a width of >= 1200 px (shared logic with the pre-submit
+ *     checks via scripts/screenshot-inventory.js).
+ *   - C6 reads the version-specific protocol docs/live_test_<version>.md
+ *     first and falls back to the legacy docs/live_test_protocol.md.
+ *   - C7 derives "artifact-relevant" from the package list in
+ *     scripts/verify-package.js instead of a hand-maintained pattern.
+ *
  * Usage:
  *   node scripts/submission-gate.js            # full gate (runs tests, lint, build)
  *   node scripts/submission-gate.js --no-commands   # only artefacts/criteria, skip commands
@@ -17,6 +27,8 @@
 const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
+const { collectScreenshots, MIN_LISTING_WIDTH } = require('./screenshot-inventory.js');
+const { ALLOWED_FILES, ALLOWED_PREFIXES } = require('./verify-package.js');
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -29,26 +41,32 @@ function runCommand(command, args) {
 }
 
 function hasScreenshots(rootDir) {
-  const dir = path.join(rootDir, 'docs', 'screenshots');
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir).filter((name) => /\.(png|jpe?g)$/i.test(name));
+  return collectScreenshots(rootDir).map((shot) => shot.name);
 }
 
-function liveTestSummary(rootDir) {
-  const file = path.join(rootDir, 'docs', 'live_test_protocol.md');
-  if (!fs.existsSync(file)) return { present: false, filled: false, okCount: 0, failCount: 0 };
-  const content = fs.readFileSync(file, 'utf8');
-  // The protocol ends with "**Summe:** __ OK / __ FAIL / ..."; unfilled
-  // placeholders mean the test has not been performed yet.
-  const summaryLine = (content.match(/\*\*Summe:\*\*[^\n]*/) || [''])[0];
-  const okMatch = summaryLine.match(/(\d+)\s*OK/);
-  const failMatch = summaryLine.match(/(\d+)\s*FAIL/);
-  return {
-    present: true,
-    filled: !summaryLine.includes('__') && (!!okMatch || !!failMatch),
-    okCount: okMatch ? parseInt(okMatch[1], 10) : 0,
-    failCount: failMatch ? parseInt(failMatch[1], 10) : 0
-  };
+function liveTestSummary(rootDir, version) {
+  const candidates = [];
+  // Repository convention: docs/live_test_1_22_0.md (version dots become underscores).
+  if (version) candidates.push('live_test_' + String(version).replace(/\./g, '_') + '.md');
+  candidates.push('live_test_protocol.md');
+  const files = candidates.map((name) => path.join(rootDir, 'docs', name));
+  for (const file of files) {
+    if (!fs.existsSync(file)) continue;
+    const content = fs.readFileSync(file, 'utf8');
+    // The protocol ends with "**Summe:** __ OK / __ FAIL / ..."; unfilled
+    // placeholders mean the test has not been performed yet.
+    const summaryLine = (content.match(/\*\*Summe:\*\*[^\n]*/) || [''])[0];
+    const okMatch = summaryLine.match(/(\d+)\s*OK/);
+    const failMatch = summaryLine.match(/(\d+)\s*FAIL/);
+    return {
+      present: true,
+      filled: !summaryLine.includes('__') && (!!okMatch || !!failMatch),
+      okCount: okMatch ? parseInt(okMatch[1], 10) : 0,
+      failCount: failMatch ? parseInt(failMatch[1], 10) : 0,
+      source: path.relative(rootDir, file)
+    };
+  }
+  return { present: false, filled: false, okCount: 0, failCount: 0, source: null };
 }
 
 /**
@@ -59,8 +77,15 @@ function liveTestSummary(rootDir) {
  * and no **artifact-relevant** file changed since that tag (documentation
  * commits after the release are fine, a changed manifest/background script is
  * not - that would require a new release).
+ *
+ * "Artifact-relevant" is derived from the package content list in
+ * scripts/verify-package.js (ALLOWED_FILES + ALLOWED_PREFIXES), so every file
+ * that ships in the XPI counts - including files a hand-maintained pattern
+ * missed (finding M1 of PROBLEMANALYSE_STORE_READINESS_1_23_0.md).
  */
-const ARTIFACT_RELEVANT = /^(manifest\.json|background\.js|db\.js|api\.js|api_gateway\.js|options\.(html|js)|popup\.html|theme\.css|img\/|_locales\/|LICENSE)/;
+function isArtifactRelevant(file) {
+  return ALLOWED_FILES.includes(file) || ALLOWED_PREFIXES.some((prefix) => file.startsWith(prefix));
+}
 
 function releaseTagState(version) {
   const tag = 'v' + version;
@@ -72,7 +97,7 @@ function releaseTagState(version) {
 
   const diff = spawnSync('git', ['diff', '--name-only', tag + '..HEAD'], { cwd: ROOT, encoding: 'utf8' });
   const changed = (diff.stdout || '').split('\n').map((line) => line.trim()).filter(Boolean);
-  const changedArtifacts = changed.filter((file) => ARTIFACT_RELEVANT.test(file));
+  const changedArtifacts = changed.filter((file) => isArtifactRelevant(file));
   return { exists: true, atHead: tagSha === headSha, tag, tagSha, headSha, changedArtifacts };
 }
 
@@ -100,26 +125,37 @@ function evaluateGate({ rootDir = ROOT, commandRunner = runCommand, tagLookup = 
     }
   }
 
-  const screenshots = hasScreenshots(rootDir);
-  add('C5', 'real screenshots (PNG, no SVG placeholders)', screenshots.length > 0 ? 'pass' : 'fail',
-    screenshots.length > 0 ? screenshots.join(', ') : 'no PNG/JPEG screenshots in docs/screenshots/');
-
-  const live = liveTestSummary(rootDir);
-  if (!live.present) {
-    add('C6', 'live test protocol for Thunderbird 140 ESR', 'fail', 'docs/live_test_protocol.md is missing');
-  } else if (!live.filled) {
-    add('C6', 'live test protocol for Thunderbird 140 ESR', 'fail',
-      'the protocol has not been filled in yet (no result in the "Summe" line)');
-  } else if (live.failCount > 0) {
-    add('C6', 'live test protocol for Thunderbird 140 ESR', 'fail', live.failCount + ' documented FAIL entries');
-  } else if (live.okCount < 10) {
-    add('C6', 'live test protocol for Thunderbird 140 ESR', 'fail',
-      'only ' + live.okCount + ' OK entries recorded (at least 10 expected)');
-  } else {
-    add('C6', 'live test protocol for Thunderbird 140 ESR', 'pass', live.okCount + ' OK entries, no FAIL');
-  }
+  const shots = collectScreenshots(rootDir);
+  const qualifying = shots.filter((shot) => (shot.width || 0) >= MIN_LISTING_WIDTH);
+  const shotEvidence = shots.length === 0
+    ? 'no PNG/JPEG screenshots in docs/screenshots/'
+    : shots.length + ' PNG/JPEG found (recursive), widths: ' +
+      shots.map((shot) => shot.name + '=' + (shot.width === null ? '?' : shot.width + 'px')).join(', ');
+  add('C5', 'real screenshots (PNG/JPEG, at least one with width >= ' + MIN_LISTING_WIDTH + ' px)',
+    qualifying.length > 0 ? 'pass' : 'fail',
+    qualifying.length > 0
+      ? qualifying.map((shot) => shot.name + ' (' + shot.width + 'px)').join(', ')
+      : (shots.length > 0
+        ? shotEvidence + ' - none reaches ' + MIN_LISTING_WIDTH + ' px width (curate the listing set)'
+        : shotEvidence));
 
   const manifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'manifest.json'), 'utf8'));
+  const live = liveTestSummary(rootDir, manifest.version);
+  const c6Title = 'live test protocol for version ' + manifest.version + ' (Thunderbird 140 ESR)';
+  if (!live.present) {
+    add('C6', c6Title, 'fail', 'no docs/live_test_' + manifest.version + '.md and no docs/live_test_protocol.md');
+  } else if (!live.filled) {
+    add('C6', c6Title, 'fail',
+      live.source + ' has not been filled in yet (no result in the "Summe" line)');
+  } else if (live.failCount > 0) {
+    add('C6', c6Title, 'fail', live.failCount + ' documented FAIL entries in ' + live.source);
+  } else if (live.okCount < 10) {
+    add('C6', c6Title, 'fail',
+      'only ' + live.okCount + ' OK entries recorded in ' + live.source + ' (at least 10 expected)');
+  } else {
+    add('C6', c6Title, 'pass', live.okCount + ' OK entries, no FAIL (source: ' + live.source + ')');
+  }
+
   const tag = tagLookup(manifest.version);
   const title = 'release for version ' + manifest.version + ' matches the package content';
   if (tag && tag.exists && (tag.atHead || (tag.changedArtifacts || []).length === 0)) {
@@ -163,4 +199,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { evaluateGate, hasScreenshots, liveTestSummary, releaseTagState, runCommand };
+module.exports = { evaluateGate, hasScreenshots, liveTestSummary, releaseTagState, runCommand, isArtifactRelevant };

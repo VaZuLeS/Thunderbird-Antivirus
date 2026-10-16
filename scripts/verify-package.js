@@ -217,4 +217,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { ALLOWED_FILES, REQUIRED_FILES, FORBIDDEN, selectArtifact };
+module.exports = { ALLOWED_FILES, ALLOWED_PREFIXES, REQUIRED_FILES, FORBIDDEN, selectArtifact };

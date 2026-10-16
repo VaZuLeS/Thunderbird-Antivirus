@@ -282,8 +282,8 @@ function runChecks(rootDir) {
   if (!fs.existsSync(privacyPolicy)) fail('docs/privacy_policy.md is missing');
   else ok('privacy policy document present');
 
-  const screenshots = collectFiles(rootDir, 'docs').filter((file) => /\.(png|jpe?g)$/i.test(file));
-  if (screenshots.length === 0) warn('no PNG/JPEG screenshots found in docs/ (the store listing needs real screenshots)');
+  const screenshots = require('./screenshot-inventory.js').collectScreenshots(rootDir);
+  if (screenshots.length === 0) warn('no PNG/JPEG screenshots found in docs/screenshots/ (the store listing needs real screenshots)');
   else ok('store screenshots found (' + screenshots.length + ')');
 
   const linkingFiles = ['docs/index.html', 'docs/index_en.html', 'docs/index_de.html'];
