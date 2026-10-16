@@ -1,5 +1,26 @@
 # Store-Readiness-Gate: GO und Release v1.23.0 — 16. Oktober 2026
 
+# Runde 2: Plan vollständig abgearbeitet (A-24 bis A-26) — 16. Oktober 2026
+
+Der Aufgabenplan ist damit **vollständig abgearbeitet**: Alle nicht-✋-Aufgaben sind erledigt, das
+GO bleibt bestehen (`npm run goal`, Exit 0, C1–C7 PASS nach den Runde-2-Änderungen). Neu:
+
+- **A-24 Review-Rücklauf:** Prozess [atn_review_process.md](atn_review_process.md) (SOP, Fristen,
+  Version-bump-Eskalation) und Issue-Vorlage
+  [`.github/ISSUE_TEMPLATE/atn_review_feedback.md`](../.github/ISSUE_TEMPLATE/atn_review_feedback.md)
+  (Label `atn-review`, neue Befunde fortlaufend ab B6).
+- **A-25 Enterprise-Fahrplan:** [AUFGABENPLAN_ENTERPRISE_N06.md](AUFGABENPLAN_ENTERPRISE_N06.md) mit
+  derselben G0–G6-Struktur; 19 EN-Tasks mit Traceability zu N01–N18 (≈ 150 h, davon ≈ 146 h ✋ —
+  reale Cloud-/IdP-/Flottenzugänge), blockiert die ATN-Einreichung nicht.
+- **A-26 Support-Kanal:** [support_faq.md](support_faq.md) (Kanäle, FAQ, Signaturprüfung über
+  `SHA256SUMS.txt`, ehrliche Grenzen); verlinkt aus [store_listing.md](store_listing.md).
+
+Verbleibend sind ausschließlich Aufgaben, die reale Zugänge brauchen und deshalb hier nicht
+ausführbar sind: A-03/A-04/A-05 (ATN-Signierung, Einreichung, Store-URL — Maintainer-Schlüssel;
+der Secret-Zugriff ist mit diesem Token selbst nicht einsehbar), A-16 – A-21 (Windows/macOS,
+Screenreader/DPI, reale Browserübergabe, Updateverteilung, produktive N06). Deren Ausführung ist im
+Enterprise-Fahrplan (EN-00a ff.) bzw. im Store-Plan verdrahtet und startet mit den Maintainer-Zugängen.
+
 Der Submission-Gate meldet erstmals **GO**: alle Kriterien C1–C7 PASS (`npm run store-gate`, Exit 0;
 953 Tests, 0 Fehler, Lint 24 bekannte Thunderbird-Warnungen, Paket valid). Voraus gingen die
 Gate-Härtungen aus [AUFGABENPLAN_STORE_READINESS_1_23_0.md](AUFGABENPLAN_STORE_READINESS_1_23_0.md)

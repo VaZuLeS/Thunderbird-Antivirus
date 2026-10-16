@@ -9,7 +9,7 @@
 **License:** GNU GPL v3 (`GPL-3.0-only`)
 **Homepage:** https://vazules.github.io/Thunderbird-Antivirus/
 **Privacy policy URL:** https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
-**Support:** bludau.it.services@gmail.com
+**Support:** bludau.it.services@gmail.com · [Support & FAQ](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/docs/support_faq.md)
 **Repository / Releases:** https://github.com/VaZuLeS/Thunderbird-Antivirus
 **Store status:** not submitted to the Thunderbird Add-ons Store yet — there is no store URL.
 
@@ -161,6 +161,7 @@ zeigt die Banner an.
 | Category | **Privacy and Security** (ATN category slug `privacy-and-security`; source: https://addons.thunderbird.net/api/v4/addons/categories/) |
 | License | GNU GPL v3 (`GPL-3.0-only`; `LICENSE` in the repository) |
 | Support email | bludau.it.services@gmail.com |
+| Support page | https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/docs/support_faq.md |
 | Homepage | https://vazules.github.io/Thunderbird-Antivirus/ |
 | Privacy policy URL | https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html |
 | Source code | https://github.com/VaZuLeS/Thunderbird-Antivirus |

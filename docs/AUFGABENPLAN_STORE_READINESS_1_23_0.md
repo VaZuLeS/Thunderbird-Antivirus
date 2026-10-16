@@ -186,7 +186,9 @@ Release https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0 (�
 | A-16 – A-21 | **offen ✋** | Windows, macOS, Screenreader/DPI, Browserübergabe, Updateverteilung, produktive N06 — brauchen reale Umgebungen |
 | A-22 | **erledigt** | D12–D14 in [decisions.md](decisions.md), Kopf auf „Thundy AV“ ohne Alt-Version |
 | A-23 | **erledigt** | Versions-Grep: `store_listing.md`/`store_assets.md` nennen 1.23.0; verbleibende 1.6.x-Referenzen nur in als historisch markierten Snapshots (STATUS §„Stand: 1. Oktober 2026“) |
-| A-24 – A-26 | **offen (nach GO)** | Review-Rücklauf, Enterprise-Fahrplan, Support-Kanal — bewusst nach der Einreichung |
+| A-24 | **erledigt** | Review-Rücklauf-Prozess: [atn_review_process.md](atn_review_process.md) (SOP, Fristen, Eskalation) + Issue-Vorlage `.github/ISSUE_TEMPLATE/atn_review_feedback.md` mit Label `atn-review` |
+| A-25 | **erledigt** | Enterprise-Fahrplan: [AUFGABENPLAN_ENTERPRISE_N06.md](AUFGABENPLAN_ENTERPRISE_N06.md) (G0–G6, Traceability zu N01–N18, 19 EN-Tasks, ≈ 150 h davon ≈ 146 h ✋) |
+| A-26 | **erledigt** | Support-Kanal: [support_faq.md](support_faq.md) (Kanäle inkl. Signaturprüfung über `SHA256SUMS.txt`, FAQ, Grenzen); verlinkt aus [store_listing.md](store_listing.md) |
 
 **Verbleibende Blocker bis zur Store-Listung:** ausschließlich A-03/A-04 (Signierung + Einreichung,
 ✋ Maintainer-Schlüssel) und danach A-05 (Store-URL). Alle automatisierbaren Kriterien sind PASS.
