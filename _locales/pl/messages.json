@@ -1405,5 +1405,51 @@
   },
   "auditVerdictAtDecision": {
     "message": "Wynik w chwili decyzji"
+  },
+  "ui_169": {
+    "message": "Protokół analizy: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Identyfikator zadania: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Identyfikator przesłania: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokół pobrany: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " Analiza nadal trwa (IN_PROGRESS). Wynik jest automatycznie ponownie sprawdzany co $P1$ sekund (próba $P2$); ukończony protokół analizy pojawi się tutaj bez ponownego zapytania, gdy tylko zostanie zapisany.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
   }
 }

@@ -274,3 +274,43 @@ Thunderbird 140 ESR (C6). Beide bleiben als manuelle Schritte dokumentiert.
 (`gh api repos/…/releases/latest` → `v1.6.2`), damit ist Befund R-6 ohne destruktive Eingriffe gelöst.
 
 
+
+## 13. Runde 3 — Funktionsanalyse Hybrid-Analysis-Strang und Analyse-Protokoll (2026-10-16)
+
+**Anlass:** Nutzermeldung „Der Hybrid-Analyse-Strang scheint kein Analyse-Protokoll zurückzuliefern“.
+**Bezug:** Quellstand 1.23.0; ergänzt Phasen 1–4 um den Themenbereich *Analyse-Funktionalität* und
+*Analyse-Protokoll*. Alle Befunde sind statisch am Quelltext und über Testsuite-Läufe belegt.
+
+### Befunde
+
+| ID | Schwere | Befund | Beleg |
+|---|---|---|---|
+| FA-1 | **P1** | Ein im Hintergrund hochgeladenes Element (`state UPLOADED`) wird im Popup genau **einmal** via `overview/{sha256}` abgefragt. Liefert die API `state IN_PROGRESS`, bleibt es bei „Bitte versuchen Sie es später erneut“ — es gibt **kein Polling**: das fertige Analyse-Protokoll wird dem Nutzer nie zugestellt, solange das Popup offen ist; nach dem Schließen ist der Zustand verloren. | `api.js` `renderInProgressStatus()`/`renderReport()` (IN_PROGRESS-Zweig); kein `setInterval`/Polling im gesamten `api.js` (vor dem Fix) |
+| FA-2 | **P2** | `hybrid_submission_id` und `hybrid_job_id` werden beim Upload gespeichert, aber **nirgends gelesen oder angezeigt** — das Analyse-Protokoll ist ohne Job-/Submission-ID nicht nachvollziehbar (keine Traceability zum Provider-Vorgang). | `background.js:946–947`, `background.js:1504–1505`, `background.js:1562–1563` (nur Schreibzugriffe); kein Lesezugriff in `api.js` |
+| FA-3 | **P1** | Das abgerufene Protokoll (`json_data`) wird **nicht persistiert**. Nach dem Schließen des Popups enthält der IndexedDB-Datensatz nur Upload-Status (`UPLOADED`/`UNKNOWN`), nicht das fertige Ergebnis — ein erneutes Öffnen fragt erneut nach (und nach 15-minütigem `ExpiringMap`-Cache-Verfall erneut die API) statt das fertige Protokoll offline zu zeigen. | `api.js` `get_hybrid_report_by_sha256()`/`render_hybrid_report_ui()` (vor dem Fix kein Schreibzugriff auf den Store); `db.js` Store `hybridanalysis` |
+
+### Aufgaben
+
+| ID | Aufgabe | Befund | DoD (Nachweis) | Aufwand | Status |
+|---|---|---|---|---|---|
+| FA-A1 | **Automatisches Polling für laufende Analysen:** `get_hybrid_report_by_sha256()` plant bei `state IN_PROGRESS` begrenzte Wiederholungen (`HYBRID_REPORT_POLL_MAX_ATTEMPTS = 3`, 5 s Abstand), löscht vor jedem Poll den SHA-Cache und ersetzt die `IN_PROGRESS`-Karte durch das fertige Protokoll; UI-Hinweis nennt das automatische Nachfragen (Schlüssel `ui_173`, alle sechs Sprachen). | FA-1 | Unit-Tests: Poll wird geplant, Cache vor Wiederholung gelöscht, Abbruch nach Versuchslimit; Kataloge EN/DE/FR/ES/IT/PL konsistent | 0,5 d | **erledigt** |
+| FA-A2 | **Analyse-Protokoll-Metadaten rendern:** neuer Block „Analyse-Protokoll“ in jeder Ergebniskarte mit Job-ID, Submission-ID, SHA-256 und Abrufzeitpunkt (Schlüssel `ui_169`–`ui_172`, alle sechs Sprachen); Job-/Submission-IDs werden aus dem gespeicherten Datensatz an die Renderkette durchgereicht. | FA-2 | Unit-Test rendert Job-/Submission-ID; i18n-Gate prüft Kataloge | 0,25 d | **erledigt** |
+| FA-A3 | **Protokoll persistieren und offline rendern:** nach erfolgreichem Abruf wird `json_data` mit `report_fetched_at` in den Nachrichtendatensatz geschrieben (`persistHybridReport()`, nur lokal — keine Zustimmungsrelevanz, da die Daten bereits auf dem Gerät sind); beim nächsten Popup-Öffnen wird ein **fertiges** gespeichertes Protokoll ohne Provideranfrage gerendert (`hasFinalStoredReport()`, `buildStoredAttachmentReportTask()`/`buildStoredLinkReportTask()`); neue Uploads (Rescan, URL-Scan, Autoupload) invalidieren das alte Protokoll (`report = null`). | FA-3 | Unit-Tests: Persistierung schreibt Report in Attachments und Links; Offline-Render ohne Netzaufruf; `npm run check` Exit 0 | 0,5 d | **erledigt** |
+| FA-A4 | **Dokumentation:** Datenschutzerklärung §8 um die lokal gespeicherten Analyse-Protokolle ergänzt; STATUS-Eintrag mit Nachweisen. | FA-3 | Änderung in `docs/privacy_policy.md` §8; STATUS-Eintrag 2026-10-16 | 0,25 d | **erledigt** |
+| FA-A5 | ✋ **Live-Verifikation des Analyse-Protokolls in Thunderbird 140 ESR** (benötigt Hybrid-Analysis-API-Key und GUI): echter Anhang-Upload → `IN_PROGRESS`-Karte mit Polling-Hinweis → fertiges Protokoll erscheint ohne Nutzeraktion; Popup schließen und erneut öffnen → Protokoll wird **offline** angezeigt; Rescan leert das alte Protokoll und startet neu; URL-Scan entsprechend. Ergebnis in `docs/live_test_protocol.md` festhalten. | FA-1, FA-3 | Protokollabschnitt mit gemessenen Zeiten (Upload → fertiges Protokoll) und Screenshots | 0,5 d | **offen (manuell)** |
+| FA-A6 | **Funktionsanalyse der Analysepfade automatisiert absichern:** Browser-Kurzfälle (`npm run check:ui`) um die neuen Zustände erweitern — gefülltes Popup mit `IN_PROGRESS`-Karte, Polling-Übergang, Offline-Protokollkarte mit Protokollblock; Regression gegen versehentliche Netzaufrufe im Offline-Fall. | FA-1, FA-3 | `npm run check:ui` enthält die drei neuen Fälle mit Bestehen | 0,5–1 d | **offen** |
+| FA-A7 | **Review-Notes ergänzen:** `docs/reviewer_notes.md` um den Datenfluss „Overview-Abruf → lokale Protokollspeicherung → Offline-Anzeige“ erweitern (erleichtert die ATN-Review-Begutachtung des Zustimmungsmodells). | FA-2, FA-3 | Reviewer-Notes enthalten den erweiterten Datenfluss mit Dateiverweisen | 0,25 d | **offen** |
+
+### Ausführungsstand Runde 3 (2026-10-16)
+
+| ID | Status | Nachweis |
+|---|---|---|
+| FA-A1 | **erledigt** | `api.js`: `HYBRID_REPORT_POLL_MAX_ATTEMPTS`/`HYBRID_REPORT_POLL_DELAY_MS`, `scheduleHybridReportPoll()`; Tests „polls an IN_PROGRESS analysis automatically…“ und „stops polling after the attempt limit“ bestehen |
+| FA-A2 | **erledigt** | `api.js`: `renderProtocolMeta()` in `renderReport()`; Test „renders analysis protocol metadata (job and submission id)“ besteht; `ui_169`–`ui_173` in allen sechs `_locales` identisch strukturiert |
+| FA-A3 | **erledigt** | `api.js`: `persistHybridReport()`, `hasFinalStoredReport()`, Task-Builder, IIFE-Verzweigungen; `background.js`: Protokoll-Invalidierung bei neuen Uploads (3 Stellen); Tests „persists the finished protocol…“ und „renders a stored protocol offline…“ bestehen |
+| FA-A4 | **erledigt** | `docs/privacy_policy.md` §8 ergänzt; STATUS-Eintrag 2026-10-16 |
+| Gesamt | — | `npm run check` → **Exit 0**, **954 Tests bestanden** (vorher 949; +5 neue Protokoll-Tests), 0 Lint-Fehler, Paketprüfung gültig |
+
+**Offen in dieser Runde:** FA-A5 (✋ manuell, Hybrid-Analysis-API-Key + Thunderbird-GUI), FA-A6,
+FA-A7; zusätzlich unverändert die Gate-Kriterien C5 (echte PNG-Screenshots in `docs/screenshots/`),
+C6 (ausgefülltes Live-Test-Protokoll) und C7 (Git-Tag `v1.23.0`).

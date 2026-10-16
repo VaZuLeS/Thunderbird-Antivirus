@@ -1408,5 +1408,51 @@
   },
   "auditVerdictAtDecision": {
     "message": "Ergebnis bei Entscheidung"
+  },
+  "ui_169": {
+    "message": "Analyse-Protokoll: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Job-ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Submission-ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokoll abgerufen: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " Die Analyse läuft noch (IN_PROGRESS). Das Ergebnis wird automatisch alle $P1$ Sekunden erneut abgefragt (Versuch $P2$); das fertige Analyse-Protokoll erscheint hier, sobald es gespeichert ist, ohne erneute Abfrage.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
   }
 }

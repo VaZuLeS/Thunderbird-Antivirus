@@ -1,3 +1,17 @@
+# Hybrid-Analysis-Strang: Analyse-Protokoll zustellen — 16. Oktober 2026
+
+Nutzermeldung „kein Analyse-Protokoll“ nachvollzogen und am Quellstand 1.23.0 behoben: Der Popup-Report
+fragte die Hybrid-Analysis-Overview genau einmal ab und verharrte bei `IN_PROGRESS` ohne Polling
+(FA-1); Job-/Submission-IDs wurden gespeichert, aber nie angezeigt (FA-2); das abgerufene Protokoll
+wurde nicht persistiert, sodass es nach dem Schließen des Popups verloren war (FA-3). Neu: begrenztes
+automatisches Polling (3 Versuche, 5 s) mit Karte-Ersetzung, Protokollblock mit Job-/Submission-ID/
+SHA-256/Abrufzeitpunkt, lokale Persistierung des fertigen Protokolls mit Offline-Anzeige beim
+nächsten Öffnen sowie Protokollinvalidierung bei Rescan/URL-Scan/Autoupload. Datenschutzerklärung
+§8 dokumentiert die lokale Protokollspeicherung. Sechs neue UI-Schlüssel (`ui_169`–`ui_173`) in
+EN/DE/FR/ES/IT/PL. `npm run check` → Exit 0 mit **954 bestandenen Tests** (+5); Befunde und Aufgaben
+FA-1…FA-3 / FA-A1…FA-A7 in [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13.
+Live-Verifikation mit realem API-Key, Browser-Kurzfälle und Reviewer-Notes bleiben offen.
+
 # Prozessabbruch-Wiederherstellung und aktuelles Audit — 15. Oktober 2026
 
 Der reale Thunderbird-Prüflauf ist um erzwungene Prozessabbrüche nach bestätigten Daten und bei offenem Linkdialog erweitert. Gespeicherte Entscheidungen bleiben erhalten; offene Vorgänge bleiben `PENDING`, ohne erfundene Entscheidung oder erneute OS-Zustellung. Eine neue Entscheidung funktioniert anschließend. Die dabei gefundene veraltete Auditansicht lädt bei Rückkehr in den Tab neu und erhält Filter, offene Nachweise und Fokus; überholte Antworten werden verworfen. [Prüfweg, Originalnachweise und Grenzen](THUNDERBIRD_LINUX_ABNAHME.md#wiederherstellung-nach-erzwungenem-prozessabbruch). Vorbereitete Version 1.23.0; keine neue getaggte Veröffentlichung.

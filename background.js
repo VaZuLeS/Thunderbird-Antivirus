@@ -950,6 +950,10 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         state: result.hybrid_data.state,
         partName: result.hybrid_data.partName,
         virustotal_stats: result.virustotal_stats,
+        // A new submission invalidates any previously persisted analysis
+        // protocol (FA-3); the popup re-fetches and re-persists the report.
+        report: null,
+        report_fetched_at: null,
         created: new Date()
       }));
 
@@ -1505,6 +1509,8 @@ async function handleUrlScan(url, headerMessageId) {
                         existingRecord.links[linkIndex].hybrid_job_id = json_data.job_id;
                         existingRecord.links[linkIndex].hybrid_sha256 = json_data.sha256;
                         existingRecord.links[linkIndex].state = 'UPLOADED';
+                        existingRecord.links[linkIndex].report = null;
+                        existingRecord.links[linkIndex].report_fetched_at = null;
                     }
                 }
                 return existingRecord;
@@ -1562,6 +1568,8 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
                         existingRecord.attachments[attIndex].hybrid_submission_id = json_data.submission_id;
                         existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id;
                         existingRecord.attachments[attIndex].state = 'UPLOADED';
+                        existingRecord.attachments[attIndex].report = null;
+                        existingRecord.attachments[attIndex].report_fetched_at = null;
                     }
                 }
                 return existingRecord;
