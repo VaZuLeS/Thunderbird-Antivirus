@@ -1,4 +1,4 @@
-# Entscheidungen des Store-Readiness-Arbeitslaufs (Thundy AV 1.6)
+# Entscheidungen des Store-Readiness-Arbeitslaufs (Thundy AV)
 
 **Bezug:** [PROBLEMANALYSE_STORE_READINESS.md](PROBLEMANALYSE_STORE_READINESS.md) ·
 [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md)
@@ -185,3 +185,35 @@ Merge erreichbar.
 **Nicht Bestandteil dieses Releases:** ATN-Upload/Signierung (benötigt die ATN-API-Schlüssel des
 Maintainers), echte Screenshots und der Live-Test in Thunderbird 140 ESR.
 
+
+## D12 — Release-Scope 1.23.0 (E-01)
+**Bezug:** B1 (Problemanalyse 1.23.0) · **Aufgabe:** A-01, A-02 (Plan 1.23.0)
+
+Der Quellstand 1.23.0 (Basis `f9f1e95`, `CHANGELOG.md` §1.23.0) ist der Einreichungskandidat:
+`npm run check` ist vollständig grün (949 Tests), die reale Thunderbird-140.17-ESR-Teilabnahme ist
+dokumentiert ([live_test_1_23_0.md](live_test_1_23_0.md)). Vor dem Tag werden nur gate-relevante
+Skript-/Doku-Änderungen erlaubt (keine Änderungen an paketierten Dateien); danach wird `v1.23.0`
+auf den freigegebenen Commit gesetzt und als GitHub-Release mit XPI-Artefakt veröffentlicht.
+Keine weiteren Features vor dem Tag.
+
+## D13 — Gate-Artefakte für C6 (E-03, A-11)
+**Bezug:** B5 (Problemanalyse 1.23.0) · **Aufgabe:** A-11, A-14 (Plan 1.23.0)
+
+Kriterium C6 des Submission-Gates liest primär `docs/live_test_<version>.md` (Punkte im Dateinamen
+werden zu Unterstrichen, Repo-Konvention `live_test_1_23_0.md`) und fällt auf das
+`docs/live_test_protocol.md` der 1.6-Ära zurück. Normatives Artefakt ist damit die
+versionsspezifische Protokollserie; [THUNDERBIRD_LINUX_ABNAHME.md](THUNDERBIRD_LINUX_ABNAHME.md)
+und die JSON-Berichte unter `docs/audits/` bleiben die Rohbelege, aus denen die
+Summenzeile (25 OK / 0 FAIL / 5 OFFEN) Zeile für Zeile zitiert. Ein Protokoll gilt als ausgefüllt,
+wenn die Summenzeile keine Platzhalter (`__`) enthält, 0 FAIL und mindestens 10 OK zählt.
+
+## D14 — Screenshot-Regel für C5 (E-02, A-10)
+**Bezug:** B3, B4, M2 (Problemanalyse 1.23.0) · **Aufgabe:** A-06, A-07, A-10 (Plan 1.23.0)
+
+C5 zählt echte PNG/JPEG-Aufnahmen **rekursiv** unter `docs/screenshots/` und verlangt mindestens
+eine Aufnahme mit **≥ 1200 px Breite** (dokumentierte Regel aus STATUS „Remaining“; 1280 × 800 bleibt
+Empfehlung). Die Zähllogik liegt ausschließlich in `scripts/screenshot-inventory.js` und wird von
+Pre-Submit-Check und Gate geteilt, damit beide dieselben Zahlen melden (M2). Die drei SVG-Platzhalter
+sind entfernt (A-06). Das Listing-Set wird per Motiv-Zuordnung in [store_assets.md](store_assets.md)
+§3 kuratiert; fehlende Banner-Motive bleiben offen ✋ und blockieren C5 nicht, weil echte Aufnahmen
+mit ausreichender Breite bereits vorliegen.

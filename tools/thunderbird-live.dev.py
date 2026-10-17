@@ -126,7 +126,7 @@ def native_click(display, x, y):
         x11.XCloseDisplay(connection)
 
 
-def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, permanent=False, audit_only=False):
+def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, permanent=False, audit_only=False, banner_root_shot=False):
     with zipfile.ZipFile(xpi) as package:
         manifest = json.loads(package.read('manifest.json'))
         catalogs = {lang: json.loads(package.read('_locales/' + lang + '/messages.json'))
@@ -216,6 +216,24 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
     wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
     m.screenshot(out / 'message.png')
+    if banner_root_shot:
+        def banner_probe():
+            return m.page('''const o=document.getElementById("thundy-optin-banner");
+                const t=document.getElementById("thundy-threat-banner");
+                const r={optin:null,threat:null};
+                if(o){const b=o.querySelectorAll("button");
+                    r.optin={text:o.innerText,buttons:b.length,
+                        labels:Array.from(b).map(x=>x.textContent)};}
+                if(t){r.threat={text:t.innerText};}
+                return (o||t)?r:null;''')
+        state = wait_for(banner_probe, 60)
+        report['bannerProbe'] = state
+        if state.get('optin') and state['optin'].get('buttons') in (2, 3) and 'Thundy AV' in state['optin'].get('text', ''):
+            subprocess.run(['import', '-window', 'root', str(out / 'optin-banner.png')],
+                           env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
+        if state.get('threat'):
+            subprocess.run(['import', '-window', 'root', str(out / 'threat-banner.png')],
+                           env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
     m.page('document.querySelector("a[href^=https]").click();')
     dialog = wait_for(lambda: m.page('''const p=document.getElementById("thundy-link-dialog");
         const r=p?.shadowRoot;if(r?.querySelectorAll("footer button").length!==2)return null;
@@ -519,6 +537,8 @@ def main():
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
     parser.add_argument('--langpack', type=Path)
     parser.add_argument('--out', type=Path, default=ROOT / '.audit/thunderbird-live')
+    parser.add_argument('--banner-root-shot', action='store_true',
+                        help='verify the opt-in banner (2 buttons) and capture an X11 root screenshot of the message view')
     args = parser.parse_args()
     if not __debug__:
         parser.error("Run without Python optimization so assertions remain enabled")
@@ -644,7 +664,7 @@ def main():
                 if args.restart_check:
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
-                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi)
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, banner_root_shot=args.banner_root_shot)
             except Exception:
                 try:
                     m.screenshot(out / 'failure.png')

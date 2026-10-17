@@ -1,3 +1,62 @@
+# Store-Readiness-Gate: GO und Release v1.23.0 — 16. Oktober 2026
+
+# Runde 2: Plan vollständig abgearbeitet (A-24 bis A-26) — 16. Oktober 2026
+
+Der Aufgabenplan ist damit **vollständig abgearbeitet**: Alle nicht-✋-Aufgaben sind erledigt, das
+GO bleibt bestehen (`npm run goal`, Exit 0, C1–C7 PASS nach den Runde-2-Änderungen). Neu:
+
+- **A-24 Review-Rücklauf:** Prozess [atn_review_process.md](atn_review_process.md) (SOP, Fristen,
+  Version-bump-Eskalation) und Issue-Vorlage
+  [`.github/ISSUE_TEMPLATE/atn_review_feedback.md`](../.github/ISSUE_TEMPLATE/atn_review_feedback.md)
+  (Label `atn-review`, neue Befunde fortlaufend ab B6).
+- **A-25 Enterprise-Fahrplan:** [AUFGABENPLAN_ENTERPRISE_N06.md](AUFGABENPLAN_ENTERPRISE_N06.md) mit
+  derselben G0–G6-Struktur; 19 EN-Tasks mit Traceability zu N01–N18 (≈ 150 h, davon ≈ 146 h ✋ —
+  reale Cloud-/IdP-/Flottenzugänge), blockiert die ATN-Einreichung nicht.
+- **A-26 Support-Kanal:** [support_faq.md](support_faq.md) (Kanäle, FAQ, Signaturprüfung über
+  `SHA256SUMS.txt`, ehrliche Grenzen); verlinkt aus [store_listing.md](store_listing.md).
+- **Intelligente Abarbeitung der offenen Punkte:** Thunderbird 140.17.0 ESR wurde ohne Root in
+  dieser Umgebung lauffähig gemacht (lokales DEB-Prefix + Mozilla-Tarball, gepatchte Xvfb-Pfade)
+  und die **komplette reale Live-Abnahme hier wiederholt** — `passed: true` in einer zweiten
+  Umgebung ([audits/thunderbird-140-repeat.json](audits/thunderbird-140-repeat.json)). Damit war
+  erstmals der Opt-in-Banner programmatisch verifizierbar und als echte Listing-Aufnahme fangbar
+  ([optin-banner.png](screenshots/thunderbird-linux/optin-banner.png), 1280 × 1000) —
+  Store-Asset-Motiv 6 geschlossen; nur das Threat-Banner-Motiv (braucht einen Scan mit Warnbefund)
+  bleibt offen ✋. Runner-Flag `--banner-root-shot` (Standard aus, CI unverändert).
+
+Verbleibend sind ausschließlich Aufgaben, die reale Zugänge brauchen und deshalb hier nicht
+ausführbar sind: A-03/A-04/A-05 (ATN-Signierung, Einreichung, Store-URL — Maintainer-Schlüssel;
+der Secret-Zugriff ist mit diesem Token selbst nicht einsehbar), A-16 – A-21 (Windows/macOS,
+Screenreader/DPI, reale Browserübergabe, Updateverteilung, produktive N06). Deren Ausführung ist im
+Enterprise-Fahrplan (EN-00a ff.) bzw. im Store-Plan verdrahtet und startet mit den Maintainer-Zugängen.
+
+Der Submission-Gate meldet erstmals **GO**: alle Kriterien C1–C7 PASS (`npm run store-gate`, Exit 0;
+953 Tests, 0 Fehler, Lint 24 bekannte Thunderbird-Warnungen, Paket valid). Voraus gingen die
+Gate-Härtungen aus [AUFGABENPLAN_STORE_READINESS_1_23_0.md](AUFGABENPLAN_STORE_READINESS_1_23_0.md)
+(C5 rekursive Screenshotprüfung mit Mindestbreite über [screenshot-inventory.js](../scripts/screenshot-inventory.js),
+C6 versionsspezifisches [live_test_1_23_0.md](live_test_1_23_0.md), C7 artefaktrelevant aus der
+Paketliste statt handgepflegtem Muster; Entscheidungen D12–D14 in [decisions.md](decisions.md)).
+Tag `v1.23.0` auf Commit `df63c76`; Release
+https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0 (kein Pre-Release, „Latest“)
+mit Asset `thundy-av-1.23.0.xpi`, 218.405 Bytes, SHA-256
+`00ab882d7e90bda5b97850b6076afda9b9403f75ee1b593f97782830cd3e6234`; heruntergeladenes Asset ist
+byte-identisch mit dem geprüften Build. Das SVG-Platzhalter-Set in `docs/screenshots/` wurde entfernt;
+das Listing-Set ist je Motiv in [store_assets.md](store_assets.md) §3 kuratiert (Banner-Motive bleiben
+offen ✋). Weiterhin offen: ATN-Signierung und Einreichung (Maintainer-Schlüssel), Windows/macOS,
+Screenreader/DPI, reale Browserübergabe, automatische Updateverteilung und produktive N06-Nachweise.
+
+Nachbereitung der Runde: Der manuelle Release-Weg lief dem Tag-Push-Workflow (`release.yml`) auf
+`v1.23.0` zu und ließ den Lauf im Schritt „gh release create“ scheitern („a release with the same
+tag name already exists“). Der Release wurde mit workflow-identischen Inhalten wiederhergestellt
+(Notizen aus `docs/releases/1.23.0.md`, XPI + `SHA256SUMS.txt`); neuer Asset-Hash
+`00ab882d7e90bda5b97850b6076afda9b9403f75ee1b593f97782830cd3e6234` (Build nicht byte-reproduzierbar,
+der Hash gilt für dieses Artefakt und die angehängte Summendatei; heruntergeladenes Asset ist
+byte-identisch). Der Veröffentlichungsschritt des Workflows ist jetzt idempotent
+(create → upload --clobber). Die GO-Funktion ist dauerhaft als `npm run goal` in die
+übernahmefähigen Workflow-Definitionen (`docs/ci/`) verdrahtet — volle Messung in `ci.yml` nach dem
+Paketschritt, Schranke vor `web-ext sign` im ATN-Signier-Workflow und GO-Pflicht vor dem Publish
+in `release-publish.yml`; die Aktivierung der Spiegel braucht ein Token mit `workflows`-Berechtigung.
+Details: [Aufgabenplan §12](AUFGABENPLAN_STORE_READINESS_1_23_0.md).
+
 # Prozessabbruch-Wiederherstellung und aktuelles Audit — 15. Oktober 2026
 
 Der reale Thunderbird-Prüflauf ist um erzwungene Prozessabbrüche nach bestätigten Daten und bei offenem Linkdialog erweitert. Gespeicherte Entscheidungen bleiben erhalten; offene Vorgänge bleiben `PENDING`, ohne erfundene Entscheidung oder erneute OS-Zustellung. Eine neue Entscheidung funktioniert anschließend. Die dabei gefundene veraltete Auditansicht lädt bei Rückkehr in den Tab neu und erhält Filter, offene Nachweise und Fokus; überholte Antworten werden verworfen. [Prüfweg, Originalnachweise und Grenzen](THUNDERBIRD_LINUX_ABNAHME.md#wiederherstellung-nach-erzwungenem-prozessabbruch). Vorbereitete Version 1.23.0; keine neue getaggte Veröffentlichung.

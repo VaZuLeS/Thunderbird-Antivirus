@@ -1,15 +1,15 @@
-> Update für den Entwicklungskandidaten 1.19.0: vollständige UI-Sprachen EN/DE/FR/ES/IT/PL; lokale Prüfungen ohne API-Schlüssel; externe Analysen nur mit Zustimmung und Nachrichten-/Absenderfreigabe. Diese Angaben sind für die nächste Einreichung vorbereitet. Der Kandidat wurde noch nicht eingereicht; historische Angaben zu 1.6.2 unten bleiben Release-Referenzen.
+> Update für den Entwicklungskandidaten 1.23.0 (Quellstand `f9f1e95`): alle UI-Oberflächen in EN/DE/FR/ES/IT/PL, lokaler Linkschutz mit Zeit-Punkt-Protokoll, Einrichtungsassistent, reale Thunderbird-140.17-ESR-Teilabnahme ([live_test_1_23_0.md](live_test_1_23_0.md)), Release v1.23.0 mit XPI-Artefakt. Diese Angaben sind für die nächste Einreichung vorbereitet. Der Kandidat wurde noch nicht eingereicht; historische Angaben zu 1.6.x unten bleiben Release-Referenzen.
 
 # Store-Listing — Thundy AV (final copy package)
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird
 **Short name:** Thundy AV
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.6 (Manifest V3, `strict_min_version` 140.0)
+**Version:** 1.23.0 (Manifest V3, `strict_min_version` 140.0)
 **License:** GNU GPL v3 (`GPL-3.0-only`)
 **Homepage:** https://vazules.github.io/Thunderbird-Antivirus/
 **Privacy policy URL:** https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html
-**Support:** bludau.it.services@gmail.com
+**Support:** bludau.it.services@gmail.com · [Support & FAQ](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/docs/support_faq.md)
 **Repository / Releases:** https://github.com/VaZuLeS/Thunderbird-Antivirus
 **Store status:** not submitted to the Thunderbird Add-ons Store yet — there is no store URL.
 
@@ -157,17 +157,42 @@ zeigt die Banner an.
 | Title | Thundy AV – Email Scanner for Thunderbird |
 | Short name | Thundy AV |
 | Add-on ID | thundy-av@bludau-it-services.de |
-| Version | 1.6 |
+| Version | 1.23.0 |
 | Category | **Privacy and Security** (ATN category slug `privacy-and-security`; source: https://addons.thunderbird.net/api/v4/addons/categories/) |
 | License | GNU GPL v3 (`GPL-3.0-only`; `LICENSE` in the repository) |
 | Support email | bludau.it.services@gmail.com |
+| Support page | https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/docs/support_faq.md |
 | Homepage | https://vazules.github.io/Thunderbird-Antivirus/ |
 | Privacy policy URL | https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html |
 | Source code | https://github.com/VaZuLeS/Thunderbird-Antivirus |
 | Compatibility | Thunderbird 140 ESR and newer (`strict_min_version: "140.0"`) |
-| Language of the user interface | Options page and popup: German. Manifest strings and banners: localized (English, German – `_locales/`), `default_locale: en`. |
+| Language of the user interface | Fully localized in English, German, French, Spanish, Italian and Polish (`_locales/`, `default_locale: en`); verified in real Thunderbird profiles ([live_test_1_23_0.md](live_test_1_23_0.md)). |
 
 ## 6. Release notes
+
+### 1.23.0 – 2026-10-15 (submission candidate)
+
+Release notes for the ATN version dialog (Markdown as accepted there):
+
+- **Setup wizard:** a dedicated first-run wizard guides you through welcome, link protection/local
+  audit and optional provider configuration in EN/DE/FR/ES/IT/PL; updates never reopen it and your
+  API keys, consent, sender approvals and logs are preserved.
+- **Shared design system:** one design contract and generated component CSS across the add-on and
+  all offline admin renderers, with document-local theme/accent/density controls.
+- **Native theming:** follow Thunderbird's light/dark theme or choose light/dark plus four accent
+  palettes, saved independently and applied to the wizard, scanner, local tools and the isolated
+  message security UI; native popup colors are read with the `theme` permission and fall back safely.
+- **Redesigned settings** with section navigation, clearer form groups and a persistent save action.
+- **Audit view:** historical verdicts/providers stay separate from later checks, verdict labels are
+  localized in all six languages, and raw export evidence is preserved; the view reloads when it
+  becomes visible so stale data is never shown after a crash.
+- **Link dialog:** keyboard focus stays inside the modal during the asynchronous browser handoff and
+  the retry action is restored when opening fails.
+- **Accessibility:** reproducible six-language browser/axe CI; fixed main landmarks, inline-link
+  identification, scroll-region keyboard focus and audit-dialog naming.
+- **Verified in a real Thunderbird 140.17.0 ESR GUI:** first install, six wizard languages, link
+  dialog, native popup, persistent upgrades from 1.22.0 with clean restarts and recovery after
+  forced process kills ([live test](live_test_1_23_0.md)).
 
 ### 1.6.2 – 2026-10-01 (store-readiness release)
 
@@ -225,9 +250,9 @@ Current licensing (14 October 2026): use GNU GPL version 3 only for the current 
 
 | Item | Status |
 |---|---|
-| Real screenshots (PNG; recommended 1280 × 800 / 1.6:1 — a recommendation, not a store requirement) | **open** — only SVG placeholders exist (`docs/store_assets.md`) |
+| Real screenshots (PNG; recommended 1280 × 800 — a recommendation, not a store requirement) | **partially done** — 23 real captures exist (`docs/screenshots/`, 10 with ≥ 1200 px width, incl. real Thunderbird runs); the two banner motifs are still open ([store_assets.md](store_assets.md) §3/§6) |
 | Icons in usable resolutions (16/32/48/64/128 px, shield motif) | done — reproducibly generated by `node scripts/generate-icons.js`, dimensions verified by the pre-submit checks |
-| Manifest metadata (name, ID, version 1.6.2, `strict_min_version`, MIT at that release, `menus`) | done |
+| Manifest metadata (name, ID, version 1.23.0, `strict_min_version` 140.0, GPL-3.0-only, `menus`, data-collection declaration) | done |
 | Data-collection declaration (`required: ["none"]`, optional `personalCommunications`; `optional_permissions: ["sensitiveDataUpload"]`) | done (`manifest.json`) |
 | Consent model documented | done (see note below) |
 | Privacy policy publicly reachable | done — https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html |
@@ -237,7 +262,7 @@ Current licensing (14 October 2026): use GNU GPL version 3 only for the current 
 | Unit tests (`npm test`) | complete suite as defined in `package.json`; run it for the current commit |
 | Pre-submit checks / lint / package verification | done — `npm run check` (pre-submit checks + tests + lint filter + build + package verification) |
 | Submission gate | available — `npm run store-gate` (submission gate added by the maintainer) |
-| Manual verification of the banner injection in Thunderbird 140 ESR | **open** |
+| Manual verification in Thunderbird 140 ESR | **partially done** — real Linux partial acceptance including banner injection, link dialog and popup ([live_test_1_23_0.md](live_test_1_23_0.md)); Windows/macOS remain open |
 | Signed XPI / submission to the Thunderbird Add-ons Store | **open** — not submitted, no signed release artifact, no store URL |
 
 Note: this table describes documentation, packaging and verification status only. It does not claim that

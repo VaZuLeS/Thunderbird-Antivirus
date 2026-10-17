@@ -4,6 +4,8 @@ web-ext-artifacts/
 *.log
 test_output.log
 .audit/
+.audit-tb/
+.tb-runtime/
 
 # Generated local Enterprise identities, keys, journal and exports.
 enterprise/.local/

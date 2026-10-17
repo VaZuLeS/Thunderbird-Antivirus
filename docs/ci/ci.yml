@@ -26,6 +26,9 @@ jobs:
         run: npm run lint:filtered
       - name: Build XPI and verify the package content
         run: npm run package
+      - name: Store submission gate (GO/NO-GO)
+        # Executable goal function: exit 0 only with a full GO (C1-C7).
+        run: npm run goal
       - name: Upload the built XPI as an artifact
         uses: actions/upload-artifact@v4
         with:
