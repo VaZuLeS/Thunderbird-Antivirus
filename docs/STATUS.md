@@ -39,6 +39,17 @@ Hybrid-Analysis-Schlüssel und interaktiven Zustimmungs-/Netzwerkprüfungen, u. 
 Provider-/interaktive Schritte werden im Protokoll ehrlich als `N/A` mit Begründung geführt; das Gate zählt
 OK/FAIL (≥ 10 OK, 0 FAIL). Aufgabenstand: [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §15.
 
+# Heuristik-Korpus erweitert: benigne FR/ES/IT/PL-Gegenstücke und Signalwort-Varianten — 16. Oktober 2026
+
+Erweiterung N-09 (Teil 1): `testdata/heuristics.json` von 12 auf 21 Samples. Neu sind erstmals benigne
+Gegenstücke für FR/ES/IT/PL (gewöhnliche Rechnungs-/Terminmails — Fehlalarm-Schutz über Sprachen),
+ein gemischt- EN/PL-benigner Fall und je Sprache eine Riskio-Variante mit anderem Signalwort-Muster
+(fr „Compte bloqué/immédiatement“, es „Contraseña/inmediatamente“, it “Account bloccato/
+immediatamente”, pl „Ważna/Pilnie/natychmiast“). Der Bestandstest prüft jede Zeile gegen
+`evaluateBehavior` (starke Dringlichkeit + 50 bei Erstkontakt) und besteht mit allen 21 Samples;
+`npm test` → 954 bestanden. Grenze: synthetischer Korpus, kein Nachweis realer Erkennung — Teil 2
+(reale Korpora, Schwellen-Feinjustierung) bleibt im Plan.
+
 # Runde 5: Einreichungsfokus — Doku-Drift geschlossen, nächste Aufgaben geplant — 16. Oktober 2026
 
 Deltalanalyse über alle Pläne (Store-Gate, i18n-Plan T01–T18, Enterprise): Die Qualitätsaufgaben
