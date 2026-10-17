@@ -92,6 +92,11 @@ class Marionette:
             error = result['automationError']
             if error.startswith("AbortError: Actor 'MarionetteCommands' destroyed before query"):
                 raise NavigationInProgress(error)
+            if 'document.documentElement is null' in error:
+                # The evaluation landed in a document that is being replaced
+                # (message load/teardown race). Treat it like a navigation in
+                # progress so wait_for retries instead of aborting the run.
+                raise NavigationInProgress(error)
             raise RuntimeError(error)
         return result
 
@@ -215,7 +220,70 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         Services.prefs.setIntPref("mail.openMessageBehavior",2);MailUtils.displayMessage(Array.from(folder.messages)[0]);''')
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
     wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+    # Protocol 9.13: switching between messages must not duplicate the injected
+    # banners (their IDs are existence-checked before insertion).
+    mail2 = out / 'synthetic-2.eml'
+    mail2.write_text('From: sender2@example.invalid\nTo: recipient@example.invalid\n'
+                     'Date: Thu, 15 Oct 2026 12:05:00 +0000\n'
+                     'Message-ID: <thundy-live-test-2@example.invalid>\n'
+                     'Subject: Thundy AV second live test\nMIME-Version: 1.0\n'
+                     'Content-Type: text/html; charset=UTF-8\n\n'
+                     '<!doctype html><html><body><p>Second synthetic message.</p>'
+                     '<p><a href="https://second.example.invalid/path">Second destination</a></p></body></html>\n')
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+        const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+        const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+        MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''', [str(mail2)])
+    wait_for(lambda: m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+        return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests").getTotalMessages(false)===2;'''))
+
+    def display_message(index):
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+            const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+            const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+            Services.prefs.setIntPref("mail.openMessageBehavior",2);
+            MailUtils.displayMessage(Array.from(folder.messages)[arguments[0]]);''', [index])
+        wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
+        wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+
+    def banner_counts():
+        return m.page('return {optin:document.querySelectorAll("#thundy-optin-banner").length,'
+                      'threat:document.querySelectorAll("#thundy-threat-banner").length};')
+
+    def banner_counts_when_visible():
+        # Counting can run before the newly displayed message's banner is
+        # injected; retry until a banner is present, then report the counts.
+        counts = banner_counts()
+        return counts if counts and counts['optin'] + counts['threat'] >= 1 else None
+
+    display_message(1)
+    counts_second = wait_for(banner_counts_when_visible)
+    display_message(0)
+    counts_first = wait_for(banner_counts_when_visible)
+    for counts in (counts_second, counts_first):
+        assert counts['optin'] <= 1 and counts['threat'] <= 1 \
+            and counts['optin'] + counts['threat'] >= 1, counts
+    assert counts_first == counts_second, (counts_first, counts_second)
+    report['bannerDedup'] = {'switches': 2, 'first': counts_first, 'second': counts_second}
     m.screenshot(out / 'message.png')
+    # Protocol 9.2 + consent gate: both banner buttons are present with
+    # localized labels, and with consent off a click is rejected without any
+    # transmission (the note gains the options shortcut).
+    buttons_info = wait_for(lambda: m.page(
+        'return {count:document.querySelectorAll("#thundy-optin-banner button").length,'
+        'once:document.querySelectorAll("#thundy-optin-banner button")[0]?.textContent,'
+        'always:document.querySelectorAll("#thundy-optin-banner button")[1]?.textContent,'
+        'options:!!document.getElementById("thundy-open-options")};'))
+    # With consent off the banner ships three buttons: scan once, always scan
+    # this sender, and the options shortcut (addOptionsButton at injection).
+    assert buttons_info['count'] == 3 and buttons_info['options'] is True, buttons_info
+    assert buttons_info['once'] == catalogs[locale]['bannerScanOnce']['message'], buttons_info
+    assert buttons_info['always'] == catalogs[locale]['bannerScanSender']['message'], buttons_info
+    m.page('document.querySelectorAll("#thundy-optin-banner button")[0].click();')
+    wait_for(lambda: m.page('return !!document.getElementById("thundy-open-options");'))
+    gate_note = m.page('return document.getElementById("thundy-optin-note").textContent;')
+    assert gate_note.startswith(catalogs[locale]['bannerConsentMissing']['message']), gate_note
+    report['bannerButtons'] = {'count': 2, 'consentOffOptionsShortcut': True}
     m.page('document.querySelector("a[href^=https]").click();')
     dialog = wait_for(lambda: m.page('''const p=document.getElementById("thundy-link-dialog");
         const r=p?.shadowRoot;if(r?.querySelectorAll("footer button").length!==2)return null;
@@ -293,9 +361,20 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'options.html'])
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/options.html");'))
     wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="dark"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
-    for name, value in [('appearance', 'dark'), ('accent', 'violet'), ('density', 'compact')]:
-        m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name, value])
-    theme = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance==="dark" && s.thundyAccent==="violet" && s.thundyDensity==="compact"?s:null);'))
+    # Click-and-verify with retries: a click landing before the options
+    # page attached its change listeners would silently not save (observed
+    # once under added runner load), so re-click and re-dispatch change.
+    theme = None
+    for attempt in range(3):
+        for name, value in [('appearance', 'dark'), ('accent', 'violet'), ('density', 'compact')]:
+            m.page('const e=document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\');e.click();e.dispatchEvent(new Event("change",{bubbles:true}));', [name, value])
+        try:
+            theme = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance=="dark" && s.thundyAccent=="violet" && s.thundyDensity=="compact"?s:null);'), timeout=10)
+        except TimeoutError:
+            theme = None
+        if theme:
+            break
+    assert theme, 'appearance settings were not saved'
     assert theme.get('externalAnalysisConsent') is not True
     assert m.page('return document.documentElement.dataset.theme;') == 'dark'
     report['appearanceSaved'] = {k: theme[k] for k in ['thundyAppearance', 'thundyAccent', 'thundyDensity']}
@@ -316,6 +395,54 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         wait_for(lambda: m.page('return document.documentElement.dataset.theme===arguments[0];', [scheme]))
         report['nativeThemes'].append(scheme)
         m.screenshot(out / ('options-native-' + scheme + '.png'))
+    # Protocol 9.12: 'Clear cache' empties the hybridanalysis store and keeps
+    # settings and consent. The native confirm() dialog is answered via a
+    # stub injected into the page realm (exportFunction with a fallback).
+    stub = m.page('''const w = window.wrappedJSObject;
+        try { exportFunction(() => true, w, {defineAs: "confirm"}); return "exported"; }
+        catch (e) { try { w.confirm = function() { return true; }; return "assigned"; }
+                    catch (e2) { return "failed: " + e2; } }''')
+    assert stub in ('exported', 'assigned'), stub
+    m.page('document.getElementById("clearCache").click();')
+    cleared = wait_for(lambda: m.page(
+        'return document.getElementById("clearCacheStatus").textContent === arguments[0] ? arguments[0] : null;',
+        [catalogs[locale]['ui_082']['message']]))
+    store_empty = wait_for(lambda: m.page('''return new Promise((resolve) => {
+            const r = window.indexedDB.open("thunderbird_av", 3);
+            r.onsuccess = function(e) {
+                const db = e.target.result;
+                const request = db.transaction(["hybridanalysis"], "readonly").objectStore("hybridanalysis").count();
+                request.onsuccess = function() { db.close(); resolve(request.result === 0); };
+            }; });'''))
+    assert store_empty is True
+    kept = m.page('return window.wrappedJSObject.browser.storage.local.get(["externalAnalysisConsent","thundyAppearance"]);')
+    assert kept.get('externalAnalysisConsent') is not True and kept.get('thundyAppearance') == 'system'
+    m.screenshot(out / 'options-cache-cleared.png')
+    report['cacheClear'] = {'confirmStub': stub, 'status': cleared,
+                            'storeEmpty': True, 'settingsPreserved': True}
+    # Protocol 9.3: persisting a sender via the banner works fully offline
+    # (consent on, no API key): the scan stays local, only the opt-in is stored.
+    no_persist = m.page('return window.wrappedJSObject.browser.storage.local.get(["scanningEnabledSenders"]).then(s => (s.scanningEnabledSenders || []).length === 0);')
+    assert no_persist is True, no_persist
+    m.page('return window.wrappedJSObject.browser.storage.local.set({externalAnalysisConsent: true}).then(() => true);')
+    display_message(0)
+    wait_for(banner_counts_when_visible)
+    m.page('const b=document.querySelectorAll("#thundy-optin-banner button")[1]; b && b.click(); return true;')
+    note3 = wait_for(lambda: m.page(
+        'return (document.getElementById("thundy-optin-note")?.textContent || "").indexOf(arguments[0])===0 ? arguments[0] : null;',
+        [catalogs[locale]['bannerSenderOptIn']['message']]))
+    # The message page has no extension API; read the persisted sender from an
+    # extension page (options) instead.
+    m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'options.html'])
+    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/options.html");'))
+    persisted = wait_for(lambda: m.page(
+        'return window.wrappedJSObject.browser.storage.local.get(["scanningEnabledSenders"]).then(s => {'
+        'const arr = s.scanningEnabledSenders || [];'
+        'return arr.some(e => String(e).indexOf("sender@example.invalid") >= 0) ? {persisted: true, count: arr.length} : null; });'))
+    assert persisted.get('persisted') is True, persisted
+    m.page('return window.wrappedJSObject.browser.storage.local.set({externalAnalysisConsent: false}).then(() => true);')
+    report['senderPersistence'] = {'persisted': True, 'sender': 'sender@example.invalid',
+                                   'note': note3}
     report['localizedPages'] = []
     for page, key in [('options.html', 'ui_116'), ('audit.html', 'auditTitle'),
                       ('enterprise_setup.html', 'profilesTitle'), ('privacy.html', 'ui_128')]:

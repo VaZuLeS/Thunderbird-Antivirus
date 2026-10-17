@@ -5,6 +5,37 @@ const path = require('path');
 const vm = require('vm');
 
 describe('ApiGateway module', () => {
+    it('injects provider auth headers for keys wired via setApikey', () => {
+        context = {
+            AbortController: globalThis.AbortController,
+            setTimeout: setTimeout,
+            clearTimeout: clearTimeout,
+            fetch: async () => ({ status: 200, json: async () => ({}) }),
+            console: { log: () => {}, warn: () => {}, error: () => {} },
+            URL: URL
+        };
+        vm.createContext(context);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8'), context);
+        const gw = new context.ApiGateway();
+        gw.setApikey('virustotal', 'vt-key');
+        gw.setApikey('abuseipdb', 'ip-key');
+        gw.setApikey('urlscan', 'scan-key');
+        const vt = gw._injectAuthHeaders('https://www.virustotal.com/api/v3/files/abc', { method: 'GET' });
+        assert.strictEqual(vt.headers['x-apikey'], 'vt-key');
+        const ip = gw._injectAuthHeaders('https://api.abuseipdb.com/api/v2/check?ipAddress=1.2.3.4', { method: 'GET' });
+        assert.strictEqual(ip.headers['Key'], 'ip-key');
+        const scan = gw._injectAuthHeaders('https://urlscan.io/api/v1/result/uuid/', { method: 'GET' });
+        assert.strictEqual(scan.headers['API-Key'], 'scan-key');
+        const plain = gw._injectAuthHeaders('https://example.com/api', { method: 'GET' });
+        assert.ok(!('x-apikey' in plain.headers) && !('Key' in plain.headers));
+        // Defense in depth: an adapter-provided header is never overridden.
+        gw.setApikey('hybridanalysis', 'gw-key');
+        const ha = gw._injectAuthHeaders('https://hybrid-analysis.com/api/v2/overview/abc', {
+            method: 'GET',
+            headers: { 'api-key': 'adapter-key' }
+        });
+        assert.strictEqual(ha.headers['api-key'], 'adapter-key');
+    });
     let context;
 
     it('should fetch and return JSON correctly', async () => {

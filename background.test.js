@@ -279,6 +279,14 @@ describe('background.js', () => {
         assert.strictEqual(context.get_apikey(), 'test-api-key');
     });
 
+    it('storage.onChanged wires gateway apikeys for the auth-injection layer', () => {
+        context.set_urlscanApikey(undefined);
+        const listener = context.browser.storage.onChanged.listeners[0];
+        listener({ urlscanApikey: { newValue: 'scan-key' } }, 'local');
+        const wired = vm.runInContext('syncGatewayApikeys(); apiGateway.apikeys.urlscan', context);
+        assert.strictEqual(wired, 'scan-key');
+    });
+
     it('storage.onChanged updates API key dynamically', () => {
         context.set_apikey(undefined);
         const listener = context.browser.storage.onChanged.listeners[0];
@@ -1133,9 +1141,10 @@ describe('background.js', () => {
             assert.ok(result.reasons.includes("Visuelle Erkennung: Die Seite gibt sich als PayPal aus (Phishing-Verdacht)."));
         });
 
-        it('handles successful scan and result polling (clean)', async () => {
+        it('handles successful scan and result polling (clean) and sends the API key on the result fetch', async () => {
             let callCount = 0;
-            context.fetch = async (url) => {
+            let resultFetchOptions = null;
+            context.fetch = async (url, options) => {
                 callCount++;
                 if (callCount === 1) {
                     return {
@@ -1144,6 +1153,7 @@ describe('background.js', () => {
                         json: async () => ({ uuid: 'test-uuid-3' })
                     };
                 } else if (callCount === 2) {
+                    resultFetchOptions = options;
                     return {
                         status: 200,
                         json: async () => ({ verdicts: {} })
@@ -1153,6 +1163,8 @@ describe('background.js', () => {
 
             const result = await context.checkUrlscanIo('http://clean.com', 'apikey');
             assert.strictEqual(result.status, 'CLEAN');
+            // Result fetches for unlisted scans carry the API key (PA-8).
+            assert.strictEqual(resultFetchOptions.headers['API-Key'], 'apikey');
         });
 
         it('handles successful scan but polling timeout', async () => {
@@ -3125,18 +3137,19 @@ describe('background.js', () => {
             assert.equal(options.method, 'GET');
             assert.equal(options.headers.accept, 'application/json');
             assert.equal(options.headers['api-key'], 'test-api-key');
-            assert.match(options.headers['user-agent'], /Falcon/);
+            // user-agent is a forbidden header name for fetch and must not be set.
+            assert.ok(!('user-agent' in options.headers));
             assert.ok(!options.body);
         });
 
-        it('should add body and scan_type header for POST request with body', () => {
+        it('should add body for POST request with body (scan_type rides in the form body)', () => {
             const body = { test: 'data' };
             const options = context.getHybridAnalysisOptions('POST', body);
             assert.equal(options.method, 'POST');
             assert.equal(options.headers.accept, 'application/json');
             assert.equal(options.headers['api-key'], 'test-api-key');
-            assert.match(options.headers['user-agent'], /Falcon/);
-            assert.equal(options.headers['scan_type'], 'all');
+            assert.ok(!('user-agent' in options.headers));
+            assert.ok(!('scan_type' in options.headers));
             assert.deepEqual(options.body, body);
         });
 
@@ -3146,8 +3159,8 @@ describe('background.js', () => {
             assert.equal(options.method, 'POST');
             assert.equal(options.headers.accept, 'application/json');
             assert.equal(options.headers['api-key'], 'test-api-key');
-            assert.match(options.headers['user-agent'], /Falcon/);
-            assert.equal(options.headers['scan_type'], 'all');
+            assert.ok(!('user-agent' in options.headers));
+            assert.ok(!('scan_type' in options.headers));
             assert.equal(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
             assert.deepEqual(options.body, body);
         });

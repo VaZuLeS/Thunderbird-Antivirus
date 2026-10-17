@@ -205,6 +205,9 @@ Zugriffsrechte des Betriebssystem-Benutzerkontos und die Zugriffskontrolle des T
 **Lokal in der IndexedDB-Datenbank `thunderbird_av`** (Version 3, Objektspeicher `hybridanalysis`):
 
 - Scan-Ergebnisse je Nachricht (Verdikt, Status, Kennungen der Analyse, Zeitstempel),
+- abgerufene Analyse-Protokolle des Providers (vollständige JSON-Antwort des letzten
+  Overview-Abrufs inklusive Job-/Submission-ID und Abrufzeitpunkt), damit das fertige
+  Ergebnis auch nach dem Schließen des Popups ohne erneute Übermittlung angezeigt wird;
 - Link-Metadaten (geprüfte URLs und deren Status),
 - Zuordnungen zu Nachrichten über die Message-ID bzw. Header-ID.
 

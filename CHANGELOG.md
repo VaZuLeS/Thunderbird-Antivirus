@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.24.2 — 2026-10-17
+
+- Wire the gateway's provider auth-injection layer (PA-8): `setApikey` is now called on startup and on every key change for Hybrid Analysis, VirusTotal, urlscan.io, URLhaus and AbuseIPDB. The injection is defense in depth only — adapter-provided auth headers are never overridden.
+- urlscan.io result fetches now carry the `API-Key` header, making the polling of `unlisted` scan results robust against future urlscan policy changes (previously only public-by-UUID access).
+- No changes to endpoints, consent model, privacy tiers or scan behavior.
+
+## 1.24.1 — 2026-10-17
+
+- Provider connection audit across all five analysis services (Hybrid Analysis, VirusTotal, urlscan.io, URLhaus, AbuseIPDB): endpoints, methods and authentication headers verified against the provider APIs — no functional defects found.
+- Remove the `user-agent: Falcon` request header (a forbidden header name for `fetch`; it was never actually sent) and a redundant `scan_type` header (the multipart/form body already carries it).
+- Declare `https://www.virustotal.com/*` explicitly in `optional_host_permissions` (previously covered only via the `*.virustotal.com` wildcard), making the VirusTotal permission grant deterministic.
+- Corrected a test-only key mismatch in the live runner banner check (`bannerScanSender`).
+
+## 1.24.0 — 2026-10-16
+
+- Deliver the finished Hybrid Analysis protocol to the popup: poll `IN_PROGRESS` overview results automatically (3 attempts, 5 s apart), show job/submission ID, SHA-256 and retrieval time in every result card, store the finished protocol locally for offline display after reopening the popup, and invalidate stored protocols on new submissions (rescan, manual upload, URL scan, auto upload). Six new UI strings in EN/DE/FR/ES/IT/PL.
+- Extend the browser/axe CI with analysis-protocol cases (`hybrid-stored`, `hybrid-poll`): offline protocol card without consent or network requests and the `IN_PROGRESS` → finished transition with exactly two overview requests.
+- Document the analysis-protocol lifecycle in the reviewer notes (§4.1) and the local protocol storage in the privacy policy (§8).
+- Fix the store-readiness gate C5 screenshot scan to include sub-directories, so the real Thunderbird acceptance screenshots are recognized.
+
 ## 1.23.0 — 2026-10-15
 
 - Keep link-dialog focus inside the modal during asynchronous browser handoff and restore the retry action on opening failure.

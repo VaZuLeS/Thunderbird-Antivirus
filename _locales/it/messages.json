@@ -1405,5 +1405,51 @@
   },
   "auditVerdictAtDecision": {
     "message": "Risultato al momento della decisione"
+  },
+  "ui_169": {
+    "message": "Protocollo di analisi: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID processo: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID invio: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protocollo recuperato: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " L’analisi è ancora in corso (IN_PROGRESS). Il risultato viene ricontrollato automaticamente ogni $P1$ secondi (tentativo $P2$); il protocollo di analisi completato appare qui senza una nuova richiesta non appena viene salvato.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
   }
 }

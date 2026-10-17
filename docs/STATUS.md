@@ -1,3 +1,143 @@
+# Store-Gate C5 behoben, Browser-Kurzfälle und Reviewer-Notes für Analyse-Protokoll — 16. Oktober 2026
+
+Fortsetzung der Analyse-Protokoll-Runde: Gate-Kriterium C5 suchte `docs/screenshots/` nur auf Top-Level
+und meldete die echten PNG-Screenshots der Thunderbird-140.17-ESR-Abnahme fälschlich als fehlend
+(Befund FA-4); `hasScreenshots()` durchsucht den Baum nun rekursiv — C5 ist **PASS** (8 PNGs in
+`thunderbird-linux/` u. a.), Gate-Unit-Tests 7/7. Die Browser-Kurzfälle (`check:ui`) decken die neuen
+Zustände ab: Offline-Protokollkarte ohne Zustimmung und ohne Netzaufrufe sowie Polling-Übergang
+`IN_PROGRESS` → fertiges Protokoll mit synthetischer Provider-Route und genau zwei Overview-Anfragen
+(Fälle `hybrid-stored-*`/`hybrid-poll-*` in EN/DE; Lauf verifiziert über den CI-Job `browser-ui`, in
+dieser Umgebung fehlen die Chromium-Systembibliotheken). Reviewer-Notes §4.1 dokumentiert den
+Protokoll-Lebenszyklus für die ATN-Begutachtung. `npm test` → 954 bestanden; Store-Gate C1–C5 PASS,
+offen bleiben C6 (Live-Test-Protokoll, manuell) und C7 (Tag v1.23.0 + Release). Aufgabenstand:
+[AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13.
+
+# CI vollständig grün: Protokoll-Fälle und Live-Runner verifiziert — 16. Oktober 2026
+
+N-06 abgeschlossen. Die neuen Analyse-Protokoll-Browserfälle laufen in allen sechs Sprachen grün
+([CI 38982642985](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38982642985):
+test, Browser UI × 6 und Thunderbird Linux GUI success). Drei Läuferkorrekturen waren nötig:
+Hybrid-Fälle benötigen `populated: true` (Nachrichtenkontext), der Popup-`ready()`-Locator toleriert
+die verschachtelte Scanner-Info-Karte (`.first()`), und der Poll-Fall wartet auf das Bedrohungsscore-
+Feld der fertigen Karte statt auf die sofort sichtbaren Protokoll-Metadaten. Zusätzlich härtet
+`tools/thunderbird-live.dev.py` den realen Thunderbird-Lauf gegen einen flaky Dokument-Teardown-Race
+(`documentElement is null` → Retry statt Abbruch); der GUI-Job war damit erneut grün. Der
+„Publish GitHub release“-Workflow-Fehler beim Tag-Push war nur der Konflikt mit dem zuvor manuell
+erstellten Release (Assets verifiziert).
+
+# PA-8 behoben: Gateway-Auth-Verdrahtung und urlscan-Ergebnis-Schlüssel — 17. Oktober 2026
+
+Verifikation von PA-8 ergab zwei echte Lücken, behoben in **1.24.2**: (1) Die Gateway-Auth-Injektion war
+toter Code — `setApikey` wurde nie aufgerufen; jetzt werden alle fünf Provider-Schlüssel beim Start und
+bei jeder Änderung (`syncGatewayApikeys`) in den Gateway geschrieben, und die Injektion ist ausdrücklich
+nur Ergänzung: bestehende Adapter-Header werden nie überschrieben (Test belegt). (2) Der urlscan-
+Ergebnis-Abruf (`/result/{uuid}/`) sendet jetzt den `API-Key` — für `unlisted`-Scans bislang per
+UUID-Zugriff zulässig, aber robust gegen urlscan-Politikänderungen (Test mit Header-Assertion).
+`npm test` → 956 bestanden (2 neue Tests); `npm run check` → Exit 0. Release v1.24.2 vorbereitet
+(CHANGELOG, Release-Notes, Doku-Versionen). Nachweis: Tag `v1.24.2` am Release-Commit `26fb960`; der Workflow „Publish GitHub release“ hat [v1.24.2](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.2) mit `thundy-av-1.24.2.xpi` + `SHA256SUMS.txt` erstellt (Asset-SHA-256 `f7376f3c97e89d878eed25bb6737928a3e789829c7cd4b450ae6db49056267a9`); der entpackte Inhalt ist mit dem lokalen Build vom Tag-Commit byte-identisch (diff -r ohne Abweichung). CI auf dem Release-Commit vollständig grün ([CI 39018317418](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/39018317418): test, Browser UI × 6, Thunderbird Linux GUI). Store-Gate: C1–C5 + C7 **PASS**, einziges offenes Kriterium C6. [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §16.
+
+# Provider-Anbindungs-Audit: alle fünf Dienste korrekt angebunden — 17. Oktober 2026
+
+Auf die Frage „Sind alle weiteren externen Dienste korrekt angebunden?“ wurden Hybrid Analysis, VirusTotal, urlscan.io, URLhaus und AbuseIPDB vollständig geprüft (Endpunkte, Methoden, Auth-Header, Bodies, Host-Berechtigungen Manifest↔options.js↔Runtime, Gateway, Caching): **keine funktionalen Defekte**. Drei Hygiene-Findings behoben in **1.24.1**: der nie gesendete `user-agent: Falcon`-Header (verbotener Header-Name für fetch) und ein redundanter `scan_type`-Header entfernt; `https://www.virustotal.com/*` zusätzlich explizit in `optional_host_permissions` deklariert (bisher nur Wildcard-Abdeckung). Verifiziert-korrekt: options.js fordert Origins nur für konfigurierte Dienste an und „Speichern“ re-fragt bei Stufenwechsel immer; Gateway/Queue/Retry-After/Cache-Verhalten wie geplant. Release v1.24.1 getaggt und veröffentlicht. Nachweis: Tag `v1.24.1` am Release-Commit `80299fb`; der Workflow „Publish GitHub release“ hat das Release [v1.24.1](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.1) selbst erstellt (diesmal ohne Konflikt) mit `thundy-av-1.24.1.xpi` + `SHA256SUMS.txt` (SHA-256 `a172c322187d08b17282f5327897a0e266603e24919c17c21beaded347fe9b5f`); der entpackte Inhalt des Assets ist mit dem lokalen Build vom Tag-Commit byte-identisch (44 Dateien, diff -r ohne Abweichung). CI auf dem Release-Commit vollständig grün ([CI 39015367240](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/39015367240): test, Browser UI × 6, Thunderbird Linux GUI). Store-Gate: C1–C5 + C7 **PASS**, einziges offenes Kriterium C6. Offen: Provider-Live-Checks mit echten Schlüsseln (N-01/PA-R5), u. a. PA-8 (urlscan-Ergebnis-Polling ohne Key bei `unlisted` erneut gegen aktuelle urlscan-Politik prüfen). [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §16.
+
+# CI-Live-Runner belegt Protokollschritte 9.2 und 9.3 — 16. Oktober 2026
+
+Der reale Thunderbird-Lauf im CI deckt jetzt auch **9.2** (beide Banner-Buttons mit lokalisierten Labels; Consent aus → Klick endet ohne Übertragung und der Options-Shortcut erscheint) und **9.3** („Absender dauerhaft scannen“ persistiert `sender@example.invalid` in `scanningEnabledSenders` — bei Consent an und ohne API-Schlüssel vollständig offline, der Scan bleibt lokal; Bestätigung in allen sechs Sprachen) ab ([CI 38989477602](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38989477602), Report-Felder `bannerButtons`/`senderPersistence`, alle Läufe `passed: true`). Der manuelle Rest von N-01 umfasst damit nur noch die Provider-Schritte mit konfiguriertem Schlüssel (9.6, 9.8–9.11, 9.14) plus 9.10 als Sichtprüfung; 9.2, 9.3, 9.12 und 9.13 sind CI-belegt ([live_test_1_24_0.md](live_test_1_24_0.md) §1). Runner-Fix unterwegs: der Consent-off-Banner enthält drei Buttons (inkl. Options-Shortcut) — die Erwartung wurde korrigiert.
+
+# CI-Live-Runner vollständig grün mit 9.12/9.13; Theme-Klicks gehärtet — 16. Oktober 2026
+
+Der erweiterte Live-Runner ist im CI über alle sieben Läufe bestanden
+([CI 38986392566](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38986392566)):
+`bannerDedup` zeigt je Nachricht genau `{optin: 1, threat: 0}` nach zwei Nachrichtenwechseln,
+`cacheClear` bestätigt die lokalisierte Erfolgsmeldung, den leeren Objektspeicher und unveränderte
+Einstellungen/Zustimmung. Nach einem weiteren Zähl-Race (Banner-Injektion der neuen Nachricht) ist der Lauf auf `5fc3cb9` vollständig grün; die Report-Prüfung über alle 7 Läufe bestätigt die Dedup- und Cache-Werte. Der Failure-Screenshot des ersten Laufs zeigte außerdem ein separates Ergebnis-Problem:
+Die Dark-Auswahl in den Einstellungen ging verloren, wenn der Klick vor dem
+Listener-Attachment der Seite landete („Follow Thunderbird“ aktiv statt Dark, während
+Violet/Compact gespeichert waren). Die Theme-Klicks prüfen jetzt den gespeicherten Zustand und
+wiederholen Klick plus expliziten `change`-Dispatch bis zur Bestätigung (max. 3 Versuche). Der
+manuelle Rest von N-01 umfasst nur noch Provider-/Gesten-Schritte (9.6, 9.8–9.11, 9.14) plus
+9.3/9.10.
+
+# CI-Live-Runner deckt Protokollschritte 9.12 und 9.13 ab — 16. Oktober 2026
+
+Der reale Thunderbird-Lauf im CI (Job „Thunderbird Linux GUI“) wurde um zwei Protokollschritte
+erweitert: **9.13 Banner-Dedup** — zweite synthetische Nachricht in den Testordner kopiert, zwei
+Nachrichtenwechsel, je Nachricht genau ein Banner-Instanzen-Satz (≤ 1 pro Typ, identische Zählung)
+statt Duplikaten; **9.12 Cache leeren** — Bestätigungsdialog über in die Seiten-Realm injizierten
+Stub (`exportFunction` mit Fallback) beantwortet, Statusmeldung `ui_082` je Sprache, Objektspeicher
+`hybridanalysis` danach leer (Count über IndexedDB), Einstellungen und Zustimmung unverändert.
+Damit schrumpft der manuelle Rest von N-01 auf Provider-/Gesten-Schritte (9.6, 9.8–9.11, 9.14) plus
+9.3/9.10. Belege: `report.json`-Felder `bannerDedup`/`cacheClear` im Artefakt `thunderbird-linux-live`;
+Doku in [live_test_1_24_0.md](live_test_1_24_0.md) §1 und
+[AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §15.
+
+# Live-Abnahme 1.24.0 strukturiert: CI-Beleg getrennt vom Maintainer-Protokoll — 16. Oktober 2026
+
+Kriterium C6 ehrlich verzinsbar gemacht: Das ausfüllbare Protokoll [live_test_protocol.md](live_test_protocol.md)
+ist auf 1.24.0 aktualisiert (Version, Bezugs-Commit `v1.24.0`/`82238c7`) und um Schritt **9.14 „Analyse-Protokoll
+live“** erweitert (Upload → `IN_PROGRESS`-Polling ohne Nutzereingriff → fertiges Protokoll mit Job-/Submission-ID;
+Popup zu/au → Offline-Anzeige ohne Netzrequest; Rescan-Invalidierung; Cache-Verhalten). Neu:
+[live_test_1_24_0.md](live_test_1_24_0.md) trennt den **CI-belegten Umfang** (reales Thunderbird 140 ESR im
+Job „Thunderbird Linux GUI“: Frischinstallation, Upgrade 1.22.0 → 1.24.0 mit erhaltener Konfiguration,
+sechs Sprachen, Banner/Time-of-Click, Linkdialog, OS-Übergabe, Audit, Themes, Abbruch-Recovery — Runner-Report
+`report.json` + Screenshots im Artefakt `thunderbird-linux-live`) vom **Maintainer-Rest** (Schritte mit
+Hybrid-Analysis-Schlüssel und interaktiven Zustimmungs-/Netzwerkprüfungen, u. a. 9.6, 9.8–9.11, 9.14).
+Provider-/interaktive Schritte werden im Protokoll ehrlich als `N/A` mit Begründung geführt; das Gate zählt
+OK/FAIL (≥ 10 OK, 0 FAIL). Aufgabenstand: [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §15.
+
+# Heuristik-Korpus erweitert: benigne FR/ES/IT/PL-Gegenstücke und Signalwort-Varianten — 16. Oktober 2026
+
+Erweiterung N-09 (Teil 1): `testdata/heuristics.json` von 12 auf 21 Samples. Neu sind erstmals benigne
+Gegenstücke für FR/ES/IT/PL (gewöhnliche Rechnungs-/Terminmails — Fehlalarm-Schutz über Sprachen),
+ein gemischt- EN/PL-benigner Fall und je Sprache eine Riskio-Variante mit anderem Signalwort-Muster
+(fr „Compte bloqué/immédiatement“, es „Contraseña/inmediatamente“, it “Account bloccato/
+immediatamente”, pl „Ważna/Pilnie/natychmiast“). Der Bestandstest prüft jede Zeile gegen
+`evaluateBehavior` (starke Dringlichkeit + 50 bei Erstkontakt) und besteht mit allen 21 Samples;
+`npm test` → 954 bestanden. Grenze: synthetischer Korpus, kein Nachweis realer Erkennung — Teil 2
+(reale Korpora, Schwellen-Feinjustierung) bleibt im Plan.
+
+# Runde 5: Einreichungsfokus — Doku-Drift geschlossen, nächste Aufgaben geplant — 16. Oktober 2026
+
+Deltalanalyse über alle Pläne (Store-Gate, i18n-Plan T01–T18, Enterprise): Die Qualitätsaufgaben
+T01–T17 sind implementiert; die manuellen Freigabenachweise konvergieren in einen Live-Test
+(C6 = T18 = FA-A5). Doku-Drift vor der Einreichung geschlossen: Store-Listing auf 1.24.0 aktualisiert
+(Header, Einleitung, Release-Notes-Block 1.24.0 in §6, Checklist §7: Manifest 1.24.0/GPL v3,
+Screenshots done), [store_assets.md](store_assets.md) mit realem PNG-Inventar (23 Aufnahmen,
+Gate C5 PASS) und sechssprachiger UI-Angabe, Reviewer-Notes-Kopf auf 1.24.0. Neuer Aufgabenplan-§15
+mit den nächsten Aufgaben: N-01 ✋ Live-Test (kritischer Pfad, danach Store-Gate GO), N-05
+Einreichungspaket/Signier-Dry-Run, N-06 CI-Verifikation der Protokoll-Fälle, N-07 Review-Monitoring
+nach Einreichung, N-08/N-09 Erweiterungen (Enterprise, Heuristik-Korpora) — klar getrennt von
+Freigabe-Arbeit. [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §15.
+
+# Tag- und Release-Lage geklärt; Version 1.24.0 vorbereitet — 16. Oktober 2026
+
+Korrektur zur vorherigen Meldung: Der veröffentlichte Tag `v1.23.0` zeigt auf den Vorbereitungsstand
+`df63c76` (vor den Analyse-Protokoll-Fixes); das Release-Asset `thundy-av-1.23.0.xpi`
+(SHA-256 `00ab882d…1cb39`) entspricht diesem Stand. Da `api.js`, `background.js` und die
+`_locales` nach dem Tag geändert wurden, verlangt Gate C7 zurecht eine neue Version. Daher:
+**Version 1.24.0** (manifest/package/lock), CHANGELOG-Eintrag mit den Analyse-Protokoll-Lieferungen,
+Release-Notes in `docs/releases/1.24.0.md`, Tag `v1.24.0` und GitHub-Release
+[v1.24.0](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.0) mit Assets
+`thundy-av-1.24.0.xpi` + `SHA256SUMS.txt`. Nachweis: Asset heruntergeladen und gegen den lokalen Build
+des Tag-Commits verglichen — byte-identisch,
+SHA-256 `c6dc5631b1a71e53f283c4bf6dfb5c5a513fb236d54bf5750c9a150fb8c3145d`. Store-Gate danach:
+C1–C5 + C7 **PASS**; einziges offenes Kriterium C6 (Live-Test-Protokoll, manuell in Thunderbird 140
+ESR; FA-A5). [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13/§14.
+
+# Hybrid-Analysis-Strang: Analyse-Protokoll zustellen — 16. Oktober 2026
+
+Nutzermeldung „kein Analyse-Protokoll“ nachvollzogen und am Quellstand 1.23.0 behoben: Der Popup-Report
+fragte die Hybrid-Analysis-Overview genau einmal ab und verharrte bei `IN_PROGRESS` ohne Polling
+(FA-1); Job-/Submission-IDs wurden gespeichert, aber nie angezeigt (FA-2); das abgerufene Protokoll
+wurde nicht persistiert, sodass es nach dem Schließen des Popups verloren war (FA-3). Neu: begrenztes
+automatisches Polling (3 Versuche, 5 s) mit Karte-Ersetzung, Protokollblock mit Job-/Submission-ID/
+SHA-256/Abrufzeitpunkt, lokale Persistierung des fertigen Protokolls mit Offline-Anzeige beim
+nächsten Öffnen sowie Protokollinvalidierung bei Rescan/URL-Scan/Autoupload. Datenschutzerklärung
+§8 dokumentiert die lokale Protokollspeicherung. Sechs neue UI-Schlüssel (`ui_169`–`ui_173`) in
+EN/DE/FR/ES/IT/PL. `npm run check` → Exit 0 mit **954 bestandenen Tests** (+5); Befunde und Aufgaben
+FA-1…FA-3 / FA-A1…FA-A7 in [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §13.
+Live-Verifikation mit realem API-Key, Browser-Kurzfälle und Reviewer-Notes bleiben offen.
+
 # Prozessabbruch-Wiederherstellung und aktuelles Audit — 15. Oktober 2026
 
 Der reale Thunderbird-Prüflauf ist um erzwungene Prozessabbrüche nach bestätigten Daten und bei offenem Linkdialog erweitert. Gespeicherte Entscheidungen bleiben erhalten; offene Vorgänge bleiben `PENDING`, ohne erfundene Entscheidung oder erneute OS-Zustellung. Eine neue Entscheidung funktioniert anschließend. Die dabei gefundene veraltete Auditansicht lädt bei Rückkehr in den Tab neu und erhält Filter, offene Nachweise und Fokus; überholte Antworten werden verworfen. [Prüfweg, Originalnachweise und Grenzen](THUNDERBIRD_LINUX_ABNAHME.md#wiederherstellung-nach-erzwungenem-prozessabbruch). Vorbereitete Version 1.23.0; keine neue getaggte Veröffentlichung.
@@ -288,12 +428,21 @@ wurden abgearbeitet. Alle Zahlen unten sind in diesem Arbeitslauf **gemessen**:
 - **Live-Test in Thunderbird 140 ESR (Pflicht vor der Einreichung):** Protokoll in
   [live_test_protocol.md](live_test_protocol.md) abarbeiten (Banner, Kontextmenü, Time-of-Click,
   Permission-Geste, Stufen-Gate, Popup, HTML-Entschärfen, Cache leeren) — Testdaten liegen in
-  `testdata/`.
-- **Echte Screenshots** (PNG, ≥ 1200 px breit) gemäß [screenshot_capture.md](screenshot_capture.md);
-  danach meldet der Pre-Submit-Check 0 Warnungen und Kriterium C5 wird grün.
-- **ATN-Listung, Signierung, Store-URL:** Listing-Felder aus [store_listing.md](store_listing.md);
-  signieren mit `npx web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed
-  --approval-timeout 0`; danach Store-URL in README/Listing/Landing-Page ergänzen.
+  `testdata/`; zusätzlich die Analyse-Protokoll-Verifikation aus Aufgabenplan §13 (FA-A5: Upload →
+  `IN_PROGRESS`-Polling → fertiges Protokoll, Popup zu/zu mit Offline-Anzeige, Rescan-Invalidierung).
+- ~~**Echte Screenshots**~~ **erledigt:** echte PNG-Screenshots liegen unter
+  `docs/screenshots/thunderbird-linux/` u. a.; Pre-Submit-Check meldet 0 Warnungen, Gate-Kriterium
+  C5 ist PASS (seit 16. Oktober 2026, rekursive Suche im Gate, FA-4/FA-A8).
+- **ATN-Listung, Signierung, Store-URL (Aufgabenplan §15, N-05):** Reihenfolge — (1) N-01 Live-Test
+  ausführen, Summe-Zeile füllen → `npm run store-gate` muss **GO** melden (C1–C7 PASS); (2) Review-Paket
+  bereitlegen: [store_listing.md](store_listing.md) (Version 1.24.0), [reviewer_notes.md](reviewer_notes.md)
+  inkl. §4.1 Analyse-Protokoll, [store_assets.md](store_assets.md) (23 PNG), Testdaten `testdata/`;
+  (3) signieren mit `npx web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/ --channel
+  listed --approval-timeout 0` (ATN-Schlüssel des Maintainers; `--approval-timeout 0`, weil die
+  manuelle ATN-Prüfung länger als 15 Minuten dauert); (4) Store-URL in README/Listing/Landing-Page
+  ergänzen; (5) nach Einreichung Review-Monitoring (N-07). Drift-Check 16.10.: README (EN/DE),
+  docs/index, Listing, Assets, Notes, Quickstart nennen 1.24.0; verbliebene 1.19.x/1.22.x-Angaben sind
+  historische Release-/Feature-Hinweise.
 - **Optional:** Lokalisierung der Options-/Popup-Oberfläche (derzeit deutsch; Manifest-Strings und Banner
   sind en/de lokalisiert).
 

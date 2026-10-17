@@ -274,3 +274,146 @@ Thunderbird 140 ESR (C6). Beide bleiben als manuelle Schritte dokumentiert.
 (`gh api repos/…/releases/latest` → `v1.6.2`), damit ist Befund R-6 ohne destruktive Eingriffe gelöst.
 
 
+
+## 13. Runde 3 — Funktionsanalyse Hybrid-Analysis-Strang und Analyse-Protokoll (2026-10-16)
+
+**Anlass:** Nutzermeldung „Der Hybrid-Analyse-Strang scheint kein Analyse-Protokoll zurückzuliefern“.
+**Bezug:** Quellstand 1.23.0; ergänzt Phasen 1–4 um den Themenbereich *Analyse-Funktionalität* und
+*Analyse-Protokoll*. Alle Befunde sind statisch am Quelltext und über Testsuite-Läufe belegt.
+
+### Befunde
+
+| ID | Schwere | Befund | Beleg |
+|---|---|---|---|
+| FA-1 | **P1** | Ein im Hintergrund hochgeladenes Element (`state UPLOADED`) wird im Popup genau **einmal** via `overview/{sha256}` abgefragt. Liefert die API `state IN_PROGRESS`, bleibt es bei „Bitte versuchen Sie es später erneut“ — es gibt **kein Polling**: das fertige Analyse-Protokoll wird dem Nutzer nie zugestellt, solange das Popup offen ist; nach dem Schließen ist der Zustand verloren. | `api.js` `renderInProgressStatus()`/`renderReport()` (IN_PROGRESS-Zweig); kein `setInterval`/Polling im gesamten `api.js` (vor dem Fix) |
+| FA-2 | **P2** | `hybrid_submission_id` und `hybrid_job_id` werden beim Upload gespeichert, aber **nirgends gelesen oder angezeigt** — das Analyse-Protokoll ist ohne Job-/Submission-ID nicht nachvollziehbar (keine Traceability zum Provider-Vorgang). | `background.js:946–947`, `background.js:1504–1505`, `background.js:1562–1563` (nur Schreibzugriffe); kein Lesezugriff in `api.js` |
+| FA-3 | **P1** | Das abgerufene Protokoll (`json_data`) wird **nicht persistiert**. Nach dem Schließen des Popups enthält der IndexedDB-Datensatz nur Upload-Status (`UPLOADED`/`UNKNOWN`), nicht das fertige Ergebnis — ein erneutes Öffnen fragt erneut nach (und nach 15-minütigem `ExpiringMap`-Cache-Verfall erneut die API) statt das fertige Protokoll offline zu zeigen. | `api.js` `get_hybrid_report_by_sha256()`/`render_hybrid_report_ui()` (vor dem Fix kein Schreibzugriff auf den Store); `db.js` Store `hybridanalysis` |
+| FA-4 | **P2** | Gate-Kriterium C5 durchsuchte `docs/screenshots/` **nicht rekursiv**; die echten Abnahme-Screenshots aus den Thunderbird-140.17-ESR-Läufen liegen aber in Unterverzeichnissen (`docs/screenshots/thunderbird-linux/`, `1.19.1` … `1.22.0`) und wurden deshalb fälschlich als fehlend gemeldet. | `scripts/submission-gate.js` `hasScreenshots()` (vor dem Fix: nur Top-Level-`readdirSync`); existierende PNGs: 8 Dateien in `docs/screenshots/thunderbird-linux/` u. a. |
+
+### Aufgaben
+
+| ID | Aufgabe | Befund | DoD (Nachweis) | Aufwand | Status |
+|---|---|---|---|---|---|
+| FA-A1 | **Automatisches Polling für laufende Analysen:** `get_hybrid_report_by_sha256()` plant bei `state IN_PROGRESS` begrenzte Wiederholungen (`HYBRID_REPORT_POLL_MAX_ATTEMPTS = 3`, 5 s Abstand), löscht vor jedem Poll den SHA-Cache und ersetzt die `IN_PROGRESS`-Karte durch das fertige Protokoll; UI-Hinweis nennt das automatische Nachfragen (Schlüssel `ui_173`, alle sechs Sprachen). | FA-1 | Unit-Tests: Poll wird geplant, Cache vor Wiederholung gelöscht, Abbruch nach Versuchslimit; Kataloge EN/DE/FR/ES/IT/PL konsistent | 0,5 d | **erledigt** |
+| FA-A2 | **Analyse-Protokoll-Metadaten rendern:** neuer Block „Analyse-Protokoll“ in jeder Ergebniskarte mit Job-ID, Submission-ID, SHA-256 und Abrufzeitpunkt (Schlüssel `ui_169`–`ui_172`, alle sechs Sprachen); Job-/Submission-IDs werden aus dem gespeicherten Datensatz an die Renderkette durchgereicht. | FA-2 | Unit-Test rendert Job-/Submission-ID; i18n-Gate prüft Kataloge | 0,25 d | **erledigt** |
+| FA-A3 | **Protokoll persistieren und offline rendern:** nach erfolgreichem Abruf wird `json_data` mit `report_fetched_at` in den Nachrichtendatensatz geschrieben (`persistHybridReport()`, nur lokal — keine Zustimmungsrelevanz, da die Daten bereits auf dem Gerät sind); beim nächsten Popup-Öffnen wird ein **fertiges** gespeichertes Protokoll ohne Provideranfrage gerendert (`hasFinalStoredReport()`, `buildStoredAttachmentReportTask()`/`buildStoredLinkReportTask()`); neue Uploads (Rescan, URL-Scan, Autoupload) invalidieren das alte Protokoll (`report = null`). | FA-3 | Unit-Tests: Persistierung schreibt Report in Attachments und Links; Offline-Render ohne Netzaufruf; `npm run check` Exit 0 | 0,5 d | **erledigt** |
+| FA-A4 | **Dokumentation:** Datenschutzerklärung §8 um die lokal gespeicherten Analyse-Protokolle ergänzt; STATUS-Eintrag mit Nachweisen. | FA-3 | Änderung in `docs/privacy_policy.md` §8; STATUS-Eintrag 2026-10-16 | 0,25 d | **erledigt** |
+| FA-A5 | ✋ **Live-Verifikation des Analyse-Protokolls in Thunderbird 140 ESR** (benötigt Hybrid-Analysis-API-Key und GUI): echter Anhang-Upload → `IN_PROGRESS`-Karte mit Polling-Hinweis → fertiges Protokoll erscheint ohne Nutzeraktion; Popup schließen und erneut öffnen → Protokoll wird **offline** angezeigt; Rescan leert das alte Protokoll und startet neu; URL-Scan entsprechend. Ergebnis in `docs/live_test_protocol.md` festhalten. | FA-1, FA-3 | Protokollabschnitt mit gemessenen Zeiten (Upload → fertiges Protokoll) und Screenshots | 0,5 d | **offen (manuell)** |
+| FA-A6 | **Funktionsanalyse der Analysepfade automatisiert absichern:** Browser-Kurzfälle (`npm run check:ui`) um die neuen Zustände erweitern — Offline-Protokollkarte mit Protokollblock (ohne Zustimmung, ohne Netzaufrufe), Polling-Übergang `IN_PROGRESS` → fertiges Protokoll mit synthetischer Provider-Route, Anzahl der Overview-Anfragen genau 2. | FA-1, FA-3 | Matrix enthält `hybrid-stored-*` und `hybrid-poll-*` (EN/DE); Lauf `npm run check:ui` in CI (Umgebung ohne Chromium-Systembibliotheken dort nicht ausführbar) | 0,5–1 d | **implementiert; Lauf in CI** |
+| FA-A7 | **Review-Notes ergänzen:** `docs/reviewer_notes.md` §4.1 um den Datenfluss „Submission → Overview-Abruf → lokale Protokollspeicherung → Offline-Anzeige → Invalidierung“ erweitern (erleichtert die ATN-Review-Begutachtung des Zustimmungsmodells). | FA-2, FA-3 | Reviewer-Notes enthalten §4.1 mit Funktions-/Dateiverweisen | 0,25 d | **erledigt** || FA-A8 | **Gate-Fix C5:** `hasScreenshots()` in `scripts/submission-gate.js` durchsucht `docs/screenshots/` rekursiv (Unterverzeichnisse einbezogen); Gate-Unit-Tests bleiben grün. | FA-4 | `scripts/submission-gate.test.js`: 7/7 bestanden; `npm run store-gate` meldet C5 **PASS** mit den gefundenen PNG-Pfaden | 0,25 d | **erledigt** |
+
+
+### Ausführungsstand Runde 3 (2026-10-16)
+
+| ID | Status | Nachweis |
+|---|---|---|
+| FA-A1 | **erledigt** | `api.js`: `HYBRID_REPORT_POLL_MAX_ATTEMPTS`/`HYBRID_REPORT_POLL_DELAY_MS`, `scheduleHybridReportPoll()`; Tests „polls an IN_PROGRESS analysis automatically…“ und „stops polling after the attempt limit“ bestehen |
+| FA-A2 | **erledigt** | `api.js`: `renderProtocolMeta()` in `renderReport()`; Test „renders analysis protocol metadata (job and submission id)“ besteht; `ui_169`–`ui_173` in allen sechs `_locales` identisch strukturiert |
+| FA-A3 | **erledigt** | `api.js`: `persistHybridReport()`, `hasFinalStoredReport()`, Task-Builder, IIFE-Verzweigungen; `background.js`: Protokoll-Invalidierung bei neuen Uploads (3 Stellen); Tests „persists the finished protocol…“ und „renders a stored protocol offline…“ bestehen |
+| FA-A4 | **erledigt** | `docs/privacy_policy.md` §8 ergänzt; STATUS-Eintrag 2026-10-16 |
+| FA-A6 | **implementiert** | `tools/browser-ui.dev.cjs`: Fälle `hybrid-stored-*`/`hybrid-poll-*` (EN/DE), `seedHybridStore()`/`HYBRID_RECORD`, synthetische `hybrid-analysis.com`-Route (1× `IN_PROGRESS`, 1× fertig), Interaktionsprüfungen auf Protokollblock und Anfragezahl 2; `tools/ui-fixtures.dev.cjs`: `hybrid`-Modus (Consent/API-Key/Host-Berechtigung). Matrix-Verifikation lokal bestanden (4 Fälle); Browser-Lauf in dieser Umgebung nicht möglich (fehlende Chromium-Systembibliotheken, kein Root) — verifiziert über den CI-Job `browser-ui` |
+| FA-A7 | **erledigt** | `docs/reviewer_notes.md` §4.1 „Analysis-protocol lifecycle“ (5 Schritte + Löschverhalten) |
+| FA-A8 | **erledigt** | `scripts/submission-gate.js` `hasScreenshots()` rekursiv; `submission-gate.test.js` 7/7; Store-Gate C5 nun **PASS** |
+| Gesamt | — | `npm run check` → **Exit 0**, **954 Tests bestanden**, 0 Lint-Fehler, Paketprüfung gültig; `npm run store-gate` → C1–C5 PASS, offen C6/C7 |
+
+**Korrektur (16.10., zweiter Lauf):** Der veröffentlichte Tag `v1.23.0` zeigt auf den Vorbereitungsstand
+`df63c76` — die Analyse-Protokoll-Fixes liegen **nicht** im 1.23.0-Release. Gate C7 meldet zurecht
+„publish a new version“ (geänderte Artefaktdateien: `api.js`, `background.js`, `_locales/*`).
+Die Fixes werden daher als **Version 1.24.0** veröffentlicht (Runde 4, §14); C7 wird durch den Tag
+`v1.24.0` am Release-Commit erfüllt. Hinweis: Der Workflow „Publish GitHub release“ schlug beim
+Tag-Push fehl, weil das Release bereits manuell (vor dem Workflow) erstellt war — harmlos, Assets
+verifiziert; künftig Release-Erstellung dem Workflow überlassen oder umgekehrt.
+
+---
+
+## 14. Runde 4 — Release 1.24.0 (Analyse-Protokoll ausliefern)
+
+| ID | Aufgabe | DoD | Status |
+|---|---|---|---|
+| V-01 | Versionsbump: `manifest.json`, `package.json`, `package-lock.json` auf 1.24.0 | Pre-Submit meldet „package.json and manifest.json versions match (1.24.0)“ | **erledigt** |
+| V-02 | CHANGELOG-Eintrag 1.24.0 (Analyse-Protokoll, Browser-Fälle, Gate-Fix) | `CHANGELOG.md` §1.24.0 vorhanden; 1.23.0 unverändert ohne Protokoll-Fixes | **erledigt** |
+| V-03 | Release-Notes `docs/releases/1.24.0.md` (EN + DE-Kurzfassung) | Datei vorhanden, referenziert aus STATUS | **erledigt** |
+| V-04 | Doku-Versionen: `docs/index.md` auf 1.24.0 (Drift 1.22.0 → 1.24.0 geschlossen) | `grep 1.22.0 docs/index.md` leer | **erledigt** |
+| V-05 | Gates grün vor Tag: `npm test` 954, Lint 0 Fehler, Paketprüfung gültig | Exit 0 | **erledigt** |
+| V-06 | Tag `v1.24.0` am Release-Commit, push, GitHub-Release mit `thundy-av-1.24.0.xpi` + `SHA256SUMS.txt` | Release https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.0 mit beiden Assets; Asset heruntergeladen und gegen lokalen Build verglichen — byte-identisch, SHA-256 `c6dc5631…3145d`; Hash in STATUS dokumentiert | **erledigt** |
+| V-07 | Store-Gate final: C1–C5 + C7 PASS, offen nur C6 | Gate-Protokoll: C1–C5 **PASS**, C6 FAIL (manuell), C7 **PASS** | **erledigt** |
+| V-08 | ✋ ATN-Signierung/Einreichung (ATN-Schlüssel) + Live-Test C6/FA-A5 | Store-URL in README/Listing | **offen (manuell)** |
+
+
+## 15. Runde 5 — Nächste Aufgaben: Einreichungsfokus (Plan vom 16. Oktober 2026)
+
+**Vorgehen:** Deltalanalyse über alle Pläne (Store-Gate, Analyse-Protokoll-Runde §13/§14,
+[AUFGABENPLAN_OPTIMIERUNG_I18N.md](AUFGABENPLAN_OPTIMIERUNG_I18N.md) T01–T18,
+[ENTERPRISE_NAECHSTE_SCHRITTE.md](ENTERPRISE_NAECHSTE_SCHRITTE.md)). Ergebnis der Delta-Analyse:
+die Qualitätsaufgaben T01–T17 sind implementiert; die manuellen Freigabenachweise konvergieren in
+**einen** Live-Test (C6 = T18 = FA-A5). Der kritische Pfad zur Einreichung ist daher:
+Doku-Konsistenz → Live-Test → Store-Gate GO → ATN-Signierung/Einreichung.
+
+### Befunde (Doku-Drift vor der Einreichung)
+
+| ID | Schwere | Befund | Beleg |
+|---|---|---|---|
+| SL-1 | **P1** | Das Store-Listing ist auf dem Stand 1.6/1.19.0: Header-Version „1.6“, Einleitungstext nennt Kandidat 1.19.0, Checklist §7 verweist auf „version 1.6.2“/„MIT at that release“ und meldet Screenshots als offen — alles überholt (aktuell 1.24.0, GPL v3, 23 echte PNGs, Gate C5 PASS). | `docs/store_listing.md` Kopf, Einleitung, §7 |
+| SL-2 | **P2** | `store_assets.md` meldet Screenshots als „offen — nur SVG-Platzhalter“ und „nur deutsch lokalisiert“; beide Aussagen sind überholt (23 reale PNGs, Gate C5 PASS; sechs Sprachen seit 1.19.0). | `docs/store_assets.md` §1/§2/§4/§6 (vor dem Fix) |
+| SL-3 | **P2** | `reviewer_notes.md` Kopf nennt „**Version:** 1.6“ statt 1.24.0. | `docs/reviewer_notes.md` Kopf (vor dem Fix) |
+
+### Aufgaben
+
+| ID | Aufgabe | Befund | DoD | Aufwand | Status |
+|---|---|---|---|---|---|
+| N-01 | ✋ **Live-Test in Thunderbird 140 ESR ausführen** (deckt C6, T18 und FA-A5 ab): Protokoll `docs/live_test_protocol.md` in der Fassung 1.24.0 abarbeiten — inkl. neuem Schritt **9.14** (Analyse-Protokoll live: Upload → `IN_PROGRESS`-Polling → fertiges Protokoll; Popup schließen/öffnen → Offline-Anzeige ohne Netzrequest; Rescan-Invalidierung; Cache-Verhalten). Der CI-belegte Umfang ist in [live_test_1_24_0.md](live_test_1_24_0.md) dokumentiert und muss nicht wiederholt werden. Der Runner deckt inzwischen 9.2 (Banner-Buttons/Consent-Gate), 9.3 (offline Absender-Persistenz), 9.12 (Cache leeren) und 9.13 (Banner-Dedup) automatisiert ab — der manuelle Rest schrumpft auf die Provider-Schritte mit konfiguriertem Schlüssel (9.6, 9.8–9.11, 9.14) plus 9.10 als Sichtprüfung. Provider- und interaktive Schritte ohne Schlüssel werden ehrlich als `N/A` mit Begründung geführt (das Gate zählt nur OK/FAIL; ≥ 10 OK nötig — erreichbar über 9.1–9.5, 9.7, 9.10, 9.12, 9.13, 9.14-dokumentiert). Summe-Zeile füllen, optionale Banner-Motive aufnehmen. | C6, FA-A5, T18 | Gate C6 **PASS** (≥ 10 OK, 0 FAIL) → `npm run store-gate` → **GO** | 0,5–1 d | **offen (manuell)** |
+| N-02 | **Store-Listing auf 1.24.0 aktualisieren:** Header-Version, Einleitung (Kandidat 1.24.0 inkl. Analyse-Protokoll), Release-Notes-Block 1.24.0 in §6, Checklist §7 (Manifest 1.24.0/GPL v3, Screenshots done). | SL-1 | `grep` findet keine 1.6/1.19.0-Aktivbehauptungen mehr; §7 ehrlich (Live-Test weiter offen bis N-01) | 0,25 d | **erledigt** |
+| N-03 | **`store_assets.md` aktualisieren:** reale PNG-Inventare (23, fünf Gruppen), SVGs als Entwurfsskizzen gekennzeichnet, „Was fehlt“/„Offene Punkte“ korrigiert, Sprachangabe sechssprachig. | SL-2 | Dokument stimmt mit `find docs/screenshots -iname '*.png'` (23) und Gate C5 PASS überein | 0,25 d | **erledigt** |
+| N-04 | **`reviewer_notes.md` Kopf auf 1.24.0** setzen. | SL-3 | Kopf nennt 1.24.0 | 0,1 d | **erledigt** |
+| N-05 | **Einreichungspaket & Signier-Dry-Run vorbereiten:** finale Checkliste (Store-Gate GO nach N-01), Signierkommando (STATUS „Remaining“) gegenprüfen, ATN-Konto-Voraussetzungen listen, Reviewer-Notes/Listing/Testdata als Review-Paket verlinken, Doku-Drift-Check (`grep 1.23.0/1.6` in Aktivdokumenten). | SL-1–SL-3, V-08 | Checkliste im STATUS „Remaining“ ergänzt; alle Aktivdokumente nennen 1.24.0 | 0,25 d | **offen** |
+| N-06 | **CI-Verifikation FA-A6:** `browser-ui`-Job auf dem Release-Commit prüfen; `hybrid-stored-*`/`hybrid-poll-*` müssen grün sein, sonst Fix nachziehen. Drei Testläufer-Fixes dafür nötig: (1) Hybrid-Fälle benötigen `populated: true` (sonst keine angezeigte Nachricht, Leerkarte statt Record-Auflösung); (2) `ready()`/Kartenzählung tolerant gegen die verschachtelte Scanner-Info-Karte (`.first()` bzw. Top-Level-Zählung `> .card`); (3) Poll-Case wartet auf das Bedrohungsscore-Feld der fertigen Karte (die IN_PROGRESS-Karte enthält die Protokoll-Metadaten bereits sofort). Außern Live-Runner gegen transienten Dokument-Teardown gehärtet (`documentElement is null` → Navigation-in-Progress-Retry). | FA-A6 | CI-Lauf [38982642985](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38982642985) auf `d6bd400`: **alle Jobs success** (test, Browser UI × 6, Thunderbird Linux GUI) | 0,1 d | **erledigt** |
+| N-07 | **Post-Listung: Review-Monitoring** (nach Einreichung): ATN-Review-Status verfolgen, Feedback-Triage (Issues mit FA-/T-Labels), schnelle Punkt-Releases für Review-Fixes (Versionspolitik wie Runde 4). | V-08 | Prozessabschnitt in STATUS/decisions | 0,25 d | **offen (nach Einreichung)** |
+| N-08 | **Erweiterung (kein Freigabe-Blocker):** Enterprise-Track (SEALED/SSO/N06, produktive Policy-Kanäle) gemäß [ENTERPRISE_NAECHSTE_SCHRITTE.md](ENTERPRISE_NAECHSTE_SCHRITTE.md) separat planen und priorisieren. | — | Eigener Aufgabenplan-Status im Enterprise-Dok | — | **offen (Erweiterung)** |
+| N-09 | **Erweiterung (kein Freigabe-Blocker):** Erkennungsqualität — reale Korpora für FR/ES/IT/PL-Heuristiken und sprachübergreifende Gemischttext-Fälle (Fortsetzung T15/T16 aus dem i18n-Plan). **Teil 1 erledigt:** Korpus `testdata/heuristics.json` von 12 auf 21 Samples erweitert — erstmals **benigne Gegenstücke** für FR/ES/IT/PL (Fehlalarm-Schutz: gewöhnliche Rechnungs-/Terminmails dürfen nicht riskant bewertet werden), ein gemischt- en/PL-benigner Fall und je Sprache eine Riskio-Variante mit anderem Signalwort-Muster (fr „Compte bloqué“, es „Contraseña“, it “Account bloccato”, pl „Ważna aktualizacja“). Der Bestandstest (`heuristic corpus distinguishes urgency from ordinary invoices across message languages`) besteht mit allen 21 Samples. **Teil 2 offen:** reale (nicht synthetische) Nachrichtenkorpora und Feinjustierung der Schwellen auf Basis von Fehlalarm-Statistik. | — | Korpus-Test mit 21 Samples grün; Teil 2 dokumentiert | 0,5 PT (Teil 1) | **teilweise erledigt (Erweiterung)** |
+
+### Reihenfolge und GO-Pfad
+
+1. **N-02…N-04** (erledigt) — Doku-Konsistenz vor der Einreichung hergestellt.
+2. **N-05** — Einreichungspaket und Signier-Dry-Run (ohne ATN-Schlüssel dokumentierbar).
+3. **N-01** ✋ — manueller Live-Test (kritischer Pfad); danach `npm run store-gate` → **GO**
+   (C1–C7 PASS). Alle anderen Kriterien sind seit Runde 4 grün.
+4. **V-08** — ATN-Signierung (`--amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed
+   --approval-timeout 0`) und Einreichung; danach **N-06/N-07**.
+5. **N-08/N-09** — Erweiterungen nach der Listung, klar getrennt von Freigabe-Arbeit.
+
+
+## 16. Runde 6 — Provider-Anbindungs-Audit („Sind alle externen Dienste korrekt angebunden?“)
+
+**Anlass:** Explizite Nutzerfrage. **Umfang:** Alle fünf externen Dienste — Hybrid Analysis,
+VirusTotal, urlscan.io, URLhaus (abuse.ch), AbuseIPDB — gegen ihre APIs geprüft: Endpunkte, Methoden,
+Auth-Header, Form-/JSON-Bodies, Host-Berechtigungen (Manifest ↔ options.js ↔ runtime
+`requireHostPermission`), Gateway (Timeout, Host-Queue, Retry-After, Abort bei Consent-Entzug) und
+Caching/Invalidierung (T10/T13).
+
+### Befunde
+
+| ID | Schwere | Befund | Beleg |
+|---|---|---|---|
+| PA-1 | **verifiziert korrekt** | Endpunkte/Methoden/Auth-Header aller fünf Dienste stimmen mit den Provider-APIs überein: HA `GET /api/v2/overview/{sha}` + `POST quick-scan/file` (multipart, `scan_type` im Form-Body) + `POST quick-scan/url` (form-urlencoded `url`+`scan_type`) mit `api-key`-Header; VT `GET /api/v3/files/{sha}` und `/ip_addresses/{ip}` mit `x-apikey`; urlscan `POST /scan/` JSON `{url, visibility: 'unlisted'}` mit `API-Key` + Ergebnis-Polling `GET /result/{uuid}/` mit Backoff; URLhaus `POST /v1/host/` form `host=…` mit `Auth-Key`, `query_status`-Auswertung; AbuseIPDB `GET /api/v2/check?ipAddress=…&maxAgeInDays=90` mit `Key`-Header | `providers.js`, `background.js:316–355`, `api.js` `fetch_hybrid_report` |
+| PA-2 | **verifiziert korrekt** | Gateway injiziert Auth-Header hostname-basiert und konsistent mit den Adaptern; alle Provider-Aufrufe laufen über `apiGateway.fetchWithTimeout` (Timeout, Host-Queue 2/Host für HA, Retry-After nur für GET, keine POST-Wiederholungen, Abort bei Consent-Entzug) | `api_gateway.js:17–45`, `providers.js`, T13-Nachweise |
+| PA-3 | **P3 (behoben)** | `user-agent: Falcon` ist ein verbotener Header-Name für `fetch` — der Header wurde **nie gesendet**; toter Code in `providers.js` und `api.js` (Popup-Overview). Entfernt. | `providers.js` (vor Fix), `api.js:622` (vor Fix) |
+| PA-4 | **P3 (behoben)** | `scan_type: 'all'` wurde zusätzlich als **Header** gesetzt, obwohl der multipart-/form-Body den Parameter bereits trägt — redundant. Entfernt. | `providers.js` (vor Fix) |
+| PA-5 | **P3 (behoben)** | VirusTotal-Origin war nur über die Wildcard `https://*.virustotal.com/*` gedeckt, während Code (`PROVIDER_ORIGINS`) und options.js den expliziten Pattern `https://www.virustotal.com/*` verwenden. Firefox deckt schmalere Pattern über breitere deklarierte Pattern ab, aber der explizite Eintrag macht den Grant deterministisch. Ergänzt. | `manifest.json` optional_host_permissions (vor/nach Fix), `scan_policy.js:57`, `options.js:188` |
+| PA-6 | **verifiziert korrekt** | options.js fordert Origins nur für konfigurierte Dienste an (`hybrid` bei Schlüssel, VT bei Schlüssel/IP-Provider, urlscan nur bei Stufe `max`, URLhaus/AbuseIPDB bei Provider+Schlüssel); Stufenwechsel erfordern immer „Speichern“, das die Origins neu anfragt — keine Lücke. Runtime-Gates (`tierAtLeast`, `mayTransmitExternally`) bleiben unabhängig von Berechtigungen. | `options.js:186–193` |
+| PA-7 | **verifiziert korrekt** | Schlüsselwechsel invalidieren Caches (VT-Cache, Hybrid-Report-Cache, Reputation), API-Schlüssel liegen — dokumentiert — unverschlüsselt lokal, werden im XPI nicht ausgeliefert, kein Telemetrie-Pfad | `background.js` storage.onChanged, `db.js`, reviewer_notes |
+| PA-8 | **P2 (behoben in 1.24.2)** | urlscan-Ergebnis-Polling fragte `/result/{uuid}/` **ohne** `API-Key`-Header — für `unlisted`-Scans per UUID-Zugriff zulässig, aber anfällig gegen urlscan-Politikänderungen. Behoben: der Ergebnis-Abruf sendet jetzt den `API-Key`; außerdem ist der Gateway-Auth-Injektions-Layer verdrahtet (`setApikey` bei Start und bei jeder Schlüsseländerung, defense-in-depth — bestehende Adapter-Header werden nie überschrieben). Restverifikation mit echtem Schlüssel im Live-Test (N-01). | `providers.js` `pollUrlscanIoResult`, `background.js` `syncGatewayApikeys`, `api_gateway.js` `_injectAuthHeaders` |
+
+**Gesamturteil:** Alle fünf externen Dienste sind korrekt angebunden; keine Endpunkt-, Auth- oder
+Berechtigungsfehler. Drei Hygiene-/Robustheits-Findings (PA-3…PA-5) wurden in Version **1.24.1** behoben.
+
+### Release 1.24.1
+
+| ID | Aufgabe | DoD | Status |
+|---|---|---|---|
+| PA-R1 | Version 1.24.1 (manifest/package/lock), CHANGELOG, Release-Notes `docs/releases/1.24.1.md`, docs/index + README (EN/DE) auf 1.24.1 | Pre-Submit: Versionen stimmen überein | **erledigt** |
+| PA-R2 | Tests mit aktualisierten Header-Erwartungen (`getHybridAnalysisOptions`, `fetch_hybrid_report`) | `npm test` → 954 bestanden | **erledigt** |
+| PA-R3 | Tag `v1.24.1` + GitHub-Release mit `thundy-av-1.24.1.xpi` + `SHA256SUMS.txt`; Asset-Hash gegen lokalen Build verifiziert | Release [v1.24.1](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.1) vom Workflow erstellt; entpackter Inhalt byte-identisch mit dem Build vom Tag-Commit (44 Dateien), Asset-SHA-256 `a172c322…9b5f`; Store-Gate C7 **PASS** | **erledigt** |
+| PA-R4 | CI grün auf Release-Commit (test, Browser UI × 6, Thunderbird Linux GUI) | [CI 39015367240](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/39015367240) — alle Jobs success | **erledigt** |
+| PA-R5 | ✋ Provider-Live-Checks mit echten Schlüsseln (N-01): HA-Upload inkl. 9.14, VT-Hash/IP, urlscan Time-of-Click inkl. PA-8-Restverifikation, URLhaus, AbuseIPDB | Protokoll Ist-Werte → C6 → GO | **offen (manuell)** |
+| PA-R6 | Version 1.24.2: Gateway-Verdrahtung (`syncGatewayApikeys` bei Start/onChanged, nur Ergänzung ohne Override), urlscan-Ergebnisabruf mit `API-Key`, Tests (Gateway-Injektion, Verdrahtung, Header-Assertion) | `npm test` → 956 bestanden (2 neue Tests) | **erledigt** |
+| PA-R7 | Tag `v1.24.2` + GitHub-Release (Workflow) mit Assets; Asset-Inhalt gegen Tag-Build verifiziert; Store-Gate C7 **PASS**; CI grün | Release [v1.24.2](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.2) vom Workflow erstellt; entpackter Inhalt byte-identisch mit dem Build vom Tag-Commit, Asset-SHA-256 `f7376f3c…67a9`; [CI 39018317418](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/39018317418) — alle Jobs success; Store-Gate C1–C5 + C7 **PASS**, einziges offenes Kriterium C6 | **erledigt** |

@@ -13,12 +13,12 @@ minimal notwendigen Daten an externe Analysedienste.
 | Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.19.0 – GitHub-Release (unsigniert) – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.24.2 – GitHub-Release (unsigniert) – siehe [CHANGELOG.md](CHANGELOG.md) |
 | Lizenz | GNU GPL v3 (`GPL-3.0-only`, aktueller Quelltext) – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.0 |
+| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.2 |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
 | Sprachen | Englisch, Deutsch, Französisch, Spanisch, Italienisch und Polnisch; vollständige lokale UI-Kataloge mit englischem Fallback |
 
@@ -165,7 +165,7 @@ npm run store-gate                                    # Submission-Gate (vom Mai
 
 Die Umsetzung steht im [Optimierungsplan](docs/AUFGABENPLAN_OPTIMIERUNG_I18N.md). Externe Scans benötigen globale Zustimmung und eine Nachrichtenaktion oder Absenderfreigabe. Lokale Prüfungen funktionieren ohne API-Schlüssel; vollständige URL-Übermittlungen verlangen die Stufe Maximal. Absenderfreigaben sind in den Einstellungen bearbeitbar. Reputation-Caches verfallen nach 15 Minuten; gespeicherte Ergebnisse sind auf 1.000 Nachrichten begrenzt und werden beim Datenbankstart anhand einer Aufbewahrungsfrist von 30 Tagen bereinigt.
 
-Der [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.19.0) enthält ein unsigniertes XPI. Reale Thunderbird-Tests und Screenshots sind noch erforderlich; dafür gibt es das [Protokoll für 1.19.0](docs/live_test_1_19_0.md).
+Der [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.2) enthält ein unsigniertes XPI. Echte Abnahme-Screenshots liegen vor ([thunderbird-linux](docs/screenshots/thunderbird-linux/), Gate C5 PASS); der manuelle Live-Test in Thunderbird 140 ESR bleibt erforderlich ([Live-Test-Protokoll](docs/live_test_protocol.md)).
 
 ## Berechtigungen im Überblick
 
@@ -249,4 +249,4 @@ Copyright © 2025–2026 Jan Bludau. Diese Lizenz gilt für den aktuellen Projek
 
 ## Einrichtung nach Installation
 
-Version 1.22.0 öffnet bei Erstinstallation einen [dreistufigen Einrichtungsassistenten](docs/EINRICHTUNGSASSISTENT.md). Updates öffnen ihn nicht erneut. Linkschutz kann eingerichtet werden; optionale Anbieter werden mit separater Einwilligung in den Einstellungen konfiguriert. Alle sechs Sprachen werden mitgeliefert; der Assistent lässt sich in den Einstellungen erneut öffnen oder ohne Speicherung verschieben.
+Seit Version 1.22.0 öffnet die Erweiterung bei Erstinstallation einen [dreistufigen Einrichtungsassistenten](docs/EINRICHTUNGSASSISTENT.md). Updates öffnen ihn nicht erneut. Linkschutz kann eingerichtet werden; optionale Anbieter werden mit separater Einwilligung in den Einstellungen konfiguriert. Alle sechs Sprachen werden mitgeliefert; der Assistent lässt sich in den Einstellungen erneut öffnen oder ohne Speicherung verschieben.

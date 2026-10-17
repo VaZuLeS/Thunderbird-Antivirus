@@ -681,6 +681,212 @@ tag: tag,
         context.fetch_hybrid_report = originalFetch;
         context.handle_hybrid_report_fetch_error = originalHandleFetchError;
     });
+
+    it('renders analysis protocol metadata (job and submission id)', async () => {
+        context.apiContentElement.innerHTML = '';
+        const originalSetupRescan = context.setupRescanButton;
+        const originalSetupCdr = context.setupCdrButton;
+        context.setupRescanButton = () => {};
+        context.setupCdrButton = () => {};
+        const originalOpenDB = context.openDB;
+        const originalUpdateStore = context.updateStore;
+        context.openDB = async () => ({ close() {} });
+        context.updateStore = async () => 'ok';
+        const originalFetch = context.fetch_hybrid_report;
+        context.fetch_hybrid_report = async (sha) => ({
+            response: { status: 200 },
+            json_data: { state: 'COMPLETE', threat_score: 10, verdict: 'clean', sha256: sha }
+        });
+
+        await get_hybrid_report_by_sha256({
+            hybrid_sha: 'proto_sha',
+            attachmentName: 'report.pdf',
+            messageId: 'msg1',
+            partName: 'part1',
+            headerMessageId: 'hdr1',
+            jobId: 'job-42',
+            submissionId: 'sub-42'
+        });
+
+        const html = context.apiContentElement.innerHTML;
+        assert.ok(html.includes('Analyse-Protokoll'));
+        assert.ok(html.includes('Job-ID: job-42'));
+        assert.ok(html.includes('Submission-ID: sub-42'));
+        assert.ok(html.includes('SHA-256: proto_sha'));
+
+        context.fetch_hybrid_report = originalFetch;
+        context.openDB = originalOpenDB;
+        context.updateStore = originalUpdateStore;
+        context.setupRescanButton = originalSetupRescan;
+        context.setupCdrButton = originalSetupCdr;
+    });
+
+    it('polls an IN_PROGRESS analysis automatically until the protocol is complete', async () => {
+        context.apiContentElement.innerHTML = '';
+        const originalSetupRescan = context.setupRescanButton;
+        const originalSetupCdr = context.setupCdrButton;
+        context.setupRescanButton = () => {};
+        context.setupCdrButton = () => {};
+        const originalOpenDB = context.openDB;
+        const originalUpdateStore = context.updateStore;
+        const originalSetTimeout = context.setTimeout;
+        context.openDB = async () => ({ close() {} });
+        context.updateStore = async () => 'ok';
+
+        const scheduled = [];
+        context.setTimeout = (fn, ms) => { scheduled.push(ms); fn(); return 0; };
+
+        let fetchCalls = 0;
+        const originalFetch = context.fetch_hybrid_report;
+        context.fetch_hybrid_report = async (sha) => {
+            fetchCalls += 1;
+            if (fetchCalls === 1) return { response: { status: 200 }, json_data: { state: 'IN_PROGRESS', sha256: sha } };
+            return { response: { status: 200 }, json_data: { state: 'COMPLETE', threat_score: 0, verdict: 'clean', sha256: sha } };
+        };
+
+        await get_hybrid_report_by_sha256({
+            hybrid_sha: 'poll_sha',
+            attachmentName: 'scan.txt',
+            messageId: 'msg1',
+            partName: 'part1',
+            headerMessageId: 'hdr1'
+        });
+
+        // Let the synchronously scheduled poll finish its microtasks.
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        assert.strictEqual(fetchCalls, 2, 'the report should be fetched again automatically');
+        assert.ok(scheduled.length >= 1, 'a poll timer should have been scheduled');
+        assert.ok(context.apiContentElement.innerHTML.includes('automatisch alle 5 Sekunden'));
+
+        context.fetch_hybrid_report = originalFetch;
+        context.setTimeout = originalSetTimeout;
+        context.openDB = originalOpenDB;
+        context.updateStore = originalUpdateStore;
+        context.setupRescanButton = originalSetupRescan;
+        context.setupCdrButton = originalSetupCdr;
+    });
+
+    it('stops polling after the attempt limit', async () => {
+        context.apiContentElement.innerHTML = '';
+        const originalSetupRescan = context.setupRescanButton;
+        const originalSetupCdr = context.setupCdrButton;
+        context.setupRescanButton = () => {};
+        context.setupCdrButton = () => {};
+        const originalOpenDB = context.openDB;
+        const originalUpdateStore = context.updateStore;
+        const originalSetTimeout = context.setTimeout;
+        context.openDB = async () => ({ close() {} });
+        context.updateStore = async () => 'ok';
+        context.setTimeout = (fn, ms) => { fn(); return 0; };
+
+        let fetchCalls = 0;
+        const originalFetch = context.fetch_hybrid_report;
+        context.fetch_hybrid_report = async (sha) => {
+            fetchCalls += 1;
+            return { response: { status: 200 }, json_data: { state: 'IN_PROGRESS', sha256: sha } };
+        };
+
+        await get_hybrid_report_by_sha256({
+            hybrid_sha: 'limit_sha',
+            attachmentName: 'slow.txt',
+            messageId: 'msg1',
+            partName: 'part1',
+            headerMessageId: 'hdr1'
+        });
+
+        for (let i = 0; i < 4; i += 1) await new Promise((resolve) => setImmediate(resolve));
+
+        assert.strictEqual(fetchCalls, 3, 'polling must stop at HYBRID_REPORT_POLL_MAX_ATTEMPTS');
+
+        context.fetch_hybrid_report = originalFetch;
+        context.setTimeout = originalSetTimeout;
+        context.openDB = originalOpenDB;
+        context.updateStore = originalUpdateStore;
+        context.setupRescanButton = originalSetupRescan;
+        context.setupCdrButton = originalSetupCdr;
+    });
+
+    it('persists the finished protocol into the stored record', async () => {
+        context.document.getElementById('hybrid_analysis_api_content'); context.apiContentElement.innerHTML = '';
+        const originalOpenDB = context.openDB;
+        const originalUpdateStore = context.updateStore;
+        const originalSetupRescan = context.setupRescanButton;
+        const originalSetupCdr = context.setupCdrButton;
+        context.setupRescanButton = () => {};
+        context.setupCdrButton = () => {};
+
+        let updateArgs = null;
+        const storedRecord = {
+            attachments: [{ attachment_name: 'test.txt', hybrid_sha256: 'persist_sha', state: 'UPLOADED' }],
+            links: [{ url: 'https://example.org/a', hybrid_sha256: 'persist_sha', state: 'UPLOADED' }]
+        };
+        context.openDB = async () => ({ close() {} });
+        context.updateStore = async (db, storeName, key, updateFn) => {
+            updateArgs = { storeName, key, updated: updateFn(JSON.parse(JSON.stringify(storedRecord))) };
+            return key;
+        };
+
+        const finalReport = { state: 'COMPLETE', threat_score: 0, verdict: 'clean', sha256: 'persist_sha' };
+        const originalFetch = context.fetch_hybrid_report;
+        context.fetch_hybrid_report = async (sha) => ({ response: { status: 200 }, json_data: finalReport });
+
+        await get_hybrid_report_by_sha256({
+            hybrid_sha: 'persist_sha',
+            attachmentName: 'test.txt',
+            messageId: 'msg1',
+            partName: 'part1',
+            headerMessageId: 'hdr1'
+        });
+
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setImmediate(resolve));
+
+        assert.ok(updateArgs, 'updateStore should have been called');
+        assert.strictEqual(updateArgs.storeName, 'hybridanalysis');
+        assert.strictEqual(updateArgs.key, 'hdr1');
+        assert.deepStrictEqual(updateArgs.updated.attachments[0].report, finalReport);
+        assert.ok(updateArgs.updated.attachments[0].report_fetched_at);
+        assert.deepStrictEqual(updateArgs.updated.links[0].report, finalReport);
+
+        context.fetch_hybrid_report = originalFetch;
+        context.openDB = originalOpenDB;
+        context.updateStore = originalUpdateStore;
+        context.setupRescanButton = originalSetupRescan;
+        context.setupCdrButton = originalSetupCdr;
+    });
+
+    it('renders a stored protocol offline instead of re-querying the provider', async () => {
+        assert.strictEqual(context.hasFinalStoredReport({ report: { state: 'COMPLETE' } }), true);
+        assert.strictEqual(context.hasFinalStoredReport({ report: { state: 'IN_PROGRESS' } }), false);
+        assert.strictEqual(context.hasFinalStoredReport(null), false);
+        assert.strictEqual(context.hasFinalStoredReport({ state: 'UPLOADED' }), false);
+
+        const originalRender = context.render_hybrid_report_ui;
+        let renderArgs = null;
+        context.render_hybrid_report_ui = (args, target) => { renderArgs = { args, target }; };
+
+        const task = context.buildStoredAttachmentReportTask({
+            hybrid_sha256: 'stored_sha',
+            attachment_name: 'stored.pdf',
+            report: { state: 'COMPLETE', verdict: 'clean' },
+            hybrid_job_id: 'job-7',
+            hybrid_submission_id: 'sub-7',
+            report_fetched_at: '2026-10-16T10:00:00.000Z'
+        }, { id: 5, headerMessageId: 'hdr5' });
+
+        const frag = context.document.createDocumentFragment();
+        await task(frag);
+
+        assert.ok(renderArgs, 'render_hybrid_report_ui should have been called');
+        assert.strictEqual(renderArgs.args.hybrid_sha, 'stored_sha');
+        assert.strictEqual(renderArgs.args.jobId, 'job-7');
+        assert.strictEqual(renderArgs.args.submissionId, 'sub-7');
+        assert.strictEqual(renderArgs.args.fetched_at, '2026-10-16T10:00:00.000Z');
+
+        context.render_hybrid_report_ui = originalRender;
+    });
 });
 
 
@@ -2139,7 +2345,8 @@ describe('fetch_hybrid_report', () => {
         assert.strictEqual(fetchedUrl, 'https://hybrid-analysis.com/api/v2/overview/test_sha_2');
         assert.strictEqual(fetchedOptions.method, 'GET');
         assert.strictEqual(fetchedOptions.headers['api-key'], 'mock_api_key');
-        assert.strictEqual(fetchedOptions.headers['user-agent'], 'Falcon');
+        // user-agent is a forbidden header name for fetch and must not be set.
+        assert.ok(!('user-agent' in fetchedOptions.headers));
 
         assert.strictEqual(result.response.status, 200);
         assert.deepStrictEqual(result.json_data, { result: 'success data' });
