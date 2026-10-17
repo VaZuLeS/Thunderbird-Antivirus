@@ -28,10 +28,10 @@ erstellten Release (Assets verifiziert).
 # CI-Live-Runner vollständig grün mit 9.12/9.13; Theme-Klicks gehärtet — 16. Oktober 2026
 
 Der erweiterte Live-Runner ist im CI über alle sieben Läufe bestanden
-([CI 38985838395](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38985838395)):
+([CI 38986392566](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38986392566)):
 `bannerDedup` zeigt je Nachricht genau `{optin: 1, threat: 0}` nach zwei Nachrichtenwechseln,
 `cacheClear` bestätigt die lokalisierte Erfolgsmeldung, den leeren Objektspeicher und unveränderte
-Einstellungen/Zustimmung. Dabei zeigte der Failure-Screenshot des ersten Laufs ein separates
+Einstellungen/Zustimmung. Dabei zeigte der Failure-Screenshot des ersten Laufs ein separates Nach einem weiteren Zähl-Race (Banner-Injektion der neuen Nachricht) ist der Lauf auf `5fc3cb9` vollständig grün; die Report-Prüfung über alle 7 Läufe bestätigt die Dedup- und Cache-Werte.
 Ergebnis-Problem: Die Dark-Auswahl in den Einstellungen ging verloren, wenn der Klick vor dem
 Listener-Attachment der Seite landete („Follow Thunderbird“ aktiv statt Dark, während
 Violet/Compact gespeichert waren). Die Theme-Klicks prüfen jetzt den gespeicherten Zustand und
