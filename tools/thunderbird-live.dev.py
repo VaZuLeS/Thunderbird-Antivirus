@@ -272,8 +272,11 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     buttons_info = wait_for(lambda: m.page(
         'return {count:document.querySelectorAll("#thundy-optin-banner button").length,'
         'once:document.querySelectorAll("#thundy-optin-banner button")[0]?.textContent,'
-        'always:document.querySelectorAll("#thundy-optin-banner button")[1]?.textContent};'))
-    assert buttons_info['count'] == 2, buttons_info
+        'always:document.querySelectorAll("#thundy-optin-banner button")[1]?.textContent,'
+        'options:!!document.getElementById("thundy-open-options")};'))
+    # With consent off the banner ships three buttons: scan once, always scan
+    # this sender, and the options shortcut (addOptionsButton at injection).
+    assert buttons_info['count'] == 3 and buttons_info['options'] is True, buttons_info
     assert buttons_info['once'] == catalogs[locale]['bannerScanOnce']['message'], buttons_info
     assert buttons_info['always'] == catalogs[locale]['bannerScanSender']['message'], buttons_info
     m.page('document.querySelectorAll("#thundy-optin-banner button")[0].click();')
@@ -419,6 +422,8 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
                             'storeEmpty': True, 'settingsPreserved': True}
     # Protocol 9.3: persisting a sender via the banner works fully offline
     # (consent on, no API key): the scan stays local, only the opt-in is stored.
+    no_persist = m.page('return window.wrappedJSObject.browser.storage.local.get(["scanningEnabledSenders"]).then(s => (s.scanningEnabledSenders || []).length === 0);')
+    assert no_persist is True, no_persist
     m.page('return window.wrappedJSObject.browser.storage.local.set({externalAnalysisConsent: true}).then(() => true);')
     display_message(0)
     wait_for(banner_counts_when_visible)
