@@ -412,6 +412,6 @@ Berechtigungsfehler. Drei Hygiene-/Robustheits-Findings (PA-3…PA-5) wurden in 
 |---|---|---|---|
 | PA-R1 | Version 1.24.1 (manifest/package/lock), CHANGELOG, Release-Notes `docs/releases/1.24.1.md`, docs/index + README (EN/DE) auf 1.24.1 | Pre-Submit: Versionen stimmen überein | **erledigt** |
 | PA-R2 | Tests mit aktualisierten Header-Erwartungen (`getHybridAnalysisOptions`, `fetch_hybrid_report`) | `npm test` → 954 bestanden | **erledigt** |
-| PA-R3 | Tag `v1.24.1` + GitHub-Release mit `thundy-av-1.24.1.xpi` + `SHA256SUMS.txt`; Asset-Hash gegen lokalen Build verifiziert | `gh release view v1.24.1`; Store-Gate C7 **PASS** | **erledigt** |
-| PA-R4 | CI grün auf Release-Commit (test, Browser UI × 6, Thunderbird Linux GUI) | Run-Link in STATUS | **erledigt** |
+| PA-R3 | Tag `v1.24.1` + GitHub-Release mit `thundy-av-1.24.1.xpi` + `SHA256SUMS.txt`; Asset-Hash gegen lokalen Build verifiziert | Release [v1.24.1](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.1) vom Workflow erstellt; entpackter Inhalt byte-identisch mit dem Build vom Tag-Commit (44 Dateien), Asset-SHA-256 `a172c322…9b5f`; Store-Gate C7 **PASS** | **erledigt** |
+| PA-R4 | CI grün auf Release-Commit (test, Browser UI × 6, Thunderbird Linux GUI) | [CI 39015367240](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/39015367240) — alle Jobs success | **erledigt** |
 | PA-R5 | ✋ Provider-Live-Checks mit echten Schlüsseln (N-01): HA-Upload inkl. 9.14, VT-Hash/IP, urlscan Time-of-Click inkl. PA-8-Verifikation, URLhaus, AbuseIPDB | Protokoll Ist-Werte → C6 → GO | **offen (manuell)** |
