@@ -250,10 +250,16 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         return m.page('return {optin:document.querySelectorAll("#thundy-optin-banner").length,'
                       'threat:document.querySelectorAll("#thundy-threat-banner").length};')
 
+    def banner_counts_when_visible():
+        # Counting can run before the newly displayed message's banner is
+        # injected; retry until a banner is present, then report the counts.
+        counts = banner_counts()
+        return counts if counts and counts['optin'] + counts['threat'] >= 1 else None
+
     display_message(1)
-    counts_second = wait_for(banner_counts)
+    counts_second = wait_for(banner_counts_when_visible)
     display_message(0)
-    counts_first = wait_for(banner_counts)
+    counts_first = wait_for(banner_counts_when_visible)
     for counts in (counts_second, counts_first):
         assert counts['optin'] <= 1 and counts['threat'] <= 1 \
             and counts['optin'] + counts['threat'] >= 1, counts
