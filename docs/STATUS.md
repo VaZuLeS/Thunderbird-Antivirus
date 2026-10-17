@@ -34,7 +34,7 @@ nur Ergänzung: bestehende Adapter-Header werden nie überschrieben (Test belegt
 Ergebnis-Abruf (`/result/{uuid}/`) sendet jetzt den `API-Key` — für `unlisted`-Scans bislang per
 UUID-Zugriff zulässig, aber robust gegen urlscan-Politikänderungen (Test mit Header-Assertion).
 `npm test` → 956 bestanden (2 neue Tests); `npm run check` → Exit 0. Release v1.24.2 vorbereitet
-(CHANGELOG, Release-Notes, Doku-Versionen). [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §16.
+(CHANGELOG, Release-Notes, Doku-Versionen). Nachweis: Tag `v1.24.2` am Release-Commit `26fb960`; der Workflow „Publish GitHub release“ hat [v1.24.2](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.2) mit `thundy-av-1.24.2.xpi` + `SHA256SUMS.txt` erstellt (Asset-SHA-256 `f7376f3c97e89d878eed25bb6737928a3e789829c7cd4b450ae6db49056267a9`); der entpackte Inhalt ist mit dem lokalen Build vom Tag-Commit byte-identisch (diff -r ohne Abweichung). CI auf dem Release-Commit vollständig grün ([CI 39018317418](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/39018317418): test, Browser UI × 6, Thunderbird Linux GUI). Store-Gate: C1–C5 + C7 **PASS**, einziges offenes Kriterium C6. [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §16.
 
 # Provider-Anbindungs-Audit: alle fünf Dienste korrekt angebunden — 17. Oktober 2026
 
