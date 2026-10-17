@@ -1,0 +1,7 @@
+{
+  "name": "Thundy AV – Email & Link Security",
+  "description": "Email attachment and link scanner with threat scoring, link decision auditing, and enterprise profile management.",
+  "version": "1.23.0",
+  "permissions": [],
+  "capabilities": []
+}
