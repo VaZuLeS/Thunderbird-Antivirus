@@ -25,6 +25,20 @@ Feld der fertigen Karte statt auf die sofort sichtbaren Protokoll-Metadaten. Zus
 „Publish GitHub release“-Workflow-Fehler beim Tag-Push war nur der Konflikt mit dem zuvor manuell
 erstellten Release (Assets verifiziert).
 
+# Live-Abnahme 1.24.0 strukturiert: CI-Beleg getrennt vom Maintainer-Protokoll — 16. Oktober 2026
+
+Kriterium C6 ehrlich verzinsbar gemacht: Das ausfüllbare Protokoll [live_test_protocol.md](live_test_protocol.md)
+ist auf 1.24.0 aktualisiert (Version, Bezugs-Commit `v1.24.0`/`82238c7`) und um Schritt **9.14 „Analyse-Protokoll
+live“** erweitert (Upload → `IN_PROGRESS`-Polling ohne Nutzereingriff → fertiges Protokoll mit Job-/Submission-ID;
+Popup zu/au → Offline-Anzeige ohne Netzrequest; Rescan-Invalidierung; Cache-Verhalten). Neu:
+[live_test_1_24_0.md](live_test_1_24_0.md) trennt den **CI-belegten Umfang** (reales Thunderbird 140 ESR im
+Job „Thunderbird Linux GUI“: Frischinstallation, Upgrade 1.22.0 → 1.24.0 mit erhaltener Konfiguration,
+sechs Sprachen, Banner/Time-of-Click, Linkdialog, OS-Übergabe, Audit, Themes, Abbruch-Recovery — Runner-Report
+`report.json` + Screenshots im Artefakt `thunderbird-linux-live`) vom **Maintainer-Rest** (Schritte mit
+Hybrid-Analysis-Schlüssel und interaktiven Zustimmungs-/Netzwerkprüfungen, u. a. 9.6, 9.8–9.11, 9.14).
+Provider-/interaktive Schritte werden im Protokoll ehrlich als `N/A` mit Begründung geführt; das Gate zählt
+OK/FAIL (≥ 10 OK, 0 FAIL). Aufgabenstand: [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §15.
+
 # Runde 5: Einreichungsfokus — Doku-Drift geschlossen, nächste Aufgaben geplant — 16. Oktober 2026
 
 Deltalanalyse über alle Pläne (Store-Gate, i18n-Plan T01–T18, Enterprise): Die Qualitätsaufgaben

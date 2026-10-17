@@ -51,7 +51,7 @@ without consent. There is no telemetry, no analytics and no developer-operated s
 - Release 1.20.0: local link decisions, administrator filters, decision snapshots and JSON/CSV exports. [Administrator roadmap](ADMIN_FEATURES.md) · [Release notes](releases/1.20.0.md).
 - Release 1.19.1: fixed popup sizing, default-browser link opening and redesigned security UI. [Release notes](releases/1.19.1.md).
 - Release 1.19.0: complete EN/DE/FR/ES/IT/PL, 485 passing tests, no lint errors, verified unsigned XPI. [Release notes](releases/1.19.0.md).
-- Real-client verification remains open: [live_test_1_20_0.md](live_test_1_20_0.md). GitHub publication is separate from Thunderbird Store signing and submission.
+- Live acceptance status for the 1.24.0 submission candidate: CI-executed real-Thunderbird checks in [live_test_1_24_0.md](live_test_1_24_0.md); the maintainer protocol (incl. analysis-protocol step 9.14) is [live_test_protocol.md](live_test_protocol.md) and remains open (gate C6). GitHub publication is separate from Thunderbird Store signing and submission.
 
 ## Enterprise implementation concept
 

@@ -1,8 +1,10 @@
-> Dieses Formular dokumentiert die frühere Store-Abnahme. Für den neuen Kandidaten 1.19.0 mit sechs Sprachen gilt zusätzlich [live_test_1_19_0.md](live_test_1_19_0.md); dessen Ergebnisse sind noch offen.
+> Dieses Formular ist der ausfüllbare Maintainer-Teil der Abnahme für den Einreichungskandidaten **1.24.0**.
+> Den automatisiert (CI, reales Thunderbird 140 ESR) belegten Umfang dokumentiert [live_test_1_24_0.md](live_test_1_24_0.md);
+> die hier aufgelisteten Schritte brauchen API-Schlüssel bzw. interaktive Prüfungen und bleiben davon unberührt.
 
 # Live-Test-Protokoll — Thundy AV in Thunderbird 140 ESR
 
-**Add-on:** Thundy AV – Email Scanner for Thunderbird · Version **1.6** · ID `thundy-av@bludau-it-services.de`
+**Add-on:** Thundy AV – Email Scanner for Thunderbird · Version **1.24.0** · ID `thundy-av@bludau-it-services.de`
 **Bezug:** Aufgabenplan `docs/AUFGABENPLAN_STORE_READINESS.md` — **A-06** (Live-Test, abhängig von A-03/A-04).
 **Testdaten:** `testdata/` (Erwartungen je Datei in `testdata/README.md`).
 
@@ -22,9 +24,9 @@
 | Betriebssystem + Version | |
 | Datum des Tests | |
 | Tester (Name/Kürzel) | |
-| Add-on-Version | 1.6.2 |
+| Add-on-Version | 1.24.0 |
 | Add-on-ID | thundy-av@bludau-it-services.de |
-| Bezugs-Commit (Repo) | `b5734b6` (HEAD zum Erstellzeitpunkt dieses Protokolls) |
+| Bezugs-Commit (Repo) | Tag `v1.24.0` (Commit `82238c7`) |
 | Testprofil (Name/Pfad) | |
 | Verwendeter API-Schlüssel (Anbieter/Art) | |
 | Datenschutz-Stufe(n) im Test | ☐ strict ☐ balanced ☐ max |
@@ -37,7 +39,7 @@ Threat-Banner, Time-of-Click), die Kontextmenüeinträge, der Popup-Bootstrap un
 Berechtigungs-/Stufen-Gates. Grundlage ist der Aufgabenplan A-06 („Kernfunktion live belegt") und die
 in `docs/reviewer_notes.md` §8 beschriebene Vorgehensweise.
 
-**Referenzstand des Codes:** Basis `b5734b6`. Hinweis für den Tester: A-04/A-05/A-08/A-10 wurden auf
+**Referenzstand des Codes:** Tag `v1.24.0` (Commit `82238c7`, enthält die Analyse-Protokoll-Auslieferung, Schritt 9.14). Hinweis für den Tester: A-04/A-05/A-08/A-10 wurden auf
 diesem Stand gerade umgesetzt (u. a. `TIER_REQUIRES_MAX`, `TIER_BLOCKS_UPLOAD`, `HOST_PERMISSION_MISSING`,
 `menus`-Berechtigung). Weicht der getestete Commit ab, oben eintragen.
 
@@ -159,6 +161,8 @@ Stufe `strict`, `scanningEnabledSenders` leer. „Erwartung" = Soll; „Ist" tr�
 
 ---
 
+| **9.14** Analyse-Protokoll live (FA-A5) | (a) Mit konfiguriertem Hybrid-Analysis-Schlüssel, Zustimmung AN und Stufe `balanced`: Anhang hochladen → die Karte zeigt „Die Analyse läuft noch (IN_PROGRESS). Das Ergebnis wird automatisch alle 5 Sekunden erneut abgefragt …“ und aktualisiert sich **ohne Nutzereingriff** auf das fertige Protokoll. (b) Die fertige Karte enthält den Block „Analyse-Protokoll“ mit Job-ID, Submission-ID, SHA-256 und Abrufzeitpunkt. (c) Popup schließen und erneut öffnen: das Protokoll wird **ohne erneute Netzwerk-Anfrage** angezeigt (Offline-Protokoll; im Netzwerk-Tab verifizieren). (d) Rescan/URL-Scan/Autoupload invalidiert das gespeicherte Protokoll: danach erscheint kein veraltetes Protokoll als aktuell; der erneute Abruf liefert das neue. (e) „Cache leeren“ entfernt auch die gespeicherten Protokolle. | | | |
+
 ## 10. Abschluss
 
 - **Ergebnis:** ☐ alle Schritte OK ☐ Fehlschläge vorhanden (siehe unten)
@@ -170,8 +174,9 @@ Stufe `strict`, `scanningEnabledSenders` leer. „Erwartung" = Soll; „Ist" tr�
 | | | | | |
 | | | | | |
 
-- **Anhänge:** Screenshots und kopierte Konsolen-/Netzwerkzeilen zu den Schritten 9.1–9.13.
+- **Anhänge:** Screenshots und kopierte Konsolen-/Netzwerkzeilen zu den Schritten 9.1–9.14.
 - **Hinweis zur Vollständigkeit:** Dieses Protokoll deckt nur die ohne Thunderbird-GUI **nicht**
   prüfbaren Punkte ab. Die reinen Datei-/Parsing-Eigenschaften der Testdaten sind in
   `testdata/README.md` §4 (technische Validierung) nachgewiesen.
-- **Version/Commit dieses Protokolls:** Bezug `b5734b6` (siehe §1/§2); bei abweichendem Test-Commit dort aktualisieren.
+- **Version/Commit dieses Protokolls:** Bezug `v1.24.0` / `82238c7` (siehe §1/§2); bei abweichendem Test-Commit dort aktualisieren.
+- **Schritt 9.14 gehört zur Analyse-Protokoll-Auslieferung (FA-1…FA-3, Aufgabenplan §13); die CI-belegten Anteile stehen in [live_test_1_24_0.md](live_test_1_24_0.md) §1.
