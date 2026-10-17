@@ -25,6 +25,10 @@ Feld der fertigen Karte statt auf die sofort sichtbaren Protokoll-Metadaten. Zus
 „Publish GitHub release“-Workflow-Fehler beim Tag-Push war nur der Konflikt mit dem zuvor manuell
 erstellten Release (Assets verifiziert).
 
+# CI-Live-Runner belegt Protokollschritte 9.2 und 9.3 — 16. Oktober 2026
+
+Der reale Thunderbird-Lauf im CI deckt jetzt auch **9.2** (beide Banner-Buttons mit lokalisierten Labels; Consent aus → Klick endet ohne Übertragung und der Options-Shortcut erscheint) und **9.3** („Absender dauerhaft scannen“ persistiert `sender@example.invalid` in `scanningEnabledSenders` — bei Consent an und ohne API-Schlüssel vollständig offline, der Scan bleibt lokal; Bestätigung in allen sechs Sprachen) ab ([CI 38989477602](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38989477602), Report-Felder `bannerButtons`/`senderPersistence`, alle Läufe `passed: true`). Der manuelle Rest von N-01 umfasst damit nur noch die Provider-Schritte mit konfiguriertem Schlüssel (9.6, 9.8–9.11, 9.14) plus 9.10 als Sichtprüfung; 9.2, 9.3, 9.12 und 9.13 sind CI-belegt ([live_test_1_24_0.md](live_test_1_24_0.md) §1). Runner-Fix unterwegs: der Consent-off-Banner enthält drei Buttons (inkl. Options-Shortcut) — die Erwartung wurde korrigiert.
+
 # CI-Live-Runner vollständig grün mit 9.12/9.13; Theme-Klicks gehärtet — 16. Oktober 2026
 
 Der erweiterte Live-Runner ist im CI über alle sieben Läufe bestanden

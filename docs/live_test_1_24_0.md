@@ -1,7 +1,7 @@
 # Live-Abnahme 1.24.0 — Analyse-Protokoll und CI-Läufe
 
 Status: Der CI-anteilige Live-Umfang ist mit **realem Thunderbird 140 ESR** ausgeführt
-([CI 38986392566](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38986392566),
+([CI 38989477602](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38989477602),
 Job „Thunderbird Linux GUI", Runner `tools/thunderbird-live.dev.py`, Artefakt
 `thunderbird-linux-live`: Report `report.json` + Screenshots je Lauf; 7 Läufe — install-en, sechs Sprachen- und sechs Neustart-/Abbruch-Läufe — alle `passed: true`). **Offen bleiben die
 Schritte, die einen Hybrid-Analysis-API-Schlüssel bzw. interaktive Zustimmungs- und
@@ -26,6 +26,8 @@ Netzwerkbeobachtung brauchen** — diese führt der Maintainer mit
 | Lokalisierte Add-on-Seiten je Sprache | `localizedPages` |
 | Wiederherstellung nach erzwungenem Prozessabbruch; Neustart-Prüfung | `--restart-check --crash-check`-Läufe je Sprache |
 | Protokoll 9.13: Banner-Dedup beim Nachrichtenwechsel (keine Doppel-Banner) | `bannerDedup` — gemessen in allen 7 Läufen: zwei Wechsel, je Nachricht `{optin: 1, threat: 0}`, identische Zählung (Zählung wartet auf die Banner-Injektion der neuen Nachricht) |
+| Protokoll 9.2: beide Banner-Buttons mit lokalisierten Labels; Consent aus → Klick endet ohne Übertragung mit Optionen-Shortcut | `bannerButtons` — gemessen in allen 7 Läufen: `{count: 2, consentOffOptionsShortcut: true}` (Labels je Sprache gegen `bannerScanOnce`/`bannerScanSender` geprüft) |
+| Protokoll 9.3: „Absender dauerhaft scannen“ persistiert offline (Consent an, kein API-Schlüssel — Scan bleibt lokal) | `senderPersistence` — gemessen in allen 6 Sprachläufen: `persisted: true`, Absender in `scanningEnabledSenders`, lokalisierte Bestätigung („Dieser Absender wird jetzt automatisch gescannt.“ u. a.) |
 | Protokoll 9.12: „Cache leeren“ mit Bestätigungsdialog leert den Objektspeicher, Einstellungen/Zustimmung bleiben | `cacheClear` — gemessen in allen 7 Läufen: Bestätigungs-Stub wirksam, lokalisierte Erfolgsmeldung („Cache vidé.“, „Pamięć podręczna wyczyszczona.” …), Store-Count = 0, `externalAnalysisConsent` unverändert |
 
 ## 2. Offen für den Maintainer (manuell, mit Hybrid-Analysis-API-Schlüssel)
@@ -33,14 +35,14 @@ Netzwerkbeobachtung brauchen** — diese führt der Maintainer mit
 Schritte aus [live_test_protocol.md](live_test_protocol.md) §9, die ohne Schlüssel/GUI-Interaktion
 nicht belegbar sind — darunter:
 
-- 9.6/9.8: Consent-Gesten, `permissions.request` aus dem Banner, Scan fortsetzen/verweigern.
+- 9.6/9.8: Consent-Gesten mit konfiguriertem Schlüssel, `permissions.request` aus dem Banner, Scan fortsetzen/verweigern (die Consent-Gate-Ablehnung ohne Schlüssel ist bereits CI-belegt, siehe `bannerButtons` in §1).
 - 9.9: Stufen-Gate mit echten Provider-Aufrufen (`balanced`/`max`, vollständige URL bei `max`).
 - 9.11: Entzug der Host-Berechtigung → `HOST_PERMISSION_MISSING`.
 - **9.14 (neu): Analyse-Protokoll live** — Upload → Karte „Analyse läuft noch (IN_PROGRESS)" mit
   automatischem Nachfragen (alle 5 s, max. 3 Versuche) → fertiges Protokoll mit Job-/Submission-ID
   und Abrufzeitpunkt; Popup schließen/öffnen → Protokoll wird **offline** angezeigt; Rescan leert
   das alte Protokoll und startet neu.
-- Ergänzend 9.3 und 9.10 (Absenderfreigabe, HTML-Entschärfung) als interaktive Sichtprüfungen.
+- Ergänzend 9.10 (HTML-Entschärfung mit Speicher-Dialog) als interaktive Sichtprüfung. 9.2, 9.3, 9.12 und 9.13 sind im CI belegt (siehe §1).
   9.12 und 9.13 sind inzwischen im CI belegt (siehe §1).
 
 Erst wenn diese Schritte mit Ist-Werten und Status (OK/N/A) im Protokoll stehen, ist Kriterium C6
