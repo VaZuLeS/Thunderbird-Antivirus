@@ -158,14 +158,14 @@ async function checkUrlscanIo(url, apikey) {
 
         if (!uuid) throw new Error(uiText("ui_101", "Keine UUID von urlscan.io erhalten."));
 
-        return await pollUrlscanIoResult(uuid);
+        return await pollUrlscanIoResult(uuid, apikey);
     } catch (e) {
         Logger.error("Fehler bei urlscan.io Abfrage", e);
         return { status: 'ERROR', details: e.message };
     }
 }
 
-async function pollUrlscanIoResult(uuid) {
+async function pollUrlscanIoResult(uuid, apikey) {
     let waitTime = 2000;
     let elapsed = 0;
     const maxTime = 30000;
@@ -178,7 +178,13 @@ async function pollUrlscanIoResult(uuid) {
         waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
 
         if (Date.now() >= deadline) break;
-        const resultRes = await apiGateway.fetchWithTimeout(`https://urlscan.io/api/v1/result/${encodeURIComponent(uuid)}/`, {}, Math.min(15000, deadline - Date.now()));
+        const resultRes = await apiGateway.fetchWithTimeout(`https://urlscan.io/api/v1/result/${encodeURIComponent(uuid)}/`, {
+            method: 'GET',
+            headers: {
+                'API-Key': apikey,
+                'Accept': 'application/json'
+            }
+        }, Math.min(15000, deadline - Date.now()));
         if (resultRes.status === 200) {
             const resultData = await resultRes.json();
 

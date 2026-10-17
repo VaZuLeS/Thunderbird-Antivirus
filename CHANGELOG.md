@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.24.2 — 2026-10-17
+
+- Wire the gateway's provider auth-injection layer (PA-8): `setApikey` is now called on startup and on every key change for Hybrid Analysis, VirusTotal, urlscan.io, URLhaus and AbuseIPDB. The injection is defense in depth only — adapter-provided auth headers are never overridden.
+- urlscan.io result fetches now carry the `API-Key` header, making the polling of `unlisted` scan results robust against future urlscan policy changes (previously only public-by-UUID access).
+- No changes to endpoints, consent model, privacy tiers or scan behavior.
+
 ## 1.24.1 — 2026-10-17
 
 - Provider connection audit across all five analysis services (Hybrid Analysis, VirusTotal, urlscan.io, URLhaus, AbuseIPDB): endpoints, methods and authentication headers verified against the provider APIs — no functional defects found.

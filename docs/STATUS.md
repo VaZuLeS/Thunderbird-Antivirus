@@ -25,6 +25,17 @@ Feld der fertigen Karte statt auf die sofort sichtbaren Protokoll-Metadaten. Zus
 „Publish GitHub release“-Workflow-Fehler beim Tag-Push war nur der Konflikt mit dem zuvor manuell
 erstellten Release (Assets verifiziert).
 
+# PA-8 behoben: Gateway-Auth-Verdrahtung und urlscan-Ergebnis-Schlüssel — 17. Oktober 2026
+
+Verifikation von PA-8 ergab zwei echte Lücken, behoben in **1.24.2**: (1) Die Gateway-Auth-Injektion war
+toter Code — `setApikey` wurde nie aufgerufen; jetzt werden alle fünf Provider-Schlüssel beim Start und
+bei jeder Änderung (`syncGatewayApikeys`) in den Gateway geschrieben, und die Injektion ist ausdrücklich
+nur Ergänzung: bestehende Adapter-Header werden nie überschrieben (Test belegt). (2) Der urlscan-
+Ergebnis-Abruf (`/result/{uuid}/`) sendet jetzt den `API-Key` — für `unlisted`-Scans bislang per
+UUID-Zugriff zulässig, aber robust gegen urlscan-Politikänderungen (Test mit Header-Assertion).
+`npm test` → 956 bestanden (2 neue Tests); `npm run check` → Exit 0. Release v1.24.2 vorbereitet
+(CHANGELOG, Release-Notes, Doku-Versionen). [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §16.
+
 # Provider-Anbindungs-Audit: alle fünf Dienste korrekt angebunden — 17. Oktober 2026
 
 Auf die Frage „Sind alle weiteren externen Dienste korrekt angebunden?“ wurden Hybrid Analysis, VirusTotal, urlscan.io, URLhaus und AbuseIPDB vollständig geprüft (Endpunkte, Methoden, Auth-Header, Bodies, Host-Berechtigungen Manifest↔options.js↔Runtime, Gateway, Caching): **keine funktionalen Defekte**. Drei Hygiene-Findings behoben in **1.24.1**: der nie gesendete `user-agent: Falcon`-Header (verbotener Header-Name für fetch) und ein redundanter `scan_type`-Header entfernt; `https://www.virustotal.com/*` zusätzlich explizit in `optional_host_permissions` deklariert (bisher nur Wildcard-Abdeckung). Verifiziert-korrekt: options.js fordert Origins nur für konfigurierte Dienste an und „Speichern“ re-fragt bei Stufenwechsel immer; Gateway/Queue/Retry-After/Cache-Verhalten wie geplant. Release v1.24.1 getaggt und veröffentlicht. Nachweis: Tag `v1.24.1` am Release-Commit `80299fb`; der Workflow „Publish GitHub release“ hat das Release [v1.24.1](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.1) selbst erstellt (diesmal ohne Konflikt) mit `thundy-av-1.24.1.xpi` + `SHA256SUMS.txt` (SHA-256 `a172c322187d08b17282f5327897a0e266603e24919c17c21beaded347fe9b5f`); der entpackte Inhalt des Assets ist mit dem lokalen Build vom Tag-Commit byte-identisch (44 Dateien, diff -r ohne Abweichung). CI auf dem Release-Commit vollständig grün ([CI 39015367240](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/39015367240): test, Browser UI × 6, Thunderbird Linux GUI). Store-Gate: C1–C5 + C7 **PASS**, einziges offenes Kriterium C6. Offen: Provider-Live-Checks mit echten Schlüsseln (N-01/PA-R5), u. a. PA-8 (urlscan-Ergebnis-Polling ohne Key bei `unlisted` erneut gegen aktuelle urlscan-Politik prüfen). [AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §16.

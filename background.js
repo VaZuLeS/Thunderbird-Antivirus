@@ -187,11 +187,27 @@ async function loadSettings() {
     if (result.ipReputationApiKey !== undefined) {
       ipReputationApiKey = result.ipReputationApiKey;
     }
+    syncGatewayApikeys();
   } catch (error) {
     Logger.error("Fehler beim Laden der Einstellungen:", error);
   }
 }
+/**
+ * The gateway injects provider auth headers as defense in depth; the adapters
+ * already carry the same headers, so leaving this unwired would silently
+ * disable that layer (provider audit PA-8).
+ */
+function syncGatewayApikeys() {
+    if (typeof apiGateway === 'undefined' || typeof apiGateway.setApikey !== 'function') return;
+    apiGateway.setApikey('hybridanalysis', apikey_hybridanalysis);
+    apiGateway.setApikey('virustotal', apikey_virustotal);
+    apiGateway.setApikey('urlscan', urlscanApikey);
+    apiGateway.setApikey('urlhaus', urlhausApikey);
+    apiGateway.setApikey('abuseipdb', ipReputationProvider === 'abuseipdb' ? ipReputationApiKey : '');
+}
+
 loadSettings();
+syncGatewayApikeys();
 apiGateway.beforeRequest = () => assertExternalAnalysisAllowed();
 
 // Opt-In helpers
@@ -255,6 +271,7 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.externalAnalysisConsent !== undefined) {
     externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
   }
+  syncGatewayApikeys();
 });
 
 function extractPublicIPs(receivedHeaders) {

@@ -279,6 +279,14 @@ describe('background.js', () => {
         assert.strictEqual(context.get_apikey(), 'test-api-key');
     });
 
+    it('storage.onChanged wires gateway apikeys for the auth-injection layer', () => {
+        context.set_urlscanApikey(undefined);
+        const listener = context.browser.storage.onChanged.listeners[0];
+        listener({ urlscanApikey: { newValue: 'scan-key' } }, 'local');
+        const wired = vm.runInContext('syncGatewayApikeys(); apiGateway.apikeys.urlscan', context);
+        assert.strictEqual(wired, 'scan-key');
+    });
+
     it('storage.onChanged updates API key dynamically', () => {
         context.set_apikey(undefined);
         const listener = context.browser.storage.onChanged.listeners[0];
@@ -1133,9 +1141,10 @@ describe('background.js', () => {
             assert.ok(result.reasons.includes("Visuelle Erkennung: Die Seite gibt sich als PayPal aus (Phishing-Verdacht)."));
         });
 
-        it('handles successful scan and result polling (clean)', async () => {
+        it('handles successful scan and result polling (clean) and sends the API key on the result fetch', async () => {
             let callCount = 0;
-            context.fetch = async (url) => {
+            let resultFetchOptions = null;
+            context.fetch = async (url, options) => {
                 callCount++;
                 if (callCount === 1) {
                     return {
@@ -1144,6 +1153,7 @@ describe('background.js', () => {
                         json: async () => ({ uuid: 'test-uuid-3' })
                     };
                 } else if (callCount === 2) {
+                    resultFetchOptions = options;
                     return {
                         status: 200,
                         json: async () => ({ verdicts: {} })
@@ -1153,6 +1163,8 @@ describe('background.js', () => {
 
             const result = await context.checkUrlscanIo('http://clean.com', 'apikey');
             assert.strictEqual(result.status, 'CLEAN');
+            // Result fetches for unlisted scans carry the API key (PA-8).
+            assert.strictEqual(resultFetchOptions.headers['API-Key'], 'apikey');
         });
 
         it('handles successful scan but polling timeout', async () => {

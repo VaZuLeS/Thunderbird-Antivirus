@@ -6,7 +6,7 @@ permalink: /documentation.html
 # Thundy AV – Documentation
 
 Landing page for the documentation of **Thundy AV – Email Scanner for Thunderbird**
-(short name "Thundy AV"), version 1.24.1. The current source uses GNU GPL v3 (`GPL-3.0-only`); published releases retain their original license. [License information](license.md).
+(short name "Thundy AV"), version 1.24.2. The current source uses GNU GPL v3 (`GPL-3.0-only`); published releases retain their original license. [License information](license.md).
 
 - Language selection page (GitHub Pages root): [index.html](index.html) ·
   [English](index_en.html) · [Deutsch](index_de.html) · [Français](index_fr.html) · [Español](index_es.html) · [Italiano](index_it.html) · [Polski](index_pl.html)

@@ -27,15 +27,17 @@ class ApiGateway {
             return options;
         }
 
-        if ((hostname === 'virustotal.com' || hostname === 'www.virustotal.com') && this.apikeys['virustotal']) {
+        // Defense in depth only: adapters already carry the same auth headers,
+        // so never override an existing header (PA-8 follow-up).
+        if ((hostname === 'virustotal.com' || hostname === 'www.virustotal.com') && this.apikeys['virustotal'] && !headers['x-apikey']) {
             headers['x-apikey'] = this.apikeys['virustotal'];
-        } else if (hostname === 'urlhaus-api.abuse.ch' && this.apikeys['urlhaus']) {
+        } else if (hostname === 'urlhaus-api.abuse.ch' && this.apikeys['urlhaus'] && !headers['Auth-Key']) {
             headers['Auth-Key'] = this.apikeys['urlhaus'];
-        } else if ((hostname === 'hybrid-analysis.com' || hostname === 'www.hybrid-analysis.com') && this.apikeys['hybridanalysis']) {
+        } else if ((hostname === 'hybrid-analysis.com' || hostname === 'www.hybrid-analysis.com') && this.apikeys['hybridanalysis'] && !headers['api-key']) {
             headers['api-key'] = this.apikeys['hybridanalysis'];
-        } else if ((hostname === 'urlscan.io' || hostname === 'www.urlscan.io') && this.apikeys['urlscan']) {
+        } else if ((hostname === 'urlscan.io' || hostname === 'www.urlscan.io') && this.apikeys['urlscan'] && !headers['API-Key']) {
             headers['API-Key'] = this.apikeys['urlscan'];
-        } else if (hostname === 'api.abuseipdb.com' && this.apikeys['abuseipdb']) {
+        } else if (hostname === 'api.abuseipdb.com' && this.apikeys['abuseipdb'] && !headers['Key']) {
             headers['Key'] = this.apikeys['abuseipdb'];
         }
 

@@ -13,12 +13,12 @@ minimal notwendigen Daten an externe Analysedienste.
 | Add-on-Name | Thundy AV – Email Scanner for Thunderbird |
 | Kurzname | Thundy AV |
 | Add-on-ID | `thundy-av@bludau-it-services.de` |
-| Version | 1.24.1 – GitHub-Release (unsigniert) – siehe [CHANGELOG.md](CHANGELOG.md) |
+| Version | 1.24.2 – GitHub-Release (unsigniert) – siehe [CHANGELOG.md](CHANGELOG.md) |
 | Lizenz | GNU GPL v3 (`GPL-3.0-only`, aktueller Quelltext) – siehe [LICENSE](LICENSE) |
 | Maintainer | Jan Bludau (VaZuLeS) |
 | Support | bludau.it.services@gmail.com |
 | Repository | https://github.com/VaZuLeS/Thunderbird-Antivirus |
-| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.1 |
+| Release (unsigniertes XPI zum Testen) | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.2 |
 | Voraussetzung | Thunderbird 140.0 oder neuer (Manifest V3) |
 | Sprachen | Englisch, Deutsch, Französisch, Spanisch, Italienisch und Polnisch; vollständige lokale UI-Kataloge mit englischem Fallback |
 
@@ -165,7 +165,7 @@ npm run store-gate                                    # Submission-Gate (vom Mai
 
 Die Umsetzung steht im [Optimierungsplan](docs/AUFGABENPLAN_OPTIMIERUNG_I18N.md). Externe Scans benötigen globale Zustimmung und eine Nachrichtenaktion oder Absenderfreigabe. Lokale Prüfungen funktionieren ohne API-Schlüssel; vollständige URL-Übermittlungen verlangen die Stufe Maximal. Absenderfreigaben sind in den Einstellungen bearbeitbar. Reputation-Caches verfallen nach 15 Minuten; gespeicherte Ergebnisse sind auf 1.000 Nachrichten begrenzt und werden beim Datenbankstart anhand einer Aufbewahrungsfrist von 30 Tagen bereinigt.
 
-Der [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.1) enthält ein unsigniertes XPI. Echte Abnahme-Screenshots liegen vor ([thunderbird-linux](docs/screenshots/thunderbird-linux/), Gate C5 PASS); der manuelle Live-Test in Thunderbird 140 ESR bleibt erforderlich ([Live-Test-Protokoll](docs/live_test_protocol.md)).
+Der [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.2) enthält ein unsigniertes XPI. Echte Abnahme-Screenshots liegen vor ([thunderbird-linux](docs/screenshots/thunderbird-linux/), Gate C5 PASS); der manuelle Live-Test in Thunderbird 140 ESR bleibt erforderlich ([Live-Test-Protokoll](docs/live_test_protocol.md)).
 
 ## Berechtigungen im Überblick
 
