@@ -25,6 +25,8 @@ Netzwerkbeobachtung brauchen** — diese führt der Maintainer mit
 | Hell-/Dunkel-Themes, Akzent und Dichte im realen Client | `appearanceSaved`, `nativeThemes` |
 | Lokalisierte Add-on-Seiten je Sprache | `localizedPages` |
 | Wiederherstellung nach erzwungenem Prozessabbruch; Neustart-Prüfung | `--restart-check --crash-check`-Läufe je Sprache |
+| Protokoll 9.13: Banner-Dedup beim Nachrichtenwechsel (keine Doppel-Banner) | `bannerDedup` (zwei Wechsel, Bannerzahl je Nachricht identisch, ≤ 1 pro Banner-Typ) |
+| Protokoll 9.12: „Cache leeren“ mit Bestätigungsdialog leert den Objektspeicher, Einstellungen/Zustimmung bleiben | `cacheClear` (Bestätigungs-Stub, Statusmeldung `ui_082` je Sprache, Store-Count = 0, `externalAnalysisConsent` unverändert) |
 
 ## 2. Offen für den Maintainer (manuell, mit Hybrid-Analysis-API-Schlüssel)
 
@@ -38,8 +40,8 @@ nicht belegbar sind — darunter:
   automatischem Nachfragen (alle 5 s, max. 3 Versuche) → fertiges Protokoll mit Job-/Submission-ID
   und Abrufzeitpunkt; Popup schließen/öffnen → Protokoll wird **offline** angezeigt; Rescan leert
   das alte Protokoll und startet neu.
-- Ergänzend 9.3, 9.10, 9.12, 9.13 (Absenderfreigabe, HTML-Entschärfung, Cache leeren,
-  MessageList-Verhalten) als interaktive Sichtprüfungen.
+- Ergänzend 9.3 und 9.10 (Absenderfreigabe, HTML-Entschärfung) als interaktive Sichtprüfungen.
+  9.12 und 9.13 sind inzwischen im CI belegt (siehe §1).
 
 Erst wenn diese Schritte mit Ist-Werten und Status (OK/N/A) im Protokoll stehen, ist Kriterium C6
 erfüllt und der Store-Gate meldet GO.

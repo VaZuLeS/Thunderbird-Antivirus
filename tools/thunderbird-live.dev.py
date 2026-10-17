@@ -220,6 +220,45 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         Services.prefs.setIntPref("mail.openMessageBehavior",2);MailUtils.displayMessage(Array.from(folder.messages)[0]);''')
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
     wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+    # Protocol 9.13: switching between messages must not duplicate the injected
+    # banners (their IDs are existence-checked before insertion).
+    mail2 = out / 'synthetic-2.eml'
+    mail2.write_text('From: sender2@example.invalid\nTo: recipient@example.invalid\n'
+                     'Date: Thu, 15 Oct 2026 12:05:00 +0000\n'
+                     'Message-ID: <thundy-live-test-2@example.invalid>\n'
+                     'Subject: Thundy AV second live test\nMIME-Version: 1.0\n'
+                     'Content-Type: text/html; charset=UTF-8\n\n'
+                     '<!doctype html><html><body><p>Second synthetic message.</p>'
+                     '<p><a href="https://second.example.invalid/path">Second destination</a></p></body></html>\n')
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+        const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+        const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+        MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''', [str(mail2)])
+    wait_for(lambda: m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+        return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests").getTotalMessages(false)===2;'''))
+
+    def display_message(index):
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+            const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+            const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+            Services.prefs.setIntPref("mail.openMessageBehavior",2);
+            MailUtils.displayMessage(Array.from(folder.messages)[arguments[0]]);''', [index])
+        wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
+        wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+
+    def banner_counts():
+        return m.page('return {optin:document.querySelectorAll("#thundy-optin-banner").length,'
+                      'threat:document.querySelectorAll("#thundy-threat-banner").length};')
+
+    display_message(1)
+    counts_second = wait_for(banner_counts)
+    display_message(0)
+    counts_first = wait_for(banner_counts)
+    for counts in (counts_second, counts_first):
+        assert counts['optin'] <= 1 and counts['threat'] <= 1 \
+            and counts['optin'] + counts['threat'] >= 1, counts
+    assert counts_first == counts_second, (counts_first, counts_second)
+    report['bannerDedup'] = {'switches': 2, 'first': counts_first, 'second': counts_second}
     m.screenshot(out / 'message.png')
     m.page('document.querySelector("a[href^=https]").click();')
     dialog = wait_for(lambda: m.page('''const p=document.getElementById("thundy-link-dialog");
@@ -321,6 +360,31 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         wait_for(lambda: m.page('return document.documentElement.dataset.theme===arguments[0];', [scheme]))
         report['nativeThemes'].append(scheme)
         m.screenshot(out / ('options-native-' + scheme + '.png'))
+    # Protocol 9.12: 'Clear cache' empties the hybridanalysis store and keeps
+    # settings and consent. The native confirm() dialog is answered via a
+    # stub injected into the page realm (exportFunction with a fallback).
+    stub = m.page('''const w = window.wrappedJSObject;
+        try { exportFunction(() => true, w, {defineAs: "confirm"}); return "exported"; }
+        catch (e) { try { w.confirm = function() { return true; }; return "assigned"; }
+                    catch (e2) { return "failed: " + e2; } }''')
+    assert stub in ('exported', 'assigned'), stub
+    m.page('document.getElementById("clearCache").click();')
+    cleared = wait_for(lambda: m.page(
+        'return document.getElementById("clearCacheStatus").textContent === arguments[0] ? arguments[0] : null;',
+        [catalogs[locale]['ui_082']['message']]))
+    store_empty = wait_for(lambda: m.page('''return new Promise((resolve) => {
+            const r = window.indexedDB.open("thunderbird_av", 3);
+            r.onsuccess = function(e) {
+                const db = e.target.result;
+                const request = db.transaction(["hybridanalysis"], "readonly").objectStore("hybridanalysis").count();
+                request.onsuccess = function() { db.close(); resolve(request.result === 0); };
+            }; });'''))
+    assert store_empty is True
+    kept = m.page('return window.wrappedJSObject.browser.storage.local.get(["externalAnalysisConsent","thundyAppearance"]);')
+    assert kept.get('externalAnalysisConsent') is not True and kept.get('thundyAppearance') == 'system'
+    m.screenshot(out / 'options-cache-cleared.png')
+    report['cacheClear'] = {'confirmStub': stub, 'status': cleared,
+                            'storeEmpty': True, 'settingsPreserved': True}
     report['localizedPages'] = []
     for page, key in [('options.html', 'ui_116'), ('audit.html', 'auditTitle'),
                       ('enterprise_setup.html', 'profilesTitle'), ('privacy.html', 'ui_128')]:

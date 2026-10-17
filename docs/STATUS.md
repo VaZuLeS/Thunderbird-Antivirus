@@ -25,6 +25,19 @@ Feld der fertigen Karte statt auf die sofort sichtbaren Protokoll-Metadaten. Zus
 „Publish GitHub release“-Workflow-Fehler beim Tag-Push war nur der Konflikt mit dem zuvor manuell
 erstellten Release (Assets verifiziert).
 
+# CI-Live-Runner deckt Protokollschritte 9.12 und 9.13 ab — 16. Oktober 2026
+
+Der reale Thunderbird-Lauf im CI (Job „Thunderbird Linux GUI“) wurde um zwei Protokollschritte
+erweitert: **9.13 Banner-Dedup** — zweite synthetische Nachricht in den Testordner kopiert, zwei
+Nachrichtenwechsel, je Nachricht genau ein Banner-Instanzen-Satz (≤ 1 pro Typ, identische Zählung)
+statt Duplikaten; **9.12 Cache leeren** — Bestätigungsdialog über in die Seiten-Realm injizierten
+Stub (`exportFunction` mit Fallback) beantwortet, Statusmeldung `ui_082` je Sprache, Objektspeicher
+`hybridanalysis` danach leer (Count über IndexedDB), Einstellungen und Zustimmung unverändert.
+Damit schrumpft der manuelle Rest von N-01 auf Provider-/Gesten-Schritte (9.6, 9.8–9.11, 9.14) plus
+9.3/9.10. Belege: `report.json`-Felder `bannerDedup`/`cacheClear` im Artefakt `thunderbird-linux-live`;
+Doku in [live_test_1_24_0.md](live_test_1_24_0.md) §1 und
+[AUFGABENPLAN_STORE_READINESS.md](AUFGABENPLAN_STORE_READINESS.md) §15.
+
 # Live-Abnahme 1.24.0 strukturiert: CI-Beleg getrennt vom Maintainer-Protokoll — 16. Oktober 2026
 
 Kriterium C6 ehrlich verzinsbar gemacht: Das ausfüllbare Protokoll [live_test_protocol.md](live_test_protocol.md)
