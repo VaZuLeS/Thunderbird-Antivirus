@@ -104,7 +104,7 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
     $('auditRefresh').addEventListener('click', refresh);
     $('auditJson').addEventListener('click', () => download('json')); $('auditCsv').addEventListener('click', () => download('csv'));
     $('auditPrevious').addEventListener('click', () => { page--; render(); }); $('auditNext').addEventListener('click', () => { page++; render(); });
-    $('auditClear').addEventListener('click', () => $('auditConfirm').showModal());
+    $('auditClear').addEventListener('click', () => { $('auditConfirm').showModal(); $('auditKeep').focus(); });
     $('auditKeep').addEventListener('click', () => $('auditConfirm').close());
     $('auditDelete').addEventListener('click', async () => {
         try { const result = await browser.runtime.sendMessage({ action: 'clearLinkAudit' }); if (!result || !result.success) throw new Error('Cannot clear audit'); $('auditConfirm').close(); await refresh(); }
