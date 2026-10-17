@@ -266,6 +266,21 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     assert counts_first == counts_second, (counts_first, counts_second)
     report['bannerDedup'] = {'switches': 2, 'first': counts_first, 'second': counts_second}
     m.screenshot(out / 'message.png')
+    # Protocol 9.2 + consent gate: both banner buttons are present with
+    # localized labels, and with consent off a click is rejected without any
+    # transmission (the note gains the options shortcut).
+    buttons_info = wait_for(lambda: m.page(
+        'return {count:document.querySelectorAll("#thundy-optin-banner button").length,'
+        'once:document.querySelectorAll("#thundy-optin-banner button")[0]?.textContent,'
+        'always:document.querySelectorAll("#thundy-optin-banner button")[1]?.textContent};'))
+    assert buttons_info['count'] == 2, buttons_info
+    assert buttons_info['once'] == catalogs[locale]['bannerScanOnce']['message'], buttons_info
+    assert buttons_info['always'] == catalogs[locale]['bannerScanSender']['message'], buttons_info
+    m.page('document.querySelectorAll("#thundy-optin-banner button")[0].click();')
+    wait_for(lambda: m.page('return !!document.getElementById("thundy-open-options");'))
+    gate_note = m.page('return document.getElementById("thundy-optin-note").textContent;')
+    assert gate_note.startswith(catalogs[locale]['bannerConsentMissing']['message']), gate_note
+    report['bannerButtons'] = {'count': 2, 'consentOffOptionsShortcut': True}
     m.page('document.querySelector("a[href^=https]").click();')
     dialog = wait_for(lambda: m.page('''const p=document.getElementById("thundy-link-dialog");
         const r=p?.shadowRoot;if(r?.querySelectorAll("footer button").length!==2)return null;
@@ -402,6 +417,27 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     m.screenshot(out / 'options-cache-cleared.png')
     report['cacheClear'] = {'confirmStub': stub, 'status': cleared,
                             'storeEmpty': True, 'settingsPreserved': True}
+    # Protocol 9.3: persisting a sender via the banner works fully offline
+    # (consent on, no API key): the scan stays local, only the opt-in is stored.
+    m.page('return window.wrappedJSObject.browser.storage.local.set({externalAnalysisConsent: true}).then(() => true);')
+    display_message(0)
+    wait_for(banner_counts_when_visible)
+    m.page('const b=document.querySelectorAll("#thundy-optin-banner button")[1]; b && b.click(); return true;')
+    note3 = wait_for(lambda: m.page(
+        'return (document.getElementById("thundy-optin-note")?.textContent || "").indexOf(arguments[0])===0 ? arguments[0] : null;',
+        [catalogs[locale]['bannerSenderOptIn']['message']]))
+    # The message page has no extension API; read the persisted sender from an
+    # extension page (options) instead.
+    m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'options.html'])
+    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/options.html");'))
+    persisted = wait_for(lambda: m.page(
+        'return window.wrappedJSObject.browser.storage.local.get(["scanningEnabledSenders"]).then(s => {'
+        'const arr = s.scanningEnabledSenders || [];'
+        'return arr.some(e => String(e).indexOf("sender@example.invalid") >= 0) ? {persisted: true, count: arr.length} : null; });'))
+    assert persisted.get('persisted') is True, persisted
+    m.page('return window.wrappedJSObject.browser.storage.local.set({externalAnalysisConsent: false}).then(() => true);')
+    report['senderPersistence'] = {'persisted': True, 'sender': 'sender@example.invalid',
+                                   'note': note3}
     report['localizedPages'] = []
     for page, key in [('options.html', 'ui_116'), ('audit.html', 'auditTitle'),
                       ('enterprise_setup.html', 'profilesTitle'), ('privacy.html', 'ui_128')]:
