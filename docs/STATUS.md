@@ -25,6 +25,20 @@ Feld der fertigen Karte statt auf die sofort sichtbaren Protokoll-Metadaten. Zus
 „Publish GitHub release“-Workflow-Fehler beim Tag-Push war nur der Konflikt mit dem zuvor manuell
 erstellten Release (Assets verifiziert).
 
+# CI-Live-Runner vollständig grün mit 9.12/9.13; Theme-Klicks gehärtet — 16. Oktober 2026
+
+Der erweiterte Live-Runner ist im CI über alle sieben Läufe bestanden
+([CI 38985838395](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38985838395)):
+`bannerDedup` zeigt je Nachricht genau `{optin: 1, threat: 0}` nach zwei Nachrichtenwechseln,
+`cacheClear` bestätigt die lokalisierte Erfolgsmeldung, den leeren Objektspeicher und unveränderte
+Einstellungen/Zustimmung. Dabei zeigte der Failure-Screenshot des ersten Laufs ein separates
+Ergebnis-Problem: Die Dark-Auswahl in den Einstellungen ging verloren, wenn der Klick vor dem
+Listener-Attachment der Seite landete („Follow Thunderbird“ aktiv statt Dark, während
+Violet/Compact gespeichert waren). Die Theme-Klicks prüfen jetzt den gespeicherten Zustand und
+wiederholen Klick plus expliziten `change`-Dispatch bis zur Bestätigung (max. 3 Versuche). Der
+manuelle Rest von N-01 umfasst nur noch Provider-/Gesten-Schritte (9.6, 9.8–9.11, 9.14) plus
+9.3/9.10.
+
 # CI-Live-Runner deckt Protokollschritte 9.12 und 9.13 ab — 16. Oktober 2026
 
 Der reale Thunderbird-Lauf im CI (Job „Thunderbird Linux GUI“) wurde um zwei Protokollschritte

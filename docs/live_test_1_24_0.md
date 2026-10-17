@@ -1,9 +1,9 @@
 # Live-Abnahme 1.24.0 — Analyse-Protokoll und CI-Läufe
 
 Status: Der CI-anteilige Live-Umfang ist mit **realem Thunderbird 140 ESR** ausgeführt
-([CI 38983009136](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38983009136),
+([CI 38985838395](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/38985838395),
 Job „Thunderbird Linux GUI", Runner `tools/thunderbird-live.dev.py`, Artefakt
-`thunderbird-linux-live`: Report `report.json` + Screenshots je Lauf). **Offen bleiben die
+`thunderbird-linux-live`: Report `report.json` + Screenshots je Lauf; 7 Läufe — install-en, sechs Sprachen- und sechs Neustart-/Abbruch-Läufe — alle `passed: true`). **Offen bleiben die
 Schritte, die einen Hybrid-Analysis-API-Schlüssel bzw. interaktive Zustimmungs- und
 Netzwerkbeobachtung brauchen** — diese führt der Maintainer mit
 [live_test_protocol.md](live_test_protocol.md) (Version 1.24.0) aus; erst danach meldet
@@ -25,8 +25,8 @@ Netzwerkbeobachtung brauchen** — diese führt der Maintainer mit
 | Hell-/Dunkel-Themes, Akzent und Dichte im realen Client | `appearanceSaved`, `nativeThemes` |
 | Lokalisierte Add-on-Seiten je Sprache | `localizedPages` |
 | Wiederherstellung nach erzwungenem Prozessabbruch; Neustart-Prüfung | `--restart-check --crash-check`-Läufe je Sprache |
-| Protokoll 9.13: Banner-Dedup beim Nachrichtenwechsel (keine Doppel-Banner) | `bannerDedup` (zwei Wechsel, Bannerzahl je Nachricht identisch, ≤ 1 pro Banner-Typ) |
-| Protokoll 9.12: „Cache leeren“ mit Bestätigungsdialog leert den Objektspeicher, Einstellungen/Zustimmung bleiben | `cacheClear` (Bestätigungs-Stub, Statusmeldung `ui_082` je Sprache, Store-Count = 0, `externalAnalysisConsent` unverändert) |
+| Protokoll 9.13: Banner-Dedup beim Nachrichtenwechsel (keine Doppel-Banner) | `bannerDedup` — gemessen in allen 7 Läufen: zwei Wechsel, je Nachricht `{optin: 1, threat: 0}`, identische Zählung |
+| Protokoll 9.12: „Cache leeren“ mit Bestätigungsdialog leert den Objektspeicher, Einstellungen/Zustimmung bleiben | `cacheClear` — gemessen in allen 7 Läufen: Bestätigungs-Stub wirksam, lokalisierte Erfolgsmeldung („Cache vidé.“, „Pamięć podręczna wyczyszczona.” …), Store-Count = 0, `externalAnalysisConsent` unverändert |
 
 ## 2. Offen für den Maintainer (manuell, mit Hybrid-Analysis-API-Schlüssel)
 
