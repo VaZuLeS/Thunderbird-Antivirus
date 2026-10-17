@@ -162,6 +162,11 @@ traceable:
 Deleting the store with **"Cache leeren"** (options) removes all stored protocols; the IndexedDB
 retention (30 days / 1,000 messages, `db.js` `pruneStore`) applies as well.
 
+Two transport details a reviewer may ask about: urlscan.io **result** fetches (`/result/{uuid}/`)
+carry the `API-Key` header for the `unlisted` visibility used here, and the Hybrid Analysis requests
+do **not** set a custom `user-agent` header — `user-agent` is a forbidden header name for `fetch`,
+so requests use Thunderbird's own user-agent string; authentication is the `api-key` header alone.
+
 What is **not** transmitted, regardless of tier:
 
 - the full message body and the subject line,
