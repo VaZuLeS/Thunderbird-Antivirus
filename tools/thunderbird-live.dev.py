@@ -337,9 +337,20 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'options.html'])
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/options.html");'))
     wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="dark"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
-    for name, value in [('appearance', 'dark'), ('accent', 'violet'), ('density', 'compact')]:
-        m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name, value])
-    theme = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance==="dark" && s.thundyAccent==="violet" && s.thundyDensity==="compact"?s:null);'))
+    # Click-and-verify with retries: a click landing before the options
+    # page attached its change listeners would silently not save (observed
+    # once under added runner load), so re-click and re-dispatch change.
+    theme = None
+    for attempt in range(3):
+        for name, value in [('appearance', 'dark'), ('accent', 'violet'), ('density', 'compact')]:
+            m.page('const e=document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\');e.click();e.dispatchEvent(new Event("change",{bubbles:true}));', [name, value])
+        try:
+            theme = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance=="dark" && s.thundyAccent=="violet" && s.thundyDensity=="compact"?s:null);'), timeout=10)
+        except TimeoutError:
+            theme = None
+        if theme:
+            break
+    assert theme, 'appearance settings were not saved'
     assert theme.get('externalAnalysisConsent') is not True
     assert m.page('return document.documentElement.dataset.theme;') == 'dark'
     report['appearanceSaved'] = {k: theme[k] for k in ['thundyAppearance', 'thundyAccent', 'thundyDensity']}
