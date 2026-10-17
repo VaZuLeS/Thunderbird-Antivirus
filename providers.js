@@ -5,13 +5,11 @@ function getHybridAnalysisOptions(method, body = null, isUrl = false) {
         method: method,
         headers: {
             accept: 'application/json',
-            'api-key': apikey_hybridanalysis,
-            'user-agent': 'Falcon'
+            'api-key': apikey_hybridanalysis
         }
     };
     if (body) {
         options.body = body;
-        options.headers['scan_type'] = 'all';
     }
     if (isUrl) {
         options.headers['Content-Type'] = 'application/x-www-form-urlencoded';

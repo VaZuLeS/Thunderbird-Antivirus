@@ -5,7 +5,7 @@
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
   "author": "Jan Bludau",
-  "version": "1.24.0",
+  "version": "1.24.1",
   "homepage_url": "https://vazules.github.io/Thunderbird-Antivirus/",
   "browser_specific_settings": {
     "gecko": {
@@ -37,6 +37,7 @@
     "https://hybrid-analysis.com/*",
     "https://*.hybrid-analysis.com/*",
     "https://*.virustotal.com/*",
+    "https://www.virustotal.com/*",
     "https://urlscan.io/*",
     "https://*.urlscan.io/*",
     "https://urlhaus-api.abuse.ch/*",

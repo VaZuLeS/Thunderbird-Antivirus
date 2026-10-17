@@ -380,3 +380,38 @@ Doku-Konsistenz → Live-Test → Store-Gate GO → ATN-Signierung/Einreichung.
 4. **V-08** — ATN-Signierung (`--amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed
    --approval-timeout 0`) und Einreichung; danach **N-06/N-07**.
 5. **N-08/N-09** — Erweiterungen nach der Listung, klar getrennt von Freigabe-Arbeit.
+
+
+## 16. Runde 6 — Provider-Anbindungs-Audit („Sind alle externen Dienste korrekt angebunden?“)
+
+**Anlass:** Explizite Nutzerfrage. **Umfang:** Alle fünf externen Dienste — Hybrid Analysis,
+VirusTotal, urlscan.io, URLhaus (abuse.ch), AbuseIPDB — gegen ihre APIs geprüft: Endpunkte, Methoden,
+Auth-Header, Form-/JSON-Bodies, Host-Berechtigungen (Manifest ↔ options.js ↔ runtime
+`requireHostPermission`), Gateway (Timeout, Host-Queue, Retry-After, Abort bei Consent-Entzug) und
+Caching/Invalidierung (T10/T13).
+
+### Befunde
+
+| ID | Schwere | Befund | Beleg |
+|---|---|---|---|
+| PA-1 | **verifiziert korrekt** | Endpunkte/Methoden/Auth-Header aller fünf Dienste stimmen mit den Provider-APIs überein: HA `GET /api/v2/overview/{sha}` + `POST quick-scan/file` (multipart, `scan_type` im Form-Body) + `POST quick-scan/url` (form-urlencoded `url`+`scan_type`) mit `api-key`-Header; VT `GET /api/v3/files/{sha}` und `/ip_addresses/{ip}` mit `x-apikey`; urlscan `POST /scan/` JSON `{url, visibility: 'unlisted'}` mit `API-Key` + Ergebnis-Polling `GET /result/{uuid}/` mit Backoff; URLhaus `POST /v1/host/` form `host=…` mit `Auth-Key`, `query_status`-Auswertung; AbuseIPDB `GET /api/v2/check?ipAddress=…&maxAgeInDays=90` mit `Key`-Header | `providers.js`, `background.js:316–355`, `api.js` `fetch_hybrid_report` |
+| PA-2 | **verifiziert korrekt** | Gateway injiziert Auth-Header hostname-basiert und konsistent mit den Adaptern; alle Provider-Aufrufe laufen über `apiGateway.fetchWithTimeout` (Timeout, Host-Queue 2/Host für HA, Retry-After nur für GET, keine POST-Wiederholungen, Abort bei Consent-Entzug) | `api_gateway.js:17–45`, `providers.js`, T13-Nachweise |
+| PA-3 | **P3 (behoben)** | `user-agent: Falcon` ist ein verbotener Header-Name für `fetch` — der Header wurde **nie gesendet**; toter Code in `providers.js` und `api.js` (Popup-Overview). Entfernt. | `providers.js` (vor Fix), `api.js:622` (vor Fix) |
+| PA-4 | **P3 (behoben)** | `scan_type: 'all'` wurde zusätzlich als **Header** gesetzt, obwohl der multipart-/form-Body den Parameter bereits trägt — redundant. Entfernt. | `providers.js` (vor Fix) |
+| PA-5 | **P3 (behoben)** | VirusTotal-Origin war nur über die Wildcard `https://*.virustotal.com/*` gedeckt, während Code (`PROVIDER_ORIGINS`) und options.js den expliziten Pattern `https://www.virustotal.com/*` verwenden. Firefox deckt schmalere Pattern über breitere deklarierte Pattern ab, aber der explizite Eintrag macht den Grant deterministisch. Ergänzt. | `manifest.json` optional_host_permissions (vor/nach Fix), `scan_policy.js:57`, `options.js:188` |
+| PA-6 | **verifiziert korrekt** | options.js fordert Origins nur für konfigurierte Dienste an (`hybrid` bei Schlüssel, VT bei Schlüssel/IP-Provider, urlscan nur bei Stufe `max`, URLhaus/AbuseIPDB bei Provider+Schlüssel); Stufenwechsel erfordern immer „Speichern“, das die Origins neu anfragt — keine Lücke. Runtime-Gates (`tierAtLeast`, `mayTransmitExternally`) bleiben unabhängig von Berechtigungen. | `options.js:186–193` |
+| PA-7 | **verifiziert korrekt** | Schlüsselwechsel invalidieren Caches (VT-Cache, Hybrid-Report-Cache, Reputation), API-Schlüssel liegen — dokumentiert — unverschlüsselt lokal, werden im XPI nicht ausgeliefert, kein Telemetrie-Pfad | `background.js` storage.onChanged, `db.js`, reviewer_notes |
+| PA-8 | **✋ Hinweis** | urlscan-Ergebnis-Polling fragt `/result/{uuid}/` **ohne** `API-Key`-Header — für `unlisted`-Scans per UUID-Zugriff zulässig; bei künftigen urlscan-Politikänderungen im Live-Test mit Schlüssel (N-01) erneut verifizieren | `providers.js` `pollUrlscanIoResult` |
+
+**Gesamturteil:** Alle fünf externen Dienste sind korrekt angebunden; keine Endpunkt-, Auth- oder
+Berechtigungsfehler. Drei Hygiene-/Robustheits-Findings (PA-3…PA-5) wurden in Version **1.24.1** behoben.
+
+### Release 1.24.1
+
+| ID | Aufgabe | DoD | Status |
+|---|---|---|---|
+| PA-R1 | Version 1.24.1 (manifest/package/lock), CHANGELOG, Release-Notes `docs/releases/1.24.1.md`, docs/index + README (EN/DE) auf 1.24.1 | Pre-Submit: Versionen stimmen überein | **erledigt** |
+| PA-R2 | Tests mit aktualisierten Header-Erwartungen (`getHybridAnalysisOptions`, `fetch_hybrid_report`) | `npm test` → 954 bestanden | **erledigt** |
+| PA-R3 | Tag `v1.24.1` + GitHub-Release mit `thundy-av-1.24.1.xpi` + `SHA256SUMS.txt`; Asset-Hash gegen lokalen Build verifiziert | `gh release view v1.24.1`; Store-Gate C7 **PASS** | **erledigt** |
+| PA-R4 | CI grün auf Release-Commit (test, Browser UI × 6, Thunderbird Linux GUI) | Run-Link in STATUS | **erledigt** |
+| PA-R5 | ✋ Provider-Live-Checks mit echten Schlüsseln (N-01): HA-Upload inkl. 9.14, VT-Hash/IP, urlscan Time-of-Click inkl. PA-8-Verifikation, URLhaus, AbuseIPDB | Protokoll Ist-Werte → C6 → GO | **offen (manuell)** |

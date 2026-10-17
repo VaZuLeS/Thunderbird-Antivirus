@@ -3125,18 +3125,19 @@ describe('background.js', () => {
             assert.equal(options.method, 'GET');
             assert.equal(options.headers.accept, 'application/json');
             assert.equal(options.headers['api-key'], 'test-api-key');
-            assert.match(options.headers['user-agent'], /Falcon/);
+            // user-agent is a forbidden header name for fetch and must not be set.
+            assert.ok(!('user-agent' in options.headers));
             assert.ok(!options.body);
         });
 
-        it('should add body and scan_type header for POST request with body', () => {
+        it('should add body for POST request with body (scan_type rides in the form body)', () => {
             const body = { test: 'data' };
             const options = context.getHybridAnalysisOptions('POST', body);
             assert.equal(options.method, 'POST');
             assert.equal(options.headers.accept, 'application/json');
             assert.equal(options.headers['api-key'], 'test-api-key');
-            assert.match(options.headers['user-agent'], /Falcon/);
-            assert.equal(options.headers['scan_type'], 'all');
+            assert.ok(!('user-agent' in options.headers));
+            assert.ok(!('scan_type' in options.headers));
             assert.deepEqual(options.body, body);
         });
 
@@ -3146,8 +3147,8 @@ describe('background.js', () => {
             assert.equal(options.method, 'POST');
             assert.equal(options.headers.accept, 'application/json');
             assert.equal(options.headers['api-key'], 'test-api-key');
-            assert.match(options.headers['user-agent'], /Falcon/);
-            assert.equal(options.headers['scan_type'], 'all');
+            assert.ok(!('user-agent' in options.headers));
+            assert.ok(!('scan_type' in options.headers));
             assert.equal(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
             assert.deepEqual(options.body, body);
         });

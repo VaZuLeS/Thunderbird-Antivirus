@@ -619,7 +619,6 @@ async function fetch_hybrid_report(hybrid_sha) {
         headers: {
             accept: 'application/json',
             'api-key': apikey_hybridanalysis,
-            'user-agent': 'Falcon',
         },
     };
 

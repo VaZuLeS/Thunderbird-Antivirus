@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.24.1 — 2026-10-17
+
+- Provider connection audit across all five analysis services (Hybrid Analysis, VirusTotal, urlscan.io, URLhaus, AbuseIPDB): endpoints, methods and authentication headers verified against the provider APIs — no functional defects found.
+- Remove the `user-agent: Falcon` request header (a forbidden header name for `fetch`; it was never actually sent) and a redundant `scan_type` header (the multipart/form body already carries it).
+- Declare `https://www.virustotal.com/*` explicitly in `optional_host_permissions` (previously covered only via the `*.virustotal.com` wildcard), making the VirusTotal permission grant deterministic.
+- Corrected a test-only key mismatch in the live runner banner check (`bannerScanSender`).
+
 ## 1.24.0 — 2026-10-16
 
 - Deliver the finished Hybrid Analysis protocol to the popup: poll `IN_PROGRESS` overview results automatically (3 attempts, 5 s apart), show job/submission ID, SHA-256 and retrieval time in every result card, store the finished protocol locally for offline display after reopening the popup, and invalidate stored protocols on new submissions (rescan, manual upload, URL scan, auto upload). Six new UI strings in EN/DE/FR/ES/IT/PL.

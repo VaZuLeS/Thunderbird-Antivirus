@@ -2345,7 +2345,8 @@ describe('fetch_hybrid_report', () => {
         assert.strictEqual(fetchedUrl, 'https://hybrid-analysis.com/api/v2/overview/test_sha_2');
         assert.strictEqual(fetchedOptions.method, 'GET');
         assert.strictEqual(fetchedOptions.headers['api-key'], 'mock_api_key');
-        assert.strictEqual(fetchedOptions.headers['user-agent'], 'Falcon');
+        // user-agent is a forbidden header name for fetch and must not be set.
+        assert.ok(!('user-agent' in fetchedOptions.headers));
 
         assert.strictEqual(result.response.status, 200);
         assert.deepStrictEqual(result.json_data, { result: 'success data' });
