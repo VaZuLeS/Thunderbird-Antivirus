@@ -33,6 +33,10 @@ export interface SettingsState {
   trustedAuthServers: string[];
   customWhitelist: string[];
   customBlacklist: string[];
+
+  // Power User & Accessibility
+  keyboardShortcutsEnabled?: boolean;
+  showShortcutToasts?: boolean;
 }
 
 export interface ThreatReasonDetail {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { EmailMessage, Language, SettingsState } from '../types';
 import { t } from '../lib/i18n';
 import { SAMPLE_EMAILS } from '../lib/sampleEmails';
@@ -6,6 +6,7 @@ import { evaluateThreatScore } from '../lib/riskEngine';
 import { disarmHTML, extractLinksFromHtml } from '../lib/sanitizer';
 import { LinkCheckModal } from './LinkCheckModal';
 import { QuickScanButton } from './QuickScanButton';
+import { isMac } from '../lib/keyboardShortcuts';
 import { 
   ShieldCheck, ShieldAlert, AlertTriangle, ExternalLink, 
   Mail, Link as LinkIcon, CheckCircle2, XCircle, FileCode, Upload
@@ -21,8 +22,44 @@ export const ScannerView: React.FC<ScannerViewProps> = ({ lang, settings }) => {
   const [customEmails, setCustomEmails] = useState<EmailMessage[]>([]);
   const [activeSubTab, setActiveSubTab] = useState<'disarmed' | 'links' | 'headers' | 'raw'>('disarmed');
   const [testingLinkUrl, setTestingLinkUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const allEmails = useMemo(() => [...SAMPLE_EMAILS, ...customEmails], [customEmails]);
+
+  // Keyboard shortcut listeners for next/prev email and upload
+  useEffect(() => {
+    const handleNextEmail = () => {
+      setSelectedEmailId((currentId) => {
+        const idx = allEmails.findIndex((e) => e.id === currentId);
+        if (idx === -1) return allEmails[0]?.id || currentId;
+        const nextIdx = (idx + 1) % allEmails.length;
+        return allEmails[nextIdx].id;
+      });
+    };
+
+    const handlePrevEmail = () => {
+      setSelectedEmailId((currentId) => {
+        const idx = allEmails.findIndex((e) => e.id === currentId);
+        if (idx === -1) return allEmails[0]?.id || currentId;
+        const prevIdx = (idx - 1 + allEmails.length) % allEmails.length;
+        return allEmails[prevIdx].id;
+      });
+    };
+
+    const handleUploadEml = () => {
+      fileInputRef.current?.click();
+    };
+
+    window.addEventListener('thundy:next-email', handleNextEmail);
+    window.addEventListener('thundy:prev-email', handlePrevEmail);
+    window.addEventListener('thundy:upload-eml', handleUploadEml);
+
+    return () => {
+      window.removeEventListener('thundy:next-email', handleNextEmail);
+      window.removeEventListener('thundy:prev-email', handlePrevEmail);
+      window.removeEventListener('thundy:upload-eml', handleUploadEml);
+    };
+  }, [allEmails]);
   const currentEmail = useMemo(() => {
     return allEmails.find(e => e.id === selectedEmailId) || allEmails[0];
   }, [allEmails, selectedEmailId]);
@@ -123,6 +160,7 @@ export const ScannerView: React.FC<ScannerViewProps> = ({ lang, settings }) => {
             value={selectedEmailId}
             onChange={(e) => setSelectedEmailId(e.target.value)}
             style={{ fontSize: '13px', minHeight: '36px', maxWidth: '380px' }}
+            title="Select sample email (Press J for next, K for previous)"
           >
             {allEmails.map(eml => (
               <option key={eml.id} value={eml.id}>
@@ -130,12 +168,30 @@ export const ScannerView: React.FC<ScannerViewProps> = ({ lang, settings }) => {
               </option>
             ))}
           </select>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <kbd style={{ padding: '1px 5px', background: 'var(--input-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace' }}>J</kbd>
+            <span>/</span>
+            <kbd style={{ padding: '1px 5px', background: 'var(--input-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace' }}>K</kbd>
+          </span>
         </div>
 
-        <label className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', padding: '6px 12px' }}>
+        <label 
+          className="btn-secondary" 
+          title={`Upload custom .eml message [${isMac() ? '⌘U' : 'Ctrl+U'}]`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', padding: '6px 12px' }}
+        >
           <Upload size={15} />
           <span>{t(lang, 'uploadEml')}</span>
-          <input type="file" accept=".eml,.txt" onChange={handleFileUpload} style={{ display: 'none' }} />
+          <kbd style={{ fontSize: '10px', padding: '1px 5px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace', color: 'var(--link-color)' }}>
+            {isMac() ? '⌘U' : 'Ctrl+U'}
+          </kbd>
+          <input 
+            ref={fileInputRef}
+            type="file" 
+            accept=".eml,.txt" 
+            onChange={handleFileUpload} 
+            style={{ display: 'none' }} 
+          />
         </label>
       </div>
 

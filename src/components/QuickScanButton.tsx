@@ -10,6 +10,7 @@ import {
 import { AttachmentScanResult } from '../types';
 import { playAlertChime } from '../lib/thresholdStorage';
 import { addAuditRecord } from '../lib/auditStorage';
+import { isMac } from '../lib/keyboardShortcuts';
 import { 
   Zap, ShieldCheck, ShieldAlert, AlertTriangle, FileText, 
   CheckCircle2, X, RefreshCw, Copy, Check, ExternalLink, 
@@ -53,6 +54,24 @@ export const QuickScanButton: React.FC<QuickScanButtonProps> = ({
         setScanResult(pastScans[0]);
       }
     }
+  }, [targetInfo]);
+
+  // Listen for global shortcut (Ctrl+S / Cmd+S) and panel close (Escape)
+  useEffect(() => {
+    const handleGlobalScanTrigger = () => {
+      handleTriggerQuickScan();
+    };
+
+    const handleGlobalClose = () => {
+      setIsPanelOpen(false);
+    };
+
+    window.addEventListener('thundy:trigger-quick-scan', handleGlobalScanTrigger);
+    window.addEventListener('thundy:close-panels', handleGlobalClose);
+    return () => {
+      window.removeEventListener('thundy:trigger-quick-scan', handleGlobalScanTrigger);
+      window.removeEventListener('thundy:close-panels', handleGlobalClose);
+    };
   }, [targetInfo]);
 
   const handleTriggerQuickScan = async () => {
@@ -623,8 +642,8 @@ export const QuickScanButton: React.FC<QuickScanButtonProps> = ({
         aria-label="Quick Scan most recent email attachment"
         title={
           hasAttachment
-            ? `Quick Scan: ${targetAttachment?.filename} (${targetAttachment?.size})`
-            : 'Quick Scan email attachment (none currently loaded)'
+            ? `Quick Scan: ${targetAttachment?.filename} (${targetAttachment?.size}) [${isMac() ? '⌘S' : 'Ctrl+S'}]`
+            : `Quick Scan [${isMac() ? '⌘S' : 'Ctrl+S'}]`
         }
         style={{
           display: 'inline-flex',
@@ -675,6 +694,21 @@ export const QuickScanButton: React.FC<QuickScanButtonProps> = ({
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', textAlign: 'left' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', lineHeight: 1.2 }}>
             <span>{isScanning ? 'Scanning...' : 'Quick Scan'}</span>
+            <kbd
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                fontFamily: 'monospace',
+                background: isScanning ? 'var(--input-bg)' : 'rgba(255, 255, 255, 0.22)',
+                color: isScanning ? 'var(--link-color)' : '#ffffff',
+                border: isScanning ? '1px solid var(--card-border)' : '1px solid rgba(255, 255, 255, 0.3)',
+                padding: '1px 5px',
+                borderRadius: '4px',
+                letterSpacing: '0.5px',
+              }}
+            >
+              {isMac() ? '⌘S' : 'Ctrl+S'}
+            </kbd>
             {hasAttachment && !isScanning && (
               <span
                 style={{

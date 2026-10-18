@@ -22,6 +22,7 @@ import {
 import { generateCompliancePdfReport } from '../lib/pdfReportGenerator';
 import { getNotificationThresholds, evaluateSpikeBreaches } from '../lib/thresholdStorage';
 import { ThreatThresholdModal } from './ThreatThresholdModal';
+import { isMac } from '../lib/keyboardShortcuts';
 
 interface ThreatActivityChartProps {
   records: LinkAuditRecord[];
@@ -55,7 +56,7 @@ export const ThreatActivityChart: React.FC<ThreatActivityChartProps> = ({ record
   const [isAlertDismissed, setIsAlertDismissed] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
-  // Sync thresholds across windows / storage updates
+  // Sync thresholds across windows / storage updates & global shortcuts
   React.useEffect(() => {
     const handleThresholdsUpdated = (e: any) => {
       if (e.detail) {
@@ -63,8 +64,24 @@ export const ThreatActivityChart: React.FC<ThreatActivityChartProps> = ({ record
         setIsAlertDismissed(false);
       }
     };
+
+    const handleOpenThresholds = () => {
+      setIsThresholdModalOpen(true);
+    };
+
+    const handleClosePanels = () => {
+      setIsThresholdModalOpen(false);
+    };
+
     window.addEventListener('thundy_thresholds_updated', handleThresholdsUpdated);
-    return () => window.removeEventListener('thundy_thresholds_updated', handleThresholdsUpdated);
+    window.addEventListener('thundy:open-thresholds', handleOpenThresholds);
+    window.addEventListener('thundy:close-panels', handleClosePanels);
+
+    return () => {
+      window.removeEventListener('thundy_thresholds_updated', handleThresholdsUpdated);
+      window.removeEventListener('thundy:open-thresholds', handleOpenThresholds);
+      window.removeEventListener('thundy:close-panels', handleClosePanels);
+    };
   }, []);
 
   // Compute 24-hour threshold breaches
@@ -564,7 +581,7 @@ export const ThreatActivityChart: React.FC<ThreatActivityChartProps> = ({ record
               fontWeight: 600,
               transition: 'all 0.15s ease',
             }}
-            title="Configure notification thresholds for 24-hour threat spikes"
+            title={`Configure notification thresholds for 24-hour threat spikes [${isMac() ? '⌘⇧T' : 'Ctrl+Shift+T'}]`}
           >
             {thresholds.enabled ? (
               breachEval.breaches.length > 0 ? (
@@ -576,6 +593,9 @@ export const ThreatActivityChart: React.FC<ThreatActivityChartProps> = ({ record
               <BellOff size={14} />
             )}
             <span>Threshold: {thresholds.enabled ? `≥${thresholds.spikeCountThreshold}/24h` : 'OFF'}</span>
+            <kbd style={{ fontSize: '10px', padding: '1px 4px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace' }}>
+              {isMac() ? '⌘⇧T' : 'Ctrl+Shift+T'}
+            </kbd>
             {thresholds.enabled && breachEval.breaches.length > 0 && (
               <span style={{
                 background: 'var(--color-danger)',

@@ -3,8 +3,9 @@ import { AccentColor, InformationDensity, Language, PrivacyTier, SettingsState, 
 import { t } from '../lib/i18n';
 import { 
   Palette, Shield, Lock, Globe, Users, Database, 
-  Save, CheckCircle2, AlertCircle, Trash2 
+  Save, CheckCircle2, AlertCircle, Trash2, Keyboard, Sparkles 
 } from 'lucide-react';
+import { isMac } from '../lib/keyboardShortcuts';
 
 interface SettingsViewProps {
   lang: Language;
@@ -376,6 +377,113 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               ✓ {t(lang, 'cacheCleared')}
             </span>
           )}
+        </div>
+      </div>
+
+      {/* 07 Power User & Keyboard Shortcuts */}
+      <div className="thundy-card">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Keyboard size={20} style={{ color: 'var(--link-color)' }} />
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 750 }}>
+              07 Power User & Keyboard Shortcuts
+            </h3>
+            <span className="thundy-badge info" style={{ fontSize: '11px', fontWeight: 700 }}>
+              WCAG Accessible
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('keydown', { bubbles: true }));
+              // Dispatch open cheatsheet
+              const evt = new KeyboardEvent('keydown', { key: '?', bubbles: true });
+              window.dispatchEvent(evt);
+            }}
+            style={{ padding: '6px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <Sparkles size={14} style={{ color: 'var(--color-warning)' }} />
+            <span>Open Shortcut Cheat Sheet (?)</span>
+          </button>
+        </div>
+
+        <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--text-muted)' }}>
+          High-velocity keyboard controls for quick attachment scans, compliance log navigation, and theme toggling without leaving your hands off the keyboard.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+          {/* Enable shortcuts toggle */}
+          <div style={{ padding: '14px', background: 'var(--input-bg)', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 650, fontSize: '13px' }}>
+              <input
+                type="checkbox"
+                checked={form.keyboardShortcutsEnabled ?? true}
+                onChange={(e) => updateField('keyboardShortcutsEnabled', e.target.checked)}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <span>Enable Keyboard Shortcuts System</span>
+            </label>
+            <p style={{ margin: '6px 0 0 28px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              Enables global hotkeys (e.g. {isMac() ? '⌘+S' : 'Ctrl+S'}, {isMac() ? '⌘+A' : 'Ctrl+A'}, {isMac() ? '⌘+1..5' : 'Ctrl+1..5'}).
+            </p>
+          </div>
+
+          {/* Show toast hints toggle */}
+          <div style={{ padding: '14px', background: 'var(--input-bg)', borderRadius: '10px', border: '1px solid var(--card-border)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 650, fontSize: '13px' }}>
+              <input
+                type="checkbox"
+                checked={form.showShortcutToasts ?? true}
+                onChange={(e) => updateField('showShortcutToasts', e.target.checked)}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <span>Show Floating Shortcut Confirmation Hints</span>
+            </label>
+            <p style={{ margin: '6px 0 0 28px', fontSize: '12px', color: 'var(--text-muted)' }}>
+              Displays an unobtrusive toast notification whenever a shortcut triggers an action.
+            </p>
+          </div>
+        </div>
+
+        {/* Quick cheat-sheet table */}
+        <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '16px' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '10px' }}>
+            Primary Shortcuts Overview ({isMac() ? 'macOS' : 'Windows / Linux'})
+          </span>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', fontSize: '12px' }}>
+              <span>Trigger Scan</span>
+              <kbd style={{ padding: '2px 6px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--link-color)' }}>{isMac() ? '⌘S' : 'Ctrl+S'}</kbd>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', fontSize: '12px' }}>
+              <span>Audit Log View</span>
+              <kbd style={{ padding: '2px 6px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--link-color)' }}>{isMac() ? '⌘A' : 'Ctrl+A'}</kbd>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', fontSize: '12px' }}>
+              <span>Toggle Theme</span>
+              <kbd style={{ padding: '2px 6px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--link-color)' }}>{isMac() ? '⌘T' : 'Ctrl+T'}</kbd>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', fontSize: '12px' }}>
+              <span>Cycle Sample Emails</span>
+              <kbd style={{ padding: '2px 6px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--link-color)' }}>J / K</kbd>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', fontSize: '12px' }}>
+              <span>Upload .eml File</span>
+              <kbd style={{ padding: '2px 6px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--link-color)' }}>{isMac() ? '⌘U' : 'Ctrl+U'}</kbd>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--input-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', fontSize: '12px' }}>
+              <span>All Shortcuts Modal</span>
+              <kbd style={{ padding: '2px 6px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700, color: 'var(--link-color)' }}>? or {isMac() ? '⌘/' : 'Ctrl+/'}</kbd>
+            </div>
+          </div>
         </div>
       </div>
 

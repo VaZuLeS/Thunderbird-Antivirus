@@ -6,6 +6,7 @@ import { ThreatActivityChart } from './ThreatActivityChart';
 import { RawThreatHistoryTable } from './RawThreatHistoryTable';
 import { ThreatExecutiveSummary } from './ThreatExecutiveSummary';
 import { generateCompliancePdfReport } from '../lib/pdfReportGenerator';
+import { isMac } from '../lib/keyboardShortcuts';
 import { 
   FileText, Search, Download, Trash2, RefreshCw, 
   ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, FileDown, ShieldAlert
@@ -33,6 +34,15 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
 
   useEffect(() => {
     loadData();
+
+    const handleGlobalExportPdf = () => {
+      handleExportPdf();
+    };
+
+    window.addEventListener('thundy:export-pdf', handleGlobalExportPdf);
+    return () => {
+      window.removeEventListener('thundy:export-pdf', handleGlobalExportPdf);
+    };
   }, []);
 
   const threatsCount = useMemo(() => {
@@ -273,10 +283,13 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
             onClick={handleExportPdf}
             disabled={isExportingPdf}
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px' }}
-            title="Export compliance PDF report with 30-day threat activity visualization"
+            title={`Export compliance PDF report [${isMac() ? '⌘⇧E' : 'Ctrl+Shift+E'}]`}
           >
             <FileDown size={14} />
             <span>{isExportingPdf ? 'Exporting PDF...' : 'Compliance PDF Report'}</span>
+            <kbd style={{ fontSize: '10px', padding: '1px 5px', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '4px', fontFamily: 'monospace', color: 'var(--link-color)' }}>
+              {isMac() ? '⌘⇧E' : 'Ctrl+Shift+E'}
+            </kbd>
           </button>
         </div>
       </div>
