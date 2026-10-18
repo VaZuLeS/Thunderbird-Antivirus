@@ -5,6 +5,7 @@ import { SAMPLE_EMAILS } from '../lib/sampleEmails';
 import { evaluateThreatScore } from '../lib/riskEngine';
 import { disarmHTML, extractLinksFromHtml } from '../lib/sanitizer';
 import { LinkCheckModal } from './LinkCheckModal';
+import { QuickScanButton } from './QuickScanButton';
 import { 
   ShieldCheck, ShieldAlert, AlertTriangle, ExternalLink, 
   Mail, Link as LinkIcon, CheckCircle2, XCircle, FileCode, Upload
@@ -418,10 +419,20 @@ export const ScannerView: React.FC<ScannerViewProps> = ({ lang, settings }) => {
         <LinkCheckModal
           url={testingLinkUrl}
           messageId={currentEmail.messageId}
+          sender={currentEmail.fromName ? `${currentEmail.fromName} <${currentEmail.fromEmail}>` : currentEmail.author}
           lang={lang}
           onClose={() => setTestingLinkUrl(null)}
         />
       )}
+
+      {/* Quick Scan Floating Action Button (FAB) & Non-Intrusive Result Dock */}
+      <QuickScanButton
+        allEmails={allEmails}
+        currentEmail={currentEmail}
+        lang={lang}
+        onSelectEmail={(id) => setSelectedEmailId(id)}
+        onOpenRawTab={() => setActiveSubTab('raw')}
+      />
     </div>
   );
 };

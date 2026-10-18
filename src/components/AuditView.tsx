@@ -2,9 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Language, LinkAuditRecord } from '../types';
 import { t } from '../lib/i18n';
 import { getAuditRecords, saveAuditRecords, clearAuditLog } from '../lib/auditStorage';
+import { ThreatActivityChart } from './ThreatActivityChart';
+import { RawThreatHistoryTable } from './RawThreatHistoryTable';
+import { ThreatExecutiveSummary } from './ThreatExecutiveSummary';
+import { generateCompliancePdfReport } from '../lib/pdfReportGenerator';
 import { 
   FileText, Search, Download, Trash2, RefreshCw, 
-  ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle
+  ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, FileDown, ShieldAlert
 } from 'lucide-react';
 
 interface AuditViewProps {
@@ -13,6 +17,7 @@ interface AuditViewProps {
 
 export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
   const [records, setRecords] = useState<LinkAuditRecord[]>([]);
+  const [activeTableTab, setActiveTableTab] = useState<'threats' | 'decisions'>('threats');
   const [search, setSearch] = useState('');
   const [outcomeFilter, setOutcomeFilter] = useState('');
   const [minScore, setMinScore] = useState('');
@@ -29,6 +34,10 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const threatsCount = useMemo(() => {
+    return records.filter(r => (r.score ?? 0) >= 20 || r.verdict === 'MALICIOUS' || r.verdict === 'SUSPICIOUS' || r.outcome === 'ABORTED').length;
+  }, [records]);
 
   // Filtered records
   const filtered = useMemo(() => {
@@ -94,6 +103,79 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
     URL.revokeObjectURL(url);
   };
 
+  // Export Threat History as CSV for compliance and offline records
+  const handleExportThreatsCsv = () => {
+    const threats = records.filter(
+      r => (r.score ?? 0) >= 20 || r.verdict === 'MALICIOUS' || r.verdict === 'SUSPICIOUS' || r.outcome === 'ABORTED'
+    );
+    const headers = [
+      'Timestamp (ISO)',
+      'Date',
+      'Time',
+      'Threat Level',
+      'Threat Score',
+      'Sender',
+      'Source / Message ID',
+      'Destination URL',
+      'Verdict',
+      'Detection Reasons / Heuristics',
+      'Decision / Outcome',
+      'Analysis Provider'
+    ];
+    const escapeCsv = (val: string | number | null | undefined): string => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val);
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+    const rows = threats.map(threat => {
+      const d = new Date(threat.clickedAt);
+      const score = threat.score ?? 0;
+      const threatLevel = score >= 50 || threat.verdict === 'MALICIOUS' ? 'High' : score >= 20 || threat.verdict === 'SUSPICIOUS' ? 'Medium' : 'Low';
+      return [
+        escapeCsv(d.toISOString()),
+        escapeCsv(d.toISOString().split('T')[0]),
+        escapeCsv(d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })),
+        escapeCsv(threatLevel),
+        score,
+        escapeCsv(threat.sender || 'Unknown Sender'),
+        escapeCsv(threat.source || (threat.messageId ? `Message ID: ${threat.messageId}` : 'Mail Client')),
+        escapeCsv(threat.url),
+        escapeCsv(threat.verdict),
+        escapeCsv(threat.reasons?.join('; ') || 'None'),
+        escapeCsv(threat.outcome === 'ABORTED' ? 'Blocked' : threat.outcome),
+        escapeCsv(threat.provider)
+      ].join(',');
+    });
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `thundy-threat-history-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleExportPdf = async () => {
+    try {
+      setIsExportingPdf(true);
+      const svgEl = document.querySelector('.threat-activity-component svg') as SVGSVGElement | null;
+      await generateCompliancePdfReport({
+        records,
+        lang,
+        chartSvgElement: svgEl,
+      });
+    } catch (e) {
+      console.error('Failed to export compliance PDF', e);
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
+
   const handleClear = () => {
     clearAuditLog();
     loadData();
@@ -138,8 +220,73 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
         </div>
       </div>
 
-      {/* Filters & Actions */}
-      <div className="thundy-card">
+      {/* Threat Executive Summary Card (30-Day Metrics, Avg Score, Most Common Vector) */}
+      <ThreatExecutiveSummary
+        records={records}
+        lang={lang}
+        onNavigateToThreats={() => setActiveTableTab('threats')}
+      />
+
+      {/* Threat Activity Over Time Visualization (Recharts) */}
+      <ThreatActivityChart records={records} lang={lang} />
+
+      {/* Sub-navigation Tabs: Raw Threat History vs All Decisions + Top Action Bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0 16px', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className={`thundy-nav-tab ${activeTableTab === 'threats' ? 'active' : ''}`}
+            onClick={() => setActiveTableTab('threats')}
+            style={{ padding: '8px 16px', fontSize: '13px' }}
+          >
+            <ShieldAlert size={16} />
+            <span>Raw History of Detected Threats ({threatsCount})</span>
+          </button>
+
+          <button
+            type="button"
+            className={`thundy-nav-tab ${activeTableTab === 'decisions' ? 'active' : ''}`}
+            onClick={() => setActiveTableTab('decisions')}
+            style={{ padding: '8px 16px', fontSize: '13px' }}
+          >
+            <FileText size={16} />
+            <span>All Link Decisions Log ({records.length})</span>
+          </button>
+        </div>
+
+        {/* Global Compliance & Offline Record Export Actions */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={handleExportThreatsCsv}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px' }}
+            title="Export all detected threats as CSV for offline record-keeping"
+          >
+            <Download size={14} />
+            <span>Export Threat History (CSV)</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleExportPdf}
+            disabled={isExportingPdf}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 12px' }}
+            title="Export compliance PDF report with 30-day threat activity visualization"
+          >
+            <FileDown size={14} />
+            <span>{isExportingPdf ? 'Exporting PDF...' : 'Compliance PDF Report'}</span>
+          </button>
+        </div>
+      </div>
+
+      {activeTableTab === 'threats' ? (
+        <RawThreatHistoryTable records={records} lang={lang} />
+      ) : (
+        <>
+          {/* Filters & Actions */}
+          <div className="thundy-card">
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 650, marginBottom: '4px' }}>
@@ -243,6 +390,17 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
             >
               <Download size={14} />
               <span>{t(lang, 'auditCsv')}</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleExportPdf}
+              disabled={isExportingPdf}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <FileDown size={14} />
+              <span>{isExportingPdf ? 'Exporting PDF...' : 'Export Compliance PDF'}</span>
             </button>
           </div>
 
@@ -358,6 +516,8 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {/* Confirmation Modal for Clearing Log */}
       {showClearConfirm && (

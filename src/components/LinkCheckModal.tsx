@@ -7,6 +7,7 @@ import { ShieldAlert, ShieldCheck, ExternalLink, XCircle, AlertTriangle } from '
 interface LinkCheckModalProps {
   url: string;
   messageId: string;
+  sender?: string;
   lang: Language;
   onClose: () => void;
   onActionCompleted?: () => void;
@@ -15,6 +16,7 @@ interface LinkCheckModalProps {
 export const LinkCheckModal: React.FC<LinkCheckModalProps> = ({
   url,
   messageId,
+  sender,
   lang,
   onClose,
   onActionCompleted,
@@ -51,6 +53,8 @@ export const LinkCheckModal: React.FC<LinkCheckModalProps> = ({
   const handleProceed = () => {
     addAuditRecord({
       messageId,
+      sender: sender || 'Inbound Message',
+      source: `Email: ${messageId}`,
       url,
       score,
       scoreAtDecision: score,
@@ -73,6 +77,8 @@ export const LinkCheckModal: React.FC<LinkCheckModalProps> = ({
   const handleAbort = () => {
     addAuditRecord({
       messageId,
+      sender: sender || 'Inbound Message',
+      source: `Email: ${messageId}`,
       url,
       score,
       scoreAtDecision: score,

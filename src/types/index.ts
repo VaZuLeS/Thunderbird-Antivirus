@@ -53,6 +53,8 @@ export interface LinkAuditRecord {
   clickedAt: number;
   decidedAt: number | null;
   messageId: string;
+  sender?: string;
+  source?: string;
   url: string;
   score: number | null;
   scoreSource?: string;
@@ -69,6 +71,12 @@ export interface LinkAuditRecord {
   extensionVersion: string;
 }
 
+export interface EmailAttachment {
+  filename: string;
+  size: string;
+  type: string;
+}
+
 export interface EmailMessage {
   id: string;
   author: string;
@@ -82,7 +90,35 @@ export interface EmailMessage {
   receivedHeaders: string[];
   bodyText: string;
   bodyHtml?: string;
-  attachments?: { filename: string; size: string; type: string }[];
+  attachments?: EmailAttachment[];
+}
+
+export interface AttachmentScanResult {
+  id: string;
+  filename: string;
+  size: string;
+  type: string;
+  scannedAt: number;
+  emailSubject: string;
+  emailAuthor: string;
+  emailId: string;
+  verdict: 'SAFE' | 'SUSPICIOUS' | 'MALICIOUS';
+  score: number;
+  sha256: string;
+  magicBytesVerified: boolean;
+  magicHeader: string;
+  macrosDetected: boolean;
+  scriptsDetected: boolean;
+  suspiciousStreamsCount: number;
+  extractedUrls: string[];
+  sandboxDetonation: 'clean' | 'suspicious' | 'blocked';
+  engineResults: {
+    clamAvSignature: string;
+    heuristicEngine: string;
+    entropyScore: number;
+    disarmedPdfValid: boolean;
+  };
+  reasons: string[];
 }
 
 export interface EnterpriseProfileItem {
@@ -112,3 +148,28 @@ export interface EnterpriseSelection {
   siem: string;
   tickets: string;
 }
+
+export interface ThreatNotificationThresholds {
+  enabled: boolean;
+  spikeCountThreshold: number; // count of threat events in a 24-hour window that triggers an alert
+  windowHours: number; // default 24
+  metricBasis: 'all_threats' | 'critical_only' | 'blocked_only';
+  notifyInApp: boolean;
+  notifyDesktop: boolean;
+  notifySound: boolean;
+  emailAlertRecipient?: string;
+}
+
+export interface SpikeThresholdBreach {
+  date: string;
+  fullDate: string;
+  timestamp: number;
+  threatCount: number;
+  highThreats: number;
+  mediumThreats: number;
+  aborted: number;
+  threshold: number;
+  excess: number;
+  isRecent24h: boolean;
+}
+
