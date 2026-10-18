@@ -50,6 +50,13 @@ export default {
     // package metadata / lock files
     'package.json',
     'package-lock.json',
+    'bun.lock',
+    'index.html',
+    'metadata.json',
+    'tsconfig.json',
+    'vite.config.ts',
+    'src',
+    'src/**',
     'node_modules',
     'build',
     'web-ext-artifacts',

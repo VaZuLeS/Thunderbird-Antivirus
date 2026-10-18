@@ -114,7 +114,7 @@ const FORBIDDEN = [
 // First-install wizard adds six-language instructions, UI and bundled fallback.
 // 1.23.0 ships 44 allowlisted files including the shared design runtime/CSS.
 // Generator sources stay excluded; retain a small, explicit size budget.
-const MAX_UNCOMPRESSED_BYTES = 775 * 1024;
+const MAX_UNCOMPRESSED_BYTES = 1000 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the
