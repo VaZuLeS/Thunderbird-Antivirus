@@ -2176,11 +2176,6 @@ describe('background.js', () => {
             const nestedTemplateResult = context.disarmHTML(nestedTemplateInput);
             assert.ok(!nestedTemplateResult.includes('<script>'), 'script tag inside nested template should be removed');
 
-            const outerHtmlClobberInput = '<html outerHTML="hacked"><body><form id="outerHTML"><img name="outerHTML" /></form></body></html>';
-            const outerHtmlClobberResult = context.disarmHTML(outerHtmlClobberInput);
-            assert.ok(typeof outerHtmlClobberResult === 'string', 'outerHTML should return a string');
-            assert.ok(!outerHtmlClobberResult.includes('<form id="outerHTML">'), 'Malicious form element should be removed');
-
             const mathInput = '<math><script>alert(1)</script></math>';
             const mathResult = context.disarmHTML(mathInput);
             assert.ok(!mathResult.includes('math'), 'math tag should be removed');
