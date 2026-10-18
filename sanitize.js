@@ -54,6 +54,13 @@ function disarmHTML(htmlString) {
     }
     const safeGetContent = Object.getOwnPropertyDescriptor(protoForContent, 'content').get;
 
+    const safeHtmlElement = doc.createElement('html');
+    let protoForOuterHTML = Object.getPrototypeOf(safeHtmlElement);
+    while (protoForOuterHTML && !Object.getOwnPropertyDescriptor(protoForOuterHTML, 'outerHTML')) {
+        protoForOuterHTML = Object.getPrototypeOf(protoForOuterHTML);
+    }
+    const safeGetOuterHTML = Object.getOwnPropertyDescriptor(protoForOuterHTML, 'outerHTML').get;
+
     function processRoot(root) {
         const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
         let el = walker.currentNode;
@@ -105,6 +112,6 @@ function disarmHTML(htmlString) {
         }
     }
 
-    return doc.documentElement.outerHTML;
+    return safeGetOuterHTML.call(doc.documentElement);
 }
 
