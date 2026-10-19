@@ -202,7 +202,7 @@ try {
                         const hash256 = att.hybrid_sha256;
                         if (att.state === 'SIZE_LIMIT') {
                             const p = document.createElement('p'); p.textContent = uiText('sizeLimit', 'Attachment exceeds the local size limit.'); liveContainer.appendChild(p);
-                        } else if (['UNKNOWN', 'MANUAL_CHECK_PENDING', 'NOT_CHECKED'].includes(att.state)) {
+                        } else if (att.state === 'UNKNOWN' || att.state === 'MANUAL_CHECK_PENDING' || att.state === 'NOT_CHECKED') {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, liveContainer);
                         } else if (externalAnalysisConsent && apikey_hybridanalysis) {
                             fetchTasks.push((frag) =>

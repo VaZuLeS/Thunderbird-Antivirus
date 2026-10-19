@@ -1259,7 +1259,7 @@ async function handleOpenCheckedLink(request, sender) {
         const tabId = sender && sender.tab && sender.tab.id;
         if (tabId == null || request.messageId == null || typeof request.url !== 'string') return { success: false };
         const url = new URL(request.url);
-        if (!['http:', 'https:'].includes(url.protocol)) return { success: false };
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') return { success: false };
         const message = await getFirstDisplayedMessage(tabId, { throwOnError: true });
         if (!message || message.id !== request.messageId) return { success: false };
         await browser.windows.openDefaultBrowser(url.href);
