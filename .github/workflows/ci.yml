@@ -32,7 +32,7 @@ jobs:
       - name: Build and verify extension package
         run: npm run package
       - name: Preserve package for real Thunderbird checks
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: thunderbird-test-package
           path: build/*.zip
@@ -59,7 +59,7 @@ jobs:
         run: npm run check:ui -- --lang ${{ matrix.language }}
       - name: Preserve browser evidence and failure screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-ui-${{ matrix.language }}
           path: .audit/ui/
@@ -117,7 +117,7 @@ jobs:
           done
       - name: Preserve real-client report, logs and screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: thunderbird-linux-live
           path: .audit/thunderbird-live/
