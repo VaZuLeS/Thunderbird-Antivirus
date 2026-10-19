@@ -80,7 +80,7 @@ jobs:
           apt-get install -y --no-install-recommends thunderbird thunderbird-l10n-de thunderbird-l10n-fr thunderbird-l10n-es-es thunderbird-l10n-it thunderbird-l10n-pl xvfb python3 imagemagick libxtst6 ca-certificates
           useradd --create-home thunderbird-test
       - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: thunderbird-test-package
           path: build
