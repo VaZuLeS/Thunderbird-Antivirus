@@ -16,40 +16,92 @@ export function disarmHTML(htmlString: string): string {
 
   const nodesToRemove: Element[] = [];
 
-  function processNode(node: Element) {
-    const tagName = node.tagName.toLowerCase();
-    if (activeTags.has(tagName)) {
-      nodesToRemove.push(node);
-      return;
-    }
+  const safeEl = doc.createElement('div');
+  const safeHasAttributes = safeEl.hasAttributes;
+  const safeRemoveAttribute = safeEl.removeAttribute;
 
-    // Process attributes
-    const attrs = Array.from(node.attributes);
-    for (const attr of attrs) {
-      const name = attr.name.toLowerCase();
-      if (name.startsWith('on') || ['style', 'src', 'srcset', 'background', 'poster', 'ping'].includes(name)) {
-        node.removeAttribute(attr.name);
-        continue;
-      }
-      if (dangerousAttributes.has(name)) {
-        let val = attr.value.toLowerCase().replace(DANGEROUS_URI_CHARS_REGEX, '');
-        if (val.startsWith('javascript:') || val.startsWith('data:') || val.startsWith('vbscript:')) {
-          node.removeAttribute(attr.name);
+  let protoForTagName = Object.getPrototypeOf(safeEl);
+  while (protoForTagName && !Object.getOwnPropertyDescriptor(protoForTagName, 'tagName')) {
+      protoForTagName = Object.getPrototypeOf(protoForTagName);
+  }
+  const safeGetTagName = Object.getOwnPropertyDescriptor(protoForTagName, 'tagName')!.get!;
+
+  let protoForAttributes = Object.getPrototypeOf(safeEl);
+  while (protoForAttributes && !Object.getOwnPropertyDescriptor(protoForAttributes, 'attributes')) {
+      protoForAttributes = Object.getPrototypeOf(protoForAttributes);
+  }
+  const safeGetAttributes = Object.getOwnPropertyDescriptor(protoForAttributes, 'attributes')!.get!;
+
+  let protoForParentNode = Object.getPrototypeOf(safeEl);
+  while (protoForParentNode && !Object.getOwnPropertyDescriptor(protoForParentNode, 'parentNode')) {
+      protoForParentNode = Object.getPrototypeOf(protoForParentNode);
+  }
+  const safeGetParentNode = Object.getOwnPropertyDescriptor(protoForParentNode, 'parentNode')!.get!;
+
+  let protoForRemoveChild = Object.getPrototypeOf(safeEl);
+  while (protoForRemoveChild && !Object.getOwnPropertyDescriptor(protoForRemoveChild, 'removeChild')) {
+      protoForRemoveChild = Object.getPrototypeOf(protoForRemoveChild);
+  }
+  const safeRemoveChild = Object.getOwnPropertyDescriptor(protoForRemoveChild, 'removeChild')!.value;
+
+  let protoForNodeType = Object.getPrototypeOf(safeEl);
+  while (protoForNodeType && !Object.getOwnPropertyDescriptor(protoForNodeType, 'nodeType')) {
+      protoForNodeType = Object.getPrototypeOf(protoForNodeType);
+  }
+  const safeGetNodeType = Object.getOwnPropertyDescriptor(protoForNodeType, 'nodeType')!.get!;
+
+  const safeTemplate = doc.createElement('template');
+  let protoForContent = Object.getPrototypeOf(safeTemplate);
+  while (protoForContent && !Object.getOwnPropertyDescriptor(protoForContent, 'content')) {
+      protoForContent = Object.getPrototypeOf(protoForContent);
+  }
+  const safeGetContent = Object.getOwnPropertyDescriptor(protoForContent, 'content')!.get!;
+
+  function processRoot(root: Node) {
+    const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
+    let el = walker.currentNode as Element;
+    while (el) {
+        if (safeGetNodeType.call(el) === 1) {
+            const tagName = (safeGetTagName.call(el) as string).toLowerCase();
+            if (activeTags.has(tagName)) {
+                nodesToRemove.push(el);
+            } else {
+                if (safeHasAttributes.call(el)) {
+                    const attrs = safeGetAttributes.call(el) as NamedNodeMap;
+                    for (let j = attrs.length - 1; j >= 0; j--) {
+                        const attrName = attrs[j].name.toLowerCase();
+                        if (attrName.startsWith('on') || ['style', 'src', 'srcset', 'background', 'poster', 'ping'].includes(attrName)) {
+                            safeRemoveAttribute.call(el, attrName);
+                            continue;
+                        }
+                        if (dangerousAttributes.has(attrName)) {
+                            let val = attrs[j].value.toLowerCase();
+                            let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
+                            if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
+                                safeRemoveAttribute.call(el, attrName);
+                            }
+                        }
+                    }
+                }
+                if (tagName === 'template') {
+                    const content = safeGetContent.call(el) as DocumentFragment | null;
+                    if (content) {
+                        processRoot(content);
+                    }
+                }
+            }
         }
-      }
-    }
-
-    // Process children
-    const children = Array.from(node.children);
-    for (const child of children) {
-      processNode(child);
+        el = walker.nextNode() as Element;
     }
   }
 
-  processNode(doc.body);
+  processRoot(doc.documentElement);
 
-  for (const el of nodesToRemove) {
-    el.parentNode?.removeChild(el);
+  for (let i = nodesToRemove.length - 1; i >= 0; i--) {
+      const pNode = safeGetParentNode.call(nodesToRemove[i]) as Node | null;
+      if (pNode) {
+          safeRemoveChild.call(pNode, nodesToRemove[i]);
+      }
   }
 
   return doc.body.innerHTML;
