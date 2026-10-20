@@ -245,6 +245,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('apikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              maxLength={255}
+              autoComplete="off"
+              spellCheck={false}
             />
           </div>
 
@@ -258,6 +261,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('urlhausApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              maxLength={255}
+              autoComplete="off"
+              spellCheck={false}
             />
           </div>
 
@@ -271,6 +277,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('urlscanApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              maxLength={255}
+              autoComplete="off"
+              spellCheck={false}
             />
           </div>
 
@@ -284,6 +293,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('virustotalApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              maxLength={255}
+              autoComplete="off"
+              spellCheck={false}
             />
           </div>
         </div>
