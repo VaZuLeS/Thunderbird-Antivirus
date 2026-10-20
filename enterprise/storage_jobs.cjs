@@ -328,7 +328,7 @@ class StorageJobs {
       if (p.kind === "ATTEMPT") {
         need(
           p.data === null &&
-            ["QUEUED", "RETRY", "WRITING"].includes(old.status) &&
+            (old.status === "QUEUED" || old.status === "RETRY" || old.status === "WRITING") &&
             old.attempts < this.maxAttempts &&
             (!old.nextAttemptAt ||
               Date.parse(p.at) >= Date.parse(old.nextAttemptAt)),
@@ -490,7 +490,7 @@ class StorageJobs {
     const job = [...this.jobs.values()].find(
       (j) =>
         j.input.destination.provider === "local-simulation" &&
-        ["QUEUED", "RETRY", "WRITING"].includes(j.status) &&
+        (j.status === "QUEUED" || j.status === "RETRY" || j.status === "WRITING") &&
         (!j.nextAttemptAt || Date.parse(j.nextAttemptAt) <= this.clock()),
     );
     if (!job) return { processed: false, sealed: false };
@@ -651,7 +651,7 @@ class StorageJobs {
     const job = [...this.jobs.values()].find(
       (j) =>
         j.input.destination.provider !== "local-simulation" &&
-        ["QUEUED", "RETRY", "WRITING"].includes(j.status) &&
+        (j.status === "QUEUED" || j.status === "RETRY" || j.status === "WRITING") &&
         (!j.nextAttemptAt || Date.parse(j.nextAttemptAt) <= this.clock()),
     );
     if (!job) return { processed: false, sealed: false };
