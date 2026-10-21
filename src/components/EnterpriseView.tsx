@@ -101,17 +101,19 @@ export const EnterpriseView: React.FC<EnterpriseViewProps> = ({ lang }) => {
           {t(lang, 'profilesIntro')}
         </p>
 
-        {hasChanges && (
-          <span className="thundy-badge warning" style={{ marginBottom: '10px' }}>
-            Unsaved changes compared to local profile
-          </span>
-        )}
+        <div id="enterprise-save-status" role="status">
+          {hasChanges && (
+            <span className="thundy-badge warning" style={{ marginBottom: '10px', display: 'inline-block' }}>
+              Unsaved changes compared to local profile
+            </span>
+          )}
 
-        {statusMsg && (
-          <div style={{ padding: '8px 12px', background: 'var(--success-bg)', color: 'var(--color-success)', borderRadius: '6px', fontSize: '13px', fontWeight: 600 }}>
-            ✓ {statusMsg}
-          </div>
-        )}
+          {statusMsg && (
+            <div style={{ padding: '8px 12px', background: 'var(--success-bg)', color: 'var(--color-success)', borderRadius: '6px', fontSize: '13px', fontWeight: 600, display: 'inline-block', marginLeft: hasChanges ? '10px' : '0' }}>
+              ✓ {statusMsg}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Profile Form */}
@@ -228,6 +230,7 @@ export const EnterpriseView: React.FC<EnterpriseViewProps> = ({ lang }) => {
             type="button"
             className="btn-primary"
             onClick={handleSave}
+            aria-describedby="enterprise-save-status"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
             <Save size={16} />
