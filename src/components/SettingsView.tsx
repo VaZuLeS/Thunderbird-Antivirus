@@ -381,7 +381,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Sticky Save Bar */}
       <div className="thundy-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', position: 'sticky', bottom: '16px', zIndex: 90, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-        <div>
+        <div id="settings-save-status" role="status">
           {isDirty ? (
             <span style={{ color: 'var(--color-warning)', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <AlertCircle size={16} />
@@ -402,6 +402,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <button
           type="submit"
           className="btn-primary"
+          aria-describedby="settings-save-status"
           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px' }}
         >
           <Save size={16} />
