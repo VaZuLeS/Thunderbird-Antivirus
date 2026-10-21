@@ -81,3 +81,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The new `ipReputationApiKey` input in `options.html` was missing the `autocomplete="off"` and `spellcheck="false"` attributes, similar to previous vulnerabilities on other API keys.
 **Learning:** When adding new configuration inputs for secrets, it's easy to miss applying standard security attributes if they aren't enforced systemically.
 **Prevention:** Extend automated UI tests to iterate through *all* known configuration inputs containing secrets (e.g., updating the `apiKeyIds` array in `options.test.js`) to assert that the required security attributes are consistently applied.
+
+## 2024-10-25 - Insecure Sensitive API Key Input Configuration (SettingsView)
+**Vulnerability:** The four API key configuration inputs in `src/components/SettingsView.tsx` were missing the `autoComplete="off"`, `spellCheck={false}`, and `maxLength={255}` attributes. Furthermore, the `customWhitelist` and `customBlacklist` textareas were missing `spellCheck={false}`.
+**Learning:** When migrating HTML options pages to React components, security attributes must be explicitly ported over to the new TSX templates using React's camelCase prop conventions to maintain the same defense-in-depth posture.
+**Prevention:** Extend automated UI tests to iterate through *all* known configuration inputs containing secrets in React views to assert that the required security attributes are consistently applied.
