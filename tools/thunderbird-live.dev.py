@@ -310,8 +310,8 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         return
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'options.html'])
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/options.html");'))
-    wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="dark"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
     for name, value in [('appearance', 'dark'), ('accent', 'violet'), ('density', 'compact')]:
+        wait_for(lambda: m.page('return !document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\')?.disabled && !!document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\');', [name, value]))
         m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name, value])
     theme = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance==="dark" && s.thundyAccent==="violet" && s.thundyDensity==="compact"?s:null);'))
     assert theme.get('externalAnalysisConsent') is not True
