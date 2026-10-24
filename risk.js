@@ -104,6 +104,9 @@ function checkLists(email, senderDomain) {
 }
 
 const AUTH_FAIL_REGEX = /(?:spf=fail|spf=softfail|dkim=fail|dmarc=fail)/i;
+const FAIL_SPF_REGEX = /spf=(?:fail|softfail)/i;
+const FAIL_DKIM_REGEX = /dkim=fail/i;
+const FAIL_DMARC_REGEX = /dmarc=fail/i;
 const AUTH_PASS_REGEX_SPF = /spf=pass/i;
 const AUTH_PASS_REGEX_DKIM = /dkim=pass/i;
 const AUTH_PASS_REGEX_DMARC = /dmarc=pass/i;
@@ -117,17 +120,18 @@ function evaluateAuthHeaders(authHeaders, score, reasons) {
         if (AUTH_FAIL_REGEX.test(headerStr)) {
             let fail = false;
 
-            if (/spf=(?:fail|softfail)/i.test(headerStr)) {
+            // ⚡ Bolt Optimization: Use precompiled regex to prevent regex compilation on each test
+            if (FAIL_SPF_REGEX.test(headerStr)) {
                 score += 50;
                 addReason(reasons, "ui_087", "SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
                 fail = true;
             }
-            if (/dkim=fail/i.test(headerStr)) {
+            if (FAIL_DKIM_REGEX.test(headerStr)) {
                 score += 50;
                 addReason(reasons, "ui_088", "DKIM-Signatur ungültig (Mögliches Spoofing).");
                 fail = true;
             }
-            if (/dmarc=fail/i.test(headerStr)) {
+            if (FAIL_DMARC_REGEX.test(headerStr)) {
                 score += 50;
                 addReason(reasons, "ui_089", "DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
                 fail = true;

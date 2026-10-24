@@ -38,3 +38,6 @@
 ## 2026-10-19 - Optimize hot-path array lookups using strict string equality
 **Learning:** In JavaScript hot paths, creating inline arrays specifically to use the `.includes()` method (e.g., `['a', 'b', 'c'].includes(val)`) forces the JS engine to instantiate a new array object and execute garbage collection for every loop iteration. This causes substantial overhead.
 **Action:** Always replace inline array instantiations and `.includes()` checks with direct string equality comparisons (e.g., `val === 'a' || val === 'b' || val === 'c'`) in performance-critical sections (like DOM parsing or message iteration). This eliminates object allocation and executes >10x faster.
+## 2024-10-24 - Precompiled Regexes in evaluateAuthHeaders
+**Learning:** When performing micro-optimizations on hot-paths, extracting inline regular expression literals into module-level constants is a valid, safe improvement that ensures no unnecessary instantiation occurs and improves readability, even if modern JS engine optimizations make the real-world performance gain negligible.
+**Action:** Extract inline regular expressions to module-level constants when they are used repeatedly inside hot-path functions.
