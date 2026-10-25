@@ -241,6 +241,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </label>
             <input
               type="password"
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
               value={form.apikey}
               onChange={(e) => updateField('apikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
@@ -254,6 +257,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </label>
             <input
               type="password"
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
               value={form.urlhausApikey}
               onChange={(e) => updateField('urlhausApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
@@ -267,6 +273,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </label>
             <input
               type="password"
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
               value={form.urlscanApikey}
               onChange={(e) => updateField('urlscanApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
@@ -280,6 +289,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </label>
             <input
               type="password"
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
               value={form.virustotalApikey}
               onChange={(e) => updateField('virustotalApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
@@ -305,6 +317,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </label>
             <textarea
               rows={3}
+              spellCheck={false}
               value={form.customWhitelist.join(', ')}
               onChange={(e) => updateField('customWhitelist', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
               placeholder="e.g. example.com, boss@company.org"
@@ -318,6 +331,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </label>
             <textarea
               rows={3}
+              spellCheck={false}
               value={form.customBlacklist.join(', ')}
               onChange={(e) => updateField('customBlacklist', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
               placeholder="e.g. spammer.net, phishing.xyz"
