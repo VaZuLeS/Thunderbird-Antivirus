@@ -8,7 +8,8 @@ const AuditExport = (() => {
         return '"' + text.replaceAll('"', '""') + '"';
     }
     function csv(records) {
-        return '\ufeff' + fields.join(',') + '\r\n' + records.map(record => fields.map(field => csvCell(['clickedAt', 'decidedAt', 'scoredAt', 'checkedAt'].includes(field) && record[field] != null ? new Date(record[field]).toISOString() : record[field])).join(',')).join('\r\n');
+        // ⚡ Bolt Optimization: Use direct equality checks instead of inline array instantiation to eliminate recurrent allocation overhead in large data mapping
+        return '\ufeff' + fields.join(',') + '\r\n' + records.map(record => fields.map(field => csvCell((field === 'clickedAt' || field === 'decidedAt' || field === 'scoredAt' || field === 'checkedAt') && record[field] != null ? new Date(record[field]).toISOString() : record[field])).join(',')).join('\r\n');
     }
     async function json(records, metadata, cryptoApi = crypto) {
         const payload = { schemaVersion: 1, exportedAt: new Date().toISOString(), ...metadata, records };
