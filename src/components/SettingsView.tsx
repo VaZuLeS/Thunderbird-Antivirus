@@ -245,6 +245,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('apikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
             />
           </div>
 
@@ -258,6 +261,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('urlhausApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
             />
           </div>
 
@@ -271,6 +277,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('urlscanApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
             />
           </div>
 
@@ -284,6 +293,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('virustotalApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
             />
           </div>
         </div>
@@ -309,6 +321,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('customWhitelist', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
               placeholder="e.g. example.com, boss@company.org"
               style={{ width: '100%' }}
+              spellCheck={false}
             />
           </div>
 
@@ -322,6 +335,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('customBlacklist', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
               placeholder="e.g. spammer.net, phishing.xyz"
               style={{ width: '100%' }}
+              spellCheck={false}
             />
           </div>
         </div>
