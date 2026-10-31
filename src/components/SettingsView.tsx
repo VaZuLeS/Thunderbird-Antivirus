@@ -245,6 +245,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('apikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
             />
           </div>
 
@@ -258,6 +261,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('urlhausApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
             />
           </div>
 
@@ -271,6 +277,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('urlscanApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
             />
           </div>
 
@@ -284,6 +293,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('virustotalApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
               style={{ width: '100%' }}
+              autoComplete="off"
+              spellCheck={false}
+              maxLength={255}
             />
           </div>
         </div>
@@ -309,6 +321,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('customWhitelist', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
               placeholder="e.g. example.com, boss@company.org"
               style={{ width: '100%' }}
+              spellCheck={false}
             />
           </div>
 
@@ -322,6 +335,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) => updateField('customBlacklist', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
               placeholder="e.g. spammer.net, phishing.xyz"
               style={{ width: '100%' }}
+              spellCheck={false}
             />
           </div>
         </div>
@@ -341,6 +355,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             type="button"
             className="btn-secondary"
             onClick={handleClearCache}
+            aria-describedby="clear-cache-status"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
             <Trash2 size={14} />
@@ -371,17 +386,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             {t(lang, 'navWizard')}
           </button>
 
-          {cacheClearedMsg && (
-            <span style={{ color: 'var(--color-success)', fontSize: '13px', fontWeight: 600 }}>
-              ✓ {t(lang, 'cacheCleared')}
-            </span>
-          )}
+          <span id="clear-cache-status" role="status" aria-live="polite">
+            {cacheClearedMsg && (
+              <span style={{ color: 'var(--color-success)', fontSize: '13px', fontWeight: 600 }}>
+                ✓ {t(lang, 'cacheCleared')}
+              </span>
+            )}
+          </span>
         </div>
       </div>
 
       {/* Sticky Save Bar */}
       <div className="thundy-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', position: 'sticky', bottom: '16px', zIndex: 90, boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
-        <div>
+        <div id="save-status-container" role="status" aria-live="polite">
           {isDirty ? (
             <span style={{ color: 'var(--color-warning)', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <AlertCircle size={16} />
@@ -402,6 +419,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         <button
           type="submit"
           className="btn-primary"
+          aria-describedby="save-status-container"
           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '10px 20px' }}
         >
           <Save size={16} />

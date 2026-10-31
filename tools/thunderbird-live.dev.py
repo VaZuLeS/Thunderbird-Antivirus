@@ -290,7 +290,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     report['blockedOsDispatch'] = {'apiAccepted': True, 'additionalReceiverCalls': 0,
                                    'observationSeconds': 1, 'protocolPolicy': False}
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'audit.html'])
-    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/audit.html");'))
+    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.endsWith("/audit.html");'))
     wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===3 && document.querySelector("#auditRows").innerText.includes("destination.example.invalid");'))
     audit = m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getLinkAudit"});')
     records = audit.get('records', [])
@@ -309,7 +309,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     if audit_only:
         return
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'options.html'])
-    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.currentURI.spec.endsWith("/options.html");'))
+    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.endsWith("/options.html");'))
     wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="dark"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
     for name, value in [('appearance', 'dark'), ('accent', 'violet'), ('density', 'compact')]:
         m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name, value])
@@ -319,7 +319,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     report['appearanceSaved'] = {k: theme[k] for k in ['thundyAppearance', 'thundyAccent', 'thundyDensity']}
     m.screenshot(out / 'options-dark.png')
     previous = m.js('const b=window.gTabmail.currentTabInfo.browser;const id=b.browsingContext.currentWindowGlobal.innerWindowId;b.reload();return id;')
-    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser.browsingContext.currentWindowGlobal?.innerWindowId!==arguments[0];', [previous]))
+    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.browsingContext.currentWindowGlobal?.innerWindowId!==arguments[0];', [previous]))
     wait_for(lambda: m.page('return document.documentElement.dataset.theme==="dark" && document.documentElement.dataset.accent==="violet" && document.documentElement.dataset.density==="compact";'))
     assert m.js('return Services.io.offline;')
     wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="system"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="system"]\');'))
