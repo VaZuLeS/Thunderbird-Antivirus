@@ -81,3 +81,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** The new `ipReputationApiKey` input in `options.html` was missing the `autocomplete="off"` and `spellcheck="false"` attributes, similar to previous vulnerabilities on other API keys.
 **Learning:** When adding new configuration inputs for secrets, it's easy to miss applying standard security attributes if they aren't enforced systemically.
 **Prevention:** Extend automated UI tests to iterate through *all* known configuration inputs containing secrets (e.g., updating the `apiKeyIds` array in `options.test.js`) to assert that the required security attributes are consistently applied.
+
+## 2026-10-28 - Secure sensitive inputs from leakage
+**Vulnerability:** API key fields and sensitive configuration textareas (allowlist/blocklist) lacked protective attributes like spellCheck={false}, autoComplete='off', and maxLength={255}.
+**Learning:** Sensitive user configurations can be inadvertently cached or leaked to third-party services through browser autofill or spellchecking mechanisms (spelljacking).
+**Prevention:** Apply autoComplete='off', spellCheck={false}, and a reasonable maxLength (e.g., 255) to all inputs and textareas that handle sensitive configuration data (like API keys and network lists) to prevent data leakage.
