@@ -38,6 +38,7 @@
 ## 2026-10-19 - Optimize hot-path array lookups using strict string equality
 **Learning:** In JavaScript hot paths, creating inline arrays specifically to use the `.includes()` method (e.g., `['a', 'b', 'c'].includes(val)`) forces the JS engine to instantiate a new array object and execute garbage collection for every loop iteration. This causes substantial overhead.
 **Action:** Always replace inline array instantiations and `.includes()` checks with direct string equality comparisons (e.g., `val === 'a' || val === 'b' || val === 'c'`) in performance-critical sections (like DOM parsing or message iteration). This eliminates object allocation and executes >10x faster.
-## 2024-05-18 - [Hoist Inline RegExp]
-**Learning:** Extracting inline regular expression literals into module-level constants on hot-paths is a valid, safe improvement that ensures no unnecessary instantiation occurs and improves readability.
-**Action:** Hoist inline regexes on hot paths to module-level constants.
+
+## 2026-10-28 - Avoid Inline Array Instantiation in Large Data Mapping
+**Learning:** Instantiating arrays inline for `.includes()` checks inside mapping functions over large data structures (like CSV exports with thousands of rows and multiple fields) causes immense, recurrent allocation and garbage collection overhead.
+**Action:** Replace inline array `.includes()` with direct string equality checks or module-level `Set.has()` checks in these hot paths to drastically reduce memory churn and improve execution speed.
