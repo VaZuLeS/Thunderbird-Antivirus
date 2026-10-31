@@ -19,7 +19,7 @@
 <label><span data-i18n="auditFrom">From</span><input id="auditFrom" type="date"></label>
 <label><span data-i18n="auditTo">To</span><input id="auditTo" type="date"></label>
 </form>
-<div class="audit-actions"><button id="auditRefresh" data-i18n="auditRefresh">Refresh</button><button id="auditJson" class="btn-primary" data-i18n="auditJson">Export JSON</button><button id="auditCsv" data-i18n="auditCsv">Export CSV</button><button id="auditClear" class="btn-danger" data-i18n="auditClear">Delete local log</button></div>
+<div class="audit-actions"><button id="auditRefresh" aria-describedby="auditStatus" data-i18n="auditRefresh">Refresh</button><button id="auditJson" class="btn-primary" aria-describedby="auditStatus" data-i18n="auditJson">Export JSON</button><button id="auditCsv" aria-describedby="auditStatus" data-i18n="auditCsv">Export CSV</button><button id="auditClear" class="btn-danger" aria-describedby="auditStatus" data-i18n="auditClear">Delete local log</button></div>
 <p class="risk-note" data-i18n="auditExportHelp"></p>
 <p id="auditStatus" role="status" aria-live="polite"></p>
 <div class="audit-table-wrap" tabindex="0" role="region" aria-labelledby="auditCount"><table class="audit-table"><caption id="auditCount"></caption><thead><tr><th scope="col" data-i18n="auditTime">Click / decision time</th><th scope="col" data-i18n="auditOutcome">Decision</th><th scope="col" data-i18n="auditLocalScore">Local score</th><th scope="col" data-i18n="auditVerdict">Provider result</th><th scope="col" data-i18n="auditAddress">URL and details</th></tr></thead><tbody id="auditRows"></tbody></table></div>
