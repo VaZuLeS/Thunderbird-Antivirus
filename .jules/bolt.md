@@ -42,3 +42,7 @@
 ## 2026-10-28 - Avoid Inline Array Instantiation in Large Data Mapping
 **Learning:** Instantiating arrays inline for `.includes()` checks inside mapping functions over large data structures (like CSV exports with thousands of rows and multiple fields) causes immense, recurrent allocation and garbage collection overhead.
 **Action:** Replace inline array `.includes()` with direct string equality checks or module-level `Set.has()` checks in these hot paths to drastically reduce memory churn and improve execution speed.
+
+## 2024-11-20 - Fast-path regex to avoid DOM sanitization string allocations
+**Learning:** Unconditionally allocating `.toLowerCase()` copies of every DOM node attribute in a sanitization tree walker is an expensive operation that dominates processing time for safe attributes.
+**Action:** Use a fast-path regex check to evaluate the original case string. Only allocate the lowercased copy if the fast-path check matches, preserving performance on the happy path.

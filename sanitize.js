@@ -6,6 +6,7 @@ const activeTags = new Set(['style', 'form', 'input', 'button', 'textarea', 'sel
 // ⚡ Bolt: Use a direct precompiled regex with bounds and no capturing groups for peak performance
 const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\xA0\u1680\u180E\u2000-\u2029\u202F\u205F\u3000\u200B-\u200D\uFEFF\uFFFD]/g;
 const DANGEROUS_URI_CHARS_TEST_REGEX = /[\x00-\x20\x7F-\x9F\xA0\u1680\u180E\u2000-\u2029\u202F\u205F\u3000\u200B-\u200D\uFEFF\uFFFD]/;
+const DANGEROUS_URI_PREFIX_REGEX = /^(?:javascript|data|vbscript):/i;
 
 function disarmHTML(htmlString) {
     const parser = new DOMParser();
@@ -73,12 +74,19 @@ function disarmHTML(htmlString) {
                                 continue;
                             }
                             if (dangerousAttributes.has(attrName)) {
-                                let val = attrs[j].value.toLowerCase();
+                                let val = attrs[j].value;
                                 // Remove control characters (like tabs/newlines) that might evade the check
                                 // ⚡ Bolt: Fast test before replacing avoids regex replace string allocation on clean values
-                                let cleanVal = DANGEROUS_URI_CHARS_TEST_REGEX.test(val) ? val.replace(DANGEROUS_URI_CHARS_REGEX, '') : val;
-                                if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
-                                    safeRemoveAttribute.call(el, attrName);
+                                if (!DANGEROUS_URI_CHARS_TEST_REGEX.test(val)) {
+                                    if (DANGEROUS_URI_PREFIX_REGEX.test(val)) {
+                                        safeRemoveAttribute.call(el, attrName);
+                                    }
+                                } else {
+                                    let lowerVal = val.toLowerCase();
+                                    let cleanVal = lowerVal.replace(DANGEROUS_URI_CHARS_REGEX, '');
+                                    if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
+                                        safeRemoveAttribute.call(el, attrName);
+                                    }
                                 }
                             }
                         }
