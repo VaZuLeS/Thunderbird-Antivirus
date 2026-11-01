@@ -42,3 +42,7 @@
 ## 2026-10-28 - Avoid Inline Array Instantiation in Large Data Mapping
 **Learning:** Instantiating arrays inline for `.includes()` checks inside mapping functions over large data structures (like CSV exports with thousands of rows and multiple fields) causes immense, recurrent allocation and garbage collection overhead.
 **Action:** Replace inline array `.includes()` with direct string equality checks or module-level `Set.has()` checks in these hot paths to drastically reduce memory churn and improve execution speed.
+
+## 2026-11-20 - Avoid inline array instantiation in loop conditions
+**Learning:** In JavaScript hot paths, creating inline arrays specifically to use the `.includes()` method within a loop condition (e.g., `['a', 'b', 'c'].includes(val)`) forces the JS engine to instantiate a new array object and execute garbage collection for every single iteration. This causes substantial overhead.
+**Action:** Replace inline array `.includes()` checks with direct string equality comparisons (e.g., `val === 'a' || val === 'b' || val === 'c'`) in performance-critical sections (like DOM parsing or message iteration). This eliminates object allocation and executes much faster.
