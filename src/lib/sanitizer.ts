@@ -70,8 +70,7 @@ export function disarmHTML(htmlString: string): string {
                     const attrs = safeGetAttributes.call(el) as NamedNodeMap;
                     for (let j = attrs.length - 1; j >= 0; j--) {
                         const attrName = attrs[j].name.toLowerCase();
-                        // ⚡ Bolt Optimization: Replace inline array .includes() with direct equality checks to eliminate loop allocations
-                        if (attrName.startsWith('on') || attrName === 'style' || attrName === 'src' || attrName === 'srcset' || attrName === 'background' || attrName === 'poster' || attrName === 'ping') {
+                        if (attrName.startsWith('on') || ['style', 'src', 'srcset', 'background', 'poster', 'ping'].includes(attrName)) {
                             safeRemoveAttribute.call(el, attrName);
                             continue;
                         }
