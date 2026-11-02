@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "kind": "npm-toolchain-audit",
+  "date": "2026-11-02",
+  "metadata": {
+    "info": 0,
+    "low": 1,
+    "moderate": 9,
+    "high": 0,
+    "critical": 0,
+    "total": 10
+  },
+  "patched": {
+    "node-forge": "1.4.2",
+    "fast-uri": "3.1.9"
+  },
+  "remaining": [
+    {
+      "name": "@eslint-community/eslint-utils",
+      "severity": "moderate",
+      "dev": true,
+      "fixAvailable": {
+        "name": "web-ext",
+        "version": "3.2.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@eslint/config-array",
+      "severity": "moderate",
+      "dev": true,
+      "fixAvailable": {
+        "name": "web-ext",
+        "version": "3.2.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "@eslint/eslintrc",
+      "severity": "moderate",
+      "dev": true,
+      "fixAvailable": {
+        "name": "web-ext",
+        "version": "3.2.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "addons-linter",
+      "severity": "moderate",
+      "dev": true,
+      "fixAvailable": {
+        "name": "web-ext",
+        "version": "3.2.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "deepmerge",
+      "severity": "low",
+      "dev": true,
+      "fixAvailable": {
+        "name": "web-ext",
+        "version": "3.2.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "eslint",
+      "severity": "moderate",
+      "dev": true,
+      "fixAvailable": {
+        "name": "web-ext",
+        "version": "3.2.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "eslint-plugin-no-unsanitized",
+      "severity": "moderate",
+      "dev": true,
+      "fixAvailable": {
+        "name": "web-ext",
+        "version": "3.2.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "minimatch",
+      "severity": "moderate",
+      "dev": true,
+      "fixAvailable": {
+        "name": "web-ext",
+        "version": "3.2.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "multimatch",
+      "severity": "moderate",
+      "dev": true,
+      "fixAvailable": {
+        "name": "web-ext",
+        "version": "3.2.1",
+        "isSemVerMajor": true
+      }
+    },
+    {
+      "name": "web-ext",
+      "severity": "moderate",
+      "dev": true,
+      "fixAvailable": {
+        "name": "web-ext",
+        "version": "3.2.1",
+        "isSemVerMajor": true
+      }
+    }
+  ],
+  "scope": "development tools and repository Node dependencies; not an authenticated scan of the XPI or a productive Enterprise environment"
+}

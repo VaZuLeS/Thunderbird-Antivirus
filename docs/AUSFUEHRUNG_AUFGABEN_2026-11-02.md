@@ -6,7 +6,9 @@ Status: `[ ]` offen; `[x]` ausgeführt mit Beleg. Eine vorbereitete Prüfanweisu
 
 ## Ausführungsübersicht
 
-44 von 53 Unteraufgaben sind mit den verfügbaren Mitteln ausgeführt. Neun Teilaufgaben benötigen zusätzliche Zielsysteme, Konten oder öffentliche Erreichbarkeit und bleiben ausdrücklich offen. Fachliches Sprachreview und der tatsächliche Remote-CI-/Pages-Lauf werden von lokalen Automatikergebnissen getrennt.
+46 von 56 Unteraufgaben sind mit den verfügbaren Mitteln ausgeführt. Neun Teilaufgaben benötigen zusätzliche Zielsysteme, Konten oder öffentliche Erreichbarkeit. Ein zusätzlicher Werkzeugkettenbefund bleibt offen, bis eine unterstützte gepatchte Version oder eine geprüfte Migration vorliegt. Fachliches Sprachreview und der tatsächliche Remote-CI-/Pages-Lauf werden von lokalen Automatikergebnissen getrennt.
+
+TAV-018 ergänzt die Liste dynamisch um einen beim Ausführen neu belegten Lieferkettenbefund.
 
 Die Implementierung bereitet 1.24.3 vor. Sie veröffentlicht keinen neuen Release, überschreibt keine bestehenden Tags/Assets und aktiviert keine Unternehmensintegration. Vollständige lokale Prüfungen: Node 22 und 24, 976 Tests; 600 vollständige Browserfälle plus 36 CSS-Zoomfälle; echte Linux-Upgrades/Neustarts/Prozessverluste in sechs Sprachprofilen, Profilrestore und zusätzlicher echter Browserpfad. Die konkreten Grenzen stehen je Paket unten.
 
@@ -35,14 +37,14 @@ Ergebnis/Beleg: [Dateiweiser Releaseabgleich](RELEASE_ABGLEICH_1_24_3.md), wiede
 
 ## TAV-003 — Releasegates und aktive Workflows vereinheitlichen
 
-Status: Lokal umgesetzt und geprüft; tatsächlicher Remote-CI-Lauf nach Übernahme separat nachzuweisen.
+Status: Lokal und auf GitHub b3f9f69 geprüft; Remote-Wiederholung für spätere Werkzeugpatches separat.
 
 - [x] TAV-003.01 Schmutzigen Paketarbeitsbaum und ungebundene Live-Evidenz im Gate ablehnen.
 - [x] TAV-003.02 Kandidatenprüfung und taggebundene Publikationsprüfung ohne zirkuläre Abhängigkeit trennen.
 - [x] TAV-003.03 Aktive CI-/Release-Workflows mit identischer Paketidentität und unveränderlichen Assets verbinden.
 - [x] TAV-003.04 Negative Gatefälle und Wiederholung/Assetabweichungen testen.
 
-Ergebnis/Beleg: Aktive CI/Release-Workflows und Referenzkopien synchron; Paket-/Quellbindung, sauberes C7, sechs Sprachberichte und unveränderliche Assets. 17 gezielte Gate-/Releaseprüfungen erfolgreich, YAML geparst. [CI-Verhalten](ci/README.md). Vollständiger Kandidatengate nach Implementierungscommit erfolgreich: Exit 0, C1–C7 PASS; kein Tag oder Storestatus behauptet.
+Ergebnis/Beleg: Aktive CI/Release-Workflows und Referenzkopien synchron; Paket-/Quellbindung, sauberes C7, sechs Sprachberichte und unveränderliche Assets. 17 gezielte Gate-/Releaseprüfungen erfolgreich, YAML geparst. [CI-Verhalten](ci/README.md). Vollständiger Kandidatengate nach Implementierungscommit erfolgreich: Exit 0, C1–C7 PASS. Auch [GitHub-CI einschließlich echter GUI und Kandidatengate](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/41384190870) erfolgreich; kein Tag oder Storestatus behauptet.
 
 ## TAV-004 — Webdemo und Thunderbird-Produkt verbindlich abgrenzen
 
@@ -183,3 +185,13 @@ Status: Produktiver Pilot blockiert; Scope und Voraussetzungen konkretisiert.
 - [ ] TAV-017.03 Liveabnahme nur mit realen Voraussetzungen durchführen; keine STAGED→SEALED-Behauptung erfinden.
 
 Ergebnis/Beleg: [Pilotgrenze und vorhandene EN-/N-Zuordnung](ENTERPRISE_BRUECKE_2026-11.md). Aktuelle Runtime meldet null Secrets/Unternehmensidentitäten/Infrastrukturcapabilities. Betreiber, freigegebener Testmandant, Daten-/Retention-/Rollenfreigaben und gewählte Liveziele fehlen. Kein Produktivbetrieb erfunden.
+
+## TAV-018 — Werkzeug-Lieferkette nach aktuellem npm-Audit
+
+Status: kompatible Patches umgesetzt; verbleibende Werkzeugmeldungen offen. Neu aus der Ausführung, Hauptbereich Lieferfähigkeit/Releaseprovenienz, Typ Optimierung.
+
+- [x] TAV-018.01 Aktuellen Kandidaten statt nur GitHubs Standardbranch-Zähler mit npm audit untersuchen und Runtime-/Toolscope unterscheiden.
+- [x] TAV-018.02 Kompatible node-forge-/fast-uri-Patches ohne --force anwenden; frische Installation und relevante Gesamtprüfung erneut ausführen.
+- [ ] TAV-018.03 Unterstützte Behebung für die verbleibende web-ext-/Linterkette bestimmen und einschließlich API-, Lint-, Package- und Signierpfad validieren.
+
+Ergebnis/Beleg: [konkrete Priorität, Umfang, Akzeptanz und verbliebene Meldungen](DEPENDENCY_AUDIT_2026-11.md). 12 auf 10 Meldungen reduziert, hohe Meldung behoben; neun mittlere/eine niedrige Werkzeugmeldung bleiben nach kompatibler Standardbehebung offen. Kein betroffenes Werkzeugpaket wird als solches ins XPI gepackt. Kein pauschaler Downgrade oder ungeprüfter Override.

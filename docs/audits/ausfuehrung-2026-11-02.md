@@ -1,6 +1,6 @@
 # Abschlussprotokoll zur Ausführung am 2. November 2026
 
-Ausgangscommit `6046fe0427f53e12377c167e98385e57f533c790`; [detaillierte Aufgabenliste](../AUSFUEHRUNG_AUFGABEN_2026-11-02.md). 44 von 53 Unteraufgaben ausgeführt; neun benötigen zusätzliche reale Systeme, Zugänge oder öffentliche Erreichbarkeit. Kein neuer Release/Tag, keine ATN-Signierung und keine Enterpriseaktivierung werden durch diesen Stand behauptet.
+Ausgangscommit `6046fe0427f53e12377c167e98385e57f533c790`; [detaillierte Aufgabenliste](../AUSFUEHRUNG_AUFGABEN_2026-11-02.md). 46 von 56 Unteraufgaben ausgeführt; neun benötigen zusätzliche reale Systeme, Zugänge oder öffentliche Erreichbarkeit und ein neu belegter Werkzeugkettenbefund benötigt eine unterstützte Behebung. Kein neuer Release/Tag, keine ATN-Signierung und keine Enterpriseaktivierung werden durch diesen Stand behauptet.
 
 ## Implementierung und Versionsidentität
 
@@ -28,7 +28,7 @@ Die exakten getesteten Paketbytes wurden erhalten, obwohl ein erneuter Build ein
 | Workflow-/Dokumentquellen | CI-/Release-/Pages-YAML geparst, aktive CI/Publish-Referenzkopien identisch; aktuelle lokale Links/Permalinks geprüft; kein lokaler Jekyll-Build mangels Ruby/Jekyll |
 | Paketgebundene Evidenz | candidate-evidence.js meldet ok:true; Quellfingerprint und exakte ZIP-/XPI-SHA stimmen mit sechs Sprachberichten und vollständiger UI-Matrix überein |
 | Vollständiger Kandidatengate | Exit 0, C1–C7 PASS auf Implementierungscommit d84fb2f; keine Kommandos übersprungen, kein Neubuild der getesteten Bytes. GO gilt für den Kandidaten, nicht als Release-/ATN-Freigabe |
-| Remote-CI / öffentliche Pages | separater Nachweis nach Übernahme erforderlich; öffentliche Pages-/ATN-Leseversuche hier nicht zugänglich |
+| Remote-CI / öffentliche Pages | GitHub-CI auf b3f9f69 erfolgreich einschließlich sechs Browserjobs, echter Thunderbird-GUI und paketgebundenem Kandidatengate: https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/41384190870 . Die nachfolgenden kompatiblen Werkzeugpatches sind lokal erneut geprüft; neuer Remote-Lauf folgt separat. Öffentliche Pages-/ATN-Leseversuche hier nicht zugänglich |
 
 Eine erste Gesamtprüfung traf einen bestehenden 20-ms-Testdeadlinefall vor dem eigentlich zu prüfenden AWS-Readback. Der Test verwendet nun ein realistisches Zeitbudget und verlangt ausdrücklich, dass der Readback erreicht wurde; der vollständige Node-22-/24-Check danach bestand. Eine lokal erzeugte Python-Cacheablage wurde vor der Paket-/Testprüfung entfernt. Fehlgeschlagene Harnessläufe bei der großen Nachricht und dem neuen echten Browserpfad sind nicht als PASS gewertet; Ursachen und erfolgreiche vollständige Wiederholung sind in den jeweiligen Untersuchungsdokumenten beschrieben.
 
@@ -40,6 +40,10 @@ Eine erste Gesamtprüfung traf einen bestehenden 20-ms-Testdeadlinefall vor dem 
 - Echte Provider-Testkonten, erlaubte Artefakte und Netzfreigaben für Liveverträge.
 - Für genau einen Enterprisepilot: Betreiber, Daten-/Retention-/Rollenfreigaben, ausgewählte Testmandanten/IdP/Storage/MDM-Ziele und entsprechende Identitäten. Keine Produktivparameter erfunden.
 
-Die ausführbare lokale Arbeit ist nicht durch diese Voraussetzungen blockiert geblieben. Die verbleibenden neun Teilaufgaben sind in der Aufgabenliste offen und mit konkreten Gründen versehen.
+Die ausführbare lokale Arbeit ist nicht durch diese Voraussetzungen blockiert geblieben. Die verbleibenden zehn Teilaufgaben sind in der Aufgabenliste offen und mit konkreten Gründen versehen.
 
 Lokale Detailprotokolle und fehlgeschlagene Ausgangsläufe liegen unter `/workspace/scratch/thundy-*`; die wesentlichen positiven Ergebnisse und Grenzen sind in diesem Repository dauerhaft referenziert. Personenbezogene Profile/Prozesskennungen wurden aus den dauerhaft gespeicherten Clientberichten entfernt.
+
+## Ergänzender Lieferkettenbefund
+
+[Neu erfasst als TAV-018](../DEPENDENCY_AUDIT_2026-11.md): kompatible node-forge-/fast-uri-Patches im Lockfile, keine hohe/kritische Meldung mehr im geprüften npm-Baum. Neun mittlere/eine niedrige Werkzeugmeldung bleiben transparent offen. Das XPI und sein Quellfingerprint sind von den Werkzeugpatches unverändert. Erneutes frisches npm ci und Gesamtprüfung unter Node 22 und 24 nach dem Patch erfolgreich: jeweils 976 Tests, 0 Fehler, gültiges Paket.
