@@ -1472,5 +1472,83 @@
   },
   "reportNotSaved": {
     "message": "Le rapport est affiché, mais n’a pas pu être enregistré localement. Rouvrez-le pour réessayer."
+  },
+  "checkOrigin_live": {
+    "message": "Résultat actuel du fournisseur"
+  },
+  "checkOrigin_stored": {
+    "message": "Résultat enregistré"
+  },
+  "checkOrigin_none": {
+    "message": "Aucune observation du fournisseur"
+  },
+  "checkOutcome_success": {
+    "message": "Requête réussie"
+  },
+  "checkOutcome_failed": {
+    "message": "Échec de la requête"
+  },
+  "checkOutcome_disabled": {
+    "message": "Analyse externe désactivée"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Autorisation du site manquante"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Clé du fournisseur manquante"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Aucune référence du fournisseur"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Aucune nouvelle requête"
+  },
+  "checkOutcome_no_result": {
+    "message": "Aucun nouveau résultat exploitable"
+  },
+  "checkAttempted": {
+    "message": "Tentative de vérification"
+  },
+  "checkObserved": {
+    "message": "Résultat observé"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Motifs au moment de la décision"
+  },
+  "auditReasonsLatest": {
+    "message": "Derniers motifs disponibles"
+  },
+  "auditReasonsMissing": {
+    "message": "Non enregistrés à ce moment-là"
+  },
+  "coverageSummary": {
+    "message": "Couverture — détectés : $1 ; admissibles : $2 ; traités : $3 ; en échec : $4 ; ignorés : $5. Les éléments ignorés ne sont pas évalués."
+  },
+  "supportTitle": {
+    "message": "Rapport local pour le support"
+  },
+  "supportHelp": {
+    "message": "Prévisualisez un rapport de diagnostic minimal, puis enregistrez-le localement. Aucun envoi. Les sommes de contrôle ne prouvent pas sa source."
+  },
+  "supportPreview": {
+    "message": "Aperçu du rapport"
+  },
+  "supportConfiguration": {
+    "message": "Inclure les réglages généraux (sans clés ni listes d’expéditeurs)"
+  },
+  "supportSave": {
+    "message": "Enregistrer le rapport localement"
+  },
+  "coverageAttachments": {
+    "message": "Pièces jointes"
+  },
+  "coverageDomains": {
+    "message": "Domaines uniques"
+  },
+  "coverageBatch": {
+    "message": "Liens du lot"
+  },
+  "coverageLimits": {
+    "message": "Limites par passage : 100 pièces jointes, 25 Mio par pièce jointe, 100 domaines uniques, 20 liens par lot. Traité ne signifie ni analysé en externe ni sûr."
   }
 }

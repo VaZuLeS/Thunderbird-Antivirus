@@ -1475,5 +1475,83 @@
   },
   "reportNotSaved": {
     "message": "The report is visible, but could not be saved locally. Reopen it to retry."
+  },
+  "checkOrigin_live": {
+    "message": "Current provider result"
+  },
+  "checkOrigin_stored": {
+    "message": "Stored result"
+  },
+  "checkOrigin_none": {
+    "message": "No provider observation"
+  },
+  "checkOutcome_success": {
+    "message": "Request succeeded"
+  },
+  "checkOutcome_failed": {
+    "message": "Request failed"
+  },
+  "checkOutcome_disabled": {
+    "message": "External analysis disabled"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Host permission missing"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Provider key missing"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "No provider reference"
+  },
+  "checkOutcome_not_requested": {
+    "message": "No new request"
+  },
+  "checkOutcome_no_result": {
+    "message": "No usable new result"
+  },
+  "checkAttempted": {
+    "message": "Check attempted"
+  },
+  "checkObserved": {
+    "message": "Result observed"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Reasons at decision"
+  },
+  "auditReasonsLatest": {
+    "message": "Latest available reasons"
+  },
+  "auditReasonsMissing": {
+    "message": "Not recorded at the time"
+  },
+  "coverageSummary": {
+    "message": "Coverage — detected: $1; eligible: $2; processed: $3; failed: $4; skipped: $5. Skipped items are unassessed."
+  },
+  "supportTitle": {
+    "message": "Local support report"
+  },
+  "supportHelp": {
+    "message": "Preview a minimal diagnostic report, then save it locally. Nothing is sent. Checksums do not authenticate its source."
+  },
+  "supportPreview": {
+    "message": "Preview report"
+  },
+  "supportConfiguration": {
+    "message": "Include coarse settings (no keys or sender lists)"
+  },
+  "supportSave": {
+    "message": "Save report locally"
+  },
+  "coverageAttachments": {
+    "message": "Attachments"
+  },
+  "coverageDomains": {
+    "message": "Unique domains"
+  },
+  "coverageBatch": {
+    "message": "Batch links"
+  },
+  "coverageLimits": {
+    "message": "Limits per pass: 100 attachments, 25 MiB per attachment, 100 unique domains, 20 batch links. Processed does not mean externally scanned or safe."
   }
 }

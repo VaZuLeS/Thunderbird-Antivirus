@@ -490,7 +490,18 @@ async function checkFirstCommunication(senderEmail) {
     return isFirstCommunication;
 }
 
-async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
+// Counts describe this particular pass, not a whole-message safety verdict.
+function scanCoverage(detected, eligible, processed, failed, reason) {
+    return { detected, eligible, processed, failed, skipped: detected - processed - failed, reason, observedAt: Date.now() };
+}
+async function persistScanCoverage(message, kind, coverage) {
+    const key = message.headerMessageId || 'message:' + message.id;
+    await updateStore(await getSharedDB(), 'hybridanalysis', key, existing => ({
+        ...(existing || { messageHeader: key }), scanCoverage: { ...(existing?.scanCoverage || {}), [kind]: coverage }
+    }));
+}
+
+async function checkURLhausDomains(filteredUrls, parsedUrlCache = null, coverage = null) {
     let urlhausDomains = [];
     if (urlhausApikey && filteredUrls.length > 0 && mayTransmitExternally()) {
         let linkDomainsSet = new Set();
@@ -511,6 +522,7 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
             } catch (e) { /* Ignore invalid URLs */ }
         }
         const domainChecks = [];
+        let failed = 0;
 
         // ⚡ Bolt Optimization: Iterate directly over the Set to avoid Array.from() allocation overhead
         for (const domain of Array.from(linkDomainsSet).slice(0, 100)) {
@@ -518,7 +530,7 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
             if (urlhausCache.has(domain)) {
                 const cached = urlhausCache.get(domain);
                 if (cached instanceof Promise) {
-                    domainChecks.push(cached.then(isMal => { if (isMal) urlhausDomains.push(domain); }));
+                    domainChecks.push(cached.then(isMal => { if (isMal === null) failed++; else if (isMal) urlhausDomains.push(domain); }));
                 } else if (cached) {
                     urlhausDomains.push(domain);
                 }
@@ -534,7 +546,7 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
             urlhausCache.set(domain, checkPromise);
 
             domainChecks.push(checkPromise.then(isMalicious => {
-                if (isMalicious === null) urlhausCache.delete(domain);
+                if (isMalicious === null) { failed++; urlhausCache.delete(domain); }
                 else urlhausCache.set(domain, isMalicious);
                 if (isMalicious) urlhausDomains.push(domain);
             }));
@@ -543,6 +555,7 @@ async function checkURLhausDomains(filteredUrls, parsedUrlCache = null) {
         if (domainChecks.length > 0) {
             await Promise.all(domainChecks);
         }
+        if (coverage) Object.assign(coverage, scanCoverage(linkDomainsSet.size, linkDomainsSet.size, Math.min(linkDomainsSet.size, 100) - failed, failed, 'domain_limit_100'));
     }
     return urlhausDomains;
 }
@@ -590,12 +603,14 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
   const authHeaders = trusted.has(authServer) ? [first] : [];
   const receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
 
+  const domainCoverage = {};
   const [maliciousIps, urlhausDomains, becData] = await Promise.all([
     allowExternal ? checkIPReputation(receivedHeaders) : [],
-    allowExternal ? checkURLhausDomains(filteredUrls, parsedUrlCache) : [],
+    allowExternal ? checkURLhausDomains(filteredUrls, parsedUrlCache, domainCoverage) : [],
     extractBecProtectionData(message, fullMessage)
   ]);
 
+  if (domainCoverage.detected != null) await persistScanCoverage(message, 'domains', domainCoverage);
   return {
     authHeaders,
     urlhausDomains,
@@ -912,9 +927,8 @@ async function process_single_attachment(message, attachment, allowExternal = tr
         item.hybrid_data.state = 'SIZE_LIMIT';
         return item;
     }
-    let file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
-
         try {
+            const file = await browser.messages.getAttachmentFile(message.id, attachment.partName);
             const content_of_attachment = file.slice();
             const arrayBuffer = await content_of_attachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
@@ -947,7 +961,9 @@ async function sent_to_hybrid_by_attachment(message, attachments, allowExternal 
       ? await mapWithLimit(selected, 2, attachment => process_single_attachment(message, attachment, allowExternal, manualAction))
       : await Promise.all(selected.map(attachment => process_single_attachment(message, attachment, allowExternal, manualAction)));
 
-  const validResults = results.filter(r => r !== null);
+  const validResults = results.filter(r => r != null);
+  const limited = validResults.filter(r => r.hybrid_data?.state === 'SIZE_LIMIT').length;
+  await persistScanCoverage(message, 'attachments', scanCoverage(attachments.length, attachments.filter(a => !(a.size > 25 * 1024 * 1024)).length, validResults.length - limited, selected.length - validResults.length, 'attachment_limit_100_or_25MiB'));
   if (validResults.length > 0) {
       await indexedDB_save_batch_hybrid_data_to_db(message, validResults);
   }
@@ -1181,7 +1197,9 @@ async function scanLinksOfDisplayedMessage(tabId) {
                 Logger.error('Could not submit link for analysis', e);
             }
         }
-        notify('notificationTitle', 'notificationScanCount', [String(submitted)]);
+        const coverage = scanCoverage(urls.length, urls.length, submitted, Math.min(urls.length, 20) - submitted, 'batch_limit_20');
+        await persistScanCoverage(message, 'batchLinks', coverage);
+        notify('notificationTitle', 'coverageSummary', [coverage.detected, coverage.eligible, coverage.processed, coverage.failed, coverage.skipped].map(String));
     } catch (e) {
         notify('notificationTitleError', 'notificationScanError', [e.message]);
     }
@@ -1249,29 +1267,38 @@ async function handleCheckLinkState(request, sender, sendResponse) {
             }
         }
 
+        let urlscanAttempt = null;
         // Time-of-Click Live Scan via urlscan.io
         if (request.userAction === true && urlscanApikey && tierAtLeast('max') && (!linkObj || linkObj.state === 'UNKNOWN')) {
             try {
                 const res = await checkUrlscanIo(request.url, urlscanApikey);
+                urlscanAttempt = { origin: 'none', outcome: res?.status === 'NOT_CHECKED' ? 'not_requested' : 'failed', attemptedAt: Date.now(), observedAt: null };
                 if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT' && res.status !== 'NOT_CHECKED') {
                     // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
-                    sendResponse({ status: res.status, reasons: res.reasons, provider: 'urlscan.io' });
+                    sendResponse({ status: res.status, reasons: res.reasons, provider: 'urlscan.io', check: { origin: 'live', outcome: 'success', attemptedAt: Date.now(), observedAt: Date.now() } });
                     return;
                 }
             } catch (e) {
+                urlscanAttempt = { origin: 'none', outcome: 'failed', attemptedAt: Date.now(), observedAt: null };
                 Logger.error("Fehler bei Time-of-Click Live-Scan:", e);
             }
         }
 
         if (linkObj) {
-            const status = request.userAction === true ? await checkHybridAnalysisVerdict(linkObj.hybrid_sha256, linkObj.state) : linkObj.state;
-            sendResponse({status: status, provider: 'Hybrid Analysis'});
+            const result = await checkHybridAnalysisResult(linkObj.hybrid_sha256, linkObj.state, { requested: request.userAction === true, observedAt: linkObj.observedAt });
+            sendResponse({ ...result, provider: 'Hybrid Analysis' });
         } else {
-            sendResponse({status: 'UNKNOWN'});
+            sendResponse({ status: 'UNKNOWN', provider: urlscanAttempt ? 'urlscan.io' : 'none', check: urlscanAttempt || { origin: 'none', outcome: !request.userAction ? 'not_requested' : !mayTransmitExternally() ? 'disabled' : 'missing_reference', attemptedAt: request.userAction ? Date.now() : null, observedAt: null } });
         }
     } catch (err) {
         sendResponse({status: 'ERROR'});
     }
+}
+
+function validLinkRequest(request, sender, { checking = true } = {}) {
+    if (!sender?.tab || !Number.isInteger(sender.tab.id) || !Number.isInteger(request.messageId) || typeof request.url !== 'string' || request.url.length > 65536 || (checking && typeof request.userAction !== 'boolean')) return false;
+    if (request.interactionId != null && (typeof request.interactionId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(request.interactionId))) return false;
+    try { return ['http:', 'https:'].includes(new URL(request.url).protocol); } catch (error) { return false; }
 }
 
 // Message documents cannot navigate reliably. Use Thunderbird's external-browser API.
@@ -1291,29 +1318,34 @@ async function handleOpenCheckedLink(request, sender) {
     }
 }
 
-async function checkHybridAnalysisVerdict(hybrid_sha256, fallbackState) {
-    if (hybrid_sha256 && apikey_hybridanalysis && mayTransmitExternally()) {
-        const overviewOptions = getHybridAnalysisOptions('GET');
-        overviewOptions.url = 'https://hybrid-analysis.com/api/v2/overview/' + hybrid_sha256;
-        try {
-            await requireHostPermission(overviewOptions.url);
-            const response = await apiGateway.fetchWithTimeout(overviewOptions.url, overviewOptions);
-            const json_data = await response.json();
-            if (json_data.verdict) {
-                if (json_data.verdict === 'no specific threat') {
-                    return 'CLEAN';
-                } else {
-                    return json_data.verdict.toUpperCase();
-                }
-            } else {
-                return fallbackState;
-            }
-        } catch (err) {
-            return fallbackState;
-        }
-    } else {
-        return fallbackState || 'UNKNOWN';
-    }
+// Optional legacy fields never imply a known observation time. `created` on a
+// submission is not the time a provider observed its final verdict.
+async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { requested = true, observedAt = null } = {}) {
+    const check = { origin: fallbackState ? 'stored' : 'none', outcome: 'not_requested', attemptedAt: requested ? Date.now() : null, observedAt: Number.isFinite(observedAt) ? observedAt : null };
+    const fallback = () => ({ status: fallbackState || 'UNKNOWN', check });
+    if (!requested) return fallback();
+    if (!mayTransmitExternally()) { check.outcome = 'disabled'; return fallback(); }
+    if (!apikey_hybridanalysis) { check.outcome = 'missing_key'; return fallback(); }
+    if (!hybrid_sha256) { check.outcome = 'missing_reference'; return fallback(); }
+    const options = getHybridAnalysisOptions('GET');
+    options.url = 'https://hybrid-analysis.com/api/v2/overview/' + encodeURIComponent(hybrid_sha256);
+    try { await requireHostPermission(options.url); }
+    catch (error) { check.outcome = 'permission_denied'; return fallback(); }
+    try {
+        const response = await apiGateway.fetchWithTimeout(options.url, options);
+        if (response.ok === false) throw new Error('Provider HTTP failure');
+        const data = await response.json();
+        const verdicts = { 'no specific threat': 'CLEAN', malicious: 'MALICIOUS', suspicious: 'SUSPICIOUS', unknown: 'UNKNOWN' };
+        const verdict = typeof data.verdict === 'string' ? verdicts[data.verdict.toLowerCase()] : null;
+        if (!verdict) { check.outcome = 'no_result'; return fallback(); }
+        return { status: verdict, check: { ...check, origin: 'live', outcome: 'success', observedAt: Date.now() } };
+    } catch (error) { check.outcome = 'failed'; return fallback(); }
+}
+
+// Compatibility for existing string-result callers. Message/audit consumers use
+// the structured contract above so a fallback cannot acquire fresh evidence.
+async function checkHybridAnalysisVerdict(hash, fallbackState) {
+    return (await checkHybridAnalysisResult(hash, fallbackState)).status;
 }
 
 /**
@@ -1402,6 +1434,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
 
         case "cancelLinkInteraction":
+            if (!validLinkRequest(request, sender, { checking: false })) { sendResponse({ success: false }); return false; }
             handleCancelAuditedLink(request, sender).then(sendResponse);
             return true;
 
@@ -1416,10 +1449,12 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
 
         case "openCheckedLink":
+            if (!validLinkRequest(request, sender, { checking: false })) { sendResponse({ success: false }); return false; }
             (request.interactionId ? handleOpenAuditedLink(request, sender) : handleOpenCheckedLink(request, sender)).then(sendResponse);
             return true;
 
         case "checkLinkState":
+            if (!validLinkRequest(request, sender)) { sendResponse({ status: 'ERROR', auditSaved: false }); return false; }
             if (request.interactionId) handleAuditedLinkCheck(request, sender).then(sendResponse);
             else handleCheckLinkState(request, sender, sendResponse);
             return true;

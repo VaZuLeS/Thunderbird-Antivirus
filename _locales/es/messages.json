@@ -1472,5 +1472,83 @@
   },
   "reportNotSaved": {
     "message": "El informe se muestra, pero no se pudo guardar localmente. Vuelva a abrirlo para reintentarlo."
+  },
+  "checkOrigin_live": {
+    "message": "Resultado actual del proveedor"
+  },
+  "checkOrigin_stored": {
+    "message": "Resultado guardado"
+  },
+  "checkOrigin_none": {
+    "message": "Sin observación del proveedor"
+  },
+  "checkOutcome_success": {
+    "message": "Consulta correcta"
+  },
+  "checkOutcome_failed": {
+    "message": "Error de consulta"
+  },
+  "checkOutcome_disabled": {
+    "message": "Análisis externo desactivado"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Falta permiso del sitio"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Falta la clave del proveedor"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Sin referencia del proveedor"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Sin consulta nueva"
+  },
+  "checkOutcome_no_result": {
+    "message": "Sin resultado nuevo válido"
+  },
+  "checkAttempted": {
+    "message": "Intento de comprobación"
+  },
+  "checkObserved": {
+    "message": "Resultado observado"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Motivos al decidir"
+  },
+  "auditReasonsLatest": {
+    "message": "Últimos motivos disponibles"
+  },
+  "auditReasonsMissing": {
+    "message": "No registrados en ese momento"
+  },
+  "coverageSummary": {
+    "message": "Cobertura — detectados: $1; aptos: $2; procesados: $3; fallidos: $4; omitidos: $5. Los omitidos no están evaluados."
+  },
+  "supportTitle": {
+    "message": "Informe local de soporte"
+  },
+  "supportHelp": {
+    "message": "Revise un informe mínimo de diagnóstico y guárdelo localmente. No se envía nada. Las sumas de verificación no autentican su origen."
+  },
+  "supportPreview": {
+    "message": "Vista previa del informe"
+  },
+  "supportConfiguration": {
+    "message": "Incluir ajustes generales (sin claves ni listas de remitentes)"
+  },
+  "supportSave": {
+    "message": "Guardar informe localmente"
+  },
+  "coverageAttachments": {
+    "message": "Adjuntos"
+  },
+  "coverageDomains": {
+    "message": "Dominios únicos"
+  },
+  "coverageBatch": {
+    "message": "Enlaces del lote"
+  },
+  "coverageLimits": {
+    "message": "Límites por ejecución: 100 adjuntos, 25 MiB por adjunto, 100 dominios únicos, 20 enlaces por lote. Procesado no significa analizado externamente ni seguro."
   }
 }

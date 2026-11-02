@@ -64,6 +64,7 @@ async function prepareMessage(page, c, catalog) {
             score: uiTest.checkStatus === "CLEAN" ? 0 : 72,
             reasons: [],
             auditSaved: true,
+            ...(uiTest.checkMetadata ? {check:uiTest.checkMetadata} : {}),
           };
         }
         if (request.action === "openCheckedLink")
@@ -227,6 +228,15 @@ async function checkMessage(page, c, tags) {
     "rgb(226, 232, 240)",
     "message appearance changed",
   );
+  await link.evaluate(el => el.href = 'https://destination.example.invalid/path?test=1');
+  await page.evaluate(() => { uiTest.checkStatus = 'CLEAN'; uiTest.checkMetadata = {origin:'stored',outcome:'failed',attemptedAt:100,observedAt:1}; });
+  await open();
+  assert.equal(await dialog.locator('.result.unknown').count(), 1, 'stored clean result must not look fresh');
+  const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../_locales', c.lang, 'messages.json')));
+  const text = await dialog.locator('.dialog').textContent();
+  assert.ok(text.includes(catalog.checkOrigin_stored.message));
+  assert.ok(text.includes(catalog.checkOutcome_failed.message));
+  await cancel.click();
   return {
     rulesPassed: axe.passes.length,
     incomplete: axe.incomplete.map((r) => ({
@@ -242,6 +252,7 @@ async function checkMessage(page, c, tags) {
       "retry",
       "cancel-while-checking",
       "destination-change",
+      "stored-clean-request-failed",
     ],
   };
 }

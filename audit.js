@@ -1,8 +1,8 @@
 /* The review/export UI does not navigate to logged URLs or contact providers. */
 const AuditExport = (() => {
-    const fields = ['id', 'clickedAt', 'decidedAt', 'outcome', 'url', 'score', 'scoreSource', 'scoreAtDecision', 'verdict', 'verdictAtDecision', 'providerAtDecision', 'provider', 'messageId', 'cancelReason', 'openAttempts', 'extensionVersion', 'scoredAt', 'checkedAt', 'reasons', 'providerReasons', 'reasonDetails'];
+    const fields = ['id', 'clickedAt', 'decidedAt', 'outcome', 'url', 'score', 'scoreSource', 'scoreAtDecision', 'verdict', 'verdictAtDecision', 'providerAtDecision', 'provider', 'messageId', 'cancelReason', 'openAttempts', 'extensionVersion', 'scoredAt', 'checkedAt', 'reasons', 'providerReasons', 'reasonDetails', 'reasonsAtDecision', 'reasonDetailsAtDecision', 'providerReasonsAtDecision', 'check', 'checkAtDecision'];
     function csvCell(value) {
-        let text = value == null ? '' : Array.isArray(value) ? JSON.stringify(value) : String(value);
+        let text = value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
         // Spreadsheet formula injection includes leading spaces/control characters.
         if (/^[\s\u0000-\u001f]*[=+@-]/.test(text) || /^[\t\r\n]/.test(text)) text = "'" + text;
         return '"' + text.replaceAll('"', '""') + '"';
@@ -68,7 +68,13 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
             details.append(node('p', t('auditEventId') + ': ' + record.id));
             if (record.cancelReason) details.append(node('p', t('auditCancelReason') + ': ' + t(cancelKeys[record.cancelReason] || 'auditCancelUnknown')));
             if (record.outcome === 'PENDING') details.append(node('p', t('auditPendingExplanation')));
+            if (record.check) details.append(node('p', t(({ live: 'checkOrigin_live', stored: 'checkOrigin_stored', none: 'checkOrigin_none' })[record.check.origin] || 'auditUnavailable') + ' · ' + t(({success: 'checkOutcome_success', failed: 'checkOutcome_failed', disabled: 'checkOutcome_disabled', permission_denied: 'checkOutcome_permission_denied', missing_key: 'checkOutcome_missing_key', missing_reference: 'checkOutcome_missing_reference', not_requested: 'checkOutcome_not_requested', no_result: 'checkOutcome_no_result'})[record.check.outcome] || 'auditUnavailable') + ' · ' + t('checkAttempted') + ': ' + date(record.check.attemptedAt) + ' · ' + t('checkObserved') + ': ' + date(record.check.observedAt)));
             if (record.checkedAt) details.append(node('p', t('auditFinalResult') + ': ' + verdictLabel(record.verdict) + ' · ' + date(record.checkedAt)));
+            details.append(node('strong', t('auditReasonsAtDecision')));
+            const historical = document.createElement('ul');
+            if (record.reasonsAtDecision == null && record.providerReasonsAtDecision == null) historical.append(node('li', t('auditReasonsMissing')));
+            else for (const reason of [...(record.reasonsAtDecision || []), ...(record.providerReasonsAtDecision || [])]) historical.append(node('li', reason));
+            details.append(historical, node('strong', t('auditReasonsLatest')));
             const reasons = document.createElement('ul');
             for (const reason of [...(record.reasons || []), ...(record.providerReasons || [])]) reasons.appendChild(node('li', reason));
             if (focusedId === String(record.id)) restoreFocus = details.querySelector('summary');

@@ -64,3 +64,17 @@ Withdrawing consent blocks new transfers and aborts pending gateway work. It can
 The audit keeps complete URLs and historical assessment/decision snapshots. OPENED means Thunderbird accepted an opening request, not that a browser started or a website was visited. PENDING remains incomplete after process loss. Later assessments do not rewrite the original decision. The local profile owner can modify the log; an unkeyed export checksum does not authenticate it.
 
 Cache deletion, audit deletion and sender-authorization removal are separate. Upgrades do not grant consent. Exported files and profile backups require separate access control and deletion. Restoring a backup restores its snapshot, not later decisions. The React web demo is a separate simulation: do not enter confidential mail or real keys there.
+
+## Ergänzung: lokaler Supportexport des weiterentwickelten Kandidaten
+
+DE: In den Einstellungen können Sie einen minimierten technischen Bericht zunächst prüfen und dann lokal speichern. Grobe Einstellungen sind optional. Der Bericht enthält keine Schlüssel, Nachrichten, Roh-URLs, Absenderlisten, Profilkennungen oder Fehlerfreitexte. Kein automatischer Versand. Exportdateien müssen Sie selbst schützen und löschen.
+
+EN: Settings offer a minimal technical report with a preview and explicit local download. Coarse configuration is optional. No keys, messages, raw URLs, sender lists, profile identifiers or free-form errors are included. No automatic transmission. Protect and delete exported files separately.
+
+FR : Les paramètres proposent un rapport technique minimal avec aperçu et téléchargement local explicite. Les réglages généraux sont facultatifs. Aucune clé, aucun message, aucune URL brute, liste d’expéditeurs, identification de profil ou erreur en texte libre n’est inclus. Aucun envoi automatique. Protégez et supprimez vous-même les fichiers exportés.
+
+ES: Los ajustes ofrecen un informe técnico mínimo con vista previa y descarga local explícita. La configuración general es opcional. No incluye claves, mensajes, URL completas, listas de remitentes, identificadores de perfil ni errores en texto libre. Sin envío automático. Proteja y elimine los archivos exportados por separado.
+
+IT: Le impostazioni offrono un rapporto tecnico minimo con anteprima e download locale esplicito. La configurazione generale è facoltativa. Non include chiavi, messaggi, URL complete, elenchi di mittenti, identificativi del profilo o errori a testo libero. Nessun invio automatico. Proteggi ed elimina separatamente i file esportati.
+
+PL: Ustawienia udostępniają minimalny raport techniczny z podglądem i wyraźnie wybranym pobraniem lokalnym. Ogólna konfiguracja jest opcjonalna. Raport nie zawiera kluczy, wiadomości, pełnych adresów URL, list nadawców, identyfikatorów profilu ani dowolnych tekstów błędów. Brak automatycznej wysyłki. Pliki eksportu należy samodzielnie chronić i usuwać.

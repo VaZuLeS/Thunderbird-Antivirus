@@ -203,6 +203,14 @@ try {
     const db = await openDB('thunderbird_av', 3);
     try {
             const record = await getFromStore(db, 'hybridanalysis', message.headerMessageId);
+            const liveContainer = apiContainer || document.getElementById('hybrid_analysis_api_content');
+            if (liveContainer) liveContainer.textContent = '';
+            for (const [kind, coverage] of Object.entries(record?.scanCoverage || {})) {
+                const summary = document.createElement('p'); summary.className = 'card card-info'; summary.setAttribute('role', 'status');
+                summary.textContent = uiText(({ attachments: 'coverageAttachments', domains: 'coverageDomains', batchLinks: 'coverageBatch' })[kind], '') + ' · ' + uiText('coverageSummary', 'Coverage: $1 / $2 / $3 / $4 / $5', [coverage.detected, coverage.eligible, coverage.processed, coverage.failed, coverage.skipped].map(String)) + ' · ' + new Date(coverage.observedAt).toLocaleString();
+                liveContainer.appendChild(summary);
+            }
+            if (record?.scanCoverage) { const limits = document.createElement('p'); limits.textContent = uiText('coverageLimits', ''); liveContainer.appendChild(limits); }
             const hasAttachments = record && record.attachments && record.attachments.length > 0;
             const hasLinks = record && record.links && record.links.length > 0;
 
@@ -211,8 +219,6 @@ try {
                 // code passed an undefined identifier (`syncFragment`) and used an
                 // undeclared `container`, which threw a ReferenceError and left the
                 // report area empty (P0-9).
-                const liveContainer = apiContainer || document.getElementById('hybrid_analysis_api_content');
-                if (liveContainer) liveContainer.textContent = ''; // clear
 
                 let fetchTasks = [];
 
@@ -267,7 +273,7 @@ try {
                 }
             } else {
                 let container = document.getElementById('hybrid_analysis_api_content');
-                if (container) container.textContent = '';
+                if (container && !record?.scanCoverage) container.textContent = '';
                 let emptyCard = document.createElement('div');
                 emptyCard.className = 'card card-info mb-3';
                 emptyCard.setAttribute('role', 'status');

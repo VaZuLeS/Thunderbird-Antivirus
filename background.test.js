@@ -107,6 +107,8 @@ describe('background.js', () => {
                 })
             },
             console: { log: () => {}, error: () => {}, warn: () => {} },
+            openDB: async () => ({}),
+            updateStore: async (_db, _store, _key, update) => update(null),
             fetch: async () => ({ status: 200, json: async () => ({}) }),
             AbortController: globalThis.AbortController,
             clearTimeout: globalThis.clearTimeout,
@@ -2968,7 +2970,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'UNKNOWN' });
+            assert.equal(response.status, 'UNKNOWN'); assert.equal(response.check.origin, 'none'); assert.equal(response.check.outcome, 'missing_reference'); assert.equal(response.check.observedAt, null);
         });
 
         it('checks urlscan.io if no link object is found and urlscan is active, returning MALICIOUS', async () => {
@@ -3007,7 +3009,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'CUSTOM_STATE', provider: 'Hybrid Analysis' });
+            assert.equal(response.status, 'CUSTOM_STATE'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'stored'); assert.equal(response.check.outcome, 'missing_reference');
         });
 
         it('fetches overview from hybrid analysis if hybrid_sha256 exists, returning CLEAN for no specific threat', async () => {
@@ -3025,7 +3027,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'CLEAN', provider: 'Hybrid Analysis' });
+            assert.equal(response.status, 'CLEAN'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'live'); assert.equal(response.check.outcome, 'success');
         });
 
         it('fetches overview from hybrid analysis, returning UPPERCASE verdict for threats', async () => {
@@ -3038,7 +3040,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'MALICIOUS', provider: 'Hybrid Analysis' });
+            assert.equal(response.status, 'MALICIOUS'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'live'); assert.equal(response.check.outcome, 'success');
         });
 
         it('falls back to link state if hybrid analysis fetch throws an error', async () => {
@@ -3051,7 +3053,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'FALLBACK_STATE', provider: 'Hybrid Analysis' });
+            assert.equal(response.status, 'FALLBACK_STATE'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'stored'); assert.equal(response.check.outcome, 'failed');
         });
 
         it('returns ERROR on generic unexpected errors in the main flow', async () => {

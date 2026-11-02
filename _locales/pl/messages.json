@@ -1472,5 +1472,83 @@
   },
   "reportNotSaved": {
     "message": "Raport jest widoczny, ale nie udało się go zapisać lokalnie. Otwórz go ponownie, aby spróbować jeszcze raz."
+  },
+  "checkOrigin_live": {
+    "message": "Aktualny wynik dostawcy"
+  },
+  "checkOrigin_stored": {
+    "message": "Zapisany wynik"
+  },
+  "checkOrigin_none": {
+    "message": "Brak obserwacji dostawcy"
+  },
+  "checkOutcome_success": {
+    "message": "Żądanie zakończone pomyślnie"
+  },
+  "checkOutcome_failed": {
+    "message": "Żądanie nie powiodło się"
+  },
+  "checkOutcome_disabled": {
+    "message": "Analiza zewnętrzna wyłączona"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Brak uprawnienia do hosta"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Brak klucza dostawcy"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Brak identyfikatora dostawcy"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Brak nowego żądania"
+  },
+  "checkOutcome_no_result": {
+    "message": "Brak nowego wyniku do wykorzystania"
+  },
+  "checkAttempted": {
+    "message": "Próba sprawdzenia"
+  },
+  "checkObserved": {
+    "message": "Zaobserwowany wynik"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Powody w chwili decyzji"
+  },
+  "auditReasonsLatest": {
+    "message": "Ostatnie dostępne powody"
+  },
+  "auditReasonsMissing": {
+    "message": "Nie zapisano w tamtej chwili"
+  },
+  "coverageSummary": {
+    "message": "Zakres — wykryte: $1; kwalifikujące się: $2; przetworzone: $3; błędy: $4; pominięte: $5. Pominięte elementy nie zostały ocenione."
+  },
+  "supportTitle": {
+    "message": "Lokalny raport pomocy"
+  },
+  "supportHelp": {
+    "message": "Sprawdź minimalny raport diagnostyczny i zapisz go lokalnie. Nic nie jest wysyłane. Sumy kontrolne nie potwierdzają źródła."
+  },
+  "supportPreview": {
+    "message": "Podgląd raportu"
+  },
+  "supportConfiguration": {
+    "message": "Uwzględnij ogólne ustawienia (bez kluczy i list nadawców)"
+  },
+  "supportSave": {
+    "message": "Zapisz raport lokalnie"
+  },
+  "coverageAttachments": {
+    "message": "Załączniki"
+  },
+  "coverageDomains": {
+    "message": "Unikalne domeny"
+  },
+  "coverageBatch": {
+    "message": "Linki zbiorcze"
+  },
+  "coverageLimits": {
+    "message": "Limity na przebieg: 100 załączników, 25 MiB na załącznik, 100 unikalnych domen, 20 linków zbiorczych. Przetworzenie nie oznacza analizy zewnętrznej ani bezpieczeństwa."
   }
 }

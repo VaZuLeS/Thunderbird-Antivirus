@@ -13,13 +13,15 @@ function pruneLinkAudit(records, now = Date.now()) {
     return retained.filter(record => { size += new TextEncoder().encode(JSON.stringify(record)).length + 1; return size <= LINK_AUDIT_BYTES; });
 }
 
-function editLinkAudit(edit) {
+function editLinkAudit(edit, { readOnly = false } = {}) {
     const job = linkAuditQueue.then(async () => {
         const stored = await browser.storage.local.get([LINK_AUDIT_KEY, 'linkAuditProfileId']);
-        const records = pruneLinkAudit(Array.isArray(stored[LINK_AUDIT_KEY]) ? stored[LINK_AUDIT_KEY] : []);
+        const original = Array.isArray(stored[LINK_AUDIT_KEY]) ? stored[LINK_AUDIT_KEY] : [];
+        const records = pruneLinkAudit(original);
         const result = edit(records);
         const profileId = stored.linkAuditProfileId || crypto.randomUUID();
-        await browser.storage.local.set({ [LINK_AUDIT_KEY]: pruneLinkAudit(records), linkAuditProfileId: profileId });
+        const unchanged = readOnly && stored.linkAuditProfileId && original.length === records.length && records.every((record, index) => record === original[index]);
+        if (!unchanged) await browser.storage.local.set({ [LINK_AUDIT_KEY]: readOnly ? records : pruneLinkAudit(records), linkAuditProfileId: profileId });
         return { result, profileId };
     });
     linkAuditQueue = job.catch(() => {});
@@ -77,6 +79,8 @@ async function handleAuditedLinkCheck(request, sender) {
                 const threat = calculateThreatScore(message.author, [request.url], options);
                 session.score = Number.isFinite(threat.score) ? Math.max(0, Math.min(100, threat.score)) : null;
                 session.scoredAt = Date.now();
+                session.reasons = copyAuditValue((threat.reasons || []).slice(0, 20));
+                session.reasonDetails = copyAuditValue((threat.reasonDetails || []).slice(0, 20));
                 try {
                     const saved = await updateLinkAudit(session.record.id, { score: session.score, scoredAt: session.scoredAt, reasons: (threat.reasons || []).slice(0, 20), reasonDetails: (threat.reasonDetails || []).slice(0, 20) });
                     if (!saved) session.auditSaved = false;
@@ -84,10 +88,12 @@ async function handleAuditedLinkCheck(request, sender) {
             } catch (error) { session.score = null; }
         })();
         const verdict = await new Promise(resolve => handleCheckLinkState(request, sender, resolve));
-        session.verdict = verdict.status || 'UNKNOWN'; session.provider = verdict.provider || 'none'; session.checked = true;
+        session.providerReasons = copyAuditValue((verdict.reasons || []).slice(0, 20));
+        session.check = verdict.check || null;
+        session.verdict = verdict.status || 'UNKNOWN'; session.provider = verdict.provider || 'none'; session.checked = true; session.providerCheckedAt = Date.now();
         await localCheck;
         let saved = false;
-        try { saved = await updateLinkAudit(session.record.id, { verdict: session.verdict, provider: session.provider, checkedAt: Date.now(), providerReasons: (verdict.reasons || []).slice(0, 20) }); }
+        try { saved = await updateLinkAudit(session.record.id, { verdict: session.verdict, provider: session.provider, checkedAt: verdict.check?.origin === 'live' ? verdict.check.observedAt : null, check: verdict.check || null, providerReasons: (verdict.reasons || []).slice(0, 20) }); }
         catch (error) { reportLinkAuditFailure(); }
         return { ...verdict, score: session.score, auditSaved: saved && session.auditSaved };
     } catch (error) {
@@ -95,6 +101,17 @@ async function handleAuditedLinkCheck(request, sender) {
         reportLinkAuditFailure();
         return { status: 'ERROR', score: session.score, auditSaved: false };
     }
+}
+
+function copyAuditValue(value) { return value == null ? null : JSON.parse(JSON.stringify(value)); }
+
+function decisionReasons(session, decidedAt) {
+    return {
+        reasonsAtDecision: session.scoredAt <= decidedAt ? copyAuditValue(session.reasons || []) : null,
+        reasonDetailsAtDecision: session.scoredAt <= decidedAt ? copyAuditValue(session.reasonDetails || []) : null,
+        providerReasonsAtDecision: session.checked && session.providerCheckedAt <= decidedAt ? copyAuditValue(session.providerReasons || []) : null,
+        checkAtDecision: session.checked && session.providerCheckedAt <= decidedAt ? copyAuditValue(session.check) : null
+    };
 }
 
 async function handleCancelAuditedLink(request, sender) {
@@ -105,7 +122,7 @@ async function handleCancelAuditedLink(request, sender) {
     try {
         await session.ready;
         const reason = ['cancel', 'escape', 'destination_changed', 'context_closed'].includes(request.reason) ? request.reason : 'cancel';
-        const saved = await updateLinkAudit(session.record.id, { outcome: 'ABORTED', decidedAt, cancelReason: reason, scoreAtDecision: session.scoredAt <= decidedAt ? session.score : null, verdictAtDecision: session.verdict || 'UNKNOWN', providerAtDecision: session.provider || 'none' });
+        const saved = await updateLinkAudit(session.record.id, { outcome: 'ABORTED', decidedAt, cancelReason: reason, scoreAtDecision: session.scoredAt <= decidedAt ? session.score : null, verdictAtDecision: session.verdict || 'UNKNOWN', providerAtDecision: session.provider || 'none', ...decisionReasons(session, decidedAt) });
         return { success: saved };
     } catch (error) { reportLinkAuditFailure(); return { success: false }; }
 }
@@ -121,7 +138,7 @@ async function handleOpenAuditedLink(request, sender) {
         session.terminal = result.success;
         const decidedAt = Date.now();
         try {
-            const saved = await updateLinkAudit(session.record.id, { outcome: result.success ? 'OPENED' : 'OPEN_ERROR', decidedAt, openAttempts: session.record.openAttempts, scoreAtDecision: session.score, verdictAtDecision: session.verdict || 'UNKNOWN', providerAtDecision: session.provider || 'none' });
+            const saved = await updateLinkAudit(session.record.id, { outcome: result.success ? 'OPENED' : 'OPEN_ERROR', decidedAt, openAttempts: session.record.openAttempts, scoreAtDecision: session.score, verdictAtDecision: session.verdict || 'UNKNOWN', providerAtDecision: session.provider || 'none', ...decisionReasons(session, decidedAt) });
             if (!saved) return { ...result, auditSaved: false };
         } catch (error) { reportLinkAuditFailure(); return { ...result, auditSaved: false }; }
         return { ...result, auditSaved: true };
@@ -130,7 +147,7 @@ async function handleOpenAuditedLink(request, sender) {
 }
 
 async function readLinkAudit() {
-    const { result, profileId } = await editLinkAudit(records => records.map(record => ({ ...record })));
+    const { result, profileId } = await editLinkAudit(records => records.map(record => ({ ...record })), { readOnly: true });
     return { records: result, profileId, retentionDays: LINK_AUDIT_DAYS, maxRecords: LINK_AUDIT_LIMIT, maxBytes: LINK_AUDIT_BYTES };
 }
 

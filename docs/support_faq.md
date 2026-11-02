@@ -6,6 +6,10 @@ Stand: 2. November 2026. Veröffentlicht: GitHub 1.24.2 (unsigniert); vorbereite
 
 Bugs und Fragen: [GitHub Issues](https://github.com/VaZuLeS/Thunderbird-Antivirus/issues). Sicherheitsmeldungen nicht öffentlich melden, siehe [SECURITY.md](../SECURITY.md). Ansprechpartner: bludau.it.services@gmail.com. Keine API-Schlüssel, vertraulichen Nachrichten, vollständigen privaten URLs oder Profilbackups in öffentliche Tickets hochladen.
 
+## Lokaler Supportbericht im Kandidaten
+
+In den Einstellungen lässt sich ein minimaler Bericht anzeigen und anschließend ausdrücklich lokal speichern. Er enthält Versionen und API-Fähigkeiten; grobe Einstellungen sind abwählbar und standardmäßig nicht enthalten. Schlüssel, Absenderlisten, Nachrichten, URLs, Profilkennungen und Fehlerfreitexte werden nicht aufgenommen. Es gibt keinen automatischen Versand. Vor einer Weitergabe die Vorschau prüfen; gespeicherte Dateien selbst schützen und löschen. Der vollständige Auditexport bleibt eine getrennte Funktion mit sensiblen Originaldaten.
+
 ## Häufige Fragen
 
 **Ist die React-Webanwendung mein Thunderbird-Add-on?** Nein. Sie ist eine separate Simulation, nicht im XPI enthalten und nicht mit Thunderbird verbunden. Keine echten Schlüssel oder vertrauliche Post eingeben.

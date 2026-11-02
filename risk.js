@@ -103,49 +103,48 @@ function checkLists(email, senderDomain) {
     return null;
 }
 
-const AUTH_FAIL_REGEX = /(?:spf=fail|spf=softfail|dkim=fail|dmarc=fail)/i;
-const FAIL_SPF_REGEX = /spf=(?:fail|softfail)/i;
-const FAIL_DKIM_REGEX = /dkim=fail/i;
-const FAIL_DMARC_REGEX = /dmarc=fail/i;
-const AUTH_PASS_REGEX_SPF = /spf=pass/i;
-const AUTH_PASS_REGEX_DKIM = /dkim=pass/i;
-const AUTH_PASS_REGEX_DMARC = /dmarc=pass/i;
-
-function evaluateAuthHeaders(authHeaders, score, reasons) {
-    let authStatus = 'neutral';
-    if (authHeaders && authHeaders.length > 0) {
-        const headerStr = authHeaders.join(' ');
-
-        // ⚡ Bolt Optimization: Fast-path to avoid unconditionally allocating lowercased copy of large texts
-        if (AUTH_FAIL_REGEX.test(headerStr)) {
-            let fail = false;
-
-            // ⚡ Bolt Optimization: Use module-level constant regexes to prevent unnecessary instantiations in hot path
-            if (FAIL_SPF_REGEX.test(headerStr)) {
-                score += 50;
-                addReason(reasons, "ui_087", "SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).");
-                fail = true;
-            }
-            if (FAIL_DKIM_REGEX.test(headerStr)) {
-                score += 50;
-                addReason(reasons, "ui_088", "DKIM-Signatur ungültig (Mögliches Spoofing).");
-                fail = true;
-            }
-            if (FAIL_DMARC_REGEX.test(headerStr)) {
-                score += 50;
-                addReason(reasons, "ui_089", "DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).");
-                fail = true;
-            }
-
-            if (fail) {
-                authStatus = 'fail';
-            } else if (AUTH_PASS_REGEX_SPF.test(headerStr) && AUTH_PASS_REGEX_DKIM.test(headerStr) && AUTH_PASS_REGEX_DMARC.test(headerStr)) {
-                authStatus = 'pass';
-            }
-        } else if (AUTH_PASS_REGEX_SPF.test(headerStr) && AUTH_PASS_REGEX_DKIM.test(headerStr) && AUTH_PASS_REGEX_DMARC.test(headerStr)) {
-            authStatus = 'pass';
+// Authentication-Results is structured input, never a substring search over prose.
+// Comments and quoted values may contain result-looking text. Reject malformed
+// quoting/comments conservatively; conflicting results never produce a pass.
+function parseAuthenticationResults(headers) {
+    const methods = { spf: [], dkim: [], dmarc: [] };
+    for (const header of headers || []) {
+        if (typeof header !== 'string') continue;
+        let clean = '', depth = 0, quoted = false, escaped = false;
+        for (const char of header.replace(/\r?\n[ \t]+/g, ' ')) {
+            if (escaped) { escaped = false; continue; }
+            if (char === '\\' && (depth || quoted)) { escaped = true; continue; }
+            if (!depth && char === '"') { quoted = !quoted; clean += ' '; continue; }
+            if (quoted) continue;
+            if (char === '(') { depth++; clean += ' '; continue; }
+            if (char === ')') { if (!depth) { depth = -1; break; } depth--; continue; }
+            if (!depth) clean += char;
+        }
+        if (depth || quoted || escaped) continue;
+        clean = clean.replace(/^Authentication-Results\s*:/i, '').trim();
+        // Accept standalone method clauses for pure-function callers. Real mail
+        // headers are selected at the separate trusted-authserv-id boundary.
+        for (const clause of clean.split(';')) {
+            const match = clause.trim().match(/^(spf|dkim|dmarc)(?:\/\d+)?\s*=\s*(pass|fail|softfail|neutral|none|temperror|permerror)(?=\s|$)/i);
+            if (match) methods[match[1].toLowerCase()].push(match[2].toLowerCase());
+            else { const invalid = clause.trim().match(/^(spf|dkim|dmarc)(?:\/\d+)?\s*=/i); if (invalid) methods[invalid[1].toLowerCase()].push('unknown'); }
         }
     }
+    return methods;
+}
+
+function evaluateAuthHeaders(authHeaders, score, reasons) {
+    const results = parseAuthenticationResults(authHeaders);
+    let authStatus = 'neutral';
+    for (const [method, values] of Object.entries(results)) {
+        if (values.some(value => value === 'fail' || (method === 'spf' && value === 'softfail'))) {
+            score += 50;
+            const messages = { spf: ['ui_087', 'SPF-Prüfung fehlgeschlagen (Mögliches Spoofing).'], dkim: ['ui_088', 'DKIM-Signatur ungültig (Mögliches Spoofing).'], dmarc: ['ui_089', 'DMARC-Prüfung fehlgeschlagen (Mögliches Spoofing).'] };
+            addReason(reasons, ...messages[method]);
+            authStatus = 'fail';
+        }
+    }
+    if (authStatus !== 'fail' && Object.values(results).every(values => values.length > 0 && values.every(value => value === 'pass'))) authStatus = 'pass';
     return { score, authStatus };
 }
 

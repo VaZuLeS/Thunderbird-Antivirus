@@ -1475,5 +1475,83 @@
   },
   "reportNotSaved": {
     "message": "Der Bericht wird angezeigt, konnte aber lokal nicht gespeichert werden. Zum erneuten Versuch nochmals öffnen."
+  },
+  "checkOrigin_live": {
+    "message": "Aktuelles Anbieterergebnis"
+  },
+  "checkOrigin_stored": {
+    "message": "Gespeichertes Ergebnis"
+  },
+  "checkOrigin_none": {
+    "message": "Keine Anbieterbeobachtung"
+  },
+  "checkOutcome_success": {
+    "message": "Abruf erfolgreich"
+  },
+  "checkOutcome_failed": {
+    "message": "Abruf fehlgeschlagen"
+  },
+  "checkOutcome_disabled": {
+    "message": "Externe Analyse deaktiviert"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Hostberechtigung fehlt"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Anbieterschlüssel fehlt"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Keine Anbieterreferenz"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Kein neuer Abruf"
+  },
+  "checkOutcome_no_result": {
+    "message": "Kein verwertbares neues Ergebnis"
+  },
+  "checkAttempted": {
+    "message": "Prüfversuch"
+  },
+  "checkObserved": {
+    "message": "Ergebnis beobachtet"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Gründe bei Entscheidung"
+  },
+  "auditReasonsLatest": {
+    "message": "Zuletzt verfügbare Gründe"
+  },
+  "auditReasonsMissing": {
+    "message": "Damals nicht aufgezeichnet"
+  },
+  "coverageSummary": {
+    "message": "Prüfumfang — erkannt: $1; zulässig: $2; bearbeitet: $3; fehlgeschlagen: $4; ausgelassen: $5. Ausgelassene Elemente sind nicht bewertet."
+  },
+  "supportTitle": {
+    "message": "Lokaler Supportbericht"
+  },
+  "supportHelp": {
+    "message": "Minimierten Diagnosebericht prüfen und lokal speichern. Es wird nichts versendet. Prüfsummen bestätigen die Quelle nicht."
+  },
+  "supportPreview": {
+    "message": "Berichtvorschau"
+  },
+  "supportConfiguration": {
+    "message": "Grobe Einstellungen aufnehmen (keine Schlüssel oder Absenderlisten)"
+  },
+  "supportSave": {
+    "message": "Bericht lokal speichern"
+  },
+  "coverageAttachments": {
+    "message": "Anhänge"
+  },
+  "coverageDomains": {
+    "message": "Eindeutige Domains"
+  },
+  "coverageBatch": {
+    "message": "Stapellinks"
+  },
+  "coverageLimits": {
+    "message": "Grenzen pro Lauf: 100 Anhänge, 25 MiB je Anhang, 100 eindeutige Domains, 20 Stapellinks. Bearbeitet bedeutet weder extern geprüft noch sicher."
   }
 }

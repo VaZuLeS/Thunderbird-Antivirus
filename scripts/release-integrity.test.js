@@ -11,14 +11,39 @@ const { publish } = require('./publish-release.js');
 
 test('all six real-client upgrade/crash reports and browser reports must match the candidate', () => {
     const identity = { extensionVersion: '1.24.3', packageSha256: 'package', sourceFingerprint: 'source' };
-    const live = languages.map(lang => ({ extensionVersion: identity.extensionVersion, xpiSha256: 'package', uiLanguage: lang, passed: true, gracefulRestarts: 2, forcedRestarts: 2, client: { capabilities: { browserName: 'thunderbird' } } }));
-    const ui = [{ sourceFingerprint: 'source', view: 'all', failed: 0, passed: 6, planned: 6, matrix: 'full', results: languages.map(lang => ({ lang })) }];
+    const live = languages.map(lang => ({ extensionVersion: identity.extensionVersion, xpiSha256: 'package', uiLanguage: lang, passed: true, gracefulRestarts: 2, forcedRestarts: 2, client: { capabilities: { browserName: 'thunderbird' } },
+        previousInstallation: { extensionVersion: '1.24.2', auditRecord: { id:'old-abort', outcome:'ABORTED', scoreAtDecision:12 }, openedAuditRecord: { id:'old-open', outcome:'OPENED', scoreAtDecision:0 }, blockedOsAuditRecord: { id:'old-blocked', outcome:'OPENED', scoreAtDecision:0 } }, previousRestart: { storagePreserved: true, addon: { version: '1.24.2' } },
+        currentRestart: { storagePreserved: true, auditRecordsPreserved: 3, addon: { version: '1.24.3', active: true } },
+        acknowledgedCrashRecovery: { storagePreserved: true, extraOsDispatches: 0 },
+        pendingCrashRecovery: { storagePreserved: true, decisionNotInvented: true, extraOsDispatches: 0, record: { id: 'pending', outcome: 'PENDING', decidedAt: null, openAttempts: 0 } },
+        finalAuditRecords: [{ id:'old-abort', outcome:'ABORTED', scoreAtDecision:12 }, { id:'old-open', outcome:'OPENED', scoreAtDecision:0 }, { id:'old-blocked', outcome:'OPENED', scoreAtDecision:0 }, { id: 'pending', outcome: 'PENDING', decidedAt: null }]
+    }));
+    const results = require('../tools/browser-ui.dev.cjs').matrix({ matrix: 'full', zoom: 1 }, ['alerts', 'capacity-alerts', 'capacity', 'cases', 'events', 'health', 'heartbeats', 'storage']).map(row => ({ ...row, status: 'passed' }));
+    const ui = [{ schemaVersion: 1, kind: 'thundy-browser-ui-check', language: 'all', sourceFingerprint: 'source', view: 'all', failed: 0, passed: results.length, planned: results.length, matrix: 'full', results }];
     validateReports(identity, live, ui);
     assert.throws(() => validateReports(identity, live.slice(1), ui), /en/);
     assert.throws(() => validateReports(identity, live.map(report => ({ ...report, xpiSha256: 'older' })), ui), /real Thunderbird/);
     assert.throws(() => validateReports(identity, live, [{ ...ui[0], sourceFingerprint: 'older' }]), /browser UI/);
     assert.throws(() => validateReports(identity, live, [{ ...ui[0], matrix: 'smoke' }]), /browser UI/);
     assert.throws(() => validateReports(identity, live, [{ ...ui[0], failed: 1 }]), /browser UI/);
+    for (const mutate of [
+        r => { r.results[0].status = 'failed'; },
+        r => { r.results[0].error = 'runner error despite passed summary'; },
+        r => { const row=r.results.find(row=>row.populated); row.populated=false; },
+        r => { r.results[0].status = 'skipped'; },
+        r => { r.passed = 1; r.planned = 1; },
+        r => { r.results.pop(); r.passed--; r.planned--; },
+        r => { r.results[0] = r.results[1]; },
+        r => { r.results[0].lang = 'xx'; },
+    ]) { const bad = JSON.parse(JSON.stringify(ui)); mutate(bad[0]); assert.throws(() => validateReports(identity, live, bad), /browser UI/); }
+    for (const mutate of [
+        r => { delete r.pendingCrashRecovery; },
+        r => { r.pendingCrashRecovery.record.outcome = 'OPENED'; },
+        r => { r.acknowledgedCrashRecovery.extraOsDispatches = 1; },
+        r => { r.currentRestart.storagePreserved = false; },
+        r => { r.finalAuditRecords[0].scoreAtDecision = 99; },
+    ]) { const bad = JSON.parse(JSON.stringify(live)); mutate(bad[0]); assert.throws(() => validateReports(identity, bad, ui), /real Thunderbird/); }
+
 });
 
 test('a package cannot be validated against changed working-tree source', () => {

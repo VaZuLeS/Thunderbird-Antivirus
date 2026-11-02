@@ -17,3 +17,7 @@ Offen bleibt eine unterstützte gepatchte Toolchain oder eine eigenständig gepr
 ## Akzeptanz und Validierung
 
 Kompatible Patches: frische Installation, Node-22-/24-Gesamtprüfung und unveränderte paketgebundene Runtimeevidenz. Verbleibende Werkzeugmeldungen: upstream-/migrationstaugliche Fixversion bestimmen, alle relevanten API-/Lint-/Package-/Signierfälle prüfen und dann audit mit tatsächlichem Ergebnis fortschreiben. Testzahlen allein oder ein mit --force erzeugtes Lockfile gelten nicht als Abnahme. Die Aufgabe ist teilweise umgesetzt; verbleibende Befunde werden nicht als behoben markiert.
+
+## Untersuchung in der Weiterentwicklung
+
+`web-ext` 10.8.0 ist verfügbar und nun explizit gepinnt; frische Registry-/Auditprüfung ergibt weiterhin 9 mittlere und 1 niedrige Meldung. Lint besteht mit 0 Fehlern und 24 kuratierten Thunderbird-Warnungen. Die neue Mindest-/Pinangabe ist keine Sicherheitsbehebung: Das vorherige Lockfile enthielt bereits 10.8.0. Der angebotene npm-Downgrade auf 3.2.1 wird weiter nicht übernommen. TAV-018.03 bleibt offen, bis eine unterstützte gepatchte Linter-/ESLint-Kette oder eine validierte Migration verfügbar ist.

@@ -46,18 +46,50 @@ function collectReports(directory) {
     }
     return result;
 }
+function historicalRecordsPreserved(report) {
+    const previous = report.previousInstallation;
+    const originals = [previous?.auditRecord, previous?.openedAuditRecord, previous?.blockedOsAuditRecord];
+    if (originals.some(record => typeof record?.id !== 'string') || new Set(originals.map(record => record.id)).size !== 3 || !Array.isArray(report.finalAuditRecords)) return false;
+    if (new Set(report.finalAuditRecords.map(record => record.id)).size !== report.finalAuditRecords.length) return false;
+    return originals.every(original => {
+        const current = report.finalAuditRecords.find(record => record.id === original.id);
+        return current && Object.keys(current).length === Object.keys(original).length && Object.keys(original).every(key => JSON.stringify(current[key]) === JSON.stringify(original[key]));
+    });
+}
 function validateReports(identity, thunderbird, browserUi) {
+    // A summary is only a claim. Derive success from the actual runner rows and
+    // require the complete expected case IDs for each language.
+    const { matrix } = require('../tools/browser-ui.dev.cjs');
+    const expected = matrix({ matrix: 'full', zoom: 1 }, ['alerts', 'capacity-alerts', 'capacity', 'cases', 'events', 'health', 'heartbeats', 'storage']);
     for (const lang of languages) {
         const tb = thunderbird.find(report => {
-            const language = report.uiLanguage || report.currentRestart?.uiLanguage || report.previousInstallation?.uiLanguage;
-            return language?.split('-')[0] === lang && report.passed === true && report.extensionVersion === identity.extensionVersion && report.xpiSha256 === identity.packageSha256 &&
-                report.client?.capabilities?.browserName === 'thunderbird' && report.gracefulRestarts >= 2 && report.forcedRestarts >= 2;
+            const language = report.uiLanguage || report.currentRestart?.uiLanguage;
+            const pending = report.pendingCrashRecovery;
+            const current = report.currentRestart;
+            return language?.split('-')[0] === lang && report.passed === true && !report.error && report.extensionVersion === identity.extensionVersion && report.xpiSha256 === identity.packageSha256 &&
+                report.client?.capabilities?.browserName === 'thunderbird' && Number.isInteger(report.gracefulRestarts) && report.gracefulRestarts >= 2 && Number.isInteger(report.forcedRestarts) && report.forcedRestarts >= 2 && historicalRecordsPreserved(report) &&
+                report.previousRestart?.storagePreserved === true && current?.storagePreserved === true && current.addon?.version === identity.extensionVersion && current.addon.active === true &&
+                report.previousRestart?.addon?.version === report.previousInstallation?.extensionVersion && report.previousRestart.addon.version !== identity.extensionVersion && current.auditRecordsPreserved >= 3 &&
+                report.acknowledgedCrashRecovery?.storagePreserved === true && report.acknowledgedCrashRecovery.extraOsDispatches === 0 &&
+                pending?.storagePreserved === true && pending.decisionNotInvented === true && pending.extraOsDispatches === 0 &&
+                pending.record?.outcome === 'PENDING' && pending.record.decidedAt === null && pending.record.openAttempts === 0 &&
+                Array.isArray(report.finalAuditRecords) && report.finalAuditRecords.some(record => record.id === pending.record.id && record.outcome === 'PENDING' && record.decidedAt === null);
         });
         if (!tb) throw new Error('Missing package-bound real Thunderbird upgrade/crash evidence: ' + lang);
-        if (!browserUi.some(report => !report.fatalError && report.sourceFingerprint === identity.sourceFingerprint && report.view === 'all' && (report.cssZoom ?? 1) === 1 && report.failed === 0 && report.passed > 0 && report.passed === report.planned && report.results?.some(result => result.lang === lang) && report.matrix === 'full'))
-            throw new Error('Missing complete browser UI evidence: ' + lang);
+        const complete = browserUi.some(report => {
+            if (report.schemaVersion !== 1 || report.kind !== 'thundy-browser-ui-check' || report.fatalError || report.sourceFingerprint !== identity.sourceFingerprint || report.view !== 'all' || (report.cssZoom ?? 1) !== 1 || report.matrix !== 'full' || !Array.isArray(report.results)) return false;
+            const rows = report.results;
+            if (!rows.length || report.failed !== 0 || report.passed !== rows.length || report.planned !== rows.length || rows.some(row => row.status !== 'passed' || row.error || row.errors?.length || row.violations?.length)) return false;
+            if (new Set(rows.map(row => row.id)).size !== rows.length) return false;
+            const scope = report.language === 'all' ? languages : [report.language];
+            if (!scope.includes(lang) || scope.some(value => !languages.includes(value))) return false;
+            const wanted = expected.filter(row => scope.includes(row.lang));
+            return wanted.length === rows.length && wanted.every(want => rows.some(row => row.id === want.id && ['lang', 'view', 'kind', 'width', 'scheme', 'state', 'populated', 'url'].every(key => row[key] === want[key])));
+        });
+        if (!complete) throw new Error('Missing complete browser UI evidence: ' + lang);
     }
 }
+
 function evidenceFile(root = ROOT) {
     const version = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'))).version;
     return path.join(root, 'docs', 'audits', 'candidate-' + version.replaceAll('.', '_') + '.json');

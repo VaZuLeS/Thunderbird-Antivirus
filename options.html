@@ -626,6 +626,15 @@
                 style="display: none"
               ></span>
             </article>
+            <article id="supportReport">
+              <h3 data-i18n="supportTitle">Local support report</h3>
+              <p data-i18n="supportHelp"></p>
+              <label><input type="checkbox" id="supportConfiguration"><span data-i18n="supportConfiguration"></span></label>
+              <button type="button" id="supportPreview" data-i18n="supportPreview">Preview report</button>
+              <pre id="supportContent" tabindex="0" hidden></pre>
+              <button type="button" id="supportSave" data-i18n="supportSave" disabled>Save report locally</button>
+              <p id="supportStatus" role="status" aria-live="polite"></p>
+            </article>
             <article>
               <h3 data-i18n="auditTitle">Link decision log</h3>
               <p data-i18n="auditScope"></p>

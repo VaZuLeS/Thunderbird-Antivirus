@@ -294,6 +294,22 @@ async function interaction(page, c) {
       true,
       "appearance changed consent",
     );
+    await page.locator('#supportPreview').click();
+    await page.locator('#supportContent').waitFor({ state: 'visible' });
+    const minimal = JSON.parse(await page.locator('#supportContent').textContent());
+    assert.equal(minimal.authenticatedSource, false);
+    assert.equal(minimal.configuration, undefined);
+    await page.locator('#supportConfiguration').check();
+    assert.equal(await page.locator('#supportSave').isDisabled(), true);
+    await page.locator('#supportPreview').click();
+    await page.waitForFunction(() => !document.getElementById('supportSave').disabled);
+    const preview = JSON.parse(await page.locator('#supportContent').textContent());
+    assert.equal(preview.configuration.thundyAccent, 'amber');
+    assert.ok(!JSON.stringify(preview).includes('apikey'));
+    await page.locator('#supportSave').click();
+    await page.waitForFunction(() => uiTest.downloads.length === 1);
+    assert.deepEqual(JSON.parse(await page.evaluate(() => uiTest.downloads[0].content)), preview);
+    assert.equal(await page.evaluate(() => uiTest.permissionRequests), 0);
   } else if (c.view === "enterprise_setup.html") {
     await page.locator("#profileBundle").selectOption("microsoft");
     assert.equal(await page.locator("#profileChanges").isVisible(), true);

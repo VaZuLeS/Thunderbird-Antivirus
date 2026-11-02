@@ -135,6 +135,33 @@ def native_click(display, x, y):
         x11.XCloseDisplay(connection)
 
 
+def native_save_path(display, path):
+    """Type an ASCII location in the genuine GTK file picker with XTest."""
+    x11 = ctypes.CDLL('libX11.so.6'); xtest = ctypes.CDLL('libXtst.so.6')
+    x11.XOpenDisplay.argtypes = [ctypes.c_char_p]; x11.XOpenDisplay.restype = ctypes.c_void_p
+    x11.XStringToKeysym.argtypes = [ctypes.c_char_p]; x11.XStringToKeysym.restype = ctypes.c_ulong
+    x11.XKeysymToKeycode.argtypes = [ctypes.c_void_p, ctypes.c_ulong]; x11.XKeysymToKeycode.restype = ctypes.c_uint
+    x11.XFlush.argtypes = [ctypes.c_void_p]; x11.XCloseDisplay.argtypes = [ctypes.c_void_p]
+    xtest.XTestFakeKeyEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_ulong]
+    connection = x11.XOpenDisplay(display.encode())
+    if not connection: raise RuntimeError('Cannot open save-picker display')
+    def key(name, pressed):
+        code = x11.XKeysymToKeycode(connection, x11.XStringToKeysym(name.encode()))
+        if not code or not xtest.XTestFakeKeyEvent(connection, code, pressed, 0): raise RuntimeError('Cannot type save path')
+        x11.XFlush(connection)
+    try:
+        key('Control_L',1); key('l',1); key('l',0); key('Control_L',0)
+        time.sleep(.2)
+        names = {'/':'slash','.':'period','-':'minus','_':'underscore'}
+        for char in str(path):
+            shifted = char.isupper() or char == '_'
+            if shifted: key('Shift_L',1)
+            key(names.get(char,char),1); key(names.get(char,char),0)
+            if shifted: key('Shift_L',0)
+        key('Return',1);key('Return',0)
+    finally: x11.XCloseDisplay(connection)
+
+
 def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, permanent=False, audit_only=False, banner_root_shot=False, message_kib=0):
     with zipfile.ZipFile(xpi) as package:
         manifest = json.loads(package.read('manifest.json'))
@@ -285,8 +312,10 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelectorAll("footer button")[1].click();')
     wait_for(lambda: m.page('return !document.getElementById("thundy-link-dialog");'))
     receipt = out / 'os-handoff.json'
-    wait_for(lambda: receipt.exists())
-    report['osHandoff'] = json.loads(receipt.read_text())
+    def completed_receipt():
+        try: return json.loads(receipt.read_text())
+        except (FileNotFoundError, json.JSONDecodeError): return None
+    report['osHandoff'] = wait_for(completed_receipt)
     assert report['osHandoff'] == {'argv': [URL]}, report['osHandoff']
     # Thunderbird 140 resolves its API even when its protocol policy blocks dispatch.
     # Preserve this observed limit: API acceptance alone cannot prove OS delivery.
@@ -358,7 +387,98 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         wait_for(lambda: m.page('return document.documentElement.lang===arguments[0] && document.querySelector("h1")?.textContent===arguments[1];', [locale, expected]))
         report['localizedPages'].append({'page': page, 'language': locale, 'heading': expected})
         m.screenshot(out / (page.replace('.html', '') + '-' + locale + '.png'))
+    if tuple(map(int, manifest['version'].split('.'))) >= (1, 24, 3):
+        check_followup(m, base, out, report, display)
     report['passed'] = True
+
+
+def check_followup(m, base, out, report, display):
+    """Real extension APIs, synthetic MIME, no provider credentials or API mocks."""
+    open_page(m, base + 'options.html')
+    wait_for(lambda: m.page('return !!document.getElementById("supportPreview");'))
+    m.page('document.getElementById("supportPreview").click();')
+    preview = wait_for(lambda: m.page('return document.getElementById("supportContent").hidden?null:document.getElementById("supportContent").textContent;'))
+    diagnostic = json.loads(preview)
+    assert diagnostic['authenticatedSource'] is False and 'configuration' not in diagnostic
+    assert diagnostic['extensionVersion'] == report['extensionVersion']
+    assert not any(key in preview for key in ['apikey', 'messageId', 'profileId', 'linkAuditLog'])
+    report['supportPreview'] = {'passed': True, 'minimal': True, 'configurationOmitted': True}
+    m.screenshot(out / 'support-preview.png')
+    m.page('document.getElementById("supportSave").click();')
+    time.sleep(1)
+    subprocess.run(['import', '-window', 'root', str(out / 'support-picker-open.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
+    exported = out / 'support-download.json'
+    native_save_path(display, exported.with_suffix(''))
+    def downloaded_report():
+        try: return json.loads(exported.read_text())
+        except (FileNotFoundError, json.JSONDecodeError): return None
+    try: downloaded = wait_for(downloaded_report, 15)
+    except TimeoutError:
+        subprocess.run(['import', '-window', 'root', str(out / 'support-picker-failure.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
+        raise
+    assert downloaded == diagnostic
+    report['supportDownload'] = {'passed': True, 'realDownloadsAPI': True, 'nativeFilePicker': True}
+    # Import actual MIME through Thunderbird's copy service, then use actual
+    # messages APIs from its extension context. There are no attachment API doubles.
+    mail = out / 'followup.eml'
+    body = 'From: sender@example.invalid\nTo: recipient@example.invalid\nSubject: Thundy followup MIME\nMessage-ID: <followup@example.invalid>\nAuthentication-Results: mx.example.invalid; spf=passage; dkim=passage; dmarc=passage\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="thundy"\n\n--thundy\nContent-Type: text/plain\n\nSynthetic offline fixture.\n'
+    for index in range(101):
+        body += '--thundy\nContent-Type: text/plain\nContent-Disposition: attachment; filename="sample-' + str(index) + '.txt"\n\nhello\n'
+    mail.write_text(body + '--thundy--\n')
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+        const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+        const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+        MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''', [str(mail)])
+    wait_for(lambda: m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+        return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests").getTotalMessages(false)===2;'''))
+    probe = m.page('''return (async()=>{
+        const b=window.wrappedJSObject.browser;
+        const raw=await b.runtime.getBackgroundPage(); const bg=raw.wrappedJSObject || raw;
+        const list=await b.messages.query({subject:"Thundy followup MIME"});
+        const message=list.messages.find(m=>m.subject==="Thundy followup MIME");
+        if(!message) throw new Error("Imported fixture missing");
+        const previous=await b.storage.local.get("trustedAuthServers");
+        await b.storage.local.set({trustedAuthServers:["mx.example.invalid"]});
+        let risk;
+        try {risk=await b.runtime.sendMessage({action:"getLocalRisk",messageId:message.id});}
+        finally {if(previous.trustedAuthServers===undefined)await b.storage.local.remove("trustedAuthServers");else await b.storage.local.set(previous);}
+        await bg.processAttachments(message,false,false);
+        const db=await bg.getSharedDB();const stored=await bg.getFromStore(db,"hybridanalysis",message.headerMessageId);
+        const auditBefore=await b.storage.local.get("linkAuditLog");
+        const benchmark=[];
+        try {
+          for(const count of [0,50,2000]){
+            await b.storage.local.set({linkAuditLog:Array.from({length:count},(_,i)=>({id:String(i),clickedAt:Date.now()-i,url:"https://benchmark.invalid/"+i,outcome:"PENDING",decidedAt:null}))});
+            const start=performance.now();for(let i=0;i<3;i++)await bg.readLinkAudit();
+            benchmark.push({count,meanReadMs:(performance.now()-start)/3});
+          }
+        } finally {await b.storage.local.set(auditBefore);}
+        return {authStatus:risk.threat.authStatus,attachmentsListed:(await b.messages.listAttachments(message.id)).length,coverage:stored.scanCoverage.attachments,storedAttachments:stored.attachments.length,benchmark};
+    })();''')
+    assert probe['authStatus'] == 'neutral', probe
+    assert probe['attachmentsListed'] == 101 and probe['storedAttachments'] == 100
+    assert probe['coverage']['detected'] == 101 and probe['coverage']['skipped'] == 1
+    assert probe['coverage']['processed'] == 100 and probe['coverage']['failed'] == 0
+    # Verify the actual popup explains the 101/100/1 coverage after selecting
+    # the imported MIME message, using the native toolbar button again.
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+        const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+        const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+        const header=Array.from(folder.messages).find(h=>h.subject==="Thundy followup MIME");
+        MailUtils.displayMessage(header);''')
+    wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
+    wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+    point = m.js('''const t=window.gTabmail.currentTabInfo,b=t.chromeBrowser;
+        const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect();
+        const p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display, point['x'], point['y'])
+    wait_for(lambda: m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup_browser = 'document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda: m.page('return document.body.innerText.includes("101") && document.body.innerText.includes("100");', browser=popup_browser))
+    probe['coverageVisibleInNativePopup'] = True
+    subprocess.run(['import', '-window', 'root', str(out / 'coverage-popup.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    report['followup'] = {'passed': True, 'realThunderbirdAPIs': True, **probe}
 
 
 def addon_state(m):

@@ -7,8 +7,37 @@ on:
   pull_request:
     branches: [ '**' ]
 
+# PR workflows check the merge context. Standalone branch pushes still run;
+# push workflows with an open same-repository PR defer to its full PR workflow.
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  route:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run: ${{ steps.route.outputs.result }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/github-script@v8
+        id: route
+        with:
+          script: |
+            const { shouldRunChecks } = require('./scripts/ci-event.js');
+            return await shouldRunChecks({
+              eventName: context.eventName, ref: context.ref,
+              defaultBranch: context.payload.repository.default_branch,
+              owner: context.repo.owner, repository: context.repo.repo,
+              listOpenPulls: async options => (await github.rest.pulls.list(options)).data
+            });
+
   test:
+    needs: route
+    if: needs.route.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -45,6 +74,8 @@ jobs:
           retention-days: 14
 
   browser-ui:
+    needs: route
+    if: needs.route.outputs.run == 'true'
     name: Browser UI (${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 20

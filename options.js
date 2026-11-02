@@ -1,3 +1,30 @@
+// Explicit field projection: never serialize storage, error objects or API keys.
+const SupportReport = (() => {
+    const keys = ['privacyTier', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'externalAnalysisConsent', 'thundyAppearance', 'thundyAccent', 'thundyDensity'];
+    function project(settings) {
+        const result = {};
+        for (const key of keys) {
+            const value = settings[key];
+            if (['alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'externalAnalysisConsent'].includes(key)) { if (typeof value === 'boolean') result[key] = value; }
+            else {
+                const allowed = { privacyTier: ['strict', 'balanced', 'max'], thundyAppearance: ['system', 'light', 'dark'], thundyAccent: ['ocean', 'violet', 'forest', 'amber'], thundyDensity: ['comfortable', 'compact'] };
+                if (allowed[key].includes(value)) result[key] = value;
+            }
+        }
+        return result;
+    }
+    async function create(api, configuration) {
+        const safeVersion = value => typeof value === 'string' && /^\d+(?:\.\d+){0,3}(?:[a-z]\d*)?$/i.test(value) ? value : null;
+        let info = {};
+        try { info = await api.runtime.getBrowserInfo(); } catch (error) { /* no raw error in report */ }
+        return { schemaVersion: 1, kind: 'thundy-local-support', authenticatedSource: false, createdAt: new Date().toISOString(),
+            extensionVersion: safeVersion(api.runtime.getManifest().version), thunderbirdVersion: safeVersion(info.version),
+            capabilities: { displayedMessages: typeof api.messageDisplay?.getDisplayedMessages === 'function', hostPermissions: typeof api.permissions?.contains === 'function', downloads: typeof api.downloads?.download === 'function' },
+            ...(configuration ? { configuration: project(await api.storage.local.get(keys)) } : {}) };
+    }
+    return { project, create };
+})();
+
 function uiText(key, fallback, params = []) {
     return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
 }
@@ -67,11 +94,30 @@ let _saveTimeoutId = null;
 let _clearTimeoutId = null;
 document.addEventListener('DOMContentLoaded', function() {
     document.body.addEventListener('input', event => {
-        if (!event.target.closest('#appearance') && event.target.matches('input,select,textarea')) {
+        if (!event.target.closest('#appearance,#supportReport') && event.target.matches('input,select,textarea')) {
             const dirty = document.getElementById('settingsDirty');
             if (dirty) dirty.hidden = false;
         }
     });
+    const previewButton = document.getElementById('supportPreview');
+    if (previewButton) {
+        const content = document.getElementById('supportContent'), save = document.getElementById('supportSave'), config = document.getElementById('supportConfiguration'), status = document.getElementById('supportStatus');
+        let preview = null, generation = 0;
+        config.addEventListener('change', () => { generation++; preview = null; save.disabled = true; content.hidden = true; });
+        previewButton.addEventListener('click', async () => {
+            const current = ++generation, configuration = config.checked;
+            save.disabled = true; preview = null; content.hidden = true;
+            try { const report = JSON.stringify(await SupportReport.create(browser, configuration), null, 2); if (current !== generation) return; preview = report; content.textContent = preview; content.hidden = false; save.disabled = false; content.focus(); status.textContent = ''; }
+            catch (error) { if (current !== generation) return; content.hidden = true; status.textContent = uiText('auditExportFailed', 'Export failed'); }
+        });
+        save.addEventListener('click', async () => {
+            if (!preview) return;
+            let url;
+            try { url = URL.createObjectURL(new Blob([preview], { type: 'application/json' })); await browser.downloads.download({ url, filename: 'thundy-support.json', saveAs: true }); status.textContent = uiText('auditExported', 'Export saved'); }
+            catch (error) { status.textContent = uiText('auditExportFailed', 'Export failed'); }
+            finally { if (url) URL.revokeObjectURL(url); }
+        });
+    }
     dataCollectionConsentSupported().then(supported => { collectionConsentSupported = supported; });
     // Abrufen der gespeicherten Einstellung
     browser.storage.local.get([
