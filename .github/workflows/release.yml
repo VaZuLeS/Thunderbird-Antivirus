@@ -28,7 +28,7 @@ jobs:
           version="$(node -p 'require("./manifest.json").version')"
           test "$RELEASE_TAG" = "v$version"
           test -f "docs/releases/$version.md"
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - name: Verify source, tests, lint and package
         run: npm run check
       - name: Prepare unsigned XPI and checksums
