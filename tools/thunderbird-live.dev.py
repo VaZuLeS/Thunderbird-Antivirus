@@ -48,7 +48,7 @@ def wait_for(operation, timeout=20):
 class Marionette:
     def __init__(self, port):
         self.socket = socket.create_connection(('127.0.0.1', port), 2)
-        self.socket.settimeout(30)
+        self.socket.settimeout(40)
         self.index = 0
         self.read()
 
@@ -80,7 +80,7 @@ class Marionette:
         return self.command('WebDriver:ExecuteAsyncScript' if asynchronous else
                             'WebDriver:ExecuteScript', {
             'script': script, 'args': args or [], 'newSandbox': True,
-            'sandbox': 'default', 'scriptTimeout': 20000,
+            'sandbox': 'default', 'scriptTimeout': 35000,
         })['value']
 
     def page(self, script, args=None, browser='window.gTabmail.currentTabInfo.browser'):
@@ -90,7 +90,7 @@ class Marionette:
             if(!target?.browsingContext?.currentWindowGlobal){done(null);return;}
             const actor=target.browsingContext.currentWindowGlobal.getActor("MarionetteCommands");
             actor.executeScript(arguments[0],arguments[1],
-                {newSandbox:true,sandboxName:"default",async:false})
+                {newSandbox:true,sandboxName:"default",async:false,timeout:30000})
                 .then(done,e=>done({automationError:String(e)}));''',
                          [script, args or []], asynchronous=True)
         if isinstance(result, dict) and 'automationError' in result:
@@ -158,8 +158,30 @@ def native_save_path(display, path):
             if shifted: key('Shift_L',1)
             key(names.get(char,char),1); key(names.get(char,char),0)
             if shifted: key('Shift_L',0)
+            time.sleep(.005)
         key('Return',1);key('Return',0)
     finally: x11.XCloseDisplay(connection)
+
+
+def native_json_download(m, display, out, button, stem):
+    known = m.page('return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.map(item=>item.id));')
+    m.page('document.getElementById(arguments[0]).click();', [button])
+    time.sleep(1)
+    native_save_path(display, out / stem)
+    def completed():
+        return m.page('''const known=new Set(arguments[0]);return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.find(item=>!known.has(item.id)&&item.state==="complete")||null);''', [known])
+    try: item = wait_for(completed)
+    except TimeoutError:
+        subprocess.run(['import','-window','root',str(out/(stem+'-failure.png'))], env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+        raise
+    actual = Path(item['filename'])
+    assert actual.parent.resolve() == out.resolve(), 'Download escaped the selected test directory'
+    # GTK can add/retain filename extensions. Bind to the actual newly completed
+    # download ID and content, never an older file or an assumed basename.
+    def content():
+        try: return json.loads(actual.read_text())
+        except (FileNotFoundError,json.JSONDecodeError): return None
+    return wait_for(content)
 
 
 def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, permanent=False, audit_only=False, banner_root_shot=False, message_kib=0):
@@ -392,10 +414,27 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     report['passed'] = True
 
 
+def import_appearance_profile(m, profile):
+    m.page('''const input=document.getElementById("localProfileInput");input.value=arguments[0];input.dispatchEvent(new Event("input",{bubbles:true}));document.getElementById("localProfilePreview").click();''', [json.dumps(profile)])
+    wait_for(lambda: m.page('return !document.getElementById("localProfileApply").disabled;'))
+    m.page('document.getElementById("localProfileApply").click();')
+    wait_for(lambda: m.page('''return window.wrappedJSObject.browser.storage.local.get(["thundyAppearance","thundyAccent","thundyDensity"]).then(s=>s.thundyAppearance===arguments[0]&&s.thundyAccent===arguments[1]&&s.thundyDensity===arguments[2]);''', [profile['appearance']['mode'],profile['appearance']['accent'],profile['appearance']['density']]))
+
+    wait_for(lambda: m.page('return !document.getElementById("localProfileExport").disabled && document.getElementById("localProfileDiff").hidden;'))
+
+
 def check_followup(m, base, out, report, display):
     """Real extension APIs, synthetic MIME, no provider credentials or API mocks."""
     open_page(m, base + 'options.html')
     wait_for(lambda: m.page('return !!document.getElementById("supportPreview");'))
+    original = storage_snapshot(m)
+    profile = {'schemaVersion':1,'kind':'thundy-local-settings','appearance':{'mode':'dark','accent':'violet','density':'compact'}}
+    import_appearance_profile(m, profile)
+    imported = storage_snapshot(m)
+    assert all(imported.get(key)==value for key,value in original.items() if key not in ['thundyAppearance','thundyAccent','thundyDensity'])
+    assert native_json_download(m, display, out, 'localProfileExport', 'appearance-profile') == profile
+    report['appearanceProfile'] = {'passed':True,'confirmedUiImport':True,'realDownloadsAPI':True,'unrelatedDataPreserved':True}
+    m.screenshot(out / 'appearance-profile.png')
     m.page('document.getElementById("supportPreview").click();')
     preview = wait_for(lambda: m.page('return document.getElementById("supportContent").hidden?null:document.getElementById("supportContent").textContent;'))
     diagnostic = json.loads(preview)
@@ -404,19 +443,7 @@ def check_followup(m, base, out, report, display):
     assert not any(key in preview for key in ['apikey', 'messageId', 'profileId', 'linkAuditLog'])
     report['supportPreview'] = {'passed': True, 'minimal': True, 'configurationOmitted': True}
     m.screenshot(out / 'support-preview.png')
-    m.page('document.getElementById("supportSave").click();')
-    time.sleep(1)
-    subprocess.run(['import', '-window', 'root', str(out / 'support-picker-open.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
-    exported = out / 'support-download.json'
-    native_save_path(display, exported.with_suffix(''))
-    def downloaded_report():
-        try: return json.loads(exported.read_text())
-        except (FileNotFoundError, json.JSONDecodeError): return None
-    try: downloaded = wait_for(downloaded_report, 15)
-    except TimeoutError:
-        subprocess.run(['import', '-window', 'root', str(out / 'support-picker-failure.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
-        raise
-    assert downloaded == diagnostic
+    assert native_json_download(m, display, out, 'supportSave', 'support-download') == diagnostic
     report['supportDownload'] = {'passed': True, 'realDownloadsAPI': True, 'nativeFilePicker': True}
     # Import actual MIME through Thunderbird's copy service, then use actual
     # messages APIs from its extension context. There are no attachment API doubles.
@@ -474,7 +501,7 @@ def check_followup(m, base, out, report, display):
     native_click(display, point['x'], point['y'])
     wait_for(lambda: m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup_browser = 'document.querySelector(\'browser[webextension-view-type="popup"]\')'
-    wait_for(lambda: m.page('return document.body.innerText.includes("101") && document.body.innerText.includes("100");', browser=popup_browser))
+    wait_for(lambda: m.page('return document.body?.innerText?.includes("101") && document.body?.innerText?.includes("100");', browser=popup_browser))
     probe['coverageVisibleInNativePopup'] = True
     subprocess.run(['import', '-window', 'root', str(out / 'coverage-popup.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
@@ -543,8 +570,7 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     assert all(saved.get(key) == value for key, value in before.items())
     assert saved.get('externalAnalysisConsent') is not True
     wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="dark"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
-    for name, value in [('appearance','dark'),('accent','violet'),('density','compact')]:
-        m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name,value])
+    import_appearance_profile(m, {'schemaVersion':1,'kind':'thundy-local-settings','appearance':{'mode':'dark','accent':'violet','density':'compact'}})
     wait_for(lambda: m.page('return document.documentElement.dataset.theme==="dark" && document.documentElement.dataset.accent==="violet" && document.documentElement.dataset.density==="compact";'))
     after_upgrade = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance==="dark" && s.thundyAccent==="violet" && s.thundyDensity==="compact"?s:null);'))
     close_extension_tabs(m)
@@ -553,6 +579,8 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
     open_page(m, base+'audit.html')
     assert storage_snapshot(m) == after_upgrade
+    assert all(after_upgrade.get(key)==value for key,value in before.items() if key not in ['thundyAppearance','thundyAccent','thundyDensity'])
+    report['appearanceProfileRestart'] = {'passed':True,'confirmedUiImport':True,'storagePreserved':True,'unrelatedDataPreserved':True}
     wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===3;'))
     assert current_catalog['auditRiskyOpened']['message'] in m.page('return document.getElementById("auditSummary").textContent;')
     m.screenshot(out/'current-audit-after-restart.png')

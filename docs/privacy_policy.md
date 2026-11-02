@@ -1,6 +1,6 @@
 # Datenschutz und Datenflüsse — Thundy AV
 
-Technischer Dokumentationsstand: 2. November 2026. Veröffentlicht: GitHub 1.24.2 (unsigniert); vorbereitet: 1.24.3. Dies beschreibt die echte Thunderbird-Erweiterung, nicht die separate React-Websimulation. Ansprechpartner: Jan Bludau, bludau.it.services@gmail.com. Quellcode: [VaZuLeS/Thunderbird-Antivirus](https://github.com/VaZuLeS/Thunderbird-Antivirus).
+Technischer Dokumentationsstand: 2. November 2026. Dokumentierte Version: 1.24.3; [GitHub-Veröffentlichungsstatus](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.3), unsignierte Distribution. Dies beschreibt die echte Thunderbird-Erweiterung, nicht die separate React-Websimulation. Ansprechpartner: Jan Bludau, bludau.it.services@gmail.com. Quellcode: [VaZuLeS/Thunderbird-Antivirus](https://github.com/VaZuLeS/Thunderbird-Antivirus).
 
 ## Deutsch
 

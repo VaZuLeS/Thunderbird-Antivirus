@@ -1550,5 +1550,41 @@
   },
   "coverageLimits": {
     "message": "Limity na przebieg: 100 załączników, 25 MiB na załącznik, 100 unikalnych domen, 20 linków zbiorczych. Przetworzenie nie oznacza analizy zewnętrznej ani bezpieczeństwa."
+  },
+  "localProfileTitle": {
+    "message": "Lokalne profile wyglądu"
+  },
+  "localProfileHelp": {
+    "message": "Przenoś tylko wygląd, kolor i gęstość. Sprawdź i potwierdź każdy import. Klucze, zgody, uprawnienia, reguły ochrony i historia są wykluczone."
+  },
+  "localProfileExport": {
+    "message": "Eksportuj wygląd"
+  },
+  "localProfileFile": {
+    "message": "Wybierz profil (JSON, do 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "JSON profilu (lub wklej tutaj)"
+  },
+  "localProfilePreview": {
+    "message": "Podgląd zmian"
+  },
+  "localProfileApply": {
+    "message": "Zastosuj pokazane zmiany"
+  },
+  "localProfileDiscard": {
+    "message": "Odrzuć import"
+  },
+  "localProfileInvalid": {
+    "message": "Nieprawidłowy profil, nieobsługiwana wersja lub niedozwolone pola. Nic nie zastosowano."
+  },
+  "localProfileChanged": {
+    "message": "Wygląd zmienił się od podglądu. Przejrzyj ponownie przed zastosowaniem."
+  },
+  "localProfileFailed": {
+    "message": "Nie udało się zapisać profilu. Sprawdź bieżące ustawienia i spróbuj ponownie."
+  },
+  "localProfileApplied": {
+    "message": "Zastosowano profil wyglądu. Ochrona i zgody bez zmian."
   }
 }

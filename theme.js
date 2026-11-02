@@ -33,6 +33,7 @@ const ThundyTheme = (() => {
         ";",
     };
   }
+  let idle = () => Promise.resolve();
   function initialize() {
     // The same file is loaded by the background for isolated message UI snapshots.
     if (
@@ -45,6 +46,7 @@ const ThundyTheme = (() => {
       generation = 0,
       pending = 0,
       queue = Promise.resolve();
+    idle = () => queue;
     const status = document.getElementById("themeStatus"),
       retry = document.getElementById("themeRetry");
     const say = (key) => {
@@ -153,5 +155,5 @@ const ThundyTheme = (() => {
   }
   if (typeof document !== "undefined")
     document.addEventListener("DOMContentLoaded", initialize);
-  return { resolve, normalize, snapshot, color, contrast };
+  return { resolve, normalize, snapshot, color, contrast, whenIdle: () => idle() };
 })();

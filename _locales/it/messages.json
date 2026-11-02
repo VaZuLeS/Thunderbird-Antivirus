@@ -1550,5 +1550,41 @@
   },
   "coverageLimits": {
     "message": "Limiti per esecuzione: 100 allegati, 25 MiB per allegato, 100 domini unici, 20 link per gruppo. Elaborato non significa analizzato esternamente o sicuro."
+  },
+  "localProfileTitle": {
+    "message": "Profili di aspetto locali"
+  },
+  "localProfileHelp": {
+    "message": "Trasferisci solo aspetto, colore e densità. Controlla e conferma ogni importazione. Sono esclusi chiavi, consenso, autorizzazioni, regole di protezione e cronologia."
+  },
+  "localProfileExport": {
+    "message": "Esporta aspetto"
+  },
+  "localProfileFile": {
+    "message": "Scegli profilo (JSON, fino a 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profilo JSON (o incolla qui)"
+  },
+  "localProfilePreview": {
+    "message": "Anteprima modifiche"
+  },
+  "localProfileApply": {
+    "message": "Applica modifiche visualizzate"
+  },
+  "localProfileDiscard": {
+    "message": "Scarta importazione"
+  },
+  "localProfileInvalid": {
+    "message": "Profilo non valido, versione non supportata o campi vietati. Nessuna modifica applicata."
+  },
+  "localProfileChanged": {
+    "message": "L’aspetto è cambiato dopo l’anteprima. Controlla di nuovo prima di applicare."
+  },
+  "localProfileFailed": {
+    "message": "Impossibile salvare il profilo. Controlla le impostazioni attuali e riprova."
+  },
+  "localProfileApplied": {
+    "message": "Profilo di aspetto applicato. Protezione e consenso invariati."
   }
 }

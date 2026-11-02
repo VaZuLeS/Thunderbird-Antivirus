@@ -42,3 +42,20 @@ test('CI routing preserves PR, fork, main, tag and standalone branch checks; API
  assert.equal(await shouldRunChecks(base),false);
  for(const patch of [{eventName:'pull_request'},{eventName:'workflow_call'},{ref:'refs/heads/main'},{ref:'refs/tags/v1.24.3'},{listOpenPulls:async()=>[]},{listOpenPulls:async()=>{throw new Error('403')}},{listOpenPulls:async()=>[{state:'open',head:{ref:'feature',repo:{full_name:'fork/repo'}}}]}])assert.equal(await shouldRunChecks({...base,...patch}),true);
 });
+function profiles(){const c=vm.createContext({document:{addEventListener(){},getElementById(){return {addEventListener(){}}}}});vm.runInContext(fs.readFileSync('options.js','utf8')+'\nglobalThis.profiles=LocalSettingsProfile;',c);return c.profiles;}
+test('portable profiles exclude keys, consent, rules and history and reject unsupported schemas',()=>{
+ const p=profiles();const profile=p.create({thundyAppearance:'dark',thundyAccent:'forest',thundyDensity:'compact',apikey:'secret',externalAnalysisConsent:true,linkAuditLog:[{outcome:'OPENED'}]});
+ assert.deepEqual(JSON.parse(JSON.stringify(profile)),{schemaVersion:1,kind:'thundy-local-settings',appearance:{mode:'dark',accent:'forest',density:'compact'}});
+ for(const mutation of [v=>{v.schemaVersion=2},v=>{v.apikey='secret'},v=>{v.appearance.mode='javascript:alert(1)'},v=>{v.appearance.externalAnalysisConsent=true},v=>{delete v.appearance.density},v=>{v.appearance=[]},v=>{v.kind='enterprise-profile'}]){const bad=JSON.parse(JSON.stringify(profile));mutation(bad);assert.throws(()=>p.parse(JSON.stringify(bad)));}
+ assert.throws(()=>p.parse(' '.repeat(8193)));assert.throws(()=>p.parse('{"__proto__":{"polluted":true}}'));assert.equal({}.polluted,undefined);
+ const Ajv=require('ajv/dist/2020');const validate=new Ajv().compile(JSON.parse(fs.readFileSync('docs/schemas/local-settings-profile-v1.json')));assert.equal(validate(JSON.parse(JSON.stringify(profile))),true);assert.equal(validate({...profile,externalAnalysisConsent:true}),false);
+});
+test('profile preview is read-only; confirmation writes only appearance and rejects stale or failed changes',async()=>{
+ const p=profiles();const store={apikey:'retained',externalAnalysisConsent:false,timeOfClickProtection:true,linkAuditLog:[{outcome:'PENDING'}],thundyAppearance:'light',thundyAccent:'ocean',thundyDensity:'comfortable'};let writes=0,fail=false;
+ const storage={get:async()=>structuredClone(store),set:async value=>{if(fail)throw new Error('quota');writes++;Object.assign(store,structuredClone(value))}};
+ const profile=p.create({thundyAppearance:'dark',thundyAccent:'forest',thundyDensity:'compact'});
+ const draft=await p.prepare(JSON.stringify(profile),storage);assert.equal(writes,0);assert.equal(store.thundyAppearance,'light');
+ store.thundyAccent='amber';await assert.rejects(p.commit(draft,storage),/PROFILE_CHANGED/);assert.equal(writes,0);
+ const fresh=await p.prepare(JSON.stringify(profile),storage);fail=true;await assert.rejects(p.commit(fresh,storage),/quota/);assert.equal(store.thundyAppearance,'light');fail=false;
+ await p.commit(fresh,storage);assert.equal(writes,1);assert.equal(store.thundyAppearance,'dark');assert.equal(store.apikey,'retained');assert.equal(store.externalAnalysisConsent,false);assert.equal(store.timeOfClickProtection,true);assert.equal(store.linkAuditLog[0].outcome,'PENDING');
+});

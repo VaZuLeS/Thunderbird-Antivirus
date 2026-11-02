@@ -21,3 +21,7 @@ Kompatible Patches: frische Installation, Node-22-/24-Gesamtprüfung und unverä
 ## Untersuchung in der Weiterentwicklung
 
 `web-ext` 10.8.0 ist verfügbar und nun explizit gepinnt; frische Registry-/Auditprüfung ergibt weiterhin 9 mittlere und 1 niedrige Meldung. Lint besteht mit 0 Fehlern und 24 kuratierten Thunderbird-Warnungen. Die neue Mindest-/Pinangabe ist keine Sicherheitsbehebung: Das vorherige Lockfile enthielt bereits 10.8.0. Der angebotene npm-Downgrade auf 3.2.1 wird weiter nicht übernommen. TAV-018.03 bleibt offen, bis eine unterstützte gepatchte Linter-/ESLint-Kette oder eine validierte Migration verfügbar ist.
+
+## Erneute Prüfung vor Veröffentlichung
+
+Die Registry liefert weiterhin web-ext 10.8.0, addons-linter 10.15.0 und deepmerge 4.3.1 als aktuelle Versionen. Deepmerge 4.3.1 ist selbst betroffen; eine unterstützte gepatchte Version ist damit nicht verfügbar. Minimatch 11.0.4 ist gepatcht, die betroffene Werkzeugkette verwendet jedoch mehrere ältere Major-Versionen. Ein pauschaler Major-Override aller Verbraucher wäre keine unterstützte Standardbehebung. Erneutes npm audit: weiterhin 9 mittel / 1 niedrig, keine hohe/kritische Meldung im Kandidatenbaum. Die Befunde werden im GitHub-Release offen benannt; die Meldungen des alten Standardbranchs sind davon zu unterscheiden.

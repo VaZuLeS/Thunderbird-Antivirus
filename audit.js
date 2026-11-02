@@ -69,7 +69,7 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
             if (record.cancelReason) details.append(node('p', t('auditCancelReason') + ': ' + t(cancelKeys[record.cancelReason] || 'auditCancelUnknown')));
             if (record.outcome === 'PENDING') details.append(node('p', t('auditPendingExplanation')));
             if (record.check) details.append(node('p', t(({ live: 'checkOrigin_live', stored: 'checkOrigin_stored', none: 'checkOrigin_none' })[record.check.origin] || 'auditUnavailable') + ' · ' + t(({success: 'checkOutcome_success', failed: 'checkOutcome_failed', disabled: 'checkOutcome_disabled', permission_denied: 'checkOutcome_permission_denied', missing_key: 'checkOutcome_missing_key', missing_reference: 'checkOutcome_missing_reference', not_requested: 'checkOutcome_not_requested', no_result: 'checkOutcome_no_result'})[record.check.outcome] || 'auditUnavailable') + ' · ' + t('checkAttempted') + ': ' + date(record.check.attemptedAt) + ' · ' + t('checkObserved') + ': ' + date(record.check.observedAt)));
-            if (record.checkedAt) details.append(node('p', t('auditFinalResult') + ': ' + verdictLabel(record.verdict) + ' · ' + date(record.checkedAt)));
+            if (record.checkedAt || record.check) details.append(node('p', t('auditFinalResult') + ': ' + verdictLabel(record.verdict) + ' · ' + date(record.checkedAt)));
             details.append(node('strong', t('auditReasonsAtDecision')));
             const historical = document.createElement('ul');
             if (record.reasonsAtDecision == null && record.providerReasonsAtDecision == null) historical.append(node('li', t('auditReasonsMissing')));

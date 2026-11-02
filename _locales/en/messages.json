@@ -1553,5 +1553,41 @@
   },
   "coverageLimits": {
     "message": "Limits per pass: 100 attachments, 25 MiB per attachment, 100 unique domains, 20 batch links. Processed does not mean externally scanned or safe."
+  },
+  "localProfileTitle": {
+    "message": "Local appearance profiles"
+  },
+  "localProfileHelp": {
+    "message": "Transfer appearance, accent and density only. Preview and confirm every import. Keys, consent, permissions, protection rules and audit history are excluded."
+  },
+  "localProfileExport": {
+    "message": "Export appearance"
+  },
+  "localProfileFile": {
+    "message": "Choose a profile file (JSON, up to 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profile JSON (or paste here)"
+  },
+  "localProfilePreview": {
+    "message": "Preview changes"
+  },
+  "localProfileApply": {
+    "message": "Apply displayed changes"
+  },
+  "localProfileDiscard": {
+    "message": "Discard import"
+  },
+  "localProfileInvalid": {
+    "message": "Invalid profile, unsupported version or forbidden fields. Nothing was applied."
+  },
+  "localProfileChanged": {
+    "message": "Appearance changed since preview. Preview again before applying."
+  },
+  "localProfileFailed": {
+    "message": "Profile could not be saved. Review the current settings and retry."
+  },
+  "localProfileApplied": {
+    "message": "Appearance profile applied. Protection and consent unchanged."
   }
 }

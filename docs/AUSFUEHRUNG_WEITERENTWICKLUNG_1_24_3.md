@@ -1,5 +1,7 @@
 # Ausführung des nächsten Aufgabenplans — Thundy AV 1.24.3
 
+Historischer Umsetzungsstand vor dem Veröffentlichungsauftrag. Der [Veröffentlichungsabschluss](VEROEFFENTLICHUNG_1_24_3.md) ergänzt den inzwischen implementierten Darstellungsprofil-Import und neue paketgebundene Nachweise.
+
 Grundlage: [Aufgabenplan](AUFGABENPLAN_WEITERENTWICKLUNG_1_24_3.md), analysierter Ausgangscommit `3024636`. Der aktuelle Auftrag umfasst die Umsetzung. Veröffentlicht bleibt 1.24.2; diese Änderungen bereiten neue Kandidatenbytes für 1.24.3 vor. Eine vorhandene Freigabe früherer Paketbytes gilt dafür nicht.
 
 ## Aufgabenstatus

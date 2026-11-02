@@ -597,3 +597,7 @@
 }
 
 #supportContent { max-height: 24rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; padding: 1rem; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--card-border); border-radius: 8px; }
+
+#localProfile label { display: block; margin-top: 12px; }
+#localProfile :is(textarea,input[type="file"]) { width: 100%; max-width: 100%; }
+#localProfileDiff { white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; border: 1px solid var(--card-border); border-radius: 8px; }

@@ -1,6 +1,6 @@
 # Support und FAQ — Thundy AV
 
-Stand: 2. November 2026. Veröffentlicht: GitHub 1.24.2 (unsigniert); vorbereitet: 1.24.3. [Aktueller Stand](AKTUELLER_PRODUKTSTAND.md).
+Stand: 2. November 2026. Version 1.24.3; [GitHub-Veröffentlichungsstatus](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.3), unsignierte Distribution. [Aktueller Stand](AKTUELLER_PRODUKTSTAND.md).
 
 ## Kontakt
 
@@ -9,6 +9,10 @@ Bugs und Fragen: [GitHub Issues](https://github.com/VaZuLeS/Thunderbird-Antiviru
 ## Lokaler Supportbericht im Kandidaten
 
 In den Einstellungen lässt sich ein minimaler Bericht anzeigen und anschließend ausdrücklich lokal speichern. Er enthält Versionen und API-Fähigkeiten; grobe Einstellungen sind abwählbar und standardmäßig nicht enthalten. Schlüssel, Absenderlisten, Nachrichten, URLs, Profilkennungen und Fehlerfreitexte werden nicht aufgenommen. Es gibt keinen automatischen Versand. Vor einer Weitergabe die Vorschau prüfen; gespeicherte Dateien selbst schützen und löschen. Der vollständige Auditexport bleibt eine getrennte Funktion mit sensiblen Originaldaten.
+
+## Lokale Darstellungsprofile
+
+In den Einstellungen können Darstellung, Akzent und Dichte als JSON exportiert und per Datei oder eingefügtem JSON importiert werden. Erst die Vorschau prüfen, dann die angezeigten Änderungen bestätigen. Geänderte Ausgangswerte verlangen eine neue Vorschau. Importiert werden keine Schlüssel, Zustimmungen, Schutzregeln oder historischen Daten; Enterprise-Profile bleiben getrennte Entwürfe.
 
 ## Häufige Fragen
 

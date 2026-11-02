@@ -1,5 +1,7 @@
 # Kandidatenprüfung 1.24.3 — reale Linux-Teilabnahme
 
+Jüngster Umfang einschließlich portabler Darstellungsprofile und eigener aktueller Paketbindung: [Veröffentlichungsabschluss](VEROEFFENTLICHUNG_1_24_3.md). Die nachfolgenden Tabellen bleiben als zeitgebundene frühere Abnahmen erhalten.
+
 ## Aktuelle Weiterentwicklung — eigene Abnahme
 
 Neue lokale Paketbytes: SHA-256 `a150e885188d72703cecc7cf8812b396902e5fa04c0565032b5848b3ed7a2627`; Quellfingerprint `35a5174d43da3592df604e322becd5a5b345580f28ecd1f3dc647a4c982b8f77`. Vollständige [Ausführung und Grenzen](AUSFUEHRUNG_WEITERENTWICKLUNG_1_24_3.md); aktuelle [Reportbindung](audits/candidate-1_24_3.json). Keine Veröffentlichung oder ATN-Freigabe.

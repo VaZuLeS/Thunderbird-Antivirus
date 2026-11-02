@@ -1550,5 +1550,41 @@
   },
   "coverageLimits": {
     "message": "Limites par passage : 100 pièces jointes, 25 Mio par pièce jointe, 100 domaines uniques, 20 liens par lot. Traité ne signifie ni analysé en externe ni sûr."
+  },
+  "localProfileTitle": {
+    "message": "Profils d’apparence locaux"
+  },
+  "localProfileHelp": {
+    "message": "Transférez uniquement l’apparence, l’accent et la densité. Prévisualisez et confirmez chaque importation. Clés, consentements, autorisations, règles de protection et historique sont exclus."
+  },
+  "localProfileExport": {
+    "message": "Exporter l’apparence"
+  },
+  "localProfileFile": {
+    "message": "Choisir un profil (JSON, 8 Kio maximum)"
+  },
+  "localProfileInput": {
+    "message": "Profil JSON (ou coller ici)"
+  },
+  "localProfilePreview": {
+    "message": "Prévisualiser les modifications"
+  },
+  "localProfileApply": {
+    "message": "Appliquer les modifications affichées"
+  },
+  "localProfileDiscard": {
+    "message": "Abandonner l’importation"
+  },
+  "localProfileInvalid": {
+    "message": "Profil invalide, version non prise en charge ou champs interdits. Aucune modification appliquée."
+  },
+  "localProfileChanged": {
+    "message": "L’apparence a changé depuis l’aperçu. Prévisualisez à nouveau avant d’appliquer."
+  },
+  "localProfileFailed": {
+    "message": "Impossible d’enregistrer le profil. Vérifiez les paramètres actuels et réessayez."
+  },
+  "localProfileApplied": {
+    "message": "Profil d’apparence appliqué. Protection et consentement inchangés."
   }
 }

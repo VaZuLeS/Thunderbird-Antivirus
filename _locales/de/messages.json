@@ -1553,5 +1553,41 @@
   },
   "coverageLimits": {
     "message": "Grenzen pro Lauf: 100 Anhänge, 25 MiB je Anhang, 100 eindeutige Domains, 20 Stapellinks. Bearbeitet bedeutet weder extern geprüft noch sicher."
+  },
+  "localProfileTitle": {
+    "message": "Lokale Darstellungsprofile"
+  },
+  "localProfileHelp": {
+    "message": "Nur Darstellung, Akzent und Dichte übertragen. Jeden Import zuerst prüfen und bestätigen. Schlüssel, Zustimmung, Berechtigungen, Schutzregeln und Audithistorie sind ausgeschlossen."
+  },
+  "localProfileExport": {
+    "message": "Darstellung exportieren"
+  },
+  "localProfileFile": {
+    "message": "Profildatei wählen (JSON, bis 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profil-JSON (oder hier einfügen)"
+  },
+  "localProfilePreview": {
+    "message": "Änderungen prüfen"
+  },
+  "localProfileApply": {
+    "message": "Angezeigte Änderungen übernehmen"
+  },
+  "localProfileDiscard": {
+    "message": "Import verwerfen"
+  },
+  "localProfileInvalid": {
+    "message": "Ungültiges Profil, nicht unterstützte Version oder unzulässige Felder. Es wurde nichts übernommen."
+  },
+  "localProfileChanged": {
+    "message": "Darstellung wurde seit der Vorschau geändert. Vor dem Übernehmen erneut prüfen."
+  },
+  "localProfileFailed": {
+    "message": "Profil konnte nicht gespeichert werden. Aktuelle Einstellungen prüfen und erneut versuchen."
+  },
+  "localProfileApplied": {
+    "message": "Darstellungsprofil übernommen. Schutz und Zustimmung unverändert."
   }
 }

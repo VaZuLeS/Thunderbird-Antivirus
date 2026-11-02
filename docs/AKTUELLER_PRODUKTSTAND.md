@@ -1,13 +1,15 @@
 # Aktueller Produktstand — 2. November 2026
 
+Der [Veröffentlichungsabschluss 1.24.3](VEROEFFENTLICHUNG_1_24_3.md) führt den jüngsten Freigabeumfang, Darstellungsprofile und offene Ressourcenabnahmen. Tatsächlicher [GitHub-Release-Status](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.3).
+
 Die anschließende Weiterentwicklung (Headerparser, Prüfherkunft, Entscheidungsgründe, Prüfumfang und lokaler Supportexport) ist im [aktuellen Ausführungsprotokoll](AUSFUEHRUNG_WEITERENTWICKLUNG_1_24_3.md) abgegrenzt.
 
 Vorheriger Ausführungsstand ist die [detaillierte Aufgabenliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md). Die [Bestandsaufnahme](PRODUKTANALYSE_AUFGABENPLAN_2026-11-02.md) beschreibt den Ausgangscommit `6046fe0`; alte Statusmeldungen sind zeitgebundene Nachweise und keine aktuelle Freigabe.
 
 | Ebene | Stand |
 | --- | --- |
-| Veröffentlichter GitHub-Release | 1.24.2, unsigniert; bestehende Tags/Assets werden nicht umgeschrieben |
-| Vorbereiteter Quellstand | 1.24.3; Veröffentlichung und ATN-Signierung nicht durch lokale Tests erledigt |
+| GitHub-Distribution | Zielversion 1.24.3, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.2 bleibt historisch erhalten |
+| Quellstand | 1.24.3 mit bestätigtem lokalem Darstellungsprofil-Import; ATN-Signierung und automatische Updates bleiben eigenständige Schritte |
 | Tatsächliches Add-on | MV3-MailExtension; Hintergrundskripte, eigene HTML-Seiten, IndexedDB und browser.storage.local |
 | React | separate gekennzeichnete Websimulation mit eigenem localStorage; nicht im XPI |
 | Enterprise | deaktivierte Profile plus lokale Node-Werkzeuge; neuer Offline-Audit-Review aktiviert keinen Dienst |

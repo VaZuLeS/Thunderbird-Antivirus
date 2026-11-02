@@ -626,6 +626,20 @@
                 style="display: none"
               ></span>
             </article>
+            <article id="localProfile">
+              <h3 data-i18n="localProfileTitle">Local appearance profiles</h3>
+              <p data-i18n="localProfileHelp"></p>
+              <button type="button" id="localProfileExport" data-i18n="localProfileExport">Export appearance</button>
+              <label for="localProfileFile" data-i18n="localProfileFile">Choose profile file</label>
+              <input type="file" id="localProfileFile" accept=".json,application/json">
+              <label for="localProfileInput" data-i18n="localProfileInput">Profile JSON</label>
+              <textarea id="localProfileInput" rows="5" maxlength="8192" spellcheck="false"></textarea>
+              <button type="button" id="localProfilePreview" data-i18n="localProfilePreview">Preview changes</button>
+              <pre id="localProfileDiff" tabindex="0" hidden></pre>
+              <button type="button" id="localProfileApply" data-i18n="localProfileApply" disabled>Apply displayed changes</button>
+              <button type="button" id="localProfileDiscard" data-i18n="localProfileDiscard">Discard</button>
+              <p id="localProfileStatus" role="status" aria-live="polite"></p>
+            </article>
             <article id="supportReport">
               <h3 data-i18n="supportTitle">Local support report</h3>
               <p data-i18n="supportHelp"></p>
