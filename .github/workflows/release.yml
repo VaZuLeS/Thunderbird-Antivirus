@@ -29,7 +29,7 @@ jobs:
           node-version: '22'
       - name: Install validation dependencies without rebuilding the tested archive
         run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: validated-release-candidate
           path: .
