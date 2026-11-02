@@ -24,7 +24,7 @@
     "message": "Skanowanie…"
   },
   "bannerScanDone": {
-    "message": "Skanowanie zakończone"
+    "message": "Żądania zakończone — zobacz źródła analizy"
   },
   "bannerScanFailed": {
     "message": "Błąd skanowania"
@@ -1586,5 +1586,134 @@
   },
   "localProfileApplied": {
     "message": "Zastosowano profil wyglądu. Ochrona i zgody bez zmian."
+  },
+  "analysisTitle": {
+    "message": "Źródła analizy"
+  },
+  "analysisMixed": {
+    "message": "Sprawdzenia lokalne i zewnętrzne"
+  },
+  "analysisExternal": {
+    "message": "Dostępne obserwacje zewnętrzne"
+  },
+  "analysisLocal": {
+    "message": "Lokalnie · brak zapisanych wyników zewnętrznych"
+  },
+  "analysisLocalChecked": {
+    "message": "Wykonano lokalną heurystykę wiadomości i linków."
+  },
+  "analysisLocalPending": {
+    "message": "Ocena lokalna nie została jeszcze zapisana."
+  },
+  "analysisUnknown": {
+    "message": "Nieznane"
+  },
+  "analysisTimeUnknown": {
+    "message": "Nie zapisano czasu"
+  },
+  "analysisObserved": {
+    "message": "Ostatnia użyteczna odpowiedź"
+  },
+  "analysisFindingObserved": {
+    "message": "Zapisano ocenę"
+  },
+  "analysisAttempted": {
+    "message": "Ostatnia próba"
+  },
+  "analysisPartial": {
+    "message": "Część żądań nie powiodła się; wyniki nie obejmują wszystkich elementów."
+  },
+  "analysisOtherServices": {
+    "message": "Inne usługi / niesprawdzone"
+  },
+  "analysisLimit": {
+    "message": "Wynik lokalny nie jest werdyktem antywirusa. Żądania i przesłania nie oznaczają ukończonej analizy. Zapisane wyniki zachowują swój wiek; brak zapisu nie dowodzi braku wcześniejszych żądań."
+  },
+  "analysisScope_hash": {
+    "message": "Reputacja skrótu pliku"
+  },
+  "analysisScope_file": {
+    "message": "Przesłanie pliku"
+  },
+  "analysisScope_url": {
+    "message": "Analiza adresu URL"
+  },
+  "analysisScope_domain": {
+    "message": "Reputacja domeny"
+  },
+  "analysisScope_ip": {
+    "message": "Reputacja publicznych IP"
+  },
+  "analysisScope_report": {
+    "message": "Raport analizy"
+  },
+  "analysisState_running": {
+    "message": "Zlecono · brak ukończonego wyniku"
+  },
+  "analysisState_checked": {
+    "message": "Otrzymano wynik"
+  },
+  "analysisState_received": {
+    "message": "Otrzymano odpowiedź · brak werdyktu"
+  },
+  "analysisState_submitted": {
+    "message": "Przyjęto przesłanie · ukończenie analizy niepotwierdzone"
+  },
+  "analysisState_not_found": {
+    "message": "Brak rekordu u dostawcy"
+  },
+  "analysisState_failed": {
+    "message": "Żądanie nieudane · brak nowego werdyktu"
+  },
+  "analysisState_incomplete": {
+    "message": "Brak zapisu ukończonej analizy"
+  },
+  "analysisSource_remote": {
+    "message": "Skontaktowano usługę zewnętrzną"
+  },
+  "analysisSource_cache": {
+    "message": "Pamięć podręczna · bez nowego żądania"
+  },
+  "analysisSource_stored": {
+    "message": "Zapisana obserwacja zewnętrzna"
+  },
+  "analysisSource_attempt": {
+    "message": "Próba · odpowiedź niepotwierdzona"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Werdykt niedostępny"
+  },
+  "analysisVerdict_none": {
+    "message": "Dostępne oceny: brak wykryć (bez gwarancji bezpieczeństwa)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Dostępne oceny zawierają podejrzane wskaźniki"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Dostępne oceny zawierają wykrytą groźbę"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Obecnie nieskonfigurowane"
+  },
+  "analysisReason_disabled": {
+    "message": "Nowe żądania zewnętrzne wyłączone"
+  },
+  "analysisReason_permission": {
+    "message": "Brak uprawnienia hosta dla nowych żądań"
+  },
+  "analysisReason_authorization": {
+    "message": "Brak automatycznej zgody dla tej wiadomości / tryb ręczny"
+  },
+  "analysisReason_policy": {
+    "message": "Niedozwolone na bieżącym poziomie prywatności"
+  },
+  "analysisReason_on_action": {
+    "message": "Tylko po wyraźnej akcji dotyczącej linku"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Brak zapisanej kontroli tej wiadomości"
+  },
+  "analysisUnavailable": {
+    "message": "Źródła analizy są obecnie niedostępne"
   }
 }

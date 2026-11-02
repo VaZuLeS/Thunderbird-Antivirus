@@ -218,6 +218,14 @@ function addonMock({
               retentionDays: 30,
               maxRecords: 1000,
             }
+          : p.action === "getMessageAnalysis"
+            ? {success:true,messageId:p.messageId,local:{state:"checked"},rows:[
+                {provider:"hybridanalysis",scope:"hash",responses:1,state:"checked",verdict:"none",source:"remote",observedAt:1791014400000},
+                {provider:"virustotal",scope:"hash",responses:1,state:"checked",verdict:"none",source:"cache",observedAt:1791014400000},
+                {provider:"urlhaus",scope:"domain",responses:1,state:"checked",verdict:"none",source:"remote",observedAt:1791014400000},
+                {provider:"abuseipdb",scope:"ip",state:"failed",verdict:"malicious",source:"stored",responses:1,failures:1,observedAt:1791014400000},
+                {provider:"urlscan",scope:"url",responses:1,state:"submitted",verdict:"unknown",source:"remote",observedAt:1791014400000}
+              ],availability:{}}
           : p.action === "getLocalRisk"
             ? { threat: { score: 72, reasons: [] } }
             : { status: "success" },

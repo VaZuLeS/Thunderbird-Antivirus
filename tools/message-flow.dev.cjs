@@ -41,6 +41,20 @@ async function injection(catalog, scheme) {
 }
 async function prepareMessage(page, c, catalog) {
   const payload = await injection(catalog, c.scheme);
+  const context = vm.createContext({URL, Date});
+  vm.runInContext(fs.readFileSync(path.join(__dirname,"../analysis_status.js"),"utf8") + "\nglobalThis.analysis=ThundyAnalysis;", context);
+  await page.evaluate(({source, labels, theme}) => {
+    document.documentElement.dataset.thundyAnalysisMessage = "42";
+    const rows = [
+      {provider:"hybridanalysis",scope:"report",responses:1,state:"checked",verdict:"none",source:"remote"},
+      {provider:"virustotal",scope:"hash",responses:1,state:"checked",verdict:"none",source:"cache"},
+      {provider:"urlhaus",scope:"domain",responses:1,state:"checked",verdict:"none",source:"remote"},
+      {provider:"abuseipdb",scope:"ip",state:"failed",verdict:"malicious",source:"stored",responses:1,failures:1},
+      {provider:"urlscan",scope:"url",responses:1,state:"submitted",verdict:"unknown",source:"remote"}
+    ];
+    (0,eval)("("+source+")")({messageId:42,local:{state:"checked"},rows},labels,theme);
+  }, {source:context.analysis.render.toString(),labels:context.analysis.labels(key=>catalog[key]?.message||key),theme:Object.entries(design.resolve({}, {}, c.scheme === "dark").colors).map(([k,v])=>k+":"+v).join(";")+";"});
+
   await page.evaluate(
     ({ source, args, lang }) => {
       document.documentElement.lang = lang;
@@ -79,6 +93,14 @@ async function prepareMessage(page, c, catalog) {
   );
 }
 async function checkMessage(page, c, tags) {
+  const sources = page.locator("#thundy-analysis-status .card");
+  assert.equal(await sources.evaluate(el=>getComputedStyle(el).fontSize),"14px");
+  assert.equal(await sources.evaluate(el=>getComputedStyle(el).backgroundColor),c.scheme === "dark" ? "rgb(25, 37, 50)" : "rgb(255, 255, 255)");
+  for (const brand of ["Hybrid Analysis","VirusTotal","URLhaus","AbuseIPDB","urlscan.io"])
+    assert.ok((await sources.innerText()).includes(brand));
+  const sourceAxe = await new AxeBuilder({page}).include("#thundy-analysis-status").withTags(tags).analyze();
+  assert.deepEqual(sourceAxe.violations,[]);
+
   const link = page.locator("#message-link"),
     dialog = page.locator("#thundy-link-dialog"),
     proceed = dialog.locator("button.primary"),

@@ -29,7 +29,7 @@ const ThundyI18n = (() => {
     "message": "Scanning…"
   },
   "bannerScanDone": {
-    "message": "Scan finished"
+    "message": "Requests completed — see analysis sources"
   },
   "bannerScanFailed": {
     "message": "Scan failed"
@@ -1591,6 +1591,135 @@ const ThundyI18n = (() => {
   },
   "localProfileApplied": {
     "message": "Appearance profile applied. Protection and consent unchanged."
+  },
+  "analysisTitle": {
+    "message": "Analysis sources"
+  },
+  "analysisMixed": {
+    "message": "Local + external checks"
+  },
+  "analysisExternal": {
+    "message": "External observations available"
+  },
+  "analysisLocal": {
+    "message": "Local · no external results recorded"
+  },
+  "analysisLocalChecked": {
+    "message": "Local message/link heuristics completed."
+  },
+  "analysisLocalPending": {
+    "message": "Local assessment not yet recorded."
+  },
+  "analysisUnknown": {
+    "message": "Unknown"
+  },
+  "analysisTimeUnknown": {
+    "message": "Time not recorded"
+  },
+  "analysisObserved": {
+    "message": "Last usable response"
+  },
+  "analysisFindingObserved": {
+    "message": "Finding recorded"
+  },
+  "analysisAttempted": {
+    "message": "Last request attempt"
+  },
+  "analysisPartial": {
+    "message": "Some requests failed; available findings do not cover every item."
+  },
+  "analysisOtherServices": {
+    "message": "Other services / not checked"
+  },
+  "analysisLimit": {
+    "message": "A local score is not an antivirus verdict. Requests and uploads are not finished analyses. Stored results keep their original age; missing records do not prove that no earlier request occurred."
+  },
+  "analysisScope_hash": {
+    "message": "File hash reputation"
+  },
+  "analysisScope_file": {
+    "message": "File submission"
+  },
+  "analysisScope_url": {
+    "message": "URL analysis"
+  },
+  "analysisScope_domain": {
+    "message": "Domain reputation"
+  },
+  "analysisScope_ip": {
+    "message": "Public IP reputation"
+  },
+  "analysisScope_report": {
+    "message": "Analysis report"
+  },
+  "analysisState_running": {
+    "message": "Requested · no finished result yet"
+  },
+  "analysisState_checked": {
+    "message": "Result received"
+  },
+  "analysisState_received": {
+    "message": "Response received · verdict unavailable"
+  },
+  "analysisState_submitted": {
+    "message": "Submission accepted · analysis not confirmed complete"
+  },
+  "analysisState_not_found": {
+    "message": "No provider record found"
+  },
+  "analysisState_failed": {
+    "message": "Request failed · no new verdict"
+  },
+  "analysisState_incomplete": {
+    "message": "No completed analysis recorded"
+  },
+  "analysisSource_remote": {
+    "message": "External service contacted"
+  },
+  "analysisSource_cache": {
+    "message": "Memory cache · no new provider request"
+  },
+  "analysisSource_stored": {
+    "message": "Stored external observation"
+  },
+  "analysisSource_attempt": {
+    "message": "Request attempt · response not confirmed"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Verdict unavailable"
+  },
+  "analysisVerdict_none": {
+    "message": "Available findings: no detection (no safety guarantee)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Available findings include suspicious indicators"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Available findings include a threat detection"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Currently not configured"
+  },
+  "analysisReason_disabled": {
+    "message": "New external requests disabled"
+  },
+  "analysisReason_permission": {
+    "message": "Host permission missing for new requests"
+  },
+  "analysisReason_authorization": {
+    "message": "No automatic authorization for this message / manual mode"
+  },
+  "analysisReason_policy": {
+    "message": "Not permitted by the current privacy tier"
+  },
+  "analysisReason_on_action": {
+    "message": "Runs only after an explicit link action"
+  },
+  "analysisReason_unrecorded": {
+    "message": "No check recorded for this message"
+  },
+  "analysisUnavailable": {
+    "message": "Analysis sources currently unavailable"
   }
 };
     function get(key, params = []) {

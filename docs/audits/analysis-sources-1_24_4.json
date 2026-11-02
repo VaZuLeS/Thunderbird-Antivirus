@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "kind": "local-feature-validation-not-release-evidence",
+  "generatedAt": "2026-11-02T12:01:19.568Z",
+  "extensionVersion": "1.24.4",
+  "sourceFingerprint": "e2665bc9659115ae1f69d1a4151416ea5636ff80e31081326b2d922daff05e50",
+  "packageSha256": "99406f4b79c3e4300f9640758a92c966cfcaa5fa3808c23bed430a901112dfa3",
+  "automatedTests": {
+    "passed": 999,
+    "failed": 0,
+    "followupCatalogModelManifest": 77,
+    "followupTheme": 12
+  },
+  "native": [
+    {
+      "client": "153.6.0",
+      "uiLanguage": "en-US",
+      "passed": true,
+      "xpiSha256": "99406f4b79c3e4300f9640758a92c966cfcaa5fa3808c23bed430a901112dfa3",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "startedAt": "2026-11-02T11:59:59Z",
+      "finishedAt": "2026-11-02T12:00:50Z",
+      "analysisSources": {
+        "nativeLocalMessage": true,
+        "syntheticStoredReport": true,
+        "liveProviderCalls": false,
+        "nativePopup": true,
+        "nativeStoredMessage": true
+      },
+      "nativePopup": {
+        "panelWidth": 602,
+        "contentWidth": 600,
+        "language": "en",
+        "heading": "Message security overview"
+      },
+      "reportSha256": "8e9f1232c81d6454950fc145ad0b22b778fe2dcb2fe73a43c47a80ea68711d36"
+    },
+    {
+      "client": "140.12.0",
+      "uiLanguage": "en-US",
+      "passed": true,
+      "xpiSha256": "99406f4b79c3e4300f9640758a92c966cfcaa5fa3808c23bed430a901112dfa3",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "startedAt": "2026-11-02T12:00:00Z",
+      "finishedAt": "2026-11-02T12:00:55Z",
+      "analysisSources": {
+        "nativeLocalMessage": true,
+        "syntheticStoredReport": true,
+        "liveProviderCalls": false,
+        "nativePopup": true,
+        "nativeStoredMessage": true
+      },
+      "nativePopup": {
+        "panelWidth": 602,
+        "contentWidth": 600,
+        "language": "en",
+        "heading": "Message security overview"
+      },
+      "reportSha256": "8ca6e5689bf879430c9841c6776db38448039e40b307c098feb2041e46734827"
+    }
+  ],
+  "browser": [
+    {
+      "view": "popup.html",
+      "language": "all",
+      "cssZoom": 1,
+      "passed": 48,
+      "failed": 0,
+      "sourceFingerprint": "63104d9806b44f0992bd82b033fd718efce5002493343fb5ceaa7e958c2483e5",
+      "syntheticBrowserAPIs": true,
+      "screenReaderVerified": false,
+      "sourceDifference": "Earlier browser runs preceded the final translation-only clarification of current configuration. Final catalog/model checks passed separately."
+    },
+    {
+      "view": "message",
+      "language": "all",
+      "cssZoom": 1,
+      "passed": 24,
+      "failed": 0,
+      "sourceFingerprint": "63104d9806b44f0992bd82b033fd718efce5002493343fb5ceaa7e958c2483e5",
+      "syntheticBrowserAPIs": true,
+      "screenReaderVerified": false,
+      "sourceDifference": "Earlier browser runs preceded the final translation-only clarification of current configuration. Final catalog/model checks passed separately."
+    },
+    {
+      "view": "popup.html",
+      "language": "all",
+      "cssZoom": 2,
+      "passed": 4,
+      "failed": 0,
+      "sourceFingerprint": "63104d9806b44f0992bd82b033fd718efce5002493343fb5ceaa7e958c2483e5",
+      "syntheticBrowserAPIs": true,
+      "screenReaderVerified": false,
+      "sourceDifference": "Earlier browser runs preceded the final translation-only clarification of current configuration. Final catalog/model checks passed separately."
+    }
+  ],
+  "limitations": [
+    "No live provider accounts: stored external responses are synthetic test data.",
+    "Linux English native runs; six languages in browser fixtures.",
+    "No new local upgrade/crash/automatic-update/rollback evidence; CI must generate its own complete candidate evidence.",
+    "No Windows/macOS, native screen reader or OS DPI acceptance."
+  ],
+  "rawReports": "/workspace/scratch/analysis-*"
+}

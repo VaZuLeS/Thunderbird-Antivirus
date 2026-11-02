@@ -24,7 +24,7 @@
     "message": "Analisi…"
   },
   "bannerScanDone": {
-    "message": "Analisi terminata"
+    "message": "Richieste concluse — vedi fonti di analisi"
   },
   "bannerScanFailed": {
     "message": "Analisi non riuscita"
@@ -1586,5 +1586,134 @@
   },
   "localProfileApplied": {
     "message": "Profilo di aspetto applicato. Protezione e consenso invariati."
+  },
+  "analysisTitle": {
+    "message": "Fonti di analisi"
+  },
+  "analysisMixed": {
+    "message": "Controlli locali ed esterni"
+  },
+  "analysisExternal": {
+    "message": "Osservazioni esterne disponibili"
+  },
+  "analysisLocal": {
+    "message": "Locale · nessun risultato esterno registrato"
+  },
+  "analysisLocalChecked": {
+    "message": "Euristica locale di messaggio e link eseguita."
+  },
+  "analysisLocalPending": {
+    "message": "Valutazione locale non ancora registrata."
+  },
+  "analysisUnknown": {
+    "message": "Sconosciuto"
+  },
+  "analysisTimeUnknown": {
+    "message": "Data non registrata"
+  },
+  "analysisObserved": {
+    "message": "Ultima risposta utilizzabile"
+  },
+  "analysisFindingObserved": {
+    "message": "Esito registrato"
+  },
+  "analysisAttempted": {
+    "message": "Ultimo tentativo"
+  },
+  "analysisPartial": {
+    "message": "Alcune richieste non sono riuscite; gli esiti non coprono tutti gli elementi."
+  },
+  "analysisOtherServices": {
+    "message": "Altri servizi / non verificati"
+  },
+  "analysisLimit": {
+    "message": "Un punteggio locale non è un verdetto antivirus. Richieste e invii non sono analisi concluse. I risultati salvati conservano la loro data; l’assenza di registrazioni non dimostra che non vi siano state richieste precedenti."
+  },
+  "analysisScope_hash": {
+    "message": "Reputazione hash del file"
+  },
+  "analysisScope_file": {
+    "message": "Invio file"
+  },
+  "analysisScope_url": {
+    "message": "Analisi URL"
+  },
+  "analysisScope_domain": {
+    "message": "Reputazione dominio"
+  },
+  "analysisScope_ip": {
+    "message": "Reputazione IP pubblici"
+  },
+  "analysisScope_report": {
+    "message": "Rapporto di analisi"
+  },
+  "analysisState_running": {
+    "message": "Richiesto · nessun risultato concluso"
+  },
+  "analysisState_checked": {
+    "message": "Risultato ricevuto"
+  },
+  "analysisState_received": {
+    "message": "Risposta ricevuta · verdetto non disponibile"
+  },
+  "analysisState_submitted": {
+    "message": "Invio accettato · analisi conclusa non confermata"
+  },
+  "analysisState_not_found": {
+    "message": "Nessun record del fornitore"
+  },
+  "analysisState_failed": {
+    "message": "Richiesta non riuscita · nessun nuovo verdetto"
+  },
+  "analysisState_incomplete": {
+    "message": "Nessuna analisi conclusa registrata"
+  },
+  "analysisSource_remote": {
+    "message": "Servizio esterno contattato"
+  },
+  "analysisSource_cache": {
+    "message": "Cache in memoria · nessuna nuova richiesta"
+  },
+  "analysisSource_stored": {
+    "message": "Osservazione esterna salvata"
+  },
+  "analysisSource_attempt": {
+    "message": "Tentativo · risposta non confermata"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Verdetto non disponibile"
+  },
+  "analysisVerdict_none": {
+    "message": "Esiti disponibili: nessun rilevamento (nessuna garanzia di sicurezza)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Gli esiti includono indizi sospetti"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Gli esiti includono una minaccia rilevata"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Attualmente non configurato"
+  },
+  "analysisReason_disabled": {
+    "message": "Nuove richieste esterne disattivate"
+  },
+  "analysisReason_permission": {
+    "message": "Autorizzazione host mancante per nuove richieste"
+  },
+  "analysisReason_authorization": {
+    "message": "Nessuna autorizzazione automatica per questo messaggio / modalità manuale"
+  },
+  "analysisReason_policy": {
+    "message": "Non consentito dal livello di riservatezza attuale"
+  },
+  "analysisReason_on_action": {
+    "message": "Solo dopo un’azione esplicita su un link"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Nessuna verifica registrata per questo messaggio"
+  },
+  "analysisUnavailable": {
+    "message": "Fonti di analisi al momento non disponibili"
   }
 }

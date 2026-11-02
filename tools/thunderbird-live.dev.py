@@ -410,7 +410,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         report['localizedPages'].append({'page': page, 'language': locale, 'heading': expected})
         m.screenshot(out / (page.replace('.html', '') + '-' + locale + '.png'))
     if tuple(map(int, manifest['version'].split('.'))) >= (1, 24, 3):
-        check_followup(m, base, out, report, display)
+        check_followup(m, base, out, report, display, catalogs[locale])
     report['passed'] = True
 
 
@@ -423,7 +423,7 @@ def import_appearance_profile(m, profile):
     wait_for(lambda: m.page('return !document.getElementById("localProfileExport").disabled && document.getElementById("localProfileDiff").hidden;'))
 
 
-def check_followup(m, base, out, report, display):
+def check_followup(m, base, out, report, display, source_catalog):
     """Real extension APIs, synthetic MIME, no provider credentials or API mocks."""
     open_page(m, base + 'options.html')
     wait_for(lambda: m.page('return !!document.getElementById("supportPreview");'))
@@ -495,6 +495,10 @@ def check_followup(m, base, out, report, display):
         MailUtils.displayMessage(header);''')
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
     wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+    if 'analysisTitle' in source_catalog:
+        sources = wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;'))
+        assert source_catalog['analysisLocal']['message'] in sources, sources
+        probe['analysisSources'] = {'nativeLocalMessage':True,'syntheticStoredReport':True,'liveProviderCalls':False}
     point = m.js('''const t=window.gTabmail.currentTabInfo,b=t.chromeBrowser;
         const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect();
         const p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
@@ -502,9 +506,31 @@ def check_followup(m, base, out, report, display):
     wait_for(lambda: m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup_browser = 'document.querySelector(\'browser[webextension-view-type="popup"]\')'
     wait_for(lambda: m.page('return document.body?.innerText?.includes("101") && document.body?.innerText?.includes("100");', browser=popup_browser))
+    if 'analysisTitle' in source_catalog:
+        m.page('''return (async()=>{
+          const b=window.wrappedJSObject.browser;
+          const raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject || raw;
+          const tabs=await b.tabs.query({active:true,currentWindow:true});
+          const displayed=await b.messageDisplay.getDisplayedMessages(tabs[0].id);
+          const message=displayed.messages[0];
+          const db=await bg.getSharedDB();
+          await bg.updateStore(db,"hybridanalysis",message.headerMessageId,old=>({...old,attachments:old.attachments.map((item,index)=>index===0?{...item,report:{verdict:"no specific threat"},report_fetched_at:"2026-10-15T08:00:00Z"}:item)}));
+          await b.runtime.sendMessage({action:"getLocalRisk",messageId:message.id});
+          return true;
+        })();''', browser=popup_browser)
+        popup_sources = wait_for(lambda: m.page('const text=document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;return text?.includes(arguments[0])?text:null;', [source_catalog['analysisMixed']['message']], browser=popup_browser))
+        assert source_catalog['analysisMixed']['message'] in popup_sources, popup_sources
+        assert source_catalog['analysisSource_stored']['message'] in popup_sources, popup_sources
+        probe['analysisSources']['nativePopup'] = True
     probe['coverageVisibleInNativePopup'] = True
     subprocess.run(['import', '-window', 'root', str(out / 'coverage-popup.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    if 'analysisTitle' in source_catalog:
+        sources = wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;'))
+        assert source_catalog['analysisMixed']['message'] in sources, sources
+        assert source_catalog['analysisSource_stored']['message'] in sources, sources
+        probe['analysisSources']['nativeStoredMessage'] = True
+        m.screenshot(out / 'analysis-sources-message.png')
     report['followup'] = {'passed': True, 'realThunderbirdAPIs': True, **probe}
 
 

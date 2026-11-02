@@ -355,6 +355,14 @@ async function interaction(page, c) {
       "failed save lost draft",
     );
   } else if (c.view === "popup.html" && c.populated) {
+    await page.locator("#thundy-analysis-status .mode").waitFor();
+    const sourceText = await page.locator("#thundy-analysis-status .card").innerText();
+    for (const brand of ["Hybrid Analysis","VirusTotal","URLhaus","AbuseIPDB","urlscan.io"])
+      assert.ok(sourceText.includes(brand), "missing source: " + brand);
+    const sourceCatalog = JSON.parse(fs.readFileSync(path.join(root,"_locales",c.lang,"messages.json")));
+    for (const key of ["analysisMixed","analysisSource_cache","analysisSource_stored","analysisState_submitted","analysisPartial"])
+      assert.ok(sourceText.includes(sourceCatalog[key].message), "missing state: " + key);
+
     assert.equal(
       await page.locator(".local-risk .risk-meter").getAttribute("value"),
       "72",

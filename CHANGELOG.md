@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.24.4 — unreleased development (2026-11-02)
+
+- Show message-bound analysis sources in the message view and toolbar popup for all five external providers, including successful checks without detections.
+- Distinguish live responses, cache and historical reports, submissions, incomplete checks and failures; preserve original observation times and available warnings.
+- Ship the same theme-aware, keyboard-accessible source display in all six languages. No additional external requests or consent changes.
+- Validation and limits: docs/ANALYSEQUELLEN_1_24_4.md. Not published or ATN-signed.
+
 ## 1.24.3 — unreleased candidate (2026-11-02)
 
 - Restore released analysis-report persistence/polling and provider-auth wiring; bind late reports to the active popup/submission.

@@ -10,7 +10,7 @@ const files = ['README.md', 'README.de.md', ...[
     'SCHUTZWIRKUNG_VALIDIERUNG_2026-11.md', 'PERFORMANCE_BASELINE_2026-11.md',
     'ENTERPRISE_BRUECKE_2026-11.md', 'ATN_KANDIDAT_1_24_3.md',
     'support_faq.md', 'index.md', 'index.html', 'ci/README.md',
-    'live_test_1_24_3.md', 'releases/1.24.3.md',
+    'live_test_1_24_3.md', 'releases/1.24.3.md', 'ANALYSEQUELLEN_1_24_4.md', 'live_test_1_24_4.md', 'releases/1.24.4.md',
     ...['en', 'de', 'fr', 'es', 'it', 'pl'].map(lang => 'index_' + lang + '.html')
 ].map(file => 'docs/' + file)];
 const permalinks = new Map();

@@ -24,7 +24,7 @@
     "message": "Analyse…"
   },
   "bannerScanDone": {
-    "message": "Analyse terminée"
+    "message": "Requêtes terminées — voir les sources d’analyse"
   },
   "bannerScanFailed": {
     "message": "Échec de l’analyse"
@@ -1586,5 +1586,134 @@
   },
   "localProfileApplied": {
     "message": "Profil d’apparence appliqué. Protection et consentement inchangés."
+  },
+  "analysisTitle": {
+    "message": "Sources d’analyse"
+  },
+  "analysisMixed": {
+    "message": "Vérifications locales et externes"
+  },
+  "analysisExternal": {
+    "message": "Observations externes disponibles"
+  },
+  "analysisLocal": {
+    "message": "Local · aucun résultat externe enregistré"
+  },
+  "analysisLocalChecked": {
+    "message": "Heuristiques locales du message et des liens effectuées."
+  },
+  "analysisLocalPending": {
+    "message": "Évaluation locale pas encore enregistrée."
+  },
+  "analysisUnknown": {
+    "message": "Inconnu"
+  },
+  "analysisTimeUnknown": {
+    "message": "Date non enregistrée"
+  },
+  "analysisObserved": {
+    "message": "Dernière réponse exploitable"
+  },
+  "analysisFindingObserved": {
+    "message": "Constat enregistré"
+  },
+  "analysisAttempted": {
+    "message": "Dernière tentative"
+  },
+  "analysisPartial": {
+    "message": "Certaines requêtes ont échoué ; les constats ne couvrent pas tous les éléments."
+  },
+  "analysisOtherServices": {
+    "message": "Autres services / non vérifiés"
+  },
+  "analysisLimit": {
+    "message": "Un score local n’est pas un verdict antivirus. Les requêtes et envois ne sont pas des analyses terminées. Les résultats enregistrés gardent leur ancienneté ; une absence de trace ne prouve pas l’absence de requête passée."
+  },
+  "analysisScope_hash": {
+    "message": "Réputation du hachage de fichier"
+  },
+  "analysisScope_file": {
+    "message": "Envoi de fichier"
+  },
+  "analysisScope_url": {
+    "message": "Analyse d’URL"
+  },
+  "analysisScope_domain": {
+    "message": "Réputation du domaine"
+  },
+  "analysisScope_ip": {
+    "message": "Réputation des IP publiques"
+  },
+  "analysisScope_report": {
+    "message": "Rapport d’analyse"
+  },
+  "analysisState_running": {
+    "message": "Demandé · aucun résultat terminé"
+  },
+  "analysisState_checked": {
+    "message": "Résultat reçu"
+  },
+  "analysisState_received": {
+    "message": "Réponse reçue · verdict indisponible"
+  },
+  "analysisState_submitted": {
+    "message": "Envoi accepté · fin d’analyse non confirmée"
+  },
+  "analysisState_not_found": {
+    "message": "Aucun enregistrement trouvé"
+  },
+  "analysisState_failed": {
+    "message": "Échec de la requête · aucun nouveau verdict"
+  },
+  "analysisState_incomplete": {
+    "message": "Aucune analyse terminée enregistrée"
+  },
+  "analysisSource_remote": {
+    "message": "Service externe contacté"
+  },
+  "analysisSource_cache": {
+    "message": "Cache mémoire · aucune nouvelle requête"
+  },
+  "analysisSource_stored": {
+    "message": "Observation externe enregistrée"
+  },
+  "analysisSource_attempt": {
+    "message": "Tentative · réponse non confirmée"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Verdict indisponible"
+  },
+  "analysisVerdict_none": {
+    "message": "Constats disponibles : aucune détection (sans garantie de sécurité)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Les constats disponibles incluent des indices suspects"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Les constats disponibles incluent une menace détectée"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Actuellement non configuré"
+  },
+  "analysisReason_disabled": {
+    "message": "Nouvelles requêtes externes désactivées"
+  },
+  "analysisReason_permission": {
+    "message": "Autorisation du site manquante pour les nouvelles requêtes"
+  },
+  "analysisReason_authorization": {
+    "message": "Aucune autorisation automatique pour ce message / mode manuel"
+  },
+  "analysisReason_policy": {
+    "message": "Non autorisé par le niveau de confidentialité actuel"
+  },
+  "analysisReason_on_action": {
+    "message": "Uniquement après une action explicite sur un lien"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Aucune vérification enregistrée pour ce message"
+  },
+  "analysisUnavailable": {
+    "message": "Sources d’analyse actuellement indisponibles"
   }
 }

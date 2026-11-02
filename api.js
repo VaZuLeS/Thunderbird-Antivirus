@@ -1,3 +1,4 @@
+let popupAnalysisContext = null;
 function uiText(key, fallback, params = []) {
     return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
 }
@@ -109,6 +110,24 @@ if (!message) {
 }
 
 if (!message.headerMessageId) message.headerMessageId = 'message:' + message.id;
+if (typeof ThundyAnalysis !== 'undefined') {
+    popupAnalysisContext = { scopeOverride: 'report', event: event => browser.runtime.sendMessage({ action: 'recordAnalysisEvent', messageId: message.id, event }) };
+    let sourceGeneration = 0;
+    const sourceLabels = ThundyAnalysis.labels(key => uiText(key, key));
+    const sourceTheme = typeof ThundyTheme !== 'undefined' ? (await ThundyTheme.snapshot())?.css || '' : '';
+    const noSources = { messageId: message.id, local: { state: 'unrecorded' }, rows: [], availability: {} };
+    ThundyAnalysis.render(noSources, sourceLabels, sourceTheme);
+    const refreshSources = async () => {
+        const own = ++sourceGeneration;
+        try { const result = await browser.runtime.sendMessage({ action: 'getMessageAnalysis', messageId: message.id });
+            if (!hybridReportDisposed && own === sourceGeneration && result?.success && result.messageId === message.id) ThundyAnalysis.render(result, sourceLabels, sourceTheme);
+            else if (!hybridReportDisposed && own === sourceGeneration) ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme);
+        } catch (_) { if (!hybridReportDisposed && own === sourceGeneration) ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme); }
+    };
+    browser.runtime.onMessage?.addListener(request => { if (request?.action === 'analysisStatusChanged' && request.messageId === message.id) refreshSources(); });
+    await refreshSources();
+}
+
 
 // Aktualisieren Sie die HTML-Felder mit dem Betreff und dem Absender der Nachricht.
 const updateGridField = (id, value, fallbackText) => {
@@ -635,12 +654,18 @@ async function fetch_hybrid_report(hybrid_sha) {
         if (current.externalAnalysisConsent !== true || !await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] })) throw new Error(uiText('errorHostPermissionMissing', 'Host permission missing'));
     }
     if (hybrid_report_cache.has(hybrid_sha)) {
-        return hybrid_report_cache.get(hybrid_sha);
+        const cached = await hybrid_report_cache.get(hybrid_sha);
+        if (popupAnalysisContext && typeof ThundyAnalysis !== 'undefined') {
+            const classified = ThundyAnalysis.response({ provider: 'hybridanalysis', scope: 'report' }, cached.response.status, cached.json_data);
+            popupAnalysisContext.event({ phase: 'cache', provider: 'hybridanalysis', scope: 'report', ...classified, observedAt: ThundyAnalysis.cacheTime('hybridanalysis', 'report', hybrid_sha) }).catch(() => {});
+        }
+        return cached;
     }
 
     const options = {
         method: 'GET',
         url: 'https://hybrid-analysis.com/api/v2/overview/' + hybrid_sha,
+        analysisContext: popupAnalysisContext,
         headers: {
             accept: 'application/json',
             'api-key': apikey_hybridanalysis,
@@ -653,6 +678,7 @@ async function fetch_hybrid_report(hybrid_sha) {
             const json_data = await response.json();
 
             const result = { response, json_data };
+            if (response.status === 200 && typeof ThundyAnalysis !== 'undefined') ThundyAnalysis.cacheTime('hybridanalysis', 'report', hybrid_sha, true);
             if (response.status !== 200) {
                 hybrid_report_cache.delete(hybrid_sha);
             }
