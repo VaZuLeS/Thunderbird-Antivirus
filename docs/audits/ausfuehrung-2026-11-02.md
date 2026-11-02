@@ -27,7 +27,7 @@ Die exakten getesteten Paketbytes wurden erhalten, obwohl ein erneuter Build ein
 | Gate-/Release-Negativprüfungen | 17 gezielte Fälle einschließlich falscher Evidenz/Quellbytes, schmutzigem Tag-HEAD, Assetabweichung und unklarem Remote-Status erfolgreich |
 | Workflow-/Dokumentquellen | CI-/Release-/Pages-YAML geparst, aktive CI/Publish-Referenzkopien identisch; aktuelle lokale Links/Permalinks geprüft; kein lokaler Jekyll-Build mangels Ruby/Jekyll |
 | Paketgebundene Evidenz | candidate-evidence.js meldet ok:true; Quellfingerprint und exakte ZIP-/XPI-SHA stimmen mit sechs Sprachberichten und vollständiger UI-Matrix überein |
-| Vollständiger Kandidatengate | folgt nach dem Implementierungscommit; kein GO aus übersprungenen Kommandos abgeleitet |
+| Vollständiger Kandidatengate | Exit 0, C1–C7 PASS auf Implementierungscommit d84fb2f; keine Kommandos übersprungen, kein Neubuild der getesteten Bytes. GO gilt für den Kandidaten, nicht als Release-/ATN-Freigabe |
 | Remote-CI / öffentliche Pages | separater Nachweis nach Übernahme erforderlich; öffentliche Pages-/ATN-Leseversuche hier nicht zugänglich |
 
 Eine erste Gesamtprüfung traf einen bestehenden 20-ms-Testdeadlinefall vor dem eigentlich zu prüfenden AWS-Readback. Der Test verwendet nun ein realistisches Zeitbudget und verlangt ausdrücklich, dass der Readback erreicht wurde; der vollständige Node-22-/24-Check danach bestand. Eine lokal erzeugte Python-Cacheablage wurde vor der Paket-/Testprüfung entfernt. Fehlgeschlagene Harnessläufe bei der großen Nachricht und dem neuen echten Browserpfad sind nicht als PASS gewertet; Ursachen und erfolgreiche vollständige Wiederholung sind in den jeweiligen Untersuchungsdokumenten beschrieben.

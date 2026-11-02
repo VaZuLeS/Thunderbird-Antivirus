@@ -42,7 +42,7 @@ Status: Lokal umgesetzt und geprüft; tatsächlicher Remote-CI-Lauf nach Überna
 - [x] TAV-003.03 Aktive CI-/Release-Workflows mit identischer Paketidentität und unveränderlichen Assets verbinden.
 - [x] TAV-003.04 Negative Gatefälle und Wiederholung/Assetabweichungen testen.
 
-Ergebnis/Beleg: Aktive CI/Release-Workflows und Referenzkopien synchron; Paket-/Quellbindung, sauberes C7, sechs Sprachberichte und unveränderliche Assets. 17 gezielte Gate-/Releaseprüfungen erfolgreich, YAML geparst. [CI-Verhalten](ci/README.md). Der vollständige lokale Kandidatengate wird nach Commit ausgeführt; Ergebnis im Abschlussprotokoll.
+Ergebnis/Beleg: Aktive CI/Release-Workflows und Referenzkopien synchron; Paket-/Quellbindung, sauberes C7, sechs Sprachberichte und unveränderliche Assets. 17 gezielte Gate-/Releaseprüfungen erfolgreich, YAML geparst. [CI-Verhalten](ci/README.md). Vollständiger Kandidatengate nach Implementierungscommit erfolgreich: Exit 0, C1–C7 PASS; kein Tag oder Storestatus behauptet.
 
 ## TAV-004 — Webdemo und Thunderbird-Produkt verbindlich abgrenzen
 
@@ -62,7 +62,7 @@ Status: Lokale Quellen korrigiert; öffentliche HTTP-/Deployment-Abnahme blockie
 - [x] TAV-005.02 Privacy-, Status-, Index- und CI-Dokumentation korrigieren; historische Pläne markieren.
 - [ ] TAV-005.03 Pages-Quellen/Verweise prüfen; öffentliche Website nach verfügbarem Zugriff lesen.
 
-Ergebnis/Beleg: [Datenflussmatrix](privacy_policy.md), sechs öffentliche Sprachquellen, aktueller Index/Status/Support und historische Kennzeichnung. 24 aktuelle Dokumente, 120 relative Verweise zunächst geprüft; zusätzliche Abschlusslinks werden erneut geprüft. Webwerkzeug konnte Pages nicht lesen; hier kein Ruby/Jekyll, kein neuer Pages-Produktivdeploy behauptet.
+Ergebnis/Beleg: [Datenflussmatrix](privacy_policy.md), sechs öffentliche Sprachquellen, aktueller Index/Status/Support und historische Kennzeichnung. 24 aktuelle Dokumente und 142 relative Verweise/Permalinks geprüft. Webwerkzeug konnte Pages nicht lesen; hier kein Ruby/Jekyll, kein neuer Pages-Produktivdeploy behauptet.
 
 ## TAV-006 — Schutzqualität und Providerverhalten risikobasiert untersuchen
 
@@ -183,4 +183,3 @@ Status: Produktiver Pilot blockiert; Scope und Voraussetzungen konkretisiert.
 - [ ] TAV-017.03 Liveabnahme nur mit realen Voraussetzungen durchführen; keine STAGED→SEALED-Behauptung erfinden.
 
 Ergebnis/Beleg: [Pilotgrenze und vorhandene EN-/N-Zuordnung](ENTERPRISE_BRUECKE_2026-11.md). Aktuelle Runtime meldet null Secrets/Unternehmensidentitäten/Infrastrukturcapabilities. Betreiber, freigegebener Testmandant, Daten-/Retention-/Rollenfreigaben und gewählte Liveziele fehlen. Kein Produktivbetrieb erfunden.
-

@@ -28,6 +28,8 @@ TAV-002. Ausgangs-main `6046fe0`, veröffentlichter Tag `v1.24.2` (`26fb960`). K
 
 `providers.js` entspricht nach gezielter Wiederaufnahme wieder dem veröffentlichten Stand: urlscan-Ergebnis-Key und bereinigte Hybrid-Analysis-Header sind erhalten. Unveränderte Paketdateien wurden nicht durch ein pauschales Tag-Checkout ersetzt. React und Node-Werkzeuge bleiben aus dem XPI ausgeschlossen.
 
+Die versionierten Release-Notizen 1.24.0–1.24.2 und die zuvor aus main entfernten 1.24.x-Changelogabschnitte wurden aus dem unveränderten Tag wieder aufgenommen. 1.24.3 ist ausdrücklich als unveröffentlichter Kandidat gekennzeichnet.
+
 ## Daten und Nachweise
 
 Keine IndexedDB-Schemaänderung, keine automatische Einwilligung und keine Umdeutung alter Entscheidungen. Nach der Wiederaufnahme erzeugte oder verspätete Berichte benötigen dieselbe Inhalts-/Submissionidentität. Echte dauerhafte 1.24.2→1.24.3-Upgrades in sechs Sprachprofilen bewahren Originalwerte; der gesonderte vollständige Profilrestore stellt den früheren Snapshot wieder her.
