@@ -1,0 +1,657 @@
+{
+  "sourceFingerprint": "a52a9fc477143ff3adf709c2d3c8dadec17937867941add4321899f63614d0aa",
+  "schemaVersion": 1,
+  "kind": "thundy-browser-ui-check",
+  "matrix": "full",
+  "cssZoom": 2,
+  "language": "all",
+  "view": "audit.html",
+  "startedAt": "2026-11-02T03:22:32.048Z",
+  "commit": "6046fe0427f53e12377c167e98385e57f533c790",
+  "sourceDirty": true,
+  "syntheticBrowserAPIs": true,
+  "realThunderbirdVerified": false,
+  "screenReaderVerified": false,
+  "wcagCertification": false,
+  "axeTags": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "wcag22aa",
+    "best-practice"
+  ],
+  "results": [
+    {
+      "id": "addon-audit.html-de-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "de",
+      "width": 1280,
+      "scheme": "dark",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-de-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "de",
+      "width": 1280,
+      "scheme": "light",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-en-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "en",
+      "width": 1280,
+      "scheme": "dark",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-en-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "en",
+      "width": 1280,
+      "scheme": "light",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-es-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "es",
+      "width": 1280,
+      "scheme": "dark",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-es-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "es",
+      "width": 1280,
+      "scheme": "light",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-fr-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "fr",
+      "width": 1280,
+      "scheme": "dark",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-fr-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "fr",
+      "width": 1280,
+      "scheme": "light",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-it-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "it",
+      "width": 1280,
+      "scheme": "dark",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-it-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "it",
+      "width": 1280,
+      "scheme": "light",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-pl-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "pl",
+      "width": 1280,
+      "scheme": "dark",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-pl-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "pl",
+      "width": 1280,
+      "scheme": "light",
+      "rulesPassed": 45,
+      "incomplete": [
+        {
+          "id": "th-has-data-cells",
+          "targets": [
+            [
+              "table"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-de-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "de",
+      "width": 1280,
+      "scheme": "dark",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-de-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "de",
+      "width": 1280,
+      "scheme": "light",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-en-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "en",
+      "width": 1280,
+      "scheme": "dark",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-en-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "en",
+      "width": 1280,
+      "scheme": "light",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-es-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "es",
+      "width": 1280,
+      "scheme": "dark",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-es-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "es",
+      "width": 1280,
+      "scheme": "light",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-fr-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "fr",
+      "width": 1280,
+      "scheme": "dark",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-fr-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "fr",
+      "width": 1280,
+      "scheme": "light",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-it-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "it",
+      "width": 1280,
+      "scheme": "dark",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-it-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "it",
+      "width": 1280,
+      "scheme": "light",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-pl-1280-dark",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "pl",
+      "width": 1280,
+      "scheme": "dark",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    },
+    {
+      "id": "addon-audit.html-populated-pl-1280-light",
+      "kind": "addon",
+      "view": "audit.html",
+      "url": "/audit.html",
+      "lang": "pl",
+      "width": 1280,
+      "scheme": "light",
+      "populated": true,
+      "rulesPassed": 47,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "targets": [
+            [
+              ".audit-risky > td:nth-child(5) > strong"
+            ],
+            [
+              ".audit-risky > td:nth-child(5) > details > summary"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > strong"
+            ],
+            [
+              "tr[data-record-id=\"synthetic-abort\"] > td:nth-child(5) > details > summary"
+            ]
+          ]
+        }
+      ],
+      "status": "passed"
+    }
+  ],
+  "browser": "154.0.8037.57",
+  "playwright": "1.62.1",
+  "axe": "4.14.0",
+  "planned": 24,
+  "finishedAt": "2026-11-02T03:23:28.803Z",
+  "passed": 24,
+  "failed": 0
+}

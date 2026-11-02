@@ -1,3 +1,5 @@
+> Kandidat 1.24.3, noch nicht veröffentlicht/eingereicht: [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_24_3.md), [Datenmatrix](privacy_policy.md). Die nachfolgenden versionsbezogenen Abschnitte sind historische Einreichungstexte; vor einer tatsächlichen ATN-Einreichung die aktuelle Checkliste verwenden.
+
 > Update für den Entwicklungskandidaten 1.23.0 (Quellstand `f9f1e95`): alle UI-Oberflächen in EN/DE/FR/ES/IT/PL, lokaler Linkschutz mit Zeit-Punkt-Protokoll, Einrichtungsassistent, reale Thunderbird-140.17-ESR-Teilabnahme ([live_test_1_23_0.md](live_test_1_23_0.md)), Release v1.23.0 mit XPI-Artefakt. Diese Angaben sind für die nächste Einreichung vorbereitet. Der Kandidat wurde noch nicht eingereicht; historische Angaben zu 1.6.x unten bleiben Release-Referenzen.
 
 # Store-Listing — Thundy AV (final copy package)

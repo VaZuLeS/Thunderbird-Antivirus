@@ -1405,5 +1405,72 @@
   },
   "auditVerdictAtDecision": {
     "message": "Resultado al decidir"
+  },
+  "ui_169": {
+    "message": "Protocolo de análisis: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID de trabajo: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID de envío: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protocolo recuperado: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " El análisis todavía se está ejecutando (IN_PROGRESS). El resultado se vuelve a comprobar automáticamente cada $P1$ segundos (intento $P2$); el protocolo de análisis terminado aparece aquí sin una nueva solicitud en cuanto se guarde.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "No hay una decisión final registrada. Tras un reinicio o la pérdida del proceso, sigue pendiente; no implica que el enlace se abriera o se cancelara."
+  },
+  "auditCancelUser": {
+    "message": "Cancelado por el usuario"
+  },
+  "auditCancelEscape": {
+    "message": "Cerrado con Escape"
+  },
+  "auditCancelDestination": {
+    "message": "Destino modificado"
+  },
+  "auditCancelContext": {
+    "message": "Contexto del mensaje cerrado"
+  },
+  "auditCancelUnknown": {
+    "message": "Motivo de cancelación desconocido"
+  },
+  "reportNotSaved": {
+    "message": "El informe se muestra, pero no se pudo guardar localmente. Vuelva a abrirlo para reintentarlo."
   }
 }

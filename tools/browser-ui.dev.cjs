@@ -35,7 +35,7 @@ function options(args) {
     const key = args[i]?.slice(2);
     if (
       !args[i]?.startsWith("--") ||
-      !["matrix", "out", "browser", "lang", "view"].includes(key) ||
+      !["matrix", "out", "browser", "lang", "view", "zoom"].includes(key) ||
       !args[i + 1] ||
       Object.hasOwn(o, "provided-" + key)
     )
@@ -46,6 +46,8 @@ function options(args) {
   if (!["smoke", "full"].includes(o.matrix)) throw Error("UI_MATRIX_INVALID");
   if (o.lang !== undefined && !languages.includes(o.lang))
     throw Error("UI_LANGUAGE_INVALID");
+  o.zoom = o.zoom === undefined ? 1 : Number(o.zoom);
+  if (![1, 2].includes(o.zoom)) throw Error("UI_ZOOM_INVALID");
   o.out = path.resolve(o.out);
   return o;
 }
@@ -143,7 +145,7 @@ function matrix(o, kinds) {
           scheme,
         });
       }
-  const selected = o.view ? cases.filter((c) => c.view === o.view) : cases;
+  const selected = (o.view ? cases.filter((c) => c.view === o.view) : cases).filter(c => o.zoom === 1 || c.width >= 600);
   if (selected.length === 0) throw Error("UI_VIEW_INVALID");
   return selected;
 }
@@ -437,9 +439,11 @@ async function main() {
     server = startServer(reviews);
   let browser;
   const report = {
+    sourceFingerprint: require("../scripts/candidate-evidence.js").sourceFingerprint(root),
     schemaVersion: 1,
     kind: "thundy-browser-ui-check",
     matrix: o.matrix,
+    cssZoom: o.zoom,
     language: o.lang ?? "all",
     view: o.view ?? "all",
     startedAt: new Date().toISOString(),
@@ -519,6 +523,7 @@ async function main() {
               ),
             );
           await ready(page, c);
+          if (o.zoom !== 1) await page.evaluate(zoom => { document.documentElement.style.zoom = String(zoom); }, o.zoom);
           Object.assign(result, await checks(page, c));
           await interaction(page, c);
           if (c.kind === "message")

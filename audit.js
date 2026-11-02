@@ -35,6 +35,7 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
     let records = [], snapshot = null, page = 0, refreshGeneration = 0;
     const pageSize = 50;
     const decisionKeys = { OPENED: 'auditOpened', ABORTED: 'auditAborted', OPEN_ERROR: 'auditOpenError', PENDING: 'auditPending' };
+    const cancelKeys = { cancel: 'auditCancelUser', escape: 'auditCancelEscape', destination_changed: 'auditCancelDestination', context_closed: 'auditCancelContext' };
     const verdictLabel = value => {
         if (!value) return t('auditUnavailable');
         const keys = { CLEAN: 'providerNoDetection', MALICIOUS: 'providerMalicious', MALICIOUS_VISUAL: 'providerMalicious', SUSPICIOUS: 'providerSuspicious', PENDING: 'providerPending', UNKNOWN: 'providerUnknown', ERROR: 'providerUnknown', NOT_CHECKED: 'providerUnknown' };
@@ -65,7 +66,8 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
             address.appendChild(node('strong', domain));
             const details = document.createElement('details'); details.open = expanded.has(String(record.id)); details.append(node('summary', t('auditDetails')), node('code', record.url));
             details.append(node('p', t('auditEventId') + ': ' + record.id));
-            if (record.cancelReason) details.append(node('p', t('auditCancelReason') + ': ' + record.cancelReason));
+            if (record.cancelReason) details.append(node('p', t('auditCancelReason') + ': ' + t(cancelKeys[record.cancelReason] || 'auditCancelUnknown')));
+            if (record.outcome === 'PENDING') details.append(node('p', t('auditPendingExplanation')));
             if (record.checkedAt) details.append(node('p', t('auditFinalResult') + ': ' + verdictLabel(record.verdict) + ' · ' + date(record.checkedAt)));
             const reasons = document.createElement('ul');
             for (const reason of [...(record.reasons || []), ...(record.providerReasons || [])]) reasons.appendChild(node('li', reason));

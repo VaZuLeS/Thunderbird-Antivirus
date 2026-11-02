@@ -1410,6 +1410,73 @@ const ThundyI18n = (() => {
   },
   "auditVerdictAtDecision": {
     "message": "Result at decision"
+  },
+  "ui_169": {
+    "message": "Analysis protocol: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Job ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Submission ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protocol retrieved: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " The analysis is still running (IN_PROGRESS). The result is automatically rechecked every $P1$ seconds (attempt $P2$); the finished analysis protocol appears here without a new request once it is stored.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "No completed decision is recorded. After a restart or process loss, this remains pending; do not infer that the link was opened or cancelled."
+  },
+  "auditCancelUser": {
+    "message": "Cancelled by the user"
+  },
+  "auditCancelEscape": {
+    "message": "Closed with Escape"
+  },
+  "auditCancelDestination": {
+    "message": "Destination changed"
+  },
+  "auditCancelContext": {
+    "message": "Message context closed"
+  },
+  "auditCancelUnknown": {
+    "message": "Unknown cancellation reason"
+  },
+  "reportNotSaved": {
+    "message": "The report is visible, but could not be saved locally. Reopen it to retry."
   }
 };
     function get(key, params = []) {

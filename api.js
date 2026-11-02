@@ -35,6 +35,21 @@ let apikey_hybridanalysis;
 // Global consent for external analysis. Declared outside the startup IIFE so it
 // is always defined, kept in sync while the popup is open.
 let externalAnalysisConsent = false;
+// Invalidate outstanding reports when this popup loses its request context.
+let hybridReportGeneration = 0;
+let hybridReportDisposed = false;
+const hybridReportTimers = new Set();
+function cancelHybridReportWork(dispose = false) {
+    hybridReportGeneration++;
+    hybridReportDisposed = hybridReportDisposed || dispose;
+    for (const timer of hybridReportTimers) if (typeof clearTimeout === 'function') clearTimeout(timer.id);
+    hybridReportTimers.clear();
+    if (typeof apiGateway !== 'undefined') apiGateway.abortAll();
+}
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('pagehide', () => cancelHybridReportWork(true), { once: true });
+}
+
 if (typeof apiGateway !== 'undefined') apiGateway.beforeRequest = async () => {
     const current = await browser.storage.local.get('externalAnalysisConsent');
     if (current.externalAnalysisConsent !== true) throw new Error(uiText('bannerConsentMissing', 'External analysis is disabled.'));
@@ -68,9 +83,13 @@ const settings = await browser.storage.local.get(['externalAnalysisConsent']);
 externalAnalysisConsent = settings && settings.externalAnalysisConsent === true;
 try {
     browser.storage.onChanged.addListener((changes, area) => {
+        if (area === 'local' && changes.apikey) {
+            apikey_hybridanalysis = changes.apikey.newValue;
+            cancelHybridReportWork(); hybrid_report_cache.clear();
+        }
         if (area === 'local' && changes.externalAnalysisConsent) {
             externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
-            if (!externalAnalysisConsent && typeof apiGateway !== 'undefined') { apiGateway.abortAll(); hybrid_report_cache.clear(); }
+            if (!externalAnalysisConsent) { cancelHybridReportWork(); hybrid_report_cache.clear(); }
         }
     });
 } catch (e) { /* storage.onChanged is optional in tests */ }
@@ -202,8 +221,12 @@ try {
                         const hash256 = att.hybrid_sha256;
                         if (att.state === 'SIZE_LIMIT') {
                             const p = document.createElement('p'); p.textContent = uiText('sizeLimit', 'Attachment exceeds the local size limit.'); liveContainer.appendChild(p);
-                        } else if (att.state === 'UNKNOWN' || att.state === 'MANUAL_CHECK_PENDING' || att.state === 'NOT_CHECKED') {
+                        } else if ((att.state === 'UNKNOWN' || att.state === 'MANUAL_CHECK_PENDING' || att.state === 'NOT_CHECKED')) {
                             renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, liveContainer);
+                        } else if (hasFinalStoredReport(att)) {
+                            // FA-3: a finished protocol was already persisted; show it
+                            // without a new provider request (the data is local).
+                            fetchTasks.push(buildStoredAttachmentReportTask(att, message));
                         } else if (externalAnalysisConsent && apikey_hybridanalysis) {
                             fetchTasks.push((frag) =>
                                 get_hybrid_report_by_sha256({
@@ -212,7 +235,9 @@ try {
                                     messageId: message.id,
                                     partName: att.partName,
                                     headerMessageId: message.headerMessageId,
-                                    virustotal_stats: att.virustotal_stats
+                                    virustotal_stats: att.virustotal_stats,
+                                    jobId: att.hybrid_job_id,
+                                    submissionId: att.hybrid_submission_id
                                 }, frag)
                             );
                         } else {
@@ -288,7 +313,7 @@ function createEl(tag, className = '', textContent = '') {
     return el;
 }
 
-function renderInProgressStatus(json_data, hybrid_sha, card) {
+function renderInProgressStatus(json_data, hybrid_sha, card, attempt = null) {
     const pStatus = document.createElement('p');
     pStatus.className = "text-warning";
     const statusStrong = document.createElement('strong');
@@ -296,6 +321,16 @@ function renderInProgressStatus(json_data, hybrid_sha, card) {
     pStatus.appendChild(statusStrong);
     pStatus.appendChild(document.createTextNode(uiText("ui_011", " Die Analyse läuft noch (IN_PROGRESS). Bitte versuchen Sie es später erneut.")));
     card.appendChild(pStatus);
+
+    // FA-1: the popup now polls automatically, so say so instead of leaving the
+    // user with a dead "try again later" message.
+    if (attempt) {
+        const pPoll = document.createElement('p');
+        pPoll.className = "text-info";
+        pPoll.setAttribute('role', 'status');
+        pPoll.textContent = uiText("ui_173", " Die Analyse läuft noch (IN_PROGRESS). Das Ergebnis wird automatisch alle $1 Sekunden erneut abgefragt (Versuch $2); das fertige Analyse-Protokoll erscheint hier, sobald es gespeichert ist, ohne erneute Abfrage.", [HYBRID_REPORT_POLL_DELAY_MS / 1000, attempt, HYBRID_REPORT_POLL_MAX_ATTEMPTS]);
+        card.appendChild(pPoll);
+    }
 
     const pHash = document.createElement('p');
     pHash.textContent = uiText("ui_012", "SHA-256: $1", [json_data.sha256 || hybrid_sha]);
@@ -491,7 +526,28 @@ function renderActionButtons(hybrid_sha, attachmentName, card) {
     }
 }
 
-function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats = null }) {
+/**
+ * Renders the analysis-protocol metadata block (FA-2): job/submission IDs from
+ * the stored submission plus retrieval time. This is what makes a Hybrid
+ * Analysis result traceable instead of an anonymous threat score.
+ */
+function renderProtocolMeta({ hybrid_sha, jobId = null, submissionId = null, fetched_at = null }, card) {
+    const parts = [];
+    if (jobId) parts.push(uiText("ui_170", "Job-ID: $1", [jobId]));
+    if (submissionId) parts.push(uiText("ui_171", "Submission-ID: $1", [submissionId]));
+    parts.push(uiText("ui_012", "SHA-256: $1", [hybrid_sha]));
+    if (fetched_at) parts.push(uiText("ui_172", "Protokoll abgerufen: $1", [fetched_at]));
+
+    const pMeta = document.createElement('p');
+    pMeta.className = "text-muted";
+    const metaStrong = document.createElement('strong');
+    metaStrong.textContent = uiText("ui_169", "Analyse-Protokoll:");
+    pMeta.appendChild(metaStrong);
+    pMeta.appendChild(document.createTextNode(` ${parts.join(' · ')}`));
+    card.appendChild(pMeta);
+}
+
+function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats = null, jobId = null, submissionId = null, fetched_at = null, attempt = null }) {
     const card = document.createElement('div');
     card.className = "card mb-3";
 
@@ -499,8 +555,10 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
     h2.textContent = uiText("ui_036", "Geprüftes Element: $1", [attachmentName || uiText('unknownAttachment', "Unbekannt")]);
     card.appendChild(h2);
 
+    renderProtocolMeta({ hybrid_sha, jobId: json_data.job_id || jobId, submissionId: json_data.submission_id || submissionId, fetched_at }, card);
+
     if (json_data.state === 'IN_PROGRESS') {
-        renderInProgressStatus(json_data, hybrid_sha, card);
+        renderInProgressStatus(json_data, hybrid_sha, card, attempt);
     } else {
         renderThreatInfo(json_data, card);
 
@@ -580,7 +638,6 @@ async function fetch_hybrid_report(hybrid_sha) {
         headers: {
             accept: 'application/json',
             'api-key': apikey_hybridanalysis,
-            'user-agent': 'Falcon',
         },
     };
 
@@ -687,13 +744,20 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName }) {
     }
 }
 
-function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }, targetContainer) {
+function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data, jobId = null, submissionId = null, fetched_at = null, attempt = null }, targetContainer, replaceNode = null) {
     let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
-    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats });
-    container.appendChild(reportNode);
+    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats, jobId, submissionId, fetched_at, attempt });
+    // A poll attempt replaces the previous (still IN_PROGRESS) card instead of
+    // appending a duplicate report (FA-1).
+    if (replaceNode && typeof replaceNode.replaceWith === 'function') {
+        replaceNode.replaceWith(reportNode);
+    } else {
+        container.appendChild(reportNode);
+    }
 
     setupRescanButton({ hybrid_sha, attachmentName, messageId, partName, headerMessageId });
     setupCdrButton({ hybrid_sha, attachmentName, messageId, partName });
+    return reportNode;
 }
 
 function handle_hybrid_report_error(response, attachmentName, targetContainer) {
@@ -734,17 +798,126 @@ function handle_hybrid_report_fetch_error(error, attachmentName, targetContainer
     container.appendChild(errDiv2);
 }
 
-async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }, targetContainer) {
+/**
+ * Persists the fetched analysis protocol (FA-3) into the IndexedDB record so
+ * the finished Hybrid Analysis report survives the popup being closed and is
+ * shown on the next open without a new provider request. Local-only write; the
+ * report data is already on the machine, so this never violates the consent
+ * rules. Returns true when the record was updated.
+ */
+async function persistHybridReport({ headerMessageId, sha256, attachmentName, report, fetchedAt = null, jobId = null, submissionId = null, generation = hybridReportGeneration }) {
+    if (!headerMessageId || !report || typeof updateStore !== 'function' || typeof openDB !== 'function') return false;
+    try {
+        const db = await openDB('thunderbird_av', 3);
+        try {
+            const updatedAt = Date.now();
+            let changed = false;
+            await updateStore(db, 'hybridanalysis', headerMessageId, (record) => {
+                if (!record) return null;
+                if (hybridReportDisposed || generation !== hybridReportGeneration) return record;
+                // A filename is not a submission identity. A resubmission may have
+                // reused it while an older provider response was in flight.
+                const matches = item => (
+                    (sha256 ? item.hybrid_sha256 === sha256 : attachmentName && (item.attachment_name === attachmentName || item.url === attachmentName)) &&
+                    (!jobId || item.hybrid_job_id === jobId) &&
+                    (!submissionId || item.hybrid_submission_id === submissionId)
+                );
+                for (const att of (record.attachments || [])) {
+                    if (matches(att)) { att.report = report; att.report_fetched_at = fetchedAt || new Date().toISOString(); changed = true; }
+                }
+                for (const link of (record.links || [])) {
+                    if (matches(link)) { link.report = report; link.report_fetched_at = fetchedAt || new Date().toISOString(); changed = true; }
+                }
+                if (changed) record.updatedAt = updatedAt;
+                return record;
+            });
+            return changed;
+        } finally { db.close(); }
+    } catch (error) {
+        console.error('Fehler beim Speichern des Analyse-Protokolls:', error);
+        return false;
+    }
+}
+
+/**
+ * True when a finished analysis protocol was already persisted for this item
+ * (FA-3): it can be rendered offline instead of querying the provider again.
+ */
+function hasFinalStoredReport(item) {
+    return !!(item && item.report && item.report.state && item.report.state !== 'IN_PROGRESS');
+}
+
+function buildStoredAttachmentReportTask(att, message) {
+    return (frag) => render_hybrid_report_ui({
+        hybrid_sha: att.hybrid_sha256,
+        attachmentName: att.attachment_name,
+        messageId: message.id,
+        partName: att.partName,
+        headerMessageId: message.headerMessageId,
+        virustotal_stats: att.virustotal_stats,
+        json_data: att.report,
+        jobId: att.hybrid_job_id,
+        submissionId: att.hybrid_submission_id,
+        fetched_at: att.report_fetched_at
+    }, frag);
+}
+
+function buildStoredLinkReportTask(linkObj, headerMessageId) {
+    return (frag) => render_hybrid_report_ui({
+        hybrid_sha: linkObj.hybrid_sha256,
+        attachmentName: linkObj.url,
+        headerMessageId: headerMessageId,
+        json_data: linkObj.report,
+        jobId: linkObj.hybrid_job_id,
+        submissionId: linkObj.hybrid_submission_id,
+        fetched_at: linkObj.report_fetched_at
+    }, frag);
+}
+
+// Polling bounds for the in-progress analysis protocol (FA-1). The Hybrid
+// Analysis overview endpoint returns state IN_PROGRESS until the analysis is
+// finished; without polling the popup never delivered the finished protocol.
+const HYBRID_REPORT_POLL_MAX_ATTEMPTS = 3;
+const HYBRID_REPORT_POLL_DELAY_MS = 5000;
+
+function scheduleHybridReportPoll(params, targetContainer, replaceNode) {
+    if (typeof setTimeout !== 'function' || hybridReportDisposed) return;
+    const generation = hybridReportGeneration;
+    // Timer handles are records so synchronous timer testdoubles are safe too.
+    const timer = { id: null };
+    hybridReportTimers.add(timer);
+    timer.id = setTimeout(() => {
+        hybridReportTimers.delete(timer);
+        if (hybridReportDisposed || generation !== hybridReportGeneration) return;
+        hybrid_report_cache.delete(params.hybrid_sha);
+        get_hybrid_report_by_sha256(params, targetContainer, replaceNode);
+    }, HYBRID_REPORT_POLL_DELAY_MS);
+}
+
+async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null, jobId = null, submissionId = null, _attempt = 1 }, targetContainer, replaceNode = null) {
+    const generation = hybridReportGeneration;
+    if (hybridReportDisposed) return;
     try {
         const { response, json_data } = await fetch_hybrid_report(hybrid_sha);
+        if (hybridReportDisposed || generation !== hybridReportGeneration) return;
 
         if (response.status === 200) {
-            render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data }, targetContainer);
+            const reportNode = render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data, jobId, submissionId, attempt: _attempt }, targetContainer, replaceNode);
+            const saved = await persistHybridReport({ headerMessageId, sha256: hybrid_sha, attachmentName, report: json_data, jobId, submissionId, generation });
+            if (hybridReportDisposed || generation !== hybridReportGeneration) return;
+            if (headerMessageId && !saved && reportNode) {
+                const status = document.createElement('p'); status.setAttribute('role', 'status');
+                status.textContent = uiText('reportNotSaved', 'This report could not be saved locally.');
+                reportNode.appendChild(status);
+            }
+            if (json_data && json_data.state === 'IN_PROGRESS' && _attempt < HYBRID_REPORT_POLL_MAX_ATTEMPTS) {
+                scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, jobId, submissionId, _attempt: _attempt + 1 }, targetContainer, reportNode);
+            }
         } else {
             handle_hybrid_report_error(response, attachmentName, targetContainer);
         }
     } catch (error) {
-        handle_hybrid_report_fetch_error(error, attachmentName, targetContainer);
+        if (!hybridReportDisposed && generation === hybridReportGeneration) handle_hybrid_report_fetch_error(error, attachmentName, targetContainer);
     }
 }
 
@@ -772,7 +945,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
                 // response.data.sha256 enthält den sha256-Hash des URL-Scans
                 get_hybrid_report_by_sha256({
                     hybrid_sha: response.data.sha256,
-                    attachmentName: url
+                    attachmentName: url, headerMessageId,
+                    jobId: response.data?.job_id, submissionId: response.data?.submission_id
                 });
             }, 3000);
         } else {
@@ -793,10 +967,16 @@ function processRecordLinks(links, headerMessageId, syncFragment, fetchTasks) {
     for (const linkObj of links) {
         if (linkObj.state === 'UNKNOWN') {
             renderManualUrlScanUI(linkObj.url, headerMessageId, syncFragment);
+        } else if (hasFinalStoredReport(linkObj)) {
+            // FA-3: finished protocol already persisted; render it offline.
+            fetchTasks.push(buildStoredLinkReportTask(linkObj, headerMessageId));
         } else if (linkObj.hybrid_sha256) {
             fetchTasks.push((frag) => get_hybrid_report_by_sha256({
                 hybrid_sha: linkObj.hybrid_sha256,
-                attachmentName: linkObj.url
+                attachmentName: linkObj.url,
+                headerMessageId: headerMessageId,
+                jobId: linkObj.hybrid_job_id,
+                submissionId: linkObj.hybrid_submission_id
             }, frag));
         }
     }
@@ -878,7 +1058,8 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                     let container = document.getElementById(`upload-container-${safeHash}`);
                     if (container) container.remove();
                     get_hybrid_report_by_sha256({
-                        hybrid_sha: hash,
+                        hybrid_sha: response.data?.sha256 || hash,
+                        jobId: response.data?.job_id, submissionId: response.data?.submission_id,
                         attachmentName: attachmentName,
                         messageId: messageId,
                         partName: partName,

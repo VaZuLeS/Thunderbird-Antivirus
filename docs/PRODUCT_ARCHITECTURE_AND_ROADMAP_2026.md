@@ -1,3 +1,5 @@
+> Historischer Analyse-/Planungsstand. Nicht ungeprüft als aktuelle Implementierung oder Freigabe übernehmen. Maßgeblich: [aktueller Produktstand](AKTUELLER_PRODUKTSTAND.md) und [Ausführungsliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md).
+
 # Thundy AV — Technische Produktarchitektur, Bestandsaufnahme und Priorisierter Aufgabenplan (2026)
 
 **Rolle:** Technischer Produktarchitekt und Senior Thunderbird-Extension-Entwickler

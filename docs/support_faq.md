@@ -1,71 +1,29 @@
-# Support & FAQ — Thundy AV
+# Support und FAQ — Thundy AV
 
-**Version:** 1.23.0 · **Stand:** 2026-10-16 · **Sprachen:** EN/DE
-**Store-Status:** Einreichung vorbereitet; Store-URL wird nach der Freigabe hier ergänzt
-(A-05 in [AUFGABENPLAN_STORE_READINESS_1_23_0.md](AUFGABENPLAN_STORE_READINESS_1_23_0.md)).
+Stand: 2. November 2026. Veröffentlicht: GitHub 1.24.2 (unsigniert); vorbereitet: 1.24.3. [Aktueller Stand](AKTUELLER_PRODUKTSTAND.md).
 
-## Support-Kanäle
+## Kontakt
 
-| Kanal | Wofür | Link |
-|---|---|---|
-| GitHub Issues | Bugs, Fragen, Feature-Wünsche | https://github.com/VaZuLeS/Thunderbird-Antivirus/issues |
-| ATN-Reviewsystem | Fragen zu einer Store-Version | Kommentar im Store-Eintrag (Store-URL: nach Freigabe) |
-| E-Mail | Support-Anfragen | bludau.it.services@gmail.com |
-| Sicherheitsmeldungen | **Nicht öffentlich** — verantwortungsvolle Offenlegung | [SECURITY.md](../SECURITY.md) |
-| Quellcode & Releases | Nachvollziehbarkeit, Hashes | https://github.com/VaZuLeS/Thunderbird-Antivirus/releases (XPI + `SHA256SUMS.txt`) |
+Bugs und Fragen: [GitHub Issues](https://github.com/VaZuLeS/Thunderbird-Antivirus/issues). Sicherheitsmeldungen nicht öffentlich melden, siehe [SECURITY.md](../SECURITY.md). Ansprechpartner: bludau.it.services@gmail.com. Keine API-Schlüssel, vertraulichen Nachrichten, vollständigen privaten URLs oder Profilbackups in öffentliche Tickets hochladen.
 
-## FAQ
+## Häufige Fragen
 
-**Scannt Thundy AV automatisch alle meine E-Mails?**
-Nein. Lokale Prüfungen laufen nur für die Nachricht, die du gerade öffnest. Externe Analyse
-(Anbieter wie Hybrid Analysis, VirusTotal, urlscan.io, URLhaus, AbuseIPDB) passiert **nur**, wenn du
-1. global „Externe Analyse erlauben“ in den Einstellungen aktiviert hast **und**
-2. den Absender per Banner freigegeben hast („Nur diese Nachricht scannen“ oder „Absender dauerhaft
-   scannen“).
+**Ist die React-Webanwendung mein Thunderbird-Add-on?** Nein. Sie ist eine separate Simulation, nicht im XPI enthalten und nicht mit Thunderbird verbunden. Keine echten Schlüssel oder vertrauliche Post eingeben.
 
-**Welche Daten werden gesendet?**
-Abhängig von der Datenschutz-Stufe: SHA-256-Hashes von Anhängen (alle Stufen), vollständige
-Anhänge unbekannter Dateien (ab *balanced*), URLs aus der Nachricht (ab *max*). Nachrichteninhalt,
-Betreff, Absender-/Empfängeradressen und API-Schlüssel werden **nie** übertragen. Details:
-[Datenschutzerklärung](privacy_policy.md).
+**Funktioniert die Erweiterung ohne Schlüssel?** Ja, lokale Heuristik, HTML-Entschärfung und Linkaudit funktionieren ohne externe Analyse. Das ist kein vollständiger Virenscanner und ein niedriger Score keine Sicherheitsgarantie.
 
-**Ohne API-Schlüssel — funktioniert das Add-on trotzdem?**
-Ja. Die lokalen Prüfungen (Absender-Domain, Erstkontakt, Dringlichkeits-/Zahlungswortwahl,
-Anhangstypen, verdächtige Links) und die Banner laufen ohne Schlüssel; erst für die externen
-Analysen braucht es eigene Schlüssel der Anbieter.
+**Was wird extern übertragen?** Nur nach globaler Zustimmung und passenden Rechten/Aktionen. In strict sind Hash-, Domain- und ausdrücklich konfigurierte öffentliche IP-Reputation möglich, ab balanced vollständige Dateien, nur in max vollständige URLs. Inhalte einer hochgeladenen Datei oder URL können vertrauliche Daten enthalten. Anbieterkeys werden zur Authentisierung an den jeweiligen Anbieter gesendet, nicht in Audit-/Profilentwürfe exportiert. Die vollständige [Datenmatrix](privacy_policy.md) beschreibt automatische und manuelle Pfade.
 
-**Was bedeutet „Öffnung angefordert“ im Protokoll?**
-Der Linkschutz hat die Öffnung eines Links angefordert — das ist keine Bestätigung, dass der Browser
-die Seite geladen hat (Betriebssysteme können die Übergabe still blockieren). Das Add-on behauptet
-also keinen Besuch; der Audit-Eintrag zeigt die Anforderung mit URL und lokalem Score.
+**Was bedeutet OPENED?** Thunderbird hat die Öffnungsanforderung angenommen. Weder Browserstart noch Webseitenbesuch sind bestätigt. Ein Betriebssystem kann eine angenommene Anfrage still blockieren. PENDING bleibt nach einem Prozessverlust eine offene Entscheidung.
 
-**Wie leere ich die lokalen Analysedaten?**
-Einstellungen → „Cache leeren“ löscht die lokale Analyse-Datenbank (IndexedDB). Freigaben
-(Absender, Zustimmung) und Einstellungen bleiben erhalten.
+**Was löscht „Cache leeren“?** Gespeicherte Analyseergebnisse und Reputationscaches. Linkprotokoll, Einstellungen und Absenderfreigaben sind getrennt. Das Audit besitzt eine eigene bestätigte Löschaktion. Downloads und Backups separat verwalten; siehe [Datenlebenszyklus](DATENLEBENSZYKLUS.md).
 
-**Update von einer älteren Version — geht etwas verloren?**
-Nein. Persistierte Upgrades 1.22.0 → 1.23.0 wurden in einer realen Thunderbird-Abnahme geprüft:
-Einrichtungsstand, Linkschutz, historische Auditdatensätze, Sprache und Darstellungseinstellungen
-bleiben erhalten ([live_test_1_23_0.md](live_test_1_23_0.md)).
+**Überleben Daten ein Update?** Echte Linux-Upgrades von 1.24.2 auf Kandidat 1.24.3 mit Neustart und Prozessverlust erhalten bestehende Storagewerte und historische Entscheidungen im geprüften Umfang. Das ist kein Nachweis für jedes OS, Stromausfall oder einen beliebigen Downgrade. Der geprüfte Rückweg ist ein sauber angelegtes vollständiges Profilbackup; nach der Sicherung entstandene Daten liegen außerhalb dieses Snapshots.
 
-**Wie prüfe ich die Integrität des Pakets?**
-Zu jedem GitHub-Release liegen `SHA256SUMS.txt` und das XPI bei: `sha256sum thundy-av-<version>.xpi`
-mit der Summendatei vergleichen. Der Build ist nicht byte-reproduzierbar — der Hash gilt für das
-veröffentlichte Artefakt. Das Store-Paket wird von ATN signiert; die Installationsprüfung erfolgt
-über Thunderbird.
+**Sind SHA256SUMS eine Signatur?** Nein. Sie vergleichen die heruntergeladenen Bytes mit der referenzierten Prüfsumme. Sie beweisen keine unabhängige Herausgeberidentität und ersetzen keine ATN-Signatur. Veröffentlichung/ATN/Automatik sind getrennte Nachweise.
 
-**Welche Thunderbird-Versionen werden unterstützt?**
-Thunderbird 140 ESR und neuer (`strict_min_version: 140.0`, Manifest V3).
+**Aktiviert ein Enterprise-Profil eine Integration?** Nein. Profile sind deaktivierte Entwürfe. Node-Werkzeuge werden explizit lokal gestartet. Der neue Offline-Auditreview sendet nichts und authentifiziert den Export nicht als Unternehmensgerät. Produktive Cloud-/SSO-/MDM-Anbindung benötigt echte Systeme und gesonderte Abnahme.
 
-**Gibt es das Add-on für Firefox?**
-Nein — Thundy AV nutzt Thunderbird-spezifische APIs (`messages.*`, `messageDisplay`, `menus`)
-und läuft nur in Thunderbird.
+## English
 
-## Grenzen (ehrlich)
-
-- Reale Abnahmen existieren für Linux/X11 (Thunderbird 140.17.0 ESR); Windows/macOS,
-  Screenreader/DPI und die Übergabe an echte Standardbrowser sind in Arbeit
-  ([AUFGABENPLAN_STORE_READINESS_1_23_0.md](AUFGABENPLAN_STORE_READINESS_1_23_0.md) A-16 – A-19,
-  [AUFGABENPLAN_ENTERPRISE_N06.md](AUFGABENPLAN_ENTERPRISE_N06.md)).
-- Die Risiko-Bewertung ist lokal und heuristisch — ein Score 0 ist keine Sicherheitsgarantie und
-  ein hoher Score kein Beweis für Malware. Externe Analysen liefern die belastbaren Befunde.
+Published GitHub release: 1.24.2, unsigned; source candidate: 1.24.3. The React web application is a separate labelled simulation, not the extension. Local checks work without external keys. External analysis requires opt-in, relevant permissions and privacy-tier checks; strict may include hashes, domains and configured public IPs, balanced also files, max also full URLs. OPENED confirms only Thunderbird's accepted opening request; PENDING stays incomplete after process loss. An export checksum is not a signature. Contact [GitHub Issues](https://github.com/VaZuLeS/Thunderbird-Antivirus/issues) or follow SECURITY.md for private security reports.

@@ -473,3 +473,45 @@ test('injected dialogs and background auditing record both decisions with one ev
     assert.equal(data.records.filter(record => record.outcome === 'ABORTED').length, 1);
     assert.ok(data.records.every(record => record.score === 100)); assert.equal(state.requests.length, 0);
 });
+
+test('concurrent open/cancel actions issue only one native request and one terminal snapshot', async () => {
+    const state = setup(); await state.context.configure(); const request = auditRequest('concurrent_open');
+    await state.context.handleAuditedLinkCheck(request, auditSender);
+    let complete, calls = 0;
+    state.context.browser.windows.openDefaultBrowser = () => { calls++; return new Promise(resolve => { complete = resolve; }); };
+    const first = state.context.handleOpenAuditedLink(request, auditSender);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
+    assert.equal((await state.context.handleCancelAuditedLink(request, auditSender)).success, false);
+    complete(); assert.equal((await first).success, true);
+    assert.equal(calls, 1);
+    const record = (await state.context.readLinkAudit()).records[0];
+    assert.equal(record.outcome, 'OPENED'); assert.equal(record.openAttempts, 1);
+});
+
+test('an accepted native request followed by a failed audit commit stays uncertain on restart', async () => {
+    const state = setup(); await state.context.configure(); const request = auditRequest('commit_gap');
+    await state.context.handleAuditedLinkCheck(request, auditSender);
+    // Emulate the storage API's structured clone boundary, not shared object mutation.
+    const baseline = JSON.parse(JSON.stringify(state.config));
+    state.context.browser.storage.local.get = async () => JSON.parse(JSON.stringify(baseline));
+    state.context.browser.storage.local.set = async () => { throw new Error('quota after native acceptance'); };
+    const result = await state.context.handleOpenAuditedLink(request, auditSender);
+    assert.equal(result.success, true); assert.equal(result.auditSaved, false);
+    const recovered = setup(baseline); await recovered.context.configure();
+    let requests = 0; recovered.context.browser.windows.openDefaultBrowser = async () => { requests++; };
+    const record = (await recovered.context.readLinkAudit()).records[0];
+    assert.equal(record.outcome, 'PENDING'); assert.equal(record.decidedAt, null);
+    assert.equal(record.openAttempts, 0); assert.equal(requests, 0);
+    assert.equal((await recovered.context.handleOpenAuditedLink(request, auditSender)).success, false);
+});
+
+test('the actual displayed message is rechecked immediately before native opening', async () => {
+    const state = setup(); await state.context.configure(); const request = auditRequest('message_switch');
+    await state.context.handleAuditedLinkCheck(request, auditSender);
+    let calls = 0; state.context.browser.windows.openDefaultBrowser = async () => { calls++; };
+    state.context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 99 }] });
+    assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
+    assert.equal(calls, 0);
+    assert.equal((await state.context.readLinkAudit()).records[0].outcome, 'OPEN_ERROR');
+});

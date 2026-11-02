@@ -1,3 +1,5 @@
+> Aktuell: veröffentlichter GitHub-Release 1.24.2 (unsigniert), vorbereiteter Kandidat 1.24.3. [Produktstand](AKTUELLER_PRODUKTSTAND.md). `npm run dev` startet ausschließlich die Webdemo; das Add-on wird mit `npm run package` gebaut und im Thunderbird-Add-on-Manager installiert.
+
 # Quickstart – Thundy AV (Thunderbird WebExtension)
 
 Kurzanleitung zum Bauen, Testen und Laden des Add-ons **Thundy AV – Email Scanner for Thunderbird**

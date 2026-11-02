@@ -187,11 +187,27 @@ async function loadSettings() {
     if (result.ipReputationApiKey !== undefined) {
       ipReputationApiKey = result.ipReputationApiKey;
     }
+    syncGatewayApikeys();
   } catch (error) {
     Logger.error("Fehler beim Laden der Einstellungen:", error);
   }
 }
+/**
+ * The gateway injects provider auth headers as defense in depth; the adapters
+ * already carry the same headers, so leaving this unwired would silently
+ * disable that layer (provider audit PA-8).
+ */
+function syncGatewayApikeys() {
+    if (typeof apiGateway === 'undefined' || typeof apiGateway.setApikey !== 'function') return;
+    apiGateway.setApikey('hybridanalysis', apikey_hybridanalysis);
+    apiGateway.setApikey('virustotal', apikey_virustotal);
+    apiGateway.setApikey('urlscan', urlscanApikey);
+    apiGateway.setApikey('urlhaus', urlhausApikey);
+    apiGateway.setApikey('abuseipdb', ipReputationProvider === 'abuseipdb' ? ipReputationApiKey : '');
+}
+
 loadSettings();
+syncGatewayApikeys();
 apiGateway.beforeRequest = () => assertExternalAnalysisAllowed();
 
 // Opt-In helpers
@@ -255,6 +271,7 @@ browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.externalAnalysisConsent !== undefined) {
     externalAnalysisConsent = changes.externalAnalysisConsent.newValue === true;
   }
+  syncGatewayApikeys();
 });
 
 function extractPublicIPs(receivedHeaders) {
@@ -950,6 +967,10 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         state: result.hybrid_data.state,
         partName: result.hybrid_data.partName,
         virustotal_stats: result.virustotal_stats,
+        // A new submission invalidates any previously persisted analysis
+        // protocol (FA-3); the popup re-fetches and re-persists the report.
+        report: null,
+        report_fetched_at: null,
         created: new Date()
       }));
 
@@ -1505,6 +1526,8 @@ async function handleUrlScan(url, headerMessageId) {
                         existingRecord.links[linkIndex].hybrid_job_id = json_data.job_id;
                         existingRecord.links[linkIndex].hybrid_sha256 = json_data.sha256;
                         existingRecord.links[linkIndex].state = 'UPLOADED';
+                        existingRecord.links[linkIndex].report = null;
+                        existingRecord.links[linkIndex].report_fetched_at = null;
                     }
                 }
                 return existingRecord;
@@ -1562,6 +1585,8 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
                         existingRecord.attachments[attIndex].hybrid_submission_id = json_data.submission_id;
                         existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id;
                         existingRecord.attachments[attIndex].state = 'UPLOADED';
+                        existingRecord.attachments[attIndex].report = null;
+                        existingRecord.attachments[attIndex].report_fetched_at = null;
                     }
                 }
                 return existingRecord;

@@ -5,10 +5,15 @@ import base64
 import ctypes
 from contextlib import ExitStack
 import hashlib
+import http.server
+import ssl
+import threading
+from urllib.parse import urlparse
 import json
 import os
 from pathlib import Path
 import select
+import shutil
 import signal
 import socket
 import subprocess
@@ -92,6 +97,10 @@ class Marionette:
             error = result['automationError']
             if error.startswith("AbortError: Actor 'MarionetteCommands' destroyed before query"):
                 raise NavigationInProgress(error)
+            if 'document.documentElement is null' in error:
+                # Read-only readiness probes can race document replacement.
+                # Only wait_for retries this; write/click calls are not replayed.
+                raise NavigationInProgress(error)
             raise RuntimeError(error)
         return result
 
@@ -126,11 +135,12 @@ def native_click(display, x, y):
         x11.XCloseDisplay(connection)
 
 
-def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, permanent=False, audit_only=False, banner_root_shot=False):
+def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, permanent=False, audit_only=False, banner_root_shot=False, message_kib=0):
     with zipfile.ZipFile(xpi) as package:
         manifest = json.loads(package.read('manifest.json'))
         catalogs = {lang: json.loads(package.read('_locales/' + lang + '/messages.json'))
                     for lang in ['en', 'de', 'fr', 'es', 'it', 'pl']}
+    expected_score = 40 if urlparse(URL).hostname == '127.0.0.1' else 0
     report['extensionVersion'] = manifest['version']
     report['client'] = m.command('WebDriver:NewSession', {
         'capabilities': {'alwaysMatch': {'acceptInsecureCerts': False}}})
@@ -201,7 +211,9 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
                     'Subject: Thundy AV synthetic live test\nMIME-Version: 1.0\n'
                     'Content-Type: text/html; charset=UTF-8\n\n'
                     '<!doctype html><html><body><p>Synthetic offline test message.</p>'
-                    '<p><a href="' + URL + '">Test destination</a></p></body></html>\n')
+                    '<p><a href="' + URL + '">Test destination</a></p>' +
+                    ('<p>Ordinary local newsletter content for a repeatable measurement.</p>' * (message_kib * 1024 // 69)) + '</body></html>\n')
+    report['syntheticMessageBytes'] = mail.stat().st_size
     m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
         const root=MailServices.accounts.localFoldersServer.rootFolder;
         root.createSubfolder("Thundy Tests",null);const folder=root.getChildNamed("Thundy Tests");
@@ -234,7 +246,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         if state.get('threat'):
             subprocess.run(['import', '-window', 'root', str(out / 'threat-banner.png')],
                            env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
-    m.page('document.querySelector("a[href^=https]").click();')
+    m.page('document.querySelector("a[href^=http]").click();')
     dialog = wait_for(lambda: m.page('''const p=document.getElementById("thundy-link-dialog");
         const r=p?.shadowRoot;if(r?.querySelectorAll("footer button").length!==2)return null;
         return {text:r.querySelector(".dialog").innerText,width:r.querySelector(".dialog").getBoundingClientRect().width,
@@ -268,7 +280,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
                    env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     # Real OS dispatch to a receiver registered only in this run's XDG directories.
-    m.page('document.querySelector("a[href^=https]").click();')
+    m.page('document.querySelector("a[href^=http]").click();')
     wait_for(lambda: m.page('return document.getElementById("thundy-link-dialog")?.shadowRoot.querySelectorAll("footer button").length===2;'))
     m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelectorAll("footer button")[1].click();')
     wait_for(lambda: m.page('return !document.getElementById("thundy-link-dialog");'))
@@ -280,7 +292,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     # Preserve this observed limit: API acceptance alone cannot prove OS delivery.
     delivered = receipt.read_text()
     m.js('Services.prefs.setBoolPref("network.protocol-handler.external.https",false);')
-    m.page('document.querySelector("a[href^=https]").click();')
+    m.page('document.querySelector("a[href^=http]").click();')
     wait_for(lambda: m.page('return document.getElementById("thundy-link-dialog")?.shadowRoot.querySelectorAll("footer button").length===2;'))
     m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelectorAll("footer button")[1].click();')
     wait_for(lambda: m.page('return !document.getElementById("thundy-link-dialog");'))
@@ -291,18 +303,18 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
                                    'observationSeconds': 1, 'protocolPolicy': False}
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'audit.html'])
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.endsWith("/audit.html");'))
-    wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===3 && document.querySelector("#auditRows").innerText.includes("destination.example.invalid");'))
+    wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===3 && document.querySelector("#auditRows").innerText.includes(arguments[0]);', [urlparse(URL).hostname]))
     audit = m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getLinkAudit"});')
     records = audit.get('records', [])
     assert audit['success'] and len(records) == 3, audit
     record = next(r for r in records if r['outcome'] == 'ABORTED')
-    assert record['outcome'] == 'ABORTED' and record['url'] == URL and record['scoreAtDecision'] == 0
+    assert record['outcome'] == 'ABORTED' and record['url'] == URL and record['scoreAtDecision'] == expected_score
     assert record['openAttempts'] == 0 and record['cancelReason'] == 'cancel'
     report['auditRecord'] = record
     opened_records = [r for r in records if r['outcome'] == 'OPENED']
     assert len(opened_records) == 2
     opened = min(opened_records, key=lambda r: r['clickedAt'])
-    assert opened['url'] == URL and opened['scoreAtDecision'] == 0 and opened['openAttempts'] == 1
+    assert opened['url'] == URL and opened['scoreAtDecision'] == expected_score and opened['openAttempts'] == 1
     report['openedAuditRecord'] = opened
     report['blockedOsAuditRecord'] = max(opened_records, key=lambda r: r['clickedAt'])
     m.screenshot(out / 'audit.png')
@@ -311,6 +323,9 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base + 'options.html'])
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.endsWith("/options.html");'))
     wait_for(lambda: m.page('return !document.querySelector(\'input[name="appearance"][value="dark"]\')?.disabled && !!document.querySelector(\'input[name="appearance"][value="dark"]\');'))
+    # HTML inputs may precede DOMContentLoaded/theme listener initialization.
+    # Wait for the ready status instead of replaying a potentially lost click.
+    wait_for(lambda: m.page('return document.getElementById("themeStatus")?.textContent===arguments[0];', [catalogs[locale]['themeReady']['message']]))
     for name, value in [('appearance', 'dark'), ('accent', 'violet'), ('density', 'compact')]:
         m.page('document.querySelector(\'input[name="\'+arguments[0]+\'"][value="\'+arguments[1]+\'"]\').click();', [name, value])
     theme = wait_for(lambda: m.page('return window.wrappedJSObject.browser.storage.local.get(null).then(s=>s.thundyAppearance==="dark" && s.thundyAccent==="violet" && s.thundyDensity==="compact"?s:null);'))
@@ -388,7 +403,7 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     before = storage_snapshot(m)
     assert len(before['linkAuditLog']) == 3
     close_extension_tabs(m)
-    m = restart()
+    m = restart(backup_to=out / '.rollback-profile' if args.restore_check else None)
     assert addon_state(m) == old_state
     assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
     open_page(m, base+'audit.html')
@@ -435,7 +450,7 @@ def check_restart_upgrade(m, args, out, display, report, restart):
         MailUtils.displayMessage(Array.from(folder.messages)[0]);''')
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
     wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
-    m.page('document.querySelector("a[href^=https]").click();')
+    m.page('document.querySelector("a[href^=http]").click();')
     wait_for(lambda: m.page('return document.getElementById("thundy-link-dialog")?.shadowRoot.querySelectorAll("footer button").length===2;'))
     with zipfile.ZipFile(args.xpi) as package:
         catalog = json.loads(package.read('_locales/'+args.locale+'/messages.json'))
@@ -454,6 +469,16 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     assert report.get('gracefulRestarts') == 2
     if args.crash_check:
         check_crash_recovery(m, args, out, report, restart, base, current_state)
+    if args.restore_check:
+        m = restart(restore_from=out / '.rollback-profile')
+        restored = addon_state(m)
+        assert restored['version'] == old_state['version'] and restored['active']
+        open_page(m, base + 'options.html')
+        assert storage_snapshot(m) == before
+        report['backupRestore'] = {'passed': True, 'restoredVersion': restored['version'],
+                                  'snapshotRecordsPreserved': len(before['linkAuditLog']),
+                                  'scope': 'clean full-profile backup before upgrade; newer candidate events are outside this snapshot'}
+        shutil.rmtree(out / '.rollback-profile')
     report['passed'] = True
 
 
@@ -464,7 +489,7 @@ def open_test_link_dialog(m):
         MailUtils.displayMessage(Array.from(folder.messages)[0]);''')
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
     wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
-    m.page('document.querySelector("a[href^=https]").click();')
+    m.page('document.querySelector("a[href^=http]").click();')
     wait_for(lambda: m.page('return document.getElementById("thundy-link-dialog")?.shadowRoot.querySelectorAll("footer button").length===2;'))
 
 
@@ -532,6 +557,10 @@ def main():
     parser.add_argument('--previous-xpi', type=Path)
     parser.add_argument('--restart-check', action='store_true',
                         help='Permanent upgrade with two graceful restarts; requires --previous-xpi')
+    parser.add_argument('--real-browser', type=Path, help='Isolated real Chromium handoff to a controlled local HTTPS page, direct install only')
+    parser.add_argument('--restore-check', action='store_true', help='Verify clean pre-upgrade profile backup restore; requires --restart-check')
+    parser.add_argument('--performance-check', action='store_true', help='Measure actual local message analysis through the extension API')
+    parser.add_argument('--message-kib', type=int, default=0, help='Synthetic newsletter body size for direct-install performance checks (0..10240 KiB)')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -546,6 +575,14 @@ def main():
         setattr(args, name, getattr(args, name).resolve(strict=True))
     if args.locale != 'en' and not args.langpack:
         parser.error('Non-English runs require the corresponding Thunderbird --langpack')
+    if args.real_browser and args.restart_check:
+        parser.error('--real-browser is a direct-install check')
+    if args.real_browser:
+        args.real_browser = args.real_browser.resolve(strict=True)
+    if args.restore_check and not args.restart_check:
+        parser.error('--restore-check requires --restart-check')
+    if not 0 <= args.message_kib <= 10240 or (args.restart_check and (args.message_kib or args.performance_check)):
+        parser.error('performance payload requires a direct-install run and at most 10240 KiB')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -585,6 +622,32 @@ def main():
                      'mail.server.server1.userName': 'nobody', 'mail.server.server1.name': 'Local Folders',
                      'mail.server.server1.directory-rel': '[ProfD]Mail/Local Folders',
                      'network.manage-offline-status': False}
+            if args.real_browser:
+                # Controlled localhost HTTPS only; no external website or personal profile.
+                cert, key = profile / 'localhost.crt', profile / 'localhost.key'
+                subprocess.run(['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1',
+                                '-subj', '/CN=localhost', '-addext', 'subjectAltName=IP:127.0.0.1',
+                                '-keyout', str(key), '-out', str(cert)], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                receipt = out / 'real-browser-page.json'
+                class LocalPage(http.server.BaseHTTPRequestHandler):
+                    def do_GET(self):
+                        if self.path == '/thundy-browser-check':
+                            receipt.write_text(json.dumps({'method': 'GET', 'path': self.path}))
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'text/html; charset=utf-8')
+                        self.end_headers()
+                        self.wfile.write(b'<!doctype html><title>Thundy controlled local browser test</title><p>Local test only</p>')
+                    def log_message(self, *_args):
+                        pass
+                server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), LocalPage)
+                tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                tls.load_cert_chain(cert, key)
+                server.socket = tls.wrap_socket(server.socket, server_side=True)
+                threading.Thread(target=server.serve_forever, daemon=True).start()
+                cleanup.callback(server.server_close)
+                cleanup.callback(server.shutdown)
+                global URL
+                URL = 'https://127.0.0.1:' + str(server.server_port) + '/thundy-browser-check'
             (profile / 'Mail/Local Folders').mkdir(parents=True)
             (profile / 'user.js').write_text('\n'.join('user_pref(' + json.dumps(k) + ', ' +
                                                      json.dumps(v) + ');' for k, v in prefs.items()))
@@ -605,6 +668,29 @@ def main():
             receiver = profile / 'receive-url.py'
             receiver.write_text('import json,sys\nfrom pathlib import Path\nPath(' +
                                 repr(str(out / 'os-handoff.json')) + ').open("a").write(json.dumps({"argv":sys.argv[1:]})+"\\n")\n')
+            if args.real_browser:
+                browser_profile = profile / 'real-browser-profile'
+                pid_file = out / 'real-browser-pid.json'
+                with receiver.open('a') as script:
+                    command = [str(args.real_browser), '--no-sandbox', '--no-first-run', '--no-default-browser-check',
+                               '--disable-background-networking', '--disable-component-update', '--disable-sync',
+                               '--disable-domain-reliability', '--disable-features=MediaRouter', '--allow-insecure-localhost',
+                               '--user-data-dir=' + str(browser_profile)]
+                    script.write('import subprocess\ncommand=' + repr(command) + '\np=subprocess.Popen(command+sys.argv[1:],start_new_session=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\nPath(' + repr(str(pid_file)) + ').write_text(json.dumps({"pid":p.pid}))\n')
+                def stop_real_browser():
+                    if not pid_file.exists():
+                        return
+                    pid = json.loads(pid_file.read_text())['pid']
+                    try:
+                        command = Path('/proc/' + str(pid) + '/cmdline').read_bytes()
+                        if not command:
+                            return  # The isolated browser already exited (zombie/reaped).
+                        if str(browser_profile).encode() not in command or os.getpgid(pid) != pid:
+                            raise RuntimeError('Refusing to stop an unrelated browser process')
+                        os.killpg(pid, signal.SIGTERM)
+                    except (ProcessLookupError, FileNotFoundError):
+                        pass
+                cleanup.callback(stop_real_browser)
             # Desktop Entry Exec arguments use double quotes and escaped special characters.
             def desktop_quote(value):
                 return '"' + str(value).replace('\\', '\\\\').replace('"', '\\"').replace('`', '\\`').replace('$', '\\$') + '"'
@@ -632,7 +718,7 @@ def main():
                 return wait_for(connect, 30)
 
             m = start_client()
-            def restart_client(abrupt=False):
+            def restart_client(abrupt=False, backup_to=None, restore_from=None):
                 nonlocal m
                 previous_pid = tb.pid
                 if abrupt:
@@ -653,6 +739,13 @@ def main():
                     if tb.wait(timeout=30) != 0:
                         raise RuntimeError('Thunderbird did not exit cleanly')
                     report['gracefulRestarts'] = report.get('gracefulRestarts', 0) + 1
+                if backup_to:
+                    shutil.copytree(profile, backup_to, symlinks=True, ignore=shutil.ignore_patterns('lock', '.parentlock', 'parent.lock'))
+                if restore_from:
+                    if not restore_from.is_dir():
+                        raise RuntimeError('No clean rollback snapshot')
+                    shutil.rmtree(profile)
+                    shutil.copytree(restore_from, profile, symlinks=True)
                 m = start_client()
                 assert tb.pid != previous_pid
                 m.command('WebDriver:NewSession', {'capabilities': {'alwaysMatch': {'acceptInsecureCerts': False}}})
@@ -664,7 +757,32 @@ def main():
                 if args.restart_check:
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
-                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, banner_root_shot=args.banner_root_shot)
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    if args.real_browser:
+                        wait_for(lambda: (out / 'real-browser-page.json').exists(), 30)
+                        report['realBrowserHandoff'] = {'browser': str(args.real_browser), 'browserStarted': True,
+                                                      'controlledLocalPageRequested': True,
+                                                      'scope': 'real isolated Chromium process; localhost HTTPS fixture, not an external website'}
+                    if args.performance_check:
+                        report['performance'] = m.page('''return (async()=>{
+                            const samples=[]; let score=null;
+                            for(let i=0;i<6;i++){
+                                const start=performance.now();
+                                const result=await window.wrappedJSObject.browser.runtime.sendMessage({action:"getLocalRisk",messageId:arguments[0]});
+                                if(result.status!=="success")throw new Error("Local assessment failed");
+                                samples.push(performance.now()-start);score=result.threat.score;
+                            }return {scope:"real Thunderbird local analysis plus API roundtrip; no memory claim",coldMs:samples[0],warmMs:samples.slice(1),score};
+                        })();''', [report['auditRecord']['messageId']])
+                        bench = m.page('''return window.wrappedJSObject.browser.storage.local.set({linkAuditLog:Array.from({length:2000},(_,index)=>({id:crypto.randomUUID(),clickedAt:Date.now()-index,decidedAt:null,messageId:arguments[0],url:'https://benchmark.example.invalid/'+index,score:null,scoreAtDecision:null,verdict:'UNKNOWN',outcome:'PENDING',openAttempts:0,extensionVersion:window.wrappedJSObject.browser.runtime.getManifest().version,syntheticBenchmark:true}))}).then(()=>true);''', [report['auditRecord']['messageId']])
+                        assert bench
+                        base = m.page('return window.wrappedJSObject.browser.runtime.getURL("");')
+                        started = time.monotonic()
+                        open_page(m, base + 'audit.html')
+                        wait_for(lambda: m.page('return document.querySelectorAll("#auditRows tr").length===50;'))
+                        report['auditBenchmark'] = {'synthetic': True, 'inserted': 2000, 'visibleRows': 50,
+                                                    'loadAndAutomationMs': round((time.monotonic()-started)*1000),
+                                                    'scope': 'real Thunderbird render of synthetic storage fixtures; includes automation/navigation overhead'}
+
             except Exception:
                 try:
                     m.screenshot(out / 'failure.png')

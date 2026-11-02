@@ -1,3 +1,5 @@
+> Kandidat 1.24.3, noch nicht veröffentlicht/eingereicht: [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_24_3.md), [Datenmatrix](privacy_policy.md). Die nachfolgenden versionsbezogenen Abschnitte sind historische Einreichungstexte; vor einer tatsächlichen ATN-Einreichung die aktuelle Checkliste verwenden.
+
 # Reviewer Notes — Thundy AV (Thunderbird Add-on)
 
 **Add-on name:** Thundy AV – Email Scanner for Thunderbird (short name: "Thundy AV")

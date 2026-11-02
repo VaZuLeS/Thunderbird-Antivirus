@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-synthetic-risk-corpus",
+  "generatedAt": "2026-11-02T03:10:30.362Z",
+  "scope": "synthetic behavior contracts, no prevalence or detection-rate estimate",
+  "sourceFingerprint": "a52a9fc477143ff3adf709c2d3c8dadec17937867941add4321899f63614d0aa",
+  "results": [
+    {
+      "id": "AUTH-FAIL",
+      "passed": true,
+      "score": 50,
+      "authStatus": "fail",
+      "reasonCodes": [
+        "ui_087"
+      ]
+    },
+    {
+      "id": "BENIGN-AUTH",
+      "passed": true,
+      "score": 0,
+      "authStatus": "pass",
+      "reasonCodes": []
+    },
+    {
+      "id": "REPLY-MISMATCH",
+      "passed": true,
+      "score": 50,
+      "authStatus": "neutral",
+      "reasonCodes": [
+        "ui_091"
+      ]
+    },
+    {
+      "id": "BEC-EN",
+      "passed": true,
+      "score": 50,
+      "authStatus": "neutral",
+      "reasonCodes": [
+        "ui_092"
+      ]
+    },
+    {
+      "id": "BEC-DE",
+      "passed": true,
+      "score": 50,
+      "authStatus": "neutral",
+      "reasonCodes": [
+        "ui_092"
+      ]
+    },
+    {
+      "id": "BEC-FR",
+      "passed": true,
+      "score": 50,
+      "authStatus": "neutral",
+      "reasonCodes": [
+        "ui_092"
+      ]
+    },
+    {
+      "id": "BEC-ES",
+      "passed": true,
+      "score": 50,
+      "authStatus": "neutral",
+      "reasonCodes": [
+        "ui_092"
+      ]
+    },
+    {
+      "id": "BEC-IT",
+      "passed": true,
+      "score": 50,
+      "authStatus": "neutral",
+      "reasonCodes": [
+        "ui_092"
+      ]
+    },
+    {
+      "id": "BEC-PL",
+      "passed": true,
+      "score": 50,
+      "authStatus": "neutral",
+      "reasonCodes": [
+        "ui_092"
+      ]
+    }
+  ],
+  "privateSuffixSeparation": true
+}

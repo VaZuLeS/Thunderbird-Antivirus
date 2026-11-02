@@ -1405,5 +1405,72 @@
   },
   "auditVerdictAtDecision": {
     "message": "Résultat au moment de la décision"
+  },
+  "ui_169": {
+    "message": "Protocole d’analyse : $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID de tâche : $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID de soumission : $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protocole récupéré : $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " L’analyse est encore en cours (IN_PROGRESS). Le résultat est revérifié automatiquement toutes les $P1$ secondes (tentative $P2$) ; le protocole d’analyse terminé apparaît ici sans nouvelle requête dès qu’il est enregistré.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Aucune décision terminée n’est enregistrée. Après un redémarrage ou un arrêt du processus, cette entrée reste en attente ; cela ne prouve ni ouverture ni annulation."
+  },
+  "auditCancelUser": {
+    "message": "Annulé par l’utilisateur"
+  },
+  "auditCancelEscape": {
+    "message": "Fermé avec Échap"
+  },
+  "auditCancelDestination": {
+    "message": "Destination modifiée"
+  },
+  "auditCancelContext": {
+    "message": "Contexte du message fermé"
+  },
+  "auditCancelUnknown": {
+    "message": "Motif d’annulation inconnu"
+  },
+  "reportNotSaved": {
+    "message": "Le rapport est affiché, mais n’a pas pu être enregistré localement. Rouvrez-le pour réessayer."
   }
 }

@@ -63,6 +63,7 @@ describe('submission gate', () => {
 
   it('reports GO when commands, screenshots, protocol and release tag are all in place', () => {
     const { criteria, go } = evaluateGate({
+      evidenceLookup: () => ({ ok: true, evidence: 'package-bound fixture' }),
       rootDir: complete,
       commandRunner: () => ({ ok: true, output: 'ok' }),
       tagLookup: () => ({ exists: true, atHead: true, tag: 'v1.6', tagSha: 'abc12345', headSha: 'abc12345', changedArtifacts: [] })
@@ -74,6 +75,7 @@ describe('submission gate', () => {
 
   it('reports NO-GO for the current repository state (no screenshots, protocol not filled, no tag)', () => {
     const { criteria, go } = evaluateGate({
+      evidenceLookup: () => ({ ok: true, evidence: 'package-bound fixture' }),
       rootDir: incomplete,
       commandRunner: () => ({ ok: true, output: 'ok' }),
       tagLookup: () => ({ exists: true, atHead: false, tag: 'v1.6', tagSha: 'aaaaaaaa', headSha: 'bbbbbbbb', changedArtifacts: ['manifest.json'] })
@@ -87,6 +89,7 @@ describe('submission gate', () => {
 
   it('fails when a gate command fails', () => {
     const { criteria, go } = evaluateGate({
+      evidenceLookup: () => ({ ok: true, evidence: 'package-bound fixture' }),
       rootDir: complete,
       commandRunner: (command, args) => ({ ok: !args.includes('scripts/lint-with-filter.js'), output: 'lint failed' }),
       tagLookup: () => ({ exists: true, atHead: true, tag: 'v1.6', tagSha: 'abc12345', headSha: 'abc12345', changedArtifacts: [] })
@@ -155,7 +158,8 @@ describe('submission gate', () => {
     });
     for (const [root, expected] of [[narrow, false], [wide, true]]) {
       const { criteria, go } = evaluateGate({
-        rootDir: root,
+        evidenceLookup: () => ({ ok: true, evidence: 'package-bound fixture' }),
+      rootDir: root,
         commandRunner: () => ({ ok: true, output: 'ok' }),
         tagLookup: () => ({ exists: true, atHead: true, tag: 'v1.6', tagSha: 'abc12345', headSha: 'abc12345', changedArtifacts: [] })
       });
@@ -180,6 +184,7 @@ describe('submission gate', () => {
 
   it('passes C7 when only documentation changed since the release tag', () => {
     const { criteria, go } = evaluateGate({
+      evidenceLookup: () => ({ ok: true, evidence: 'package-bound fixture' }),
       rootDir: complete,
       commandRunner: () => ({ ok: true, output: 'ok' }),
       tagLookup: () => ({ exists: true, atHead: false, tag: 'v1.6', tagSha: 'aaaaaaaa', headSha: 'bbbbbbbb', changedArtifacts: [] })
@@ -192,6 +197,7 @@ describe('submission gate', () => {
 
   it('fails C7 when a packaged file changed after the release tag', () => {
     const { criteria, go } = evaluateGate({
+      evidenceLookup: () => ({ ok: true, evidence: 'package-bound fixture' }),
       rootDir: complete,
       commandRunner: () => ({ ok: true, output: 'ok' }),
       tagLookup: () => ({ exists: true, atHead: false, tag: 'v1.6', tagSha: 'aaaaaaaa', headSha: 'bbbbbbbb', changedArtifacts: ['background.js'] })

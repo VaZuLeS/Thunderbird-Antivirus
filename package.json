@@ -1,6 +1,6 @@
 {
   "name": "thundy-av",
-  "version": "1.23.0",
+  "version": "1.24.3",
   "description": "Thundy AV - opt-in email attachment and link scanner for Thunderbird (WebExtension, Manifest V3).",
   "license": "GPL-3.0-only",
   "private": true,
@@ -13,19 +13,19 @@
     "url": "https://github.com/VaZuLeS/Thunderbird-Antivirus/issues"
   },
   "engines": {
-    "node": ">=20"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0 --port 3000",
-    "test": "NODE_PATH=node_modules node --test --test-reporter=spec api.test.js api_gateway.test.js background.test.js db.test.js options.test.js scripts/pre-submit-checks.test.js scripts/submission-gate.test.js test/consent-and-tier.test.js test/manifest.test.js test/i18n.test.js test/optimization.test.js test/audit.test.js enterprise/test/contracts.test.js enterprise/test/profiles.test.js enterprise/test/ledger.test.js enterprise/test/outbox.test.js enterprise/test/evidence.test.js enterprise/test/immutable-storage.test.js enterprise/test/storage-jobs.test.js enterprise/test/storage-review.test.js test/onboarding.test.js enterprise/test/policy-state.test.js enterprise/test/incidents.test.js enterprise/test/health.test.js enterprise/test/connectors.test.js enterprise/test/acceptance.test.js enterprise/test/incident-cases.test.js enterprise/test/policy-simulation.test.js enterprise/test/cases-review.test.js enterprise/test/heartbeats.test.js enterprise/test/heartbeats-review.test.js enterprise/test/heartbeat-alerts.test.js enterprise/test/heartbeat-alerts-review.test.js enterprise/test/heartbeat-source.test.js enterprise/test/review-package.test.js enterprise/test/capacity.test.js test/theme.test.js enterprise/test/design-system.test.js enterprise/test/capacity-alerts.test.js",
+    "test": "NODE_PATH=node_modules node --test --test-reporter=spec api.test.js api_gateway.test.js background.test.js db.test.js options.test.js scripts/pre-submit-checks.test.js scripts/submission-gate.test.js test/consent-and-tier.test.js test/manifest.test.js test/i18n.test.js test/optimization.test.js test/audit.test.js enterprise/test/contracts.test.js enterprise/test/profiles.test.js enterprise/test/ledger.test.js enterprise/test/outbox.test.js enterprise/test/evidence.test.js enterprise/test/immutable-storage.test.js enterprise/test/storage-jobs.test.js enterprise/test/storage-review.test.js test/onboarding.test.js enterprise/test/policy-state.test.js enterprise/test/incidents.test.js enterprise/test/health.test.js enterprise/test/connectors.test.js enterprise/test/acceptance.test.js enterprise/test/incident-cases.test.js enterprise/test/policy-simulation.test.js enterprise/test/cases-review.test.js enterprise/test/heartbeats.test.js enterprise/test/heartbeats-review.test.js enterprise/test/heartbeat-alerts.test.js enterprise/test/heartbeat-alerts-review.test.js enterprise/test/heartbeat-source.test.js enterprise/test/review-package.test.js enterprise/test/capacity.test.js test/theme.test.js enterprise/test/design-system.test.js enterprise/test/capacity-alerts.test.js test/report-lifecycle.test.js scripts/release-integrity.test.js enterprise/test/audit-import.test.js",
     "lint": "web-ext lint --source-dir .",
     "lint:filtered": "node scripts/lint-with-filter.js",
     "verify-package": "node scripts/verify-package.js ./build",
     "package": "node scripts/build-and-verify-package.js",
     "pre-submit-checks": "node ./scripts/pre-submit-checks.js",
-    "check": "npm run pre-submit-checks && npm run check:i18n && npm run check:vendor && npm run check:design && npm test && npm run lint:filtered && npm run package",
+    "check": "npm run check:source && npm test && npm run lint:filtered && npm run package",
     "store-gate": "node ./scripts/submission-gate.js",
     "goal": "node ./scripts/submission-gate.js",
     "check:i18n": "node scripts/generate-i18n-fallback.js --check",
@@ -51,7 +51,11 @@
     "check:design": "node scripts/generate-design.js --check && node tools/design-reference.dev.cjs --check",
     "design:build": "node scripts/generate-design.js",
     "enterprise:capacity-alerts": "node enterprise/capacity_alerts_cli.cjs",
-    "check:ui": "node tools/browser-ui.dev.cjs"
+    "check:ui": "node tools/browser-ui.dev.cjs",
+    "check:web": "tsc --noEmit && vite build",
+    "check:source": "npm run pre-submit-checks && npm run check:i18n && npm run check:vendor && npm run check:design && npm run check:docs",
+    "enterprise:audit-review": "node enterprise/audit_import.cjs",
+    "check:docs": "node tools/docs-links.dev.cjs"
   },
   "dependencies": {
     "lucide-react": "^1.16.0",
@@ -62,7 +66,7 @@
     "@axe-core/playwright": "4.14.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "6.1.2",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "canonicalize": "2.1.0",

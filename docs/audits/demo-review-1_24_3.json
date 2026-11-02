@@ -1,0 +1,10 @@
+{
+  "kind": "separate-web-demo-review",
+  "passed": true,
+  "realThunderbird": false,
+  "simulatedOutcome": "SIMULATED_OPEN",
+  "realOpeningAttempts": 0,
+  "legacyDemoPreserved": true,
+  "providerInputsDisabled": true,
+  "externalRequests": 0
+}

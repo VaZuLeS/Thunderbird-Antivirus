@@ -1,3 +1,5 @@
+> Historischer Analyse-/Planungsstand. Nicht ungeprüft als aktuelle Implementierung oder Freigabe übernehmen. Maßgeblich: [aktueller Produktstand](AKTUELLER_PRODUKTSTAND.md) und [Ausführungsliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md).
+
 # Produktaufgabenplan & Architektur-Roadmap — Thundy AV (Stand: Oktober 2026)
 
 ---

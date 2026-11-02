@@ -820,19 +820,21 @@ test("total deadline interrupts AWS preflight and forwards an aborted SDK signal
 test("AWS readback stall times out and destroys the body", async () => {
   const f = fixture(),
     body = new Readable({ read() {} });
+  let reachedReadback = false;
   try {
     const s = s3Fixture({
-      getObject: async () => ({
+      getObject: async () => { reachedReadback = true; return ({
         VersionId: "version-1",
         ServerSideEncryption: "aws:kms",
         SSEKMSKeyId: "arn:aws:kms:eu-central-1:123456789012:key/test-key",
         Body: body,
-      }),
+      }); },
     });
     await assert.rejects(
-      storeS3(f.artifact, s.config, s.port, permit, { timeoutMs: 20 }),
+      storeS3(f.artifact, s.config, s.port, permit, { timeoutMs: 1000 }),
       { code: "STORAGE_TIMEOUT" },
     );
+    assert.equal(reachedReadback, true, "deadline must exercise the stalled body rather than earlier preflight work");
     assert.equal(body.destroyed, true);
   } finally {
     body.destroy();

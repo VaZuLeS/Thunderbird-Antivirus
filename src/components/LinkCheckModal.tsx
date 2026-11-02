@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Language } from '../types';
+import { demoText } from '../lib/demo';
 import { t } from '../lib/i18n';
 import { addAuditRecord } from '../lib/auditStorage';
 import { ShieldAlert, ShieldCheck, ExternalLink, XCircle, AlertTriangle } from 'lucide-react';
@@ -58,12 +59,12 @@ export const LinkCheckModal: React.FC<LinkCheckModalProps> = ({
       verdictAtDecision: verdict,
       provider: 'local-time-of-click',
       reasons,
-      outcome: 'OPENED',
-      openAttempts: 1,
+      outcome: 'SIMULATED_OPEN',
+      openAttempts: 0,
       decidedAt: Date.now(),
     });
 
-    setOutcomeStatus('OPENED');
+    setOutcomeStatus('SIMULATED_OPEN');
     setTimeout(() => {
       onActionCompleted?.();
       onClose();
@@ -80,13 +81,13 @@ export const LinkCheckModal: React.FC<LinkCheckModalProps> = ({
       verdictAtDecision: verdict,
       provider: 'local-time-of-click',
       reasons,
-      outcome: 'ABORTED',
+      outcome: 'SIMULATED_ABORT',
       cancelReason: 'cancel',
       openAttempts: 0,
       decidedAt: Date.now(),
     });
 
-    setOutcomeStatus('ABORTED');
+    setOutcomeStatus('SIMULATED_ABORT');
     setTimeout(() => {
       onActionCompleted?.();
       onClose();
@@ -166,10 +167,10 @@ export const LinkCheckModal: React.FC<LinkCheckModalProps> = ({
             marginBottom: '14px',
             fontSize: '13px',
             fontWeight: 600,
-            background: outcomeStatus === 'OPENED' ? 'var(--success-bg)' : 'var(--warning-bg)',
-            color: outcomeStatus === 'OPENED' ? 'var(--color-success)' : 'var(--color-warning)'
+            background: outcomeStatus === 'SIMULATED_OPEN' ? 'var(--success-bg)' : 'var(--warning-bg)',
+            color: outcomeStatus === 'SIMULATED_OPEN' ? 'var(--color-success)' : 'var(--color-warning)'
           }}>
-            {outcomeStatus === 'OPENED' ? 'Decision logged: Opened' : 'Decision logged: Aborted / Blocked'}
+            {outcomeStatus === 'SIMULATED_OPEN' ? demoText(lang, 'opened') : demoText(lang, 'aborted')}
           </div>
         )}
 
@@ -181,7 +182,7 @@ export const LinkCheckModal: React.FC<LinkCheckModalProps> = ({
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
             <XCircle size={16} />
-            {t(lang, 'abortLink')}
+            {demoText(lang, 'cancel')}
           </button>
 
           <button
@@ -191,7 +192,7 @@ export const LinkCheckModal: React.FC<LinkCheckModalProps> = ({
             style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
             <ExternalLink size={16} />
-            {t(lang, 'proceedLink')}
+            {demoText(lang, 'proceed')}
           </button>
         </div>
       </div>

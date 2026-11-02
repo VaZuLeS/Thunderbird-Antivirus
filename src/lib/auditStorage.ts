@@ -34,7 +34,8 @@ export function addAuditRecord(record: Omit<LinkAuditRecord, 'id' | 'clickedAt' 
     ...record,
     id: crypto.randomUUID ? crypto.randomUUID() : 'rec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
     clickedAt: Date.now(),
-    extensionVersion: '1.23.0',
+    extensionVersion: 'web-demo',
+    simulation: true,
   };
   const current = getAuditRecords();
   current.unshift(fullRecord);
@@ -59,9 +60,10 @@ function getDefaultAuditRecords(): LinkAuditRecord[] {
       verdict: 'SUSPICIOUS',
       provider: 'urlscan.io',
       reasons: ['Urgency keywords detected in context', 'External domain mismatch'],
-      outcome: 'ABORTED',
+      outcome: 'SIMULATED_ABORT',
       openAttempts: 0,
-      extensionVersion: '1.23.0',
+      extensionVersion: 'web-demo',
+    simulation: true,
     },
     {
       id: 'demo-audit-2',
@@ -73,9 +75,10 @@ function getDefaultAuditRecords(): LinkAuditRecord[] {
       verdict: 'SAFE',
       provider: 'local-heuristic',
       reasons: ['Domain matches verified sender', 'SPF/DKIM/DMARC valid'],
-      outcome: 'OPENED',
-      openAttempts: 1,
-      extensionVersion: '1.23.0',
+      outcome: 'SIMULATED_OPEN',
+      openAttempts: 0,
+      extensionVersion: 'web-demo',
+    simulation: true,
     },
     {
       id: 'demo-audit-3',
@@ -87,9 +90,10 @@ function getDefaultAuditRecords(): LinkAuditRecord[] {
       verdict: 'MALICIOUS',
       provider: 'URLhaus',
       reasons: ['Domain resembles paypal.com (Levenshtein distance 2)', 'Listed on URLhaus blacklist'],
-      outcome: 'ABORTED',
+      outcome: 'SIMULATED_ABORT',
       openAttempts: 0,
-      extensionVersion: '1.23.0',
+      extensionVersion: 'web-demo',
+    simulation: true,
     }
   ];
 }
