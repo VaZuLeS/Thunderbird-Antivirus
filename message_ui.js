@@ -289,7 +289,7 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
                 addOptionsButton();
                 buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); });
               } else if (resp && (resp.error === 'EXTERNAL_ANALYSIS_DISABLED' || resp.code === 'EXTERNAL_ANALYSIS_DISABLED')) {
-                setNote(t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.'));
+                setNote(t('bannerConsentMissing', 'New external requests are disabled. Previously stored reports may still be shown.'));
                 addOptionsButton();
                 buttons.forEach(b => { b.disabled = false; b.removeAttribute('aria-busy'); btn.textContent = label; });
               } else {
@@ -311,7 +311,7 @@ async function injectOptInBanner(tabId, messageId, senderEmail, consentGiven) {
         note.style.color = 'var(--text-muted,#334155)';
         note.textContent = t('bannerNoteOptIn', 'Scanning transmits data to external analysis services, but only if you enabled it in the add-on settings and only after you gave your consent. See the add-on options.');
         if (!consentGiven) {
-          note.textContent = t('bannerConsentMissing', 'External analysis is disabled in the options – nothing was transmitted.');
+          note.textContent = t('bannerConsentMissing', 'New external requests are disabled. Previously stored reports may still be shown.');
         }
 
         function setNote(value) {

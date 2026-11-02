@@ -36,7 +36,7 @@
     "message": "Erforderliche Host-Berechtigung wurde verweigert"
   },
   "bannerConsentMissing": {
-    "message": "Externe Analyse ist in den Einstellungen deaktiviert – es wurden keine Daten übertragen."
+    "message": "Neue externe Anfragen sind deaktiviert. Bereits gespeicherte Berichte können weiterhin angezeigt werden."
   },
   "bannerThreatTitle": {
     "message": "Thundy AV Warnung"
@@ -1718,5 +1718,53 @@
   },
   "analysisUnavailable": {
     "message": "Analysequellen derzeit nicht verfügbar"
+  },
+  "analysisModeUnknown": {
+    "message": "Prüfstand noch nicht dokumentiert"
+  },
+  "analysisModeRunning": {
+    "message": "Externe Anfrage läuft · Ergebnis ausstehend"
+  },
+  "analysisModeSubmitted": {
+    "message": "Extern übermittelt · Analyse noch nicht abgeschlossen"
+  },
+  "analysisModeIncomplete": {
+    "message": "Externe Prüfung unvollständig · Abschluss nicht bestätigt"
+  },
+  "analysisModePartial": {
+    "message": "Externe Ergebnisse vorhanden · einzelne Anfragen fehlgeschlagen"
+  },
+  "analysisModeFailed": {
+    "message": "Externe Anfrage fehlgeschlagen · kein verwertbares Ergebnis dokumentiert"
+  },
+  "analysisModeResults": {
+    "message": "Externe Antworten vorhanden · Prüfstand siehe unten"
+  },
+  "analysisResourceMessage": {
+    "message": "Nachrichtenkontext / Transportreputation"
+  },
+  "analysisResourceAttachment": {
+    "message": "Anhang"
+  },
+  "analysisResourceLink": {
+    "message": "Link"
+  },
+  "analysisResourceUnknown": {
+    "message": "Frühere Zusammenfassung · Ressource nicht dokumentiert"
+  },
+  "analysisTruncated": {
+    "message": "Einzelne Ressourcendetails wurden wegen der lokalen Anzeigegrenze ausgelassen."
+  },
+  "analysisResources": {
+    "message": "Ressourcen dieser Nachricht"
+  },
+  "analysisResourceLocal": {
+    "message": "Anhang in der Nachricht gespeichert · kein Nachweis eines Antivirus-Scans"
+  },
+  "analysisResourceTarget": {
+    "message": "Verknüpftes Ziel · Laden entfernter Inhalte ist kein Nachweis einer externen Analyse"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Keine externe Prüfung dieser Ressource dokumentiert"
   }
 }

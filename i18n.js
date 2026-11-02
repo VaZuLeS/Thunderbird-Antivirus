@@ -38,7 +38,7 @@ const ThundyI18n = (() => {
     "message": "Required host permission was denied"
   },
   "bannerConsentMissing": {
-    "message": "External analysis is disabled in the options – nothing was transmitted."
+    "message": "New external requests are disabled. Previously stored reports may still be shown."
   },
   "bannerThreatTitle": {
     "message": "Thundy AV warning"
@@ -1720,6 +1720,54 @@ const ThundyI18n = (() => {
   },
   "analysisUnavailable": {
     "message": "Analysis sources currently unavailable"
+  },
+  "analysisModeUnknown": {
+    "message": "Analysis status not yet recorded"
+  },
+  "analysisModeRunning": {
+    "message": "External request running · result pending"
+  },
+  "analysisModeSubmitted": {
+    "message": "Submitted externally · analysis not yet complete"
+  },
+  "analysisModeIncomplete": {
+    "message": "External check incomplete · completion not confirmed"
+  },
+  "analysisModePartial": {
+    "message": "External results available · some requests failed"
+  },
+  "analysisModeFailed": {
+    "message": "External request failed · no usable result recorded"
+  },
+  "analysisModeResults": {
+    "message": "External responses available · see checks below"
+  },
+  "analysisResourceMessage": {
+    "message": "Message context / transport reputation"
+  },
+  "analysisResourceAttachment": {
+    "message": "Attachment"
+  },
+  "analysisResourceLink": {
+    "message": "Link"
+  },
+  "analysisResourceUnknown": {
+    "message": "Earlier summary · resource not recorded"
+  },
+  "analysisTruncated": {
+    "message": "Some resource details were omitted because the local display limit was reached."
+  },
+  "analysisResources": {
+    "message": "Resources in this message"
+  },
+  "analysisResourceLocal": {
+    "message": "Attachment stored with the message · not proof of an antivirus scan"
+  },
+  "analysisResourceTarget": {
+    "message": "Linked destination · loading remote content is not proof of an external analysis"
+  },
+  "analysisResourceNoExternal": {
+    "message": "No external check recorded for this resource"
   }
 };
     function get(key, params = []) {

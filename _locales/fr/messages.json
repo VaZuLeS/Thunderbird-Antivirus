@@ -33,7 +33,7 @@
     "message": "Autorisation d’accès requise refusée"
   },
   "bannerConsentMissing": {
-    "message": "Analyse externe désactivée dans les paramètres : aucune donnée transmise."
+    "message": "Les nouvelles requêtes externes sont désactivées. Les rapports déjà enregistrés peuvent encore être affichés."
   },
   "bannerThreatTitle": {
     "message": "Avertissement Thundy AV"
@@ -1715,5 +1715,53 @@
   },
   "analysisUnavailable": {
     "message": "Sources d’analyse actuellement indisponibles"
+  },
+  "analysisModeUnknown": {
+    "message": "État de vérification non encore enregistré"
+  },
+  "analysisModeRunning": {
+    "message": "Requête externe en cours · résultat en attente"
+  },
+  "analysisModeSubmitted": {
+    "message": "Transmis au service externe · analyse non terminée"
+  },
+  "analysisModeIncomplete": {
+    "message": "Vérification externe incomplète · fin non confirmée"
+  },
+  "analysisModePartial": {
+    "message": "Résultats externes disponibles · certaines requêtes ont échoué"
+  },
+  "analysisModeFailed": {
+    "message": "Échec de la requête externe · aucun résultat exploitable enregistré"
+  },
+  "analysisModeResults": {
+    "message": "Réponses externes disponibles · voir les vérifications ci-dessous"
+  },
+  "analysisResourceMessage": {
+    "message": "Contexte du message / réputation du transport"
+  },
+  "analysisResourceAttachment": {
+    "message": "Pièce jointe"
+  },
+  "analysisResourceLink": {
+    "message": "Lien"
+  },
+  "analysisResourceUnknown": {
+    "message": "Ancien résumé · ressource non enregistrée"
+  },
+  "analysisTruncated": {
+    "message": "Certains détails des ressources ont été omis car la limite locale d’affichage a été atteinte."
+  },
+  "analysisResources": {
+    "message": "Ressources de ce message"
+  },
+  "analysisResourceLocal": {
+    "message": "Pièce jointe stockée avec le message · ne prouve pas une analyse antivirus"
+  },
+  "analysisResourceTarget": {
+    "message": "Destination liée · le chargement de contenu distant ne prouve pas une analyse externe"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Aucune vérification externe enregistrée pour cette ressource"
   }
 }

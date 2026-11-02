@@ -46,13 +46,13 @@ async function prepareMessage(page, c, catalog) {
   await page.evaluate(({source, labels, theme}) => {
     document.documentElement.dataset.thundyAnalysisMessage = "42";
     const rows = [
-      {provider:"hybridanalysis",scope:"report",responses:1,state:"checked",verdict:"none",source:"remote"},
-      {provider:"virustotal",scope:"hash",responses:1,state:"checked",verdict:"none",source:"cache"},
-      {provider:"urlhaus",scope:"domain",responses:1,state:"checked",verdict:"none",source:"remote"},
-      {provider:"abuseipdb",scope:"ip",state:"failed",verdict:"malicious",source:"stored",responses:1,failures:1},
-      {provider:"urlscan",scope:"url",responses:1,state:"submitted",verdict:"unknown",source:"remote"}
+      {provider:"hybridanalysis",resource:"attachment:1.2",scope:"report",responses:1,state:"checked",verdict:"none",source:"remote"},
+      {provider:"virustotal",resource:"attachment:1.3",scope:"hash",responses:1,state:"checked",verdict:"none",source:"cache"},
+      {provider:"urlhaus",resource:"link:0",scope:"domain",responses:1,state:"checked",verdict:"none",source:"remote"},
+      {provider:"abuseipdb",resource:"message",scope:"ip",state:"failed",verdict:"malicious",source:"stored",responses:1,failures:1},
+      {provider:"urlscan",resource:"link:1",scope:"url",responses:1,state:"submitted",verdict:"unknown",source:"remote"}
     ];
-    (0,eval)("("+source+")")({messageId:42,local:{state:"checked"},rows},labels,theme);
+    (0,eval)("("+source+")")({messageId:42,local:{state:"checked"},rows,resourceLabels:{"attachment:1.2":"same.txt (1.2)","attachment:1.3":"same.txt (1.3)","link:0":"https://first.invalid/path","link:1":"https://second.invalid/path"}},labels,theme);
   }, {source:context.analysis.render.toString(),labels:context.analysis.labels(key=>catalog[key]?.message||key),theme:Object.entries(design.resolve({}, {}, c.scheme === "dark").colors).map(([k,v])=>k+":"+v).join(";")+";"});
 
   await page.evaluate(

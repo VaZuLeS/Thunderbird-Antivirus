@@ -1,4 +1,5 @@
 let popupAnalysisContext = null;
+const popupLinkResources = new Map();
 function uiText(key, fallback, params = []) {
     return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
 }
@@ -124,7 +125,7 @@ if (typeof ThundyAnalysis !== 'undefined') {
             else if (!hybridReportDisposed && own === sourceGeneration) ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme);
         } catch (_) { if (!hybridReportDisposed && own === sourceGeneration) ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme); }
     };
-    browser.runtime.onMessage?.addListener(request => { if (request?.action === 'analysisStatusChanged' && request.messageId === message.id) refreshSources(); });
+    browser.runtime.onMessage?.addListener(request => { if (request?.action === 'analysisStatusChanged' && request.messageId === message.id || request?.action === 'memoryCachesCleared') refreshSources(); });
     await refreshSources();
 }
 
@@ -222,6 +223,8 @@ try {
     const db = await openDB('thunderbird_av', 3);
     try {
             const record = await getFromStore(db, 'hybridanalysis', message.headerMessageId);
+            popupLinkResources.clear();
+            for (const [index,item] of (record?.links || []).entries()) popupLinkResources.set(item.url, 'link:' + index);
             const liveContainer = apiContainer || document.getElementById('hybrid_analysis_api_content');
             if (liveContainer) liveContainer.textContent = '';
             for (const [kind, coverage] of Object.entries(record?.scanCoverage || {})) {
@@ -645,7 +648,8 @@ function hasExternalAnalysisConsent() {
     return externalAnalysisConsent === true;
 }
 
-async function fetch_hybrid_report(hybrid_sha) {
+async function fetch_hybrid_report(hybrid_sha, resource = null) {
+    const reportContext = popupAnalysisContext ? {scopeOverride:'report', event:event => { if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) ThundyAnalysis.cacheTime('hybridanalysis','report',hybrid_sha,event.observedAt); return popupAnalysisContext.event({...event,resource}); }} : null;
     if (!hasExternalAnalysisConsent()) {
         throw new Error('external-analysis-disabled');
     }
@@ -657,7 +661,7 @@ async function fetch_hybrid_report(hybrid_sha) {
         const cached = await hybrid_report_cache.get(hybrid_sha);
         if (popupAnalysisContext && typeof ThundyAnalysis !== 'undefined') {
             const classified = ThundyAnalysis.response({ provider: 'hybridanalysis', scope: 'report' }, cached.response.status, cached.json_data);
-            popupAnalysisContext.event({ phase: 'cache', provider: 'hybridanalysis', scope: 'report', ...classified, observedAt: ThundyAnalysis.cacheTime('hybridanalysis', 'report', hybrid_sha) }).catch(() => {});
+            reportContext.event({ phase: 'cache', provider: 'hybridanalysis', scope: 'report', ...classified, observedAt: ThundyAnalysis.cacheTime('hybridanalysis', 'report', hybrid_sha) }).catch(() => {});
         }
         return cached;
     }
@@ -665,7 +669,7 @@ async function fetch_hybrid_report(hybrid_sha) {
     const options = {
         method: 'GET',
         url: 'https://hybrid-analysis.com/api/v2/overview/' + hybrid_sha,
-        analysisContext: popupAnalysisContext,
+        analysisContext: reportContext,
         headers: {
             accept: 'application/json',
             'api-key': apikey_hybridanalysis,
@@ -678,7 +682,6 @@ async function fetch_hybrid_report(hybrid_sha) {
             const json_data = await response.json();
 
             const result = { response, json_data };
-            if (response.status === 200 && typeof ThundyAnalysis !== 'undefined') ThundyAnalysis.cacheTime('hybridanalysis', 'report', hybrid_sha, true);
             if (response.status !== 200) {
                 hybrid_report_cache.delete(hybrid_sha);
             }
@@ -930,7 +933,7 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
     const generation = hybridReportGeneration;
     if (hybridReportDisposed) return;
     try {
-        const { response, json_data } = await fetch_hybrid_report(hybrid_sha);
+        const { response, json_data } = await fetch_hybrid_report(hybrid_sha, partName ? 'attachment:' + partName : popupLinkResources.get(attachmentName) || null);
         if (hybridReportDisposed || generation !== hybridReportGeneration) return;
 
         if (response.status === 200) {

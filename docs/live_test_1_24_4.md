@@ -1,5 +1,7 @@
 # Entwicklungsprüfung 1.24.4 — Analysequellen
 
+Aktueller Folgeumfang: [Ausführung des Informationsdarstellungsplans](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md), mit eigenen neuen Nachweisen. Die folgenden Zahlen und Paketbytes bleiben als frühere Abnahme erhalten.
+
 Keine Veröffentlichung oder ATN-Freigabe. Veröffentlicht bleibt 1.24.3. [Umsetzung](ANALYSEQUELLEN_1_24_4.md), [Entwicklungsnotizen](releases/1.24.4.md).
 
 Die folgenden Fälle betreffen isolierte lokale Linux-Profile und synthetische Nachrichten. Externe Antworten sind Testdaten, keine produktiven Providerabnahmen. Browserprüfungen simulieren Thunderbird-APIs; native Läufe verwenden echtes Thunderbird und dessen APIs. Die sechs Sprachfassungen werden im Browser geprüft; die hier zusätzlich ausgeführten nativen Läufe sind Englisch. CI führt gesondert sechs Sprach-/Upgrade-/Crashläufe aus und erzeugt dafür ihre eigene Paketbindung.

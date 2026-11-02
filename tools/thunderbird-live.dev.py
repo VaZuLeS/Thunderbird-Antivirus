@@ -449,8 +449,11 @@ def check_followup(m, base, out, report, display, source_catalog):
     # messages APIs from its extension context. There are no attachment API doubles.
     mail = out / 'followup.eml'
     body = 'From: sender@example.invalid\nTo: recipient@example.invalid\nSubject: Thundy followup MIME\nMessage-ID: <followup@example.invalid>\nAuthentication-Results: mx.example.invalid; spf=passage; dkim=passage; dmarc=passage\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="thundy"\n\n--thundy\nContent-Type: text/plain\n\nSynthetic offline fixture.\n'
+    if 'analysisResources' in source_catalog:
+        body += 'https://fixture.invalid/one?token=one\nhttps://fixture.invalid/two?token=two\n'
     for index in range(101):
-        body += '--thundy\nContent-Type: text/plain\nContent-Disposition: attachment; filename="sample-' + str(index) + '.txt"\n\nhello\n'
+        name = 'same.txt' if 'analysisResources' in source_catalog and index < 2 else 'sample-' + str(index) + '.txt'
+        body += '--thundy\nContent-Type: text/plain\nContent-Disposition: attachment; filename="' + name + '"\n\nhello\n'
     mail.write_text(body + '--thundy--\n')
     m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
         const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
@@ -506,6 +509,35 @@ def check_followup(m, base, out, report, display, source_catalog):
     wait_for(lambda: m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup_browser = 'document.querySelector(\'browser[webextension-view-type="popup"]\')'
     wait_for(lambda: m.page('return document.body?.innerText?.includes("101") && document.body?.innerText?.includes("100");', browser=popup_browser))
+    if 'analysisModeRunning' in source_catalog:
+        # These are explicit synthetic observations through the real popup bridge,
+        # never live provider requests. Exercise an already open native popup.
+        bridge = m.page('''return (async()=>{
+          const b=window.wrappedJSObject.browser;
+          const raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject || raw;
+          const tabs=await b.tabs.query({active:true,currentWindow:true});
+          const message=(await b.messageDisplay.getDisplayedMessages(tabs[0].id)).messages[0];
+          const record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId);
+          window.wrappedJSObject.sourceProbe={id:message.id,resource:"attachment:"+record.attachments[0].partName,observedAt:Date.parse("2026-10-15T08:00:00Z")};
+          const result=await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:message.id,event:{provider:"hybridanalysis",scope:"report",resource:window.wrappedJSObject.sourceProbe.resource,phase:"start"}});
+          return result.success;
+        })();''', browser=popup_browser)
+        assert bridge is True
+        wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".phase")?.textContent===arguments[0];', [source_catalog['analysisModeRunning']['message']], browser=popup_browser))
+        timed = m.page('''return (async()=>{
+          const b=window.wrappedJSObject.browser,p=window.wrappedJSObject.sourceProbe;
+          const event={provider:"hybridanalysis",scope:"report",resource:p.resource};
+          await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:p.id,event:{...event,phase:"finish",state:"checked",verdict:"malicious",responded:true,observedAt:p.observedAt}});
+          await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:p.id,event:{...event,phase:"cache",state:"checked",verdict:"malicious",observedAt:p.observedAt}});
+          await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:p.id,event:{...event,phase:"start"}});
+          await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:p.id,event:{...event,phase:"finish",state:"failed",verdict:"unknown",responded:false}});
+          const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:p.id});
+          const row=snapshot.rows.find(row=>row.resource===p.resource && row.scope==="report");
+          return {originalAgePreserved:row.observedAt===p.observedAt,warningPreserved:row.verdict==="malicious",cacheVisible:row.source==="cache"};
+        })();''', browser=popup_browser)
+        assert all(timed.values()), timed
+        wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".phase")?.textContent===arguments[0];', [source_catalog['analysisModePartial']['message']], browser=popup_browser))
+        probe['analysisSources'].update({'nativeFirstRequest':True,'nativeCacheAndFailedRefresh':timed})
     if 'analysisTitle' in source_catalog:
         m.page('''return (async()=>{
           const b=window.wrappedJSObject.browser;
@@ -514,13 +546,31 @@ def check_followup(m, base, out, report, display, source_catalog):
           const displayed=await b.messageDisplay.getDisplayedMessages(tabs[0].id);
           const message=displayed.messages[0];
           const db=await bg.getSharedDB();
-          await bg.updateStore(db,"hybridanalysis",message.headerMessageId,old=>({...old,attachments:old.attachments.map((item,index)=>index===0?{...item,report:{verdict:"no specific threat"},report_fetched_at:"2026-10-15T08:00:00Z"}:item)}));
+          const modern = !!document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".phase");
+          await bg.updateStore(db,"hybridanalysis",message.headerMessageId,old=>({...old,
+            attachments:old.attachments.map((item,index)=>index<(modern?2:1)?{...item,report:{verdict:modern && index===0?"malicious":"no specific threat"},report_fetched_at:"2026-10-15T08:00:00Z"}:item),
+            links:modern?(old.links || []).map((item,index)=>({...item,report:{verdict:index===0?"malicious":"no specific threat"},report_fetched_at:"2026-10-15T08:00:00Z"})):old.links
+          }));
           await b.runtime.sendMessage({action:"getLocalRisk",messageId:message.id});
           return true;
         })();''', browser=popup_browser)
-        popup_sources = wait_for(lambda: m.page('const text=document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;return text?.includes(arguments[0])?text:null;', [source_catalog['analysisMixed']['message']], browser=popup_browser))
+        popup_sources = wait_for(lambda: m.page('const text=document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;return text?.includes(arguments[0]) && text.includes(arguments[1])?text:null;', [source_catalog['analysisMixed']['message'],source_catalog['analysisSource_stored']['message']], browser=popup_browser))
         assert source_catalog['analysisMixed']['message'] in popup_sources, popup_sources
         assert source_catalog['analysisSource_stored']['message'] in popup_sources, popup_sources
+        if 'analysisResources' in source_catalog:
+            resources = m.page('''return (async()=>{
+              const b=window.wrappedJSObject.browser,p=window.wrappedJSObject.sourceProbe;
+              const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:p.id});
+              const attachments=Object.keys(snapshot.resourceLabels).filter(ref=>ref.startsWith("attachment:"));
+              const links=Object.keys(snapshot.resourceLabels).filter(ref=>ref.startsWith("link:"));
+              return {attachmentCount:attachments.length,linkCount:links.length,
+                differentSameNameAttachments:snapshot.resourceLabels[attachments[0]]!==snapshot.resourceLabels[attachments[1]],
+                linksHaveFindings:links.every(ref=>snapshot.rows.some(row=>row.resource===ref)),
+                noStoredQueryInDisplay:links.every(ref=>!snapshot.resourceLabels[ref].includes("token="))};
+            })();''', browser=popup_browser)
+            assert resources['attachmentCount']==100 and resources['linkCount']==2, resources
+            assert all(resources[key] for key in ['differentSameNameAttachments','linksHaveFindings','noStoredQueryInDisplay']), resources
+            probe['analysisSources']['resources']=resources
         probe['analysisSources']['nativePopup'] = True
     probe['coverageVisibleInNativePopup'] = True
     subprocess.run(['import', '-window', 'root', str(out / 'coverage-popup.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)

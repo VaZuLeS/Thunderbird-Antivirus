@@ -2,6 +2,10 @@
 
 ## 1.24.4 — unreleased development (2026-11-02)
 
+- Show pending external checks immediately and bind findings to MIME parts, links or the message transport context; retain unknown historical summaries.
+- Keep resource details compact, preserve keyboard focus during refresh, isolate persisted message sources even with duplicate headers, and prevent late cache writes after deletion.
+- Clarify that disabling new external requests does not remove stored external reports. Follow-up validation: docs/UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md.
+
 - Show message-bound analysis sources in the message view and toolbar popup for all five external providers, including successful checks without detections.
 - Distinguish live responses, cache and historical reports, submissions, incomplete checks and failures; preserve original observation times and available warnings.
 - Ship the same theme-aware, keyboard-accessible source display in all six languages. No additional external requests or consent changes.

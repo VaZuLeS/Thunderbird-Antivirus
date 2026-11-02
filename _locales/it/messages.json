@@ -33,7 +33,7 @@
     "message": "Permesso di accesso necessario negato"
   },
   "bannerConsentMissing": {
-    "message": "Analisi esterna disattivata nelle impostazioni: nessun dato inviato."
+    "message": "Le nuove richieste esterne sono disattivate. I rapporti già salvati possono essere ancora visualizzati."
   },
   "bannerThreatTitle": {
     "message": "Avviso Thundy AV"
@@ -1715,5 +1715,53 @@
   },
   "analysisUnavailable": {
     "message": "Fonti di analisi al momento non disponibili"
+  },
+  "analysisModeUnknown": {
+    "message": "Stato della verifica non ancora registrato"
+  },
+  "analysisModeRunning": {
+    "message": "Richiesta esterna in corso · risultato in attesa"
+  },
+  "analysisModeSubmitted": {
+    "message": "Inviato al servizio esterno · analisi non ancora completata"
+  },
+  "analysisModeIncomplete": {
+    "message": "Verifica esterna incompleta · completamento non confermato"
+  },
+  "analysisModePartial": {
+    "message": "Risultati esterni disponibili · alcune richieste non sono riuscite"
+  },
+  "analysisModeFailed": {
+    "message": "Richiesta esterna non riuscita · nessun risultato utilizzabile registrato"
+  },
+  "analysisModeResults": {
+    "message": "Risposte esterne disponibili · consultare le verifiche seguenti"
+  },
+  "analysisResourceMessage": {
+    "message": "Contesto del messaggio / reputazione del trasporto"
+  },
+  "analysisResourceAttachment": {
+    "message": "Allegato"
+  },
+  "analysisResourceLink": {
+    "message": "Link"
+  },
+  "analysisResourceUnknown": {
+    "message": "Riepilogo precedente · risorsa non registrata"
+  },
+  "analysisTruncated": {
+    "message": "Alcuni dettagli delle risorse sono stati omessi perché è stato raggiunto il limite locale di visualizzazione."
+  },
+  "analysisResources": {
+    "message": "Risorse di questo messaggio"
+  },
+  "analysisResourceLocal": {
+    "message": "Allegato memorizzato nel messaggio · non dimostra una scansione antivirus"
+  },
+  "analysisResourceTarget": {
+    "message": "Destinazione collegata · caricare contenuti remoti non dimostra un’analisi esterna"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Nessuna verifica esterna registrata per questa risorsa"
   }
 }

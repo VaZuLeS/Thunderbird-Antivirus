@@ -43,20 +43,29 @@ const ThundyAnalysis = (() => {
         return result;
     }
     const worst = (a, b) => verdicts[Math.max(verdicts.indexOf(a), verdicts.indexOf(b), 0)];
+    // References point into existing message records; never duplicate resource contents.
+    const validResource = ref => ref === 'message' || typeof ref === 'string' && (/^attachment:[0-9]+(?:\.[0-9]+)*$/.test(ref) && ref.length <= 80 || /^link:[0-9]{1,6}$/.test(ref));
+    const rowKey = row => [row.provider, row.scope, row.resource || 'unknown'].join(':');
     function create(stored = {}) {
-        const data = { schemaVersion: 1, local: { state: 'unrecorded', observedAt: null }, rows: [] };
-        if (stored.schemaVersion === 1) {
-            if (stored.local?.state === 'checked') data.local = { state: 'checked', observedAt: stored.local.observedAt || null, source: 'stored' };
-            for (const old of (Array.isArray(stored.rows) ? stored.rows : []).slice(0, 30)) if (providers.includes(old.provider) && scopes.includes(old.scope)) {
-                const row = { provider: old.provider, scope: old.scope, source: 'stored', active: 0, state: states.includes(old.state) && old.state !== 'running' ? old.state : 'incomplete', verdict: verdicts.includes(old.verdict) ? old.verdict : 'unknown', responses: Number.isSafeInteger(old.responses) && old.responses > 0 ? Math.min(old.responses, 100000) : 0, failures: Number.isSafeInteger(old.failures) && old.failures > 0 ? Math.min(old.failures, 100000) : 0, cacheHits: Number.isSafeInteger(old.cacheHits) && old.cacheHits > 0 ? Math.min(old.cacheHits, 100000) : 0, observedAt: Number.isFinite(old.observedAt) ? old.observedAt : null, findingAt: Number.isFinite(old.findingAt) ? old.findingAt : null, attemptedAt: Number.isFinite(old.attemptedAt) ? old.attemptedAt : null };
-                data.rows.push(row);
+        const data = { schemaVersion: 2, local: { state: 'unrecorded', observedAt: null }, rows: [], truncated: stored.truncated === true };
+        if ([1, 2].includes(stored.schemaVersion)) {
+            if (stored.local?.state === 'checked') data.local = { state: 'checked', observedAt: Number.isFinite(stored.local.observedAt) ? stored.local.observedAt : null, source: 'stored' };
+            for (const old of (Array.isArray(stored.rows) ? stored.rows : []).slice(0, 1200)) if (providers.includes(old.provider) && scopes.includes(old.scope)) {
+                const row = { provider: old.provider, scope: old.scope, resource: validResource(old.resource) ? old.resource : null, source: 'stored', active: 0, state: states.includes(old.state) && old.state !== 'running' ? old.state : 'incomplete', verdict: verdicts.includes(old.verdict) ? old.verdict : 'unknown', responses: Number.isSafeInteger(old.responses) && old.responses > 0 ? Math.min(old.responses, 100000) : 0, failures: Number.isSafeInteger(old.failures) && old.failures > 0 ? Math.min(old.failures, 100000) : 0, cacheHits: Number.isSafeInteger(old.cacheHits) && old.cacheHits > 0 ? Math.min(old.cacheHits, 100000) : 0, observedAt: Number.isFinite(old.observedAt) ? old.observedAt : null, findingAt: Number.isFinite(old.findingAt) ? old.findingAt : null, attemptedAt: Number.isFinite(old.attemptedAt) ? old.attemptedAt : null };
+                if (!data.rows.some(current => rowKey(current) === rowKey(row))) data.rows.push(row);
             }
+            if (stored.rows?.length > 1200) data.truncated = true;
         }
         function event(e) {
-            if (!e || !providers.includes(e.provider) || !scopes.includes(e.scope) || !['start', 'finish', 'cache'].includes(e.phase)) return false;
+            if (!e || !providers.includes(e.provider) || !scopes.includes(e.scope) || !['start', 'finish', 'cache'].includes(e.phase) || e.resource != null && !validResource(e.resource)) return false;
             if (e.phase !== 'start' && (!states.includes(e.state) || !verdicts.includes(e.verdict))) return false;
-            let row = data.rows.find(r => r.provider === e.provider && r.scope === e.scope);
-            if (!row) { row = { provider: e.provider, scope: e.scope, state: 'running', verdict: 'unknown', active: 0, responses: 0, failures: 0, cacheHits: 0, observedAt: null, attemptedAt: null }; data.rows.push(row); }
+            const resource = e.resource || null;
+            let row = data.rows.find(r => r.provider === e.provider && r.scope === e.scope && r.resource === resource);
+            if (!row) {
+                if (data.rows.length >= 1200) { data.truncated = true; return false; }
+                row = { provider: e.provider, scope: e.scope, resource, state: 'running', verdict: 'unknown', source: 'attempt', active: 0, responses: 0, failures: 0, cacheHits: 0, observedAt: null, attemptedAt: null };
+                data.rows.push(row);
+            }
             if (e.phase === 'start') { row.active++; row.attemptedAt = Date.now(); row.state = 'running'; return true; }
             if (e.phase === 'finish') row.active = Math.max(0, row.active - 1);
             if (e.phase === 'cache') { row.cacheHits++; row.source = 'cache'; }
@@ -73,61 +82,112 @@ const ThundyAnalysis = (() => {
     }
     function legacy(record) {
         const model = create(record?.analysisStatus);
-        const documented = new Set(model.data.rows.map(row => row.provider + ':' + row.scope));
-        for (const item of [...(Array.isArray(record?.attachments) ? record.attachments : []), ...(Array.isArray(record?.links) ? record.links : [])]) {
+        const documented = new Set(model.data.rows.map(rowKey));
+        const attachments = Array.isArray(record?.attachments) ? record.attachments : [];
+        const links = Array.isArray(record?.links) ? record.links : [];
+        for (const [item, resource] of [...attachments.map(item => [item, validResource('attachment:' + item.partName) ? 'attachment:' + item.partName : null]), ...links.map((item,index) => [item, 'link:' + index])]) {
             const report = item.report;
             if (report || ['KNOWN', 'UPLOADED'].includes(item.state)) {
-                const info = { provider: 'hybridanalysis', scope: report ? 'report' : item.url ? 'url' : item.state === 'UPLOADED' ? 'file' : 'hash' };
-                if (!documented.has(info.provider + ':' + info.scope)) model.event({ ...info, phase: 'cache', ...(report ? response(info, 200, report) : { state: item.state === 'UPLOADED' ? 'submitted' : 'received', verdict: 'unknown' }), observedAt: report && Number.isFinite(Date.parse(item.report_fetched_at)) ? Date.parse(item.report_fetched_at) : null });
+                const info = { provider: 'hybridanalysis', scope: report ? 'report' : item.url ? 'url' : item.state === 'UPLOADED' ? 'file' : 'hash', resource };
+                if (!documented.has(rowKey(info))) model.event({ ...info, phase: 'cache', ...(report ? response(info, 200, report) : { state: item.state === 'UPLOADED' ? 'submitted' : 'received', verdict: 'unknown' }), observedAt: report && Number.isFinite(Date.parse(item.report_fetched_at)) ? Date.parse(item.report_fetched_at) : null });
             }
-            if (!documented.has('virustotal:hash') && Number.isFinite(item.virustotal_stats?.malicious)) model.event({ provider: 'virustotal', scope: 'hash', phase: 'cache', state: 'checked', verdict: item.virustotal_stats.malicious > 0 ? 'malicious' : item.virustotal_stats.suspicious > 0 ? 'suspicious' : 'none', observedAt: null });
+            const vt = {provider:'virustotal',scope:'hash',resource};
+            if (!documented.has(rowKey(vt)) && Number.isFinite(item.virustotal_stats?.malicious)) model.event({ ...vt, phase: 'cache', state: 'checked', verdict: item.virustotal_stats.malicious > 0 ? 'malicious' : item.virustotal_stats.suspicious > 0 ? 'suspicious' : 'none', observedAt: null });
         }
         for (const row of model.data.rows) row.source = 'stored';
         return model.data;
+    }
+    function bind(context, resources) {
+        if (!context) return null;
+        const refs = [...new Set(resources.filter(ref => ref == null || validResource(ref)))];
+        const apply = event => {
+            if (!refs.length) return context.event(event);
+            let valid = false;
+            for (const resource of refs) valid = context.event({...event, resource}) || valid;
+            return valid;
+        };
+        return {event:apply, cached(provider,scope,verdict,observedAt) { return apply({provider,scope,verdict,observedAt,phase:'cache',state:verdict === 'unknown' ? 'received' : 'checked'}); }};
     }
     // Self-contained renderer: serialized into the message's isolated world too.
     function render(data, labels, theme = '') {
         const document = globalThis.document;
         if (document.documentElement.dataset.thundyAnalysisMessage && document.documentElement.dataset.thundyAnalysisMessage !== String(data.messageId)) return null;
-        const previous = document.getElementById('thundy-analysis-status');
-        const open = previous?.shadowRoot?.querySelector('details')?.open || false;
-        const focus = previous?.shadowRoot?.activeElement?.tagName === 'SUMMARY';
-        previous?.remove();
-        const host = document.createElement('section'); host.id = 'thundy-analysis-status';
-        host.setAttribute('aria-label', labels.analysisTitle); host.style.cssText = 'all:initial!important;display:block!important;visibility:visible!important;opacity:1!important;margin:12px!important;' + theme.split(';').filter(Boolean).map(rule => rule + '!important').join(';');
-        const root = host.attachShadow({ mode: 'open' });
-        const style = document.createElement('style'); style.textContent = ':host{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40)}*{box-sizing:border-box}.card{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40);padding:var(--surface-pad,18px);border:1px solid var(--card-border,#cbd5e1);border-left:4px solid var(--link-color,#146b80);border-radius:12px;background:var(--card-bg,#fff);overflow-wrap:anywhere}h2{font:700 16px/1.4 system-ui;margin:0 0 8px}p{margin:6px 0}.mode{font-weight:700}.muted,small{color:var(--text-muted,#536579)}ul{padding-left:20px;margin:8px 0}li{margin:8px 0}summary{cursor:pointer;font-weight:600}summary:focus-visible{outline:3px solid var(--link-color,#146b80);outline-offset:3px}.warning{color:var(--color-danger,#b32642)}';
+        let host = document.getElementById('thundy-analysis-status');
+        const wasPresent = !!host;
+        const opened = new Set(Array.from(host?.shadowRoot?.querySelectorAll('details[open]') || []).map(node => node.dataset.key));
+        const focused = host?.shadowRoot?.activeElement?.dataset.focusKey;
         const n = (tag, text, cls = '') => { const node = document.createElement(tag); node.textContent = text; node.className = cls; return node; };
         const t = key => labels[key] || labels.analysisUnknown;
+        if (!host) { host = document.createElement('section'); host.id = 'thundy-analysis-status'; host.attachShadow({mode:'open'}); }
+        host.setAttribute('aria-label', labels.analysisTitle); host.style.cssText = 'all:initial!important;display:block!important;visibility:visible!important;opacity:1!important;margin:12px!important;' + theme.split(';').filter(Boolean).map(rule => rule + '!important').join(';');
+        const root = host.shadowRoot;
+        let live = root.querySelector('.live');
+        if (!live) { live = n('div','','live'); live.setAttribute('role','status'); live.setAttribute('aria-live','polite'); live.setAttribute('aria-atomic','true'); }
+        const style = document.createElement('style'); style.textContent = ':host{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40)}*{box-sizing:border-box}.card{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40);padding:var(--surface-pad,18px);border:1px solid var(--card-border,#cbd5e1);border-left:4px solid var(--link-color,#146b80);border-radius:12px;background:var(--card-bg,#fff);overflow-wrap:anywhere}h2{font:700 16px/1.4 system-ui;margin:0 0 8px}p{margin:6px 0}.mode,.phase{font-weight:700}.muted,small{color:var(--text-muted,#536579)}ul{padding-left:20px;margin:8px 0}li{margin:8px 0}summary{cursor:pointer}summary:focus-visible{outline:3px solid var(--link-color,#146b80);outline-offset:3px}.warning{color:var(--color-danger,#b32642)}.live{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}details{margin:8px 0}';
         const date = value => Number.isFinite(value) ? new Date(value).toLocaleString(document.documentElement.lang || undefined) : t('analysisTimeUnknown');
-        const rows = data.rows || [], external = rows.some(row => row.responses > 0 || row.cacheHits > 0), local = data.local?.state === 'checked';
-        const card = n('div', '', 'card'); card.append(n('h2', t('analysisTitle')), n('p', t(data.unavailable ? 'analysisUnavailable' : external ? local ? 'analysisMixed' : 'analysisExternal' : 'analysisLocal'), 'mode'));
-        const status = n('p', t(local ? 'analysisLocalChecked' : 'analysisLocalPending'), 'muted'); status.setAttribute('role', 'status'); card.append(status);
+        const rows = data.rows || [], local = data.local?.state === 'checked';
+        const running = rows.some(row => row.state === 'running'), waiting = rows.some(row => row.state === 'submitted'), incomplete = rows.some(row => row.state === 'incomplete');
+        const failures = rows.some(row => row.failures > 0 || row.state === 'failed'), usable = rows.some(row => row.responses > 0 || row.cacheHits > 0);
+        const mode = t(data.unavailable ? 'analysisUnavailable' : rows.length ? local ? 'analysisMixed' : 'analysisExternal' : local ? 'analysisLocal' : 'analysisModeUnknown');
+        const phase = t(running ? 'analysisModeRunning' : waiting ? 'analysisModeSubmitted' : failures ? usable ? 'analysisModePartial' : 'analysisModeFailed' : incomplete ? 'analysisModeIncomplete' : usable ? 'analysisModeResults' : 'analysisModeUnknown');
+        const card = n('div', '', 'card'); card.append(n('h2', t('analysisTitle')), n('p', mode, 'mode'));
+        if (rows.length) card.append(n('p',phase, failures ? 'phase warning' : 'phase'));
+        card.append(n('p', t(local ? 'analysisLocalChecked' : 'analysisLocalPending'), 'muted'));
         const brands = { hybridanalysis: 'Hybrid Analysis', virustotal: 'VirusTotal', urlhaus: 'URLhaus', abuseipdb: 'AbuseIPDB', urlscan: 'urlscan.io' };
         const list = document.createElement('ul'), inactive = document.createElement('ul');
+        const details = (key, title) => { const node = document.createElement('details'); node.dataset.key = key; node.open = opened.has(key); const summary = n('summary',title); summary.dataset.focusKey = key; node.append(summary); return node; };
+        const resourceName = row => {
+            if (row.resource === 'message') return t('analysisResourceMessage');
+            if (row.resource?.startsWith('attachment:')) return t('analysisResourceAttachment') + ' · ' + (data.resourceLabels?.[row.resource] || row.resource.slice(11));
+            if (row.resource?.startsWith('link:')) return t('analysisResourceLink') + ' ' + (Number(row.resource.slice(5)) + 1) + (data.resourceLabels?.[row.resource] ? ' · ' + data.resourceLabels[row.resource] : '');
+            return t('analysisResourceUnknown');
+        };
         for (const [provider, brand] of Object.entries(brands)) {
             const items = rows.filter(row => row.provider === provider), li = document.createElement('li'); li.append(n('strong', brand));
             if (items.length) {
+                li.append(n('div', [...new Set(items.map(row => t('analysisState_' + row.state)))].join(' · '), 'service-status'));
+                if (items.some(row => row.failures && row.responses)) li.append(n('div',t('analysisPartial'),'warning'));
                 if (['disabled','permission','authorization','policy','unconfigured'].includes(data.availability?.[provider])) li.append(n('div', t('analysisReason_' + data.availability[provider]), 'muted'));
-                const scopes = document.createElement('ul');
                 for (const row of items) {
-                    const entry = document.createElement('li');
-                    entry.append(n('span', t('analysisScope_' + row.scope) + ' · ' + t('analysisState_' + row.state) + ' · ' + t('analysisSource_' + row.source)));
-                    if (row.verdict && row.verdict !== 'unknown') entry.append(n('div', t('analysisVerdict_' + row.verdict), row.verdict === 'malicious' || row.verdict === 'suspicious' ? 'warning' : ''));
-                    entry.append(n('div', t('analysisFindingObserved') + ': ' + date(row.findingAt)));
+                    const key = [provider,row.scope,row.resource || 'unknown'].join(':');
+                    const warning = ['malicious','suspicious'].includes(row.verdict);
+                    const entry = details(key, resourceName(row) + ' · ' + t('analysisScope_' + row.scope) + ' · ' + t('analysisState_' + row.state) + ' · ' + t('analysisSource_' + row.source) + (warning ? ' · ' + t('analysisVerdict_' + row.verdict) : ''));
+                    if (warning) entry.querySelector('summary').className = 'warning';
+                    if (row.verdict && row.verdict !== 'unknown') entry.append(n('p', t('analysisVerdict_' + row.verdict), warning ? 'warning' : ''));
+                    entry.append(n('p', t('analysisFindingObserved') + ': ' + date(row.findingAt)));
                     entry.append(n('small', t('analysisObserved') + ': ' + date(row.observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(row.attemptedAt)));
-                    if (row.failures && row.responses) entry.append(n('div', t('analysisPartial'), 'warning'));
-                    scopes.append(entry);
+                    li.append(entry);
                 }
-                li.append(scopes); list.append(li);
+                list.append(li);
             } else { li.append(n('div', t('analysisReason_' + (data.availability?.[provider] || 'unrecorded')), 'muted')); inactive.append(li); }
         }
-        if (rows.some(row => ['malicious','suspicious'].includes(row.verdict))) { card.style.borderColor = 'var(--color-danger,#b32642)'; card.append(n('p', t(rows.some(row => row.verdict === 'malicious') ? 'analysisVerdict_malicious' : 'analysisVerdict_suspicious'), 'warning')); }
+        const strongest = rows.some(row => row.verdict === 'malicious') ? 'malicious' : rows.some(row => row.verdict === 'suspicious') ? 'suspicious' : null;
+        if (strongest) { card.style.borderColor = 'var(--color-danger,#b32642)'; card.append(n('p', t('analysisVerdict_' + strongest), 'warning')); }
         card.append(list);
-        if (inactive.childElementCount) { const details = document.createElement('details'); details.open = open; details.append(n('summary', t('analysisOtherServices')), inactive); card.append(details); }
-        card.append(n('p', t('analysisLimit'), 'muted')); root.append(style, card);
-        const mount = document.getElementById('analysisSourceMount'); if (mount) mount.append(host); else document.body.prepend(host);
-        if (focus) root.querySelector('summary')?.focus();
+        if (inactive.childElementCount) { const other = details('other',t('analysisOtherServices')); other.append(inactive); card.append(other); }
+        const refs = Object.keys(data.resourceLabels || {}).filter(ref => /^attachment:[0-9]+(?:\.[0-9]+)*$/.test(ref) || /^link:[0-9]{1,6}$/.test(ref));
+        if (refs.length) {
+            const inventory = details('resources', t('analysisResources'));
+            const resources = document.createElement('ul');
+            for (const resource of refs.slice(0,500)) {
+                const item = n('li',resourceName({resource}));
+                item.append(n('div',t(resource.startsWith('attachment:') ? 'analysisResourceLocal' : 'analysisResourceTarget'),'muted'));
+                const providers = [...new Set(rows.filter(row => row.resource === resource).map(row => brands[row.provider]).filter(Boolean))];
+                item.append(n('div', providers.length ? providers.join(' · ') : t('analysisResourceNoExternal')));
+                resources.append(item);
+            }
+            if (refs.length > 500) resources.append(n('li',t('analysisTruncated'),'warning'));
+            inventory.append(resources); card.append(inventory);
+        }
+        if (data.truncated) card.append(n('p',t('analysisTruncated'),'warning'));
+        card.append(n('p', t('analysisLimit'), 'muted'));
+        const announcement = [mode, rows.length ? phase : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
+        const changed = host.dataset.announcement !== announcement;
+        root.replaceChildren(style, live, card);
+        if (wasPresent && changed) live.textContent = announcement;
+        host.dataset.announcement = announcement;
+        if (!wasPresent) { const mount = document.getElementById('analysisSourceMount'); if (mount) mount.append(host); else document.body.prepend(host); }
+        if (focused) Array.from(root.querySelectorAll('summary')).find(node => node.dataset.focusKey === focused)?.focus({preventScroll:true});
         return host;
     }
     function withCache(context, provider, scope, key) {
@@ -138,9 +198,9 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }
-    return { providers, scopes, create, spec, response, legacy, render, cacheTime, labels, withCache };
+    return { providers, scopes, create, spec, response, legacy, render, cacheTime, labels, withCache, bind, validResource, rowKey };
 })();

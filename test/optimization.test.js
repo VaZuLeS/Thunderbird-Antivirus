@@ -623,3 +623,66 @@ test('clearing analysis caches disposes observers so late responses cannot resto
     assert.equal(fresh.model.data.rows.length,0);
     assert.equal(state.requests.length,0);
 });
+
+function sourceRecords(state, initial = null) {
+    const records = new Map(initial ? [[state.message.headerMessageId,initial]] : []);
+    state.context.getFromStore=async(_db,_store,key)=>records.get(key)||null;
+    state.context.updateStore=async(_db,_store,key,update)=>{const value=update(records.get(key)||null);if(value)records.set(key,value);return value};
+    return records;
+}
+
+test('two same-name attachments and two links retain distinct provider resources through cache and restart',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'strict',virustotalApikey:'vt',urlhausApikey:'uh'},true);await s.context.configure();
+ const records=sourceRecords(s);const ctx=await s.context.getMessageAnalysisContext(s.message);
+ const attachments=[{name:'same.txt',partName:'1.2',size:4},{name:'same.txt',partName:'1.3',size:4}];
+ await s.context.sent_to_hybrid_by_attachment(s.message,attachments,true,false,ctx);
+ const urls=['https://example.com/a?token=one','https://example.com/b?token=two'];
+ await s.context.processAndUploadUrls(s.message,urls,false,false,ctx);
+ await s.context.checkURLhausDomains(urls,null,null,ctx);
+ await ctx.flush();let snap=await ctx.snapshot();
+ assert.equal(records.get(s.message.headerMessageId).attachments.length,2);
+ for(const ref of ['attachment:1.2','attachment:1.3','link:0','link:1'])assert.ok(snap.rows.some(row=>row.resource===ref),ref);
+ assert.equal(snap.rows.find(row=>row.resource==='attachment:1.3').source,'cache');
+ assert.equal(Object.keys(snap.resourceLabels).length,4);assert.notEqual(snap.resourceLabels['attachment:1.2'],snap.resourceLabels['attachment:1.3']);
+ assert.ok(!snap.resourceLabels['link:0'].includes('token='));
+ const metadata=JSON.stringify(records.get(s.message.headerMessageId).analysisStatus);
+ for(const value of [...urls,'same.txt','token=one'])assert.ok(!metadata.includes(value));
+ const requestCount=s.requests.length;await s.context.checkURLhausDomains(urls,null,null,ctx);await ctx.flush();assert.equal(s.requests.length,requestCount);
+ const restarted=setup({},true);restarted.context.getFromStore=async()=>records.get(s.message.headerMessageId);await restarted.context.configure();
+ const loaded=await restarted.context.getMessageAnalysisContext(restarted.message);snap=await loaded.snapshot();assert.equal(snap.rows.length,ctx.model.data.rows.length);assert.ok(snap.rows.every(row=>row.source==='stored'));assert.equal(restarted.requests.length,0);
+});
+
+test('link result updates preserve historical duplicate slots and all source references',async()=>{
+ const s=setup({},true);const links=[{url:'https://a.invalid',state:'UNKNOWN'},{url:'https://a.invalid',state:'UNKNOWN'},{url:'https://b.invalid',state:'UNKNOWN'}];
+ const records=sourceRecords(s,{links,analysisStatus:{schemaVersion:2,rows:[{provider:'urlhaus',scope:'domain',resource:'link:2',state:'checked',verdict:'malicious',responses:1,observedAt:100}]}});
+ await s.context.indexedDB_save_links_objects_to_db(s.message,[{url:'https://a.invalid',state:'UPLOADED'},{url:'https://c.invalid',state:'UPLOADED'}]);
+ const result=records.get(s.message.headerMessageId);assert.equal(result.links.length,4);assert.equal(result.links[2].url,'https://b.invalid');assert.equal(result.analysisStatus.rows[0].resource,'link:2');
+});
+
+test('clearing caches during a queued source write cannot resurrect the cleared record',async()=>{
+ const s=setup({},true);await s.context.configure();const ctx=await s.context.getMessageAnalysisContext(s.message);
+ let apply,entered;const started=new Promise(resolve=>entered=resolve);let saved=null;
+ s.context.updateStore=async(_db,_store,_key,update)=>{entered();await new Promise(resolve=>apply=resolve);saved=update(null)};
+ const pending=ctx.flush();await started;s.listeners.at(-1)({action:'clearMemoryCaches'},{},()=>{});await new Promise(resolve=>setImmediate(resolve));apply();await pending;
+ assert.equal(saved,null);assert.equal(s.injections.length,0);
+});
+
+test('manual URL submission creates a stable reference for a previously unrecorded link',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();const records=sourceRecords(s);const ctx=await s.context.getMessageAnalysisContext(s.message);
+ s.context.fetch=async()=>({status:201,ok:true,json:async()=>({submission_id:'submission',job_id:'job',sha256:'hash'})});
+ await s.context.handleUrlScan('https://new.invalid/path',s.message.headerMessageId,ctx);await ctx.flush();
+ const record=records.get(s.message.headerMessageId);assert.equal(record.links[0].url,'https://new.invalid/path');assert.equal(ctx.model.data.rows[0].resource,'link:0');assert.equal(ctx.model.data.rows[0].state,'submitted');
+});
+
+test('persisted source observations are isolated between different messages sharing a header and survive reopening both',async()=>{
+ const s=setup({},true);await s.context.configure();const records=sourceRecords(s);
+ const first=await s.context.getMessageAnalysisContext(s.message);
+ first.event({provider:'urlhaus',scope:'domain',resource:'link:0',phase:'cache',state:'checked',verdict:'malicious',observedAt:100});await first.flush();
+ const otherMessage={...s.message,id:8};const second=await s.context.getMessageAnalysisContext(otherMessage);
+ assert.equal((await second.snapshot()).rows.length,0);
+ second.event({provider:'urlscan',scope:'url',resource:'link:1',phase:'start'});await second.flush();
+ assert.equal((await first.snapshot()).rows.length,1);assert.equal((await first.snapshot()).rows[0].provider,'urlhaus');
+ const restart=setup({},true);restart.context.getFromStore=async()=>records.get(s.message.headerMessageId);await restart.context.configure();
+ const loadedFirst=await restart.context.getMessageAnalysisContext(restart.message),loadedSecond=await restart.context.getMessageAnalysisContext(otherMessage);
+ assert.equal(loadedFirst.model.data.rows.length,1);assert.equal(loadedFirst.model.data.rows[0].verdict,'malicious');assert.equal(loadedSecond.model.data.rows.length,1);assert.equal(loadedSecond.model.data.rows[0].provider,'urlscan');assert.equal(loadedSecond.model.data.rows[0].state,'incomplete');
+});

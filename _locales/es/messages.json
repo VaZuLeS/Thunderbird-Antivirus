@@ -33,7 +33,7 @@
     "message": "Permiso de acceso requerido denegado"
   },
   "bannerConsentMissing": {
-    "message": "El análisis externo está desactivado en ajustes: no se ha enviado nada."
+    "message": "Las nuevas consultas externas están desactivadas. Los informes ya guardados pueden seguir mostrándose."
   },
   "bannerThreatTitle": {
     "message": "Advertencia de Thundy AV"
@@ -1715,5 +1715,53 @@
   },
   "analysisUnavailable": {
     "message": "Fuentes de análisis no disponibles ahora"
+  },
+  "analysisModeUnknown": {
+    "message": "Estado de comprobación aún no registrado"
+  },
+  "analysisModeRunning": {
+    "message": "Consulta externa en curso · resultado pendiente"
+  },
+  "analysisModeSubmitted": {
+    "message": "Enviado al servicio externo · análisis sin finalizar"
+  },
+  "analysisModeIncomplete": {
+    "message": "Comprobación externa incompleta · finalización no confirmada"
+  },
+  "analysisModePartial": {
+    "message": "Resultados externos disponibles · algunas consultas fallaron"
+  },
+  "analysisModeFailed": {
+    "message": "Consulta externa fallida · sin resultado utilizable registrado"
+  },
+  "analysisModeResults": {
+    "message": "Respuestas externas disponibles · consulte las comprobaciones"
+  },
+  "analysisResourceMessage": {
+    "message": "Contexto del mensaje / reputación del transporte"
+  },
+  "analysisResourceAttachment": {
+    "message": "Adjunto"
+  },
+  "analysisResourceLink": {
+    "message": "Enlace"
+  },
+  "analysisResourceUnknown": {
+    "message": "Resumen anterior · recurso no registrado"
+  },
+  "analysisTruncated": {
+    "message": "Se omitieron algunos detalles de recursos por alcanzar el límite local de visualización."
+  },
+  "analysisResources": {
+    "message": "Recursos de este mensaje"
+  },
+  "analysisResourceLocal": {
+    "message": "Adjunto almacenado con el mensaje · no demuestra un análisis antivirus"
+  },
+  "analysisResourceTarget": {
+    "message": "Destino enlazado · cargar contenido remoto no demuestra un análisis externo"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Sin comprobación externa registrada para este recurso"
   }
 }

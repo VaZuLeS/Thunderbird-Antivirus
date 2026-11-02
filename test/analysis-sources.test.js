@@ -47,3 +47,41 @@ test('gateway observes every supported provider without transmitting observer me
  const m=c.a.create(),ctx={event:e=>m.event(e)};await c.gateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/overview/hash',{analysisContext:ctx});assert.equal(m.data.rows[0].state,'checked');assert.equal(m.data.rows[0].source,'remote');
  c.fetch=async()=>{throw new Error('offline')};await assert.rejects(c.gateway.fetchWithTimeout('https://urlhaus-api.abuse.ch/v1/host/',{analysisContext:ctx}));assert.equal(m.data.rows[1].state,'failed');assert.equal(m.data.rows[1].responses,0);
 });
+
+test('first external request, submission, loss and failure are visible in the headline before any usable result',()=>{
+ const catalog=JSON.parse(fs.readFileSync('_locales/de/messages.json'));
+ const dom=new JSDOM('<html lang="de"><body></body></html>');
+ try{
+ const c=vm.createContext({URL,Date,document:dom.window.document});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+ const labels=c.a.labels(key=>catalog[key].message),m=c.a.create();m.data.local.state='checked';
+ m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'start'});
+ const check=key=>{c.a.render(m.data,labels);const card=dom.window.document.getElementById('thundy-analysis-status').shadowRoot.querySelector('.card');assert.ok(card.querySelector('.mode').textContent.includes(catalog.analysisMixed.message));assert.ok(card.querySelector('.phase').textContent.includes(catalog[key].message));};
+ check('analysisModeRunning');m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'finish',state:'submitted',verdict:'unknown',responded:true,observedAt:100});check('analysisModeSubmitted');
+ m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'start'});m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'finish',state:'failed',verdict:'unknown',responded:false});check('analysisModePartial');
+ const restarted=c.a.create({schemaVersion:2,local:{state:'checked'},rows:[{provider:'urlscan',scope:'url',resource:'link:0',state:'running'}]});c.a.render(restarted.data,labels);assert.ok(dom.window.document.getElementById('thundy-analysis-status').shadowRoot.querySelector('.phase').textContent.includes(catalog.analysisModeIncomplete.message));
+ }finally{dom.window.close()}
+});
+
+test('resource histories stay separate, schema-1 summaries survive and invalid or excessive references do not hide limits',()=>{
+ const a=model(),m=a.create({schemaVersion:1,rows:[{provider:'hybridanalysis',scope:'hash',state:'checked',verdict:'malicious',observedAt:20,responses:1}]});
+ for(const [resource,verdict,time] of [['attachment:1.2','none',100],['attachment:1.3','suspicious',200],['link:0','none',300],['link:1','malicious',400]])m.event({provider:'hybridanalysis',scope:'hash',resource,phase:'cache',state:'checked',verdict,observedAt:time});
+ const loaded=a.create(JSON.parse(JSON.stringify(m.data)));assert.equal(loaded.data.schemaVersion,2);assert.equal(loaded.data.rows.length,5);assert.equal(loaded.data.rows.find(r=>r.resource===null).verdict,'malicious');assert.equal(loaded.data.rows.find(r=>r.resource==='attachment:1.2').verdict,'none');assert.equal(loaded.data.rows.find(r=>r.resource==='link:1').observedAt,400);
+ assert.equal(m.event({provider:'hybridanalysis',scope:'hash',resource:'https://secret.invalid',phase:'start'}),false);
+ for(let i=2;i<1300;i++)m.event({provider:'urlhaus',scope:'domain',resource:'link:'+i,phase:'start'});
+ assert.equal(m.data.rows.length,1200);assert.equal(m.data.truncated,true);
+});
+
+test('source refresh preserves each open resource and keyboard focus, and announces changed external status only',()=>{
+ const dom=new JSDOM('<html lang="en"><body></body></html>',{pretendToBeVisual:true});
+ try{
+ const c=vm.createContext({URL,Date,document:dom.window.document});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+ const catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json')),labels=c.a.labels(key=>catalog[key].message),m=c.a.create();m.data.local.state='checked';
+ m.event({provider:'urlhaus',scope:'domain',resource:'link:0',phase:'start'});const data=()=>({...m.data,resourceLabels:{'link:0':'https://a.invalid/path','attachment:1.2':'same.txt (1.2)'}});
+ const host=c.a.render(data(),labels),root=host.shadowRoot;
+ const detail=root.querySelector('details');detail.open=true;detail.querySelector('summary').focus();const key=detail.dataset.key;
+ m.event({provider:'urlhaus',scope:'domain',resource:'link:0',phase:'finish',state:'checked',verdict:'none',responded:true,observedAt:100});assert.equal(c.a.render(data(),labels),host);
+ assert.equal(root.activeElement.dataset.focusKey,key);assert.equal(Array.from(root.querySelectorAll('details')).find(node=>node.dataset.key===key).open,true);assert.ok(root.querySelector('.live').textContent.includes(catalog.analysisModeResults.message));
+ assert.ok(root.textContent.includes(catalog.analysisResourceNoExternal.message));assert.ok(root.textContent.includes(catalog.analysisResourceTarget.message));assert.ok(root.textContent.includes(catalog.analysisResourceLocal.message));
+ const unchanged=root.querySelector('.live').textContent;c.a.render(data(),labels);assert.equal(root.querySelector('.live').textContent,unchanged);
+ }finally{dom.window.close()}
+});

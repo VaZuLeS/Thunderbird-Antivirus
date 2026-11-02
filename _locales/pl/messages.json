@@ -33,7 +33,7 @@
     "message": "Odmówiono wymaganego uprawnienia do dostępu"
   },
   "bannerConsentMissing": {
-    "message": "Analiza zewnętrzna jest wyłączona w ustawieniach: nic nie zostało przesłane."
+    "message": "Nowe żądania zewnętrzne są wyłączone. Wcześniej zapisane raporty mogą być nadal wyświetlane."
   },
   "bannerThreatTitle": {
     "message": "Ostrzeżenie Thundy AV"
@@ -1715,5 +1715,53 @@
   },
   "analysisUnavailable": {
     "message": "Źródła analizy są obecnie niedostępne"
+  },
+  "analysisModeUnknown": {
+    "message": "Stan sprawdzenia nie został jeszcze zapisany"
+  },
+  "analysisModeRunning": {
+    "message": "Trwa żądanie zewnętrzne · oczekiwanie na wynik"
+  },
+  "analysisModeSubmitted": {
+    "message": "Przesłano do usługi zewnętrznej · analiza nie jest zakończona"
+  },
+  "analysisModeIncomplete": {
+    "message": "Sprawdzenie zewnętrzne niepełne · zakończenie niepotwierdzone"
+  },
+  "analysisModePartial": {
+    "message": "Dostępne wyniki zewnętrzne · niektóre żądania nie powiodły się"
+  },
+  "analysisModeFailed": {
+    "message": "Żądanie zewnętrzne nie powiodło się · brak zapisanego użytecznego wyniku"
+  },
+  "analysisModeResults": {
+    "message": "Dostępne odpowiedzi zewnętrzne · sprawdzenia poniżej"
+  },
+  "analysisResourceMessage": {
+    "message": "Kontekst wiadomości / reputacja transportu"
+  },
+  "analysisResourceAttachment": {
+    "message": "Załącznik"
+  },
+  "analysisResourceLink": {
+    "message": "Link"
+  },
+  "analysisResourceUnknown": {
+    "message": "Wcześniejsze podsumowanie · nie zapisano zasobu"
+  },
+  "analysisTruncated": {
+    "message": "Pominięto niektóre szczegóły zasobów z powodu osiągnięcia lokalnego limitu wyświetlania."
+  },
+  "analysisResources": {
+    "message": "Zasoby tej wiadomości"
+  },
+  "analysisResourceLocal": {
+    "message": "Załącznik zapisany z wiadomością · nie potwierdza skanowania antywirusowego"
+  },
+  "analysisResourceTarget": {
+    "message": "Cel linku · pobranie treści zdalnej nie potwierdza analizy zewnętrznej"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Brak zapisanej kontroli zewnętrznej tego zasobu"
   }
 }

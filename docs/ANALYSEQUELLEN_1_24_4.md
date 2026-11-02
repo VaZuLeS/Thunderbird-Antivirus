@@ -1,5 +1,7 @@
 # Sichtbare Analysequellen — Entwicklung 1.24.4
 
+Die anschließende [Ausführung des Darstellungsplans](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md) ergänzt Ressourcenzuordnung, kompakte Details und einen bereits während der Anfrage sichtbaren Status. Die nachstehende Beschreibung dokumentiert die erste Quellenanzeige.
+
 Unveröffentlichter Entwicklungsstand; veröffentlicht bleibt [1.24.3](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.3). Die Anzeige ergänzt Nachricht und Toolbar-Popup. Sie verändert weder Einwilligung noch Berechtigungen oder die Entscheidung zum Öffnen eines Links.
 
 ## Befund und Umsetzung
