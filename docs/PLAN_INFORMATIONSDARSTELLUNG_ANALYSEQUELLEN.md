@@ -1,5 +1,22 @@
 # Aufgabenplan: Analysen in E-Mail und Toolbar-Popup nachvollziehbar darstellen
 
+## Abschlussstatus
+
+Die mit den vorhandenen Mitteln ausführbaren Arbeitspakete sind abgeschlossen. Implementierungsstand: `96e8b0323b03bc7d270e48222a733852d1fe877b`. Die [vollständige GitHub-CI](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/41468666892) ist erfolgreich, einschließlich aller sechs Browser-Sprachjobs, echter Linux-Thunderbird-Prüfungen und des paketgebundenen Kandidatengates. [Nachweis](audits/information-display-ci-96e8b03.json).
+
+- [x] INFO-01: Status bereits während der ersten externen Anfrage sichtbar.
+- [x] INFO-02: Zuordnung zu Anhängen, Links und Nachrichtenkontext; Altdaten erhalten.
+- [x] INFO-03: Kompakte Übersicht und aufklappbare Details.
+- [x] INFO-04: Alle fünf Provider und bestehenden Prüfwege erfasst.
+- [x] INFO-05: Nachrichtenbindung, Cache-Löschung, Alter und Historie abgesichert.
+- [x] INFO-06: Sechs Sprachen, Themes, Tastatur und Fokus geprüft; native Screenreader bleiben INFO-08.
+- [x] INFO-07: Lokale sowie vollständige CI-Abnahme mit eigenen Nachweisen abgeschlossen.
+- [ ] INFO-08: Reale zusätzliche Abnahmen blockiert. Die [Prüfabläufe](ABNAHME_INFORMATIONSDARSTELLUNG_EXTERN.md) sind vorbereitet; Windows/macOS, NVDA/VoiceOver und freigegebene Providerkonten/Testziele fehlen weiterhin.
+
+[Umsetzung und lokale Prüfergebnisse](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md) · [Pull Request #721](https://github.com/VaZuLeS/Thunderbird-Antivirus/pull/721). Eine Veröffentlichung oder Aktivierung externer Dienste gehört nicht zu diesem Planabschluss.
+
+Die nachstehenden Befunde und die Reihenfolge dokumentieren den ursprünglichen Planungsstand vor der Umsetzung. Sie sind keine weiterhin offene Aufgabenliste.
+
 ## Ziel und geprüfter Ausgangspunkt
 
 Für die ausgewählte E-Mail muss sofort erkennbar sein, ob lokale Prüfungen, externe Anfragen oder eine Kombination dokumentiert sind, welche Ressourcen betroffen sind und ob verwertbare Ergebnisse vorliegen. Das gilt für Hybrid Analysis, VirusTotal, URLhaus, AbuseIPDB und urlscan.io, auch ohne Erkennung einer Bedrohung.
@@ -36,13 +53,13 @@ Aufwand: K = klein, M = mittel, G = groß. Priorität „zuerst“ schützt vor 
 | INFO-07 | Thunderbird-Integration und Abnahme / Optimierung | Linux-Läufe für 140/153 sind dokumentiert; der nächste UI-/Datenstand benötigt eigene Nachweise. | Nach Umsetzung einen vollständigen lokalen Ablauf mit synthetischer Mail und mehreren Ressourcen prüfen: lokal, extern ohne Treffer, Warnung, gemischte Befunde, Cache, fehlgeschlagene Auffrischung und nachträgliche Popup-Aktualisierung. Eigene Paketbindung und Screenshots erzeugen. | Abschluss vor Freigabe / M | INFO-01 bis INFO-06 | Nachricht und Popup zeigen zur selben Mail konsistente Quellen und Zustände. Echte Thunderbird-APIs und simulierte externe Antworten im Bericht separat benennen. Geeignete unterstützte Mindest-/aktuelle Thunderbird-Versionen verwenden; vorhandene Freigabegates bleiben verbindlich. |
 | INFO-08 | Zusätzliche Umgebungen / Validierung | Windows/macOS, NVDA/VoiceOver und produktive Providerkonten stehen laut bisheriger Ressourcenklärung nicht zur Verfügung. | Fehlende reale Prüfungen mit genauem Ablauf und Ergebniserwartung vorbereiten, bei Verfügbarkeit ausführen. Keine simulierte Prüfung als native oder produktive Abnahme deklarieren. | Vor entsprechender Freigabe / M plus Zugang | Windows mit NVDA; macOS mit VoiceOver; ausdrücklich konfigurierte Testkonten/Schlüssel und Einwilligung für jeweilige Dienste, ggf. nutzbare Kontingente | Native Tastatur-/Screenreader-Bedienung und tatsächlich unterstützte Providerantworten nachvollziehbar dokumentieren. Bis dahin konkrete Abnahme offen lassen. Keine Freigabe allein aus Testzahlen ableiten. |
 
-## Reihenfolge und nächste drei Schritte
+## Ursprüngliche Reihenfolge — abgearbeitet
 
 1. **INFO-01:** Statussemantik schärfen. Der Nutzer muss eine externe Anfrage bereits vor dem ersten Ergebnis erkennen können. Das hat unmittelbaren Nutzen und baut auf dem vorhandenen Modell auf.
 2. **INFO-04:** Alle bestehenden Providerwege gegen diese Semantik prüfen. Damit wird die Verbesserung für alle fünf Dienste vollständig und nicht nur für Hybrid Analysis sichtbar.
 3. **INFO-02, Untersuchung:** Ressourcenreferenzen und Altdaten prüfen, anschließend den konkreten Daten-/Darstellungsvertrag festlegen. Erst damit ist eine zuverlässige Aussage pro Anhang oder Link möglich.
 
-Mittelfristig folgen INFO-02-Umsetzung, die kompakte Darstellung aus INFO-03 und INFO-06. INFO-05 begleitet alle Änderungen. INFO-07 prüft das gemeinsame Ergebnis vor einer Freigabe. INFO-08 folgt abhängig von den tatsächlich verfügbaren Ressourcen und bleibt bis dahin klar abgegrenzt.
+INFO-02-Umsetzung, INFO-03 und INFO-06 sind inzwischen abgeschlossen. INFO-05 wurde begleitend geprüft; INFO-07 ist lokal und in der CI abgeschlossen. INFO-08 bleibt bis zur Verfügbarkeit der konkret benannten Ressourcen blockiert.
 
 ## Mit vorhandenen Mitteln ausführbar
 

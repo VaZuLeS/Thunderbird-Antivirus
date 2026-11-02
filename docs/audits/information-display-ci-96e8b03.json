@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 1,
+  "kind": "github-ci-status-evidence",
+  "observedAt": "2026-11-02T15:39:31Z",
+  "repository": "VaZuLeS/Thunderbird-Antivirus",
+  "testedCommit": "96e8b0323b03bc7d270e48222a733852d1fe877b",
+  "workflowRun": {
+    "id": 41468666892,
+    "url": "https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/41468666892",
+    "status": "completed",
+    "conclusion": "success"
+  },
+  "jobs": [
+    {
+      "id": 125356151323,
+      "name": "route",
+      "conclusion": "success",
+      "steps": [
+        "Set up job",
+        "Run actions/checkout@v7",
+        "Run actions/github-script@v8",
+        "Post Run actions/checkout@v7",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 125356218749,
+      "name": "test",
+      "conclusion": "success",
+      "steps": [
+        "Set up job",
+        "Run actions/checkout@v7",
+        "Use Node.js",
+        "Install dependencies",
+        "Type-check and build the separate web demo",
+        "Pre-submit checks (manifest, privacy, permissions)",
+        "Verify bundled English fallback",
+        "Verify bundled Public Suffix List",
+        "Verify generated design assets",
+        "Run unit tests",
+        "web-ext lint",
+        "Build and verify extension package",
+        "Preserve package for real Thunderbird checks",
+        "Post Use Node.js",
+        "Post Run actions/checkout@v7",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 125356218845,
+      "name": "Browser UI (it)",
+      "conclusion": "success",
+      "steps": [
+        "Set up job",
+        "Run actions/checkout@v7",
+        "Run actions/setup-node@v7",
+        "Run npm ci",
+        "Install pinned Playwright Chromium",
+        "Check layouts, keyboard, exports and accessibility",
+        "Check 200 percent CSS zoom in settings and audit",
+        "Preserve browser evidence and failure screenshots",
+        "Post Run actions/setup-node@v7",
+        "Post Run actions/checkout@v7",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 125356218939,
+      "name": "Browser UI (en)",
+      "conclusion": "success",
+      "steps": [
+        "Set up job",
+        "Run actions/checkout@v7",
+        "Run actions/setup-node@v7",
+        "Run npm ci",
+        "Install pinned Playwright Chromium",
+        "Check layouts, keyboard, exports and accessibility",
+        "Check 200 percent CSS zoom in settings and audit",
+        "Preserve browser evidence and failure screenshots",
+        "Post Run actions/setup-node@v7",
+        "Post Run actions/checkout@v7",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 125356218962,
+      "name": "Browser UI (de)",
+      "conclusion": "success",
+      "steps": [
+        "Set up job",
+        "Run actions/checkout@v7",
+        "Run actions/setup-node@v7",
+        "Run npm ci",
+        "Install pinned Playwright Chromium",
+        "Check layouts, keyboard, exports and accessibility",
+        "Check 200 percent CSS zoom in settings and audit",
+        "Preserve browser evidence and failure screenshots",
+        "Post Run actions/setup-node@v7",
+        "Post Run actions/checkout@v7",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 125356218969,
+      "name": "Browser UI (pl)",
+      "conclusion": "success",
+      "steps": [
+        "Set up job",
+        "Run actions/checkout@v7",
+        "Run actions/setup-node@v7",
+        "Run npm ci",
+        "Install pinned Playwright Chromium",
+        "Check layouts, keyboard, exports and accessibility",
+        "Check 200 percent CSS zoom in settings and audit",
+        "Preserve browser evidence and failure screenshots",
+        "Post Run actions/setup-node@v7",
+        "Post Run actions/checkout@v7",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 125356219253,
+      "name": "Browser UI (es)",
+      "conclusion": "success",
+      "steps": [
+        "Set up job",
+        "Run actions/checkout@v7",
+        "Run actions/setup-node@v7",
+        "Run npm ci",
+        "Install pinned Playwright Chromium",
+        "Check layouts, keyboard, exports and accessibility",
+        "Check 200 percent CSS zoom in settings and audit",
+        "Preserve browser evidence and failure screenshots",
+        "Post Run actions/setup-node@v7",
+        "Post Run actions/checkout@v7",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 125356219585,
+      "name": "Browser UI (fr)",
+      "conclusion": "success",
+      "steps": [
+        "Set up job",
+        "Run actions/checkout@v7",
+        "Run actions/setup-node@v7",
+        "Run npm ci",
+        "Install pinned Playwright Chromium",
+        "Check layouts, keyboard, exports and accessibility",
+        "Check 200 percent CSS zoom in settings and audit",
+        "Preserve browser evidence and failure screenshots",
+        "Post Run actions/setup-node@v7",
+        "Post Run actions/checkout@v7",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 125356931162,
+      "name": "Thunderbird Linux GUI",
+      "conclusion": "success",
+      "steps": [
+        "Set up job",
+        "Initialize containers",
+        "Install real Thunderbird and isolated X11 runtime",
+        "Run actions/checkout@v7",
+        "Run actions/download-artifact@v4",
+        "Download pinned previous release for upgrade checks",
+        "Check real installs, crash recovery, OS dispatch and six languages",
+        "Preserve real-client report, logs and screenshots",
+        "Post Run actions/checkout@v7",
+        "Stop containers",
+        "Complete job"
+      ]
+    },
+    {
+      "id": 125359204557,
+      "name": "Package-bound candidate gate",
+      "conclusion": "success",
+      "steps": [
+        "Set up job",
+        "Run actions/checkout@v7",
+        "Run actions/setup-node@v7",
+        "Run npm ci",
+        "Run actions/download-artifact@v4",
+        "Run actions/download-artifact@v4",
+        "Run actions/download-artifact@v4",
+        "Bind exact tested bytes and six-language reports",
+        "Verify candidate without claiming publication",
+        "Run actions/upload-artifact@v4",
+        "Post Run actions/setup-node@v7",
+        "Post Run actions/checkout@v7",
+        "Complete job"
+      ]
+    }
+  ],
+  "candidateArtifact": {
+    "id": 13154067484,
+    "name": "validated-release-candidate",
+    "sizeInBytes": 302992,
+    "githubReportedDigest": "sha256:da11fb97bb2e09b67386d630eccca41483e89904803e522972e1868ac215e712",
+    "expiresAt": "2026-11-16T15:15:08Z",
+    "scope": "Artifact metadata and successful package-bound CI gate observed via GitHub API. Archive contents were not downloaded into the local workspace; local and CI ZIP hashes are not equated."
+  },
+  "limits": [
+    "Linux native checks use synthetic messages and external observations.",
+    "No native Windows/macOS/NVDA/VoiceOver acceptance.",
+    "No live provider account acceptance or human usability study.",
+    "No release publication, signing or automatic distribution approval."
+  ]
+}
