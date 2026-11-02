@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "kind": "read-only-product-planning-evidence",
+  "observedAt": "2026-11-02T16:07:45.283Z",
+  "source": {
+    "branch": "codex/analysis-sources-ui-20261102",
+    "commit": "2588ff08c172606fbbcd00741220e7e7535e6361",
+    "extensionVersion": "1.24.4",
+    "sourceFingerprint": "78fe4735c95044a0dbaace538f5f46dc672941944ca3d00adb97e7aa566c9ab7",
+    "packageSha256": "eaf959e203749c19a1446eca0c3039f88792e689b89c2469398faa8eea0b47d8",
+    "runtimeChangedByPlanning": false
+  },
+  "remote": {
+    "main": "8d61cd4064f44cbb872674e26f3cd071a5f2f3d7",
+    "latestRelease": {
+      "tag": "v1.24.3",
+      "publishedAt": "2026-11-02T10:36:15Z",
+      "draft": false,
+      "prerelease": false,
+      "assetDigestReportedByGitHub": "sha256:f45050748b8464cc602ca914e586000d78b08225bbc18db41f4d1c065b1bc402",
+      "archiveRedownloadedForThisAnalysis": false
+    },
+    "ci": {
+      "id": 41473941206,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/41473941206"
+    },
+    "pages": {
+      "sourceCommit": "8d61cd4064f44cbb872674e26f3cd071a5f2f3d7",
+      "deploymentRuns": [
+        41429009701,
+        41429008773
+      ],
+      "deploymentConclusion": "success",
+      "publicHttpCheck": "URLError; public rendered content not verified",
+      "apiLimit": "Workflow-collection routes rejected by connector; deployment runs verified through actions/runs filtered by main SHA."
+    }
+  },
+  "checks": {
+    "source": "npm run check:source passed",
+    "focused": {
+      "command": "node --test test/analysis-sources.test.js test/optimization.test.js test/i18n.test.js test/manifest.test.js",
+      "passed": 133,
+      "failed": 0,
+      "syntheticBrowserAndProviderAPIs": true
+    },
+    "riskCorpus": {
+      "schemaVersion": 1,
+      "kind": "thundy-synthetic-risk-corpus",
+      "generatedAt": "2026-11-02T15:56:40.637Z",
+      "scope": "synthetic behavior contracts, no prevalence or detection-rate estimate",
+      "sourceFingerprint": "78fe4735c95044a0dbaace538f5f46dc672941944ca3d00adb97e7aa566c9ab7",
+      "results": [
+        {
+          "id": "AUTH-FAIL",
+          "passed": true,
+          "score": 50,
+          "authStatus": "fail",
+          "reasonCodes": [
+            "ui_087"
+          ]
+        },
+        {
+          "id": "BENIGN-AUTH",
+          "passed": true,
+          "score": 0,
+          "authStatus": "pass",
+          "reasonCodes": []
+        },
+        {
+          "id": "REPLY-MISMATCH",
+          "passed": true,
+          "score": 50,
+          "authStatus": "neutral",
+          "reasonCodes": [
+            "ui_091"
+          ]
+        },
+        {
+          "id": "BEC-EN",
+          "passed": true,
+          "score": 50,
+          "authStatus": "neutral",
+          "reasonCodes": [
+            "ui_092"
+          ]
+        },
+        {
+          "id": "BEC-DE",
+          "passed": true,
+          "score": 50,
+          "authStatus": "neutral",
+          "reasonCodes": [
+            "ui_092"
+          ]
+        },
+        {
+          "id": "BEC-FR",
+          "passed": true,
+          "score": 50,
+          "authStatus": "neutral",
+          "reasonCodes": [
+            "ui_092"
+          ]
+        },
+        {
+          "id": "BEC-ES",
+          "passed": true,
+          "score": 50,
+          "authStatus": "neutral",
+          "reasonCodes": [
+            "ui_092"
+          ]
+        },
+        {
+          "id": "BEC-IT",
+          "passed": true,
+          "score": 50,
+          "authStatus": "neutral",
+          "reasonCodes": [
+            "ui_092"
+          ]
+        },
+        {
+          "id": "BEC-PL",
+          "passed": true,
+          "score": 50,
+          "authStatus": "neutral",
+          "reasonCodes": [
+            "ui_092"
+          ]
+        }
+      ],
+      "privateSuffixSeparation": true
+    },
+    "package": "Existing local package verified; no package rebuilt or published for this analysis.",
+    "dependencyAudit": {
+      "all": {
+        "info": 0,
+        "low": 1,
+        "moderate": 9,
+        "high": 0,
+        "critical": 0,
+        "total": 10
+      },
+      "omitDev": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "issues": [
+        {
+          "name": "@eslint-community/eslint-utils",
+          "severity": "moderate",
+          "isDirect": false,
+          "fixAvailable": {
+            "name": "web-ext",
+            "version": "3.2.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "name": "@eslint/config-array",
+          "severity": "moderate",
+          "isDirect": false,
+          "fixAvailable": {
+            "name": "web-ext",
+            "version": "3.2.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "name": "@eslint/eslintrc",
+          "severity": "moderate",
+          "isDirect": false,
+          "fixAvailable": {
+            "name": "web-ext",
+            "version": "3.2.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "name": "addons-linter",
+          "severity": "moderate",
+          "isDirect": false,
+          "fixAvailable": {
+            "name": "web-ext",
+            "version": "3.2.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "name": "deepmerge",
+          "severity": "low",
+          "isDirect": false,
+          "fixAvailable": {
+            "name": "web-ext",
+            "version": "3.2.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "name": "eslint",
+          "severity": "moderate",
+          "isDirect": false,
+          "fixAvailable": {
+            "name": "web-ext",
+            "version": "3.2.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "name": "eslint-plugin-no-unsanitized",
+          "severity": "moderate",
+          "isDirect": false,
+          "fixAvailable": {
+            "name": "web-ext",
+            "version": "3.2.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "name": "minimatch",
+          "severity": "moderate",
+          "isDirect": false,
+          "fixAvailable": {
+            "name": "web-ext",
+            "version": "3.2.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "name": "multimatch",
+          "severity": "moderate",
+          "isDirect": false,
+          "fixAvailable": {
+            "name": "web-ext",
+            "version": "3.2.1",
+            "isSemVerMajor": true
+          }
+        },
+        {
+          "name": "web-ext",
+          "severity": "moderate",
+          "isDirect": true,
+          "fixAvailable": {
+            "name": "web-ext",
+            "version": "3.2.1",
+            "isSemVerMajor": true
+          }
+        }
+      ]
+    }
+  },
+  "diagnostics": {
+    "synthetic": true,
+    "ttl": {
+      "experiment": "expired-context-iteration",
+      "expiredEntriesStillInSize": 100,
+      "expiredEntriesStillInValues": 100,
+      "checkedKeyPresent": false,
+      "remainingAfterCheckingOneKey": 99
+    },
+    "ownership": {
+      "experiment": "foreign-owner-resource-labels",
+      "messageId": 8,
+      "rows": 0,
+      "resourceLabels": {
+        "attachment:1.2": "from-message-A.txt (1.2)",
+        "link:0": "https://message-a.invalid/private"
+      }
+    }
+  },
+  "reproduce": "node docs/audits/next-development-1_24_4-reproduce.cjs",
+  "logs": {
+    "product-plan-source.log": "b964c5d4e1add6e94cc8ef43de07fb39ccd2ea8fcf2b3bf3839e64a556bf4d2d",
+    "product-plan-focused.log": "c44c3ac98507d7720168461870a18433c109e29d795c74ae4625bc5f0e886019",
+    "product-plan-package.log": "1b14e162d10aaafcf6589b7ee46c2f0fc5f6151edaa1f1113babf16025f7af7a"
+  },
+  "limits": [
+    "No live provider calls or newly configured accounts.",
+    "No new native Thunderbird runs: existing source-bound native/CI evidence reviewed.",
+    "No Windows/macOS, native screenreader or human translation/usability approval.",
+    "No public Pages HTTP-content approval, automatic-update or distribution rollback proof.",
+    "No implementation of proposed fixes and no release publication."
+  ]
+}
