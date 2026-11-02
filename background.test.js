@@ -107,6 +107,8 @@ describe('background.js', () => {
                 })
             },
             console: { log: () => {}, error: () => {}, warn: () => {} },
+            openDB: async () => ({}),
+            updateStore: async (_db, _store, _key, update) => update(null),
             fetch: async () => ({ status: 200, json: async () => ({}) }),
             AbortController: globalThis.AbortController,
             clearTimeout: globalThis.clearTimeout,
@@ -277,6 +279,14 @@ describe('background.js', () => {
         context.set_apikey(undefined);
         await context.loadSettings();
         assert.strictEqual(context.get_apikey(), 'test-api-key');
+    });
+
+    it('storage.onChanged wires gateway apikeys for the auth-injection layer', () => {
+        context.set_urlscanApikey(undefined);
+        const listener = context.browser.storage.onChanged.listeners[0];
+        listener({ urlscanApikey: { newValue: 'scan-key' } }, 'local');
+        const wired = vm.runInContext('syncGatewayApikeys(); apiGateway.apikeys.urlscan', context);
+        assert.strictEqual(wired, 'scan-key');
     });
 
     it('storage.onChanged updates API key dynamically', () => {
@@ -1133,9 +1143,10 @@ describe('background.js', () => {
             assert.ok(result.reasons.includes("Visuelle Erkennung: Die Seite gibt sich als PayPal aus (Phishing-Verdacht)."));
         });
 
-        it('handles successful scan and result polling (clean)', async () => {
+        it('handles successful scan and result polling (clean) and sends the API key on the result fetch', async () => {
             let callCount = 0;
-            context.fetch = async (url) => {
+            let resultFetchOptions = null;
+            context.fetch = async (url, options) => {
                 callCount++;
                 if (callCount === 1) {
                     return {
@@ -1144,6 +1155,7 @@ describe('background.js', () => {
                         json: async () => ({ uuid: 'test-uuid-3' })
                     };
                 } else if (callCount === 2) {
+                    resultFetchOptions = options;
                     return {
                         status: 200,
                         json: async () => ({ verdicts: {} })
@@ -1153,6 +1165,8 @@ describe('background.js', () => {
 
             const result = await context.checkUrlscanIo('http://clean.com', 'apikey');
             assert.strictEqual(result.status, 'CLEAN');
+            // Result fetches for unlisted scans carry the API key (PA-8).
+            assert.strictEqual(resultFetchOptions.headers['API-Key'], 'apikey');
         });
 
         it('handles successful scan but polling timeout', async () => {
@@ -2956,7 +2970,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'UNKNOWN' });
+            assert.equal(response.status, 'UNKNOWN'); assert.equal(response.check.origin, 'none'); assert.equal(response.check.outcome, 'missing_reference'); assert.equal(response.check.observedAt, null);
         });
 
         it('checks urlscan.io if no link object is found and urlscan is active, returning MALICIOUS', async () => {
@@ -2995,7 +3009,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'CUSTOM_STATE', provider: 'Hybrid Analysis' });
+            assert.equal(response.status, 'CUSTOM_STATE'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'stored'); assert.equal(response.check.outcome, 'missing_reference');
         });
 
         it('fetches overview from hybrid analysis if hybrid_sha256 exists, returning CLEAN for no specific threat', async () => {
@@ -3013,7 +3027,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'CLEAN', provider: 'Hybrid Analysis' });
+            assert.equal(response.status, 'CLEAN'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'live'); assert.equal(response.check.outcome, 'success');
         });
 
         it('fetches overview from hybrid analysis, returning UPPERCASE verdict for threats', async () => {
@@ -3026,7 +3040,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'MALICIOUS', provider: 'Hybrid Analysis' });
+            assert.equal(response.status, 'MALICIOUS'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'live'); assert.equal(response.check.outcome, 'success');
         });
 
         it('falls back to link state if hybrid analysis fetch throws an error', async () => {
@@ -3039,7 +3053,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'FALLBACK_STATE', provider: 'Hybrid Analysis' });
+            assert.equal(response.status, 'FALLBACK_STATE'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'stored'); assert.equal(response.check.outcome, 'failed');
         });
 
         it('returns ERROR on generic unexpected errors in the main flow', async () => {
@@ -3125,18 +3139,19 @@ describe('background.js', () => {
             assert.equal(options.method, 'GET');
             assert.equal(options.headers.accept, 'application/json');
             assert.equal(options.headers['api-key'], 'test-api-key');
-            assert.match(options.headers['user-agent'], /Falcon/);
+            // user-agent is a forbidden header name for fetch and must not be set.
+            assert.ok(!('user-agent' in options.headers));
             assert.ok(!options.body);
         });
 
-        it('should add body and scan_type header for POST request with body', () => {
+        it('should add body for POST request with body (scan_type rides in the form body)', () => {
             const body = { test: 'data' };
             const options = context.getHybridAnalysisOptions('POST', body);
             assert.equal(options.method, 'POST');
             assert.equal(options.headers.accept, 'application/json');
             assert.equal(options.headers['api-key'], 'test-api-key');
-            assert.match(options.headers['user-agent'], /Falcon/);
-            assert.equal(options.headers['scan_type'], 'all');
+            assert.ok(!('user-agent' in options.headers));
+            assert.ok(!('scan_type' in options.headers));
             assert.deepEqual(options.body, body);
         });
 
@@ -3146,8 +3161,8 @@ describe('background.js', () => {
             assert.equal(options.method, 'POST');
             assert.equal(options.headers.accept, 'application/json');
             assert.equal(options.headers['api-key'], 'test-api-key');
-            assert.match(options.headers['user-agent'], /Falcon/);
-            assert.equal(options.headers['scan_type'], 'all');
+            assert.ok(!('user-agent' in options.headers));
+            assert.ok(!('scan_type' in options.headers));
             assert.equal(options.headers['Content-Type'], 'application/x-www-form-urlencoded');
             assert.deepEqual(options.body, body);
         });

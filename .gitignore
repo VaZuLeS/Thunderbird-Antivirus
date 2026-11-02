@@ -9,3 +9,6 @@ test_output.log
 
 # Generated local Enterprise identities, keys, journal and exports.
 enterprise/.local/
+
+# Separate web demo output
+dist/

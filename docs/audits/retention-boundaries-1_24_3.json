@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "kind": "synthetic-retention-boundary-check",
+  "sourceFingerprint": "a52a9fc477143ff3adf709c2d3c8dadec17937867941add4321899f63614d0aa",
+  "checks": {
+    "ageBoundaryInclusive": true,
+    "expiredRemoved": true,
+    "clockRollbackDoesNotRewriteFutureData": true,
+    "legacyOptionalFieldsUnchanged": true,
+    "inputUnchanged": true,
+    "countBound": true,
+    "byteBound": true
+  },
+  "scope": "pure Node storage-policy behavior; no disk-failure or wall-clock deletion guarantee"
+}

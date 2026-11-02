@@ -1,59 +1,30 @@
-# CI-Workflows (übernahmefähige Definitionen)
+# Aktive CI, Kandidatengate und Veröffentlichung
 
-Dieses Verzeichnis enthält die **fertigen Workflow-Definitionen** für das Repository:
+Stand: 2. November 2026. Aktiv sind die Dateien unter `.github/workflows/`. `docs/ci/ci.yml` und `docs/ci/release-publish.yml` sind inhaltsgleiche Referenzkopien. `docs/ci/release.yml` bleibt eine **separate, nicht aktivierte ATN-Signiervorlage**. Alte Angaben über einen nur reduzierten aktiven Testworkflow oder ungeprüftes `upload --clobber` gelten nicht für diesen Quellstand.
 
-| Datei | Ziel im Repository | Zweck |
-|---|---|---|
-| `ci.yml` | `.github/workflows/ci.yml` | `npm ci`, Pre-Submit-Checks, vollständige Testsuite (`npm test`), `web-ext lint` mit kuratiertem Thunderbird-Filter (`npm run lint:filtered`), XPI-Build + Paketprüfung (`npm run package`), Submission-Gate (`npm run goal`), Upload des XPI als Artefakt |
-| `release.yml` | `.github/workflows/release.yml` | manueller Signier-/Einreichungsjob für **addons.thunderbird.net** (`web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/`), Submission-Gate (`npm run goal`) als Schranke **vor** dem Signieren, Secrets `ATN_API_KEY`/`ATN_API_SECRET`, `approval-timeout` als Eingabe |
-| `release-publish.yml` | `.github/workflows/release-publish.yml` (oder: aktive `release.yml` ersetzen) | Tag-Push `v*`: Validierung, `npm run check`, Submission-Gate (`npm run goal`), XPI + `SHA256SUMS.txt`, idempotentes Publish (create, sonst upload --clobber) |
+1. `ci.yml` prüft frisches `npm ci`, Webdemo, Quellen, Tests, gefiltertes Lint und Paketinhalt. Sechs Browserjobs prüfen synthetische UI-APIs. Der echte Linux-Thunderbird-Job installiert das gehashte GitHub-XPI 1.24.2 und den Kandidaten in isolierten Sprachprofilen und prüft Neustart, Prozessverlust und Profilbackup-Restore.
+2. Der nachgelagerte Kandidatenjob lädt **dieselben Paketbytes** und alle Reports. `candidate-evidence.js` verlangt in sechs Sprachen echte Upgrade-/Crashberichte mit passendem Pakethash sowie vollständige Browserberichte mit passendem Quellfingerprint. `npm run goal -- --candidate` prüft zusätzlich Quellen/Tests/Lint/Paket und einen sauberen paketwirksamen Arbeitsbaum. Er baut das Paket nicht nochmals.
+3. `release.yml` wird durch einen neuen `v*`-Tag gestartet und ruft denselben CI-Workflow auf. Erst nach dessen Erfolg werden Kandidat und Evidenz geladen, Tag/Version geprüft und die getesteten Bytes als XPI bereitgestellt. Es gibt keinen nachträglichen Neubuild.
+4. `publish-release.js` legt einen fehlenden Release an. Existiert er, werden Metadaten und beide Assets heruntergeladen und byteweise über SHA-256 verglichen. Gleiche Dateien bleiben unverändert, Abweichungen oder unklarer Zugriffsstatus brechen ab. Veröffentlichte Assets werden nicht überschrieben.
 
-## Warum liegen sie hier und nicht direkt unter `.github/workflows/`?
+Die CI-Konfiguration kann lokal auf Syntax und die Gate-/Publikationslogik mit Testdoubles geprüft werden. Ein erfolgreicher GitHub-Lauf muss nach Übernahme der Änderungen separat nachgewiesen werden. Aktuelle lokale Berichte ersetzen diesen Remote-Lauf nicht.
 
-GitHub lehnt Pushes ab, die Workflow-Dateien anlegen oder ändern, wenn das verwendete
-Token keine **Workflows**-Berechtigung besitzt. Das ist in dieser Umgebung reproduzierbar:
+## Lokal
 
-```
-! [remote rejected] cline/k0d34w90 -> cline/k0d34w90
-  (refusing to allow a GitHub App to create or update workflow `.github/workflows/ci.yml`
-   without `workflows` permission)
-```
-
-Der **aktive** Workflow im Repository ist deshalb weiterhin die reduzierte Variante
-(`npm ci`, Pre-Submit-Checks, `node --test background.test.js`, `web-ext lint` ohne Filter,
-kein Build/Paketcheck). Genau dieser Umstand ist Befund **P1-7** der Problemanalyse und wird
-erst mit der Übernahme behoben.
-
-Alle referenzierten Skripte liegen im Repository und sind getestet:
-
-- `scripts/pre-submit-checks.js` (Manifest, Daten-Deklaration, Rechte, Assets)
-- `scripts/lint-with-filter.js` + `scripts/filter-lint-warnings.js` (nur dokumentierte Thunderbird-False-Positives werden toleriert)
-- `scripts/build-and-verify-package.js` + `scripts/verify-package.js` (Build, Paketinhalt, Artefaktwahl)
-- `scripts/submission-gate.js` (Go/No-Go-Gate, siehe unten)
-
-## Übernehmen
-
-1. Workflow-Dateien kopieren (mit einem Token, das `workflows` darf):
-
-   ```bash
-   cp docs/ci/ci.yml .github/workflows/ci.yml
-   cp docs/ci/release.yml .github/workflows/release.yml
-   git add .github/workflows && git commit -m "ci: activate full store-readiness gates"
-   git push
-   ```
-
-2. Für `release.yml` die Secrets `ATN_API_KEY` und `ATN_API_SECRET` setzen (ATN →
-   Developer Hub → API-Schlüssel; `web-ext sign` liest sie über `WEB_EXT_API_KEY` /
-   `WEB_EXT_API_SECRET`).
-
-## Lokale Entsprechung (ohne GitHub Actions)
-
-```bash
+```sh
 npm ci
-npm run check          # Pre-Submit-Checks + Tests + Lint mit Filter + Build/Paketprüfung
-npm run store-gate     # Go/No-Go-Protokoll mit Nachweis je Kriterium
+npm run check:web
+npm run check
+npm run check:ui -- --browser /absolute/path/to/chromium
+# Echte Clientberichte separat erzeugen, siehe NATIVE_ABNAHME_2026-11.md.
+node scripts/candidate-evidence.js --write /path/to/live /path/to/ui
+npm run goal -- --candidate
 ```
 
-`npm run check` entspricht inhaltlich exakt dem `ci.yml`-Job; `npm run store-gate` ergänzt die
-nicht automatisch prüfbaren Kriterien (Live-Test-Protokoll, Screenshots, Release-Tag) und
-liefert Exit-Code 0 nur bei vollständigem GO.
+Ohne `--candidate` wird zusätzlich ein passender Release-Tag verlangt. `--no-commands` zeigt C1–C4 ausdrücklich als übersprungen und kann keine vollständige GO-Freigabe erzeugen. Die lokale Kandidatenevidenz liegt unter `docs/audits/candidate-<version>.json`; jede paketwirksame Änderung macht sie ungültig. Ein neuer ZIP-Container mit anderen Bytes braucht neue pakethashgebundene Liveberichte.
+
+## ATN und automatische Updates
+
+GitHub-Veröffentlichung ist weder Signierung noch Store-Listung. Echte ATN-Schritte benötigen Maintainerzugang, einen zulässigen Kanal und bei Automation passende API-Credentials. Diese Umgebung meldet keine dafür eingerichteten Secrets. Der automatische Updatekanal ist gesondert abzunehmen; lokale XPI-Upgrades und ein Profilrestore benötigen keine ATN-Schlüssel.
+
+Keine Signaturprüfung durch eine SHA256SUMS-Datei behaupten. Die Datei schützt den Vergleich mit den referenzierten Bytes, nicht die unabhängige Authentizität des Herausgebers.

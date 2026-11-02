@@ -1408,5 +1408,186 @@
   },
   "auditVerdictAtDecision": {
     "message": "Ergebnis bei Entscheidung"
+  },
+  "ui_169": {
+    "message": "Analyse-Protokoll: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Job-ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Submission-ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokoll abgerufen: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " Die Analyse läuft noch (IN_PROGRESS). Das Ergebnis wird automatisch alle $P1$ Sekunden erneut abgefragt (Versuch $P2$); das fertige Analyse-Protokoll erscheint hier, sobald es gespeichert ist, ohne erneute Abfrage.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Es ist keine abgeschlossene Entscheidung gespeichert. Nach Neustart oder Prozessverlust bleibt der Vorgang offen; daraus folgt weder eine Öffnung noch ein Abbruch."
+  },
+  "auditCancelUser": {
+    "message": "Vom Nutzer abgebrochen"
+  },
+  "auditCancelEscape": {
+    "message": "Mit Escape geschlossen"
+  },
+  "auditCancelDestination": {
+    "message": "Linkziel geändert"
+  },
+  "auditCancelContext": {
+    "message": "Nachrichtenkontext geschlossen"
+  },
+  "auditCancelUnknown": {
+    "message": "Unbekannter Abbruchgrund"
+  },
+  "reportNotSaved": {
+    "message": "Der Bericht wird angezeigt, konnte aber lokal nicht gespeichert werden. Zum erneuten Versuch nochmals öffnen."
+  },
+  "checkOrigin_live": {
+    "message": "Aktuelles Anbieterergebnis"
+  },
+  "checkOrigin_stored": {
+    "message": "Gespeichertes Ergebnis"
+  },
+  "checkOrigin_none": {
+    "message": "Keine Anbieterbeobachtung"
+  },
+  "checkOutcome_success": {
+    "message": "Abruf erfolgreich"
+  },
+  "checkOutcome_failed": {
+    "message": "Abruf fehlgeschlagen"
+  },
+  "checkOutcome_disabled": {
+    "message": "Externe Analyse deaktiviert"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Hostberechtigung fehlt"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Anbieterschlüssel fehlt"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Keine Anbieterreferenz"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Kein neuer Abruf"
+  },
+  "checkOutcome_no_result": {
+    "message": "Kein verwertbares neues Ergebnis"
+  },
+  "checkAttempted": {
+    "message": "Prüfversuch"
+  },
+  "checkObserved": {
+    "message": "Ergebnis beobachtet"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Gründe bei Entscheidung"
+  },
+  "auditReasonsLatest": {
+    "message": "Zuletzt verfügbare Gründe"
+  },
+  "auditReasonsMissing": {
+    "message": "Damals nicht aufgezeichnet"
+  },
+  "coverageSummary": {
+    "message": "Prüfumfang — erkannt: $1; zulässig: $2; bearbeitet: $3; fehlgeschlagen: $4; ausgelassen: $5. Ausgelassene Elemente sind nicht bewertet."
+  },
+  "supportTitle": {
+    "message": "Lokaler Supportbericht"
+  },
+  "supportHelp": {
+    "message": "Minimierten Diagnosebericht prüfen und lokal speichern. Es wird nichts versendet. Prüfsummen bestätigen die Quelle nicht."
+  },
+  "supportPreview": {
+    "message": "Berichtvorschau"
+  },
+  "supportConfiguration": {
+    "message": "Grobe Einstellungen aufnehmen (keine Schlüssel oder Absenderlisten)"
+  },
+  "supportSave": {
+    "message": "Bericht lokal speichern"
+  },
+  "coverageAttachments": {
+    "message": "Anhänge"
+  },
+  "coverageDomains": {
+    "message": "Eindeutige Domains"
+  },
+  "coverageBatch": {
+    "message": "Stapellinks"
+  },
+  "coverageLimits": {
+    "message": "Grenzen pro Lauf: 100 Anhänge, 25 MiB je Anhang, 100 eindeutige Domains, 20 Stapellinks. Bearbeitet bedeutet weder extern geprüft noch sicher."
+  },
+  "localProfileTitle": {
+    "message": "Lokale Darstellungsprofile"
+  },
+  "localProfileHelp": {
+    "message": "Nur Darstellung, Akzent und Dichte übertragen. Jeden Import zuerst prüfen und bestätigen. Schlüssel, Zustimmung, Berechtigungen, Schutzregeln und Audithistorie sind ausgeschlossen."
+  },
+  "localProfileExport": {
+    "message": "Darstellung exportieren"
+  },
+  "localProfileFile": {
+    "message": "Profildatei wählen (JSON, bis 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profil-JSON (oder hier einfügen)"
+  },
+  "localProfilePreview": {
+    "message": "Änderungen prüfen"
+  },
+  "localProfileApply": {
+    "message": "Angezeigte Änderungen übernehmen"
+  },
+  "localProfileDiscard": {
+    "message": "Import verwerfen"
+  },
+  "localProfileInvalid": {
+    "message": "Ungültiges Profil, nicht unterstützte Version oder unzulässige Felder. Es wurde nichts übernommen."
+  },
+  "localProfileChanged": {
+    "message": "Darstellung wurde seit der Vorschau geändert. Vor dem Übernehmen erneut prüfen."
+  },
+  "localProfileFailed": {
+    "message": "Profil konnte nicht gespeichert werden. Aktuelle Einstellungen prüfen und erneut versuchen."
+  },
+  "localProfileApplied": {
+    "message": "Darstellungsprofil übernommen. Schutz und Zustimmung unverändert."
   }
 }

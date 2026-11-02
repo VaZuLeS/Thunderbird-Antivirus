@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Language, LinkAuditRecord } from '../types';
+import { demoText } from '../lib/demo';
 import { t } from '../lib/i18n';
 import { getAuditRecords, saveAuditRecords, clearAuditLog } from '../lib/auditStorage';
 import { 
@@ -62,20 +63,20 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
 
   // Export JSON
   const handleExportJson = () => {
-    const blob = new Blob([JSON.stringify(filtered, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ kind: 'thundy-web-simulation', records: filtered }, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `thundy-link-audit-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `thundy-demo-audit-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   // Export CSV
   const handleExportCsv = () => {
-    const headers = ['ID', 'ClickTime', 'DecisionTime', 'URL', 'Outcome', 'Score', 'Verdict', 'Provider'];
+    const headers = ['SimulationOnly', 'ID', 'ClickTime', 'DecisionTime', 'URL', 'Outcome', 'Score', 'Verdict', 'Provider'];
     const rows = filtered.map(r => [
-      r.id,
+      'true', r.id,
       new Date(r.clickedAt).toISOString(),
       r.decidedAt ? new Date(r.decidedAt).toISOString() : '',
       `"${r.url.replace(/"/g, '""')}"`,
@@ -89,7 +90,7 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `thundy-link-audit-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `thundy-demo-audit-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -111,7 +112,7 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
           </h2>
         </div>
         <p style={{ margin: '0 0 12px', fontSize: '13px', color: 'var(--text-muted)' }}>
-          {t(lang, 'auditScope')}
+          {demoText(lang, 'data')}
         </p>
         <div style={{ padding: '8px 12px', background: 'var(--accent-soft)', color: 'var(--link-color)', borderRadius: '8px', fontSize: '12px' }}>
           🛡️ {t(lang, 'auditPrivacy')}
@@ -166,6 +167,8 @@ export const AuditView: React.FC<AuditViewProps> = ({ lang }) => {
               style={{ width: '100%' }}
             >
               <option value="">{t(lang, 'auditAll')}</option>
+              <option value="SIMULATED_OPEN">{demoText(lang, 'opened')}</option>
+              <option value="SIMULATED_ABORT">{demoText(lang, 'aborted')}</option>
               <option value="OPENED">{t(lang, 'auditOpened')}</option>
               <option value="ABORTED">{t(lang, 'auditAborted')}</option>
               <option value="OPEN_ERROR">{t(lang, 'auditOpenError')}</option>

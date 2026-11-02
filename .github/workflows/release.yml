@@ -1,51 +1,64 @@
-name: Publish GitHub release
+name: Publish validated GitHub release
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
 
 permissions:
-  contents: write
+  contents: read
+  pull-requests: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
   release:
+    needs: checks
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
-          cache: npm
-      - name: Validate tag and release notes
+      - name: Install validation dependencies without rebuilding the tested archive
+        run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: validated-release-candidate
+          path: .
+      - name: Validate immutable candidate and release identity
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          version="$(node -p 'require("./manifest.json").version')"
-          test "$RELEASE_TAG" = "v$version"
-          test -f "docs/releases/$version.md"
-      - run: npm ci
-      - name: Verify source, tests, lint and package
-        run: npm run check
-      - name: Prepare unsigned XPI and checksums
+          node scripts/candidate-evidence.js
+          node - <<'JS'
+          const fs = require('node:fs');
+          const version = require('./manifest.json').version;
+          const tag = require('./scripts/submission-gate.js').releaseTagState(version);
+          if (process.env.RELEASE_TAG !== 'v' + version || !tag.exists || tag.changedArtifacts.length) throw new Error('Release identity mismatch');
+          if (!fs.existsSync('docs/releases/' + version + '.md')) throw new Error('Missing release notes');
+          JS
+      - name: Reuse exact tested bytes as unsigned XPI
         run: |
-          version="$(node -p 'require("./manifest.json").version')"
-          cp "build/thundy_av_email_scanner_for_thunderbird-$version.zip" "build/thundy-av-$version.xpi"
-          cd build
-          sha256sum "thundy-av-$version.xpi" > SHA256SUMS.txt
-      - name: Publish release with validated assets
+          node - <<'JS'
+          const fs = require('node:fs'), crypto = require('node:crypto');
+          const version = require('./manifest.json').version;
+          const input = require('./scripts/verify-package.js').selectArtifact('build');
+          const name = 'thundy-av-' + version + '.xpi';
+          const bytes = fs.readFileSync(input);
+          fs.writeFileSync('build/' + name, bytes);
+          fs.writeFileSync('build/SHA256SUMS.txt', crypto.createHash('sha256').update(bytes).digest('hex') + '  ' + name + '\n');
+          JS
+      - name: Publish once or verify identical existing assets
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          version="$(node -p 'require("./manifest.json").version')"
-          gh release create "$RELEASE_TAG" \
-            "build/thundy-av-$version.xpi" build/SHA256SUMS.txt \
-            --verify-tag --latest \
-            --title "Thundy AV $version" \
-            --notes-file "docs/releases/$version.md"
+        run: node scripts/publish-release.js

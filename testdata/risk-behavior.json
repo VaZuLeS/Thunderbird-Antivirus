@@ -1,0 +1,136 @@
+{
+  "scope": "synthetic behavior contracts, no prevalence or detection-rate estimate",
+  "cases": [
+    {
+      "id": "AUTH-FAIL",
+      "author": "Alice <alice@example.org>",
+      "urls": [],
+      "options": {
+        "authHeaders": [
+          "mx.example.org; spf=fail"
+        ]
+      },
+      "expect": {
+        "minScore": 50,
+        "maxScore": 100,
+        "authStatus": "fail",
+        "reason": "ui_087"
+      }
+    },
+    {
+      "id": "BENIGN-AUTH",
+      "author": "Alice <alice@example.org>",
+      "urls": [
+        "https://docs.example.org/guide"
+      ],
+      "options": {
+        "authHeaders": [
+          "mx.example.org; spf=pass; dkim=pass; dmarc=pass"
+        ],
+        "messageText": "Quarterly newsletter and meeting notes."
+      },
+      "expect": {
+        "minScore": 0,
+        "maxScore": 0,
+        "authStatus": "pass"
+      }
+    },
+    {
+      "id": "REPLY-MISMATCH",
+      "author": "Alice <alice@example.org>",
+      "urls": [],
+      "options": {
+        "replyTo": "payment@different.example.net"
+      },
+      "expect": {
+        "minScore": 1,
+        "maxScore": 100,
+        "reason": "ui_091"
+      }
+    },
+    {
+      "id": "BEC-EN",
+      "author": "Alice <alice@example.org>",
+      "urls": [],
+      "options": {
+        "subject": "Urgent transfer immediately",
+        "isFirstCommunication": true
+      },
+      "expect": {
+        "minScore": 50,
+        "maxScore": 100,
+        "reason": "ui_092"
+      }
+    },
+    {
+      "id": "BEC-DE",
+      "author": "Alice <alice@example.org>",
+      "urls": [],
+      "options": {
+        "subject": "Dringend sofort überweisen",
+        "isFirstCommunication": true
+      },
+      "expect": {
+        "minScore": 50,
+        "maxScore": 100,
+        "reason": "ui_092"
+      }
+    },
+    {
+      "id": "BEC-FR",
+      "author": "Alice <alice@example.org>",
+      "urls": [],
+      "options": {
+        "subject": "Virement urgent immédiatement",
+        "isFirstCommunication": true
+      },
+      "expect": {
+        "minScore": 50,
+        "maxScore": 100,
+        "reason": "ui_092"
+      }
+    },
+    {
+      "id": "BEC-ES",
+      "author": "Alice <alice@example.org>",
+      "urls": [],
+      "options": {
+        "subject": "Pago urgente inmediatamente",
+        "isFirstCommunication": true
+      },
+      "expect": {
+        "minScore": 50,
+        "maxScore": 100,
+        "reason": "ui_092"
+      }
+    },
+    {
+      "id": "BEC-IT",
+      "author": "Alice <alice@example.org>",
+      "urls": [],
+      "options": {
+        "subject": "Pagamento urgente subito",
+        "isFirstCommunication": true
+      },
+      "expect": {
+        "minScore": 50,
+        "maxScore": 100,
+        "reason": "ui_092"
+      }
+    },
+    {
+      "id": "BEC-PL",
+      "author": "Alice <alice@example.org>",
+      "urls": [],
+      "options": {
+        "subject": "Pilne przelew natychmiast",
+        "isFirstCommunication": true
+      },
+      "expect": {
+        "minScore": 50,
+        "maxScore": 100,
+        "reason": "ui_092"
+      }
+    }
+  ]
+}

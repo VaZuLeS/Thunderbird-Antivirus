@@ -1405,5 +1405,186 @@
   },
   "auditVerdictAtDecision": {
     "message": "Wynik w chwili decyzji"
+  },
+  "ui_169": {
+    "message": "Protokół analizy: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Identyfikator zadania: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Identyfikator przesłania: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protokół pobrany: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " Analiza nadal trwa (IN_PROGRESS). Wynik jest automatycznie ponownie sprawdzany co $P1$ sekund (próba $P2$); ukończony protokół analizy pojawi się tutaj bez ponownego zapytania, gdy tylko zostanie zapisany.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Nie zapisano zakończonej decyzji. Po ponownym uruchomieniu lub utracie procesu wpis pozostaje oczekujący; nie oznacza otwarcia ani anulowania łącza."
+  },
+  "auditCancelUser": {
+    "message": "Anulowano przez użytkownika"
+  },
+  "auditCancelEscape": {
+    "message": "Zamknięto klawiszem Escape"
+  },
+  "auditCancelDestination": {
+    "message": "Zmieniono adres docelowy"
+  },
+  "auditCancelContext": {
+    "message": "Zamknięto kontekst wiadomości"
+  },
+  "auditCancelUnknown": {
+    "message": "Nieznany powód anulowania"
+  },
+  "reportNotSaved": {
+    "message": "Raport jest widoczny, ale nie udało się go zapisać lokalnie. Otwórz go ponownie, aby spróbować jeszcze raz."
+  },
+  "checkOrigin_live": {
+    "message": "Aktualny wynik dostawcy"
+  },
+  "checkOrigin_stored": {
+    "message": "Zapisany wynik"
+  },
+  "checkOrigin_none": {
+    "message": "Brak obserwacji dostawcy"
+  },
+  "checkOutcome_success": {
+    "message": "Żądanie zakończone pomyślnie"
+  },
+  "checkOutcome_failed": {
+    "message": "Żądanie nie powiodło się"
+  },
+  "checkOutcome_disabled": {
+    "message": "Analiza zewnętrzna wyłączona"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Brak uprawnienia do hosta"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Brak klucza dostawcy"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Brak identyfikatora dostawcy"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Brak nowego żądania"
+  },
+  "checkOutcome_no_result": {
+    "message": "Brak nowego wyniku do wykorzystania"
+  },
+  "checkAttempted": {
+    "message": "Próba sprawdzenia"
+  },
+  "checkObserved": {
+    "message": "Zaobserwowany wynik"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Powody w chwili decyzji"
+  },
+  "auditReasonsLatest": {
+    "message": "Ostatnie dostępne powody"
+  },
+  "auditReasonsMissing": {
+    "message": "Nie zapisano w tamtej chwili"
+  },
+  "coverageSummary": {
+    "message": "Zakres — wykryte: $1; kwalifikujące się: $2; przetworzone: $3; błędy: $4; pominięte: $5. Pominięte elementy nie zostały ocenione."
+  },
+  "supportTitle": {
+    "message": "Lokalny raport pomocy"
+  },
+  "supportHelp": {
+    "message": "Sprawdź minimalny raport diagnostyczny i zapisz go lokalnie. Nic nie jest wysyłane. Sumy kontrolne nie potwierdzają źródła."
+  },
+  "supportPreview": {
+    "message": "Podgląd raportu"
+  },
+  "supportConfiguration": {
+    "message": "Uwzględnij ogólne ustawienia (bez kluczy i list nadawców)"
+  },
+  "supportSave": {
+    "message": "Zapisz raport lokalnie"
+  },
+  "coverageAttachments": {
+    "message": "Załączniki"
+  },
+  "coverageDomains": {
+    "message": "Unikalne domeny"
+  },
+  "coverageBatch": {
+    "message": "Linki zbiorcze"
+  },
+  "coverageLimits": {
+    "message": "Limity na przebieg: 100 załączników, 25 MiB na załącznik, 100 unikalnych domen, 20 linków zbiorczych. Przetworzenie nie oznacza analizy zewnętrznej ani bezpieczeństwa."
+  },
+  "localProfileTitle": {
+    "message": "Lokalne profile wyglądu"
+  },
+  "localProfileHelp": {
+    "message": "Przenoś tylko wygląd, kolor i gęstość. Sprawdź i potwierdź każdy import. Klucze, zgody, uprawnienia, reguły ochrony i historia są wykluczone."
+  },
+  "localProfileExport": {
+    "message": "Eksportuj wygląd"
+  },
+  "localProfileFile": {
+    "message": "Wybierz profil (JSON, do 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "JSON profilu (lub wklej tutaj)"
+  },
+  "localProfilePreview": {
+    "message": "Podgląd zmian"
+  },
+  "localProfileApply": {
+    "message": "Zastosuj pokazane zmiany"
+  },
+  "localProfileDiscard": {
+    "message": "Odrzuć import"
+  },
+  "localProfileInvalid": {
+    "message": "Nieprawidłowy profil, nieobsługiwana wersja lub niedozwolone pola. Nic nie zastosowano."
+  },
+  "localProfileChanged": {
+    "message": "Wygląd zmienił się od podglądu. Przejrzyj ponownie przed zastosowaniem."
+  },
+  "localProfileFailed": {
+    "message": "Nie udało się zapisać profilu. Sprawdź bieżące ustawienia i spróbuj ponownie."
+  },
+  "localProfileApplied": {
+    "message": "Zastosowano profil wyglądu. Ochrona i zgody bez zmian."
   }
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { demoText } from './lib/demo';
 import { Language, SettingsState } from './types';
 import { Header } from './components/Header';
 import { ScannerView } from './components/ScannerView';
@@ -85,6 +86,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="thundy-app">
+      <aside className="thundy-card" role="note" aria-label="Demo">{demoText(lang, 'notice')}</aside>
       <Header
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
@@ -129,12 +131,12 @@ export const App: React.FC = () => {
 
       <footer style={{ borderTop: '1px solid var(--card-border)', padding: '20px 24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>
         <p style={{ margin: '0 0 6px' }}>
-          <strong>Thundy AV</strong> — Local email attachment & link scanner.
+          <strong>Thundy AV</strong> — {demoText(lang, 'data')}
         </p>
         <p style={{ margin: 0 }}>
           <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noreferrer" style={{ color: 'var(--link-color)' }}>GNU GPL v3</a>
           {' · '}
-          <span>Local by default — No telemetry or unconsented transmission</span>
+          <span>{demoText(lang, 'noProviders')}</span>
         </p>
       </footer>
     </div>

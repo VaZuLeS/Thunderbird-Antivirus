@@ -13,7 +13,9 @@ class ApiGateway {
     }
 
     _injectAuthHeaders(url, options) {
-        let headers = options.headers || {};
+        const inputHeaders = options.headers || {};
+        const headers = typeof inputHeaders.entries === 'function' ? Object.fromEntries(inputHeaders.entries()) : Array.isArray(inputHeaders) ? Object.fromEntries(inputHeaders) : { ...inputHeaders };
+        const hasHeader = name => Object.keys(headers).some(key => key.toLowerCase() === name.toLowerCase());
         let hostname;
 
         try {
@@ -27,15 +29,17 @@ class ApiGateway {
             return options;
         }
 
-        if ((hostname === 'virustotal.com' || hostname === 'www.virustotal.com') && this.apikeys['virustotal']) {
+        // Defense in depth only: adapters already carry the same auth headers,
+        // so never override an existing header (PA-8 follow-up).
+        if ((hostname === 'virustotal.com' || hostname === 'www.virustotal.com') && this.apikeys['virustotal'] && !hasHeader('x-apikey')) {
             headers['x-apikey'] = this.apikeys['virustotal'];
-        } else if (hostname === 'urlhaus-api.abuse.ch' && this.apikeys['urlhaus']) {
+        } else if (hostname === 'urlhaus-api.abuse.ch' && this.apikeys['urlhaus'] && !hasHeader('Auth-Key')) {
             headers['Auth-Key'] = this.apikeys['urlhaus'];
-        } else if ((hostname === 'hybrid-analysis.com' || hostname === 'www.hybrid-analysis.com') && this.apikeys['hybridanalysis']) {
+        } else if ((hostname === 'hybrid-analysis.com' || hostname === 'www.hybrid-analysis.com') && this.apikeys['hybridanalysis'] && !hasHeader('api-key')) {
             headers['api-key'] = this.apikeys['hybridanalysis'];
-        } else if ((hostname === 'urlscan.io' || hostname === 'www.urlscan.io') && this.apikeys['urlscan']) {
+        } else if ((hostname === 'urlscan.io' || hostname === 'www.urlscan.io') && this.apikeys['urlscan'] && !hasHeader('API-Key')) {
             headers['API-Key'] = this.apikeys['urlscan'];
-        } else if (hostname === 'api.abuseipdb.com' && this.apikeys['abuseipdb']) {
+        } else if (hostname === 'api.abuseipdb.com' && this.apikeys['abuseipdb'] && !hasHeader('Key')) {
             headers['Key'] = this.apikeys['abuseipdb'];
         }
 

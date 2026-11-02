@@ -1,0 +1,234 @@
+{
+  "passed": true,
+  "scope": "Linux X11 GUI; synthetic plaintext; offline; no API mocks",
+  "startedAt": "2026-11-02T03:20:20Z",
+  "xpiSha256": "1c3ba1f8f2f24197c82cb3335dce0901b27f1611c6230665229e16e915778e39",
+  "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+  "extensionVersion": "1.24.3",
+  "client": {
+    "capabilities": {
+      "acceptInsecureCerts": false,
+      "browserName": "thunderbird",
+      "browserVersion": "153.6.0",
+      "platformName": "linux",
+      "setWindowRect": true,
+      "unhandledPromptBehavior": "dismiss and notify",
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:153.0) Gecko/20100101 Thunderbird/153.6.0",
+      "moz:buildID": "20261026222624",
+      "moz:headless": false,
+      "moz:platformVersion": "6.18.57",
+      "moz:shutdownTimeout": 60000,
+      "pageLoadStrategy": "normal",
+      "timeouts": {
+        "implicit": 0,
+        "pageLoad": 300000,
+        "script": 30000
+      },
+      "strictFileInteractability": false,
+      "moz:accessibilityChecks": false,
+      "moz:webdriverClick": true,
+      "moz:windowless": false,
+      "capabilities": {
+        "alwaysMatch": {
+          "acceptInsecureCerts": false
+        }
+      },
+      "proxy": {}
+    }
+  },
+  "appLocale": "en-US",
+  "uiLanguage": "en-US",
+  "wizardVersion": "1.24.3",
+  "wizardLanguages": [
+    {
+      "language": "en",
+      "title": "Set up Thundy AV"
+    },
+    {
+      "language": "de",
+      "title": "Thundy AV einrichten"
+    },
+    {
+      "language": "fr",
+      "title": "Configurer Thundy AV"
+    },
+    {
+      "language": "es",
+      "title": "Configurar Thundy AV"
+    },
+    {
+      "language": "it",
+      "title": "Configura Thundy AV"
+    },
+    {
+      "language": "pl",
+      "title": "Skonfiguruj Thundy AV"
+    }
+  ],
+  "wizardSaved": {
+    "onboardingState": {
+      "schemaVersion": 1,
+      "status": "completed",
+      "completedAt": "2026-11-02T03:20:23.282Z"
+    },
+    "timeOfClickProtection": true
+  },
+  "syntheticMessageBytes": 403,
+  "linkDialog": {
+    "text": "T\nThundy AV\nCheck before opening\n\nDestination website\n\n127.0.0.1:41511\n\nShow full link address\n\nThis link could not be checked. Opening it may be risky.\n\nLocal score (link and message): 40 / 100\n\nOnly available scan results can be shown. Missing checks do not mean a link is safe.\n\nCancel\nOpen link anyway",
+    "width": 520,
+    "focus": "Cancel",
+    "url": "https://127.0.0.1:41511/thundy-browser-check"
+  },
+  "nativePopup": {
+    "panelWidth": 602,
+    "contentWidth": 600,
+    "language": "en",
+    "heading": "Message security overview"
+  },
+  "osHandoff": {
+    "argv": [
+      "https://127.0.0.1:41511/thundy-browser-check"
+    ]
+  },
+  "blockedOsDispatch": {
+    "apiAccepted": true,
+    "additionalReceiverCalls": 0,
+    "observationSeconds": 1,
+    "protocolPolicy": false
+  },
+  "auditRecord": {
+    "id": "18e814d2-a749-4de9-8aa2-621688d3841f",
+    "clickedAt": 1793589623778,
+    "decidedAt": 1793589623973,
+    "messageId": 1,
+    "url": "https://127.0.0.1:41511/thundy-browser-check",
+    "score": 40,
+    "scoreSource": "local-message-and-link",
+    "scoreAtDecision": 40,
+    "verdict": "UNKNOWN",
+    "verdictAtDecision": "UNKNOWN",
+    "providerAtDecision": "Hybrid Analysis",
+    "provider": "Hybrid Analysis",
+    "reasons": [
+      "None of the links in the text point to the sender domain (example.invalid)."
+    ],
+    "outcome": "ABORTED",
+    "cancelReason": "cancel",
+    "openAttempts": 0,
+    "extensionVersion": "1.24.3",
+    "scoredAt": 1793589623789,
+    "reasonDetails": [
+      {
+        "code": "ui_097",
+        "params": [
+          "example.invalid"
+        ]
+      }
+    ],
+    "checkedAt": 1793589623797,
+    "providerReasons": []
+  },
+  "openedAuditRecord": {
+    "id": "0d19fa61-d084-4db3-94ab-f9f68a2cb546",
+    "clickedAt": 1793589624307,
+    "decidedAt": 1793589624479,
+    "messageId": 1,
+    "url": "https://127.0.0.1:41511/thundy-browser-check",
+    "score": 40,
+    "scoreSource": "local-message-and-link",
+    "scoreAtDecision": 40,
+    "verdict": "UNKNOWN",
+    "verdictAtDecision": "UNKNOWN",
+    "providerAtDecision": "Hybrid Analysis",
+    "provider": "Hybrid Analysis",
+    "reasons": [
+      "None of the links in the text point to the sender domain (example.invalid)."
+    ],
+    "outcome": "OPENED",
+    "cancelReason": null,
+    "openAttempts": 1,
+    "extensionVersion": "1.24.3",
+    "scoredAt": 1793589624320,
+    "reasonDetails": [
+      {
+        "code": "ui_097",
+        "params": [
+          "example.invalid"
+        ]
+      }
+    ],
+    "checkedAt": 1793589624324,
+    "providerReasons": []
+  },
+  "blockedOsAuditRecord": {
+    "id": "26de828e-b76e-41e3-b297-617bd048e665",
+    "clickedAt": 1793589624602,
+    "decidedAt": 1793589624727,
+    "messageId": 1,
+    "url": "https://127.0.0.1:41511/thundy-browser-check",
+    "score": 40,
+    "scoreSource": "local-message-and-link",
+    "scoreAtDecision": 40,
+    "verdict": "UNKNOWN",
+    "verdictAtDecision": "UNKNOWN",
+    "providerAtDecision": "Hybrid Analysis",
+    "provider": "Hybrid Analysis",
+    "reasons": [
+      "None of the links in the text point to the sender domain (example.invalid)."
+    ],
+    "outcome": "OPENED",
+    "cancelReason": null,
+    "openAttempts": 1,
+    "extensionVersion": "1.24.3",
+    "scoredAt": 1793589624647,
+    "reasonDetails": [
+      {
+        "code": "ui_097",
+        "params": [
+          "example.invalid"
+        ]
+      }
+    ],
+    "checkedAt": 1793589624651,
+    "providerReasons": []
+  },
+  "appearanceSaved": {
+    "thundyAppearance": "dark",
+    "thundyAccent": "violet",
+    "thundyDensity": "compact"
+  },
+  "nativeThemes": [
+    "dark",
+    "light"
+  ],
+  "localizedPages": [
+    {
+      "page": "options.html",
+      "language": "en",
+      "heading": "Thundy AV settings"
+    },
+    {
+      "page": "audit.html",
+      "language": "en",
+      "heading": "Link decision log"
+    },
+    {
+      "page": "enterprise_setup.html",
+      "language": "en",
+      "heading": "Optional enterprise profiles"
+    },
+    {
+      "page": "privacy.html",
+      "language": "en",
+      "heading": "Privacy policy"
+    }
+  ],
+  "realBrowserHandoff": {
+    "browser": "/usr/bin/chromium",
+    "browserStarted": true,
+    "controlledLocalPageRequested": true,
+    "scope": "real isolated Chromium process; localhost HTTPS fixture, not an external website"
+  },
+  "finishedAt": "2026-11-02T03:20:28Z"
+}

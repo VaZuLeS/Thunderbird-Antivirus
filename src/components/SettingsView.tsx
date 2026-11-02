@@ -146,7 +146,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: 650 }}>
             <input
               type="checkbox"
-              checked={form.externalAnalysisConsent}
+              disabled checked={false}
               onChange={(e) => updateField('externalAnalysisConsent', e.target.checked)}
               style={{ width: '18px', height: '18px' }}
             />
@@ -240,7 +240,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               Hybrid Analysis API Key (optional)
             </label>
             <input
-              type="password"
+              type="password" disabled
               value={form.apikey}
               onChange={(e) => updateField('apikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
@@ -256,7 +256,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               URLhaus API Key (optional)
             </label>
             <input
-              type="password"
+              type="password" disabled
               value={form.urlhausApikey}
               onChange={(e) => updateField('urlhausApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
@@ -272,7 +272,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               urlscan.io API Key (optional)
             </label>
             <input
-              type="password"
+              type="password" disabled
               value={form.urlscanApikey}
               onChange={(e) => updateField('urlscanApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"
@@ -288,7 +288,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               VirusTotal API Key (optional)
             </label>
             <input
-              type="password"
+              type="password" disabled
               value={form.virustotalApikey}
               onChange={(e) => updateField('virustotalApikey', e.target.value)}
               placeholder="e.g. abcdef123456…"

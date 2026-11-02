@@ -1405,5 +1405,186 @@
   },
   "auditVerdictAtDecision": {
     "message": "Risultato al momento della decisione"
+  },
+  "ui_169": {
+    "message": "Protocollo di analisi: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID processo: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID invio: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protocollo recuperato: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " L’analisi è ancora in corso (IN_PROGRESS). Il risultato viene ricontrollato automaticamente ogni $P1$ secondi (tentativo $P2$); il protocollo di analisi completato appare qui senza una nuova richiesta non appena viene salvato.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Non è registrata alcuna decisione conclusa. Dopo un riavvio o la perdita del processo, l’operazione resta in sospeso; non implica apertura o annullamento."
+  },
+  "auditCancelUser": {
+    "message": "Annullato dall’utente"
+  },
+  "auditCancelEscape": {
+    "message": "Chiuso con Esc"
+  },
+  "auditCancelDestination": {
+    "message": "Destinazione modificata"
+  },
+  "auditCancelContext": {
+    "message": "Contesto del messaggio chiuso"
+  },
+  "auditCancelUnknown": {
+    "message": "Motivo di annullamento sconosciuto"
+  },
+  "reportNotSaved": {
+    "message": "Il rapporto è visualizzato, ma non è stato salvato localmente. Riaprirlo per riprovare."
+  },
+  "checkOrigin_live": {
+    "message": "Risultato attuale del fornitore"
+  },
+  "checkOrigin_stored": {
+    "message": "Risultato salvato"
+  },
+  "checkOrigin_none": {
+    "message": "Nessuna osservazione del fornitore"
+  },
+  "checkOutcome_success": {
+    "message": "Richiesta riuscita"
+  },
+  "checkOutcome_failed": {
+    "message": "Richiesta non riuscita"
+  },
+  "checkOutcome_disabled": {
+    "message": "Analisi esterna disattivata"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Autorizzazione del sito mancante"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Chiave del fornitore mancante"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Nessun riferimento del fornitore"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Nessuna nuova richiesta"
+  },
+  "checkOutcome_no_result": {
+    "message": "Nessun nuovo risultato utilizzabile"
+  },
+  "checkAttempted": {
+    "message": "Tentativo di verifica"
+  },
+  "checkObserved": {
+    "message": "Risultato osservato"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Motivi al momento della decisione"
+  },
+  "auditReasonsLatest": {
+    "message": "Ultimi motivi disponibili"
+  },
+  "auditReasonsMissing": {
+    "message": "Non registrati al momento"
+  },
+  "coverageSummary": {
+    "message": "Copertura — rilevati: $1; idonei: $2; elaborati: $3; non riusciti: $4; esclusi: $5. Gli elementi esclusi non sono valutati."
+  },
+  "supportTitle": {
+    "message": "Rapporto locale di assistenza"
+  },
+  "supportHelp": {
+    "message": "Visualizza un rapporto diagnostico minimo e salvalo localmente. Nulla viene inviato. Le somme di controllo non autenticano la fonte."
+  },
+  "supportPreview": {
+    "message": "Anteprima del rapporto"
+  },
+  "supportConfiguration": {
+    "message": "Includi impostazioni generali (senza chiavi o elenchi mittenti)"
+  },
+  "supportSave": {
+    "message": "Salva il rapporto localmente"
+  },
+  "coverageAttachments": {
+    "message": "Allegati"
+  },
+  "coverageDomains": {
+    "message": "Domini unici"
+  },
+  "coverageBatch": {
+    "message": "Link del gruppo"
+  },
+  "coverageLimits": {
+    "message": "Limiti per esecuzione: 100 allegati, 25 MiB per allegato, 100 domini unici, 20 link per gruppo. Elaborato non significa analizzato esternamente o sicuro."
+  },
+  "localProfileTitle": {
+    "message": "Profili di aspetto locali"
+  },
+  "localProfileHelp": {
+    "message": "Trasferisci solo aspetto, colore e densità. Controlla e conferma ogni importazione. Sono esclusi chiavi, consenso, autorizzazioni, regole di protezione e cronologia."
+  },
+  "localProfileExport": {
+    "message": "Esporta aspetto"
+  },
+  "localProfileFile": {
+    "message": "Scegli profilo (JSON, fino a 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profilo JSON (o incolla qui)"
+  },
+  "localProfilePreview": {
+    "message": "Anteprima modifiche"
+  },
+  "localProfileApply": {
+    "message": "Applica modifiche visualizzate"
+  },
+  "localProfileDiscard": {
+    "message": "Scarta importazione"
+  },
+  "localProfileInvalid": {
+    "message": "Profilo non valido, versione non supportata o campi vietati. Nessuna modifica applicata."
+  },
+  "localProfileChanged": {
+    "message": "L’aspetto è cambiato dopo l’anteprima. Controlla di nuovo prima di applicare."
+  },
+  "localProfileFailed": {
+    "message": "Impossibile salvare il profilo. Controlla le impostazioni attuali e riprova."
+  },
+  "localProfileApplied": {
+    "message": "Profilo di aspetto applicato. Protezione e consenso invariati."
   }
 }

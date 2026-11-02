@@ -1405,5 +1405,186 @@
   },
   "auditVerdictAtDecision": {
     "message": "Résultat au moment de la décision"
+  },
+  "ui_169": {
+    "message": "Protocole d’analyse : $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID de tâche : $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID de soumission : $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protocole récupéré : $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " L’analyse est encore en cours (IN_PROGRESS). Le résultat est revérifié automatiquement toutes les $P1$ secondes (tentative $P2$) ; le protocole d’analyse terminé apparaît ici sans nouvelle requête dès qu’il est enregistré.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "Aucune décision terminée n’est enregistrée. Après un redémarrage ou un arrêt du processus, cette entrée reste en attente ; cela ne prouve ni ouverture ni annulation."
+  },
+  "auditCancelUser": {
+    "message": "Annulé par l’utilisateur"
+  },
+  "auditCancelEscape": {
+    "message": "Fermé avec Échap"
+  },
+  "auditCancelDestination": {
+    "message": "Destination modifiée"
+  },
+  "auditCancelContext": {
+    "message": "Contexte du message fermé"
+  },
+  "auditCancelUnknown": {
+    "message": "Motif d’annulation inconnu"
+  },
+  "reportNotSaved": {
+    "message": "Le rapport est affiché, mais n’a pas pu être enregistré localement. Rouvrez-le pour réessayer."
+  },
+  "checkOrigin_live": {
+    "message": "Résultat actuel du fournisseur"
+  },
+  "checkOrigin_stored": {
+    "message": "Résultat enregistré"
+  },
+  "checkOrigin_none": {
+    "message": "Aucune observation du fournisseur"
+  },
+  "checkOutcome_success": {
+    "message": "Requête réussie"
+  },
+  "checkOutcome_failed": {
+    "message": "Échec de la requête"
+  },
+  "checkOutcome_disabled": {
+    "message": "Analyse externe désactivée"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Autorisation du site manquante"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Clé du fournisseur manquante"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Aucune référence du fournisseur"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Aucune nouvelle requête"
+  },
+  "checkOutcome_no_result": {
+    "message": "Aucun nouveau résultat exploitable"
+  },
+  "checkAttempted": {
+    "message": "Tentative de vérification"
+  },
+  "checkObserved": {
+    "message": "Résultat observé"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Motifs au moment de la décision"
+  },
+  "auditReasonsLatest": {
+    "message": "Derniers motifs disponibles"
+  },
+  "auditReasonsMissing": {
+    "message": "Non enregistrés à ce moment-là"
+  },
+  "coverageSummary": {
+    "message": "Couverture — détectés : $1 ; admissibles : $2 ; traités : $3 ; en échec : $4 ; ignorés : $5. Les éléments ignorés ne sont pas évalués."
+  },
+  "supportTitle": {
+    "message": "Rapport local pour le support"
+  },
+  "supportHelp": {
+    "message": "Prévisualisez un rapport de diagnostic minimal, puis enregistrez-le localement. Aucun envoi. Les sommes de contrôle ne prouvent pas sa source."
+  },
+  "supportPreview": {
+    "message": "Aperçu du rapport"
+  },
+  "supportConfiguration": {
+    "message": "Inclure les réglages généraux (sans clés ni listes d’expéditeurs)"
+  },
+  "supportSave": {
+    "message": "Enregistrer le rapport localement"
+  },
+  "coverageAttachments": {
+    "message": "Pièces jointes"
+  },
+  "coverageDomains": {
+    "message": "Domaines uniques"
+  },
+  "coverageBatch": {
+    "message": "Liens du lot"
+  },
+  "coverageLimits": {
+    "message": "Limites par passage : 100 pièces jointes, 25 Mio par pièce jointe, 100 domaines uniques, 20 liens par lot. Traité ne signifie ni analysé en externe ni sûr."
+  },
+  "localProfileTitle": {
+    "message": "Profils d’apparence locaux"
+  },
+  "localProfileHelp": {
+    "message": "Transférez uniquement l’apparence, l’accent et la densité. Prévisualisez et confirmez chaque importation. Clés, consentements, autorisations, règles de protection et historique sont exclus."
+  },
+  "localProfileExport": {
+    "message": "Exporter l’apparence"
+  },
+  "localProfileFile": {
+    "message": "Choisir un profil (JSON, 8 Kio maximum)"
+  },
+  "localProfileInput": {
+    "message": "Profil JSON (ou coller ici)"
+  },
+  "localProfilePreview": {
+    "message": "Prévisualiser les modifications"
+  },
+  "localProfileApply": {
+    "message": "Appliquer les modifications affichées"
+  },
+  "localProfileDiscard": {
+    "message": "Abandonner l’importation"
+  },
+  "localProfileInvalid": {
+    "message": "Profil invalide, version non prise en charge ou champs interdits. Aucune modification appliquée."
+  },
+  "localProfileChanged": {
+    "message": "L’apparence a changé depuis l’aperçu. Prévisualisez à nouveau avant d’appliquer."
+  },
+  "localProfileFailed": {
+    "message": "Impossible d’enregistrer le profil. Vérifiez les paramètres actuels et réessayez."
+  },
+  "localProfileApplied": {
+    "message": "Profil d’apparence appliqué. Protection et consentement inchangés."
   }
 }

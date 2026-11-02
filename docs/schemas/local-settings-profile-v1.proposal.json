@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Thundy local settings profile — proposal only; no runtime importer",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "appearance"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "thundy-local-settings" },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "enum": ["system", "light", "dark"] },
+        "accent": { "enum": ["ocean", "violet", "forest", "amber"] },
+        "density": { "enum": ["comfortable", "compact"] }
+      }
+    }
+  }
+}

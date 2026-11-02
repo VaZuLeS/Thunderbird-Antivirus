@@ -1,3 +1,5 @@
+> Aktueller Ausführungsstand vom 2. November 2026: [Produktstand](AKTUELLER_PRODUKTSTAND.md) und [Aufgabenliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md). Die folgenden Abschnitte dokumentieren ihre jeweiligen historischen Pakete und Umgebungen.
+
 # Reale Thunderbird-Linux-Teilabnahme
 
 Am 15. Oktober 2026 wurde der Quellstand 1.23.0 erstmals in dieser Umgebung in einer echten Thunderbird-GUI geprüft. Der wiederholbare Lauf verwendet Thunderbirds tatsächliche WebExtension-, Nachrichten-, Speicher- und Theme-Schnittstellen. Es werden keine Add-on-APIs nachgebildet. Die zusätzliche Chromium-/axe-Prüfung bleibt ein eigener Prüfumfang.

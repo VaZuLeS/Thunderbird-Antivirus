@@ -820,19 +820,21 @@ test("total deadline interrupts AWS preflight and forwards an aborted SDK signal
 test("AWS readback stall times out and destroys the body", async () => {
   const f = fixture(),
     body = new Readable({ read() {} });
+  let reachedReadback = false;
   try {
     const s = s3Fixture({
-      getObject: async () => ({
+      getObject: async () => { reachedReadback = true; return ({
         VersionId: "version-1",
         ServerSideEncryption: "aws:kms",
         SSEKMSKeyId: "arn:aws:kms:eu-central-1:123456789012:key/test-key",
         Body: body,
-      }),
+      }); },
     });
     await assert.rejects(
-      storeS3(f.artifact, s.config, s.port, permit, { timeoutMs: 20 }),
+      storeS3(f.artifact, s.config, s.port, permit, { timeoutMs: 1000 }),
       { code: "STORAGE_TIMEOUT" },
     );
+    assert.equal(reachedReadback, true, "deadline must exercise the stalled body rather than earlier preflight work");
     assert.equal(body.destroyed, true);
   } finally {
     body.destroy();
@@ -920,21 +922,32 @@ test("pre-aborted caller and invalid timeout never contact providers", async () 
   }
 });
 
-test("late readback response after timeout disposes its stream", async () => {
+test("late readback response after timeout disposes its stream", { timeout: 10000 }, async (t) => {
   const f = fixture();
-  let resolve;
+  let clock = 0;
+  t.mock.method(performance, "now", () => clock);
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  let started, resolve;
+  const reading = new Promise(r => { started = r; });
   const body = new Readable({ read() {} });
   try {
     const s = s3Fixture({
       getObject: () =>
         new Promise((r) => {
           resolve = r;
+          started();
         }),
     });
-    await assert.rejects(
+    const rejected = assert.rejects(
       storeS3(f.artifact, s.config, s.port, permit, { timeoutMs: 20 }),
       { code: "STORAGE_TIMEOUT" },
     );
+    // Reach the readback before expiring its deadline. Host load must not
+    // accidentally turn this into a preflight-timeout test with no stream.
+    await reading;
+    clock = 21;
+    t.mock.timers.tick(21);
+    await rejected;
     resolve({ Body: body });
     await new Promise((r) => setImmediate(r));
     assert.equal(body.destroyed, true);

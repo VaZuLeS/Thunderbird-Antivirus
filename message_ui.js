@@ -16,7 +16,7 @@ async function injectIntoMessageDisplay(tabId, func, args = []) {
 
 async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null) {
     if (!timeOfClickProtection) return;
-    const labels = { waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), auditFailed: msg('auditFailure') };
+    const labels = { waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), auditFailed: msg('auditFailure'), origins: { live: msg('checkOrigin_live'), stored: msg('checkOrigin_stored'), none: msg('checkOrigin_none') }, outcomes: {success: msg('checkOutcome_success'), failed: msg('checkOutcome_failed'), disabled: msg('checkOutcome_disabled'), permission_denied: msg('checkOutcome_permission_denied'), missing_key: msg('checkOutcome_missing_key'), missing_reference: msg('checkOutcome_missing_reference'), not_requested: msg('checkOutcome_not_requested'), no_result: msg('checkOutcome_no_result')}, observed: msg('checkObserved'), attempted: msg('checkAttempted') };
     const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
     await injectIntoMessageDisplay(tabId, function(labels, messageId, theme) {
         if (document.documentElement.dataset.thundyClickProtection) return;
@@ -119,7 +119,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             if (!panel.isConnected) return;
             if (!link.isConnected || link.href !== url) { close('destination_changed'); return; }
             const dangerous = /MALICIOUS|SUSPICIOUS|MALICIOUS_VISUAL/.test(result && result.status || '');
-            const clean = result && result.status === 'CLEAN';
+            const clean = result && result.status === 'CLEAN' && (!result.check || result.check.origin === 'live');
             text.className = 'result ' + (dangerous ? 'danger' : clean ? '' : 'unknown');
             text.textContent = dangerous ? labels.warning : clean ? labels.noDetection : labels.unknown;
             if (result && Array.isArray(result.reasons)) {
@@ -129,6 +129,12 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             const score = document.createElement('p'); score.className = 'note';
             score.textContent = labels.score + ': ' + (Number.isFinite(result && result.score) ? result.score + ' / 100' : labels.unavailable);
             card.insertBefore(score, note);
+            if (result?.check) {
+                const provenance = document.createElement('p'); provenance.className = 'note';
+                const date = value => value == null ? labels.unavailable : new Date(value).toLocaleString();
+                provenance.textContent = (labels.origins[result.check.origin] || labels.unavailable) + ' · ' + (labels.outcomes[result.check.outcome] || labels.unavailable) + ' · ' + labels.attempted + ': ' + date(result.check.attemptedAt) + ' · ' + labels.observed + ': ' + date(result.check.observedAt);
+                card.insertBefore(provenance, note);
+            }
             if (result && result.auditSaved === false) { const auditNotice = document.createElement('p'); auditNotice.className = 'error'; auditNotice.textContent = labels.auditFailed; card.insertBefore(auditNotice, footer); }
             const proceed = document.createElement('button'); proceed.type = 'button'; proceed.className = 'primary' + (dangerous ? ' warning' : '');
             const buttonLabel = clean ? labels.open : labels.proceed;

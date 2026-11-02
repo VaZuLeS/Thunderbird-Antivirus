@@ -1,0 +1,51 @@
+{
+  "synthetic": true,
+  "physicalDiskMeasured": false,
+  "node": "v24.19.0",
+  "before": [
+    {
+      "count": 0,
+      "reads": 10,
+      "writes": 10,
+      "meanReadMs": 0.04433980000000091,
+      "serializedBytes": 2
+    },
+    {
+      "count": 50,
+      "reads": 10,
+      "writes": 10,
+      "meanReadMs": 0.4134608,
+      "serializedBytes": 5581
+    },
+    {
+      "count": 2000,
+      "reads": 10,
+      "writes": 10,
+      "meanReadMs": 11.607892200000007,
+      "serializedBytes": 229781
+    }
+  ],
+  "after": [
+    {
+      "count": 0,
+      "reads": 10,
+      "writes": 0,
+      "meanReadMs": 0.028232599999999053,
+      "serializedBytes": 2
+    },
+    {
+      "count": 50,
+      "reads": 10,
+      "writes": 0,
+      "meanReadMs": 0.22586570000000136,
+      "serializedBytes": 5581
+    },
+    {
+      "count": 2000,
+      "reads": 10,
+      "writes": 0,
+      "meanReadMs": 5.592010900000003,
+      "serializedBytes": 229781
+    }
+  ]
+}

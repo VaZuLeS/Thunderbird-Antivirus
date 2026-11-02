@@ -165,3 +165,11 @@ test('late audit responses and errors cannot replace the newest successful snaps
         assert.equal(doc.getElementById('auditJson').disabled, false);
     } finally { dom.window.close(); }
 });
+
+test('pending stored warning remains visible without pretending a fresh observation or decision', async()=>{
+ const dom=new JSDOM(fs.readFileSync('audit.html','utf8'));try{
+ const entry={...records[1],outcome:'PENDING',verdict:'MALICIOUS',checkedAt:null,verdictAtDecision:null,check:{origin:'stored',outcome:'failed',attemptedAt:100,observedAt:null}};
+ const catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));const c=vm.createContext({document:dom.window.document,browser:{runtime:{sendMessage:async()=>({success:true,records:[entry],profileId:'synthetic'})},i18n:{getUILanguage:()=> 'en',getMessage:key=>catalog[key]?.message||''}}});vm.runInContext(fs.readFileSync('i18n.js','utf8')+'\n'+source,c);await new Promise(resolve=>setImmediate(resolve));
+ const row=dom.window.document.querySelector('#auditRows tr');assert.ok(row.querySelector('details').textContent.includes(catalog.providerMalicious.message));assert.ok(!row.children[3].textContent.includes(catalog.providerMalicious.message));assert.ok(row.textContent.includes(catalog.auditPendingExplanation.message));
+ }finally{dom.window.close()}
+});

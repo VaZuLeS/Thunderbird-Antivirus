@@ -1,22 +1,56 @@
 name: CI
 
 on:
+  workflow_call:
   push:
     branches: [ '**' ]
   pull_request:
     branches: [ '**' ]
 
+# PR workflows check the merge context. Standalone branch pushes still run;
+# push workflows with an open same-repository PR defer to its full PR workflow.
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  route:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      run: ${{ steps.route.outputs.result }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/github-script@v8
+        id: route
+        with:
+          script: |
+            const { shouldRunChecks } = require('./scripts/ci-event.js');
+            return await shouldRunChecks({
+              eventName: context.eventName, ref: context.ref,
+              defaultBranch: context.payload.repository.default_branch,
+              owner: context.repo.owner, repository: context.repo.repo,
+              listOpenPulls: async options => (await github.rest.pulls.list(options)).data
+            });
+
   test:
+    needs: route
+    if: needs.route.outputs.run == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Use Node.js
         uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Install dependencies
         run: npm ci
+      - name: Type-check and build the separate web demo
+        run: npm run check:web
       - name: Pre-submit checks (manifest, privacy, permissions)
         run: node ./scripts/pre-submit-checks.js
       - name: Verify bundled English fallback
@@ -40,6 +74,8 @@ jobs:
           retention-days: 14
 
   browser-ui:
+    needs: route
+    if: needs.route.outputs.run == 'true'
     name: Browser UI (${{ matrix.language }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -49,6 +85,8 @@ jobs:
         language: [en, de, fr, es, it, pl]
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
           node-version: '22'
@@ -57,6 +95,10 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Check layouts, keyboard, exports and accessibility
         run: npm run check:ui -- --lang ${{ matrix.language }}
+      - name: Check 200 percent CSS zoom in settings and audit
+        run: |
+          npm run check:ui -- --lang ${{ matrix.language }} --view options.html --zoom 2
+          npm run check:ui -- --lang ${{ matrix.language }} --view audit.html --zoom 2
       - name: Preserve browser evidence and failure screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -80,6 +122,8 @@ jobs:
           apt-get install -y --no-install-recommends thunderbird thunderbird-l10n-de thunderbird-l10n-fr thunderbird-l10n-es-es thunderbird-l10n-it thunderbird-l10n-pl xvfb python3 imagemagick libxtst6 ca-certificates
           useradd --create-home thunderbird-test
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
           name: thunderbird-test-package
@@ -88,10 +132,10 @@ jobs:
         run: |
           python3 - <<'PYTHON'
           import hashlib, pathlib, urllib.request
-          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.22.0/thundy-av-1.22.0.xpi'
+          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.24.2/thundy-av-1.24.2.xpi'
           with urllib.request.urlopen(url, timeout=30) as response:
               data = response.read()
-          if hashlib.sha256(data).hexdigest() != '4d8003aed95719524524ae18a97be227991d551c2c23ae51e70f5dd85f3663cd':
+          if hashlib.sha256(data).hexdigest() != 'f7376f3c97e89d878eed25bb6737928a3e789829c7cd4b450ae6db49056267a9':
               raise SystemExit('Previous release hash mismatch')
           pathlib.Path('build/previous.xpi').write_bytes(data)
           PYTHON
@@ -113,7 +157,7 @@ jobs:
               set -- "$@" --langpack "/usr/lib/thunderbird/extensions/langpack-$pack@thunderbird.mozilla.org.xpi"
             fi
             runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --previous-xpi build/previous.xpi "$@" --out ".audit/thunderbird-live/$lang"
-            runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --previous-xpi build/previous.xpi --restart-check --crash-check "$@" --out ".audit/thunderbird-live/restart-$lang"
+            runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --previous-xpi build/previous.xpi --restart-check --crash-check --restore-check "$@" --out ".audit/thunderbird-live/restart-$lang"
           done
       - name: Preserve real-client report, logs and screenshots
         if: always()
@@ -122,5 +166,43 @@ jobs:
           name: thunderbird-linux-live
           path: .audit/thunderbird-live/
           include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  candidate-gate:
+    name: Package-bound candidate gate
+    needs: [test, browser-ui, thunderbird-live]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: thunderbird-test-package
+          path: build
+      - uses: actions/download-artifact@v4
+        with:
+          name: thunderbird-linux-live
+          path: .audit/thunderbird-live
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: browser-ui-*
+          path: .audit/browser
+      - name: Bind exact tested bytes and six-language reports
+        run: node scripts/candidate-evidence.js --write .audit/thunderbird-live .audit/browser
+      - name: Verify candidate without claiming publication
+        run: npm run goal -- --candidate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validated-release-candidate
+          path: |
+            build/*.zip
+            docs/audits/candidate-*.json
           if-no-files-found: error
           retention-days: 14

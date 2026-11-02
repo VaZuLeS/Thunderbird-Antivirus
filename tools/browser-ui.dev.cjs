@@ -35,7 +35,7 @@ function options(args) {
     const key = args[i]?.slice(2);
     if (
       !args[i]?.startsWith("--") ||
-      !["matrix", "out", "browser", "lang", "view"].includes(key) ||
+      !["matrix", "out", "browser", "lang", "view", "zoom"].includes(key) ||
       !args[i + 1] ||
       Object.hasOwn(o, "provided-" + key)
     )
@@ -46,6 +46,8 @@ function options(args) {
   if (!["smoke", "full"].includes(o.matrix)) throw Error("UI_MATRIX_INVALID");
   if (o.lang !== undefined && !languages.includes(o.lang))
     throw Error("UI_LANGUAGE_INVALID");
+  o.zoom = o.zoom === undefined ? 1 : Number(o.zoom);
+  if (![1, 2].includes(o.zoom)) throw Error("UI_ZOOM_INVALID");
   o.out = path.resolve(o.out);
   return o;
 }
@@ -143,7 +145,7 @@ function matrix(o, kinds) {
           scheme,
         });
       }
-  const selected = o.view ? cases.filter((c) => c.view === o.view) : cases;
+  const selected = (o.view ? cases.filter((c) => c.view === o.view) : cases).filter(c => o.zoom === 1 || c.width >= 600);
   if (selected.length === 0) throw Error("UI_VIEW_INVALID");
   return selected;
 }
@@ -292,6 +294,53 @@ async function interaction(page, c) {
       true,
       "appearance changed consent",
     );
+    await page.locator('#supportPreview').click();
+    await page.locator('#supportContent').waitFor({ state: 'visible' });
+    const minimal = JSON.parse(await page.locator('#supportContent').textContent());
+    assert.equal(minimal.authenticatedSource, false);
+    assert.equal(minimal.configuration, undefined);
+    await page.locator('#supportConfiguration').check();
+    assert.equal(await page.locator('#supportSave').isDisabled(), true);
+    await page.locator('#supportPreview').click();
+    await page.waitForFunction(() => !document.getElementById('supportSave').disabled);
+    const preview = JSON.parse(await page.locator('#supportContent').textContent());
+    assert.equal(preview.configuration.thundyAccent, 'amber');
+    assert.ok(!JSON.stringify(preview).includes('apikey'));
+    await page.locator('#supportSave').click();
+    await page.waitForFunction(() => uiTest.downloads.length === 1);
+    assert.deepEqual(JSON.parse(await page.evaluate(() => uiTest.downloads[0].content)), preview);
+    assert.equal(await page.evaluate(() => uiTest.permissionRequests), 0);
+    const profile = { schemaVersion:1, kind:'thundy-local-settings', appearance:{mode:'light',accent:'forest',density:'comfortable'} };
+    await page.locator('#localProfileInput').fill(JSON.stringify({...profile,externalAnalysisConsent:true}));
+    await page.locator('#localProfilePreview').click();
+    await page.waitForFunction(() => !!document.getElementById('localProfileStatus').textContent);
+    assert.equal(await page.locator('#localProfileApply').isDisabled(), true);
+    await page.locator('#localProfileFile').setInputFiles({ name:'appearance.json', mimeType:'application/json', buffer:Buffer.from(JSON.stringify(profile)) });
+    await page.waitForFunction(() => document.getElementById('localProfileInput').value.includes('forest'));
+    await page.locator('#localProfilePreview').click();
+    await page.waitForFunction(() => !document.getElementById('localProfileApply').disabled);
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.accent), 'amber', 'preview wrote settings');
+    await page.evaluate(() => uiTest.failSave = true);
+    await page.locator('#localProfileApply').click();
+    await page.waitForFunction(() => !document.getElementById('localProfileApply').disabled);
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.accent), 'amber', 'failed import changed appearance');
+    await page.evaluate(() => uiTest.failSave = false);
+    await page.locator('#localProfileApply').click();
+    await page.waitForFunction(() => document.documentElement.dataset.accent === 'forest' && document.activeElement.id === 'localProfilePreview');
+    await page.locator('#localProfileExport').click();
+    await page.waitForFunction(() => uiTest.downloads.length === 2);
+    assert.deepEqual(JSON.parse(await page.evaluate(() => uiTest.downloads[1].content)), profile);
+    assert.equal(await page.locator('#externalAnalysisConsent').isChecked(), false);
+    assert.equal(await page.evaluate(() => uiTest.permissionRequests), 0);
+    await page.locator('#localProfileInput').fill(JSON.stringify(profile));
+    await page.locator('#localProfilePreview').click();
+    await page.waitForFunction(() => !document.getElementById('localProfileApply').disabled);
+    await page.locator('label:has([name="accent"][value="violet"])').click();
+    await page.locator('#localProfileApply').click();
+    await page.waitForFunction(() => !!document.getElementById('localProfileStatus').textContent);
+    assert.equal(await page.evaluate(() => document.documentElement.dataset.accent), 'violet', 'stale preview overwrote newer choice');
+    await page.locator('#localProfileDiscard').click();
+    assert.equal(await page.locator('#localProfileApply').isDisabled(), true);
   } else if (c.view === "enterprise_setup.html") {
     await page.locator("#profileBundle").selectOption("microsoft");
     assert.equal(await page.locator("#profileChanges").isVisible(), true);
@@ -437,9 +486,11 @@ async function main() {
     server = startServer(reviews);
   let browser;
   const report = {
+    sourceFingerprint: require("../scripts/candidate-evidence.js").sourceFingerprint(root),
     schemaVersion: 1,
     kind: "thundy-browser-ui-check",
     matrix: o.matrix,
+    cssZoom: o.zoom,
     language: o.lang ?? "all",
     view: o.view ?? "all",
     startedAt: new Date().toISOString(),
@@ -519,6 +570,7 @@ async function main() {
               ),
             );
           await ready(page, c);
+          if (o.zoom !== 1) await page.evaluate(zoom => { document.documentElement.style.zoom = String(zoom); }, o.zoom);
           Object.assign(result, await checks(page, c));
           await interaction(page, c);
           if (c.kind === "message")

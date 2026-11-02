@@ -154,12 +154,12 @@ test('heuristic corpus distinguishes urgency from ordinary invoices across messa
 
 test('untrusted authentication reports never become a verified status', async () => {
     const state = setup(); await state.context.configure();
-    state.full.headers['authentication-results'] = ['attacker.invalid; spf=pass dkim=pass dmarc=pass'];
+    state.full.headers['authentication-results'] = ['attacker.invalid; spf=pass; dkim=pass; dmarc=pass'];
     const options = await state.context.collectThreatEvaluationOptions({ message: state.message, fullMessage: state.full, filteredUrls: [], messageText: '', allowExternal: false });
     const result = state.context.calculateThreatScore(state.message.author, [], options);
     assert.equal(result.authStatus, 'neutral');
     state.config.trustedAuthServers = ['recipient.example.com'];
-    state.full.headers['authentication-results'] = ['recipient.example.com; spf=pass dkim=pass dmarc=pass'];
+    state.full.headers['authentication-results'] = ['recipient.example.com; spf=pass; dkim=pass; dmarc=pass'];
     const trusted = await state.context.collectThreatEvaluationOptions({ message: state.message, fullMessage: state.full, filteredUrls: [], messageText: '', allowExternal: false });
     assert.equal(state.context.calculateThreatScore(state.message.author, [], trusted).authStatus, 'pass');
 });
@@ -392,11 +392,13 @@ test('cancellation during pending checks keeps the decision snapshot when a late
     await new Promise(resolve => setImmediate(resolve));
     const cancel = await state.context.handleCancelAuditedLink({ ...request, reason: 'escape' }, auditSender);
     assert.equal(cancel.success, true);
-    resolveFull(state.full); verdict({ status: 'MALICIOUS', provider: 'test-provider' }); await check;
+    resolveFull(state.full); verdict({ status: 'MALICIOUS', provider: 'test-provider', reasons: ['late provider reason'], check: {origin:'live',outcome:'success',observedAt:Date.now()} }); await check;
     const record = (await state.context.readLinkAudit()).records[0];
     assert.equal(record.outcome, 'ABORTED'); assert.equal(record.cancelReason, 'escape');
     assert.equal(record.scoreAtDecision, null); assert.equal(record.verdictAtDecision, 'UNKNOWN');
     assert.equal(record.verdict, 'MALICIOUS'); assert.equal(typeof record.score, 'number');
+    assert.equal(record.reasonsAtDecision, null); assert.equal(record.providerReasonsAtDecision, null); assert.equal(record.checkAtDecision, null);
+    assert.deepEqual(Array.from(record.providerReasons), ['late provider reason']);
     assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
 });
 
@@ -472,4 +474,78 @@ test('injected dialogs and background auditing record both decisions with one ev
     assert.equal(data.records.filter(record => record.outcome === 'OPENED').length, 1);
     assert.equal(data.records.filter(record => record.outcome === 'ABORTED').length, 1);
     assert.ok(data.records.every(record => record.score === 100)); assert.equal(state.requests.length, 0);
+});
+
+test('concurrent open/cancel actions issue only one native request and one terminal snapshot', async () => {
+    const state = setup(); await state.context.configure(); const request = auditRequest('concurrent_open');
+    await state.context.handleAuditedLinkCheck(request, auditSender);
+    let complete, calls = 0;
+    state.context.browser.windows.openDefaultBrowser = () => { calls++; return new Promise(resolve => { complete = resolve; }); };
+    const first = state.context.handleOpenAuditedLink(request, auditSender);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
+    assert.equal((await state.context.handleCancelAuditedLink(request, auditSender)).success, false);
+    complete(); assert.equal((await first).success, true);
+    assert.equal(calls, 1);
+    const record = (await state.context.readLinkAudit()).records[0];
+    assert.equal(record.outcome, 'OPENED'); assert.equal(record.openAttempts, 1);
+});
+
+test('an accepted native request followed by a failed audit commit stays uncertain on restart', async () => {
+    const state = setup(); await state.context.configure(); const request = auditRequest('commit_gap');
+    await state.context.handleAuditedLinkCheck(request, auditSender);
+    // Emulate the storage API's structured clone boundary, not shared object mutation.
+    const baseline = JSON.parse(JSON.stringify(state.config));
+    state.context.browser.storage.local.get = async () => JSON.parse(JSON.stringify(baseline));
+    state.context.browser.storage.local.set = async () => { throw new Error('quota after native acceptance'); };
+    const result = await state.context.handleOpenAuditedLink(request, auditSender);
+    assert.equal(result.success, true); assert.equal(result.auditSaved, false);
+    const recovered = setup(baseline); await recovered.context.configure();
+    let requests = 0; recovered.context.browser.windows.openDefaultBrowser = async () => { requests++; };
+    const record = (await recovered.context.readLinkAudit()).records[0];
+    assert.equal(record.outcome, 'PENDING'); assert.equal(record.decidedAt, null);
+    assert.equal(record.openAttempts, 0); assert.equal(requests, 0);
+    assert.equal((await recovered.context.handleOpenAuditedLink(request, auditSender)).success, false);
+});
+
+test('the actual displayed message is rechecked immediately before native opening', async () => {
+    const state = setup(); await state.context.configure(); const request = auditRequest('message_switch');
+    await state.context.handleAuditedLinkCheck(request, auditSender);
+    let calls = 0; state.context.browser.windows.openDefaultBrowser = async () => { calls++; };
+    state.context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 99 }] });
+    assert.equal((await state.context.handleOpenAuditedLink(request, auditSender)).success, false);
+    assert.equal(calls, 0);
+    assert.equal((await state.context.readLinkAudit()).records[0].outcome, 'OPEN_ERROR');
+});
+
+test('structured link checks retain stored warning and observation time on failure without claiming freshness', async () => {
+ const s=setup({externalAnalysisConsent:true,apikey:'dummy'});await s.context.configure();
+ s.context.fetch=async()=>{throw new Error('offline')};
+ const result=await s.context.checkHybridAnalysisResult('hash','MALICIOUS',{observedAt:123});
+ assert.equal(result.status,'MALICIOUS');assert.equal(result.check.origin,'stored');assert.equal(result.check.observedAt,123);assert.equal(result.check.outcome,'failed');assert.ok(result.check.attemptedAt>123);
+ s.config.externalAnalysisConsent=false;await s.context.configure();
+ assert.equal((await s.context.checkHybridAnalysisResult('hash','CLEAN')).check.outcome,'disabled');
+ s.config.externalAnalysisConsent=true;await s.context.configure();s.context.browser.permissions.contains=async()=>false;
+ assert.equal((await s.context.checkHybridAnalysisResult('hash','CLEAN')).check.outcome,'permission_denied');
+ assert.equal((await s.context.checkHybridAnalysisResult('hash','CLEAN',{requested:false})).check.attemptedAt,null);
+});
+test('coverage accounts for 101 attachments and 21 batch links without raising limits', async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'dummy'});await s.context.configure();const saved={};
+ s.context.persistScanCoverage=async(_m,kind,coverage)=>{saved[kind]=coverage};s.context.indexedDB_save_batch_hybrid_data_to_db=async()=>{};
+ s.context.process_single_attachment=async(_m,a)=>a.name==='failed'?null:{hybrid_data:{state:a.size>25*1024*1024?'SIZE_LIMIT':'MANUAL_CHECK_PENDING'}};
+ const atts=Array.from({length:101},(_,i)=>({name:i===1?'failed':String(i),size:i===2?26*1024*1024:10}));
+ await s.context.sent_to_hybrid_by_attachment(s.message,atts,false,false);
+ assert.equal(saved.attachments.detected,101);assert.equal(saved.attachments.eligible,100);assert.equal(saved.attachments.processed,98);assert.equal(saved.attachments.failed,1);assert.equal(saved.attachments.skipped,2);
+ s.full.parts=[{contentType:'text/plain',body:Array.from({length:21},(_,i)=>'https://example'+i+'.invalid/').join(' ')}];let count=0;s.context.handleUrlScan=async()=>{count++;if(count===1)throw new Error('failed')};
+ await s.context.scanLinksOfDisplayedMessage(1);assert.equal(count,20);assert.equal(saved.batchLinks.processed,19);assert.equal(saved.batchLinks.failed,1);assert.equal(saved.batchLinks.skipped,1);
+});
+test('domain coverage counts unique domains, failures and the 100-domain limit',async()=>{
+ const s=setup({externalAnalysisConsent:true,urlhausApikey:'dummy'});await s.context.configure();s.context.checkURLhaus=async domain=>domain==='d0.invalid'?null:false;
+ const coverage={};await s.context.checkURLhausDomains([...Array.from({length:101},(_,i)=>'https://d'+i+'.invalid/'),'https://d1.invalid/again'],null,coverage);
+ assert.equal(coverage.detected,101);assert.equal(coverage.processed,99);assert.equal(coverage.failed,1);assert.equal(coverage.skipped,1);
+});
+test('message link contract rejects invalid schemes and malformed identities before work',async()=>{
+ const s=setup();const sender={tab:{id:1}};
+ assert.equal(s.context.validLinkRequest({messageId:7,url:'https://example.invalid',userAction:true,interactionId:'ok'},sender),true);
+ for(const patch of [{url:'javascript:alert(1)'},{messageId:'7'},{interactionId:'bad space'},{userAction:'true'}])assert.equal(s.context.validLinkRequest({messageId:7,url:'https://example.invalid',userAction:true,...patch},sender),false);
 });

@@ -28,6 +28,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { collectScreenshots, MIN_LISTING_WIDTH } = require('./screenshot-inventory.js');
+const { verifyEvidence } = require('./candidate-evidence.js');
 const { ALLOWED_FILES, ALLOWED_PREFIXES } = require('./verify-package.js');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -87,33 +88,37 @@ function isArtifactRelevant(file) {
   return ALLOWED_FILES.includes(file) || ALLOWED_PREFIXES.some((prefix) => file.startsWith(prefix));
 }
 
-function releaseTagState(version) {
+function releaseTagState(version, rootDir = ROOT) {
   const tag = 'v' + version;
-  const tagCommit = spawnSync('git', ['rev-list', '-n', '1', tag], { cwd: ROOT, encoding: 'utf8' });
-  const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8' });
+  const git = args => spawnSync('git', args, { cwd: rootDir, encoding: 'utf8' });
+  const dirty = git(['diff', '--name-only', 'HEAD']);
+  const untracked = git(['ls-files', '--others', '--exclude-standard']);
+  const dirtyArtifacts = ((dirty.stdout || '') + '\n' + (untracked.stdout || '')).split('\n').filter(file => file && isArtifactRelevant(file));
+  const tagCommit = spawnSync('git', ['rev-list', '-n', '1', tag], { cwd: rootDir, encoding: 'utf8' });
+  const head = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: rootDir, encoding: 'utf8' });
   const tagSha = (tagCommit.stdout || '').trim();
   const headSha = (head.stdout || '').trim();
-  if (!tagSha) return { exists: false, atHead: false, tag, tagSha, headSha, changedArtifacts: [] };
+  if (!tagSha) return { exists: false, atHead: false, tag, tagSha, headSha, dirtyArtifacts, changedArtifacts: dirtyArtifacts };
 
-  const diff = spawnSync('git', ['diff', '--name-only', tag + '..HEAD'], { cwd: ROOT, encoding: 'utf8' });
+  const diff = spawnSync('git', ['diff', '--name-only', tag + '..HEAD'], { cwd: rootDir, encoding: 'utf8' });
   const changed = (diff.stdout || '').split('\n').map((line) => line.trim()).filter(Boolean);
-  const changedArtifacts = changed.filter((file) => isArtifactRelevant(file));
-  return { exists: true, atHead: tagSha === headSha, tag, tagSha, headSha, changedArtifacts };
+  const changedArtifacts = [...new Set([...changed.filter((file) => isArtifactRelevant(file)), ...dirtyArtifacts])];
+  return { exists: true, atHead: tagSha === headSha, tag, tagSha, headSha, dirtyArtifacts, changedArtifacts };
 }
 
 /**
  * Evaluates every criterion. `commandRunner` and `tagLookup` are injectable so
  * the gate itself is unit tested.
  */
-function evaluateGate({ rootDir = ROOT, commandRunner = runCommand, tagLookup = releaseTagState, skipCommands = false } = {}) {
+function evaluateGate({ rootDir = ROOT, commandRunner = runCommand, tagLookup = releaseTagState, skipCommands = false, candidate = false, evidenceLookup = verifyEvidence } = {}) {
   const criteria = [];
   const add = (id, title, status, evidence) => criteria.push({ id, title, status, evidence });
 
   const commandCriteria = [
-    ['C1', 'pre-submit checks (manifest, declaration, permissions, assets)', ['node', ['scripts/pre-submit-checks.js']]],
+    ['C1', 'pre-submit checks (manifest, declaration, permissions, assets)', ['npm', ['run', 'check:source']]],
     ['C2', 'complete test suite (npm test)', ['npm', ['test']]],
     ['C3', 'web-ext lint with curated Thunderbird allow-list', ['node', ['scripts/lint-with-filter.js']]],
-    ['C4', 'build + package content check', ['node', ['scripts/build-and-verify-package.js']]]
+    ['C4', 'prepared package content check (no rebuild)', ['node', ['scripts/verify-package.js', './build']]]
   ];
 
   if (skipCommands) {
@@ -153,12 +158,16 @@ function evaluateGate({ rootDir = ROOT, commandRunner = runCommand, tagLookup = 
     add('C6', c6Title, 'fail',
       'only ' + live.okCount + ' OK entries recorded in ' + live.source + ' (at least 10 expected)');
   } else {
-    add('C6', c6Title, 'pass', live.okCount + ' OK entries, no FAIL (source: ' + live.source + ')');
+    const bound = evidenceLookup(rootDir);
+    add('C6', c6Title, bound.ok ? 'pass' : 'fail', bound.evidence);
   }
 
   const tag = tagLookup(manifest.version);
   const title = 'release for version ' + manifest.version + ' matches the package content';
-  if (tag && tag.exists && (tag.atHead || (tag.changedArtifacts || []).length === 0)) {
+  if (candidate) {
+    const clean = tag && tag.headSha && (tag.dirtyArtifacts || []).length === 0;
+    add('C7', 'candidate working tree is clean (no publication or tag claimed)', clean ? 'pass' : 'fail', clean ? String(tag.headSha).slice(0, 12) : 'Uncommitted package changes or missing source identity: ' + (tag?.dirtyArtifacts || []).join(', '));
+  } else if (tag && tag.exists && (tag.changedArtifacts || []).length === 0) {
     add('C7', title, 'pass',
       tag.tag + ' -> ' + String(tag.tagSha).slice(0, 8) +
       (tag.atHead ? ' (at the submitted commit)' : ' (no artifact-relevant changes since the release)'));
@@ -176,7 +185,8 @@ function evaluateGate({ rootDir = ROOT, commandRunner = runCommand, tagLookup = 
 
 function main() {
   const skipCommands = process.argv.includes('--no-commands');
-  const { criteria, go } = evaluateGate({ skipCommands });
+  const candidate = process.argv.includes('--candidate');
+  const { criteria, go } = evaluateGate({ skipCommands, candidate });
 
   console.log('Store-Readiness Go/No-Go gate');
   console.log('==============================');
@@ -190,7 +200,7 @@ function main() {
   const failed = criteria.filter((criterion) => criterion.status === 'fail');
   console.log('');
   console.log(go
-    ? 'Result: GO - all criteria passed. The package may be signed and submitted.'
+    ? (candidate ? 'Result: GO - candidate evidence verified; no publication, tag or ATN approval claimed.' : 'Result: GO - release evidence verified; ATN signing and review remain separate.')
     : 'Result: NO-GO - ' + failed.length + ' unmet criteria: ' + failed.map((criterion) => criterion.id).join(', '));
   process.exitCode = go ? 0 : 1;
 }

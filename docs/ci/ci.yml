@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  workflow_call:
   push:
     branches: [ '**' ]
   pull_request:
@@ -11,27 +12,166 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Use Node.js
         uses: actions/setup-node@v7
         with:
           node-version: '22'
-          cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Pre-submit checks (manifest, privacy, permissions, data declaration, assets)
-        run: npm run pre-submit-checks
-      - name: Unit tests (complete suite)
+      - name: Type-check and build the separate web demo
+        run: npm run check:web
+      - name: Pre-submit checks (manifest, privacy, permissions)
+        run: node ./scripts/pre-submit-checks.js
+      - name: Verify bundled English fallback
+        run: npm run check:i18n
+      - name: Verify bundled Public Suffix List
+        run: npm run check:vendor
+      - name: Verify generated design assets
+        run: npm run check:design
+      - name: Run unit tests
         run: npm test
-      - name: web-ext lint with curated Thunderbird allow-list
+      - name: web-ext lint
         run: npm run lint:filtered
-      - name: Build XPI and verify the package content
+      - name: Build and verify extension package
         run: npm run package
-      - name: Store submission gate (GO/NO-GO)
-        # Executable goal function: exit 0 only with a full GO (C1-C7).
-        run: npm run goal
-      - name: Upload the built XPI as an artifact
+      - name: Preserve package for real Thunderbird checks
         uses: actions/upload-artifact@v4
         with:
-          name: unsigned-xpi
+          name: thunderbird-test-package
           path: build/*.zip
-          if-no-files-found: warn
+          if-no-files-found: error
+          retention-days: 14
+
+  browser-ui:
+    name: Browser UI (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [en, de, fr, es, it, pl]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - run: npm ci
+      - name: Install pinned Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Check layouts, keyboard, exports and accessibility
+        run: npm run check:ui -- --lang ${{ matrix.language }}
+      - name: Check 200 percent CSS zoom in settings and audit
+        run: |
+          npm run check:ui -- --lang ${{ matrix.language }} --view options.html --zoom 2
+          npm run check:ui -- --lang ${{ matrix.language }} --view audit.html --zoom 2
+      - name: Preserve browser evidence and failure screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-ui-${{ matrix.language }}
+          path: .audit/ui/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  thunderbird-live:
+    name: Thunderbird Linux GUI
+    needs: test
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    timeout-minutes: 15
+    steps:
+      - name: Install real Thunderbird and isolated X11 runtime
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends thunderbird thunderbird-l10n-de thunderbird-l10n-fr thunderbird-l10n-es-es thunderbird-l10n-it thunderbird-l10n-pl xvfb python3 imagemagick libxtst6 ca-certificates
+          useradd --create-home thunderbird-test
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: thunderbird-test-package
+          path: build
+      - name: Download pinned previous release for upgrade checks
+        run: |
+          python3 - <<'PYTHON'
+          import hashlib, pathlib, urllib.request
+          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.24.2/thundy-av-1.24.2.xpi'
+          with urllib.request.urlopen(url, timeout=30) as response:
+              data = response.read()
+          if hashlib.sha256(data).hexdigest() != 'f7376f3c97e89d878eed25bb6737928a3e789829c7cd4b450ae6db49056267a9':
+              raise SystemExit('Previous release hash mismatch')
+          pathlib.Path('build/previous.xpi').write_bytes(data)
+          PYTHON
+          chmod 644 build/previous.xpi
+      - name: Check real installs, crash recovery, OS dispatch and six languages
+        run: |
+          mkdir -p .audit
+          chown thunderbird-test .audit
+          set -- build/*.zip
+          test "$#" -eq 1
+          cp "$1" .audit/thundy-av.xpi
+          chmod 644 .audit/thundy-av.xpi
+          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --out .audit/thunderbird-live/install-en
+          for lang in en de fr es it pl; do
+            set -- --locale "$lang"
+            if test "$lang" != en; then
+              pack="$lang"
+              if test "$lang" = es; then pack=es-ES; fi
+              set -- "$@" --langpack "/usr/lib/thunderbird/extensions/langpack-$pack@thunderbird.mozilla.org.xpi"
+            fi
+            runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --previous-xpi build/previous.xpi "$@" --out ".audit/thunderbird-live/$lang"
+            runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --previous-xpi build/previous.xpi --restart-check --crash-check --restore-check "$@" --out ".audit/thunderbird-live/restart-$lang"
+          done
+      - name: Preserve real-client report, logs and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: thunderbird-linux-live
+          path: .audit/thunderbird-live/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+
+  candidate-gate:
+    name: Package-bound candidate gate
+    needs: [test, browser-ui, thunderbird-live]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: thunderbird-test-package
+          path: build
+      - uses: actions/download-artifact@v4
+        with:
+          name: thunderbird-linux-live
+          path: .audit/thunderbird-live
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: browser-ui-*
+          path: .audit/browser
+      - name: Bind exact tested bytes and six-language reports
+        run: node scripts/candidate-evidence.js --write .audit/thunderbird-live .audit/browser
+      - name: Verify candidate without claiming publication
+        run: npm run goal -- --candidate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: validated-release-candidate
+          path: |
+            build/*.zip
+            docs/audits/candidate-*.json
+          if-no-files-found: error
+          retention-days: 14

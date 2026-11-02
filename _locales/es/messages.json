@@ -1405,5 +1405,186 @@
   },
   "auditVerdictAtDecision": {
     "message": "Resultado al decidir"
+  },
+  "ui_169": {
+    "message": "Protocolo de análisis: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "ID de trabajo: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "ID de envío: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protocolo recuperado: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " El análisis todavía se está ejecutando (IN_PROGRESS). El resultado se vuelve a comprobar automáticamente cada $P1$ segundos (intento $P2$); el protocolo de análisis terminado aparece aquí sin una nueva solicitud en cuanto se guarde.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "No hay una decisión final registrada. Tras un reinicio o la pérdida del proceso, sigue pendiente; no implica que el enlace se abriera o se cancelara."
+  },
+  "auditCancelUser": {
+    "message": "Cancelado por el usuario"
+  },
+  "auditCancelEscape": {
+    "message": "Cerrado con Escape"
+  },
+  "auditCancelDestination": {
+    "message": "Destino modificado"
+  },
+  "auditCancelContext": {
+    "message": "Contexto del mensaje cerrado"
+  },
+  "auditCancelUnknown": {
+    "message": "Motivo de cancelación desconocido"
+  },
+  "reportNotSaved": {
+    "message": "El informe se muestra, pero no se pudo guardar localmente. Vuelva a abrirlo para reintentarlo."
+  },
+  "checkOrigin_live": {
+    "message": "Resultado actual del proveedor"
+  },
+  "checkOrigin_stored": {
+    "message": "Resultado guardado"
+  },
+  "checkOrigin_none": {
+    "message": "Sin observación del proveedor"
+  },
+  "checkOutcome_success": {
+    "message": "Consulta correcta"
+  },
+  "checkOutcome_failed": {
+    "message": "Error de consulta"
+  },
+  "checkOutcome_disabled": {
+    "message": "Análisis externo desactivado"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Falta permiso del sitio"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Falta la clave del proveedor"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "Sin referencia del proveedor"
+  },
+  "checkOutcome_not_requested": {
+    "message": "Sin consulta nueva"
+  },
+  "checkOutcome_no_result": {
+    "message": "Sin resultado nuevo válido"
+  },
+  "checkAttempted": {
+    "message": "Intento de comprobación"
+  },
+  "checkObserved": {
+    "message": "Resultado observado"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Motivos al decidir"
+  },
+  "auditReasonsLatest": {
+    "message": "Últimos motivos disponibles"
+  },
+  "auditReasonsMissing": {
+    "message": "No registrados en ese momento"
+  },
+  "coverageSummary": {
+    "message": "Cobertura — detectados: $1; aptos: $2; procesados: $3; fallidos: $4; omitidos: $5. Los omitidos no están evaluados."
+  },
+  "supportTitle": {
+    "message": "Informe local de soporte"
+  },
+  "supportHelp": {
+    "message": "Revise un informe mínimo de diagnóstico y guárdelo localmente. No se envía nada. Las sumas de verificación no autentican su origen."
+  },
+  "supportPreview": {
+    "message": "Vista previa del informe"
+  },
+  "supportConfiguration": {
+    "message": "Incluir ajustes generales (sin claves ni listas de remitentes)"
+  },
+  "supportSave": {
+    "message": "Guardar informe localmente"
+  },
+  "coverageAttachments": {
+    "message": "Adjuntos"
+  },
+  "coverageDomains": {
+    "message": "Dominios únicos"
+  },
+  "coverageBatch": {
+    "message": "Enlaces del lote"
+  },
+  "coverageLimits": {
+    "message": "Límites por ejecución: 100 adjuntos, 25 MiB por adjunto, 100 dominios únicos, 20 enlaces por lote. Procesado no significa analizado externamente ni seguro."
+  },
+  "localProfileTitle": {
+    "message": "Perfiles locales de apariencia"
+  },
+  "localProfileHelp": {
+    "message": "Transfiera solo apariencia, color y densidad. Revise y confirme cada importación. Se excluyen claves, consentimiento, permisos, reglas de protección e historial."
+  },
+  "localProfileExport": {
+    "message": "Exportar apariencia"
+  },
+  "localProfileFile": {
+    "message": "Elegir perfil (JSON, hasta 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "JSON del perfil (o pegar aquí)"
+  },
+  "localProfilePreview": {
+    "message": "Revisar cambios"
+  },
+  "localProfileApply": {
+    "message": "Aplicar cambios mostrados"
+  },
+  "localProfileDiscard": {
+    "message": "Descartar importación"
+  },
+  "localProfileInvalid": {
+    "message": "Perfil no válido, versión no compatible o campos prohibidos. No se aplicó nada."
+  },
+  "localProfileChanged": {
+    "message": "La apariencia cambió desde la vista previa. Revise otra vez antes de aplicar."
+  },
+  "localProfileFailed": {
+    "message": "No se pudo guardar el perfil. Revise los ajustes actuales y vuelva a intentarlo."
+  },
+  "localProfileApplied": {
+    "message": "Perfil de apariencia aplicado. Protección y consentimiento sin cambios."
   }
 }

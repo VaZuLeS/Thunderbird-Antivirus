@@ -1408,5 +1408,186 @@
   },
   "auditVerdictAtDecision": {
     "message": "Result at decision"
+  },
+  "ui_169": {
+    "message": "Analysis protocol: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_170": {
+    "message": "Job ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_171": {
+    "message": "Submission ID: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_172": {
+    "message": "Protocol retrieved: $P1$",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      }
+    }
+  },
+  "ui_173": {
+    "message": " The analysis is still running (IN_PROGRESS). The result is automatically rechecked every $P1$ seconds (attempt $P2$); the finished analysis protocol appears here without a new request once it is stored.",
+    "placeholders": {
+      "p1": {
+        "content": "$1"
+      },
+      "p2": {
+        "content": "$2"
+      },
+      "p3": {
+        "content": "$3"
+      }
+    }
+  },
+  "auditPendingExplanation": {
+    "message": "No completed decision is recorded. After a restart or process loss, this remains pending; do not infer that the link was opened or cancelled."
+  },
+  "auditCancelUser": {
+    "message": "Cancelled by the user"
+  },
+  "auditCancelEscape": {
+    "message": "Closed with Escape"
+  },
+  "auditCancelDestination": {
+    "message": "Destination changed"
+  },
+  "auditCancelContext": {
+    "message": "Message context closed"
+  },
+  "auditCancelUnknown": {
+    "message": "Unknown cancellation reason"
+  },
+  "reportNotSaved": {
+    "message": "The report is visible, but could not be saved locally. Reopen it to retry."
+  },
+  "checkOrigin_live": {
+    "message": "Current provider result"
+  },
+  "checkOrigin_stored": {
+    "message": "Stored result"
+  },
+  "checkOrigin_none": {
+    "message": "No provider observation"
+  },
+  "checkOutcome_success": {
+    "message": "Request succeeded"
+  },
+  "checkOutcome_failed": {
+    "message": "Request failed"
+  },
+  "checkOutcome_disabled": {
+    "message": "External analysis disabled"
+  },
+  "checkOutcome_permission_denied": {
+    "message": "Host permission missing"
+  },
+  "checkOutcome_missing_key": {
+    "message": "Provider key missing"
+  },
+  "checkOutcome_missing_reference": {
+    "message": "No provider reference"
+  },
+  "checkOutcome_not_requested": {
+    "message": "No new request"
+  },
+  "checkOutcome_no_result": {
+    "message": "No usable new result"
+  },
+  "checkAttempted": {
+    "message": "Check attempted"
+  },
+  "checkObserved": {
+    "message": "Result observed"
+  },
+  "auditReasonsAtDecision": {
+    "message": "Reasons at decision"
+  },
+  "auditReasonsLatest": {
+    "message": "Latest available reasons"
+  },
+  "auditReasonsMissing": {
+    "message": "Not recorded at the time"
+  },
+  "coverageSummary": {
+    "message": "Coverage — detected: $1; eligible: $2; processed: $3; failed: $4; skipped: $5. Skipped items are unassessed."
+  },
+  "supportTitle": {
+    "message": "Local support report"
+  },
+  "supportHelp": {
+    "message": "Preview a minimal diagnostic report, then save it locally. Nothing is sent. Checksums do not authenticate its source."
+  },
+  "supportPreview": {
+    "message": "Preview report"
+  },
+  "supportConfiguration": {
+    "message": "Include coarse settings (no keys or sender lists)"
+  },
+  "supportSave": {
+    "message": "Save report locally"
+  },
+  "coverageAttachments": {
+    "message": "Attachments"
+  },
+  "coverageDomains": {
+    "message": "Unique domains"
+  },
+  "coverageBatch": {
+    "message": "Batch links"
+  },
+  "coverageLimits": {
+    "message": "Limits per pass: 100 attachments, 25 MiB per attachment, 100 unique domains, 20 batch links. Processed does not mean externally scanned or safe."
+  },
+  "localProfileTitle": {
+    "message": "Local appearance profiles"
+  },
+  "localProfileHelp": {
+    "message": "Transfer appearance, accent and density only. Preview and confirm every import. Keys, consent, permissions, protection rules and audit history are excluded."
+  },
+  "localProfileExport": {
+    "message": "Export appearance"
+  },
+  "localProfileFile": {
+    "message": "Choose a profile file (JSON, up to 8 KiB)"
+  },
+  "localProfileInput": {
+    "message": "Profile JSON (or paste here)"
+  },
+  "localProfilePreview": {
+    "message": "Preview changes"
+  },
+  "localProfileApply": {
+    "message": "Apply displayed changes"
+  },
+  "localProfileDiscard": {
+    "message": "Discard import"
+  },
+  "localProfileInvalid": {
+    "message": "Invalid profile, unsupported version or forbidden fields. Nothing was applied."
+  },
+  "localProfileChanged": {
+    "message": "Appearance changed since preview. Preview again before applying."
+  },
+  "localProfileFailed": {
+    "message": "Profile could not be saved. Review the current settings and retry."
+  },
+  "localProfileApplied": {
+    "message": "Appearance profile applied. Protection and consent unchanged."
   }
 }

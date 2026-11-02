@@ -63,7 +63,8 @@ export interface LinkAuditRecord {
   provider: string;
   reasons: string[];
   providerReasons?: string[];
-  outcome: 'OPENED' | 'ABORTED' | 'OPEN_ERROR' | 'PENDING';
+  outcome: 'OPENED' | 'ABORTED' | 'OPEN_ERROR' | 'PENDING' | 'SIMULATED_OPEN' | 'SIMULATED_ABORT';
+  simulation?: boolean;
   cancelReason?: string | null;
   openAttempts: number;
   extensionVersion: string;

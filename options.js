@@ -1,3 +1,57 @@
+// Portable profiles intentionally contain appearance only, never permissions,
+// consent, provider keys, sender rules or historical decisions.
+const LocalSettingsProfile = (() => {
+    const keys = ['thundyAppearance', 'thundyAccent', 'thundyDensity'];
+    const fields = { mode: ['system', 'light', 'dark'], accent: ['ocean', 'violet', 'forest', 'amber'], density: ['comfortable', 'compact'] };
+    const object = value => value && typeof value === 'object' && !Array.isArray(value);
+    function parse(input) {
+        if (typeof input === 'string') { if (input.length > 8192) throw new Error('PROFILE_INVALID'); input = JSON.parse(input); }
+        if (!object(input) || Object.keys(input).sort().join(',') !== 'appearance,kind,schemaVersion' || input.schemaVersion !== 1 || input.kind !== 'thundy-local-settings' || !object(input.appearance) || Object.keys(input.appearance).sort().join(',') !== 'accent,density,mode') throw new Error('PROFILE_INVALID');
+        for (const [key, values] of Object.entries(fields)) if (!values.includes(input.appearance[key])) throw new Error('PROFILE_INVALID');
+        return { schemaVersion: 1, kind: 'thundy-local-settings', appearance: { mode: input.appearance.mode, accent: input.appearance.accent, density: input.appearance.density } };
+    }
+    function create(settings) {
+        const appearance = {};
+        Object.keys(fields).forEach((field, index) => { const value = settings[keys[index]]; appearance[field] = fields[field].includes(value) ? value : fields[field][0]; });
+        return parse({ schemaVersion: 1, kind: 'thundy-local-settings', appearance });
+    }
+    async function prepare(input, storage) { return { profile: parse(input), before: create(await storage.get(keys)) }; }
+    async function commit(proposal, storage) {
+        const profile = parse(proposal.profile), before = parse(proposal.before);
+        if (JSON.stringify(create(await storage.get(keys))) !== JSON.stringify(before)) throw new Error('PROFILE_CHANGED');
+        await storage.set(Object.fromEntries(Object.keys(fields).map((field, index) => [keys[index], profile.appearance[field]])));
+        return profile;
+    }
+    return { keys, parse, create, prepare, commit };
+})();
+
+// Explicit field projection: never serialize storage, error objects or API keys.
+const SupportReport = (() => {
+    const keys = ['privacyTier', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'externalAnalysisConsent', 'thundyAppearance', 'thundyAccent', 'thundyDensity'];
+    function project(settings) {
+        const result = {};
+        for (const key of keys) {
+            const value = settings[key];
+            if (['alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'externalAnalysisConsent'].includes(key)) { if (typeof value === 'boolean') result[key] = value; }
+            else {
+                const allowed = { privacyTier: ['strict', 'balanced', 'max'], thundyAppearance: ['system', 'light', 'dark'], thundyAccent: ['ocean', 'violet', 'forest', 'amber'], thundyDensity: ['comfortable', 'compact'] };
+                if (allowed[key].includes(value)) result[key] = value;
+            }
+        }
+        return result;
+    }
+    async function create(api, configuration) {
+        const safeVersion = value => typeof value === 'string' && /^\d+(?:\.\d+){0,3}(?:[a-z]\d*)?$/i.test(value) ? value : null;
+        let info = {};
+        try { info = await api.runtime.getBrowserInfo(); } catch (error) { /* no raw error in report */ }
+        return { schemaVersion: 1, kind: 'thundy-local-support', authenticatedSource: false, createdAt: new Date().toISOString(),
+            extensionVersion: safeVersion(api.runtime.getManifest().version), thunderbirdVersion: safeVersion(info.version),
+            capabilities: { displayedMessages: typeof api.messageDisplay?.getDisplayedMessages === 'function', hostPermissions: typeof api.permissions?.contains === 'function', downloads: typeof api.downloads?.download === 'function' },
+            ...(configuration ? { configuration: project(await api.storage.local.get(keys)) } : {}) };
+    }
+    return { project, create };
+})();
+
 function uiText(key, fallback, params = []) {
     return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
 }
@@ -67,11 +121,74 @@ let _saveTimeoutId = null;
 let _clearTimeoutId = null;
 document.addEventListener('DOMContentLoaded', function() {
     document.body.addEventListener('input', event => {
-        if (!event.target.closest('#appearance') && event.target.matches('input,select,textarea')) {
+        if (!event.target.closest('#appearance,#supportReport,#localProfile') && event.target.matches('input,select,textarea')) {
             const dirty = document.getElementById('settingsDirty');
             if (dirty) dirty.hidden = false;
         }
     });
+    const profileInput = document.getElementById('localProfileInput');
+    if (profileInput) {
+        const preview = document.getElementById('localProfileDiff'), apply = document.getElementById('localProfileApply'), status = document.getElementById('localProfileStatus'), file = document.getElementById('localProfileFile');
+        let proposal = null, generation = 0, applying = false;
+        const reset = () => { generation++; proposal = null; preview.hidden = true; apply.disabled = true; status.textContent = ''; };
+        profileInput.addEventListener('input', reset);
+        file.addEventListener('change', async () => {
+            if (applying) return;
+            reset(); profileInput.value = ''; const own = generation, selected = file.files[0];
+            if (!selected) return;
+            try { if (selected.size > 8192) throw new Error('PROFILE_INVALID'); const text = await selected.text(); if (own !== generation) return; profileInput.value = text; }
+            catch (error) { if (own === generation) status.textContent = uiText('localProfileInvalid', 'Invalid profile'); }
+        });
+        document.getElementById('localProfilePreview').addEventListener('click', async () => {
+            if (applying) return;
+            reset(); const own = generation, input = profileInput.value;
+            try {
+                if (typeof ThundyTheme !== 'undefined') await ThundyTheme.whenIdle();
+                const prepared = await LocalSettingsProfile.prepare(input, browser.storage.local);
+                if (own !== generation) return;
+                proposal = prepared;
+                const names = { mode: 'themeMode', accent: 'themeAccent', density: 'themeDensity' };
+                const values = { system: 'themeSystem', light: 'themeLight', dark: 'themeDark', ocean: 'themeOcean', violet: 'themeViolet', forest: 'themeForest', amber: 'themeAmber', comfortable: 'themeComfortable', compact: 'themeCompact' };
+                preview.textContent = Object.keys(names).map(field => uiText(names[field], field) + ': ' + uiText(values[prepared.before.appearance[field]], '') + ' → ' + uiText(values[prepared.profile.appearance[field]], '')).join('\n');
+                preview.hidden = false; apply.disabled = false; preview.focus();
+            } catch (error) { if (own === generation) status.textContent = uiText('localProfileInvalid', 'Invalid profile'); }
+        });
+        document.getElementById('localProfileDiscard').addEventListener('click', () => { if (!applying) { reset(); profileInput.value = ''; file.value = ''; } });
+        apply.addEventListener('click', async () => {
+            if (!proposal || applying) return;
+            applying = true; apply.disabled = true;
+            const controls = Array.from(document.querySelectorAll('#appearance input,#localProfile input,#localProfile textarea,#localProfile button')).filter(control => control !== apply);
+            const states = controls.map(control => control.disabled); controls.forEach(control => { control.disabled = true; });
+            try { if (typeof ThundyTheme !== 'undefined') await ThundyTheme.whenIdle(); await LocalSettingsProfile.commit(proposal, browser.storage.local); reset(); status.textContent = uiText('localProfileApplied', 'Profile applied'); }
+            catch (error) { status.textContent = uiText(error.message === 'PROFILE_CHANGED' ? 'localProfileChanged' : 'localProfileFailed', 'Profile could not be applied'); apply.disabled = false; }
+            finally { applying = false; controls.forEach((control, index) => { control.disabled = states[index]; }); if (document.activeElement === document.body || document.activeElement === apply) (proposal ? apply : document.getElementById('localProfilePreview')).focus(); }
+        });
+        document.getElementById('localProfileExport').addEventListener('click', async () => {
+            let url;
+            try { if (typeof ThundyTheme !== 'undefined') await ThundyTheme.whenIdle(); const profile = LocalSettingsProfile.create(await browser.storage.local.get(LocalSettingsProfile.keys)); url = URL.createObjectURL(new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' })); await browser.downloads.download({ url, filename: 'thundy-local-settings.json', saveAs: true }); status.textContent = uiText('auditExported', 'Export saved'); }
+            catch (error) { status.textContent = uiText('auditExportFailed', 'Export failed'); }
+            finally { if (url) URL.revokeObjectURL(url); }
+        });
+    }
+    const previewButton = document.getElementById('supportPreview');
+    if (previewButton) {
+        const content = document.getElementById('supportContent'), save = document.getElementById('supportSave'), config = document.getElementById('supportConfiguration'), status = document.getElementById('supportStatus');
+        let preview = null, generation = 0;
+        config.addEventListener('change', () => { generation++; preview = null; save.disabled = true; content.hidden = true; });
+        previewButton.addEventListener('click', async () => {
+            const current = ++generation, configuration = config.checked;
+            save.disabled = true; preview = null; content.hidden = true;
+            try { const report = JSON.stringify(await SupportReport.create(browser, configuration), null, 2); if (current !== generation) return; preview = report; content.textContent = preview; content.hidden = false; save.disabled = false; content.focus(); status.textContent = ''; }
+            catch (error) { if (current !== generation) return; content.hidden = true; status.textContent = uiText('auditExportFailed', 'Export failed'); }
+        });
+        save.addEventListener('click', async () => {
+            if (!preview) return;
+            let url;
+            try { url = URL.createObjectURL(new Blob([preview], { type: 'application/json' })); await browser.downloads.download({ url, filename: 'thundy-support.json', saveAs: true }); status.textContent = uiText('auditExported', 'Export saved'); }
+            catch (error) { status.textContent = uiText('auditExportFailed', 'Export failed'); }
+            finally { if (url) URL.revokeObjectURL(url); }
+        });
+    }
     dataCollectionConsentSupported().then(supported => { collectionConsentSupported = supported; });
     // Abrufen der gespeicherten Einstellung
     browser.storage.local.get([
