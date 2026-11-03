@@ -2,6 +2,10 @@
 
 ## 1.24.4 — unreleased development (2026-11-02)
 
+- Follow-up on 2026-11-03: read resource labels from the actual message, filter popup records and keep original link references; bind manual URL requests explicitly instead of guessing by a shared header.
+- Enforce observable cache expiry and idle disposal, limit active source contexts to 200, and reject late observer responses after eviction without deleting stored decisions.
+- Native identity probe demonstrates numeric message-ID reassignment after restart. Durable binding/migration remains open; see docs/FORTSCHRITT_AVN_001_002_009.md before a release claim.
+
 - Show pending external checks immediately and bind findings to MIME parts, links or the message transport context; retain unknown historical summaries.
 - Keep resource details compact, preserve keyboard focus during refresh, isolate persisted message sources even with duplicate headers, and prevent late cache writes after deletion.
 - Clarify that disabling new external requests does not remove stored external reports. Follow-up validation: docs/UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md.

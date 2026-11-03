@@ -1768,6 +1768,9 @@ const ThundyI18n = (() => {
   },
   "analysisResourceNoExternal": {
     "message": "No external check recorded for this resource"
+  },
+  "analysisContextChanged": {
+    "message": "The message context changed. Close and reopen the popup before submitting again."
   }
 };
     function get(key, params = []) {

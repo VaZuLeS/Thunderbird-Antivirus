@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "kind": "incremental-implementation-and-identity-investigation",
+  "generatedAt": "2026-11-03T06:19:10.868Z",
+  "extensionVersion": "1.24.4",
+  "sourceFingerprint": "cd8d4efa8eaac16a9842a69baf64eb03a210eca91d18ea420dfbd0ee5542bef6",
+  "packageSha256": "a3894c1e1b8c5ecdbc513cb5bc39bf844272cca813ca80930f272abd9bbeddde",
+  "scope": {
+    "AVN-001": "Inventory and popup-reader guard implemented; durable binding and ambiguous same-metadata content remain open.",
+    "AVN-002": "TTL, idle disposal, 200-context bound implemented and tested.",
+    "AVN-009": "Numeric identity instability demonstrated natively; movement/copy/retention/migration not completed."
+  },
+  "checks": {
+    "full": {
+      "command": "npm run check",
+      "testsPassed": 1018,
+      "testsFailed": 0,
+      "logSha256": "ad4ae86870c9d7d11fdff0b101d6d94e66f327ea84cb19d45d0801aaf48012b8"
+    },
+    "browser": {
+      "passed": 4,
+      "failed": 0,
+      "syntheticBrowserAPIs": true,
+      "sourceFingerprint": "cd8d4efa8eaac16a9842a69baf64eb03a210eca91d18ea420dfbd0ee5542bef6"
+    }
+  },
+  "native": [
+    {
+      "runner": "153",
+      "passed": true,
+      "client": "153.6.0",
+      "xpiSha256": "a3894c1e1b8c5ecdbc513cb5bc39bf844272cca813ca80930f272abd9bbeddde",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "reportSha256": "61445f3454afdb01befe9105a857f4ae4ffb8d2f890c19128d7197b8b7f41913",
+      "startedAt": "2026-11-03T06:12:30Z",
+      "finishedAt": "2026-11-03T06:13:05Z",
+      "resourceIsolation": {
+        "passed": true,
+        "syntheticMime": true,
+        "liveProviderCalls": false,
+        "messageId": 3,
+        "sharedHeader": true,
+        "actualNameVisible": true,
+        "foreignNameAbsent": true,
+        "foreignUrlAbsent": true,
+        "popupRecordExcludesForeign": true,
+        "realMessageViewPassed": true
+      },
+      "contextCapacity": {
+        "passed": true,
+        "syntheticMessages": 205,
+        "realThunderbirdAPIs": true,
+        "configuredContextLimit": 200,
+        "firstDisposed": true,
+        "lastActive": true,
+        "before": {
+          "processes": 3,
+          "rssKiB": 765836,
+          "pssKiB": 554966
+        },
+        "after": {
+          "processes": 3,
+          "rssKiB": 780236,
+          "pssKiB": 637743
+        },
+        "loadAndAutomationMs": 2873,
+        "scope": "Owned Thunderbird process tree; PSS/RSS snapshots after importing/querying fixtures, before/after source-context load. No field prevalence or isolated-allocation claim."
+      }
+    },
+    {
+      "runner": "140",
+      "passed": true,
+      "client": "140.12.0",
+      "xpiSha256": "a3894c1e1b8c5ecdbc513cb5bc39bf844272cca813ca80930f272abd9bbeddde",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "reportSha256": "385588ae6d9799641987838c2eb0b7774909a156b777b74012444548cb94e8cb",
+      "startedAt": "2026-11-03T06:12:30Z",
+      "finishedAt": "2026-11-03T06:13:04Z",
+      "resourceIsolation": {
+        "passed": true,
+        "syntheticMime": true,
+        "liveProviderCalls": false,
+        "messageId": 3,
+        "sharedHeader": true,
+        "actualNameVisible": true,
+        "foreignNameAbsent": true,
+        "foreignUrlAbsent": true,
+        "popupRecordExcludesForeign": true,
+        "realMessageViewPassed": true
+      }
+    },
+    {
+      "runner": "upgrade",
+      "passed": true,
+      "client": "153.6.0",
+      "xpiSha256": "a3894c1e1b8c5ecdbc513cb5bc39bf844272cca813ca80930f272abd9bbeddde",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "reportSha256": "1c3e4793f43a241081c6609cf9892e6eb2c77acbebc36b15b29b3c6dbdb63312",
+      "startedAt": "2026-11-03T06:12:30Z",
+      "finishedAt": "2026-11-03T06:13:05Z",
+      "messageIdentity": {
+        "synthetic": true,
+        "beforeRestart": [
+          {
+            "id": 1,
+            "headerMessageId": "thundy-live-test@example.invalid",
+            "folderId": null
+          },
+          {
+            "id": 2,
+            "headerMessageId": "identity-second@example.invalid",
+            "folderId": null
+          }
+        ],
+        "afterRestart": [
+          {
+            "id": 1,
+            "headerMessageId": "identity-second@example.invalid",
+            "folderId": null
+          },
+          {
+            "id": 2,
+            "headerMessageId": "thundy-live-test@example.invalid",
+            "folderId": null
+          }
+        ],
+        "numericIdsStableInThisProbe": false
+      },
+      "upgrade": {
+        "previousVersion": "1.24.3",
+        "gracefulRestarts": 2,
+        "forcedRestarts": 2,
+        "originalDecisionsPreserved": true,
+        "pendingDecisionNotInvented": true,
+        "extraPendingOsDispatches": 0
+      }
+    }
+  ],
+  "limits": [
+    "External service responses in existing native scenarios are explicit synthetic observations; no live provider claims.",
+    "No Windows/macOS/NVDA/VoiceOver acceptance.",
+    "No new persisted-message identity or deletion migration.",
+    "Shared header cache and persistent numeric-ID assumptions require further AVN-001/009 work before a durable-isolation release claim.",
+    "PSS/RSS process-tree samples are not isolated allocation measurements or a claimed percentage improvement.",
+    "No publication or automatic-update-channel approval."
+  ]
+}

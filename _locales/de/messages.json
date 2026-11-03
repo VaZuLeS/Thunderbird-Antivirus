@@ -1766,5 +1766,8 @@
   },
   "analysisResourceNoExternal": {
     "message": "Keine externe Prüfung dieser Ressource dokumentiert"
+  },
+  "analysisContextChanged": {
+    "message": "Der Nachrichtenkontext hat sich geändert. Schließe und öffne das Popup vor einer erneuten Übermittlung."
   }
 }

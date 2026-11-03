@@ -85,7 +85,7 @@ const ThundyAnalysis = (() => {
         const documented = new Set(model.data.rows.map(rowKey));
         const attachments = Array.isArray(record?.attachments) ? record.attachments : [];
         const links = Array.isArray(record?.links) ? record.links : [];
-        for (const [item, resource] of [...attachments.map(item => [item, validResource('attachment:' + item.partName) ? 'attachment:' + item.partName : null]), ...links.map((item,index) => [item, 'link:' + index])]) {
+        for (const [item, resource] of [...attachments.map(item => [item, validResource('attachment:' + item.partName) ? 'attachment:' + item.partName : null]), ...links.map((item,index) => [item, validResource(item.analysisResourceRef) ? item.analysisResourceRef : 'link:' + index])]) {
             const report = item.report;
             if (report || ['KNOWN', 'UPLOADED'].includes(item.state)) {
                 const info = { provider: 'hybridanalysis', scope: report ? 'report' : item.url ? 'url' : item.state === 'UPLOADED' ? 'file' : 'hash', resource };

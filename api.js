@@ -1,4 +1,5 @@
 let popupAnalysisContext = null;
+let popupMessageId = null;
 const popupLinkResources = new Map();
 function uiText(key, fallback, params = []) {
     return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
@@ -111,6 +112,7 @@ if (!message) {
 }
 
 if (!message.headerMessageId) message.headerMessageId = 'message:' + message.id;
+popupMessageId = message.id;
 if (typeof ThundyAnalysis !== 'undefined') {
     popupAnalysisContext = { scopeOverride: 'report', event: event => browser.runtime.sendMessage({ action: 'recordAnalysisEvent', messageId: message.id, event }) };
     let sourceGeneration = 0;
@@ -222,9 +224,14 @@ try {
 
     const db = await openDB('thunderbird_av', 3);
     try {
-            const record = await getFromStore(db, 'hybridanalysis', message.headerMessageId);
+            let record;
+            if (typeof ThundyAnalysis !== 'undefined') {
+                const result = await browser.runtime.sendMessage({action:'getMessageAnalysisRecord',messageId:message.id});
+                if (!result?.success) throw new Error('Message resource inventory unavailable');
+                record = result.record;
+            } else record = await getFromStore(db, 'hybridanalysis', message.headerMessageId);
             popupLinkResources.clear();
-            for (const [index,item] of (record?.links || []).entries()) popupLinkResources.set(item.url, 'link:' + index);
+            for (const [index,item] of (record?.links || []).entries()) popupLinkResources.set(item.url, item.analysisResourceRef || 'link:' + index);
             const liveContainer = apiContainer || document.getElementById('hybrid_analysis_api_content');
             if (liveContainer) liveContainer.textContent = '';
             for (const [kind, coverage] of Object.entries(record?.scanCoverage || {})) {
@@ -965,6 +972,7 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
 
     browser.runtime.sendMessage({
         action: "scanUrl",
+        messageId: popupMessageId,
         url: url,
         headerMessageId: headerMessageId
     }).then(response => {

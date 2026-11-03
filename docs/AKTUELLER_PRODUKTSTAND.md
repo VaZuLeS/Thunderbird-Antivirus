@@ -1,8 +1,8 @@
-# Aktueller Produktstand — 2. November 2026
+# Aktueller Produktstand — 3. November 2026
 
 Der [Veröffentlichungsabschluss 1.24.3](VEROEFFENTLICHUNG_1_24_3.md) führt den jüngsten Freigabeumfang, Darstellungsprofile und offene Ressourcenabnahmen. Tatsächlicher [GitHub-Release-Status](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.3).
 
-Der unveröffentlichte Entwicklungsstand **1.24.4** ergänzt [sichtbare Analysequellen in Nachricht und Toolbar-Popup](ANALYSEQUELLEN_1_24_4.md). Die weitere [Umsetzung des Informationsdarstellungsplans](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md) ergänzt Ressourcenbezug und ausstehende Prüfzustände. GitHub-Downloads und Pages verweisen weiterhin auf die veröffentlichte Version 1.24.3.
+Der unveröffentlichte Entwicklungsstand **1.24.4** ergänzt [sichtbare Analysequellen in Nachricht und Toolbar-Popup](ANALYSEQUELLEN_1_24_4.md). Der [nächste Umsetzungsschritt](FORTSCHRITT_AVN_001_002_009.md) korrigiert Ressourceninventare und Kontextcaches; die dauerhafte Identitäts-/Retentionsarbeit bleibt nach einem nativen Gegenbeweis offen. Die weitere [Umsetzung des Informationsdarstellungsplans](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md) ergänzt Ressourcenbezug und ausstehende Prüfzustände. GitHub-Downloads und Pages verweisen weiterhin auf die veröffentlichte Version 1.24.3.
 
 Die bisherige Weiterentwicklung (Headerparser, Prüfherkunft, Entscheidungsgründe, Prüfumfang und lokaler Supportexport) ist im [aktuellen Ausführungsprotokoll](AUSFUEHRUNG_WEITERENTWICKLUNG_1_24_3.md) abgegrenzt.
 

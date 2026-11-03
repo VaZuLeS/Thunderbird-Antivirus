@@ -218,6 +218,8 @@ function addonMock({
               retentionDays: 30,
               maxRecords: 1000,
             }
+          : p.action === "getMessageAnalysisRecord"
+            ? {success:true,record:null}
           : p.action === "getMessageAnalysis"
             ? {success:true,messageId:p.messageId,local:{state:"checked"},rows:[
                 {provider:"hybridanalysis",resource:"attachment:1.2",scope:"hash",responses:1,state:"checked",verdict:"none",source:"remote",observedAt:1791014400000},

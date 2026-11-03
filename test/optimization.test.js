@@ -633,8 +633,10 @@ function sourceRecords(state, initial = null) {
 
 test('two same-name attachments and two links retain distinct provider resources through cache and restart',async()=>{
  const s=setup({externalAnalysisConsent:true,privacyTier:'strict',virustotalApikey:'vt',urlhausApikey:'uh'},true);await s.context.configure();
- const records=sourceRecords(s);const ctx=await s.context.getMessageAnalysisContext(s.message);
+ const records=sourceRecords(s);
  const attachments=[{name:'same.txt',partName:'1.2',size:4},{name:'same.txt',partName:'1.3',size:4}];
+ s.context.browser.messages.listAttachments=async()=>attachments;
+ const ctx=await s.context.getMessageAnalysisContext(s.message);
  await s.context.sent_to_hybrid_by_attachment(s.message,attachments,true,false,ctx);
  const urls=['https://example.com/a?token=one','https://example.com/b?token=two'];
  await s.context.processAndUploadUrls(s.message,urls,false,false,ctx);
@@ -642,7 +644,9 @@ test('two same-name attachments and two links retain distinct provider resources
  await ctx.flush();let snap=await ctx.snapshot();
  assert.equal(records.get(s.message.headerMessageId).attachments.length,2);
  for(const ref of ['attachment:1.2','attachment:1.3','link:0','link:1'])assert.ok(snap.rows.some(row=>row.resource===ref),ref);
- assert.equal(snap.rows.find(row=>row.resource==='attachment:1.3').source,'cache');
+ // Concurrent digest completion order is not guaranteed; exactly one request is shared.
+ assert.deepEqual(new Set(snap.rows.filter(row=>row.provider==='virustotal').map(row=>row.source)),new Set(['remote','cache']));
+ assert.equal(s.requests.filter(call=>call.url.includes('virustotal')).length,1);
  assert.equal(Object.keys(snap.resourceLabels).length,4);assert.notEqual(snap.resourceLabels['attachment:1.2'],snap.resourceLabels['attachment:1.3']);
  assert.ok(!snap.resourceLabels['link:0'].includes('token='));
  const metadata=JSON.stringify(records.get(s.message.headerMessageId).analysisStatus);
@@ -685,4 +689,70 @@ test('persisted source observations are isolated between different messages shar
  const restart=setup({},true);restart.context.getFromStore=async()=>records.get(s.message.headerMessageId);await restart.context.configure();
  const loadedFirst=await restart.context.getMessageAnalysisContext(restart.message),loadedSecond=await restart.context.getMessageAnalysisContext(otherMessage);
  assert.equal(loadedFirst.model.data.rows.length,1);assert.equal(loadedFirst.model.data.rows[0].verdict,'malicious');assert.equal(loadedSecond.model.data.rows.length,1);assert.equal(loadedSecond.model.data.rows[0].provider,'urlscan');assert.equal(loadedSecond.model.data.rows[0].state,'incomplete');
+});
+
+test('resource labels and popup records use the actual message inventory across duplicate headers and status writes',async()=>{
+ const s=setup({},true);await s.context.configure();
+ const records=sourceRecords(s,{analysisStatusOwner:7,analysisStatusByMessage:{7:{schemaVersion:2,rows:[]}},attachments:[{partName:'1.2',attachment_name:'message-A.txt',report:{verdict:'malicious'}}],links:[{url:'https://a.invalid/private',report:{verdict:'malicious'}}]});
+ s.context.browser.messages.listAttachments=async id=>[{partName:'1.2',name:id===7?'message-A.txt':'message-B.txt'}];
+ s.context.browser.messages.getFull=async id=>({parts:[{contentType:'text/plain',body:id===7?'https://a.invalid/private':'https://b.invalid/private'}]});
+ const first=await s.context.getMessageAnalysisContext(s.message),second=await s.context.getMessageAnalysisContext({...s.message,id:8});
+ for(const flush of [false,true]){
+  if(flush)await second.flush();
+  const snapshot=await second.snapshot();assert.ok(!JSON.stringify(snapshot.resourceLabels).includes('message-A'));assert.ok(!JSON.stringify(snapshot.resourceLabels).includes('a.invalid'));
+  assert.ok(snapshot.resourceLabels['attachment:1.2'].includes('message-B'));
+  const record=await second.resourceRecord();assert.equal(record.attachments.length,0);assert.equal(record.links.length,0);
+ }
+ const firstSnap=await first.snapshot();assert.ok(firstSnap.resourceLabels['attachment:1.2'].includes('message-A'));
+ const stored=records.get(s.message.headerMessageId);assert.equal(stored.attachments[0].attachment_name,'message-A.txt');assert.equal(stored.links[0].url,'https://a.invalid/private');
+ assert.equal(s.requests.length,0);
+});
+
+test('filtered legacy links keep original slot references and never acquire another link label',async()=>{
+ const s=setup({},true);await s.context.configure();sourceRecords(s,{links:[{url:'https://other.invalid/private',report:{verdict:'malicious'}},{url:'https://example.com/',report:{verdict:'no specific threat'}}]});
+ const ctx=await s.context.getMessageAnalysisContext(s.message);const snapshot=await ctx.snapshot();
+ assert.equal(snapshot.rows.length,1);assert.equal(snapshot.rows[0].resource,'link:1');assert.ok(!snapshot.resourceLabels['link:0']);assert.equal(snapshot.resourceLabels['link:1'],'https://example.com/');
+ const record=await ctx.resourceRecord();assert.equal(record.links[0].analysisResourceRef,'link:1');assert.equal(s.requests.length,0);
+});
+
+test('message contexts evict above the limit, stop pending timers and refuse late responses without deleting stored data',async()=>{
+ const s=setup({},true);await s.context.configure();const records=sourceRecords(s);
+ const first=await s.context.getMessageAnalysisContext(s.message,1);first.event({provider:'urlhaus',scope:'domain',phase:'start'});await first.flush();
+ first.event({provider:'urlscan',scope:'url',phase:'start'});assert.ok(first.timer);
+ for(let i=0;i<200;i++)await s.context.getMessageAnalysisContext({...s.message,id:100+i,headerMessageId:'bounded-'+i});
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(first.disposed,true);assert.equal(first.timer,null);assert.equal(first.tabs.size,0);
+ assert.equal(first.event({provider:'urlhaus',scope:'domain',phase:'finish',state:'checked',verdict:'none',responded:true,observedAt:100}),false);
+ assert.ok(records.has(s.message.headerMessageId));const reopened=await s.context.getMessageAnalysisContext(s.message);
+ assert.equal(reopened.model.data.rows[0].state,'incomplete');await reopened.flush();assert.equal(s.requests.length,0);
+});
+
+test('unbound legacy findings remain summaries and never leak a cached filename through the popup record',async()=>{
+ const s=setup({},true);await s.context.configure();sourceRecords(s,{attachments:[{attachment_name:'foreign-legacy.txt',report:{verdict:'malicious'}}]});
+ const ctx=await s.context.getMessageAnalysisContext(s.message);
+ const snapshot=await ctx.snapshot();assert.equal(snapshot.rows[0].resource,null);assert.equal(snapshot.rows[0].verdict,'malicious');
+ assert.equal((await ctx.resourceRecord()).attachments.length,0);assert.ok(!JSON.stringify(snapshot.resourceLabels).includes('foreign-legacy'));
+});
+
+test('header-only manual submission never attributes an evicted popup request to a remaining sibling context',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();sourceRecords(s);
+ let calls=0;s.context.fetch=async()=>{calls++;return {status:201,ok:true,json:async()=>({submission_id:'job',sha256:'hash'})}};
+ const sibling=await s.context.getMessageAnalysisContext(s.message);
+ await s.context.handleUrlScan('https://other.invalid/',s.message.headerMessageId);
+ assert.equal(sibling.model.data.rows.length,0);assert.equal(calls,1);
+});
+
+test('manual popup URL submission recreates its explicit message context rather than guessing by shared header',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();sourceRecords(s);
+ const sibling=await s.context.getMessageAnalysisContext(s.message);
+ const other={...s.message,id:8};s.context.browser.messages.get=async id=>id===8?other:s.message;
+ s.context.fetch=async()=>({status:201,ok:true,json:async()=>({submission_id:'job',sha256:'hash'})});
+ const response=await new Promise(resolve=>s.listeners.at(-1)({action:'scanUrl',url:'https://other.invalid/',headerMessageId:other.headerMessageId,messageId:8},{url:'popup.html'},resolve));
+ assert.equal(response.status,'success');assert.equal(sibling.model.data.rows.length,0);
+ const target=await s.context.getMessageAnalysisContext(other);assert.equal(target.model.data.rows[0].state,'submitted');await target.flush();
+});
+
+test('manual URL submission refuses a mismatched explicit message before contacting a provider',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();let calls=0;s.context.fetch=async()=>{calls++;throw Error('unexpected')};
+ const response=await new Promise(resolve=>s.listeners.at(-1)({action:'scanUrl',url:'https://other.invalid/',headerMessageId:'different-header',messageId:7},{url:'popup.html'},resolve));
+ assert.equal(response.status,'error');assert.equal(response.code,'MESSAGE_CONTEXT_CHANGED');assert.equal(calls,0);
 });

@@ -130,34 +130,59 @@ function getSharedDB() {
 }
 
 // Contexts are keyed by the actual message, never by the currently selected tab.
-const messageAnalyses = typeof ExpiringMap !== 'undefined' ? new ExpiringMap(900000) : new Map();
-async function getMessageAnalysisContext(message, tabId = null) {
+const MAX_MESSAGE_ANALYSES = 200;
+const messageAnalyses = typeof ExpiringMap !== 'undefined' ? new ExpiringMap(900000, () => Date.now(), {
+    maxSize: MAX_MESSAGE_ANALYSES, autoExpire: true,
+    onEvict: ready => Promise.resolve(ready).then(context => context.dispose()).catch(() => {})
+}) : new Map();
+async function getMessageAnalysisContext(message, tabId = null, inventory = {}) {
     if (typeof ThundyAnalysis === 'undefined' || !message) return null;
     const key = message.headerMessageId || 'message:' + message.id;
     const contextKey = key + ':' + message.id;
     if (!messageAnalyses.has(contextKey)) {
         const ready = (async () => {
+            // Labels must come from the actual message, not a shared Message-ID cache.
+            const currentParts = new Map();
+            const currentLinks = new Set();
+            try {
+                const attachments = inventory.attachments || await browser.messages.listAttachments(message.id);
+                for (const item of attachments.slice(0,100)) currentParts.set(String(item.partName), item.name || '');
+            } catch (_) { /* unreadable inventory stays unknown */ }
+            try {
+                const full = inventory.fullMessage || await browser.messages.getFull(message.id);
+                for (const url of filterUrls(extractUrls(extractTextFromParts(full.parts || full)))) currentLinks.add(url);
+            } catch (_) { /* no fallback to another message's links */ }
             let record = null;
             try { record = await getFromStore(await getSharedDB(), 'hybridanalysis', key); } catch (_) { /* still expose live state */ }
             const sourceRecord = saved => {
                 if (!saved) return saved;
                 const own = saved.analysisStatusByMessage?.[message.id];
                 const foreign = saved.analysisStatusOwner != null && saved.analysisStatusOwner !== message.id;
-                return {...saved, analysisStatus:own || (foreign ? undefined : saved.analysisStatus), ...(foreign ? {attachments:[],links:[]} : {})};
+                const attachments = foreign ? [] : (saved.attachments || []).filter(item => !item.partName || currentParts.get(String(item.partName)) === item.attachment_name);
+                const links = foreign ? [] : (saved.links || []).map((item,index) => ({...item,analysisResourceRef:'link:' + index})).filter(item => currentLinks.has(item.url));
+                return {...saved, analysisStatus:own || (foreign ? undefined : saved.analysisStatus), attachments, links};
             };
             const model = ThundyAnalysis.create(ThundyAnalysis.legacy(sourceRecord(record)));
             const context = { disposed: false, model, headerMessageId: key, messageId: message.id, tabs: new Set(), timer: null,
-                event(event) { if (context.disposed) return false; const valid = model.event(event); if (valid) context.schedule(); return valid; },
+                dispose() { context.disposed = true; if (context.timer) clearTimeout(context.timer); context.timer = null; context.tabs.clear(); },
+                event(event) { if (context.disposed || messageAnalyses.get(contextKey) !== ready) { context.dispose(); return false; } messageAnalyses.touch?.(contextKey); const valid = model.event(event); if (valid) context.schedule(); return valid; },
                 cached(provider, scope, verdict, observedAt) { context.event({ provider, scope, phase: 'cache', state: verdict === 'unknown' ? 'received' : 'checked', verdict, observedAt }); },
-                forAttachment(partName) { return ThundyAnalysis.bind(context, ['attachment:' + partName]); },
+                forAttachment(partName, name) { if (name != null) currentParts.set(String(partName), name); return ThundyAnalysis.bind(context, ['attachment:' + partName]); },
+                async resourceRecord() {
+                    const saved = sourceRecord(await getFromStore(await getSharedDB(), 'hybridanalysis', key));
+                    if (!saved) return null;
+                    // Unbound legacy findings may remain unknown summaries, never named popup resources.
+                    return {...saved,attachments:(saved.attachments || []).filter(item => item.partName && currentParts.get(String(item.partName)) === item.attachment_name)};
+                },
                 async forLinks(urls) {
+                    for (const url of urls) currentLinks.add(url);
                     try {
                         const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
                         const links = saved?.links || [];
                         return ThundyAnalysis.bind(context, urls.map(url => { const index = links.findIndex(item => item.url === url); return index < 0 ? null : 'link:' + index; }));
                     } catch (_) { return ThundyAnalysis.bind(context, []); }
                 },
-                schedule() { if (!context.timer) context.timer = setTimeout(() => { context.timer = null; context.flush().catch(() => {}); }, 300); },
+                schedule() { if (context.disposed) return; if (!context.timer) context.timer = setTimeout(() => { context.timer = null; context.flush().catch(() => {}); }, 300); },
                 async snapshot() {
                     try { const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key); for (const row of ThundyAnalysis.legacy({...sourceRecord(saved),analysisStatus:model.data}).rows) if (!model.data.rows.some(current => ThundyAnalysis.rowKey(current) === ThundyAnalysis.rowKey(row)) && model.data.rows.length < 1200) model.data.rows.push(row); } catch (_) { /* retain known live metadata */ }
                     const enabled = { hybridanalysis: !!apikey_hybridanalysis, virustotal: !!apikey_virustotal || ipReputationProvider === 'virustotal' && !!ipReputationApiKey, urlhaus: !!urlhausApikey, abuseipdb: ipReputationProvider === 'abuseipdb' && !!ipReputationApiKey, urlscan: !!urlscanApikey };
@@ -167,14 +192,14 @@ async function getMessageAnalysisContext(message, tabId = null) {
                         availability[provider] = !enabled[provider] ? 'unconfigured' : !mayTransmitExternally() ? 'disabled' : !await hasHostPermissionFor(PROVIDER_ORIGINS[provider]) ? 'permission' : provider === 'urlscan' ? !tierAtLeast('max') ? 'policy' : 'on_action' : !authorized ? 'authorization' : 'unrecorded';
                     }));
                     const resourceLabels = {};
+                    const clean = text => String(text || '').replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g,'').slice(0,512);
+                    for (const [partName,name] of currentParts) if (ThundyAnalysis.validResource('attachment:' + partName)) resourceLabels['attachment:' + partName] = clean(name) + ' (' + partName + ')';
                     try {
                         const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
-                        const clean = text => String(text || '').replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g,'').slice(0,512);
-                        for (const item of saved?.attachments || []) if (ThundyAnalysis.validResource('attachment:' + item.partName)) resourceLabels['attachment:' + item.partName] = clean(item.attachment_name) + ' (' + item.partName + ')';
-                        for (const [index,item] of (saved?.links || []).entries()) {
+                        for (const [index,item] of (saved?.links || []).entries()) if (currentLinks.has(item.url)) {
                             try { const url = new URL(item.url); resourceLabels['link:' + index] = clean(url.origin + url.pathname); } catch (_) { /* no URL guess */ }
                         }
-                    } catch (_) { /* references remain identifiable without labels */ }
+                    } catch (_) { /* actual parts remain identifiable without cached links */ }
                     return { ...JSON.parse(JSON.stringify(model.data)), resourceLabels, availability, messageId: message.id };
                 },
                 async flush() {
@@ -190,6 +215,7 @@ async function getMessageAnalysisContext(message, tabId = null) {
                         try {
                             const active = await getFirstDisplayedMessage(tab, { throwOnError: true });
                             if (!context.disposed && active?.id === message.id) await injectIntoMessageDisplay(tab, ThundyAnalysis.render, [snapshot, labels, theme?.css || '']);
+                            else if (active?.id !== message.id) context.tabs.delete(tab);
                         } catch (_) { /* closed or changed message */ }
                     }
                     if (browser.runtime.sendMessage) browser.runtime.sendMessage({ action: 'analysisStatusChanged', messageId: message.id }).catch(() => {});
@@ -198,9 +224,10 @@ async function getMessageAnalysisContext(message, tabId = null) {
             return context;
         })();
         messageAnalyses.set(contextKey, ready);
-        ready.catch(() => messageAnalyses.delete(contextKey));
+        ready.catch(() => { if (messageAnalyses.get(contextKey) === ready) messageAnalyses.delete(contextKey); });
     }
     const context = await messageAnalyses.get(contextKey);
+    messageAnalyses.touch?.(contextKey);
     if (tabId != null) context.tabs.add(tabId);
     return context;
 }
@@ -787,7 +814,7 @@ async function handleDisplayedMessage(tab, message) {
       attachments = await browser.messages.listAttachments(message.id);
     } catch (e) { /* ignore */ }
 
-    analysisContext = await getMessageAnalysisContext(message, tab.id);
+    analysisContext = await getMessageAnalysisContext(message, tab.id, {attachments,fullMessage});
     await processAttachments(message, allowExternal, false, analysisContext);
 
     let parsedUrlCache = new Map();
@@ -1019,7 +1046,7 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
 
 
 async function process_single_attachment(message, attachment, allowExternal = true, manualAction = false, analysisContext = null) {
-    if (analysisContext?.forAttachment) analysisContext = analysisContext.forAttachment(attachment.partName);
+    if (analysisContext?.forAttachment) analysisContext = analysisContext.forAttachment(attachment.partName, attachment.name);
     if (attachment.size > 25 * 1024 * 1024) {
         const item = create_manual_check_hybrid_data('', attachment, null);
         item.hybrid_data.state = 'SIZE_LIMIT';
@@ -1508,6 +1535,13 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case "getUiTheme":
             ThundyTheme.snapshot().then(sendResponse).catch(() => sendResponse(null));
             return true;
+        case "getMessageAnalysisRecord":
+            if (!Number.isInteger(request.messageId)) { sendResponse({success:false}); return false; }
+            (async () => {
+                const context = await getMessageAnalysisContext(await browser.messages.get(request.messageId));
+                return {success:!!context,record:context ? await context.resourceRecord() : null};
+            })().then(sendResponse).catch(() => sendResponse({success:false}));
+            return true;
         case "getMessageAnalysis":
             if (!Number.isInteger(request.messageId)) { sendResponse({ success: false }); return false; }
             (async () => {
@@ -1539,8 +1573,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case "clearMemoryCaches":
             urlhausCache.clear(); ipReputationCache.clear(); vtCache.clear(); knownSendersCache.clear();
             for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(context => {
-                context.disposed = true;
-                if (context.timer) clearTimeout(context.timer);
+                context.dispose();
             }).catch(() => {});
             messageAnalyses.clear();
             if (browser.runtime.sendMessage) browser.runtime.sendMessage({ action: 'memoryCachesCleared' }).catch(() => {});
@@ -1553,8 +1586,16 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
 
         case "scanUrl":
-            handleUrlScan(request.url, request.headerMessageId)
-                .then(res => sendResponse({status: 'success', data: res}))
+            (async () => {
+                let context = null;
+                if (Number.isInteger(request.messageId)) {
+                    const message = await browser.messages.get(request.messageId);
+                    const key = message.headerMessageId || 'message:' + message.id;
+                    if (key !== request.headerMessageId) throw typedError('MESSAGE_CONTEXT_CHANGED', msg('analysisContextChanged'));
+                    context = await getMessageAnalysisContext(message);
+                }
+                return await handleUrlScan(request.url, request.headerMessageId, context);
+            })().then(res => sendResponse({status: 'success', data: res}))
                 .catch(err => sendResponse({status: 'error', message: err.message, code: err.code}));
             return true;
 
@@ -1646,7 +1687,7 @@ async function handleDownloadDisarmed(messageId, partName, attachmentName) {
 }
 
 async function handleUrlScan(url, headerMessageId, analysisContext = null) {
-    analysisContext = analysisContext || await analysisByHeader(headerMessageId);
+    // A header-only caller cannot prove which duplicate message initiated this request.
     if (!apikey_hybridanalysis) throw new Error(uiText("ui_086", "API-Key fehlt."));
     assertExternalAnalysisAllowed();
     // Submitting the full URL to the sandbox is a "max" tier feature (see
