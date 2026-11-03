@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const { JSDOM } = require('jsdom');
 const runtime = fs.readFileSync('runtime.js', 'utf8');
 const gateway = fs.readFileSync('api_gateway.js', 'utf8');
-function setup(settings = {}) {
+function setup(settings = {}, trackSources = false) {
     const requests = [], injections = [], listeners = [];
     const config = { externalAnalysisConsent: false, privacyTier: 'strict', ...settings };
     const message = { id: 7, headerMessageId: 'mail-7', author: 'Alice <alice@example.com>', subject: 'Hello' };
@@ -25,7 +25,7 @@ function setup(settings = {}) {
         fetch: async (url, options) => { requests.push({ url, options }); return { status: 200, ok: true, json: async () => ({ verdict: 'no specific threat', query_status: 'no_results', data: { attributes: { last_analysis_stats: { malicious: 0 } } } }) }; },
         openDB: async () => ({}), getFromStore: async () => null, updateStore: async () => {},
     });
-    vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\n' + runtime + '\n' + gateway + '\n' + fs.readFileSync('risk.js', 'utf8') + '\n' + fs.readFileSync('sanitize.js', 'utf8') + '\n' + ['scan_policy.js', 'providers.js', 'message_ui.js', 'vendor/tldts.js', 'link_audit.js', 'background.js'].map(file => fs.readFileSync(file, 'utf8')).join('\n') + '\n globalThis.configure = async () => { await loadSettings(); }; globalThis.forceTier = value => { privacyTier = value; };', context);
+    vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\n' + runtime + '\n' + gateway + '\n' + fs.readFileSync('risk.js', 'utf8') + '\n' + fs.readFileSync('sanitize.js', 'utf8') + '\n' + [...(trackSources ? ['analysis_status.js'] : []), 'scan_policy.js', 'providers.js', 'message_ui.js', 'vendor/tldts.js', 'link_audit.js', 'background.js'].map(file => fs.readFileSync(file, 'utf8')).join('\n') + '\n globalThis.configure = async () => { await loadSettings(); }; globalThis.forceTier = value => { privacyTier = value; };', context);
     return { context, config, requests, injections, listeners, message, full };
 }
 
@@ -548,4 +548,211 @@ test('message link contract rejects invalid schemes and malformed identities bef
  const s=setup();const sender={tab:{id:1}};
  assert.equal(s.context.validLinkRequest({messageId:7,url:'https://example.invalid',userAction:true,interactionId:'ok'},sender),true);
  for(const patch of [{url:'javascript:alert(1)'},{messageId:'7'},{interactionId:'bad space'},{userAction:'true'}])assert.equal(s.context.validLinkRequest({messageId:7,url:'https://example.invalid',userAction:true,...patch},sender),false);
+});
+
+test('message-bound sources expose successful clean external checks and cached results without extra transmissions',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'strict',apikey:'key',virustotalApikey:'vt-key',urlhausApikey:'url-key',ipReputationProvider:'abuseipdb',ipReputationApiKey:'ip-key',scanningEnabledSenders:['alice@example.com']},true);
+ const records=new Map();s.context.getFromStore=async(_db,_store,key)=>records.get(key)||null;s.context.updateStore=async(_db,_store,key,update)=>{const value=update(records.get(key)||null);if(value)records.set(key,value);return value};
+ s.full.headers.received=['from sender.example ([8.8.8.8])'];const calls=[];
+ s.context.fetch=async(url,options)=>{calls.push({url,options});assert.equal(options.analysisContext,undefined);return {status:200,ok:true,json:async()=>url.includes('virustotal.com')?{data:{attributes:{last_analysis_stats:{malicious:0,suspicious:0}}}}:url.includes('urlhaus')?{query_status:'no_results'}:url.includes('abuseipdb')?{data:{abuseConfidenceScore:0}}:{verdict:'no specific threat',submission_id:'submission',job_id:'job'}}};
+ await s.context.configure();await s.context.handleDisplayedMessage({id:1},s.message);
+ const context=await s.context.getMessageAnalysisContext(s.message);const data=await context.snapshot();assert.equal(data.local.state,'checked');
+ for(const provider of ['hybridanalysis','virustotal','urlhaus','abuseipdb'])assert.ok(data.rows.some(row=>row.provider===provider&&row.state==='checked'&&row.source==='remote'),provider);
+ const before=new Map(data.rows.map(row=>[row.provider+row.scope,row.observedAt]));
+ await s.context.handleDisplayedMessage({id:1},s.message);const cached=await context.snapshot();
+ for(const provider of ['virustotal','urlhaus','abuseipdb']){const row=cached.rows.find(row=>row.provider===provider);assert.equal(row.source,'cache');assert.equal(row.observedAt,before.get(row.provider+row.scope));assert.equal(calls.filter(call=>call.url.includes(provider==='urlhaus'?'urlhaus':provider==='abuseipdb'?'abuseipdb':'virustotal')).length,1)}
+ const metadata=JSON.stringify(records.get(s.message.headerMessageId).analysisStatus);for(const secret of ['8.8.8.8','alice@example.com','https://example.com/','vt-key'])assert.ok(!metadata.includes(secret));
+ assert.ok(s.injections.some(injection=>injection.func.toString().includes('thundy-analysis-status')));
+});
+test('disabled external analysis exposes local-only status and stored findings without performing requests',async()=>{
+ const s=setup({},true);s.context.getFromStore=async()=>({attachments:[{state:'KNOWN',report:{verdict:'malicious'},report_fetched_at:'2026-10-01T08:00:00Z'}]});await s.context.configure();
+ const c=await s.context.getMessageAnalysisContext(s.message);const snapshot=await c.snapshot();assert.equal(s.requests.length,0);assert.equal(snapshot.rows[0].source,'stored');assert.equal(snapshot.rows[0].verdict,'malicious');assert.equal(snapshot.availability.hybridanalysis,'unconfigured');
+});
+test('urlscan submission is visible before its later report and VirusTotal IP scope is distinct', {timeout:15000}, async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',urlscanApikey:'url-key',ipReputationProvider:'virustotal',ipReputationApiKey:'ip-key'},true);await s.context.configure();
+ s.context.fetch=async(url)=>({status:200,ok:true,json:async()=>url.includes('/scan/')?{uuid:'scan-id'}:url.includes('/result/')?{verdicts:{overall:{malicious:true}}}:{data:{attributes:{last_analysis_stats:{malicious:2}}}}});
+ const ctx=await s.context.getMessageAnalysisContext(s.message);const pending=s.context.checkUrlscanIo('https://example.net/','url-key',ctx);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(ctx.model.data.rows.find(r=>r.provider==='urlscan').state,'submitted');await pending;assert.equal(ctx.model.data.rows.find(r=>r.provider==='urlscan').verdict,'malicious');
+ await s.context.checkIPReputation(['from sender ([8.8.8.8])'],ctx);assert.ok(ctx.model.data.rows.some(r=>r.provider==='virustotal'&&r.scope==='ip'&&r.verdict==='malicious'));await ctx.flush();
+});
+
+test('concurrent messages, duplicate headers and stale display never redirect source events', async () => {
+    const state = setup({}, true); await state.context.configure();
+    const first = await state.context.getMessageAnalysisContext(state.message, 1);
+    const second = await state.context.getMessageAnalysisContext({...state.message,id:8}, 2);
+    assert.notEqual(first, second);
+    first.event({provider:'urlhaus',scope:'domain',phase:'start'});
+    second.event({provider:'urlscan',scope:'url',phase:'start'});
+    first.event({provider:'urlhaus',scope:'domain',phase:'finish',state:'checked',verdict:'none',observedAt:100,responded:true});
+    second.event({provider:'urlscan',scope:'url',phase:'finish',state:'submitted',verdict:'unknown',observedAt:200,responded:true});
+    assert.equal((await first.snapshot()).rows[0].provider,'urlhaus');
+    assert.equal((await second.snapshot()).rows[0].provider,'urlscan');
+    assert.equal(await state.context.analysisByHeader(state.message.headerMessageId),null);
+    await second.flush();
+    assert.equal(state.injections.length,0, 'message 7 is displayed, so message 8 must not be injected');
+    await first.flush();
+    assert.equal(state.injections.length,1);
+    assert.equal(state.injections[0].args[0].messageId,7);
+    assert.equal(state.requests.length,0);
+});
+
+test('popup event bridge rejects other pages and unvalidated provider events', async () => {
+    const state = setup({}, true);await state.context.configure();
+    const listener=state.listeners.at(-1);
+    const payload={action:'recordAnalysisEvent',messageId:7,event:{provider:'hybridanalysis',scope:'report',phase:'finish',state:'checked',verdict:'none',responded:true,observedAt:100}};
+    const before=await state.context.getMessageAnalysisContext(state.message);
+    await listener(payload,{url:'options.html'});
+    await listener({...payload,event:{...payload.event,provider:'virustotal'}},{url:'popup.html'});
+    assert.equal(before.model.data.rows.length,0);
+    const accepted=await new Promise(resolve=>listener(payload,{url:'popup.html'},resolve));
+    assert.equal(accepted.success,true);
+    assert.equal(before.model.data.rows[0].provider,'hybridanalysis');
+    await before.flush();
+    assert.equal(state.requests.length,0);
+});
+
+test('clearing analysis caches disposes observers so late responses cannot restore deleted metadata', async () => {
+    const state=setup({},true);await state.context.configure();
+    const context=await state.context.getMessageAnalysisContext(state.message);
+    context.event({provider:'urlhaus',scope:'domain',phase:'start'});
+    state.listeners.at(-1)({action:'clearMemoryCaches'},{},()=>{});
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.equal(context.disposed,true);
+    assert.equal(context.event({provider:'urlhaus',scope:'domain',phase:'finish',state:'checked',verdict:'none',responded:true,observedAt:100}),false);
+    const fresh=await state.context.getMessageAnalysisContext(state.message);
+    assert.equal(fresh.model.data.rows.length,0);
+    assert.equal(state.requests.length,0);
+});
+
+function sourceRecords(state, initial = null) {
+    const records = new Map(initial ? [[state.message.headerMessageId,initial]] : []);
+    state.context.getFromStore=async(_db,_store,key)=>records.get(key)||null;
+    state.context.updateStore=async(_db,_store,key,update)=>{const value=update(records.get(key)||null);if(value)records.set(key,value);return value};
+    return records;
+}
+
+test('two same-name attachments and two links retain distinct provider resources through cache and restart',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'strict',virustotalApikey:'vt',urlhausApikey:'uh'},true);await s.context.configure();
+ const records=sourceRecords(s);
+ const attachments=[{name:'same.txt',partName:'1.2',size:4},{name:'same.txt',partName:'1.3',size:4}];
+ s.context.browser.messages.listAttachments=async()=>attachments;
+ const ctx=await s.context.getMessageAnalysisContext(s.message);
+ await s.context.sent_to_hybrid_by_attachment(s.message,attachments,true,false,ctx);
+ const urls=['https://example.com/a?token=one','https://example.com/b?token=two'];
+ await s.context.processAndUploadUrls(s.message,urls,false,false,ctx);
+ await s.context.checkURLhausDomains(urls,null,null,ctx);
+ await ctx.flush();let snap=await ctx.snapshot();
+ assert.equal(records.get(s.message.headerMessageId).attachments.length,2);
+ for(const ref of ['attachment:1.2','attachment:1.3','link:0','link:1'])assert.ok(snap.rows.some(row=>row.resource===ref),ref);
+ // Concurrent digest completion order is not guaranteed; exactly one request is shared.
+ assert.deepEqual(new Set(snap.rows.filter(row=>row.provider==='virustotal').map(row=>row.source)),new Set(['remote','cache']));
+ assert.equal(s.requests.filter(call=>call.url.includes('virustotal')).length,1);
+ assert.equal(Object.keys(snap.resourceLabels).length,4);assert.notEqual(snap.resourceLabels['attachment:1.2'],snap.resourceLabels['attachment:1.3']);
+ assert.ok(!snap.resourceLabels['link:0'].includes('token='));
+ const metadata=JSON.stringify(records.get(s.message.headerMessageId).analysisStatus);
+ for(const value of [...urls,'same.txt','token=one'])assert.ok(!metadata.includes(value));
+ const requestCount=s.requests.length;await s.context.checkURLhausDomains(urls,null,null,ctx);await ctx.flush();assert.equal(s.requests.length,requestCount);
+ const restarted=setup({},true);restarted.context.getFromStore=async()=>records.get(s.message.headerMessageId);await restarted.context.configure();
+ const loaded=await restarted.context.getMessageAnalysisContext(restarted.message);snap=await loaded.snapshot();assert.equal(snap.rows.length,ctx.model.data.rows.length);assert.ok(snap.rows.every(row=>row.source==='stored'));assert.equal(restarted.requests.length,0);
+});
+
+test('link result updates preserve historical duplicate slots and all source references',async()=>{
+ const s=setup({},true);const links=[{url:'https://a.invalid',state:'UNKNOWN'},{url:'https://a.invalid',state:'UNKNOWN'},{url:'https://b.invalid',state:'UNKNOWN'}];
+ const records=sourceRecords(s,{links,analysisStatus:{schemaVersion:2,rows:[{provider:'urlhaus',scope:'domain',resource:'link:2',state:'checked',verdict:'malicious',responses:1,observedAt:100}]}});
+ await s.context.indexedDB_save_links_objects_to_db(s.message,[{url:'https://a.invalid',state:'UPLOADED'},{url:'https://c.invalid',state:'UPLOADED'}]);
+ const result=records.get(s.message.headerMessageId);assert.equal(result.links.length,4);assert.equal(result.links[2].url,'https://b.invalid');assert.equal(result.analysisStatus.rows[0].resource,'link:2');
+});
+
+test('clearing caches during a queued source write cannot resurrect the cleared record',async()=>{
+ const s=setup({},true);await s.context.configure();const ctx=await s.context.getMessageAnalysisContext(s.message);
+ let apply,entered;const started=new Promise(resolve=>entered=resolve);let saved=null;
+ s.context.updateStore=async(_db,_store,_key,update)=>{entered();await new Promise(resolve=>apply=resolve);saved=update(null)};
+ const pending=ctx.flush();await started;s.listeners.at(-1)({action:'clearMemoryCaches'},{},()=>{});await new Promise(resolve=>setImmediate(resolve));apply();await pending;
+ assert.equal(saved,null);assert.equal(s.injections.length,0);
+});
+
+test('manual URL submission creates a stable reference for a previously unrecorded link',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();const records=sourceRecords(s);const ctx=await s.context.getMessageAnalysisContext(s.message);
+ s.context.fetch=async()=>({status:201,ok:true,json:async()=>({submission_id:'submission',job_id:'job',sha256:'hash'})});
+ await s.context.handleUrlScan('https://new.invalid/path',s.message.headerMessageId,ctx);await ctx.flush();
+ const record=records.get(s.message.headerMessageId);assert.equal(record.links[0].url,'https://new.invalid/path');assert.equal(ctx.model.data.rows[0].resource,'link:0');assert.equal(ctx.model.data.rows[0].state,'submitted');
+});
+
+test('persisted source observations are isolated between different messages sharing a header and survive reopening both',async()=>{
+ const s=setup({},true);await s.context.configure();const records=sourceRecords(s);
+ const first=await s.context.getMessageAnalysisContext(s.message);
+ first.event({provider:'urlhaus',scope:'domain',resource:'link:0',phase:'cache',state:'checked',verdict:'malicious',observedAt:100});await first.flush();
+ const otherMessage={...s.message,id:8};const second=await s.context.getMessageAnalysisContext(otherMessage);
+ assert.equal((await second.snapshot()).rows.length,0);
+ second.event({provider:'urlscan',scope:'url',resource:'link:1',phase:'start'});await second.flush();
+ assert.equal((await first.snapshot()).rows.length,1);assert.equal((await first.snapshot()).rows[0].provider,'urlhaus');
+ const restart=setup({},true);restart.context.getFromStore=async()=>records.get(s.message.headerMessageId);await restart.context.configure();
+ const loadedFirst=await restart.context.getMessageAnalysisContext(restart.message),loadedSecond=await restart.context.getMessageAnalysisContext(otherMessage);
+ assert.equal(loadedFirst.model.data.rows.length,1);assert.equal(loadedFirst.model.data.rows[0].verdict,'malicious');assert.equal(loadedSecond.model.data.rows.length,1);assert.equal(loadedSecond.model.data.rows[0].provider,'urlscan');assert.equal(loadedSecond.model.data.rows[0].state,'incomplete');
+});
+
+test('resource labels and popup records use the actual message inventory across duplicate headers and status writes',async()=>{
+ const s=setup({},true);await s.context.configure();
+ const records=sourceRecords(s,{analysisStatusOwner:7,analysisStatusByMessage:{7:{schemaVersion:2,rows:[]}},attachments:[{partName:'1.2',attachment_name:'message-A.txt',report:{verdict:'malicious'}}],links:[{url:'https://a.invalid/private',report:{verdict:'malicious'}}]});
+ s.context.browser.messages.listAttachments=async id=>[{partName:'1.2',name:id===7?'message-A.txt':'message-B.txt'}];
+ s.context.browser.messages.getFull=async id=>({parts:[{contentType:'text/plain',body:id===7?'https://a.invalid/private':'https://b.invalid/private'}]});
+ const first=await s.context.getMessageAnalysisContext(s.message),second=await s.context.getMessageAnalysisContext({...s.message,id:8});
+ for(const flush of [false,true]){
+  if(flush)await second.flush();
+  const snapshot=await second.snapshot();assert.ok(!JSON.stringify(snapshot.resourceLabels).includes('message-A'));assert.ok(!JSON.stringify(snapshot.resourceLabels).includes('a.invalid'));
+  assert.ok(snapshot.resourceLabels['attachment:1.2'].includes('message-B'));
+  const record=await second.resourceRecord();assert.equal(record.attachments.length,0);assert.equal(record.links.length,0);
+ }
+ const firstSnap=await first.snapshot();assert.ok(firstSnap.resourceLabels['attachment:1.2'].includes('message-A'));
+ const stored=records.get(s.message.headerMessageId);assert.equal(stored.attachments[0].attachment_name,'message-A.txt');assert.equal(stored.links[0].url,'https://a.invalid/private');
+ assert.equal(s.requests.length,0);
+});
+
+test('filtered legacy links keep original slot references and never acquire another link label',async()=>{
+ const s=setup({},true);await s.context.configure();sourceRecords(s,{links:[{url:'https://other.invalid/private',report:{verdict:'malicious'}},{url:'https://example.com/',report:{verdict:'no specific threat'}}]});
+ const ctx=await s.context.getMessageAnalysisContext(s.message);const snapshot=await ctx.snapshot();
+ assert.equal(snapshot.rows.length,1);assert.equal(snapshot.rows[0].resource,'link:1');assert.ok(!snapshot.resourceLabels['link:0']);assert.equal(snapshot.resourceLabels['link:1'],'https://example.com/');
+ const record=await ctx.resourceRecord();assert.equal(record.links[0].analysisResourceRef,'link:1');assert.equal(s.requests.length,0);
+});
+
+test('message contexts evict above the limit, stop pending timers and refuse late responses without deleting stored data',async()=>{
+ const s=setup({},true);await s.context.configure();const records=sourceRecords(s);
+ const first=await s.context.getMessageAnalysisContext(s.message,1);first.event({provider:'urlhaus',scope:'domain',phase:'start'});await first.flush();
+ first.event({provider:'urlscan',scope:'url',phase:'start'});assert.ok(first.timer);
+ for(let i=0;i<200;i++)await s.context.getMessageAnalysisContext({...s.message,id:100+i,headerMessageId:'bounded-'+i});
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(first.disposed,true);assert.equal(first.timer,null);assert.equal(first.tabs.size,0);
+ assert.equal(first.event({provider:'urlhaus',scope:'domain',phase:'finish',state:'checked',verdict:'none',responded:true,observedAt:100}),false);
+ assert.ok(records.has(s.message.headerMessageId));const reopened=await s.context.getMessageAnalysisContext(s.message);
+ assert.equal(reopened.model.data.rows[0].state,'incomplete');await reopened.flush();assert.equal(s.requests.length,0);
+});
+
+test('unbound legacy findings remain summaries and never leak a cached filename through the popup record',async()=>{
+ const s=setup({},true);await s.context.configure();sourceRecords(s,{attachments:[{attachment_name:'foreign-legacy.txt',report:{verdict:'malicious'}}]});
+ const ctx=await s.context.getMessageAnalysisContext(s.message);
+ const snapshot=await ctx.snapshot();assert.equal(snapshot.rows[0].resource,null);assert.equal(snapshot.rows[0].verdict,'malicious');
+ assert.equal((await ctx.resourceRecord()).attachments.length,0);assert.ok(!JSON.stringify(snapshot.resourceLabels).includes('foreign-legacy'));
+});
+
+test('header-only manual submission never attributes an evicted popup request to a remaining sibling context',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();sourceRecords(s);
+ let calls=0;s.context.fetch=async()=>{calls++;return {status:201,ok:true,json:async()=>({submission_id:'job',sha256:'hash'})}};
+ const sibling=await s.context.getMessageAnalysisContext(s.message);
+ await s.context.handleUrlScan('https://other.invalid/',s.message.headerMessageId);
+ assert.equal(sibling.model.data.rows.length,0);assert.equal(calls,1);
+});
+
+test('manual popup URL submission recreates its explicit message context rather than guessing by shared header',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();sourceRecords(s);
+ const sibling=await s.context.getMessageAnalysisContext(s.message);
+ const other={...s.message,id:8};s.context.browser.messages.get=async id=>id===8?other:s.message;
+ s.context.fetch=async()=>({status:201,ok:true,json:async()=>({submission_id:'job',sha256:'hash'})});
+ const response=await new Promise(resolve=>s.listeners.at(-1)({action:'scanUrl',url:'https://other.invalid/',headerMessageId:other.headerMessageId,messageId:8},{url:'popup.html'},resolve));
+ assert.equal(response.status,'success');assert.equal(sibling.model.data.rows.length,0);
+ const target=await s.context.getMessageAnalysisContext(other);assert.equal(target.model.data.rows[0].state,'submitted');await target.flush();
+});
+
+test('manual URL submission refuses a mismatched explicit message before contacting a provider',async()=>{
+ const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();let calls=0;s.context.fetch=async()=>{calls++;throw Error('unexpected')};
+ const response=await new Promise(resolve=>s.listeners.at(-1)({action:'scanUrl',url:'https://other.invalid/',headerMessageId:'different-header',messageId:7},{url:'popup.html'},resolve));
+ assert.equal(response.status,'error');assert.equal(response.code,'MESSAGE_CONTEXT_CHANGED');assert.equal(calls,0);
 });

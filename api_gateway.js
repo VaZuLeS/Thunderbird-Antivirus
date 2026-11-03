@@ -99,10 +99,13 @@ class ApiGateway {
         this.controllers.add(controller);
         const id = setTimeout(() => controller.abort(), timeout);
 
-        const fetchOptions = {
-            ...this._injectAuthHeaders(url, options),
-            signal: controller.signal
-        };
+        const context = options.analysisContext;
+        const info = typeof ThundyAnalysis !== 'undefined' && context ? ThundyAnalysis.spec(url, options.method) : null;
+        if (info && ['report','url'].includes(context.scopeOverride) && info.provider === 'hybridanalysis') info.scope = context.scopeOverride;
+        const emit = event => { try { const pending = context?.event({ ...info, ...event }); pending?.catch?.(() => {}); } catch (_) { /* metadata never blocks protection */ } };
+        const fetchOptions = { ...this._injectAuthHeaders(url, options), signal: controller.signal };
+        delete fetchOptions.analysisContext;
+        let started = false, responded = false;
 
         let release;
         try {
@@ -111,7 +114,9 @@ class ApiGateway {
             let response;
             for (let attempt = 0; attempt < 3; attempt++) {
                 if (this.beforeRequest) await this.beforeRequest();
+                if (info && !started) { emit({ phase: 'start' }); started = true; }
                 response = await fetch(url, fetchOptions);
+                responded = true;
                 const retryAfter = response.headers && response.headers.get('retry-after');
                 if ((options.method || 'GET').toUpperCase() !== 'GET' || !retryAfter || ![429, 503].includes(response.status) || attempt === 2) break;
                 const seconds = Number(retryAfter);
@@ -121,8 +126,10 @@ class ApiGateway {
             }
             // Provider responses are JSON. Keep the slot, abort signal and deadline
             // active until the body has been consumed, not just until headers arrive.
-            if (response.body && typeof response.json === 'function') {
+            let observedData;
+            if ((response.body || info) && typeof response.json === 'function') {
                 const data = await response.json();
+                observedData = data;
                 response.json = async () => data;
             }
             clearTimeout(id);
@@ -132,8 +139,10 @@ class ApiGateway {
                 // In a production scenario, you might want to implement retry logic here
             }
 
+            if (info) emit({ phase: 'finish', responded: true, ...ThundyAnalysis.response(info, response.status, observedData), observedAt: Date.now() });
             return response;
         } catch (error) {
+            if (info && started) emit({ phase: 'finish', responded, state: 'failed', verdict: 'unknown', observedAt: null });
             clearTimeout(id);
             if (error.name === 'AbortError') {
                 throw new Error(typeof ThundyI18n !== 'undefined' ? ThundyI18n.get('gatewayRequestTimeout') : `[ApiGateway] Request cancelled or timed out after ${timeout}ms`);

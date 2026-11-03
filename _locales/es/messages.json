@@ -24,7 +24,7 @@
     "message": "Analizando…"
   },
   "bannerScanDone": {
-    "message": "Análisis terminado"
+    "message": "Consultas finalizadas — ver fuentes de análisis"
   },
   "bannerScanFailed": {
     "message": "Error de análisis"
@@ -33,7 +33,7 @@
     "message": "Permiso de acceso requerido denegado"
   },
   "bannerConsentMissing": {
-    "message": "El análisis externo está desactivado en ajustes: no se ha enviado nada."
+    "message": "Las nuevas consultas externas están desactivadas. Los informes ya guardados pueden seguir mostrándose."
   },
   "bannerThreatTitle": {
     "message": "Advertencia de Thundy AV"
@@ -1586,5 +1586,185 @@
   },
   "localProfileApplied": {
     "message": "Perfil de apariencia aplicado. Protección y consentimiento sin cambios."
+  },
+  "analysisTitle": {
+    "message": "Fuentes de análisis"
+  },
+  "analysisMixed": {
+    "message": "Comprobaciones locales y externas"
+  },
+  "analysisExternal": {
+    "message": "Observaciones externas disponibles"
+  },
+  "analysisLocal": {
+    "message": "Local · sin resultados externos registrados"
+  },
+  "analysisLocalChecked": {
+    "message": "Heurística local del mensaje y enlaces realizada."
+  },
+  "analysisLocalPending": {
+    "message": "Evaluación local aún no registrada."
+  },
+  "analysisUnknown": {
+    "message": "Desconocido"
+  },
+  "analysisTimeUnknown": {
+    "message": "Fecha no registrada"
+  },
+  "analysisObserved": {
+    "message": "Última respuesta válida"
+  },
+  "analysisFindingObserved": {
+    "message": "Hallazgo registrado"
+  },
+  "analysisAttempted": {
+    "message": "Último intento"
+  },
+  "analysisPartial": {
+    "message": "Algunas consultas fallaron; los hallazgos no cubren todos los elementos."
+  },
+  "analysisOtherServices": {
+    "message": "Otros servicios / no comprobados"
+  },
+  "analysisLimit": {
+    "message": "Una puntuación local no es un veredicto antivirus. Las consultas y envíos no son análisis terminados. Los resultados guardados conservan su antigüedad; la falta de registros no demuestra que no hubo consultas anteriores."
+  },
+  "analysisScope_hash": {
+    "message": "Reputación del hash de archivo"
+  },
+  "analysisScope_file": {
+    "message": "Envío de archivo"
+  },
+  "analysisScope_url": {
+    "message": "Análisis de URL"
+  },
+  "analysisScope_domain": {
+    "message": "Reputación del dominio"
+  },
+  "analysisScope_ip": {
+    "message": "Reputación de IP públicas"
+  },
+  "analysisScope_report": {
+    "message": "Informe de análisis"
+  },
+  "analysisState_running": {
+    "message": "Solicitado · sin resultado terminado"
+  },
+  "analysisState_checked": {
+    "message": "Resultado recibido"
+  },
+  "analysisState_received": {
+    "message": "Respuesta recibida · veredicto no disponible"
+  },
+  "analysisState_submitted": {
+    "message": "Envío aceptado · análisis terminado no confirmado"
+  },
+  "analysisState_not_found": {
+    "message": "Sin registro del proveedor"
+  },
+  "analysisState_failed": {
+    "message": "Consulta fallida · sin veredicto nuevo"
+  },
+  "analysisState_incomplete": {
+    "message": "Sin análisis terminado registrado"
+  },
+  "analysisSource_remote": {
+    "message": "Servicio externo contactado"
+  },
+  "analysisSource_cache": {
+    "message": "Caché de memoria · sin nueva consulta"
+  },
+  "analysisSource_stored": {
+    "message": "Observación externa guardada"
+  },
+  "analysisSource_attempt": {
+    "message": "Intento · respuesta no confirmada"
+  },
+  "analysisVerdict_unknown": {
+    "message": "Veredicto no disponible"
+  },
+  "analysisVerdict_none": {
+    "message": "Hallazgos disponibles: sin detecciones (sin garantía de seguridad)"
+  },
+  "analysisVerdict_suspicious": {
+    "message": "Los hallazgos incluyen indicios sospechosos"
+  },
+  "analysisVerdict_malicious": {
+    "message": "Los hallazgos incluyen una amenaza detectada"
+  },
+  "analysisReason_unconfigured": {
+    "message": "Actualmente sin configurar"
+  },
+  "analysisReason_disabled": {
+    "message": "Nuevas consultas externas desactivadas"
+  },
+  "analysisReason_permission": {
+    "message": "Falta permiso del sitio para nuevas consultas"
+  },
+  "analysisReason_authorization": {
+    "message": "Sin autorización automática para este mensaje / modo manual"
+  },
+  "analysisReason_policy": {
+    "message": "No permitido por el nivel de privacidad actual"
+  },
+  "analysisReason_on_action": {
+    "message": "Solo tras una acción explícita sobre un enlace"
+  },
+  "analysisReason_unrecorded": {
+    "message": "Sin comprobación registrada para este mensaje"
+  },
+  "analysisUnavailable": {
+    "message": "Fuentes de análisis no disponibles ahora"
+  },
+  "analysisModeUnknown": {
+    "message": "Estado de comprobación aún no registrado"
+  },
+  "analysisModeRunning": {
+    "message": "Consulta externa en curso · resultado pendiente"
+  },
+  "analysisModeSubmitted": {
+    "message": "Enviado al servicio externo · análisis sin finalizar"
+  },
+  "analysisModeIncomplete": {
+    "message": "Comprobación externa incompleta · finalización no confirmada"
+  },
+  "analysisModePartial": {
+    "message": "Resultados externos disponibles · algunas consultas fallaron"
+  },
+  "analysisModeFailed": {
+    "message": "Consulta externa fallida · sin resultado utilizable registrado"
+  },
+  "analysisModeResults": {
+    "message": "Respuestas externas disponibles · consulte las comprobaciones"
+  },
+  "analysisResourceMessage": {
+    "message": "Contexto del mensaje / reputación del transporte"
+  },
+  "analysisResourceAttachment": {
+    "message": "Adjunto"
+  },
+  "analysisResourceLink": {
+    "message": "Enlace"
+  },
+  "analysisResourceUnknown": {
+    "message": "Resumen anterior · recurso no registrado"
+  },
+  "analysisTruncated": {
+    "message": "Se omitieron algunos detalles de recursos por alcanzar el límite local de visualización."
+  },
+  "analysisResources": {
+    "message": "Recursos de este mensaje"
+  },
+  "analysisResourceLocal": {
+    "message": "Adjunto almacenado con el mensaje · no demuestra un análisis antivirus"
+  },
+  "analysisResourceTarget": {
+    "message": "Destino enlazado · cargar contenido remoto no demuestra un análisis externo"
+  },
+  "analysisResourceNoExternal": {
+    "message": "Sin comprobación externa registrada para este recurso"
+  },
+  "analysisContextChanged": {
+    "message": "El contexto del mensaje ha cambiado. Cierre y vuelva a abrir la ventana antes de enviar de nuevo."
   }
 }

@@ -17,12 +17,13 @@ function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     return options;
 }
 
-async function checkAbuseIPDB(ip, apikey) {
+async function checkAbuseIPDB(ip, apikey, analysisContext = null) {
+    if (typeof ThundyAnalysis !== 'undefined') analysisContext = ThundyAnalysis.withCache(analysisContext, 'abuseipdb', 'ip', ip);
     if (!mayTransmitExternally()) return null;
     await requireHostPermission('https://api.abuseipdb.com/api/v2/check');
     try {
         const response = await apiGateway.fetchWithTimeout(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, {
-            method: 'GET',
+            method: 'GET', analysisContext,
             headers: {
                 'Key': apikey,
                 'Accept': 'application/json'
@@ -37,12 +38,13 @@ async function checkAbuseIPDB(ip, apikey) {
     return null;
 }
 
-async function checkVirusTotalIP(ip, apikey) {
+async function checkVirusTotalIP(ip, apikey, analysisContext = null) {
+    if (typeof ThundyAnalysis !== 'undefined') analysisContext = ThundyAnalysis.withCache(analysisContext, 'virustotal', 'ip', ip);
     if (!mayTransmitExternally()) return null;
     await requireHostPermission('https://www.virustotal.com/api/v3/ip_addresses/' + ip);
     try {
         const response = await apiGateway.fetchWithTimeout(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`, {
-            method: 'GET',
+            method: 'GET', analysisContext,
             headers: {
                 'x-apikey': apikey,
                 'Accept': 'application/json'
@@ -58,17 +60,20 @@ async function checkVirusTotalIP(ip, apikey) {
     return null;
 }
 
-async function checkVirusTotal(hash, apikey) {
+async function checkVirusTotal(hash, apikey, analysisContext = null) {
+    if (typeof ThundyAnalysis !== 'undefined') analysisContext = ThundyAnalysis.withCache(analysisContext, 'virustotal', 'hash', hash);
     if (!apikey) return null;
     if (!mayTransmitExternally()) return null;
     if (vtCache.has(hash)) {
-        return await vtCache.get(hash);
+        const stats = await vtCache.get(hash);
+        if (stats && analysisContext && typeof ThundyAnalysis !== 'undefined') analysisContext.cached('virustotal', 'hash', !Number.isFinite(stats.malicious) ? 'unknown' : stats.malicious > 0 ? 'malicious' : stats.suspicious > 0 ? 'suspicious' : 'none', ThundyAnalysis.cacheTime('virustotal', 'hash', hash));
+        return stats;
     }
 
     let checkPromise = (async () => {
         const url = `https://www.virustotal.com/api/v3/files/${hash}`;
         const options = {
-            method: 'GET',
+            method: 'GET', analysisContext,
             headers: {
                 'x-apikey': apikey,
                 'accept': 'application/json'
@@ -101,10 +106,12 @@ async function checkVirusTotal(hash, apikey) {
         // Remove from cache on failure so it can be retried
         vtCache.delete(hash);
     }
+
     return stats;
 }
 
-async function checkURLhaus(domain, apikey) {
+async function checkURLhaus(domain, apikey, analysisContext = null) {
+    if (typeof ThundyAnalysis !== 'undefined') analysisContext = ThundyAnalysis.withCache(analysisContext, 'urlhaus', 'domain', domain);
     if (!apikey) return null;
     if (!mayTransmitExternally()) return null;
     try {
@@ -112,7 +119,7 @@ async function checkURLhaus(domain, apikey) {
         const body = new URLSearchParams();
         body.append('host', domain);
         const response = await apiGateway.fetchWithTimeout('https://urlhaus-api.abuse.ch/v1/host/', {
-            method: 'POST',
+            method: 'POST', analysisContext,
             headers: {
                 'Auth-Key': apikey,
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -129,7 +136,7 @@ async function checkURLhaus(domain, apikey) {
     return null;
 }
 
-async function checkUrlscanIo(url, apikey) {
+async function checkUrlscanIo(url, apikey, analysisContext = null) {
     if (!apikey) return null;
     if (!mayTransmitExternally()) return null;
     if (!tierAtLeast('max')) return { status: 'NOT_CHECKED' };
@@ -138,7 +145,7 @@ async function checkUrlscanIo(url, apikey) {
         // Start Scan
         // 🛡️ Sentinel: Prevent sensitive URL leakage by defaulting to 'unlisted' instead of 'public' visibility
         const scanRes = await apiGateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/', {
-            method: 'POST',
+            method: 'POST', analysisContext,
             headers: {
                 'API-Key': apikey,
                 'Content-Type': 'application/json'
@@ -158,14 +165,14 @@ async function checkUrlscanIo(url, apikey) {
 
         if (!uuid) throw new Error(uiText("ui_101", "Keine UUID von urlscan.io erhalten."));
 
-        return await pollUrlscanIoResult(uuid, apikey);
+        return await pollUrlscanIoResult(uuid, apikey, analysisContext);
     } catch (e) {
         Logger.error("Fehler bei urlscan.io Abfrage", e);
         return { status: 'ERROR', details: e.message };
     }
 }
 
-async function pollUrlscanIoResult(uuid, apikey) {
+async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
     let waitTime = 2000;
     let elapsed = 0;
     const maxTime = 30000;
@@ -179,7 +186,7 @@ async function pollUrlscanIoResult(uuid, apikey) {
 
         if (Date.now() >= deadline) break;
         const resultRes = await apiGateway.fetchWithTimeout(`https://urlscan.io/api/v1/result/${encodeURIComponent(uuid)}/`, {
-            method: 'GET',
+            method: 'GET', analysisContext,
             headers: {
                 'API-Key': apikey,
                 'Accept': 'application/json'

@@ -218,6 +218,16 @@ function addonMock({
               retentionDays: 30,
               maxRecords: 1000,
             }
+          : p.action === "getMessageAnalysisRecord"
+            ? {success:true,record:null}
+          : p.action === "getMessageAnalysis"
+            ? {success:true,messageId:p.messageId,local:{state:"checked"},rows:[
+                {provider:"hybridanalysis",resource:"attachment:1.2",scope:"hash",responses:1,state:"checked",verdict:"none",source:"remote",observedAt:1791014400000},
+                {provider:"virustotal",resource:"attachment:1.3",scope:"hash",responses:1,state:"checked",verdict:"none",source:"cache",observedAt:1791014400000},
+                {provider:"urlhaus",resource:"link:0",scope:"domain",responses:1,state:"checked",verdict:"none",source:"remote",observedAt:1791014400000},
+                {provider:"abuseipdb",resource:"message",scope:"ip",state:"failed",verdict:"malicious",source:"stored",responses:1,failures:1,observedAt:1791014400000},
+                {provider:"urlscan",resource:"link:1",scope:"url",responses:1,state:"submitted",verdict:"unknown",source:"remote",observedAt:1791014400000}
+              ],resourceLabels:{"attachment:1.2":"same.txt (1.2)","attachment:1.3":"same.txt (1.3)","link:0":"https://first.invalid/path","link:1":"https://second.invalid/path"},availability:{}}
           : p.action === "getLocalRisk"
             ? { threat: { score: 72, reasons: [] } }
             : { status: "success" },

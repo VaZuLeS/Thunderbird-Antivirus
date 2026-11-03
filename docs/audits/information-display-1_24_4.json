@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "kind": "plan-execution-local-validation-not-release-approval",
+  "generatedAt": "2026-11-02T15:08:27.610Z",
+  "extensionVersion": "1.24.4",
+  "sourceFingerprint": "78fe4735c95044a0dbaace538f5f46dc672941944ca3d00adb97e7aa566c9ab7",
+  "packageSha256": "eaf959e203749c19a1446eca0c3039f88792e689b89c2469398faa8eea0b47d8",
+  "fullTests": {
+    "passed": 1007,
+    "failed": 0,
+    "logSha256": "bb990f05e0a503cc9cc64f023f21a612979a905b103ac822da2444e0bdf8c7e7",
+    "scope": "Full suite before the final wording-only consent clarification."
+  },
+  "finalFocusedTests": {
+    "passed": 386,
+    "failed": 0,
+    "logSha256": "e4bf632ca5c42d95b358ec0da579c59aed1b7bf1954a8248b8d12943d25734c5",
+    "scope": "Final source, model, resource/provider flows, locales, manifest and background."
+  },
+  "native": [
+    {
+      "runner": "info-native-140-retry",
+      "client": "140.12.0",
+      "passed": true,
+      "reportSha256": "72cc1a15fbfe61aae6db77d4552a347ccdde9c8aa21849857b3615089579fa0a",
+      "xpiSha256": "eaf959e203749c19a1446eca0c3039f88792e689b89c2469398faa8eea0b47d8",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "startedAt": "2026-11-02T15:06:43Z",
+      "finishedAt": "2026-11-02T15:06:58Z",
+      "syntheticExternalObservations": true,
+      "liveProviderCalls": false,
+      "analysisSources": {
+        "nativeLocalMessage": true,
+        "syntheticStoredReport": true,
+        "liveProviderCalls": false,
+        "nativeFirstRequest": true,
+        "nativeCacheAndFailedRefresh": {
+          "originalAgePreserved": true,
+          "warningPreserved": true,
+          "cacheVisible": true
+        },
+        "resources": {
+          "attachmentCount": 100,
+          "linkCount": 2,
+          "differentSameNameAttachments": true,
+          "linksHaveFindings": true,
+          "noStoredQueryInDisplay": true
+        },
+        "nativePopup": true,
+        "nativeStoredMessage": true
+      }
+    },
+    {
+      "runner": "info-native-153-verified",
+      "client": "153.6.0",
+      "passed": true,
+      "reportSha256": "eb1b99d99006cd99a3ec592f364497dd97d9d212f4b0b61645054909477fea85",
+      "xpiSha256": "eaf959e203749c19a1446eca0c3039f88792e689b89c2469398faa8eea0b47d8",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "startedAt": "2026-11-02T15:05:08Z",
+      "finishedAt": "2026-11-02T15:05:44Z",
+      "syntheticExternalObservations": true,
+      "liveProviderCalls": false,
+      "analysisSources": {
+        "nativeLocalMessage": true,
+        "syntheticStoredReport": true,
+        "liveProviderCalls": false,
+        "nativeFirstRequest": true,
+        "nativeCacheAndFailedRefresh": {
+          "originalAgePreserved": true,
+          "warningPreserved": true,
+          "cacheVisible": true
+        },
+        "resources": {
+          "attachmentCount": 100,
+          "linkCount": 2,
+          "differentSameNameAttachments": true,
+          "linksHaveFindings": true,
+          "noStoredQueryInDisplay": true
+        },
+        "nativePopup": true,
+        "nativeStoredMessage": true
+      }
+    },
+    {
+      "runner": "info-native-upgrade-verified",
+      "client": "153.6.0",
+      "passed": true,
+      "reportSha256": "319d3dc62b18329189bb251c6091dcf67060f466641ab698c70bef494123543d",
+      "xpiSha256": "eaf959e203749c19a1446eca0c3039f88792e689b89c2469398faa8eea0b47d8",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "startedAt": "2026-11-02T15:05:08Z",
+      "finishedAt": "2026-11-02T15:05:46Z",
+      "syntheticExternalObservations": true,
+      "liveProviderCalls": false,
+      "previousVersion": "1.24.3",
+      "gracefulRestarts": 2,
+      "forcedRestarts": 2,
+      "originalAuditRecordsPreserved": true,
+      "pendingDecisionNotInvented": true,
+      "pendingExtraOsDispatches": 0
+    }
+  ],
+  "browser": [
+    {
+      "runner": "info-popup-complete",
+      "passed": 48,
+      "failed": 0,
+      "view": "popup.html",
+      "languages": "all",
+      "cssZoom": 1,
+      "sourceFingerprint": "53797ccc5b5e947a96d47196cfbcd57ef018ea0ecbe6ee70bf3e16f864de3af8",
+      "reportSha256": "87b6bad597f1411823d719b41bdb597152ee8a9f709829b2795de1961842ce96",
+      "syntheticBrowserAPIs": true,
+      "screenReaderVerified": false,
+      "scope": "Before the final consent-banner wording clarification only; final six-language catalogs and focused runtime tests passed separately."
+    },
+    {
+      "runner": "info-message-complete",
+      "passed": 24,
+      "failed": 0,
+      "view": "message",
+      "languages": "all",
+      "cssZoom": 1,
+      "sourceFingerprint": "53797ccc5b5e947a96d47196cfbcd57ef018ea0ecbe6ee70bf3e16f864de3af8",
+      "reportSha256": "9c3396ba59f29e550924ad3224bd9c49f35c9899b57c7fe85aac82a32c2e87b4",
+      "syntheticBrowserAPIs": true,
+      "screenReaderVerified": false,
+      "scope": "Before the final consent-banner wording clarification only; final six-language catalogs and focused runtime tests passed separately."
+    },
+    {
+      "runner": "info-zoom-complete",
+      "passed": 4,
+      "failed": 0,
+      "view": "popup.html",
+      "languages": "all",
+      "cssZoom": 2,
+      "sourceFingerprint": "53797ccc5b5e947a96d47196cfbcd57ef018ea0ecbe6ee70bf3e16f864de3af8",
+      "reportSha256": "8e5d4f26998d38084da9b751c68f3c063a55b293d74627a6a9a3bedc5c6335d6",
+      "syntheticBrowserAPIs": true,
+      "screenReaderVerified": false,
+      "scope": "Before the final consent-banner wording clarification only; final six-language catalogs and focused runtime tests passed separately."
+    },
+    {
+      "runner": "info-popup-verified",
+      "passed": 4,
+      "failed": 0,
+      "view": "popup.html",
+      "languages": "all",
+      "cssZoom": 1,
+      "sourceFingerprint": "78fe4735c95044a0dbaace538f5f46dc672941944ca3d00adb97e7aa566c9ab7",
+      "reportSha256": "85d8e92c9bfe1b9fe73fe2d6e8baf4aaac20ca0ad773ae54ce79e2850ebbf516",
+      "syntheticBrowserAPIs": true,
+      "screenReaderVerified": false,
+      "scope": "Final source snapshot"
+    }
+  ],
+  "earlierAttempt": {
+    "runner": "info-native-140-verified",
+    "passed": false,
+    "reason": "Timeout in the unrelated native GTK support-download file picker",
+    "resolution": "Same final package rerun successfully in info-native-140-retry; no product code changed."
+  },
+  "limits": [
+    "No Windows/macOS or native NVDA/VoiceOver tests.",
+    "No live provider accounts: external observations are explicit synthetic fixtures.",
+    "No human usability study.",
+    "No automatic update/ATN/real distribution rollback approval.",
+    "Complete six-language candidate evidence remains required by the existing CI/release gate."
+  ]
+}

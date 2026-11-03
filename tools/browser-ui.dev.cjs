@@ -355,6 +355,32 @@ async function interaction(page, c) {
       "failed save lost draft",
     );
   } else if (c.view === "popup.html" && c.populated) {
+    await page.locator("#thundy-analysis-status .mode").waitFor();
+    const sourceText = await page.locator("#thundy-analysis-status .card").innerText();
+    for (const brand of ["Hybrid Analysis","VirusTotal","URLhaus","AbuseIPDB","urlscan.io"])
+      assert.ok(sourceText.includes(brand), "missing source: " + brand);
+    const sourceCatalog = JSON.parse(fs.readFileSync(path.join(root,"_locales",c.lang,"messages.json")));
+    for (const key of ["analysisMixed","analysisSource_cache","analysisSource_stored","analysisState_submitted","analysisPartial"])
+      assert.ok(sourceText.includes(sourceCatalog[key].message), "missing state: " + key);
+
+    const sourceSummary = page.locator("#thundy-analysis-status details summary").first();
+    await sourceSummary.focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await sourceSummary.evaluate(el=>el.parentElement.open),true);
+    await page.keyboard.press("Space");
+    assert.equal(await sourceSummary.evaluate(el=>el.parentElement.open),false);
+    await page.keyboard.press("Enter");
+    const sourceFocusKey = await sourceSummary.getAttribute("data-focus-key");
+    await page.evaluate(async()=>{
+      const snapshot=await browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:42});
+      const theme=await ThundyTheme.snapshot();
+      ThundyAnalysis.render({...snapshot,rows:snapshot.rows.map((row,index)=>index===0?{...row,state:"running"}:row)},ThundyAnalysis.labels(key=>browser.i18n.getMessage(key)),theme.css);
+    });
+    assert.equal(await page.locator("#thundy-analysis-status").evaluate(el=>el.shadowRoot.activeElement?.dataset.focusKey),sourceFocusKey);
+    assert.equal(await sourceSummary.evaluate(el=>el.parentElement.open),true);
+    await page.keyboard.press("Tab");
+    assert.equal(await page.locator("#thundy-analysis-status").evaluate(el=>el.shadowRoot.activeElement?.tagName),"SUMMARY");
+
     assert.equal(
       await page.locator(".local-risk .risk-meter").getAttribute("value"),
       "72",

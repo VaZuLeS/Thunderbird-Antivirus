@@ -410,7 +410,7 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
         report['localizedPages'].append({'page': page, 'language': locale, 'heading': expected})
         m.screenshot(out / (page.replace('.html', '') + '-' + locale + '.png'))
     if tuple(map(int, manifest['version'].split('.'))) >= (1, 24, 3):
-        check_followup(m, base, out, report, display)
+        check_followup(m, base, out, report, display, catalogs[locale])
     report['passed'] = True
 
 
@@ -423,7 +423,7 @@ def import_appearance_profile(m, profile):
     wait_for(lambda: m.page('return !document.getElementById("localProfileExport").disabled && document.getElementById("localProfileDiff").hidden;'))
 
 
-def check_followup(m, base, out, report, display):
+def check_followup(m, base, out, report, display, source_catalog):
     """Real extension APIs, synthetic MIME, no provider credentials or API mocks."""
     open_page(m, base + 'options.html')
     wait_for(lambda: m.page('return !!document.getElementById("supportPreview");'))
@@ -449,8 +449,11 @@ def check_followup(m, base, out, report, display):
     # messages APIs from its extension context. There are no attachment API doubles.
     mail = out / 'followup.eml'
     body = 'From: sender@example.invalid\nTo: recipient@example.invalid\nSubject: Thundy followup MIME\nMessage-ID: <followup@example.invalid>\nAuthentication-Results: mx.example.invalid; spf=passage; dkim=passage; dmarc=passage\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="thundy"\n\n--thundy\nContent-Type: text/plain\n\nSynthetic offline fixture.\n'
+    if 'analysisResources' in source_catalog:
+        body += 'https://fixture.invalid/one?token=one\nhttps://fixture.invalid/two?token=two\n'
     for index in range(101):
-        body += '--thundy\nContent-Type: text/plain\nContent-Disposition: attachment; filename="sample-' + str(index) + '.txt"\n\nhello\n'
+        name = 'same.txt' if 'analysisResources' in source_catalog and index < 2 else 'sample-' + str(index) + '.txt'
+        body += '--thundy\nContent-Type: text/plain\nContent-Disposition: attachment; filename="' + name + '"\n\nhello\n'
     mail.write_text(body + '--thundy--\n')
     m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
         const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
@@ -495,6 +498,10 @@ def check_followup(m, base, out, report, display):
         MailUtils.displayMessage(header);''')
     wait_for(lambda: m.js('return window.gTabmail.currentTabInfo.mode.name==="mailMessageTab";'))
     wait_for(lambda: m.page('return document.documentElement.dataset.thundyClickProtection==="true";'))
+    if 'analysisTitle' in source_catalog:
+        sources = wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;'))
+        assert source_catalog['analysisLocal']['message'] in sources, sources
+        probe['analysisSources'] = {'nativeLocalMessage':True,'syntheticStoredReport':True,'liveProviderCalls':False}
     point = m.js('''const t=window.gTabmail.currentTabInfo,b=t.chromeBrowser;
         const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect();
         const p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
@@ -502,9 +509,78 @@ def check_followup(m, base, out, report, display):
     wait_for(lambda: m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup_browser = 'document.querySelector(\'browser[webextension-view-type="popup"]\')'
     wait_for(lambda: m.page('return document.body?.innerText?.includes("101") && document.body?.innerText?.includes("100");', browser=popup_browser))
+    if 'analysisModeRunning' in source_catalog:
+        # These are explicit synthetic observations through the real popup bridge,
+        # never live provider requests. Exercise an already open native popup.
+        bridge = m.page('''return (async()=>{
+          const b=window.wrappedJSObject.browser;
+          const raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject || raw;
+          const tabs=await b.tabs.query({active:true,currentWindow:true});
+          const message=(await b.messageDisplay.getDisplayedMessages(tabs[0].id)).messages[0];
+          const record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId);
+          window.wrappedJSObject.sourceProbe={id:message.id,resource:"attachment:"+record.attachments[0].partName,observedAt:Date.parse("2026-10-15T08:00:00Z")};
+          const result=await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:message.id,event:{provider:"hybridanalysis",scope:"report",resource:window.wrappedJSObject.sourceProbe.resource,phase:"start"}});
+          return result.success;
+        })();''', browser=popup_browser)
+        assert bridge is True
+        wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".phase")?.textContent===arguments[0];', [source_catalog['analysisModeRunning']['message']], browser=popup_browser))
+        timed = m.page('''return (async()=>{
+          const b=window.wrappedJSObject.browser,p=window.wrappedJSObject.sourceProbe;
+          const event={provider:"hybridanalysis",scope:"report",resource:p.resource};
+          await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:p.id,event:{...event,phase:"finish",state:"checked",verdict:"malicious",responded:true,observedAt:p.observedAt}});
+          await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:p.id,event:{...event,phase:"cache",state:"checked",verdict:"malicious",observedAt:p.observedAt}});
+          await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:p.id,event:{...event,phase:"start"}});
+          await b.runtime.sendMessage({action:"recordAnalysisEvent",messageId:p.id,event:{...event,phase:"finish",state:"failed",verdict:"unknown",responded:false}});
+          const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:p.id});
+          const row=snapshot.rows.find(row=>row.resource===p.resource && row.scope==="report");
+          return {originalAgePreserved:row.observedAt===p.observedAt,warningPreserved:row.verdict==="malicious",cacheVisible:row.source==="cache"};
+        })();''', browser=popup_browser)
+        assert all(timed.values()), timed
+        wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".phase")?.textContent===arguments[0];', [source_catalog['analysisModePartial']['message']], browser=popup_browser))
+        probe['analysisSources'].update({'nativeFirstRequest':True,'nativeCacheAndFailedRefresh':timed})
+    if 'analysisTitle' in source_catalog:
+        m.page('''return (async()=>{
+          const b=window.wrappedJSObject.browser;
+          const raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject || raw;
+          const tabs=await b.tabs.query({active:true,currentWindow:true});
+          const displayed=await b.messageDisplay.getDisplayedMessages(tabs[0].id);
+          const message=displayed.messages[0];
+          const db=await bg.getSharedDB();
+          const modern = !!document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".phase");
+          await bg.updateStore(db,"hybridanalysis",message.headerMessageId,old=>({...old,
+            attachments:old.attachments.map((item,index)=>index<(modern?2:1)?{...item,report:{verdict:modern && index===0?"malicious":"no specific threat"},report_fetched_at:"2026-10-15T08:00:00Z"}:item),
+            links:modern?(old.links || []).map((item,index)=>({...item,report:{verdict:index===0?"malicious":"no specific threat"},report_fetched_at:"2026-10-15T08:00:00Z"})):old.links
+          }));
+          await b.runtime.sendMessage({action:"getLocalRisk",messageId:message.id});
+          return true;
+        })();''', browser=popup_browser)
+        popup_sources = wait_for(lambda: m.page('const text=document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;return text?.includes(arguments[0]) && text.includes(arguments[1])?text:null;', [source_catalog['analysisMixed']['message'],source_catalog['analysisSource_stored']['message']], browser=popup_browser))
+        assert source_catalog['analysisMixed']['message'] in popup_sources, popup_sources
+        assert source_catalog['analysisSource_stored']['message'] in popup_sources, popup_sources
+        if 'analysisResources' in source_catalog:
+            resources = m.page('''return (async()=>{
+              const b=window.wrappedJSObject.browser,p=window.wrappedJSObject.sourceProbe;
+              const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:p.id});
+              const attachments=Object.keys(snapshot.resourceLabels).filter(ref=>ref.startsWith("attachment:"));
+              const links=Object.keys(snapshot.resourceLabels).filter(ref=>ref.startsWith("link:"));
+              return {attachmentCount:attachments.length,linkCount:links.length,
+                differentSameNameAttachments:snapshot.resourceLabels[attachments[0]]!==snapshot.resourceLabels[attachments[1]],
+                linksHaveFindings:links.every(ref=>snapshot.rows.some(row=>row.resource===ref)),
+                noStoredQueryInDisplay:links.every(ref=>!snapshot.resourceLabels[ref].includes("token="))};
+            })();''', browser=popup_browser)
+            assert resources['attachmentCount']==100 and resources['linkCount']==2, resources
+            assert all(resources[key] for key in ['differentSameNameAttachments','linksHaveFindings','noStoredQueryInDisplay']), resources
+            probe['analysisSources']['resources']=resources
+        probe['analysisSources']['nativePopup'] = True
     probe['coverageVisibleInNativePopup'] = True
     subprocess.run(['import', '-window', 'root', str(out / 'coverage-popup.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    if 'analysisTitle' in source_catalog:
+        sources = wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector(".card")?.textContent;'))
+        assert source_catalog['analysisMixed']['message'] in sources, sources
+        assert source_catalog['analysisSource_stored']['message'] in sources, sources
+        probe['analysisSources']['nativeStoredMessage'] = True
+        m.screenshot(out / 'analysis-sources-message.png')
     report['followup'] = {'passed': True, 'realThunderbirdAPIs': True, **probe}
 
 
@@ -532,6 +608,112 @@ def close_extension_tabs(m):
     }''')
 
 
+def check_resource_isolation(m, base, out, report):
+    """Distinct real MIME resources sharing a Message-ID; no provider requests."""
+    fixture = out / 'resource-isolation.eml'
+    fixture.write_text('From: sender@example.invalid\nTo: recipient@example.invalid\nSubject: Thundy isolation B\nMessage-ID: <followup@example.invalid>\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="isolate"\n\n--isolate\nContent-Type: text/plain\n\nhttps://message-b.invalid/path\n--isolate\nContent-Type: text/plain\nContent-Disposition: attachment; filename="message-B.txt"\n\nDistinct resource B.\n--isolate--\n')
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+        const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+        const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+        MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''', [str(fixture)])
+    wait_for(lambda: m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests").getTotalMessages(false)===3;'''))
+    open_page(m,base+'options.html')
+    result=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser;
+      const a=(await b.messages.query({subject:"Thundy followup MIME"})).messages.find(m=>m.subject==="Thundy followup MIME");
+      const target=(await b.messages.query({subject:"Thundy isolation B"})).messages.find(m=>m.subject==="Thundy isolation B");
+      if(a.headerMessageId!==target.headerMessageId)throw new Error("Shared header fixture missing");
+      const before=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:target.id});
+      const cached=await b.runtime.sendMessage({action:"getMessageAnalysisRecord",messageId:target.id});
+      await b.runtime.sendMessage({action:"getLocalRisk",messageId:target.id});
+      return {messageId:target.id,sharedHeader:true,actualNameVisible:Object.values(before.resourceLabels).some(name=>name.includes("message-B.txt")),foreignNameAbsent:!JSON.stringify(before.resourceLabels).includes("same.txt"),foreignUrlAbsent:!JSON.stringify(before.resourceLabels).includes("fixture.invalid"),popupRecordExcludesForeign:cached.success && cached.record.attachments.length===0 && cached.record.links.length===0};
+    })();''')
+    assert all(result[key] for key in ['sharedHeader','actualNameVisible','foreignNameAbsent','foreignUrlAbsent','popupRecordExcludesForeign']),result
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+      const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+      MailUtils.displayMessage(Array.from(folder.messages).find(item=>item.subject==="Thundy isolation B"));''')
+    text=wait_for(lambda: m.page('const text=document.getElementById("thundy-analysis-status")?.shadowRoot?.textContent;return text?.includes("message-B.txt")?text:null;'))
+    assert 'same.txt' not in text and 'fixture.invalid' not in text,text
+    result['realMessageViewPassed']=True
+    report['resourceIsolation']={'passed':True,'syntheticMime':True,'liveProviderCalls':False,**result}
+    m.screenshot(out/'resource-isolation-message.png')
+
+
+def owned_process_memory(root_pid):
+    pending=[root_pid]
+    owned=set()
+    while pending:
+        pid=pending.pop()
+        if pid in owned:
+            continue
+        owned.add(pid)
+        result=subprocess.run(['ps','-o','pid=','--ppid',str(pid)],capture_output=True,text=True,timeout=5)
+        pending.extend(int(value) for value in result.stdout.split())
+    rss=pss=measured=0
+    for pid in owned:
+        try:
+            lines=Path('/proc/'+str(pid)+'/smaps_rollup').read_text().splitlines()
+            fields={line.split(':',1)[0]:int(line.split()[1]) for line in lines if line.startswith(('Rss:','Pss:'))}
+            rss+=fields['Rss'];pss+=fields['Pss'];measured+=1
+        except (OSError,KeyError,ValueError):
+            pass
+    return {'processes':measured,'rssKiB':rss,'pssKiB':pss}
+
+
+def check_context_capacity(m, base, out, report):
+    count=205
+    initial=m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests").getTotalMessages(false);''')
+    for index in range(count):
+        fixture=out/('capacity-'+str(index)+'.eml')
+        fixture.write_text('From: fixture@example.invalid\nTo: receiver@example.invalid\nSubject: Thundy context capacity '+str(index)+'\nMessage-ID: <context-'+str(index)+'@example.invalid>\nMIME-Version: 1.0\nContent-Type: text/plain\n\nSynthetic local capacity probe.\n')
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+            const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+            const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+            MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''', [str(fixture)])
+    wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests").getTotalMessages(false);''')==initial+count)
+    open_page(m,base+'options.html')
+    ids=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,ids=[];
+      let list=await b.messages.query({subject:"Thundy context capacity "});
+      while(true){ids.push(...list.messages.map(item=>item.id));if(!list.id)break;list=await b.messages.continueList(list.id);}
+      window.wrappedJSObject.contextCapacityIds=ids;
+      return ids.length;
+    })();''')
+    assert ids==count,ids
+    pid=m.js('return Services.appinfo.processID;')
+    before=owned_process_memory(pid)
+    started=time.monotonic()
+    result=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser;
+      const raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject || raw;
+      const ids=window.wrappedJSObject.contextCapacityIds;
+      const first=await bg.getMessageAnalysisContext(await b.messages.get(ids[0]));
+      for(const id of ids){const result=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:id});if(!result.success)throw new Error("Capacity source read failed");}
+      const last=await bg.getMessageAnalysisContext(await b.messages.get(ids.at(-1)));
+      return {firstDisposed:(first.wrappedJSObject || first).disposed,lastActive:!(last.wrappedJSObject || last).disposed};
+    })();''')
+    elapsed=round((time.monotonic()-started)*1000)
+    after=owned_process_memory(pid)
+    assert result['firstDisposed'] and result['lastActive'],result
+    report['contextCapacity']={'passed':True,'syntheticMessages':count,'realThunderbirdAPIs':True,'configuredContextLimit':200,**result,'before':before,'after':after,'loadAndAutomationMs':elapsed,'scope':'Owned Thunderbird process tree; PSS/RSS snapshots after importing/querying fixtures, before/after source-context load. No field prevalence or isolated-allocation claim.'}
+
+
+def message_identity_snapshot(m, second_first):
+    return m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser;
+      const subjects=arguments[0]?["Thundy identity second","Thundy AV synthetic live test"]:["Thundy AV synthetic live test","Thundy identity second"];
+      const result=[];
+      for(const subject of subjects){
+        const list=await b.messages.query({subject});
+        const item=list.messages.find(message=>message.subject===subject);
+        if(!item)throw new Error("Identity fixture missing");
+        result.push({id:item.id,headerMessageId:item.headerMessageId,folderId:item.folder?.id});
+      }
+      return result;
+    })();''', [second_first])
+
+
 def check_restart_upgrade(m, args, out, display, report, restart):
     with zipfile.ZipFile(args.xpi) as package:
         current_version = json.loads(package.read('manifest.json'))['version']
@@ -547,6 +729,16 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     assert old_state['active'] and not old_state['temporary'] and not old_state['appDisabled'] and old_state['profileScoped']
     assert tuple(map(int, old_state['version'].split('.'))) < tuple(map(int, current_version.split('.')))
     base = m.page('return window.wrappedJSObject.browser.runtime.getURL("");')
+    if args.identity_check:
+        probe_mail = out / 'identity-second.eml'
+        probe_mail.write_text('From: fixture@example.invalid\nTo: receiver@example.invalid\nSubject: Thundy identity second\nMessage-ID: <identity-second@example.invalid>\nMIME-Version: 1.0\nContent-Type: text/plain\n\nSynthetic identity probe.\n')
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+            const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests");
+            const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+            MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''', [str(probe_mail)])
+        wait_for(lambda: m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Thundy Tests").getTotalMessages(false)===2;'''))
+        report['messageIdentity'] = {'synthetic':True,'beforeRestart':message_identity_snapshot(m, False)}
+        m.js('''for(const tab of [...window.gTabmail.tabInfo])if(tab.mode.name==="mailMessageTab")window.gTabmail.closeTab(tab);''')
     before = storage_snapshot(m)
     assert len(before['linkAuditLog']) == 3
     close_extension_tabs(m)
@@ -555,6 +747,11 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
     open_page(m, base+'audit.html')
     assert storage_snapshot(m) == before
+    if args.identity_check:
+        report['messageIdentity']['afterRestart'] = message_identity_snapshot(m, True)
+        old_ids={item['headerMessageId']:item['id'] for item in report['messageIdentity']['beforeRestart']}
+        report['messageIdentity']['numericIdsStableInThisProbe'] = all(old_ids[item['headerMessageId']]==item['id'] for item in report['messageIdentity']['afterRestart'])
+
     assert m.js('return !window.gTabmail.tabInfo.some(t=>t.browser?.currentURI.spec.endsWith("/onboarding.html"));')
     language = m.page('return window.wrappedJSObject.browser.i18n.getUILanguage();')
     assert language.split('-')[0] == args.locale
@@ -709,6 +906,9 @@ def main():
     parser.add_argument('--restore-check', action='store_true', help='Verify clean pre-upgrade profile backup restore; requires --restart-check')
     parser.add_argument('--performance-check', action='store_true', help='Measure actual local message analysis through the extension API')
     parser.add_argument('--message-kib', type=int, default=0, help='Synthetic newsletter body size for direct-install performance checks (0..10240 KiB)')
+    parser.add_argument('--context-load-check', action='store_true', help='Real 205-message source cache bound and owned-process PSS/RSS probe after direct install')
+    parser.add_argument('--resource-isolation-check', action='store_true', help='Real duplicate-Message-ID resource inventory check after direct install')
+    parser.add_argument('--identity-check', action='store_true', help='Probe numeric message IDs across a restart with reversed lookup order; requires --restart-check')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -731,6 +931,12 @@ def main():
         parser.error('--restore-check requires --restart-check')
     if not 0 <= args.message_kib <= 10240 or (args.restart_check and (args.message_kib or args.performance_check)):
         parser.error('performance payload requires a direct-install run and at most 10240 KiB')
+    if args.context_load_check and args.restart_check:
+        parser.error('--context-load-check requires direct installation')
+    if args.resource_isolation_check and args.restart_check:
+        parser.error('--resource-isolation-check requires direct installation')
+    if args.identity_check and not args.restart_check:
+        parser.error('--identity-check requires --restart-check')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -906,6 +1112,14 @@ def main():
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
                     run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    if args.resource_isolation_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_resource_isolation(m,base,out,report)
+                    if args.context_load_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_context_capacity(m,base,out,report)
+
+
                     if args.real_browser:
                         wait_for(lambda: (out / 'real-browser-page.json').exists(), 30)
                         report['realBrowserHandoff'] = {'browser': str(args.real_browser), 'browserStarted': True,
