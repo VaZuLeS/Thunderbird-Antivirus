@@ -49,7 +49,7 @@ const ThundyAnalysis = (() => {
     function create(stored = {}) {
         const data = { schemaVersion: 2, local: { state: 'unrecorded', observedAt: null }, rows: [], truncated: stored.truncated === true };
         if ([1, 2].includes(stored.schemaVersion)) {
-            if (stored.local?.state === 'checked') data.local = { state: 'checked', observedAt: Number.isFinite(stored.local.observedAt) ? stored.local.observedAt : null, source: 'stored' };
+            if (['checked','incomplete','failed'].includes(stored.local?.state)) data.local = { state: stored.local.state, observedAt: Number.isFinite(stored.local.observedAt) ? stored.local.observedAt : null, source: 'stored', ...(['decryption_unavailable','text_unavailable','read_failed'].includes(stored.local.reason) ? {reason:stored.local.reason} : {}) };
             for (const old of (Array.isArray(stored.rows) ? stored.rows : []).slice(0, 1200)) if (providers.includes(old.provider) && scopes.includes(old.scope)) {
                 const row = { provider: old.provider, scope: old.scope, resource: validResource(old.resource) ? old.resource : null, source: 'stored', active: 0, state: states.includes(old.state) && old.state !== 'running' ? old.state : 'incomplete', verdict: verdicts.includes(old.verdict) ? old.verdict : 'unknown', responses: Number.isSafeInteger(old.responses) && old.responses > 0 ? Math.min(old.responses, 100000) : 0, failures: Number.isSafeInteger(old.failures) && old.failures > 0 ? Math.min(old.failures, 100000) : 0, cacheHits: Number.isSafeInteger(old.cacheHits) && old.cacheHits > 0 ? Math.min(old.cacheHits, 100000) : 0, observedAt: Number.isFinite(old.observedAt) ? old.observedAt : null, findingAt: Number.isFinite(old.findingAt) ? old.findingAt : null, attemptedAt: Number.isFinite(old.attemptedAt) ? old.attemptedAt : null };
                 if (!data.rows.some(current => rowKey(current) === rowKey(row))) data.rows.push(row);
@@ -125,14 +125,15 @@ const ThundyAnalysis = (() => {
         if (!live) { live = n('div','','live'); live.setAttribute('role','status'); live.setAttribute('aria-live','polite'); live.setAttribute('aria-atomic','true'); }
         const style = document.createElement('style'); style.textContent = ':host{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40)}*{box-sizing:border-box}.card{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40);padding:var(--surface-pad,18px);border:1px solid var(--card-border,#cbd5e1);border-left:4px solid var(--link-color,#146b80);border-radius:12px;background:var(--card-bg,#fff);overflow-wrap:anywhere}h2{font:700 16px/1.4 system-ui;margin:0 0 8px}p{margin:6px 0}.mode,.phase{font-weight:700}.muted,small{color:var(--text-muted,#536579)}ul{padding-left:20px;margin:8px 0}li{margin:8px 0}summary{cursor:pointer}summary:focus-visible{outline:3px solid var(--link-color,#146b80);outline-offset:3px}.warning{color:var(--color-danger,#b32642)}.live{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}details{margin:8px 0}';
         const date = value => Number.isFinite(value) ? new Date(value).toLocaleString(document.documentElement.lang || undefined) : t('analysisTimeUnknown');
-        const rows = data.rows || [], local = data.local?.state === 'checked';
+        const rows = data.rows || [], local = data.local?.state === 'checked', localLimited = ['incomplete','failed'].includes(data.local?.state);
         const running = rows.some(row => row.state === 'running'), waiting = rows.some(row => row.state === 'submitted'), incomplete = rows.some(row => row.state === 'incomplete');
         const failures = rows.some(row => row.failures > 0 || row.state === 'failed'), usable = rows.some(row => row.responses > 0 || row.cacheHits > 0);
-        const mode = t(data.unavailable ? 'analysisUnavailable' : rows.length ? local ? 'analysisMixed' : 'analysisExternal' : local ? 'analysisLocal' : 'analysisModeUnknown');
+        const mode = t(data.unavailable ? 'analysisUnavailable' : rows.length ? local || localLimited ? 'analysisMixed' : 'analysisExternal' : local || localLimited ? 'analysisLocal' : 'analysisModeUnknown');
         const phase = t(running ? 'analysisModeRunning' : waiting ? 'analysisModeSubmitted' : failures ? usable ? 'analysisModePartial' : 'analysisModeFailed' : incomplete ? 'analysisModeIncomplete' : usable ? 'analysisModeResults' : 'analysisModeUnknown');
         const card = n('div', '', 'card'); card.append(n('h2', t('analysisTitle')), n('p', mode, 'mode'));
         if (rows.length) card.append(n('p',phase, failures ? 'phase warning' : 'phase'));
-        card.append(n('p', t(local ? 'analysisLocalChecked' : 'analysisLocalPending'), 'muted'));
+        const localLabel = t(data.local?.state === 'failed' ? 'analysisLocalUnavailable' : localLimited ? 'analysisLocalIncomplete' : local ? 'analysisLocalChecked' : 'analysisLocalPending');
+        card.append(n('p', localLabel, localLimited ? 'warning' : 'muted'));
         const brands = { hybridanalysis: 'Hybrid Analysis', virustotal: 'VirusTotal', urlhaus: 'URLhaus', abuseipdb: 'AbuseIPDB', urlscan: 'urlscan.io' };
         const list = document.createElement('ul'), inactive = document.createElement('ul');
         const details = (key, title) => { const node = document.createElement('details'); node.dataset.key = key; node.open = opened.has(key); const summary = n('summary',title); summary.dataset.focusKey = key; node.append(summary); return node; };
@@ -181,7 +182,7 @@ const ThundyAnalysis = (() => {
         }
         if (data.truncated) card.append(n('p',t('analysisTruncated'),'warning'));
         card.append(n('p', t('analysisLimit'), 'muted'));
-        const announcement = [mode, rows.length ? phase : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
+        const announcement = [mode, localLabel, rows.length ? phase : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
         const changed = host.dataset.announcement !== announcement;
         root.replaceChildren(style, live, card);
         if (wasPresent && changed) live.textContent = announcement;
@@ -198,7 +199,7 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }

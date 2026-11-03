@@ -61,6 +61,8 @@ jobs:
         run: npm run check:design
       - name: Run unit tests
         run: npm test
+      - name: Verify identity probe preserves non-local MIME bytes
+        run: python3 tools/test_thunderbird_identity.dev.py -v
       - name: web-ext lint
         run: npm run lint:filtered
       - name: Build and verify extension package
@@ -148,7 +150,7 @@ jobs:
           test "$#" -eq 1
           cp "$1" .audit/thundy-av.xpi
           chmod 644 .audit/thundy-av.xpi
-          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --resource-isolation-check --context-load-check --out .audit/thunderbird-live/install-en
+          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --resource-isolation-check --context-load-check --identity-lifecycle-check --mime-content-check --out .audit/thunderbird-live/install-en
           for lang in en de fr es it pl; do
             set -- --locale "$lang"
             if test "$lang" != en; then

@@ -1766,5 +1766,7 @@
   },
   "analysisContextChanged": {
     "message": "Kontekst wiadomości uległ zmianie. Zamknij i otwórz ponownie okno przed ponownym wysłaniem."
-  }
+  },
+  "analysisLocalIncomplete": {"message": "Analiza lokalna jest niepełna: część treści wiadomości jest niedostępna."},
+  "analysisLocalUnavailable": {"message": "Analiza lokalna jest niedostępna: nie udało się odczytać wiadomości."}
 }

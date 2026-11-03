@@ -8,6 +8,10 @@ Der [separat gespeicherte Analyseprompt V2](PROMPT_PRODUKTANALYSE_THUNDERBIRD_V2
 
 Am 3. November 2026 wurde [der erste Umsetzungsschritt AVN-001/002/009](FORTSCHRITT_AVN_001_002_009.md) ausgeführt. AVN-001 hat einen geprüften Inventar-/Lesepfad-Fix, bleibt hinsichtlich der gesamten dauerhaften Zuordnung teilweise offen. AVN-002 ist implementiert und gezielt sowie nativ geprüft. AVN-009 hat einen nativen Gegenbeweis zur Stabilität numerischer Nachrichten-IDs; dauerhafte Bindung, Bewegung/Kopie und Retention sind weiter offen. Die nachstehenden Befunde und Prioritäten bleiben als ursprünglicher Planungsstand erhalten.
 
+Die anschließende [Identitätsuntersuchung und der Speichervertrag](IDENTITAET_ANALYSEBEFUNDE.md) erweitern AVN-009 um lokale Copy/Move-/Status-/Compact-/Restart-/Restore-Fälle und gleiche Ressourcenmetadaten bei abweichendem Inhalt. Ungefilterte Rohdaten-Hashes erweisen sich wegen lokaler Statusheader ebenfalls als ungeeignet. Der experimentelle Inhaltsvergleich ist noch kein produktiver Schlüssel; Migration, weitere MIME-/Speicherbackends und Retention bleiben offen.
+
+Der weitere [Schritt AVN-003/009.b zur Inhaltsverfügbarkeit](PRUEFUMFANG_NACHRICHTENINHALT.md) korrigiert einen nativ bestätigten falschen lokalen Abschluss bei `decryptionStatus: fail`. Teilprüfung und Lesefehler sind nun sechssprachig sichtbar; leere Mails und Textanhänge bleiben korrekt abgegrenzt. Binäre Anhänge sind nativ mit bekannten Bytes geprüft. AVN-003 bleibt teilweise offen: Die neue Unteraufgabe **AVN-003.2 (P1, Untersuchung zuerst, M)** grenzt eine unter 140/153 reproduzierte quoted-printable-/Unicode-Abweichung ein. Ihre Akzeptanz ist die belegte Ursache und eine risikogeprüfte Entscheidung über den Eingangsweg, nicht mehr Heuristikregeln auf verändertem Text. Hauptzuordnung C, Verweis aus AVN-009.b; keine zweite Decoderaufgabe dort.
+
 ## 1. Bestandsaufnahme und Nachweisgrenzen
 
 ### Veröffentlichter Stand und vorbereitete Entwicklung

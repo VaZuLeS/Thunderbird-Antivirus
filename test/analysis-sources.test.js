@@ -2,6 +2,25 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const {JSDOM}=require('jsdom');
 const source=fs.readFileSync('analysis_status.js','utf8');
 function model(){const c=vm.createContext({URL,Date});vm.runInContext(source+'\nglobalThis.analysis=ThundyAnalysis;',c);return c.analysis;}
+test('partial and failed local input survive storage and render in all six languages with live updates',()=>{
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>');
+  try{
+   const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
+   const m=c.a.create({schemaVersion:2,local:{state:'incomplete',reason:'decryption_unavailable',observedAt:123},rows:[]});
+   assert.equal(m.data.local.state,'incomplete');assert.equal(m.data.local.observedAt,123);
+   const host=c.a.render(m.data,labels);assert.ok(host.shadowRoot.textContent.includes(catalog.analysisLocalIncomplete.message));
+   assert.ok(!host.shadowRoot.textContent.includes(catalog.analysisLocalChecked.message));
+   m.data.local.state='failed';c.a.render(m.data,labels);
+   assert.ok(host.shadowRoot.textContent.includes(catalog.analysisLocalUnavailable.message));
+   assert.ok(host.shadowRoot.querySelector('.live').textContent.includes(catalog.analysisLocalUnavailable.message));
+   m.data.local.state='checked';c.a.render(m.data,labels);
+   assert.ok(host.shadowRoot.textContent.includes(catalog.analysisLocalChecked.message));
+   assert.ok(!host.shadowRoot.textContent.includes('MISSING:'));
+  }finally{dom.window.close();}
+ }
+});
 test('all five services classify actual responses, submission is separate from completed analysis',()=>{
  const a=model();for(const [url,method,data,provider,scope,state] of [
  ['https://hybrid-analysis.com/api/v2/overview/hash','GET',{verdict:'malicious'},'hybridanalysis','hash','checked'],

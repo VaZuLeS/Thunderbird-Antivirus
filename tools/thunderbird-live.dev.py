@@ -21,6 +21,9 @@ import sys
 import tempfile
 import time
 import zipfile
+from email.message import EmailMessage
+from email.policy import SMTP
+from email.parser import BytesParser
 
 ROOT = Path(__file__).resolve().parents[1]
 ADDON_ID = 'thundy-av@bludau-it-services.de'
@@ -714,6 +717,249 @@ def message_identity_snapshot(m, second_first):
     })();''', [second_first])
 
 
+def summarize_identity_bytes(raw):
+    """Experimental local-header exclusion; preserve every other original byte."""
+    header, separator, body = raw.partition(b'\r\n\r\n')
+    if not separator:
+        raise ValueError('CRLF MIME fixture headers missing')
+    kept, local_status = [], []
+    skip = False
+    # Thunderbird may prepend LF status headers to a CRLF message and rewrite
+    # them as CRLF on compaction. Splitting only on CRLF could drop From too.
+    for line in header.splitlines(keepends=True):
+        if not line.startswith((b' ', b'\t')):
+            skip = line.split(b':', 1)[0].lower() in [b'x-mozilla-status', b'x-mozilla-status2', b'x-mozilla-keys']
+        (local_status if skip else kept).append(line)
+    return {
+        'rawSha256': hashlib.sha256(raw).hexdigest(),
+        'localStatusHeaders': [line.decode('ascii').rstrip('\r\n') for line in local_status],
+        'localStatusLineEndings': ['CRLF' if line.endswith(b'\r\n') else 'LF' if line.endswith(b'\n') else 'none' for line in local_status],
+        'withoutLocalStatusSha256': hashlib.sha256(b''.join(kept) + separator + body).hexdigest(),
+    }
+
+
+def content_identity_snapshot(m):
+    """Observe candidate identities through real read-only WebExtension APIs."""
+    rows = m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser;
+      const result=[];
+      let list=await b.messages.query({subject:"Thundy identity lifecycle"});
+      while(true){
+        for(const item of list.messages){
+          if(item.subject!=="Thundy identity lifecycle")continue;
+          const raw=await b.messages.getRaw(item.id,{decrypt:false,data_format:"BinaryString"});
+          const attachments=[];
+          for(const part of await b.messages.listAttachments(item.id)){
+            const file=await b.messages.getAttachmentFile(item.id,part.partName);
+            attachments.push({partName:part.partName,name:part.name,size:part.size,asciiFixture:await file.text()});
+          }
+          result.push({id:item.id,headerMessageId:item.headerMessageId,folderId:item.folderId ?? item.folder?.id ?? null,
+            read:item.read,flagged:item.flagged,rawBytes:raw.length,
+            rawBinaryString:raw,attachments});
+        }
+        if(!list.id)break;list=await b.messages.continueList(list.id);
+      }
+      return result;
+    })();''')
+    # Hash exact getRaw binary-string bytes outside the automation Xray realm.
+    # Attachment fixtures are intentionally ASCII; this is no generic MIME decoder.
+    for row in rows:
+        raw = row.pop('rawBinaryString').encode('latin1')
+        row.update(summarize_identity_bytes(raw))
+        for attachment in row['attachments']:
+            attachment['sha256'] = hashlib.sha256(attachment.pop('asciiFixture').encode('ascii')).hexdigest()
+    return rows
+
+
+def check_identity_lifecycle(m, base, out, report, restart):
+    """Isolated local-folder mutations by test chrome, never added addon rights."""
+    probe={'passed':False,'syntheticMime':True,'liveProviderCalls':False,
+           'mutationActor':'privileged test harness; no added message-mutation permissions',
+           'rawOptions':{'decrypt':False,'data_format':'BinaryString'},'stages':{},'folderStages':{}}
+    report['contentIdentity']=probe  # Keep failed observations too.
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const root=MailServices.accounts.localFoldersServer.rootFolder;
+      for(const name of ["Identity Source","Identity Copy","Identity Moved"])root.createSubfolder(name,null);''')
+    # Exactly equal visible metadata, header ID, part names and byte lengths.
+    for index, payload in enumerate(['AAAA','BBBB']):
+        fixture=out/('identity-content-'+str(index)+'.eml')
+        fixture.write_bytes(('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\n'
+            'Date: Tue, 03 Nov 2026 10:00:00 +0000\r\nSubject: Thundy identity lifecycle\r\n'
+            'Message-ID: <identity-collision@example.invalid>\r\nMIME-Version: 1.0\r\n'
+            'Content-Type: multipart/mixed; boundary="identity"\r\n\r\n'
+            '--identity\r\nContent-Type: text/plain\r\n\r\nIdentical body.\r\n'
+            '--identity\r\nContent-Type: application/octet-stream\r\n'
+            'Content-Disposition: attachment; filename="same.bin"\r\n\r\n'+payload+'\r\n--identity--\r\n').encode('ascii'))
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Identity Source");
+          const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+          MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''',[str(fixture)])
+        wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Identity Source").getTotalMessages(false);''')==index+1)
+    def observe(stage):
+        rows=content_identity_snapshot(m)
+        probe['stages'][stage]=rows
+        probe['folderStages'][stage]=m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const root=MailServices.accounts.localFoldersServer.rootFolder;
+          return ["Identity Source","Identity Copy","Identity Moved"].map(name=>({name,
+            messages:Array.from(root.getChildNamed(name).messages).map(h=>({messageKey:h.messageKey,headerMessageId:h.messageId}))}));''')
+        return rows
+    open_page(m,base+'options.html')
+    initial=observe('initial')
+    assert len(initial)==2 and len({r['headerMessageId'] for r in initial})==1,initial
+    assert len({r['rawSha256'] for r in initial})==2,initial
+    assert len({r['withoutLocalStatusSha256'] for r in initial})==2,initial
+    assert all(len(r['attachments'])==1 for r in initial),initial
+    assert len({(r['attachments'][0]['partName'],r['attachments'][0]['name'],r['attachments'][0]['size']) for r in initial})==1,initial
+    assert len({r['attachments'][0]['sha256'] for r in initial})==2,initial
+    keys=m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      return Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Identity Source").messages).map(h=>h.messageKey).sort((a,b)=>a-b);''')
+    for key, destination, move in [(keys[0],'Identity Copy',False),(keys[1],'Identity Moved',True)]:
+        result=m.js('''const done=arguments[arguments.length-1];
+          const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const root=MailServices.accounts.localFoldersServer.rootFolder;
+          const source=root.getChildNamed("Identity Source");
+          MailServices.copy.copyMessages(source,[source.GetMessageHeader(arguments[0])],root.getChildNamed(arguments[1]),arguments[2],
+            {onStartCopy(){},onProgress(){},setMessageKey(){},getMessageId(){return null;},onStopCopy(status){done({status});},
+             QueryInterface:ChromeUtils.generateQI(["nsIMsgCopyServiceListener"])},null,false);''',[key,destination,move],asynchronous=True)
+        assert result['status']==0,result
+        current=observe('moved' if move else 'copied')
+        assert len({r['id'] for r in current})==3,current
+        assert [len(f['messages']) for f in probe['folderStages']['moved' if move else 'copied']]==([1,1,1] if move else [2,1,0])
+        assert len(current)==3 and {r['rawSha256'] for r in current}=={r['rawSha256'] for r in initial},current
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Identity Source");
+      const headers=Array.from(folder.messages);folder.markMessagesRead(headers,true);folder.markMessagesFlagged(headers,true);''')
+    marked=observe('flagsChanged')
+    assert any(r['read'] and r['flagged'] for r in marked),marked
+    assert sorted(r['withoutLocalStatusSha256'] for r in marked)==sorted(r['withoutLocalStatusSha256'] for r in current),marked
+    result=m.js('''const done=arguments[arguments.length-1];
+      const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Identity Source").compact(
+        {OnStartRunningUrl(){},OnStopRunningUrl(url,status){done({status});},QueryInterface:ChromeUtils.generateQI(["nsIUrlListener"])},null);''',asynchronous=True)
+    assert result['status']==0,result
+    compacted=observe('compacted')
+    expected=sorted((r['withoutLocalStatusSha256'],r['folderId'],r['attachments'][0]['sha256']) for r in compacted)
+    assert sorted(r['withoutLocalStatusSha256'] for r in compacted)==sorted(r['withoutLocalStatusSha256'] for r in marked),compacted
+    before=storage_snapshot(m)
+    close_extension_tabs(m)
+    m.js('''for(const tab of [...window.gTabmail.tabInfo])if(tab.mode.name==="mailMessageTab")window.gTabmail.closeTab(tab);''')
+    backup=out/'.identity-profile'
+    m=restart(backup_to=backup)
+    open_page(m,base+'options.html')
+    after=observe('restarted')
+    assert sorted((r['withoutLocalStatusSha256'],r['folderId'],r['attachments'][0]['sha256']) for r in after)==expected,after
+    assert storage_snapshot(m)==before
+    assert probe['folderStages']['restarted']==probe['folderStages']['compacted']
+    # A post-backup folder must disappear after full-profile restore.
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const root=MailServices.accounts.localFoldersServer.rootFolder;root.createSubfolder("Identity After Backup",null);
+      if(!root.containsChildNamed("Identity After Backup"))throw new Error("Backup marker missing");''')
+    close_extension_tabs(m)
+    m=restart(restore_from=backup)
+    open_page(m,base+'options.html')
+    restored=observe('profileRestored')
+    assert sorted((r['withoutLocalStatusSha256'],r['folderId'],r['attachments'][0]['sha256']) for r in restored)==expected,restored
+    assert storage_snapshot(m)==before
+    assert m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      return !MailServices.accounts.localFoldersServer.rootFolder.containsChildNamed("Identity After Backup");''')
+    assert probe['folderStages']['profileRestored']==probe['folderStages']['compacted']
+    shutil.rmtree(backup)
+    probe.update(passed=True,metadataCollisionDistinguished=True,copyRemainsDistinctInstance=True,
+                 rawDigestStableAcrossFlagChange=sorted(r['rawSha256'] for r in marked)==sorted(r['rawSha256'] for r in current),
+                 digestWithoutLocalStatusStableAcrossTestedMutations=True,auditAndSettingsPreserved=True,
+                 scope='Local mbox, plaintext MIME only; unfiltered raw digest includes mutable local headers; stripped digest is an experimental candidate, not occurrence identity. No production migration or retention change.')
+    return m
+
+
+def check_mime_content(m, base, out, report, display):
+    """Small controlled encoding/readability investigation, no provider calls."""
+    expected={}
+    fixtures=[]
+    for name,payload in [('binary-a',bytes(range(256))),('binary-b',bytes(range(255))+b'\x00')]:
+        mail=EmailMessage(policy=SMTP)
+        mail['From']='fixture@example.invalid';mail['To']='receiver@example.invalid'
+        mail['Subject']='Thundy MIME '+name;mail['Message-ID']='<mime-'+name+'@example.invalid>'
+        mail.set_content('Grüße — Français, Español, Italiano, Polski: żółć. 测试',charset='utf-8',cte='quoted-printable')
+        mail.add_attachment(payload,maintype='application',subtype='octet-stream',filename='prøbe-ä-测试.bin',cte='base64')
+        fixtures.append((name,mail.as_bytes()))
+        expected[name]=hashlib.sha256(payload).hexdigest()
+    fixtures.append(('empty',b'From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy MIME empty\r\nMessage-ID: <mime-empty@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n'))
+    fixtures.append(('unavailable',b'From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy MIME unavailable\r\nMessage-ID: <mime-unavailable@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/encrypted; protocol="application/pgp-encrypted"; boundary="unavailable"\r\n\r\n--unavailable\r\nContent-Type: application/pgp-encrypted\r\n\r\nVersion: 1\r\n--unavailable\r\nContent-Type: application/octet-stream\r\n\r\nThis is deliberately not a decryptable OpenPGP message.\r\n--unavailable--\r\n'))
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      MailServices.accounts.localFoldersServer.rootFolder.createSubfolder("MIME Content",null);''')
+    for index,(name,data) in enumerate(fixtures):
+        path=out/('mime-'+name+'.eml');path.write_bytes(data)
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("MIME Content");
+          const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+          MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''',[str(path)])
+        wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("MIME Content").getTotalMessages(false);''')==index+1)
+    open_page(m,base+'options.html')
+    rows=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,result=[];
+      for(const name of ["binary-a","binary-b","empty","unavailable"]){
+        const item=(await b.messages.query({subject:"Thundy MIME "+name})).messages.find(m=>m.subject==="Thundy MIME "+name);
+        let full=null,fullError=null;try{full=await b.messages.getFull(item.id);}catch(e){fullError=String(e);}
+        const textParts=[];const visit=part=>{if(part?.contentType?.startsWith("text/"))textParts.push({type:part.contentType,hasBody:typeof part.body==="string",body:part.body ?? null});for(const child of part?.parts || [])visit(child);};visit(full);
+        const attachments=[];
+        try{for(const part of await b.messages.listAttachments(item.id)){
+          const file=await b.messages.getAttachmentFile(item.id,part.partName);
+          const binaryString=await new Promise((resolve,reject)=>{const reader=new window.wrappedJSObject.FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error("Fixture FileReader failed"));reader.readAsBinaryString(file);});
+          attachments.push({partName:part.partName,name:part.name,size:part.size,binaryString});
+        }}catch(e){attachments.push({readError:String(e)});}
+        const rawBinaryString=await b.messages.getRaw(item.id,{decrypt:false,data_format:"BinaryString"});
+        const risk=await b.runtime.sendMessage({action:"getLocalRisk",messageId:item.id});
+        const sources=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:item.id});
+        result.push({name,messageId:item.id,decryptionStatus:full?.decryptionStatus ?? null,fullError,textParts,attachments,rawBinaryString,
+          apiReplacementCharacters:textParts.some(part=>part.body?.includes(String.fromCharCode(65533))),
+          riskStatus:risk.status,coverage:risk.threat?.coverage ?? null,local:sources.local ?? null});
+      }return result;
+    })();''')
+    report['mimeContent']={'passed':False,'realThunderbirdAPIs':True,'liveProviderCalls':False,'rows':rows,
+      'scope':'Synthetic quoted-printable Unicode, base64 binary and empty plaintext; malformed encrypted MIME probes unavailable content, not successful OpenPGP/S-MIME decryption.'}
+    for row in rows:
+        raw=row.pop('rawBinaryString').encode('latin1')
+        body=raw.partition(b'\r\n\r\n')[2]
+        fixture=dict(fixtures)[row['name']]
+        row['rawBodySha256']=hashlib.sha256(body).hexdigest()
+        row['rawBodyMatchesFixture']=body==fixture.partition(b'\r\n\r\n')[2]
+        assert row['rawBodyMatchesFixture'],row
+        for part in row['attachments']:
+            if 'binaryString' in part:
+                part['sha256']=hashlib.sha256(part.pop('binaryString').encode('latin1')).hexdigest()
+        if row['name'] in expected:
+            parsed=BytesParser(policy=SMTP).parsebytes(fixture)
+            row['fixtureUnicodeRoundTripExact']='żółć. 测试' in parsed.get_body(preferencelist=('plain',)).get_content()
+            assert row['fixtureUnicodeRoundTripExact'],row
+            assert len(row['attachments'])==1 and row['attachments'][0]['sha256']==expected[row['name']],row
+            assert row['attachments'][0]['name']=='prøbe-ä-测试.bin',row
+            row['unicodeRoundTripExact']=any('Grüße — Français, Español, Italiano, Polski: żółć. 测试' in (part['body'] or '') for part in row['textParts'])
+        assert row['riskStatus']=='success',row
+        expected_state='incomplete' if row['name']=='unavailable' else 'checked'
+        assert row['local']['state']==expected_state and row['coverage']['state']==expected_state,row
+    # Exercise both actual displays for the unavailable encrypted fixture.
+    label=m.page('return window.wrappedJSObject.browser.i18n.getMessage("analysisLocalIncomplete");')
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+      const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("MIME Content");
+      MailUtils.displayMessage(Array.from(folder.messages).find(h=>h.subject==="Thundy MIME unavailable"));''')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[label]))
+    m.screenshot(out/'mime-unavailable-message.png')
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser;
+      const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect();
+      const p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    popup_browser='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    wait_for(lambda:m.page('return document.querySelector(".local-risk")?.textContent.includes(arguments[0]) && document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[label],browser=popup_browser))
+    subprocess.run(['import','-window','root',str(out/'mime-unavailable-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    report['mimeContent']['actualMessageAndPopupIncomplete']=True
+    report['mimeContent']['passed']=True
+
+
 def check_restart_upgrade(m, args, out, display, report, restart):
     with zipfile.ZipFile(args.xpi) as package:
         current_version = json.loads(package.read('manifest.json'))['version']
@@ -909,6 +1155,8 @@ def main():
     parser.add_argument('--context-load-check', action='store_true', help='Real 205-message source cache bound and owned-process PSS/RSS probe after direct install')
     parser.add_argument('--resource-isolation-check', action='store_true', help='Real duplicate-Message-ID resource inventory check after direct install')
     parser.add_argument('--identity-check', action='store_true', help='Probe numeric message IDs across a restart with reversed lookup order; requires --restart-check')
+    parser.add_argument('--identity-lifecycle-check', action='store_true', help='Real content/metadata collision, copy/move/flags/compact/restart/profile-restore investigation; direct permanent install')
+    parser.add_argument('--mime-content-check', action='store_true', help='Real Unicode, binary and unreadable-content investigation; direct install')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -937,6 +1185,10 @@ def main():
         parser.error('--resource-isolation-check requires direct installation')
     if args.identity_check and not args.restart_check:
         parser.error('--identity-check requires --restart-check')
+    if args.identity_lifecycle_check and (args.restart_check or args.previous_xpi):
+        parser.error('--identity-lifecycle-check requires a direct install without --previous-xpi')
+    if args.mime_content_check and args.restart_check:
+        parser.error('--mime-content-check requires direct installation')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -1111,7 +1363,7 @@ def main():
                 if args.restart_check:
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
-                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
                     if args.resource_isolation_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_resource_isolation(m,base,out,report)
@@ -1144,6 +1396,13 @@ def main():
                         report['auditBenchmark'] = {'synthetic': True, 'inserted': 2000, 'visibleRows': 50,
                                                     'loadAndAutomationMs': round((time.monotonic()-started)*1000),
                                                     'scope': 'real Thunderbird render of synthetic storage fixtures; includes automation/navigation overhead'}
+
+                    if args.identity_lifecycle_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        m=check_identity_lifecycle(m,base,out,report,restart_client)
+                    if args.mime_content_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_mime_content(m,base,out,report,display)
 
             except Exception:
                 try:

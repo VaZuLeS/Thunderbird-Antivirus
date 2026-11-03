@@ -1769,5 +1769,7 @@
   },
   "analysisContextChanged": {
     "message": "Der Nachrichtenkontext hat sich geändert. Schließe und öffne das Popup vor einer erneuten Übermittlung."
-  }
+  },
+  "analysisLocalIncomplete": {"message": "Die lokale Prüfung ist unvollständig: Ein Teil des Nachrichteninhalts ist nicht verfügbar."},
+  "analysisLocalUnavailable": {"message": "Die lokale Prüfung ist nicht verfügbar: Die Nachricht konnte nicht gelesen werden."}
 }

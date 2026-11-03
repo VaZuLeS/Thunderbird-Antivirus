@@ -1766,5 +1766,7 @@
   },
   "analysisContextChanged": {
     "message": "Le contexte du message a changé. Fermez puis rouvrez la fenêtre avant de renvoyer la demande."
-  }
+  },
+  "analysisLocalIncomplete": {"message": "L’analyse locale est incomplète : une partie du contenu du message est indisponible."},
+  "analysisLocalUnavailable": {"message": "L’analyse locale est indisponible : le message n’a pas pu être lu."}
 }

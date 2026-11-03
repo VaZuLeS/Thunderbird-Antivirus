@@ -1771,6 +1771,12 @@ const ThundyI18n = (() => {
   },
   "analysisContextChanged": {
     "message": "The message context changed. Close and reopen the popup before submitting again."
+  },
+  "analysisLocalIncomplete": {
+    "message": "Local analysis is incomplete: some message content is unavailable."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Local analysis is unavailable: the message could not be read."
   }
 };
     function get(key, params = []) {
