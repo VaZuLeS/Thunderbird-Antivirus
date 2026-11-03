@@ -16,6 +16,8 @@ Die [Quellenhistorie](QUELLENHISTORIE_ZUORDNUNG.md) wird jetzt von aktuellen Beo
 
 Vorheriger Ausführungsstand ist die [detaillierte Aufgabenliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md). Die [Bestandsaufnahme](PRODUKTANALYSE_AUFGABENPLAN_2026-11-02.md) beschreibt den Ausgangscommit `6046fe0`; alte Statusmeldungen sind zeitgebundene Nachweise und keine aktuelle Freigabe.
 
+Die [begrenzte Protokollhistorie](PROTOKOLLHISTORIE.md) sichert nun die bisherigen gespeicherten Ressourcenprotokolle vor Ersetzung in derselben Transaktion. Lokales Wiederlesen desselben Anhanginhalts erhält den fertigen Bericht; volle Kapazität oder Commitfehler erhalten die alten Daten und werden angezeigt. Die bestehende Cacheaufbewahrung gilt weiterhin; unabhängige Langzeitarchivierung und dauerhafte Vorkommensmigration bleiben offen.
+
 | Ebene | Stand |
 | --- | --- |
 | GitHub-Distribution | Zielversion 1.24.3, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.2 bleibt historisch erhalten |

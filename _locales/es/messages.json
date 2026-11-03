@@ -1771,5 +1771,6 @@
   "analysisLocalUnavailable": {"message": "El análisis local no está disponible: no se pudo leer el mensaje."},
   "analysisHistoryTitle": {"message": "Historial guardado · asociación sin confirmar"},
   "analysisHistoryWarning": {"message": "Estas entradas históricas pueden pertenecer a otro mensaje con el mismo Message-ID. No confirman un análisis de este mensaje."},
-  "analysisPersistenceFailed": {"message": "No se pudieron guardar las nuevas observaciones de las fuentes. Se conservó el historial existente."}
+  "analysisPersistenceFailed": {"message": "No se pudieron guardar las nuevas observaciones de las fuentes. Se conservó el historial existente."},
+  "analysisReportArchiveBlocked": {"message": "No se pudo guardar una actualización del informe. Se conservaron los protocolos anteriores."}
 }

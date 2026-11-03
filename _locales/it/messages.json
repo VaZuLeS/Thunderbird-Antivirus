@@ -1771,5 +1771,6 @@
   "analysisLocalUnavailable": {"message": "L’analisi locale non è disponibile: impossibile leggere il messaggio."},
   "analysisHistoryTitle": {"message": "Cronologia salvata · associazione non confermata"},
   "analysisHistoryWarning": {"message": "Queste voci storiche possono appartenere a un altro messaggio con lo stesso Message-ID. Non confermano un’analisi di questo messaggio."},
-  "analysisPersistenceFailed": {"message": "Impossibile salvare le nuove osservazioni delle fonti. La cronologia esistente è stata conservata."}
+  "analysisPersistenceFailed": {"message": "Impossibile salvare le nuove osservazioni delle fonti. La cronologia esistente è stata conservata."},
+  "analysisReportArchiveBlocked": {"message": "Impossibile salvare un aggiornamento del rapporto. I protocolli precedenti sono stati conservati."}
 }

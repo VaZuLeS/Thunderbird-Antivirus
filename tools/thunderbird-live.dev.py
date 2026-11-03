@@ -1109,6 +1109,87 @@ def check_source_history(m, base, out, report, restart, display):
     return m
 
 
+def check_report_archive(m, base, out, report, restart, display):
+    """Real MIME, popup-side protected DAO and restart; synthetic provider protocols."""
+    for index, (name, payload) in enumerate([('A', 'AAAA'), ('B', 'BBBB')], 1):
+        fixture = out / ('report-archive-' + name + '.eml')
+        fixture.write_bytes(('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy report archive ' + name + '\r\nMessage-ID: <report-archive-collision@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="archive"\r\n\r\n--archive\r\nContent-Type: text/plain\r\n\r\nSynthetic archive fixture.\r\n--archive\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename="same.bin"\r\n\r\n' + payload + '\r\n--archive--\r\n').encode('ascii'))
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const root=MailServices.accounts.localFoldersServer.rootFolder;
+          if(!root.containsChildNamed("Report Archive"))root.createSubfolder("Report Archive",null);
+          const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+          MailServices.copy.copyFileMessage(file,root.getChildNamed("Report Archive"),null,false,0,"",null,null);''', [str(fixture)])
+        wait_for(lambda: m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Report Archive").getTotalMessages(false);''') == index)
+    open_page(m, base + 'options.html')
+    before = m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const find=async name=>(await b.messages.query({subject:"Thundy report archive "+name})).messages.find(item=>item.subject==="Thundy report archive "+name);
+      const a=await find("A"),target=await find("B"),part=(await b.messages.listAttachments(a.id))[0];
+      const hashed=await bg.process_single_attachment(a,part,false,false),db=await bg.getSharedDB();
+      const old={partName:part.partName,attachment_name:"same.bin",hybrid_sha256:hashed.hybrid_data.sha256,hybrid_job_id:"job-A",hybrid_submission_id:"submission-A",state:"KNOWN",report:{state:"COMPLETE",verdict:"malicious",created:"provider-original",details:{nested:[1,"original",{retained:true}]}},report_fetched_at:"2026-10-02T08:00:00.000Z",virustotal_stats:{malicious:2,undetected:5},created:new Date()};
+      await bg.updateStore(db,"hybridanalysis",a.headerMessageId,()=>({messageHeader:a.headerMessageId,attachments:[old],updatedAt:Date.now()}));
+      await bg.processAttachments(a,false,false);
+      const same=await bg.getFromStore(db,"hybridanalysis",a.headerMessageId);
+      const offlineKeptReport=JSON.stringify(same.attachments[0].report)===JSON.stringify(old.report)&&same.attachments[0].report_fetched_at===old.report_fetched_at&&same.attachments[0].hybrid_job_id==="job-A"&&!same.analysisReportArchive;
+      await bg.processAttachments(target,false,false);
+      const changed=await bg.getFromStore(db,"hybridanalysis",a.headerMessageId),entry=changed.analysisReportArchive.entries[0];
+      const exactOriginal=JSON.stringify(entry.resource.report)===JSON.stringify(old.report)&&entry.resource.hybrid_sha256===old.hybrid_sha256&&entry.resource.report_fetched_at===old.report_fetched_at&&entry.resource.virustotal_stats.malicious===2&&entry.resource.hybrid_submission_id==="submission-A";
+      const current=changed.attachments[0];
+      await bg.updateStore(db,"hybridanalysis",a.headerMessageId,record=>{record.attachments[0]={...current,state:"KNOWN",hybrid_job_id:"job-B",report:{state:"COMPLETE",verdict:"malicious",details:{originalB:true}},report_fetched_at:"2026-10-03T08:00:00.000Z"};return record;});
+      return {offlineKeptReport,exactOriginal,newContentClearedCurrentReport:current.report===null,differentHashes:current.hybrid_sha256!==old.hybrid_sha256,archiveEntries:changed.analysisReportArchive.entries.length};
+    })();''')
+    assert all(before[key] for key in ['offlineKeptReport', 'exactOriginal', 'newContentClearedCurrentReport', 'differentHashes']) and before['archiveEntries'] == 1, before
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+      MailUtils.displayMessage(Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Report Archive").messages).find(h=>h.subject==="Thundy report archive B"));''')
+    wait_for(lambda: m.page('return !!document.getElementById("thundy-analysis-status");'))
+    point = m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser;
+      const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();
+      return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display, point['x'], point['y'])
+    wait_for(lambda: m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup = 'document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda: m.page('return typeof window.wrappedJSObject.updateStore==="function"&&!!document.getElementById("thundy-analysis-status");', browser=popup))
+    saved = m.page('''return (async()=>{
+      const w=window.wrappedJSObject,b=w.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const target=(await b.messages.query({subject:"Thundy report archive B"})).messages.find(item=>item.subject==="Thundy report archive B");
+      const db=await bg.getSharedDB(),record=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId),item=record.attachments[0];
+      const write=async(report,fetchedAt)=>{const popupDb=await w.openDB();try{return await w.updateStore(popupDb,"hybridanalysis",target.headerMessageId,record=>{record.attachments[0].report=report;record.attachments[0].report_fetched_at=fetchedAt;return record;},{preserveReports:true}).then(()=>true,()=>false);}finally{popupDb.close();}};
+      const success=await write({state:"COMPLETE",verdict:"clean",details:{newB:true}},"2026-11-03T08:00:00.000Z");
+      const saved=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      const oldB=saved.analysisReportArchive.entries.find(entry=>entry.resource.report?.details?.originalB);
+      await bg.updateStore(db,"hybridanalysis",target.headerMessageId,record=>{
+        while(record.analysisReportArchive.entries.length<128)record.analysisReportArchive.entries.push({id:crypto.randomUUID(),archivedAt:Date.now(),kind:"link",slot:record.analysisReportArchive.entries.length,resource:{url:"https://archive.example.invalid/"+record.analysisReportArchive.entries.length,report:{state:"COMPLETE",verdict:"unknown"}}});return record;
+      });
+      const full=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      const refused=await write({state:"COMPLETE",verdict:"malicious",details:{mustNotCommit:true}},new Date().toISOString());
+      const after=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      return {popupSaved:success,oldBRetained:!!oldB&&oldB.resource.report_fetched_at==="2026-10-03T08:00:00.000Z",archiveEntriesBeforeLimit:saved.analysisReportArchive.entries.length,capacityRefused:refused===false,protocolUnchanged:JSON.stringify(after.attachments)===JSON.stringify(full.attachments),archiveUnchanged:JSON.stringify(after.analysisReportArchive)===JSON.stringify(full.analysisReportArchive)};
+    })();''', browser=popup)
+    assert all(saved[key] for key in ['popupSaved', 'oldBRetained', 'capacityRefused', 'protocolUnchanged', 'archiveUnchanged']) and saved['archiveEntriesBeforeLimit'] == 2, saved
+    warning = 'A report update could not be saved. Earlier protocols were retained.'
+    wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);', [warning], browser=popup))
+    subprocess.run(['import', '-window', 'root', str(out / 'report-archive-popup.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);', [warning]))
+    m.screenshot(out / 'report-archive-message.png')
+    close_extension_tabs(m)
+    m.js('for(const tab of [...window.gTabmail.tabInfo])if(tab.mode.name==="mailMessageTab")window.gTabmail.closeTab(tab);')
+    m = restart()
+    open_page(m, base + 'options.html')
+    after = m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const target=(await b.messages.query({subject:"Thundy report archive B"})).messages.find(item=>item.subject==="Thundy report archive B");
+      const record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",target.headerMessageId);
+      const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:target.id});
+      return {archiveEntries:record.analysisReportArchive.entries.length,originalA:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.details?.nested?.[2]?.retained),originalB:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.details?.originalB),currentClean:record.attachments[0].report.verdict==="clean",activeRows:snapshot.rows.length,historicalUnbound:snapshot.sourceHistory.rows.every(row=>row.resource===null),originalTimeInHistory:snapshot.sourceHistory.rows.some(row=>row.observedAt===Date.parse("2026-10-02T08:00:00Z"))};
+    })();''')
+    assert after['archiveEntries'] == 128 and after['activeRows'] == 0 and all(after[key] for key in ['originalA', 'originalB', 'currentClean', 'historicalUnbound', 'originalTimeInHistory']), after
+    report['reportArchive'] = {'passed': True, 'syntheticProtocols': True, 'liveProviderCalls': False, 'realMimeIndexedDBPopupRestart': True, 'popupWriteScope': 'Actual protected DAO in the native popup with fixture callback; module-private persistHybridReport is covered separately by Node integration.', 'before': before, 'popupAndCapacity': saved, 'afterRestart': after, 'warningVisibleInMessageAndPopup': True, 'scope': 'Bounded revisions in the existing header cache; no independent durable archive.'}
+    return m
+
+
 def check_restart_upgrade(m, args, out, display, report, restart):
     with zipfile.ZipFile(args.xpi) as package:
         current_version = json.loads(package.read('manifest.json'))['version']
@@ -1308,6 +1389,7 @@ def main():
     parser.add_argument('--mime-content-check', action='store_true', help='Real Unicode, binary and unreadable-content investigation; direct install')
     parser.add_argument('--unicode-input-check', action='store_true', help='Compare real MIME decoding variants and product analysis input; direct install')
     parser.add_argument('--source-history-check', action='store_true', help='Real legacy source separation, content guard and persisted history across ID reuse; direct permanent install')
+    parser.add_argument('--report-archive-check', action='store_true', help='Real bounded protocol revisions, popup writes, capacity refusal and restart; synthetic reports, direct permanent install')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -1344,6 +1426,8 @@ def main():
         parser.error('--unicode-input-check requires direct installation')
     if args.source_history_check and (args.restart_check or args.previous_xpi):
         parser.error('--source-history-check requires direct installation without --previous-xpi')
+    if args.report_archive_check and (args.restart_check or args.previous_xpi):
+        parser.error('--report-archive-check requires direct installation without --previous-xpi')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -1518,7 +1602,7 @@ def main():
                 if args.restart_check:
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
-                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
                     if args.resource_isolation_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_resource_isolation(m,base,out,report)
@@ -1564,6 +1648,9 @@ def main():
                     if args.source_history_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         m=check_source_history(m,base,out,report,restart_client,display)
+                    if args.report_archive_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        m=check_report_archive(m,base,out,report,restart_client,display)
 
             except Exception:
                 try:

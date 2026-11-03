@@ -16,6 +16,8 @@ Der weitere [Schritt AVN-003/009.b zur Inhaltsverfügbarkeit](PRUEFUMFANG_NACHRI
 
 **AVN-001/009.c teilweise umgesetzt:** [Unbestätigte Quellenhistorie und additive Snapshots](QUELLENHISTORIE_ZUORDNUNG.md) trennen alte numerische Zuordnungen von aktuellen Prüfungen. Alle fünf Dienste bleiben in der Historie sichtbar; benannte Anhangberichte benötigen einen tatsächlichen Hashvergleich im aktiven Kontext. Neue Quellenstände überschreiben alte Statusfelder nicht. Speichergrenzen und Commitfehler werden angezeigt, statt ältere Quellenstände dafür zu löschen. Die vollständige Ressourcen-/Protokollarchivierung, dauerhafte Vorkommensbindung und allgemeine Retentionsstrategie bleiben offen.
 
+**AVN-001/009.d anschließend umgesetzt:** Die [begrenzte Protokollhistorie](PROTOKOLLHISTORIE.md) erhält bei den fünf bestehenden Ressourcenwritern frühere Berichtspayloads, VirusTotal-Statistiken und laufende Submissionkennungen atomar vor Ersetzung. Gleiches tatsächlich gehashtes Anhangmaterial verliert fertige Berichte beim lokalen Wiederlesen nicht. Kapazitäts-/Commitfehler erhalten alte Daten und werden sechssprachig angezeigt. Das ist ein begrenzter Erhaltungsvertrag im vorhandenen Headercache; unabhängige Langzeitarchivierung, dauerhafte Vorkommensbindung und allgemeine Retention bleiben offen.
+
 ## 1. Bestandsaufnahme und Nachweisgrenzen
 
 ### Veröffentlichter Stand und vorbereitete Entwicklung

@@ -127,6 +127,13 @@ const ThundyAnalysis = (() => {
         add(legacy({attachments:(record.attachments || []).slice(0,100),links:(record.links || []).slice(0,500)}));
         result.truncated ||= (record.attachments?.length || 0) > 100 || (record.links?.length || 0) > 500;
         add(record.analysisStatusLegacy);add(record.analysisStatus);
+        const archived = record.analysisReportArchive;
+        if (archived?.schemaVersion === 1 && Array.isArray(archived.entries)) {
+            for (const entry of archived.entries.slice(0,128)) {
+                if (entry?.resource && ['attachment','link'].includes(entry.kind)) add(legacy({[entry.kind === 'attachment' ? 'attachments' : 'links']:[entry.resource]}));
+            }
+            result.truncated ||= archived.entries.length > 128;
+        }
         for (const map of [record.analysisStatusByMessage,record.analysisSourceSnapshots]) {
             if (!map || typeof map !== 'object') continue;
             let count = 0;
@@ -229,8 +236,9 @@ const ThundyAnalysis = (() => {
             card.append(history);
         }
         if (data.sourcePersistenceFailed) card.append(n('p',t('analysisPersistenceFailed'),'warning'));
+        if (data.reportArchiveBlocked) card.append(n('p',t('analysisReportArchiveBlocked'),'warning'));
         card.append(n('p', t('analysisLimit'), 'muted'));
-        const announcement = [mode, localLabel, rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', data.sourcePersistenceFailed ? t('analysisPersistenceFailed') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
+        const announcement = [mode, localLabel, rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', data.sourcePersistenceFailed ? t('analysisPersistenceFailed') : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
         const changed = host.dataset.announcement !== announcement;
         root.replaceChildren(style, live, card);
         if (wasPresent && changed) live.textContent = announcement;
@@ -247,7 +255,7 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }

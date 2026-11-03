@@ -41,7 +41,7 @@ Die lesende Historienprojektion ist auf 1.200 normalisierte Quellenzeilen und je
 
 Die bereits vorhandene [Cache-Aufbewahrung](DATENLEBENSZYKLUS.md) von 30 Tagen bzw. 1.000 Headerdatensätzen gilt weiterhin für den gesamten Cache. Eine explizite Cachelöschung entfernt weiterhin diesen Cache. Es gibt keine zusätzliche automatische Löschmigration, keine neue Frist für das Linkaudit und keine Zusage unbegrenzter Historie. Der allgemeine Retentionsvertrag aus AVN-009 bleibt offen.
 
-**Weiterhin offen:** bestehende Cachewriter können Ressourcen-/Protokollfelder beim nächsten Verarbeitungslauf ersetzen oder bei einer neuen Submission invalidieren. Diese Änderung archiviert solche vollständigen Originalprotokolle nicht unabhängig vom Headercache. Die neue Quellenprojektion selbst schreibt sie beim Lesen nicht um. Eine vollständige Ressourcen-/Protokollmigration und dauerhafte Vorkommensbindung bleiben daher Voraussetzung für weitergehende Erhaltungs-/Isolationszusagen.
+**Anschließender Fortschritt:** Die [begrenzte Protokollhistorie AVN-001/009.d](PROTOKOLLHISTORIE.md) schützt inzwischen die fünf vorhandenen Ressourcen-/Protokollwriter vor verlustbehafteter Ersetzung innerhalb des Headercaches. Sie sichert die bisher gespeicherten Originalprotokolle atomar und verweigert eine Ersetzung bei voller Kapazität. Ein unabhängiges Langzeitarchiv, vollständige Ressourcen-/Protokollmigration und dauerhafte Vorkommensbindung bleiben Voraussetzungen für weitergehende Erhaltungs-/Isolationszusagen.
 
 ## Validierung
 

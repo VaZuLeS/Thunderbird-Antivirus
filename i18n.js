@@ -1786,6 +1786,9 @@ const ThundyI18n = (() => {
   },
   "analysisPersistenceFailed": {
     "message": "New source observations could not be saved. Existing history was retained."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "A report update could not be saved. Earlier protocols were retained."
   }
 };
     function get(key, params = []) {

@@ -216,7 +216,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                             try { const url = new URL(item.url); resourceLabels['link:' + index] = clean(url.origin + url.pathname); } catch (_) { /* no URL guess */ }
                         }
                     } catch (_) { /* actual parts remain identifiable without cached links */ }
-                    return { ...JSON.parse(JSON.stringify(model.data)), sourceHistory, sourcePersistenceFailed:context.persistenceFailed, resourceLabels, availability, messageId: message.id };
+                    return { ...JSON.parse(JSON.stringify(model.data)), sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
@@ -1279,7 +1279,10 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
             let found = false;
             for (let j = 0; j < atts.length; j++) {
               if (newAtt.partName && atts[j].partName === newAtt.partName || !atts[j].partName && atts[j].attachment_name === newAtt.attachment_name && atts.filter(item => item.attachment_name === newAtt.attachment_name).length === 1 && newAttachments.filter(item => item.attachment_name === newAtt.attachment_name).length === 1) {
-                atts[j] = newAtt;
+                const old = atts[j];
+                // An offline/local reread is not a new provider submission.
+                const sameContent = /^[0-9a-f]{64}$/i.test(newAtt.hybrid_sha256 || '') && old.hybrid_sha256?.toLowerCase() === newAtt.hybrid_sha256.toLowerCase();
+                atts[j] = sameContent && ['MANUAL_CHECK_PENDING','UNKNOWN','NOT_CHECKED'].includes(newAtt.state) && (old.report != null || old.virustotal_stats != null || ['KNOWN','UPLOADED'].includes(old.state)) ? {...newAtt,state:old.state,hybrid_job_id:old.hybrid_job_id,hybrid_submission_id:old.hybrid_submission_id,report:old.report,report_fetched_at:old.report_fetched_at,virustotal_stats:newAtt.virustotal_stats ?? old.virustotal_stats} : newAtt;
                 found = true;
                 break;
               }
@@ -1299,7 +1302,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         }
         recordToSave.updatedAt = Date.now();
         return recordToSave;
-      });
+      }, {preserveReports:true});
     }
   } catch (error) {
     Logger.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
@@ -1342,7 +1345,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
         }
         recordToSave.updatedAt = Date.now();
         return recordToSave;
-      });
+      }, {preserveReports:true});
     }
   } catch (error) {
     Logger.error('IndexedDB (Links) Save Error:', error);
@@ -1682,6 +1685,11 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!request || typeof request !== 'object') return false;
 
     switch (request.action) {
+        case "reportArchiveBlocked":
+            if (sender?.url?.split(/[?#]/)[0] !== browser.runtime.getURL('popup.html') || typeof request.headerMessageId !== 'string' || request.headerMessageId.length > 4096) return false;
+            if (typeof noteReportArchiveBlocked === 'function') noteReportArchiveBlocked(request.headerMessageId, false);
+            for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(context => { if (context.headerMessageId === request.headerMessageId) context.schedule(); }).catch(() => {});
+            sendResponse({success:true});return false;
         case "getUiTheme":
             ThundyTheme.snapshot().then(sendResponse).catch(() => sendResponse(null));
             return true;
@@ -1722,6 +1730,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })().then(threat => sendResponse({ status: 'success', threat })).catch(() => sendResponse({ status: 'error' }));
             return true;
         case "clearMemoryCaches":
+            if (typeof clearReportArchiveWarnings === 'function') clearReportArchiveWarnings();
             urlhausCache.clear(); ipReputationCache.clear(); vtCache.clear(); knownSendersCache.clear();
             for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(context => {
                 context.dispose();
@@ -1890,7 +1899,7 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
                     }
                 }
                 return existingRecord;
-            });
+            }, {preserveReports:true});
         } catch (dbError) {
             Logger.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
         }
@@ -1952,7 +1961,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
                     }
                 }
                 return existingRecord;
-            });
+            }, {preserveReports:true});
         } catch (dbError) {
             Logger.error('Fehler beim Aktualisieren des DB Records:', dbError);
         }

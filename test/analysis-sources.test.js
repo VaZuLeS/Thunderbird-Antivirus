@@ -131,9 +131,9 @@ test('all six views separate historical services from current verdicts and expos
    for(const brand of ['Hybrid Analysis','VirusTotal','URLhaus','AbuseIPDB','urlscan.io'])assert.ok(detail.querySelector('summary').textContent.includes(brand));
    assert.ok(detail.textContent.includes(catalog.analysisHistoryWarning.message));
    detail.open=true;detail.querySelector('summary').focus();
-   c.a.render({...data,sourcePersistenceFailed:true},labels);
+   c.a.render({...data,sourcePersistenceFailed:true,reportArchiveBlocked:true},labels);
    assert.equal(root.querySelector('[data-key="unbound-history"]').open,true);assert.equal(root.activeElement.dataset.focusKey,'unbound-history');
-   assert.ok(root.querySelector('.live').textContent.includes(catalog.analysisPersistenceFailed.message));assert.ok(!root.textContent.includes('MISSING:'));
+   assert.ok(root.querySelector('.live').textContent.includes(catalog.analysisPersistenceFailed.message));assert.ok(root.textContent.includes(catalog.analysisReportArchiveBlocked.message));assert.ok(!root.textContent.includes('MISSING:'));
   }finally{dom.window.close();}
  }
 });
@@ -142,10 +142,18 @@ test('serialized mail renderer can display history without module globals',()=>{
  const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
  const dom=new JSDOM('<html lang="en"><body></body></html>');
  try{
-  const c=vm.createContext({document:dom.window.document,Date,labels:a.labels(key=>catalog[key]?.message),data:{local:{state:'checked'},rows:[],sourceHistory:{rows:[{provider:'urlscan',scope:'url',state:'submitted',verdict:'unknown',observedAt:100}]}}});
+  const c=vm.createContext({document:dom.window.document,Date,labels:a.labels(key=>catalog[key]?.message),data:{local:{state:'checked'},rows:[],sourceHistory:{rows:[{provider:'urlscan',scope:'url',state:'submitted',verdict:'unknown',observedAt:100}]},reportArchiveBlocked:true}});
   vm.runInContext('('+a.render.toString()+')(data,labels)',c);
   const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
   assert.ok(root.querySelector('[data-key="unbound-history"]').textContent.includes('urlscan.io'));
   assert.ok(root.textContent.includes(catalog.analysisHistoryWarning.message));
  }finally{dom.window.close();}
+});
+
+
+test('archived protocol payloads appear only as unbound historical observations',()=>{
+ const a=model();const record={analysisReportArchive:{schemaVersion:1,entries:[{kind:'attachment',slot:0,resource:{partName:'1.2',attachment_name:'private.bin',hybrid_sha256:'private-hash',report:{state:'COMPLETE',verdict:'malicious'},report_fetched_at:'2026-10-02T08:00:00Z',virustotal_stats:{malicious:2}}}]}};
+ const history=a.history(record);assert.equal(history.rows.length,2);assert.ok(history.rows.every(row=>row.resource===null&&row.source==='stored'));
+ assert.ok(history.rows.some(row=>row.observedAt===Date.parse('2026-10-02T08:00:00Z')));assert.ok(!JSON.stringify(history).includes('private.bin'));assert.ok(!JSON.stringify(history).includes('private-hash'));
+ assert.equal(a.create().data.rows.length,0);
 });

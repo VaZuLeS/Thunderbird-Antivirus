@@ -1771,5 +1771,6 @@
   "analysisLocalUnavailable": {"message": "Analiza lokalna jest niedostępna: nie udało się odczytać wiadomości."},
   "analysisHistoryTitle": {"message": "Zapisana historia · powiązanie niepotwierdzone"},
   "analysisHistoryWarning": {"message": "Te wpisy historyczne mogą dotyczyć innej wiadomości o tym samym Message-ID. Nie potwierdzają sprawdzenia tej wiadomości."},
-  "analysisPersistenceFailed": {"message": "Nie udało się zapisać nowych obserwacji źródeł. Dotychczasowa historia została zachowana."}
+  "analysisPersistenceFailed": {"message": "Nie udało się zapisać nowych obserwacji źródeł. Dotychczasowa historia została zachowana."},
+  "analysisReportArchiveBlocked": {"message": "Nie udało się zapisać aktualizacji raportu. Poprzednie protokoły zostały zachowane."}
 }

@@ -877,7 +877,7 @@ async function persistHybridReport({ headerMessageId, sha256, attachmentName, re
                 }
                 if (changed) record.updatedAt = updatedAt;
                 return record;
-            });
+            }, {preserveReports:true});
             return changed;
         } finally { db.close(); }
     } catch (error) {
