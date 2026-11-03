@@ -144,13 +144,15 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
             // Labels must come from the actual message, not a shared Message-ID cache.
             const currentParts = new Map();
             const currentLinks = new Set();
+            let currentCoverage = {state:'failed',reason:'read_failed'};
             try {
                 const attachments = inventory.attachments || await browser.messages.listAttachments(message.id);
                 for (const item of attachments.slice(0,100)) currentParts.set(String(item.partName), item.name || '');
             } catch (_) { /* unreadable inventory stays unknown */ }
             try {
-                const full = inventory.fullMessage || await browser.messages.getFull(message.id);
-                for (const url of filterUrls(extractUrls(extractTextFromParts(full.parts || full)))) currentLinks.add(url);
+                const full = Object.prototype.hasOwnProperty.call(inventory, 'fullMessage') ? inventory.fullMessage : await browser.messages.getFull(message.id);
+                currentCoverage = localContentCoverage(full);
+                if (full) for (const url of filterUrls(extractUrls(extractTextFromParts(full.parts || full)))) currentLinks.add(url);
             } catch (_) { /* no fallback to another message's links */ }
             let record = null;
             try { record = await getFromStore(await getSharedDB(), 'hybridanalysis', key); } catch (_) { /* still expose live state */ }
@@ -163,6 +165,8 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 return {...saved, analysisStatus:own || (foreign ? undefined : saved.analysisStatus), attachments, links};
             };
             const model = ThundyAnalysis.create(ThundyAnalysis.legacy(sourceRecord(record)));
+            // Current unreadability must not inherit a historical "checked" state.
+            if (currentCoverage.state !== 'checked') model.data.local = {...currentCoverage,source:'local',observedAt:Date.now()};
             const context = { disposed: false, model, headerMessageId: key, messageId: message.id, tabs: new Set(), timer: null,
                 dispose() { context.disposed = true; if (context.timer) clearTimeout(context.timer); context.timer = null; context.tabs.clear(); },
                 event(event) { if (context.disposed || messageAnalyses.get(contextKey) !== ready) { context.dispose(); return false; } messageAnalyses.touch?.(contextKey); const valid = model.event(event); if (valid) context.schedule(); return valid; },
@@ -743,8 +747,46 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
 async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filteredUrls, messageText, parsedUrlCache = null, allowExternal = true, analysisContext = null }) {
   const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal, analysisContext });
   const threat = calculateThreatScore(message.author, urls, options);
+  threat.coverage = localContentCoverage(fullMessage);
   await injectThreatBanner(tab.id, threat);
-  if (analysisContext) { analysisContext.model.data.local = { state: 'checked', source: 'local', observedAt: Date.now() }; await analysisContext.flush().catch(() => {}); }
+  if (analysisContext) { recordLocalCoverage(analysisContext, threat.coverage); await analysisContext.flush().catch(() => {}); }
+}
+
+// This describes the available text input, not an antivirus or full MIME verdict.
+function localContentCoverage(fullMessage) {
+  if (!fullMessage || typeof fullMessage !== 'object') return {state:'failed',reason:'read_failed'};
+  let unavailable = false, missingText = false;
+  const visit = part => {
+    if (!part || typeof part !== 'object') return;
+    if (['fail','skipped'].includes(part.decryptionStatus) ||
+        part.contentType === 'multipart/encrypted' && fullMessage.decryptionStatus !== 'success') unavailable = true;
+    // Thunderbird omits body for valid zero-length text parts. Absence alone
+    // is no failure; a positive decoded size supplies the missing evidence.
+    const attachment = !!part.name || (part.headers?.['content-disposition'] || []).some(value => /^attachment(?:;|$)/i.test(value.trim()));
+    if (!attachment && ['text/plain','text/html'].includes(part.contentType) && part.size > 0 && typeof part.body !== 'string') missingText = true;
+    for (const child of part.parts || []) visit(child);
+  };
+  visit(fullMessage);
+  return unavailable ? {state:'incomplete',reason:'decryption_unavailable'} : missingText ? {state:'incomplete',reason:'text_unavailable'} : {state:'checked'};
+}
+
+function recordLocalCoverage(context, coverage) {
+  if (!context || context.disposed) return;
+  context.model.data.local = {...coverage,source:'local',observedAt:Date.now()};
+  context.schedule();
+}
+
+async function readFullForAnalysis(message, context = null) {
+  try { return await browser.messages.getFull(message.id); }
+  catch (error) {
+    // Preserve the API failure without retrying it during context creation.
+    try {
+      context ||= await getMessageAnalysisContext(message, null, {fullMessage:null});
+      recordLocalCoverage(context, {state:'failed',reason:'read_failed'});
+      await context?.flush();
+    } catch (_) { /* the original read failure remains authoritative */ }
+    throw error;
+  }
 }
 
 /**
@@ -808,7 +850,7 @@ async function handleDisplayedMessage(tab, message) {
     const canAutoUpload = permission && enabledSenders.includes(senderEmail) && !alwaysManual &&
       !!apikey_hybridanalysis && mayTransmitExternally();
 
-    let fullMessage = await browser.messages.getFull(message.id);
+    let fullMessage = await readFullForAnalysis(message);
     let attachments = [];
     try {
       attachments = await browser.messages.listAttachments(message.id);
@@ -1509,7 +1551,7 @@ async function handleRequestScan(request, sender) {
         }
         const analysisContext = await getMessageAnalysisContext(messageObj, sender?.tab?.id ?? request.tabId);
         await processAttachments(messageObj, true, true, analysisContext);
-        const fullMessage = await browser.messages.getFull(request.messageId);
+        const fullMessage = await readFullForAnalysis(messageObj, analysisContext);
         const tabId = (sender && sender.tab && sender.tab.id) ? sender.tab.id : (request.tabId || null);
         const tab = { id: tabId };
         const parsedUrlCache = new Map();
@@ -1560,13 +1602,14 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case "getLocalRisk":
             (async () => {
                 const message = await browser.messages.get(request.messageId);
-                const fullMessage = await browser.messages.getFull(request.messageId);
+                const fullMessage = await readFullForAnalysis(message);
                 const messageText = extractTextFromParts(fullMessage.parts || fullMessage);
                 const urls = filterUrls(extractUrls(messageText));
                 const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls: urls, messageText, allowExternal: false });
                 const threat = calculateThreatScore(message.author, urls, options);
-                const context = await getMessageAnalysisContext(message);
-                if (context) { context.model.data.local = { state: 'checked', source: 'local', observedAt: Date.now() }; context.schedule(); }
+                threat.coverage = localContentCoverage(fullMessage);
+                const context = await getMessageAnalysisContext(message, null, {fullMessage});
+                recordLocalCoverage(context, threat.coverage);
                 return threat;
             })().then(threat => sendResponse({ status: 'success', threat })).catch(() => sendResponse({ status: 'error' }));
             return true;

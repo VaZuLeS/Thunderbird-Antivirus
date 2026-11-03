@@ -64,3 +64,7 @@ Fehlende Inhaltslesbarkeit, API-Fehler oder eine überschrittene Ressourcenbegre
 Die SHA-Berechnung im Prüfrunner findet außerhalb der Automation-Xray-Grenze statt. `getRaw` liefert echte BinaryString-Bytes; die Attachment-Fixtures sind absichtlich ASCII und werden mit `File.text()` gelesen. Daraus folgt keine generische Binär-/Encodingabnahme. Der Prüfrunner exportiert Prüfsummen und Metadaten der synthetischen Fixtures, keine fremden Mailinhalte. Kein realer Provider wird kontaktiert.
 
 Die Untersuchung allein schließt AVN-001/009 nicht ab und gibt 1.24.4 nicht zur Veröffentlichung frei.
+
+## Ergänzung: binäre Eingaben und begrenzte Inhaltsverfügbarkeit
+
+Der [anschließende Umsetzungsschritt AVN-003/009.b](PRUEFUMFANG_NACHRICHTENINHALT.md) prüft echte 256-Byte-Binäranhänge mit Unicode-Dateinamen und schließt den belegten falschen lokalen Abschluss bei nicht verfügbaren Inhalten. Diese separate Probe nutzt `FileReader`/BinaryString statt `File.text()`; die oben beschriebene historische Identitätsmatrix bleibt in ihrem damaligen ASCII-Umfang erhalten. Die neue Probe ersetzt keinen dauerhaften Vorkommensvertrag. Eine Unicode-/quoted-printable-Abweichung der dekodierten API-Antwort ist nun unter 140 und 153 reproduziert und vor weiteren Eingangs-/Identitätszusagen zu klären.

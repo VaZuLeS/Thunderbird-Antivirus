@@ -2,6 +2,8 @@
 
 ## 1.24.4 — unreleased development (2026-11-02)
 
+- Mark unavailable/decryption-failed message content as incomplete and read failures as unavailable in both source views and the popup risk card, in all six languages. Keep empty messages and attachment coverage distinct; retain original data and allow a later successful retry.
+- Verify Unicode filenames, actual binary attachment bytes and unavailable-content UI under Linux Thunderbird 140/153. Record a remaining decoded quoted-printable/Unicode discrepancy; no general MIME/Crypto or durable identity claim (docs/PRUEFUMFANG_NACHRICHTENINHALT.md).
 - Follow-up on 2026-11-03: read resource labels from the actual message, filter popup records and keep original link references; bind manual URL requests explicitly instead of guessing by a shared header.
 - Enforce observable cache expiry and idle disposal, limit active source contexts to 200, and reject late observer responses after eviction without deleting stored decisions.
 - Native identity probe demonstrates numeric message-ID reassignment after restart. Durable binding/migration remains open; see docs/FORTSCHRITT_AVN_001_002_009.md before a release claim.

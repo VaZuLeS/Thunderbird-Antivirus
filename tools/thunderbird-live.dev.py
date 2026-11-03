@@ -21,6 +21,9 @@ import sys
 import tempfile
 import time
 import zipfile
+from email.message import EmailMessage
+from email.policy import SMTP
+from email.parser import BytesParser
 
 ROOT = Path(__file__).resolve().parents[1]
 ADDON_ID = 'thundy-av@bludau-it-services.de'
@@ -869,6 +872,94 @@ def check_identity_lifecycle(m, base, out, report, restart):
     return m
 
 
+def check_mime_content(m, base, out, report, display):
+    """Small controlled encoding/readability investigation, no provider calls."""
+    expected={}
+    fixtures=[]
+    for name,payload in [('binary-a',bytes(range(256))),('binary-b',bytes(range(255))+b'\x00')]:
+        mail=EmailMessage(policy=SMTP)
+        mail['From']='fixture@example.invalid';mail['To']='receiver@example.invalid'
+        mail['Subject']='Thundy MIME '+name;mail['Message-ID']='<mime-'+name+'@example.invalid>'
+        mail.set_content('Grüße — Français, Español, Italiano, Polski: żółć. 测试',charset='utf-8',cte='quoted-printable')
+        mail.add_attachment(payload,maintype='application',subtype='octet-stream',filename='prøbe-ä-测试.bin',cte='base64')
+        fixtures.append((name,mail.as_bytes()))
+        expected[name]=hashlib.sha256(payload).hexdigest()
+    fixtures.append(('empty',b'From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy MIME empty\r\nMessage-ID: <mime-empty@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n'))
+    fixtures.append(('unavailable',b'From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy MIME unavailable\r\nMessage-ID: <mime-unavailable@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/encrypted; protocol="application/pgp-encrypted"; boundary="unavailable"\r\n\r\n--unavailable\r\nContent-Type: application/pgp-encrypted\r\n\r\nVersion: 1\r\n--unavailable\r\nContent-Type: application/octet-stream\r\n\r\nThis is deliberately not a decryptable OpenPGP message.\r\n--unavailable--\r\n'))
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      MailServices.accounts.localFoldersServer.rootFolder.createSubfolder("MIME Content",null);''')
+    for index,(name,data) in enumerate(fixtures):
+        path=out/('mime-'+name+'.eml');path.write_bytes(data)
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("MIME Content");
+          const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+          MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''',[str(path)])
+        wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("MIME Content").getTotalMessages(false);''')==index+1)
+    open_page(m,base+'options.html')
+    rows=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,result=[];
+      for(const name of ["binary-a","binary-b","empty","unavailable"]){
+        const item=(await b.messages.query({subject:"Thundy MIME "+name})).messages.find(m=>m.subject==="Thundy MIME "+name);
+        let full=null,fullError=null;try{full=await b.messages.getFull(item.id);}catch(e){fullError=String(e);}
+        const textParts=[];const visit=part=>{if(part?.contentType?.startsWith("text/"))textParts.push({type:part.contentType,hasBody:typeof part.body==="string",body:part.body ?? null});for(const child of part?.parts || [])visit(child);};visit(full);
+        const attachments=[];
+        try{for(const part of await b.messages.listAttachments(item.id)){
+          const file=await b.messages.getAttachmentFile(item.id,part.partName);
+          const binaryString=await new Promise((resolve,reject)=>{const reader=new window.wrappedJSObject.FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error("Fixture FileReader failed"));reader.readAsBinaryString(file);});
+          attachments.push({partName:part.partName,name:part.name,size:part.size,binaryString});
+        }}catch(e){attachments.push({readError:String(e)});}
+        const rawBinaryString=await b.messages.getRaw(item.id,{decrypt:false,data_format:"BinaryString"});
+        const risk=await b.runtime.sendMessage({action:"getLocalRisk",messageId:item.id});
+        const sources=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:item.id});
+        result.push({name,messageId:item.id,decryptionStatus:full?.decryptionStatus ?? null,fullError,textParts,attachments,rawBinaryString,
+          apiReplacementCharacters:textParts.some(part=>part.body?.includes(String.fromCharCode(65533))),
+          riskStatus:risk.status,coverage:risk.threat?.coverage ?? null,local:sources.local ?? null});
+      }return result;
+    })();''')
+    report['mimeContent']={'passed':False,'realThunderbirdAPIs':True,'liveProviderCalls':False,'rows':rows,
+      'scope':'Synthetic quoted-printable Unicode, base64 binary and empty plaintext; malformed encrypted MIME probes unavailable content, not successful OpenPGP/S-MIME decryption.'}
+    for row in rows:
+        raw=row.pop('rawBinaryString').encode('latin1')
+        body=raw.partition(b'\r\n\r\n')[2]
+        fixture=dict(fixtures)[row['name']]
+        row['rawBodySha256']=hashlib.sha256(body).hexdigest()
+        row['rawBodyMatchesFixture']=body==fixture.partition(b'\r\n\r\n')[2]
+        assert row['rawBodyMatchesFixture'],row
+        for part in row['attachments']:
+            if 'binaryString' in part:
+                part['sha256']=hashlib.sha256(part.pop('binaryString').encode('latin1')).hexdigest()
+        if row['name'] in expected:
+            parsed=BytesParser(policy=SMTP).parsebytes(fixture)
+            row['fixtureUnicodeRoundTripExact']='żółć. 测试' in parsed.get_body(preferencelist=('plain',)).get_content()
+            assert row['fixtureUnicodeRoundTripExact'],row
+            assert len(row['attachments'])==1 and row['attachments'][0]['sha256']==expected[row['name']],row
+            assert row['attachments'][0]['name']=='prøbe-ä-测试.bin',row
+            row['unicodeRoundTripExact']=any('Grüße — Français, Español, Italiano, Polski: żółć. 测试' in (part['body'] or '') for part in row['textParts'])
+        assert row['riskStatus']=='success',row
+        expected_state='incomplete' if row['name']=='unavailable' else 'checked'
+        assert row['local']['state']==expected_state and row['coverage']['state']==expected_state,row
+    # Exercise both actual displays for the unavailable encrypted fixture.
+    label=m.page('return window.wrappedJSObject.browser.i18n.getMessage("analysisLocalIncomplete");')
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+      const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("MIME Content");
+      MailUtils.displayMessage(Array.from(folder.messages).find(h=>h.subject==="Thundy MIME unavailable"));''')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[label]))
+    m.screenshot(out/'mime-unavailable-message.png')
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser;
+      const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect();
+      const p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    popup_browser='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    wait_for(lambda:m.page('return document.querySelector(".local-risk")?.textContent.includes(arguments[0]) && document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[label],browser=popup_browser))
+    subprocess.run(['import','-window','root',str(out/'mime-unavailable-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    report['mimeContent']['actualMessageAndPopupIncomplete']=True
+    report['mimeContent']['passed']=True
+
+
 def check_restart_upgrade(m, args, out, display, report, restart):
     with zipfile.ZipFile(args.xpi) as package:
         current_version = json.loads(package.read('manifest.json'))['version']
@@ -1065,6 +1156,7 @@ def main():
     parser.add_argument('--resource-isolation-check', action='store_true', help='Real duplicate-Message-ID resource inventory check after direct install')
     parser.add_argument('--identity-check', action='store_true', help='Probe numeric message IDs across a restart with reversed lookup order; requires --restart-check')
     parser.add_argument('--identity-lifecycle-check', action='store_true', help='Real content/metadata collision, copy/move/flags/compact/restart/profile-restore investigation; direct permanent install')
+    parser.add_argument('--mime-content-check', action='store_true', help='Real Unicode, binary and unreadable-content investigation; direct install')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -1095,6 +1187,8 @@ def main():
         parser.error('--identity-check requires --restart-check')
     if args.identity_lifecycle_check and (args.restart_check or args.previous_xpi):
         parser.error('--identity-lifecycle-check requires a direct install without --previous-xpi')
+    if args.mime_content_check and args.restart_check:
+        parser.error('--mime-content-check requires direct installation')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -1306,6 +1400,9 @@ def main():
                     if args.identity_lifecycle_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         m=check_identity_lifecycle(m,base,out,report,restart_client)
+                    if args.mime_content_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_mime_content(m,base,out,report,display)
 
             except Exception:
                 try:

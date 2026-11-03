@@ -3,6 +3,11 @@ import hashlib
 import importlib.util
 from pathlib import Path
 import unittest
+import sys
+
+# Keep the developer directory free of generated files; manifest discovery
+# intentionally permits only explicitly named .dev scripts in this directory.
+sys.dont_write_bytecode = True
 
 spec = importlib.util.spec_from_file_location('thunderbird_live', Path(__file__).with_name('thunderbird-live.dev.py'))
 runner = importlib.util.module_from_spec(spec)

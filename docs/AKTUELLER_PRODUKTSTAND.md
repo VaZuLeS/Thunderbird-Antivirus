@@ -8,6 +8,8 @@ Die bisherige Weiterentwicklung (Headerparser, Prüfherkunft, Entscheidungsgrün
 
 Die weitere [Identitätsuntersuchung](IDENTITAET_ANALYSEBEFUNDE.md) zeigt, dass auch unveränderte Nachrichteninhalte bei Statusänderung oder Komprimierung andere Rohdaten-Hashes erhalten können. Inhaltsnachweis, Nachrichtenvorkommen und historische Entscheidung benötigen getrennte Bindungen. Der ergänzte native Prüfrunner ändert weder den produktiven Speicherschlüssel noch vorhandene Daten.
 
+Der [anschließende Inhaltsumfang-Fix](PRUEFUMFANG_NACHRICHTENINHALT.md) verhindert einen lokalen Abschluss für nicht verfügbare Inhalte und zeigt Teilprüfung/Lesefehler in allen sechs Sprachen. Echte Linux-Prüfungen unter 140/153 bestätigen Nachricht und Popup sowie binäre Ressourcen. Die neue Unicode-Eingangsabweichung und erfolgreiche Cryptoabnahmen bleiben offen; die dauerhafte Identitätsmigration ist nicht implementiert.
+
 Vorheriger Ausführungsstand ist die [detaillierte Aufgabenliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md). Die [Bestandsaufnahme](PRODUKTANALYSE_AUFGABENPLAN_2026-11-02.md) beschreibt den Ausgangscommit `6046fe0`; alte Statusmeldungen sind zeitgebundene Nachweise und keine aktuelle Freigabe.
 
 | Ebene | Stand |

@@ -756,3 +756,46 @@ test('manual URL submission refuses a mismatched explicit message before contact
  const response=await new Promise(resolve=>s.listeners.at(-1)({action:'scanUrl',url:'https://other.invalid/',headerMessageId:'different-header',messageId:7},{url:'popup.html'},resolve));
  assert.equal(response.status,'error');assert.equal(response.code,'MESSAGE_CONTEXT_CHANGED');assert.equal(calls,0);
 });
+
+test('unavailable decryption never inherits checked status and local risk reports partial input',async()=>{
+ const s=setup({},true);await s.context.configure();
+ const original={analysisStatus:{schemaVersion:2,local:{state:'checked',observedAt:123},rows:[]}};
+ const before=JSON.stringify(original);s.context.getFromStore=async()=>original;
+ s.full.decryptionStatus='fail';s.full.parts=[];
+ const context=await s.context.getMessageAnalysisContext(s.message);
+ assert.equal((await context.snapshot()).local.state,'incomplete');
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));
+ assert.equal(result.status,'success');assert.equal(result.threat.coverage.state,'incomplete');
+ assert.equal(result.threat.coverage.reason,'decryption_unavailable');
+ assert.equal((await context.snapshot()).local.state,'incomplete');
+ assert.equal(JSON.stringify(original),before);assert.equal(s.requests.length,0);context.dispose();
+});
+
+test('a read failure replaces current completion, avoids an initialization retry and can recover',async()=>{
+ const s=setup({},true);await s.context.configure();let reads=0;
+ s.context.browser.messages.getFull=async()=>{reads++;throw new Error('unreadable');};
+ const request=()=>new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));
+ assert.equal((await request()).status,'error');assert.equal(reads,1);
+ const context=await s.context.getMessageAnalysisContext(s.message);
+ assert.equal((await context.snapshot()).local.state,'failed');
+ s.context.browser.messages.getFull=async()=>s.full;
+ assert.equal((await request()).threat.coverage.state,'checked');
+ assert.equal((await context.snapshot()).local.state,'checked');assert.equal(s.requests.length,0);context.dispose();
+});
+
+test('empty text stays valid while nonempty missing text and skipped decryption remain partial',async()=>{
+ const s=setup({},true);await s.context.configure();
+ for(const [full,expected] of [
+  [{decryptionStatus:'none',parts:[{contentType:'text/plain',size:0}]},'checked'],
+  [{decryptionStatus:'success',parts:[{contentType:'text/html',size:3,body:'abc'}]},'checked'],
+  [{parts:[{contentType:'text/plain',size:8,name:'document.txt',headers:{'content-disposition':['attachment; filename=document.txt']}}]},'checked'],
+  [{decryptionStatus:'none',parts:[{contentType:'text/plain',size:8}]},'incomplete'],
+  [{decryptionStatus:'skipped',parts:[]},'incomplete'],
+  [{parts:[{contentType:'multipart/encrypted',parts:[]}]},'incomplete']
+ ]){
+  s.context.browser.messages.getFull=async()=>full;
+  const result=await new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));
+  assert.equal(result.status,'success');assert.equal(result.threat.coverage.state,expected);
+ }
+ (await s.context.getMessageAnalysisContext(s.message)).dispose();assert.equal(s.requests.length,0);
+});

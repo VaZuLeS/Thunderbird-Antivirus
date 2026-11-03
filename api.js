@@ -168,6 +168,11 @@ try {
         const note = document.createElement('p'); note.className = 'risk-note';
         note.textContent = uiText('popupLocalExplanation', 'Local indicators only. This score is not an antivirus verdict or a guarantee of safety.');
         card.appendChild(note);
+        if (['incomplete','failed'].includes(local.threat.coverage?.state)) {
+            const coverage = document.createElement('p'); coverage.className = 'risk-note';
+            coverage.textContent = uiText('analysisLocalIncomplete', 'Local analysis is incomplete: some message content is unavailable.');
+            card.appendChild(coverage);
+        }
         if (local.threat.reasons.length) {
             const list = document.createElement('ul'); list.className = 'risk-reasons';
             for (const reason of local.threat.reasons) {
