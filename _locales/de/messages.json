@@ -1770,10 +1770,55 @@
   "analysisContextChanged": {
     "message": "Der Nachrichtenkontext hat sich geändert. Schließe und öffne das Popup vor einer erneuten Übermittlung."
   },
-  "analysisLocalIncomplete": {"message": "Die lokale Prüfung ist unvollständig: Ein Teil des Nachrichteninhalts ist nicht verfügbar."},
-  "analysisLocalUnavailable": {"message": "Die lokale Prüfung ist nicht verfügbar: Die Nachricht konnte nicht gelesen werden."},
-  "analysisHistoryTitle": {"message": "Gespeicherte Historie · Zuordnung unbestätigt"},
-  "analysisHistoryWarning": {"message": "Diese historischen Einträge können zu einer anderen Nachricht mit derselben Message-ID gehören. Sie bestätigen keine Prüfung dieser Nachricht."},
-  "analysisPersistenceFailed": {"message": "Neue Quellenbeobachtungen konnten nicht gespeichert werden. Die bestehende Historie blieb erhalten."},
-  "analysisReportArchiveBlocked": {"message": "Eine Berichtsaktualisierung konnte nicht gespeichert werden. Frühere Protokolle blieben erhalten."}
+  "analysisLocalIncomplete": {
+    "message": "Die lokale Prüfung ist unvollständig: Ein Teil des Nachrichteninhalts ist nicht verfügbar."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Die lokale Prüfung ist nicht verfügbar: Die Nachricht konnte nicht gelesen werden."
+  },
+  "analysisHistoryTitle": {
+    "message": "Gespeicherte Historie · Zuordnung unbestätigt"
+  },
+  "analysisHistoryWarning": {
+    "message": "Diese historischen Einträge können zu einer anderen Nachricht mit derselben Message-ID gehören. Sie bestätigen keine Prüfung dieser Nachricht."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Neue Quellenbeobachtungen konnten nicht gespeichert werden. Die bestehende Historie blieb erhalten."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Eine Berichtsaktualisierung konnte nicht gespeichert werden. Frühere Protokolle blieben erhalten."
+  },
+  "sourceExportOpen": {
+    "message": "Quellenbericht als Vorschau öffnen"
+  },
+  "sourceExportTitle": {
+    "message": "Bericht der Analysequellen"
+  },
+  "sourceExportIntro": {
+    "message": "Erstellt eine lokale Momentaufnahme der aufgezeichneten Prüfungen. Es startet keine neue Analyse. Aktuelle Beobachtungen und gespeicherte Historie mit unbestätigter Zuordnung bleiben getrennt."
+  },
+  "sourceExportPrivacy": {
+    "message": "Enthält Dienste, Zustände, Bewertungen und genaue Beobachtungszeiten. Ohne URLs, Dateinamen, Hashes, IPs, Schlüssel, Mailtext und interne Kennungen. Ressourcennummern gelten nur innerhalb dieses Berichts. Keine vollständige Historie und kein authentifizierter Beleg. Es wird nichts automatisch übertragen. Vor dem Teilen prüfen."
+  },
+  "sourceExportCancel": {
+    "message": "Vorschau verwerfen"
+  },
+  "sourceExportContentLabel": {
+    "message": "Berichtsvorschau (JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Der Nachrichtenkontext ist nicht mehr verfügbar. Den Bericht erneut über das Toolbar-Popup der Nachricht öffnen."
+  },
+  "sourceExportChanged": {
+    "message": "Der aufgezeichnete Stand hat sich geändert. Vor dem Speichern eine neue Vorschau erstellen."
+  },
+  "sourceExportReady": {
+    "message": "Die Vorschau vor dem Speichern oder Teilen prüfen."
+  },
+  "sourceExportRequested": {
+    "message": "Speichern angefordert. Abschluss in den Thunderbird-Downloads prüfen."
+  },
+  "sourceExportFailed": {
+    "message": "Der Bericht wurde nicht gespeichert. Für einen erneuten Versuch eine neue Vorschau erstellen."
+  }
 }

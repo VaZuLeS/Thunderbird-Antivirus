@@ -39,6 +39,15 @@ test('opening an unauthorized sender never sends data across all privacy tiers',
     }
 });
 
+test('source export context changes after cache loss and does not initiate external requests', async () => {
+    const state = setup({}, true);await state.context.configure();
+    const read = () => new Promise(resolve => state.listeners[0]({action:'getMessageAnalysis',messageId:7},{id:'test',url:'source_export.html'},resolve));
+    const first = await read(),same = await read();
+    assert.equal(first.success,true);assert.equal(first.contextToken,same.contextToken);assert.equal(typeof first.contextToken,'string');
+    vm.runInContext('messageAnalyses.clear()',state.context);
+    const changed = await read();assert.notEqual(changed.contextToken,first.contextToken);assert.equal(changed.messageId,7);assert.equal(state.requests.length,0);
+});
+
 test('authorized senders respect manual mode and full URL tier', async () => {
     for (const manual of [false, true]) for (const tier of ['strict', 'balanced', 'max']) {
         const state = setup({ externalAnalysisConsent: true, alwaysManual: manual, privacyTier: tier, apikey: 'dummy', autoScanLinks: true, scanningEnabledSenders: ['alice@example.com'] });

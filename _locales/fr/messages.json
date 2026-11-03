@@ -1767,10 +1767,55 @@
   "analysisContextChanged": {
     "message": "Le contexte du message a changé. Fermez puis rouvrez la fenêtre avant de renvoyer la demande."
   },
-  "analysisLocalIncomplete": {"message": "L’analyse locale est incomplète : une partie du contenu du message est indisponible."},
-  "analysisLocalUnavailable": {"message": "L’analyse locale est indisponible : le message n’a pas pu être lu."},
-  "analysisHistoryTitle": {"message": "Historique enregistré · association non confirmée"},
-  "analysisHistoryWarning": {"message": "Ces entrées historiques peuvent appartenir à un autre message ayant le même Message-ID. Elles ne confirment pas une analyse de ce message."},
-  "analysisPersistenceFailed": {"message": "Les nouvelles observations des sources n’ont pas pu être enregistrées. L’historique existant a été conservé."},
-  "analysisReportArchiveBlocked": {"message": "Une mise à jour du rapport n’a pas pu être enregistrée. Les protocoles précédents ont été conservés."}
+  "analysisLocalIncomplete": {
+    "message": "L’analyse locale est incomplète : une partie du contenu du message est indisponible."
+  },
+  "analysisLocalUnavailable": {
+    "message": "L’analyse locale est indisponible : le message n’a pas pu être lu."
+  },
+  "analysisHistoryTitle": {
+    "message": "Historique enregistré · association non confirmée"
+  },
+  "analysisHistoryWarning": {
+    "message": "Ces entrées historiques peuvent appartenir à un autre message ayant le même Message-ID. Elles ne confirment pas une analyse de ce message."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Les nouvelles observations des sources n’ont pas pu être enregistrées. L’historique existant a été conservé."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Une mise à jour du rapport n’a pas pu être enregistrée. Les protocoles précédents ont été conservés."
+  },
+  "sourceExportOpen": {
+    "message": "Prévisualiser le rapport des sources"
+  },
+  "sourceExportTitle": {
+    "message": "Rapport des sources d’analyse"
+  },
+  "sourceExportIntro": {
+    "message": "Crée un instantané local des vérifications enregistrées sans lancer de nouvelle analyse. Les observations actuelles et l’historique enregistré dont l’association n’est pas confirmée restent séparés."
+  },
+  "sourceExportPrivacy": {
+    "message": "Contient les services, états, verdicts et heures exactes des observations. Exclut URL, noms de fichiers, empreintes, adresses IP, clés, texte des messages et identifiants internes. Les numéros de ressources sont propres à ce rapport. Ce n’est ni un historique complet ni une preuve authentifiée. Aucun envoi automatique. Vérifiez avant de partager."
+  },
+  "sourceExportCancel": {
+    "message": "Abandonner l’aperçu"
+  },
+  "sourceExportContentLabel": {
+    "message": "Aperçu du rapport (JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Le contexte du message n’est plus disponible. Rouvrez le rapport depuis le menu de la barre d’outils du message."
+  },
+  "sourceExportChanged": {
+    "message": "Les données enregistrées ont changé. Créez un nouvel aperçu avant d’enregistrer."
+  },
+  "sourceExportReady": {
+    "message": "Vérifiez l’aperçu avant d’enregistrer ou de partager."
+  },
+  "sourceExportRequested": {
+    "message": "Enregistrement demandé. Vérifiez la fin du téléchargement dans Thunderbird."
+  },
+  "sourceExportFailed": {
+    "message": "Le rapport n’a pas été enregistré. Créez un nouvel aperçu pour réessayer."
+  }
 }

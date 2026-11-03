@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="script-src 'self';">
+<title data-i18n="sourceExportTitle">Analysis source report</title>
+<link rel="stylesheet" href="theme.css"><script src="design_system.js"></script><script src="theme.js"></script><script src="i18n.js"></script>
+<script src="source_export.js" defer></script>
+</head>
+<body class="admin-page profile-page">
+<main>
+<header class="scanner-header"><img src="img/icon-48px.png" width="40" height="40" alt=""><div><strong class="scanner-brand">Thundy AV</strong><h1 data-i18n="sourceExportTitle">Analysis source report</h1></div><a href="options.html" data-i18n="bannerOpenOptions">Open options</a></header>
+<p data-i18n="sourceExportIntro"></p>
+<p class="card audit-disclosure" data-i18n="sourceExportPrivacy"></p>
+<div class="audit-actions">
+<button type="button" id="sourceExportPreview" data-i18n="supportPreview">Preview report</button>
+<button type="button" id="sourceExportSave" data-i18n="supportSave" disabled>Save report locally</button>
+<button type="button" id="sourceExportCancel" data-i18n="sourceExportCancel">Discard preview</button>
+</div>
+<p id="sourceExportStatus" role="status" aria-live="polite"></p>
+<pre id="sourceExportContent" class="card" tabindex="0" data-i18n-aria-label="sourceExportContentLabel" aria-label="Report preview" hidden></pre>
+</main>
+</body></html>

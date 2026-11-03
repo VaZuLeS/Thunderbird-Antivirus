@@ -1789,6 +1789,39 @@ const ThundyI18n = (() => {
   },
   "analysisReportArchiveBlocked": {
     "message": "A report update could not be saved. Earlier protocols were retained."
+  },
+  "sourceExportOpen": {
+    "message": "Preview analysis source report"
+  },
+  "sourceExportTitle": {
+    "message": "Analysis source report"
+  },
+  "sourceExportIntro": {
+    "message": "Create a local snapshot of the recorded checks. This does not run a new analysis. Current observations and stored history with unconfirmed association are kept separate."
+  },
+  "sourceExportPrivacy": {
+    "message": "Includes services, states, verdicts and exact observation times. Excludes URLs, filenames, hashes, IPs, keys, message text and internal identifiers. Resource numbers apply only within this report. This is not a complete history or an authenticated record. Nothing is sent automatically. Review before sharing."
+  },
+  "sourceExportCancel": {
+    "message": "Discard preview"
+  },
+  "sourceExportContentLabel": {
+    "message": "Report preview (JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "The message context is no longer available. Reopen the report from its message toolbar popup."
+  },
+  "sourceExportChanged": {
+    "message": "The recorded state changed. Create a new preview before saving."
+  },
+  "sourceExportReady": {
+    "message": "Review the preview before saving or sharing."
+  },
+  "sourceExportRequested": {
+    "message": "Save requested. Check completion in Thunderbird downloads."
+  },
+  "sourceExportFailed": {
+    "message": "The report was not saved. Create a new preview to try again."
   }
 };
     function get(key, params = []) {

@@ -1705,7 +1705,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             (async () => {
                 const message = await browser.messages.get(request.messageId);
                 const context = await getMessageAnalysisContext(message, sender?.tab?.id);
-                return context ? { success: true, ...await context.snapshot() } : { success: false };
+                return context ? { success: true, ...await context.snapshot(), contextToken:context.snapshotId } : { success: false };
             })().then(sendResponse).catch(() => sendResponse({ success: false }));
             return true;
         case "recordAnalysisEvent":

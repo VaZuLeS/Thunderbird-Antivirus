@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "kind": "local-minimized-analysis-source-export",
+  "generatedAt": "2026-11-03T17:40:45.014469+00:00",
+  "baseCommit": "ba96ec478fe06bfe59c9cfa402d876cda1cdc9c0",
+  "extensionVersion": "1.24.4",
+  "sourceFingerprint": "7d10397bbba65fc47cedf55743fc6b8831c2b6a49fdfe27efb161d12e9483c9c",
+  "packageSha256": "aa2cdbe956a5317121d2bde910cbabcc56a257ddcad279e63516841aecf5a75d",
+  "runnerSha256": "1880c0ae61ac05d6b90bc554ba843148719a548bc812ebca24f44adc483ae400",
+  "runnerBeforeAdditionalControlAssertionsSha256": "273a87494e963fd5e316ea4e1c9afebb8688cd512a393c9726f50f172230b14b",
+  "checks": {
+    "full": {
+      "command": "npm run check",
+      "passed": 1052,
+      "failed": 0,
+      "logSha256": "128d572ad2a184336d0c694fc1baaf1a14adb1f687c30a1fc94ffe42c46fd710"
+    },
+    "targetedBehavior": {
+      "command": "node --test test/source-export.test.js test/optimization.test.js",
+      "passed": 79,
+      "failed": 0,
+      "logSha256": "e8c6dce46f6b02f1fa9830265d1807e0a77bd413936c34e85dbafff2e692b939"
+    },
+    "runnerByteRegressions": {
+      "passed": 3,
+      "failed": 0
+    },
+    "browserSmoke": {
+      "status": "not-run",
+      "reason": "Chromium unavailable; previously denied official download not retried or bypassed."
+    }
+  },
+  "contract": {
+    "schemaVersion": 1,
+    "authenticatedSource": false,
+    "currentRowsLimit": 1200,
+    "historyRowsLimit": 1200,
+    "maxCounter": 100000,
+    "historyAssociation": "unconfirmed",
+    "resourceOrdinals": "Report-local only, never original parts or slots",
+    "preview": "Explicit; reset on relevant updates and memory-cache clear; reread and equality check before download",
+    "runtimeBinding": "Message locator plus ephemeral source-context UUID; never exported, old runtime links refused",
+    "noNewAnalysis": true,
+    "noAutomaticTransmission": true,
+    "noRawResourceOrProtocolExport": true
+  },
+  "native": [
+    {
+      "probe": "export153",
+      "passed": true,
+      "client": "153.6.0",
+      "xpiSha256": "aa2cdbe956a5317121d2bde910cbabcc56a257ddcad279e63516841aecf5a75d",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "reportSha256": "f8bbb24dc7c3b59b81bf78770ad3c1f95b24803a90b2a2bf3ac24138292a49fe",
+      "startedAt": "2026-11-03T17:39:21Z",
+      "finishedAt": "2026-11-03T17:39:42Z",
+      "gracefulRestarts": 1,
+      "forcedRestarts": 0,
+      "runnerSha256": "1880c0ae61ac05d6b90bc554ba843148719a548bc812ebca24f44adc483ae400",
+      "sourceExport": {
+        "passed": true,
+        "realPopupEntry": true,
+        "realGtkDownload": true,
+        "downloadMatchesPreview": true,
+        "cancelAndCacheClearInvalidate": true,
+        "oldRuntimeLinkRefusedAfterRestart": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "saveControl": {
+          "text": "Save report locally",
+          "disabled": false,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "0.910701",
+          "width": 154.13333129882812,
+          "height": 44.399993896484375
+        },
+        "providers": [
+          "abuseipdb",
+          "hybridanalysis",
+          "urlhaus",
+          "urlscan",
+          "virustotal"
+        ],
+        "canonicalDownloadSha256": "79341c1cb818fdd4b607c2bc3fc15595af1e779cf9582516a3587bf996f618c2",
+        "scope": "Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance."
+      }
+    },
+    {
+      "probe": "export140",
+      "passed": true,
+      "client": "140.12.0",
+      "xpiSha256": "aa2cdbe956a5317121d2bde910cbabcc56a257ddcad279e63516841aecf5a75d",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "reportSha256": "9ff75898fa139130d5ae16f77146432b114eadedb7c12e961a464ccc47bbe577",
+      "startedAt": "2026-11-03T17:38:14Z",
+      "finishedAt": "2026-11-03T17:38:47Z",
+      "gracefulRestarts": 1,
+      "forcedRestarts": 0,
+      "runnerSha256": "273a87494e963fd5e316ea4e1c9afebb8688cd512a393c9726f50f172230b14b",
+      "sourceExport": {
+        "passed": true,
+        "realPopupEntry": true,
+        "realGtkDownload": true,
+        "downloadMatchesPreview": true,
+        "cancelAndCacheClearInvalidate": true,
+        "oldRuntimeLinkRefusedAfterRestart": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "providers": [
+          "abuseipdb",
+          "hybridanalysis",
+          "urlhaus",
+          "urlscan",
+          "virustotal"
+        ],
+        "downloadSha256": "6260ae9cf75459af2a880972ccdecf6599cca7ab7df81129500a1a769fbde2c6",
+        "scope": "Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance."
+      }
+    },
+    {
+      "probe": "historyArchive153",
+      "passed": true,
+      "client": "153.6.0",
+      "xpiSha256": "aa2cdbe956a5317121d2bde910cbabcc56a257ddcad279e63516841aecf5a75d",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "reportSha256": "8dc637aadcb42a8d6b37f51ad1cd21cf36555588f331b18cef4b101635a82345",
+      "startedAt": "2026-11-03T17:38:15Z",
+      "finishedAt": "2026-11-03T17:38:50Z",
+      "gracefulRestarts": 2,
+      "forcedRestarts": 0,
+      "runnerSha256": "273a87494e963fd5e316ea4e1c9afebb8688cd512a393c9726f50f172230b14b",
+      "reportArchive": {
+        "passed": true,
+        "syntheticProtocols": true,
+        "liveProviderCalls": false,
+        "realMimeIndexedDBPopupRestart": true,
+        "popupWriteScope": "Actual protected DAO in the native popup with fixture callback; module-private persistHybridReport is covered separately by Node integration.",
+        "before": {
+          "offlineKeptReport": true,
+          "exactOriginal": true,
+          "newContentClearedCurrentReport": true,
+          "differentHashes": true,
+          "archiveEntries": 1
+        },
+        "popupAndCapacity": {
+          "popupSaved": true,
+          "oldBRetained": true,
+          "archiveEntriesBeforeLimit": 2,
+          "capacityRefused": true,
+          "protocolUnchanged": true,
+          "archiveUnchanged": true
+        },
+        "afterRestart": {
+          "archiveEntries": 128,
+          "originalA": true,
+          "originalB": true,
+          "currentClean": true,
+          "activeRows": 0,
+          "historicalUnbound": true,
+          "originalTimeInHistory": true
+        },
+        "warningVisibleInMessageAndPopup": true,
+        "scope": "Bounded revisions in the existing header cache; no independent durable archive."
+      },
+      "sourceHistory": {
+        "passed": true,
+        "realThunderbirdAPIs": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "numericIdReassignedToSibling": true,
+        "actualMessageAndPopupPassed": true
+      }
+    },
+    {
+      "probe": "upgrade153",
+      "passed": true,
+      "client": "153.6.0",
+      "xpiSha256": "aa2cdbe956a5317121d2bde910cbabcc56a257ddcad279e63516841aecf5a75d",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "reportSha256": "93e130239d314b647e978ab28f3b584452f00da8be5b6a81ef5a5ee1d63e1306",
+      "startedAt": "2026-11-03T17:38:17Z",
+      "finishedAt": "2026-11-03T17:38:49Z",
+      "gracefulRestarts": 3,
+      "forcedRestarts": 2,
+      "runnerSha256": "273a87494e963fd5e316ea4e1c9afebb8688cd512a393c9726f50f172230b14b",
+      "scope": "Manual upgrade from published 1.24.3; audit/settings, three normal restarts including profile restore and two SIGKILL restarts; no automatic distribution or in-place downgrade."
+    }
+  ],
+  "initialAttempts": [
+    {
+      "passed": false,
+      "reportSha256": "79e069a9e8da39b3a7511040120df27ee828e03222a9d1c5f560d478d64755ff",
+      "reason": "Probe opened preview before popup local processing and its queued source notification had finished. Invalidation worked; runner now waits for popup loading completion and flush before preview. Product bytes unchanged for successful reruns."
+    },
+    {
+      "passed": false,
+      "reportSha256": "2a08ee3e40e236846ec953adafa72453dd70283b1162cae8d833ed5d6944034b",
+      "reason": "Probe opened preview before popup local processing and its queued source notification had finished. Invalidation worked; runner now waits for popup loading completion and flush before preview. Product bytes unchanged for successful reruns."
+    }
+  ],
+  "screenshots": {
+    "docs/screenshots/1.24.4/source-export-preview.png": "19ad6355a9f20899e3d0261b11c7b33d8c3951204433f20a81f13735907328c3"
+  },
+  "downloadedFiles": [
+    {
+      "probe": "avn011-native153-r3",
+      "filename": "source-export-download.json",
+      "sha256": "16e23bbba77165fa587cc6ff48e6c492cc74c17231f24e2d88de053d3e0b5501"
+    },
+    {
+      "probe": "avn011-native140-r2",
+      "filename": "source-export-download.json",
+      "sha256": "8af708df8a1bfd95c98c17a91e11c19845a37aa8682e2a68b4d9a17a1fe2f26b"
+    }
+  ],
+  "excludedClaims": [
+    "Live provider accounts",
+    "Complete historic request log",
+    "Authenticated enterprise evidence",
+    "Durable occurrence migration",
+    "Native screen reader or Windows/macOS acceptance",
+    "Automatic update distribution",
+    "Release publication"
+  ]
+}

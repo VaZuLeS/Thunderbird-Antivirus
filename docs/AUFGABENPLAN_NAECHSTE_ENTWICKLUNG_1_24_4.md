@@ -18,6 +18,8 @@ Der weitere [Schritt AVN-003/009.b zur Inhaltsverfügbarkeit](PRUEFUMFANG_NACHRI
 
 **AVN-001/009.d anschließend umgesetzt:** Die [begrenzte Protokollhistorie](PROTOKOLLHISTORIE.md) erhält bei den fünf bestehenden Ressourcenwritern frühere Berichtspayloads, VirusTotal-Statistiken und laufende Submissionkennungen atomar vor Ersetzung. Gleiches tatsächlich gehashtes Anhangmaterial verliert fertige Berichte beim lokalen Wiederlesen nicht. Kapazitäts-/Commitfehler erhalten alte Daten und werden sechssprachig angezeigt. Das ist ein begrenzter Erhaltungsvertrag im vorhandenen Headercache; unabhängige Langzeitarchivierung, dauerhafte Vorkommensbindung und allgemeine Retention bleiben offen.
 
+**AVN-011 anschließend umgesetzt und geprüft:** Der [lokale Quellenbericht](QUELLENEXPORT.md) ergänzt ausdrückliche Vorschau, Abbruch und lokalen Download. Eine strikte Positivliste entfernt Ressourceninhalte und interne Kennungen; aktuelle Beobachtungen und unbestätigte Historie bleiben getrennt. Laufzeittoken verhindern eine neue Bindung alter Export-Links nach Kontextverlust. Änderungen und Cachelöschung verwerfen Vorschauen; vor dem Speichern wird erneut abgeglichen. 1.052 automatisierte Tests bestehen; native Linux-Export-/Download-/Cache-/Neustartfälle unter 140 und 153 sind erfolgreich. Es handelt sich um Quellenmetadaten, keinen Vollprotokoll-/Entscheidungsexport oder authentifizierten Unternehmensbeleg. Der ursprüngliche Planungsbefund unten bleibt als Ausgangspunkt erhalten.
+
 ## 1. Bestandsaufnahme und Nachweisgrenzen
 
 ### Veröffentlichter Stand und vorbereitete Entwicklung

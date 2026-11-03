@@ -1109,6 +1109,66 @@ def check_source_history(m, base, out, report, restart, display):
     return m
 
 
+def check_source_export(m, base, out, report, restart, display):
+    """Real popup entry, privacy projection, GTK download, clear and restart."""
+    open_page(m,base+'options.html')
+    target_id=report['auditRecord']['messageId']
+    seed=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const message=await b.messages.get(arguments[0]),ready=await bg.getMessageAnalysisContext(message),context=ready.wrappedJSObject||ready;
+      const rows=["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"].map((provider,index)=>({provider,scope:["report","hash","domain","ip","url"][index],resource:"message",state:provider==="urlscan"?"submitted":"checked",verdict:provider==="urlscan"?"unknown":"none",responses:1,observedAt:1000}));
+      await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,record=>({...record,messageHeader:message.headerMessageId,analysisStatusLegacy:{schemaVersion:2,rows:rows.map(row=>({...row,observedAt:500,verdict:"malicious"}))},updatedAt:Date.now()}));
+      for(const row of rows)context.event({...row,phase:"finish",responded:true});await context.flush();
+      await b.messageDisplay.open({messageId:message.id,location:"tab"});
+      return {messageId:message.id};
+    })();''',[target_id])
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status");'))
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser;
+      const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();
+      return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.page('return !!document.querySelector(".local-risk")&&!document.getElementById("thundy-initial-loading");',browser=popup))
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;const ready=await bg.getMessageAnalysisContext(await b.messages.get(arguments[0]));await (ready.wrappedJSObject||ready).flush();return true;})();''',[target_id],browser=popup)
+    url=wait_for(lambda:m.page('const a=document.getElementById("sourceExportOpen");return a&&!a.hidden&&a.href;',browser=popup))
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    open_page(m,url)
+    wait_for(lambda:m.page('return document.getElementById("sourceExportPreview")?.textContent!=="";'))
+    wait_for(lambda:m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;const ready=await bg.getMessageAnalysisContext(await b.messages.get(arguments[0]));return !(ready.wrappedJSObject||ready).timer;})();''',[target_id]))
+    assert m.page('return document.getElementById("sourceExportContent").hidden&&document.getElementById("sourceExportSave").disabled;')
+    m.page('document.getElementById("sourceExportPreview").click();')
+    preview=wait_for(lambda:m.page('const p=document.getElementById("sourceExportContent");return !p.hidden&&JSON.parse(p.textContent);'))
+    assert len({row['provider'] for row in preview['current']['rows']})==5,preview
+    assert all(row['observedAt']==1000 for row in preview['current']['rows']),preview
+    assert preview['history']['rows'] and all(row['resource']['kind']=='unbound' for row in preview['history']['rows']),preview
+    encoded=json.dumps(preview)
+    assert all(text not in encoded for text in ['messageId','contextToken','headerMessageId','https://','@','fixture@example','apikey','resourceLabels']),encoded
+    save_control=m.page('const b=document.getElementById("sourceExportSave"),s=getComputedStyle(b),r=b.getBoundingClientRect();return {text:b.textContent,disabled:b.disabled,display:s.display,visibility:s.visibility,opacity:s.opacity,width:r.width,height:r.height};')
+    assert save_control['text'] and not save_control['disabled'] and save_control['display']!='none' and save_control['visibility']=='visible' and float(save_control['opacity'])>0 and save_control['width']>40 and save_control['height']>=40,save_control
+    m.screenshot(out/'source-export-preview.png')
+    subprocess.run(['import','-window','root',str(out/'source-export-preview-root.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.page('document.getElementById("sourceExportCancel").click();')
+    assert m.page('return document.getElementById("sourceExportContent").textContent===""&&document.getElementById("sourceExportSave").disabled;')
+    m.page('document.getElementById("sourceExportPreview").click();')
+    expected=wait_for(lambda:m.page('const p=document.getElementById("sourceExportContent");return !p.hidden&&JSON.parse(p.textContent);'))
+    downloaded=native_json_download(m,display,out,'sourceExportSave','source-export-download')
+    assert downloaded==expected
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;await bg.clearStore(await bg.getSharedDB(),"hybridanalysis");await b.runtime.sendMessage({action:"clearMemoryCaches"});return true;})();''')
+    wait_for(lambda:m.page('return document.getElementById("sourceExportSave").disabled&&document.getElementById("sourceExportContent").textContent==="";'))
+    m.page('document.getElementById("sourceExportPreview").click();')
+    wait_for(lambda:m.page('return document.getElementById("sourceExportStatus").textContent.startsWith("The message context is no longer available");'))
+    close_extension_tabs(m)
+    m.js('for(const tab of [...window.gTabmail.tabInfo])if(tab.mode.name==="mailMessageTab")window.gTabmail.closeTab(tab);')
+    m=restart();open_page(m,url)
+    wait_for(lambda:m.page('return !!document.getElementById("sourceExportPreview");'))
+    m.page('document.getElementById("sourceExportPreview").click();')
+    wait_for(lambda:m.page('return document.getElementById("sourceExportStatus").textContent.startsWith("The message context is no longer available");'))
+    assert m.page('return document.getElementById("sourceExportSave").disabled&&document.getElementById("sourceExportContent").textContent==="";')
+    report['sourceExport']={'passed':True,'realPopupEntry':True,'realGtkDownload':True,'downloadMatchesPreview':True,'cancelAndCacheClearInvalidate':True,'oldRuntimeLinkRefusedAfterRestart':True,'syntheticObservations':True,'liveProviderCalls':False,'saveControl':save_control,'providers':sorted({row['provider'] for row in downloaded['current']['rows']}),'canonicalDownloadSha256':hashlib.sha256(json.dumps(downloaded,sort_keys=True).encode()).hexdigest(),'scope':'Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance.'}
+    return m
+
+
 def check_report_archive(m, base, out, report, restart, display):
     """Real MIME, popup-side protected DAO and restart; synthetic provider protocols."""
     for index, (name, payload) in enumerate([('A', 'AAAA'), ('B', 'BBBB')], 1):
@@ -1390,6 +1450,7 @@ def main():
     parser.add_argument('--unicode-input-check', action='store_true', help='Compare real MIME decoding variants and product analysis input; direct install')
     parser.add_argument('--source-history-check', action='store_true', help='Real legacy source separation, content guard and persisted history across ID reuse; direct permanent install')
     parser.add_argument('--report-archive-check', action='store_true', help='Real bounded protocol revisions, popup writes, capacity refusal and restart; synthetic reports, direct permanent install')
+    parser.add_argument('--source-export-check', action='store_true', help='Real popup source export, GTK download, cache clear and stale runtime rejection; direct permanent install, EN')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -1428,6 +1489,8 @@ def main():
         parser.error('--source-history-check requires direct installation without --previous-xpi')
     if args.report_archive_check and (args.restart_check or args.previous_xpi):
         parser.error('--report-archive-check requires direct installation without --previous-xpi')
+    if args.source_export_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
+        parser.error('--source-export-check requires direct EN installation without --previous-xpi')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -1602,7 +1665,7 @@ def main():
                 if args.restart_check:
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
-                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check or args.source_export_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
                     if args.resource_isolation_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_resource_isolation(m,base,out,report)
@@ -1651,6 +1714,9 @@ def main():
                     if args.report_archive_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         m=check_report_archive(m,base,out,report,restart_client,display)
+                    if args.source_export_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        m=check_source_export(m,base,out,report,restart_client,display)
 
             except Exception:
                 try:

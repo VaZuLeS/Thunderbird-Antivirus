@@ -1767,10 +1767,55 @@
   "analysisContextChanged": {
     "message": "El contexto del mensaje ha cambiado. Cierre y vuelva a abrir la ventana antes de enviar de nuevo."
   },
-  "analysisLocalIncomplete": {"message": "El análisis local está incompleto: parte del contenido del mensaje no está disponible."},
-  "analysisLocalUnavailable": {"message": "El análisis local no está disponible: no se pudo leer el mensaje."},
-  "analysisHistoryTitle": {"message": "Historial guardado · asociación sin confirmar"},
-  "analysisHistoryWarning": {"message": "Estas entradas históricas pueden pertenecer a otro mensaje con el mismo Message-ID. No confirman un análisis de este mensaje."},
-  "analysisPersistenceFailed": {"message": "No se pudieron guardar las nuevas observaciones de las fuentes. Se conservó el historial existente."},
-  "analysisReportArchiveBlocked": {"message": "No se pudo guardar una actualización del informe. Se conservaron los protocolos anteriores."}
+  "analysisLocalIncomplete": {
+    "message": "El análisis local está incompleto: parte del contenido del mensaje no está disponible."
+  },
+  "analysisLocalUnavailable": {
+    "message": "El análisis local no está disponible: no se pudo leer el mensaje."
+  },
+  "analysisHistoryTitle": {
+    "message": "Historial guardado · asociación sin confirmar"
+  },
+  "analysisHistoryWarning": {
+    "message": "Estas entradas históricas pueden pertenecer a otro mensaje con el mismo Message-ID. No confirman un análisis de este mensaje."
+  },
+  "analysisPersistenceFailed": {
+    "message": "No se pudieron guardar las nuevas observaciones de las fuentes. Se conservó el historial existente."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "No se pudo guardar una actualización del informe. Se conservaron los protocolos anteriores."
+  },
+  "sourceExportOpen": {
+    "message": "Vista previa del informe de fuentes"
+  },
+  "sourceExportTitle": {
+    "message": "Informe de fuentes de análisis"
+  },
+  "sourceExportIntro": {
+    "message": "Crea una instantánea local de las comprobaciones registradas sin iniciar un nuevo análisis. Las observaciones actuales y el historial guardado con asociación sin confirmar se mantienen separados."
+  },
+  "sourceExportPrivacy": {
+    "message": "Incluye servicios, estados, veredictos y horas exactas de observación. Excluye URL, nombres de archivo, hashes, IP, claves, texto de mensajes e identificadores internos. Los números de recursos solo se aplican a este informe. No es un historial completo ni una prueba autenticada. No se envía nada automáticamente. Revíselo antes de compartir."
+  },
+  "sourceExportCancel": {
+    "message": "Descartar vista previa"
+  },
+  "sourceExportContentLabel": {
+    "message": "Vista previa del informe (JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "El contexto del mensaje ya no está disponible. Abra de nuevo el informe desde el menú de la barra de herramientas del mensaje."
+  },
+  "sourceExportChanged": {
+    "message": "El estado registrado ha cambiado. Cree una nueva vista previa antes de guardar."
+  },
+  "sourceExportReady": {
+    "message": "Revise la vista previa antes de guardar o compartir."
+  },
+  "sourceExportRequested": {
+    "message": "Guardado solicitado. Compruebe su finalización en las descargas de Thunderbird."
+  },
+  "sourceExportFailed": {
+    "message": "El informe no se ha guardado. Cree una nueva vista previa para volver a intentarlo."
+  }
 }

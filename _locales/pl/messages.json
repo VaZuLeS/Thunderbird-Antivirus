@@ -1767,10 +1767,55 @@
   "analysisContextChanged": {
     "message": "Kontekst wiadomości uległ zmianie. Zamknij i otwórz ponownie okno przed ponownym wysłaniem."
   },
-  "analysisLocalIncomplete": {"message": "Analiza lokalna jest niepełna: część treści wiadomości jest niedostępna."},
-  "analysisLocalUnavailable": {"message": "Analiza lokalna jest niedostępna: nie udało się odczytać wiadomości."},
-  "analysisHistoryTitle": {"message": "Zapisana historia · powiązanie niepotwierdzone"},
-  "analysisHistoryWarning": {"message": "Te wpisy historyczne mogą dotyczyć innej wiadomości o tym samym Message-ID. Nie potwierdzają sprawdzenia tej wiadomości."},
-  "analysisPersistenceFailed": {"message": "Nie udało się zapisać nowych obserwacji źródeł. Dotychczasowa historia została zachowana."},
-  "analysisReportArchiveBlocked": {"message": "Nie udało się zapisać aktualizacji raportu. Poprzednie protokoły zostały zachowane."}
+  "analysisLocalIncomplete": {
+    "message": "Analiza lokalna jest niepełna: część treści wiadomości jest niedostępna."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Analiza lokalna jest niedostępna: nie udało się odczytać wiadomości."
+  },
+  "analysisHistoryTitle": {
+    "message": "Zapisana historia · powiązanie niepotwierdzone"
+  },
+  "analysisHistoryWarning": {
+    "message": "Te wpisy historyczne mogą dotyczyć innej wiadomości o tym samym Message-ID. Nie potwierdzają sprawdzenia tej wiadomości."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Nie udało się zapisać nowych obserwacji źródeł. Dotychczasowa historia została zachowana."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Nie udało się zapisać aktualizacji raportu. Poprzednie protokoły zostały zachowane."
+  },
+  "sourceExportOpen": {
+    "message": "Podgląd raportu źródeł analizy"
+  },
+  "sourceExportTitle": {
+    "message": "Raport źródeł analizy"
+  },
+  "sourceExportIntro": {
+    "message": "Tworzy lokalny obraz zapisanych kontroli bez uruchamiania nowej analizy. Bieżące obserwacje i zapisana historia z niepotwierdzonym powiązaniem pozostają rozdzielone."
+  },
+  "sourceExportPrivacy": {
+    "message": "Zawiera usługi, stany, werdykty i dokładne czasy obserwacji. Nie zawiera adresów URL, nazw plików, skrótów, adresów IP, kluczy, treści wiadomości ani wewnętrznych identyfikatorów. Numery zasobów obowiązują tylko w tym raporcie. To nie jest pełna historia ani uwierzytelniony dowód. Nic nie jest wysyłane automatycznie. Sprawdź przed udostępnieniem."
+  },
+  "sourceExportCancel": {
+    "message": "Odrzuć podgląd"
+  },
+  "sourceExportContentLabel": {
+    "message": "Podgląd raportu (JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Kontekst wiadomości nie jest już dostępny. Otwórz raport ponownie z menu na pasku narzędzi wiadomości."
+  },
+  "sourceExportChanged": {
+    "message": "Zapisany stan uległ zmianie. Utwórz nowy podgląd przed zapisaniem."
+  },
+  "sourceExportReady": {
+    "message": "Sprawdź podgląd przed zapisaniem lub udostępnieniem."
+  },
+  "sourceExportRequested": {
+    "message": "Zażądano zapisania. Sprawdź ukończenie w pobieranych plikach Thunderbirda."
+  },
+  "sourceExportFailed": {
+    "message": "Raport nie został zapisany. Utwórz nowy podgląd, aby spróbować ponownie."
+  }
 }

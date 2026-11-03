@@ -1767,10 +1767,55 @@
   "analysisContextChanged": {
     "message": "Il contesto del messaggio è cambiato. Chiudi e riapri la finestra prima di inviare di nuovo."
   },
-  "analysisLocalIncomplete": {"message": "L’analisi locale è incompleta: parte del contenuto del messaggio non è disponibile."},
-  "analysisLocalUnavailable": {"message": "L’analisi locale non è disponibile: impossibile leggere il messaggio."},
-  "analysisHistoryTitle": {"message": "Cronologia salvata · associazione non confermata"},
-  "analysisHistoryWarning": {"message": "Queste voci storiche possono appartenere a un altro messaggio con lo stesso Message-ID. Non confermano un’analisi di questo messaggio."},
-  "analysisPersistenceFailed": {"message": "Impossibile salvare le nuove osservazioni delle fonti. La cronologia esistente è stata conservata."},
-  "analysisReportArchiveBlocked": {"message": "Impossibile salvare un aggiornamento del rapporto. I protocolli precedenti sono stati conservati."}
+  "analysisLocalIncomplete": {
+    "message": "L’analisi locale è incompleta: parte del contenuto del messaggio non è disponibile."
+  },
+  "analysisLocalUnavailable": {
+    "message": "L’analisi locale non è disponibile: impossibile leggere il messaggio."
+  },
+  "analysisHistoryTitle": {
+    "message": "Cronologia salvata · associazione non confermata"
+  },
+  "analysisHistoryWarning": {
+    "message": "Queste voci storiche possono appartenere a un altro messaggio con lo stesso Message-ID. Non confermano un’analisi di questo messaggio."
+  },
+  "analysisPersistenceFailed": {
+    "message": "Impossibile salvare le nuove osservazioni delle fonti. La cronologia esistente è stata conservata."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "Impossibile salvare un aggiornamento del rapporto. I protocolli precedenti sono stati conservati."
+  },
+  "sourceExportOpen": {
+    "message": "Anteprima del rapporto sulle fonti"
+  },
+  "sourceExportTitle": {
+    "message": "Rapporto sulle fonti di analisi"
+  },
+  "sourceExportIntro": {
+    "message": "Crea un’istantanea locale dei controlli registrati senza avviare una nuova analisi. Le osservazioni attuali e la cronologia salvata con associazione non confermata restano separate."
+  },
+  "sourceExportPrivacy": {
+    "message": "Include servizi, stati, verdetti e orari esatti delle osservazioni. Esclude URL, nomi di file, hash, IP, chiavi, testo dei messaggi e identificatori interni. I numeri delle risorse valgono solo in questo rapporto. Non è una cronologia completa né una prova autenticata. Nessun invio automatico. Verificare prima di condividere."
+  },
+  "sourceExportCancel": {
+    "message": "Scarta anteprima"
+  },
+  "sourceExportContentLabel": {
+    "message": "Anteprima del rapporto (JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "Il contesto del messaggio non è più disponibile. Riaprire il rapporto dal menu della barra degli strumenti del messaggio."
+  },
+  "sourceExportChanged": {
+    "message": "Lo stato registrato è cambiato. Creare una nuova anteprima prima di salvare."
+  },
+  "sourceExportReady": {
+    "message": "Verificare l’anteprima prima di salvare o condividere."
+  },
+  "sourceExportRequested": {
+    "message": "Salvataggio richiesto. Verificare il completamento nei download di Thunderbird."
+  },
+  "sourceExportFailed": {
+    "message": "Il rapporto non è stato salvato. Creare una nuova anteprima per riprovare."
+  }
 }
