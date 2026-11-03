@@ -40,3 +40,7 @@ python3 tools/thunderbird-live.dev.py \
 ```
 
 Automatische Updateverteilung benötigt zusätzlich einen echten Distributionskanal, dessen angebotene Version und tatsächlich installierte Aktualisierung nachgewiesen werden. Diese Teilprüfung wird nicht aus dem manuellen Paketupgrade abgeleitet.
+
+## Ergänzende Untersuchung für die unveröffentlichte 1.24.4
+
+Der [Identitätsvertrag und native Nachweis](IDENTITAET_ANALYSEBEFUNDE.md) vom 3. November 2026 unterscheiden Laufzeit-Locator, Inhalt, Vorkommen, Befund und Entscheidung. Numerische Nachrichten-IDs sind nicht dauerhaft; ein ungefilterter Rohdaten-Hash ändert sich bereits durch lokale Statusheader. Der experimentelle Vergleich des Prüfrunners ist keine produktive Migration. Bestehende Lebenszyklusregeln werden dadurch nicht verändert, Altbestände nicht neu zugeordnet oder zusätzlich gelöscht.

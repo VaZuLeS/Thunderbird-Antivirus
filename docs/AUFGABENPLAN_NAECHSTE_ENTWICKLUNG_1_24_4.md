@@ -8,6 +8,8 @@ Der [separat gespeicherte Analyseprompt V2](PROMPT_PRODUKTANALYSE_THUNDERBIRD_V2
 
 Am 3. November 2026 wurde [der erste Umsetzungsschritt AVN-001/002/009](FORTSCHRITT_AVN_001_002_009.md) ausgeführt. AVN-001 hat einen geprüften Inventar-/Lesepfad-Fix, bleibt hinsichtlich der gesamten dauerhaften Zuordnung teilweise offen. AVN-002 ist implementiert und gezielt sowie nativ geprüft. AVN-009 hat einen nativen Gegenbeweis zur Stabilität numerischer Nachrichten-IDs; dauerhafte Bindung, Bewegung/Kopie und Retention sind weiter offen. Die nachstehenden Befunde und Prioritäten bleiben als ursprünglicher Planungsstand erhalten.
 
+Die anschließende [Identitätsuntersuchung und der Speichervertrag](IDENTITAET_ANALYSEBEFUNDE.md) erweitern AVN-009 um lokale Copy/Move-/Status-/Compact-/Restart-/Restore-Fälle und gleiche Ressourcenmetadaten bei abweichendem Inhalt. Ungefilterte Rohdaten-Hashes erweisen sich wegen lokaler Statusheader ebenfalls als ungeeignet. Der experimentelle Inhaltsvergleich ist noch kein produktiver Schlüssel; Migration, weitere MIME-/Speicherbackends und Retention bleiben offen.
+
 ## 1. Bestandsaufnahme und Nachweisgrenzen
 
 ### Veröffentlichter Stand und vorbereitete Entwicklung

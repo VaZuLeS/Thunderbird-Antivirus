@@ -1,0 +1,1683 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-message-content-identity-investigation",
+  "generatedAt": "2026-11-03T06:38:01.360462+00:00",
+  "baseCommit": "1a3cf76f7d0c15b5366a81b5167218a0dfa2bb73",
+  "extensionVersion": "1.24.4",
+  "runtimeChanged": false,
+  "sourceFingerprint": "cd8d4efa8eaac16a9842a69baf64eb03a210eca91d18ea420dfbd0ee5542bef6",
+  "runnerSha256": "cc21710a627bf7e00fff44a73b0ba51a0f756fa5808e6c01b68f1ccf8496264b",
+  "probeRegressionSha256": "befc279be86e0e430e849dad93a155e985dcca8519784c15a1b13a3d79d3c3f5",
+  "automatedProbeRegressions": {
+    "command": "python3 tools/test_thunderbird_identity.dev.py -v",
+    "passed": 3,
+    "failed": 0,
+    "scope": "synthetic byte-regressions; not native Thunderbird or a generic MIME parser"
+  },
+  "native": [
+    {
+      "startedAt": "2026-11-03T06:35:12Z",
+      "finishedAt": "2026-11-03T06:35:31Z",
+      "xpiSha256": "a3894c1e1b8c5ecdbc513cb5bc39bf844272cca813ca80930f272abd9bbeddde",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "gracefulRestarts": 2,
+      "probe": "153-f",
+      "passed": true,
+      "client": "153.6.0",
+      "reportSha256": "ef213a55e3c09799b24992e4eb43d1fded510d9117761b7a520806b981188c6d",
+      "contentIdentity": {
+        "passed": true,
+        "syntheticMime": true,
+        "liveProviderCalls": false,
+        "mutationActor": "privileged test harness; no added message-mutation permissions",
+        "rawOptions": {
+          "decrypt": false,
+          "data_format": "BinaryString"
+        },
+        "stages": {
+          "initial": [
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 4,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            }
+          ],
+          "copied": [
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 4,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            },
+            {
+              "id": 5,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            }
+          ],
+          "moved": [
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 5,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 6,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            }
+          ],
+          "flagsChanged": [
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": true,
+              "flagged": true,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "3b2b4bf8b060b47133c3c9081e82ce4d7ae92ec68d64fc2ee5a431afb294b444",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0005",
+                "X-Mozilla-Status2: 10000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 5,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 6,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            }
+          ],
+          "compacted": [
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": true,
+              "flagged": true,
+              "rawBytes": 595,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "94f8cee6b5b9e250e05dc6dd398d6350f79fa3d5b86e157d4deddd0abc060bdc",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0005",
+                "X-Mozilla-Status2: 10000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "CRLF",
+                "CRLF",
+                "CRLF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 5,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 6,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            }
+          ],
+          "restarted": [
+            {
+              "id": 1,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": true,
+              "flagged": true,
+              "rawBytes": 595,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "94f8cee6b5b9e250e05dc6dd398d6350f79fa3d5b86e157d4deddd0abc060bdc",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0005",
+                "X-Mozilla-Status2: 10000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "CRLF",
+                "CRLF",
+                "CRLF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 2,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            },
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            }
+          ],
+          "profileRestored": [
+            {
+              "id": 1,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 2,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": true,
+              "flagged": true,
+              "rawBytes": 595,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "94f8cee6b5b9e250e05dc6dd398d6350f79fa3d5b86e157d4deddd0abc060bdc",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0005",
+                "X-Mozilla-Status2: 10000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "CRLF",
+                "CRLF",
+                "CRLF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            }
+          ]
+        },
+        "folderStages": {
+          "initial": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                },
+                {
+                  "messageKey": 2,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": []
+            },
+            {
+              "name": "Identity Moved",
+              "messages": []
+            }
+          ],
+          "copied": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                },
+                {
+                  "messageKey": 2,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": []
+            }
+          ],
+          "moved": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            }
+          ],
+          "flagsChanged": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            }
+          ],
+          "compacted": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            }
+          ],
+          "restarted": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            }
+          ],
+          "profileRestored": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            }
+          ]
+        },
+        "metadataCollisionDistinguished": true,
+        "copyRemainsDistinctInstance": true,
+        "rawDigestStableAcrossFlagChange": false,
+        "digestWithoutLocalStatusStableAcrossTestedMutations": true,
+        "auditAndSettingsPreserved": true,
+        "scope": "Local mbox, plaintext MIME only; unfiltered raw digest includes mutable local headers; stripped digest is an experimental candidate, not occurrence identity. No production migration or retention change."
+      }
+    },
+    {
+      "startedAt": "2026-11-03T06:35:56Z",
+      "finishedAt": "2026-11-03T06:36:21Z",
+      "xpiSha256": "a3894c1e1b8c5ecdbc513cb5bc39bf844272cca813ca80930f272abd9bbeddde",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "gracefulRestarts": 2,
+      "probe": "140",
+      "passed": true,
+      "client": "140.12.0",
+      "reportSha256": "98249c8f730ec4c30f4c1599d68d58af208f7ca5105cdbaf3f7be677a9e397bf",
+      "contentIdentity": {
+        "passed": true,
+        "syntheticMime": true,
+        "liveProviderCalls": false,
+        "mutationActor": "privileged test harness; no added message-mutation permissions",
+        "rawOptions": {
+          "decrypt": false,
+          "data_format": "BinaryString"
+        },
+        "stages": {
+          "initial": [
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 4,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            }
+          ],
+          "copied": [
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 4,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            },
+            {
+              "id": 5,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            }
+          ],
+          "moved": [
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 5,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 6,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            }
+          ],
+          "flagsChanged": [
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": true,
+              "flagged": true,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "3b2b4bf8b060b47133c3c9081e82ce4d7ae92ec68d64fc2ee5a431afb294b444",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0005",
+                "X-Mozilla-Status2: 10000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 5,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 6,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            }
+          ],
+          "compacted": [
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": true,
+              "flagged": true,
+              "rawBytes": 595,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "94f8cee6b5b9e250e05dc6dd398d6350f79fa3d5b86e157d4deddd0abc060bdc",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0005",
+                "X-Mozilla-Status2: 10000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "CRLF",
+                "CRLF",
+                "CRLF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 5,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 6,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            }
+          ],
+          "restarted": [
+            {
+              "id": 1,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": true,
+              "flagged": true,
+              "rawBytes": 595,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "94f8cee6b5b9e250e05dc6dd398d6350f79fa3d5b86e157d4deddd0abc060bdc",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0005",
+                "X-Mozilla-Status2: 10000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "CRLF",
+                "CRLF",
+                "CRLF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 2,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            },
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            }
+          ],
+          "profileRestored": [
+            {
+              "id": 1,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "981239a6fa98dd00c25c02618e94823749a0a92c8fb80a554ffe82bef6e01fe7",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 2,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": true,
+              "flagged": true,
+              "rawBytes": 595,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "63c1dd951ffedf6f7fd968ad4efa39b8ed584f162f46e715114ee184f8de9201"
+                }
+              ],
+              "rawSha256": "94f8cee6b5b9e250e05dc6dd398d6350f79fa3d5b86e157d4deddd0abc060bdc",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0005",
+                "X-Mozilla-Status2: 10000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "CRLF",
+                "CRLF",
+                "CRLF"
+              ],
+              "withoutLocalStatusSha256": "11372ff8d259f2cb9c3f3262a20f5074815ff0a9047f056d49f08233487e7d6f"
+            },
+            {
+              "id": 3,
+              "headerMessageId": "identity-collision@example.invalid",
+              "folderId": null,
+              "read": false,
+              "flagged": false,
+              "rawBytes": 592,
+              "attachments": [
+                {
+                  "partName": "1.2",
+                  "name": "same.bin",
+                  "size": 4,
+                  "sha256": "4a8d8134f29b0b7b60c126f5532bc9f5d9bb73037373cf6fb872d81f1dcefdfd"
+                }
+              ],
+              "rawSha256": "041e4c4913cfdc2ef7f3378cf7a8f8ccf9b6ba8bce409f69d59f826a490b34f9",
+              "localStatusHeaders": [
+                "X-Mozilla-Status: 0001",
+                "X-Mozilla-Status2: 00000000",
+                "X-Mozilla-Keys:                                                                                 "
+              ],
+              "localStatusLineEndings": [
+                "LF",
+                "LF",
+                "LF"
+              ],
+              "withoutLocalStatusSha256": "26240ec7ce907c353aa157127eb2e3e26c880775f5f29f491229eae32f85c2dc"
+            }
+          ]
+        },
+        "folderStages": {
+          "initial": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                },
+                {
+                  "messageKey": 2,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": []
+            },
+            {
+              "name": "Identity Moved",
+              "messages": []
+            }
+          ],
+          "copied": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                },
+                {
+                  "messageKey": 2,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": []
+            }
+          ],
+          "moved": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            }
+          ],
+          "flagsChanged": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            }
+          ],
+          "compacted": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            }
+          ],
+          "restarted": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            }
+          ],
+          "profileRestored": [
+            {
+              "name": "Identity Source",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Copy",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            },
+            {
+              "name": "Identity Moved",
+              "messages": [
+                {
+                  "messageKey": 1,
+                  "headerMessageId": "identity-collision@example.invalid"
+                }
+              ]
+            }
+          ]
+        },
+        "metadataCollisionDistinguished": true,
+        "copyRemainsDistinctInstance": true,
+        "rawDigestStableAcrossFlagChange": false,
+        "digestWithoutLocalStatusStableAcrossTestedMutations": true,
+        "auditAndSettingsPreserved": true,
+        "scope": "Local mbox, plaintext MIME only; unfiltered raw digest includes mutable local headers; stripped digest is an experimental candidate, not occurrence identity. No production migration or retention change."
+      }
+    },
+    {
+      "startedAt": "2026-11-03T06:35:56Z",
+      "finishedAt": "2026-11-03T06:36:23Z",
+      "xpiSha256": "a3894c1e1b8c5ecdbc513cb5bc39bf844272cca813ca80930f272abd9bbeddde",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "gracefulRestarts": 2,
+      "probe": "ci",
+      "passed": true,
+      "client": "153.6.0",
+      "reportSha256": "97be86d2a1b2fe5ff1ac087b290d95fe0aee08c43609d2265c4b126a6c8980b0",
+      "contentIdentity": {
+        "passed": true,
+        "syntheticMime": true,
+        "liveProviderCalls": false,
+        "mutationActor": "privileged test harness; no added message-mutation permissions",
+        "rawOptions": {
+          "decrypt": false,
+          "data_format": "BinaryString"
+        },
+        "metadataCollisionDistinguished": true,
+        "copyRemainsDistinctInstance": true,
+        "rawDigestStableAcrossFlagChange": false,
+        "digestWithoutLocalStatusStableAcrossTestedMutations": true,
+        "auditAndSettingsPreserved": true,
+        "scope": "Local mbox, plaintext MIME only; unfiltered raw digest includes mutable local headers; stripped digest is an experimental candidate, not occurrence identity. No production migration or retention change."
+      },
+      "resourceIsolation": {
+        "passed": true,
+        "syntheticMime": true,
+        "liveProviderCalls": false,
+        "messageId": 3,
+        "sharedHeader": true,
+        "actualNameVisible": true,
+        "foreignNameAbsent": true,
+        "foreignUrlAbsent": true,
+        "popupRecordExcludesForeign": true,
+        "realMessageViewPassed": true
+      },
+      "contextCapacity": {
+        "passed": true,
+        "syntheticMessages": 205,
+        "configuredContextLimit": 200,
+        "firstDisposed": true,
+        "lastActive": true
+      }
+    }
+  ],
+  "conclusions": {
+    "numericMessageIds": "session-scoped; prior and current restart observations reject them as durable owners",
+    "rawDigest": "rejected as invariant identity: local status mutation and compaction change raw bytes",
+    "strippedDigest": "experimental local-mbox plaintext candidate; stable in tested operations, not a production occurrence key",
+    "attachmentHash": "distinguishes equal-metadata ASCII fixtures; same-content copies remain different occurrences",
+    "folderLocator": "absent in addon API response with current manifest; test chrome locations are separate observations",
+    "migration": "not implemented; original records and current retention rules unchanged",
+    "remaining": [
+      "Unicode and arbitrary binary MIME",
+      "large-message IO limits",
+      "OpenPGP/S-MIME and unavailable content",
+      "alternative stores and IMAP",
+      "durable occurrence binding and data-preserving migration",
+      "retention and crash/concurrency contract"
+    ]
+  }
+}
