@@ -1771,5 +1771,8 @@
     "message": "Der Nachrichtenkontext hat sich geändert. Schließe und öffne das Popup vor einer erneuten Übermittlung."
   },
   "analysisLocalIncomplete": {"message": "Die lokale Prüfung ist unvollständig: Ein Teil des Nachrichteninhalts ist nicht verfügbar."},
-  "analysisLocalUnavailable": {"message": "Die lokale Prüfung ist nicht verfügbar: Die Nachricht konnte nicht gelesen werden."}
+  "analysisLocalUnavailable": {"message": "Die lokale Prüfung ist nicht verfügbar: Die Nachricht konnte nicht gelesen werden."},
+  "analysisHistoryTitle": {"message": "Gespeicherte Historie · Zuordnung unbestätigt"},
+  "analysisHistoryWarning": {"message": "Diese historischen Einträge können zu einer anderen Nachricht mit derselben Message-ID gehören. Sie bestätigen keine Prüfung dieser Nachricht."},
+  "analysisPersistenceFailed": {"message": "Neue Quellenbeobachtungen konnten nicht gespeichert werden. Die bestehende Historie blieb erhalten."}
 }

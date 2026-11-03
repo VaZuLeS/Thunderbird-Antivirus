@@ -131,6 +131,10 @@ function getSharedDB() {
 
 // Contexts are keyed by the actual message, never by the currently selected tab.
 const MAX_MESSAGE_ANALYSES = 200;
+let analysisRuntimeId = null;
+function getAnalysisRuntimeId() { return analysisRuntimeId ||= crypto.randomUUID(); }
+const MAX_SOURCE_SNAPSHOTS = 64;
+const MAX_SOURCE_SNAPSHOT_BYTES = 1024 * 1024;
 const messageAnalyses = typeof ExpiringMap !== 'undefined' ? new ExpiringMap(900000, () => Date.now(), {
     maxSize: MAX_MESSAGE_ANALYSES, autoExpire: true,
     onEvict: ready => Promise.resolve(ready).then(context => context.dispose()).catch(() => {})
@@ -143,7 +147,9 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
         const ready = (async () => {
             // Labels must come from the actual message, not a shared Message-ID cache.
             const currentParts = new Map();
+            const verifiedHashes = new Map();
             const currentLinks = new Set();
+            const snapshotId = crypto.randomUUID();
             let currentCoverage = {state:'failed',reason:'read_failed'};
             try {
                 const attachments = inventory.attachments || await browser.messages.listAttachments(message.id);
@@ -158,20 +164,21 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
             try { record = await getFromStore(await getSharedDB(), 'hybridanalysis', key); } catch (_) { /* still expose live state */ }
             const sourceRecord = saved => {
                 if (!saved) return saved;
-                const own = saved.analysisStatusByMessage?.[message.id];
-                const foreign = saved.analysisStatusOwner != null && saved.analysisStatusOwner !== message.id;
-                const attachments = foreign ? [] : (saved.attachments || []).filter(item => !item.partName || currentParts.get(String(item.partName)) === item.attachment_name);
-                const links = foreign ? [] : (saved.links || []).map((item,index) => ({...item,analysisResourceRef:'link:' + index})).filter(item => currentLinks.has(item.url));
-                return {...saved, analysisStatus:own || (foreign ? undefined : saved.analysisStatus), attachments, links};
+                // Numeric IDs and metadata alone cannot bind historical findings.
+                const attachments = (saved.attachments || []).filter(item => item.partName && currentParts.has(String(item.partName)) && currentParts.get(String(item.partName)) === item.attachment_name && verifiedHashes.has(String(item.partName)) && typeof item.hybrid_sha256 === 'string' && verifiedHashes.get(String(item.partName)) === item.hybrid_sha256.toLowerCase());
+                const links = (saved.links || []).map((item,index) => ({...item,analysisResourceRef:'link:' + index})).filter(item => currentLinks.has(item.url));
+                const scanCoverage = Object.fromEntries(Object.entries(saved.scanCoverage || {}).filter(([kind]) => saved.scanCoverageBindings?.[kind]?.runtimeId === getAnalysisRuntimeId() && saved.scanCoverageBindings[kind].messageId === message.id));
+                return {messageHeader:saved.messageHeader, attachments, links, scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined};
             };
             const model = ThundyAnalysis.create(ThundyAnalysis.legacy(sourceRecord(record)));
             // Current unreadability must not inherit a historical "checked" state.
             if (currentCoverage.state !== 'checked') model.data.local = {...currentCoverage,source:'local',observedAt:Date.now()};
-            const context = { disposed: false, model, headerMessageId: key, messageId: message.id, tabs: new Set(), timer: null,
+            let snapshotCreated = false, persistenceQueue = Promise.resolve();
+            const context = { disposed: false, model, snapshotId, persistenceFailed:false, headerMessageId: key, messageId: message.id, tabs: new Set(), timer: null,
                 dispose() { context.disposed = true; if (context.timer) clearTimeout(context.timer); context.timer = null; context.tabs.clear(); },
                 event(event) { if (context.disposed || messageAnalyses.get(contextKey) !== ready) { context.dispose(); return false; } messageAnalyses.touch?.(contextKey); const valid = model.event(event); if (valid) context.schedule(); return valid; },
                 cached(provider, scope, verdict, observedAt) { context.event({ provider, scope, phase: 'cache', state: verdict === 'unknown' ? 'received' : 'checked', verdict, observedAt }); },
-                forAttachment(partName, name) { if (name != null) currentParts.set(String(partName), name); return ThundyAnalysis.bind(context, ['attachment:' + partName]); },
+                forAttachment(partName, name, hash) { if (name != null) currentParts.set(String(partName), name); if (/^[0-9a-f]{64}$/i.test(hash || '')) verifiedHashes.set(String(partName), hash.toLowerCase()); return ThundyAnalysis.bind(context, ['attachment:' + partName]); },
                 async resourceRecord() {
                     const saved = sourceRecord(await getFromStore(await getSharedDB(), 'hybridanalysis', key));
                     if (!saved) return null;
@@ -188,7 +195,12 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 },
                 schedule() { if (context.disposed) return; if (!context.timer) context.timer = setTimeout(() => { context.timer = null; context.flush().catch(() => {}); }, 300); },
                 async snapshot() {
-                    try { const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key); for (const row of ThundyAnalysis.legacy({...sourceRecord(saved),analysisStatus:model.data}).rows) if (!model.data.rows.some(current => ThundyAnalysis.rowKey(current) === ThundyAnalysis.rowKey(row)) && model.data.rows.length < 1200) model.data.rows.push(row); } catch (_) { /* retain known live metadata */ }
+                    let sourceHistory = {rows:[],truncated:false};
+                    try {
+                        const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key), current = sourceRecord(saved);
+                        if (saved) sourceHistory = ThundyAnalysis.history({...saved,attachments:(saved.attachments || []).filter(item => !(current.attachments || []).includes(item)),links:(saved.links || []).filter(item => !currentLinks.has(item.url))},snapshotId);
+                        for (const row of ThundyAnalysis.legacy({...current,analysisStatus:model.data}).rows) if (!model.data.rows.some(active => ThundyAnalysis.rowKey(active) === ThundyAnalysis.rowKey(row)) && model.data.rows.length < 1200) model.data.rows.push(row);
+                    } catch (_) { /* retain known live metadata */ }
                     const enabled = { hybridanalysis: !!apikey_hybridanalysis, virustotal: !!apikey_virustotal || ipReputationProvider === 'virustotal' && !!ipReputationApiKey, urlhaus: !!urlhausApikey, abuseipdb: ipReputationProvider === 'abuseipdb' && !!ipReputationApiKey, urlscan: !!urlscanApikey };
                     const availability = {};
                     const authorized = await authorizeMessageScan(message);
@@ -204,13 +216,31 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                             try { const url = new URL(item.url); resourceLabels['link:' + index] = clean(url.origin + url.pathname); } catch (_) { /* no URL guess */ }
                         }
                     } catch (_) { /* actual parts remain identifiable without cached links */ }
-                    return { ...JSON.parse(JSON.stringify(model.data)), resourceLabels, availability, messageId: message.id };
+                    return { ...JSON.parse(JSON.stringify(model.data)), sourceHistory, sourcePersistenceFailed:context.persistenceFailed, resourceLabels, availability, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
                     if (context.timer) { clearTimeout(context.timer); context.timer = null; }
-                    try { const snapshot = JSON.parse(JSON.stringify(model.data)); await updateStore(await getSharedDB(), 'hybridanalysis', key, old => context.disposed ? old : ({ ...(old || { messageHeader: key }), ...(old?.analysisStatus && old.analysisStatusOwner == null && !old.analysisStatusLegacy ? {analysisStatusLegacy:old.analysisStatus} : {}), analysisStatusByMessage:{...(old?.analysisStatusByMessage || {}),[message.id]:snapshot}, analysisStatusOwner:message.id, analysisStatus: snapshot, updatedAt: Date.now() })); }
-                    catch (_) { Logger.warn('Analysis source metadata could not be persisted'); }
+                    const value = JSON.parse(JSON.stringify(model.data));
+                    persistenceQueue = persistenceQueue.then(async () => {
+                      try {
+                        await updateStore(await getSharedDB(), 'hybridanalysis', key, old => {
+                            if (context.disposed) return old;
+                            const previous = old?.analysisSourceSnapshots;
+                            if (previous != null && (typeof previous !== 'object' || Array.isArray(previous))) throw new Error('Invalid source snapshot container');
+                            if (!snapshotCreated && Object.prototype.hasOwnProperty.call(previous || {}, snapshotId)) throw new Error('Source snapshot identifier collision');
+                            if (!Object.prototype.hasOwnProperty.call(previous || {}, snapshotId) && Object.keys(previous || {}).length >= MAX_SOURCE_SNAPSHOTS) throw new Error('Source snapshot capacity reached');
+                            const snapshots = {...previous,[snapshotId]:{savedAt:Date.now(),snapshot:value}};
+                            if (new TextEncoder().encode(JSON.stringify(snapshots)).length > MAX_SOURCE_SNAPSHOT_BYTES) throw new Error('Source snapshot byte capacity reached');
+                            // Additive area: never overwrite legacy snapshots under reused IDs.
+                            return {...(old || {messageHeader:key}),analysisSourceSnapshots:snapshots,updatedAt:Date.now()};
+                        });
+                        snapshotCreated = true;
+                        context.persistenceFailed = false;
+                      }
+                      catch (_) { context.persistenceFailed = true; Logger.warn('Analysis source metadata could not be persisted'); }
+                    });
+                    await persistenceQueue;
                     const snapshot = await context.snapshot();
                     if (context.disposed) return;
                     const labels = ThundyAnalysis.labels(msg);
@@ -617,7 +647,8 @@ function scanCoverage(detected, eligible, processed, failed, reason) {
 async function persistScanCoverage(message, kind, coverage) {
     const key = message.headerMessageId || 'message:' + message.id;
     await updateStore(await getSharedDB(), 'hybridanalysis', key, existing => ({
-        ...(existing || { messageHeader: key }), scanCoverage: { ...(existing?.scanCoverage || {}), [kind]: coverage }
+        ...(existing || { messageHeader: key }), scanCoverage: { ...(existing?.scanCoverage || {}), [kind]: coverage },
+        ...(typeof ThundyAnalysis !== 'undefined' ? {scanCoverageBindings:{...(existing?.scanCoverageBindings || {}),[kind]:{runtimeId:getAnalysisRuntimeId(),messageId:message.id}}} : {})
     }));
 }
 
@@ -1165,7 +1196,6 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
 
 
 async function process_single_attachment(message, attachment, allowExternal = true, manualAction = false, analysisContext = null) {
-    if (analysisContext?.forAttachment) analysisContext = analysisContext.forAttachment(attachment.partName, attachment.name);
     if (attachment.size > 25 * 1024 * 1024) {
         const item = create_manual_check_hybrid_data('', attachment, null);
         item.hybrid_data.state = 'SIZE_LIMIT';
@@ -1176,6 +1206,7 @@ async function process_single_attachment(message, attachment, allowExternal = tr
             const content_of_attachment = file.slice();
             const arrayBuffer = await content_of_attachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
+            if (analysisContext?.forAttachment) analysisContext = analysisContext.forAttachment(attachment.partName, attachment.name, local_hash);
 
             const virustotal_stats = allowExternal ? await fetch_virustotal_stats(local_hash, apikey_virustotal, analysisContext) : null;
 

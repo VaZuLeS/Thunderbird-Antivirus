@@ -68,3 +68,7 @@ Die Untersuchung allein schließt AVN-001/009 nicht ab und gibt 1.24.4 nicht zur
 ## Ergänzung: binäre Eingaben und begrenzte Inhaltsverfügbarkeit
 
 Der [anschließende Umsetzungsschritt AVN-003/009.b](PRUEFUMFANG_NACHRICHTENINHALT.md) prüft echte 256-Byte-Binäranhänge mit Unicode-Dateinamen und schließt den belegten falschen lokalen Abschluss bei nicht verfügbaren Inhalten. Diese separate Probe nutzt `FileReader`/BinaryString statt `File.text()`; die oben beschriebene historische Identitätsmatrix bleibt in ihrem damaligen ASCII-Umfang erhalten. Die neue Probe ersetzt keinen dauerhaften Vorkommensvertrag. Eine Unicode-/quoted-printable-Abweichung der dekodierten API-Antwort ist nun unter 140 und 153 reproduziert und vor weiteren Eingangs-/Identitätszusagen zu klären.
+
+## Weiterer Umsetzungsstand
+
+Der [Unicode-Eingang](UNICODE_NACHRICHTENEINGANG.md) behebt anschließend den belegten UTF-8/QP-Fall im begrenzten Produkteingang. Der folgende Schritt [AVN-001/009.c](QUELLENHISTORIE_ZUORDNUNG.md) setzt die konservative Historienanzeige und einen separaten optionalen Snapshotbereich im vorhandenen Headerdatensatz um. Numerische Altzuordnungen werden nicht mehr als aktuelle Quellen geladen. Neue UUID-Kontextstände überschreiben alte Statusfelder nicht. Der gesamte Inhalts-/Vorkommens-/Protokollspeicher und dessen Migration sind damit ausdrücklich noch nicht abgeschlossen; die ursprünglichen Vertragsgrenzen bleiben maßgeblich.

@@ -104,3 +104,48 @@ test('source refresh preserves each open resource and keyboard focus, and announ
  const unchanged=root.querySelector('.live').textContent;c.a.render(data(),labels);assert.equal(root.querySelector('.live').textContent,unchanged);
  }finally{dom.window.close()}
 });
+
+test('unbound history retains source times and states without resource data or mutating originals',()=>{
+ const a=model(),snapshot={schemaVersion:2,local:{state:'checked',observedAt:5},rows:[{provider:'hybridanalysis',scope:'report',resource:'attachment:1.2',state:'running',verdict:'malicious',responses:1,observedAt:10,findingAt:9}]};
+ const record={analysisStatus:snapshot,analysisStatusByMessage:{7:snapshot},analysisSourceSnapshots:{saved:{snapshot}},attachments:[{partName:'1.2',attachment_name:'secret.txt',hybrid_sha256:'private-hash',report:{verdict:'suspicious'}}]};
+ const original=JSON.stringify(record),history=a.history(record);
+ assert.ok(history.rows.some(row=>row.state==='incomplete'&&row.observedAt===10&&row.findingAt===9));
+ assert.ok(history.rows.every(row=>row.resource===null&&row.source==='stored'&&row.active===0));
+ assert.ok(!JSON.stringify(history).includes('secret.txt'));assert.ok(!JSON.stringify(history).includes('private-hash'));assert.equal(JSON.stringify(record),original);
+ assert.ok(a.history({...record,analysisStatus:null,analysisStatusLegacy:null,analysisStatusByMessage:{missing:null,7:snapshot}}).rows.some(row=>row.observedAt===10));
+ const tooMany={analysisStatusByMessage:Object.fromEntries(Array.from({length:130},(_,i)=>[String(i),{schemaVersion:2,rows:[]}]))};
+ assert.equal(a.history(tooMany).truncated,true);
+});
+
+test('all six views separate historical services from current verdicts and expose unsaved observations',()=>{
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  try{
+   const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
+   const history=c.a.history({analysisStatus:{schemaVersion:2,rows:c.a.providers.map(provider=>({provider,scope:'report',resource:'message',state:'checked',verdict:'malicious',responses:1,observedAt:10}))}});
+   const data={local:{state:'checked'},rows:[],sourceHistory:history};const host=c.a.render(data,labels),root=host.shadowRoot;
+   assert.equal(root.querySelector('.mode').textContent,catalog.analysisLocal.message);
+   assert.equal(root.querySelector('.card').style.borderColor,'');
+   const detail=root.querySelector('[data-key="unbound-history"]');
+   for(const brand of ['Hybrid Analysis','VirusTotal','URLhaus','AbuseIPDB','urlscan.io'])assert.ok(detail.querySelector('summary').textContent.includes(brand));
+   assert.ok(detail.textContent.includes(catalog.analysisHistoryWarning.message));
+   detail.open=true;detail.querySelector('summary').focus();
+   c.a.render({...data,sourcePersistenceFailed:true},labels);
+   assert.equal(root.querySelector('[data-key="unbound-history"]').open,true);assert.equal(root.activeElement.dataset.focusKey,'unbound-history');
+   assert.ok(root.querySelector('.live').textContent.includes(catalog.analysisPersistenceFailed.message));assert.ok(!root.textContent.includes('MISSING:'));
+  }finally{dom.window.close();}
+ }
+});
+
+test('serialized mail renderer can display history without module globals',()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
+ const dom=new JSDOM('<html lang="en"><body></body></html>');
+ try{
+  const c=vm.createContext({document:dom.window.document,Date,labels:a.labels(key=>catalog[key]?.message),data:{local:{state:'checked'},rows:[],sourceHistory:{rows:[{provider:'urlscan',scope:'url',state:'submitted',verdict:'unknown',observedAt:100}]}}});
+  vm.runInContext('('+a.render.toString()+')(data,labels)',c);
+  const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+  assert.ok(root.querySelector('[data-key="unbound-history"]').textContent.includes('urlscan.io'));
+  assert.ok(root.textContent.includes(catalog.analysisHistoryWarning.message));
+ }finally{dom.window.close();}
+});

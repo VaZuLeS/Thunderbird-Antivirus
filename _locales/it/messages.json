@@ -1768,5 +1768,8 @@
     "message": "Il contesto del messaggio è cambiato. Chiudi e riapri la finestra prima di inviare di nuovo."
   },
   "analysisLocalIncomplete": {"message": "L’analisi locale è incompleta: parte del contenuto del messaggio non è disponibile."},
-  "analysisLocalUnavailable": {"message": "L’analisi locale non è disponibile: impossibile leggere il messaggio."}
+  "analysisLocalUnavailable": {"message": "L’analisi locale non è disponibile: impossibile leggere il messaggio."},
+  "analysisHistoryTitle": {"message": "Cronologia salvata · associazione non confermata"},
+  "analysisHistoryWarning": {"message": "Queste voci storiche possono appartenere a un altro messaggio con lo stesso Message-ID. Non confermano un’analisi di questo messaggio."},
+  "analysisPersistenceFailed": {"message": "Impossibile salvare le nuove osservazioni delle fonti. La cronologia esistente è stata conservata."}
 }

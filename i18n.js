@@ -1777,6 +1777,15 @@ const ThundyI18n = (() => {
   },
   "analysisLocalUnavailable": {
     "message": "Local analysis is unavailable: the message could not be read."
+  },
+  "analysisHistoryTitle": {
+    "message": "Stored history · association unconfirmed"
+  },
+  "analysisHistoryWarning": {
+    "message": "These historical records may belong to another message with the same Message-ID. They do not confirm a check of this message."
+  },
+  "analysisPersistenceFailed": {
+    "message": "New source observations could not be saved. Existing history was retained."
   }
 };
     function get(key, params = []) {

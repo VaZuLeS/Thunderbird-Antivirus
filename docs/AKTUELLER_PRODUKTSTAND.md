@@ -12,6 +12,8 @@ Der [anschließende Inhaltsumfang-Fix](PRUEFUMFANG_NACHRICHTENINHALT.md) verhind
 
 Die Unicode-Abweichung ist danach [im begrenzten Thundy-AV-Eingangsweg für die belegten UTF-8/QP-Fälle behoben](UNICODE_NACHRICHTENEINGANG.md): Normale Texte bleiben beim bestehenden API-Aufruf; betroffene Textparts werden strikt verifiziert, unbestätigte Eingaben bleiben unvollständig. Die nativen 140/153-Matrizen bestehen mit 13 gültigen und einem bewusst ungültigen Fall. Erfolgreiche Cryptoabnahmen, große Nachrichten, andere Speicherbackends und dauerhafte Identitätsmigration sind weiter offen.
 
+Die [Quellenhistorie](QUELLENHISTORIE_ZUORDNUNG.md) wird jetzt von aktuellen Beobachtungen getrennt und nach einem Prozesswechsel nicht anhand alter Zahlen neu gebunden. Neue Quellenstände verwenden einen additiven UUID-Bereich; alte Quellenfelder bleiben erhalten. Gespeicherte Anhangkarten benötigen einen aktuellen Hashnachweis im aktiven Kontext. Dies ist ein defensiver Teilschritt, keine vollständige Ressourcen-/Vorkommensmigration oder unbegrenzte Archivierung.
+
 Vorheriger Ausführungsstand ist die [detaillierte Aufgabenliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md). Die [Bestandsaufnahme](PRODUKTANALYSE_AUFGABENPLAN_2026-11-02.md) beschreibt den Ausgangscommit `6046fe0`; alte Statusmeldungen sind zeitgebundene Nachweise und keine aktuelle Freigabe.
 
 | Ebene | Stand |

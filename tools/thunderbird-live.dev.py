@@ -1031,6 +1031,84 @@ def check_unicode_input(m, base, out, report):
     report['unicodeInput']['passed']=True
 
 
+def check_source_history(m, base, out, report, restart, display):
+    """Synthetic stored observations through real DB/APIs, including ID reuse."""
+    for name,payload in [('A','AAAA'),('B','BBBB')]:
+        fixture=out/('source-history-'+name+'.eml')
+        fixture.write_bytes(('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy source history '+name+'\r\nMessage-ID: <source-history-collision@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="source-history"\r\n\r\n--source-history\r\nContent-Type: text/plain\r\n\r\nSynthetic source history.\r\n--source-history\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename="same.bin"\r\n\r\n'+payload+'\r\n--source-history--\r\n').encode('ascii'))
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const root=MailServices.accounts.localFoldersServer.rootFolder;
+          if(!root.containsChildNamed("Source History"))root.createSubfolder("Source History",null);
+          const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+          MailServices.copy.copyFileMessage(file,root.getChildNamed("Source History"),null,false,0,"",null,null);''',[str(fixture)])
+        wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Source History").getTotalMessages(false);''')==(1 if name=='A' else 2))
+    open_page(m,base+'options.html')
+    before=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject || page;
+      const find=async suffix=>(await b.messages.query({subject:"Thundy source history "+suffix})).messages.find(m=>m.subject==="Thundy source history "+suffix);
+      const target=await find("B"),other=await find("A");
+      const part=(await b.messages.listAttachments(other.id))[0];
+      const result=await bg.process_single_attachment(other,part,false,false);
+      const oldTime=Date.parse("2026-10-15T08:00:00Z");
+      const rows=["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"].map((provider,index)=>({provider,scope:["report","hash","domain","ip","url"][index],resource:"message",state:provider==="urlscan"?"running":"checked",verdict:provider==="urlscan"?"unknown":"malicious",responses:provider==="urlscan"?0:1,observedAt:oldTime,findingAt:oldTime}));
+      const legacy={schemaVersion:2,local:{state:"checked",observedAt:oldTime},rows};
+      const original={analysisStatus:legacy,analysisStatusOwner:target.id,analysisStatusByMessage:{[target.id]:legacy},analysisStatusLegacy:legacy};
+      const db=await bg.getSharedDB();
+      await bg.updateStore(db,"hybridanalysis",target.headerMessageId,()=>({messageHeader:target.headerMessageId,...original,attachments:[{partName:part.partName,attachment_name:"same.bin",hybrid_sha256:result.hybrid_data.sha256,report:{verdict:"malicious"},report_fetched_at:new Date(oldTime).toISOString()}],updatedAt:Date.now()}));
+      window.wrappedJSObject.historyProbeOriginal=JSON.stringify(original);
+      const pending=await bg.getMessageAnalysisContext(target),context=pending.wrappedJSObject || pending,initial=await context.snapshot();
+      const ownPart=(await b.messages.listAttachments(target.id))[0];
+      await bg.process_single_attachment(target,ownPart,false,false,context);
+      const cached=await context.resourceRecord();
+      await b.runtime.sendMessage({action:"getLocalRisk",messageId:target.id});
+      context.event({provider:"urlhaus",scope:"domain",phase:"finish",state:"checked",verdict:"none",responded:true,observedAt:Date.now()});await context.flush();
+      const saved=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      const fields=Object.fromEntries(Object.keys(original).map(key=>[key,saved[key]]));
+      return {oldNumericId:target.id,otherNumericId:other.id,initialActiveRows:initial.rows.length,oldLocalNotInherited:initial.local.state!=="checked",historicalProviders:[...new Set(initial.sourceHistory.rows.map(row=>row.provider))],historicalResourcesUnbound:initial.sourceHistory.rows.every(row=>row.resource===null),oldTimePreserved:initial.sourceHistory.rows.some(row=>row.observedAt===oldTime),differentBytesHideCachedReport:cached.attachments.length===0,originalFieldsPreserved:JSON.stringify(fields)===JSON.stringify(original),legacy:JSON.stringify(original),newSnapshotId:context.snapshotId,newSnapshot:saved.analysisSourceSnapshots[context.snapshotId]};
+    })();''')
+    assert before['initialActiveRows']==0 and len(before['historicalProviders'])==5,before
+    assert all(before[k] for k in ['oldLocalNotInherited','historicalResourcesUnbound','oldTimePreserved','differentBytesHideCachedReport','originalFieldsPreserved']),before
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+      MailUtils.displayMessage(Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Source History").messages).find(h=>h.subject==="Thundy source history B"));''')
+    brands=['Hybrid Analysis','VirusTotal','URLhaus','AbuseIPDB','urlscan.io']
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(\'[data-key="unbound-history"]\');'))
+    visible=m.page('''const root=document.getElementById("thundy-analysis-status").shadowRoot;
+      const detail=root.querySelector('[data-key="unbound-history"]');detail.open=true;
+      return {summary:detail.querySelector("summary").textContent,currentNotMalicious:root.querySelector(".card").style.borderColor===""};''')
+    assert visible['currentNotMalicious'] and all(brand in visible['summary'] for brand in brands),visible
+    m.screenshot(out/'source-history-message.png')
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser;
+      const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();
+      return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    summary=wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(\'[data-key="unbound-history"] summary\')?.textContent;',browser=popup))
+    assert all(brand in summary for brand in brands),summary
+    subprocess.run(['import','-window','root',str(out/'source-history-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    close_extension_tabs(m)
+    m.js('''for(const tab of [...window.gTabmail.tabInfo])if(tab.mode.name==="mailMessageTab")window.gTabmail.closeTab(tab);''')
+    m=restart()
+    open_page(m,base+'options.html')
+    after=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject || page;
+      for(const subject of ["Thundy AV synthetic live test","Thundy followup MIME"])await b.messages.query({subject});
+      const other=(await b.messages.query({subject:"Thundy source history A"})).messages.find(m=>m.subject==="Thundy source history A");
+      const target=(await b.messages.query({subject:"Thundy source history B"})).messages.find(m=>m.subject==="Thundy source history B");
+      const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:other.id});
+      const record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",other.headerMessageId);
+      return {otherNumericId:other.id,targetNumericId:target.id,activeRows:snapshot.rows.length,historicalProviders:[...new Set(snapshot.sourceHistory.rows.map(row=>row.provider))],allHistoricalResourcesUnbound:snapshot.sourceHistory.rows.every(row=>row.resource===null),oldNumericOwner:record.analysisStatusOwner,legacy:JSON.stringify({analysisStatus:record.analysisStatus,analysisStatusOwner:record.analysisStatusOwner,analysisStatusByMessage:record.analysisStatusByMessage,analysisStatusLegacy:record.analysisStatusLegacy}),snapshots:record.analysisSourceSnapshots};
+    })();''')
+    assert after['activeRows']==0 and after['allHistoricalResourcesUnbound'] and len(after['historicalProviders'])==5,after
+    assert after['oldNumericOwner']==before['oldNumericId'] and after['legacy']==before['legacy'],after
+    assert after['snapshots'][before['newSnapshotId']]['snapshot']['rows'][0]['verdict']=='none',after
+    report['sourceHistory']={'passed':True,'realThunderbirdAPIs':True,'syntheticObservations':True,'liveProviderCalls':False,'beforeRestart':before,'afterRestart':after,'numericIdReassignedToSibling':after['otherNumericId']==before['oldNumericId'],'actualMessageAndPopupPassed':True,'scope':'Read projection and additive source snapshots; no durable occurrence migration or general retention guarantee.'}
+    return m
+
+
 def check_restart_upgrade(m, args, out, display, report, restart):
     with zipfile.ZipFile(args.xpi) as package:
         current_version = json.loads(package.read('manifest.json'))['version']
@@ -1229,6 +1307,7 @@ def main():
     parser.add_argument('--identity-lifecycle-check', action='store_true', help='Real content/metadata collision, copy/move/flags/compact/restart/profile-restore investigation; direct permanent install')
     parser.add_argument('--mime-content-check', action='store_true', help='Real Unicode, binary and unreadable-content investigation; direct install')
     parser.add_argument('--unicode-input-check', action='store_true', help='Compare real MIME decoding variants and product analysis input; direct install')
+    parser.add_argument('--source-history-check', action='store_true', help='Real legacy source separation, content guard and persisted history across ID reuse; direct permanent install')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -1263,6 +1342,8 @@ def main():
         parser.error('--mime-content-check requires direct installation')
     if args.unicode_input_check and args.restart_check:
         parser.error('--unicode-input-check requires direct installation')
+    if args.source_history_check and (args.restart_check or args.previous_xpi):
+        parser.error('--source-history-check requires direct installation without --previous-xpi')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -1437,7 +1518,7 @@ def main():
                 if args.restart_check:
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
-                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
                     if args.resource_isolation_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_resource_isolation(m,base,out,report)
@@ -1480,6 +1561,9 @@ def main():
                     if args.unicode_input_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_unicode_input(m,base,out,report)
+                    if args.source_history_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        m=check_source_history(m,base,out,report,restart_client,display)
 
             except Exception:
                 try:

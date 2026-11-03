@@ -108,6 +108,37 @@ const ThundyAnalysis = (() => {
         };
         return {event:apply, cached(provider,scope,verdict,observedAt) { return apply({provider,scope,verdict,observedAt,phase:'cache',state:verdict === 'unknown' ? 'received' : 'checked'}); }};
     }
+    function history(record, excludeId = null) {
+        const result = {rows:[],truncated:false}, seen = new Set();
+        if (!record) return result;
+        const add = stored => {
+            if (!stored || typeof stored !== 'object') return;
+            if (result.rows.length >= 1200) { result.truncated = true; return; }
+            const restored = create(stored);
+            result.truncated ||= restored.data.truncated;
+            for (const row of restored.data.rows) {
+                const entry = {...row,resource:null,source:'stored'};
+                const key = JSON.stringify(entry);
+                if (seen.has(key)) continue;
+                if (result.rows.length >= 1200) { result.truncated = true; break; }
+                seen.add(key);result.rows.push(entry);
+            }
+        };
+        add(legacy({attachments:(record.attachments || []).slice(0,100),links:(record.links || []).slice(0,500)}));
+        result.truncated ||= (record.attachments?.length || 0) > 100 || (record.links?.length || 0) > 500;
+        add(record.analysisStatusLegacy);add(record.analysisStatus);
+        for (const map of [record.analysisStatusByMessage,record.analysisSourceSnapshots]) {
+            if (!map || typeof map !== 'object') continue;
+            let count = 0;
+            for (const id in map) {
+                if (!Object.prototype.hasOwnProperty.call(map,id)) continue;
+                if (id === excludeId && map === record.analysisSourceSnapshots) continue;
+                if (++count > 128 || result.rows.length >= 1200) { result.truncated = true; break; }
+                add(map === record.analysisSourceSnapshots ? map[id]?.snapshot : map[id]);
+            }
+        }
+        return result;
+    }
     // Self-contained renderer: serialized into the message's isolated world too.
     function render(data, labels, theme = '') {
         const document = globalThis.document;
@@ -181,8 +212,25 @@ const ThundyAnalysis = (() => {
             inventory.append(resources); card.append(inventory);
         }
         if (data.truncated) card.append(n('p',t('analysisTruncated'),'warning'));
+        if (data.sourceHistory?.rows?.length || data.sourceHistory?.truncated) {
+            const names = [...new Set(data.sourceHistory.rows.map(row => brands[row.provider]).filter(Boolean))];
+            const history = details('unbound-history',t('analysisHistoryTitle') + (names.length ? ' · ' + names.join(' · ') : ''));
+            history.append(n('p',t('analysisHistoryWarning'),'warning'));
+            const entries = document.createElement('ul');
+            for (const row of data.sourceHistory.rows.slice(0,120)) {
+                if (!brands[row.provider] || !Object.prototype.hasOwnProperty.call(labels,'analysisScope_' + row.scope) || !Object.prototype.hasOwnProperty.call(labels,'analysisState_' + row.state)) continue;
+                const li = n('li', brands[row.provider] + ' · ' + t('analysisScope_' + row.scope) + ' · ' + t('analysisState_' + row.state) + ' · ' + t('analysisSource_stored'));
+                li.append(n('div',t('analysisVerdict_' + (Object.prototype.hasOwnProperty.call(labels,'analysisVerdict_' + row.verdict) ? row.verdict : 'unknown'))));
+                li.append(n('small',t('analysisFindingObserved') + ': ' + date(row.findingAt) + ' · ' + t('analysisObserved') + ': ' + date(row.observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(row.attemptedAt)));
+                entries.append(li);
+            }
+            history.append(entries);
+            if (data.sourceHistory.truncated || data.sourceHistory.rows.length > 120) history.append(n('p',t('analysisTruncated'),'warning'));
+            card.append(history);
+        }
+        if (data.sourcePersistenceFailed) card.append(n('p',t('analysisPersistenceFailed'),'warning'));
         card.append(n('p', t('analysisLimit'), 'muted'));
-        const announcement = [mode, localLabel, rows.length ? phase : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
+        const announcement = [mode, localLabel, rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', data.sourcePersistenceFailed ? t('analysisPersistenceFailed') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
         const changed = host.dataset.announcement !== announcement;
         root.replaceChildren(style, live, card);
         if (wasPresent && changed) live.textContent = announcement;
@@ -199,9 +247,9 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }
-    return { providers, scopes, create, spec, response, legacy, render, cacheTime, labels, withCache, bind, validResource, rowKey };
+    return { providers, scopes, create, spec, response, legacy, history, render, cacheTime, labels, withCache, bind, validResource, rowKey };
 })();
