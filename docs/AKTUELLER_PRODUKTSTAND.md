@@ -8,7 +8,9 @@ Die bisherige Weiterentwicklung (Headerparser, Prüfherkunft, Entscheidungsgrün
 
 Die weitere [Identitätsuntersuchung](IDENTITAET_ANALYSEBEFUNDE.md) zeigt, dass auch unveränderte Nachrichteninhalte bei Statusänderung oder Komprimierung andere Rohdaten-Hashes erhalten können. Inhaltsnachweis, Nachrichtenvorkommen und historische Entscheidung benötigen getrennte Bindungen. Der ergänzte native Prüfrunner ändert weder den produktiven Speicherschlüssel noch vorhandene Daten.
 
-Der [anschließende Inhaltsumfang-Fix](PRUEFUMFANG_NACHRICHTENINHALT.md) verhindert einen lokalen Abschluss für nicht verfügbare Inhalte und zeigt Teilprüfung/Lesefehler in allen sechs Sprachen. Echte Linux-Prüfungen unter 140/153 bestätigen Nachricht und Popup sowie binäre Ressourcen. Die neue Unicode-Eingangsabweichung und erfolgreiche Cryptoabnahmen bleiben offen; die dauerhafte Identitätsmigration ist nicht implementiert.
+Der [anschließende Inhaltsumfang-Fix](PRUEFUMFANG_NACHRICHTENINHALT.md) verhindert einen lokalen Abschluss für nicht verfügbare Inhalte und zeigt Teilprüfung/Lesefehler in allen sechs Sprachen. Echte Linux-Prüfungen unter 140/153 bestätigen Nachricht und Popup sowie binäre Ressourcen. Erfolgreiche Cryptoabnahmen und die dauerhafte Identitätsmigration bleiben offen.
+
+Die Unicode-Abweichung ist danach [im begrenzten Thundy-AV-Eingangsweg für die belegten UTF-8/QP-Fälle behoben](UNICODE_NACHRICHTENEINGANG.md): Normale Texte bleiben beim bestehenden API-Aufruf; betroffene Textparts werden strikt verifiziert, unbestätigte Eingaben bleiben unvollständig. Die nativen 140/153-Matrizen bestehen mit 13 gültigen und einem bewusst ungültigen Fall. Erfolgreiche Cryptoabnahmen, große Nachrichten, andere Speicherbackends und dauerhafte Identitätsmigration sind weiter offen.
 
 Vorheriger Ausführungsstand ist die [detaillierte Aufgabenliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md). Die [Bestandsaufnahme](PRODUKTANALYSE_AUFGABENPLAN_2026-11-02.md) beschreibt den Ausgangscommit `6046fe0`; alte Statusmeldungen sind zeitgebundene Nachweise und keine aktuelle Freigabe.
 

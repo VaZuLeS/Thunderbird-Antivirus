@@ -2,6 +2,7 @@
 
 ## 1.24.4 — unreleased development (2026-11-02)
 
+- Recover the demonstrated multipart UTF-8/quoted-printable text loss through bounded verification of Thunderbird-provided raw text parts. Use one analysis input path for message/source checks, manual links and new link decisions; preserve genuine replacement characters and historical decisions. Invalid or unverifiable input remains incomplete (docs/UNICODE_NACHRICHTENEINGANG.md).
 - Mark unavailable/decryption-failed message content as incomplete and read failures as unavailable in both source views and the popup risk card, in all six languages. Keep empty messages and attachment coverage distinct; retain original data and allow a later successful retry.
 - Verify Unicode filenames, actual binary attachment bytes and unavailable-content UI under Linux Thunderbird 140/153. Record a remaining decoded quoted-printable/Unicode discrepancy; no general MIME/Crypto or durable identity claim (docs/PRUEFUMFANG_NACHRICHTENINHALT.md).
 - Follow-up on 2026-11-03: read resource labels from the actual message, filter popup records and keep original link references; bind manual URL requests explicitly instead of guessing by a shared header.

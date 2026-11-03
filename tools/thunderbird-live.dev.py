@@ -903,6 +903,8 @@ def check_mime_content(m, base, out, report, display):
         const item=(await b.messages.query({subject:"Thundy MIME "+name})).messages.find(m=>m.subject==="Thundy MIME "+name);
         let full=null,fullError=null;try{full=await b.messages.getFull(item.id);}catch(e){fullError=String(e);}
         const textParts=[];const visit=part=>{if(part?.contentType?.startsWith("text/"))textParts.push({type:part.contentType,hasBody:typeof part.body==="string",body:part.body ?? null});for(const child of part?.parts || [])visit(child);};visit(full);
+        const page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject || page;
+        const input=await bg.readFullForAnalysis(item),inputText=bg.extractTextFromParts(input.parts || input);
         const attachments=[];
         try{for(const part of await b.messages.listAttachments(item.id)){
           const file=await b.messages.getAttachmentFile(item.id,part.partName);
@@ -912,7 +914,7 @@ def check_mime_content(m, base, out, report, display):
         const rawBinaryString=await b.messages.getRaw(item.id,{decrypt:false,data_format:"BinaryString"});
         const risk=await b.runtime.sendMessage({action:"getLocalRisk",messageId:item.id});
         const sources=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:item.id});
-        result.push({name,messageId:item.id,decryptionStatus:full?.decryptionStatus ?? null,fullError,textParts,attachments,rawBinaryString,
+        result.push({name,messageId:item.id,decryptionStatus:full?.decryptionStatus ?? null,fullError,textParts,attachments,rawBinaryString,inputText,inputStatus:input.thundyInputStatus ?? null,
           apiReplacementCharacters:textParts.some(part=>part.body?.includes(String.fromCharCode(65533))),
           riskStatus:risk.status,coverage:risk.threat?.coverage ?? null,local:sources.local ?? null});
       }return result;
@@ -936,6 +938,8 @@ def check_mime_content(m, base, out, report, display):
             assert len(row['attachments'])==1 and row['attachments'][0]['sha256']==expected[row['name']],row
             assert row['attachments'][0]['name']=='prøbe-ä-测试.bin',row
             row['unicodeRoundTripExact']=any('Grüße — Français, Español, Italiano, Polski: żółć. 测试' in (part['body'] or '') for part in row['textParts'])
+            row['productUnicodeExact']='Grüße — Français, Español, Italiano, Polski: żółć. 测试' in row['inputText']
+            assert row['productUnicodeExact'],row
         assert row['riskStatus']=='success',row
         expected_state='incomplete' if row['name']=='unavailable' else 'checked'
         assert row['local']['state']==expected_state and row['coverage']['state']==expected_state,row
@@ -958,6 +962,73 @@ def check_mime_content(m, base, out, report, display):
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     report['mimeContent']['actualMessageAndPopupIncomplete']=True
     report['mimeContent']['passed']=True
+
+
+def check_unicode_input(m, base, out, report):
+    """Compare native decode variants with independently known MIME inputs."""
+    text='Prüfung: żółć — 测试 https://unicode.example.invalid/ż'
+    import quopri
+    encoded=quopri.encodestring(text.encode('utf-8'))
+    split=encoded.replace(b'=C5=BC',b'=C5=\r\n=BC')
+    cases=[('8bit','utf-8','8bit',text.encode('utf-8'),text),
+           ('base64','utf-8','base64',base64.b64encode(text.encode('utf-8')),text),
+           ('qp','utf-8','quoted-printable',encoded,text),
+           ('qp-byte-split','utf-8','quoted-printable',split,text),
+           ('qp-character-split','utf-8','quoted-printable',encoded.replace(b'=C5=BC',b'=\r\n=C5=BC'),text),
+           ('qp-literal-replacement','utf-8','quoted-printable',b'Valid =EF=BF=BD replacement character.','Valid \ufffd replacement character.'),
+           ('qp-invalid-utf8','utf-8','quoted-printable',b'Invalid =C5=20 bytes.',None),
+           ('latin1','iso-8859-1','quoted-printable',b'Gr=FC=DFe','Grüße'),
+           ('mixed-qp-byte-split','utf-8','quoted-printable',split,text),
+           ('mixed-base64','utf-8','base64',base64.b64encode(text.encode('utf-8')),text),
+           ('alternative-qp-byte-split','utf-8','quoted-printable',split,text)]
+    cases.extend([('mixed-html-byte-split','utf-8','quoted-printable',b'<p>'+split+b'</p>','<p>'+text+'</p>'),
+                  ('mixed-qp-literal-replacement','utf-8','quoted-printable',b'Valid =EF=BF=BD replacement character.','Valid \ufffd replacement character.'),
+                  ('mixed-latin1','iso-8859-1','quoted-printable',b'Gr=FC=DFe','Grüße')])
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      MailServices.accounts.localFoldersServer.rootFolder.createSubfolder("Unicode Input",null);''')
+    expected={}
+    for index,(name,charset,cte,body,reference) in enumerate(cases):
+        body=body.replace(b'\r\n',b'\n').replace(b'\n',b'\r\n')
+        media='text/html' if 'html' in name else 'text/plain'
+        data=('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy Unicode '+name+'\r\nMessage-ID: <unicode-'+name+'@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: '+media+'; charset="'+charset+'"\r\nContent-Transfer-Encoding: '+cte+'\r\n\r\n').encode('ascii')+body+b'\r\n'
+        if name.startswith(('mixed-','alternative-')):
+            outer,leaf=data.split(b'MIME-Version: 1.0\r\n',1)
+            subtype='alternative' if name.startswith('alternative-') else 'mixed'
+            data=outer+('MIME-Version: 1.0\r\nContent-Type: multipart/'+subtype+'; boundary="unicode-matrix"\r\n\r\n--unicode-matrix\r\n').encode('ascii')+leaf+b'--unicode-matrix\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename="control.bin"\r\nContent-Transfer-Encoding: base64\r\n\r\nAAEC/w==\r\n--unicode-matrix--\r\n'
+        if reference is not None:
+            assert BytesParser(policy=SMTP).parsebytes(data).get_body(preferencelist=('plain','html')).get_content().rstrip('\r\n')==reference,name
+        path=out/('unicode-'+name+'.eml');path.write_bytes(data)
+        expected[name]=reference
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Unicode Input");
+          const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+          MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''',[str(path)])
+        wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Unicode Input").getTotalMessages(false);''')==index+1)
+    open_page(m,base+'options.html')
+    rows=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,result=[];
+      const page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject || page;
+      const leaves=full=>{const result=[];const visit=p=>{if(p.contentType?.startsWith("text/"))result.push({partName:p.partName,contentType:p.contentType,headers:p.headers || p.rawHeaders,body:p.body ?? p.rawBody});for(const child of p.parts || [])visit(child);};visit(full);return result;};
+      for(const name of arguments[0]){
+        const item=(await b.messages.query({subject:"Thundy Unicode "+name})).messages.find(m=>m.subject==="Thundy Unicode "+name);
+        const decoded=await b.messages.getFull(item.id);
+        const encoded=await b.messages.getFull(item.id,{decodeContent:false});
+        const noHeaderDecode=await b.messages.getFull(item.id,{decodeHeaders:false});
+        const input=await bg.readFullForAnalysis(item);
+        const risk=await b.runtime.sendMessage({action:"getLocalRisk",messageId:item.id});
+        result.push({name,decoded:leaves(decoded),encoded:leaves(encoded),noHeaderDecode:leaves(noHeaderDecode),input:leaves(input),inputStatus:input.thundyInputStatus ?? null,coverage:risk.threat?.coverage});
+      }return result;
+    })();''',[[case[0] for case in cases]])
+    report['unicodeInput']={'passed':False,'realThunderbirdAPIs':True,'liveProviderCalls':False,'rows':rows,'scope':'Synthetic encoding matrix; native decoding and product input are separate observations. No Crypto/backend coverage claim.'}
+    for row in rows:
+        reference=expected[row['name']]
+        row['validFixture']=reference is not None
+        row['nativeExact']=reference is not None and any(part.get('body','').rstrip('\r\n')==reference for part in row['decoded'])
+        row['inputExact']=reference is not None and any(part.get('body','').rstrip('\r\n')==reference for part in row['input'])
+        if reference is not None: assert row['inputExact'] and row['coverage']['state']=='checked',row
+        else: assert row['coverage']['state']=='incomplete',row
+    report['unicodeInput']['passed']=True
 
 
 def check_restart_upgrade(m, args, out, display, report, restart):
@@ -1157,6 +1228,7 @@ def main():
     parser.add_argument('--identity-check', action='store_true', help='Probe numeric message IDs across a restart with reversed lookup order; requires --restart-check')
     parser.add_argument('--identity-lifecycle-check', action='store_true', help='Real content/metadata collision, copy/move/flags/compact/restart/profile-restore investigation; direct permanent install')
     parser.add_argument('--mime-content-check', action='store_true', help='Real Unicode, binary and unreadable-content investigation; direct install')
+    parser.add_argument('--unicode-input-check', action='store_true', help='Compare real MIME decoding variants and product analysis input; direct install')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -1189,6 +1261,8 @@ def main():
         parser.error('--identity-lifecycle-check requires a direct install without --previous-xpi')
     if args.mime_content_check and args.restart_check:
         parser.error('--mime-content-check requires direct installation')
+    if args.unicode_input_check and args.restart_check:
+        parser.error('--unicode-input-check requires direct installation')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -1403,6 +1477,9 @@ def main():
                     if args.mime_content_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_mime_content(m,base,out,report,display)
+                    if args.unicode_input_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_unicode_input(m,base,out,report)
 
             except Exception:
                 try:

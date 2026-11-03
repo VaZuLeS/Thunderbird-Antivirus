@@ -150,7 +150,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 for (const item of attachments.slice(0,100)) currentParts.set(String(item.partName), item.name || '');
             } catch (_) { /* unreadable inventory stays unknown */ }
             try {
-                const full = Object.prototype.hasOwnProperty.call(inventory, 'fullMessage') ? inventory.fullMessage : await browser.messages.getFull(message.id);
+                const full = Object.prototype.hasOwnProperty.call(inventory, 'fullMessage') ? inventory.fullMessage : await getAnalysisFull(message.id);
                 currentCoverage = localContentCoverage(full);
                 if (full) for (const url of filterUrls(extractUrls(extractTextFromParts(full.parts || full)))) currentLinks.add(url);
             } catch (_) { /* no fallback to another message's links */ }
@@ -755,6 +755,7 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
 // This describes the available text input, not an antivirus or full MIME verdict.
 function localContentCoverage(fullMessage) {
   if (!fullMessage || typeof fullMessage !== 'object') return {state:'failed',reason:'read_failed'};
+  if (fullMessage.thundyInputStatus === 'incomplete') return {state:'incomplete',reason:'text_unavailable'};
   let unavailable = false, missingText = false;
   const visit = part => {
     if (!part || typeof part !== 'object') return;
@@ -777,7 +778,7 @@ function recordLocalCoverage(context, coverage) {
 }
 
 async function readFullForAnalysis(message, context = null) {
-  try { return await browser.messages.getFull(message.id); }
+  try { return await getAnalysisFull(message.id); }
   catch (error) {
     // Preserve the API failure without retrying it during context creation.
     try {
@@ -787,6 +788,82 @@ async function readFullForAnalysis(message, context = null) {
     } catch (_) { /* the original read failure remains authoritative */ }
     throw error;
   }
+}
+
+const TEXT_RECOVERY_BYTES = 1024 * 1024;
+const TEXT_RECOVERY_PARTS = 2000;
+function decodeUtf8QuotedPrintable(text) {
+  if (typeof text !== 'string' || text.length > TEXT_RECOVERY_BYTES || /[ \t](?:\r?\n|$)/.test(text)) return null;
+  const bytes = new Uint8Array(text.length);
+  let length = 0;
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code === 61) {
+      if (text.slice(i + 1, i + 3) === '\r\n') { i += 2; continue; }
+      const hex = text.slice(i + 1, i + 3);
+      if (!/^[0-9a-f]{2}$/i.test(hex)) return null;
+      bytes[length++] = parseInt(hex, 16); i += 2;
+    } else {
+      if (!(code === 9 || code === 10 || code === 13 || code >= 32 && code <= 126)) return null;
+      bytes[length++] = code;
+    }
+  }
+  try { return new TextDecoder('utf-8', {fatal:true,ignoreBOM:true}).decode(bytes.subarray(0, length)); }
+  catch (_) { return null; }
+}
+
+async function getAnalysisFull(messageId) {
+  const full = await browser.messages.getFull(messageId);
+  const parts = tree => {
+    const found = [], pending = [tree];
+    while (pending.length && found.length < TEXT_RECOVERY_PARTS) {
+      const part = pending.pop(); if (!part || typeof part !== 'object') continue;
+      found.push(part);
+      if (Array.isArray(part.parts)) {
+        if (found.length + pending.length + part.parts.length > TEXT_RECOVERY_PARTS) return null;
+        for (const child of part.parts) pending.push(child);
+      }
+    }
+    return pending.length ? null : found;
+  };
+  const utf8QP = part => ['text/plain','text/html'].includes(part.contentType) && !part.name &&
+    typeof part.partName === 'string' && part.partName.length <= 80 && /^\d+(?:\.\d+)*$/.test(part.partName) &&
+    (part.headers?.['content-transfer-encoding'] || []).length === 1 &&
+    part.headers['content-transfer-encoding'][0].trim().toLowerCase() === 'quoted-printable' &&
+    (part.headers?.['content-type'] || []).length === 1 &&
+    (part.headers['content-type'][0].match(/;\s*charset\s*=/gi) || []).length === 1 &&
+    /;\s*charset\s*=\s*(?:"utf-?8"|utf-?8)\s*(?:;|$)/i.test(part.headers['content-type'][0]) &&
+    !(part.headers?.['content-disposition'] || []).some(value => /^attachment(?:;|$)/i.test(value.trim()));
+  const tree = parts(full);
+  const limited = () => ({...full,thundyInputStatus:'incomplete'});
+  if (!tree) return limited();
+  const candidates = tree.filter(part => utf8QP(part) && typeof part.body === 'string' && part.body.includes('\ufffd'));
+  if (!candidates.length || ['fail','skipped'].includes(full.decryptionStatus)) return full;
+  if (full.size > TEXT_RECOVERY_BYTES) return limited();
+  // Thunderbird still owns MIME structure/decryption. Only verify affected
+  // UTF-8/QP leaves; never reparse an entire raw message or guess a charset.
+  let raw;
+  try { raw = await browser.messages.getFull(messageId, {decodeContent:false}); }
+  catch (_) { return limited(); }
+  if (!raw || raw.decryptionStatus !== full.decryptionStatus || JSON.stringify(raw.headers?.['message-id']) !== JSON.stringify(full.headers?.['message-id'])) return limited();
+  const rawTree = parts(raw);
+  if (!rawTree || rawTree.reduce((size,part) => size + (typeof part.rawBody === 'string' ? part.rawBody.length : 0), 0) > TEXT_RECOVERY_BYTES) return limited();
+  const uniqueParts = list => {
+    const map = new Map();
+    for (const part of list) map.set(part.partName, map.has(part.partName) ? null : part);
+    return map;
+  };
+  const decodedParts = uniqueParts(tree), rawParts = uniqueParts(rawTree);
+  const replacements = new Map(); let incomplete = false, recovered = false;
+  for (const part of candidates) {
+    const matching = rawParts.get(part.partName);
+    const input = decodedParts.get(part.partName) === part && matching && utf8QP(matching) ? matching : null;
+    const decoded = input && input.contentType === part.contentType ? decodeUtf8QuotedPrintable(input.rawBody) : null;
+    if (decoded === null) { incomplete = true; continue; }
+    replacements.set(part, decoded); recovered ||= decoded !== part.body;
+  }
+  const derive = part => ({...part,...(replacements.has(part) ? {body:replacements.get(part)} : {}),...(Array.isArray(part.parts) ? {parts:part.parts.map(derive)} : {})});
+  return {...derive(full),thundyInputStatus:incomplete ? 'incomplete' : recovered ? 'recovered' : 'verified'};
 }
 
 /**
@@ -1346,7 +1423,7 @@ async function scanLinksOfDisplayedMessage(tabId) {
     }
     try {
         assertExternalAnalysisAllowed();
-        const fullMessage = await browser.messages.getFull(message.id);
+        const fullMessage = await readFullForAnalysis(message);
         const text = extractTextFromParts(fullMessage.parts || fullMessage);
         const urls = filterUrls(extractUrls(text));
         if (urls.length === 0) {

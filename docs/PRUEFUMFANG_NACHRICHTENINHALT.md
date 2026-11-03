@@ -68,3 +68,7 @@ Der zusätzliche lokale Playwright-Smoke konnte nicht ausgeführt werden: Das Br
 4. Danach den [getrennten Inhalts-/Vorkommens-/Befundspeicher](IDENTITAET_ANALYSEBEFUNDE.md) und eine datenbewahrende Migration implementieren. Ein Metadatenvergleich oder eine bytegleiche Kopie darf weiterhin keine alte Nutzerentscheidung übernehmen.
 
 AVN-003 und AVN-009.b sind damit teilweise umgesetzt; weder allgemeine MIME-/Cryptoabdeckung noch dauerhafte Identitätsmigration werden als abgeschlossen erklärt. 1.24.4 bleibt unveröffentlicht.
+
+## Folgeschritt AVN-003.2
+
+Die oben dokumentierte Unicode-Abweichung ist anschließend [für die belegten Multipart-UTF-8/QP-Fälle eingegrenzt und im Produkt-Eingang behoben](UNICODE_NACHRICHTENEINGANG.md). Der native API-Pfad liefert dort weiterhin Ersatzzeichen; Thundy AV rekonstruiert ausschließlich überprüfbare, begrenzte Textparts über `decodeContent:false` und strikte Byte-Dekodierung. Die neue Evidenz ist an neue Paketbytes gebunden. Die vorherigen Ergebnisse bleiben historische Beobachtungen ihres Pakets; allgemeine MIME-/Crypto-/Größenabdeckung und Migration bleiben offen.

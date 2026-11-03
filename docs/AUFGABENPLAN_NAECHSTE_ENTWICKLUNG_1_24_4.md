@@ -12,6 +12,8 @@ Die anschließende [Identitätsuntersuchung und der Speichervertrag](IDENTITAET_
 
 Der weitere [Schritt AVN-003/009.b zur Inhaltsverfügbarkeit](PRUEFUMFANG_NACHRICHTENINHALT.md) korrigiert einen nativ bestätigten falschen lokalen Abschluss bei `decryptionStatus: fail`. Teilprüfung und Lesefehler sind nun sechssprachig sichtbar; leere Mails und Textanhänge bleiben korrekt abgegrenzt. Binäre Anhänge sind nativ mit bekannten Bytes geprüft. AVN-003 bleibt teilweise offen: Die neue Unteraufgabe **AVN-003.2 (P1, Untersuchung zuerst, M)** grenzt eine unter 140/153 reproduzierte quoted-printable-/Unicode-Abweichung ein. Ihre Akzeptanz ist die belegte Ursache und eine risikogeprüfte Entscheidung über den Eingangsweg, nicht mehr Heuristikregeln auf verändertem Text. Hauptzuordnung C, Verweis aus AVN-009.b; keine zweite Decoderaufgabe dort.
 
+**AVN-003.2 anschließend umgesetzt:** Der [begrenzte Unicode-Eingang](UNICODE_NACHRICHTENEINGANG.md) behebt die belegten Multipart-UTF-8/QP-Fälle durch Verifikation der von Thunderbird bereits strukturierten Textparts. Die nativen 140/153-Matrizen liefern jeweils 13 gültige Fälle exakt; ein ungültiger Fall bleibt unvollständig. Normale Eingaben erhalten keinen zusätzlichen Leseaufruf. Allgemeine MIME-/Crypto-/Großnachrichtenabdeckung und die Identitätsmigration bleiben offen; AVN-003 ist insgesamt weiterhin teilweise umgesetzt.
+
 ## 1. Bestandsaufnahme und Nachweisgrenzen
 
 ### Veröffentlichter Stand und vorbereitete Entwicklung

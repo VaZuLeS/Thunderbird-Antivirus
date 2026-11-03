@@ -12,7 +12,7 @@ function setup(settings = {}, trackSources = false) {
     const full = { headers: {}, parts: [{ contentType: 'text/plain', body: 'Visit https://example.com/' }] };
     const context = vm.createContext({
         console: { error() {}, warn() {}, info() {} }, URL, URLSearchParams, Blob, File, FormData,
-        DOMParser: new JSDOM().window.DOMParser, crypto: globalThis.crypto, AbortController, setTimeout, clearTimeout, TextEncoder,
+        DOMParser: new JSDOM().window.DOMParser, crypto: globalThis.crypto, AbortController, setTimeout, clearTimeout, TextEncoder, TextDecoder,
         browser: {
             runtime: { id: 'test', getURL: p => p, getManifest: () => ({ version: '1.20.0' }), onMessage: { addListener: f => listeners.push(f) } },
             storage: { local: { get: async () => ({ ...config }), set: async values => Object.assign(config, values) }, onChanged: { addListener() {} } },
@@ -798,4 +798,63 @@ test('empty text stays valid while nonempty missing text and skipped decryption 
   assert.equal(result.status,'success');assert.equal(result.threat.coverage.state,expected);
  }
  (await s.context.getMessageAnalysisContext(s.message)).dispose();assert.equal(s.requests.length,0);
+});
+
+test('strict UTF-8/QP decoding joins bytes before decoding and refuses ambiguous input',()=>{
+ const s=setup();
+ assert.equal(s.context.decodeUtf8QuotedPrintable('=C5=\r\n=BC =F0=9F=\r\n=98=80 <p>=E6=B5=8B</p>'),'ż 😀 <p>测</p>');
+ assert.equal(s.context.decodeUtf8QuotedPrintable('=EF=BB=BFtext'),'\ufefftext');
+ for(const value of ['=C5=20','=ED=A0=80','=FF','=Q0','=A','=\n','=C5=BC \r\n','ü','a'.repeat(1024*1024+1)]) assert.equal(s.context.decodeUtf8QuotedPrintable(value),null);
+});
+
+function qpInput(s, rawBody='https://example.invalid/=C5=\r\n=BC') {
+ const headers={'content-type':['text/plain; charset="utf-8"'],'content-transfer-encoding':['quoted-printable']};
+ const leaf={partName:'1.1',contentType:'text/plain',headers,body:'https://example.invalid/��'};
+ const full={decryptionStatus:'none',size:80,headers:{'message-id':['same']},parts:[leaf]};
+ const raw={...full,parts:[{...leaf,body:undefined,rawBody}]};
+ const reads=[];s.context.browser.messages.getFull=async(id,options)=>{reads.push({id,options});return options?.decodeContent===false?raw:full;};
+ return {leaf,full,raw,reads};
+}
+
+test('affected input is repaired without mutating native trees and reaches the local URL assessment',async()=>{
+ const s=setup({},true);await s.context.configure();const f=qpInput(s),before=JSON.stringify(f.full),rawBefore=JSON.stringify(f.raw);
+ const received=[];const calculate=s.context.calculateThreatScore;
+ s.context.calculateThreatScore=(author,urls,options)=>{received.push({urls:Array.from(urls),text:options.messageText});return calculate(author,urls,options);};
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));
+ assert.equal(result.status,'success');assert.equal(result.threat.coverage.state,'checked');
+ assert.equal(received[0].text,'https://example.invalid/ż ');assert.deepEqual(received[0].urls,['https://example.invalid/ż']);
+ assert.equal(f.reads.length,2);assert.equal(f.reads[1].options.decodeContent,false);
+ assert.equal(JSON.stringify(f.full),before);assert.equal(JSON.stringify(f.raw),rawBefore);assert.equal(s.requests.length,0);
+ (await s.context.getMessageAnalysisContext(s.message)).dispose();
+});
+
+test('normal inputs need one read and genuine replacement characters are retained after verification',async()=>{
+ const s=setup();const normal=qpInput(s);normal.leaf.body='ordinary UTF-8 ż';
+ assert.equal((await s.context.getAnalysisFull(7)).parts[0].body,normal.leaf.body);assert.equal(normal.reads.length,1);
+ const literal=qpInput(s,'Valid =EF=BF=BD');literal.leaf.body='Valid �';
+ const input=await s.context.getAnalysisFull(7);assert.equal(input.parts[0].body,'Valid �');assert.equal(input.thundyInputStatus,'verified');
+ assert.equal(s.context.localContentCoverage(input).state,'checked');
+ const other=qpInput(s);other.leaf.headers['content-type']=['text/plain; charset=iso-8859-1'];
+ await s.context.getAnalysisFull(7);assert.equal(other.reads.length,1);assert.equal(s.requests.length,0);
+});
+
+test('unverifiable text is partial and limits avoid a second read of large or excessive trees',async()=>{
+ for(const problem of ['invalid-utf8','failed-read','wrong-part','duplicate-part','wrong-charset','changed-header','changed-decryption','large-message','large-encoded','too-many-parts']){
+  const s=setup();const f=qpInput(s);
+  if(problem==='invalid-utf8')f.raw.parts[0].rawBody='=C5=20';
+  if(problem==='failed-read')s.context.browser.messages.getFull=async(_id,options)=>{if(options)throw new Error('offline');return f.full;};
+  if(problem==='wrong-part')f.raw.parts[0].partName='2';
+  if(problem==='duplicate-part')f.raw.parts.push({...f.raw.parts[0]});
+  if(problem==='wrong-charset')f.raw.parts[0].headers={...f.raw.parts[0].headers,'content-type':['text/plain; charset=latin1']};
+  if(problem==='changed-header')f.raw.headers={'message-id':['different']};
+  if(problem==='changed-decryption')f.raw.decryptionStatus='fail';
+  if(problem==='large-message')f.full.size=1024*1024+1;
+  if(problem==='large-encoded')f.raw.parts[0].rawBody='a'.repeat(1024*1024+1);
+  if(problem==='too-many-parts')f.full.parts.push(...Array.from({length:2001},()=>({contentType:'application/octet-stream'})));
+  const original=JSON.stringify(f.full),input=await s.context.getAnalysisFull(7);
+  assert.equal(s.context.localContentCoverage(input).state,'incomplete',problem);assert.equal(JSON.stringify(f.full),original,problem);
+  assert.equal(input.parts[0].body,'https://example.invalid/��',problem);
+  if(['large-message','too-many-parts'].includes(problem))assert.equal(f.reads.length,1,problem);
+  assert.equal(s.requests.length,0,problem);
+ }
 });

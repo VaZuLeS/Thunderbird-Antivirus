@@ -73,7 +73,7 @@ async function handleAuditedLinkCheck(request, sender) {
         const message = await session.ready;
         const localCheck = (async () => {
             try {
-                const fullMessage = await browser.messages.getFull(message.id);
+                const fullMessage = await readFullForAnalysis(message);
                 const messageText = extractTextFromParts(fullMessage.parts || fullMessage);
                 const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls: [request.url], messageText, allowExternal: false });
                 const threat = calculateThreatScore(message.author, [request.url], options);

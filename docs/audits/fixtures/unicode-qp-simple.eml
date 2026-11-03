@@ -1,0 +1,12 @@
+From: fixture@example.invalid
+To: receiver@example.invalid
+Subject: Thundy Unicode qp-byte-split
+Message-ID: <unicode-qp-byte-split@example.invalid>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Pr=C3=BCfung: =C5=
+=BC=C3=B3=C5=82=C4=87 =E2=80=94 =E6=B5=8B=E8=AF=95 https:/=
+/unicode.example.invalid/=C5=
+=BC
