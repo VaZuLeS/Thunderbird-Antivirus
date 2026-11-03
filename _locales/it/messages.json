@@ -1817,5 +1817,17 @@
   },
   "sourceExportFailed": {
     "message": "Il rapporto non è stato salvato. Creare una nuova anteprima per riprovare."
+  },
+  "analysisHistoryPages": {
+    "message": "Pagine della cronologia"
+  },
+  "analysisHistoryEntries": {
+    "message": "Voci"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Risultato storico sospetto o dannoso · associazione non confermata"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Mostra il primo avviso storico"
   }
 }

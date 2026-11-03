@@ -138,6 +138,23 @@ def native_click(display, x, y):
         x11.XCloseDisplay(connection)
 
 
+def native_key(display, name):
+    """A real X11 key press, used after focusing a native document control."""
+    x11=ctypes.CDLL('libX11.so.6');xtest=ctypes.CDLL('libXtst.so.6')
+    x11.XOpenDisplay.argtypes=[ctypes.c_char_p];x11.XOpenDisplay.restype=ctypes.c_void_p
+    x11.XStringToKeysym.argtypes=[ctypes.c_char_p];x11.XStringToKeysym.restype=ctypes.c_ulong
+    x11.XKeysymToKeycode.argtypes=[ctypes.c_void_p,ctypes.c_ulong];x11.XKeysymToKeycode.restype=ctypes.c_uint
+    x11.XFlush.argtypes=[ctypes.c_void_p];x11.XCloseDisplay.argtypes=[ctypes.c_void_p]
+    xtest.XTestFakeKeyEvent.argtypes=[ctypes.c_void_p,ctypes.c_uint,ctypes.c_int,ctypes.c_ulong]
+    connection=x11.XOpenDisplay(display.encode())
+    if not connection: raise RuntimeError('Cannot open keyboard display')
+    try:
+        code=x11.XKeysymToKeycode(connection,x11.XStringToKeysym(name.encode()))
+        if not code or not xtest.XTestFakeKeyEvent(connection,code,1,0) or not xtest.XTestFakeKeyEvent(connection,code,0,0): raise RuntimeError('Cannot send keyboard event')
+        x11.XFlush(connection)
+    finally: x11.XCloseDisplay(connection)
+
+
 def native_save_path(display, path):
     """Type an ASCII location in the genuine GTK file picker with XTest."""
     x11 = ctypes.CDLL('libX11.so.6'); xtest = ctypes.CDLL('libXtst.so.6')
@@ -1109,6 +1126,71 @@ def check_source_history(m, base, out, report, restart, display):
     return m
 
 
+def check_history_pages(m, base, out, report, display):
+    """Large synthetic history through real storage, message and popup renderer."""
+    fixture=out/'large-history.eml'
+    fixture.write_bytes(b'From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy large history\r\nMessage-ID: <large-history@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain\r\n\r\nSynthetic source history.\r\n')
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const root=MailServices.accounts.localFoldersServer.rootFolder;if(!root.containsChildNamed("Large History"))root.createSubfolder("Large History",null);
+      const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);MailServices.copy.copyFileMessage(file,root.getChildNamed("Large History"),null,false,0,"",null,null);''',[str(fixture)])
+    wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Large History").getTotalMessages(false);''')==1)
+    open_page(m,base+'options.html')
+    seeded=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const message=(await b.messages.query({subject:"Thundy large history"})).messages.find(item=>item.subject==="Thundy large history");
+      const rows=Array.from({length:1200},(_,index)=>({provider:["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"][index%5],scope:["report","hash","domain","ip","url"][index%5],resource:"link:"+index,state:"checked",verdict:index===1199?"malicious":"none",responses:1,observedAt:1790000000000+index*1000,findingAt:1790000000000+index*1000}));
+      const legacy={schemaVersion:2,rows};await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,()=>({messageHeader:message.headerMessageId,analysisStatusLegacy:legacy,updatedAt:Date.now()}));
+      await b.messageDisplay.open({messageId:message.id,location:"tab"});return {id:message.id,legacy:JSON.stringify(legacy)};
+    })();''')
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".history-range");'))
+    inspect='''const host=document.getElementById("thundy-analysis-status"),root=host.shadowRoot,detail=root.querySelector('[data-key="unbound-history"]');return {page:Number(host.dataset.historyPage),entries:detail.querySelectorAll(".history-entries li").length,range:detail.querySelector(".history-range").textContent,summary:detail.querySelector("summary").textContent,localOnly:root.querySelector(".mode").textContent==="Local · no external results recorded",noCurrentThreat:root.querySelector(".card").style.borderColor==="",nodes:root.querySelectorAll("*").length,focused:root.activeElement?.dataset.focusKey||null,warningFocused:root.activeElement?.dataset.historyWarning==="true"};'''
+    first=m.page(inspect);assert first['entries']==30 and first['page']==0 and first['noCurrentThreat'],first
+    assert 'association unconfirmed' in first['summary'] and 'Suspicious or malicious historical finding' in first['summary'],first
+    m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="unbound-history"]\');d.open=true;d.querySelector(\'[data-focus-key="history-next"]\').focus();')
+    native_key(display,'Return')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").dataset.historyPage==="1";'))
+    keyboard=m.page(inspect);assert keyboard['focused']=='history-next' and keyboard['entries']==30,keyboard
+    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-focus-key="history-find-warning"]\').focus();')
+    native_key(display,'Return')
+    last=wait_for(lambda:(lambda value:value if value['page']==39 else None)(m.page(inspect)))
+    assert last['warningFocused'] and '1171–1200 / 1200' in last['range'] and last['noCurrentThreat'],last
+    options_browser='window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).browser'
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,ready=await bg.getMessageAnalysisContext(await b.messages.get(arguments[0]));await (ready.wrappedJSObject||ready).flush();return true;})();''',[seeded['id']],browser=options_browser)
+    refreshed=m.page(inspect);assert refreshed['page']==39 and refreshed['warningFocused'],refreshed
+    m.page('return new Promise(resolve=>window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>resolve(true))));')
+    m.screenshot(out/'history-pages-message.png')
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".history-range");',browser=popup))
+    popup_first=m.page(inspect,browser=popup);assert popup_first['page']==0 and popup_first['entries']==30 and popup_first['noCurrentThreat'],popup_first
+    wait_for(lambda:m.page('return !!document.querySelector(".local-risk")&&!document.getElementById("thundy-initial-loading");',browser=popup))
+    # The remote popup needs chrome-level browser focus before X11 keys;
+    # focusing only a DOM child leaves the native key target in the message.
+    popup='document.getElementById("webextension-remote-preload-panel").querySelector(\'browser[webextension-view-type="popup"]\')'
+    m.js('document.getElementById("webextension-remote-preload-panel").querySelector(\'browser[webextension-view-type="popup"]\').focus();')
+    m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="unbound-history"]\');d.open=true;d.querySelector(\'[data-focus-key="history-next"]\').focus();',browser=popup)
+    m.page('return new Promise(resolve=>window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>resolve(true))));',browser=popup)
+    native_key(display,'Return')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").dataset.historyPage==="1";',browser=popup))
+    native_key(display,'space')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").dataset.historyPage==="2";',browser=popup))
+    native_key(display,'Tab')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.activeElement?.dataset.focusKey==="history-find-warning";',browser=popup))
+    native_key(display,'Return')
+    popup_last=wait_for(lambda:(lambda value:value if value['page']==39 else None)(m.page(inspect,browser=popup)))
+    assert popup_last['warningFocused'] and popup_last['noCurrentThreat'],popup_last
+    assert m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";')
+    m.page('return new Promise(resolve=>window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>resolve(true))));',browser=popup)
+    subprocess.run(['import','-window','root',str(out/'history-pages-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    open_page(m,base+'options.html')
+    preserved=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId);return JSON.stringify(record.analysisStatusLegacy)===arguments[1];})();''',[seeded['id'],seeded['legacy']])
+    assert preserved
+    report['historyPages']={'passed':True,'syntheticObservations':True,'liveProviderCalls':False,'storedHistoryUnchanged':preserved,'realX11Keyboard':True,'popupKeys':['Return','space','Tab'],'popupKeyboardSetup':'Explicit chrome browser focus before X11 keys','firstMessagePage':first,'keyboardMessagePage':keyboard,'lastMessagePage':last,'afterRefresh':refreshed,'firstPopupPage':popup_first,'lastPopupPage':popup_last,'scope':'Real message and popup, 1200 unbound history observations; no current threat inherited, no screen reader acceptance.'}
+
+
 def check_source_export(m, base, out, report, restart, display):
     """Real popup entry, privacy projection, GTK download, clear and restart."""
     open_page(m,base+'options.html')
@@ -1451,6 +1533,7 @@ def main():
     parser.add_argument('--source-history-check', action='store_true', help='Real legacy source separation, content guard and persisted history across ID reuse; direct permanent install')
     parser.add_argument('--report-archive-check', action='store_true', help='Real bounded protocol revisions, popup writes, capacity refusal and restart; synthetic reports, direct permanent install')
     parser.add_argument('--source-export-check', action='store_true', help='Real popup source export, GTK download, cache clear and stale runtime rejection; direct permanent install, EN')
+    parser.add_argument('--history-pages-check', action='store_true', help='Real 1200-row history, late warnings and X11 keyboard in message and popup; direct EN install')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -1491,6 +1574,8 @@ def main():
         parser.error('--report-archive-check requires direct installation without --previous-xpi')
     if args.source_export_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
         parser.error('--source-export-check requires direct EN installation without --previous-xpi')
+    if args.history_pages_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
+        parser.error('--history-pages-check requires direct EN installation without --previous-xpi')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -1503,6 +1588,7 @@ def main():
     # Fresh output prevents old reports/screenshots from being mistaken for new evidence.
     out.mkdir(parents=True, exist_ok=False, mode=0o700)
     report = {'passed': False, 'scope': 'Linux X11 GUI; synthetic plaintext; offline; no API mocks',
+              'runnerSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'startedAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
               'xpiSha256': hashlib.sha256(args.xpi.read_bytes()).hexdigest(),
               'binarySha256': hashlib.sha256(args.thunderbird.read_bytes()).hexdigest()}
@@ -1717,6 +1803,9 @@ def main():
                     if args.source_export_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         m=check_source_export(m,base,out,report,restart_client,display)
+                    if args.history_pages_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_history_pages(m,base,out,report,display)
 
             except Exception:
                 try:

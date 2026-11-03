@@ -157,3 +157,42 @@ test('archived protocol payloads appear only as unbound historical observations'
  assert.ok(history.rows.some(row=>row.observedAt===Date.parse('2026-10-02T08:00:00Z')));assert.ok(!JSON.stringify(history).includes('private.bin'));assert.ok(!JSON.stringify(history).includes('private-hash'));
  assert.equal(a.create().data.rows.length,0);
 });
+
+test('all normalized history rows remain reachable and late warnings stay historical in all six languages',()=>{
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  try{
+   const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
+   const rows=Array.from({length:1200},(_,i)=>({provider:'urlhaus',scope:'domain',state:'checked',source:'stored',verdict:i===1199?'malicious':'none',resource:null,observedAt:1000+i,findingAt:1000+i}));
+   const data={local:{state:'checked'},rows:[],sourceHistory:{rows,truncated:false}},original=JSON.stringify(data);
+   const host=c.a.render(data,labels),root=host.shadowRoot,history=root.querySelector('[data-key="unbound-history"]');history.open=true;
+   assert.ok(history.querySelector('summary').textContent.includes(catalog.analysisHistoryFlagged.message));assert.equal(root.querySelector('.card').style.borderColor,'');assert.equal(root.querySelector('.mode').textContent,catalog.analysisLocal.message);
+   const seen=[];
+   for(let page=0;page<40;page++){
+    const items=history.querySelectorAll('.history-entries li');assert.equal(items.length,30);seen.push(...Array.from(items,item=>item.dataset.focusKey));
+    const next=history.querySelector('[data-focus-key="history-next"]');assert.equal(next.disabled,page===39);if(!next.disabled)next.click();
+   }
+   assert.equal(new Set(seen).size,1200);assert.ok(history.textContent.includes(catalog.analysisVerdict_malicious.message));assert.ok(root.querySelector('.live').textContent.includes('1171–1200 / 1200'));
+   const previous=history.querySelector('[data-focus-key="history-previous"]');previous.click();assert.equal(host.dataset.historyPage,'38');previous.focus();
+   c.a.render(data,labels);assert.equal(host.dataset.historyPage,'38');assert.equal(root.activeElement.dataset.focusKey,'history-previous');assert.equal(root.querySelector('[data-key="unbound-history"]').open,true);
+   root.querySelector('[data-focus-key="history-find-warning"]').click();assert.equal(host.dataset.historyPage,'39');assert.equal(root.activeElement.dataset.historyWarning,'true');
+   c.a.render(data,labels);assert.equal(root.activeElement.dataset.historyWarning,'true');
+   c.a.render({...data,sourceHistory:{rows:rows.slice(0,1),truncated:false}},labels);assert.equal(host.dataset.historyPage,'0');assert.equal(root.querySelectorAll('.history-entries li').length,1);assert.equal(root.activeElement.dataset.focusKey,'unbound-history');
+   assert.equal(JSON.stringify(data),original);assert.ok(!root.textContent.includes('MISSING:'));
+  }finally{dom.window.close();}
+ }
+});
+
+test('serialized history navigation needs no module globals and keeps projection limits distinct from pages',()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
+ const dom=new JSDOM('<html lang="en"><body></body></html>',{pretendToBeVisual:true});
+ try{
+  const rows=Array.from({length:1201},(_,i)=>({provider:'urlscan',scope:'url',state:'submitted',verdict:i===1199?'suspicious':'unknown',observedAt:i}));
+  const c=vm.createContext({document:dom.window.document,Date,labels:a.labels(key=>catalog[key]?.message),data:{local:{state:'checked'},rows:[],sourceHistory:{rows,truncated:false}}});
+  vm.runInContext('('+a.render.toString()+')(data,labels)',c);
+  const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+  assert.ok(root.textContent.includes(catalog.analysisTruncated.message));root.querySelector('[data-key="unbound-history"]').open=true;
+  root.querySelector('[data-focus-key="history-find-warning"]').click();assert.equal(root.querySelectorAll('.history-entries li').length,30);assert.ok(root.querySelector('.history-range').textContent.includes('1200 / 1200'));assert.ok(root.textContent.includes(catalog.analysisVerdict_suspicious.message));assert.equal(root.querySelector('.card').style.borderColor,'');
+ }finally{dom.window.close();}
+});

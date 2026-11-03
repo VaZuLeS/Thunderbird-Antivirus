@@ -20,6 +20,8 @@ Die [begrenzte Protokollhistorie](PROTOKOLLHISTORIE.md) sichert nun die bisherig
 
 Der [lokale Quellenbericht](QUELLENEXPORT.md) bietet eine datensparsame Vorschau und einen ausdrücklichen Download des aufgezeichneten Prüfstands. Aktuelle Beobachtungen und unbestätigte Historie bleiben getrennt. Ressourceninhalte und interne Kennungen sind ausgeschlossen; Kontextwechsel, Änderungen und Cachelöschung machen ältere Vorschauen ungültig. Es startet keine neue Analyse oder automatische Übermittlung.
 
+Die [Historiennavigation AVN-007.a](GROSSE_QUELLENHISTORIEN.md) macht alle bis zu 1.200 normalisierten historischen Beobachtungen in 30er-Seiten erreichbar. Ein auffälliger historischer Befund bleibt bereits in der Zusammenfassung sichtbar und kann direkt angesprungen werden. Die Zuordnung bleibt unbestätigt; aktuelle Bewertungen und gespeicherte Originaldaten werden dadurch nicht geändert.
+
 | Ebene | Stand |
 | --- | --- |
 | GitHub-Distribution | Zielversion 1.24.3, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.2 bleibt historisch erhalten |

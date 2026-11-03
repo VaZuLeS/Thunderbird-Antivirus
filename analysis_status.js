@@ -161,7 +161,7 @@ const ThundyAnalysis = (() => {
         const root = host.shadowRoot;
         let live = root.querySelector('.live');
         if (!live) { live = n('div','','live'); live.setAttribute('role','status'); live.setAttribute('aria-live','polite'); live.setAttribute('aria-atomic','true'); }
-        const style = document.createElement('style'); style.textContent = ':host{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40)}*{box-sizing:border-box}.card{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40);padding:var(--surface-pad,18px);border:1px solid var(--card-border,#cbd5e1);border-left:4px solid var(--link-color,#146b80);border-radius:12px;background:var(--card-bg,#fff);overflow-wrap:anywhere}h2{font:700 16px/1.4 system-ui;margin:0 0 8px}p{margin:6px 0}.mode,.phase{font-weight:700}.muted,small{color:var(--text-muted,#536579)}ul{padding-left:20px;margin:8px 0}li{margin:8px 0}summary{cursor:pointer}summary:focus-visible{outline:3px solid var(--link-color,#146b80);outline-offset:3px}.warning{color:var(--color-danger,#b32642)}.live{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}details{margin:8px 0}';
+        const style = document.createElement('style'); style.textContent = ':host{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40)}*{box-sizing:border-box}.card{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40);padding:var(--surface-pad,18px);border:1px solid var(--card-border,#cbd5e1);border-left:4px solid var(--link-color,#146b80);border-radius:12px;background:var(--card-bg,#fff);overflow-wrap:anywhere}h2{font:700 16px/1.4 system-ui;margin:0 0 8px}p{margin:6px 0}.mode,.phase{font-weight:700}.muted,small{color:var(--text-muted,#536579)}ul{padding-left:20px;margin:8px 0}li{margin:8px 0}summary{cursor:pointer}:is(summary,button,li):focus-visible{outline:3px solid var(--link-color,#146b80);outline-offset:3px}.history-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}button{font:inherit;min-height:44px;padding:8px 12px;color:var(--text-color,#192b40);background:var(--input-bg,#fff);border:1px solid var(--input-border,#8091a5);border-radius:8px;cursor:pointer}button:disabled{opacity:.6;cursor:not-allowed}.warning{color:var(--color-danger,#b32642)}.live{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}details{margin:8px 0}';
         const date = value => Number.isFinite(value) ? new Date(value).toLocaleString(document.documentElement.lang || undefined) : t('analysisTimeUnknown');
         const rows = data.rows || [], local = data.local?.state === 'checked', localLimited = ['incomplete','failed'].includes(data.local?.state);
         const running = rows.some(row => row.state === 'running'), waiting = rows.some(row => row.state === 'submitted'), incomplete = rows.some(row => row.state === 'incomplete');
@@ -219,32 +219,63 @@ const ThundyAnalysis = (() => {
             inventory.append(resources); card.append(inventory);
         }
         if (data.truncated) card.append(n('p',t('analysisTruncated'),'warning'));
-        if (data.sourceHistory?.rows?.length || data.sourceHistory?.truncated) {
-            const names = [...new Set(data.sourceHistory.rows.map(row => brands[row.provider]).filter(Boolean))];
-            const history = details('unbound-history',t('analysisHistoryTitle') + (names.length ? ' · ' + names.join(' · ') : ''));
+        const historyRows = (Array.isArray(data.sourceHistory?.rows) ? data.sourceHistory.rows : []).slice(0,1200).filter(row => row && Object.prototype.hasOwnProperty.call(brands,row.provider) && Object.prototype.hasOwnProperty.call(labels,'analysisScope_' + row.scope) && Object.prototype.hasOwnProperty.call(labels,'analysisState_' + row.state));
+        const historicalWarning = historyRows.some(row => ['malicious','suspicious'].includes(row.verdict));
+        if (historyRows.length || data.sourceHistory?.truncated) {
+            const names = [...new Set(historyRows.map(row => brands[row.provider]))];
+            const history = details('unbound-history',t('analysisHistoryTitle') + (names.length ? ' · ' + names.join(' · ') : '') + (historicalWarning ? ' · ' + t('analysisHistoryFlagged') : ''));
             history.append(n('p',t('analysisHistoryWarning'),'warning'));
             const entries = document.createElement('ul');
-            for (const row of data.sourceHistory.rows.slice(0,120)) {
-                if (!brands[row.provider] || !Object.prototype.hasOwnProperty.call(labels,'analysisScope_' + row.scope) || !Object.prototype.hasOwnProperty.call(labels,'analysisState_' + row.state)) continue;
-                const li = n('li', brands[row.provider] + ' · ' + t('analysisScope_' + row.scope) + ' · ' + t('analysisState_' + row.state) + ' · ' + t('analysisSource_stored'));
-                li.append(n('div',t('analysisVerdict_' + (Object.prototype.hasOwnProperty.call(labels,'analysisVerdict_' + row.verdict) ? row.verdict : 'unknown'))));
-                li.append(n('small',t('analysisFindingObserved') + ': ' + date(row.findingAt) + ' · ' + t('analysisObserved') + ': ' + date(row.observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(row.attemptedAt)));
-                entries.append(li);
+            entries.className = 'history-entries';
+            const pageSize = 30, lastPage = Math.max(0,Math.ceil(historyRows.length/pageSize)-1);
+            let page = Number(host.dataset.historyPage);
+            page = Number.isSafeInteger(page) && page >= 0 ? Math.min(page,lastPage) : 0;
+            const controls = n('div','','history-controls');controls.setAttribute('role','group');controls.setAttribute('aria-label',t('analysisHistoryPages'));
+            const previous = n('button',t('auditPrevious')), next = n('button',t('auditNext')), range = n('span');
+            previous.type = next.type = 'button';previous.dataset.focusKey='history-previous';next.dataset.focusKey='history-next';
+            range.className='history-range';
+            function paintHistory(announce = false) {
+                host.dataset.historyPage=String(page);entries.replaceChildren();
+                for (const row of historyRows.slice(page*pageSize,(page+1)*pageSize)) {
+                    const li = n('li', brands[row.provider] + ' · ' + t('analysisScope_' + row.scope) + ' · ' + t('analysisState_' + row.state) + ' · ' + t('analysisSource_stored'));
+                    const flagged = ['malicious','suspicious'].includes(row.verdict);
+                    li.tabIndex=-1;li.dataset.focusKey='history-row:'+JSON.stringify([row.provider,row.scope,row.state,row.verdict,row.observedAt,row.findingAt,row.attemptedAt]);
+                    if (flagged) li.dataset.historyWarning='true';
+                    li.append(n('div',t('analysisVerdict_' + (Object.prototype.hasOwnProperty.call(labels,'analysisVerdict_' + row.verdict) ? row.verdict : 'unknown')),flagged ? 'warning' : ''));
+                    li.append(n('small',t('analysisFindingObserved') + ': ' + date(row.findingAt) + ' · ' + t('analysisObserved') + ': ' + date(row.observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(row.attemptedAt)));
+                    entries.append(li);
+                }
+                range.textContent=t('analysisHistoryEntries')+': '+(historyRows.length ? page*pageSize+1 : 0)+'–'+Math.min(historyRows.length,(page+1)*pageSize)+' / '+historyRows.length;
+                previous.disabled=page===0;next.disabled=page===lastPage;
+                if (announce) live.textContent=t('analysisHistoryTitle')+' · '+range.textContent;
             }
+            previous.addEventListener('click',() => { page=Math.max(0,page-1);paintHistory(true);(previous.disabled ? next : previous).focus(); });
+            next.addEventListener('click',() => { page=Math.min(lastPage,page+1);paintHistory(true);(next.disabled ? previous : next).focus(); });
+            if (historyRows.length > pageSize) controls.append(previous,next);
+            if (historyRows.length) controls.append(range);
+            if (historicalWarning) {
+                const jump=n('button',t('analysisHistoryFindWarning'));jump.type='button';jump.dataset.focusKey='history-find-warning';
+                jump.addEventListener('click',() => {page=Math.floor(historyRows.findIndex(row=>['malicious','suspicious'].includes(row.verdict))/pageSize);paintHistory(true);entries.querySelector('[data-history-warning]')?.focus();});
+                controls.append(jump);
+            }
+            paintHistory();history.append(controls);
             history.append(entries);
-            if (data.sourceHistory.truncated || data.sourceHistory.rows.length > 120) history.append(n('p',t('analysisTruncated'),'warning'));
+            if (data.sourceHistory.truncated || data.sourceHistory.rows?.length > 1200) history.append(n('p',t('analysisTruncated'),'warning'));
             card.append(history);
         }
         if (data.sourcePersistenceFailed) card.append(n('p',t('analysisPersistenceFailed'),'warning'));
         if (data.reportArchiveBlocked) card.append(n('p',t('analysisReportArchiveBlocked'),'warning'));
         card.append(n('p', t('analysisLimit'), 'muted'));
-        const announcement = [mode, localLabel, rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', data.sourcePersistenceFailed ? t('analysisPersistenceFailed') : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
+        const announcement = [mode, localLabel, rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? t('analysisPersistenceFailed') : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
         const changed = host.dataset.announcement !== announcement;
         root.replaceChildren(style, live, card);
         if (wasPresent && changed) live.textContent = announcement;
         host.dataset.announcement = announcement;
         if (!wasPresent) { const mount = document.getElementById('analysisSourceMount'); if (mount) mount.append(host); else document.body.prepend(host); }
-        if (focused) Array.from(root.querySelectorAll('summary')).find(node => node.dataset.focusKey === focused)?.focus({preventScroll:true});
+        if (focused) {
+            const target=Array.from(root.querySelectorAll('[data-focus-key]')).find(node => node.dataset.focusKey === focused && !node.disabled);
+            (target || (focused.startsWith('history-') ? root.querySelector('[data-key="unbound-history"] summary') : null))?.focus({preventScroll:true});
+        }
         return host;
     }
     function withCache(context, provider, scope, key) {
@@ -255,7 +286,7 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }

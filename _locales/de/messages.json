@@ -1820,5 +1820,17 @@
   },
   "sourceExportFailed": {
     "message": "Der Bericht wurde nicht gespeichert. Für einen erneuten Versuch eine neue Vorschau erstellen."
+  },
+  "analysisHistoryPages": {
+    "message": "Seiten der Historie"
+  },
+  "analysisHistoryEntries": {
+    "message": "Einträge"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Verdächtiger oder schädlicher historischer Befund · Zuordnung unbestätigt"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Ersten auffälligen historischen Befund zeigen"
   }
 }

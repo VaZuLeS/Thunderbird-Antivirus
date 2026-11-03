@@ -1817,5 +1817,17 @@
   },
   "sourceExportFailed": {
     "message": "Le rapport n’a pas été enregistré. Créez un nouvel aperçu pour réessayer."
+  },
+  "analysisHistoryPages": {
+    "message": "Pages de l’historique"
+  },
+  "analysisHistoryEntries": {
+    "message": "Entrées"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Résultat historique suspect ou malveillant · association non confirmée"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Afficher le premier avertissement historique"
   }
 }

@@ -20,6 +20,8 @@ Der weitere [Schritt AVN-003/009.b zur Inhaltsverfügbarkeit](PRUEFUMFANG_NACHRI
 
 **AVN-011 anschließend umgesetzt und geprüft:** Der [lokale Quellenbericht](QUELLENEXPORT.md) ergänzt ausdrückliche Vorschau, Abbruch und lokalen Download. Eine strikte Positivliste entfernt Ressourceninhalte und interne Kennungen; aktuelle Beobachtungen und unbestätigte Historie bleiben getrennt. Laufzeittoken verhindern eine neue Bindung alter Export-Links nach Kontextverlust. Änderungen und Cachelöschung verwerfen Vorschauen; vor dem Speichern wird erneut abgeglichen. 1.052 automatisierte Tests bestehen; native Linux-Export-/Download-/Cache-/Neustartfälle unter 140 und 153 sind erfolgreich. Es handelt sich um Quellenmetadaten, keinen Vollprotokoll-/Entscheidungsexport oder authentifizierten Unternehmensbeleg. Der ursprüngliche Planungsbefund unten bleibt als Ausgangspunkt erhalten.
 
+**AVN-007.a anschließend umgesetzt und geprüft:** Die [Untersuchung großer Quellenhistorien](GROSSE_QUELLENHISTORIEN.md) bestätigt eine dauerhafte Anzeigekürzung nach 120 von bis zu 1.200 vorhandenen Zeilen. Die Historie erhält 30er-Seiten, einen direkten Sprung zum ersten auffälligen historischen Befund und Fokus-/Seitenwiederherstellung. 1.054 automatisierte Tests sowie native Linux-Tastaturläufe unter 140 und 153 bestehen. Der Befund bleibt ausdrücklich unbestätigt und ändert keine aktuelle Bewertung. AVN-007 ist insgesamt weiter teilweise offen: große aktive Listen, 200-%-/schmale Ansichten, menschlicher Sprachreview und native Screenreaderabnahme sind gesondert zu prüfen.
+
 ## 1. Bestandsaufnahme und Nachweisgrenzen
 
 ### Veröffentlichter Stand und vorbereitete Entwicklung

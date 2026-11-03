@@ -1817,5 +1817,17 @@
   },
   "sourceExportFailed": {
     "message": "Raport nie został zapisany. Utwórz nowy podgląd, aby spróbować ponownie."
+  },
+  "analysisHistoryPages": {
+    "message": "Strony historii"
+  },
+  "analysisHistoryEntries": {
+    "message": "Wpisy"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Podejrzany lub złośliwy wynik historyczny · powiązanie niepotwierdzone"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Pokaż pierwsze ostrzeżenie historyczne"
   }
 }

@@ -1817,5 +1817,17 @@
   },
   "sourceExportFailed": {
     "message": "El informe no se ha guardado. Cree una nueva vista previa para volver a intentarlo."
+  },
+  "analysisHistoryPages": {
+    "message": "Páginas del historial"
+  },
+  "analysisHistoryEntries": {
+    "message": "Entradas"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Hallazgo histórico sospechoso o malicioso · asociación sin confirmar"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Mostrar la primera advertencia histórica"
   }
 }

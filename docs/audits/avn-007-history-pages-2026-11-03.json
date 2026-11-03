@@ -1,0 +1,566 @@
+{
+  "schemaVersion": 1,
+  "kind": "reachable-paged-unbound-source-history",
+  "generatedAt": "2026-11-03T18:18:58.437195+00:00",
+  "baseCommit": "e75667d3a6690d24a08e61817fb37f3e033e3534",
+  "extensionVersion": "1.24.4",
+  "sourceFingerprint": "6a35a9d93aa263280e4e82e9081ca2d6dc8a42a9ed96cb9532492f72b79f170c",
+  "packageSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+  "runnerSha256": "74f862e343d384e1870249c3c7a77aa4823eeea01284d29dee9b7fdfaf189082",
+  "checks": {
+    "full": {
+      "command": "npm run check",
+      "passed": 1054,
+      "failed": 0,
+      "logSha256": "983acfe1dd0718d7a9d2d49135e336013044205091e6259221dbba0dffa82d3f"
+    },
+    "targeted": {
+      "command": "node --test test/analysis-sources.test.js test/optimization.test.js",
+      "passed": 87,
+      "failed": 0,
+      "logSha256": "5e27803cf34597ac772a0cb5b62252d975661a78623c7b9bce8e7d9eced21cc7"
+    },
+    "runnerByteRegressions": {
+      "passed": 3,
+      "failed": 0
+    },
+    "browserSmoke": {
+      "status": "not-run",
+      "reason": "Chromium unavailable; previous denied official download not retried or bypassed."
+    },
+    "finalSource": {
+      "command": "npm run check:source",
+      "passed": true,
+      "logSha256": "6892f3be35b4be33c687e34a16c495fbd08272dd8f5c94377dc2b340ff7681b7"
+    },
+    "finalPackage": {
+      "command": "node scripts/verify-package.js ./build",
+      "passed": true,
+      "logSha256": "89388daa37f3dde92d43c6a68e40c5610d732a9e4999d584ac69a9ac657b2f85"
+    }
+  },
+  "domInvestigation": {
+    "command": "node tools/source-history-performance.dev.cjs SOURCE OUTPUT",
+    "toolSha256": "1f953e2e134025738ffdab4ae8deeed2893dde3e8f81a2d01c8d4e06be9697e7",
+    "before": {
+      "schemaVersion": 1,
+      "kind": "source-history-dom-measurement",
+      "scope": "Synthetic JSDOM DOM construction including date formatting; no browser layout, RSS, user comprehension or screen reader claim",
+      "node": "v24.19.0",
+      "sourceSha256": "cde3f31960ed332a8b47a939bb94538706c56be1e5fe2662df394e623a3d2716",
+      "results": [
+        {
+          "lang": "en",
+          "historyOnlyMs": [
+            86.04,
+            31.23,
+            16.94
+          ],
+          "historyOnlyNodes": 391,
+          "historyRowsRendered": 120,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": false,
+          "lastWarningReachable": false,
+          "jumpToLastWarningMs": null,
+          "mixedMs": 219.48,
+          "mixedNodes": 7893
+        },
+        {
+          "lang": "de",
+          "historyOnlyMs": [
+            18.55,
+            12.17,
+            12.23
+          ],
+          "historyOnlyNodes": 391,
+          "historyRowsRendered": 120,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": false,
+          "lastWarningReachable": false,
+          "jumpToLastWarningMs": null,
+          "mixedMs": 223.95,
+          "mixedNodes": 7893
+        },
+        {
+          "lang": "fr",
+          "historyOnlyMs": [
+            27.95,
+            9.38,
+            12.25
+          ],
+          "historyOnlyNodes": 391,
+          "historyRowsRendered": 120,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": false,
+          "lastWarningReachable": false,
+          "jumpToLastWarningMs": null,
+          "mixedMs": 186.04,
+          "mixedNodes": 7893
+        },
+        {
+          "lang": "es",
+          "historyOnlyMs": [
+            19.95,
+            9.82,
+            7.05
+          ],
+          "historyOnlyNodes": 391,
+          "historyRowsRendered": 120,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": false,
+          "lastWarningReachable": false,
+          "jumpToLastWarningMs": null,
+          "mixedMs": 176.52,
+          "mixedNodes": 7893
+        },
+        {
+          "lang": "it",
+          "historyOnlyMs": [
+            15.37,
+            9.76,
+            9
+          ],
+          "historyOnlyNodes": 391,
+          "historyRowsRendered": 120,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": false,
+          "lastWarningReachable": false,
+          "jumpToLastWarningMs": null,
+          "mixedMs": 222.51,
+          "mixedNodes": 7893
+        },
+        {
+          "lang": "pl",
+          "historyOnlyMs": [
+            11.76,
+            8.94,
+            8.05
+          ],
+          "historyOnlyNodes": 391,
+          "historyRowsRendered": 120,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": false,
+          "lastWarningReachable": false,
+          "jumpToLastWarningMs": null,
+          "mixedMs": 202.46,
+          "mixedNodes": 7893
+        }
+      ]
+    },
+    "after": {
+      "schemaVersion": 1,
+      "kind": "source-history-dom-measurement",
+      "scope": "Synthetic JSDOM DOM construction including date formatting; no browser layout, RSS, user comprehension or screen reader claim",
+      "node": "v24.19.0",
+      "sourceSha256": "380f9e5b49311c23dec289bd0a5f03cd9bf6427da0d908594891e5e18b57d597",
+      "results": [
+        {
+          "lang": "en",
+          "historyOnlyMs": [
+            64.35,
+            14.97,
+            12.83
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 65.75,
+          "mixedMs": 267.49,
+          "mixedNodes": 7627
+        },
+        {
+          "lang": "de",
+          "historyOnlyMs": [
+            14.27,
+            8.02,
+            5.94
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 10,
+          "mixedMs": 244.61,
+          "mixedNodes": 7627
+        },
+        {
+          "lang": "fr",
+          "historyOnlyMs": [
+            10.02,
+            6.85,
+            6.5
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 7.04,
+          "mixedMs": 201.5,
+          "mixedNodes": 7627
+        },
+        {
+          "lang": "es",
+          "historyOnlyMs": [
+            8.75,
+            4.85,
+            4.67
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 4.37,
+          "mixedMs": 179.48,
+          "mixedNodes": 7627
+        },
+        {
+          "lang": "it",
+          "historyOnlyMs": [
+            8.58,
+            5.12,
+            4.26
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 5.71,
+          "mixedMs": 169.32,
+          "mixedNodes": 7627
+        },
+        {
+          "lang": "pl",
+          "historyOnlyMs": [
+            8.21,
+            5.33,
+            5.25
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 3.99,
+          "mixedMs": 254.37,
+          "mixedNodes": 7627
+        }
+      ]
+    },
+    "scope": "Synthetic JSDOM construction, no native layout/RSS/general latency or comprehension claim"
+  },
+  "limits": {
+    "normalizedHistoryRows": 1200,
+    "rowsPerHistoryPage": 30,
+    "pageSizeChangesStorage": false,
+    "historicalAssociation": "unconfirmed",
+    "currentVerdictChanges": false
+  },
+  "native": [
+    {
+      "probe": "history153",
+      "passed": true,
+      "client": "153.6.0",
+      "startedAt": "2026-11-03T18:17:45Z",
+      "finishedAt": "2026-11-03T18:18:01Z",
+      "xpiSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "reportSha256": "880b75d25caeb788cdfa39a379e0dbdb2524303e5c963c855771aafd0f422cad",
+      "runnerSha256": "74f862e343d384e1870249c3c7a77aa4823eeea01284d29dee9b7fdfaf189082",
+      "gracefulRestarts": 0,
+      "forcedRestarts": 0,
+      "historyPages": {
+        "passed": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "storedHistoryUnchanged": true,
+        "realX11Keyboard": true,
+        "popupKeys": [
+          "Return",
+          "space",
+          "Tab"
+        ],
+        "popupKeyboardSetup": "Explicit chrome browser focus before X11 keys",
+        "firstMessagePage": {
+          "page": 0,
+          "entries": 30,
+          "range": "Entries: 1–30 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": null,
+          "warningFocused": false
+        },
+        "keyboardMessagePage": {
+          "page": 1,
+          "entries": 30,
+          "range": "Entries: 31–60 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": "history-next",
+          "warningFocused": false
+        },
+        "lastMessagePage": {
+          "page": 39,
+          "entries": 30,
+          "range": "Entries: 1171–1200 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": "history-row:[\"urlscan\",\"url\",\"checked\",\"malicious\",1790001199000,1790001199000,null]",
+          "warningFocused": true
+        },
+        "afterRefresh": {
+          "page": 39,
+          "entries": 30,
+          "range": "Entries: 1171–1200 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": "history-row:[\"urlscan\",\"url\",\"checked\",\"malicious\",1790001199000,1790001199000,null]",
+          "warningFocused": true
+        },
+        "firstPopupPage": {
+          "page": 0,
+          "entries": 30,
+          "range": "Entries: 1–30 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": null,
+          "warningFocused": false
+        },
+        "lastPopupPage": {
+          "page": 39,
+          "entries": 30,
+          "range": "Entries: 1171–1200 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": "history-row:[\"urlscan\",\"url\",\"checked\",\"malicious\",1790001199000,1790001199000,null]",
+          "warningFocused": true
+        },
+        "scope": "Real message and popup, 1200 unbound history observations; no current threat inherited, no screen reader acceptance."
+      }
+    },
+    {
+      "probe": "history140",
+      "passed": true,
+      "client": "140.12.0",
+      "startedAt": "2026-11-03T18:14:57Z",
+      "finishedAt": "2026-11-03T18:15:16Z",
+      "xpiSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "reportSha256": "5a40eab91212dd1d973d3ec4ef54651c1efe2860158567f2589d6c82f953f184",
+      "runnerSha256": "817f1f2bbfad8ac2561250c39694baf471586360483787e53a558fdbae362f6c",
+      "gracefulRestarts": 0,
+      "forcedRestarts": 0,
+      "historyPages": {
+        "passed": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "storedHistoryUnchanged": true,
+        "realX11Keyboard": true,
+        "popupKeys": [
+          "Return",
+          "space",
+          "Tab"
+        ],
+        "popupKeyboardSetup": "Explicit chrome browser focus before X11 keys",
+        "firstMessagePage": {
+          "page": 0,
+          "entries": 30,
+          "range": "Entries: 1–30 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": null,
+          "warningFocused": false
+        },
+        "keyboardMessagePage": {
+          "page": 1,
+          "entries": 30,
+          "range": "Entries: 31–60 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": "history-next",
+          "warningFocused": false
+        },
+        "lastMessagePage": {
+          "page": 39,
+          "entries": 30,
+          "range": "Entries: 1171–1200 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": "history-row:[\"urlscan\",\"url\",\"checked\",\"malicious\",1790001199000,1790001199000,null]",
+          "warningFocused": true
+        },
+        "afterRefresh": {
+          "page": 39,
+          "entries": 30,
+          "range": "Entries: 1171–1200 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": "history-row:[\"urlscan\",\"url\",\"checked\",\"malicious\",1790001199000,1790001199000,null]",
+          "warningFocused": true
+        },
+        "firstPopupPage": {
+          "page": 0,
+          "entries": 30,
+          "range": "Entries: 1–30 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": null,
+          "warningFocused": false
+        },
+        "lastPopupPage": {
+          "page": 39,
+          "entries": 30,
+          "range": "Entries: 1171–1200 / 1200",
+          "summary": "Stored history · association unconfirmed · Hybrid Analysis · VirusTotal · URLhaus · AbuseIPDB · urlscan.io · Suspicious or malicious historical finding · association unconfirmed",
+          "localOnly": true,
+          "noCurrentThreat": true,
+          "nodes": 125,
+          "focused": "history-row:[\"urlscan\",\"url\",\"checked\",\"malicious\",1790001199000,1790001199000,null]",
+          "warningFocused": true
+        },
+        "scope": "Real message and popup, 1200 unbound history observations; no current threat inherited, no screen reader acceptance."
+      }
+    },
+    {
+      "probe": "sourceExport153",
+      "passed": true,
+      "client": "153.6.0",
+      "startedAt": "2026-11-03T18:04:18Z",
+      "finishedAt": "2026-11-03T18:04:40Z",
+      "xpiSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "reportSha256": "41d55b4e5aace76f27e726814c9825dde2bd7259d1311e7db4d13f0bef027ab2",
+      "runnerSha256": "85124a59f7aed4bd17ed56303bbf3127d5d77c533c02dfa04a69c4d6a6697e97",
+      "gracefulRestarts": 1,
+      "forcedRestarts": 0,
+      "sourceExport": {
+        "passed": true,
+        "realPopupEntry": true,
+        "realGtkDownload": true,
+        "downloadMatchesPreview": true,
+        "cancelAndCacheClearInvalidate": true,
+        "oldRuntimeLinkRefusedAfterRestart": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "saveControl": {
+          "text": "Save report locally",
+          "disabled": false,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "0.906017",
+          "width": 154.13333129882812,
+          "height": 44.399993896484375
+        },
+        "providers": [
+          "abuseipdb",
+          "hybridanalysis",
+          "urlhaus",
+          "urlscan",
+          "virustotal"
+        ],
+        "canonicalDownloadSha256": "191d0f30c9d7402a8a20d9f5fef76f524b2f7b8be21e73f4ade8eb070e066004",
+        "scope": "Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance."
+      }
+    },
+    {
+      "probe": "upgrade153",
+      "passed": true,
+      "client": "153.6.0",
+      "startedAt": "2026-11-03T18:02:31Z",
+      "finishedAt": "2026-11-03T18:03:02Z",
+      "xpiSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "reportSha256": "b845ec8085796cb72bb7f8b75561b01cbf3b02714ef17c856d5d9eb73fe32086",
+      "runnerSha256": "3aab207c482c088d6db134eb52ca1589e3392ad16be640fb4a783b7418730e80",
+      "gracefulRestarts": 3,
+      "forcedRestarts": 2,
+      "scope": "Manual upgrade from published 1.24.3; audit/settings, three normal restarts including profile restore, two SIGKILL restarts. No automatic distribution or in-place downgrade."
+    }
+  ],
+  "initialProbeAttempts": [
+    {
+      "passed": false,
+      "reportSha256": "6ccc6060cdac6beea788f67df206feac3d45e032f76e55d601e8ab738fc08b4f",
+      "reason": "Probe initially called extension-only APIs from the message; corrected to existing options tab."
+    },
+    {
+      "passed": false,
+      "reportSha256": "e813affeac7b7ea93603e6e57b02021679e0fab59eaa257d09f1e7764b5fc8f3",
+      "reason": "Probe initially called extension-only APIs from the message; corrected to existing options tab."
+    },
+    {
+      "passed": false,
+      "reportSha256": "aa6ee4bf88fbc09e13d519958e0ff9b1f0cd43f1e3d743672c73e17ed7e998ac",
+      "reason": "Popup X11 input probe lacked explicit chrome browser focus. DOM and screenshot/coordinate investigations preceded the final keyboard setup; failed attempts are not counted as successful popup input checks. Final probes explicitly focus the remote browser and validate Enter, Space and Tab. Product bytes unchanged."
+    },
+    {
+      "passed": false,
+      "reportSha256": "a1be55515db255799d41d1d2e01f7bcf28fc9bf709e9b991651c6a19bcb6d9bf",
+      "reason": "Popup X11 input probe lacked explicit chrome browser focus. DOM and screenshot/coordinate investigations preceded the final keyboard setup; failed attempts are not counted as successful popup input checks. Final probes explicitly focus the remote browser and validate Enter, Space and Tab. Product bytes unchanged."
+    },
+    {
+      "passed": false,
+      "reportSha256": "8db5854da6ac933fb9e392b4dbb3324c778ddb4e542d5ce63c4c7070b23f7e8c",
+      "reason": "Popup X11 input probe lacked explicit chrome browser focus. DOM and screenshot/coordinate investigations preceded the final keyboard setup; failed attempts are not counted as successful popup input checks. Final probes explicitly focus the remote browser and validate Enter, Space and Tab. Product bytes unchanged."
+    },
+    {
+      "passed": false,
+      "reportSha256": "7ed9f59518fecee167a475846209dba9b8f1a4b5615879d94a3425df20b58a17",
+      "reason": "Popup X11 input probe lacked explicit chrome browser focus. DOM and screenshot/coordinate investigations preceded the final keyboard setup; failed attempts are not counted as successful popup input checks. Final probes explicitly focus the remote browser and validate Enter, Space and Tab. Product bytes unchanged."
+    },
+    {
+      "passed": false,
+      "reportSha256": "f23fd78acfe741675f8235fccd50d5432db14927281861a0ce7ff75f2f7cb299",
+      "reason": "Popup X11 input probe lacked explicit chrome browser focus. DOM and screenshot/coordinate investigations preceded the final keyboard setup; failed attempts are not counted as successful popup input checks. Final probes explicitly focus the remote browser and validate Enter, Space and Tab. Product bytes unchanged."
+    },
+    {
+      "passed": false,
+      "reportSha256": "1a190c90ea8d28d6f542396364681f7f22f3c598e8ad46e337853d892ca81cc5",
+      "reason": "Popup X11 input probe lacked explicit chrome browser focus. DOM and screenshot/coordinate investigations preceded the final keyboard setup; failed attempts are not counted as successful popup input checks. Final probes explicitly focus the remote browser and validate Enter, Space and Tab. Product bytes unchanged."
+    },
+    {
+      "passed": false,
+      "reportSha256": "60125ca1384d224456a82af721f541bf1035d05ee2cf28b783388e0014c78979",
+      "reason": "Popup X11 input probe lacked explicit chrome browser focus. DOM and screenshot/coordinate investigations preceded the final keyboard setup; failed attempts are not counted as successful popup input checks. Final probes explicitly focus the remote browser and validate Enter, Space and Tab. Product bytes unchanged."
+    }
+  ],
+  "screenshots": {
+    "docs/screenshots/1.24.4/history-pages-message.png": "a3b9ff608ef5bd48150ce94930fbed378bcbfeb60e26966a9f407cd18c65fbdc",
+    "docs/screenshots/1.24.4/history-pages-popup.png": "74a9a51a48e38b972457e183c3ac090929a528a4c53d7b16440d5599fd589edb"
+  },
+  "remaining": [
+    "Native investigation of large active source/inventory lists before further optimization",
+    "Human language and usability review",
+    "Native screen readers and Windows/macOS",
+    "Durable occurrence migration and independent retention",
+    "Live provider accounts",
+    "Automatic update distribution and release publication"
+  ]
+}

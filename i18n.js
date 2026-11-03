@@ -1822,6 +1822,18 @@ const ThundyI18n = (() => {
   },
   "sourceExportFailed": {
     "message": "The report was not saved. Create a new preview to try again."
+  },
+  "analysisHistoryPages": {
+    "message": "History pages"
+  },
+  "analysisHistoryEntries": {
+    "message": "Entries"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Suspicious or malicious historical finding · association unconfirmed"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Show first historical warning"
   }
 };
     function get(key, params = []) {
