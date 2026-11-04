@@ -1835,5 +1835,11 @@
   },
   "analysisCurrentFindWarning": {
     "message": "Stärksten aktuellen Warnbefund zeigen"
+  },
+  "reportDisplayFailed": {
+    "message": "Ein gespeicherter Bericht konnte nicht dargestellt werden. Andere Ergebnisse bleiben verfügbar."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Einige Berichtsdetails haben ein nicht unterstütztes Format und konnten nicht dargestellt werden."
   }
 }

@@ -35,6 +35,52 @@ test('all five services classify actual responses, submission is separate from c
  assert.equal(a.response({provider:'hybridanalysis',scope:'file'},200,{}).state,'received');
  assert.equal(a.spec('https://virustotal.com.attacker.invalid/x'),null);
 });
+test('API verdicts and provenance are visible for every provider in popup and serialized message cards',()=>{
+ const a=model(),m=a.create();
+ const cases=[
+  ['hybridanalysis','report',{state:'COMPLETE',verdict:'malicious'},'malicious'],
+  ['virustotal','hash',{data:{attributes:{last_analysis_stats:{malicious:0,suspicious:0}}}},'none'],
+  ['urlhaus','domain',{query_status:'ok',url_count:1},'malicious'],
+  ['abuseipdb','ip',{data:{abuseConfidenceScore:90}},'malicious'],
+  ['urlscan','url',{uuid:'queued'},'unknown']
+ ];
+ for(const [provider,scope,data] of cases){const spec={provider,scope,resource:'message'};m.event({...spec,phase:'start'});m.event({...spec,phase:'finish',...a.response(spec,200,data),responded:true,observedAt:100});}
+ // A second unresolved observation must remain visible beside a no-detection result.
+ m.event({provider:'virustotal',scope:'ip',resource:'link:0',phase:'finish',state:'failed',verdict:'unknown',responded:true,observedAt:100});
+ for(const lang of ['en','de','fr','es','it','pl'])for(const serialized of [false,true]){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>');
+  try{
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(k=>catalog[k]?.message),before=JSON.stringify(m.data);
+   const c=vm.createContext({document:dom.window.document,URL,Date,labels,data:m.data});
+   vm.runInContext(serialized ? '('+a.render.toString()+')(data,labels)' : source+'\nThundyAnalysis.render(data,labels);',c);
+   const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+   for(const [provider,,,verdict] of cases){
+    const entry=root.querySelector('[data-provider="'+provider+'"]');assert.ok(entry);
+    assert.ok(entry.querySelector('.service-results').textContent.includes(catalog['analysisVerdict_'+verdict].message));
+    assert.ok(entry.querySelector('.service-origin').textContent.includes(catalog.analysisSource_remote.message));
+   }
+   const vt=root.querySelector('[data-provider="virustotal"]');assert.ok(vt.querySelector('.service-results').textContent.includes(catalog.analysisVerdict_unknown.message));
+   assert.equal(root.querySelectorAll('.services details[open]').length,0);
+   assert.equal(JSON.stringify(m.data),before);
+  }finally{dom.window.close();}
+ }
+});
+test('failed and unrecognized API responses remain visibly unknown for all five services',()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json')),labels=a.labels(k=>catalog[k]?.message);
+ for(const status of [200,401,429,500]){
+  const m=a.create();
+  for(const provider of a.providers){const spec={provider,scope:'report',resource:'message'};m.event({...spec,phase:'start'});m.event({...spec,phase:'finish',...a.response(spec,status,{}),responded:true,observedAt:100});}
+  const dom=new JSDOM('<html><body></body></html>');
+  try{
+   const c=vm.createContext({document:dom.window.document,URL,Date,data:m.data,labels});vm.runInContext(source+'\nThundyAnalysis.render(data,labels);',c);
+   const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+   for(const provider of a.providers){const entry=root.querySelector('[data-provider="'+provider+'"]');
+    assert.equal(entry.querySelector('.service-results').textContent,catalog.analysisVerdict_unknown.message);
+    assert.ok(entry.querySelector('.service-status').textContent.includes(catalog[status===200?'analysisState_received':'analysisState_failed'].message));
+   }
+  }finally{dom.window.close();}
+ }
+});
 test('failed refresh and cache hits never freshen an older finding; mixed outcomes retain warning',()=>{
  const a=model(),m=a.create();
  const base={provider:'urlhaus',scope:'domain'};m.event({...base,phase:'start'});m.event({...base,phase:'finish',state:'checked',verdict:'malicious',observedAt:100,responded:true});

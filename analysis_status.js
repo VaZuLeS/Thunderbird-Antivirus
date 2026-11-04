@@ -163,6 +163,7 @@ const ThundyAnalysis = (() => {
         if (!live) { live = n('div','','live'); live.setAttribute('role','status'); live.setAttribute('aria-live','polite'); live.setAttribute('aria-atomic','true'); }
         const style = document.createElement('style'); style.textContent = ':host{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40)}*{box-sizing:border-box}.card{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40);padding:var(--surface-pad,18px);border:1px solid var(--card-border,#cbd5e1);border-left:4px solid var(--link-color,#146b80);border-radius:12px;background:var(--card-bg,#fff);overflow-wrap:anywhere}h2{font:700 16px/1.4 system-ui;margin:0 0 8px}p{margin:6px 0}.mode,.phase{font-weight:700}.muted,small{color:var(--text-muted,#536579)}ul{padding-left:20px;margin:8px 0}li{margin:8px 0}summary{cursor:pointer}:is(summary,button,li):focus-visible{outline:3px solid var(--link-color,#146b80);outline-offset:3px}.history-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}button{font:inherit;min-height:44px;padding:8px 12px;color:var(--text-color,#192b40);background:var(--input-bg,#fff);border:1px solid var(--input-border,#8091a5);border-radius:8px;cursor:pointer}button:disabled{opacity:.6;cursor:not-allowed}.warning{color:var(--color-danger,#b32642)}.live{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}details{margin:8px 0}';
         const date = value => Number.isFinite(value) ? new Date(value).toLocaleString(document.documentElement.lang || undefined) : t('analysisTimeUnknown');
+        style.textContent += '.services{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}.services>li{min-width:0;margin:0;padding:12px;border:1px solid var(--card-border,#cbd5e1);border-radius:10px;background:var(--input-bg,var(--card-bg,#fff))}.services>li.has-warning{border-color:var(--color-danger,#b32642)}.service-results{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.service-verdict{display:inline-block;padding:3px 8px;border:1px solid currentColor;border-radius:8px;font-weight:600}.service-origin{margin:6px 0;font-size:.95em}';
         const rows = data.rows || [], local = data.local?.state === 'checked', localLimited = ['incomplete','failed'].includes(data.local?.state);
         const running = rows.some(row => row.state === 'running'), waiting = rows.some(row => row.state === 'submitted'), incomplete = rows.some(row => row.state === 'incomplete');
         const failures = rows.some(row => row.failures > 0 || row.state === 'failed'), usable = rows.some(row => row.responses > 0 || row.cacheHits > 0);
@@ -180,6 +181,7 @@ const ThundyAnalysis = (() => {
             providersByResource.get(row.resource).add(brands[row.provider]);
         }
         const list = document.createElement('ul'), inactive = document.createElement('ul');
+        list.className='services';list.setAttribute('role','list');
         const detailBodies = new WeakMap();
         const hydrate = entry => {
             const body = detailBodies.get(entry);
@@ -204,7 +206,15 @@ const ThundyAnalysis = (() => {
         for (const [provider, brand] of Object.entries(brands)) {
             const items = rows.filter(row => row.provider === provider), li = document.createElement('li'); li.append(n('strong', brand));
             if (items.length) {
+                li.dataset.provider=provider;
+                const results=n('div','','service-results');
+                for (const verdict of ['malicious','suspicious','none','unknown']) if (items.some(row => (row.verdict || 'unknown')===verdict)) {
+                    results.append(n('span',t('analysisVerdict_'+verdict),'service-verdict'+(['malicious','suspicious'].includes(verdict)?' warning':'')));
+                }
+                if (items.some(row => ['malicious','suspicious'].includes(row.verdict))) li.className='has-warning';
+                li.append(results);
                 li.append(n('div', [...new Set(items.map(row => t('analysisState_' + row.state)))].join(' · '), 'service-status'));
+                li.append(n('div',[...new Set(items.map(row=>t('analysisSource_'+row.source)))].join(' · '),'service-origin muted'));
                 if (items.some(row => row.failures && row.responses)) li.append(n('div',t('analysisPartial'),'warning'));
                 if (['disabled','permission','authorization','policy','unconfigured'].includes(data.availability?.[provider])) li.append(n('div', t('analysisReason_' + data.availability[provider]), 'muted'));
                 for (const row of items) {

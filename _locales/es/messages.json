@@ -1832,5 +1832,11 @@
   },
   "analysisCurrentFindWarning": {
     "message": "Mostrar el hallazgo actual más grave"
+  },
+  "reportDisplayFailed": {
+    "message": "No se pudo mostrar un informe guardado. Los demás resultados siguen disponibles."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Algunos detalles del informe tienen un formato no compatible y no se pudieron mostrar."
   }
 }
