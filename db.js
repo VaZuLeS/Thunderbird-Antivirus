@@ -235,6 +235,11 @@ function pruneStore(db, storeName, now = Date.now()) {
             const cursor = request.result;
             if (cursor) {
                 const record = cursor.value;
+                // Unreadable resource collections are not a deletion decision.
+                // Leave the original intact and let other records remain usable.
+                if (!record || ['attachments','links'].some(field => record[field] != null && (!Array.isArray(record[field]) || record[field].some(item => !item || typeof item !== 'object' || Array.isArray(item))))) {
+                    cursor.continue(); return;
+                }
                 const dates = [...(record.attachments || []), ...(record.links || [])].map(item => new Date(item.created || 0).getTime());
                 const updatedAt = record.updatedAt || dates.reduce((latest, value) => Math.max(latest, value || 0), 0);
                 if (updatedAt < now - 30 * 24 * 60 * 60 * 1000) cursor.delete();

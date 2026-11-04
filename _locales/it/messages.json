@@ -1838,5 +1838,17 @@
   },
   "reportFieldsUnavailable": {
     "message": "Alcuni dettagli del rapporto hanno un formato non supportato e non sono stati visualizzati."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Non è stato possibile leggere alcuni dati di analisi salvati. Gli altri risultati restano disponibili."
+  },
+  "analysisModeResponses": {
+    "message": "Risposte ricevute · nessun verdetto valutabile disponibile"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Risposte ricevute senza un verdetto valutabile · alcune richieste non sono riuscite"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Per le nuove richieste"
   }
 }

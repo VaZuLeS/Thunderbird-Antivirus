@@ -192,7 +192,8 @@ test('oversize attachments remain visible without allocating a file', async () =
 test('cache retention deletes expired records and keeps the newest 1000', async () => {
     const context = vm.createContext({ console }); vm.runInContext(fs.readFileSync('db.js', 'utf8'), context);
     const now = Date.now(), deleted = [];
-    const records = [{ key: 'expired', value: { updatedAt: now - 31 * 86400000 } }, ...Array.from({ length: 1001 }, (_, i) => ({ key: 'recent-' + i, value: { updatedAt: now - i } }))];
+    const unreadable=[{key:'bad-list',value:{attachments:{old:true}}},{key:'bad-item',value:{links:[null]}}],original=JSON.stringify(unreadable);
+    const records = [...unreadable,{ key: 'expired', value: { updatedAt: now - 31 * 86400000 } }, ...Array.from({ length: 1001 }, (_, i) => ({ key: 'recent-' + i, value: { updatedAt: now - i } }))];
     let index = 0, request = {}, transaction;
     function next() {
         const item = records[index++];
@@ -203,6 +204,7 @@ test('cache retention deletes expired records and keeps the newest 1000', async 
     const db = { objectStoreNames: { contains: () => true }, transaction: () => transaction = { objectStore: () => ({ openCursor: () => { queueMicrotask(next); return request; }, delete: key => deleted.push(key) }) } };
     await context.pruneStore(db, 'hybridanalysis', now);
     assert.deepEqual(deleted, ['expired', 'recent-1000']);
+    assert.equal(JSON.stringify(unreadable),original);
 });
 
 test('provider retries honor Retry-After for GET and never repeat an upload', async () => {
@@ -639,6 +641,18 @@ function sourceRecords(state, initial = null) {
     state.context.updateStore=async(_db,_store,key,update)=>{const value=update(records.get(key)||null);if(value)records.set(key,value);return value};
     return records;
 }
+
+test('source RPC survives malformed stored lists and retains link slots and all provider history',async()=>{
+ const s=setup({},true);await s.context.configure();
+ const record={attachments:{bad:true},links:[null,{url:'https://example.com/',state:'KNOWN',report:{state:'COMPLETE',verdict:'malicious'}}],analysisStatus:{schemaVersion:2,rows:[null,...['hybridanalysis','virustotal','urlhaus','abuseipdb','urlscan'].map(provider=>({provider,scope:'report',state:'checked',verdict:'malicious',observedAt:10,responses:1}))]}};
+ const records=sourceRecords(s,record),before=JSON.stringify(record),ctx=await s.context.getMessageAnalysisContext(s.message);
+ try{
+  const bound=await ctx.resourceRecord();assert.equal(bound.links.length,1);assert.equal(bound.links[0].analysisResourceRef,'link:1');
+  const snapshot=await ctx.snapshot();assert.equal(snapshot.sourceDataIncomplete,true);assert.equal(snapshot.sourceHistory.sourceDataIncomplete,true);
+  for(const provider of ['hybridanalysis','virustotal','urlhaus','abuseipdb','urlscan'])assert.ok(snapshot.sourceHistory.rows.some(row=>row.provider===provider&&row.verdict==='malicious'));
+  assert.equal(JSON.stringify(records.get(s.message.headerMessageId)),before);assert.equal(s.requests.length,0);
+ }finally{ctx.dispose();}
+});
 
 test('two same-name attachments and two links retain distinct provider resources through cache and restart',async()=>{
  const s=setup({externalAnalysisConsent:true,privacyTier:'strict',virustotalApikey:'vt',urlhausApikey:'uh'},true);await s.context.configure();

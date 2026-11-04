@@ -1838,5 +1838,17 @@
   },
   "reportFieldsUnavailable": {
     "message": "Niektóre szczegóły raportu mają nieobsługiwany format i nie mogły zostać wyświetlone."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Nie udało się odczytać części zapisanych danych analizy. Pozostałe wyniki są nadal dostępne."
+  },
+  "analysisModeResponses": {
+    "message": "Otrzymano odpowiedzi · brak możliwej do oceny klasyfikacji"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Otrzymano odpowiedzi bez możliwej do oceny klasyfikacji · część zapytań nie powiodła się"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Dla nowych zapytań"
   }
 }

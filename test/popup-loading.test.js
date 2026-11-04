@@ -51,6 +51,16 @@ test('opening the popup tolerates optional Hybrid Analysis field shapes without 
  }finally{f.close();}
 });
 
+test('malformed neighboring resource entries do not abort a valid stored popup report',async()=>{
+ const record={attachments:{unexpected:true},links:[null,{url:'https://valid.example.invalid',state:'KNOWN',hybrid_sha256:'b',report:{state:'COMPLETE',verdict:'malicious'}}]},before=JSON.stringify(record);
+ const f=await popup(record);try{
+  assert.equal(f.dom.window.document.getElementById('unexpected-error-msg'),null);
+  const text=f.dom.window.document.getElementById('hybrid_analysis_api_content').textContent;
+  assert.ok(text.includes('valid.example.invalid'));assert.ok(text.includes(f.catalog.analysisStoredDataIncomplete.message));
+  assert.equal(JSON.stringify(record),before);assert.equal(f.requests.length,0);
+ }finally{f.close();}
+});
+
 test('stored report actions bind after fragment rendering and remain separate for equal attachment hashes',async()=>{
  const record={attachments:['1.2','1.3'].map(partName=>({partName,attachment_name:'same.html',hybrid_sha256:'same-hash',state:'KNOWN',report:{state:'COMPLETE',verdict:'clean',threat_score:0}}))};
  const before=JSON.stringify(record),f=await popup(record);

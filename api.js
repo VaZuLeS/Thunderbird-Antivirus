@@ -242,10 +242,15 @@ try {
                 if (!result?.success) throw new Error('Message resource inventory unavailable');
                 record = result.record;
             } else record = await getFromStore(db, 'hybridanalysis', message.headerMessageId);
+            if (typeof ThundyAnalysis !== 'undefined' && typeof ThundyAnalysis.resources === 'function') record = ThundyAnalysis.resources(record);
             popupLinkResources.clear();
             for (const [index,item] of (record?.links || []).entries()) popupLinkResources.set(item.url, item.analysisResourceRef || 'link:' + index);
             const liveContainer = apiContainer || document.getElementById('hybrid_analysis_api_content');
             if (liveContainer) liveContainer.textContent = '';
+            if (record?.sourceDataIncomplete) {
+                const warning = document.createElement('p'); warning.className = 'card card-warn'; warning.setAttribute('role','status');
+                warning.textContent = uiText('analysisStoredDataIncomplete','Some stored analysis data could not be read. Other results remain available.'); liveContainer.appendChild(warning);
+            }
             for (const [kind, coverage] of Object.entries(record?.scanCoverage || {})) {
                 const summary = document.createElement('p'); summary.className = 'card card-info'; summary.setAttribute('role', 'status');
                 summary.textContent = uiText(({ attachments: 'coverageAttachments', domains: 'coverageDomains', batchLinks: 'coverageBatch' })[kind], '') + ' · ' + uiText('coverageSummary', 'Coverage: $1 / $2 / $3 / $4 / $5', [coverage.detected, coverage.eligible, coverage.processed, coverage.failed, coverage.skipped].map(String)) + ' · ' + new Date(coverage.observedAt).toLocaleString();
@@ -323,7 +328,7 @@ try {
                 }
             } else {
                 let container = document.getElementById('hybrid_analysis_api_content');
-                if (container && !record?.scanCoverage) container.textContent = '';
+                if (container && !record?.scanCoverage && !record?.sourceDataIncomplete) container.textContent = '';
                 let emptyCard = document.createElement('div');
                 emptyCard.className = 'card card-info mb-3';
                 emptyCard.setAttribute('role', 'status');
