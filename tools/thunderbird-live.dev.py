@@ -197,7 +197,7 @@ def native_download(m, display, out, button, stem, browser='window.gTabmail.curr
     native_save_path(display, out / stem, save_button=save_button)
     def completed():
         return m.page('''const known=new Set(arguments[0]);return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.find(item=>!known.has(item.id)&&item.state==="complete")||null);''', [known],browser=browser)
-    try: item = wait_for(completed)
+    try: item = wait_for(completed, timeout=40)
     except TimeoutError:
         subprocess.run(['import','-window','root',str(out/(stem+'-failure.png'))], env={**os.environ,'DISPLAY':display},check=True,timeout=10)
         raise
