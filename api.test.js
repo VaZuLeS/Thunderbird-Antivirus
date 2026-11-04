@@ -3429,8 +3429,8 @@ describe('setupRescanButton', () => {
         // Immediate UI updates
         assert.strictEqual(btn.disabled, true);
         assert.strictEqual(btn.attributes['aria-busy'], 'true');
-        assert.strictEqual(btn.textContent || btn.textContent, 'Sende Rescan...');
-        assert.strictEqual(status.textContent || status.textContent, 'Datei wird für Rescan hochgeladen...');
+        assert.strictEqual(btn.textContent, 'Sende Rescan...');
+        assert.strictEqual(status.textContent, 'Datei wird für Rescan hochgeladen...');
 
         // Wait for promise resolution (macro task)
         await new Promise(resolve => setTimeout(resolve, 0));
