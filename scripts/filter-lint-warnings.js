@@ -15,12 +15,11 @@
 const fs = require('fs');
 
 const KNOWN_THUNDERBIRD_FALSE_POSITIVES = [
-  'messagesRead',
   'messageDisplay.getDisplayedMessages',
   'messageDisplay.onMessagesDisplayed',
   'messages.getFull',
   // Thunderbird messages.get(messageId) retrieves the authoritative MessageHeader.
-  'messages.get is not supported',
+  'messages.get',
   'messages.listAttachments',
   'messages.getAttachmentFile',
   'messages.query',
@@ -28,8 +27,8 @@ const KNOWN_THUNDERBIRD_FALSE_POSITIVES = [
   // https://webextension-api.thunderbird.net/en/mv3/windows.html#opendefaultbrowser-url
   'windows.openDefaultBrowser',
   'scripting.messageDisplay',
-  // Thunderbird-only optional permission for uploading user data
-  'sensitiveDataUpload'
+  'scripting.messageDisplay.register',
+  'scripting.messageDisplay.unregister'
 ];
 
 const ALLOWED_CODES = [
@@ -42,48 +41,66 @@ const ALLOWED_CODES = [
 ];
 
 function isKnownFalsePositive(warning) {
+  if (!warning || typeof warning.message !== 'string') return false;
   if (!ALLOWED_CODES.includes(warning.code)) return false;
   // The add-on is distributed for Thunderbird only; the Firefox for Android
   // compatibility notice can never apply and is always irrelevant.
   if (warning.code === 'KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION') return true;
   if (warning.code === 'MANIFEST_OPTIONAL_PERMISSIONS') {
-    return (warning.message || '').includes('sensitiveDataUpload');
+    return /^(?:\/optional_permissions: )?Invalid optional_permissions "sensitiveDataUpload" at \d+\.$/.test(warning.message);
   }
-  const message = warning.message || '';
-  return KNOWN_THUNDERBIRD_FALSE_POSITIVES.some((needle) => message.includes(needle));
+  if (warning.code === 'MANIFEST_PERMISSIONS') {
+    return /^(?:\/permissions: )?Invalid permissions "messagesRead" at \d+\.$/.test(warning.message);
+  }
+  return warning.code === 'UNSUPPORTED_API' && KNOWN_THUNDERBIRD_FALSE_POSITIVES.some(api => warning.message === api + ' is not supported');
 }
 
+function assessReport(report) {
+  const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+  const invalid = () => { throw new Error('Incomplete or inconsistent lint report'); };
+  if (!object(report) || !object(report.summary) || !object(report.metadata)) invalid();
+  for (const [bucket, type] of [['errors','error'],['warnings','warning'],['notices','notice']]) {
+    if (!Array.isArray(report[bucket]) || !Number.isSafeInteger(report.summary[bucket]) || report.summary[bucket] < 0 || report.summary[bucket] !== report[bucket].length) invalid();
+    if (report[bucket].some(item => !object(item) || typeof item.code !== 'string' || !item.code.trim() || typeof item.message !== 'string' || !item.message.trim() || item._type !== undefined && item._type !== type)) invalid();
+  }
+  if (!Number.isSafeInteger(report.count) || report.count < 0 || report.count !== report.errors.length + report.warnings.length + report.notices.length) invalid();
+  const unexpected = report.warnings.filter(warning => !isKnownFalsePositive(warning));
+  return {report,unexpected,accepted:report.errors.length === 0 && unexpected.length === 0};
+}
 
-function main() {
-  const file = process.argv[2] || '/tmp/lint.json';
-  const report = JSON.parse(fs.readFileSync(file, 'utf8'));
-  const errors = report.errors || [];
-  const warnings = report.warnings || [];
-  const unexpected = warnings.filter((warning) => !isKnownFalsePositive(warning));
-
-  console.log('lint summary:', JSON.stringify(report.summary));
+function printAssessment({report,unexpected,accepted}, logger = console) {
+  const {errors,warnings} = report;
+  logger.log('lint summary:', JSON.stringify(report.summary));
   for (const warning of warnings) {
     const known = isKnownFalsePositive(warning);
-    console.log((known ? 'known-false-positive: ' : 'UNEXPECTED WARNING: ') + warning.code + ' | ' + warning.message);
+    logger.log((known ? 'known-false-positive: ' : 'UNEXPECTED WARNING: ') + warning.code + ' | ' + warning.message);
   }
 
   if (errors.length > 0) {
-    for (const error of errors) console.error('LINT ERROR: ' + error.code + ' | ' + error.message);
-    process.exitCode = 1;
-    return;
+    for (const error of errors) logger.error('LINT ERROR: ' + error.code + ' | ' + error.message);
   }
 
   if (unexpected.length > 0) {
-    console.error('\n' + unexpected.length + ' unexpected lint warning(s); fix them or document them as known Thunderbird false positives.');
-    process.exitCode = 1;
-    return;
+    logger.error('\n' + unexpected.length + ' unexpected lint warning(s); fix them or document them as known Thunderbird false positives.');
   }
 
-  console.log('\nLint ok: ' + warnings.length + ' warning(s), all of them known Thunderbird false positives.');
+  if (accepted) logger.log('\nLint ok: ' + warnings.length + ' warning(s), all of them known Thunderbird false positives.');
+}
+
+function main() {
+  try {
+    const report = JSON.parse(fs.readFileSync(process.argv[2] || '/tmp/lint.json', 'utf8'));
+    const assessment = assessReport(report);
+    printAssessment(assessment);
+    process.exitCode = assessment.accepted ? 0 : 1;
+  } catch (_) {
+    console.error('Lint report rejected: unreadable, invalid or inconsistent report.');
+    process.exitCode = 1;
+  }
 }
 
 if (require.main === module) {
   main();
 }
 
-module.exports = { isKnownFalsePositive, KNOWN_THUNDERBIRD_FALSE_POSITIVES };
+module.exports = { isKnownFalsePositive, KNOWN_THUNDERBIRD_FALSE_POSITIVES, assessReport, printAssessment };
