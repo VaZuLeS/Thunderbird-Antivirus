@@ -1250,6 +1250,39 @@ def check_history_pages(m, base, out, report, display):
     report['historyPages']={'passed':True,'syntheticObservations':True,'liveProviderCalls':False,'storedHistoryUnchanged':preserved,'realX11Keyboard':True,'popupKeys':['Return','space','Tab'],'popupKeyboardSetup':'Explicit chrome browser focus before X11 keys','firstMessagePage':first,'keyboardMessagePage':keyboard,'lastMessagePage':last,'afterRefresh':refreshed,'firstPopupPage':popup_first,'lastPopupPage':popup_last,'scope':'Real message and popup, 1200 unbound history observations; no current threat inherited, no screen reader acceptance.'}
 
 
+def probe_source_export_navigation(m, base, invalidate=False):
+    """Observe actual document reuse, without assuming a back/forward cache."""
+    m.page('''sessionStorage.removeItem("thundyNavigationEvents");
+      window.wrappedJSObject.__thundyNavigationMarker="original-export-document";
+      for(const type of ["pagehide","pageshow"])addEventListener(type,event=>{
+        const rows=JSON.parse(sessionStorage.getItem("thundyNavigationEvents")||"[]");
+        rows.push({type,persisted:event.persisted});sessionStorage.setItem("thundyNavigationEvents",JSON.stringify(rows));
+      });
+      setTimeout(()=>location.assign(arguments[0]),0);''', [base+'options.html'])
+    wait_for(lambda:m.page('return location.pathname.endsWith("/options.html")&&document.readyState==="complete";'))
+    if invalidate:
+        m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+          await bg.clearStore(await bg.getSharedDB(),"hybridanalysis");
+          await b.runtime.sendMessage({action:"clearMemoryCaches"});return true;})();''')
+    m.page('setTimeout(()=>history.back(),0);')
+    wait_for(lambda:m.page('return location.pathname.endsWith("/source_export.html")&&document.readyState==="complete";'))
+    observed=m.page('''return {sameDocument:window.wrappedJSObject.__thundyNavigationMarker==="original-export-document",
+      events:JSON.parse(sessionStorage.getItem("thundyNavigationEvents")||"[]"),
+      navigationType:performance.getEntriesByType("navigation")[0]?.type,
+      initiallyEmpty:document.getElementById("sourceExportContent").textContent==="",
+      initiallyDisabled:document.getElementById("sourceExportSave").disabled};''')
+    m.page('document.getElementById("sourceExportPreview").click();')
+    state=wait_for(lambda:m.page('''const p=document.getElementById("sourceExportContent"),s=document.getElementById("sourceExportSave");
+      if(!p.hidden&&!s.disabled)return "fresh-preview";
+      if(document.getElementById("sourceExportStatus").textContent.startsWith("The message context is no longer available")&&s.disabled&&p.textContent==="")return "unavailable";
+      return null;'''))
+    observed['afterExplicitPreview']=state
+    observed['cacheClearedWhileAway']=invalidate
+    assert observed['initiallyEmpty'] and observed['initiallyDisabled'],observed
+    assert state==('unavailable' if invalidate else 'fresh-preview'),observed
+    return observed
+
+
 def check_source_export(m, base, out, report, restart, display):
     """Real popup entry, privacy projection, GTK download, clear and restart."""
     open_page(m,base+'options.html')
@@ -1295,6 +1328,8 @@ def check_source_export(m, base, out, report, restart, display):
     expected=wait_for(lambda:m.page('const p=document.getElementById("sourceExportContent");return !p.hidden&&JSON.parse(p.textContent);'))
     downloaded=native_json_download(m,display,out,'sourceExportSave','source-export-download')
     assert downloaded==expected
+    navigation=[probe_source_export_navigation(m,base),probe_source_export_navigation(m,base,invalidate=True)]
+    report['sourceExportNavigation']={'passed':True,'cases':navigation,'scope':'Actual same-tab forward navigation and history.back; document reuse observed rather than assumed. No synthetic pageshow event.'}
     m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;await bg.clearStore(await bg.getSharedDB(),"hybridanalysis");await b.runtime.sendMessage({action:"clearMemoryCaches"});return true;})();''')
     wait_for(lambda:m.page('return document.getElementById("sourceExportSave").disabled&&document.getElementById("sourceExportContent").textContent==="";'))
     m.page('document.getElementById("sourceExportPreview").click();')

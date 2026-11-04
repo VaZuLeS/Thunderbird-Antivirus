@@ -2,6 +2,8 @@
 
 Stand: 3. November 2026, unveröffentlichte Entwicklung 1.24.4.
 
+Die ergänzende [native Navigationsuntersuchung vom 4. November](EXPORT_NAVIGATION.md) prüft Rückkehr und Cachelöschung während der Abwesenheit unter Linux 140/153. Sie ändert diesen Exportvertrag nicht und grenzt die nicht beobachtete Wiederherstellung desselben Dokuments ausdrücklich ab.
+
 ## Zweck und Bedienung
 
 Das Toolbar-Popup der konkreten Nachricht öffnet über „Quellenbericht als Vorschau öffnen“ eine eigene Add-on-Seite. Dort wird erst nach „Vorschau“ der aufgezeichnete Stand gelesen. „Vorschau verwerfen“ löscht die Vorschau; „Lokal speichern“ öffnet Thunderbirds echten Download-/Speicherdialog. Das Öffnen, Vorbereiten und Speichern startet keine neue lokale Bewertung, Providerabfrage oder Übermittlung. Es erteilt keine Einwilligung oder Berechtigung.

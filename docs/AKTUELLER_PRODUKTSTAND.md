@@ -26,6 +26,8 @@ Die [großen aktiven Quellenansichten AVN-007.b](AKTIVE_QUELLENANSICHTEN.md) wer
 
 Der [Lint-Prüfvertrag AVN-008.a](LINT_PRUEFVERTRAG.md) weist unvollständige Berichte, widersprüchliche Prozessresultate und zu breit passende Warnungsausnahmen ab. Der isolierte neuere Linter besteht die abgegrenzte Vergleichsprobe, wird ohne belegten Advisory-/Integrationsvorteil aber nicht erzwungen. Die App-Nutzdaten und das exakt nativ geprüfte Entwicklungspaket bleiben unverändert; dies ist eine Verbesserung der Buildprüfung, keine neue Analysefähigkeit.
 
+Die [native Exportnavigation AVN-011.b](EXPORT_NAVIGATION.md) prüft anschließend die tatsächliche Rückkehr im selben Inhaltstab mit und ohne Cachelöschung während der Abwesenheit. Unter Linux 140/153 wird jeweils ein neues Dokument mit leerer Vorschau geladen; ein gelöschter Kontext bleibt unzugänglich. Die vermutete Wiederherstellung desselben Dokuments wurde nicht beobachtet. Die begrenzte Untersuchung ist abgeschlossen und im bestehenden nativen CI-Schritt abgesichert; Runtime und Paketbytes bleiben unverändert.
+
 | Ebene | Stand |
 | --- | --- |
 | GitHub-Distribution | Zielversion 1.24.3, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.2 bleibt historisch erhalten |

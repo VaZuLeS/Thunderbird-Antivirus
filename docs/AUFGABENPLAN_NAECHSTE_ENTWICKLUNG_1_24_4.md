@@ -26,6 +26,8 @@ Der weitere [Schritt AVN-003/009.b zur Inhaltsverfügbarkeit](PRUEFUMFANG_NACHRI
 
 **AVN-008.a am 4. November umgesetzt und geprüft:** Die [isolierte Linteruntersuchung und Gatekorrektur](LINT_PRUEFVERTRAG.md) bestätigen bisher angenommene leere Berichte und ähnlich benannte ungültige Berechtigungen. Berichtsschema, Zähler, Prozessabschluss und exakte Thunderbird-Ausnahmen sind nun geprüft; ein gemeinsamer Temporärbericht entfällt. 1.062 automatisierte Tests und 14 tatsächliche CLI-Scans bestehen. 10.15.0 besteht die Stichprobe mit aktueller XPI und sechs Fixtures, reduziert aber die gleichartig isolierten Auditbefunde nicht. Der bestehende Consumer und das exakte nativ geprüfte Paket bleiben unverändert. Advisorybehebung und reproduzierbarer Archivaufbau bleiben als AVN-008.b/014.b offen; eine allgemeine Sicherheitsfreigabe wird nicht abgeleitet.
 
+**AVN-011.b am 4. November untersucht und abgeschlossen:** Die [native Exportnavigation](EXPORT_NAVIGATION.md) bestätigt unter Linux 140/153 eine neue Dokumentladung bei Rückkehr im selben Inhaltstab. Alte Vorschauen bleiben leer; nach Cachelöschung während der Abwesenheit bleibt der alte Kontext unzugänglich. Eine tatsächliche Wiederherstellung desselben Dokuments aus dem Back/Forward-Cache wurde nicht beobachtet; hierfür wird keine Freigabe behauptet. Beide Fälle sind im bestehenden nativen CI-Prüfer ergänzt. Keine Runtimeänderung ist durch den Befund begründet. Die [GitHub-Roadmap #740](https://github.com/VaZuLeS/Thunderbird-Antivirus/issues/740) führt die verbleibenden Pakete; der historische Plan unten bleibt als ursprünglicher Stand erhalten.
+
 ## 1. Bestandsaufnahme und Nachweisgrenzen
 
 ### Veröffentlichter Stand und vorbereitete Entwicklung
