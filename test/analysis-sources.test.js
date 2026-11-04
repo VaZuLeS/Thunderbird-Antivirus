@@ -104,3 +104,139 @@ test('source refresh preserves each open resource and keyboard focus, and announ
  const unchanged=root.querySelector('.live').textContent;c.a.render(data(),labels);assert.equal(root.querySelector('.live').textContent,unchanged);
  }finally{dom.window.close()}
 });
+
+test('unbound history retains source times and states without resource data or mutating originals',()=>{
+ const a=model(),snapshot={schemaVersion:2,local:{state:'checked',observedAt:5},rows:[{provider:'hybridanalysis',scope:'report',resource:'attachment:1.2',state:'running',verdict:'malicious',responses:1,observedAt:10,findingAt:9}]};
+ const record={analysisStatus:snapshot,analysisStatusByMessage:{7:snapshot},analysisSourceSnapshots:{saved:{snapshot}},attachments:[{partName:'1.2',attachment_name:'secret.txt',hybrid_sha256:'private-hash',report:{verdict:'suspicious'}}]};
+ const original=JSON.stringify(record),history=a.history(record);
+ assert.ok(history.rows.some(row=>row.state==='incomplete'&&row.observedAt===10&&row.findingAt===9));
+ assert.ok(history.rows.every(row=>row.resource===null&&row.source==='stored'&&row.active===0));
+ assert.ok(!JSON.stringify(history).includes('secret.txt'));assert.ok(!JSON.stringify(history).includes('private-hash'));assert.equal(JSON.stringify(record),original);
+ assert.ok(a.history({...record,analysisStatus:null,analysisStatusLegacy:null,analysisStatusByMessage:{missing:null,7:snapshot}}).rows.some(row=>row.observedAt===10));
+ const tooMany={analysisStatusByMessage:Object.fromEntries(Array.from({length:130},(_,i)=>[String(i),{schemaVersion:2,rows:[]}]))};
+ assert.equal(a.history(tooMany).truncated,true);
+});
+
+test('all six views separate historical services from current verdicts and expose unsaved observations',()=>{
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  try{
+   const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
+   const history=c.a.history({analysisStatus:{schemaVersion:2,rows:c.a.providers.map(provider=>({provider,scope:'report',resource:'message',state:'checked',verdict:'malicious',responses:1,observedAt:10}))}});
+   const data={local:{state:'checked'},rows:[],sourceHistory:history};const host=c.a.render(data,labels),root=host.shadowRoot;
+   assert.equal(root.querySelector('.mode').textContent,catalog.analysisLocal.message);
+   assert.equal(root.querySelector('.card').style.borderColor,'');
+   const detail=root.querySelector('[data-key="unbound-history"]');
+   for(const brand of ['Hybrid Analysis','VirusTotal','URLhaus','AbuseIPDB','urlscan.io'])assert.ok(detail.querySelector('summary').textContent.includes(brand));
+   assert.ok(detail.textContent.includes(catalog.analysisHistoryWarning.message));
+   detail.open=true;detail.querySelector('summary').focus();
+   c.a.render({...data,sourcePersistenceFailed:true,reportArchiveBlocked:true},labels);
+   assert.equal(root.querySelector('[data-key="unbound-history"]').open,true);assert.equal(root.activeElement.dataset.focusKey,'unbound-history');
+   assert.ok(root.querySelector('.live').textContent.includes(catalog.analysisPersistenceFailed.message));assert.ok(root.textContent.includes(catalog.analysisReportArchiveBlocked.message));assert.ok(!root.textContent.includes('MISSING:'));
+  }finally{dom.window.close();}
+ }
+});
+
+test('serialized mail renderer can display history without module globals',()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
+ const dom=new JSDOM('<html lang="en"><body></body></html>');
+ try{
+  const c=vm.createContext({document:dom.window.document,Date,labels:a.labels(key=>catalog[key]?.message),data:{local:{state:'checked'},rows:[],sourceHistory:{rows:[{provider:'urlscan',scope:'url',state:'submitted',verdict:'unknown',observedAt:100}]},reportArchiveBlocked:true}});
+  vm.runInContext('('+a.render.toString()+')(data,labels)',c);
+  const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+  assert.equal(root.querySelector('[data-key="unbound-history"] summary').textContent,catalog.analysisHistoryTitle.message+' · urlscan.io');
+  assert.ok(root.textContent.includes(catalog.analysisHistoryWarning.message));
+ }finally{dom.window.close();}
+});
+
+
+test('archived protocol payloads appear only as unbound historical observations',()=>{
+ const a=model();const record={analysisReportArchive:{schemaVersion:1,entries:[{kind:'attachment',slot:0,resource:{partName:'1.2',attachment_name:'private.bin',hybrid_sha256:'private-hash',report:{state:'COMPLETE',verdict:'malicious'},report_fetched_at:'2026-10-02T08:00:00Z',virustotal_stats:{malicious:2}}}]}};
+ const history=a.history(record);assert.equal(history.rows.length,2);assert.ok(history.rows.every(row=>row.resource===null&&row.source==='stored'));
+ assert.ok(history.rows.some(row=>row.observedAt===Date.parse('2026-10-02T08:00:00Z')));assert.ok(!JSON.stringify(history).includes('private.bin'));assert.ok(!JSON.stringify(history).includes('private-hash'));
+ assert.equal(a.create().data.rows.length,0);
+});
+
+test('all normalized history rows remain reachable and late warnings stay historical in all six languages',()=>{
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  try{
+   const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
+   const rows=Array.from({length:1200},(_,i)=>({provider:'urlhaus',scope:'domain',state:'checked',source:'stored',verdict:i===1199?'malicious':'none',resource:null,observedAt:1000+i,findingAt:1000+i}));
+   const data={local:{state:'checked'},rows:[],sourceHistory:{rows,truncated:false}},original=JSON.stringify(data);
+   const host=c.a.render(data,labels),root=host.shadowRoot,history=root.querySelector('[data-key="unbound-history"]');history.open=true;
+   assert.ok(history.querySelector('summary').textContent.includes(catalog.analysisHistoryFlagged.message));assert.equal(root.querySelector('.card').style.borderColor,'');assert.equal(root.querySelector('.mode').textContent,catalog.analysisLocal.message);
+   const seen=[];
+   for(let page=0;page<40;page++){
+    const items=history.querySelectorAll('.history-entries li');assert.equal(items.length,30);seen.push(...Array.from(items,item=>item.dataset.focusKey));
+    const next=history.querySelector('[data-focus-key="history-next"]');assert.equal(next.disabled,page===39);if(!next.disabled)next.click();
+   }
+   assert.equal(new Set(seen).size,1200);assert.ok(history.textContent.includes(catalog.analysisVerdict_malicious.message));assert.ok(root.querySelector('.live').textContent.includes('1171–1200 / 1200'));
+   const previous=history.querySelector('[data-focus-key="history-previous"]');previous.click();assert.equal(host.dataset.historyPage,'38');previous.focus();
+   c.a.render(data,labels);assert.equal(host.dataset.historyPage,'38');assert.equal(root.activeElement.dataset.focusKey,'history-previous');assert.equal(root.querySelector('[data-key="unbound-history"]').open,true);
+   root.querySelector('[data-focus-key="history-find-warning"]').click();assert.equal(host.dataset.historyPage,'39');assert.equal(root.activeElement.dataset.historyWarning,'true');
+   c.a.render(data,labels);assert.equal(root.activeElement.dataset.historyWarning,'true');
+   c.a.render({...data,sourceHistory:{rows:rows.slice(0,1),truncated:false}},labels);assert.equal(host.dataset.historyPage,'0');assert.equal(root.querySelectorAll('.history-entries li').length,1);assert.equal(root.activeElement.dataset.focusKey,'unbound-history');
+   assert.equal(JSON.stringify(data),original);assert.ok(!root.textContent.includes('MISSING:'));
+  }finally{dom.window.close();}
+ }
+});
+
+test('serialized history navigation needs no module globals and keeps projection limits distinct from pages',()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
+ const dom=new JSDOM('<html lang="en"><body></body></html>',{pretendToBeVisual:true});
+ try{
+  const rows=Array.from({length:1201},(_,i)=>({provider:'urlscan',scope:'url',state:'submitted',verdict:i===1199?'suspicious':'unknown',observedAt:i}));
+  const c=vm.createContext({document:dom.window.document,Date,labels:a.labels(key=>catalog[key]?.message),data:{local:{state:'checked'},rows:[],sourceHistory:{rows,truncated:false}}});
+  vm.runInContext('('+a.render.toString()+')(data,labels)',c);
+  const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+  assert.ok(root.textContent.includes(catalog.analysisTruncated.message));root.querySelector('[data-key="unbound-history"]').open=true;
+  root.querySelector('[data-focus-key="history-find-warning"]').click();assert.equal(root.querySelectorAll('.history-entries li').length,30);assert.ok(root.querySelector('.history-range').textContent.includes('1200 / 1200'));assert.ok(root.textContent.includes(catalog.analysisVerdict_suspicious.message));assert.equal(root.querySelector('.card').style.borderColor,'');
+ }finally{dom.window.close();}
+});
+
+test('current details format only on disclosure and preserve rendered times, focus and idempotent reopen in six languages',async()=>{
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  try{
+   let formats=0;class CountedDate extends Date{toLocaleString(...args){formats++;return super.toLocaleString(...args);}}
+   const c=vm.createContext({document:dom.window.document,URL,Date:CountedDate});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
+   const oldTime=Date.parse('2026-10-01T08:00:00Z'),newTime=Date.parse('2026-11-01T12:00:00Z');
+   const data={local:{state:'checked'},rows:[{provider:'hybridanalysis',scope:'report',resource:'message',source:'stored',state:'checked',verdict:'none',findingAt:oldTime,observedAt:oldTime,attemptedAt:oldTime}]};
+   const host=c.a.render(data,labels),root=host.shadowRoot;let entry=root.querySelector('[data-key="hybridanalysis:report:message"]');
+   assert.equal(formats,0);assert.equal(entry.querySelectorAll('p,small').length,0);
+   data.rows[0].observedAt=newTime;data.rows[0].findingAt=newTime;data.rows[0].verdict='malicious';
+   const toggle=async open=>{const changed=new Promise(resolve=>entry.addEventListener('toggle',resolve,{once:true}));entry.open=open;await changed;};
+   await toggle(true);assert.equal(formats,3);assert.ok(entry.textContent.includes(new Date(oldTime).toLocaleString(lang)));assert.ok(!entry.textContent.includes(new Date(newTime).toLocaleString(lang)));assert.ok(entry.textContent.includes(catalog.analysisVerdict_none.message));
+   const children=entry.children.length;await toggle(false);await toggle(true);assert.equal(entry.children.length,children);assert.equal(formats,3);
+   entry.querySelector('summary').focus();c.a.render(data,labels);entry=root.querySelector('[data-key="hybridanalysis:report:message"]');assert.equal(entry.open,true);assert.equal(root.activeElement.dataset.focusKey,'hybridanalysis:report:message');assert.ok(entry.textContent.includes(new Date(newTime).toLocaleString(lang)));assert.ok(entry.textContent.includes(catalog.analysisVerdict_malicious.message));
+  }finally{dom.window.close();}
+ }
+});
+
+test('serialized current warning jump chooses the strongest active finding without inheriting historical warnings',()=>{
+ const a=model();for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  try{
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
+   const data={local:{state:'checked'},rows:[{provider:'urlhaus',scope:'domain',resource:'link:0',state:'checked',source:'remote',verdict:'suspicious',observedAt:100},{provider:'virustotal',scope:'hash',resource:'attachment:1.2',state:'checked',source:'cache',verdict:'malicious',observedAt:200}],sourceHistory:{rows:[{provider:'urlscan',scope:'url',state:'checked',verdict:'malicious',observedAt:300}]}};
+   const c=vm.createContext({document:dom.window.document,Date,labels,data});vm.runInContext('globalThis.render=('+a.render.toString()+');render(data,labels);',c);
+   const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot,jump=root.querySelector('[data-focus-key="current-find-warning"]');
+   assert.equal(jump.textContent,catalog.analysisCurrentFindWarning.message);jump.click();
+   const target=root.querySelector('[data-key="virustotal:hash:attachment:1.2"]');assert.equal(target.open,true);assert.equal(root.activeElement,target.querySelector('summary'));assert.ok(target.querySelector('summary').getAttribute('aria-label').startsWith('VirusTotal · '));assert.equal(target.querySelector('.service-status').textContent,'VirusTotal');assert.ok(target.querySelector('small'));assert.equal(root.querySelector('[data-key="urlhaus:domain:link:0"]').open,false);
+   c.render({...data,rows:[]},labels);assert.equal(root.querySelector('[data-focus-key="current-find-warning"]'),null);assert.ok(root.querySelector('[data-focus-key="history-find-warning"]'));assert.equal(root.querySelector('.card').style.borderColor,'');
+  }finally{dom.window.close();}
+ }
+});
+
+test('inventory provider index preserves resource ownership, source order and deduplication',()=>{
+ const a=model(),dom=new JSDOM('<html lang="en"><body></body></html>');try{
+  const catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json')),labels=a.labels(key=>catalog[key]?.message),c=vm.createContext({document:dom.window.document,Date,URL});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+  const rows=[{provider:'urlhaus',scope:'domain',resource:'link:0'},{provider:'virustotal',scope:'hash',resource:'link:0'},{provider:'urlhaus',scope:'url',resource:'link:0'},{provider:'hybridanalysis',scope:'report',resource:'link:1'}].map(row=>({...row,state:'checked',source:'stored',verdict:'none'}));
+  const original=JSON.stringify(rows),host=c.a.render({rows,local:{state:'checked'},resourceLabels:{'link:0':'first','link:1':'second','link:2':'third'}},labels),items=host.shadowRoot.querySelectorAll('[data-key="resources"] li');
+  assert.equal(items[0].lastChild.textContent,'URLhaus · VirusTotal');assert.equal(items[1].lastChild.textContent,'Hybrid Analysis');assert.equal(items[2].lastChild.textContent,catalog.analysisResourceNoExternal.message);assert.equal(JSON.stringify(rows),original);
+ }finally{dom.window.close();}
+});

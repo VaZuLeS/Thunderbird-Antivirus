@@ -123,9 +123,15 @@ if (typeof ThundyAnalysis !== 'undefined') {
     const refreshSources = async () => {
         const own = ++sourceGeneration;
         try { const result = await browser.runtime.sendMessage({ action: 'getMessageAnalysis', messageId: message.id });
+            const exportLink = document.getElementById('sourceExportOpen');
+            if (exportLink && !hybridReportDisposed && own === sourceGeneration) {
+                exportLink.hidden = !result?.success || result.messageId !== message.id || typeof result.contextToken !== 'string';
+                if (!exportLink.hidden) exportLink.href = browser.runtime.getURL('source_export.html') + '?messageId=' + message.id + '&contextToken=' + encodeURIComponent(result.contextToken);
+                else exportLink.removeAttribute('href');
+            }
             if (!hybridReportDisposed && own === sourceGeneration && result?.success && result.messageId === message.id) ThundyAnalysis.render(result, sourceLabels, sourceTheme);
             else if (!hybridReportDisposed && own === sourceGeneration) ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme);
-        } catch (_) { if (!hybridReportDisposed && own === sourceGeneration) ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme); }
+        } catch (_) { if (!hybridReportDisposed && own === sourceGeneration) { document.getElementById('sourceExportOpen')?.setAttribute('hidden','');ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme); } }
     };
     browser.runtime.onMessage?.addListener(request => { if (request?.action === 'analysisStatusChanged' && request.messageId === message.id || request?.action === 'memoryCachesCleared') refreshSources(); });
     await refreshSources();
@@ -877,7 +883,7 @@ async function persistHybridReport({ headerMessageId, sha256, attachmentName, re
                 }
                 if (changed) record.updatedAt = updatedAt;
                 return record;
-            });
+            }, {preserveReports:true});
             return changed;
         } finally { db.close(); }
     } catch (error) {

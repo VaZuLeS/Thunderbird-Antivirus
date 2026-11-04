@@ -1,0 +1,479 @@
+{
+  "schemaVersion": 1,
+  "kind": "strict-lint-gate-and-isolated-scanner-comparison",
+  "generatedAt": "2026-11-04T03:16:30.283746+00:00",
+  "baseCommit": "de20eda1c9c57f70996042f59abfb02a1b8a8467",
+  "extensionVersion": "1.24.4",
+  "sourceFingerprint": "619d0a65fb8fab903df94691fba08d2f6feffe40ddcd12ea903939fbcfeccea2",
+  "packageSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+  "scripts": {
+    "scripts/filter-lint-warnings.js": "8df07433548eadad45570d9444a54d6e335896f4b45aad994b75c10b8b9fefef",
+    "scripts/lint-with-filter.js": "9cee8e8689479a93b368d6c1e4d503209e9f9abee1da46ba7c95d565fc2f3095",
+    "scripts/lint-gate.test.js": "27d4d3746e37f7fb25cdd64435774e1dc537a6092d78deb22c9018ea38d6e000",
+    "tools/linter-compatibility.dev.cjs": "f9faef0aa1e5642086c3f59d55b0197e2924a3e92f265a0290a22d120f0ce014"
+  },
+  "checks": {
+    "full": {
+      "command": "npm run check",
+      "passed": 1062,
+      "failed": 0,
+      "logSha256": "efffa584b1bba7771f2743a354e5fc64a58610cabb449347eb155a147c4e5e7e"
+    },
+    "targeted": {
+      "command": "node --test scripts/lint-gate.test.js scripts/pre-submit-checks.test.js",
+      "passed": 36,
+      "failed": 0,
+      "logSha256": "2053ed82e25c6c50cbddd5e053ff9e36a8ea1ba6d75c058804290136081bb023"
+    },
+    "postEnvironmentRestartLint": {
+      "command": "npm run lint:filtered",
+      "passed": true,
+      "logSha256": "7b96ea13af7acea1537f2d34608da61af430abf7d16a2af3e588063cb44e07be"
+    },
+    "finalSource": {
+      "command": "npm run check:source",
+      "passed": true,
+      "logSha256": "2240a6affd9d6939e1ca453ef08f1ec2427ffb95c25ba17e18b1a4694feb469d"
+    },
+    "finalPackage": {
+      "command": "node scripts/verify-package.js ./build",
+      "passed": true,
+      "logSha256": "00c7faa75834a49b886c02050135f2189508e104f32ad2b2ec915e17648c981e"
+    }
+  },
+  "beforeAfterGate": [
+    {
+      "name": "empty",
+      "before": {
+        "status": 0,
+        "stdout": "lint summary: undefined\n\nLint ok: 0 warning(s), all of them known Thunderbird false positives.\n",
+        "stderr": ""
+      },
+      "after": {
+        "status": 1,
+        "stdout": "",
+        "stderr": "Lint report rejected: unreadable, invalid or inconsistent report.\n"
+      }
+    },
+    {
+      "name": "lookalike",
+      "before": {
+        "status": 0,
+        "stdout": "lint summary: {\"errors\":0,\"notices\":0,\"warnings\":2}\nknown-false-positive: MANIFEST_PERMISSIONS | /permissions: Invalid permissions \"messagesReadExtra\" at 0.\nknown-false-positive: KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION | Manifest key not supported by the specified minimum Firefox for Android version\n\nLint ok: 2 warning(s), all of them known Thunderbird false positives.\n",
+        "stderr": ""
+      },
+      "after": {
+        "status": 1,
+        "stdout": "lint summary: {\"errors\":0,\"notices\":0,\"warnings\":2}\nUNEXPECTED WARNING: MANIFEST_PERMISSIONS | /permissions: Invalid permissions \"messagesReadExtra\" at 0.\nknown-false-positive: KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION | Manifest key not supported by the specified minimum Firefox for Android version\n",
+        "stderr": "\n1 unexpected lint warning(s); fix them or document them as known Thunderbird false positives.\n"
+      }
+    }
+  ],
+  "compatibility": {
+    "schemaVersion": 1,
+    "kind": "isolated-linter-compatibility",
+    "passed": true,
+    "packageSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+    "node": "v24.19.0",
+    "results": [
+      {
+        "version": "10.14.0",
+        "case": "candidate",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 27
+        },
+        "codes": [
+          "MANIFEST_PERMISSIONS",
+          "MANIFEST_OPTIONAL_PERMISSIONS",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API"
+        ],
+        "stdoutSha256": "341026d582f077bc3b5c9844bb20c5e6c8e1e5ef9531ee662216e4ac86d811d2"
+      },
+      {
+        "version": "10.14.0",
+        "case": "clean",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "69eb361aba858fe49ec7b14c2ea9cf23f6bd1a3c5c5cfe3cbcec1df1d2a41543"
+      },
+      {
+        "version": "10.14.0",
+        "case": "empty-script",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "c95dd79ddd84fd9c859c4acf283a9c0cdc070c19de95f2f95bbe20b5abbb0f5d"
+      },
+      {
+        "version": "10.14.0",
+        "case": "permission-lookalike",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "MANIFEST_PERMISSIONS",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "846576932e2df688e9811cc29f6407a312d96f850ed88c0c3ae543736ec00d10"
+      },
+      {
+        "version": "10.14.0",
+        "case": "bad-manifest",
+        "status": 1,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 1,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "JSON_INVALID",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "99a4cf23f09f6111772daa536ccbbb82c832ab5059fc125bc7eac01e3d0750b8"
+      },
+      {
+        "version": "10.14.0",
+        "case": "unsafe-script",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "DANGEROUS_EVAL"
+        ],
+        "stdoutSha256": "aa70afa877239a6a8809a594ea58487573eaab36207c760fa4d63543ed82ef98"
+      },
+      {
+        "version": "10.14.0",
+        "case": "inline-script",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "INLINE_SCRIPT"
+        ],
+        "stdoutSha256": "9a89d46d39ca085985cc10cddfa32a20b9f643c014ca7082185a3e18e89d71e1"
+      },
+      {
+        "version": "10.15.0",
+        "case": "candidate",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 27
+        },
+        "codes": [
+          "MANIFEST_PERMISSIONS",
+          "MANIFEST_OPTIONAL_PERMISSIONS",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API"
+        ],
+        "stdoutSha256": "341026d582f077bc3b5c9844bb20c5e6c8e1e5ef9531ee662216e4ac86d811d2"
+      },
+      {
+        "version": "10.15.0",
+        "case": "clean",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "69eb361aba858fe49ec7b14c2ea9cf23f6bd1a3c5c5cfe3cbcec1df1d2a41543"
+      },
+      {
+        "version": "10.15.0",
+        "case": "empty-script",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "c95dd79ddd84fd9c859c4acf283a9c0cdc070c19de95f2f95bbe20b5abbb0f5d"
+      },
+      {
+        "version": "10.15.0",
+        "case": "permission-lookalike",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "MANIFEST_PERMISSIONS",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "846576932e2df688e9811cc29f6407a312d96f850ed88c0c3ae543736ec00d10"
+      },
+      {
+        "version": "10.15.0",
+        "case": "bad-manifest",
+        "status": 1,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 1,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "JSON_INVALID",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "99a4cf23f09f6111772daa536ccbbb82c832ab5059fc125bc7eac01e3d0750b8"
+      },
+      {
+        "version": "10.15.0",
+        "case": "unsafe-script",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "DANGEROUS_EVAL"
+        ],
+        "stdoutSha256": "aa70afa877239a6a8809a594ea58487573eaab36207c760fa4d63543ed82ef98"
+      },
+      {
+        "version": "10.15.0",
+        "case": "inline-script",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "INLINE_SCRIPT"
+        ],
+        "stdoutSha256": "9a89d46d39ca085985cc10cddfa32a20b9f643c014ca7082185a3e18e89d71e1"
+      }
+    ],
+    "scope": "Public CLI scans of exact development package and synthetic canaries; no web-ext dependency override or security clearance."
+  },
+  "compatibilityReportSha256": "6af3aeeb47e2b32fe671ce6d6c676a71c483f2c3436e2bea4f99639b9436d4a4",
+  "identicalScannerReportsByCase": {
+    "candidate": true,
+    "clean": true,
+    "empty-script": true,
+    "permission-lookalike": true,
+    "bad-manifest": true,
+    "unsafe-script": true,
+    "inline-script": true
+  },
+  "audits": {
+    "project": {
+      "info": 0,
+      "low": 1,
+      "moderate": 9,
+      "high": 0,
+      "critical": 0,
+      "total": 10
+    },
+    "withoutDev": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "isolatedOld": {
+      "info": 0,
+      "low": 1,
+      "moderate": 7,
+      "high": 0,
+      "critical": 0,
+      "total": 8
+    },
+    "isolatedNew": {
+      "info": 0,
+      "low": 1,
+      "moderate": 7,
+      "high": 0,
+      "critical": 0,
+      "total": 8
+    },
+    "sameUnderlyingAdvisories": true,
+    "underlyingAdvisories": [
+      {
+        "name": "deepmerge",
+        "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+        "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+        "severity": "low",
+        "range": ">=4.2.0 <=4.3.1"
+      },
+      {
+        "name": "minimatch",
+        "title": "minimatch has potential denial of service via globparts amplification",
+        "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+        "severity": "moderate",
+        "range": "<11.0.1"
+      }
+    ],
+    "countMeaning": "npm counts affected packages; isolated eight/project ten are not eight/ten distinct advisories. No exhaustive XPI security claim.",
+    "logSha256": {
+      "avn008-before-audit.json": "69d6894cf2f9d84093e307662532b7b0b9ac3fe83aea56626ae62e47c64e91cf",
+      "avn008-runtime-audit.json": "829684bb91c640849021c2867c60737d8261fa5eaaec8b54c0573946140a86fc",
+      "avn008-isolated-old-audit.json": "2111036646a97e543cb6a8f1dd55aa4608646a7129fe566afc6b18668fc7232f",
+      "avn008-isolated-audit.json": "b48db7bf0a1cd5f49ee1c3fea61c57971805a9a74552275ff23fd076bb8ce793"
+    }
+  },
+  "defaultToolchain": {
+    "webExt": "10.8.0",
+    "addonsLinter": "10.14.0",
+    "isolatedCandidate": "10.15.0",
+    "dependenciesChanged": false,
+    "lockfileChanged": false,
+    "lockfileSha256": "7e434136e8aefbd8d22ddeed58bc1bac86892994fc913b9f4f75ce59b9f450f0",
+    "npxFallbackRemoved": true,
+    "sharedTemporaryReportRemoved": true
+  },
+  "archiveReuse": {
+    "rebuiltPackageSha256": "276497e8588303990b920664be3a120c1c303dccac277a130d77303a6ecc99db",
+    "reusedPackageSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+    "sameEntryNames": true,
+    "samePayloadBytes": true,
+    "sameEntryOrder": false,
+    "timestampDifferences": 56,
+    "reason": "Reuse exact previously native-tested XPI after proving payload equality; rebuilding changes ZIP order/timestamps."
+  },
+  "nativeEvidence": {
+    "newNativeRuns": false,
+    "reason": "Reuse exact previously native-tested XPI with unchanged packaged payload and source fingerprint. Only development gate/docs/test files changed.",
+    "previousEvidence": "avn-007-active-sources-2026-11-04.json"
+  },
+  "remaining": [
+    "Supported advisory remediation and reachability study",
+    "Reproducible ZIP construction before tests/signing",
+    "Export page navigation/back-forward investigation",
+    "Previously documented OS/screen reader/live provider/crypto/distribution prerequisites"
+  ],
+  "releasePublished": false
+}

@@ -1,0 +1,703 @@
+{
+  "schemaVersion": 1,
+  "kind": "conservative-source-history-and-additive-snapshots",
+  "generatedAt": "2026-11-03T16:48:08.287199+00:00",
+  "baseCommit": "fd559f9eb517905bdac2183cb185b047a803f33c",
+  "extensionVersion": "1.24.4",
+  "sourceFingerprint": "c2eaa79f86b88da1bdab72714084fd697ccaa2c14cd7c803d9abda315c9d8d82",
+  "packageSha256": "650f49d7a61aeecfb3022a125aff9ff711c24180b9c68a4b7fa6ddd4cc077293",
+  "runnerSha256": "821679f82b4f951565706d9458d49f86f2c8908d7e5ecaf74d06162dd5ef546f",
+  "checks": {
+    "full": {
+      "command": "npm run check",
+      "passed": 1033,
+      "failed": 0,
+      "logSha256": "eef039d2ed9f30d1198acae8c4747939c544b29167e3874e142b4e8ed7089434"
+    },
+    "probeRegressions": {
+      "command": "python3 tools/test_thunderbird_identity.dev.py -v",
+      "passed": 3,
+      "failed": 0
+    },
+    "browserSmoke": {
+      "status": "not-run",
+      "reason": "Existing missing browser/network download restriction; no new attempt or local Chromium-success claim."
+    }
+  },
+  "limits": {
+    "contextSnapshotsPerHeader": 64,
+    "newSnapshotBytesPerHeader": 1048576,
+    "normalizedHistoryRows": 1200,
+    "historicalMapEntriesInspectedPerContainer": 128,
+    "historicalRowsRendered": 120
+  },
+  "native": [
+    {
+      "startedAt": "2026-11-03T16:44:47Z",
+      "finishedAt": "2026-11-03T16:45:29Z",
+      "xpiSha256": "650f49d7a61aeecfb3022a125aff9ff711c24180b9c68a4b7fa6ddd4cc077293",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "gracefulRestarts": 1,
+      "probe": "153",
+      "passed": true,
+      "client": "153.6.0",
+      "reportSha256": "cdedc5490b83c960350833341e4e34c70387d60a3f140f537954389631fad0a6",
+      "sourceHistory": {
+        "passed": true,
+        "realThunderbirdAPIs": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "beforeRestart": {
+          "oldNumericId": 3,
+          "otherNumericId": 4,
+          "initialActiveRows": 0,
+          "oldLocalNotInherited": true,
+          "historicalProviders": [
+            "hybridanalysis",
+            "virustotal",
+            "urlhaus",
+            "abuseipdb",
+            "urlscan"
+          ],
+          "historicalResourcesUnbound": true,
+          "oldTimePreserved": true,
+          "differentBytesHideCachedReport": true,
+          "originalFieldsPreserved": true,
+          "legacy": "{\"analysisStatus\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]},\"analysisStatusOwner\":3,\"analysisStatusByMessage\":{\"3\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]}},\"analysisStatusLegacy\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]}}",
+          "newSnapshotId": "07fcdc66-34b1-4868-9db3-7244e3341eee",
+          "newSnapshot": {
+            "savedAt": 1793724320290,
+            "snapshot": {
+              "schemaVersion": 2,
+              "local": {
+                "state": "checked",
+                "source": "local",
+                "observedAt": 1793724320285
+              },
+              "rows": [
+                {
+                  "provider": "urlhaus",
+                  "scope": "domain",
+                  "resource": null,
+                  "state": "checked",
+                  "verdict": "none",
+                  "source": "remote",
+                  "active": 0,
+                  "responses": 1,
+                  "failures": 0,
+                  "cacheHits": 0,
+                  "observedAt": 1793724320290,
+                  "attemptedAt": null,
+                  "findingAt": 1793724320290
+                }
+              ],
+              "truncated": false
+            }
+          }
+        },
+        "afterRestart": {
+          "otherNumericId": 3,
+          "targetNumericId": 4,
+          "activeRows": 0,
+          "historicalProviders": [
+            "hybridanalysis",
+            "virustotal",
+            "urlhaus",
+            "abuseipdb",
+            "urlscan"
+          ],
+          "allHistoricalResourcesUnbound": true,
+          "oldNumericOwner": 3,
+          "legacy": "{\"analysisStatus\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]},\"analysisStatusOwner\":3,\"analysisStatusByMessage\":{\"3\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]}},\"analysisStatusLegacy\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]}}",
+          "snapshots": {
+            "07fcdc66-34b1-4868-9db3-7244e3341eee": {
+              "savedAt": 1793724322593,
+              "snapshot": {
+                "schemaVersion": 2,
+                "local": {
+                  "state": "checked",
+                  "source": "local",
+                  "observedAt": 1793724322288
+                },
+                "rows": [
+                  {
+                    "provider": "urlhaus",
+                    "scope": "domain",
+                    "resource": null,
+                    "state": "checked",
+                    "verdict": "none",
+                    "source": "remote",
+                    "active": 0,
+                    "responses": 1,
+                    "failures": 0,
+                    "cacheHits": 0,
+                    "observedAt": 1793724320290,
+                    "attemptedAt": null,
+                    "findingAt": 1793724320290
+                  }
+                ],
+                "truncated": false
+              }
+            }
+          }
+        },
+        "numericIdReassignedToSibling": true,
+        "actualMessageAndPopupPassed": true,
+        "scope": "Read projection and additive source snapshots; no durable occurrence migration or general retention guarantee."
+      }
+    },
+    {
+      "startedAt": "2026-11-03T16:44:47Z",
+      "finishedAt": "2026-11-03T16:45:31Z",
+      "xpiSha256": "650f49d7a61aeecfb3022a125aff9ff711c24180b9c68a4b7fa6ddd4cc077293",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "gracefulRestarts": 1,
+      "probe": "140",
+      "passed": true,
+      "client": "140.12.0",
+      "reportSha256": "11839492b3f8c258302dd62035f594c137911d4f3f69d7abf1411438bad8d0ff",
+      "sourceHistory": {
+        "passed": true,
+        "realThunderbirdAPIs": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "beforeRestart": {
+          "oldNumericId": 3,
+          "otherNumericId": 4,
+          "initialActiveRows": 0,
+          "oldLocalNotInherited": true,
+          "historicalProviders": [
+            "hybridanalysis",
+            "virustotal",
+            "urlhaus",
+            "abuseipdb",
+            "urlscan"
+          ],
+          "historicalResourcesUnbound": true,
+          "oldTimePreserved": true,
+          "differentBytesHideCachedReport": true,
+          "originalFieldsPreserved": true,
+          "legacy": "{\"analysisStatus\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]},\"analysisStatusOwner\":3,\"analysisStatusByMessage\":{\"3\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]}},\"analysisStatusLegacy\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]}}",
+          "newSnapshotId": "c63a03e4-877d-4081-99f0-1942309668fd",
+          "newSnapshot": {
+            "savedAt": 1793724322355,
+            "snapshot": {
+              "schemaVersion": 2,
+              "local": {
+                "state": "checked",
+                "source": "local",
+                "observedAt": 1793724322345
+              },
+              "rows": [
+                {
+                  "provider": "urlhaus",
+                  "scope": "domain",
+                  "resource": null,
+                  "state": "checked",
+                  "verdict": "none",
+                  "source": "remote",
+                  "active": 0,
+                  "responses": 1,
+                  "failures": 0,
+                  "cacheHits": 0,
+                  "observedAt": 1793724322353,
+                  "attemptedAt": null,
+                  "findingAt": 1793724322353
+                }
+              ],
+              "truncated": false
+            }
+          }
+        },
+        "afterRestart": {
+          "otherNumericId": 3,
+          "targetNumericId": 4,
+          "activeRows": 0,
+          "historicalProviders": [
+            "hybridanalysis",
+            "virustotal",
+            "urlhaus",
+            "abuseipdb",
+            "urlscan"
+          ],
+          "allHistoricalResourcesUnbound": true,
+          "oldNumericOwner": 3,
+          "legacy": "{\"analysisStatus\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]},\"analysisStatusOwner\":3,\"analysisStatusByMessage\":{\"3\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]}},\"analysisStatusLegacy\":{\"schemaVersion\":2,\"local\":{\"state\":\"checked\",\"observedAt\":1792051200000},\"rows\":[{\"provider\":\"hybridanalysis\",\"scope\":\"report\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"virustotal\",\"scope\":\"hash\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlhaus\",\"scope\":\"domain\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"abuseipdb\",\"scope\":\"ip\",\"resource\":\"message\",\"state\":\"checked\",\"verdict\":\"malicious\",\"responses\":1,\"observedAt\":1792051200000,\"findingAt\":1792051200000},{\"provider\":\"urlscan\",\"scope\":\"url\",\"resource\":\"message\",\"state\":\"running\",\"verdict\":\"unknown\",\"responses\":0,\"observedAt\":1792051200000,\"findingAt\":1792051200000}]}}",
+          "snapshots": {
+            "c63a03e4-877d-4081-99f0-1942309668fd": {
+              "savedAt": 1793724324469,
+              "snapshot": {
+                "schemaVersion": 2,
+                "local": {
+                  "state": "checked",
+                  "source": "local",
+                  "observedAt": 1793724324160
+                },
+                "rows": [
+                  {
+                    "provider": "urlhaus",
+                    "scope": "domain",
+                    "resource": null,
+                    "state": "checked",
+                    "verdict": "none",
+                    "source": "remote",
+                    "active": 0,
+                    "responses": 1,
+                    "failures": 0,
+                    "cacheHits": 0,
+                    "observedAt": 1793724322353,
+                    "attemptedAt": null,
+                    "findingAt": 1793724322353
+                  }
+                ],
+                "truncated": false
+              }
+            }
+          }
+        },
+        "numericIdReassignedToSibling": true,
+        "actualMessageAndPopupPassed": true,
+        "scope": "Read projection and additive source snapshots; no durable occurrence migration or general retention guarantee."
+      }
+    },
+    {
+      "startedAt": "2026-11-03T16:44:47Z",
+      "finishedAt": "2026-11-03T16:45:38Z",
+      "xpiSha256": "650f49d7a61aeecfb3022a125aff9ff711c24180b9c68a4b7fa6ddd4cc077293",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "gracefulRestarts": 2,
+      "probe": "regression",
+      "passed": true,
+      "client": "153.6.0",
+      "reportSha256": "533aad47315e5ac21eeca93990889e1007aeee55cadfca025de6ec0657a51d35",
+      "resourceIsolation": {
+        "passed": true,
+        "syntheticMime": true,
+        "liveProviderCalls": false,
+        "messageId": 3,
+        "sharedHeader": true,
+        "actualNameVisible": true,
+        "foreignNameAbsent": true,
+        "foreignUrlAbsent": true,
+        "popupRecordExcludesForeign": true,
+        "realMessageViewPassed": true
+      },
+      "mimeContent": {
+        "passed": true,
+        "realThunderbirdAPIs": true,
+        "liveProviderCalls": false,
+        "rows": [
+          {
+            "name": "binary-a",
+            "messageId": 4,
+            "decryptionStatus": "none",
+            "fullError": null,
+            "textParts": [
+              {
+                "type": "text/plain",
+                "hasBody": true,
+                "body": "Grüße — Français, Español, Italiano, Polski: ��ółć. 测试\r\n"
+              }
+            ],
+            "attachments": [
+              {
+                "partName": "1.2",
+                "name": "prøbe-ä-测试.bin",
+                "size": 256,
+                "sha256": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880"
+              }
+            ],
+            "inputText": "Grüße — Français, Español, Italiano, Polski: żółć. 测试\r\n ",
+            "inputStatus": "recovered",
+            "apiReplacementCharacters": true,
+            "riskStatus": "success",
+            "coverage": {
+              "state": "checked"
+            },
+            "local": {
+              "state": "checked",
+              "source": "local",
+              "observedAt": 1793724336954
+            },
+            "rawBodySha256": "446fca615aa7bc1273924421fd822ad93cd6b01d9b51afa2ba26697d9865a464",
+            "rawBodyMatchesFixture": true,
+            "fixtureUnicodeRoundTripExact": true,
+            "unicodeRoundTripExact": false,
+            "productUnicodeExact": true
+          },
+          {
+            "name": "binary-b",
+            "messageId": 5,
+            "decryptionStatus": "none",
+            "fullError": null,
+            "textParts": [
+              {
+                "type": "text/plain",
+                "hasBody": true,
+                "body": "Grüße — Français, Español, Italiano, Polski: ��ółć. 测试\r\n"
+              }
+            ],
+            "attachments": [
+              {
+                "partName": "1.2",
+                "name": "prøbe-ä-测试.bin",
+                "size": 256,
+                "sha256": "4f374557bf44bb12ba2663f8a84e9515165a2332c1f3059d6d81dfe1379eb77b"
+              }
+            ],
+            "inputText": "Grüße — Français, Español, Italiano, Polski: żółć. 测试\r\n ",
+            "inputStatus": "recovered",
+            "apiReplacementCharacters": true,
+            "riskStatus": "success",
+            "coverage": {
+              "state": "checked"
+            },
+            "local": {
+              "state": "checked",
+              "source": "local",
+              "observedAt": 1793724336990
+            },
+            "rawBodySha256": "23d1efebe189e58beb705863cac010ca593de082db44157c27fcf295078ad5cc",
+            "rawBodyMatchesFixture": true,
+            "fixtureUnicodeRoundTripExact": true,
+            "unicodeRoundTripExact": false,
+            "productUnicodeExact": true
+          },
+          {
+            "name": "empty",
+            "messageId": 6,
+            "decryptionStatus": "none",
+            "fullError": null,
+            "textParts": [
+              {
+                "type": "text/plain",
+                "hasBody": false,
+                "body": null
+              }
+            ],
+            "attachments": [],
+            "inputText": "",
+            "inputStatus": null,
+            "apiReplacementCharacters": false,
+            "riskStatus": "success",
+            "coverage": {
+              "state": "checked"
+            },
+            "local": {
+              "state": "checked",
+              "source": "local",
+              "observedAt": 1793724337013
+            },
+            "rawBodySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "rawBodyMatchesFixture": true
+          },
+          {
+            "name": "unavailable",
+            "messageId": 7,
+            "decryptionStatus": "fail",
+            "fullError": null,
+            "textParts": [],
+            "attachments": [
+              {
+                "readError": "Error: Error decrypting message 7"
+              }
+            ],
+            "inputText": "",
+            "inputStatus": null,
+            "apiReplacementCharacters": false,
+            "riskStatus": "success",
+            "coverage": {
+              "state": "incomplete",
+              "reason": "decryption_unavailable"
+            },
+            "local": {
+              "state": "incomplete",
+              "reason": "decryption_unavailable",
+              "source": "local",
+              "observedAt": 1793724337042
+            },
+            "rawBodySha256": "e57935fb0185217589f5af69ffda5d323b9d958d58ecbea804bf7b772cd83e48",
+            "rawBodyMatchesFixture": true
+          }
+        ],
+        "scope": "Synthetic quoted-printable Unicode, base64 binary and empty plaintext; malformed encrypted MIME probes unavailable content, not successful OpenPGP/S-MIME decryption.",
+        "actualMessageAndPopupIncomplete": true
+      },
+      "contentIdentity": {
+        "passed": true,
+        "syntheticMime": true,
+        "liveProviderCalls": false,
+        "mutationActor": "privileged test harness; no added message-mutation permissions",
+        "rawOptions": {
+          "decrypt": false,
+          "data_format": "BinaryString"
+        },
+        "metadataCollisionDistinguished": true,
+        "copyRemainsDistinctInstance": true,
+        "rawDigestStableAcrossFlagChange": false,
+        "digestWithoutLocalStatusStableAcrossTestedMutations": true,
+        "auditAndSettingsPreserved": true,
+        "scope": "Local mbox, plaintext MIME only; unfiltered raw digest includes mutable local headers; stripped digest is an experimental candidate, not occurrence identity. No production migration or retention change."
+      },
+      "contextCapacity": {
+        "passed": true,
+        "syntheticMessages": 205,
+        "realThunderbirdAPIs": true,
+        "configuredContextLimit": 200,
+        "firstDisposed": true,
+        "lastActive": true,
+        "scope": "Owned Thunderbird process tree; PSS/RSS snapshots after importing/querying fixtures, before/after source-context load. No field prevalence or isolated-allocation claim."
+      },
+      "unicodeInput": {
+        "passed": true,
+        "cases": [
+          {
+            "name": "8bit",
+            "validFixture": true,
+            "nativeExact": true,
+            "inputExact": true,
+            "inputStatus": null,
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "base64",
+            "validFixture": true,
+            "nativeExact": true,
+            "inputExact": true,
+            "inputStatus": null,
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "qp",
+            "validFixture": true,
+            "nativeExact": true,
+            "inputExact": true,
+            "inputStatus": null,
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "qp-byte-split",
+            "validFixture": true,
+            "nativeExact": true,
+            "inputExact": true,
+            "inputStatus": null,
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "qp-character-split",
+            "validFixture": true,
+            "nativeExact": true,
+            "inputExact": true,
+            "inputStatus": null,
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "qp-literal-replacement",
+            "validFixture": true,
+            "nativeExact": true,
+            "inputExact": true,
+            "inputStatus": "verified",
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "qp-invalid-utf8",
+            "validFixture": false,
+            "nativeExact": false,
+            "inputExact": false,
+            "inputStatus": "incomplete",
+            "coverage": {
+              "state": "incomplete",
+              "reason": "text_unavailable"
+            }
+          },
+          {
+            "name": "latin1",
+            "validFixture": true,
+            "nativeExact": true,
+            "inputExact": true,
+            "inputStatus": null,
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "mixed-qp-byte-split",
+            "validFixture": true,
+            "nativeExact": false,
+            "inputExact": true,
+            "inputStatus": "recovered",
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "mixed-base64",
+            "validFixture": true,
+            "nativeExact": true,
+            "inputExact": true,
+            "inputStatus": null,
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "alternative-qp-byte-split",
+            "validFixture": true,
+            "nativeExact": false,
+            "inputExact": true,
+            "inputStatus": "recovered",
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "mixed-html-byte-split",
+            "validFixture": true,
+            "nativeExact": false,
+            "inputExact": true,
+            "inputStatus": "recovered",
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "mixed-qp-literal-replacement",
+            "validFixture": true,
+            "nativeExact": true,
+            "inputExact": true,
+            "inputStatus": "verified",
+            "coverage": {
+              "state": "checked"
+            }
+          },
+          {
+            "name": "mixed-latin1",
+            "validFixture": true,
+            "nativeExact": true,
+            "inputExact": true,
+            "inputStatus": null,
+            "coverage": {
+              "state": "checked"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "startedAt": "2026-11-03T16:44:47Z",
+      "finishedAt": "2026-11-03T16:45:34Z",
+      "xpiSha256": "650f49d7a61aeecfb3022a125aff9ff711c24180b9c68a4b7fa6ddd4cc077293",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "gracefulRestarts": 3,
+      "forcedRestarts": 2,
+      "previousXpiSha256": "f45050748b8464cc602ca914e586000d78b08225bbc18db41f4d1c065b1bc402",
+      "probe": "upgrade",
+      "passed": true,
+      "client": "153.6.0",
+      "reportSha256": "bf00422ba7d36e2dffa7cd70c4922c8c8fc41bd5571f56981ca91e19af32c52a",
+      "previousRestart": {
+        "addon": {
+          "version": "1.24.3",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "wizardAbsent": true,
+        "uiLanguage": "en-US"
+      },
+      "currentRestart": {
+        "addon": {
+          "version": "1.24.4",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "uiLanguage": "en-US",
+        "wizardAbsent": true,
+        "auditRecordsPreserved": 3
+      },
+      "backupRestore": {
+        "passed": true,
+        "restoredVersion": "1.24.3",
+        "snapshotRecordsPreserved": 3,
+        "scope": "clean full-profile backup before upgrade; newer candidate events are outside this snapshot"
+      },
+      "acknowledgedCrashRecovery": {
+        "recordsPreserved": 4,
+        "storagePreserved": true,
+        "addon": {
+          "version": "1.24.4",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "uiLanguage": "en-US",
+        "extraOsDispatches": 0
+      },
+      "pendingCrashRecovery": {
+        "record": {
+          "id": "f5084cb3-fafc-4748-8dda-5eef36f01fec",
+          "clickedAt": 1793724323940,
+          "decidedAt": null,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": null,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": null,
+          "providerAtDecision": null,
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "PENDING",
+          "cancelReason": null,
+          "openAttempts": 0,
+          "extensionVersion": "1.24.4",
+          "scoredAt": 1793724324053,
+          "reasonDetails": [],
+          "checkedAt": null,
+          "check": {
+            "origin": "stored",
+            "outcome": "disabled",
+            "attemptedAt": 1793724324056,
+            "observedAt": null
+          },
+          "providerReasons": []
+        },
+        "storagePreserved": true,
+        "decisionNotInvented": true,
+        "extraOsDispatches": 0
+      }
+    }
+  ],
+  "scope": {
+    "current": "Legacy numeric-ID source states are unbound; attachment cache cards require actual hash verification in the active context; exact current URLs can reuse stored target findings.",
+    "writes": "New cumulative context snapshots use independent UUIDs; legacy source fields are retained, not migrated or overwritten. Serialized writes, collision/capacity/commit failures tested.",
+    "dataLifecycle": "Existing header-cache retention/explicit deletion remains; no additional cleanup, durable occurrence migration or independent full-protocol archive.",
+    "remaining": [
+      "Durable content/occurrence/resource migration",
+      "Full protocol preservation outside replacing header-cache writers",
+      "General retention and long-running use",
+      "Other backends/IMAP and valid Crypto coverage",
+      "Windows/macOS and native screenreaders",
+      "Live provider contracts and automatic distribution"
+    ]
+  }
+}

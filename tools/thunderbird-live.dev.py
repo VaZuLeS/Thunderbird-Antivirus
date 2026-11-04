@@ -138,6 +138,23 @@ def native_click(display, x, y):
         x11.XCloseDisplay(connection)
 
 
+def native_key(display, name):
+    """A real X11 key press, used after focusing a native document control."""
+    x11=ctypes.CDLL('libX11.so.6');xtest=ctypes.CDLL('libXtst.so.6')
+    x11.XOpenDisplay.argtypes=[ctypes.c_char_p];x11.XOpenDisplay.restype=ctypes.c_void_p
+    x11.XStringToKeysym.argtypes=[ctypes.c_char_p];x11.XStringToKeysym.restype=ctypes.c_ulong
+    x11.XKeysymToKeycode.argtypes=[ctypes.c_void_p,ctypes.c_ulong];x11.XKeysymToKeycode.restype=ctypes.c_uint
+    x11.XFlush.argtypes=[ctypes.c_void_p];x11.XCloseDisplay.argtypes=[ctypes.c_void_p]
+    xtest.XTestFakeKeyEvent.argtypes=[ctypes.c_void_p,ctypes.c_uint,ctypes.c_int,ctypes.c_ulong]
+    connection=x11.XOpenDisplay(display.encode())
+    if not connection: raise RuntimeError('Cannot open keyboard display')
+    try:
+        code=x11.XKeysymToKeycode(connection,x11.XStringToKeysym(name.encode()))
+        if not code or not xtest.XTestFakeKeyEvent(connection,code,1,0) or not xtest.XTestFakeKeyEvent(connection,code,0,0): raise RuntimeError('Cannot send keyboard event')
+        x11.XFlush(connection)
+    finally: x11.XCloseDisplay(connection)
+
+
 def native_save_path(display, path):
     """Type an ASCII location in the genuine GTK file picker with XTest."""
     x11 = ctypes.CDLL('libX11.so.6'); xtest = ctypes.CDLL('libXtst.so.6')
@@ -903,6 +920,8 @@ def check_mime_content(m, base, out, report, display):
         const item=(await b.messages.query({subject:"Thundy MIME "+name})).messages.find(m=>m.subject==="Thundy MIME "+name);
         let full=null,fullError=null;try{full=await b.messages.getFull(item.id);}catch(e){fullError=String(e);}
         const textParts=[];const visit=part=>{if(part?.contentType?.startsWith("text/"))textParts.push({type:part.contentType,hasBody:typeof part.body==="string",body:part.body ?? null});for(const child of part?.parts || [])visit(child);};visit(full);
+        const page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject || page;
+        const input=await bg.readFullForAnalysis(item),inputText=bg.extractTextFromParts(input.parts || input);
         const attachments=[];
         try{for(const part of await b.messages.listAttachments(item.id)){
           const file=await b.messages.getAttachmentFile(item.id,part.partName);
@@ -912,7 +931,7 @@ def check_mime_content(m, base, out, report, display):
         const rawBinaryString=await b.messages.getRaw(item.id,{decrypt:false,data_format:"BinaryString"});
         const risk=await b.runtime.sendMessage({action:"getLocalRisk",messageId:item.id});
         const sources=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:item.id});
-        result.push({name,messageId:item.id,decryptionStatus:full?.decryptionStatus ?? null,fullError,textParts,attachments,rawBinaryString,
+        result.push({name,messageId:item.id,decryptionStatus:full?.decryptionStatus ?? null,fullError,textParts,attachments,rawBinaryString,inputText,inputStatus:input.thundyInputStatus ?? null,
           apiReplacementCharacters:textParts.some(part=>part.body?.includes(String.fromCharCode(65533))),
           riskStatus:risk.status,coverage:risk.threat?.coverage ?? null,local:sources.local ?? null});
       }return result;
@@ -936,6 +955,8 @@ def check_mime_content(m, base, out, report, display):
             assert len(row['attachments'])==1 and row['attachments'][0]['sha256']==expected[row['name']],row
             assert row['attachments'][0]['name']=='prøbe-ä-测试.bin',row
             row['unicodeRoundTripExact']=any('Grüße — Français, Español, Italiano, Polski: żółć. 测试' in (part['body'] or '') for part in row['textParts'])
+            row['productUnicodeExact']='Grüße — Français, Español, Italiano, Polski: żółć. 测试' in row['inputText']
+            assert row['productUnicodeExact'],row
         assert row['riskStatus']=='success',row
         expected_state='incomplete' if row['name']=='unavailable' else 'checked'
         assert row['local']['state']==expected_state and row['coverage']['state']==expected_state,row
@@ -958,6 +979,451 @@ def check_mime_content(m, base, out, report, display):
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     report['mimeContent']['actualMessageAndPopupIncomplete']=True
     report['mimeContent']['passed']=True
+
+
+def check_unicode_input(m, base, out, report):
+    """Compare native decode variants with independently known MIME inputs."""
+    text='Prüfung: żółć — 测试 https://unicode.example.invalid/ż'
+    import quopri
+    encoded=quopri.encodestring(text.encode('utf-8'))
+    split=encoded.replace(b'=C5=BC',b'=C5=\r\n=BC')
+    cases=[('8bit','utf-8','8bit',text.encode('utf-8'),text),
+           ('base64','utf-8','base64',base64.b64encode(text.encode('utf-8')),text),
+           ('qp','utf-8','quoted-printable',encoded,text),
+           ('qp-byte-split','utf-8','quoted-printable',split,text),
+           ('qp-character-split','utf-8','quoted-printable',encoded.replace(b'=C5=BC',b'=\r\n=C5=BC'),text),
+           ('qp-literal-replacement','utf-8','quoted-printable',b'Valid =EF=BF=BD replacement character.','Valid \ufffd replacement character.'),
+           ('qp-invalid-utf8','utf-8','quoted-printable',b'Invalid =C5=20 bytes.',None),
+           ('latin1','iso-8859-1','quoted-printable',b'Gr=FC=DFe','Grüße'),
+           ('mixed-qp-byte-split','utf-8','quoted-printable',split,text),
+           ('mixed-base64','utf-8','base64',base64.b64encode(text.encode('utf-8')),text),
+           ('alternative-qp-byte-split','utf-8','quoted-printable',split,text)]
+    cases.extend([('mixed-html-byte-split','utf-8','quoted-printable',b'<p>'+split+b'</p>','<p>'+text+'</p>'),
+                  ('mixed-qp-literal-replacement','utf-8','quoted-printable',b'Valid =EF=BF=BD replacement character.','Valid \ufffd replacement character.'),
+                  ('mixed-latin1','iso-8859-1','quoted-printable',b'Gr=FC=DFe','Grüße')])
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      MailServices.accounts.localFoldersServer.rootFolder.createSubfolder("Unicode Input",null);''')
+    expected={}
+    for index,(name,charset,cte,body,reference) in enumerate(cases):
+        body=body.replace(b'\r\n',b'\n').replace(b'\n',b'\r\n')
+        media='text/html' if 'html' in name else 'text/plain'
+        data=('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy Unicode '+name+'\r\nMessage-ID: <unicode-'+name+'@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: '+media+'; charset="'+charset+'"\r\nContent-Transfer-Encoding: '+cte+'\r\n\r\n').encode('ascii')+body+b'\r\n'
+        if name.startswith(('mixed-','alternative-')):
+            outer,leaf=data.split(b'MIME-Version: 1.0\r\n',1)
+            subtype='alternative' if name.startswith('alternative-') else 'mixed'
+            data=outer+('MIME-Version: 1.0\r\nContent-Type: multipart/'+subtype+'; boundary="unicode-matrix"\r\n\r\n--unicode-matrix\r\n').encode('ascii')+leaf+b'--unicode-matrix\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename="control.bin"\r\nContent-Transfer-Encoding: base64\r\n\r\nAAEC/w==\r\n--unicode-matrix--\r\n'
+        if reference is not None:
+            assert BytesParser(policy=SMTP).parsebytes(data).get_body(preferencelist=('plain','html')).get_content().rstrip('\r\n')==reference,name
+        path=out/('unicode-'+name+'.eml');path.write_bytes(data)
+        expected[name]=reference
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const folder=MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Unicode Input");
+          const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+          MailServices.copy.copyFileMessage(file,folder,null,false,0,"",null,null);''',[str(path)])
+        wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Unicode Input").getTotalMessages(false);''')==index+1)
+    open_page(m,base+'options.html')
+    rows=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,result=[];
+      const page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject || page;
+      const leaves=full=>{const result=[];const visit=p=>{if(p.contentType?.startsWith("text/"))result.push({partName:p.partName,contentType:p.contentType,headers:p.headers || p.rawHeaders,body:p.body ?? p.rawBody});for(const child of p.parts || [])visit(child);};visit(full);return result;};
+      for(const name of arguments[0]){
+        const item=(await b.messages.query({subject:"Thundy Unicode "+name})).messages.find(m=>m.subject==="Thundy Unicode "+name);
+        const decoded=await b.messages.getFull(item.id);
+        const encoded=await b.messages.getFull(item.id,{decodeContent:false});
+        const noHeaderDecode=await b.messages.getFull(item.id,{decodeHeaders:false});
+        const input=await bg.readFullForAnalysis(item);
+        const risk=await b.runtime.sendMessage({action:"getLocalRisk",messageId:item.id});
+        result.push({name,decoded:leaves(decoded),encoded:leaves(encoded),noHeaderDecode:leaves(noHeaderDecode),input:leaves(input),inputStatus:input.thundyInputStatus ?? null,coverage:risk.threat?.coverage});
+      }return result;
+    })();''',[[case[0] for case in cases]])
+    report['unicodeInput']={'passed':False,'realThunderbirdAPIs':True,'liveProviderCalls':False,'rows':rows,'scope':'Synthetic encoding matrix; native decoding and product input are separate observations. No Crypto/backend coverage claim.'}
+    for row in rows:
+        reference=expected[row['name']]
+        row['validFixture']=reference is not None
+        row['nativeExact']=reference is not None and any(part.get('body','').rstrip('\r\n')==reference for part in row['decoded'])
+        row['inputExact']=reference is not None and any(part.get('body','').rstrip('\r\n')==reference for part in row['input'])
+        if reference is not None: assert row['inputExact'] and row['coverage']['state']=='checked',row
+        else: assert row['coverage']['state']=='incomplete',row
+    report['unicodeInput']['passed']=True
+
+
+def check_source_history(m, base, out, report, restart, display):
+    """Synthetic stored observations through real DB/APIs, including ID reuse."""
+    for name,payload in [('A','AAAA'),('B','BBBB')]:
+        fixture=out/('source-history-'+name+'.eml')
+        fixture.write_bytes(('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy source history '+name+'\r\nMessage-ID: <source-history-collision@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="source-history"\r\n\r\n--source-history\r\nContent-Type: text/plain\r\n\r\nSynthetic source history.\r\n--source-history\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename="same.bin"\r\n\r\n'+payload+'\r\n--source-history--\r\n').encode('ascii'))
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const root=MailServices.accounts.localFoldersServer.rootFolder;
+          if(!root.containsChildNamed("Source History"))root.createSubfolder("Source History",null);
+          const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+          MailServices.copy.copyFileMessage(file,root.getChildNamed("Source History"),null,false,0,"",null,null);''',[str(fixture)])
+        wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Source History").getTotalMessages(false);''')==(1 if name=='A' else 2))
+    open_page(m,base+'options.html')
+    before=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject || page;
+      const find=async suffix=>(await b.messages.query({subject:"Thundy source history "+suffix})).messages.find(m=>m.subject==="Thundy source history "+suffix);
+      const target=await find("B"),other=await find("A");
+      const part=(await b.messages.listAttachments(other.id))[0];
+      const result=await bg.process_single_attachment(other,part,false,false);
+      const oldTime=Date.parse("2026-10-15T08:00:00Z");
+      const rows=["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"].map((provider,index)=>({provider,scope:["report","hash","domain","ip","url"][index],resource:"message",state:provider==="urlscan"?"running":"checked",verdict:provider==="urlscan"?"unknown":"malicious",responses:provider==="urlscan"?0:1,observedAt:oldTime,findingAt:oldTime}));
+      const legacy={schemaVersion:2,local:{state:"checked",observedAt:oldTime},rows};
+      const original={analysisStatus:legacy,analysisStatusOwner:target.id,analysisStatusByMessage:{[target.id]:legacy},analysisStatusLegacy:legacy};
+      const db=await bg.getSharedDB();
+      await bg.updateStore(db,"hybridanalysis",target.headerMessageId,()=>({messageHeader:target.headerMessageId,...original,attachments:[{partName:part.partName,attachment_name:"same.bin",hybrid_sha256:result.hybrid_data.sha256,report:{verdict:"malicious"},report_fetched_at:new Date(oldTime).toISOString()}],updatedAt:Date.now()}));
+      window.wrappedJSObject.historyProbeOriginal=JSON.stringify(original);
+      const pending=await bg.getMessageAnalysisContext(target),context=pending.wrappedJSObject || pending,initial=await context.snapshot();
+      const ownPart=(await b.messages.listAttachments(target.id))[0];
+      await bg.process_single_attachment(target,ownPart,false,false,context);
+      const cached=await context.resourceRecord();
+      await b.runtime.sendMessage({action:"getLocalRisk",messageId:target.id});
+      context.event({provider:"urlhaus",scope:"domain",phase:"finish",state:"checked",verdict:"none",responded:true,observedAt:Date.now()});await context.flush();
+      const saved=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      const fields=Object.fromEntries(Object.keys(original).map(key=>[key,saved[key]]));
+      return {oldNumericId:target.id,otherNumericId:other.id,initialActiveRows:initial.rows.length,oldLocalNotInherited:initial.local.state!=="checked",historicalProviders:[...new Set(initial.sourceHistory.rows.map(row=>row.provider))],historicalResourcesUnbound:initial.sourceHistory.rows.every(row=>row.resource===null),oldTimePreserved:initial.sourceHistory.rows.some(row=>row.observedAt===oldTime),differentBytesHideCachedReport:cached.attachments.length===0,originalFieldsPreserved:JSON.stringify(fields)===JSON.stringify(original),legacy:JSON.stringify(original),newSnapshotId:context.snapshotId,newSnapshot:saved.analysisSourceSnapshots[context.snapshotId]};
+    })();''')
+    assert before['initialActiveRows']==0 and len(before['historicalProviders'])==5,before
+    assert all(before[k] for k in ['oldLocalNotInherited','historicalResourcesUnbound','oldTimePreserved','differentBytesHideCachedReport','originalFieldsPreserved']),before
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+      MailUtils.displayMessage(Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Source History").messages).find(h=>h.subject==="Thundy source history B"));''')
+    brands=['Hybrid Analysis','VirusTotal','URLhaus','AbuseIPDB','urlscan.io']
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(\'[data-key="unbound-history"]\');'))
+    visible=m.page('''const root=document.getElementById("thundy-analysis-status").shadowRoot;
+      const detail=root.querySelector('[data-key="unbound-history"]');detail.open=true;
+      return {summary:detail.querySelector("summary").textContent,currentNotMalicious:root.querySelector(".card").style.borderColor===""};''')
+    assert visible['currentNotMalicious'] and all(brand in visible['summary'] for brand in brands),visible
+    m.screenshot(out/'source-history-message.png')
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser;
+      const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();
+      return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    summary=wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(\'[data-key="unbound-history"] summary\')?.textContent;',browser=popup))
+    assert all(brand in summary for brand in brands),summary
+    subprocess.run(['import','-window','root',str(out/'source-history-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    close_extension_tabs(m)
+    m.js('''for(const tab of [...window.gTabmail.tabInfo])if(tab.mode.name==="mailMessageTab")window.gTabmail.closeTab(tab);''')
+    m=restart()
+    open_page(m,base+'options.html')
+    after=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject || page;
+      for(const subject of ["Thundy AV synthetic live test","Thundy followup MIME"])await b.messages.query({subject});
+      const other=(await b.messages.query({subject:"Thundy source history A"})).messages.find(m=>m.subject==="Thundy source history A");
+      const target=(await b.messages.query({subject:"Thundy source history B"})).messages.find(m=>m.subject==="Thundy source history B");
+      const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:other.id});
+      const record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",other.headerMessageId);
+      return {otherNumericId:other.id,targetNumericId:target.id,activeRows:snapshot.rows.length,historicalProviders:[...new Set(snapshot.sourceHistory.rows.map(row=>row.provider))],allHistoricalResourcesUnbound:snapshot.sourceHistory.rows.every(row=>row.resource===null),oldNumericOwner:record.analysisStatusOwner,legacy:JSON.stringify({analysisStatus:record.analysisStatus,analysisStatusOwner:record.analysisStatusOwner,analysisStatusByMessage:record.analysisStatusByMessage,analysisStatusLegacy:record.analysisStatusLegacy}),snapshots:record.analysisSourceSnapshots};
+    })();''')
+    assert after['activeRows']==0 and after['allHistoricalResourcesUnbound'] and len(after['historicalProviders'])==5,after
+    assert after['oldNumericOwner']==before['oldNumericId'] and after['legacy']==before['legacy'],after
+    assert after['snapshots'][before['newSnapshotId']]['snapshot']['rows'][0]['verdict']=='none',after
+    report['sourceHistory']={'passed':True,'realThunderbirdAPIs':True,'syntheticObservations':True,'liveProviderCalls':False,'beforeRestart':before,'afterRestart':after,'numericIdReassignedToSibling':after['otherNumericId']==before['oldNumericId'],'actualMessageAndPopupPassed':True,'scope':'Read projection and additive source snapshots; no durable occurrence migration or general retention guarantee.'}
+    return m
+
+
+def check_active_sources(m, base, out, report, display, baseline=False):
+    """Paired native operation measurements; synthetic observations, real MIME inventory."""
+    fixture=out/'active-sources.eml'
+    urls=['https://source-'+str(i)+'.example.net/item' for i in range(500)]
+    fixture.write_bytes(('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy active sources\r\nMessage-ID: <active-sources@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain\r\n\r\n'+'\r\n'.join(urls)+'\r\n').encode('ascii'))
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const root=MailServices.accounts.localFoldersServer.rootFolder;if(!root.containsChildNamed("Active Sources"))root.createSubfolder("Active Sources",null);const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);MailServices.copy.copyFileMessage(file,root.getChildNamed("Active Sources"),null,false,0,"",null,null);''',[str(fixture)])
+    wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Active Sources").getTotalMessages(false);''')==1)
+    open_page(m,base+'options.html')
+    target=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,message=(await b.messages.query({subject:"Thundy active sources"})).messages.find(item=>item.subject==="Thundy active sources");await b.messageDisplay.open({messageId:message.id,location:"tab"});return message.id;})();''')
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status");'))
+    options='window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).browser'
+    measured=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]);
+      await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,old=>({...old,messageHeader:message.headerMessageId,links:arguments[1].map(url=>({url,state:"UNKNOWN"})),updatedAt:Date.now()}));
+      const ready=await bg.getMessageAnalysisContext(message),context=ready.wrappedJSObject||ready;
+      for(let index=0;index<1200;index++)context.event({provider:["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"][index%5],scope:["report","hash","domain","ip","url"][index%5],resource:"link:"+Math.floor(index/5),phase:"cache",state:"checked",verdict:index===1199?"malicious":"none",observedAt:1790000000000+index*1000});
+      const samples=[];for(let run=0;run<3;run++){const start=performance.now();await context.flush();samples.push(performance.now()-start);}
+      const snapshot=await context.snapshot();return {flushMs:samples,activeRows:snapshot.rows.length,inventory:Object.keys(snapshot.resourceLabels).length,sourceTimesUnchanged:snapshot.rows[0].observedAt===1790000000000&&snapshot.rows[1199].observedAt===1790001199000};
+    })();''',[target,urls],browser=options)
+    assert measured['activeRows']==1200 and measured['inventory']==500 and measured['sourceTimesUnchanged'],measured
+    inspect='''const root=document.getElementById("thundy-analysis-status").shadowRoot,items=Array.from(root.querySelectorAll("details")).filter(d=>/^(hybridanalysis|virustotal|urlhaus|abuseipdb|urlscan):/.test(d.dataset.key||""));return {nodes:root.querySelectorAll("*").length,details:items.length,closedWithBody:items.filter(d=>!d.open&&d.querySelector("p,small")).length,opened:items.filter(d=>d.open).length,firstKey:items[0].dataset.key,jumpAvailable:!!root.querySelector('[data-focus-key="current-find-warning"]')};'''
+    initial=m.page(inspect);assert initial['details']==1200,initial
+    assert initial['closedWithBody']==(1200 if baseline else 0),initial
+    m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot;Array.from(root.querySelectorAll("details")).find(d=>d.dataset.key?.startsWith("hybridanalysis:")).querySelector("summary").focus();')
+    native_key(display,'Return')
+    wait_for(lambda:m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="hybridanalysis:report:link:0"]\');return d.open&&!!d.querySelector("small");'))
+    opened=m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="hybridanalysis:report:link:0"]\');return {timesPreserved:d.textContent.includes(new Date(1790000000000).toLocaleString("en")),children:d.children.length};')
+    assert opened['timesPreserved'],opened
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,ready=await bg.getMessageAnalysisContext(await b.messages.get(arguments[0]));await (ready.wrappedJSObject||ready).flush();return true;})();''',[target],browser=options)
+    preserved=m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot,d=root.querySelector(\'[data-key="hybridanalysis:report:link:0"]\');return d.open&&!!d.querySelector("small")&&root.activeElement?.dataset.focusKey===d.dataset.key;')
+    assert preserved
+    if not baseline:
+        m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-focus-key="current-find-warning"]\').focus();')
+        native_key(display,'Return')
+        wait_for(lambda:m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot,d=root.querySelector(\'[data-key="urlscan:url:link:239"]\');return d.open&&!!d.querySelector("small")&&d.querySelector(".service-status")?.textContent==="urlscan.io"&&d.querySelector("summary").getAttribute("aria-label")?.startsWith("urlscan.io · ")&&root.activeElement?.dataset.focusKey===d.dataset.key;'))
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    started=time.monotonic();native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.getElementById("webextension-remote-preload-panel").querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.page('return Array.from(document.getElementById("thundy-analysis-status")?.shadowRoot.querySelectorAll("details")||[]).filter(d=>/^(hybridanalysis|virustotal|urlhaus|abuseipdb|urlscan):/.test(d.dataset.key||"")).length===1200;',browser=popup))
+    popup_initial=m.page(inspect,browser=popup);popup_ms=round((time.monotonic()-started)*1000)
+    assert popup_initial['closedWithBody']==(1200 if baseline else 0),popup_initial
+    wait_for(lambda:m.page('return !!document.querySelector(".local-risk")&&!document.getElementById("thundy-initial-loading");',browser=popup))
+    m.js('document.getElementById("webextension-remote-preload-panel").querySelector(\'browser[webextension-view-type="popup"]\').focus();')
+    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="hybridanalysis:report:link:0"] summary\').focus();',browser=popup)
+    native_key(display,'Return')
+    wait_for(lambda:m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="hybridanalysis:report:link:0"]\');return d.open&&!!d.querySelector("small");',browser=popup))
+    popup_opened=m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="hybridanalysis:report:link:0"]\');return d.textContent.includes(new Date(1790000000000).toLocaleString("en"));',browser=popup)
+    assert popup_opened
+    if not baseline:
+        m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-focus-key="current-find-warning"]\').focus();',browser=popup)
+        native_key(display,'Return')
+        wait_for(lambda:m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot,d=root.querySelector(\'[data-key="urlscan:url:link:239"]\');return d.open&&!!d.querySelector("small")&&d.querySelector(".service-status")?.textContent==="urlscan.io"&&d.querySelector("summary").getAttribute("aria-label")?.startsWith("urlscan.io · ")&&root.activeElement?.dataset.focusKey===d.dataset.key;',browser=popup))
+        m.page('return new Promise(resolve=>window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>resolve(true))));',browser=popup)
+        subprocess.run(['import','-window','root',str(out/'active-sources-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    report['activeSources']={'passed':True,'baseline':baseline,'syntheticObservations':True,'liveProviderCalls':False,'fixtureUrls':500,'operationScope':'Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim','message':{'measured':measured,'initial':initial,'opened':opened,'focusAndOpenPreserved':preserved},'popup':{'initial':popup_initial,'openAndAutomationMs':popup_ms,'openedTimePreserved':popup_opened,'keyboardDisclosurePassed':True,'strongestWarningJumpPassed':not baseline}}
+
+
+def check_history_pages(m, base, out, report, display):
+    """Large synthetic history through real storage, message and popup renderer."""
+    fixture=out/'large-history.eml'
+    fixture.write_bytes(b'From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy large history\r\nMessage-ID: <large-history@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain\r\n\r\nSynthetic source history.\r\n')
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const root=MailServices.accounts.localFoldersServer.rootFolder;if(!root.containsChildNamed("Large History"))root.createSubfolder("Large History",null);
+      const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);MailServices.copy.copyFileMessage(file,root.getChildNamed("Large History"),null,false,0,"",null,null);''',[str(fixture)])
+    wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Large History").getTotalMessages(false);''')==1)
+    open_page(m,base+'options.html')
+    seeded=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const message=(await b.messages.query({subject:"Thundy large history"})).messages.find(item=>item.subject==="Thundy large history");
+      const rows=Array.from({length:1200},(_,index)=>({provider:["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"][index%5],scope:["report","hash","domain","ip","url"][index%5],resource:"link:"+index,state:"checked",verdict:index===1199?"malicious":"none",responses:1,observedAt:1790000000000+index*1000,findingAt:1790000000000+index*1000}));
+      const legacy={schemaVersion:2,rows};await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,()=>({messageHeader:message.headerMessageId,analysisStatusLegacy:legacy,updatedAt:Date.now()}));
+      await b.messageDisplay.open({messageId:message.id,location:"tab"});return {id:message.id,legacy:JSON.stringify(legacy)};
+    })();''')
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".history-range");'))
+    inspect='''const host=document.getElementById("thundy-analysis-status"),root=host.shadowRoot,detail=root.querySelector('[data-key="unbound-history"]');return {page:Number(host.dataset.historyPage),entries:detail.querySelectorAll(".history-entries li").length,range:detail.querySelector(".history-range").textContent,summary:detail.querySelector("summary").textContent,localOnly:root.querySelector(".mode").textContent==="Local · no external results recorded",noCurrentThreat:root.querySelector(".card").style.borderColor==="",nodes:root.querySelectorAll("*").length,focused:root.activeElement?.dataset.focusKey||null,warningFocused:root.activeElement?.dataset.historyWarning==="true"};'''
+    first=m.page(inspect);assert first['entries']==30 and first['page']==0 and first['noCurrentThreat'],first
+    assert 'association unconfirmed' in first['summary'] and 'Suspicious or malicious historical finding' in first['summary'],first
+    m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="unbound-history"]\');d.open=true;d.querySelector(\'[data-focus-key="history-next"]\').focus();')
+    native_key(display,'Return')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").dataset.historyPage==="1";'))
+    keyboard=m.page(inspect);assert keyboard['focused']=='history-next' and keyboard['entries']==30,keyboard
+    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-focus-key="history-find-warning"]\').focus();')
+    native_key(display,'Return')
+    last=wait_for(lambda:(lambda value:value if value['page']==39 else None)(m.page(inspect)))
+    assert last['warningFocused'] and '1171–1200 / 1200' in last['range'] and last['noCurrentThreat'],last
+    options_browser='window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).browser'
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,ready=await bg.getMessageAnalysisContext(await b.messages.get(arguments[0]));await (ready.wrappedJSObject||ready).flush();return true;})();''',[seeded['id']],browser=options_browser)
+    refreshed=m.page(inspect);assert refreshed['page']==39 and refreshed['warningFocused'],refreshed
+    m.page('return new Promise(resolve=>window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>resolve(true))));')
+    m.screenshot(out/'history-pages-message.png')
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".history-range");',browser=popup))
+    popup_first=m.page(inspect,browser=popup);assert popup_first['page']==0 and popup_first['entries']==30 and popup_first['noCurrentThreat'],popup_first
+    wait_for(lambda:m.page('return !!document.querySelector(".local-risk")&&!document.getElementById("thundy-initial-loading");',browser=popup))
+    # The remote popup needs chrome-level browser focus before X11 keys;
+    # focusing only a DOM child leaves the native key target in the message.
+    popup='document.getElementById("webextension-remote-preload-panel").querySelector(\'browser[webextension-view-type="popup"]\')'
+    m.js('document.getElementById("webextension-remote-preload-panel").querySelector(\'browser[webextension-view-type="popup"]\').focus();')
+    m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="unbound-history"]\');d.open=true;d.querySelector(\'[data-focus-key="history-next"]\').focus();',browser=popup)
+    m.page('return new Promise(resolve=>window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>resolve(true))));',browser=popup)
+    native_key(display,'Return')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").dataset.historyPage==="1";',browser=popup))
+    native_key(display,'space')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").dataset.historyPage==="2";',browser=popup))
+    native_key(display,'Tab')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.activeElement?.dataset.focusKey==="history-find-warning";',browser=popup))
+    native_key(display,'Return')
+    popup_last=wait_for(lambda:(lambda value:value if value['page']==39 else None)(m.page(inspect,browser=popup)))
+    assert popup_last['warningFocused'] and popup_last['noCurrentThreat'],popup_last
+    assert m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";')
+    m.page('return new Promise(resolve=>window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>resolve(true))));',browser=popup)
+    subprocess.run(['import','-window','root',str(out/'history-pages-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    open_page(m,base+'options.html')
+    preserved=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]),record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId);return JSON.stringify(record.analysisStatusLegacy)===arguments[1];})();''',[seeded['id'],seeded['legacy']])
+    assert preserved
+    report['historyPages']={'passed':True,'syntheticObservations':True,'liveProviderCalls':False,'storedHistoryUnchanged':preserved,'realX11Keyboard':True,'popupKeys':['Return','space','Tab'],'popupKeyboardSetup':'Explicit chrome browser focus before X11 keys','firstMessagePage':first,'keyboardMessagePage':keyboard,'lastMessagePage':last,'afterRefresh':refreshed,'firstPopupPage':popup_first,'lastPopupPage':popup_last,'scope':'Real message and popup, 1200 unbound history observations; no current threat inherited, no screen reader acceptance.'}
+
+
+def probe_source_export_navigation(m, base, invalidate=False):
+    """Observe actual document reuse, without assuming a back/forward cache."""
+    m.page('''sessionStorage.removeItem("thundyNavigationEvents");
+      window.wrappedJSObject.__thundyNavigationMarker="original-export-document";
+      for(const type of ["pagehide","pageshow"])addEventListener(type,event=>{
+        const rows=JSON.parse(sessionStorage.getItem("thundyNavigationEvents")||"[]");
+        rows.push({type,persisted:event.persisted});sessionStorage.setItem("thundyNavigationEvents",JSON.stringify(rows));
+      });
+      setTimeout(()=>location.assign(arguments[0]),0);''', [base+'options.html'])
+    wait_for(lambda:m.page('return location.pathname.endsWith("/options.html")&&document.readyState==="complete";'))
+    if invalidate:
+        m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+          await bg.clearStore(await bg.getSharedDB(),"hybridanalysis");
+          await b.runtime.sendMessage({action:"clearMemoryCaches"});return true;})();''')
+    m.page('setTimeout(()=>history.back(),0);')
+    wait_for(lambda:m.page('return location.pathname.endsWith("/source_export.html")&&document.readyState==="complete";'))
+    observed=m.page('''return {sameDocument:window.wrappedJSObject.__thundyNavigationMarker==="original-export-document",
+      events:JSON.parse(sessionStorage.getItem("thundyNavigationEvents")||"[]"),
+      navigationType:performance.getEntriesByType("navigation")[0]?.type,
+      initiallyEmpty:document.getElementById("sourceExportContent").textContent==="",
+      initiallyDisabled:document.getElementById("sourceExportSave").disabled};''')
+    m.page('document.getElementById("sourceExportPreview").click();')
+    state=wait_for(lambda:m.page('''const p=document.getElementById("sourceExportContent"),s=document.getElementById("sourceExportSave");
+      if(!p.hidden&&!s.disabled)return "fresh-preview";
+      if(document.getElementById("sourceExportStatus").textContent.startsWith("The message context is no longer available")&&s.disabled&&p.textContent==="")return "unavailable";
+      return null;'''))
+    observed['afterExplicitPreview']=state
+    observed['cacheClearedWhileAway']=invalidate
+    assert observed['initiallyEmpty'] and observed['initiallyDisabled'],observed
+    assert state==('unavailable' if invalidate else 'fresh-preview'),observed
+    return observed
+
+
+def check_source_export(m, base, out, report, restart, display):
+    """Real popup entry, privacy projection, GTK download, clear and restart."""
+    open_page(m,base+'options.html')
+    target_id=report['auditRecord']['messageId']
+    m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const message=await b.messages.get(arguments[0]),ready=await bg.getMessageAnalysisContext(message),context=ready.wrappedJSObject||ready;
+      const rows=["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"].map((provider,index)=>({provider,scope:["report","hash","domain","ip","url"][index],resource:"message",state:provider==="urlscan"?"submitted":"checked",verdict:provider==="urlscan"?"unknown":"none",responses:1,observedAt:1000}));
+      await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,record=>({...record,messageHeader:message.headerMessageId,analysisStatusLegacy:{schemaVersion:2,rows:rows.map(row=>({...row,observedAt:500,verdict:"malicious"}))},updatedAt:Date.now()}));
+      for(const row of rows)context.event({...row,phase:"finish",responded:true});await context.flush();
+      await b.messageDisplay.open({messageId:message.id,location:"tab"});
+      return {messageId:message.id};
+    })();''',[target_id])
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status");'))
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser;
+      const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();
+      return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.page('return !!document.querySelector(".local-risk")&&!document.getElementById("thundy-initial-loading");',browser=popup))
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;const ready=await bg.getMessageAnalysisContext(await b.messages.get(arguments[0]));await (ready.wrappedJSObject||ready).flush();return true;})();''',[target_id],browser=popup)
+    url=wait_for(lambda:m.page('const a=document.getElementById("sourceExportOpen");return a&&!a.hidden&&a.href;',browser=popup))
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    open_page(m,url)
+    wait_for(lambda:m.page('return document.getElementById("sourceExportPreview")?.textContent!=="";'))
+    wait_for(lambda:m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;const ready=await bg.getMessageAnalysisContext(await b.messages.get(arguments[0]));return !(ready.wrappedJSObject||ready).timer;})();''',[target_id]))
+    assert m.page('return document.getElementById("sourceExportContent").hidden&&document.getElementById("sourceExportSave").disabled;')
+    m.page('document.getElementById("sourceExportPreview").click();')
+    preview=wait_for(lambda:m.page('const p=document.getElementById("sourceExportContent");return !p.hidden&&JSON.parse(p.textContent);'))
+    assert len({row['provider'] for row in preview['current']['rows']})==5,preview
+    assert all(row['observedAt']==1000 for row in preview['current']['rows']),preview
+    assert preview['history']['rows'] and all(row['resource']['kind']=='unbound' for row in preview['history']['rows']),preview
+    encoded=json.dumps(preview)
+    assert all(text not in encoded for text in ['messageId','contextToken','headerMessageId','https://','@','fixture@example','apikey','resourceLabels']),encoded
+    save_control=m.page('const b=document.getElementById("sourceExportSave"),s=getComputedStyle(b),r=b.getBoundingClientRect();return {text:b.textContent,disabled:b.disabled,display:s.display,visibility:s.visibility,opacity:s.opacity,width:r.width,height:r.height};')
+    assert save_control['text'] and not save_control['disabled'] and save_control['display']!='none' and save_control['visibility']=='visible' and float(save_control['opacity'])>0 and save_control['width']>40 and save_control['height']>=40,save_control
+    m.screenshot(out/'source-export-preview.png')
+    subprocess.run(['import','-window','root',str(out/'source-export-preview-root.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.page('document.getElementById("sourceExportCancel").click();')
+    assert m.page('return document.getElementById("sourceExportContent").textContent===""&&document.getElementById("sourceExportSave").disabled;')
+    m.page('document.getElementById("sourceExportPreview").click();')
+    expected=wait_for(lambda:m.page('const p=document.getElementById("sourceExportContent");return !p.hidden&&JSON.parse(p.textContent);'))
+    downloaded=native_json_download(m,display,out,'sourceExportSave','source-export-download')
+    assert downloaded==expected
+    navigation=[probe_source_export_navigation(m,base),probe_source_export_navigation(m,base,invalidate=True)]
+    report['sourceExportNavigation']={'passed':True,'cases':navigation,'scope':'Actual same-tab forward navigation and history.back; document reuse observed rather than assumed. No synthetic pageshow event.'}
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;await bg.clearStore(await bg.getSharedDB(),"hybridanalysis");await b.runtime.sendMessage({action:"clearMemoryCaches"});return true;})();''')
+    wait_for(lambda:m.page('return document.getElementById("sourceExportSave").disabled&&document.getElementById("sourceExportContent").textContent==="";'))
+    m.page('document.getElementById("sourceExportPreview").click();')
+    wait_for(lambda:m.page('return document.getElementById("sourceExportStatus").textContent.startsWith("The message context is no longer available");'))
+    close_extension_tabs(m)
+    m.js('for(const tab of [...window.gTabmail.tabInfo])if(tab.mode.name==="mailMessageTab")window.gTabmail.closeTab(tab);')
+    m=restart();open_page(m,url)
+    wait_for(lambda:m.page('return !!document.getElementById("sourceExportPreview");'))
+    m.page('document.getElementById("sourceExportPreview").click();')
+    wait_for(lambda:m.page('return document.getElementById("sourceExportStatus").textContent.startsWith("The message context is no longer available");'))
+    assert m.page('return document.getElementById("sourceExportSave").disabled&&document.getElementById("sourceExportContent").textContent==="";')
+    report['sourceExport']={'passed':True,'realPopupEntry':True,'realGtkDownload':True,'downloadMatchesPreview':True,'cancelAndCacheClearInvalidate':True,'oldRuntimeLinkRefusedAfterRestart':True,'syntheticObservations':True,'liveProviderCalls':False,'saveControl':save_control,'providers':sorted({row['provider'] for row in downloaded['current']['rows']}),'canonicalDownloadSha256':hashlib.sha256(json.dumps(downloaded,sort_keys=True).encode()).hexdigest(),'scope':'Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance.'}
+    return m
+
+
+def check_report_archive(m, base, out, report, restart, display):
+    """Real MIME, popup-side protected DAO and restart; synthetic provider protocols."""
+    for index, (name, payload) in enumerate([('A', 'AAAA'), ('B', 'BBBB')], 1):
+        fixture = out / ('report-archive-' + name + '.eml')
+        fixture.write_bytes(('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy report archive ' + name + '\r\nMessage-ID: <report-archive-collision@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary="archive"\r\n\r\n--archive\r\nContent-Type: text/plain\r\n\r\nSynthetic archive fixture.\r\n--archive\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename="same.bin"\r\n\r\n' + payload + '\r\n--archive--\r\n').encode('ascii'))
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          const root=MailServices.accounts.localFoldersServer.rootFolder;
+          if(!root.containsChildNamed("Report Archive"))root.createSubfolder("Report Archive",null);
+          const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+          MailServices.copy.copyFileMessage(file,root.getChildNamed("Report Archive"),null,false,0,"",null,null);''', [str(fixture)])
+        wait_for(lambda: m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+          return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Report Archive").getTotalMessages(false);''') == index)
+    open_page(m, base + 'options.html')
+    before = m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const find=async name=>(await b.messages.query({subject:"Thundy report archive "+name})).messages.find(item=>item.subject==="Thundy report archive "+name);
+      const a=await find("A"),target=await find("B"),part=(await b.messages.listAttachments(a.id))[0];
+      const hashed=await bg.process_single_attachment(a,part,false,false),db=await bg.getSharedDB();
+      const old={partName:part.partName,attachment_name:"same.bin",hybrid_sha256:hashed.hybrid_data.sha256,hybrid_job_id:"job-A",hybrid_submission_id:"submission-A",state:"KNOWN",report:{state:"COMPLETE",verdict:"malicious",created:"provider-original",details:{nested:[1,"original",{retained:true}]}},report_fetched_at:"2026-10-02T08:00:00.000Z",virustotal_stats:{malicious:2,undetected:5},created:new Date()};
+      await bg.updateStore(db,"hybridanalysis",a.headerMessageId,()=>({messageHeader:a.headerMessageId,attachments:[old],updatedAt:Date.now()}));
+      await bg.processAttachments(a,false,false);
+      const same=await bg.getFromStore(db,"hybridanalysis",a.headerMessageId);
+      const offlineKeptReport=JSON.stringify(same.attachments[0].report)===JSON.stringify(old.report)&&same.attachments[0].report_fetched_at===old.report_fetched_at&&same.attachments[0].hybrid_job_id==="job-A"&&!same.analysisReportArchive;
+      await bg.processAttachments(target,false,false);
+      const changed=await bg.getFromStore(db,"hybridanalysis",a.headerMessageId),entry=changed.analysisReportArchive.entries[0];
+      const exactOriginal=JSON.stringify(entry.resource.report)===JSON.stringify(old.report)&&entry.resource.hybrid_sha256===old.hybrid_sha256&&entry.resource.report_fetched_at===old.report_fetched_at&&entry.resource.virustotal_stats.malicious===2&&entry.resource.hybrid_submission_id==="submission-A";
+      const current=changed.attachments[0];
+      await bg.updateStore(db,"hybridanalysis",a.headerMessageId,record=>{record.attachments[0]={...current,state:"KNOWN",hybrid_job_id:"job-B",report:{state:"COMPLETE",verdict:"malicious",details:{originalB:true}},report_fetched_at:"2026-10-03T08:00:00.000Z"};return record;});
+      return {offlineKeptReport,exactOriginal,newContentClearedCurrentReport:current.report===null,differentHashes:current.hybrid_sha256!==old.hybrid_sha256,archiveEntries:changed.analysisReportArchive.entries.length};
+    })();''')
+    assert all(before[key] for key in ['offlineKeptReport', 'exactOriginal', 'newContentClearedCurrentReport', 'differentHashes']) and before['archiveEntries'] == 1, before
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const {MailUtils}=ChromeUtils.importESModule("resource:///modules/MailUtils.sys.mjs");
+      MailUtils.displayMessage(Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Report Archive").messages).find(h=>h.subject==="Thundy report archive B"));''')
+    wait_for(lambda: m.page('return !!document.getElementById("thundy-analysis-status");'))
+    point = m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser;
+      const r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();
+      return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display, point['x'], point['y'])
+    wait_for(lambda: m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup = 'document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda: m.page('return typeof window.wrappedJSObject.updateStore==="function"&&!!document.getElementById("thundy-analysis-status");', browser=popup))
+    saved = m.page('''return (async()=>{
+      const w=window.wrappedJSObject,b=w.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const target=(await b.messages.query({subject:"Thundy report archive B"})).messages.find(item=>item.subject==="Thundy report archive B");
+      const db=await bg.getSharedDB(),record=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId),item=record.attachments[0];
+      const write=async(report,fetchedAt)=>{const popupDb=await w.openDB();try{return await w.updateStore(popupDb,"hybridanalysis",target.headerMessageId,record=>{record.attachments[0].report=report;record.attachments[0].report_fetched_at=fetchedAt;return record;},{preserveReports:true}).then(()=>true,()=>false);}finally{popupDb.close();}};
+      const success=await write({state:"COMPLETE",verdict:"clean",details:{newB:true}},"2026-11-03T08:00:00.000Z");
+      const saved=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      const oldB=saved.analysisReportArchive.entries.find(entry=>entry.resource.report?.details?.originalB);
+      await bg.updateStore(db,"hybridanalysis",target.headerMessageId,record=>{
+        while(record.analysisReportArchive.entries.length<128)record.analysisReportArchive.entries.push({id:crypto.randomUUID(),archivedAt:Date.now(),kind:"link",slot:record.analysisReportArchive.entries.length,resource:{url:"https://archive.example.invalid/"+record.analysisReportArchive.entries.length,report:{state:"COMPLETE",verdict:"unknown"}}});return record;
+      });
+      const full=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      const refused=await write({state:"COMPLETE",verdict:"malicious",details:{mustNotCommit:true}},new Date().toISOString());
+      const after=await bg.getFromStore(db,"hybridanalysis",target.headerMessageId);
+      return {popupSaved:success,oldBRetained:!!oldB&&oldB.resource.report_fetched_at==="2026-10-03T08:00:00.000Z",archiveEntriesBeforeLimit:saved.analysisReportArchive.entries.length,capacityRefused:refused===false,protocolUnchanged:JSON.stringify(after.attachments)===JSON.stringify(full.attachments),archiveUnchanged:JSON.stringify(after.analysisReportArchive)===JSON.stringify(full.analysisReportArchive)};
+    })();''', browser=popup)
+    assert all(saved[key] for key in ['popupSaved', 'oldBRetained', 'capacityRefused', 'protocolUnchanged', 'archiveUnchanged']) and saved['archiveEntriesBeforeLimit'] == 2, saved
+    warning = 'A report update could not be saved. Earlier protocols were retained.'
+    wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);', [warning], browser=popup))
+    subprocess.run(['import', '-window', 'root', str(out / 'report-archive-popup.png')], env={**os.environ, 'DISPLAY': display}, check=True, timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    wait_for(lambda: m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);', [warning]))
+    m.screenshot(out / 'report-archive-message.png')
+    close_extension_tabs(m)
+    m.js('for(const tab of [...window.gTabmail.tabInfo])if(tab.mode.name==="mailMessageTab")window.gTabmail.closeTab(tab);')
+    m = restart()
+    open_page(m, base + 'options.html')
+    after = m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const target=(await b.messages.query({subject:"Thundy report archive B"})).messages.find(item=>item.subject==="Thundy report archive B");
+      const record=await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",target.headerMessageId);
+      const snapshot=await b.runtime.sendMessage({action:"getMessageAnalysis",messageId:target.id});
+      return {archiveEntries:record.analysisReportArchive.entries.length,originalA:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.details?.nested?.[2]?.retained),originalB:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.details?.originalB),currentClean:record.attachments[0].report.verdict==="clean",activeRows:snapshot.rows.length,historicalUnbound:snapshot.sourceHistory.rows.every(row=>row.resource===null),originalTimeInHistory:snapshot.sourceHistory.rows.some(row=>row.observedAt===Date.parse("2026-10-02T08:00:00Z"))};
+    })();''')
+    assert after['archiveEntries'] == 128 and after['activeRows'] == 0 and all(after[key] for key in ['originalA', 'originalB', 'currentClean', 'historicalUnbound', 'originalTimeInHistory']), after
+    report['reportArchive'] = {'passed': True, 'syntheticProtocols': True, 'liveProviderCalls': False, 'realMimeIndexedDBPopupRestart': True, 'popupWriteScope': 'Actual protected DAO in the native popup with fixture callback; module-private persistHybridReport is covered separately by Node integration.', 'before': before, 'popupAndCapacity': saved, 'afterRestart': after, 'warningVisibleInMessageAndPopup': True, 'scope': 'Bounded revisions in the existing header cache; no independent durable archive.'}
+    return m
 
 
 def check_restart_upgrade(m, args, out, display, report, restart):
@@ -1157,6 +1623,13 @@ def main():
     parser.add_argument('--identity-check', action='store_true', help='Probe numeric message IDs across a restart with reversed lookup order; requires --restart-check')
     parser.add_argument('--identity-lifecycle-check', action='store_true', help='Real content/metadata collision, copy/move/flags/compact/restart/profile-restore investigation; direct permanent install')
     parser.add_argument('--mime-content-check', action='store_true', help='Real Unicode, binary and unreadable-content investigation; direct install')
+    parser.add_argument('--unicode-input-check', action='store_true', help='Compare real MIME decoding variants and product analysis input; direct install')
+    parser.add_argument('--source-history-check', action='store_true', help='Real legacy source separation, content guard and persisted history across ID reuse; direct permanent install')
+    parser.add_argument('--report-archive-check', action='store_true', help='Real bounded protocol revisions, popup writes, capacity refusal and restart; synthetic reports, direct permanent install')
+    parser.add_argument('--source-export-check', action='store_true', help='Real popup source export, GTK download, cache clear and stale runtime rejection; direct permanent install, EN')
+    parser.add_argument('--history-pages-check', action='store_true', help='Real 1200-row history, late warnings and X11 keyboard in message and popup; direct EN install')
+    parser.add_argument('--active-sources-check', action='store_true', help='Real 1200 active rows and 500-resource inventory, operation timings and disclosure behavior; direct EN')
+    parser.add_argument('--active-sources-baseline', action='store_true', help='Expect the recorded eager baseline; requires --active-sources-check')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -1189,6 +1662,20 @@ def main():
         parser.error('--identity-lifecycle-check requires a direct install without --previous-xpi')
     if args.mime_content_check and args.restart_check:
         parser.error('--mime-content-check requires direct installation')
+    if args.unicode_input_check and args.restart_check:
+        parser.error('--unicode-input-check requires direct installation')
+    if args.source_history_check and (args.restart_check or args.previous_xpi):
+        parser.error('--source-history-check requires direct installation without --previous-xpi')
+    if args.report_archive_check and (args.restart_check or args.previous_xpi):
+        parser.error('--report-archive-check requires direct installation without --previous-xpi')
+    if args.source_export_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
+        parser.error('--source-export-check requires direct EN installation without --previous-xpi')
+    if args.history_pages_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
+        parser.error('--history-pages-check requires direct EN installation without --previous-xpi')
+    if args.active_sources_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
+        parser.error('--active-sources-check requires direct EN installation without --previous-xpi')
+    if args.active_sources_baseline and not args.active_sources_check:
+        parser.error('--active-sources-baseline requires --active-sources-check')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -1201,6 +1688,7 @@ def main():
     # Fresh output prevents old reports/screenshots from being mistaken for new evidence.
     out.mkdir(parents=True, exist_ok=False, mode=0o700)
     report = {'passed': False, 'scope': 'Linux X11 GUI; synthetic plaintext; offline; no API mocks',
+              'runnerSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'startedAt': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
               'xpiSha256': hashlib.sha256(args.xpi.read_bytes()).hexdigest(),
               'binarySha256': hashlib.sha256(args.thunderbird.read_bytes()).hexdigest()}
@@ -1363,7 +1851,7 @@ def main():
                 if args.restart_check:
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
-                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check or args.source_export_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
                     if args.resource_isolation_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_resource_isolation(m,base,out,report)
@@ -1403,6 +1891,24 @@ def main():
                     if args.mime_content_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_mime_content(m,base,out,report,display)
+                    if args.unicode_input_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_unicode_input(m,base,out,report)
+                    if args.source_history_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        m=check_source_history(m,base,out,report,restart_client,display)
+                    if args.report_archive_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        m=check_report_archive(m,base,out,report,restart_client,display)
+                    if args.source_export_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        m=check_source_export(m,base,out,report,restart_client,display)
+                    if args.history_pages_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_history_pages(m,base,out,report,display)
+                    if args.active_sources_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_active_sources(m,base,out,report,display,args.active_sources_baseline)
 
             except Exception:
                 try:

@@ -1,0 +1,2 @@
+# MIME regression fixtures must retain their original CRLF bytes.
+*.eml -text -diff

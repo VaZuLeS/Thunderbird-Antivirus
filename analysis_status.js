@@ -108,6 +108,44 @@ const ThundyAnalysis = (() => {
         };
         return {event:apply, cached(provider,scope,verdict,observedAt) { return apply({provider,scope,verdict,observedAt,phase:'cache',state:verdict === 'unknown' ? 'received' : 'checked'}); }};
     }
+    function history(record, excludeId = null) {
+        const result = {rows:[],truncated:false}, seen = new Set();
+        if (!record) return result;
+        const add = stored => {
+            if (!stored || typeof stored !== 'object') return;
+            if (result.rows.length >= 1200) { result.truncated = true; return; }
+            const restored = create(stored);
+            result.truncated ||= restored.data.truncated;
+            for (const row of restored.data.rows) {
+                const entry = {...row,resource:null,source:'stored'};
+                const key = JSON.stringify(entry);
+                if (seen.has(key)) continue;
+                if (result.rows.length >= 1200) { result.truncated = true; break; }
+                seen.add(key);result.rows.push(entry);
+            }
+        };
+        add(legacy({attachments:(record.attachments || []).slice(0,100),links:(record.links || []).slice(0,500)}));
+        result.truncated ||= (record.attachments?.length || 0) > 100 || (record.links?.length || 0) > 500;
+        add(record.analysisStatusLegacy);add(record.analysisStatus);
+        const archived = record.analysisReportArchive;
+        if (archived?.schemaVersion === 1 && Array.isArray(archived.entries)) {
+            for (const entry of archived.entries.slice(0,128)) {
+                if (entry?.resource && ['attachment','link'].includes(entry.kind)) add(legacy({[entry.kind === 'attachment' ? 'attachments' : 'links']:[entry.resource]}));
+            }
+            result.truncated ||= archived.entries.length > 128;
+        }
+        for (const map of [record.analysisStatusByMessage,record.analysisSourceSnapshots]) {
+            if (!map || typeof map !== 'object') continue;
+            let count = 0;
+            for (const id in map) {
+                if (!Object.prototype.hasOwnProperty.call(map,id)) continue;
+                if (id === excludeId && map === record.analysisSourceSnapshots) continue;
+                if (++count > 128 || result.rows.length >= 1200) { result.truncated = true; break; }
+                add(map === record.analysisSourceSnapshots ? map[id]?.snapshot : map[id]);
+            }
+        }
+        return result;
+    }
     // Self-contained renderer: serialized into the message's isolated world too.
     function render(data, labels, theme = '') {
         const document = globalThis.document;
@@ -123,7 +161,7 @@ const ThundyAnalysis = (() => {
         const root = host.shadowRoot;
         let live = root.querySelector('.live');
         if (!live) { live = n('div','','live'); live.setAttribute('role','status'); live.setAttribute('aria-live','polite'); live.setAttribute('aria-atomic','true'); }
-        const style = document.createElement('style'); style.textContent = ':host{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40)}*{box-sizing:border-box}.card{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40);padding:var(--surface-pad,18px);border:1px solid var(--card-border,#cbd5e1);border-left:4px solid var(--link-color,#146b80);border-radius:12px;background:var(--card-bg,#fff);overflow-wrap:anywhere}h2{font:700 16px/1.4 system-ui;margin:0 0 8px}p{margin:6px 0}.mode,.phase{font-weight:700}.muted,small{color:var(--text-muted,#536579)}ul{padding-left:20px;margin:8px 0}li{margin:8px 0}summary{cursor:pointer}summary:focus-visible{outline:3px solid var(--link-color,#146b80);outline-offset:3px}.warning{color:var(--color-danger,#b32642)}.live{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}details{margin:8px 0}';
+        const style = document.createElement('style'); style.textContent = ':host{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40)}*{box-sizing:border-box}.card{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40);padding:var(--surface-pad,18px);border:1px solid var(--card-border,#cbd5e1);border-left:4px solid var(--link-color,#146b80);border-radius:12px;background:var(--card-bg,#fff);overflow-wrap:anywhere}h2{font:700 16px/1.4 system-ui;margin:0 0 8px}p{margin:6px 0}.mode,.phase{font-weight:700}.muted,small{color:var(--text-muted,#536579)}ul{padding-left:20px;margin:8px 0}li{margin:8px 0}summary{cursor:pointer}:is(summary,button,li):focus-visible{outline:3px solid var(--link-color,#146b80);outline-offset:3px}.history-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}button{font:inherit;min-height:44px;padding:8px 12px;color:var(--text-color,#192b40);background:var(--input-bg,#fff);border:1px solid var(--input-border,#8091a5);border-radius:8px;cursor:pointer}button:disabled{opacity:.6;cursor:not-allowed}.warning{color:var(--color-danger,#b32642)}.live{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}details{margin:8px 0}';
         const date = value => Number.isFinite(value) ? new Date(value).toLocaleString(document.documentElement.lang || undefined) : t('analysisTimeUnknown');
         const rows = data.rows || [], local = data.local?.state === 'checked', localLimited = ['incomplete','failed'].includes(data.local?.state);
         const running = rows.some(row => row.state === 'running'), waiting = rows.some(row => row.state === 'submitted'), incomplete = rows.some(row => row.state === 'incomplete');
@@ -135,7 +173,27 @@ const ThundyAnalysis = (() => {
         const localLabel = t(data.local?.state === 'failed' ? 'analysisLocalUnavailable' : localLimited ? 'analysisLocalIncomplete' : local ? 'analysisLocalChecked' : 'analysisLocalPending');
         card.append(n('p', localLabel, localLimited ? 'warning' : 'muted'));
         const brands = { hybridanalysis: 'Hybrid Analysis', virustotal: 'VirusTotal', urlhaus: 'URLhaus', abuseipdb: 'AbuseIPDB', urlscan: 'urlscan.io' };
+        const warningTargets = {};
+        const providersByResource = new Map();
+        for (const row of rows) if (Object.prototype.hasOwnProperty.call(brands,row.provider)) {
+            if (!providersByResource.has(row.resource)) providersByResource.set(row.resource,new Set());
+            providersByResource.get(row.resource).add(brands[row.provider]);
+        }
         const list = document.createElement('ul'), inactive = document.createElement('ul');
+        const detailBodies = new WeakMap();
+        const hydrate = entry => {
+            const body = detailBodies.get(entry);
+            if (!body) return;
+            detailBodies.delete(entry);
+            const {brand,verdict,warning,findingAt,observedAt,attemptedAt} = body;
+            const summary=entry.querySelector('summary');summary.setAttribute('aria-label',brand+' · '+summary.textContent);
+            entry.append(n('p',brand,'service-status'));
+            if (verdict && verdict !== 'unknown') entry.append(n('p', t('analysisVerdict_' + verdict), warning ? 'warning' : ''));
+            entry.append(n('p', t('analysisFindingObserved') + ': ' + date(findingAt)));
+            entry.append(n('small', t('analysisObserved') + ': ' + date(observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(attemptedAt)));
+        };
+        // toggle does not bubble; capture handles all active details with one listener.
+        list.addEventListener('toggle',event => { if (event.target.open) hydrate(event.target); },true);
         const details = (key, title) => { const node = document.createElement('details'); node.dataset.key = key; node.open = opened.has(key); const summary = n('summary',title); summary.dataset.focusKey = key; node.append(summary); return node; };
         const resourceName = row => {
             if (row.resource === 'message') return t('analysisResourceMessage');
@@ -154,16 +212,22 @@ const ThundyAnalysis = (() => {
                     const warning = ['malicious','suspicious'].includes(row.verdict);
                     const entry = details(key, resourceName(row) + ' · ' + t('analysisScope_' + row.scope) + ' · ' + t('analysisState_' + row.state) + ' · ' + t('analysisSource_' + row.source) + (warning ? ' · ' + t('analysisVerdict_' + row.verdict) : ''));
                     if (warning) entry.querySelector('summary').className = 'warning';
-                    if (row.verdict && row.verdict !== 'unknown') entry.append(n('p', t('analysisVerdict_' + row.verdict), warning ? 'warning' : ''));
-                    entry.append(n('p', t('analysisFindingObserved') + ': ' + date(row.findingAt)));
-                    entry.append(n('small', t('analysisObserved') + ': ' + date(row.observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(row.attemptedAt)));
+                    detailBodies.set(entry,{brand,verdict:row.verdict,warning,findingAt:row.findingAt,observedAt:row.observedAt,attemptedAt:row.attemptedAt});
+                    if (entry.open) hydrate(entry);
+                    if (warning && !warningTargets[row.verdict]) warningTargets[row.verdict] = entry;
                     li.append(entry);
                 }
                 list.append(li);
             } else { li.append(n('div', t('analysisReason_' + (data.availability?.[provider] || 'unrecorded')), 'muted')); inactive.append(li); }
         }
         const strongest = rows.some(row => row.verdict === 'malicious') ? 'malicious' : rows.some(row => row.verdict === 'suspicious') ? 'suspicious' : null;
-        if (strongest) { card.style.borderColor = 'var(--color-danger,#b32642)'; card.append(n('p', t('analysisVerdict_' + strongest), 'warning')); }
+        if (strongest) {
+            card.style.borderColor = 'var(--color-danger,#b32642)';card.append(n('p', t('analysisVerdict_' + strongest), 'warning'));
+            if (warningTargets[strongest]) {
+                const jump=n('button',t('analysisCurrentFindWarning'));jump.type='button';jump.dataset.focusKey='current-find-warning';
+                jump.addEventListener('click',() => {const entry=warningTargets[strongest];entry.open=true;hydrate(entry);entry.querySelector('summary').focus();});card.append(jump);
+            }
+        }
         card.append(list);
         if (inactive.childElementCount) { const other = details('other',t('analysisOtherServices')); other.append(inactive); card.append(other); }
         const refs = Object.keys(data.resourceLabels || {}).filter(ref => /^attachment:[0-9]+(?:\.[0-9]+)*$/.test(ref) || /^link:[0-9]{1,6}$/.test(ref));
@@ -173,7 +237,7 @@ const ThundyAnalysis = (() => {
             for (const resource of refs.slice(0,500)) {
                 const item = n('li',resourceName({resource}));
                 item.append(n('div',t(resource.startsWith('attachment:') ? 'analysisResourceLocal' : 'analysisResourceTarget'),'muted'));
-                const providers = [...new Set(rows.filter(row => row.resource === resource).map(row => brands[row.provider]).filter(Boolean))];
+                const providers = [...(providersByResource.get(resource) || [])];
                 item.append(n('div', providers.length ? providers.join(' · ') : t('analysisResourceNoExternal')));
                 resources.append(item);
             }
@@ -181,14 +245,63 @@ const ThundyAnalysis = (() => {
             inventory.append(resources); card.append(inventory);
         }
         if (data.truncated) card.append(n('p',t('analysisTruncated'),'warning'));
+        const historyRows = (Array.isArray(data.sourceHistory?.rows) ? data.sourceHistory.rows : []).slice(0,1200).filter(row => row && Object.prototype.hasOwnProperty.call(brands,row.provider) && Object.prototype.hasOwnProperty.call(labels,'analysisScope_' + row.scope) && Object.prototype.hasOwnProperty.call(labels,'analysisState_' + row.state));
+        const historicalWarning = historyRows.some(row => ['malicious','suspicious'].includes(row.verdict));
+        if (historyRows.length || data.sourceHistory?.truncated) {
+            const names = [...new Set(historyRows.map(row => brands[row.provider]))];
+            const history = details('unbound-history',t('analysisHistoryTitle') + (names.length ? ' · ' + names.join(' · ') : '') + (historicalWarning ? ' · ' + t('analysisHistoryFlagged') : ''));
+            history.append(n('p',t('analysisHistoryWarning'),'warning'));
+            const entries = document.createElement('ul');
+            entries.className = 'history-entries';
+            const pageSize = 30, lastPage = Math.max(0,Math.ceil(historyRows.length/pageSize)-1);
+            let page = Number(host.dataset.historyPage);
+            page = Number.isSafeInteger(page) && page >= 0 ? Math.min(page,lastPage) : 0;
+            const controls = n('div','','history-controls');controls.setAttribute('role','group');controls.setAttribute('aria-label',t('analysisHistoryPages'));
+            const previous = n('button',t('auditPrevious')), next = n('button',t('auditNext')), range = n('span');
+            previous.type = next.type = 'button';previous.dataset.focusKey='history-previous';next.dataset.focusKey='history-next';
+            range.className='history-range';
+            function paintHistory(announce = false) {
+                host.dataset.historyPage=String(page);entries.replaceChildren();
+                for (const row of historyRows.slice(page*pageSize,(page+1)*pageSize)) {
+                    const li = n('li', brands[row.provider] + ' · ' + t('analysisScope_' + row.scope) + ' · ' + t('analysisState_' + row.state) + ' · ' + t('analysisSource_stored'));
+                    const flagged = ['malicious','suspicious'].includes(row.verdict);
+                    li.tabIndex=-1;li.dataset.focusKey='history-row:'+JSON.stringify([row.provider,row.scope,row.state,row.verdict,row.observedAt,row.findingAt,row.attemptedAt]);
+                    if (flagged) li.dataset.historyWarning='true';
+                    li.append(n('div',t('analysisVerdict_' + (Object.prototype.hasOwnProperty.call(labels,'analysisVerdict_' + row.verdict) ? row.verdict : 'unknown')),flagged ? 'warning' : ''));
+                    li.append(n('small',t('analysisFindingObserved') + ': ' + date(row.findingAt) + ' · ' + t('analysisObserved') + ': ' + date(row.observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(row.attemptedAt)));
+                    entries.append(li);
+                }
+                range.textContent=t('analysisHistoryEntries')+': '+(historyRows.length ? page*pageSize+1 : 0)+'–'+Math.min(historyRows.length,(page+1)*pageSize)+' / '+historyRows.length;
+                previous.disabled=page===0;next.disabled=page===lastPage;
+                if (announce) live.textContent=t('analysisHistoryTitle')+' · '+range.textContent;
+            }
+            previous.addEventListener('click',() => { page=Math.max(0,page-1);paintHistory(true);(previous.disabled ? next : previous).focus(); });
+            next.addEventListener('click',() => { page=Math.min(lastPage,page+1);paintHistory(true);(next.disabled ? previous : next).focus(); });
+            if (historyRows.length > pageSize) controls.append(previous,next);
+            if (historyRows.length) controls.append(range);
+            if (historicalWarning) {
+                const jump=n('button',t('analysisHistoryFindWarning'));jump.type='button';jump.dataset.focusKey='history-find-warning';
+                jump.addEventListener('click',() => {page=Math.floor(historyRows.findIndex(row=>['malicious','suspicious'].includes(row.verdict))/pageSize);paintHistory(true);entries.querySelector('[data-history-warning]')?.focus();});
+                controls.append(jump);
+            }
+            paintHistory();history.append(controls);
+            history.append(entries);
+            if (data.sourceHistory.truncated || data.sourceHistory.rows?.length > 1200) history.append(n('p',t('analysisTruncated'),'warning'));
+            card.append(history);
+        }
+        if (data.sourcePersistenceFailed) card.append(n('p',t('analysisPersistenceFailed'),'warning'));
+        if (data.reportArchiveBlocked) card.append(n('p',t('analysisReportArchiveBlocked'),'warning'));
         card.append(n('p', t('analysisLimit'), 'muted'));
-        const announcement = [mode, localLabel, rows.length ? phase : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
+        const announcement = [mode, localLabel, rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? t('analysisPersistenceFailed') : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
         const changed = host.dataset.announcement !== announcement;
         root.replaceChildren(style, live, card);
         if (wasPresent && changed) live.textContent = announcement;
         host.dataset.announcement = announcement;
         if (!wasPresent) { const mount = document.getElementById('analysisSourceMount'); if (mount) mount.append(host); else document.body.prepend(host); }
-        if (focused) Array.from(root.querySelectorAll('summary')).find(node => node.dataset.focusKey === focused)?.focus({preventScroll:true});
+        if (focused) {
+            const target=Array.from(root.querySelectorAll('[data-focus-key]')).find(node => node.dataset.focusKey === focused && !node.disabled);
+            (target || (focused.startsWith('history-') ? root.querySelector('[data-key="unbound-history"] summary') : null))?.focus({preventScroll:true});
+        }
         return host;
     }
     function withCache(context, provider, scope, key) {
@@ -199,9 +312,9 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }
-    return { providers, scopes, create, spec, response, legacy, render, cacheTime, labels, withCache, bind, validResource, rowKey };
+    return { providers, scopes, create, spec, response, legacy, history, render, cacheTime, labels, withCache, bind, validResource, rowKey };
 })();

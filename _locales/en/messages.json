@@ -1770,6 +1770,70 @@
   "analysisContextChanged": {
     "message": "The message context changed. Close and reopen the popup before submitting again."
   },
-  "analysisLocalIncomplete": {"message": "Local analysis is incomplete: some message content is unavailable."},
-  "analysisLocalUnavailable": {"message": "Local analysis is unavailable: the message could not be read."}
+  "analysisLocalIncomplete": {
+    "message": "Local analysis is incomplete: some message content is unavailable."
+  },
+  "analysisLocalUnavailable": {
+    "message": "Local analysis is unavailable: the message could not be read."
+  },
+  "analysisHistoryTitle": {
+    "message": "Stored history · association unconfirmed"
+  },
+  "analysisHistoryWarning": {
+    "message": "These historical records may belong to another message with the same Message-ID. They do not confirm a check of this message."
+  },
+  "analysisPersistenceFailed": {
+    "message": "New source observations could not be saved. Existing history was retained."
+  },
+  "analysisReportArchiveBlocked": {
+    "message": "A report update could not be saved. Earlier protocols were retained."
+  },
+  "sourceExportOpen": {
+    "message": "Preview analysis source report"
+  },
+  "sourceExportTitle": {
+    "message": "Analysis source report"
+  },
+  "sourceExportIntro": {
+    "message": "Create a local snapshot of the recorded checks. This does not run a new analysis. Current observations and stored history with unconfirmed association are kept separate."
+  },
+  "sourceExportPrivacy": {
+    "message": "Includes services, states, verdicts and exact observation times. Excludes URLs, filenames, hashes, IPs, keys, message text and internal identifiers. Resource numbers apply only within this report. This is not a complete history or an authenticated record. Nothing is sent automatically. Review before sharing."
+  },
+  "sourceExportCancel": {
+    "message": "Discard preview"
+  },
+  "sourceExportContentLabel": {
+    "message": "Report preview (JSON)"
+  },
+  "sourceExportUnavailable": {
+    "message": "The message context is no longer available. Reopen the report from its message toolbar popup."
+  },
+  "sourceExportChanged": {
+    "message": "The recorded state changed. Create a new preview before saving."
+  },
+  "sourceExportReady": {
+    "message": "Review the preview before saving or sharing."
+  },
+  "sourceExportRequested": {
+    "message": "Save requested. Check completion in Thunderbird downloads."
+  },
+  "sourceExportFailed": {
+    "message": "The report was not saved. Create a new preview to try again."
+  },
+  "analysisHistoryPages": {
+    "message": "History pages"
+  },
+  "analysisHistoryEntries": {
+    "message": "Entries"
+  },
+  "analysisHistoryFlagged": {
+    "message": "Suspicious or malicious historical finding · association unconfirmed"
+  },
+  "analysisHistoryFindWarning": {
+    "message": "Show first historical warning"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Show strongest current finding"
+  }
 }

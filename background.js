@@ -131,6 +131,10 @@ function getSharedDB() {
 
 // Contexts are keyed by the actual message, never by the currently selected tab.
 const MAX_MESSAGE_ANALYSES = 200;
+let analysisRuntimeId = null;
+function getAnalysisRuntimeId() { return analysisRuntimeId ||= crypto.randomUUID(); }
+const MAX_SOURCE_SNAPSHOTS = 64;
+const MAX_SOURCE_SNAPSHOT_BYTES = 1024 * 1024;
 const messageAnalyses = typeof ExpiringMap !== 'undefined' ? new ExpiringMap(900000, () => Date.now(), {
     maxSize: MAX_MESSAGE_ANALYSES, autoExpire: true,
     onEvict: ready => Promise.resolve(ready).then(context => context.dispose()).catch(() => {})
@@ -143,14 +147,16 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
         const ready = (async () => {
             // Labels must come from the actual message, not a shared Message-ID cache.
             const currentParts = new Map();
+            const verifiedHashes = new Map();
             const currentLinks = new Set();
+            const snapshotId = crypto.randomUUID();
             let currentCoverage = {state:'failed',reason:'read_failed'};
             try {
                 const attachments = inventory.attachments || await browser.messages.listAttachments(message.id);
                 for (const item of attachments.slice(0,100)) currentParts.set(String(item.partName), item.name || '');
             } catch (_) { /* unreadable inventory stays unknown */ }
             try {
-                const full = Object.prototype.hasOwnProperty.call(inventory, 'fullMessage') ? inventory.fullMessage : await browser.messages.getFull(message.id);
+                const full = Object.prototype.hasOwnProperty.call(inventory, 'fullMessage') ? inventory.fullMessage : await getAnalysisFull(message.id);
                 currentCoverage = localContentCoverage(full);
                 if (full) for (const url of filterUrls(extractUrls(extractTextFromParts(full.parts || full)))) currentLinks.add(url);
             } catch (_) { /* no fallback to another message's links */ }
@@ -158,20 +164,21 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
             try { record = await getFromStore(await getSharedDB(), 'hybridanalysis', key); } catch (_) { /* still expose live state */ }
             const sourceRecord = saved => {
                 if (!saved) return saved;
-                const own = saved.analysisStatusByMessage?.[message.id];
-                const foreign = saved.analysisStatusOwner != null && saved.analysisStatusOwner !== message.id;
-                const attachments = foreign ? [] : (saved.attachments || []).filter(item => !item.partName || currentParts.get(String(item.partName)) === item.attachment_name);
-                const links = foreign ? [] : (saved.links || []).map((item,index) => ({...item,analysisResourceRef:'link:' + index})).filter(item => currentLinks.has(item.url));
-                return {...saved, analysisStatus:own || (foreign ? undefined : saved.analysisStatus), attachments, links};
+                // Numeric IDs and metadata alone cannot bind historical findings.
+                const attachments = (saved.attachments || []).filter(item => item.partName && currentParts.has(String(item.partName)) && currentParts.get(String(item.partName)) === item.attachment_name && verifiedHashes.has(String(item.partName)) && typeof item.hybrid_sha256 === 'string' && verifiedHashes.get(String(item.partName)) === item.hybrid_sha256.toLowerCase());
+                const links = (saved.links || []).map((item,index) => ({...item,analysisResourceRef:'link:' + index})).filter(item => currentLinks.has(item.url));
+                const scanCoverage = Object.fromEntries(Object.entries(saved.scanCoverage || {}).filter(([kind]) => saved.scanCoverageBindings?.[kind]?.runtimeId === getAnalysisRuntimeId() && saved.scanCoverageBindings[kind].messageId === message.id));
+                return {messageHeader:saved.messageHeader, attachments, links, scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined};
             };
             const model = ThundyAnalysis.create(ThundyAnalysis.legacy(sourceRecord(record)));
             // Current unreadability must not inherit a historical "checked" state.
             if (currentCoverage.state !== 'checked') model.data.local = {...currentCoverage,source:'local',observedAt:Date.now()};
-            const context = { disposed: false, model, headerMessageId: key, messageId: message.id, tabs: new Set(), timer: null,
+            let snapshotCreated = false, persistenceQueue = Promise.resolve();
+            const context = { disposed: false, model, snapshotId, persistenceFailed:false, headerMessageId: key, messageId: message.id, tabs: new Set(), timer: null,
                 dispose() { context.disposed = true; if (context.timer) clearTimeout(context.timer); context.timer = null; context.tabs.clear(); },
                 event(event) { if (context.disposed || messageAnalyses.get(contextKey) !== ready) { context.dispose(); return false; } messageAnalyses.touch?.(contextKey); const valid = model.event(event); if (valid) context.schedule(); return valid; },
                 cached(provider, scope, verdict, observedAt) { context.event({ provider, scope, phase: 'cache', state: verdict === 'unknown' ? 'received' : 'checked', verdict, observedAt }); },
-                forAttachment(partName, name) { if (name != null) currentParts.set(String(partName), name); return ThundyAnalysis.bind(context, ['attachment:' + partName]); },
+                forAttachment(partName, name, hash) { if (name != null) currentParts.set(String(partName), name); if (/^[0-9a-f]{64}$/i.test(hash || '')) verifiedHashes.set(String(partName), hash.toLowerCase()); return ThundyAnalysis.bind(context, ['attachment:' + partName]); },
                 async resourceRecord() {
                     const saved = sourceRecord(await getFromStore(await getSharedDB(), 'hybridanalysis', key));
                     if (!saved) return null;
@@ -188,7 +195,12 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 },
                 schedule() { if (context.disposed) return; if (!context.timer) context.timer = setTimeout(() => { context.timer = null; context.flush().catch(() => {}); }, 300); },
                 async snapshot() {
-                    try { const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key); for (const row of ThundyAnalysis.legacy({...sourceRecord(saved),analysisStatus:model.data}).rows) if (!model.data.rows.some(current => ThundyAnalysis.rowKey(current) === ThundyAnalysis.rowKey(row)) && model.data.rows.length < 1200) model.data.rows.push(row); } catch (_) { /* retain known live metadata */ }
+                    let sourceHistory = {rows:[],truncated:false};
+                    try {
+                        const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key), current = sourceRecord(saved);
+                        if (saved) sourceHistory = ThundyAnalysis.history({...saved,attachments:(saved.attachments || []).filter(item => !(current.attachments || []).includes(item)),links:(saved.links || []).filter(item => !currentLinks.has(item.url))},snapshotId);
+                        for (const row of ThundyAnalysis.legacy({...current,analysisStatus:model.data}).rows) if (!model.data.rows.some(active => ThundyAnalysis.rowKey(active) === ThundyAnalysis.rowKey(row)) && model.data.rows.length < 1200) model.data.rows.push(row);
+                    } catch (_) { /* retain known live metadata */ }
                     const enabled = { hybridanalysis: !!apikey_hybridanalysis, virustotal: !!apikey_virustotal || ipReputationProvider === 'virustotal' && !!ipReputationApiKey, urlhaus: !!urlhausApikey, abuseipdb: ipReputationProvider === 'abuseipdb' && !!ipReputationApiKey, urlscan: !!urlscanApikey };
                     const availability = {};
                     const authorized = await authorizeMessageScan(message);
@@ -204,13 +216,31 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                             try { const url = new URL(item.url); resourceLabels['link:' + index] = clean(url.origin + url.pathname); } catch (_) { /* no URL guess */ }
                         }
                     } catch (_) { /* actual parts remain identifiable without cached links */ }
-                    return { ...JSON.parse(JSON.stringify(model.data)), resourceLabels, availability, messageId: message.id };
+                    return { ...JSON.parse(JSON.stringify(model.data)), sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
                     if (context.timer) { clearTimeout(context.timer); context.timer = null; }
-                    try { const snapshot = JSON.parse(JSON.stringify(model.data)); await updateStore(await getSharedDB(), 'hybridanalysis', key, old => context.disposed ? old : ({ ...(old || { messageHeader: key }), ...(old?.analysisStatus && old.analysisStatusOwner == null && !old.analysisStatusLegacy ? {analysisStatusLegacy:old.analysisStatus} : {}), analysisStatusByMessage:{...(old?.analysisStatusByMessage || {}),[message.id]:snapshot}, analysisStatusOwner:message.id, analysisStatus: snapshot, updatedAt: Date.now() })); }
-                    catch (_) { Logger.warn('Analysis source metadata could not be persisted'); }
+                    const value = JSON.parse(JSON.stringify(model.data));
+                    persistenceQueue = persistenceQueue.then(async () => {
+                      try {
+                        await updateStore(await getSharedDB(), 'hybridanalysis', key, old => {
+                            if (context.disposed) return old;
+                            const previous = old?.analysisSourceSnapshots;
+                            if (previous != null && (typeof previous !== 'object' || Array.isArray(previous))) throw new Error('Invalid source snapshot container');
+                            if (!snapshotCreated && Object.prototype.hasOwnProperty.call(previous || {}, snapshotId)) throw new Error('Source snapshot identifier collision');
+                            if (!Object.prototype.hasOwnProperty.call(previous || {}, snapshotId) && Object.keys(previous || {}).length >= MAX_SOURCE_SNAPSHOTS) throw new Error('Source snapshot capacity reached');
+                            const snapshots = {...previous,[snapshotId]:{savedAt:Date.now(),snapshot:value}};
+                            if (new TextEncoder().encode(JSON.stringify(snapshots)).length > MAX_SOURCE_SNAPSHOT_BYTES) throw new Error('Source snapshot byte capacity reached');
+                            // Additive area: never overwrite legacy snapshots under reused IDs.
+                            return {...(old || {messageHeader:key}),analysisSourceSnapshots:snapshots,updatedAt:Date.now()};
+                        });
+                        snapshotCreated = true;
+                        context.persistenceFailed = false;
+                      }
+                      catch (_) { context.persistenceFailed = true; Logger.warn('Analysis source metadata could not be persisted'); }
+                    });
+                    await persistenceQueue;
                     const snapshot = await context.snapshot();
                     if (context.disposed) return;
                     const labels = ThundyAnalysis.labels(msg);
@@ -617,7 +647,8 @@ function scanCoverage(detected, eligible, processed, failed, reason) {
 async function persistScanCoverage(message, kind, coverage) {
     const key = message.headerMessageId || 'message:' + message.id;
     await updateStore(await getSharedDB(), 'hybridanalysis', key, existing => ({
-        ...(existing || { messageHeader: key }), scanCoverage: { ...(existing?.scanCoverage || {}), [kind]: coverage }
+        ...(existing || { messageHeader: key }), scanCoverage: { ...(existing?.scanCoverage || {}), [kind]: coverage },
+        ...(typeof ThundyAnalysis !== 'undefined' ? {scanCoverageBindings:{...(existing?.scanCoverageBindings || {}),[kind]:{runtimeId:getAnalysisRuntimeId(),messageId:message.id}}} : {})
     }));
 }
 
@@ -755,6 +786,7 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
 // This describes the available text input, not an antivirus or full MIME verdict.
 function localContentCoverage(fullMessage) {
   if (!fullMessage || typeof fullMessage !== 'object') return {state:'failed',reason:'read_failed'};
+  if (fullMessage.thundyInputStatus === 'incomplete') return {state:'incomplete',reason:'text_unavailable'};
   let unavailable = false, missingText = false;
   const visit = part => {
     if (!part || typeof part !== 'object') return;
@@ -777,7 +809,7 @@ function recordLocalCoverage(context, coverage) {
 }
 
 async function readFullForAnalysis(message, context = null) {
-  try { return await browser.messages.getFull(message.id); }
+  try { return await getAnalysisFull(message.id); }
   catch (error) {
     // Preserve the API failure without retrying it during context creation.
     try {
@@ -787,6 +819,82 @@ async function readFullForAnalysis(message, context = null) {
     } catch (_) { /* the original read failure remains authoritative */ }
     throw error;
   }
+}
+
+const TEXT_RECOVERY_BYTES = 1024 * 1024;
+const TEXT_RECOVERY_PARTS = 2000;
+function decodeUtf8QuotedPrintable(text) {
+  if (typeof text !== 'string' || text.length > TEXT_RECOVERY_BYTES || /[ \t](?:\r?\n|$)/.test(text)) return null;
+  const bytes = new Uint8Array(text.length);
+  let length = 0;
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (code === 61) {
+      if (text.slice(i + 1, i + 3) === '\r\n') { i += 2; continue; }
+      const hex = text.slice(i + 1, i + 3);
+      if (!/^[0-9a-f]{2}$/i.test(hex)) return null;
+      bytes[length++] = parseInt(hex, 16); i += 2;
+    } else {
+      if (!(code === 9 || code === 10 || code === 13 || code >= 32 && code <= 126)) return null;
+      bytes[length++] = code;
+    }
+  }
+  try { return new TextDecoder('utf-8', {fatal:true,ignoreBOM:true}).decode(bytes.subarray(0, length)); }
+  catch (_) { return null; }
+}
+
+async function getAnalysisFull(messageId) {
+  const full = await browser.messages.getFull(messageId);
+  const parts = tree => {
+    const found = [], pending = [tree];
+    while (pending.length && found.length < TEXT_RECOVERY_PARTS) {
+      const part = pending.pop(); if (!part || typeof part !== 'object') continue;
+      found.push(part);
+      if (Array.isArray(part.parts)) {
+        if (found.length + pending.length + part.parts.length > TEXT_RECOVERY_PARTS) return null;
+        for (const child of part.parts) pending.push(child);
+      }
+    }
+    return pending.length ? null : found;
+  };
+  const utf8QP = part => ['text/plain','text/html'].includes(part.contentType) && !part.name &&
+    typeof part.partName === 'string' && part.partName.length <= 80 && /^\d+(?:\.\d+)*$/.test(part.partName) &&
+    (part.headers?.['content-transfer-encoding'] || []).length === 1 &&
+    part.headers['content-transfer-encoding'][0].trim().toLowerCase() === 'quoted-printable' &&
+    (part.headers?.['content-type'] || []).length === 1 &&
+    (part.headers['content-type'][0].match(/;\s*charset\s*=/gi) || []).length === 1 &&
+    /;\s*charset\s*=\s*(?:"utf-?8"|utf-?8)\s*(?:;|$)/i.test(part.headers['content-type'][0]) &&
+    !(part.headers?.['content-disposition'] || []).some(value => /^attachment(?:;|$)/i.test(value.trim()));
+  const tree = parts(full);
+  const limited = () => ({...full,thundyInputStatus:'incomplete'});
+  if (!tree) return limited();
+  const candidates = tree.filter(part => utf8QP(part) && typeof part.body === 'string' && part.body.includes('\ufffd'));
+  if (!candidates.length || ['fail','skipped'].includes(full.decryptionStatus)) return full;
+  if (full.size > TEXT_RECOVERY_BYTES) return limited();
+  // Thunderbird still owns MIME structure/decryption. Only verify affected
+  // UTF-8/QP leaves; never reparse an entire raw message or guess a charset.
+  let raw;
+  try { raw = await browser.messages.getFull(messageId, {decodeContent:false}); }
+  catch (_) { return limited(); }
+  if (!raw || raw.decryptionStatus !== full.decryptionStatus || JSON.stringify(raw.headers?.['message-id']) !== JSON.stringify(full.headers?.['message-id'])) return limited();
+  const rawTree = parts(raw);
+  if (!rawTree || rawTree.reduce((size,part) => size + (typeof part.rawBody === 'string' ? part.rawBody.length : 0), 0) > TEXT_RECOVERY_BYTES) return limited();
+  const uniqueParts = list => {
+    const map = new Map();
+    for (const part of list) map.set(part.partName, map.has(part.partName) ? null : part);
+    return map;
+  };
+  const decodedParts = uniqueParts(tree), rawParts = uniqueParts(rawTree);
+  const replacements = new Map(); let incomplete = false, recovered = false;
+  for (const part of candidates) {
+    const matching = rawParts.get(part.partName);
+    const input = decodedParts.get(part.partName) === part && matching && utf8QP(matching) ? matching : null;
+    const decoded = input && input.contentType === part.contentType ? decodeUtf8QuotedPrintable(input.rawBody) : null;
+    if (decoded === null) { incomplete = true; continue; }
+    replacements.set(part, decoded); recovered ||= decoded !== part.body;
+  }
+  const derive = part => ({...part,...(replacements.has(part) ? {body:replacements.get(part)} : {}),...(Array.isArray(part.parts) ? {parts:part.parts.map(derive)} : {})});
+  return {...derive(full),thundyInputStatus:incomplete ? 'incomplete' : recovered ? 'recovered' : 'verified'};
 }
 
 /**
@@ -1088,7 +1196,6 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
 
 
 async function process_single_attachment(message, attachment, allowExternal = true, manualAction = false, analysisContext = null) {
-    if (analysisContext?.forAttachment) analysisContext = analysisContext.forAttachment(attachment.partName, attachment.name);
     if (attachment.size > 25 * 1024 * 1024) {
         const item = create_manual_check_hybrid_data('', attachment, null);
         item.hybrid_data.state = 'SIZE_LIMIT';
@@ -1099,6 +1206,7 @@ async function process_single_attachment(message, attachment, allowExternal = tr
             const content_of_attachment = file.slice();
             const arrayBuffer = await content_of_attachment.arrayBuffer();
             const local_hash = await get_sha256_hash(arrayBuffer);
+            if (analysisContext?.forAttachment) analysisContext = analysisContext.forAttachment(attachment.partName, attachment.name, local_hash);
 
             const virustotal_stats = allowExternal ? await fetch_virustotal_stats(local_hash, apikey_virustotal, analysisContext) : null;
 
@@ -1171,7 +1279,10 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
             let found = false;
             for (let j = 0; j < atts.length; j++) {
               if (newAtt.partName && atts[j].partName === newAtt.partName || !atts[j].partName && atts[j].attachment_name === newAtt.attachment_name && atts.filter(item => item.attachment_name === newAtt.attachment_name).length === 1 && newAttachments.filter(item => item.attachment_name === newAtt.attachment_name).length === 1) {
-                atts[j] = newAtt;
+                const old = atts[j];
+                // An offline/local reread is not a new provider submission.
+                const sameContent = /^[0-9a-f]{64}$/i.test(newAtt.hybrid_sha256 || '') && old.hybrid_sha256?.toLowerCase() === newAtt.hybrid_sha256.toLowerCase();
+                atts[j] = sameContent && ['MANUAL_CHECK_PENDING','UNKNOWN','NOT_CHECKED'].includes(newAtt.state) && (old.report != null || old.virustotal_stats != null || ['KNOWN','UPLOADED'].includes(old.state)) ? {...newAtt,state:old.state,hybrid_job_id:old.hybrid_job_id,hybrid_submission_id:old.hybrid_submission_id,report:old.report,report_fetched_at:old.report_fetched_at,virustotal_stats:newAtt.virustotal_stats ?? old.virustotal_stats} : newAtt;
                 found = true;
                 break;
               }
@@ -1191,7 +1302,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         }
         recordToSave.updatedAt = Date.now();
         return recordToSave;
-      });
+      }, {preserveReports:true});
     }
   } catch (error) {
     Logger.error('Fehler bei der Batch-Interaktion mit der Datenbank:', error);
@@ -1234,7 +1345,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
         }
         recordToSave.updatedAt = Date.now();
         return recordToSave;
-      });
+      }, {preserveReports:true});
     }
   } catch (error) {
     Logger.error('IndexedDB (Links) Save Error:', error);
@@ -1346,7 +1457,7 @@ async function scanLinksOfDisplayedMessage(tabId) {
     }
     try {
         assertExternalAnalysisAllowed();
-        const fullMessage = await browser.messages.getFull(message.id);
+        const fullMessage = await readFullForAnalysis(message);
         const text = extractTextFromParts(fullMessage.parts || fullMessage);
         const urls = filterUrls(extractUrls(text));
         if (urls.length === 0) {
@@ -1574,6 +1685,11 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (!request || typeof request !== 'object') return false;
 
     switch (request.action) {
+        case "reportArchiveBlocked":
+            if (sender?.url?.split(/[?#]/)[0] !== browser.runtime.getURL('popup.html') || typeof request.headerMessageId !== 'string' || request.headerMessageId.length > 4096) return false;
+            if (typeof noteReportArchiveBlocked === 'function') noteReportArchiveBlocked(request.headerMessageId, false);
+            for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(context => { if (context.headerMessageId === request.headerMessageId) context.schedule(); }).catch(() => {});
+            sendResponse({success:true});return false;
         case "getUiTheme":
             ThundyTheme.snapshot().then(sendResponse).catch(() => sendResponse(null));
             return true;
@@ -1589,7 +1705,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             (async () => {
                 const message = await browser.messages.get(request.messageId);
                 const context = await getMessageAnalysisContext(message, sender?.tab?.id);
-                return context ? { success: true, ...await context.snapshot() } : { success: false };
+                return context ? { success: true, ...await context.snapshot(), contextToken:context.snapshotId } : { success: false };
             })().then(sendResponse).catch(() => sendResponse({ success: false }));
             return true;
         case "recordAnalysisEvent":
@@ -1614,6 +1730,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })().then(threat => sendResponse({ status: 'success', threat })).catch(() => sendResponse({ status: 'error' }));
             return true;
         case "clearMemoryCaches":
+            if (typeof clearReportArchiveWarnings === 'function') clearReportArchiveWarnings();
             urlhausCache.clear(); ipReputationCache.clear(); vtCache.clear(); knownSendersCache.clear();
             for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(context => {
                 context.dispose();
@@ -1782,7 +1899,7 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
                     }
                 }
                 return existingRecord;
-            });
+            }, {preserveReports:true});
         } catch (dbError) {
             Logger.error('Fehler beim Aktualisieren des DB Records für URL:', dbError);
         }
@@ -1844,7 +1961,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
                     }
                 }
                 return existingRecord;
-            });
+            }, {preserveReports:true});
         } catch (dbError) {
             Logger.error('Fehler beim Aktualisieren des DB Records:', dbError);
         }

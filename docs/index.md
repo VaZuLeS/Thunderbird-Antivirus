@@ -5,7 +5,7 @@ permalink: /documentation.html
 
 # Thundy AV — Documentation
 
-Version **1.24.3**, unsigned GitHub distribution: [release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.3). [Release scope](VEROEFFENTLICHUNG_1_24_3.md).
+Version **1.24.4**, unsigned GitHub distribution: [release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.4). [Release scope](VEROEFFENTLICHUNG_1_24_4.md).
 
 - [Current product status](AKTUELLER_PRODUKTSTAND.md)
 - [Detailed tasks and execution evidence](AUSFUEHRUNG_AUFGABEN_2026-11-02.md)

@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-source-export-navigation-investigation",
+  "generatedAt": "2026-11-04T03:51:04.229547+00:00",
+  "baseCommit": "3252797613229dc3851f9adb8d01be83f197fac6",
+  "extensionVersion": "1.24.4",
+  "sourceFingerprint": "619d0a65fb8fab903df94691fba08d2f6feffe40ddcd12ea903939fbcfeccea2",
+  "packageSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+  "runnerSha256": "45f0a4766ab4e6ded4e885634dfee3c52983f05c74292e5dbe6505a4410f97a4",
+  "runtimeChanged": false,
+  "result": "No stale preview or unusable return reproduced in the tested native content tabs. Both versions load a new document; actual persisted BFCache restoration not observed.",
+  "checks": {
+    "sourceExportContracts": {
+      "command": "node --test test/source-export.test.js",
+      "passed": 7,
+      "failed": 0,
+      "logSha256": "0bc583c8400bbad1905a4d06b1b3b6e724772a2419030682e1c02f298cb46946"
+    },
+    "runnerByteRegressions": {
+      "command": "python3 tools/test_thunderbird_identity.dev.py -v",
+      "passed": 3,
+      "failed": 0,
+      "logSha256": "007477fcb780db40be079d0652931f961b283addaaba5f03ef4f3e5a71670f0e"
+    },
+    "sourceChecks": {
+      "command": "npm run check:source",
+      "passed": true,
+      "logSha256": "b6e24fa24edbc98e5a6cbceef7477620a4208aa56150995f9332e5eac3d66cd6"
+    },
+    "packageVerification": {
+      "command": "node scripts/verify-package.js ./build",
+      "passed": true,
+      "logSha256": "00c7faa75834a49b886c02050135f2189508e104f32ad2b2ec915e17648c981e"
+    }
+  },
+  "native": [
+    {
+      "client": "140.12.0",
+      "platform": "linux",
+      "reportSha256": "10d9dc73fddc5006daa31c7674dd04fbc9bce000f253f4878fa8399db5795cce",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "runnerSha256": "45f0a4766ab4e6ded4e885634dfee3c52983f05c74292e5dbe6505a4410f97a4",
+      "packageSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+      "startedAt": "2026-11-04T03:49:35Z",
+      "finishedAt": "2026-11-04T03:49:57Z",
+      "gracefulRestarts": 1,
+      "forcedRestarts": 0,
+      "navigation": {
+        "passed": true,
+        "cases": [
+          {
+            "sameDocument": false,
+            "events": [
+              {
+                "type": "pagehide",
+                "persisted": false
+              }
+            ],
+            "navigationType": "back_forward",
+            "initiallyEmpty": true,
+            "initiallyDisabled": true,
+            "afterExplicitPreview": "fresh-preview",
+            "cacheClearedWhileAway": false
+          },
+          {
+            "sameDocument": false,
+            "events": [
+              {
+                "type": "pagehide",
+                "persisted": false
+              }
+            ],
+            "navigationType": "back_forward",
+            "initiallyEmpty": true,
+            "initiallyDisabled": true,
+            "afterExplicitPreview": "unavailable",
+            "cacheClearedWhileAway": true
+          }
+        ],
+        "scope": "Actual same-tab forward navigation and history.back; document reuse observed rather than assumed. No synthetic pageshow event."
+      },
+      "sourceExport": {
+        "passed": true,
+        "realPopupEntry": true,
+        "realGtkDownload": true,
+        "downloadMatchesPreview": true,
+        "cancelAndCacheClearInvalidate": true,
+        "oldRuntimeLinkRefusedAfterRestart": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "saveControl": {
+          "text": "Save report locally",
+          "disabled": false,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "0.929712",
+          "width": 154.13333129882812,
+          "height": 44.399993896484375
+        },
+        "providers": [
+          "abuseipdb",
+          "hybridanalysis",
+          "urlhaus",
+          "urlscan",
+          "virustotal"
+        ],
+        "canonicalDownloadSha256": "3c55f4e845604c5c9809bf8502b5af60aa5ed2b988a2d447043365de447d8261",
+        "scope": "Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance."
+      }
+    },
+    {
+      "client": "153.6.0",
+      "platform": "linux",
+      "reportSha256": "0a7616a90744572c0ea0e40464a17e5256fb84de312a5c143622e186624e7e9b",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "runnerSha256": "45f0a4766ab4e6ded4e885634dfee3c52983f05c74292e5dbe6505a4410f97a4",
+      "packageSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+      "startedAt": "2026-11-04T03:49:04Z",
+      "finishedAt": "2026-11-04T03:49:24Z",
+      "gracefulRestarts": 1,
+      "forcedRestarts": 0,
+      "navigation": {
+        "passed": true,
+        "cases": [
+          {
+            "sameDocument": false,
+            "events": [
+              {
+                "type": "pagehide",
+                "persisted": false
+              }
+            ],
+            "navigationType": "back_forward",
+            "initiallyEmpty": true,
+            "initiallyDisabled": true,
+            "afterExplicitPreview": "fresh-preview",
+            "cacheClearedWhileAway": false
+          },
+          {
+            "sameDocument": false,
+            "events": [
+              {
+                "type": "pagehide",
+                "persisted": false
+              }
+            ],
+            "navigationType": "back_forward",
+            "initiallyEmpty": true,
+            "initiallyDisabled": true,
+            "afterExplicitPreview": "unavailable",
+            "cacheClearedWhileAway": true
+          }
+        ],
+        "scope": "Actual same-tab forward navigation and history.back; document reuse observed rather than assumed. No synthetic pageshow event."
+      },
+      "sourceExport": {
+        "passed": true,
+        "realPopupEntry": true,
+        "realGtkDownload": true,
+        "downloadMatchesPreview": true,
+        "cancelAndCacheClearInvalidate": true,
+        "oldRuntimeLinkRefusedAfterRestart": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "saveControl": {
+          "text": "Save report locally",
+          "disabled": false,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "0.910236",
+          "width": 154.13333129882812,
+          "height": 44.399993896484375
+        },
+        "providers": [
+          "abuseipdb",
+          "hybridanalysis",
+          "urlhaus",
+          "urlscan",
+          "virustotal"
+        ],
+        "canonicalDownloadSha256": "8eea4f8be458b497db38a4954547ce834956f6c0bbb7a1dad19ed3c5983e7712",
+        "scope": "Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance."
+      }
+    }
+  ],
+  "limitations": [
+    "Linux content tabs, isolated profiles, EN, Thunderbird 140.12.0 and 153.6.0 only",
+    "Synthetic provider observations; actual Thunderbird APIs, navigation and GTK downloads",
+    "No forced pageshow/pagehide simulation and no observed same-document BFCache restoration",
+    "No Windows/macOS, native screenreader, live provider or automatic-update acceptance",
+    "No new full npm run check or remote CI result claimed"
+  ]
+}

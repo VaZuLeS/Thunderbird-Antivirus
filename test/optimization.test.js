@@ -12,7 +12,7 @@ function setup(settings = {}, trackSources = false) {
     const full = { headers: {}, parts: [{ contentType: 'text/plain', body: 'Visit https://example.com/' }] };
     const context = vm.createContext({
         console: { error() {}, warn() {}, info() {} }, URL, URLSearchParams, Blob, File, FormData,
-        DOMParser: new JSDOM().window.DOMParser, crypto: globalThis.crypto, AbortController, setTimeout, clearTimeout, TextEncoder,
+        DOMParser: new JSDOM().window.DOMParser, crypto: globalThis.crypto, AbortController, setTimeout, clearTimeout, TextEncoder, TextDecoder,
         browser: {
             runtime: { id: 'test', getURL: p => p, getManifest: () => ({ version: '1.20.0' }), onMessage: { addListener: f => listeners.push(f) } },
             storage: { local: { get: async () => ({ ...config }), set: async values => Object.assign(config, values) }, onChanged: { addListener() {} } },
@@ -37,6 +37,15 @@ test('opening an unauthorized sender never sends data across all privacy tiers',
         assert.equal(state.requests.length, 0, `${consent}/${tier}`);
         assert.ok(state.injections.length > 0);
     }
+});
+
+test('source export context changes after cache loss and does not initiate external requests', async () => {
+    const state = setup({}, true);await state.context.configure();
+    const read = () => new Promise(resolve => state.listeners[0]({action:'getMessageAnalysis',messageId:7},{id:'test',url:'source_export.html'},resolve));
+    const first = await read(),same = await read();
+    assert.equal(first.success,true);assert.equal(first.contextToken,same.contextToken);assert.equal(typeof first.contextToken,'string');
+    vm.runInContext('messageAnalyses.clear()',state.context);
+    const changed = await read();assert.notEqual(changed.contextToken,first.contextToken);assert.equal(changed.messageId,7);assert.equal(state.requests.length,0);
 });
 
 test('authorized senders respect manual mode and full URL tier', async () => {
@@ -561,12 +570,12 @@ test('message-bound sources expose successful clean external checks and cached r
  const before=new Map(data.rows.map(row=>[row.provider+row.scope,row.observedAt]));
  await s.context.handleDisplayedMessage({id:1},s.message);const cached=await context.snapshot();
  for(const provider of ['virustotal','urlhaus','abuseipdb']){const row=cached.rows.find(row=>row.provider===provider);assert.equal(row.source,'cache');assert.equal(row.observedAt,before.get(row.provider+row.scope));assert.equal(calls.filter(call=>call.url.includes(provider==='urlhaus'?'urlhaus':provider==='abuseipdb'?'abuseipdb':'virustotal')).length,1)}
- const metadata=JSON.stringify(records.get(s.message.headerMessageId).analysisStatus);for(const secret of ['8.8.8.8','alice@example.com','https://example.com/','vt-key'])assert.ok(!metadata.includes(secret));
+ const metadata=JSON.stringify(records.get(s.message.headerMessageId).analysisSourceSnapshots[context.snapshotId].snapshot);for(const secret of ['8.8.8.8','alice@example.com','https://example.com/','vt-key'])assert.ok(!metadata.includes(secret));
  assert.ok(s.injections.some(injection=>injection.func.toString().includes('thundy-analysis-status')));
 });
 test('disabled external analysis exposes local-only status and stored findings without performing requests',async()=>{
  const s=setup({},true);s.context.getFromStore=async()=>({attachments:[{state:'KNOWN',report:{verdict:'malicious'},report_fetched_at:'2026-10-01T08:00:00Z'}]});await s.context.configure();
- const c=await s.context.getMessageAnalysisContext(s.message);const snapshot=await c.snapshot();assert.equal(s.requests.length,0);assert.equal(snapshot.rows[0].source,'stored');assert.equal(snapshot.rows[0].verdict,'malicious');assert.equal(snapshot.availability.hybridanalysis,'unconfigured');
+ const c=await s.context.getMessageAnalysisContext(s.message);const snapshot=await c.snapshot();assert.equal(s.requests.length,0);assert.equal(snapshot.rows.length,0);assert.equal(snapshot.sourceHistory.rows[0].source,'stored');assert.equal(snapshot.sourceHistory.rows[0].verdict,'malicious');assert.equal(snapshot.availability.hybridanalysis,'unconfigured');
 });
 test('urlscan submission is visible before its later report and VirusTotal IP scope is distinct', {timeout:15000}, async()=>{
  const s=setup({externalAnalysisConsent:true,privacyTier:'max',urlscanApikey:'url-key',ipReputationProvider:'virustotal',ipReputationApiKey:'ip-key'},true);await s.context.configure();
@@ -649,11 +658,11 @@ test('two same-name attachments and two links retain distinct provider resources
  assert.equal(s.requests.filter(call=>call.url.includes('virustotal')).length,1);
  assert.equal(Object.keys(snap.resourceLabels).length,4);assert.notEqual(snap.resourceLabels['attachment:1.2'],snap.resourceLabels['attachment:1.3']);
  assert.ok(!snap.resourceLabels['link:0'].includes('token='));
- const metadata=JSON.stringify(records.get(s.message.headerMessageId).analysisStatus);
+ const metadata=JSON.stringify(records.get(s.message.headerMessageId).analysisSourceSnapshots[ctx.snapshotId].snapshot);
  for(const value of [...urls,'same.txt','token=one'])assert.ok(!metadata.includes(value));
  const requestCount=s.requests.length;await s.context.checkURLhausDomains(urls,null,null,ctx);await ctx.flush();assert.equal(s.requests.length,requestCount);
  const restarted=setup({},true);restarted.context.getFromStore=async()=>records.get(s.message.headerMessageId);await restarted.context.configure();
- const loaded=await restarted.context.getMessageAnalysisContext(restarted.message);snap=await loaded.snapshot();assert.equal(snap.rows.length,ctx.model.data.rows.length);assert.ok(snap.rows.every(row=>row.source==='stored'));assert.equal(restarted.requests.length,0);
+ const loaded=await restarted.context.getMessageAnalysisContext(restarted.message);snap=await loaded.snapshot();assert.equal(snap.rows.length,0);assert.ok(snap.sourceHistory.rows.length>0);assert.ok(snap.sourceHistory.rows.every(row=>row.source==='stored' && row.resource===null));assert.equal(restarted.requests.length,0);
 });
 
 test('link result updates preserve historical duplicate slots and all source references',async()=>{
@@ -688,7 +697,7 @@ test('persisted source observations are isolated between different messages shar
  assert.equal((await first.snapshot()).rows.length,1);assert.equal((await first.snapshot()).rows[0].provider,'urlhaus');
  const restart=setup({},true);restart.context.getFromStore=async()=>records.get(s.message.headerMessageId);await restart.context.configure();
  const loadedFirst=await restart.context.getMessageAnalysisContext(restart.message),loadedSecond=await restart.context.getMessageAnalysisContext(otherMessage);
- assert.equal(loadedFirst.model.data.rows.length,1);assert.equal(loadedFirst.model.data.rows[0].verdict,'malicious');assert.equal(loadedSecond.model.data.rows.length,1);assert.equal(loadedSecond.model.data.rows[0].provider,'urlscan');assert.equal(loadedSecond.model.data.rows[0].state,'incomplete');
+ assert.equal(loadedFirst.model.data.rows.length,0);assert.equal(loadedSecond.model.data.rows.length,0);const history=(await loadedFirst.snapshot()).sourceHistory.rows;assert.ok(history.some(row=>row.provider==='urlhaus'&&row.verdict==='malicious'));assert.ok(history.some(row=>row.provider==='urlscan'&&row.state==='incomplete'));assert.ok(history.every(row=>row.resource===null));
 });
 
 test('resource labels and popup records use the actual message inventory across duplicate headers and status writes',async()=>{
@@ -723,13 +732,13 @@ test('message contexts evict above the limit, stop pending timers and refuse lat
  await new Promise(resolve=>setImmediate(resolve));assert.equal(first.disposed,true);assert.equal(first.timer,null);assert.equal(first.tabs.size,0);
  assert.equal(first.event({provider:'urlhaus',scope:'domain',phase:'finish',state:'checked',verdict:'none',responded:true,observedAt:100}),false);
  assert.ok(records.has(s.message.headerMessageId));const reopened=await s.context.getMessageAnalysisContext(s.message);
- assert.equal(reopened.model.data.rows[0].state,'incomplete');await reopened.flush();assert.equal(s.requests.length,0);
+ assert.equal(reopened.model.data.rows.length,0);assert.equal((await reopened.snapshot()).sourceHistory.rows[0].state,'incomplete');await reopened.flush();assert.equal(s.requests.length,0);
 });
 
 test('unbound legacy findings remain summaries and never leak a cached filename through the popup record',async()=>{
  const s=setup({},true);await s.context.configure();sourceRecords(s,{attachments:[{attachment_name:'foreign-legacy.txt',report:{verdict:'malicious'}}]});
  const ctx=await s.context.getMessageAnalysisContext(s.message);
- const snapshot=await ctx.snapshot();assert.equal(snapshot.rows[0].resource,null);assert.equal(snapshot.rows[0].verdict,'malicious');
+ const snapshot=await ctx.snapshot();assert.equal(snapshot.rows.length,0);assert.equal(snapshot.sourceHistory.rows[0].resource,null);assert.equal(snapshot.sourceHistory.rows[0].verdict,'malicious');
  assert.equal((await ctx.resourceRecord()).attachments.length,0);assert.ok(!JSON.stringify(snapshot.resourceLabels).includes('foreign-legacy'));
 });
 
@@ -798,4 +807,117 @@ test('empty text stays valid while nonempty missing text and skipped decryption 
   assert.equal(result.status,'success');assert.equal(result.threat.coverage.state,expected);
  }
  (await s.context.getMessageAnalysisContext(s.message)).dispose();assert.equal(s.requests.length,0);
+});
+
+test('strict UTF-8/QP decoding joins bytes before decoding and refuses ambiguous input',()=>{
+ const s=setup();
+ assert.equal(s.context.decodeUtf8QuotedPrintable('=C5=\r\n=BC =F0=9F=\r\n=98=80 <p>=E6=B5=8B</p>'),'ż 😀 <p>测</p>');
+ assert.equal(s.context.decodeUtf8QuotedPrintable('=EF=BB=BFtext'),'\ufefftext');
+ for(const value of ['=C5=20','=ED=A0=80','=FF','=Q0','=A','=\n','=C5=BC \r\n','ü','a'.repeat(1024*1024+1)]) assert.equal(s.context.decodeUtf8QuotedPrintable(value),null);
+});
+
+function qpInput(s, rawBody='https://example.invalid/=C5=\r\n=BC') {
+ const headers={'content-type':['text/plain; charset="utf-8"'],'content-transfer-encoding':['quoted-printable']};
+ const leaf={partName:'1.1',contentType:'text/plain',headers,body:'https://example.invalid/��'};
+ const full={decryptionStatus:'none',size:80,headers:{'message-id':['same']},parts:[leaf]};
+ const raw={...full,parts:[{...leaf,body:undefined,rawBody}]};
+ const reads=[];s.context.browser.messages.getFull=async(id,options)=>{reads.push({id,options});return options?.decodeContent===false?raw:full;};
+ return {leaf,full,raw,reads};
+}
+
+test('affected input is repaired without mutating native trees and reaches the local URL assessment',async()=>{
+ const s=setup({},true);await s.context.configure();const f=qpInput(s),before=JSON.stringify(f.full),rawBefore=JSON.stringify(f.raw);
+ const received=[];const calculate=s.context.calculateThreatScore;
+ s.context.calculateThreatScore=(author,urls,options)=>{received.push({urls:Array.from(urls),text:options.messageText});return calculate(author,urls,options);};
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));
+ assert.equal(result.status,'success');assert.equal(result.threat.coverage.state,'checked');
+ assert.equal(received[0].text,'https://example.invalid/ż ');assert.deepEqual(received[0].urls,['https://example.invalid/ż']);
+ assert.equal(f.reads.length,2);assert.equal(f.reads[1].options.decodeContent,false);
+ assert.equal(JSON.stringify(f.full),before);assert.equal(JSON.stringify(f.raw),rawBefore);assert.equal(s.requests.length,0);
+ (await s.context.getMessageAnalysisContext(s.message)).dispose();
+});
+
+test('normal inputs need one read and genuine replacement characters are retained after verification',async()=>{
+ const s=setup();const normal=qpInput(s);normal.leaf.body='ordinary UTF-8 ż';
+ assert.equal((await s.context.getAnalysisFull(7)).parts[0].body,normal.leaf.body);assert.equal(normal.reads.length,1);
+ const literal=qpInput(s,'Valid =EF=BF=BD');literal.leaf.body='Valid �';
+ const input=await s.context.getAnalysisFull(7);assert.equal(input.parts[0].body,'Valid �');assert.equal(input.thundyInputStatus,'verified');
+ assert.equal(s.context.localContentCoverage(input).state,'checked');
+ const other=qpInput(s);other.leaf.headers['content-type']=['text/plain; charset=iso-8859-1'];
+ await s.context.getAnalysisFull(7);assert.equal(other.reads.length,1);assert.equal(s.requests.length,0);
+});
+
+test('unverifiable text is partial and limits avoid a second read of large or excessive trees',async()=>{
+ for(const problem of ['invalid-utf8','failed-read','wrong-part','duplicate-part','wrong-charset','changed-header','changed-decryption','large-message','large-encoded','too-many-parts']){
+  const s=setup();const f=qpInput(s);
+  if(problem==='invalid-utf8')f.raw.parts[0].rawBody='=C5=20';
+  if(problem==='failed-read')s.context.browser.messages.getFull=async(_id,options)=>{if(options)throw new Error('offline');return f.full;};
+  if(problem==='wrong-part')f.raw.parts[0].partName='2';
+  if(problem==='duplicate-part')f.raw.parts.push({...f.raw.parts[0]});
+  if(problem==='wrong-charset')f.raw.parts[0].headers={...f.raw.parts[0].headers,'content-type':['text/plain; charset=latin1']};
+  if(problem==='changed-header')f.raw.headers={'message-id':['different']};
+  if(problem==='changed-decryption')f.raw.decryptionStatus='fail';
+  if(problem==='large-message')f.full.size=1024*1024+1;
+  if(problem==='large-encoded')f.raw.parts[0].rawBody='a'.repeat(1024*1024+1);
+  if(problem==='too-many-parts')f.full.parts.push(...Array.from({length:2001},()=>({contentType:'application/octet-stream'})));
+  const original=JSON.stringify(f.full),input=await s.context.getAnalysisFull(7);
+  assert.equal(s.context.localContentCoverage(input).state,'incomplete',problem);assert.equal(JSON.stringify(f.full),original,problem);
+  assert.equal(input.parts[0].body,'https://example.invalid/��',problem);
+  if(['large-message','too-many-parts'].includes(problem))assert.equal(f.reads.length,1,problem);
+  assert.equal(s.requests.length,0,problem);
+ }
+});
+
+test('legacy numeric ownership is unbound and new snapshots never overwrite original fields',async()=>{
+ const s=setup({},true);await s.context.configure();
+ const legacy={schemaVersion:2,local:{state:'checked',observedAt:10},rows:[{provider:'virustotal',scope:'ip',resource:'message',state:'checked',verdict:'malicious',responses:1,observedAt:20}]};
+ const old={analysisStatus:legacy,analysisStatusOwner:7,analysisStatusByMessage:{7:legacy},analysisStatusLegacy:legacy};
+ const original=JSON.stringify(old),records=sourceRecords(s,old),ctx=await s.context.getMessageAnalysisContext(s.message);
+ let snapshot=await ctx.snapshot();assert.equal(snapshot.local.state,'unrecorded');assert.equal(snapshot.rows.length,0);assert.equal(snapshot.sourceHistory.rows[0].resource,null);
+ ctx.event({provider:'urlhaus',scope:'domain',phase:'finish',state:'checked',verdict:'none',responded:true,observedAt:50});await ctx.flush();
+ const saved=records.get(s.message.headerMessageId);assert.equal(JSON.stringify(Object.fromEntries(Object.keys(old).map(key=>[key,saved[key]]))),original);
+ assert.equal(saved.analysisSourceSnapshots[ctx.snapshotId].snapshot.rows[0].provider,'urlhaus');
+ const restart=setup({},true);restart.context.getFromStore=async()=>saved;await restart.context.configure();
+ snapshot=await (await restart.context.getMessageAnalysisContext({...restart.message,id:7})).snapshot();
+ assert.equal(snapshot.rows.length,0);assert.ok(snapshot.sourceHistory.rows.some(row=>row.provider==='virustotal'&&row.observedAt===20));assert.ok(snapshot.sourceHistory.rows.some(row=>row.provider==='urlhaus'&&row.observedAt===50));
+ ctx.dispose();assert.equal(s.requests.length,0);assert.equal(restart.requests.length,0);
+});
+
+test('matching attachment metadata cannot expose a cached report until actual file bytes match',async()=>{
+ const s=setup({},true);await s.context.configure();
+ const hash=await s.context.get_sha256_hash(new TextEncoder().encode('AAAA'));
+ const records=sourceRecords(s,{attachments:[{partName:'1.2',attachment_name:'same.txt',hybrid_sha256:hash,state:'KNOWN',report:{verdict:'malicious'},report_fetched_at:'2026-10-01T08:00:00Z'}]});
+ s.context.browser.messages.listAttachments=async()=>[{partName:'1.2',name:'same.txt',size:4}];
+ s.context.browser.messages.getAttachmentFile=async()=>new File(['BBBB'],'same.txt');
+ const ctx=await s.context.getMessageAnalysisContext(s.message),before=JSON.stringify(records.get(s.message.headerMessageId));
+ await s.context.process_single_attachment(s.message,{partName:'1.2',name:'same.txt',size:4},false,false,ctx);
+ assert.equal((await ctx.resourceRecord()).attachments.length,0);assert.equal((await ctx.snapshot()).rows.length,0);
+ assert.equal((await ctx.snapshot()).sourceHistory.rows[0].verdict,'malicious');assert.equal(JSON.stringify(records.get(s.message.headerMessageId)),before);
+ s.context.browser.messages.getAttachmentFile=async()=>new File(['AAAA'],'same.txt');
+ await s.context.process_single_attachment(s.message,{partName:'1.2',name:'same.txt',size:4},false,false,ctx);
+ assert.equal((await ctx.resourceRecord()).attachments.length,1);const snapshot=await ctx.snapshot();
+ assert.equal(snapshot.rows[0].resource,'attachment:1.2');assert.equal(snapshot.rows[0].source,'stored');assert.equal(snapshot.rows[0].observedAt,Date.parse('2026-10-01T08:00:00Z'));
+ assert.equal(s.requests.length,0);ctx.dispose();
+});
+
+test('snapshot count, byte limits, collisions and write errors preserve history and remain visible',async()=>{
+ for(const problem of ['count','bytes','collision','transaction']){
+  const s=setup({},true);await s.context.configure();const records=sourceRecords(s),ctx=await s.context.getMessageAnalysisContext(s.message);
+  const snapshots=problem==='count'?Object.fromEntries(Array.from({length:64},(_,i)=>[String(i),{snapshot:{}}])):problem==='bytes'?{large:{padding:'x'.repeat(1024*1024)}}:problem==='collision'?{[ctx.snapshotId]:{snapshot:{local:{state:'checked'}}}}:{};
+  records.set(s.message.headerMessageId,{messageHeader:s.message.headerMessageId,analysisSourceSnapshots:snapshots});
+  const original=JSON.stringify(records.get(s.message.headerMessageId));if(problem==='transaction')s.context.updateStore=async()=>{throw new Error('commit failed');};
+  ctx.event({provider:'urlhaus',scope:'domain',phase:'start'});await ctx.flush();
+  assert.equal(JSON.stringify(records.get(s.message.headerMessageId)),original,problem);assert.equal((await ctx.snapshot()).sourcePersistenceFailed,true,problem);ctx.dispose();
+ }
+});
+
+test('source writes serialize their snapshots and a failed write does not poison later saves',async()=>{
+ const s=setup({},true);await s.context.configure();const records=sourceRecords(s),ctx=await s.context.getMessageAnalysisContext(s.message);
+ let release,entered,attempts=0;const ready=new Promise(resolve=>entered=resolve),gate=new Promise(resolve=>release=resolve);
+ s.context.updateStore=async(_db,_store,key,update)=>{attempts++;if(attempts===1){entered();await gate;}const next=update(records.get(key));if(next)records.set(key,next);};
+ ctx.event({provider:'urlhaus',scope:'domain',phase:'start'});const first=ctx.flush();await ready;
+ ctx.event({provider:'virustotal',scope:'hash',phase:'start'});const second=ctx.flush();await new Promise(resolve=>setImmediate(resolve));assert.equal(attempts,1);
+ release();await Promise.all([first,second]);assert.equal(records.get(s.message.headerMessageId).analysisSourceSnapshots[ctx.snapshotId].snapshot.rows.length,2);
+ s.context.updateStore=async()=>{throw new Error('offline');};await ctx.flush();assert.equal(ctx.persistenceFailed,true);
+ sourceRecords(s,records.get(s.message.headerMessageId));await ctx.flush();assert.equal(ctx.persistenceFailed,false);ctx.dispose();
 });
