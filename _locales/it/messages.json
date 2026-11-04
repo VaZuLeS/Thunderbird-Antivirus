@@ -1832,5 +1832,11 @@
   },
   "analysisCurrentFindWarning": {
     "message": "Mostra il risultato attuale più grave"
+  },
+  "reportDisplayFailed": {
+    "message": "Impossibile visualizzare un rapporto salvato. Gli altri risultati restano disponibili."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Alcuni dettagli del rapporto hanno un formato non supportato e non sono stati visualizzati."
   }
 }

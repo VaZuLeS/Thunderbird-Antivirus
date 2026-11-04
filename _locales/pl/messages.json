@@ -1832,5 +1832,11 @@
   },
   "analysisCurrentFindWarning": {
     "message": "Pokaż najpoważniejszy bieżący wynik"
+  },
+  "reportDisplayFailed": {
+    "message": "Nie udało się wyświetlić zapisanego raportu. Pozostałe wyniki są nadal dostępne."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Niektóre szczegóły raportu mają nieobsługiwany format i nie mogły zostać wyświetlone."
   }
 }

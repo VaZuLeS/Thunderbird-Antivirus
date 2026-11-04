@@ -1,0 +1,221 @@
+{
+  "schemaVersion": 1,
+  "kind": "stored-protocol-popup-fix-and-shared-provider-results",
+  "generatedAt": "2026-11-04T08:00:05.075108+00:00",
+  "baseCommit": "6616d66b409c41ddbc8b5b7bd5460ea7cbbdcfae",
+  "extensionVersion": "1.24.5",
+  "sourceFingerprint": "0fc58ce7623cac5863953db416d937a8c5118218c299f2328a1224fd59850b5d",
+  "packageSha256": "34a59923e3ce8d6d8586e9e8514dc7dfe679933d2a049754be30350d93c7381a",
+  "runtimeChanged": true,
+  "storageSchemaChanged": false,
+  "newProviderRequestsByRendering": false,
+  "scripts": {
+    "api.js": "708f81bdc7dba00ae6d18d991d389907525023cee3c3cf4125871984f4806def",
+    "analysis_status.js": "b0bbeabc2fb92a2122d9e1c13cbf460d5667b464e7ac48b3d97a2a655ddca383",
+    "test/popup-loading.test.js": "d2efcb6364cf56ae683003d2128467526eddd8152de3d583f998443a6488b03f",
+    "test/analysis-sources.test.js": "5f5fe91ec567a3197f312845906a3ad9dc247b8704f65fac8d8039df334548d6",
+    "api.test.js": "de4b430f7a040b4032bea2c8a08bd243675ab91068cfaaefefb9ee2035b3ef60",
+    "tools/thunderbird-live.dev.py": "d590099e306a9d9f1a17bb08abad1c508e532dfb2117557d886ff69a5b9ca5b9"
+  },
+  "scope": [
+    "Hybrid Analysis optional stored report fields, per-report render isolation, unknown scores and missing metadata",
+    "Shared provider cards for Hybrid Analysis, VirusTotal, URLhaus, AbuseIPDB and urlscan.io",
+    "Popup startup, original module functions, serialized inline renderer, empty/401/429/500 provider responses"
+  ],
+  "checks": {
+    "full": {
+      "command": "npm run check",
+      "passed": 1072,
+      "failed": 0,
+      "logSha256": "588248f31ea108b67e42142ffc2dc5d944405e5e41c6ab92d94e739266ad8687"
+    },
+    "targetedNode24": {
+      "command": "node --test test/popup-loading.test.js api.test.js test/analysis-sources.test.js test/report-lifecycle.test.js",
+      "passed": 125,
+      "failed": 0,
+      "logSha256": "47f85c0389b6f6e5a70dab740d8770f165e75d38c9c6a58c6751117fb8efabd8"
+    },
+    "targetedNode22": {
+      "command": "node --test test/popup-loading.test.js api.test.js test/analysis-sources.test.js test/report-lifecycle.test.js",
+      "passed": 125,
+      "failed": 0,
+      "logSha256": "344740172833e956d12f582f87e847e20301bfd636839122fa9ee39a41548b00"
+    },
+    "runnerByteRegressions": {
+      "command": "python3 tools/test_thunderbird_identity.dev.py -v",
+      "passed": 3,
+      "failed": 0,
+      "logSha256": "007477fcb780db40be079d0652931f961b283addaaba5f03ef4f3e5a71670f0e"
+    },
+    "finalSource": {
+      "command": "npm run check:source",
+      "passed": true,
+      "logSha256": "97286389cfb02309289b555dcc3752c6115a0b9d33ef4f5f03677e36fda7cfb8"
+    },
+    "finalPackage": {
+      "command": "node scripts/verify-package.js ./build",
+      "passed": true,
+      "logSha256": "18f5df8b883ca567b24bc4be6c78212ff3c6ebe73d7d9315cf98a1cf962ca2a1"
+    }
+  },
+  "native": [
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T04:43:44Z",
+      "finishedAt": "2026-11-04T04:43:59Z",
+      "extensionVersion": "1.24.4",
+      "xpiSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c",
+      "runnerSha256": "06af6ca104280bb6b092daf9028649b9da040e1be7a28f8d359725b2c6fabc2d",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "run": "ha-popup-native-before153",
+      "client": "153.6.0",
+      "reportSha256": "a01c6c1daf430df182a7eef0d01d75151b716160444cd52ceccecdc4c48a7fed",
+      "gracefulRestarts": 0,
+      "forcedRestarts": 0,
+      "hybridPopup": {
+        "passed": true,
+        "baseline": true,
+        "syntheticReports": true,
+        "externalConsent": false,
+        "storedReportsUnchanged": true,
+        "genericError": true,
+        "first": false,
+        "second": false,
+        "partialNotice": false,
+        "providerCards": 0
+      }
+    },
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T07:53:52Z",
+      "finishedAt": "2026-11-04T07:54:35Z",
+      "extensionVersion": "1.24.5",
+      "xpiSha256": "34a59923e3ce8d6d8586e9e8514dc7dfe679933d2a049754be30350d93c7381a",
+      "runnerSha256": "d590099e306a9d9f1a17bb08abad1c508e532dfb2117557d886ff69a5b9ca5b9",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "run": "ha-popup-verified140",
+      "client": "140.12.0",
+      "reportSha256": "05d3bc08a8b9874e4ddd45fb56410ad102a8447cf9c326d84ad008c194c975b9",
+      "gracefulRestarts": 0,
+      "forcedRestarts": 0,
+      "hybridPopup": {
+        "passed": true,
+        "baseline": false,
+        "syntheticReports": true,
+        "externalConsent": false,
+        "storedReportsUnchanged": true,
+        "genericError": false,
+        "first": true,
+        "second": true,
+        "partialNotice": true,
+        "providerCards": 5
+      }
+    },
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T07:53:52Z",
+      "finishedAt": "2026-11-04T07:54:33Z",
+      "extensionVersion": "1.24.5",
+      "xpiSha256": "34a59923e3ce8d6d8586e9e8514dc7dfe679933d2a049754be30350d93c7381a",
+      "runnerSha256": "d590099e306a9d9f1a17bb08abad1c508e532dfb2117557d886ff69a5b9ca5b9",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "run": "ha-popup-verified153",
+      "client": "153.6.0",
+      "reportSha256": "72129f16d289e3200f1e86060752efdb162449124481f359739cd002c39269f3",
+      "gracefulRestarts": 0,
+      "forcedRestarts": 0,
+      "hybridPopup": {
+        "passed": true,
+        "baseline": false,
+        "syntheticReports": true,
+        "externalConsent": false,
+        "storedReportsUnchanged": true,
+        "genericError": false,
+        "first": true,
+        "second": true,
+        "partialNotice": true,
+        "providerCards": 5
+      }
+    },
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T07:53:52Z",
+      "finishedAt": "2026-11-04T07:54:45Z",
+      "extensionVersion": "1.24.5",
+      "xpiSha256": "34a59923e3ce8d6d8586e9e8514dc7dfe679933d2a049754be30350d93c7381a",
+      "runnerSha256": "d590099e306a9d9f1a17bb08abad1c508e532dfb2117557d886ff69a5b9ca5b9",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "run": "ha-popup-verified-upgrade153",
+      "client": "153.6.0",
+      "reportSha256": "4f2fdf2694f0cfaf8ec7744e2dec3f261cbb209d8db0e58b35a903a2141da99c",
+      "gracefulRestarts": 3,
+      "forcedRestarts": 2,
+      "backupRestore": {
+        "passed": true,
+        "restoredVersion": "1.24.4",
+        "snapshotRecordsPreserved": 3,
+        "scope": "clean full-profile backup before upgrade; newer candidate events are outside this snapshot"
+      },
+      "acknowledgedCrashRecovery": {
+        "recordsPreserved": 4,
+        "storagePreserved": true,
+        "addon": {
+          "version": "1.24.5",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "uiLanguage": "en-US",
+        "extraOsDispatches": 0
+      },
+      "pendingCrashRecovery": {
+        "record": {
+          "id": "71ec17fd-dc6a-4ef8-8b47-d54c9b799b51",
+          "clickedAt": 1793778873271,
+          "decidedAt": null,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": null,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": null,
+          "providerAtDecision": null,
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "PENDING",
+          "cancelReason": null,
+          "openAttempts": 0,
+          "extensionVersion": "1.24.5",
+          "scoredAt": 1793778873436,
+          "reasonDetails": [],
+          "checkedAt": null,
+          "check": {
+            "origin": "stored",
+            "outcome": "disabled",
+            "attemptedAt": 1793778873444,
+            "observedAt": null
+          },
+          "providerReasons": []
+        },
+        "storagePreserved": true,
+        "decisionNotInvented": true,
+        "extraOsDispatches": 0
+      }
+    }
+  ],
+  "screenshots": {
+    "docs/screenshots/1.24.5/inline-provider-cards-synthetic.png": "2c48030766380ce531aa973d9f599677c5d4f20eb4140692cb1a0d7184ccc2a3",
+    "docs/screenshots/1.24.5/hybrid-report-synthetic.png": "48ccd9e4be5533723487ba06b7c4d7ef38166d4e938d9f01a4d6e08d5f0eecf6",
+    "docs/screenshots/1.24.5/provider-cards-synthetic.png": "9e03c5c9561ea7f03e01bbdee675373755776c8ee9fef102512bf4111f77b4d7"
+  },
+  "limitations": [
+    "Actual user provider payload not inspected; same error path reproduced with synthetic stored protocols",
+    "Real Thunderbird, MIME/hash/popup/message operations, but synthetic provider observations and no live accounts",
+    "Initial 140 probe checked readiness before module initialization; final probes wait for subject and populated result area",
+    "No new Windows/macOS, native screenreader, live provider contract or automatic update acceptance",
+    "1.24.5 is not published; 1.24.4 release assets unchanged",
+    "No successful remote CI claimed"
+  ]
+}

@@ -1837,6 +1837,12 @@ const ThundyI18n = (() => {
   },
   "analysisCurrentFindWarning": {
     "message": "Show strongest current finding"
+  },
+  "reportDisplayFailed": {
+    "message": "A stored report could not be displayed. Other results remain available."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Some report details have an unsupported format and could not be displayed."
   }
 };
     function get(key, params = []) {

@@ -1868,13 +1868,18 @@ describe('renderFileDetails', () => {
         assert.ok(html.includes('Typ: N/A'));
     });
 
-    it('should handle undefined sha256 property gracefully', () => {
+    it('shows unknown or the bound hash when the report omits sha256, and preserves zero byte sizes', () => {
         const jsonData = {};
         const card = context.document.createElement('div');
         renderFileDetails(jsonData, card);
 
         const html = card.innerHTML;
-        assert.ok(html.includes('SHA-256-Hashwert: undefined'));
+        assert.ok(html.includes('SHA-256-Hashwert: Unknown'));
+        assert.ok(!html.includes('undefined'));
+        const boundCard = context.document.createElement('div');
+        renderFileDetails({size:0}, boundCard, 'verified-hash');
+        assert.ok(boundCard.innerHTML.includes('SHA-256-Hashwert: verified-hash'));
+        assert.ok(boundCard.innerHTML.includes('Größe: 0 Bytes'));
         assert.ok(html.includes('Letzter Dateiname: N/A'));
         assert.ok(html.includes('Größe: N/A Bytes'));
         assert.ok(html.includes('Typ: N/A'));

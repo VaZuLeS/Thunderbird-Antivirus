@@ -1250,6 +1250,57 @@ def check_history_pages(m, base, out, report, display):
     report['historyPages']={'passed':True,'syntheticObservations':True,'liveProviderCalls':False,'storedHistoryUnchanged':preserved,'realX11Keyboard':True,'popupKeys':['Return','space','Tab'],'popupKeyboardSetup':'Explicit chrome browser focus before X11 keys','firstMessagePage':first,'keyboardMessagePage':keyboard,'lastMessagePage':last,'afterRefresh':refreshed,'firstPopupPage':popup_first,'lastPopupPage':popup_last,'scope':'Real message and popup, 1200 unbound history observations; no current threat inherited, no screen reader acceptance.'}
 
 
+def check_hybrid_popup(m, base, out, report, display, baseline=False):
+    """Real popup startup with synthetic stored provider protocols; no network."""
+    fixture=out/'hybrid-popup.eml'
+    mail=EmailMessage(policy=SMTP)
+    mail['From']='fixture@example.invalid';mail['To']='receiver@example.invalid'
+    mail['Subject']='Thundy hybrid popup';mail['Message-ID']='<hybrid-popup@example.invalid>'
+    mail.set_content('Synthetic local report presentation fixture.')
+    for name in ['first.bin','second.bin']:
+        mail.add_attachment(name.encode(),maintype='application',subtype='octet-stream',filename=name)
+    fixture.write_bytes(mail.as_bytes())
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
+      const root=MailServices.accounts.localFoldersServer.rootFolder;if(!root.containsChildNamed("Hybrid Popup"))root.createSubfolder("Hybrid Popup",null);
+      const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);
+      MailServices.copy.copyFileMessage(file,root.getChildNamed("Hybrid Popup"),null,false,0,"",null,null);''',[str(fixture)])
+    wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Hybrid Popup").getTotalMessages(false)===1;'''))
+    open_page(m,base+'options.html')
+    target=m.page('''return (async()=>{const b=window.wrappedJSObject.browser;await b.storage.local.set({externalAnalysisConsent:false});const message=(await b.messages.query({subject:"Thundy hybrid popup"})).messages.find(row=>row.subject==="Thundy hybrid popup");await b.messageDisplay.open({messageId:message.id,location:"tab"});return message.id;})();''')
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status");'))
+    open_page(m,base+'options.html')
+    before=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]);
+      const ready=await bg.getMessageAnalysisContext(message),context=ready.wrappedJSObject||ready;
+      await bg.processAttachments(message,false,false,context);
+      await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,record=>({...record,attachments:record.attachments.map((item,i)=>({...item,state:"KNOWN",report:i===0?{state:"COMPLETE",threat_score:95,verdict:"malicious",tags:"phishing",scanners:[null,{name:"fixture",anti_virus_results:{}}]}:{state:"COMPLETE",threat_score:20,verdict:"clean",tags:["fixture"]}}))}));
+      for(const provider of ["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"])context.event({provider,scope:"report",resource:"message",phase:"finish",state:provider==="urlscan"?"submitted":"checked",verdict:provider==="hybridanalysis"?"malicious":provider==="urlscan"?"unknown":"none",responded:true,observedAt:1000});
+      await context.flush();return JSON.stringify((await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId)).attachments.map(item=>item.report));
+    })();''',[target])
+    m.js('window.gTabmail.switchToTab(window.gTabmail.tabInfo.filter(tab=>tab.mode.name==="mailMessageTab").at(-1));')
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status");'))
+    if not baseline:
+        wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll(".service-results").length===5;'))
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.page('const area=document.getElementById("hybrid_analysis_api_content");return document.getElementById("subject")?.textContent==="Thundy hybrid popup"&&area?.childElementCount>0&&!document.getElementById("thundy-initial-loading");',browser=popup))
+    result=m.page('''const area=document.getElementById("hybrid_analysis_api_content");return {genericError:!!document.getElementById("unexpected-error-msg"),first:area.textContent.includes("first.bin"),second:area.textContent.includes("second.bin"),partialNotice:area.textContent.includes("unsupported format"),providerCards:document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll(".service-results").length};''',browser=popup)
+    assert result['genericError']==baseline,result
+    if not baseline:
+        assert result['first'] and result['second'] and result['partialNotice'] and result['providerCards']==5,result
+    subprocess.run(['import','-window','root',str(out/'hybrid-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.page('document.getElementById("hybrid_analysis_api_content").scrollIntoView({block:"start"});',browser=popup)
+    subprocess.run(['import','-window','root',str(out/'hybrid-report-details.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    m.screenshot(out/'hybrid-message.png')
+    open_page(m,base+'options.html')
+    after=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]);return JSON.stringify((await bg.getFromStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId)).attachments.map(item=>item.report));})();''',[target])
+    assert before==after
+    report['hybridPopup']={'passed':True,'baseline':baseline,'syntheticReports':True,'externalConsent':False,'storedReportsUnchanged':True,**result}
+
+
 def probe_source_export_navigation(m, base, invalidate=False):
     """Observe actual document reuse, without assuming a back/forward cache."""
     m.page('''sessionStorage.removeItem("thundyNavigationEvents");
@@ -1627,6 +1678,8 @@ def main():
     parser.add_argument('--source-history-check', action='store_true', help='Real legacy source separation, content guard and persisted history across ID reuse; direct permanent install')
     parser.add_argument('--report-archive-check', action='store_true', help='Real bounded protocol revisions, popup writes, capacity refusal and restart; synthetic reports, direct permanent install')
     parser.add_argument('--source-export-check', action='store_true', help='Real popup source export, GTK download, cache clear and stale runtime rejection; direct permanent install, EN')
+    parser.add_argument('--hybrid-popup-check', action='store_true', help='Real popup startup with malformed optional provider fields and message/popup result cards; direct EN')
+    parser.add_argument('--hybrid-popup-baseline', action='store_true', help='Expect the released popup failure; requires --hybrid-popup-check')
     parser.add_argument('--history-pages-check', action='store_true', help='Real 1200-row history, late warnings and X11 keyboard in message and popup; direct EN install')
     parser.add_argument('--active-sources-check', action='store_true', help='Real 1200 active rows and 500-resource inventory, operation timings and disclosure behavior; direct EN')
     parser.add_argument('--active-sources-baseline', action='store_true', help='Expect the recorded eager baseline; requires --active-sources-check')
@@ -1670,6 +1723,10 @@ def main():
         parser.error('--report-archive-check requires direct installation without --previous-xpi')
     if args.source_export_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
         parser.error('--source-export-check requires direct EN installation without --previous-xpi')
+    if args.hybrid_popup_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
+        parser.error('--hybrid-popup-check requires direct EN installation without --previous-xpi')
+    if args.hybrid_popup_baseline and not args.hybrid_popup_check:
+        parser.error('--hybrid-popup-baseline requires --hybrid-popup-check')
     if args.history_pages_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
         parser.error('--history-pages-check requires direct EN installation without --previous-xpi')
     if args.active_sources_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
@@ -1851,7 +1908,7 @@ def main():
                 if args.restart_check:
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
-                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check or args.source_export_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check or args.source_export_check or args.hybrid_popup_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
                     if args.resource_isolation_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_resource_isolation(m,base,out,report)
@@ -1909,6 +1966,9 @@ def main():
                     if args.active_sources_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_active_sources(m,base,out,report,display,args.active_sources_baseline)
+                    if args.hybrid_popup_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_hybrid_popup(m,base,out,report,display,args.hybrid_popup_baseline)
 
             except Exception:
                 try:
