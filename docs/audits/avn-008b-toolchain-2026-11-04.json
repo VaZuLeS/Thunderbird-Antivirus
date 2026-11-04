@@ -1,0 +1,522 @@
+{
+  "schemaVersion": 1,
+  "task": "AVN-008.b",
+  "generatedAt": "2026-11-04T15:38:15.068097+00:00",
+  "baseCommit": "6616d66b409c41ddbc8b5b7bd5460ea7cbbdcfae",
+  "scope": "Separate maintenance branch, no extension runtime change or publication",
+  "sourceFingerprint": "619d0a65fb8fab903df94691fba08d2f6feffe40ddcd12ea903939fbcfeccea2",
+  "packageSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c",
+  "matchesPublished1244": true,
+  "dependencyLockfileChanged": false,
+  "advisoriesFixed": false,
+  "scripts": {
+    "scripts/tool-process.js": "bc3997bb536cf60d2d47502ccec3a385740a427b2b0cdd3fa04b2a240b6a9f19",
+    "scripts/lint-with-filter.js": "205991bbefff69584c7ecdf804ef44f21513d73c9e1d0287a38056ff741e5af1",
+    "scripts/build-and-verify-package.js": "19b0c2089d2c9a51e418e4ee084f21269bcae0775a73805f3523355a375f904d",
+    "scripts/lint-gate.test.js": "2a6bca2306328e026de78f9ec27aaa9dea6abc41985f5c0aa720f734bb268ef6",
+    "scripts/reproducible-package.test.js": "6091c867c8fb0cc5e1079e359309f3c5b4629aaaa030f03e9a69b9dd6fde8e9b",
+    "tools/linter-compatibility.dev.cjs": "66ce046f1df5afb6ce214898b07052a59a9f2574d60e563eb8fe81677ad51430",
+    "tools/toolchain-observer.dev.cjs": "bc4d53081aa242920f9cba9e6ce1030c1ae79e72958f9f230d0f3dce0add2790"
+  },
+  "registry": {
+    "webExtLatest": {
+      "version": "10.8.0",
+      "dependencies.addons-linter": "10.14.0",
+      "engines": {
+        "npm": ">=8.0.0",
+        "node": ">=20.0.0"
+      }
+    },
+    "addonsLinterLatest": {
+      "version": "10.15.0",
+      "dependencies.deepmerge": "4.3.1",
+      "dependencies.eslint": "9.39.4",
+      "engines": {
+        "node": ">=20.0.0"
+      }
+    }
+  },
+  "audit": {
+    "project": {
+      "info": 0,
+      "low": 1,
+      "moderate": 9,
+      "high": 0,
+      "critical": 0,
+      "total": 10
+    },
+    "productionOnly": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "isolatedOld": {
+      "info": 0,
+      "low": 1,
+      "moderate": 7,
+      "high": 0,
+      "critical": 0,
+      "total": 8
+    },
+    "isolatedNew": {
+      "info": 0,
+      "low": 1,
+      "moderate": 7,
+      "high": 0,
+      "critical": 0,
+      "total": 8
+    },
+    "underlyingAdvisories": [
+      {
+        "source": 1243505,
+        "name": "deepmerge",
+        "dependency": "deepmerge",
+        "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+        "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+        "severity": "low",
+        "cwe": [
+          "CWE-1321"
+        ],
+        "cvss": {
+          "score": 5.3,
+          "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+        },
+        "range": ">=4.2.0 <=4.3.1"
+      },
+      {
+        "source": 1244012,
+        "name": "minimatch",
+        "dependency": "minimatch",
+        "title": "minimatch has potential denial of service via globparts amplification",
+        "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+        "severity": "moderate",
+        "cwe": [
+          "CWE-405"
+        ],
+        "cvss": {
+          "score": 0,
+          "vectorString": null
+        },
+        "range": "<11.0.1"
+      }
+    ],
+    "logs": {
+      "advisory-current-2026-11-04.json": "69d6894cf2f9d84093e307662532b7b0b9ac3fe83aea56626ae62e47c64e91cf",
+      "toolchain-prod-audit.json": "829684bb91c640849021c2867c60737d8261fa5eaaec8b54c0573946140a86fc",
+      "toolchain-isolated-old-audit.json": "2111036646a97e543cb6a8f1dd55aa4608646a7129fe566afc6b18668fc7232f",
+      "toolchain-isolated-new-audit.json": "b48db7bf0a1cd5f49ee1c3fea61c57971805a9a74552275ff23fd076bb8ce793",
+      "toolchain-dependency-tree.json": "908716c7866d3632485cdb8a08ec61d03799428d21f4584f7a93078cbc70a6cc"
+    }
+  },
+  "limits": {
+    "perInvocationTimeoutMs": 120000,
+    "capturedOutputMaxBufferBytes": 8388608,
+    "killSignal": "SIGKILL",
+    "sandbox": false
+  },
+  "checks": {
+    "full": {
+      "passed": 1072,
+      "failed": 0,
+      "logSha256": "d2eab9115ddf6a5d61d923dd949cce52cdbd7734091b20fef88051ab259032e5"
+    },
+    "targetedNode24": {
+      "passed": 15,
+      "failed": 0,
+      "logSha256": "1d5b847d490b5c133e13dfba8ad0961b8b2952b80770df178c3269c4f1e33df8"
+    },
+    "targetedNode22": {
+      "passed": 15,
+      "failed": 0,
+      "logSha256": "abf540d65086dba71964fabb5048422d92848ca515151fba940068e16e477243"
+    }
+  },
+  "observedLint": {
+    "schemaVersion": 1,
+    "node": "v24.19.0",
+    "exitCode": 0,
+    "observations": {
+      "minimatch.match": {
+        "calls": 5049,
+        "maxPatternCharacters": 50,
+        "maxPatternParts": 7,
+        "ownProtoKeys": 0,
+        "protoSymbols": 0,
+        "callSites": [
+          "node_modules/multimatch/index.js:23:39",
+          "node_modules/web-ext/src/util/file-filter.js:138:21",
+          "node_modules/web-ext/src/cmd/lint.js:44:46",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/linter.js:533:26"
+        ]
+      },
+      "deepmerge": {
+        "calls": 273,
+        "maxPatternCharacters": 0,
+        "maxPatternParts": 0,
+        "ownProtoKeys": 0,
+        "protoSymbols": 0,
+        "callSites": [
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/schema/deepmerge.js:42:15",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/schema/validator.js:448:33",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/schema/validator.js:248:35",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/schema/validator.js:288:10",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/schema/validator.js:844:27",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/parsers/manifestjson.js:521:22",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/parsers/manifestjson.js:173:12",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/linter.js:300:30",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/schema/deepmerge.js:11:40",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/schema/deepmerge.js:20:38",
+          "node_modules/addons-linter/dist/webpack:/addons-linter/src/schema/deepmerge.js:16:10"
+        ]
+      }
+    },
+    "scope": "Controlled CLI observation; no exploit proof or general reachability guarantee"
+  },
+  "observedBuild": {
+    "schemaVersion": 1,
+    "node": "v24.19.0",
+    "exitCode": 0,
+    "observations": {
+      "minimatch.match": {
+        "calls": 4802,
+        "maxPatternCharacters": 49,
+        "maxPatternParts": 7,
+        "ownProtoKeys": 0,
+        "protoSymbols": 0,
+        "callSites": [
+          "node_modules/multimatch/index.js:23:39",
+          "node_modules/web-ext/lib/util/file-filter.js:114:21",
+          "node_modules/web-ext/lib/cmd/build.js:107:37"
+        ]
+      }
+    },
+    "scope": "Controlled CLI observation; no exploit proof or general reachability guarantee"
+  },
+  "observedAndPlainLintReportsEqual": true,
+  "cliCompatibility": {
+    "schemaVersion": 1,
+    "kind": "isolated-linter-compatibility",
+    "passed": true,
+    "packageSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c",
+    "node": "v24.19.0",
+    "results": [
+      {
+        "version": "10.14.0",
+        "case": "candidate",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 27
+        },
+        "codes": [
+          "MANIFEST_PERMISSIONS",
+          "MANIFEST_OPTIONAL_PERMISSIONS",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API"
+        ],
+        "stdoutSha256": "341026d582f077bc3b5c9844bb20c5e6c8e1e5ef9531ee662216e4ac86d811d2"
+      },
+      {
+        "version": "10.14.0",
+        "case": "clean",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "69eb361aba858fe49ec7b14c2ea9cf23f6bd1a3c5c5cfe3cbcec1df1d2a41543"
+      },
+      {
+        "version": "10.14.0",
+        "case": "empty-script",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "c95dd79ddd84fd9c859c4acf283a9c0cdc070c19de95f2f95bbe20b5abbb0f5d"
+      },
+      {
+        "version": "10.14.0",
+        "case": "permission-lookalike",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "MANIFEST_PERMISSIONS",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "846576932e2df688e9811cc29f6407a312d96f850ed88c0c3ae543736ec00d10"
+      },
+      {
+        "version": "10.14.0",
+        "case": "bad-manifest",
+        "status": 1,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 1,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "JSON_INVALID",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "99a4cf23f09f6111772daa536ccbbb82c832ab5059fc125bc7eac01e3d0750b8"
+      },
+      {
+        "version": "10.14.0",
+        "case": "unsafe-script",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "DANGEROUS_EVAL"
+        ],
+        "stdoutSha256": "aa70afa877239a6a8809a594ea58487573eaab36207c760fa4d63543ed82ef98"
+      },
+      {
+        "version": "10.14.0",
+        "case": "inline-script",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "INLINE_SCRIPT"
+        ],
+        "stdoutSha256": "9a89d46d39ca085985cc10cddfa32a20b9f643c014ca7082185a3e18e89d71e1"
+      },
+      {
+        "version": "10.15.0",
+        "case": "candidate",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 27
+        },
+        "codes": [
+          "MANIFEST_PERMISSIONS",
+          "MANIFEST_OPTIONAL_PERMISSIONS",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API",
+          "UNSUPPORTED_API"
+        ],
+        "stdoutSha256": "341026d582f077bc3b5c9844bb20c5e6c8e1e5ef9531ee662216e4ac86d811d2"
+      },
+      {
+        "version": "10.15.0",
+        "case": "clean",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "69eb361aba858fe49ec7b14c2ea9cf23f6bd1a3c5c5cfe3cbcec1df1d2a41543"
+      },
+      {
+        "version": "10.15.0",
+        "case": "empty-script",
+        "status": 0,
+        "expectedAccepted": true,
+        "accepted": true,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "c95dd79ddd84fd9c859c4acf283a9c0cdc070c19de95f2f95bbe20b5abbb0f5d"
+      },
+      {
+        "version": "10.15.0",
+        "case": "permission-lookalike",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "MANIFEST_PERMISSIONS",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "846576932e2df688e9811cc29f6407a312d96f850ed88c0c3ae543736ec00d10"
+      },
+      {
+        "version": "10.15.0",
+        "case": "bad-manifest",
+        "status": 1,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 1,
+          "notices": 0,
+          "warnings": 1
+        },
+        "codes": [
+          "JSON_INVALID",
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION"
+        ],
+        "stdoutSha256": "99a4cf23f09f6111772daa536ccbbb82c832ab5059fc125bc7eac01e3d0750b8"
+      },
+      {
+        "version": "10.15.0",
+        "case": "unsafe-script",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "DANGEROUS_EVAL"
+        ],
+        "stdoutSha256": "aa70afa877239a6a8809a594ea58487573eaab36207c760fa4d63543ed82ef98"
+      },
+      {
+        "version": "10.15.0",
+        "case": "inline-script",
+        "status": 0,
+        "expectedAccepted": false,
+        "accepted": false,
+        "reportContractValid": true,
+        "summary": {
+          "errors": 0,
+          "notices": 0,
+          "warnings": 2
+        },
+        "codes": [
+          "KEY_FIREFOX_ANDROID_UNSUPPORTED_BY_MIN_VERSION",
+          "INLINE_SCRIPT"
+        ],
+        "stdoutSha256": "9a89d46d39ca085985cc10cddfa32a20b9f643c014ca7082185a3e18e89d71e1"
+      }
+    ],
+    "scope": "Public CLI scans of exact development package and synthetic canaries; no web-ext dependency override or security clearance."
+  },
+  "limitations": [
+    "Actual controlled Node subprocess tests and real public linter CLIs; not native Thunderbird/OS acceptance",
+    "No exploit demonstrated; observed ordinary calls do not prove generic unreachability",
+    "Old Module._load-only observer missed ESM matching; final _compile observer captures both packages",
+    "Previously installed isolated linter trees re-audited, no fresh installation claimed",
+    "Timeout/output limits do not fix advisories or bound total memory/arbitrary descendants",
+    "No remote CI success claimed in this local evidence; no release/assets changed"
+  ],
+  "observationLogs": {
+    "toolchain-observed-lint-final.json": "9824d7cf9ee7ab23c429c415bfde2f1a9c8b9f9aff80bcee4608b4f2cbdde6a3",
+    "toolchain-observed-lint-report-final.json": "341026d582f077bc3b5c9844bb20c5e6c8e1e5ef9531ee662216e4ac86d811d2",
+    "toolchain-plain-lint.json": "341026d582f077bc3b5c9844bb20c5e6c8e1e5ef9531ee662216e4ac86d811d2",
+    "toolchain-observed-build.json": "d98e5af3f6a6a5b0e8095a9d0b6c065a2d583f86df75912c053986f8964a876c",
+    "toolchain-bounded-linter-comparison/report.json": "969a2d71b4acfd67f97796e270c616d08218043aa9ab2ffcf5c73df2506b5022"
+  }
+}

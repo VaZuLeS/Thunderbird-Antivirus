@@ -8,7 +8,7 @@
  * is not a documented Thunderbird false positive.
  */
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { runTool } = require('./tool-process.js');
 const { assessReport, printAssessment } = require('./filter-lint-warnings.js');
 
 function assessLintRun(lint) {
@@ -21,12 +21,15 @@ function assessLintRun(lint) {
   return assessment;
 }
 
-function main() {
-  const lint = spawnSync(process.execPath, [path.resolve(__dirname, '../node_modules/web-ext/bin/web-ext.js'), 'lint', '--source-dir', '.', '--output', 'json'], {
-    cwd: path.resolve(__dirname, '..'),
-    encoding: 'utf8'
+function runLint(root = path.resolve(__dirname, '..'), limits = {}) {
+  return runTool(process.execPath, [path.join(root, 'node_modules/web-ext/bin/web-ext.js'), 'lint', '--source-dir', '.', '--output', 'json'], {
+    ...limits,
+    cwd: root,
   });
+}
 
+function main() {
+  const lint = runLint();
   try {
     const assessment = assessLintRun(lint);
     printAssessment(assessment);
@@ -41,4 +44,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { main, assessLintRun };
+module.exports = { main, assessLintRun, runLint };

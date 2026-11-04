@@ -67,3 +67,7 @@ Alle Änderungen betreffen Entwicklungs-/Prüfdateien. Runtime, Manifest, Übers
 | AVN-011.b — Exportseite bei Navigation/Rückkehr untersuchen | P2 / K–M | Bestehende Hypothese nativ reproduzieren, bevor Seitenlebenszyklus oder Kontextbindung geändert werden; veraltete Vorschauen nicht reaktivieren |
 
 Windows/macOS, Screenreader, Live-Provider, erfolgreiche Cryptoabnahmen und automatische Verteilung behalten ihre bestehenden Voraussetzungen. **1.24.4 bleibt unveröffentlicht.**
+
+## Nachfolgende Untersuchung AVN-008.b
+
+Die obigen Paket-/Freigabeangaben dokumentieren den damaligen Stand. 1.24.4 wurde inzwischen veröffentlicht. Die [anschließende Advisory- und Eingabepfadprüfung](WERKZEUG_ADVISORIES.md) ergänzt feste Prozessbudgets für lokale Lint-/Paketaufrufe; die Advisories werden dadurch nicht als behoben ausgegeben. Alte Messungen bleiben an ihre damaligen Werkzeuge und Paketbytes gebunden.
