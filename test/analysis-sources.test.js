@@ -196,3 +196,47 @@ test('serialized history navigation needs no module globals and keeps projection
   root.querySelector('[data-focus-key="history-find-warning"]').click();assert.equal(root.querySelectorAll('.history-entries li').length,30);assert.ok(root.querySelector('.history-range').textContent.includes('1200 / 1200'));assert.ok(root.textContent.includes(catalog.analysisVerdict_suspicious.message));assert.equal(root.querySelector('.card').style.borderColor,'');
  }finally{dom.window.close();}
 });
+
+test('current details format only on disclosure and preserve rendered times, focus and idempotent reopen in six languages',async()=>{
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  try{
+   let formats=0;class CountedDate extends Date{toLocaleString(...args){formats++;return super.toLocaleString(...args);}}
+   const c=vm.createContext({document:dom.window.document,URL,Date:CountedDate});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
+   const oldTime=Date.parse('2026-10-01T08:00:00Z'),newTime=Date.parse('2026-11-01T12:00:00Z');
+   const data={local:{state:'checked'},rows:[{provider:'hybridanalysis',scope:'report',resource:'message',source:'stored',state:'checked',verdict:'none',findingAt:oldTime,observedAt:oldTime,attemptedAt:oldTime}]};
+   const host=c.a.render(data,labels),root=host.shadowRoot;let entry=root.querySelector('[data-key="hybridanalysis:report:message"]');
+   assert.equal(formats,0);assert.equal(entry.querySelectorAll('p,small').length,0);
+   data.rows[0].observedAt=newTime;data.rows[0].findingAt=newTime;data.rows[0].verdict='malicious';
+   const toggle=async open=>{const changed=new Promise(resolve=>entry.addEventListener('toggle',resolve,{once:true}));entry.open=open;await changed;};
+   await toggle(true);assert.equal(formats,3);assert.ok(entry.textContent.includes(new Date(oldTime).toLocaleString(lang)));assert.ok(!entry.textContent.includes(new Date(newTime).toLocaleString(lang)));assert.ok(entry.textContent.includes(catalog.analysisVerdict_none.message));
+   const children=entry.children.length;await toggle(false);await toggle(true);assert.equal(entry.children.length,children);assert.equal(formats,3);
+   entry.querySelector('summary').focus();c.a.render(data,labels);entry=root.querySelector('[data-key="hybridanalysis:report:message"]');assert.equal(entry.open,true);assert.equal(root.activeElement.dataset.focusKey,'hybridanalysis:report:message');assert.ok(entry.textContent.includes(new Date(newTime).toLocaleString(lang)));assert.ok(entry.textContent.includes(catalog.analysisVerdict_malicious.message));
+  }finally{dom.window.close();}
+ }
+});
+
+test('serialized current warning jump chooses the strongest active finding without inheriting historical warnings',()=>{
+ const a=model();for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  try{
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
+   const data={local:{state:'checked'},rows:[{provider:'urlhaus',scope:'domain',resource:'link:0',state:'checked',source:'remote',verdict:'suspicious',observedAt:100},{provider:'virustotal',scope:'hash',resource:'attachment:1.2',state:'checked',source:'cache',verdict:'malicious',observedAt:200}],sourceHistory:{rows:[{provider:'urlscan',scope:'url',state:'checked',verdict:'malicious',observedAt:300}]}};
+   const c=vm.createContext({document:dom.window.document,Date,labels,data});vm.runInContext('globalThis.render=('+a.render.toString()+');render(data,labels);',c);
+   const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot,jump=root.querySelector('[data-focus-key="current-find-warning"]');
+   assert.equal(jump.textContent,catalog.analysisCurrentFindWarning.message);jump.click();
+   const target=root.querySelector('[data-key="virustotal:hash:attachment:1.2"]');assert.equal(target.open,true);assert.equal(root.activeElement,target.querySelector('summary'));assert.ok(target.querySelector('summary').getAttribute('aria-label').startsWith('VirusTotal · '));assert.equal(target.querySelector('.service-status').textContent,'VirusTotal');assert.ok(target.querySelector('small'));assert.equal(root.querySelector('[data-key="urlhaus:domain:link:0"]').open,false);
+   c.render({...data,rows:[]},labels);assert.equal(root.querySelector('[data-focus-key="current-find-warning"]'),null);assert.ok(root.querySelector('[data-focus-key="history-find-warning"]'));assert.equal(root.querySelector('.card').style.borderColor,'');
+  }finally{dom.window.close();}
+ }
+});
+
+test('inventory provider index preserves resource ownership, source order and deduplication',()=>{
+ const a=model(),dom=new JSDOM('<html lang="en"><body></body></html>');try{
+  const catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json')),labels=a.labels(key=>catalog[key]?.message),c=vm.createContext({document:dom.window.document,Date,URL});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+  const rows=[{provider:'urlhaus',scope:'domain',resource:'link:0'},{provider:'virustotal',scope:'hash',resource:'link:0'},{provider:'urlhaus',scope:'url',resource:'link:0'},{provider:'hybridanalysis',scope:'report',resource:'link:1'}].map(row=>({...row,state:'checked',source:'stored',verdict:'none'}));
+  const original=JSON.stringify(rows),host=c.a.render({rows,local:{state:'checked'},resourceLabels:{'link:0':'first','link:1':'second','link:2':'third'}},labels),items=host.shadowRoot.querySelectorAll('[data-key="resources"] li');
+  assert.equal(items[0].lastChild.textContent,'URLhaus · VirusTotal');assert.equal(items[1].lastChild.textContent,'Hybrid Analysis');assert.equal(items[2].lastChild.textContent,catalog.analysisResourceNoExternal.message);assert.equal(JSON.stringify(rows),original);
+ }finally{dom.window.close();}
+});

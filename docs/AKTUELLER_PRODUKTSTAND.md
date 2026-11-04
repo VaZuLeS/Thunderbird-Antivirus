@@ -1,4 +1,4 @@
-# Aktueller Produktstand — 3. November 2026
+# Aktueller Produktstand — 4. November 2026
 
 Der [Veröffentlichungsabschluss 1.24.3](VEROEFFENTLICHUNG_1_24_3.md) führt den jüngsten Freigabeumfang, Darstellungsprofile und offene Ressourcenabnahmen. Tatsächlicher [GitHub-Release-Status](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.3).
 
@@ -21,6 +21,8 @@ Die [begrenzte Protokollhistorie](PROTOKOLLHISTORIE.md) sichert nun die bisherig
 Der [lokale Quellenbericht](QUELLENEXPORT.md) bietet eine datensparsame Vorschau und einen ausdrücklichen Download des aufgezeichneten Prüfstands. Aktuelle Beobachtungen und unbestätigte Historie bleiben getrennt. Ressourceninhalte und interne Kennungen sind ausgeschlossen; Kontextwechsel, Änderungen und Cachelöschung machen ältere Vorschauen ungültig. Es startet keine neue Analyse oder automatische Übermittlung.
 
 Die [Historiennavigation AVN-007.a](GROSSE_QUELLENHISTORIEN.md) macht alle bis zu 1.200 normalisierten historischen Beobachtungen in 30er-Seiten erreichbar. Ein auffälliger historischer Befund bleibt bereits in der Zusammenfassung sichtbar und kann direkt angesprungen werden. Die Zuordnung bleibt unbestätigt; aktuelle Bewertungen und gespeicherte Originaldaten werden dadurch nicht geändert.
+
+Die [großen aktiven Quellenansichten AVN-007.b](AKTIVE_QUELLENANSICHTEN.md) werden anschließend nativ untersucht und gezielt optimiert: Inhalte geschlossener Prüfdetaileinträge entstehen erst beim Öffnen, offene Details/Fokus bleiben bei Aktualisierungen erhalten. Der stärkste aktuelle Warnbefund ist direkt erreichbar; Quellenart und ursprüngliche Zeiten bleiben unverändert. Die Zusammenfassungen werden weiterhin vollständig angezeigt.
 
 | Ebene | Stand |
 | --- | --- |

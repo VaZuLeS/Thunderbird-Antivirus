@@ -22,6 +22,8 @@ Der weitere [Schritt AVN-003/009.b zur Inhaltsverfügbarkeit](PRUEFUMFANG_NACHRI
 
 **AVN-007.a anschließend umgesetzt und geprüft:** Die [Untersuchung großer Quellenhistorien](GROSSE_QUELLENHISTORIEN.md) bestätigt eine dauerhafte Anzeigekürzung nach 120 von bis zu 1.200 vorhandenen Zeilen. Die Historie erhält 30er-Seiten, einen direkten Sprung zum ersten auffälligen historischen Befund und Fokus-/Seitenwiederherstellung. 1.054 automatisierte Tests sowie native Linux-Tastaturläufe unter 140 und 153 bestehen. Der Befund bleibt ausdrücklich unbestätigt und ändert keine aktuelle Bewertung. AVN-007 ist insgesamt weiter teilweise offen: große aktive Listen, 200-%-/schmale Ansichten, menschlicher Sprachreview und native Screenreaderabnahme sind gesondert zu prüfen.
 
+**AVN-007.b am 4. November umgesetzt und geprüft:** Die [native Untersuchung aktiver Quellenansichten](AKTIVE_QUELLENANSICHTEN.md) bestätigt 1.200 vollständig erzeugte, aber geschlossene Detailinhalte. Der Renderer baut diese nun über einen gemeinsamen Ereignisbehandler bedarfsgerecht auf und erhält offene Details/Fokus; ein eigener Sprung führt zum stärksten aktuellen Warnbefund mit sichtbarem Dienstnamen. Die Inventarzuordnung nutzt einen einmaligen Index. 1.057 automatisierte Tests und native Linux-Vergleiche unter 140/153 bestehen; anfänglich 3.934 statt 7.533 Elemente bei weiterhin 1.200 Zusammenfassungen. Quellenalter, Bewertungen und Speicherung ändern sich nicht. Normale Suchaufgaben, schmale/200-%-Ansichten, menschlicher Review und Plattform-/Screenreaderabnahmen bleiben gesondert offen; AVN-007 ist insgesamt nicht pauschal abgeschlossen.
+
 ## 1. Bestandsaufnahme und Nachweisgrenzen
 
 ### Veröffentlichter Stand und vorbereitete Entwicklung

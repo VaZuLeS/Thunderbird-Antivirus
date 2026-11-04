@@ -1829,5 +1829,8 @@
   },
   "analysisHistoryFindWarning": {
     "message": "Mostrar la primera advertencia histórica"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Mostrar el hallazgo actual más grave"
   }
 }

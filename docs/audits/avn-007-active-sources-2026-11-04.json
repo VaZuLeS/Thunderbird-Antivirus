@@ -1,0 +1,953 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-investigation-and-deferred-current-source-details",
+  "generatedAt": "2026-11-04T02:44:53.709959+00:00",
+  "baseCommit": "0aaa1ef5af05457a911243443c6e1ae8bf8bf12a",
+  "extensionVersion": "1.24.4",
+  "sourceFingerprint": "619d0a65fb8fab903df94691fba08d2f6feffe40ddcd12ea903939fbcfeccea2",
+  "packageSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+  "baselinePackageSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+  "runnerSha256": "42f7917ebcde02264153409810f47140fe370e3216639db3c8d5fc41ab8070cd",
+  "checks": {
+    "full": {
+      "command": "npm run check",
+      "passed": 1057,
+      "failed": 0,
+      "logSha256": "ff19ba73b25299b564218c30d1a9d07da2b0b9db24c25bf2310cc558dd2a8a34"
+    },
+    "targeted": {
+      "command": "node --test test/analysis-sources.test.js test/optimization.test.js",
+      "passed": 90,
+      "failed": 0,
+      "logSha256": "29db962e0842e7edd1af373c1dd992c612a2742ee7781a0c8abde8ca2f3517b5"
+    },
+    "finalSource": {
+      "command": "npm run check:source",
+      "passed": true,
+      "logSha256": "f9e4dbfbd04ac2f1ef489bb5b026b950c548e616a1e98803cd361cc593a149a7"
+    },
+    "finalPackage": {
+      "command": "node scripts/verify-package.js ./build",
+      "passed": true,
+      "logSha256": "00c7faa75834a49b886c02050135f2189508e104f32ad2b2ec915e17648c981e"
+    },
+    "runnerByteRegressions": {
+      "command": "python3 tools/test_thunderbird_identity.dev.py -v",
+      "passed": 3,
+      "failed": 0,
+      "logSha256": "007477fcb780db40be079d0652931f961b283addaaba5f03ef4f3e5a71670f0e"
+    }
+  },
+  "domInvestigation": {
+    "scope": "Synthetic JSDOM construction, not native layout/RSS or general latency",
+    "before": {
+      "schemaVersion": 1,
+      "kind": "source-history-dom-measurement",
+      "scope": "Synthetic JSDOM DOM construction including date formatting; no browser layout, RSS, user comprehension or screen reader claim",
+      "node": "v24.19.0",
+      "sourceSha256": "380f9e5b49311c23dec289bd0a5f03cd9bf6427da0d908594891e5e18b57d597",
+      "results": [
+        {
+          "lang": "en",
+          "historyOnlyMs": [
+            58.8,
+            11.31,
+            8.04
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 49.57,
+          "mixedMs": 194.72,
+          "mixedNodes": 7627
+        },
+        {
+          "lang": "de",
+          "historyOnlyMs": [
+            10.9,
+            7.54,
+            6.2
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 7.97,
+          "mixedMs": 182.66,
+          "mixedNodes": 7627
+        },
+        {
+          "lang": "fr",
+          "historyOnlyMs": [
+            9.93,
+            6.68,
+            4.91
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 5.95,
+          "mixedMs": 153.72,
+          "mixedNodes": 7627
+        },
+        {
+          "lang": "es",
+          "historyOnlyMs": [
+            7.95,
+            4.59,
+            4.64
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 4.6,
+          "mixedMs": 132.37,
+          "mixedNodes": 7627
+        },
+        {
+          "lang": "it",
+          "historyOnlyMs": [
+            8.02,
+            4.63,
+            3.89
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 3.89,
+          "mixedMs": 150.69,
+          "mixedNodes": 7627
+        },
+        {
+          "lang": "pl",
+          "historyOnlyMs": [
+            7.73,
+            4.48,
+            4.7
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 3.55,
+          "mixedMs": 230.97,
+          "mixedNodes": 7627
+        }
+      ]
+    },
+    "after": {
+      "schemaVersion": 1,
+      "kind": "source-history-dom-measurement",
+      "scope": "Synthetic JSDOM DOM construction including date formatting; no browser layout, RSS, user comprehension or screen reader claim",
+      "node": "v24.19.0",
+      "sourceSha256": "97b2cd9c3e9dd4a04ffab37c6fe248724e9619458d325fe2453ad121023872de",
+      "results": [
+        {
+          "lang": "en",
+          "historyOnlyMs": [
+            77.19,
+            19.26,
+            15.05
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 74.85,
+          "mixedMs": 138.99,
+          "mixedNodes": 4028
+        },
+        {
+          "lang": "de",
+          "historyOnlyMs": [
+            12.92,
+            8.8,
+            18.51
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 8.65,
+          "mixedMs": 92.95,
+          "mixedNodes": 4028
+        },
+        {
+          "lang": "fr",
+          "historyOnlyMs": [
+            10.52,
+            6.85,
+            6.53
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 8.58,
+          "mixedMs": 137.54,
+          "mixedNodes": 4028
+        },
+        {
+          "lang": "es",
+          "historyOnlyMs": [
+            9.82,
+            5.93,
+            5.02
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 5.23,
+          "mixedMs": 115.93,
+          "mixedNodes": 4028
+        },
+        {
+          "lang": "it",
+          "historyOnlyMs": [
+            11.9,
+            9.9,
+            4.86
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 6.41,
+          "mixedMs": 100.71,
+          "mixedNodes": 4028
+        },
+        {
+          "lang": "pl",
+          "historyOnlyMs": [
+            15.32,
+            9.12,
+            11.24
+          ],
+          "historyOnlyNodes": 125,
+          "historyRowsRendered": 30,
+          "lastHistoricalWarningVisible": false,
+          "historicalWarningIndicatorVisible": true,
+          "lastWarningReachable": true,
+          "jumpToLastWarningMs": 10.03,
+          "mixedMs": 166.97,
+          "mixedNodes": 4028
+        }
+      ]
+    }
+  },
+  "nativePaired": [
+    {
+      "probe": "avn007b-serial-before153",
+      "passed": true,
+      "client": "153.6.0",
+      "startedAt": "2026-11-04T02:30:28Z",
+      "finishedAt": "2026-11-04T02:30:46Z",
+      "xpiSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "runnerSha256": "98d28938319341b34eb947b6e983b96cb04a170a68c2ba0b78c0668d47695360",
+      "reportSha256": "99f6f638457685dc0ea8e7255849ce074ee68eaeb6c9954f2c10572c9c88dae7",
+      "activeSources": {
+        "passed": true,
+        "baseline": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              447,
+              503,
+              499
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 7533,
+            "details": 1200,
+            "closedWithBody": 1200,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": false
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 4
+          },
+          "focusAndOpenPreserved": true
+        },
+        "popup": {
+          "initial": {
+            "nodes": 7533,
+            "details": 1200,
+            "closedWithBody": 1200,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": false
+          },
+          "openAndAutomationMs": 491,
+          "openedTimePreserved": true,
+          "keyboardDisclosurePassed": true,
+          "strongestWarningJumpPassed": false
+        }
+      }
+    },
+    {
+      "probe": "avn007b-provider-after153",
+      "passed": true,
+      "client": "153.6.0",
+      "startedAt": "2026-11-04T02:39:19Z",
+      "finishedAt": "2026-11-04T02:39:38Z",
+      "xpiSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "runnerSha256": "42f7917ebcde02264153409810f47140fe370e3216639db3c8d5fc41ab8070cd",
+      "reportSha256": "c50dde76807adb346e2b58645f53d8eb707222cc962543895a2f2c6f06709965",
+      "activeSources": {
+        "passed": true,
+        "baseline": false,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              383,
+              419,
+              352
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 5
+          },
+          "focusAndOpenPreserved": true
+        },
+        "popup": {
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "openAndAutomationMs": 461,
+          "openedTimePreserved": true,
+          "keyboardDisclosurePassed": true,
+          "strongestWarningJumpPassed": true
+        }
+      },
+      "providerAtWarningDestinationVerified": "urlscan.io visible in detail and prefixed in accessible summary name"
+    },
+    {
+      "probe": "avn007b-serial-before140",
+      "passed": true,
+      "client": "140.12.0",
+      "startedAt": "2026-11-04T02:31:06Z",
+      "finishedAt": "2026-11-04T02:31:25Z",
+      "xpiSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "runnerSha256": "98d28938319341b34eb947b6e983b96cb04a170a68c2ba0b78c0668d47695360",
+      "reportSha256": "ad30a5d4c155c730d1d4aa24f41c60d38bb920f023d46d9b599e2fd8ff110b9a",
+      "activeSources": {
+        "passed": true,
+        "baseline": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              481,
+              530,
+              484
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 7533,
+            "details": 1200,
+            "closedWithBody": 1200,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": false
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 4
+          },
+          "focusAndOpenPreserved": true
+        },
+        "popup": {
+          "initial": {
+            "nodes": 7533,
+            "details": 1200,
+            "closedWithBody": 1200,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": false
+          },
+          "openAndAutomationMs": 500,
+          "openedTimePreserved": true,
+          "keyboardDisclosurePassed": true,
+          "strongestWarningJumpPassed": false
+        }
+      }
+    },
+    {
+      "probe": "avn007b-provider-after140",
+      "passed": true,
+      "client": "140.12.0",
+      "startedAt": "2026-11-04T02:39:38Z",
+      "finishedAt": "2026-11-04T02:39:57Z",
+      "xpiSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "runnerSha256": "42f7917ebcde02264153409810f47140fe370e3216639db3c8d5fc41ab8070cd",
+      "reportSha256": "f882a35b84eef0e614bf527125f587a86c8ee79231c2a7e3a6eeef025e8b0103",
+      "activeSources": {
+        "passed": true,
+        "baseline": false,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              402,
+              394,
+              394
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 5
+          },
+          "focusAndOpenPreserved": true
+        },
+        "popup": {
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "openAndAutomationMs": 449,
+          "openedTimePreserved": true,
+          "keyboardDisclosurePassed": true,
+          "strongestWarningJumpPassed": true
+        }
+      },
+      "providerAtWarningDestinationVerified": "urlscan.io visible in detail and prefixed in accessible summary name"
+    }
+  ],
+  "nativeRegressions": [
+    {
+      "probe": "manual-upgrade-crash-restore",
+      "passed": true,
+      "xpiSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+      "runnerSha256": "42f7917ebcde02264153409810f47140fe370e3216639db3c8d5fc41ab8070cd",
+      "reportSha256": "f5cc28a3f3d00168e2e7a1dfb919cf72793cb92233b3091552e715f311df6a1f",
+      "gracefulRestarts": 3,
+      "forcedRestarts": 2,
+      "scope": "Published 1.24.3 to exact current package; clean pre-upgrade profile restore, not automatic distribution or in-place downgrade."
+    }
+  ],
+  "intermediate": [
+    {
+      "probe": "avn007b-baseline153-full",
+      "passed": true,
+      "xpiSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+      "reportSha256": "863a7863f48a7dba10620ff5cf9cc26e117ea1611f988cba54d52621b0c983cf",
+      "activeSources": {
+        "passed": true,
+        "baseline": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              471,
+              501,
+              521
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 7533,
+            "details": 1200,
+            "closedWithBody": 1200,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": false
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 4
+          },
+          "focusAndOpenPreserved": true
+        },
+        "popup": {
+          "initial": {
+            "nodes": 7533,
+            "details": 1200,
+            "closedWithBody": 1200,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": false
+          },
+          "openAndAutomationMs": 509,
+          "openedTimePreserved": true,
+          "keyboardDisclosurePassed": true,
+          "strongestWarningJumpPassed": false
+        }
+      },
+      "scope": "Exploratory probes including the per-entry-listener prototype. Some overlapped other GUI checks; not used as controlled performance evidence for final shared-listener code."
+    },
+    {
+      "probe": "avn007b-after153",
+      "passed": true,
+      "xpiSha256": "0a9e11a639f010305b9c9ae81ddb9d58647be183c588973b314d3a5d630b2c95",
+      "reportSha256": "ade7102e7bdb230dddecfce54cc5d30d44afca5ffc67fc0fbe475c9cdc1fdfed",
+      "activeSources": {
+        "passed": true,
+        "baseline": false,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              824,
+              810,
+              619
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 4
+          },
+          "focusAndOpenPreserved": true
+        },
+        "popup": {
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "openAndAutomationMs": 918,
+          "openedTimePreserved": true,
+          "keyboardDisclosurePassed": true,
+          "strongestWarningJumpPassed": true
+        }
+      },
+      "scope": "Exploratory probes including the per-entry-listener prototype. Some overlapped other GUI checks; not used as controlled performance evidence for final shared-listener code."
+    },
+    {
+      "probe": "avn007b-baseline140-full",
+      "passed": true,
+      "xpiSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+      "reportSha256": "765a2622e793f88c5ba2b54a01cef13b3f576aec76937516fc2587dc44b00f78",
+      "activeSources": {
+        "passed": true,
+        "baseline": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              543,
+              567,
+              608
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 7533,
+            "details": 1200,
+            "closedWithBody": 1200,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": false
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 4
+          },
+          "focusAndOpenPreserved": true
+        },
+        "popup": {
+          "initial": {
+            "nodes": 7533,
+            "details": 1200,
+            "closedWithBody": 1200,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": false
+          },
+          "openAndAutomationMs": 585,
+          "openedTimePreserved": true,
+          "keyboardDisclosurePassed": true,
+          "strongestWarningJumpPassed": false
+        }
+      },
+      "scope": "Exploratory probes including the per-entry-listener prototype. Some overlapped other GUI checks; not used as controlled performance evidence for final shared-listener code."
+    },
+    {
+      "probe": "avn007b-after140",
+      "passed": true,
+      "xpiSha256": "0a9e11a639f010305b9c9ae81ddb9d58647be183c588973b314d3a5d630b2c95",
+      "reportSha256": "c5e6da9a101a55275e363ce666e01af8a7e391a1e1b0145ea31be3194d8fe2a2",
+      "activeSources": {
+        "passed": true,
+        "baseline": false,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              389,
+              432,
+              442
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 4
+          },
+          "focusAndOpenPreserved": true
+        },
+        "popup": {
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "openAndAutomationMs": 449,
+          "openedTimePreserved": true,
+          "keyboardDisclosurePassed": true,
+          "strongestWarningJumpPassed": true
+        }
+      },
+      "scope": "Exploratory probes including the per-entry-listener prototype. Some overlapped other GUI checks; not used as controlled performance evidence for final shared-listener code."
+    },
+    {
+      "probe": "avn007b-serial-after153",
+      "passed": true,
+      "xpiSha256": "8e4325913d5e6e1b1611f615ec2c91540417b5110b6e28e39db56858a236a7a6",
+      "reportSha256": "62da1171a8fa936977b647fee787afca9348457fb0a085a2441ee86a0ab117ba",
+      "activeSources": {
+        "passed": true,
+        "baseline": false,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              363,
+              389,
+              442
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 4
+          },
+          "focusAndOpenPreserved": true
+        },
+        "popup": {
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "openAndAutomationMs": 495,
+          "openedTimePreserved": true,
+          "keyboardDisclosurePassed": true,
+          "strongestWarningJumpPassed": true
+        }
+      },
+      "scope": "Shared-listener version before the visible and accessible provider label was added after screenshot review; not final package verification."
+    },
+    {
+      "probe": "avn007b-serial-after140",
+      "passed": true,
+      "xpiSha256": "8e4325913d5e6e1b1611f615ec2c91540417b5110b6e28e39db56858a236a7a6",
+      "reportSha256": "11886d4e21f2203db3de753cc4266a8b69f5d4fcc279f06da2cd4243e9ca33c3",
+      "activeSources": {
+        "passed": true,
+        "baseline": false,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              419,
+              434,
+              438
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 4
+          },
+          "focusAndOpenPreserved": true
+        },
+        "popup": {
+          "initial": {
+            "nodes": 3934,
+            "details": 1200,
+            "closedWithBody": 0,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": true
+          },
+          "openAndAutomationMs": 512,
+          "openedTimePreserved": true,
+          "keyboardDisclosurePassed": true,
+          "strongestWarningJumpPassed": true
+        }
+      },
+      "scope": "Shared-listener version before the visible and accessible provider label was added after screenshot review; not final package verification."
+    },
+    {
+      "probe": "avn007b-baseline153",
+      "passed": true,
+      "xpiSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+      "reportSha256": "bba9c887caa1a64de584be129cb6e8a8c5586d98c34c4b1c13158087c4a361fb",
+      "activeSources": {
+        "passed": true,
+        "baseline": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              424,
+              460,
+              452
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 7533,
+            "details": 1200,
+            "closedWithBody": 1200,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": false
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 4
+          },
+          "focusAndOpenPreserved": true
+        }
+      },
+      "scope": "Initial message-only investigation before popup coverage was added."
+    },
+    {
+      "probe": "avn007b-baseline140",
+      "passed": true,
+      "xpiSha256": "22581b5acfc7c6d015644cfae886a5237734fb7d9fca49fdc4c76e4eaa6459bf",
+      "reportSha256": "5bdea7b8e8683fbe90744357736fb85b6174040d0b41b61b4dd8259bee5a9638",
+      "activeSources": {
+        "passed": true,
+        "baseline": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "fixtureUrls": 500,
+        "operationScope": "Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim",
+        "message": {
+          "measured": {
+            "flushMs": [
+              488,
+              470,
+              477
+            ],
+            "activeRows": 1200,
+            "inventory": 500,
+            "sourceTimesUnchanged": true
+          },
+          "initial": {
+            "nodes": 7533,
+            "details": 1200,
+            "closedWithBody": 1200,
+            "opened": 0,
+            "firstKey": "hybridanalysis:report:link:0",
+            "jumpAvailable": false
+          },
+          "opened": {
+            "timesPreserved": true,
+            "children": 4
+          },
+          "focusAndOpenPreserved": true
+        }
+      },
+      "scope": "Initial message-only investigation before popup coverage was added."
+    }
+  ],
+  "serialComparisonScope": "Reference probes and final after-probes ran without parallel GUI/Node tests from this task. Probes were separated by intermediate implementation checks; not an adjacent randomized or statistically controlled field benchmark. Other host load remains uncontrolled. Timings include persistence, snapshot, injection and DOM commit.",
+  "toolingAudit": {
+    "fullCounts": {
+      "info": 0,
+      "low": 1,
+      "moderate": 9,
+      "high": 0,
+      "critical": 0,
+      "total": 10
+    },
+    "withoutDevCounts": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "fullLogSha256": "69d6894cf2f9d84093e307662532b7b0b9ac3fe83aea56626ae62e47c64e91cf",
+    "withoutDevLogSha256": "829684bb91c640849021c2867c60737d8261fa5eaaec8b54c0573946140a86fc",
+    "webExtLatest": "10.8.0",
+    "addonsLinterLatest": "10.15.0",
+    "installedWebExt": "10.8.0",
+    "installedAddonsLinter": "10.14.0",
+    "webExtDeclaredLinter": "10.14.0",
+    "npmProposedFix": {
+      "name": "web-ext",
+      "version": "3.2.1",
+      "isSemVerMajor": true
+    },
+    "dependenciesChanged": false,
+    "scope": "npm dependencies only; not an exhaustive XPI security assessment or supported upgrade proof."
+  },
+  "screenshots": {
+    "docs/screenshots/1.24.4/active-sources-popup.png": "b898998ba3ad73e2a58b8ded750de5dca8e2ef20acbf9610f764888cb2ce92c7"
+  },
+  "remaining": [
+    "Large-summary search tasks and narrow/200-percent native usability",
+    "Human language and screen reader acceptance",
+    "Windows/macOS and crypto/live provider tests",
+    "Durable occurrence/retention migration",
+    "Supported isolated linter-update investigation",
+    "Export navigation/back-forward investigation before implementation",
+    "Automatic distribution and release publication"
+  ]
+}

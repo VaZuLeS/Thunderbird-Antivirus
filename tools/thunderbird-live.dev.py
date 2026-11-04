@@ -1126,6 +1126,65 @@ def check_source_history(m, base, out, report, restart, display):
     return m
 
 
+def check_active_sources(m, base, out, report, display, baseline=False):
+    """Paired native operation measurements; synthetic observations, real MIME inventory."""
+    fixture=out/'active-sources.eml'
+    urls=['https://source-'+str(i)+'.example.net/item' for i in range(500)]
+    fixture.write_bytes(('From: fixture@example.invalid\r\nTo: receiver@example.invalid\r\nSubject: Thundy active sources\r\nMessage-ID: <active-sources@example.invalid>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain\r\n\r\n'+'\r\n'.join(urls)+'\r\n').encode('ascii'))
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const root=MailServices.accounts.localFoldersServer.rootFolder;if(!root.containsChildNamed("Active Sources"))root.createSubfolder("Active Sources",null);const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);MailServices.copy.copyFileMessage(file,root.getChildNamed("Active Sources"),null,false,0,"",null,null);''',[str(fixture)])
+    wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Active Sources").getTotalMessages(false);''')==1)
+    open_page(m,base+'options.html')
+    target=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,message=(await b.messages.query({subject:"Thundy active sources"})).messages.find(item=>item.subject==="Thundy active sources");await b.messageDisplay.open({messageId:message.id,location:"tab"});return message.id;})();''')
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status");'))
+    options='window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).browser'
+    measured=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,message=await b.messages.get(arguments[0]);
+      await bg.updateStore(await bg.getSharedDB(),"hybridanalysis",message.headerMessageId,old=>({...old,messageHeader:message.headerMessageId,links:arguments[1].map(url=>({url,state:"UNKNOWN"})),updatedAt:Date.now()}));
+      const ready=await bg.getMessageAnalysisContext(message),context=ready.wrappedJSObject||ready;
+      for(let index=0;index<1200;index++)context.event({provider:["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"][index%5],scope:["report","hash","domain","ip","url"][index%5],resource:"link:"+Math.floor(index/5),phase:"cache",state:"checked",verdict:index===1199?"malicious":"none",observedAt:1790000000000+index*1000});
+      const samples=[];for(let run=0;run<3;run++){const start=performance.now();await context.flush();samples.push(performance.now()-start);}
+      const snapshot=await context.snapshot();return {flushMs:samples,activeRows:snapshot.rows.length,inventory:Object.keys(snapshot.resourceLabels).length,sourceTimesUnchanged:snapshot.rows[0].observedAt===1790000000000&&snapshot.rows[1199].observedAt===1790001199000};
+    })();''',[target,urls],browser=options)
+    assert measured['activeRows']==1200 and measured['inventory']==500 and measured['sourceTimesUnchanged'],measured
+    inspect='''const root=document.getElementById("thundy-analysis-status").shadowRoot,items=Array.from(root.querySelectorAll("details")).filter(d=>/^(hybridanalysis|virustotal|urlhaus|abuseipdb|urlscan):/.test(d.dataset.key||""));return {nodes:root.querySelectorAll("*").length,details:items.length,closedWithBody:items.filter(d=>!d.open&&d.querySelector("p,small")).length,opened:items.filter(d=>d.open).length,firstKey:items[0].dataset.key,jumpAvailable:!!root.querySelector('[data-focus-key="current-find-warning"]')};'''
+    initial=m.page(inspect);assert initial['details']==1200,initial
+    assert initial['closedWithBody']==(1200 if baseline else 0),initial
+    m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot;Array.from(root.querySelectorAll("details")).find(d=>d.dataset.key?.startsWith("hybridanalysis:")).querySelector("summary").focus();')
+    native_key(display,'Return')
+    wait_for(lambda:m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="hybridanalysis:report:link:0"]\');return d.open&&!!d.querySelector("small");'))
+    opened=m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="hybridanalysis:report:link:0"]\');return {timesPreserved:d.textContent.includes(new Date(1790000000000).toLocaleString("en")),children:d.children.length};')
+    assert opened['timesPreserved'],opened
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,ready=await bg.getMessageAnalysisContext(await b.messages.get(arguments[0]));await (ready.wrappedJSObject||ready).flush();return true;})();''',[target],browser=options)
+    preserved=m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot,d=root.querySelector(\'[data-key="hybridanalysis:report:link:0"]\');return d.open&&!!d.querySelector("small")&&root.activeElement?.dataset.focusKey===d.dataset.key;')
+    assert preserved
+    if not baseline:
+        m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-focus-key="current-find-warning"]\').focus();')
+        native_key(display,'Return')
+        wait_for(lambda:m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot,d=root.querySelector(\'[data-key="urlscan:url:link:239"]\');return d.open&&!!d.querySelector("small")&&d.querySelector(".service-status")?.textContent==="urlscan.io"&&d.querySelector("summary").getAttribute("aria-label")?.startsWith("urlscan.io · ")&&root.activeElement?.dataset.focusKey===d.dataset.key;'))
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    started=time.monotonic();native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.getElementById("webextension-remote-preload-panel").querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.page('return Array.from(document.getElementById("thundy-analysis-status")?.shadowRoot.querySelectorAll("details")||[]).filter(d=>/^(hybridanalysis|virustotal|urlhaus|abuseipdb|urlscan):/.test(d.dataset.key||"")).length===1200;',browser=popup))
+    popup_initial=m.page(inspect,browser=popup);popup_ms=round((time.monotonic()-started)*1000)
+    assert popup_initial['closedWithBody']==(1200 if baseline else 0),popup_initial
+    wait_for(lambda:m.page('return !!document.querySelector(".local-risk")&&!document.getElementById("thundy-initial-loading");',browser=popup))
+    m.js('document.getElementById("webextension-remote-preload-panel").querySelector(\'browser[webextension-view-type="popup"]\').focus();')
+    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="hybridanalysis:report:link:0"] summary\').focus();',browser=popup)
+    native_key(display,'Return')
+    wait_for(lambda:m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="hybridanalysis:report:link:0"]\');return d.open&&!!d.querySelector("small");',browser=popup))
+    popup_opened=m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="hybridanalysis:report:link:0"]\');return d.textContent.includes(new Date(1790000000000).toLocaleString("en"));',browser=popup)
+    assert popup_opened
+    if not baseline:
+        m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-focus-key="current-find-warning"]\').focus();',browser=popup)
+        native_key(display,'Return')
+        wait_for(lambda:m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot,d=root.querySelector(\'[data-key="urlscan:url:link:239"]\');return d.open&&!!d.querySelector("small")&&d.querySelector(".service-status")?.textContent==="urlscan.io"&&d.querySelector("summary").getAttribute("aria-label")?.startsWith("urlscan.io · ")&&root.activeElement?.dataset.focusKey===d.dataset.key;',browser=popup))
+        m.page('return new Promise(resolve=>window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>resolve(true))));',browser=popup)
+        subprocess.run(['import','-window','root',str(out/'active-sources-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    report['activeSources']={'passed':True,'baseline':baseline,'syntheticObservations':True,'liveProviderCalls':False,'fixtureUrls':500,'operationScope':'Context persistence, snapshot construction, runtime injection and DOM commit; no pure renderer time or general latency/RSS claim','message':{'measured':measured,'initial':initial,'opened':opened,'focusAndOpenPreserved':preserved},'popup':{'initial':popup_initial,'openAndAutomationMs':popup_ms,'openedTimePreserved':popup_opened,'keyboardDisclosurePassed':True,'strongestWarningJumpPassed':not baseline}}
+
+
 def check_history_pages(m, base, out, report, display):
     """Large synthetic history through real storage, message and popup renderer."""
     fixture=out/'large-history.eml'
@@ -1534,6 +1593,8 @@ def main():
     parser.add_argument('--report-archive-check', action='store_true', help='Real bounded protocol revisions, popup writes, capacity refusal and restart; synthetic reports, direct permanent install')
     parser.add_argument('--source-export-check', action='store_true', help='Real popup source export, GTK download, cache clear and stale runtime rejection; direct permanent install, EN')
     parser.add_argument('--history-pages-check', action='store_true', help='Real 1200-row history, late warnings and X11 keyboard in message and popup; direct EN install')
+    parser.add_argument('--active-sources-check', action='store_true', help='Real 1200 active rows and 500-resource inventory, operation timings and disclosure behavior; direct EN')
+    parser.add_argument('--active-sources-baseline', action='store_true', help='Expect the recorded eager baseline; requires --active-sources-check')
     parser.add_argument('--crash-check', action='store_true',
                         help='Also verify two SIGKILL recoveries; requires --restart-check')
     parser.add_argument('--locale', choices=['en', 'de', 'fr', 'es', 'it', 'pl'], default='en')
@@ -1576,6 +1637,10 @@ def main():
         parser.error('--source-export-check requires direct EN installation without --previous-xpi')
     if args.history_pages_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
         parser.error('--history-pages-check requires direct EN installation without --previous-xpi')
+    if args.active_sources_check and (args.restart_check or args.previous_xpi or args.locale != 'en'):
+        parser.error('--active-sources-check requires direct EN installation without --previous-xpi')
+    if args.active_sources_baseline and not args.active_sources_check:
+        parser.error('--active-sources-baseline requires --active-sources-check')
     if args.crash_check and not args.restart_check:
         parser.error('--crash-check requires --restart-check')
     if args.restart_check and not args.previous_xpi:
@@ -1806,6 +1871,9 @@ def main():
                     if args.history_pages_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_history_pages(m,base,out,report,display)
+                    if args.active_sources_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_active_sources(m,base,out,report,display,args.active_sources_baseline)
 
             except Exception:
                 try:

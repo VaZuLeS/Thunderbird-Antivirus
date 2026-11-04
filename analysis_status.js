@@ -173,7 +173,27 @@ const ThundyAnalysis = (() => {
         const localLabel = t(data.local?.state === 'failed' ? 'analysisLocalUnavailable' : localLimited ? 'analysisLocalIncomplete' : local ? 'analysisLocalChecked' : 'analysisLocalPending');
         card.append(n('p', localLabel, localLimited ? 'warning' : 'muted'));
         const brands = { hybridanalysis: 'Hybrid Analysis', virustotal: 'VirusTotal', urlhaus: 'URLhaus', abuseipdb: 'AbuseIPDB', urlscan: 'urlscan.io' };
+        const warningTargets = {};
+        const providersByResource = new Map();
+        for (const row of rows) if (Object.prototype.hasOwnProperty.call(brands,row.provider)) {
+            if (!providersByResource.has(row.resource)) providersByResource.set(row.resource,new Set());
+            providersByResource.get(row.resource).add(brands[row.provider]);
+        }
         const list = document.createElement('ul'), inactive = document.createElement('ul');
+        const detailBodies = new WeakMap();
+        const hydrate = entry => {
+            const body = detailBodies.get(entry);
+            if (!body) return;
+            detailBodies.delete(entry);
+            const {brand,verdict,warning,findingAt,observedAt,attemptedAt} = body;
+            const summary=entry.querySelector('summary');summary.setAttribute('aria-label',brand+' · '+summary.textContent);
+            entry.append(n('p',brand,'service-status'));
+            if (verdict && verdict !== 'unknown') entry.append(n('p', t('analysisVerdict_' + verdict), warning ? 'warning' : ''));
+            entry.append(n('p', t('analysisFindingObserved') + ': ' + date(findingAt)));
+            entry.append(n('small', t('analysisObserved') + ': ' + date(observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(attemptedAt)));
+        };
+        // toggle does not bubble; capture handles all active details with one listener.
+        list.addEventListener('toggle',event => { if (event.target.open) hydrate(event.target); },true);
         const details = (key, title) => { const node = document.createElement('details'); node.dataset.key = key; node.open = opened.has(key); const summary = n('summary',title); summary.dataset.focusKey = key; node.append(summary); return node; };
         const resourceName = row => {
             if (row.resource === 'message') return t('analysisResourceMessage');
@@ -192,16 +212,22 @@ const ThundyAnalysis = (() => {
                     const warning = ['malicious','suspicious'].includes(row.verdict);
                     const entry = details(key, resourceName(row) + ' · ' + t('analysisScope_' + row.scope) + ' · ' + t('analysisState_' + row.state) + ' · ' + t('analysisSource_' + row.source) + (warning ? ' · ' + t('analysisVerdict_' + row.verdict) : ''));
                     if (warning) entry.querySelector('summary').className = 'warning';
-                    if (row.verdict && row.verdict !== 'unknown') entry.append(n('p', t('analysisVerdict_' + row.verdict), warning ? 'warning' : ''));
-                    entry.append(n('p', t('analysisFindingObserved') + ': ' + date(row.findingAt)));
-                    entry.append(n('small', t('analysisObserved') + ': ' + date(row.observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(row.attemptedAt)));
+                    detailBodies.set(entry,{brand,verdict:row.verdict,warning,findingAt:row.findingAt,observedAt:row.observedAt,attemptedAt:row.attemptedAt});
+                    if (entry.open) hydrate(entry);
+                    if (warning && !warningTargets[row.verdict]) warningTargets[row.verdict] = entry;
                     li.append(entry);
                 }
                 list.append(li);
             } else { li.append(n('div', t('analysisReason_' + (data.availability?.[provider] || 'unrecorded')), 'muted')); inactive.append(li); }
         }
         const strongest = rows.some(row => row.verdict === 'malicious') ? 'malicious' : rows.some(row => row.verdict === 'suspicious') ? 'suspicious' : null;
-        if (strongest) { card.style.borderColor = 'var(--color-danger,#b32642)'; card.append(n('p', t('analysisVerdict_' + strongest), 'warning')); }
+        if (strongest) {
+            card.style.borderColor = 'var(--color-danger,#b32642)';card.append(n('p', t('analysisVerdict_' + strongest), 'warning'));
+            if (warningTargets[strongest]) {
+                const jump=n('button',t('analysisCurrentFindWarning'));jump.type='button';jump.dataset.focusKey='current-find-warning';
+                jump.addEventListener('click',() => {const entry=warningTargets[strongest];entry.open=true;hydrate(entry);entry.querySelector('summary').focus();});card.append(jump);
+            }
+        }
         card.append(list);
         if (inactive.childElementCount) { const other = details('other',t('analysisOtherServices')); other.append(inactive); card.append(other); }
         const refs = Object.keys(data.resourceLabels || {}).filter(ref => /^attachment:[0-9]+(?:\.[0-9]+)*$/.test(ref) || /^link:[0-9]{1,6}$/.test(ref));
@@ -211,7 +237,7 @@ const ThundyAnalysis = (() => {
             for (const resource of refs.slice(0,500)) {
                 const item = n('li',resourceName({resource}));
                 item.append(n('div',t(resource.startsWith('attachment:') ? 'analysisResourceLocal' : 'analysisResourceTarget'),'muted'));
-                const providers = [...new Set(rows.filter(row => row.resource === resource).map(row => brands[row.provider]).filter(Boolean))];
+                const providers = [...(providersByResource.get(resource) || [])];
                 item.append(n('div', providers.length ? providers.join(' · ') : t('analysisResourceNoExternal')));
                 resources.append(item);
             }
@@ -286,7 +312,7 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }

@@ -1834,6 +1834,9 @@ const ThundyI18n = (() => {
   },
   "analysisHistoryFindWarning": {
     "message": "Show first historical warning"
+  },
+  "analysisCurrentFindWarning": {
+    "message": "Show strongest current finding"
   }
 };
     function get(key, params = []) {
