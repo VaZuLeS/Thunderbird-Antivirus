@@ -1,5 +1,7 @@
 # Analyseergebnisse: Ladeabbruch und gemeinsame Dienstkarten — 1.24.5
 
+Die folgenden Implementierungs- und Prüfstände sind historische Nachweise vor der Freigabe. Aktueller [Freigabeumfang und Veröffentlichungsstatus](VEROEFFENTLICHUNG_1_24_5.md); frühere Paketnachweise bleiben an ihre damaligen Bytes gebunden.
+
 Stand: **4. November 2026**, unveröffentlichter Bugfix nach dem GitHub-Release 1.24.4. Auftrag: „Unerwarteter Fehler beim Laden der Analyseergebnisse“ beheben und die Ergebnisse aller externen Dienste im Popup und direkt in der Nachricht verständlich darstellen.
 
 Der folgende Text und sein maschinenlesbarer Beleg dokumentieren den ersten Lade-/Darstellungsfix. Die anschließende [Umsetzung AVN-017 zu Berichtsschaltflächen](BERICHTSAKTIONEN_1_24_5.md) erweitert denselben PR um funktionierende, getrennte Aktionen und besitzt eigene Paket-/Clientnachweise. Frühere Paketbytes und Testsummen werden nicht auf diesen Folgeumfang umetikettiert.

@@ -1,5 +1,7 @@
 # AVN-017 — Berichtsschaltflächen zuverlässig an Ressourcen binden
 
+Die folgenden Implementierungs- und Prüfstände sind historische Nachweise vor der Freigabe. Aktueller [Freigabeumfang und Veröffentlichungsstatus](VEROEFFENTLICHUNG_1_24_5.md); frühere Paketnachweise bleiben an ihre damaligen Bytes gebunden.
+
 Stand: **4. November 2026**. Primärbereich: Bedienung und Ressourcenzuordnung; Entwicklungstyp: **Optimierung / Verbesserung**. Priorität **P1 vor Freigabe der angekündigten Berichtsaktionen**, Aufwand **M**. Umsetzung im noch offenen [PR #741](https://github.com/VaZuLeS/Thunderbird-Antivirus/pull/741), weiterhin unveröffentlichte 1.24.5.
 
 ## Auswahl nach Analyse der offenen Arbeiten
