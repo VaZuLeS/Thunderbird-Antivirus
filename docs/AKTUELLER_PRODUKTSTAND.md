@@ -28,6 +28,8 @@ Der [Lint-Prüfvertrag AVN-008.a](LINT_PRUEFVERTRAG.md) weist unvollständige Be
 
 Die [native Exportnavigation AVN-011.b](EXPORT_NAVIGATION.md) prüft anschließend die tatsächliche Rückkehr im selben Inhaltstab mit und ohne Cachelöschung während der Abwesenheit. Unter Linux 140/153 wird jeweils ein neues Dokument mit leerer Vorschau geladen; ein gelöschter Kontext bleibt unzugänglich. Die vermutete Wiederherstellung desselben Dokuments wurde nicht beobachtet. Die begrenzte Untersuchung ist abgeschlossen und im bestehenden nativen CI-Schritt abgesichert; Runtime und Paketbytes bleiben unverändert.
 
+Der [reproduzierbare Paketaufbau AVN-014.b](REPRODUZIERBARE_PAKETE.md) erzeugt danach neue Kandidaten mit fester ZIP-Reihenfolge/-Metadatenpolitik und lokal gepinntem CLI-Aufruf. Der Runtime-Fingerprint bleibt unverändert, die neuen Archivbytes (SHA-256 `44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c`) sind erneut unter Linux 140/153 sowie per manuellem Upgrade von 1.24.3 und Profilrestore unter 153 geprüft. Alte Paketnachweise bleiben ihren ursprünglichen Bytes zugeordnet. Reproduzierbarkeit gilt für die dokumentierte Python-/zlib-Toolchain; Signierung, Remote-Kandidatengate und Veröffentlichung bleiben getrennt.
+
 | Ebene | Stand |
 | --- | --- |
 | GitHub-Distribution | Zielversion 1.24.3, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.2 bleibt historisch erhalten |

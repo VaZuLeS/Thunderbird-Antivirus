@@ -28,6 +28,8 @@ Der weitere [Schritt AVN-003/009.b zur Inhaltsverfügbarkeit](PRUEFUMFANG_NACHRI
 
 **AVN-011.b am 4. November untersucht und abgeschlossen:** Die [native Exportnavigation](EXPORT_NAVIGATION.md) bestätigt unter Linux 140/153 eine neue Dokumentladung bei Rückkehr im selben Inhaltstab. Alte Vorschauen bleiben leer; nach Cachelöschung während der Abwesenheit bleibt der alte Kontext unzugänglich. Eine tatsächliche Wiederherstellung desselben Dokuments aus dem Back/Forward-Cache wurde nicht beobachtet; hierfür wird keine Freigabe behauptet. Beide Fälle sind im bestehenden nativen CI-Prüfer ergänzt. Keine Runtimeänderung ist durch den Befund begründet. Die [GitHub-Roadmap #740](https://github.com/VaZuLeS/Thunderbird-Antivirus/issues/740) führt die verbleibenden Pakete; der historische Plan unten bleibt als ursprünglicher Stand erhalten.
 
+**AVN-014.b am 4. November umgesetzt:** Der [reproduzierbare Paketaufbau](REPRODUZIERBARE_PAKETE.md) kanonisiert ausschließlich frische unsignierte Kandidaten vor Tests/Signierung; feste Reihenfolge, Zeit, Rechte und Kompression ergeben im geprüften Linux-/Python-/zlib-Umfang gleiche Bytes unter Node 22/24. Der lokale CLI-Aufruf besitzt keinen npx-Fallback. Das neue Archiv enthält unveränderte Runtime-Dateien, erhält aber eigene native 140/153- und Upgrade-/Profilrestorebelege. AVN-014 (Freigabe), weitere Plattformen und automatische Distribution bleiben offen.
+
 ## 1. Bestandsaufnahme und Nachweisgrenzen
 
 ### Veröffentlichter Stand und vorbereitete Entwicklung

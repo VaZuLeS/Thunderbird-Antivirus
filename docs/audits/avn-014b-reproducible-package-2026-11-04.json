@@ -1,0 +1,329 @@
+{
+  "schemaVersion": 1,
+  "kind": "reproducible-unsigned-package-build",
+  "generatedAt": "2026-11-04T04:02:32.596627+00:00",
+  "baseCommit": "6c2cd17397f52e0a2b1de1819ff4df1c6a9a7efd",
+  "extensionVersion": "1.24.4",
+  "sourceFingerprint": "619d0a65fb8fab903df94691fba08d2f6feffe40ddcd12ea903939fbcfeccea2",
+  "packageSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c",
+  "runtimeChanged": false,
+  "archiveBytesChanged": true,
+  "toolchain": {
+    "python": "3.12.14",
+    "zlib": "1.3.2",
+    "webExt": "10.8.0",
+    "nodes": [
+      "24.19.0",
+      "22.23.4"
+    ],
+    "scope": "Tested Linux/Python/zlib/lockfile environment only; not arbitrary future compression runtimes or OSes"
+  },
+  "policy": {
+    "timestamp": [
+      1980,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "order": "Sorted file names",
+    "fileMode": "regular 0644, Unix marker",
+    "compression": "DEFLATE level 9",
+    "directories": "omitted",
+    "commentsAndExtras": "empty",
+    "maxInputEntries": 1024,
+    "maxPayloadBytes": 1024000,
+    "exclusiveNewOutput": true,
+    "signatureMetadataRefused": true,
+    "pinnedLocalCliOnly": true,
+    "noDependencyChanges": true
+  },
+  "scripts": {
+    "scripts/build-and-verify-package.js": "2e6529274b7b5a29e13d62611d18461df369c5bf1303bf7a0bce8a8be3e7474a",
+    "scripts/reproducible-package.py": "4c329c06d4ee62bd5af863abe13242e038d7e7a07269f40d4b68ed2035e35575",
+    "scripts/reproducible-package.test.js": "cdb209e388f67fd7ca9509bfdf6155ea8865be9d8193c6a0bfcea505df78c57c",
+    "tools/thunderbird-live.dev.py": "45f0a4766ab4e6ded4e885634dfee3c52983f05c74292e5dbe6505a4410f97a4"
+  },
+  "payloadComparison": {
+    "identicalNamesAndFileBytes": true,
+    "files": 47,
+    "payloadBytes": 991421,
+    "removedDirectoryEntries": 9,
+    "oldArchiveBytes": 271936,
+    "newArchiveBytes": 269464,
+    "oldArchiveSha256": "6bd778b040afdff8891c753a46e0707e8c8826849b6266e6568092e1603b515e",
+    "newArchiveSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c"
+  },
+  "rebuilds": [
+    {
+      "run": "build1",
+      "timezone": "Etc/UTC",
+      "node": "24.19.0",
+      "identity": {
+        "extensionVersion": "1.24.4",
+        "sourceFingerprint": "619d0a65fb8fab903df94691fba08d2f6feffe40ddcd12ea903939fbcfeccea2",
+        "packageSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c"
+      },
+      "logSha256": "96ac703061ced88c40556f0f892dc6f4bc7423da5126f9fb6576f10f57747a02"
+    },
+    {
+      "run": "build2",
+      "timezone": "Pacific/Honolulu",
+      "node": "24.19.0",
+      "identity": {
+        "extensionVersion": "1.24.4",
+        "sourceFingerprint": "619d0a65fb8fab903df94691fba08d2f6feffe40ddcd12ea903939fbcfeccea2",
+        "packageSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c"
+      },
+      "logSha256": "a38404dfe850d991ccb49b8c50bb61ad1832f08ebcf6005840df3f86052ef319"
+    },
+    {
+      "run": "build3-node22",
+      "timezone": "Europe/Berlin",
+      "node": "22.23.4",
+      "identity": {
+        "extensionVersion": "1.24.4",
+        "sourceFingerprint": "619d0a65fb8fab903df94691fba08d2f6feffe40ddcd12ea903939fbcfeccea2",
+        "packageSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c"
+      },
+      "logSha256": "280b83ffd2cea07ded6c7bd0d6ed9fa1dfe46a508e97cf5b6adaa9027e095ba5"
+    },
+    {
+      "run": "full-check",
+      "timezone": "Etc/UTC",
+      "node": "24.19.0",
+      "identity": {
+        "extensionVersion": "1.24.4",
+        "sourceFingerprint": "619d0a65fb8fab903df94691fba08d2f6feffe40ddcd12ea903939fbcfeccea2",
+        "packageSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c"
+      },
+      "logSha256": "2878d61d1412a5b14674bd946290d8b3cf8ae38fa141981af48e586456cf279f"
+    }
+  ],
+  "checks": {
+    "full": {
+      "command": "npm run check",
+      "passed": 1067,
+      "failed": 0,
+      "logSha256": "2878d61d1412a5b14674bd946290d8b3cf8ae38fa141981af48e586456cf279f"
+    },
+    "finalTargetedNode24": {
+      "command": "node --test scripts/reproducible-package.test.js scripts/release-integrity.test.js",
+      "passed": 11,
+      "failed": 0,
+      "logSha256": "95c13af45b713efa8f423567d54f25db76aabaf235136a5b1fe8336776953b45"
+    },
+    "finalTargetedNode22": {
+      "command": "node --test scripts/reproducible-package.test.js scripts/release-integrity.test.js",
+      "passed": 11,
+      "failed": 0,
+      "logSha256": "c437c78703b77cd9f6b9c67b4a5da707c7d767f7054fc1ad6b97d9b0c6cbc701"
+    },
+    "finalSource": {
+      "command": "npm run check:source",
+      "passed": true,
+      "logSha256": "2c527f23fb331c38877b2b1226931bd9e38571b6d04fa41318bfc4279b356746"
+    },
+    "finalPackage": {
+      "command": "node scripts/verify-package.js ./build",
+      "passed": true,
+      "logSha256": "7507981d19a295ca5c6a6a0d65c79fe4ef21822eb411d2a47e9dade0a904abe8"
+    }
+  },
+  "native": [
+    {
+      "run": "native140",
+      "client": "140.12.0",
+      "platform": "linux",
+      "reportSha256": "75d34a2e24b0e45d472a1d319544558ae83c3bbaf606ea1405488c4451c30245",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "runnerSha256": "45f0a4766ab4e6ded4e885634dfee3c52983f05c74292e5dbe6505a4410f97a4",
+      "packageSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c",
+      "startedAt": "2026-11-04T03:59:12Z",
+      "finishedAt": "2026-11-04T03:59:55Z",
+      "passed": true,
+      "gracefulRestarts": 1,
+      "forcedRestarts": 0,
+      "sourceExportNavigation": {
+        "passed": true,
+        "cases": [
+          {
+            "sameDocument": false,
+            "events": [
+              {
+                "type": "pagehide",
+                "persisted": false
+              }
+            ],
+            "navigationType": "back_forward",
+            "initiallyEmpty": true,
+            "initiallyDisabled": true,
+            "afterExplicitPreview": "fresh-preview",
+            "cacheClearedWhileAway": false
+          },
+          {
+            "sameDocument": false,
+            "events": [
+              {
+                "type": "pagehide",
+                "persisted": false
+              }
+            ],
+            "navigationType": "back_forward",
+            "initiallyEmpty": true,
+            "initiallyDisabled": true,
+            "afterExplicitPreview": "unavailable",
+            "cacheClearedWhileAway": true
+          }
+        ],
+        "scope": "Actual same-tab forward navigation and history.back; document reuse observed rather than assumed. No synthetic pageshow event."
+      },
+      "sourceExport": {
+        "passed": true,
+        "realPopupEntry": true,
+        "realGtkDownload": true,
+        "downloadMatchesPreview": true,
+        "cancelAndCacheClearInvalidate": true,
+        "oldRuntimeLinkRefusedAfterRestart": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "saveControl": {
+          "text": "Save report locally",
+          "disabled": false,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "0.888247",
+          "width": 154.13333129882812,
+          "height": 44.399993896484375
+        },
+        "providers": [
+          "abuseipdb",
+          "hybridanalysis",
+          "urlhaus",
+          "urlscan",
+          "virustotal"
+        ],
+        "canonicalDownloadSha256": "3890c2f333e506c000dbd453bea58a07893651251806b151fbd42169a2b03cad",
+        "scope": "Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance."
+      }
+    },
+    {
+      "run": "native153",
+      "client": "153.6.0",
+      "platform": "linux",
+      "reportSha256": "07283306913897c1d79b0974cf2a078d8ba7aef78f3561b79551c0950d6cf570",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "runnerSha256": "45f0a4766ab4e6ded4e885634dfee3c52983f05c74292e5dbe6505a4410f97a4",
+      "packageSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c",
+      "startedAt": "2026-11-04T03:59:12Z",
+      "finishedAt": "2026-11-04T03:59:54Z",
+      "passed": true,
+      "gracefulRestarts": 1,
+      "forcedRestarts": 0,
+      "sourceExportNavigation": {
+        "passed": true,
+        "cases": [
+          {
+            "sameDocument": false,
+            "events": [
+              {
+                "type": "pagehide",
+                "persisted": false
+              }
+            ],
+            "navigationType": "back_forward",
+            "initiallyEmpty": true,
+            "initiallyDisabled": true,
+            "afterExplicitPreview": "fresh-preview",
+            "cacheClearedWhileAway": false
+          },
+          {
+            "sameDocument": false,
+            "events": [
+              {
+                "type": "pagehide",
+                "persisted": false
+              }
+            ],
+            "navigationType": "back_forward",
+            "initiallyEmpty": true,
+            "initiallyDisabled": true,
+            "afterExplicitPreview": "unavailable",
+            "cacheClearedWhileAway": true
+          }
+        ],
+        "scope": "Actual same-tab forward navigation and history.back; document reuse observed rather than assumed. No synthetic pageshow event."
+      },
+      "sourceExport": {
+        "passed": true,
+        "realPopupEntry": true,
+        "realGtkDownload": true,
+        "downloadMatchesPreview": true,
+        "cancelAndCacheClearInvalidate": true,
+        "oldRuntimeLinkRefusedAfterRestart": true,
+        "syntheticObservations": true,
+        "liveProviderCalls": false,
+        "saveControl": {
+          "text": "Save report locally",
+          "disabled": false,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "0.917229",
+          "width": 154.13333129882812,
+          "height": 44.399993896484375
+        },
+        "providers": [
+          "abuseipdb",
+          "hybridanalysis",
+          "urlhaus",
+          "urlscan",
+          "virustotal"
+        ],
+        "canonicalDownloadSha256": "a305358dd2e47d39b9371d19d71f3416d6919bcbb286a3f865bd515da5e6444f",
+        "scope": "Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance."
+      }
+    },
+    {
+      "run": "upgrade153",
+      "client": "153.6.0",
+      "platform": "linux",
+      "reportSha256": "443c7602bfad8380467bfa6098fa64780f3fee6c63e61f16da8161115d020dd4",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "runnerSha256": "45f0a4766ab4e6ded4e885634dfee3c52983f05c74292e5dbe6505a4410f97a4",
+      "packageSha256": "44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c",
+      "startedAt": "2026-11-04T03:59:31Z",
+      "finishedAt": "2026-11-04T04:00:00Z",
+      "passed": true,
+      "gracefulRestarts": 3,
+      "forcedRestarts": 0,
+      "previousXpiSha256": "f45050748b8464cc602ca914e586000d78b08225bbc18db41f4d1c065b1bc402",
+      "backupRestore": {
+        "passed": true,
+        "restoredVersion": "1.24.3",
+        "snapshotRecordsPreserved": 3,
+        "scope": "clean full-profile backup before upgrade; newer candidate events are outside this snapshot"
+      },
+      "currentRestart": {
+        "addon": {
+          "version": "1.24.4",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "storagePreserved": true,
+        "uiLanguage": "en-US",
+        "wizardAbsent": true,
+        "auditRecordsPreserved": 3
+      }
+    }
+  ],
+  "limitations": [
+    "No new Windows/macOS, screenreader, live provider or automatic-update acceptance",
+    "Native provider observations are synthetic; actual Thunderbird navigation, downloads and manual profile upgrade/restore",
+    "No new SIGKILL acceptance claimed for these new archive bytes",
+    "No signed or published archive rewritten; signing/release and remote candidate gate remain separate",
+    "No successful remote CI result asserted"
+  ]
+}
