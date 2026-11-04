@@ -58,7 +58,7 @@
     "check:docs": "node tools/docs-links.dev.cjs"
   },
   "dependencies": {
-    "lucide-react": "^1.16.0",
+    "lucide-react": "^1.66.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
