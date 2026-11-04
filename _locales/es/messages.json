@@ -1838,5 +1838,17 @@
   },
   "reportFieldsUnavailable": {
     "message": "Algunos detalles del informe tienen un formato no compatible y no se pudieron mostrar."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "No se pudieron leer algunos datos de análisis guardados. Los demás resultados siguen disponibles."
+  },
+  "analysisModeResponses": {
+    "message": "Respuestas recibidas · sin un veredicto evaluable disponible"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Respuestas recibidas sin un veredicto evaluable · algunas solicitudes fallaron"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Para nuevas solicitudes"
   }
 }

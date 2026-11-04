@@ -164,11 +164,12 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
             try { record = await getFromStore(await getSharedDB(), 'hybridanalysis', key); } catch (_) { /* still expose live state */ }
             const sourceRecord = saved => {
                 if (!saved) return saved;
+                saved = ThundyAnalysis.resources({...saved,links:Array.isArray(saved.links) ? saved.links.map((item,index) => item && typeof item === 'object' && !Array.isArray(item) ? {...item,analysisResourceRef:'link:' + index} : item) : saved.links});
                 // Numeric IDs and metadata alone cannot bind historical findings.
                 const attachments = (saved.attachments || []).filter(item => item.partName && currentParts.has(String(item.partName)) && currentParts.get(String(item.partName)) === item.attachment_name && verifiedHashes.has(String(item.partName)) && typeof item.hybrid_sha256 === 'string' && verifiedHashes.get(String(item.partName)) === item.hybrid_sha256.toLowerCase());
-                const links = (saved.links || []).map((item,index) => ({...item,analysisResourceRef:'link:' + index})).filter(item => currentLinks.has(item.url));
+                const links = saved.links.filter(item => currentLinks.has(item.url));
                 const scanCoverage = Object.fromEntries(Object.entries(saved.scanCoverage || {}).filter(([kind]) => saved.scanCoverageBindings?.[kind]?.runtimeId === getAnalysisRuntimeId() && saved.scanCoverageBindings[kind].messageId === message.id));
-                return {messageHeader:saved.messageHeader, attachments, links, scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined};
+                return {messageHeader:saved.messageHeader, attachments, links, ...(saved.sourceDataIncomplete ? {sourceDataIncomplete:true} : {}), scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined};
             };
             const model = ThundyAnalysis.create(ThundyAnalysis.legacy(sourceRecord(record)));
             // Current unreadability must not inherit a historical "checked" state.
@@ -189,15 +190,15 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     for (const url of urls) currentLinks.add(url);
                     try {
                         const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
-                        const links = saved?.links || [];
-                        return ThundyAnalysis.bind(context, urls.map(url => { const index = links.findIndex(item => item.url === url); return index < 0 ? null : 'link:' + index; }));
+                        const links = Array.isArray(saved?.links) ? saved.links : [];
+                        return ThundyAnalysis.bind(context, urls.map(url => { const index = links.findIndex(item => item && item.url === url); return index < 0 ? null : 'link:' + index; }));
                     } catch (_) { return ThundyAnalysis.bind(context, []); }
                 },
                 schedule() { if (context.disposed) return; if (!context.timer) context.timer = setTimeout(() => { context.timer = null; context.flush().catch(() => {}); }, 300); },
                 async snapshot() {
                     let sourceHistory = {rows:[],truncated:false};
                     try {
-                        const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key), current = sourceRecord(saved);
+                        const original = await getFromStore(await getSharedDB(), 'hybridanalysis', key), saved = original ? ThundyAnalysis.resources(original) : null, current = sourceRecord(original);
                         if (saved) sourceHistory = ThundyAnalysis.history({...saved,attachments:(saved.attachments || []).filter(item => !(current.attachments || []).includes(item)),links:(saved.links || []).filter(item => !currentLinks.has(item.url))},snapshotId);
                         for (const row of ThundyAnalysis.legacy({...current,analysisStatus:model.data}).rows) if (!model.data.rows.some(active => ThundyAnalysis.rowKey(active) === ThundyAnalysis.rowKey(row)) && model.data.rows.length < 1200) model.data.rows.push(row);
                     } catch (_) { /* retain known live metadata */ }
@@ -212,7 +213,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     for (const [partName,name] of currentParts) if (ThundyAnalysis.validResource('attachment:' + partName)) resourceLabels['attachment:' + partName] = clean(name) + ' (' + partName + ')';
                     try {
                         const saved = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
-                        for (const [index,item] of (saved?.links || []).entries()) if (currentLinks.has(item.url)) {
+                        for (const [index,item] of (Array.isArray(saved?.links) ? saved.links : []).entries()) if (item && currentLinks.has(item.url)) {
                             try { const url = new URL(item.url); resourceLabels['link:' + index] = clean(url.origin + url.pathname); } catch (_) { /* no URL guess */ }
                         }
                     } catch (_) { /* actual parts remain identifiable without cached links */ }

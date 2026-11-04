@@ -2,6 +2,42 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const {JSDOM}=require('jsdom');
 const source=fs.readFileSync('analysis_status.js','utf8');
 function model(){const c=vm.createContext({URL,Date});vm.runInContext(source+'\nglobalThis.analysis=ThundyAnalysis;',c);return c.analysis;}
+test('malformed stored rows and resource collections do not hide valid provider history',()=>{
+ const a=model();
+ const rows=a.providers.map(provider=>({provider,scope:'report',state:'checked',verdict:'malicious',responses:1,observedAt:12}));
+ const stored={schemaVersion:2,rows:[null,7,[],...rows]},record={attachments:{unexpected:true},links:[null],analysisStatus:stored},before=JSON.stringify(record);
+ const restored=a.create(stored);assert.equal(restored.data.rows.length,5);assert.equal(restored.data.sourceDataIncomplete,true);
+ const history=a.history(record);assert.equal(history.rows.length,5);assert.equal(history.sourceDataIncomplete,true);
+ assert.ok(history.rows.every(row=>row.verdict==='malicious'&&row.resource===null));assert.equal(JSON.stringify(record),before);
+});
+
+test('responses without a verdict and current authorization remain distinct in both six-language views',()=>{
+ const a=model();
+ for(const lang of ['en','de','fr','es','it','pl'])for(const serialized of [false,true]){
+  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(k=>catalog[k]?.message);
+  for(const provider of a.providers){
+   const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>');
+   try{
+    const data={local:{state:'checked'},rows:[null,{provider,scope:'url',resource:null,state:'received',verdict:'unknown',source:'remote',responses:1,failures:1}],availability:{[provider]:'authorization'}};
+    const c=vm.createContext({document:dom.window.document,URL,Date,data,labels});
+    if(!serialized)vm.runInContext(source,c);
+    const render=()=>vm.runInContext(serialized?'('+a.render.toString()+')(data,labels)':'ThundyAnalysis.render(data,labels);',c);
+    render();let root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+    assert.equal(root.querySelector('.phase').textContent,catalog.analysisModeResponsesFailed.message);
+    assert.ok(root.textContent.includes(catalog.analysisStoredDataIncomplete.message));
+    const entry=root.querySelector('[data-provider="'+provider+'"]');
+    assert.ok(entry.textContent.includes(catalog.analysisCurrentAvailability.message+': '+catalog.analysisReason_authorization.message));
+    assert.equal(entry.querySelector('.service-results').textContent,catalog.analysisVerdict_unknown.message);
+    assert.ok(entry.textContent.includes(catalog.analysisModeResponsesFailed.message));
+    assert.ok(!entry.textContent.includes(catalog.analysisPartial.message));
+    data.rows=data.rows.slice(1);data.rows[0].failures=0;render();
+    assert.equal(root.querySelector('.phase').textContent,catalog.analysisModeResponses.message);
+    data.rows[0].verdict='malicious';data.rows[0].failures=1;render();
+    assert.equal(root.querySelector('.phase').textContent,catalog.analysisModePartial.message);
+   }finally{dom.window.close();}
+  }
+ }
+});
 test('partial and failed local input survive storage and render in all six languages with live updates',()=>{
  for(const lang of ['en','de','fr','es','it','pl']){
   const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>');
@@ -122,7 +158,7 @@ test('first external request, submission, loss and failure are visible in the he
  m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'start'});
  const check=key=>{c.a.render(m.data,labels);const card=dom.window.document.getElementById('thundy-analysis-status').shadowRoot.querySelector('.card');assert.ok(card.querySelector('.mode').textContent.includes(catalog.analysisMixed.message));assert.ok(card.querySelector('.phase').textContent.includes(catalog[key].message));};
  check('analysisModeRunning');m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'finish',state:'submitted',verdict:'unknown',responded:true,observedAt:100});check('analysisModeSubmitted');
- m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'start'});m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'finish',state:'failed',verdict:'unknown',responded:false});check('analysisModePartial');
+ m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'start'});m.event({provider:'urlscan',scope:'url',resource:'link:0',phase:'finish',state:'failed',verdict:'unknown',responded:false});check('analysisModeResponsesFailed');
  const restarted=c.a.create({schemaVersion:2,local:{state:'checked'},rows:[{provider:'urlscan',scope:'url',resource:'link:0',state:'running'}]});c.a.render(restarted.data,labels);assert.ok(dom.window.document.getElementById('thundy-analysis-status').shadowRoot.querySelector('.phase').textContent.includes(catalog.analysisModeIncomplete.message));
  }finally{dom.window.close()}
 });
