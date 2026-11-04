@@ -2515,8 +2515,8 @@ describe('setupCdrButton', () => {
 
         assert.strictEqual(btn.disabled, true);
         assert.strictEqual(btn.attributes['aria-busy'], 'true');
-        assert.strictEqual(btn.innerText, 'Bereinige...');
-        assert.strictEqual(status.innerText, 'Lokales CDR wird durchgeführt...');
+        assert.strictEqual(btn.textContent, 'Bereinige...');
+        assert.strictEqual(status.textContent, 'Lokales CDR wird durchgeführt...');
 
         await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -2525,10 +2525,10 @@ describe('setupCdrButton', () => {
         assert.strictEqual(context.lastMsg.partName, 'part1');
         assert.strictEqual(context.lastMsg.attachmentName, 'test.html');
 
-        assert.strictEqual(status.innerText, 'Herunterladen erfolgreich initiiert.');
+        assert.strictEqual(status.textContent, 'Herunterladen erfolgreich initiiert.');
         assert.strictEqual(btn.attributes['aria-busy'], undefined);
         assert.strictEqual(btn.className, 'btn-success mt-2 ml-2');
-        assert.strictEqual(btn.innerText, 'Bereinigt');
+        assert.strictEqual(btn.textContent, 'Bereinigt');
     });
 
     it('handles download error response correctly', async () => {
@@ -2546,10 +2546,10 @@ describe('setupCdrButton', () => {
         btn.click();
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        assert.strictEqual(status.innerText, 'Fehler beim Herunterladen: Download error');
+        assert.strictEqual(status.textContent, 'Fehler beim Herunterladen: Download error');
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn.attributes['aria-busy'], undefined);
-        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+        assert.strictEqual(btn.textContent, 'Erneut versuchen');
     });
 
     it('handles null response correctly', async () => {
@@ -2565,10 +2565,10 @@ describe('setupCdrButton', () => {
         btn.click();
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        assert.strictEqual(status.innerText, 'Fehler beim Herunterladen: Unbekannter Fehler');
+        assert.strictEqual(status.textContent, 'Fehler beim Herunterladen: Unbekannter Fehler');
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn.attributes['aria-busy'], undefined);
-        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+        assert.strictEqual(btn.textContent, 'Erneut versuchen');
     });
 
     it('handles download exception correctly', async () => {
@@ -2586,10 +2586,10 @@ describe('setupCdrButton', () => {
         btn.click();
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        assert.strictEqual(status.innerText, 'Kommunikationsfehler: Error: Network offline');
+        assert.strictEqual(status.textContent, 'Kommunikationsfehler: Error: Network offline');
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn.attributes['aria-busy'], undefined);
-        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+        assert.strictEqual(btn.textContent, 'Erneut versuchen');
     });
 
     it('does nothing if button is not found', () => {
@@ -3429,17 +3429,17 @@ describe('setupRescanButton', () => {
         // Immediate UI updates
         assert.strictEqual(btn.disabled, true);
         assert.strictEqual(btn.attributes['aria-busy'], 'true');
-        assert.strictEqual(btn.textContent || btn.innerText, 'Sende Rescan...');
-        assert.strictEqual(status.textContent || status.innerText, 'Datei wird für Rescan hochgeladen...');
+        assert.strictEqual(btn.textContent || btn.textContent, 'Sende Rescan...');
+        assert.strictEqual(status.textContent || status.textContent, 'Datei wird für Rescan hochgeladen...');
 
         // Wait for promise resolution (macro task)
         await new Promise(resolve => setTimeout(resolve, 0));
 
         assert.strictEqual(context.lastMsg.action, 'uploadAttachment');
-        assert.strictEqual(status.innerText, 'Rescan erfolgreich initiiert. Lade Seite neu...');
+        assert.strictEqual(status.textContent, 'Rescan erfolgreich initiiert. Lade Seite neu...');
         assert.strictEqual(btn.attributes['aria-busy'], undefined);
         assert.strictEqual(btn.className, 'btn-success mt-2');
-        assert.strictEqual(btn.innerText, 'Erfolgreich');
+        assert.strictEqual(btn.textContent, 'Erfolgreich');
         assert.strictEqual(context.reloadCalled, true);
     });
 
@@ -3458,10 +3458,10 @@ describe('setupRescanButton', () => {
         btn.click();
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        assert.strictEqual(status.innerText, 'Fehler beim Rescan: test err');
+        assert.strictEqual(status.textContent, 'Fehler beim Rescan: test err');
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn.attributes['aria-busy'], undefined);
-        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+        assert.strictEqual(btn.textContent, 'Erneut versuchen');
     });
 
     it('handles upload exception correctly', async () => {
@@ -3479,10 +3479,10 @@ describe('setupRescanButton', () => {
         btn.click();
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        assert.strictEqual(status.innerText, 'Kommunikationsfehler: Error: Network error');
+        assert.strictEqual(status.textContent, 'Kommunikationsfehler: Error: Network error');
         assert.strictEqual(btn.disabled, false);
         assert.strictEqual(btn.attributes['aria-busy'], undefined);
-        assert.strictEqual(btn.innerText, 'Erneut versuchen');
+        assert.strictEqual(btn.textContent, 'Erneut versuchen');
     });
 });
 

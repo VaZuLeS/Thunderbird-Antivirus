@@ -2,7 +2,7 @@
 
 Der [Veröffentlichungsabschluss 1.24.4](VEROEFFENTLICHUNG_1_24_4.md) führt den jüngsten Freigabeumfang, Darstellungsprofile und offene Ressourcenabnahmen. Tatsächlicher [GitHub-Release-Status](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.4).
 
-Die unveröffentlichte **1.24.5** behebt einen [reproduzierten Ladeabbruch bei gespeicherten Analyseprotokollen](HOTFIX_ANALYSEERGEBNISSE_1_24_5.md) und ergänzt sichtbare Ergebnis-/Herkunftskennzeichnungen aller fünf Dienste im Popup und in der Nachricht. Die veröffentlichte GitHub-Fassung bleibt 1.24.4.
+Die unveröffentlichte **1.24.5** behebt einen [reproduzierten Ladeabbruch bei gespeicherten Analyseprotokollen](HOTFIX_ANALYSEERGEBNISSE_1_24_5.md) und ergänzt sichtbare Ergebnis-/Herkunftskennzeichnungen aller fünf Dienste im Popup und in der Nachricht. Die anschließende [Korrektur der Berichtsschaltflächen](BERICHTSAKTIONEN_1_24_5.md) bindet Aktionen an die konkrete Karte und den passenden Ressourcenpfad, auch bei gleichen Anhanghashes. Die veröffentlichte GitHub-Fassung bleibt 1.24.4.
 
 Der Freigabeumfang **1.24.4** ergänzt [sichtbare Analysequellen in Nachricht und Toolbar-Popup](ANALYSEQUELLEN_1_24_4.md). Der [nächste Umsetzungsschritt](FORTSCHRITT_AVN_001_002_009.md) korrigiert Ressourceninventare und Kontextcaches; die dauerhafte Identitäts-/Retentionsarbeit bleibt nach einem nativen Gegenbeweis offen. Die weitere [Umsetzung des Informationsdarstellungsplans](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md) ergänzt Ressourcenbezug und ausstehende Prüfzustände. GitHub-Downloadverweise und Pages führen die Zielversion 1.24.4; tatsächlicher Veröffentlichungsstatus und Paketbytes sind am Release-Link zu prüfen. 1.24.3 bleibt historisch erhalten.
 

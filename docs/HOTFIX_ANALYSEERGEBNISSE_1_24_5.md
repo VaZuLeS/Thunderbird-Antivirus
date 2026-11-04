@@ -2,6 +2,8 @@
 
 Stand: **4. November 2026**, unveröffentlichter Bugfix nach dem GitHub-Release 1.24.4. Auftrag: „Unerwarteter Fehler beim Laden der Analyseergebnisse“ beheben und die Ergebnisse aller externen Dienste im Popup und direkt in der Nachricht verständlich darstellen.
 
+Der folgende Text und sein maschinenlesbarer Beleg dokumentieren den ersten Lade-/Darstellungsfix. Die anschließende [Umsetzung AVN-017 zu Berichtsschaltflächen](BERICHTSAKTIONEN_1_24_5.md) erweitert denselben PR um funktionierende, getrennte Aktionen und besitzt eigene Paket-/Clientnachweise. Frühere Paketbytes und Testsummen werden nicht auf diesen Folgeumfang umetikettiert.
+
 ## Reproduzierter Fehler und Korrektur
 
 Die gemeldete Zeichenfolge gehört zum allgemeinen Ladefehler in `api.js`, nicht zu einer konkreten HTTP-Antwort von Hybrid Analysis. Beim Öffnen kann ein gespeicherter Bericht den Renderer abbrechen: `tags.join()` setzt eine Liste voraus, Scannerzeilen können leer sein und `anti_virus_results` muss nicht die erwartete Liste enthalten. Ein solcher Fehler in einem Einzelbericht verwarf bisher über `Promise.all` den gesamten Ergebnisbereich. Der reale Nutzerbericht wurde nicht exportiert oder eingesehen; die Untersuchung reproduziert denselben Fehlerpfad mit kontrollierten Testdaten.
