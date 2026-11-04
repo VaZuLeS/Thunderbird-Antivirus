@@ -145,7 +145,7 @@ test('serialized mail renderer can display history without module globals',()=>{
   const c=vm.createContext({document:dom.window.document,Date,labels:a.labels(key=>catalog[key]?.message),data:{local:{state:'checked'},rows:[],sourceHistory:{rows:[{provider:'urlscan',scope:'url',state:'submitted',verdict:'unknown',observedAt:100}]},reportArchiveBlocked:true}});
   vm.runInContext('('+a.render.toString()+')(data,labels)',c);
   const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
-  assert.ok(root.querySelector('[data-key="unbound-history"]').textContent.includes('urlscan.io'));
+  assert.equal(root.querySelector('[data-key="unbound-history"] summary').textContent,catalog.analysisHistoryTitle.message+' · urlscan.io');
   assert.ok(root.textContent.includes(catalog.analysisHistoryWarning.message));
  }finally{dom.window.close();}
 });

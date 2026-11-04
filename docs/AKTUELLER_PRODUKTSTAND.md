@@ -1,8 +1,8 @@
 # Aktueller Produktstand — 4. November 2026
 
-Der [Veröffentlichungsabschluss 1.24.3](VEROEFFENTLICHUNG_1_24_3.md) führt den jüngsten Freigabeumfang, Darstellungsprofile und offene Ressourcenabnahmen. Tatsächlicher [GitHub-Release-Status](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.3).
+Der [Veröffentlichungsabschluss 1.24.4](VEROEFFENTLICHUNG_1_24_4.md) führt den jüngsten Freigabeumfang, Darstellungsprofile und offene Ressourcenabnahmen. Tatsächlicher [GitHub-Release-Status](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.4).
 
-Der unveröffentlichte Entwicklungsstand **1.24.4** ergänzt [sichtbare Analysequellen in Nachricht und Toolbar-Popup](ANALYSEQUELLEN_1_24_4.md). Der [nächste Umsetzungsschritt](FORTSCHRITT_AVN_001_002_009.md) korrigiert Ressourceninventare und Kontextcaches; die dauerhafte Identitäts-/Retentionsarbeit bleibt nach einem nativen Gegenbeweis offen. Die weitere [Umsetzung des Informationsdarstellungsplans](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md) ergänzt Ressourcenbezug und ausstehende Prüfzustände. GitHub-Downloads und Pages verweisen weiterhin auf die veröffentlichte Version 1.24.3.
+Der Freigabeumfang **1.24.4** ergänzt [sichtbare Analysequellen in Nachricht und Toolbar-Popup](ANALYSEQUELLEN_1_24_4.md). Der [nächste Umsetzungsschritt](FORTSCHRITT_AVN_001_002_009.md) korrigiert Ressourceninventare und Kontextcaches; die dauerhafte Identitäts-/Retentionsarbeit bleibt nach einem nativen Gegenbeweis offen. Die weitere [Umsetzung des Informationsdarstellungsplans](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md) ergänzt Ressourcenbezug und ausstehende Prüfzustände. GitHub-Downloadverweise und Pages führen die Zielversion 1.24.4; tatsächlicher Veröffentlichungsstatus und Paketbytes sind am Release-Link zu prüfen. 1.24.3 bleibt historisch erhalten.
 
 Die bisherige Weiterentwicklung (Headerparser, Prüfherkunft, Entscheidungsgründe, Prüfumfang und lokaler Supportexport) ist im [aktuellen Ausführungsprotokoll](AUSFUEHRUNG_WEITERENTWICKLUNG_1_24_3.md) abgegrenzt.
 
@@ -32,8 +32,8 @@ Der [reproduzierbare Paketaufbau AVN-014.b](REPRODUZIERBARE_PAKETE.md) erzeugt d
 
 | Ebene | Stand |
 | --- | --- |
-| GitHub-Distribution | Zielversion 1.24.3, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.2 bleibt historisch erhalten |
-| Quellstand | Unveröffentlichte 1.24.4 mit gemeinsamer Anzeige der Analysequellen; ATN-Signierung und automatische Updates bleiben eigenständige Schritte |
+| GitHub-Distribution | Zielversion 1.24.4, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.3 bleibt historisch erhalten |
+| Quellstand | 1.24.4 mit gemeinsamer Anzeige der Analysequellen; ATN-Signierung und automatische Updates bleiben eigenständige Schritte |
 | Tatsächliches Add-on | MV3-MailExtension; Hintergrundskripte, eigene HTML-Seiten, IndexedDB und browser.storage.local |
 | React | separate gekennzeichnete Websimulation mit eigenem localStorage; nicht im XPI |
 | Enterprise | deaktivierte Profile plus lokale Node-Werkzeuge; neuer Offline-Audit-Review aktiviert keinen Dienst |

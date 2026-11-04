@@ -1287,7 +1287,7 @@ def check_source_export(m, base, out, report, restart, display):
     """Real popup entry, privacy projection, GTK download, clear and restart."""
     open_page(m,base+'options.html')
     target_id=report['auditRecord']['messageId']
-    seed=m.page('''return (async()=>{
+    m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
       const message=await b.messages.get(arguments[0]),ready=await bg.getMessageAnalysisContext(message),context=ready.wrappedJSObject||ready;
       const rows=["hybridanalysis","virustotal","urlhaus","abuseipdb","urlscan"].map((provider,index)=>({provider,scope:["report","hash","domain","ip","url"][index],resource:"message",state:provider==="urlscan"?"submitted":"checked",verdict:provider==="urlscan"?"unknown":"none",responses:1,observedAt:1000}));
