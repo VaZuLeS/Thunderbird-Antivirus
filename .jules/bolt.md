@@ -42,3 +42,6 @@
 ## 2026-10-28 - Avoid Inline Array Instantiation in Large Data Mapping
 **Learning:** Instantiating arrays inline for `.includes()` checks inside mapping functions over large data structures (like CSV exports with thousands of rows and multiple fields) causes immense, recurrent allocation and garbage collection overhead.
 **Action:** Replace inline array `.includes()` with direct string equality checks or module-level `Set.has()` checks in these hot paths to drastically reduce memory churn and improve execution speed.
+## 2024-11-05 - Use exec to avoid array allocation in global regex
+**Learning:** Using `String.prototype.match()` with a global regex allocates an entire array of matched strings before returning. In performance-critical hot paths, extracting matches using a while loop with `RegExp.prototype.exec()` is significantly faster because it avoids this full array allocation overhead and processes matches iteratively.
+**Action:** When extracting multiple substrings from large strings in hot paths, prefer using a `while ((match = regex.exec(str)) !== null)` loop over `str.match(regex)` to eliminate unnecessary object allocations.

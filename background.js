@@ -429,13 +429,13 @@ function extractPublicIPs(receivedHeaders) {
     // ⚡ Bolt Optimization: Use a traditional for loop instead of for-of for better iteration performance
     for (let i = 0, len = receivedHeaders.length; i < len; i++) {
         const header = receivedHeaders[i];
-        let matches = header.match(GLOBAL_IPV4_REGEX);
-        if (matches) {
-            for (let j = 0, mlen = matches.length; j < mlen; j++) {
-                const ip = matches[j];
+        GLOBAL_IPV4_REGEX.lastIndex = 0;
+        let match;
+        while ((match = GLOBAL_IPV4_REGEX.exec(header)) !== null) {
+            const ip = match[0];
 
-                // ⚡ Bolt Optimization: Fast path out common loopbacks early before any parsing
-                if (ip === "127.0.0.1" || ip === "0.0.0.0") continue;
+            // ⚡ Bolt Optimization: Fast path out common loopbacks early before any parsing
+            if (ip === "127.0.0.1" || ip === "0.0.0.0") continue;
 
                 // ⚡ Bolt Optimization: Manual charCodeAt calculation avoids substring allocation entirely
                 let part1 = 0;
@@ -469,7 +469,6 @@ function extractPublicIPs(receivedHeaders) {
                     ipsSet.add(ip);
                     ips.push(ip);
                 }
-            }
         }
     }
     return ips;
