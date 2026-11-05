@@ -10,19 +10,21 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { spawnSync } = require('child_process');
+const { runTool } = require('./tool-process.js');
 const { selectArtifact } = require('./verify-package.js');
 const { packageIdentity } = require('./candidate-evidence.js');
 
 const ROOT = path.resolve(__dirname, '..');
-function buildPackage(root = ROOT) {
+function buildPackage(root = ROOT, limits = {}) {
   const buildDir = path.join(root, 'build');
   fs.rmSync(buildDir, { recursive: true, force: true });
   const cli = path.join(root, 'node_modules/web-ext/bin/web-ext.js');
   if (!fs.existsSync(cli)) throw new Error('Pinned local web-ext is missing; run npm ci');
   const staging = fs.mkdtempSync(path.join(os.tmpdir(), 'thundy-package-'));
   const run = (command, args) => {
-    const result = spawnSync(command, args, { cwd: root, stdio: 'inherit' });
+    const result = runTool(command, args, { ...limits, cwd: root });
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
     if (result.error || result.signal || result.status !== 0) {
       throw new Error('Package subprocess failed: ' + path.basename(command));
     }

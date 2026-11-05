@@ -91,3 +91,22 @@ test('missing or failing pinned local tools leave no stale candidate and never f
   assert.throws(()=>buildPackage(root),/Package subprocess failed/);
   assert.equal(fs.existsSync(path.join(root,'build')),false);
 }));
+
+test('a timed out package process is killed and cannot leave a partial or stale candidate', () => fixture(root => {
+  const cli=path.join(root,'node_modules/web-ext/bin/web-ext.js');fs.mkdirSync(path.dirname(cli),{recursive:true});
+  fs.mkdirSync(path.join(root,'build'));fs.writeFileSync(path.join(root,'build','old.zip'),'stale');
+  fs.writeFileSync(cli,`const fs=require('node:fs');fs.mkdirSync('build');fs.writeFileSync('build/partial.zip','incomplete');process.on('SIGTERM',()=>{});setInterval(()=>{},1000);`);
+  assert.throws(()=>buildPackage(root,{timeoutMs:1000}),/Package subprocess failed/);
+  assert.equal(fs.existsSync(path.join(root,'build')),false);
+}));
+
+test('a package process exceeding its output budget cannot leave a candidate', () => fixture(root => {
+  const cli=path.join(root,'node_modules/web-ext/bin/web-ext.js');fs.mkdirSync(path.dirname(cli),{recursive:true});
+  fs.writeFileSync(cli,`const fs=require('node:fs');fs.mkdirSync('build');fs.writeFileSync('build/partial.zip','incomplete');const chunk=Buffer.alloc(65536,32);for(let i=0;i<100;i++)fs.writeSync(2,chunk);`);
+  // Keep expected fixture noise out of the test report; subprocess bytes are
+  // still captured and bounded before buildPackage forwards diagnostics.
+  const write=process.stderr.write;process.stderr.write=()=>true;
+  try {assert.throws(()=>buildPackage(root,{timeoutMs:5000,maxBuffer:65536}),/Package subprocess failed/);}
+  finally {process.stderr.write=write;}
+  assert.equal(fs.existsSync(path.join(root,'build')),false);
+}));

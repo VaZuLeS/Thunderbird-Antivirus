@@ -1,6 +1,6 @@
 // Compare installed public linter CLIs on the exact XPI and controlled canaries.
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),assert=require('node:assert/strict');
-const {spawnSync}=require('node:child_process');
+const {runTool}=require('../scripts/tool-process.js');
 const {assessLintRun}=require('../scripts/lint-with-filter.js');
 const [oldCli,newCli,packageFile,output]=process.argv.slice(2);
 if(!oldCli||!newCli||!packageFile||!output)throw new Error('Usage: node tools/linter-compatibility.dev.cjs OLD_CLI NEW_CLI PACKAGE NEW_DIRECTORY');
@@ -24,7 +24,7 @@ const results=[];
 for(const cli of [oldCli,newCli]){
  const absolute=path.resolve(cli),pkg=JSON.parse(fs.readFileSync(path.resolve(absolute,'../../package.json'),'utf8'));assert.equal(pkg.name,'addons-linter');
  for(const entry of cases){
-  const run=spawnSync(process.execPath,[absolute,'--output','json',entry.target],{encoding:'utf8',maxBuffer:8*1024*1024});
+  const run=runTool(process.execPath,[absolute,'--output','json',entry.target]);
   fs.writeFileSync(path.join(out,pkg.version+'-'+entry.name+'.json'),run.stdout||'');
   let assessment,error;try{assessment=assessLintRun(run);}catch(e){error=e.message;}
   results.push({version:pkg.version,case:entry.name,status:run.status,expectedAccepted:entry.accepted,accepted:assessment?.accepted===true,reportContractValid:!!assessment,summary:assessment?.report.summary,codes:assessment?[...assessment.report.errors,...assessment.report.warnings,...assessment.report.notices].map(item=>item.code):[],...(error?{error}:{}),stdoutSha256:sha(run.stdout||'')});

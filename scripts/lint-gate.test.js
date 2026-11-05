@@ -1,9 +1,42 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),{spawnSync}=require('node:child_process');
 const {assessReport,isKnownFalsePositive}=require('./filter-lint-warnings.js');
-const {assessLintRun}=require('./lint-with-filter.js');
+const {assessLintRun,runLint}=require('./lint-with-filter.js');
 function report(errors=[],warnings=[],notices=[]){return {count:errors.length+warnings.length+notices.length,summary:{errors:errors.length,warnings:warnings.length,notices:notices.length},metadata:{manifestVersion:3},errors,warnings,notices};}
 const known={_type:'warning',code:'UNSUPPORTED_API',message:'messages.getFull is not supported'};
+
+function localCli(source, check) {
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'thundy-tool-limits-'));
+ try {
+  const cli=path.join(root,'node_modules/web-ext/bin/web-ext.js');
+  fs.mkdirSync(path.dirname(cli),{recursive:true});fs.writeFileSync(cli,source);
+  return check(root);
+ } finally {fs.rmSync(root,{recursive:true,force:true});}
+}
+
+test('a real local lint subprocess cannot pass with valid JSON followed by a hang',()=>{
+ const clean=JSON.stringify(report([],[known]));
+ localCli(`require('node:fs').writeSync(1,${JSON.stringify(clean)});process.on('SIGTERM',()=>{});setInterval(()=>{},1000);`,root=>{
+  const result=runLint(root,{timeoutMs:1000});
+  assert.equal(result.error?.code,'ETIMEDOUT');assert.equal(result.signal,'SIGKILL');
+  assert.equal(result.stdout,clean);assert.throws(()=>assessLintRun(result),/did not complete normally/);
+ });
+});
+
+test('excessive output from a real local lint subprocess fails instead of accepting a truncated report',()=>{
+ localCli("const fs=require('node:fs'),chunk=Buffer.alloc(65536,32);for(let i=0;i<100;i++)fs.writeSync(1,chunk);",root=>{
+  const result=runLint(root,{timeoutMs:5000,maxBuffer:65536});
+  assert.equal(result.error?.code,'ENOBUFS');assert.throws(()=>assessLintRun(result),/did not complete normally/);
+ });
+});
+
+test('bounded local lint still accepts complete reports and rejects actual error reports',()=>{
+ for(const [value,exit,accepted] of [[report([],[known]),0,true],[report([{code:'BAD_MANIFEST',message:'Invalid manifest'}]),1,false]]){
+  localCli(`process.stdout.write(${JSON.stringify(JSON.stringify(value))});process.exitCode=${exit};`,root=>{
+   const result=runLint(root);assert.equal(result.error,undefined);assert.equal(assessLintRun(result).accepted,accepted);
+  });
+ }
+});
 
 test('lint schema rejects missing, mistyped or inconsistent reports instead of treating them as clean',()=>{
  const bad=[null,[],{},true,{errors:[],warnings:[]}];
