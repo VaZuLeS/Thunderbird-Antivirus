@@ -1837,6 +1837,24 @@ const ThundyI18n = (() => {
   },
   "analysisCurrentFindWarning": {
     "message": "Show strongest current finding"
+  },
+  "reportDisplayFailed": {
+    "message": "A stored report could not be displayed. Other results remain available."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Some report details have an unsupported format and could not be displayed."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Some stored analysis data could not be read. Other results remain available."
+  },
+  "analysisModeResponses": {
+    "message": "Responses received · no assessable verdict available"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Responses received without an assessable verdict · some requests failed"
+  },
+  "analysisCurrentAvailability": {
+    "message": "For new requests"
   }
 };
     function get(key, params = []) {

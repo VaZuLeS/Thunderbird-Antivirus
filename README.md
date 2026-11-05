@@ -2,7 +2,7 @@
 
 Thundy AV provides local message-risk heuristics, HTML attachment disarming and a link-decision log for Thunderbird. External analysis is optional and disabled until the user grants consent and configures the relevant provider. Local heuristics do not replace a full antivirus engine or guarantee that a message or website is safe.
 
-**Version 1.24.4:** [GitHub release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.4), unsigned distribution. [Release scope and remaining prerequisites](docs/VEROEFFENTLICHUNG_1_24_4.md). An XPI checksum is not a store signature. ATN listing/signing is a separate maintainer step.
+**Version 1.24.6:** [GitHub release status and download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.6), unsigned distribution. [Release scope and remaining prerequisites](docs/HOTFIX_QUELLENLADEFEHLER_1_24_6.md). An XPI checksum is not a store signature. ATN listing/signing is a separate maintainer step.
 
 ## Install and use
 

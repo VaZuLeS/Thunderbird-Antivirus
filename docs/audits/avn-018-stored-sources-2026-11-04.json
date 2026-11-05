@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "task": "AVN-018",
+  "issue": 743,
+  "generatedAt": "2026-11-04T17:42:55.324759+00:00",
+  "baseCommit": "b7dadd71bd53a7ee956226cc7f56de95bfbf6471",
+  "extensionVersion": "1.24.6",
+  "published": false,
+  "sourceFingerprint": "d57dd4edde105cacc90583fbe9c1dcc95aa582c22aff2397d1013e036c596449",
+  "packageSha256": "4ad8d9895d7705cdc7bf804384c14c27ce3f72798e27626f45aef3154e1cd36a",
+  "storageSchemaChanged": false,
+  "additionalOptionalMetadata": "sourceDataIncomplete",
+  "newRequestsByRendering": false,
+  "scripts": {
+    "api.js": "0000637565a7e404bc5594eed2315ce600c0897bb330fe6496cfa7e52f3043c5",
+    "analysis_status.js": "fc02939eb91c0733bd1aacddfe926967f1e824930fcb91d85ecb73c458b8a807",
+    "background.js": "e4d0a061a81db7137ca315e9bc49bd5af36788a6b3e20d04039e9bcc888fcca5",
+    "db.js": "024e916ae46de128ed60ab0e9015cb87d89792a993995f00d3ce7af93ecd27d3",
+    "tools/thunderbird-live.dev.py": "3f1c70641e3e0c9e4f60d75381be7d40f2a4e1112cf0e8b2f1d189c87063d844",
+    "test/analysis-sources.test.js": "30768e733814766cf7467f3b0157ebb46c2b72d23141c88d3f26fc202c28a783",
+    "test/popup-loading.test.js": "2d0fc6316f84fea04bbfa772530dad26b1d0ac13acad6acfdf5845380d816d0e",
+    "test/optimization.test.js": "84c6332a4f8c1885f6090e3d9e45a1ff8406274717b01b9e9cd4fc115ca07f83"
+  },
+  "checks": {
+    "full": {
+      "passed": 1080,
+      "failed": 0,
+      "logSha256": "1a9f37fe7356ed892b94e2d2d2c92982a153eeeb61c0688d0d83f20c2126fe36"
+    },
+    "targetedNode24": {
+      "passed": 103,
+      "failed": 0,
+      "logSha256": "61f06e65936df459ea82d6a3ce229982baee465a24cf4ffdb78b1226190001f2"
+    },
+    "targetedNode22": {
+      "passed": 103,
+      "failed": 0,
+      "logSha256": "30270ef2ddfbce26cadbb429f6d02dbc03ed04543e39a86f69823452b1a1e81c"
+    },
+    "runnerByteRegressions": {
+      "passed": 3,
+      "failed": 0,
+      "logSha256": "007477fcb780db40be079d0652931f961b283addaaba5f03ef4f3e5a71670f0e"
+    }
+  },
+  "native": [
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T17:35:02Z",
+      "finishedAt": "2026-11-04T17:35:24Z",
+      "extensionVersion": "1.24.5",
+      "xpiSha256": "283ad4dd941b31058dee8762ccd3ed945527e323b57f7b9552e593bd9d249035",
+      "runnerSha256": "3f1c70641e3e0c9e4f60d75381be7d40f2a4e1112cf0e8b2f1d189c87063d844",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "storedSources": {
+        "passed": true,
+        "baseline": true,
+        "genericPopupError": true,
+        "rpcSuccess": false,
+        "reportsAndLegacyUnchanged": true,
+        "externalConsent": false,
+        "syntheticObservations": true,
+        "phaseWithoutVerdict": "External results available · some requests failed"
+      },
+      "hybridPopup": {
+        "passed": true,
+        "baseline": false,
+        "syntheticReports": true,
+        "externalConsent": false,
+        "storedReportsUnchanged": true,
+        "genericError": false,
+        "first": true,
+        "second": true,
+        "partialNotice": true,
+        "providerCards": 5
+      },
+      "run": "stored-source-before153",
+      "client": "153.6.0",
+      "reportSha256": "8cfd1fb70bbbe40ead9a5c52596ee95112dbc40d8431e24cd3f6c914e7140f85"
+    },
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T17:40:54Z",
+      "finishedAt": "2026-11-04T17:41:28Z",
+      "extensionVersion": "1.24.6",
+      "xpiSha256": "4ad8d9895d7705cdc7bf804384c14c27ce3f72798e27626f45aef3154e1cd36a",
+      "runnerSha256": "3f1c70641e3e0c9e4f60d75381be7d40f2a4e1112cf0e8b2f1d189c87063d844",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "storedSources": {
+        "passed": true,
+        "baseline": false,
+        "genericPopupError": false,
+        "rpcSuccess": true,
+        "reportsAndLegacyUnchanged": true,
+        "externalConsent": false,
+        "syntheticObservations": true,
+        "phaseWithoutVerdict": "Responses received without an assessable verdict · some requests failed"
+      },
+      "hybridPopup": {
+        "passed": true,
+        "baseline": false,
+        "syntheticReports": true,
+        "externalConsent": false,
+        "storedReportsUnchanged": true,
+        "genericError": false,
+        "first": true,
+        "second": true,
+        "partialNotice": true,
+        "providerCards": 5
+      },
+      "run": "stored-source-final153",
+      "client": "153.6.0",
+      "reportSha256": "7b44836107f68ae05a9411cb147accdc0e1ce8f0d62ee1e448180b24d85df24e"
+    },
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T17:40:55Z",
+      "finishedAt": "2026-11-04T17:41:30Z",
+      "extensionVersion": "1.24.6",
+      "xpiSha256": "4ad8d9895d7705cdc7bf804384c14c27ce3f72798e27626f45aef3154e1cd36a",
+      "runnerSha256": "3f1c70641e3e0c9e4f60d75381be7d40f2a4e1112cf0e8b2f1d189c87063d844",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "storedSources": {
+        "passed": true,
+        "baseline": false,
+        "genericPopupError": false,
+        "rpcSuccess": true,
+        "reportsAndLegacyUnchanged": true,
+        "externalConsent": false,
+        "syntheticObservations": true,
+        "phaseWithoutVerdict": "Responses received without an assessable verdict · some requests failed"
+      },
+      "hybridPopup": {
+        "passed": true,
+        "baseline": false,
+        "syntheticReports": true,
+        "externalConsent": false,
+        "storedReportsUnchanged": true,
+        "genericError": false,
+        "first": true,
+        "second": true,
+        "partialNotice": true,
+        "providerCards": 5
+      },
+      "run": "stored-source-final140",
+      "client": "140.12.0",
+      "reportSha256": "3fd1d87e8a7d90296d51a6157b0b392c9cbc8b96e4350752675b1f785fc61ffb"
+    },
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T17:40:55Z",
+      "finishedAt": "2026-11-04T17:41:32Z",
+      "extensionVersion": "1.24.6",
+      "xpiSha256": "4ad8d9895d7705cdc7bf804384c14c27ce3f72798e27626f45aef3154e1cd36a",
+      "runnerSha256": "3f1c70641e3e0c9e4f60d75381be7d40f2a4e1112cf0e8b2f1d189c87063d844",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "gracefulRestarts": 3,
+      "forcedRestarts": 2,
+      "backupRestore": {
+        "passed": true,
+        "restoredVersion": "1.24.5",
+        "snapshotRecordsPreserved": 3,
+        "scope": "clean full-profile backup before upgrade; newer candidate events are outside this snapshot"
+      },
+      "acknowledgedCrashRecovery": {
+        "recordsPreserved": 4,
+        "storagePreserved": true,
+        "addon": {
+          "version": "1.24.6",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "uiLanguage": "en-US",
+        "extraOsDispatches": 0
+      },
+      "pendingCrashRecovery": {
+        "record": {
+          "id": "a74f0031-3c20-4c7e-9107-177e6c3b7c38",
+          "clickedAt": 1793814082453,
+          "decidedAt": null,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": null,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": null,
+          "providerAtDecision": null,
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "PENDING",
+          "cancelReason": null,
+          "openAttempts": 0,
+          "extensionVersion": "1.24.6",
+          "scoredAt": 1793814082548,
+          "reasonDetails": [],
+          "checkedAt": null,
+          "check": {
+            "origin": "stored",
+            "outcome": "disabled",
+            "attemptedAt": 1793814082556,
+            "observedAt": null
+          },
+          "providerReasons": []
+        },
+        "storagePreserved": true,
+        "decisionNotInvented": true,
+        "extraOsDispatches": 0
+      },
+      "run": "stored-source-final-upgrade153",
+      "client": "153.6.0",
+      "reportSha256": "ab6a7ac93ca1e304e235127f38a705b0352b8e54e29c21a5214b5862f9efdd7e"
+    }
+  ],
+  "screenshots": {
+    "docs/screenshots/1.24.6/stored-source-recovery-synthetic.png": "e4d7dd5e9b6ae4bb41b544283a861f55e855fed403a2b1df10476880c71b532b",
+    "docs/screenshots/1.24.6/responses-without-verdict-synthetic.png": "ada91d0570b050e5d7ec82bc3f12ab5159c5ce2d125b8400222726b8284875d2"
+  },
+  "limitations": [
+    "Actual user data and raw API payload not inspected; additional load failure reproduced with controlled stored records",
+    "Provider events and reports synthetic; actual Thunderbird, MIME/attachment bytes, IndexedDB, source RPC and both views",
+    "No new Windows/macOS, screenreader, live provider or automatic update acceptance",
+    "Malformed records are retained outside ordinary cache age/count pruning; general retention/recovery remains #725",
+    "No automatic repair/migration of malformed originals; read-only projection and additive source snapshots",
+    "Baseline phase response and load failure concern published 1.24.5; preceding report-field bug remains a separate historical fix",
+    "Local native final candidates use final package bytes; preliminary 560796f6 candidate not relabeled",
+    "No remote CI success or publication claimed by this local evidence"
+  ],
+  "counterexamples": {
+    "command": "node --test test/analysis-sources.test.js test/popup-loading.test.js",
+    "beforeLogSha256": "9c72d41e9e3d6553e77b038d1a4d505cbda1946b95299c970d262110c94ecc25",
+    "expectedFailures": [
+      "null source row dereference",
+      "generic popup error for malformed neighbor resources"
+    ]
+  }
+}

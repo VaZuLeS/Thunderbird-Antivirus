@@ -46,11 +46,31 @@ const ThundyAnalysis = (() => {
     // References point into existing message records; never duplicate resource contents.
     const validResource = ref => ref === 'message' || typeof ref === 'string' && (/^attachment:[0-9]+(?:\.[0-9]+)*$/.test(ref) && ref.length <= 80 || /^link:[0-9]{1,6}$/.test(ref));
     const rowKey = row => [row.provider, row.scope, row.resource || 'unknown'].join(':');
+    const storedObject = value => value && typeof value === 'object' && !Array.isArray(value);
+    // Read-only projection: preserve link slots before skipping invalid entries.
+    function resources(record) {
+        let incomplete = record != null && !storedObject(record) || record?.sourceDataIncomplete === true;
+        const read = (value, links = false) => {
+            if (value == null) return [];
+            if (!Array.isArray(value)) { incomplete = true; return []; }
+            return value.flatMap((item,index) => {
+                if (!storedObject(item)) { incomplete = true; return []; }
+                return [links ? {...item,analysisResourceRef:validResource(item.analysisResourceRef) ? item.analysisResourceRef : 'link:' + index} : item];
+            });
+        };
+        const attachments = read(record?.attachments), links = read(record?.links,true);
+        return {...(storedObject(record) ? record : {}),attachments,links,...(incomplete ? {sourceDataIncomplete:true} : {})};
+    }
     function create(stored = {}) {
+        const invalidRoot = stored != null && !storedObject(stored);
+        if (!storedObject(stored)) stored = {};
         const data = { schemaVersion: 2, local: { state: 'unrecorded', observedAt: null }, rows: [], truncated: stored.truncated === true };
+        if (invalidRoot || stored.sourceDataIncomplete === true) data.sourceDataIncomplete = true;
         if ([1, 2].includes(stored.schemaVersion)) {
+            if (stored.rows != null && !Array.isArray(stored.rows)) data.sourceDataIncomplete = true;
             if (['checked','incomplete','failed'].includes(stored.local?.state)) data.local = { state: stored.local.state, observedAt: Number.isFinite(stored.local.observedAt) ? stored.local.observedAt : null, source: 'stored', ...(['decryption_unavailable','text_unavailable','read_failed'].includes(stored.local.reason) ? {reason:stored.local.reason} : {}) };
-            for (const old of (Array.isArray(stored.rows) ? stored.rows : []).slice(0, 1200)) if (providers.includes(old.provider) && scopes.includes(old.scope)) {
+            for (const old of (Array.isArray(stored.rows) ? stored.rows : []).slice(0, 1200)) {
+                if (!storedObject(old) || !providers.includes(old.provider) || !scopes.includes(old.scope)) { data.sourceDataIncomplete = true; continue; }
                 const row = { provider: old.provider, scope: old.scope, resource: validResource(old.resource) ? old.resource : null, source: 'stored', active: 0, state: states.includes(old.state) && old.state !== 'running' ? old.state : 'incomplete', verdict: verdicts.includes(old.verdict) ? old.verdict : 'unknown', responses: Number.isSafeInteger(old.responses) && old.responses > 0 ? Math.min(old.responses, 100000) : 0, failures: Number.isSafeInteger(old.failures) && old.failures > 0 ? Math.min(old.failures, 100000) : 0, cacheHits: Number.isSafeInteger(old.cacheHits) && old.cacheHits > 0 ? Math.min(old.cacheHits, 100000) : 0, observedAt: Number.isFinite(old.observedAt) ? old.observedAt : null, findingAt: Number.isFinite(old.findingAt) ? old.findingAt : null, attemptedAt: Number.isFinite(old.attemptedAt) ? old.attemptedAt : null };
                 if (!data.rows.some(current => rowKey(current) === rowKey(row))) data.rows.push(row);
             }
@@ -81,7 +101,9 @@ const ThundyAnalysis = (() => {
         return { data, event };
     }
     function legacy(record) {
+        record = resources(record);
         const model = create(record?.analysisStatus);
+        if (record.sourceDataIncomplete) model.data.sourceDataIncomplete = true;
         const documented = new Set(model.data.rows.map(rowKey));
         const attachments = Array.isArray(record?.attachments) ? record.attachments : [];
         const links = Array.isArray(record?.links) ? record.links : [];
@@ -111,10 +133,13 @@ const ThundyAnalysis = (() => {
     function history(record, excludeId = null) {
         const result = {rows:[],truncated:false}, seen = new Set();
         if (!record) return result;
+        record = resources(record);
+        if (record.sourceDataIncomplete) result.sourceDataIncomplete = true;
         const add = stored => {
             if (!stored || typeof stored !== 'object') return;
             if (result.rows.length >= 1200) { result.truncated = true; return; }
             const restored = create(stored);
+            if (restored.data.sourceDataIncomplete) result.sourceDataIncomplete = true;
             result.truncated ||= restored.data.truncated;
             for (const row of restored.data.rows) {
                 const entry = {...row,resource:null,source:'stored'};
@@ -163,11 +188,16 @@ const ThundyAnalysis = (() => {
         if (!live) { live = n('div','','live'); live.setAttribute('role','status'); live.setAttribute('aria-live','polite'); live.setAttribute('aria-atomic','true'); }
         const style = document.createElement('style'); style.textContent = ':host{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40)}*{box-sizing:border-box}.card{font:14px/1.5 system-ui,sans-serif;color:var(--text-color,#192b40);padding:var(--surface-pad,18px);border:1px solid var(--card-border,#cbd5e1);border-left:4px solid var(--link-color,#146b80);border-radius:12px;background:var(--card-bg,#fff);overflow-wrap:anywhere}h2{font:700 16px/1.4 system-ui;margin:0 0 8px}p{margin:6px 0}.mode,.phase{font-weight:700}.muted,small{color:var(--text-muted,#536579)}ul{padding-left:20px;margin:8px 0}li{margin:8px 0}summary{cursor:pointer}:is(summary,button,li):focus-visible{outline:3px solid var(--link-color,#146b80);outline-offset:3px}.history-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}button{font:inherit;min-height:44px;padding:8px 12px;color:var(--text-color,#192b40);background:var(--input-bg,#fff);border:1px solid var(--input-border,#8091a5);border-radius:8px;cursor:pointer}button:disabled{opacity:.6;cursor:not-allowed}.warning{color:var(--color-danger,#b32642)}.live{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}details{margin:8px 0}';
         const date = value => Number.isFinite(value) ? new Date(value).toLocaleString(document.documentElement.lang || undefined) : t('analysisTimeUnknown');
-        const rows = data.rows || [], local = data.local?.state === 'checked', localLimited = ['incomplete','failed'].includes(data.local?.state);
+        style.textContent += '.services{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}.services>li{min-width:0;margin:0;padding:12px;border:1px solid var(--card-border,#cbd5e1);border-radius:10px;background:var(--input-bg,var(--card-bg,#fff))}.services>li.has-warning{border-color:var(--color-danger,#b32642)}.service-results{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.service-verdict{display:inline-block;padding:3px 8px;border:1px solid currentColor;border-radius:8px;font-weight:600}.service-origin{margin:6px 0;font-size:.95em}';
+        const inputRows = Array.isArray(data.rows) ? data.rows : [];
+        const rows = inputRows.filter(row => row && typeof row === 'object' && !Array.isArray(row) && ['hybridanalysis','virustotal','urlhaus','abuseipdb','urlscan'].includes(row.provider));
+        const sourceDataIncomplete = data.sourceDataIncomplete || data.sourceHistory?.sourceDataIncomplete || data.rows != null && !Array.isArray(data.rows) || rows.length !== inputRows.length;
+        const local = data.local?.state === 'checked', localLimited = ['incomplete','failed'].includes(data.local?.state);
         const running = rows.some(row => row.state === 'running'), waiting = rows.some(row => row.state === 'submitted'), incomplete = rows.some(row => row.state === 'incomplete');
-        const failures = rows.some(row => row.failures > 0 || row.state === 'failed'), usable = rows.some(row => row.responses > 0 || row.cacheHits > 0);
+        const failures = rows.some(row => row.failures > 0 || row.state === 'failed'), received = rows.some(row => row.responses > 0 || row.cacheHits > 0);
+        const usable = rows.some(row => ['none','suspicious','malicious'].includes(row.verdict) && (row.responses > 0 || row.cacheHits > 0));
         const mode = t(data.unavailable ? 'analysisUnavailable' : rows.length ? local || localLimited ? 'analysisMixed' : 'analysisExternal' : local || localLimited ? 'analysisLocal' : 'analysisModeUnknown');
-        const phase = t(running ? 'analysisModeRunning' : waiting ? 'analysisModeSubmitted' : failures ? usable ? 'analysisModePartial' : 'analysisModeFailed' : incomplete ? 'analysisModeIncomplete' : usable ? 'analysisModeResults' : 'analysisModeUnknown');
+        const phase = t(running ? 'analysisModeRunning' : waiting ? 'analysisModeSubmitted' : failures ? usable ? 'analysisModePartial' : received ? 'analysisModeResponsesFailed' : 'analysisModeFailed' : incomplete ? 'analysisModeIncomplete' : usable ? 'analysisModeResults' : received ? 'analysisModeResponses' : 'analysisModeUnknown');
         const card = n('div', '', 'card'); card.append(n('h2', t('analysisTitle')), n('p', mode, 'mode'));
         if (rows.length) card.append(n('p',phase, failures ? 'phase warning' : 'phase'));
         const localLabel = t(data.local?.state === 'failed' ? 'analysisLocalUnavailable' : localLimited ? 'analysisLocalIncomplete' : local ? 'analysisLocalChecked' : 'analysisLocalPending');
@@ -180,6 +210,7 @@ const ThundyAnalysis = (() => {
             providersByResource.get(row.resource).add(brands[row.provider]);
         }
         const list = document.createElement('ul'), inactive = document.createElement('ul');
+        list.className='services';list.setAttribute('role','list');
         const detailBodies = new WeakMap();
         const hydrate = entry => {
             const body = detailBodies.get(entry);
@@ -197,16 +228,24 @@ const ThundyAnalysis = (() => {
         const details = (key, title) => { const node = document.createElement('details'); node.dataset.key = key; node.open = opened.has(key); const summary = n('summary',title); summary.dataset.focusKey = key; node.append(summary); return node; };
         const resourceName = row => {
             if (row.resource === 'message') return t('analysisResourceMessage');
-            if (row.resource?.startsWith('attachment:')) return t('analysisResourceAttachment') + ' · ' + (data.resourceLabels?.[row.resource] || row.resource.slice(11));
-            if (row.resource?.startsWith('link:')) return t('analysisResourceLink') + ' ' + (Number(row.resource.slice(5)) + 1) + (data.resourceLabels?.[row.resource] ? ' · ' + data.resourceLabels[row.resource] : '');
+            if (typeof row.resource === 'string' && row.resource.startsWith('attachment:')) return t('analysisResourceAttachment') + ' · ' + (data.resourceLabels?.[row.resource] || row.resource.slice(11));
+            if (typeof row.resource === 'string' && row.resource.startsWith('link:')) return t('analysisResourceLink') + ' ' + (Number(row.resource.slice(5)) + 1) + (data.resourceLabels?.[row.resource] ? ' · ' + data.resourceLabels[row.resource] : '');
             return t('analysisResourceUnknown');
         };
         for (const [provider, brand] of Object.entries(brands)) {
             const items = rows.filter(row => row.provider === provider), li = document.createElement('li'); li.append(n('strong', brand));
             if (items.length) {
+                li.dataset.provider=provider;
+                const results=n('div','','service-results');
+                for (const verdict of ['malicious','suspicious','none','unknown']) if (items.some(row => (row.verdict || 'unknown')===verdict)) {
+                    results.append(n('span',t('analysisVerdict_'+verdict),'service-verdict'+(['malicious','suspicious'].includes(verdict)?' warning':'')));
+                }
+                if (items.some(row => ['malicious','suspicious'].includes(row.verdict))) li.className='has-warning';
+                li.append(results);
                 li.append(n('div', [...new Set(items.map(row => t('analysisState_' + row.state)))].join(' · '), 'service-status'));
-                if (items.some(row => row.failures && row.responses)) li.append(n('div',t('analysisPartial'),'warning'));
-                if (['disabled','permission','authorization','policy','unconfigured'].includes(data.availability?.[provider])) li.append(n('div', t('analysisReason_' + data.availability[provider]), 'muted'));
+                li.append(n('div',[...new Set(items.map(row=>t('analysisSource_'+row.source)))].join(' · '),'service-origin muted'));
+                if (items.some(row => row.failures && row.responses)) li.append(n('div',t(items.some(row => ['none','suspicious','malicious'].includes(row.verdict)) ? 'analysisPartial' : 'analysisModeResponsesFailed'),'warning'));
+                if (['disabled','permission','authorization','policy','unconfigured'].includes(data.availability?.[provider])) li.append(n('div', t('analysisCurrentAvailability') + ': ' + t('analysisReason_' + data.availability[provider]), 'muted'));
                 for (const row of items) {
                     const key = [provider,row.scope,row.resource || 'unknown'].join(':');
                     const warning = ['malicious','suspicious'].includes(row.verdict);
@@ -289,10 +328,11 @@ const ThundyAnalysis = (() => {
             if (data.sourceHistory.truncated || data.sourceHistory.rows?.length > 1200) history.append(n('p',t('analysisTruncated'),'warning'));
             card.append(history);
         }
+        if (sourceDataIncomplete) card.append(n('p',t('analysisStoredDataIncomplete'),'warning'));
         if (data.sourcePersistenceFailed) card.append(n('p',t('analysisPersistenceFailed'),'warning'));
         if (data.reportArchiveBlocked) card.append(n('p',t('analysisReportArchiveBlocked'),'warning'));
         card.append(n('p', t('analysisLimit'), 'muted'));
-        const announcement = [mode, localLabel, rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? t('analysisPersistenceFailed') : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
+        const announcement = [mode, localLabel, sourceDataIncomplete ? t('analysisStoredDataIncomplete') : '', rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? t('analysisPersistenceFailed') : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
         const changed = host.dataset.announcement !== announcement;
         root.replaceChildren(style, live, card);
         if (wasPresent && changed) live.textContent = announcement;
@@ -312,9 +352,9 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }
-    return { providers, scopes, create, spec, response, legacy, history, render, cacheTime, labels, withCache, bind, validResource, rowKey };
+    return { providers, scopes, create, spec, response, resources, legacy, history, render, cacheTime, labels, withCache, bind, validResource, rowKey };
 })();

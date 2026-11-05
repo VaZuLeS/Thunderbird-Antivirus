@@ -1835,5 +1835,23 @@
   },
   "analysisCurrentFindWarning": {
     "message": "Stärksten aktuellen Warnbefund zeigen"
+  },
+  "reportDisplayFailed": {
+    "message": "Ein gespeicherter Bericht konnte nicht dargestellt werden. Andere Ergebnisse bleiben verfügbar."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Einige Berichtsdetails haben ein nicht unterstütztes Format und konnten nicht dargestellt werden."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Einige gespeicherte Analysedaten konnten nicht gelesen werden. Andere Ergebnisse bleiben verfügbar."
+  },
+  "analysisModeResponses": {
+    "message": "Antworten empfangen · kein auswertbares Urteil verfügbar"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Antworten ohne auswertbares Urteil empfangen · einzelne Anfragen fehlgeschlagen"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Für neue Anfragen"
   }
 }

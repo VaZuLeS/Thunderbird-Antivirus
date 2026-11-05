@@ -1832,5 +1832,23 @@
   },
   "analysisCurrentFindWarning": {
     "message": "Afficher le résultat actuel le plus grave"
+  },
+  "reportDisplayFailed": {
+    "message": "Un rapport enregistré n’a pas pu être affiché. Les autres résultats restent disponibles."
+  },
+  "reportFieldsUnavailable": {
+    "message": "Certains détails du rapport ont un format non pris en charge et n’ont pas pu être affichés."
+  },
+  "analysisStoredDataIncomplete": {
+    "message": "Certaines données d’analyse enregistrées n’ont pas pu être lues. Les autres résultats restent disponibles."
+  },
+  "analysisModeResponses": {
+    "message": "Réponses reçues · aucun verdict exploitable disponible"
+  },
+  "analysisModeResponsesFailed": {
+    "message": "Réponses reçues sans verdict exploitable · certaines requêtes ont échoué"
+  },
+  "analysisCurrentAvailability": {
+    "message": "Pour les nouvelles requêtes"
   }
 }

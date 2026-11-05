@@ -1,0 +1,250 @@
+{
+  "schemaVersion": 1,
+  "task": "AVN-017",
+  "generatedAt": "2026-11-04T15:15:40.515460+00:00",
+  "baseCommit": "4d5c5680dbb96fc1d8b085feafddecdd2e08acae",
+  "extensionVersion": "1.24.5",
+  "published": false,
+  "sourceFingerprint": "14a665e62f2610a87768b0431976f69a938545cca6546e14cddbbc1ab99e231e",
+  "packageSha256": "283ad4dd941b31058dee8762ccd3ed945527e323b57f7b9552e593bd9d249035",
+  "storageSchemaChanged": false,
+  "newRequestsByRendering": false,
+  "scripts": {
+    "api.js": "e72377a1ed2178d0f4820f49facd3426580a3c2dee817309afc196afcd785ca3",
+    "api.test.js": "105dc1f3dbcb9ed75dd289594652347f27207b21d4e94f10ddcf422e01e75b09",
+    "test/popup-loading.test.js": "e843004eea56f8e9a470a4403b41f34eeaf3760f5970cd46f0a2aa4dfa33b074",
+    "tools/thunderbird-live.dev.py": "31add48e0cc6b495953c167fec83f4496ca9b1653174086c758be2aa06234529"
+  },
+  "checks": {
+    "full": {
+      "passed": 1076,
+      "failed": 0,
+      "logSha256": "41d2aaad299b76caf5f92174b8dac047aa7f3cd1462d48c7a1c50d3f0d02cc74"
+    },
+    "focusedNode24": {
+      "passed": 109,
+      "failed": 0,
+      "logSha256": "43e662d8cdad3c49b6e298afd7ee889305b75742221a4edf685a0ae9efc77cae"
+    },
+    "focusedNode22": {
+      "passed": 109,
+      "failed": 0,
+      "logSha256": "0f871436f7f850da1e83c09458ed443d5e8403213bccced01eafb7980e964e45"
+    },
+    "runnerByteRegressions": {
+      "passed": 3,
+      "failed": 0,
+      "logSha256": "007477fcb780db40be079d0652931f961b283addaaba5f03ef4f3e5a71670f0e"
+    }
+  },
+  "native": [
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T14:49:06Z",
+      "finishedAt": "2026-11-04T14:49:24Z",
+      "extensionVersion": "1.24.5",
+      "xpiSha256": "34a59923e3ce8d6d8586e9e8514dc7dfe679933d2a049754be30350d93c7381a",
+      "runnerSha256": "6d0cde30110de7016c75dd66a9c19c616de400f5d5fcdf3d9f3bad80594094f4",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "reportActions": {
+        "passed": true,
+        "baseline": true,
+        "requestCount": 0,
+        "uniqueControlIds": false
+      },
+      "hybridPopup": {
+        "passed": true,
+        "baseline": false,
+        "syntheticReports": true,
+        "externalConsent": false,
+        "storedReportsUnchanged": true,
+        "genericError": false,
+        "first": true,
+        "second": true,
+        "partialNotice": true,
+        "providerCards": 5
+      },
+      "run": "report-controls-before153-r2",
+      "client": "153.6.0",
+      "reportSha256": "58c065aca5b56e884d3d417cd1589b7579e47bf7946c5c359f72b4dc708a8fc5"
+    },
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T15:07:05Z",
+      "finishedAt": "2026-11-04T15:07:26Z",
+      "extensionVersion": "1.24.5",
+      "xpiSha256": "283ad4dd941b31058dee8762ccd3ed945527e323b57f7b9552e593bd9d249035",
+      "runnerSha256": "31add48e0cc6b495953c167fec83f4496ca9b1653174086c758be2aa06234529",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "reportActions": {
+        "passed": true,
+        "baseline": false,
+        "requests": [
+          {
+            "action": "uploadAttachment",
+            "messageId": 3,
+            "partName": "1.2"
+          },
+          {
+            "action": "downloadDisarmed",
+            "messageId": 3,
+            "partName": "1.3"
+          }
+        ],
+        "uniqueControlIds": true,
+        "externalConsent": false,
+        "realLocalCdrDownload": true,
+        "scriptRemoved": true,
+        "downloadSha256": "1e7c81bdd26e000a2278900f8c0b63cc538df86128e9d5ffb2f58660d403386d",
+        "inputAttachmentsHaveEqualBytes": true
+      },
+      "hybridPopup": {
+        "passed": true,
+        "baseline": false,
+        "syntheticReports": true,
+        "externalConsent": false,
+        "storedReportsUnchanged": true,
+        "genericError": false,
+        "first": true,
+        "second": true,
+        "partialNotice": true,
+        "providerCards": 5
+      },
+      "run": "report-controls-after153-r4",
+      "client": "153.6.0",
+      "reportSha256": "189da80a19117f522bf6bbd936aeb2af9929187f4fcb8e070c1a9f38157da8f6"
+    },
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T15:09:58Z",
+      "finishedAt": "2026-11-04T15:10:32Z",
+      "extensionVersion": "1.24.5",
+      "xpiSha256": "283ad4dd941b31058dee8762ccd3ed945527e323b57f7b9552e593bd9d249035",
+      "runnerSha256": "31add48e0cc6b495953c167fec83f4496ca9b1653174086c758be2aa06234529",
+      "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+      "reportActions": {
+        "passed": true,
+        "baseline": false,
+        "requests": [
+          {
+            "action": "uploadAttachment",
+            "messageId": 3,
+            "partName": "1.2"
+          },
+          {
+            "action": "downloadDisarmed",
+            "messageId": 3,
+            "partName": "1.3"
+          }
+        ],
+        "uniqueControlIds": true,
+        "externalConsent": false,
+        "realLocalCdrDownload": true,
+        "scriptRemoved": true,
+        "downloadSha256": "1e7c81bdd26e000a2278900f8c0b63cc538df86128e9d5ffb2f58660d403386d",
+        "inputAttachmentsHaveEqualBytes": true
+      },
+      "hybridPopup": {
+        "passed": true,
+        "baseline": false,
+        "syntheticReports": true,
+        "externalConsent": false,
+        "storedReportsUnchanged": true,
+        "genericError": false,
+        "first": true,
+        "second": true,
+        "partialNotice": true,
+        "providerCards": 5
+      },
+      "run": "report-controls-final140",
+      "client": "140.12.0",
+      "reportSha256": "21afcee2b67af69a020cdb3c5a41d12d8364baa78a76a3870374c1da0ad7d6d0"
+    },
+    {
+      "passed": true,
+      "startedAt": "2026-11-04T15:09:59Z",
+      "finishedAt": "2026-11-04T15:10:34Z",
+      "extensionVersion": "1.24.5",
+      "xpiSha256": "283ad4dd941b31058dee8762ccd3ed945527e323b57f7b9552e593bd9d249035",
+      "runnerSha256": "31add48e0cc6b495953c167fec83f4496ca9b1653174086c758be2aa06234529",
+      "binarySha256": "0e02fda83a583306827ee68d0e7dedb37051f157b292a17d31d9b1ec0b7c75fb",
+      "backupRestore": {
+        "passed": true,
+        "restoredVersion": "1.24.4",
+        "snapshotRecordsPreserved": 3,
+        "scope": "clean full-profile backup before upgrade; newer candidate events are outside this snapshot"
+      },
+      "acknowledgedCrashRecovery": {
+        "recordsPreserved": 4,
+        "storagePreserved": true,
+        "addon": {
+          "version": "1.24.5",
+          "active": true,
+          "temporary": false,
+          "appDisabled": false,
+          "profileScoped": true
+        },
+        "uiLanguage": "en-US",
+        "extraOsDispatches": 0
+      },
+      "pendingCrashRecovery": {
+        "record": {
+          "id": "7a572ecc-f203-4b2c-8d6a-7dc6ccc74298",
+          "clickedAt": 1793805024794,
+          "decidedAt": null,
+          "messageId": 1,
+          "url": "https://destination.example.invalid/test?source=thundy",
+          "score": 0,
+          "scoreSource": "local-message-and-link",
+          "scoreAtDecision": null,
+          "verdict": "UNKNOWN",
+          "verdictAtDecision": null,
+          "providerAtDecision": null,
+          "provider": "Hybrid Analysis",
+          "reasons": [],
+          "outcome": "PENDING",
+          "cancelReason": null,
+          "openAttempts": 0,
+          "extensionVersion": "1.24.5",
+          "scoredAt": 1793805024851,
+          "reasonDetails": [],
+          "checkedAt": null,
+          "check": {
+            "origin": "stored",
+            "outcome": "disabled",
+            "attemptedAt": 1793805024853,
+            "observedAt": null
+          },
+          "providerReasons": []
+        },
+        "storagePreserved": true,
+        "decisionNotInvented": true,
+        "extraOsDispatches": 0
+      },
+      "run": "report-controls-final-upgrade153",
+      "client": "153.6.0",
+      "reportSha256": "a02812d8d73e3ef851f928bf29c99c47dba613565e435cdf71d36d3882df9dfa"
+    }
+  ],
+  "limitations": [
+    "Synthetic provider observations; no live provider accounts or successful remote transmission",
+    "Actual Linux Thunderbird DOM clicks and native GTK local file save; not human keyboard/screenreader acceptance",
+    "No Windows/macOS or automatic update-channel acceptance",
+    "Initial full check rejected an owned py_compile cache artifact; removed artifact before successful final check",
+    "153 initial filepicker Return attempts failed; final explicit Save succeeded, no download assertions weakened",
+    "Historical first-fix evidence remains bound to its original package",
+    "No remote CI success claimed by this local evidence"
+  ],
+  "localDownload": {
+    "size": 53,
+    "sha256": "1e7c81bdd26e000a2278900f8c0b63cc538df86128e9d5ffb2f58660d403386d",
+    "containsScript": false
+  },
+  "reviewFollowup": {
+    "scope": "Two redundant test fallback expressions simplified after Code Quality review; runtime/package bytes unchanged",
+    "apiTestSha256": "a1f5da28e09a06e70e9da5d4a593993809726de078485732700f21e6a7ae609c",
+    "passed": 109,
+    "failed": 0,
+    "logSha256": "f1774fe28b9e553d402e2b0abd6ab50b997f715f95323f8d88a3f3d013491147"
+  }
+}
