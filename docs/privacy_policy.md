@@ -79,7 +79,7 @@ IT: Le impostazioni offrono un rapporto tecnico minimo con anteprima e download 
 
 PL: Ustawienia udostępniają minimalny raport techniczny z podglądem i wyraźnie wybranym pobraniem lokalnym. Ogólna konfiguracja jest opcjonalna. Raport nie zawiera kluczy, wiadomości, pełnych adresów URL, list nadawców, identyfikatorów profilu ani dowolnych tekstów błędów. Brak automatycznej wysyłki. Pliki eksportu należy samodzielnie chronić i usuwać.
 
-## Ergänzung: lokaler Quellenbericht in der unveröffentlichten 1.24.4
+## Ergänzung: lokaler Quellenbericht (ab 1.24.4)
 
 EN: Create a local snapshot of the recorded checks. This does not run a new analysis. Current observations and stored history with unconfirmed association are kept separate. Includes services, states, verdicts and exact observation times. Excludes URLs, filenames, hashes, IPs, keys, message text and internal identifiers. Resource numbers apply only within this report. This is not a complete history or an authenticated record. Nothing is sent automatically. Review before sharing.
 

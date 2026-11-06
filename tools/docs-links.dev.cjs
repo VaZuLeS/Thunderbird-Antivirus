@@ -20,17 +20,21 @@ for (const name of fs.readdirSync(path.join(root, 'docs'))) {
     const match = source.match(/^permalink:\s*\/?([^\n]+)$/m);
     if (match) permalinks.set(match[1].trim(), path.join(root, 'docs', name));
 }
+const configText = fs.readFileSync(path.join(root, 'docs', '_config.yml'), 'utf8');
+const excludedDirs = [...configText.matchAll(/^\s*-\s*([^\s#]+)\s*$/gm)].map(m => path.join(root, 'docs', m[1]));
 let checked = 0;
 const missing = [];
 for (const file of files) {
     const text = fs.readFileSync(path.join(root, file), 'utf8').replace(/```[\s\S]*?```/g, '');
     const urls = [...text.matchAll(/\]\(([^)]+)\)|\bhref=["']([^"']+)["']/g)].map(match => match[1] || match[2]);
+    const inDocs = file.startsWith('docs/') && !excludedDirs.some(dir => path.resolve(root, file).startsWith(dir + path.sep));
     for (let url of urls) {
         if (/^(?:https?:|mailto:|#)/i.test(url)) continue;
         url = decodeURIComponent(url.split('#')[0]);
         const target = path.resolve(root, path.dirname(file), url);
         const renderedSource = target.endsWith('.html') ? target.slice(0, -5) + '.md' : target;
-        if (!fs.existsSync(target) && !fs.existsSync(renderedSource) && !permalinks.has(url)) missing.push({ file, url });
+        const isExcludedInPages = inDocs && excludedDirs.some(dir => target === dir || target.startsWith(dir + path.sep));
+        if (isExcludedInPages || (!fs.existsSync(target) && !fs.existsSync(renderedSource) && !permalinks.has(url))) missing.push({ file, url });
         checked++;
     }
 }

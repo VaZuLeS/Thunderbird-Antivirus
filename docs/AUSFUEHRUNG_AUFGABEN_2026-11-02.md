@@ -44,7 +44,7 @@ Status: Lokal und auf GitHub b3f9f69 geprüft; Remote-Wiederholung für spätere
 - [x] TAV-003.03 Aktive CI-/Release-Workflows mit identischer Paketidentität und unveränderlichen Assets verbinden.
 - [x] TAV-003.04 Negative Gatefälle und Wiederholung/Assetabweichungen testen.
 
-Ergebnis/Beleg: Aktive CI/Release-Workflows und Referenzkopien synchron; Paket-/Quellbindung, sauberes C7, sechs Sprachberichte und unveränderliche Assets. 17 gezielte Gate-/Releaseprüfungen erfolgreich, YAML geparst. [CI-Verhalten](ci/README.md). Vollständiger Kandidatengate nach Implementierungscommit erfolgreich: Exit 0, C1–C7 PASS. Auch [GitHub-CI einschließlich echter GUI und Kandidatengate](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/41384190870) erfolgreich; kein Tag oder Storestatus behauptet.
+Ergebnis/Beleg: Aktive CI/Release-Workflows und Referenzkopien synchron; Paket-/Quellbindung, sauberes C7, sechs Sprachberichte und unveränderliche Assets. 17 gezielte Gate-/Releaseprüfungen erfolgreich, YAML geparst. [CI-Verhalten](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/docs/ci/README.md). Vollständiger Kandidatengate nach Implementierungscommit erfolgreich: Exit 0, C1–C7 PASS. Auch [GitHub-CI einschließlich echter GUI und Kandidatengate](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/41384190870) erfolgreich; kein Tag oder Storestatus behauptet.
 
 ## TAV-004 — Webdemo und Thunderbird-Produkt verbindlich abgrenzen
 

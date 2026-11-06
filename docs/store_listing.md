@@ -1,13 +1,11 @@
-> Kandidat 1.24.3, noch nicht veröffentlicht/eingereicht: [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_24_3.md), [Datenmatrix](privacy_policy.md). Die nachfolgenden versionsbezogenen Abschnitte sind historische Einreichungstexte; vor einer tatsächlichen ATN-Einreichung die aktuelle Checkliste verwenden.
-
-> Update für den Entwicklungskandidaten 1.23.0 (Quellstand `f9f1e95`): alle UI-Oberflächen in EN/DE/FR/ES/IT/PL, lokaler Linkschutz mit Zeit-Punkt-Protokoll, Einrichtungsassistent, reale Thunderbird-140.17-ESR-Teilabnahme ([live_test_1_23_0.md](live_test_1_23_0.md)), Release v1.23.0 mit XPI-Artefakt. Diese Angaben sind für die nächste Einreichung vorbereitet. Der Kandidat wurde noch nicht eingereicht; historische Angaben zu 1.6.x unten bleiben Release-Referenzen.
+> Aktueller Release-Stand **1.24.6** (unsignierte GitHub-Distribution, vorbereitet für ATN-Einreichung): [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_24_6.md), [Datenmatrix](privacy_policy.md). Vor einer tatsächlichen ATN-Einreichung die aktuelle Checkliste verwenden.
 
 # Store-Listing — Thundy AV (final copy package)
 
 **Add-on:** Thundy AV – Email Scanner for Thunderbird
 **Short name:** Thundy AV
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.23.0 (Manifest V3, `strict_min_version` 140.0)
+**Version:** 1.24.6 (Manifest V3, `strict_min_version` 140.0)
 **License:** GNU GPL v3 (`GPL-3.0-only`)
 **Homepage:** https://vazules.github.io/Thunderbird-Antivirus/
 **Privacy policy URL:** https://vazules.github.io/Thunderbird-Antivirus/privacy_policy.html

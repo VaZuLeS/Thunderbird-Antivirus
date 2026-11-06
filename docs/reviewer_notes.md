@@ -1,10 +1,10 @@
-> Kandidat 1.24.3, noch nicht veröffentlicht/eingereicht: [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_24_3.md), [Datenmatrix](privacy_policy.md). Die nachfolgenden versionsbezogenen Abschnitte sind historische Einreichungstexte; vor einer tatsächlichen ATN-Einreichung die aktuelle Checkliste verwenden.
+> Aktueller Release-Stand **1.24.6** (unsignierte GitHub-Distribution, vorbereitet für ATN-Einreichung): [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_24_6.md), [Datenmatrix](privacy_policy.md). Vor einer tatsächlichen ATN-Einreichung die aktuelle Checkliste verwenden.
 
 # Reviewer Notes — Thundy AV (Thunderbird Add-on)
 
 **Add-on name:** Thundy AV – Email Scanner for Thunderbird (short name: "Thundy AV")
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.6
+**Version:** 1.24.6
 **Manifest:** MV3 (`manifest_version: 3`), `strict_min_version: 140.0`
 **License:** GNU GPL v3 (`GPL-3.0-only`)
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus
@@ -30,11 +30,12 @@ disabled by default.
 | Permission | Why it is required |
 |---|---|
 | `messagesRead` | The core function is to inspect the message the user has opened: headers (sender, recipients, subject, date, Received), the text and HTML body, links, and the list of attachments including their content (which is hashed locally). Without this permission the add-on cannot perform any check. |
-| `storage` | Stores the user's settings (privacy tier, whitelist/blacklist, scan options), the consent flags (`externalAnalysisConsent`, `scanningEnabledSenders`) and the API keys the user enters, in `browser.storage.local`. No remote storage. |
-| `scripting` | Injects the UI banners into the message view: the per-message opt-in banner with its two buttons, the threat/warning banner, and the Time-of-Click marker on links. All injected code is bundled with the add-on (`scripting.executeScript({ func })` / `files`); no remote code is fetched or evaluated. |
+| `storage` | Stores the user's settings (privacy tier, whitelist/blacklist, scan options, appearance/density preferences), the consent flags (`externalAnalysisConsent`, `scanningEnabledSenders`), the local link decision audit log, and the API keys the user enters, in `browser.storage.local`. No remote storage. |
+| `scripting` | Injects the UI banners into the message view: the per-message opt-in banner with its two buttons, the threat/warning banner, the analysis source cards, and the Time-of-Click marker on links. All injected code is bundled with the add-on (`scripting.executeScript({ func })` / `files`); no remote code is fetched or evaluated. |
 | `notifications` | Shows short system notifications for actions that are not visible in the message pane, e.g. "scan started", "scan submitted (job ID …)" and error messages for the context-menu link scan. This gives feedback when the scan is triggered from an entry point without its own result area. |
-| `downloads` | Used for the "disarm HTML attachment" action: when the user asks for it, the add-on saves a sanitized copy of an HTML attachment through `browser.downloads.download()`. The user triggers this explicitly; nothing is downloaded automatically in the background. |
+| `downloads` | Used for explicit user-initiated local downloads (`browser.downloads.download()`): saving a sanitized copy of an HTML attachment ("disarm HTML attachment"), exporting the local link decision audit (JSON/CSV), exporting/saving local appearance profiles, and saving the privacy-minimized local support or source report. Nothing is downloaded automatically in the background. |
 | `menus` | Adds the two context-menu entries ("Scan link with Thundy AV" on a link, "Scan all links of this message" in the message display action context). Both entries only trigger the same consent-gated scan paths as the other entry points; the permission is required for `browser.menus.create()` / `onClicked`. |
+| `theme` | Reads Thunderbird's active UI theme colors (`browser.theme.getCurrent()`, `browser.theme.onUpdated`) in `theme.js` when appearance is set to "Follow Thunderbird" (`system`), ensuring accessible contrast and native light/dark integration in the popup and extension pages. |
 
 ### 2.2 Optional host permissions
 
