@@ -1855,6 +1855,47 @@ const ThundyI18n = (() => {
   },
   "analysisCurrentAvailability": {
     "message": "For new requests"
+  },
+  "reasonMaliciousIp": {
+    "message": "Malicious server IP address detected ($IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "External Threat Indicators (URLhaus & IP Reputation)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Known malware domains detected: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP Reputation ($PROVIDER$) – Suspicious server IPs: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io Results:"
+  },
+  "urlscanStatus": {
+    "message": "Status: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   }
 };
     function get(key, params = []) {

@@ -863,6 +863,9 @@ tag: tag,
     it('renders a stored protocol offline instead of re-querying the provider', async () => {
         assert.strictEqual(context.hasFinalStoredReport({ report: { state: 'COMPLETE' } }), true);
         assert.strictEqual(context.hasFinalStoredReport({ report: { state: 'IN_PROGRESS' } }), false);
+        assert.strictEqual(context.hasFinalStoredReport({ report: { sha256: 'abc', verdict: 'malicious', threat_score: 95 } }), true);
+        assert.strictEqual(context.hasFinalStoredReport({ report: { sha256: 'abc', whitelisted: true, multiscan_result: 0 } }), true);
+        assert.strictEqual(context.hasFinalStoredReport({ report: { sha256: 'abc', finished: false, scanners: [{ name: 'MetaDefender', status: 'in-progress' }] } }), false);
         assert.strictEqual(context.hasFinalStoredReport(null), false);
         assert.strictEqual(context.hasFinalStoredReport({ state: 'UPLOADED' }), false);
 
@@ -1287,6 +1290,23 @@ describe('renderManualUploadUI', () => {
         assert.strictEqual(pInfo.children[1].tag, 'strong');
         assert.strictEqual(pInfo.children[1].textContent, 'nicht automatisch hochgeladen');
         assert.strictEqual(pInfo.children[2].textContent, '.');
+    });
+
+    it('renders VirusTotal stats card in renderManualUploadUI and renderStoredResultWithoutConsent when virustotal_stats is provided', () => {
+        context.apiContentElement.children = [];
+        const vtStats = { malicious: 2, suspicious: 1, harmless: 60, undetected: 7 };
+        renderManualUploadUI('hash-vt', 'invoice.pdf', 'msg1', 'part1', 'hdr1', null, vtStats);
+
+        const manualCard = context.apiContentElement.children[0];
+        assert.strictEqual(manualCard.children.length, 8);
+        assert.strictEqual(manualCard.children[3].children[0].textContent, 'VirusTotal Ergebnisse:');
+        assert.ok(manualCard.children[4].textContent.includes('Malicious: 2'));
+
+        context.apiContentElement.children = [];
+        const storedCard = context.renderStoredResultWithoutConsent('invoice.pdf', 'hash-vt', null, vtStats);
+        assert.strictEqual(storedCard.children.length, 7);
+        assert.strictEqual(storedCard.children[2].children[0].textContent, 'VirusTotal Ergebnisse:');
+        assert.ok(storedCard.children[3].textContent.includes('Malicious: 2'));
     });
 });
 
@@ -1732,6 +1752,7 @@ describe('renderScannerResults', () => {
                         }
                     };
                 },
+                createTextNode: (text) => ({ textContent: String(text) }),
                 createDocumentFragment: () => {
                     return {
                         children: [],
@@ -1799,6 +1820,34 @@ describe('renderScannerResults', () => {
         assert.ok(html.includes('AV-Ergebnisse:'));
         assert.ok(html.includes('AV: AV-1 - Urteil: Threat found'));
         assert.ok(html.includes('AV: AV-2 - Urteil: Clean'));
+    });
+
+    it('should render scanners_v2 dictionary with positives/total, percent and error_message, and preserve multiscan_result=0 and whitelisted verdict in renderThreatInfo', () => {
+        const jsonData = {
+            verdict: null,
+            whitelisted: true,
+            threat_level: 0,
+            threat_score: 0,
+            multiscan_result: 0,
+            scanners_v2: {
+                metadefender: { name: 'MetaDefender', status: 'clean', positives: 0, total: 35, percent: 0 },
+                crowdstrike_ml: { status: 'no-result', error_message: 'Unsupported file type' }
+            }
+        };
+        const scannerCard = context.document.createElement('div');
+        renderScannerResults(jsonData, scannerCard);
+        const scannerHtml = scannerCard.innerHTML;
+        assert.ok(scannerHtml.includes('Scanner: MetaDefender'));
+        assert.ok(scannerHtml.includes('Status: clean (0/35, 0%)'));
+        assert.ok(scannerHtml.includes('Scanner: crowdstrike_ml'));
+        assert.ok(scannerHtml.includes('Status: no-result - Unsupported file type'));
+
+        assert.strictEqual(context.deriveHybridVerdict(jsonData), 'whitelisted');
+        const threatCard = context.document.createElement('div');
+        context.renderThreatInfo(jsonData, threatCard);
+        const threatHtml = threatCard.innerHTML;
+        assert.ok(threatHtml.includes('whitelisted'));
+        assert.ok(threatHtml.includes('Multiscan-Ergebnis: 0'));
     });
 });
 

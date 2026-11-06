@@ -400,10 +400,22 @@ function addReason(reasons, code, fallback, params = []) {
     reasons.push(uiText(code, fallback, params));
 }
 
+function evaluateMaliciousIps(maliciousIps, score, reasons) {
+    if (Array.isArray(maliciousIps) && maliciousIps.length > 0) {
+        for (const ip of maliciousIps) {
+            if (!ip) continue;
+            score += 60;
+            addReason(reasons, "reasonMaliciousIp", "Öffentliche IP-Adresse ($1) aus den E-Mail-Kopfzeilen ist als verdächtig oder bösartig gemeldet.", [ip]);
+        }
+    }
+    return score;
+}
+
 function calculateThreatScore(author, urls, options = {}) {
     const {
         authHeaders = [],
         urlhausDomains = [],
+        maliciousIps = [],
         isFirstCommunication = false,
         messageText = "",
         subject = "",
@@ -426,6 +438,7 @@ function calculateThreatScore(author, urls, options = {}) {
     let authStatus = authEval.authStatus;
 
     score = evaluateUrlhaus(urlhausDomains, score, reasons);
+    score = evaluateMaliciousIps(maliciousIps, score, reasons);
     score = evaluateReplyTo(replyTo, senderDomain, score, reasons);
     score = evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons);
 

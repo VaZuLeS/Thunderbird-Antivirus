@@ -1853,5 +1853,46 @@
   },
   "analysisCurrentAvailability": {
     "message": "Für neue Anfragen"
+  },
+  "reasonMaliciousIp": {
+    "message": "Bösartige Server-IP-Adresse erkannt ($IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Externe Bedrohungsindikatoren (URLhaus & IP-Reputation)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Bekannte Malware-Domains erkannt: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "IP-Reputation ($PROVIDER$) – Verdächtige Server-IPs: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "urlscan.io Ergebnisse:"
+  },
+  "urlscanStatus": {
+    "message": "Status: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   }
 }

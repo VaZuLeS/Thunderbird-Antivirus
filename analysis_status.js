@@ -13,7 +13,7 @@ const ThundyAnalysis = (() => {
     function spec(address, method = 'GET') {
         let url; try { url = new URL(address); } catch (_) { return null; }
         const host = url.hostname, path = url.pathname;
-        if (host === 'hybrid-analysis.com' || host.endsWith('.hybrid-analysis.com')) return { provider: 'hybridanalysis', scope: path.includes('quick-scan/file') ? 'file' : path.includes('quick-scan/url') ? 'url' : path.includes('/report/') ? 'report' : 'hash' };
+        if (host === 'hybrid-analysis.com' || host.endsWith('.hybrid-analysis.com')) return { provider: 'hybridanalysis', scope: path.includes('quick-scan/file') ? 'file' : path.includes('quick-scan/url') ? 'url' : (path.includes('/report/') || path.includes('/quick-scan/')) ? 'report' : 'hash' };
         if (host === 'virustotal.com' || host.endsWith('.virustotal.com')) return { provider: 'virustotal', scope: path.includes('/ip_addresses/') ? 'ip' : 'hash' };
         if (host === 'urlhaus-api.abuse.ch') return { provider: 'urlhaus', scope: 'domain' };
         if (host === 'api.abuseipdb.com') return { provider: 'abuseipdb', scope: 'ip' };
@@ -25,20 +25,47 @@ const ThundyAnalysis = (() => {
         if (status === 404) return { state: info.provider === 'urlscan' ? 'incomplete' : 'not_found', verdict: 'unknown' };
         if (!(status >= 200 && status < 300)) return { state: 'failed', verdict: 'unknown' };
         if (info.provider === 'hybridanalysis') {
-            if ((info.scope === 'file' || info.scope === 'url') && (data?.submission_id || data?.job_id)) return { state: 'submitted', verdict: 'unknown' };
-            if (data?.state === 'IN_PROGRESS') return { state: 'incomplete', verdict: 'unknown' };
-            const value = typeof data?.verdict === 'string' ? data.verdict.toLowerCase() : '';
-            if (['malicious', 'suspicious', 'no specific threat', 'clean'].includes(value)) return { state: 'checked', verdict: ['no specific threat', 'clean'].includes(value) ? 'none' : value };
+            if ((info.scope === 'file' || info.scope === 'url') && (data?.submission_id || data?.job_id || (data?.id && data?.finished !== true && !data?.verdict))) return { state: 'submitted', verdict: 'unknown' };
+            const rawState = typeof data?.state === 'string' ? data.state.toUpperCase() : '';
+            const scannersArr = Array.isArray(data?.scanners) ? data.scanners.filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
+            const scannersV2 = data?.scanners_v2 && typeof data.scanners_v2 === 'object' && !Array.isArray(data.scanners_v2) ? Object.values(data.scanners_v2).filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
+            const allScanners = [...scannersArr, ...scannersV2];
+            const scannerPending = allScanners.some(s => typeof s.status === 'string' && ['in-progress', 'in_queue', 'in-queue', 'pending', 'running', 'queued'].includes(s.status.toLowerCase()));
+            if (rawState === 'IN_PROGRESS' || rawState === 'IN_QUEUE' || data?.finished === false || scannerPending) return { state: 'incomplete', verdict: 'unknown' };
+            const value = typeof data?.verdict === 'string' ? data.verdict.trim().toLowerCase() : '';
+            if (['malicious', 'suspicious', 'no specific threat', 'no threat', 'clean', 'whitelisted'].includes(value)) return { state: 'checked', verdict: ['no specific threat', 'no threat', 'clean', 'whitelisted'].includes(value) ? 'none' : value };
+            const hasMaliciousScanner = allScanners.some(s => (typeof s.status === 'string' && s.status.toLowerCase() === 'malicious') || (Number.isFinite(s.positives) && s.positives > 0) || (Array.isArray(s.anti_virus_results) && s.anti_virus_results.some(av => typeof av?.verdict === 'string' && av.verdict.toLowerCase() === 'malicious')));
+            const hasSuspiciousScanner = allScanners.some(s => typeof s.status === 'string' && s.status.toLowerCase() === 'suspicious');
+            const hasCleanScanner = allScanners.some(s => typeof s.status === 'string' && ['clean', 'whitelisted'].includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0));
+            const threatScore = typeof data?.threat_score === 'number' && Number.isFinite(data.threat_score) ? data.threat_score : null;
+            const multiscan = typeof data?.multiscan_result === 'number' && Number.isFinite(data.multiscan_result) ? data.multiscan_result : null;
+            if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50)) return { state: 'checked', verdict: 'malicious' };
+            if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0)) return { state: 'checked', verdict: 'suspicious' };
+            if (data?.whitelisted === true || hasCleanScanner) return { state: 'checked', verdict: 'none' };
         }
         if (info.provider === 'virustotal') {
-            const stats = data?.data?.attributes?.last_analysis_stats;
+            const stats = data?.data?.attributes?.last_analysis_stats || data?.attributes?.last_analysis_stats || data?.last_analysis_stats;
             if (Number.isFinite(stats?.malicious)) return { state: 'checked', verdict: stats.malicious > 0 ? 'malicious' : stats.suspicious > 0 ? 'suspicious' : 'none' };
         }
-        if (info.provider === 'urlhaus' && ['ok', 'no_results'].includes(data?.query_status)) return { state: 'checked', verdict: data.query_status === 'ok' && data.url_count > 0 ? 'malicious' : 'none' };
-        if (info.provider === 'abuseipdb' && Number.isFinite(data?.data?.abuseConfidenceScore)) return { state: 'checked', verdict: data.data.abuseConfidenceScore > 50 ? 'malicious' : 'none' };
+        if (info.provider === 'urlhaus' && ['ok', 'no_results'].includes(data?.query_status)) {
+            const hasHit = data.query_status === 'ok' && (Number(data.url_count) > 0 || (Array.isArray(data.urls) && data.urls.length > 0) || Boolean(data.url_status || data.threat));
+            return { state: 'checked', verdict: hasHit ? 'malicious' : 'none' };
+        }
+        if (info.provider === 'abuseipdb' && Number.isFinite(data?.data?.abuseConfidenceScore)) {
+            const score = data.data.abuseConfidenceScore;
+            const whitelisted = data.data.isWhitelisted === true;
+            return { state: 'checked', verdict: whitelisted ? 'none' : score > 50 ? 'malicious' : score >= 25 ? 'suspicious' : 'none' };
+        }
         if (info.provider === 'urlscan') {
             if (typeof data?.uuid === 'string' && !data?.verdicts) return { state: 'submitted', verdict: 'unknown' };
-            if (typeof data?.verdicts?.overall?.malicious === 'boolean' || typeof data?.verdicts?.urlscan?.malicious === 'boolean') return { state: 'checked', verdict: data.verdicts.overall?.malicious || data.verdicts.urlscan?.malicious ? 'malicious' : 'none' };
+            const overall = data?.verdicts?.overall, us = data?.verdicts?.urlscan, eng = data?.verdicts?.engines;
+            const hasBool = typeof overall?.malicious === 'boolean' || typeof us?.malicious === 'boolean' || typeof eng?.malicious === 'boolean';
+            const hasScore = Number.isFinite(overall?.score) || Number.isFinite(us?.score) || Number.isFinite(eng?.maliciousTotal);
+            if (hasBool || hasScore) {
+                if (overall?.malicious || us?.malicious || eng?.malicious || (Number.isFinite(eng?.maliciousTotal) && eng.maliciousTotal > 0) || (Number.isFinite(overall?.score) && overall.score >= 80)) return { state: 'checked', verdict: 'malicious' };
+                if ((Number.isFinite(overall?.score) && overall.score >= 50) || (Number.isFinite(us?.score) && us.score >= 50)) return { state: 'checked', verdict: 'suspicious' };
+                return { state: 'checked', verdict: 'none' };
+            }
         }
         return result;
     }
@@ -115,6 +142,9 @@ const ThundyAnalysis = (() => {
             }
             const vt = {provider:'virustotal',scope:'hash',resource};
             if (!documented.has(rowKey(vt)) && Number.isFinite(item.virustotal_stats?.malicious)) model.event({ ...vt, phase: 'cache', state: 'checked', verdict: item.virustotal_stats.malicious > 0 ? 'malicious' : item.virustotal_stats.suspicious > 0 ? 'suspicious' : 'none', observedAt: null });
+            const us = {provider:'urlscan',scope:'url',resource};
+            const usVerdict = ({MALICIOUS_VISUAL:'malicious',MALICIOUS:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[item.urlscan?.status];
+            if (!documented.has(rowKey(us)) && usVerdict) model.event({ ...us, phase: 'cache', state: 'checked', verdict: usVerdict, observedAt: Number.isFinite(item.urlscan?.observedAt) ? item.urlscan.observedAt : null });
         }
         for (const row of model.data.rows) row.source = 'stored';
         return model.data;

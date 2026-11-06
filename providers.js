@@ -128,12 +128,31 @@ async function checkURLhaus(domain, apikey, analysisContext = null) {
         });
         if (!response.ok) return null;
         const data = await response.json();
-        if (data.query_status === 'ok') return data.url_count > 0;
+        if (data.query_status === 'ok') return Number(data.url_count) > 0 || (Array.isArray(data.urls) && data.urls.length > 0);
         if (data.query_status === 'no_results') return false;
     } catch (e) {
         Logger.error("Fehler bei URLhaus Abfrage", e);
     }
     return null;
+}
+
+function extractUrlscanBrandNames(verdicts) {
+    const rawBrands = [
+        ...(Array.isArray(verdicts?.urlscan?.brands) ? verdicts.urlscan.brands : []),
+        ...(Array.isArray(verdicts?.overall?.brands) ? verdicts.overall.brands : [])
+    ];
+    const names = [];
+    const seen = new Set();
+    for (const item of rawBrands) {
+        const label = typeof item === 'string'
+            ? item.trim()
+            : (item && typeof item === 'object' ? String(item.name || item.key || '').trim() : '');
+        if (label && !seen.has(label.toLowerCase())) {
+            seen.add(label.toLowerCase());
+            names.push(label);
+        }
+    }
+    return names;
 }
 
 async function checkUrlscanIo(url, apikey, analysisContext = null) {
@@ -196,23 +215,35 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
             const resultData = await resultRes.json();
 
             let isMalicious = false;
+            let isSuspicious = false;
             let reasons = [];
 
-            if (resultData.verdicts && resultData.verdicts.overall && resultData.verdicts.overall.malicious) {
+            const verdicts = resultData && resultData.verdicts ? resultData.verdicts : {};
+            const overallScore = Number.isFinite(verdicts.overall?.score) ? verdicts.overall.score : null;
+            const urlscanScore = Number.isFinite(verdicts.urlscan?.score) ? verdicts.urlscan.score : null;
+            const enginesMalicious = Boolean(verdicts.engines?.malicious || (Number.isFinite(verdicts.engines?.maliciousTotal) && verdicts.engines.maliciousTotal > 0));
+
+            if ((verdicts.overall && verdicts.overall.malicious) || enginesMalicious || (overallScore !== null && overallScore >= 80)) {
                 isMalicious = true;
+                addReason(reasons, "ui_102", "Die URL wurde von urlscan.io generell als bösartig eingestuft.");
+            } else if ((overallScore !== null && overallScore >= 50) || (urlscanScore !== null && urlscanScore >= 50)) {
+                isSuspicious = true;
                 addReason(reasons, "ui_102", "Die URL wurde von urlscan.io generell als bösartig eingestuft.");
             }
 
-            if (resultData.verdicts && resultData.verdicts.urlscan && resultData.verdicts.urlscan.brands && resultData.verdicts.urlscan.brands.length > 0) {
+            const brandNames = extractUrlscanBrandNames(verdicts);
+            if (brandNames.length > 0) {
                  // Check if it's visually trying to spoof a brand
-                 if (resultData.verdicts.urlscan.malicious) {
+                 if ((verdicts.urlscan && verdicts.urlscan.malicious) || isMalicious || isSuspicious) {
                     isMalicious = true;
-                    addReason(reasons, 'visualImpersonation', 'Visuelle Erkennung: Die Seite gibt sich als $1 aus (Phishing-Verdacht).', [resultData.verdicts.urlscan.brands.join(', ')]);
+                    addReason(reasons, 'visualImpersonation', 'Visuelle Erkennung: Die Seite gibt sich als $1 aus (Phishing-Verdacht).', [brandNames.join(', ')]);
                  }
             }
 
             if (isMalicious) {
                 return { status: 'MALICIOUS_VISUAL', reasons: reasons };
+            } else if (isSuspicious) {
+                return { status: 'SUSPICIOUS', reasons: reasons };
             } else {
                 return { status: 'CLEAN' };
             }

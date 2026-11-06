@@ -1850,5 +1850,46 @@
   },
   "analysisCurrentAvailability": {
     "message": "Para nuevas solicitudes"
+  },
+  "reasonMaliciousIp": {
+    "message": "Dirección IP de servidor maliciosa detectada ($IP$)",
+    "placeholders": {
+      "ip": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelTitle": {
+    "message": "Indicadores de amenazas externas (URLhaus y reputación IP)"
+  },
+  "threatIntelUrlhaus": {
+    "message": "URLhaus – Dominios de malware conocidos detectados: $DOMAINS$",
+    "placeholders": {
+      "domains": {
+        "content": "$1"
+      }
+    }
+  },
+  "threatIntelIpReputation": {
+    "message": "Reputación IP ($PROVIDER$) – IPs de servidor sospechosas: $IPS$",
+    "placeholders": {
+      "provider": {
+        "content": "$1"
+      },
+      "ips": {
+        "content": "$2"
+      }
+    }
+  },
+  "urlscanHeading": {
+    "message": "Resultados de urlscan.io:"
+  },
+  "urlscanStatus": {
+    "message": "Estado: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
   }
 }

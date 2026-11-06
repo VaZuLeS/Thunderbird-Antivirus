@@ -3511,5 +3511,71 @@ describe('background.js', () => {
                 context.set_ipReputationApiKey('');
             }
         });
+
+        it('extractHybridVerdictFromOverview classifies whitelisted, scanners_v2 and multiscan_result accurately', () => {
+            assert.strictEqual(context.extractHybridVerdictFromOverview({ verdict: 'whitelisted', whitelisted: true }), 'CLEAN');
+            assert.strictEqual(context.extractHybridVerdictFromOverview({ verdict: null, whitelisted: true }), 'CLEAN');
+            assert.strictEqual(
+                context.extractHybridVerdictFromOverview({
+                    verdict: null,
+                    scanners_v2: { metadefender: { status: 'malicious', positives: 3, total: 35 } }
+                }),
+                'MALICIOUS'
+            );
+            assert.strictEqual(
+                context.extractHybridVerdictFromOverview({
+                    verdict: 'no-classification',
+                    scanners: [{ name: 'MetaDefender', status: 'clean', positives: 0, total: 35 }]
+                }),
+                'CLEAN'
+            );
+        });
+
+        it('extractUrlscanBrandNames normalizes string and object brand entries without [object Object]', () => {
+            const brands = context.extractUrlscanBrandNames({
+                urlscan: {
+                    brands: [
+                        { name: 'PayPal', key: 'paypal', country: ['us'] },
+                        'Microsoft',
+                        { key: 'dhl' }
+                    ]
+                },
+                overall: {
+                    brands: ['PayPal', { name: 'Apple' }]
+                }
+            });
+            assert.deepEqual(Array.from(brands), ['PayPal', 'Microsoft', 'dhl', 'Apple']);
+        });
+
+        it('checkURLhaus detects string url_count and urls array payloads', async () => {
+            context.set_externalAnalysisConsent(true);
+            context.urlhausCache.clear();
+            const originalFetch = context.fetch;
+            let payload = { query_status: 'ok', url_count: '2' };
+            context.fetch = async () => ({
+                ok: true,
+                status: 200,
+                json: async () => payload
+            });
+            try {
+                assert.strictEqual(await context.checkURLhaus('string-count.example', 'uh-key'), true);
+                payload = { query_status: 'ok', url_count: 0, urls: [{ url: 'https://array-urls.example/mal.exe' }] };
+                assert.strictEqual(await context.checkURLhaus('array-urls.example', 'uh-key'), true);
+            } finally {
+                context.fetch = originalFetch;
+                context.urlhausCache.clear();
+            }
+        });
+
+        it('calculateThreatScore incorporates maliciousIps into threat score and reasons', () => {
+            const result = context.calculateThreatScore('sender@example.com', [], {
+                maliciousIps: ['203.0.113.5']
+            });
+            assert.ok(result.score >= 60, `Expected score >= 60, got ${result.score}`);
+            assert.ok(
+                result.reasons.some(r => r.includes('203.0.113.5')),
+                `Expected reasons to mention malicious IP 203.0.113.5, got: ${JSON.stringify(result.reasons)}`
+            );
+        });
     });
 });

@@ -322,3 +322,38 @@ test('inventory provider index preserves resource ownership, source order and de
   assert.equal(items[0].lastChild.textContent,'URLhaus · VirusTotal');assert.equal(items[1].lastChild.textContent,'Hybrid Analysis');assert.equal(items[2].lastChild.textContent,catalog.analysisResourceNoExternal.message);assert.equal(JSON.stringify(rows),original);
  }finally{dom.window.close();}
 });
+
+test('Hybrid Analysis API v2 Quick-Scan and Overview payloads classify id, finished, whitelisted and scanners_v2 accurately',()=>{
+ const a=model();
+ assert.deepEqual({...a.spec('https://hybrid-analysis.com/api/v2/quick-scan/64f123')},{provider:'hybridanalysis',scope:'report'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'file'},200,{id:'qs-123',sha256:'abc',finished:false})},{state:'submitted',verdict:'unknown'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,{id:'qs-123',sha256:'abc',finished:false,scanners:[{name:'CrowdStrike Falcon',status:'in-progress'}]})},{state:'incomplete',verdict:'unknown'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'hash'},200,{sha256:'abc',verdict:'whitelisted',whitelisted:true})},{state:'checked',verdict:'none'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,{sha256:'abc',verdict:null,whitelisted:false,scanners_v2:{metadefender:{status:'malicious',positives:4,total:35}}})},{state:'checked',verdict:'malicious'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,{sha256:'abc',verdict:'no-classification',scanners:[{name:'MetaDefender',status:'clean',positives:0,total:35}]})},{state:'checked',verdict:'none'});
+});
+
+test('VirusTotal, URLhaus, AbuseIPDB and URLScan.io API response parsers handle normalized and edge payloads accurately',()=>{
+ const a=model();
+ // VirusTotal unwrapped last_analysis_stats and suspicious
+ assert.deepEqual({...a.response({provider:'virustotal',scope:'hash'},200,{last_analysis_stats:{malicious:0,suspicious:2,harmless:60,undetected:8}})},{state:'checked',verdict:'suspicious'});
+ assert.deepEqual({...a.response({provider:'virustotal',scope:'ip'},200,{attributes:{last_analysis_stats:{malicious:3,suspicious:0,harmless:60}}})},{state:'checked',verdict:'malicious'});
+ // URLhaus string url_count, urls array, and URL endpoint fields
+ assert.deepEqual({...a.response({provider:'urlhaus',scope:'domain'},200,{query_status:'ok',url_count:'3'})},{state:'checked',verdict:'malicious'});
+ assert.deepEqual({...a.response({provider:'urlhaus',scope:'domain'},200,{query_status:'ok',urls:[{url:'https://bad.example/payload.exe'}]})},{state:'checked',verdict:'malicious'});
+ assert.deepEqual({...a.response({provider:'urlhaus',scope:'url'},200,{query_status:'ok',url_status:'online',threat:'malware_download'})},{state:'checked',verdict:'malicious'});
+ // AbuseIPDB suspicious range (25..50) and whitelisted override
+ assert.deepEqual({...a.response({provider:'abuseipdb',scope:'ip'},200,{data:{abuseConfidenceScore:35,isWhitelisted:false}})},{state:'checked',verdict:'suspicious'});
+ assert.deepEqual({...a.response({provider:'abuseipdb',scope:'ip'},200,{data:{abuseConfidenceScore:85,isWhitelisted:true}})},{state:'checked',verdict:'none'});
+ // URLScan.io engines maliciousTotal, brand objects, and suspicious score
+ assert.deepEqual({...a.response({provider:'urlscan',scope:'report'},200,{verdicts:{overall:{malicious:false,score:10},engines:{maliciousTotal:2}}})},{state:'checked',verdict:'malicious'});
+ assert.deepEqual({...a.response({provider:'urlscan',scope:'report'},200,{verdicts:{overall:{malicious:false,score:65},urlscan:{brands:[{name:'PayPal',key:'paypal'}]}}})},{state:'checked',verdict:'suspicious'});
+ // Legacy restoration of stored urlscan link verdict
+ const legacyUrlscan=a.legacy({links:[{url:'https://phish.example',state:'UNKNOWN',urlscan:{status:'MALICIOUS_VISUAL',observedAt:500}}]});
+ assert.equal(legacyUrlscan.rows.length,1);
+ assert.equal(legacyUrlscan.rows[0].provider,'urlscan');
+ assert.equal(legacyUrlscan.rows[0].verdict,'malicious');
+ assert.equal(legacyUrlscan.rows[0].observedAt,500);
+});
+
+

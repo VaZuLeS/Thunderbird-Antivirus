@@ -169,7 +169,8 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 const attachments = (saved.attachments || []).filter(item => item.partName && currentParts.has(String(item.partName)) && currentParts.get(String(item.partName)) === item.attachment_name && verifiedHashes.has(String(item.partName)) && typeof item.hybrid_sha256 === 'string' && verifiedHashes.get(String(item.partName)) === item.hybrid_sha256.toLowerCase());
                 const links = saved.links.filter(item => currentLinks.has(item.url));
                 const scanCoverage = Object.fromEntries(Object.entries(saved.scanCoverage || {}).filter(([kind]) => saved.scanCoverageBindings?.[kind]?.runtimeId === getAnalysisRuntimeId() && saved.scanCoverageBindings[kind].messageId === message.id));
-                return {messageHeader:saved.messageHeader, attachments, links, ...(saved.sourceDataIncomplete ? {sourceDataIncomplete:true} : {}), scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined};
+                const threatIntel = saved.threatIntel && (!saved.threatIntelBinding || (saved.threatIntelBinding.runtimeId === getAnalysisRuntimeId() && saved.threatIntelBinding.messageId === message.id)) ? saved.threatIntel : undefined;
+                return {messageHeader:saved.messageHeader, attachments, links, ...(saved.sourceDataIncomplete ? {sourceDataIncomplete:true} : {}), scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined, ...(threatIntel ? {threatIntel} : {})};
             };
             const model = ThundyAnalysis.create(ThundyAnalysis.legacy(sourceRecord(record)));
             // Current unreadability must not inherit a historical "checked" state.
@@ -511,8 +512,8 @@ async function processAndUploadUrls(message, filteredUrls, allowExternal = true,
                         result = {
                             url: url,
                             state: 'UPLOADED',
-                            hybrid_submission_id: json_data.submission_id,
-                            hybrid_job_id: json_data.job_id,
+                            hybrid_submission_id: json_data.submission_id || json_data.id,
+                            hybrid_job_id: json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id,
                             hybrid_sha256: json_data.sha256
                         };
                     }
@@ -746,6 +747,20 @@ async function extractBecProtectionData(message, fullMessage) {
   return { senderEmail, isFirstCommunication, replyTo, subject };
 }
 
+async function persistThreatIntelSummary(message, summary) {
+  if (!message || (!message.headerMessageId && message.id == null)) return;
+  const key = message.headerMessageId || 'message:' + message.id;
+  try {
+    await updateStore(await getSharedDB(), 'hybridanalysis', key, existing => ({
+      ...(existing || { messageHeader: key }),
+      threatIntel: summary,
+      ...(typeof ThundyAnalysis !== 'undefined' ? { threatIntelBinding: { runtimeId: getAnalysisRuntimeId(), messageId: message.id } } : {})
+    }), { preserveReports: true });
+  } catch (e) {
+    Logger.error('Fehler beim Speichern der Threat-Intel-Zusammenfassung:', e);
+  }
+}
+
 async function collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal = true, analysisContext = null }) {
   const rawAuthHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
   const settings = await browser.storage.local.get('trustedAuthServers');
@@ -763,6 +778,14 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
   ]);
 
   if (domainCoverage.detected != null) await persistScanCoverage(message, 'domains', domainCoverage);
+  if (allowExternal && ((Array.isArray(urlhausDomains) && urlhausDomains.length > 0) || (Array.isArray(maliciousIps) && maliciousIps.length > 0))) {
+    await persistThreatIntelSummary(message, {
+      urlhausDomains: Array.isArray(urlhausDomains) ? urlhausDomains : [],
+      maliciousIps: Array.isArray(maliciousIps) ? maliciousIps : [],
+      ipReputationProvider: ipReputationProvider && ipReputationProvider !== 'none' ? ipReputationProvider : null,
+      observedAt: Date.now()
+    });
+  }
   return {
     authHeaders,
     urlhausDomains,
@@ -1117,8 +1140,8 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
             if (uploadResponse.status === 200 || uploadResponse.status === 201) {
                 const uploadData = await uploadResponse.json();
                 const hybridData = HybridDataBuilder.create(
-                    uploadData.submission_id,
-                    uploadData.job_id,
+                    uploadData.submission_id || uploadData.id,
+                    uploadData.job_id || (Array.isArray(uploadData.reports) && uploadData.reports[0]) || uploadData.id,
                     uploadData.sha256 || local_hash,
                     'UPLOADED',
                     attachment
@@ -1163,6 +1186,19 @@ function create_manual_check_hybrid_data(local_hash, attachment, virustotal_stat
     return data;
 }
 
+function hasHybridReportContent(json_data) {
+    if (!json_data || typeof json_data !== 'object' || Array.isArray(json_data)) return false;
+    return Boolean(
+        (typeof json_data.verdict === 'string' && json_data.verdict.trim() !== '') ||
+        json_data.whitelisted === true ||
+        (typeof json_data.threat_score === 'number' && Number.isFinite(json_data.threat_score)) ||
+        (typeof json_data.multiscan_result === 'number' && Number.isFinite(json_data.multiscan_result)) ||
+        (Array.isArray(json_data.scanners) && json_data.scanners.length > 0) ||
+        (json_data.scanners_v2 && typeof json_data.scanners_v2 === 'object' && !Array.isArray(json_data.scanners_v2) && Object.keys(json_data.scanners_v2).length > 0) ||
+        (typeof json_data.state === 'string' && json_data.state.trim() !== '')
+    );
+}
+
 async function check_hybrid_analysis_for_attachment(local_hash, attachment, content_of_attachment, virustotal_stats, file_type, analysisContext = null) {
     if (!mayTransmitExternally()) {
         return create_manual_check_hybrid_data(local_hash, attachment, virustotal_stats);
@@ -1174,14 +1210,19 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
 
     if (responseCheck.status === 200) {
         const json_data = await responseCheck.json();
-        return HybridDataBuilder.create(
-            json_data.submission_id || 'N/A',
-            json_data.job_id || 'N/A',
+        const item = HybridDataBuilder.create(
+            json_data.submission_id || json_data.id || 'N/A',
+            json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id || 'N/A',
             local_hash,
             'KNOWN',
             attachment,
             virustotal_stats
         );
+        if (hasHybridReportContent(json_data)) {
+            item.report = json_data;
+            item.report_fetched_at = new Date().toISOString();
+        }
+        return item;
     }
 
     return await handle_unknown_attachment({
@@ -1259,9 +1300,9 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         partName: result.hybrid_data.partName,
         virustotal_stats: result.virustotal_stats,
         // A new submission invalidates any previously persisted analysis
-        // protocol (FA-3); the popup re-fetches and re-persists the report.
-        report: null,
-        report_fetched_at: null,
+        // protocol (FA-3); a freshly fetched KNOWN overview report is preserved.
+        report: result.hybrid_data.state === 'KNOWN' && result.report ? result.report : null,
+        report_fetched_at: result.hybrid_data.state === 'KNOWN' && result.report ? (result.report_fetched_at || new Date().toISOString()) : null,
         created: new Date()
       }));
 
@@ -1507,12 +1548,38 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
 
             let result = await handleUrlScan(url, msgId, activeMessage ? await getMessageAnalysisContext(activeMessage, tab?.id) : null);
 
-            notify('notificationTitle', 'notificationScanSubmitted', [String(result.job_id)]);
+            notify('notificationTitle', 'notificationScanSubmitted', [String(result.job_id || (Array.isArray(result.reports) && result.reports[0]) || result.id || result.submission_id || result.sha256 || 'OK')]);
         } catch (error) {
             notify('notificationTitleError', 'notificationScanError', [error.message]);
         }
     }
 });
+
+async function persistUrlscanLinkResult(message, url, res) {
+    if (!message || !message.headerMessageId || !res || !res.status) return;
+    try {
+        const db = await getSharedDB();
+        const reqUrl = url.endsWith('/') ? url.slice(0, -1) : url;
+        const reqUrlSlash = reqUrl + '/';
+        const observedAt = Date.now();
+        await updateStore(db, 'hybridanalysis', message.headerMessageId, existingRecord => {
+            if (!existingRecord || !Array.isArray(existingRecord.links)) return existingRecord;
+            for (const item of existingRecord.links) {
+                if (item && (item.url === reqUrl || item.url === reqUrlSlash)) {
+                    item.urlscan = {
+                        status: res.status,
+                        reasons: Array.isArray(res.reasons) ? res.reasons : [],
+                        observedAt
+                    };
+                }
+            }
+            existingRecord.updatedAt = observedAt;
+            return existingRecord;
+        }, { preserveReports: true });
+    } catch (e) {
+        Logger.error('Fehler beim Speichern des urlscan.io-Ergebnisses:', e);
+    }
+}
 
 async function handleCheckLinkState(request, sender, sendResponse) {
     try {
@@ -1554,6 +1621,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                 const res = await checkUrlscanIo(request.url, urlscanApikey, analysisContext);
                 urlscanAttempt = { origin: 'none', outcome: res?.status === 'NOT_CHECKED' ? 'not_requested' : 'failed', attemptedAt: Date.now(), observedAt: null };
                 if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT' && res.status !== 'NOT_CHECKED') {
+                    await persistUrlscanLinkResult(message, request.url, res);
                     // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
                     sendResponse({ status: res.status, reasons: res.reasons, provider: 'urlscan.io', check: { origin: 'live', outcome: 'success', attemptedAt: Date.now(), observedAt: Date.now() } });
                     return;
@@ -1562,6 +1630,16 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                 urlscanAttempt = { origin: 'none', outcome: 'failed', attemptedAt: Date.now(), observedAt: null };
                 Logger.error("Fehler bei Time-of-Click Live-Scan:", e);
             }
+        }
+
+        if (linkObj && linkObj.urlscan && ['MALICIOUS_VISUAL', 'MALICIOUS', 'SUSPICIOUS', 'CLEAN'].includes(linkObj.urlscan.status) && (!linkObj.hybrid_sha256 || linkObj.state === 'UNKNOWN')) {
+            sendResponse({
+                status: linkObj.urlscan.status,
+                reasons: Array.isArray(linkObj.urlscan.reasons) ? linkObj.urlscan.reasons : [],
+                provider: 'urlscan.io',
+                check: { origin: 'stored', outcome: 'success', attemptedAt: request.userAction ? Date.now() : null, observedAt: Number.isFinite(linkObj.urlscan.observedAt) ? linkObj.urlscan.observedAt : null }
+            });
+            return;
         }
 
         if (linkObj) {
@@ -1598,6 +1676,32 @@ async function handleOpenCheckedLink(request, sender) {
     }
 }
 
+function extractHybridVerdictFromOverview(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+    const rawState = typeof data.state === 'string' ? data.state.toUpperCase() : '';
+    const scannersArr = Array.isArray(data.scanners) ? data.scanners.filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
+    const scannersV2 = data.scanners_v2 && typeof data.scanners_v2 === 'object' && !Array.isArray(data.scanners_v2) ? Object.values(data.scanners_v2).filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
+    const allScanners = [...scannersArr, ...scannersV2];
+    const scannerPending = allScanners.some(s => typeof s.status === 'string' && ['in-progress', 'in_queue', 'in-queue', 'pending', 'running', 'queued'].includes(s.status.toLowerCase()));
+    if (rawState === 'IN_PROGRESS' || rawState === 'IN_QUEUE' || data.finished === false || scannerPending) return null;
+
+    const verdicts = { 'no specific threat': 'CLEAN', 'no threat': 'CLEAN', clean: 'CLEAN', whitelisted: 'CLEAN', malicious: 'MALICIOUS', suspicious: 'SUSPICIOUS' };
+    const rawVerdict = typeof data.verdict === 'string' ? data.verdict.trim().toLowerCase() : '';
+    if (verdicts[rawVerdict]) return verdicts[rawVerdict];
+
+    const hasMaliciousScanner = allScanners.some(s => (typeof s.status === 'string' && s.status.toLowerCase() === 'malicious') || (Number.isFinite(s.positives) && s.positives > 0) || (Array.isArray(s.anti_virus_results) && s.anti_virus_results.some(av => typeof av?.verdict === 'string' && av.verdict.toLowerCase() === 'malicious')));
+    const hasSuspiciousScanner = allScanners.some(s => typeof s.status === 'string' && s.status.toLowerCase() === 'suspicious');
+    const hasCleanScanner = allScanners.some(s => typeof s.status === 'string' && ['clean', 'whitelisted'].includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0));
+    const threatScore = typeof data.threat_score === 'number' && Number.isFinite(data.threat_score) ? data.threat_score : null;
+    const multiscan = typeof data.multiscan_result === 'number' && Number.isFinite(data.multiscan_result) ? data.multiscan_result : null;
+
+    if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50)) return 'MALICIOUS';
+    if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0)) return 'SUSPICIOUS';
+    if (data.whitelisted === true || hasCleanScanner) return 'CLEAN';
+    if (rawVerdict === 'unknown') return 'UNKNOWN';
+    return null;
+}
+
 // Optional legacy fields never imply a known observation time. `created` on a
 // submission is not the time a provider observed its final verdict.
 async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { requested = true, observedAt = null, analysisContext = null } = {}) {
@@ -1616,8 +1720,7 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
         const response = await apiGateway.fetchWithTimeout(options.url, options);
         if (response.ok === false) throw new Error('Provider HTTP failure');
         const data = await response.json();
-        const verdicts = { 'no specific threat': 'CLEAN', malicious: 'MALICIOUS', suspicious: 'SUSPICIOUS', unknown: 'UNKNOWN' };
-        const verdict = typeof data.verdict === 'string' ? verdicts[data.verdict.toLowerCase()] : null;
+        const verdict = extractHybridVerdictFromOverview(data);
         if (!verdict) { check.outcome = 'no_result'; return fallback(); }
         return { status: verdict, check: { ...check, origin: 'live', outcome: 'success', observedAt: Date.now() } };
     } catch (error) { check.outcome = 'failed'; return fallback(); }
@@ -1890,8 +1993,8 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
                         }
                     }
                     if (linkIndex > -1) {
-                        existingRecord.links[linkIndex].hybrid_submission_id = json_data.submission_id;
-                        existingRecord.links[linkIndex].hybrid_job_id = json_data.job_id;
+                        existingRecord.links[linkIndex].hybrid_submission_id = json_data.submission_id || json_data.id;
+                        existingRecord.links[linkIndex].hybrid_job_id = json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id;
                         existingRecord.links[linkIndex].hybrid_sha256 = json_data.sha256;
                         existingRecord.links[linkIndex].state = 'UPLOADED';
                         existingRecord.links[linkIndex].report = null;
@@ -1953,8 +2056,9 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
                         }
                     }
                     if (attIndex > -1) {
-                        existingRecord.attachments[attIndex].hybrid_submission_id = json_data.submission_id;
-                        existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id;
+                        existingRecord.attachments[attIndex].hybrid_submission_id = json_data.submission_id || json_data.id;
+                        existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id;
+                        if (json_data.sha256) existingRecord.attachments[attIndex].hybrid_sha256 = json_data.sha256;
                         existingRecord.attachments[attIndex].state = 'UPLOADED';
                         existingRecord.attachments[attIndex].report = null;
                         existingRecord.attachments[attIndex].report_fetched_at = null;

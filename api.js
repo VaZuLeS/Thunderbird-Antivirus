@@ -259,8 +259,13 @@ try {
             if (record?.scanCoverage) { const limits = document.createElement('p'); limits.textContent = uiText('coverageLimits', ''); liveContainer.appendChild(limits); }
             const hasAttachments = record && record.attachments && record.attachments.length > 0;
             const hasLinks = record && record.links && record.links.length > 0;
+            const hasThreatIntel = Boolean(record?.threatIntel && ((Array.isArray(record.threatIntel.urlhausDomains) && record.threatIntel.urlhausDomains.length > 0) || (Array.isArray(record.threatIntel.maliciousIps) && record.threatIntel.maliciousIps.length > 0)));
 
-            if (hasAttachments || hasLinks) {
+            if (hasThreatIntel) {
+                renderThreatIntelSummary(record.threatIntel, liveContainer);
+            }
+
+            if (hasAttachments || hasLinks || hasThreatIntel) {
                 // Single live container for everything we render below. The old
                 // code passed an undefined identifier (`syncFragment`) and used an
                 // undeclared `container`, which threw a ReferenceError and left the
@@ -274,7 +279,7 @@ try {
                         if (att.state === 'SIZE_LIMIT') {
                             const p = document.createElement('p'); p.textContent = uiText('sizeLimit', 'Attachment exceeds the local size limit.'); liveContainer.appendChild(p);
                         } else if ((att.state === 'UNKNOWN' || att.state === 'MANUAL_CHECK_PENDING' || att.state === 'NOT_CHECKED')) {
-                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, liveContainer);
+                            renderManualUploadUI(hash256, att.attachment_name, message.id, att.partName, message.headerMessageId, liveContainer, att.virustotal_stats);
                         } else if (hasFinalStoredReport(att)) {
                             // FA-3: a finished protocol was already persisted; show it
                             // without a new provider request (the data is local).
@@ -293,7 +298,7 @@ try {
                                 }, frag)
                             );
                         } else {
-                            renderStoredResultWithoutConsent(att.attachment_name, hash256, liveContainer);
+                            renderStoredResultWithoutConsent(att.attachment_name, hash256, liveContainer, att.virustotal_stats);
                         }
                     }
                 }
@@ -303,7 +308,7 @@ try {
                         processRecordLinks(record.links, message.headerMessageId, liveContainer, fetchTasks);
                     } else {
                         for (const linkObj of record.links) {
-                            renderStoredResultWithoutConsent(linkObj.url, linkObj.hybrid_sha256, liveContainer);
+                            renderStoredResultWithoutConsent(linkObj.url, linkObj.hybrid_sha256, liveContainer, null, linkObj.urlscan);
                         }
                     }
                 }
@@ -405,6 +410,64 @@ function reportTags(tags) {
     return Array.isArray(tags) ? tags.filter(tag => typeof tag === 'string').join(', ') || 'N/A' : 'N/A';
 }
 
+function extractHybridScanners(scannersInput, scannersV2Input = null) {
+    const validObj = item => Boolean(item && typeof item === 'object' && !Array.isArray(item));
+    const list = [];
+    const seen = new Set();
+    const rawScanners = Array.isArray(scannersInput)
+        ? scannersInput
+        : (validObj(scannersInput) && Array.isArray(scannersInput.scanners) ? scannersInput.scanners : []);
+    const rawV2 = validObj(scannersV2Input)
+        ? scannersV2Input
+        : (validObj(scannersInput) && validObj(scannersInput.scanners_v2) ? scannersInput.scanners_v2 : null);
+
+    for (const scanner of rawScanners) {
+        if (!validObj(scanner)) continue;
+        const nameKey = typeof scanner.name === 'string' && scanner.name.trim() ? scanner.name.trim().toLowerCase() : null;
+        if (nameKey) seen.add(nameKey);
+        list.push(scanner);
+    }
+    if (rawV2) {
+        for (const [key, scanner] of Object.entries(rawV2)) {
+            if (!validObj(scanner)) continue;
+            const resolvedName = typeof scanner.name === 'string' && scanner.name.trim() ? scanner.name : key;
+            const nameKey = String(resolvedName).trim().toLowerCase();
+            if (nameKey && seen.has(nameKey)) continue;
+            if (nameKey) seen.add(nameKey);
+            list.push(scanner.name ? scanner : { ...scanner, name: resolvedName });
+        }
+    }
+    return list;
+}
+
+function isHybridReportInProgress(json_data) {
+    if (!json_data || typeof json_data !== 'object' || Array.isArray(json_data)) return false;
+    const rawState = typeof json_data.state === 'string' ? json_data.state.toUpperCase() : '';
+    if (rawState === 'IN_PROGRESS' || rawState === 'IN_QUEUE' || json_data.finished === false) return true;
+    const scanners = extractHybridScanners(json_data);
+    return scanners.some(s => typeof s.status === 'string' && ['in-progress', 'in_queue', 'in-queue', 'pending', 'running', 'queued'].includes(s.status.toLowerCase()));
+}
+
+function deriveHybridVerdict(json_data) {
+    if (!json_data || typeof json_data !== 'object' || Array.isArray(json_data)) return '';
+    const rawVerdict = typeof json_data.verdict === 'string' ? json_data.verdict.trim() : '';
+    const lower = rawVerdict.toLowerCase();
+    if (rawVerdict && lower !== 'unknown' && lower !== 'no-classification') return rawVerdict;
+
+    const scanners = extractHybridScanners(json_data);
+    const hasMaliciousScanner = scanners.some(s => (typeof s.status === 'string' && s.status.toLowerCase() === 'malicious') || (Number.isFinite(s.positives) && s.positives > 0) || (Array.isArray(s.anti_virus_results) && s.anti_virus_results.some(av => typeof av?.verdict === 'string' && av.verdict.toLowerCase() === 'malicious')));
+    const hasSuspiciousScanner = scanners.some(s => typeof s.status === 'string' && s.status.toLowerCase() === 'suspicious');
+    const hasCleanScanner = scanners.some(s => typeof s.status === 'string' && ['clean', 'whitelisted'].includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0));
+    const threatScore = typeof json_data.threat_score === 'number' && Number.isFinite(json_data.threat_score) ? json_data.threat_score : null;
+    const multiscan = typeof json_data.multiscan_result === 'number' && Number.isFinite(json_data.multiscan_result) ? json_data.multiscan_result : null;
+
+    if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50)) return 'malicious';
+    if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0)) return 'suspicious';
+    if (json_data.whitelisted === true) return 'whitelisted';
+    if (hasCleanScanner) return 'clean';
+    return rawVerdict;
+}
+
 function renderThreatInfo(json_data, card) {
     const score = typeof json_data.threat_score === 'number' && Number.isFinite(json_data.threat_score) && json_data.threat_score >= 0 && json_data.threat_score <= 100 ? json_data.threat_score : null;
     let threatClass = score === null ? 'text-muted' : "text-success";
@@ -438,9 +501,10 @@ function renderThreatInfo(json_data, card) {
     pVerdict.appendChild(document.createTextNode(" "));
     const verdictSpan = document.createElement('span');
     verdictSpan.className = threatClass;
-    const verdictKeys = { 'no specific threat': 'providerNoDetection', 'clean': 'providerNoDetection', 'malicious': 'providerMalicious', 'suspicious': 'providerSuspicious', 'in progress': 'providerPending' };
-    const verdictKey = verdictKeys[String(json_data.verdict).toLowerCase()];
-    verdictSpan.textContent = verdictKey && typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(verdictKey) : typeof json_data.verdict === 'string' && json_data.verdict ? json_data.verdict : uiText('providerUnknown','Unknown');
+    const resolvedVerdict = deriveHybridVerdict(json_data);
+    const verdictKeys = { 'no specific threat': 'providerNoDetection', 'no threat': 'providerNoDetection', 'clean': 'providerNoDetection', 'whitelisted': 'providerNoDetection', 'malicious': 'providerMalicious', 'suspicious': 'providerSuspicious', 'in progress': 'providerPending' };
+    const verdictKey = verdictKeys[String(resolvedVerdict).toLowerCase()];
+    verdictSpan.textContent = verdictKey && typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(verdictKey) : typeof resolvedVerdict === 'string' && resolvedVerdict ? resolvedVerdict : uiText('providerUnknown','Unknown');
     pVerdict.appendChild(verdictSpan);
     card.appendChild(pVerdict);
 
@@ -452,7 +516,8 @@ function renderThreatInfo(json_data, card) {
     card.appendChild(pVxFamily);
 
     const pMulti = document.createElement('p');
-    pMulti.textContent = uiText("ui_016", "Multiscan-Ergebnis: $1", [json_data.multiscan_result || 'N/A']);
+    const multiVal = (json_data.multiscan_result !== null && json_data.multiscan_result !== undefined && json_data.multiscan_result !== '') ? json_data.multiscan_result : 'N/A';
+    pMulti.textContent = uiText("ui_016", "Multiscan-Ergebnis: $1", [multiVal]);
     card.appendChild(pMulti);
 
     const pAddInfo = document.createElement('p');
@@ -501,8 +566,78 @@ function renderVirusTotalStats(virustotal_stats, card) {
     card.appendChild(pVtHarm);
 }
 
-function renderScannerResults(scanners, card) {
-    const rows = Array.isArray(scanners) ? scanners.filter(scanner => scanner && typeof scanner === 'object' && !Array.isArray(scanner)) : [];
+function renderUrlscanResult(urlscan, card) {
+    if (!urlscan || typeof urlscan !== 'object' || Array.isArray(urlscan) || typeof urlscan.status !== 'string') return;
+    const status = urlscan.status.trim().toUpperCase();
+    if (!status) return;
+
+    const pHead = document.createElement('p');
+    pHead.className = "ml-2";
+    const headStrong = document.createElement('strong');
+    headStrong.textContent = uiText("urlscanHeading", "urlscan.io Ergebnisse:");
+    pHead.appendChild(headStrong);
+    card.appendChild(pHead);
+
+    const isMalicious = status === 'MALICIOUS' || status === 'MALICIOUS_VISUAL';
+    const isSuspicious = status === 'SUSPICIOUS';
+    const isClean = status === 'CLEAN';
+    const statusClass = isMalicious ? "text-danger" : isSuspicious ? "text-warning" : isClean ? "text-success" : "";
+
+    const pStatus = document.createElement('p');
+    pStatus.className = `ml-4 ${statusClass}`.trim();
+    pStatus.textContent = uiText("urlscanStatus", "Status: $1", [status]);
+    card.appendChild(pStatus);
+
+    if (Array.isArray(urlscan.reasons)) {
+        for (const reason of urlscan.reasons) {
+            if (typeof reason !== 'string' || !reason.trim()) continue;
+            const pReason = document.createElement('p');
+            pReason.className = `ml-4 ${statusClass}`.trim();
+            pReason.textContent = reason;
+            card.appendChild(pReason);
+        }
+    }
+}
+
+function renderThreatIntelSummary(threatIntel, targetContainer) {
+    if (!threatIntel || typeof threatIntel !== 'object' || Array.isArray(threatIntel)) return null;
+    const domains = Array.isArray(threatIntel.urlhausDomains) ? threatIntel.urlhausDomains.filter(d => typeof d === 'string' && d.trim()) : [];
+    const ips = Array.isArray(threatIntel.maliciousIps) ? threatIntel.maliciousIps.filter(ip => typeof ip === 'string' && ip.trim()) : [];
+    if (domains.length === 0 && ips.length === 0) return null;
+
+    const container = targetContainer || document.getElementById('hybrid_analysis_api_content');
+    if (!container) return null;
+
+    const card = document.createElement('div');
+    card.className = 'card mb-3';
+    card.setAttribute('role', 'status');
+
+    const h2 = document.createElement('h2');
+    h2.textContent = uiText('threatIntelTitle', 'Externe Bedrohungsindikatoren (URLhaus & IP-Reputation)');
+    card.appendChild(h2);
+
+    if (domains.length > 0) {
+        const pDomains = document.createElement('p');
+        pDomains.className = 'text-danger';
+        pDomains.textContent = uiText('threatIntelUrlhaus', 'URLhaus – Bekannte Malware-Domains erkannt: $1', [domains.join(', ')]);
+        card.appendChild(pDomains);
+    }
+
+    if (ips.length > 0) {
+        const providerRaw = typeof threatIntel.ipReputationProvider === 'string' ? threatIntel.ipReputationProvider.toLowerCase() : '';
+        const providerLabel = providerRaw === 'abuseipdb' ? 'AbuseIPDB' : providerRaw === 'virustotal' ? 'VirusTotal' : 'IP-Check';
+        const pIps = document.createElement('p');
+        pIps.className = 'text-danger';
+        pIps.textContent = uiText('threatIntelIpReputation', 'IP-Reputation ($1) – Verdächtige Server-IPs: $2', [providerLabel, ips.join(', ')]);
+        card.appendChild(pIps);
+    }
+
+    container.appendChild(card);
+    return card;
+}
+
+function renderScannerResults(scanners, card, scanners_v2 = null) {
+    const rows = extractHybridScanners(scanners, scanners_v2);
     if (rows.length > 0) {
         // Optimization: Use DocumentFragment to batch DOM insertions and avoid multiple reflows
         const fragment = document.createDocumentFragment();
@@ -515,7 +650,14 @@ function renderScannerResults(scanners, card) {
 
             const pStatus = document.createElement('p');
             pStatus.className = "ml-4";
-            pStatus.textContent = uiText("ui_026", "Status: $1", [field(scanner.status)]);
+            let statusText = field(scanner.status);
+            if (Number.isFinite(scanner.positives) && Number.isFinite(scanner.total) && scanner.total > 0) {
+                statusText += ` (${scanner.positives}/${scanner.total}${Number.isFinite(scanner.percent) ? `, ${scanner.percent}%` : ''})`;
+            }
+            if (typeof scanner.error_message === 'string' && scanner.error_message.trim()) {
+                statusText += ` - ${scanner.error_message.trim()}`;
+            }
+            pStatus.textContent = uiText("ui_026", "Status: $1", [statusText]);
             fragment.appendChild(pStatus);
 
             const avResults = scanner.anti_virus_results;
@@ -619,7 +761,7 @@ function renderProtocolMeta({ hybrid_sha, jobId = null, submissionId = null, fet
     card.appendChild(pMeta);
 }
 
-function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats = null, jobId = null, submissionId = null, fetched_at = null, attempt = null, controlId = hybrid_sha, allowCdr = true }) {
+function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats = null, urlscan = null, jobId = null, submissionId = null, fetched_at = null, attempt = null, controlId = hybrid_sha, allowCdr = true }) {
     if (!json_data || typeof json_data !== 'object' || Array.isArray(json_data)) throw new TypeError('Invalid report');
     const card = document.createElement('div');
     card.className = "card mb-3";
@@ -628,24 +770,29 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
     h2.textContent = uiText("ui_036", "Geprüftes Element: $1", [attachmentName || uiText('unknownAttachment', "Unbekannt")]);
     card.appendChild(h2);
 
-    renderProtocolMeta({ hybrid_sha, jobId: json_data.job_id || jobId, submissionId: json_data.submission_id || submissionId, fetched_at }, card);
+    const resolvedJobId = json_data.job_id || (Array.isArray(json_data.reports) && typeof json_data.reports[0] === 'string' ? json_data.reports[0] : null) || json_data.id || jobId;
+    const resolvedSubmissionId = json_data.submission_id || json_data.id || submissionId;
+    renderProtocolMeta({ hybrid_sha, jobId: resolvedJobId, submissionId: resolvedSubmissionId, fetched_at }, card);
 
-    if (json_data.state === 'IN_PROGRESS') {
+    if (isHybridReportInProgress(json_data)) {
         renderInProgressStatus(json_data, hybrid_sha, card, attempt);
     } else {
         renderThreatInfo(json_data, card);
-
-        if (virustotal_stats) {
-            renderVirusTotalStats(virustotal_stats, card);
-        }
     }
 
-    renderScannerResults(json_data.scanners, card);
+    if (virustotal_stats && typeof virustotal_stats === 'object' && !Array.isArray(virustotal_stats)) {
+        renderVirusTotalStats(virustotal_stats, card);
+    }
+    if (urlscan && typeof urlscan === 'object' && !Array.isArray(urlscan)) {
+        renderUrlscanResult(urlscan, card);
+    }
+
+    renderScannerResults(json_data.scanners, card, json_data.scanners_v2);
     const invalidTags = json_data.tags != null && !(typeof json_data.tags === 'string' || Array.isArray(json_data.tags) && json_data.tags.every(tag => typeof tag === 'string'));
     const validRow = row => row && typeof row === 'object' && !Array.isArray(row);
     const invalidScanners = json_data.scanners != null && (!Array.isArray(json_data.scanners) || json_data.scanners.some(row => !validRow(row) || row.anti_virus_results != null && (!Array.isArray(row.anti_virus_results) || row.anti_virus_results.some(item => !validRow(item)))));
     if (invalidTags || invalidScanners) {
-        const notice = document.createElement('p'); notice.className = 'text-warning'; notice.setAttribute('role','status');
+        const notice = document.createElement('p'); notice.setAttribute('role','status'); notice.className = 'text-warning';
         notice.textContent = uiText('reportFieldsUnavailable','Some report details have an unsupported format and could not be displayed.');
         card.appendChild(notice);
     }
@@ -664,7 +811,7 @@ if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.onMessa
  * the popup shows when the global consent is off: the data was already on the
  * machine, so displaying it is fine, only the network lookup is skipped (P0-7).
  */
-function renderStoredResultWithoutConsent(name, hash, targetContainer) {
+function renderStoredResultWithoutConsent(name, hash, targetContainer, virustotal_stats = null, urlscan = null) {
     const container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     if (!container) return null;
 
@@ -682,6 +829,13 @@ function renderStoredResultWithoutConsent(name, hash, targetContainer) {
         ? uiText("ui_038", "SHA-256: $1 – keine externe Abfrage, da \"Externe Analyse erlauben\" ausgeschaltet ist.", [hash])
         : uiText("ui_039", "Keine externe Abfrage, da \"Externe Analyse erlauben\" ausgeschaltet ist.");
     card.appendChild(p);
+
+    if (virustotal_stats && typeof virustotal_stats === 'object' && !Array.isArray(virustotal_stats)) {
+        renderVirusTotalStats(virustotal_stats, card);
+    }
+    if (urlscan && typeof urlscan === 'object' && !Array.isArray(urlscan)) {
+        renderUrlscanResult(urlscan, card);
+    }
 
     container.appendChild(card);
     return card;
@@ -957,7 +1111,18 @@ async function persistHybridReport({ headerMessageId, sha256, attachmentName, re
  * (FA-3): it can be rendered offline instead of querying the provider again.
  */
 function hasFinalStoredReport(item) {
-    return !!(item && item.report && item.report.state && item.report.state !== 'IN_PROGRESS');
+    const r = item && item.report;
+    if (!r || typeof r !== 'object' || Array.isArray(r)) return false;
+    if (isHybridReportInProgress(r)) return false;
+    if (typeof r.state === 'string' && r.state.trim() !== '') return true;
+    return Boolean(
+        (typeof r.verdict === 'string' && r.verdict.trim() !== '') ||
+        r.whitelisted === true ||
+        (typeof r.threat_score === 'number' && Number.isFinite(r.threat_score)) ||
+        (typeof r.multiscan_result === 'number' && Number.isFinite(r.multiscan_result)) ||
+        (Array.isArray(r.scanners) && r.scanners.length > 0) ||
+        (r.scanners_v2 && typeof r.scanners_v2 === 'object' && !Array.isArray(r.scanners_v2) && Object.keys(r.scanners_v2).length > 0)
+    );
 }
 
 function buildStoredAttachmentReportTask(att, message) {
@@ -980,6 +1145,7 @@ function buildStoredLinkReportTask(linkObj, headerMessageId) {
         hybrid_sha: linkObj.hybrid_sha256,
         attachmentName: linkObj.url,
         headerMessageId: headerMessageId,
+        urlscan: linkObj.urlscan,
         json_data: linkObj.report,
         jobId: linkObj.hybrid_job_id,
         submissionId: linkObj.hybrid_submission_id,
@@ -1007,7 +1173,7 @@ function scheduleHybridReportPoll(params, targetContainer, replaceNode) {
     }, HYBRID_REPORT_POLL_DELAY_MS);
 }
 
-async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null, jobId = null, submissionId = null, _attempt = 1 }, targetContainer, replaceNode = null) {
+async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null, urlscan = null, jobId = null, submissionId = null, _attempt = 1 }, targetContainer, replaceNode = null) {
     const generation = hybridReportGeneration;
     if (hybridReportDisposed) return;
     try {
@@ -1015,7 +1181,7 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
         if (hybridReportDisposed || generation !== hybridReportGeneration) return;
 
         if (response.status === 200) {
-            const reportNode = render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data, jobId, submissionId, attempt: _attempt }, targetContainer, replaceNode);
+            const reportNode = render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, json_data, jobId, submissionId, attempt: _attempt }, targetContainer, replaceNode);
             const saved = await persistHybridReport({ headerMessageId, sha256: hybrid_sha, attachmentName, report: json_data, jobId, submissionId, generation });
             if (hybridReportDisposed || generation !== hybridReportGeneration) return;
             if (headerMessageId && !saved && reportNode) {
@@ -1023,9 +1189,13 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
                 status.textContent = uiText('reportNotSaved', 'This report could not be saved locally.');
                 reportNode.appendChild(status);
             }
-            if (json_data && json_data.state === 'IN_PROGRESS' && _attempt < HYBRID_REPORT_POLL_MAX_ATTEMPTS) {
-                scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, jobId, submissionId, _attempt: _attempt + 1 }, targetContainer, reportNode);
+            if (json_data && isHybridReportInProgress(json_data) && _attempt < HYBRID_REPORT_POLL_MAX_ATTEMPTS) {
+                scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, _attempt: _attempt + 1 }, targetContainer, reportNode);
             }
+        } else if (response.status === 404 && (jobId || submissionId) && _attempt < HYBRID_REPORT_POLL_MAX_ATTEMPTS) {
+            const pendingReport = { state: 'IN_PROGRESS', sha256: hybrid_sha, job_id: jobId, submission_id: submissionId };
+            const reportNode = render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, json_data: pendingReport, jobId, submissionId, attempt: _attempt }, targetContainer, replaceNode);
+            scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, _attempt: _attempt + 1 }, targetContainer, reportNode);
         } else {
             handle_hybrid_report_error(response, attachmentName, targetContainer);
         }
@@ -1060,7 +1230,8 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
                 get_hybrid_report_by_sha256({
                     hybrid_sha: response.data.sha256,
                     attachmentName: url, headerMessageId,
-                    jobId: response.data?.job_id, submissionId: response.data?.submission_id
+                    jobId: response.data?.job_id || (Array.isArray(response.data?.reports) && response.data.reports[0]) || response.data?.id,
+                    submissionId: response.data?.submission_id || response.data?.id
                 });
             }, 3000);
         } else {
@@ -1080,7 +1251,7 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
 function processRecordLinks(links, headerMessageId, syncFragment, fetchTasks) {
     for (const linkObj of links) {
         if (linkObj.state === 'UNKNOWN') {
-            renderManualUrlScanUI(linkObj.url, headerMessageId, syncFragment);
+            renderManualUrlScanUI(linkObj.url, headerMessageId, syncFragment, linkObj.urlscan);
         } else if (hasFinalStoredReport(linkObj)) {
             // FA-3: finished protocol already persisted; render it offline.
             fetchTasks.push(buildStoredLinkReportTask(linkObj, headerMessageId));
@@ -1089,6 +1260,7 @@ function processRecordLinks(links, headerMessageId, syncFragment, fetchTasks) {
                 hybrid_sha: linkObj.hybrid_sha256,
                 attachmentName: linkObj.url,
                 headerMessageId: headerMessageId,
+                urlscan: linkObj.urlscan,
                 jobId: linkObj.hybrid_job_id,
                 submissionId: linkObj.hybrid_submission_id
             }, frag));
@@ -1096,7 +1268,7 @@ function processRecordLinks(links, headerMessageId, syncFragment, fetchTasks) {
     }
 }
 
-function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
+function renderManualUrlScanUI(url, headerMessageId, targetContainer, urlscan = null) {
     let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
     const u8 = new TextEncoder().encode(url);
@@ -1122,6 +1294,10 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer) {
     pInfo.appendChild(infoStrong);
     pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
+
+    if (urlscan && typeof urlscan === 'object' && !Array.isArray(urlscan)) {
+        renderUrlscanResult(urlscan, card);
+    }
 
     let btnUpload = document.createElement('button');
     btnUpload.id = `btn-upload-${urlId}`;
@@ -1173,7 +1349,8 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                     if (container) container.remove();
                     get_hybrid_report_by_sha256({
                         hybrid_sha: response.data?.sha256 || hash,
-                        jobId: response.data?.job_id, submissionId: response.data?.submission_id,
+                        jobId: response.data?.job_id || (Array.isArray(response.data?.reports) && response.data.reports[0]) || response.data?.id,
+                        submissionId: response.data?.submission_id || response.data?.id,
                         attachmentName: attachmentName,
                         messageId: messageId,
                         partName: partName,
@@ -1271,7 +1448,7 @@ function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
     });
 }
 
-function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId, targetContainer) {
+function renderManualUploadUI(hash, attachmentName, messageId, partName, headerMessageId, targetContainer, virustotal_stats = null) {
     let safeHash = escapeHTML(hash);
 
     let card = document.createElement('div');
@@ -1295,6 +1472,10 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
     pInfo.appendChild(infoStrong);
     pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
+
+    if (virustotal_stats && typeof virustotal_stats === 'object' && !Array.isArray(virustotal_stats)) {
+        renderVirusTotalStats(virustotal_stats, card);
+    }
 
     createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId });
     createCdrButton(card, safeHash, attachmentName, messageId, partName);

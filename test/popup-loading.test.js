@@ -153,3 +153,32 @@ test('missing scores stay unknown and malformed optional fields have six-languag
   }finally{f.close();}
  }
 });
+
+test('popup renders unified threatIntel (URLhaus, AbuseIPDB) and urlscan.io link verdicts offline without network requests',async()=>{
+ const record={
+  threatIntel:{
+   urlhausDomains:['malware-drop.example.invalid'],
+   maliciousIps:['203.0.113.99'],
+   ipReputationProvider:'abuseipdb'
+  },
+  links:[
+   {
+    url:'https://phish-login.example.invalid/auth',
+    state:'UNKNOWN',
+    urlscan:{status:'MALICIOUS_VISUAL',reasons:['Visueller Phishing-Verdacht: Seite imitiert PayPal'],observedAt:1700000000000}
+   }
+  ]
+ };
+ const f=await popup(record,'de');
+ try{
+  const content=f.dom.window.document.getElementById('hybrid_analysis_api_content').textContent;
+  assert.ok(content.includes('malware-drop.example.invalid'),content);
+  assert.ok(content.includes('203.0.113.99'),content);
+  assert.ok(content.includes('AbuseIPDB'),content);
+  assert.ok(content.includes('urlscan.io Ergebnisse:'),content);
+  assert.ok(content.includes('MALICIOUS_VISUAL'),content);
+  assert.ok(content.includes('Visueller Phishing-Verdacht: Seite imitiert PayPal'),content);
+  assert.equal(f.requests.length,0);
+ }finally{f.close();}
+});
+
