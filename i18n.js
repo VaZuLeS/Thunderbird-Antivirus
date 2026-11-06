@@ -1965,6 +1965,108 @@ const ThundyI18n = (() => {
         "content": "$2"
       }
     }
+  },
+  "urlscanErrorDetails": {
+    "message": "Reason: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "The urlscan.io rate limit or quota was reached. Please try again later."
+  },
+  "urlscanInvalidKey": {
+    "message": "Invalid or unauthorized urlscan.io API key."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Timeout: Scan result was not ready within 30 seconds."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domain could not be resolved by urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Element not yet recorded in Hybrid Analysis (no previous analysis found)."
+  },
+  "virustotalNotFound": {
+    "message": "Element not yet recorded in VirusTotal database."
+  },
+  "virustotalRateLimited": {
+    "message": "The VirusTotal rate limit or quota was reached. Please try again later."
+  },
+  "virustotalInvalidKey": {
+    "message": "Invalid or unauthorized VirusTotal API key."
+  },
+  "abuseipdbRateLimited": {
+    "message": "The AbuseIPDB rate limit or quota was reached. Please try again later."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Invalid or unauthorized AbuseIPDB API key."
+  },
+  "urlhausRateLimited": {
+    "message": "The URLhaus rate limit or quota was reached. Please try again later."
+  },
+  "urlhausInvalidKey": {
+    "message": "Invalid or unauthorized URLhaus API key."
+  },
+  "testApiKeyButton": {
+    "message": "Test connection"
+  },
+  "testApiKeyTesting": {
+    "message": "Testing connection…"
+  },
+  "testApiKeyValid": {
+    "message": "Connection successful. API key is valid."
+  },
+  "testApiKeyInvalid": {
+    "message": "Connection failed: Invalid API key."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Rate limit or quota reached. Please try again later."
+  },
+  "testApiKeyError": {
+    "message": "Connection test failed."
+  },
+  "testApiKeyEmpty": {
+    "message": "Please enter an API key first."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Permission to connect to service host was denied."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Please select an IP reputation provider first."
+  },
+  "rateLimitWithWait": {
+    "message": "Rate limit or quota reached. Please try again in $SECONDS$ seconds.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Rate limit reached"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Invalid API key"
+  },
+  "auditErrorCode": {
+    "message": "Error code"
+  },
+  "auditErrorDetails": {
+    "message": "Error details"
+  },
+  "auditRetryAfter": {
+    "message": "Wait time"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ seconds",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
   }
 };
     function get(key, params = []) {

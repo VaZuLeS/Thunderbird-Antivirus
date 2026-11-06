@@ -1,6 +1,6 @@
 /* The review/export UI does not navigate to logged URLs or contact providers. */
 const AuditExport = (() => {
-    const fields = ['id', 'clickedAt', 'decidedAt', 'outcome', 'url', 'score', 'scoreSource', 'scoreAtDecision', 'verdict', 'verdictAtDecision', 'providerAtDecision', 'provider', 'messageId', 'cancelReason', 'openAttempts', 'extensionVersion', 'scoredAt', 'checkedAt', 'reasons', 'providerReasons', 'reasonDetails', 'reasonsAtDecision', 'reasonDetailsAtDecision', 'providerReasonsAtDecision', 'check', 'checkAtDecision'];
+    const fields = ['id', 'clickedAt', 'decidedAt', 'outcome', 'url', 'score', 'scoreSource', 'scoreAtDecision', 'verdict', 'verdictAtDecision', 'providerAtDecision', 'provider', 'messageId', 'cancelReason', 'openAttempts', 'extensionVersion', 'scoredAt', 'checkedAt', 'reasons', 'providerReasons', 'reasonDetails', 'reasonsAtDecision', 'reasonDetailsAtDecision', 'providerReasonsAtDecision', 'check', 'checkAtDecision', 'errorCode', 'errorDetails', 'retryAfter'];
     function csvCell(value) {
         let text = value == null ? '' : typeof value === 'object' ? JSON.stringify(value) : String(value);
         // Spreadsheet formula injection includes leading spaces/control characters.
@@ -9,7 +9,10 @@ const AuditExport = (() => {
     }
     function csv(records) {
         // ⚡ Bolt Optimization: Use direct equality checks instead of inline array instantiation to eliminate recurrent allocation overhead in large data mapping
-        return '\ufeff' + fields.join(',') + '\r\n' + records.map(record => fields.map(field => csvCell((field === 'clickedAt' || field === 'decidedAt' || field === 'scoredAt' || field === 'checkedAt') && record[field] != null ? new Date(record[field]).toISOString() : record[field])).join(',')).join('\r\n');
+        return '\ufeff' + fields.join(',') + '\r\n' + records.map(record => fields.map(field => {
+            const val = record[field] !== undefined ? record[field] : (record.check && record.check[field] !== undefined ? record.check[field] : null);
+            return csvCell((field === 'clickedAt' || field === 'decidedAt' || field === 'scoredAt' || field === 'checkedAt') && val != null ? new Date(val).toISOString() : val);
+        }).join(',')).join('\r\n');
     }
     async function json(records, metadata, cryptoApi = crypto) {
         const payload = { schemaVersion: 1, exportedAt: new Date().toISOString(), ...metadata, records };
@@ -68,7 +71,21 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
             details.append(node('p', t('auditEventId') + ': ' + record.id));
             if (record.cancelReason) details.append(node('p', t('auditCancelReason') + ': ' + t(cancelKeys[record.cancelReason] || 'auditCancelUnknown')));
             if (record.outcome === 'PENDING') details.append(node('p', t('auditPendingExplanation')));
-            if (record.check) details.append(node('p', t(({ live: 'checkOrigin_live', stored: 'checkOrigin_stored', none: 'checkOrigin_none' })[record.check.origin] || 'auditUnavailable') + ' · ' + t(({success: 'checkOutcome_success', failed: 'checkOutcome_failed', disabled: 'checkOutcome_disabled', permission_denied: 'checkOutcome_permission_denied', missing_key: 'checkOutcome_missing_key', missing_reference: 'checkOutcome_missing_reference', not_requested: 'checkOutcome_not_requested', no_result: 'checkOutcome_no_result'})[record.check.outcome] || 'auditUnavailable') + ' · ' + t('checkAttempted') + ': ' + date(record.check.attemptedAt) + ' · ' + t('checkObserved') + ': ' + date(record.check.observedAt)));
+            if (record.check) details.append(node('p', t(({ live: 'checkOrigin_live', stored: 'checkOrigin_stored', none: 'checkOrigin_none' })[record.check.origin] || 'auditUnavailable') + ' · ' + t(({success: 'checkOutcome_success', failed: 'checkOutcome_failed', disabled: 'checkOutcome_disabled', permission_denied: 'checkOutcome_permission_denied', missing_key: 'checkOutcome_missing_key', missing_reference: 'checkOutcome_missing_reference', not_requested: 'checkOutcome_not_requested', no_result: 'checkOutcome_no_result', rate_limited: 'checkOutcome_rate_limited', invalid_key: 'checkOutcome_invalid_key'})[record.check.outcome] || 'auditUnavailable') + ' · ' + t('checkAttempted') + ': ' + date(record.check.attemptedAt) + ' · ' + t('checkObserved') + ': ' + date(record.check.observedAt)));
+            const errorCode = record.errorCode || record.check?.errorCode;
+            const errorDetails = record.errorDetails || record.check?.errorDetails;
+            const retryAfter = record.retryAfter || record.check?.retryAfter;
+            if (errorCode || errorDetails || retryAfter) {
+                const diag = document.createElement('div');
+                diag.className = 'audit-diagnostic-block';
+                if (errorCode) diag.append(node('p', t('auditErrorCode') + ': ' + errorCode, 'audit-error-code'));
+                if (errorDetails) diag.append(node('p', t('auditErrorDetails') + ': ' + errorDetails, 'audit-error-details'));
+                if (retryAfter) {
+                    const waitText = t('auditRetryAfter') + ': ' + (typeof ThundyI18n !== 'undefined' ? ThundyI18n.get('auditRetryAfterSeconds', [retryAfter]) : `${retryAfter}s`);
+                    diag.append(node('p', waitText, 'audit-retry-after'));
+                }
+                details.append(diag);
+            }
             if (record.checkedAt || record.check) details.append(node('p', t('auditFinalResult') + ': ' + verdictLabel(record.verdict) + ' · ' + date(record.checkedAt)));
             details.append(node('strong', t('auditReasonsAtDecision')));
             const historical = document.createElement('ul');

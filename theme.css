@@ -235,6 +235,10 @@ body.scanner-popup { width: 600px; min-width: 0; max-width: 100%; margin: 0; pad
 }
 
 .audit-risky .audit-opened { color: var(--color-danger); font-weight: 700; }
+.audit-diagnostic-block { margin: 8px 0; padding: 8px 12px; background: var(--bg-hover, rgba(0, 0, 0, 0.05)); border-inline-start: 3px solid var(--color-warning); border-radius: 4px; font-size: 0.9em; }
+.audit-diagnostic-block p { margin: 2px 0; }
+.audit-error-code { font-weight: 600; color: var(--color-danger); }
+.audit-retry-after { color: var(--color-warning); font-weight: 600; }
 
 .profile-form > select { width: 100%; padding: 10px; color: var(--text-color); background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; }
 .profile-page h2 { font-size: 20px; }

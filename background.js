@@ -218,7 +218,16 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                             try { const url = new URL(item.url); resourceLabels['link:' + index] = clean(url.origin + url.pathname); } catch (_) { /* no URL guess */ }
                         }
                     } catch (_) { /* actual parts remain identifiable without cached links */ }
-                    return { ...JSON.parse(JSON.stringify(model.data)), sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, messageId: message.id };
+                    const backoffs = {};
+                    if (typeof apiGateway !== 'undefined' && apiGateway.backoffs) {
+                        for (const host of apiGateway.backoffs.keys()) {
+                            const b = apiGateway.getBackoff(host);
+                            if (b && b.active) {
+                                backoffs[host] = { active: true, remainingSeconds: b.remainingSeconds };
+                            }
+                        }
+                    }
+                    return { ...JSON.parse(JSON.stringify(model.data)), sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
@@ -1657,6 +1666,8 @@ async function persistUrlscanLinkResult(message, url, res) {
                     item.urlscan = {
                         status: res.status,
                         reasons: Array.isArray(res.reasons) ? res.reasons : [],
+                        ...(res.details && { details: res.details }),
+                        ...(res.errorCode && { errorCode: res.errorCode }),
                         ...(reportUrl && { reportUrl }),
                         observedAt
                     };
@@ -1725,15 +1736,28 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         if (request.userAction === true && urlscanApikey && tierAtLeast('max') && (!linkObj || linkObj.state === 'UNKNOWN')) {
             try {
                 const res = await checkUrlscanIo(request.url, urlscanApikey, analysisContext);
-                urlscanAttempt = { origin: 'none', outcome: res?.status === 'NOT_CHECKED' ? 'not_requested' : 'failed', attemptedAt: Date.now(), observedAt: null };
+                const outcome = res?.status === 'NOT_CHECKED' ? 'not_requested' :
+                    res?.errorCode === 'rate_limited' ? 'rate_limited' :
+                    res?.errorCode === 'invalid_key' ? 'invalid_key' : 'failed';
+                urlscanAttempt = {
+                    origin: 'none',
+                    outcome,
+                    errorCode: res?.errorCode || null,
+                    errorDetails: res?.details || null,
+                    retryAfter: res?.retryAfter || null,
+                    attemptedAt: Date.now(),
+                    observedAt: null
+                };
                 if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT' && res.status !== 'NOT_CHECKED') {
                     await persistUrlscanLinkResult(message, request.url, res);
                     // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
                     sendResponse({ status: res.status, reasons: res.reasons, provider: 'urlscan.io', check: { origin: 'live', outcome: 'success', attemptedAt: Date.now(), observedAt: Date.now() } });
                     return;
+                } else if (res && (res.status === 'ERROR' || res.status === 'TIMEOUT')) {
+                    await persistUrlscanLinkResult(message, request.url, res);
                 }
             } catch (e) {
-                urlscanAttempt = { origin: 'none', outcome: 'failed', attemptedAt: Date.now(), observedAt: null };
+                urlscanAttempt = { origin: 'none', outcome: 'failed', errorCode: e.name || 'error', errorDetails: e.message, attemptedAt: Date.now(), observedAt: null };
                 Logger.error("Fehler bei Time-of-Click Live-Scan:", e);
             }
         }
@@ -1765,7 +1789,14 @@ async function handleCheckLinkState(request, sender, sendResponse) {
             }
             sendResponse({ ...result, provider: 'Hybrid Analysis' });
         } else {
-            sendResponse({ status: 'UNKNOWN', provider: urlscanAttempt ? 'urlscan.io' : 'none', check: urlscanAttempt || { origin: 'none', outcome: !request.userAction ? 'not_requested' : !mayTransmitExternally() ? 'disabled' : 'missing_reference', attemptedAt: request.userAction ? Date.now() : null, observedAt: null } });
+            sendResponse({
+                status: 'UNKNOWN',
+                provider: urlscanAttempt ? 'urlscan.io' : 'none',
+                errorDetails: urlscanAttempt?.errorDetails || null,
+                errorCode: urlscanAttempt?.errorCode || null,
+                retryAfter: urlscanAttempt?.retryAfter || null,
+                check: urlscanAttempt || { origin: 'none', outcome: !request.userAction ? 'not_requested' : !mayTransmitExternally() ? 'disabled' : 'missing_reference', attemptedAt: request.userAction ? Date.now() : null, observedAt: null }
+            });
         }
     } catch (err) {
         sendResponse({status: 'ERROR'});
@@ -1796,7 +1827,17 @@ async function handleOpenCheckedLink(request, sender) {
 }
 
 function extractHybridVerdictFromOverview(data) {
-    if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+    if (!data) return null;
+    if (Array.isArray(data)) {
+        if (data.length === 0) return null;
+        const candidateVerdicts = data.map(extractHybridVerdictFromOverview).filter(Boolean);
+        if (candidateVerdicts.includes('MALICIOUS')) return 'MALICIOUS';
+        if (candidateVerdicts.includes('SUSPICIOUS')) return 'SUSPICIOUS';
+        if (candidateVerdicts.includes('CLEAN')) return 'CLEAN';
+        if (candidateVerdicts.includes('UNKNOWN')) return 'UNKNOWN';
+        return null;
+    }
+    if (typeof data !== 'object') return null;
     const rawState = typeof data.state === 'string' ? data.state.toUpperCase() : '';
     const scannersArr = Array.isArray(data.scanners) ? data.scanners.filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
     const scannersV2 = data.scanners_v2 && typeof data.scanners_v2 === 'object' && !Array.isArray(data.scanners_v2) ? Object.values(data.scanners_v2).filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
@@ -1804,19 +1845,20 @@ function extractHybridVerdictFromOverview(data) {
     const scannerPending = allScanners.some(s => typeof s.status === 'string' && ['in-progress', 'in_queue', 'in-queue', 'pending', 'running', 'queued'].includes(s.status.toLowerCase()));
     if (rawState === 'IN_PROGRESS' || rawState === 'IN_QUEUE' || data.finished === false || scannerPending) return null;
 
-    const verdicts = { 'no specific threat': 'CLEAN', 'no threat': 'CLEAN', clean: 'CLEAN', whitelisted: 'CLEAN', malicious: 'MALICIOUS', suspicious: 'SUSPICIOUS' };
+    const verdicts = { 'no specific threat': 'CLEAN', 'no threat': 'CLEAN', 'no-threat': 'CLEAN', clean: 'CLEAN', whitelisted: 'CLEAN', harmless: 'CLEAN', malicious: 'MALICIOUS', suspicious: 'SUSPICIOUS' };
     const rawVerdict = typeof data.verdict === 'string' ? data.verdict.trim().toLowerCase() : '';
     if (verdicts[rawVerdict]) return verdicts[rawVerdict];
 
+    const cleanStatuses = ['clean', 'whitelisted', 'no threat', 'no_threat', 'no-threat', 'harmless'];
     const hasMaliciousScanner = allScanners.some(s => (typeof s.status === 'string' && s.status.toLowerCase() === 'malicious') || (Number.isFinite(s.positives) && s.positives > 0) || (Array.isArray(s.anti_virus_results) && s.anti_virus_results.some(av => typeof av?.verdict === 'string' && av.verdict.toLowerCase() === 'malicious')));
     const hasSuspiciousScanner = allScanners.some(s => typeof s.status === 'string' && s.status.toLowerCase() === 'suspicious');
-    const hasCleanScanner = allScanners.some(s => typeof s.status === 'string' && ['clean', 'whitelisted'].includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0));
+    const hasCleanScanner = allScanners.some(s => (typeof s.status === 'string' && cleanStatuses.includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0)) || (Number.isFinite(s.positives) && s.positives === 0 && Number.isFinite(s.total) && s.total > 0));
     const threatScore = typeof data.threat_score === 'number' && Number.isFinite(data.threat_score) ? data.threat_score : null;
     const multiscan = typeof data.multiscan_result === 'number' && Number.isFinite(data.multiscan_result) ? data.multiscan_result : null;
 
     if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50) || data.threat_level === 2) return 'MALICIOUS';
     if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0) || data.threat_level === 1) return 'SUSPICIOUS';
-    if (data.whitelisted === true || hasCleanScanner) return 'CLEAN';
+    if (data.whitelisted === true || hasCleanScanner || data.threat_level === 0 || (threatScore !== null && threatScore < 30)) return 'CLEAN';
     if (rawVerdict === 'unknown') return 'UNKNOWN';
     return null;
 }
@@ -1858,12 +1900,53 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
             await requireHostPermission(qsUrl);
             response = await apiGateway.fetchWithTimeout(qsUrl, { ...options, url: qsUrl });
         }
-        if (response.ok === false) throw new Error('Provider HTTP failure');
+        if (response.status === 404) {
+            check.outcome = 'not_found';
+            return fallback();
+        }
+        if (response.status === 429) {
+            check.outcome = 'rate_limited';
+            check.errorCode = 'rate_limited';
+            let retrySeconds = null;
+            try {
+                const errData = await response.json();
+                if (errData && Number.isFinite(errData.retry_after)) retrySeconds = errData.retry_after;
+            } catch (_) {}
+            if (!retrySeconds) {
+                const header = response.headers?.get?.('retry-after');
+                const num = Number(header);
+                if (Number.isFinite(num) && num > 0) retrySeconds = num;
+            }
+            if (retrySeconds) check.retryAfter = retrySeconds;
+            check.error = retrySeconds ? `Rate limit reached. Retry after ${retrySeconds}s` : 'Rate limit or quota reached';
+            check.errorDetails = check.error;
+            return fallback();
+        }
+        if (response.status === 401 || response.status === 403) {
+            check.outcome = 'invalid_key';
+            check.errorCode = 'invalid_key';
+            check.error = 'Invalid API key';
+            check.errorDetails = 'Invalid or unauthorized Hybrid Analysis API key';
+            return fallback();
+        }
+        if (response.ok === false) {
+            check.outcome = 'failed';
+            check.errorCode = `http_${response.status}`;
+            check.error = `HTTP ${response.status}`;
+            check.errorDetails = `HTTP ${response.status}`;
+            return fallback();
+        }
         const data = await response.json();
         const verdict = extractHybridVerdictFromOverview(data);
         if (!verdict) { check.outcome = 'no_result'; return fallback(); }
         return { status: verdict, check: { ...check, origin: 'live', outcome: 'success', observedAt: Date.now() } };
-    } catch (error) { check.outcome = 'failed'; return fallback(); }
+    } catch (error) {
+        check.outcome = 'failed';
+        check.errorCode = error.name || 'error';
+        check.error = error.message;
+        check.errorDetails = error.message;
+        return fallback();
+    }
 }
 
 // Compatibility for existing string-result callers. Message/audit consumers use
@@ -1997,6 +2080,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return true;
         case "clearMemoryCaches":
             if (typeof clearReportArchiveWarnings === 'function') clearReportArchiveWarnings();
+            if (typeof apiGateway !== 'undefined' && typeof apiGateway.clearBackoffs === 'function') apiGateway.clearBackoffs();
             urlhausCache.clear(); ipReputationCache.clear(); vtCache.clear(); knownSendersCache.clear();
             for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(context => {
                 context.dispose();

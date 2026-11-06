@@ -20,11 +20,68 @@ const ThundyAnalysis = (() => {
         if (host === 'urlscan.io' || host.endsWith('.urlscan.io')) return { provider: 'urlscan', scope: 'url' };
         return null;
     }
+    function uiText(key, fallback, params = []) {
+        try {
+            if (typeof ThundyI18n !== 'undefined' && typeof ThundyI18n.get === 'function') {
+                const translated = ThundyI18n.get(key, params);
+                if (translated && translated !== key) return translated;
+            }
+            if (typeof browser !== 'undefined' && browser.i18n && typeof browser.i18n.getMessage === 'function') {
+                const translated = browser.i18n.getMessage(key, params);
+                if (translated) return translated;
+            }
+        } catch (_) {}
+        if (params && params.length && typeof fallback === 'string') {
+            return params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
+        }
+        return fallback || key;
+    }
     function response(info, status, data) {
         const result = { state: 'received', verdict: 'unknown' };
-        if (status === 404) return { state: info.provider === 'urlscan' ? 'incomplete' : 'not_found', verdict: 'unknown' };
+        if (status === 404) {
+            if (info.provider === 'urlscan') return { state: 'incomplete', verdict: 'unknown' };
+            let errorDetails = null;
+            if (info.provider === 'virustotal') errorDetails = uiText('virustotalNotFound', 'Element not yet recorded in VirusTotal database.');
+            else if (info.provider === 'hybridanalysis') errorDetails = uiText('hybridNotFound', 'Element not yet recorded in Hybrid Analysis (no previous analysis found).');
+            return { state: 'not_found', verdict: 'unknown', ...(errorDetails ? { errorDetails } : {}) };
+        }
+        if (status === 429) {
+            const retrySeconds = (data && typeof data === 'object' && Number.isFinite(data.retry_after) && data.retry_after > 0) ? Math.ceil(data.retry_after) : null;
+            let errorDetails = retrySeconds
+                ? uiText('rateLimitWithWait', `Rate limit or quota reached. Please try again in ${retrySeconds} seconds.`, [retrySeconds])
+                : 'Rate limit or quota reached';
+            if (!retrySeconds) {
+                if (info.provider === 'virustotal') errorDetails = uiText('virustotalRateLimited', 'The VirusTotal rate limit or quota was reached. Please try again later.');
+                else if (info.provider === 'abuseipdb') errorDetails = uiText('abuseipdbRateLimited', 'The AbuseIPDB rate limit or quota was reached. Please try again later.');
+                else if (info.provider === 'urlhaus') errorDetails = uiText('urlhausRateLimited', 'The URLhaus rate limit or quota was reached. Please try again later.');
+                else if (info.provider === 'urlscan') errorDetails = uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.');
+            }
+            return {
+                state: 'failed',
+                verdict: 'unknown',
+                errorCode: 'rate_limited',
+                errorDetails,
+                ...(retrySeconds ? { retryAfter: retrySeconds } : {})
+            };
+        }
+        if (status === 401 || status === 403) {
+            let errorDetails = 'Invalid API key';
+            if (info.provider === 'virustotal') errorDetails = uiText('virustotalInvalidKey', 'Invalid or unauthorized VirusTotal API key.');
+            else if (info.provider === 'abuseipdb') errorDetails = uiText('abuseipdbInvalidKey', 'Invalid or unauthorized AbuseIPDB API key.');
+            else if (info.provider === 'urlhaus') errorDetails = uiText('urlhausInvalidKey', 'Invalid or unauthorized URLhaus API key.');
+            else if (info.provider === 'urlscan') errorDetails = uiText('urlscanInvalidKey', 'Invalid or unauthorized urlscan.io API key.');
+            return { state: 'failed', verdict: 'unknown', errorCode: 'invalid_key', errorDetails };
+        }
         if (!(status >= 200 && status < 300)) return { state: 'failed', verdict: 'unknown' };
         if (info.provider === 'hybridanalysis') {
+            if (Array.isArray(data)) {
+                if (data.length === 0) return result;
+                const responses = data.map(item => response(info, status, item));
+                if (responses.some(r => r.verdict === 'malicious')) return { state: 'checked', verdict: 'malicious' };
+                if (responses.some(r => r.verdict === 'suspicious')) return { state: 'checked', verdict: 'suspicious' };
+                if (responses.some(r => r.verdict === 'none')) return { state: 'checked', verdict: 'none' };
+                return responses[0] || result;
+            }
             if ((info.scope === 'file' || info.scope === 'url') && (data?.submission_id || data?.job_id || (data?.id && data?.finished !== true && !data?.verdict))) return { state: 'submitted', verdict: 'unknown' };
             const rawState = typeof data?.state === 'string' ? data.state.toUpperCase() : '';
             const scannersArr = Array.isArray(data?.scanners) ? data.scanners.filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
@@ -33,23 +90,32 @@ const ThundyAnalysis = (() => {
             const scannerPending = allScanners.some(s => typeof s.status === 'string' && ['in-progress', 'in_queue', 'in-queue', 'pending', 'running', 'queued'].includes(s.status.toLowerCase()));
             if (rawState === 'IN_PROGRESS' || rawState === 'IN_QUEUE' || data?.finished === false || scannerPending) return { state: 'incomplete', verdict: 'unknown' };
             const value = typeof data?.verdict === 'string' ? data.verdict.trim().toLowerCase() : '';
-            if (['malicious', 'suspicious', 'no specific threat', 'no threat', 'clean', 'whitelisted'].includes(value)) return { state: 'checked', verdict: ['no specific threat', 'no threat', 'clean', 'whitelisted'].includes(value) ? 'none' : value };
+            if (['malicious', 'suspicious', 'no specific threat', 'no threat', 'no-threat', 'clean', 'whitelisted', 'harmless'].includes(value)) return { state: 'checked', verdict: ['no specific threat', 'no threat', 'no-threat', 'clean', 'whitelisted', 'harmless'].includes(value) ? 'none' : value };
+            const cleanStatuses = ['clean', 'whitelisted', 'no threat', 'no_threat', 'no-threat', 'harmless'];
             const hasMaliciousScanner = allScanners.some(s => (typeof s.status === 'string' && s.status.toLowerCase() === 'malicious') || (Number.isFinite(s.positives) && s.positives > 0) || (Array.isArray(s.anti_virus_results) && s.anti_virus_results.some(av => typeof av?.verdict === 'string' && av.verdict.toLowerCase() === 'malicious')));
             const hasSuspiciousScanner = allScanners.some(s => typeof s.status === 'string' && s.status.toLowerCase() === 'suspicious');
-            const hasCleanScanner = allScanners.some(s => typeof s.status === 'string' && ['clean', 'whitelisted'].includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0));
+            const hasCleanScanner = allScanners.some(s => (typeof s.status === 'string' && cleanStatuses.includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0)) || (Number.isFinite(s.positives) && s.positives === 0 && Number.isFinite(s.total) && s.total > 0));
             const threatScore = typeof data?.threat_score === 'number' && Number.isFinite(data.threat_score) ? data.threat_score : null;
             const multiscan = typeof data?.multiscan_result === 'number' && Number.isFinite(data.multiscan_result) ? data.multiscan_result : null;
-            if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50)) return { state: 'checked', verdict: 'malicious' };
-            if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0)) return { state: 'checked', verdict: 'suspicious' };
-            if (data?.whitelisted === true || hasCleanScanner) return { state: 'checked', verdict: 'none' };
+            if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50) || data?.threat_level === 2) return { state: 'checked', verdict: 'malicious' };
+            if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0) || data?.threat_level === 1) return { state: 'checked', verdict: 'suspicious' };
+            if (data?.whitelisted === true || hasCleanScanner || data?.threat_level === 0 || (threatScore !== null && threatScore < 30)) return { state: 'checked', verdict: 'none' };
         }
         if (info.provider === 'virustotal') {
             const stats = data?.data?.attributes?.last_analysis_stats || data?.attributes?.last_analysis_stats || data?.last_analysis_stats;
             if (Number.isFinite(stats?.malicious)) return { state: 'checked', verdict: stats.malicious > 0 ? 'malicious' : stats.suspicious > 0 ? 'suspicious' : 'none' };
         }
-        if (info.provider === 'urlhaus' && ['ok', 'no_results'].includes(data?.query_status)) {
-            const hasHit = data.query_status === 'ok' && (Number(data.url_count) > 0 || (Array.isArray(data.urls) && data.urls.length > 0) || Boolean(data.url_status || data.threat));
-            return { state: 'checked', verdict: hasHit ? 'malicious' : 'none' };
+        if (info.provider === 'urlhaus') {
+            if (data?.query_status === 'invalid_api_key') {
+                return { state: 'failed', verdict: 'unknown', errorCode: 'invalid_key', errorDetails: uiText('urlhausInvalidKey', 'Invalid or unauthorized URLhaus API key.') };
+            }
+            if (['host_not_found', 'not_found'].includes(data?.query_status)) {
+                return { state: 'not_found', verdict: 'unknown' };
+            }
+            if (['ok', 'no_results'].includes(data?.query_status)) {
+                const hasHit = data.query_status === 'ok' && (Number(data.url_count) > 0 || (Array.isArray(data.urls) && data.urls.length > 0) || Boolean(data.url_status || data.threat));
+                return { state: 'checked', verdict: hasHit ? 'malicious' : 'none' };
+            }
         }
         if (info.provider === 'abuseipdb' && Number.isFinite(data?.data?.abuseConfidenceScore)) {
             const score = data.data.abuseConfidenceScore;
@@ -64,6 +130,9 @@ const ThundyAnalysis = (() => {
             if (hasBool || hasScore) {
                 if (overall?.malicious || us?.malicious || eng?.malicious || (Number.isFinite(eng?.maliciousTotal) && eng.maliciousTotal > 0) || (Number.isFinite(overall?.score) && overall.score >= 80)) return { state: 'checked', verdict: 'malicious' };
                 if ((Number.isFinite(overall?.score) && overall.score >= 50) || (Number.isFinite(us?.score) && us.score >= 50)) return { state: 'checked', verdict: 'suspicious' };
+                return { state: 'checked', verdict: 'none' };
+            }
+            if ((data?.task || data?.page) && (data?.page || data?.lists)) {
                 return { state: 'checked', verdict: 'none' };
             }
         }
@@ -98,7 +167,7 @@ const ThundyAnalysis = (() => {
             if (['checked','incomplete','failed'].includes(stored.local?.state)) data.local = { state: stored.local.state, observedAt: Number.isFinite(stored.local.observedAt) ? stored.local.observedAt : null, source: 'stored', ...(['decryption_unavailable','text_unavailable','read_failed'].includes(stored.local.reason) ? {reason:stored.local.reason} : {}) };
             for (const old of (Array.isArray(stored.rows) ? stored.rows : []).slice(0, 1200)) {
                 if (!storedObject(old) || !providers.includes(old.provider) || !scopes.includes(old.scope)) { data.sourceDataIncomplete = true; continue; }
-                const row = { provider: old.provider, scope: old.scope, resource: validResource(old.resource) ? old.resource : null, source: 'stored', active: 0, state: states.includes(old.state) && old.state !== 'running' ? old.state : 'incomplete', verdict: verdicts.includes(old.verdict) ? old.verdict : 'unknown', responses: Number.isSafeInteger(old.responses) && old.responses > 0 ? Math.min(old.responses, 100000) : 0, failures: Number.isSafeInteger(old.failures) && old.failures > 0 ? Math.min(old.failures, 100000) : 0, cacheHits: Number.isSafeInteger(old.cacheHits) && old.cacheHits > 0 ? Math.min(old.cacheHits, 100000) : 0, observedAt: Number.isFinite(old.observedAt) ? old.observedAt : null, findingAt: Number.isFinite(old.findingAt) ? old.findingAt : null, attemptedAt: Number.isFinite(old.attemptedAt) ? old.attemptedAt : null };
+                const row = { provider: old.provider, scope: old.scope, resource: validResource(old.resource) ? old.resource : null, source: 'stored', active: 0, state: states.includes(old.state) && old.state !== 'running' ? old.state : 'incomplete', verdict: verdicts.includes(old.verdict) ? old.verdict : 'unknown', responses: Number.isSafeInteger(old.responses) && old.responses > 0 ? Math.min(old.responses, 100000) : 0, failures: Number.isSafeInteger(old.failures) && old.failures > 0 ? Math.min(old.failures, 100000) : 0, cacheHits: Number.isSafeInteger(old.cacheHits) && old.cacheHits > 0 ? Math.min(old.cacheHits, 100000) : 0, observedAt: Number.isFinite(old.observedAt) ? old.observedAt : null, findingAt: Number.isFinite(old.findingAt) ? old.findingAt : null, attemptedAt: Number.isFinite(old.attemptedAt) ? old.attemptedAt : null, errorCode: typeof old.errorCode === 'string' ? old.errorCode.slice(0, 50) : null, errorDetails: typeof old.errorDetails === 'string' ? old.errorDetails.slice(0, 200) : null, retryAfter: Number.isFinite(old.retryAfter) ? old.retryAfter : null };
                 if (!data.rows.some(current => rowKey(current) === rowKey(row))) data.rows.push(row);
             }
             if (stored.rows?.length > 1200) data.truncated = true;
@@ -119,6 +188,9 @@ const ThundyAnalysis = (() => {
             else row.source = e.responded ? 'remote' : row.responses ? row.source : 'attempt';
             if (e.state === 'failed') row.failures++;
             else row.responses++;
+            if (e.errorCode && typeof e.errorCode === 'string') row.errorCode = e.errorCode;
+            if (e.errorDetails && typeof e.errorDetails === 'string') row.errorDetails = e.errorDetails;
+            if (Number.isFinite(e.retryAfter) && e.retryAfter > 0) row.retryAfter = e.retryAfter;
             if (e.state !== 'failed' && Number.isFinite(e.observedAt)) row.observedAt = Math.max(row.observedAt || 0, e.observedAt);
             if (e.verdict !== 'unknown' && verdicts.indexOf(e.verdict) >= verdicts.indexOf(row.verdict)) row.findingAt = Number.isFinite(e.observedAt) ? e.observedAt : row.findingAt || null;
             row.verdict = worst(row.verdict, e.verdict);
@@ -250,10 +322,11 @@ const ThundyAnalysis = (() => {
             const body = detailBodies.get(entry);
             if (!body) return;
             detailBodies.delete(entry);
-            const {brand,verdict,warning,findingAt,observedAt,attemptedAt} = body;
+            const {brand,verdict,warning,findingAt,observedAt,attemptedAt,errorDetails} = body;
             const summary=entry.querySelector('summary');summary.setAttribute('aria-label',brand+' · '+summary.textContent);
             entry.append(n('p',brand,'service-status'));
             if (verdict && verdict !== 'unknown') entry.append(n('p', t('analysisVerdict_' + verdict), warning ? 'warning' : ''));
+            if (errorDetails) entry.append(n('p', errorDetails, 'warning'));
             entry.append(n('p', t('analysisFindingObserved') + ': ' + date(findingAt)));
             entry.append(n('small', t('analysisObserved') + ': ' + date(observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(attemptedAt)));
         };
@@ -285,7 +358,7 @@ const ThundyAnalysis = (() => {
                     const warning = ['malicious','suspicious'].includes(row.verdict);
                     const entry = details(key, resourceName(row) + ' · ' + t('analysisScope_' + row.scope) + ' · ' + t('analysisState_' + row.state) + ' · ' + t('analysisSource_' + row.source) + (warning ? ' · ' + t('analysisVerdict_' + row.verdict) : ''));
                     if (warning) entry.querySelector('summary').className = 'warning';
-                    detailBodies.set(entry,{brand,verdict:row.verdict,warning,findingAt:row.findingAt,observedAt:row.observedAt,attemptedAt:row.attemptedAt});
+                    detailBodies.set(entry,{brand,verdict:row.verdict,warning,findingAt:row.findingAt,observedAt:row.observedAt,attemptedAt:row.attemptedAt,errorDetails:row.errorDetails});
                     if (entry.open) hydrate(entry);
                     if (warning && !warningTargets[row.verdict]) warningTargets[row.verdict] = entry;
                     li.append(entry);

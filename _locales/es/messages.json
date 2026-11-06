@@ -1960,5 +1960,107 @@
         "content": "$2"
       }
     }
+  },
+  "urlscanErrorDetails": {
+    "message": "Motivo: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "Se ha alcanzado el límite de velocidad o cuota de urlscan.io. Inténtelo más tarde."
+  },
+  "urlscanInvalidKey": {
+    "message": "Clave de API de urlscan.io no válida o no autorizada."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Tiempo de espera agotado: El resultado del escaneo no estuvo listo en 30 segundos."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "El dominio no se pudo resolver mediante urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Elemento aún no registrado en Hybrid Analysis (no se encontró ningún análisis previo)."
+  },
+  "virustotalNotFound": {
+    "message": "Elemento aún no registrado en la base de datos de VirusTotal."
+  },
+  "virustotalRateLimited": {
+    "message": "Se ha alcanzado el límite de velocidad o cuota de VirusTotal. Inténtelo de nuevo más tarde."
+  },
+  "virustotalInvalidKey": {
+    "message": "Clave de API de VirusTotal no válida o no autorizada."
+  },
+  "abuseipdbRateLimited": {
+    "message": "Se ha alcanzado el límite de velocidad o cuota de AbuseIPDB. Inténtelo de nuevo más tarde."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Clave de API de AbuseIPDB no válida o no autorizada."
+  },
+  "urlhausRateLimited": {
+    "message": "Se ha alcanzado el límite de velocidad o cuota de URLhaus. Inténtelo de nuevo más tarde."
+  },
+  "urlhausInvalidKey": {
+    "message": "Clave de API de URLhaus no válida o no autorizada."
+  },
+  "testApiKeyButton": {
+    "message": "Probar conexión"
+  },
+  "testApiKeyTesting": {
+    "message": "Probando conexión…"
+  },
+  "testApiKeyValid": {
+    "message": "Conexión exitosa. La clave de API es válida."
+  },
+  "testApiKeyInvalid": {
+    "message": "Error de conexión: clave de API no válida."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Límite de velocidad o cuota alcanzada. Vuelva a intentarlo más tarde."
+  },
+  "testApiKeyError": {
+    "message": "Error en la prueba de conexión."
+  },
+  "testApiKeyEmpty": {
+    "message": "Introduzca primero una clave de API."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Se denegó el permiso para conectarse al host del servicio."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Seleccione primero un proveedor de reputación de IP."
+  },
+  "rateLimitWithWait": {
+    "message": "Límite de velocidad o cuota alcanzada. Vuelva a intentarlo en $SECONDS$ segundos.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Límite de velocidad alcanzado"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Clave de API no válida"
+  },
+  "auditErrorCode": {
+    "message": "Código de error"
+  },
+  "auditErrorDetails": {
+    "message": "Detalles del error"
+  },
+  "auditRetryAfter": {
+    "message": "Tiempo de espera"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ segundos",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
   }
 }

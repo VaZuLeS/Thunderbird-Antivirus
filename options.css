@@ -357,6 +357,41 @@
 .provider-fields {
   margin-bottom: 24px;
 }
+.api-key-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.api-key-input-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.test-key-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  font-size: 13px;
+  padding: 8px 12px;
+}
+.key-test-status {
+  display: block;
+  font-size: 12px;
+  margin-top: 4px;
+  min-height: 1.2em;
+}
+.key-test-status.text-success {
+  color: var(--color-success, #246b4c);
+}
+.key-test-status.text-warning {
+  color: var(--color-warning, #d97706);
+}
+.key-test-status.text-danger {
+  color: var(--color-danger, #dc2626);
+}
+@media (max-width: 650px) {
+  .api-key-input-row {
+    flex-wrap: wrap;
+  }
+}
 .provider-guide {
   border-top: 1px solid var(--card-border);
   padding-top: 16px;

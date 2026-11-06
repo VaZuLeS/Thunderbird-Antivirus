@@ -29,10 +29,15 @@ async function checkAbuseIPDB(ip, apikey, analysisContext = null) {
                 'Accept': 'application/json'
             }
         });
-        if (response.status !== 200) return null;
-        const data = await response.json();
-        if (data?.data?.isWhitelisted === true) return false;
-        if (Number.isFinite(data?.data?.abuseConfidenceScore)) return data.data.abuseConfidenceScore > 50;
+        if (response.status === 200) {
+            const data = await response.json();
+            if (data?.data?.isWhitelisted === true) return false;
+            if (Number.isFinite(data?.data?.abuseConfidenceScore)) return data.data.abuseConfidenceScore > 50;
+        } else if (response.status === 429) {
+            Logger.warn("AbuseIPDB: " + uiText('abuseipdbRateLimited', 'The AbuseIPDB rate limit or quota was reached. Please try again later.'));
+        } else if (response.status === 401 || response.status === 403) {
+            Logger.warn("AbuseIPDB: " + uiText('abuseipdbInvalidKey', 'Invalid or unauthorized AbuseIPDB API key.'));
+        }
     } catch (e) {
         Logger.error("Fehler bei AbuseIPDB Abfrage", e);
     }
@@ -51,10 +56,17 @@ async function checkVirusTotalIP(ip, apikey, analysisContext = null) {
                 'Accept': 'application/json'
             }
         });
-        if (response.status !== 200) return null;
-        const data = await response.json();
-        const count = data?.data?.attributes?.last_analysis_stats?.malicious;
-        if (Number.isFinite(count)) return count > 0;
+        if (response.status === 200) {
+            const data = await response.json();
+            const count = data?.data?.attributes?.last_analysis_stats?.malicious;
+            if (Number.isFinite(count)) return count > 0;
+        } else if (response.status === 404) {
+            Logger.info("VirusTotal IP: " + uiText('virustotalNotFound', 'Element not yet recorded in VirusTotal database.'));
+        } else if (response.status === 429) {
+            Logger.warn("VirusTotal IP: " + uiText('virustotalRateLimited', 'The VirusTotal rate limit or quota was reached. Please try again later.'));
+        } else if (response.status === 401 || response.status === 403) {
+            Logger.warn("VirusTotal IP: " + uiText('virustotalInvalidKey', 'Invalid or unauthorized VirusTotal API key.'));
+        }
     } catch (e) {
         Logger.error("Fehler bei VirusTotal IP Abfrage", e);
     }
@@ -88,6 +100,12 @@ async function checkVirusTotal(hash, apikey, analysisContext = null) {
                 if (data && data.data && data.data.attributes && data.data.attributes.last_analysis_stats) {
                     return data.data.attributes.last_analysis_stats;
                 }
+            } else if (response.status === 404) {
+                Logger.info("VirusTotal: " + uiText('virustotalNotFound', 'Element not yet recorded in VirusTotal database.'));
+            } else if (response.status === 429) {
+                Logger.warn("VirusTotal: " + uiText('virustotalRateLimited', 'The VirusTotal rate limit or quota was reached. Please try again later.'));
+            } else if (response.status === 401 || response.status === 403) {
+                Logger.warn("VirusTotal: " + uiText('virustotalInvalidKey', 'Invalid or unauthorized VirusTotal API key.'));
             }
             return null;
         } catch (e) {
@@ -127,10 +145,16 @@ async function checkURLhaus(domain, apikey, analysisContext = null) {
             },
             body: body.toString()
         });
-        if (!response.ok) return null;
-        const data = await response.json();
-        if (data.query_status === 'ok') return Number(data.url_count) > 0 || (Array.isArray(data.urls) && data.urls.length > 0);
-        if (data.query_status === 'no_results') return false;
+        if (response.status === 200) {
+            const data = await response.json();
+            if (data.query_status === 'ok') return Number(data.url_count) > 0 || (Array.isArray(data.urls) && data.urls.length > 0);
+            if (data.query_status === 'no_results') return false;
+            if (data.query_status === 'invalid_api_key') Logger.warn("URLhaus: " + uiText('urlhausInvalidKey', 'Invalid or unauthorized URLhaus API key.'));
+        } else if (response.status === 429) {
+            Logger.warn("URLhaus: " + uiText('urlhausRateLimited', 'The URLhaus rate limit or quota was reached. Please try again later.'));
+        } else if (response.status === 401 || response.status === 403) {
+            Logger.warn("URLhaus: " + uiText('urlhausInvalidKey', 'Invalid or unauthorized URLhaus API key.'));
+        }
     } catch (e) {
         Logger.error("Fehler bei URLhaus Abfrage", e);
     }
@@ -173,9 +197,29 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
             body: JSON.stringify({ url: url, visibility: 'unlisted' })
         });
 
+        let errData = null;
+        if (!scanRes.ok) {
+            try { errData = await scanRes.json(); } catch (_) {}
+        }
+
         if (scanRes.status === 400) {
-           Logger.error("urlscan.io API Error 400 (e.g. Domain not resolvable)", await scanRes.json());
-           return { status: 'ERROR', details: 'Domain not resolvable' };
+            Logger.error("urlscan.io API Error 400 (e.g. Domain not resolvable)", errData);
+            const details = errData?.message || 'Domain not resolvable';
+            return { status: 'ERROR', errorCode: 'domain_unresolvable', details };
+        }
+
+        if (scanRes.status === 429) {
+            const retryAfter = errData?.retry_after || Number(scanRes.headers?.get?.('retry-after')) || null;
+            return {
+                status: 'ERROR',
+                errorCode: 'rate_limited',
+                retryAfter: Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null,
+                details: errData?.message || uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.')
+            };
+        }
+
+        if (scanRes.status === 401 || scanRes.status === 403) {
+            return { status: 'ERROR', errorCode: 'invalid_key', details: errData?.message || uiText('urlscanInvalidKey', 'Invalid or unauthorized urlscan.io API key.') };
         }
 
         if (!scanRes.ok) throw new Error(uiText("ui_100", "Fehler beim Starten des Scans (urlscan.io): ") + scanRes.status);
@@ -188,7 +232,7 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
         return await pollUrlscanIoResult(uuid, apikey, analysisContext);
     } catch (e) {
         Logger.error("Fehler bei urlscan.io Abfrage", e);
-        return { status: 'ERROR', details: e.message };
+        return { status: 'ERROR', errorCode: 'fetch_failed', details: e.message };
     }
 }
 
@@ -198,6 +242,16 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
     const maxTime = 30000;
     const deadline = Date.now() + maxTime;
 
+    const pollContext = analysisContext ? {
+        ...analysisContext,
+        event: (evt) => {
+            if (evt && evt.phase === 'finish' && evt.state === 'incomplete' && Date.now() < deadline) {
+                return;
+            }
+            return analysisContext.event(evt);
+        }
+    } : null;
+
     while (elapsed < maxTime && Date.now() < deadline) {
         assertExternalAnalysisAllowed();
         await new Promise(r => setTimeout(r, Math.min(waitTime, Math.max(0, deadline - Date.now()))));
@@ -206,7 +260,7 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
 
         if (Date.now() >= deadline) break;
         const resultRes = await apiGateway.fetchWithTimeout(`https://urlscan.io/api/v1/result/${encodeURIComponent(uuid)}/`, {
-            method: 'GET', analysisContext,
+            method: 'GET', analysisContext: pollContext,
             headers: {
                 'API-Key': apikey,
                 'Accept': 'application/json'
@@ -254,10 +308,16 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
             }
         } else if (resultRes.status === 404) {
             // Not ready yet, continue polling
+        } else if (resultRes.status === 429) {
+            let errData = null; try { errData = await resultRes.json(); } catch (_) {}
+            return { status: 'ERROR', errorCode: 'rate_limited', details: errData?.message || uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.') };
+        } else if (resultRes.status === 401 || resultRes.status === 403) {
+            let errData = null; try { errData = await resultRes.json(); } catch (_) {}
+            return { status: 'ERROR', errorCode: 'invalid_key', details: errData?.message || uiText('urlscanInvalidKey', 'Invalid or unauthorized urlscan.io API key.') };
         } else {
             throw new Error(uiText("ui_105", "Fehler beim Abrufen der Ergebnisse (urlscan.io): ") + resultRes.status);
         }
     }
 
-    return { status: 'TIMEOUT' }; // Took too long
+    return { status: 'TIMEOUT', errorCode: 'timeout', details: uiText('urlscanTimeoutDetails', 'Timeout: Scan result was not ready within 30 seconds.') };
 }

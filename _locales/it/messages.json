@@ -1960,5 +1960,107 @@
         "content": "$2"
       }
     }
+  },
+  "urlscanErrorDetails": {
+    "message": "Motivo: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "Il limite di frequenza o quota di urlscan.io è stato raggiunto. Riprova più tardi."
+  },
+  "urlscanInvalidKey": {
+    "message": "Chiave API urlscan.io non valida o non autorizzata."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Timeout: Il risultato della scansione non era pronto entro 30 secondi."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Impossibile risolvere il dominio tramite urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Elemento non ancora registrato in Hybrid Analysis (nessuna analisi precedente trovata)."
+  },
+  "virustotalNotFound": {
+    "message": "Elemento non ancora registrato nel database di VirusTotal."
+  },
+  "virustotalRateLimited": {
+    "message": "Il limite di frequenza o la quota di VirusTotal sono stati raggiunti. Riprova più tardi."
+  },
+  "virustotalInvalidKey": {
+    "message": "Chiave API VirusTotal non valida o non autorizzata."
+  },
+  "abuseipdbRateLimited": {
+    "message": "Il limite di frequenza o la quota di AbuseIPDB sono stati raggiunti. Riprova più tardi."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Chiave API AbuseIPDB non valida o non autorizzata."
+  },
+  "urlhausRateLimited": {
+    "message": "Il limite di frequenza o la quota di URLhaus sono stati raggiunti. Riprova più tardi."
+  },
+  "urlhausInvalidKey": {
+    "message": "Chiave API URLhaus non valida o non autorizzata."
+  },
+  "testApiKeyButton": {
+    "message": "Testa connessione"
+  },
+  "testApiKeyTesting": {
+    "message": "Test della connessione in corso…"
+  },
+  "testApiKeyValid": {
+    "message": "Connessione riuscita. La chiave API è valida."
+  },
+  "testApiKeyInvalid": {
+    "message": "Connessione non riuscita: chiave API non valida."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Limite di richieste o quota raggiunta. Riprova più tardi."
+  },
+  "testApiKeyError": {
+    "message": "Test di connessione non riuscito."
+  },
+  "testApiKeyEmpty": {
+    "message": "Inserisci prima una chiave API."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "L'autorizzazione di accesso all'host del servizio è stata negata."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Seleziona prima un provider di reputazione IP."
+  },
+  "rateLimitWithWait": {
+    "message": "Limite di richieste o quota raggiunta. Riprova tra $SECONDS$ secondi.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Limite di richieste raggiunto"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Chiave API non valida"
+  },
+  "auditErrorCode": {
+    "message": "Codice di errore"
+  },
+  "auditErrorDetails": {
+    "message": "Dettagli dell'errore"
+  },
+  "auditRetryAfter": {
+    "message": "Tempo di attesa"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ secondi",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
   }
 }

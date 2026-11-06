@@ -82,3 +82,37 @@ test('cancel during save validation and page disposal prevent late downloads; pi
   }finally{f.close();}
  }
 });
+
+test('source export projects error codes, sanitized error details, retryAfter and backoff diagnostics', () => {
+    const f = fixture();
+    try {
+        const snapshot = fresh();
+        snapshot.rows = [
+            {
+                provider: 'virustotal',
+                scope: 'hash',
+                resource: 'attachment:1.1',
+                state: 'failed',
+                source: 'remote',
+                verdict: 'unknown',
+                errorCode: 'rate_limited',
+                errorDetails: 'Rate limit or quota reached. Please try again in 45 seconds.',
+                retryAfter: 45
+            }
+        ];
+        snapshot.diagnostics = {
+            backoffs: {
+                'api.virustotal.com': { active: true, remainingSeconds: 45 }
+            }
+        };
+        const report = JSON.parse(JSON.stringify(f.c.subject.project(snapshot)));
+        assert.equal(report.current.rows[0].errorCode, 'rate_limited');
+        assert.equal(report.current.rows[0].errorDetails, 'Rate limit or quota reached. Please try again in 45 seconds.');
+        assert.equal(report.current.rows[0].retryAfter, 45);
+        assert.deepEqual(report.current.diagnostics.backoffs, {
+            'api.virustotal.com': { active: true, remainingSeconds: 45 }
+        });
+    } finally {
+        f.close();
+    }
+});

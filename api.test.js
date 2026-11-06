@@ -1695,6 +1695,22 @@ describe('renderVirusTotalStats', () => {
         assert.ok(html.includes('Suspicious: 0'), 'Should default suspicious to 0');
         assert.ok(html.includes('Harmless: 0'), 'Should default harmless to 0');
     });
+
+    it('should render NOT_FOUND message when virustotal_stats status is NOT_FOUND', () => {
+        const card = context.document.createElement('div');
+        renderVirusTotalStats({ status: 'NOT_FOUND', details: 'Element not yet recorded in VirusTotal database.' }, card);
+        const html = card.innerHTML;
+        assert.ok(html.includes('Element not yet recorded in VirusTotal database.'));
+        assert.ok(!html.includes('Malicious: 0'));
+    });
+
+    it('should render ERROR message when virustotal_stats status is ERROR', () => {
+        const card = context.document.createElement('div');
+        renderVirusTotalStats({ status: 'ERROR', details: 'The VirusTotal rate limit or quota was reached.' }, card);
+        const html = card.innerHTML;
+        assert.ok(html.includes('The VirusTotal rate limit or quota was reached.'));
+        assert.ok(!html.includes('Malicious: 0'));
+    });
 });
 
 

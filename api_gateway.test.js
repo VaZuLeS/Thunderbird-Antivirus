@@ -201,4 +201,92 @@ describe('ApiGateway module', () => {
             }
         );
     });
+
+    it('records rate limit backoff on 429 and intercepts subsequent requests without network calls', async () => {
+        let fetchCalls = 0;
+        const mockContext = {
+            AbortController: globalThis.AbortController,
+            setTimeout,
+            clearTimeout,
+            Date,
+            JSON,
+            Response: globalThis.Response,
+            Headers: globalThis.Headers,
+            fetch: async (url) => {
+                fetchCalls++;
+                return {
+                    status: 429,
+                    statusText: 'Too Many Requests',
+                    headers: { get: (name) => name.toLowerCase() === 'retry-after' ? '45' : null },
+                    json: async () => ({ error: 'rate_limit' })
+                };
+            },
+            console: { log: () => {}, warn: () => {}, error: () => {} },
+            URL: URL
+        };
+        vm.createContext(mockContext);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8'), mockContext);
+
+        const gw = new mockContext.ApiGateway();
+        assert.strictEqual(gw.getBackoff('api.virustotal.com'), null);
+
+        // 1. Initial call triggers fetch and receives 429
+        const res1 = await gw.fetchWithTimeout('https://api.virustotal.com/v3/ip');
+        assert.strictEqual(res1.status, 429);
+        assert.strictEqual(fetchCalls, 1);
+
+        // Verify backoff is recorded
+        const backoff = gw.getBackoff('api.virustotal.com');
+        assert.ok(backoff);
+        assert.strictEqual(backoff.active, true);
+        assert.ok(backoff.remainingSeconds <= 45 && backoff.remainingSeconds >= 40);
+
+        // 2. Second call during active backoff must NOT call fetch
+        const res2 = await gw.fetchWithTimeout('https://api.virustotal.com/v3/ip');
+        assert.strictEqual(res2.status, 429);
+        assert.strictEqual(fetchCalls, 1, 'fetch should NOT be called during active backoff');
+        const data2 = await res2.json();
+        assert.strictEqual(data2.error, 'rate_limited');
+        assert.ok(data2.retry_after > 0);
+
+        // 3. Clearing backoffs allows fetch again
+        gw.clearBackoffs();
+        assert.strictEqual(gw.getBackoff('api.virustotal.com'), null);
+        await gw.fetchWithTimeout('https://api.virustotal.com/v3/ip');
+        assert.strictEqual(fetchCalls, 2);
+    });
+
+    it('falls back to 60s backoff when retry-after header is missing on 429', async () => {
+        let fetchCalls = 0;
+        const mockContext = {
+            AbortController: globalThis.AbortController,
+            setTimeout,
+            clearTimeout,
+            Date,
+            JSON,
+            Response: globalThis.Response,
+            Headers: globalThis.Headers,
+            fetch: async () => {
+                fetchCalls++;
+                return {
+                    status: 429,
+                    statusText: 'Too Many Requests',
+                    headers: { get: () => null },
+                    json: async () => ({ error: 'too_many' })
+                };
+            },
+            console: { log: () => {}, warn: () => {}, error: () => {} },
+            URL: URL
+        };
+        vm.createContext(mockContext);
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8'), mockContext);
+
+        const gw = new mockContext.ApiGateway();
+        await gw.fetchWithTimeout('https://api.abuseipdb.com/check');
+        assert.strictEqual(fetchCalls, 1);
+
+        const backoff = gw.getBackoff('api.abuseipdb.com');
+        assert.ok(backoff);
+        assert.ok(backoff.remainingSeconds <= 60 && backoff.remainingSeconds >= 55);
+    });
 });

@@ -85,6 +85,161 @@ const SupportReport = (() => {
     return { project, create };
 })();
 
+const ProviderKeyTester = (() => {
+    const endpoints = {
+        hybridanalysis: {
+            origin: 'https://hybrid-analysis.com/*',
+            async test(key) {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 10000);
+                try {
+                    const res = await fetch('https://hybrid-analysis.com/api/v2/overview/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', {
+                        method: 'GET',
+                        headers: {
+                            'api-key': key,
+                            'User-Agent': 'Falcon activity client',
+                            'accept': 'application/json'
+                        },
+                        signal: controller.signal
+                    });
+                    if (res.status === 200 || res.status === 404) return { status: 'valid' };
+                    if (res.status === 401 || res.status === 403) return { status: 'invalid_key' };
+                    if (res.status === 429) return { status: 'rate_limited' };
+                    return { status: 'error', code: res.status };
+                } catch (err) {
+                    return { status: 'error', message: err.message || String(err) };
+                } finally {
+                    clearTimeout(timeout);
+                }
+            }
+        },
+        virustotal: {
+            origin: 'https://www.virustotal.com/*',
+            async test(key) {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 10000);
+                try {
+                    const res = await fetch('https://www.virustotal.com/api/v3/ip_addresses/8.8.8.8', {
+                        method: 'GET',
+                        headers: {
+                            'x-apikey': key,
+                            'accept': 'application/json'
+                        },
+                        signal: controller.signal
+                    });
+                    if (res.status === 200 || res.status === 404) return { status: 'valid' };
+                    if (res.status === 401 || res.status === 403) return { status: 'invalid_key' };
+                    if (res.status === 429) return { status: 'rate_limited' };
+                    return { status: 'error', code: res.status };
+                } catch (err) {
+                    return { status: 'error', message: err.message || String(err) };
+                } finally {
+                    clearTimeout(timeout);
+                }
+            }
+        },
+        urlhaus: {
+            origin: 'https://urlhaus-api.abuse.ch/*',
+            async test(key) {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 10000);
+                try {
+                    const res = await fetch('https://urlhaus-api.abuse.ch/v1/host/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Auth-Key': key
+                        },
+                        body: 'host=example.com',
+                        signal: controller.signal
+                    });
+                    if (res.status === 200) {
+                        const data = await res.json().catch(() => null);
+                        if (data && data.query_status === 'invalid_api_key') return { status: 'invalid_key' };
+                        return { status: 'valid' };
+                    }
+                    if (res.status === 401 || res.status === 403) return { status: 'invalid_key' };
+                    if (res.status === 429) return { status: 'rate_limited' };
+                    return { status: 'error', code: res.status };
+                } catch (err) {
+                    return { status: 'error', message: err.message || String(err) };
+                } finally {
+                    clearTimeout(timeout);
+                }
+            }
+        },
+        abuseipdb: {
+            origin: 'https://api.abuseipdb.com/*',
+            async test(key) {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 10000);
+                try {
+                    const res = await fetch('https://api.abuseipdb.com/api/v2/check?ipAddress=1.1.1.1&maxAgeInDays=90', {
+                        method: 'GET',
+                        headers: {
+                            'Key': key,
+                            'Accept': 'application/json'
+                        },
+                        signal: controller.signal
+                    });
+                    if (res.status === 200) return { status: 'valid' };
+                    if (res.status === 401 || res.status === 403) return { status: 'invalid_key' };
+                    if (res.status === 429) return { status: 'rate_limited' };
+                    return { status: 'error', code: res.status };
+                } catch (err) {
+                    return { status: 'error', message: err.message || String(err) };
+                } finally {
+                    clearTimeout(timeout);
+                }
+            }
+        },
+        urlscan: {
+            origin: 'https://urlscan.io/*',
+            async test(key) {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 10000);
+                try {
+                    const res = await fetch('https://urlscan.io/api/v1/search/?q=domain:example.com&size=1', {
+                        method: 'GET',
+                        headers: {
+                            'API-Key': key,
+                            'Accept': 'application/json'
+                        },
+                        signal: controller.signal
+                    });
+                    if (res.status === 200) return { status: 'valid' };
+                    if (res.status === 401 || res.status === 403) return { status: 'invalid_key' };
+                    if (res.status === 429) return { status: 'rate_limited' };
+                    return { status: 'error', code: res.status };
+                } catch (err) {
+                    return { status: 'error', message: err.message || String(err) };
+                } finally {
+                    clearTimeout(timeout);
+                }
+            }
+        }
+    };
+
+    async function testKey(provider, key, permissionsApi = (typeof browser !== 'undefined' ? browser.permissions : null)) {
+        if (!key || !key.trim()) return { status: 'empty' };
+        const conf = endpoints[provider];
+        if (!conf) return { status: 'error', message: 'Unknown provider' };
+
+        if (permissionsApi && typeof permissionsApi.contains === 'function') {
+            const has = await permissionsApi.contains({ origins: [conf.origin] }).catch(() => false);
+            if (!has) {
+                if (typeof permissionsApi.request !== 'function') return { status: 'permission_denied' };
+                const granted = await permissionsApi.request({ origins: [conf.origin] }).catch(() => false);
+                if (!granted) return { status: 'permission_denied' };
+            }
+        }
+        return await conf.test(key.trim());
+    }
+
+    return { testKey, endpoints };
+})();
+if (typeof globalThis !== 'undefined') globalThis.ProviderKeyTester = ProviderKeyTester;
+
 function uiText(key, fallback, params = []) {
     return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
 }
@@ -304,10 +459,90 @@ document.addEventListener('DOMContentLoaded', function() {
       // Event Listener für Änderungen
       alwaysManualCheckbox.addEventListener('change', updatePrivacyTierStatus);
       autoScanLinksCheckbox.addEventListener('change', updateTimeOfClickProtectionStatus);
+
+      function attachKeyTestHandler(buttonId, inputId, statusId, getProvider) {
+          const button = document.getElementById(buttonId);
+          const input = document.getElementById(inputId);
+          const statusSpan = document.getElementById(statusId);
+          if (!button || !input || !statusSpan) return;
+
+          input.addEventListener('input', () => {
+              statusSpan.textContent = '';
+              statusSpan.className = 'key-test-status';
+          });
+
+          button.addEventListener('click', async () => {
+              const provider = typeof getProvider === 'function' ? getProvider() : getProvider;
+              if (!provider || provider === 'none') {
+                  statusSpan.className = 'key-test-status text-warning';
+                  statusSpan.textContent = uiText('testApiKeySelectProvider', 'Please select an IP reputation provider first.');
+                  return;
+              }
+
+              const rawKey = input.value.trim().replace(/\r|\n/g, '');
+              if (!rawKey) {
+                  statusSpan.className = 'key-test-status text-warning';
+                  statusSpan.textContent = uiText('testApiKeyEmpty', 'Please enter an API key first.');
+                  return;
+              }
+
+              button.disabled = true;
+              button.setAttribute('aria-busy', 'true');
+              statusSpan.className = 'key-test-status';
+              statusSpan.textContent = uiText('testApiKeyTesting', 'Testing connection…');
+
+              try {
+                  const result = await ProviderKeyTester.testKey(provider, rawKey);
+                  if (result.status === 'valid') {
+                      statusSpan.className = 'key-test-status text-success';
+                      statusSpan.textContent = uiText('testApiKeyValid', 'Connection successful. API key is valid.');
+                  } else if (result.status === 'invalid_key') {
+                      statusSpan.className = 'key-test-status text-danger';
+                      statusSpan.textContent = uiText('testApiKeyInvalid', 'Connection failed: Invalid API key.');
+                  } else if (result.status === 'rate_limited') {
+                      statusSpan.className = 'key-test-status text-warning';
+                      statusSpan.textContent = uiText('testApiKeyRateLimited', 'Rate limit or quota reached. Please try again later.');
+                  } else if (result.status === 'permission_denied') {
+                      statusSpan.className = 'key-test-status text-danger';
+                      statusSpan.textContent = uiText('testApiKeyPermissionDenied', 'Permission to connect to service host was denied.');
+                  } else if (result.status === 'empty') {
+                      statusSpan.className = 'key-test-status text-warning';
+                      statusSpan.textContent = uiText('testApiKeyEmpty', 'Please enter an API key first.');
+                  } else {
+                      statusSpan.className = 'key-test-status text-danger';
+                      statusSpan.textContent = uiText('testApiKeyError', 'Connection test failed.');
+                  }
+              } catch (err) {
+                  statusSpan.className = 'key-test-status text-danger';
+                  statusSpan.textContent = uiText('testApiKeyError', 'Connection test failed.') + (err && err.message ? ' (' + err.message + ')' : '');
+              } finally {
+                  button.disabled = false;
+                  button.removeAttribute('aria-busy');
+              }
+          });
+      }
+
+      attachKeyTestHandler('testHybridKey', 'apikey', 'testHybridKeyStatus', 'hybridanalysis');
+      attachKeyTestHandler('testUrlhausKey', 'urlhausApikey', 'testUrlhausKeyStatus', 'urlhaus');
+      attachKeyTestHandler('testUrlscanKey', 'urlscanApikey', 'testUrlscanKeyStatus', 'urlscan');
+      attachKeyTestHandler('testVirustotalKey', 'virustotalApikey', 'testVirustotalKeyStatus', 'virustotal');
+      attachKeyTestHandler('testIpReputationKey', 'ipReputationApiKey', 'testIpReputationKeyStatus', () => document.getElementById('ipReputationProvider')?.value);
+
+      const ipProviderSelect = document.getElementById('ipReputationProvider');
+      if (ipProviderSelect) {
+          ipProviderSelect.addEventListener('change', () => {
+              const statusSpan = document.getElementById('testIpReputationKeyStatus');
+              if (statusSpan) {
+                  statusSpan.textContent = '';
+                  statusSpan.className = 'key-test-status';
+              }
+          });
+      }
     });
   });
   
-  document.getElementById('save').addEventListener('click', async function() {
+  const saveElement = document.getElementById('save');
+  if (saveElement) saveElement.addEventListener('click', async function() {
     const apikeyInput = document.getElementById('apikey');
     if (!apikeyInput.reportValidity()) {
         return;
@@ -459,7 +694,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  document.getElementById('clearCache').addEventListener('click', async function() {
+  const clearCacheElement = document.getElementById('clearCache');
+  if (clearCacheElement) clearCacheElement.addEventListener('click', async function() {
     if (!confirm(uiText("ui_080", "Möchten Sie den Cache wirklich leeren? Dies entfernt alle lokal gespeicherten Analyse-Ergebnisse."))) {
         return;
     }

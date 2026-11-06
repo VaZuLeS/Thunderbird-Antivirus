@@ -93,7 +93,16 @@ async function handleAuditedLinkCheck(request, sender) {
         session.verdict = verdict.status || 'UNKNOWN'; session.provider = verdict.provider || 'none'; session.checked = true; session.providerCheckedAt = Date.now();
         await localCheck;
         let saved = false;
-        try { saved = await updateLinkAudit(session.record.id, { verdict: session.verdict, provider: session.provider, checkedAt: verdict.check?.origin === 'live' ? verdict.check.observedAt : null, check: verdict.check || null, providerReasons: (verdict.reasons || []).slice(0, 20) }); }
+        try { saved = await updateLinkAudit(session.record.id, {
+            verdict: session.verdict,
+            provider: session.provider,
+            checkedAt: verdict.check?.origin === 'live' ? verdict.check.observedAt : null,
+            check: verdict.check || null,
+            errorCode: verdict.check?.errorCode || verdict.errorCode || null,
+            errorDetails: verdict.check?.errorDetails || verdict.errorDetails || null,
+            retryAfter: verdict.check?.retryAfter || verdict.retryAfter || null,
+            providerReasons: (verdict.reasons || []).slice(0, 20)
+        }); }
         catch (error) { reportLinkAuditFailure(); }
         return { ...verdict, score: session.score, auditSaved: saved && session.auditSaved };
     } catch (error) {

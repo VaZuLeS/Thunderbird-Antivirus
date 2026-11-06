@@ -453,22 +453,32 @@ function isHybridReportInProgress(json_data) {
 }
 
 function deriveHybridVerdict(json_data) {
-    if (!json_data || typeof json_data !== 'object' || Array.isArray(json_data)) return '';
+    if (!json_data) return '';
+    if (Array.isArray(json_data)) {
+        if (json_data.length === 0) return '';
+        const candidateVerdicts = json_data.map(deriveHybridVerdict).filter(Boolean);
+        if (candidateVerdicts.includes('malicious')) return 'malicious';
+        if (candidateVerdicts.includes('suspicious')) return 'suspicious';
+        if (candidateVerdicts.includes('clean') || candidateVerdicts.includes('whitelisted')) return 'clean';
+        return candidateVerdicts[0] || '';
+    }
+    if (typeof json_data !== 'object') return '';
     const rawVerdict = typeof json_data.verdict === 'string' ? json_data.verdict.trim() : '';
     const lower = rawVerdict.toLowerCase();
     if (rawVerdict && lower !== 'unknown' && lower !== 'no-classification') return rawVerdict;
 
     const scanners = extractHybridScanners(json_data);
+    const cleanStatuses = ['clean', 'whitelisted', 'no threat', 'no_threat', 'no-threat', 'harmless'];
     const hasMaliciousScanner = scanners.some(s => (typeof s.status === 'string' && s.status.toLowerCase() === 'malicious') || (Number.isFinite(s.positives) && s.positives > 0) || (Array.isArray(s.anti_virus_results) && s.anti_virus_results.some(av => typeof av?.verdict === 'string' && av.verdict.toLowerCase() === 'malicious')));
     const hasSuspiciousScanner = scanners.some(s => typeof s.status === 'string' && s.status.toLowerCase() === 'suspicious');
-    const hasCleanScanner = scanners.some(s => typeof s.status === 'string' && ['clean', 'whitelisted'].includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0));
+    const hasCleanScanner = scanners.some(s => (typeof s.status === 'string' && cleanStatuses.includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0)) || (Number.isFinite(s.positives) && s.positives === 0 && Number.isFinite(s.total) && s.total > 0));
     const threatScore = typeof json_data.threat_score === 'number' && Number.isFinite(json_data.threat_score) ? json_data.threat_score : null;
     const multiscan = typeof json_data.multiscan_result === 'number' && Number.isFinite(json_data.multiscan_result) ? json_data.multiscan_result : null;
 
     if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50) || json_data.threat_level === 2) return 'malicious';
     if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0) || json_data.threat_level === 1) return 'suspicious';
     if (json_data.whitelisted === true) return 'whitelisted';
-    if (hasCleanScanner || (json_data.threat_level === 0 && !isHybridReportInProgress(json_data))) return 'clean';
+    if (hasCleanScanner || (json_data.threat_level === 0 && !isHybridReportInProgress(json_data)) || (threatScore !== null && threatScore < 30 && !isHybridReportInProgress(json_data))) return 'clean';
     return rawVerdict;
 }
 
@@ -593,6 +603,22 @@ function renderVirusTotalStats(virustotal_stats, card) {
     pVtHead.appendChild(vtHeadStrong);
     card.appendChild(pVtHead);
 
+    if (virustotal_stats.status === 'NOT_FOUND' || virustotal_stats.not_found) {
+        const pNotFound = document.createElement('p');
+        pNotFound.className = "ml-4 text-muted";
+        pNotFound.textContent = virustotal_stats.details || uiText('virustotalNotFound', 'Element not yet recorded in VirusTotal database.');
+        card.appendChild(pNotFound);
+        return;
+    }
+
+    if (virustotal_stats.status === 'ERROR' || virustotal_stats.error) {
+        const pErr = document.createElement('p');
+        pErr.className = "ml-4 text-warning";
+        pErr.textContent = virustotal_stats.details || uiText('ui_046', 'Fehler');
+        card.appendChild(pErr);
+        return;
+    }
+
     const pVtMal = document.createElement('p');
     const malCount = virustotal_stats.malicious || 0;
     pVtMal.className = `ml-4 ${malCount > 0 ? "text-danger" : ""}`;
@@ -631,12 +657,20 @@ function renderUrlscanResult(urlscan, card) {
     const isMalicious = status === 'MALICIOUS' || status === 'MALICIOUS_VISUAL';
     const isSuspicious = status === 'SUSPICIOUS';
     const isClean = status === 'CLEAN';
-    const statusClass = isMalicious ? "text-danger" : isSuspicious ? "text-warning" : isClean ? "text-success" : "";
+    const isError = status === 'ERROR' || status === 'TIMEOUT';
+    const statusClass = isMalicious ? "text-danger" : isSuspicious ? "text-warning" : isClean ? "text-success" : isError ? "text-warning" : "";
 
     const pStatus = document.createElement('p');
     pStatus.className = `ml-4 ${statusClass}`.trim();
     pStatus.textContent = uiText("urlscanStatus", "Status: $1", [status]);
     card.appendChild(pStatus);
+
+    if (urlscan.details && typeof urlscan.details === 'string') {
+        const pDetails = document.createElement('p');
+        pDetails.className = `ml-4 ${statusClass}`.trim();
+        pDetails.textContent = uiText("urlscanErrorDetails", "Ursache: $1", [urlscan.details]);
+        card.appendChild(pDetails);
+    }
 
     if (Array.isArray(urlscan.reasons)) {
         for (const reason of urlscan.reasons) {
@@ -1155,6 +1189,11 @@ function handle_hybrid_report_error(response, attachmentName, targetContainer, j
         pProvider.className = 'hybrid-provider-message';
         pProvider.textContent = uiText('hybridProviderMessage', 'Provider message: $1', [providerMessage.trim().slice(0, 500)]);
         errDiv1.appendChild(pProvider);
+    }
+    if (response.status === 404) {
+        const pNotFound = document.createElement('p');
+        pNotFound.textContent = uiText('hybridNotFound', 'Element not yet recorded in Hybrid Analysis (no previous analysis found).');
+        errDiv1.appendChild(pNotFound);
     }
     if (response.status === 429) {
         const pRate = document.createElement('p');

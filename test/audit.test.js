@@ -173,3 +173,58 @@ test('pending stored warning remains visible without pretending a fresh observat
  const row=dom.window.document.querySelector('#auditRows tr');assert.ok(row.querySelector('details').textContent.includes(catalog.providerMalicious.message));assert.ok(!row.children[3].textContent.includes(catalog.providerMalicious.message));assert.ok(row.textContent.includes(catalog.auditPendingExplanation.message));
  }finally{dom.window.close()}
 });
+
+test('audit diagnostic block renders errorCode, errorDetails and retryAfter with wait time', async () => {
+    const dom = new JSDOM(fs.readFileSync('audit.html', 'utf8'));
+    try {
+        const catalog = JSON.parse(fs.readFileSync('_locales/en/messages.json'));
+        const entry = {
+            ...records[0],
+            id: 'rate-limited-entry',
+            outcome: 'ABORTED',
+            check: {
+                origin: 'live',
+                outcome: 'rate_limited',
+                attemptedAt: 1000,
+                observedAt: null,
+                errorCode: 'rate_limited',
+                errorDetails: 'Too Many Requests from Hybrid Analysis',
+                retryAfter: 45
+            }
+        };
+        const context = vm.createContext({
+            document: dom.window.document,
+            browser: {
+                runtime: { sendMessage: async () => ({ success: true, records: [entry], profileId: 'synthetic' }) },
+                i18n: {
+                    getUILanguage: () => 'en',
+                    getMessage: (key, values = []) => {
+                        const item = catalog[key];
+                        if (!item) return '';
+                        if (!item.placeholders) return item.message;
+                        return item.message.replace(/\$([A-Z0-9_]+)\$/g, (_, name) => {
+                            const ph = item.placeholders[name.toLowerCase()];
+                            return ph ? ph.content.replace(/\$(\d+)/g, (__, idx) => String(values[idx - 1])) : _;
+                        });
+                    }
+                }
+            }
+        });
+        vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\n' + source, context);
+        await new Promise(resolve => setImmediate(resolve));
+        const details = dom.window.document.querySelector('#auditRows details');
+        assert.ok(details);
+        assert.ok(details.textContent.includes(catalog.checkOutcome_rate_limited.message));
+        const diag = details.querySelector('.audit-diagnostic-block');
+        assert.ok(diag);
+        assert.ok(diag.querySelector('.audit-error-code').textContent.includes('rate_limited'));
+        assert.ok(diag.querySelector('.audit-error-details').textContent.includes('Too Many Requests from Hybrid Analysis'));
+        assert.ok(diag.querySelector('.audit-retry-after').textContent.includes('45 seconds'));
+
+        const csv = exportsApi().csv([entry]);
+        assert.ok(csv.includes('rate_limited'));
+        assert.ok(csv.includes('Too Many Requests from Hybrid Analysis'));
+        assert.ok(csv.includes('45'));
+    } finally { dom.window.close(); }
+});
+

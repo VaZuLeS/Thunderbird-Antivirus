@@ -318,16 +318,32 @@
                 ></label
               >
               <!-- Security: type="password", autocomplete="off", maxlength="255", spellcheck="false" enforce confidential masking, disable autofill caching, limit input length, and disable spellcheck data leakage -->
-              <input
-                type="password"
-                id="apikey"
-                aria-describedby="apiKeyInstructions"
-                maxlength="255"
-                autocomplete="off"
-                spellcheck="false"
-                placeholder="e.g. abcdef123456…"
-                data-i18n-placeholder="ui_131"
-              />
+              <div class="api-key-input-row">
+                <input
+                  type="password"
+                  id="apikey"
+                  aria-describedby="apiKeyInstructions testHybridKeyStatus"
+                  maxlength="255"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="e.g. abcdef123456…"
+                  data-i18n-placeholder="ui_131"
+                />
+                <button
+                  type="button"
+                  id="testHybridKey"
+                  class="btn-secondary test-key-btn"
+                  aria-describedby="testHybridKeyStatus"
+                  data-i18n="testApiKeyButton"
+                  >Test connection</button
+                >
+              </div>
+              <span
+                id="testHybridKeyStatus"
+                class="key-test-status"
+                role="status"
+                aria-live="polite"
+              ></span>
             </div>
             <div class="mb-3">
               <label for="urlhausApikey"
@@ -335,16 +351,32 @@
                   >URLhaus API key (optional domain reputation):</span
                 ></label
               >
-              <input
-                type="password"
-                id="urlhausApikey"
-                aria-describedby="urlhausHelp"
-                maxlength="255"
-                autocomplete="off"
-                spellcheck="false"
-                placeholder="e.g. abcdef123456…"
-                data-i18n-placeholder="ui_131"
-              />
+              <div class="api-key-input-row">
+                <input
+                  type="password"
+                  id="urlhausApikey"
+                  aria-describedby="urlhausHelp testUrlhausKeyStatus"
+                  maxlength="255"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="e.g. abcdef123456…"
+                  data-i18n-placeholder="ui_131"
+                />
+                <button
+                  type="button"
+                  id="testUrlhausKey"
+                  class="btn-secondary test-key-btn"
+                  aria-describedby="testUrlhausKeyStatus"
+                  data-i18n="testApiKeyButton"
+                  >Test connection</button
+                >
+              </div>
+              <span
+                id="testUrlhausKeyStatus"
+                class="key-test-status"
+                role="status"
+                aria-live="polite"
+              ></span>
               <small id="urlhausHelp"
                 ><span data-i18n="ui_133">You can obtain an API key at</span>
                 <a
@@ -365,16 +397,32 @@
                   >urlscan.io API key (optional URL analysis):</span
                 ></label
               >
-              <input
-                type="password"
-                id="urlscanApikey"
-                aria-describedby="urlscanHelp"
-                maxlength="255"
-                autocomplete="off"
-                spellcheck="false"
-                placeholder="e.g. abcdef123456…"
-                data-i18n-placeholder="ui_131"
-              />
+              <div class="api-key-input-row">
+                <input
+                  type="password"
+                  id="urlscanApikey"
+                  aria-describedby="urlscanHelp testUrlscanKeyStatus"
+                  maxlength="255"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="e.g. abcdef123456…"
+                  data-i18n-placeholder="ui_131"
+                />
+                <button
+                  type="button"
+                  id="testUrlscanKey"
+                  class="btn-secondary test-key-btn"
+                  aria-describedby="testUrlscanKeyStatus"
+                  data-i18n="testApiKeyButton"
+                  >Test connection</button
+                >
+              </div>
+              <span
+                id="testUrlscanKeyStatus"
+                class="key-test-status"
+                role="status"
+                aria-live="polite"
+              ></span>
               <p data-i18n="urlscanVisibility"></p>
               <small id="urlscanHelp"
                 ><span data-i18n="ui_138">You can obtain an API key at</span>
@@ -395,16 +443,32 @@
                   >VirusTotal API key (optional file reputation):</span
                 ></label
               >
-              <input
-                type="password"
-                id="virustotalApikey"
-                aria-describedby="virustotalHelp"
-                maxlength="255"
-                autocomplete="off"
-                spellcheck="false"
-                placeholder="e.g. abcdef123456…"
-                data-i18n-placeholder="ui_131"
-              />
+              <div class="api-key-input-row">
+                <input
+                  type="password"
+                  id="virustotalApikey"
+                  aria-describedby="virustotalHelp testVirustotalKeyStatus"
+                  maxlength="255"
+                  autocomplete="off"
+                  spellcheck="false"
+                  placeholder="e.g. abcdef123456…"
+                  data-i18n-placeholder="ui_131"
+                />
+                <button
+                  type="button"
+                  id="testVirustotalKey"
+                  class="btn-secondary test-key-btn"
+                  aria-describedby="testVirustotalKeyStatus"
+                  data-i18n="testApiKeyButton"
+                  >Test connection</button
+                >
+              </div>
+              <span
+                id="testVirustotalKeyStatus"
+                class="key-test-status"
+                role="status"
+                aria-live="polite"
+              ></span>
               <small id="virustotalHelp"
                 ><span data-i18n="ui_133">You can obtain an API key at</span>
                 <a
@@ -441,16 +505,32 @@
             <label for="ipReputationApiKey"
               ><span data-i18n="ui_153">IP reputation API key:</span></label
             >
-            <input
-              type="password"
-              id="ipReputationApiKey"
-              aria-describedby="ipReputationHelp"
-              maxlength="255"
-              autocomplete="off"
-              spellcheck="false"
-              placeholder="e.g. abcdef123456…"
-              data-i18n-placeholder="ui_131"
-            />
+            <div class="api-key-input-row">
+              <input
+                type="password"
+                id="ipReputationApiKey"
+                aria-describedby="ipReputationHelp testIpReputationKeyStatus"
+                maxlength="255"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="e.g. abcdef123456…"
+                data-i18n-placeholder="ui_131"
+              />
+              <button
+                type="button"
+                id="testIpReputationKey"
+                class="btn-secondary test-key-btn"
+                aria-describedby="testIpReputationKeyStatus"
+                data-i18n="testApiKeyButton"
+                >Test connection</button
+              >
+            </div>
+            <span
+              id="testIpReputationKeyStatus"
+              class="key-test-status"
+              role="status"
+              aria-live="polite"
+            ></span>
             <small id="ipReputationHelp"
               ><span data-i18n="ui_154"
                 >Sends public IP addresses from the email's Received headers to

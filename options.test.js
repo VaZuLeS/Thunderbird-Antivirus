@@ -340,3 +340,347 @@ describe('atomic consent save', () => {
         assert.ok(history.every(item => item.externalAnalysisConsent !== true));
     });
 });
+
+describe('ProviderKeyTester and test buttons', () => {
+    let originalFetch;
+
+    function loadTester(customContext = {}) {
+        const html = fs.readFileSync(path.join(__dirname, 'options.html'), 'utf8');
+        const dom = new JSDOM(html);
+        const { window } = dom;
+        const { document } = window;
+        const defaultBrowser = {
+            storage: { local: { get: async () => ({}), set: async () => ({}) } },
+            permissions: { contains: async () => true, request: async () => true, getAll: async () => ({}) },
+            runtime: { getManifest: () => ({ version: '1.24.8' }) }
+        };
+        const context = vm.createContext({
+            window,
+            document,
+            console,
+            setTimeout,
+            clearTimeout,
+            AbortController,
+            URL,
+            Blob,
+            fetch: (...args) => globalThis.fetch(...args),
+            ...customContext,
+            browser: {
+                ...defaultBrowser,
+                ...(customContext.browser || {}),
+                storage: { ...defaultBrowser.storage, ...(customContext.browser?.storage || {}) },
+                permissions: { ...defaultBrowser.permissions, ...(customContext.browser?.permissions || {}) }
+            },
+            ThundyI18n: {
+                get: (k) => k
+            }
+        });
+        vm.runInContext(fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8') + '\nglobalThis.tester = ProviderKeyTester;', context);
+        return context.tester;
+    }
+
+    it('returns empty status when key is whitespace or empty', async () => {
+        const tester = loadTester();
+        const res1 = await tester.testKey('virustotal', '');
+        assert.strictEqual(res1.status, 'empty');
+        const res2 = await tester.testKey('virustotal', '   \n  ');
+        assert.strictEqual(res2.status, 'empty');
+    });
+
+    it('returns error for unknown provider', async () => {
+        const tester = loadTester();
+        const res = await tester.testKey('nonexistent', 'somekey');
+        assert.strictEqual(res.status, 'error');
+    });
+
+    it('requests permission if missing and reports permission_denied if user rejects', async () => {
+        const mockPermissions = {
+            contains: async () => false,
+            request: async () => false
+        };
+        const tester = loadTester({ browser: { permissions: mockPermissions } });
+        const res = await tester.testKey('hybridanalysis', 'dummykey', mockPermissions);
+        assert.strictEqual(res.status, 'permission_denied');
+    });
+
+    it('tests Hybrid Analysis: 200 or 404 is valid, 401 is invalid_key, 429 is rate_limited', async () => {
+        const mockPermissions = { contains: async () => true };
+        const tester = loadTester();
+        const oldFetch = globalThis.fetch;
+
+        try {
+            globalThis.fetch = async (url, opts) => {
+                assert.ok(url.includes('hybrid-analysis.com'));
+                assert.strictEqual(opts.headers['api-key'], 'my-ha-key');
+                assert.strictEqual(opts.headers['User-Agent'], 'Falcon activity client');
+                return { status: 404 };
+            };
+            const res404 = await tester.testKey('hybridanalysis', 'my-ha-key', mockPermissions);
+            assert.strictEqual(res404.status, 'valid');
+
+            globalThis.fetch = async () => ({ status: 200 });
+            const res200 = await tester.testKey('hybridanalysis', 'my-ha-key', mockPermissions);
+            assert.strictEqual(res200.status, 'valid');
+
+            globalThis.fetch = async () => ({ status: 401 });
+            const res401 = await tester.testKey('hybridanalysis', 'bad-key', mockPermissions);
+            assert.strictEqual(res401.status, 'invalid_key');
+
+            globalThis.fetch = async () => ({ status: 403 });
+            const res403 = await tester.testKey('hybridanalysis', 'bad-key', mockPermissions);
+            assert.strictEqual(res403.status, 'invalid_key');
+
+            globalThis.fetch = async () => ({ status: 429 });
+            const res429 = await tester.testKey('hybridanalysis', 'rate-key', mockPermissions);
+            assert.strictEqual(res429.status, 'rate_limited');
+
+            globalThis.fetch = async () => ({ status: 500 });
+            const res500 = await tester.testKey('hybridanalysis', 'err-key', mockPermissions);
+            assert.strictEqual(res500.status, 'error');
+            assert.strictEqual(res500.code, 500);
+        } finally {
+            globalThis.fetch = oldFetch;
+        }
+    });
+
+    it('tests VirusTotal: 200 or 404 is valid, 401 is invalid_key, 429 is rate_limited', async () => {
+        const mockPermissions = { contains: async () => true };
+        const tester = loadTester();
+        const oldFetch = globalThis.fetch;
+
+        try {
+            globalThis.fetch = async (url, opts) => {
+                assert.ok(url.includes('virustotal.com'));
+                assert.strictEqual(opts.headers['x-apikey'], 'vt-key-123');
+                return { status: 200 };
+            };
+            const res200 = await tester.testKey('virustotal', 'vt-key-123', mockPermissions);
+            assert.strictEqual(res200.status, 'valid');
+
+            globalThis.fetch = async () => ({ status: 404 });
+            const res404 = await tester.testKey('virustotal', 'vt-key-123', mockPermissions);
+            assert.strictEqual(res404.status, 'valid');
+
+            globalThis.fetch = async () => ({ status: 401 });
+            const res401 = await tester.testKey('virustotal', 'bad-key', mockPermissions);
+            assert.strictEqual(res401.status, 'invalid_key');
+
+            globalThis.fetch = async () => ({ status: 429 });
+            const res429 = await tester.testKey('virustotal', 'rate-key', mockPermissions);
+            assert.strictEqual(res429.status, 'rate_limited');
+        } finally {
+            globalThis.fetch = oldFetch;
+        }
+    });
+
+    it('tests URLhaus: detects invalid_api_key in 200 JSON, handles 401 and 429', async () => {
+        const mockPermissions = { contains: async () => true };
+        const tester = loadTester();
+        const oldFetch = globalThis.fetch;
+
+        try {
+            globalThis.fetch = async (url, opts) => {
+                assert.ok(url.includes('urlhaus-api.abuse.ch'));
+                assert.strictEqual(opts.method, 'POST');
+                assert.strictEqual(opts.headers['Auth-Key'], 'uh-key');
+                return {
+                    status: 200,
+                    json: async () => ({ query_status: 'no_results' })
+                };
+            };
+            const resOk = await tester.testKey('urlhaus', 'uh-key', mockPermissions);
+            assert.strictEqual(resOk.status, 'valid');
+
+            globalThis.fetch = async () => ({
+                status: 200,
+                json: async () => ({ query_status: 'invalid_api_key' })
+            });
+            const resInvalidStatus = await tester.testKey('urlhaus', 'uh-bad-key', mockPermissions);
+            assert.strictEqual(resInvalidStatus.status, 'invalid_key');
+
+            globalThis.fetch = async () => ({ status: 401 });
+            const res401 = await tester.testKey('urlhaus', 'uh-bad-key', mockPermissions);
+            assert.strictEqual(res401.status, 'invalid_key');
+
+            globalThis.fetch = async () => ({ status: 429 });
+            const res429 = await tester.testKey('urlhaus', 'uh-rate-key', mockPermissions);
+            assert.strictEqual(res429.status, 'rate_limited');
+        } finally {
+            globalThis.fetch = oldFetch;
+        }
+    });
+
+    it('tests AbuseIPDB: 200 is valid, 401 is invalid_key, 429 is rate_limited', async () => {
+        const mockPermissions = { contains: async () => true };
+        const tester = loadTester();
+        const oldFetch = globalThis.fetch;
+
+        try {
+            globalThis.fetch = async (url, opts) => {
+                assert.ok(url.includes('api.abuseipdb.com'));
+                assert.strictEqual(opts.headers['Key'], 'abuse-key');
+                return { status: 200 };
+            };
+            const res200 = await tester.testKey('abuseipdb', 'abuse-key', mockPermissions);
+            assert.strictEqual(res200.status, 'valid');
+
+            globalThis.fetch = async () => ({ status: 401 });
+            const res401 = await tester.testKey('abuseipdb', 'bad-key', mockPermissions);
+            assert.strictEqual(res401.status, 'invalid_key');
+
+            globalThis.fetch = async () => ({ status: 429 });
+            const res429 = await tester.testKey('abuseipdb', 'rate-key', mockPermissions);
+            assert.strictEqual(res429.status, 'rate_limited');
+        } finally {
+            globalThis.fetch = oldFetch;
+        }
+    });
+
+    it('tests urlscan: 200 is valid, 401 is invalid_key, 429 is rate_limited', async () => {
+        const mockPermissions = { contains: async () => true };
+        const tester = loadTester();
+        const oldFetch = globalThis.fetch;
+
+        try {
+            globalThis.fetch = async (url, opts) => {
+                assert.ok(url.includes('urlscan.io'));
+                assert.strictEqual(opts.headers['API-Key'], 'urlscan-key');
+                return { status: 200 };
+            };
+            const res200 = await tester.testKey('urlscan', 'urlscan-key', mockPermissions);
+            assert.strictEqual(res200.status, 'valid');
+
+            globalThis.fetch = async () => ({ status: 401 });
+            const res401 = await tester.testKey('urlscan', 'bad-key', mockPermissions);
+            assert.strictEqual(res401.status, 'invalid_key');
+
+            globalThis.fetch = async () => ({ status: 429 });
+            const res429 = await tester.testKey('urlscan', 'rate-key', mockPermissions);
+            assert.strictEqual(res429.status, 'rate_limited');
+        } finally {
+            globalThis.fetch = oldFetch;
+        }
+    });
+
+    it('handles network exceptions safely without throwing', async () => {
+        const mockPermissions = { contains: async () => true };
+        const tester = loadTester();
+        const oldFetch = globalThis.fetch;
+
+        try {
+            globalThis.fetch = async () => {
+                throw new Error('Network timeout');
+            };
+            const res = await tester.testKey('virustotal', 'key', mockPermissions);
+            assert.strictEqual(res.status, 'error');
+            assert.ok(res.message.includes('Network timeout'));
+        } finally {
+            globalThis.fetch = oldFetch;
+        }
+    });
+
+    it('wires up test buttons in options.html and displays results in status spans', async () => {
+        const html = fs.readFileSync(path.join(__dirname, 'options.html'), 'utf8');
+        const dom = new JSDOM(html, { runScripts: 'outside-only' });
+        const { window } = dom;
+        const { document } = window;
+        const oldFetch = globalThis.fetch;
+
+        try {
+            globalThis.fetch = async (url) => {
+                if (url.includes('virustotal.com')) return { status: 200 };
+                if (url.includes('urlhaus-api.abuse.ch')) return { status: 200, json: async () => ({ query_status: 'invalid_api_key' }) };
+                return { status: 401 };
+            };
+
+            const mockBrowser = {
+                storage: {
+                    local: {
+                        get: async () => ({
+                            virustotalApikey: 'test-vt-key',
+                            urlhausApikey: 'test-uh-key',
+                            ipReputationProvider: 'none',
+                            ipReputationApiKey: ''
+                        }),
+                        set: async () => ({})
+                    }
+                },
+                permissions: {
+                    contains: async () => true,
+                    request: async () => true,
+                    getAll: async () => ({})
+                },
+                runtime: {
+                    getManifest: () => ({ version: '1.24.8' })
+                }
+            };
+
+            const source = fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8');
+            const context = vm.createContext({
+                window,
+                document,
+                browser: mockBrowser,
+                console,
+                setTimeout,
+                clearTimeout,
+                AbortController,
+                URL,
+                Blob,
+                fetch: (...args) => globalThis.fetch(...args),
+                ThundyI18n: {
+                    get: (k) => k
+                }
+            });
+            vm.runInContext(source, context);
+
+            // Fire DOMContentLoaded
+            document.dispatchEvent(new window.Event('DOMContentLoaded'));
+            await new Promise(r => setTimeout(r, 20));
+
+            // 1. VirusTotal button test
+            const vtBtn = document.getElementById('testVirustotalKey');
+            const vtStatus = document.getElementById('testVirustotalKeyStatus');
+            assert.ok(vtBtn);
+            assert.ok(vtStatus);
+
+            vtBtn.click();
+            await new Promise(r => setTimeout(r, 20));
+            assert.strictEqual(vtStatus.textContent, 'testApiKeyValid');
+            assert.ok(vtStatus.classList.contains('text-success'));
+
+            // Typing into the field clears status
+            const vtInput = document.getElementById('virustotalApikey');
+            vtInput.dispatchEvent(new window.Event('input'));
+            assert.strictEqual(vtStatus.textContent, '');
+
+            // 2. URLhaus button test (invalid key)
+            const uhBtn = document.getElementById('testUrlhausKey');
+            const uhStatus = document.getElementById('testUrlhausKeyStatus');
+            uhBtn.click();
+            await new Promise(r => setTimeout(r, 20));
+            assert.strictEqual(uhStatus.textContent, 'testApiKeyInvalid');
+            assert.ok(uhStatus.classList.contains('text-danger'));
+
+            // 3. IP reputation button test with "none" provider
+            const ipBtn = document.getElementById('testIpReputationKey');
+            const ipStatus = document.getElementById('testIpReputationKeyStatus');
+            const ipInput = document.getElementById('ipReputationApiKey');
+            ipInput.value = 'some-ip-key';
+            ipBtn.click();
+            await new Promise(r => setTimeout(r, 20));
+            assert.strictEqual(ipStatus.textContent, 'testApiKeySelectProvider');
+            assert.ok(ipStatus.classList.contains('text-warning'));
+
+            // Switch to virustotal provider and test
+            const ipProviderSelect = document.getElementById('ipReputationProvider');
+            ipProviderSelect.value = 'virustotal';
+            ipBtn.click();
+            await new Promise(r => setTimeout(r, 20));
+            assert.strictEqual(ipStatus.textContent, 'testApiKeyValid');
+            assert.ok(ipStatus.classList.contains('text-success'));
+        } finally {
+            globalThis.fetch = oldFetch;
+        }
+    });
+});
+

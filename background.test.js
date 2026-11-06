@@ -854,6 +854,36 @@ describe('background.js', () => {
                 context.console.error = originalConsoleError;
             }
         });
+
+        it('handles 429 rate limit correctly', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    status: 429,
+                    json: async () => ({})
+                });
+
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, null);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('handles 401 invalid key correctly', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    status: 401,
+                    json: async () => ({})
+                });
+
+                const result = await context.checkVirusTotalIP('1.2.3.4', 'dummykey');
+                assert.strictEqual(result, null);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
     });
 
     describe('checkAbuseIPDB', () => {
@@ -1041,6 +1071,36 @@ describe('background.js', () => {
                 context.console.error = originalConsoleError;
             }
         });
+
+        it('handles 429 rate limit correctly', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    status: 429,
+                    json: async () => ({ error: { message: 'Quota exceeded' } })
+                });
+
+                const result = await context.checkVirusTotal('dummyhash', 'dummyapikey');
+                assert.strictEqual(result, null);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
+
+        it('handles 401 invalid key correctly', async () => {
+            const originalFetch = context.fetch;
+            try {
+                context.fetch = async () => ({
+                    status: 401,
+                    json: async () => ({ error: { message: 'Wrong API key' } })
+                });
+
+                const result = await context.checkVirusTotal('dummyhash', 'dummyapikey');
+                assert.strictEqual(result, null);
+            } finally {
+                context.fetch = originalFetch;
+            }
+        });
     });
 
     describe('checkUrlscanIo', () => {
@@ -1204,6 +1264,30 @@ describe('background.js', () => {
             assert.strictEqual(result.status, 'ERROR');
             assert.strictEqual(result.details, 'Network offline');
             assert.strictEqual(errorLogged, true);
+        });
+
+        it('handles 429 rate limit correctly', async () => {
+            context.fetch = async () => ({
+                status: 429,
+                json: async () => ({ message: 'Rate limit exceeded' })
+            });
+
+            const result = await context.checkUrlscanIo('http://example.com', 'apikey');
+            assert.strictEqual(result.status, 'ERROR');
+            assert.strictEqual(result.errorCode, 'rate_limited');
+            assert.strictEqual(result.details, 'Rate limit exceeded');
+        });
+
+        it('handles 401 invalid key correctly', async () => {
+            context.fetch = async () => ({
+                status: 401,
+                json: async () => ({ message: 'Invalid API key' })
+            });
+
+            const result = await context.checkUrlscanIo('http://example.com', 'apikey');
+            assert.strictEqual(result.status, 'ERROR');
+            assert.strictEqual(result.errorCode, 'invalid_key');
+            assert.strictEqual(result.details, 'Invalid API key');
         });
     });
 
@@ -3056,6 +3140,43 @@ describe('background.js', () => {
             assert.equal(response.status, 'FALLBACK_STATE'); assert.equal(response.provider, 'Hybrid Analysis'); assert.equal(response.check.origin, 'stored'); assert.equal(response.check.outcome, 'failed');
         });
 
+        it('handles 404 from hybrid analysis as not_found rather than hard failure', async () => {
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
+            context.fetch = async () => ({ status: 404, ok: false, json: async () => ({ message: 'Not found' }) });
+            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UNKNOWN', hybrid_sha256: 'hash123' }] });
+            context.openDB = async () => ({});
+
+            let response;
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.equal(response.status, 'UNKNOWN');
+            assert.equal(response.provider, 'Hybrid Analysis');
+            assert.equal(response.check.outcome, 'not_found');
+        });
+
+        it('handles 429 rate limit from hybrid analysis with rate_limited outcome', async () => {
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
+            context.fetch = async () => ({ status: 429, ok: false, json: async () => ({ message: 'Rate limit' }) });
+            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UNKNOWN', hybrid_sha256: 'hash123' }] });
+            context.openDB = async () => ({});
+
+            let response;
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.equal(response.check.outcome, 'rate_limited');
+            assert.equal(response.check.error, 'Rate limit or quota reached');
+        });
+
+        it('handles 401 unauthorized from hybrid analysis with invalid_key outcome', async () => {
+            context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ headerMessageId: 'msg1' }] });
+            context.fetch = async () => ({ status: 401, ok: false, json: async () => ({ message: 'Unauthorized' }) });
+            context.getFromStore = async () => ({ links: [{ url: 'http://test.com', state: 'UNKNOWN', hybrid_sha256: 'hash123' }] });
+            context.openDB = async () => ({});
+
+            let response;
+            await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
+            assert.equal(response.check.outcome, 'invalid_key');
+            assert.equal(response.check.error, 'Invalid API key');
+        });
+
         it('returns ERROR on generic unexpected errors in the main flow', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => { throw new Error('API failure'); };
 
@@ -3529,6 +3650,14 @@ describe('background.js', () => {
                 }),
                 'CLEAN'
             );
+            assert.strictEqual(context.extractHybridVerdictFromOverview({ threat_level: 0 }), 'CLEAN');
+            assert.strictEqual(context.extractHybridVerdictFromOverview({ threat_level: 1 }), 'SUSPICIOUS');
+            assert.strictEqual(context.extractHybridVerdictFromOverview({ threat_level: 2 }), 'MALICIOUS');
+            assert.strictEqual(context.extractHybridVerdictFromOverview({ threat_score: 20 }), 'CLEAN');
+            assert.strictEqual(context.extractHybridVerdictFromOverview({ threat_score: 85 }), 'MALICIOUS');
+            assert.strictEqual(context.extractHybridVerdictFromOverview([{ threat_level: 0, threat_score: 10 }]), 'CLEAN');
+            assert.strictEqual(context.extractHybridVerdictFromOverview({ scanners: [{ name: 'CrowdStrike', status: 'no threat' }] }), 'CLEAN');
+            assert.strictEqual(context.extractHybridVerdictFromOverview({ scanners: [{ name: 'CrowdStrike', status: 'harmless' }] }), 'CLEAN');
         });
 
         it('extractUrlscanBrandNames normalizes string and object brand entries without [object Object]', () => {

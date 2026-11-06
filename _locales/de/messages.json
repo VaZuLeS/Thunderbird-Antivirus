@@ -1963,5 +1963,107 @@
         "content": "$2"
       }
     }
+  },
+  "urlscanErrorDetails": {
+    "message": "Ursache: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "Das Limit oder Kontingent von urlscan.io wurde erreicht. Bitte versuchen Sie es später erneut."
+  },
+  "urlscanInvalidKey": {
+    "message": "Ungültiger oder nicht autorisierter urlscan.io API-Schlüssel."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Zeitüberschreitung: Das Scan-Ergebnis lag innerhalb von 30 Sekunden nicht vor."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Domain konnte von urlscan.io nicht aufgelöst werden."
+  },
+  "hybridNotFound": {
+    "message": "Element noch nicht bei Hybrid Analysis erfasst (keine frühere Analyse vorhanden)."
+  },
+  "virustotalNotFound": {
+    "message": "Element noch nicht in der VirusTotal-Datenbank erfasst."
+  },
+  "virustotalRateLimited": {
+    "message": "Das VirusTotal-Ratenlimit oder -Kontingent wurde erreicht. Bitte versuche es später erneut."
+  },
+  "virustotalInvalidKey": {
+    "message": "Ungültiger oder nicht autorisierter VirusTotal-API-Schlüssel."
+  },
+  "abuseipdbRateLimited": {
+    "message": "Das AbuseIPDB-Ratenlimit oder -Kontingent wurde erreicht. Bitte versuche es später erneut."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Ungültiger oder nicht autorisierter AbuseIPDB-API-Schlüssel."
+  },
+  "urlhausRateLimited": {
+    "message": "Das URLhaus-Ratenlimit oder -Kontingent wurde erreicht. Bitte versuche es später erneut."
+  },
+  "urlhausInvalidKey": {
+    "message": "Ungültiger oder nicht autorisierter URLhaus-API-Schlüssel."
+  },
+  "testApiKeyButton": {
+    "message": "Verbindung testen"
+  },
+  "testApiKeyTesting": {
+    "message": "Verbindung wird getestet…"
+  },
+  "testApiKeyValid": {
+    "message": "Verbindung erfolgreich. API-Schlüssel ist gültig."
+  },
+  "testApiKeyInvalid": {
+    "message": "Verbindung fehlgeschlagen: Ungültiger API-Schlüssel."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Ratenlimit oder Kontingent erreicht. Bitte später erneut versuchen."
+  },
+  "testApiKeyError": {
+    "message": "Verbindungstest fehlgeschlagen."
+  },
+  "testApiKeyEmpty": {
+    "message": "Bitte geben Sie zuerst einen API-Schlüssel ein."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Berechtigung für den Zugriff auf den Dienst wurde abgelehnt."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Bitte wählen Sie zuerst einen IP-Reputationsanbieter aus."
+  },
+  "rateLimitWithWait": {
+    "message": "Ratenlimit oder Kontingent erreicht. Bitte in $SECONDS$ Sekunden erneut versuchen.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Ratenlimit erreicht"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Ungültiger API-Schlüssel"
+  },
+  "auditErrorCode": {
+    "message": "Fehlercode"
+  },
+  "auditErrorDetails": {
+    "message": "Fehlerdetails"
+  },
+  "auditRetryAfter": {
+    "message": "Wartezeit"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ Sekunden",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
   }
 }

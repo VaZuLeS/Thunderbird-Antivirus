@@ -1960,5 +1960,107 @@
         "content": "$2"
       }
     }
+  },
+  "urlscanErrorDetails": {
+    "message": "Przyczyna: $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "Osiągnięto limit zapytań lub limit konta urlscan.io. Spróbuj ponownie później."
+  },
+  "urlscanInvalidKey": {
+    "message": "Nieprawidłowy lub nieautoryzowany klucz API urlscan.io."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Przekroczono limit czasu: Wynik skanowania nie był gotowy w ciągu 30 sekund."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Nie udało się rozwiązać domeny przez urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Element nie został jeszcze zarejestrowany w Hybrid Analysis (nie znaleziono wcześniejszej analizy)."
+  },
+  "virustotalNotFound": {
+    "message": "Element nie został jeszcze zarejestrowany w bazie danych VirusTotal."
+  },
+  "virustotalRateLimited": {
+    "message": "Osiągnięto limit zapytań lub limit VirusTotal. Spróbuj ponownie później."
+  },
+  "virustotalInvalidKey": {
+    "message": "Nieprawidłowy lub nieautoryzowany klucz API VirusTotal."
+  },
+  "abuseipdbRateLimited": {
+    "message": "Osiągnięto limit zapytań lub limit AbuseIPDB. Spróbuj ponownie później."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Nieprawidłowy lub nieautoryzowany klucz API AbuseIPDB."
+  },
+  "urlhausRateLimited": {
+    "message": "Osiągnięto limit zapytań lub limit URLhaus. Spróbuj ponownie później."
+  },
+  "urlhausInvalidKey": {
+    "message": "Nieprawidłowy lub nieautoryzowany klucz API URLhaus."
+  },
+  "testApiKeyButton": {
+    "message": "Testuj połączenie"
+  },
+  "testApiKeyTesting": {
+    "message": "Testowanie połączenia…"
+  },
+  "testApiKeyValid": {
+    "message": "Połączenie udane. Klucz API jest prawidłowy."
+  },
+  "testApiKeyInvalid": {
+    "message": "Błąd połączenia: nieprawidłowy klucz API."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Osiągnięto limit zapytań lub limit przydziału. Spróbuj ponownie później."
+  },
+  "testApiKeyError": {
+    "message": "Test połączenia nie powiódł się."
+  },
+  "testApiKeyEmpty": {
+    "message": "Najpierw wprowadź klucz API."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "Odmówiono uprawnień do połączenia z hostem usługi."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Najpierw wybierz dostawcę reputacji IP."
+  },
+  "rateLimitWithWait": {
+    "message": "Osiągnięto limit zapytań lub limit przydziału. Spróbuj ponownie za $SECONDS$ sekund.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Osiągnięto limit zapytań"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Nieprawidłowy klucz API"
+  },
+  "auditErrorCode": {
+    "message": "Kod błędu"
+  },
+  "auditErrorDetails": {
+    "message": "Szczegóły błędu"
+  },
+  "auditRetryAfter": {
+    "message": "Czas oczekiwania"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ sekund",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
   }
 }

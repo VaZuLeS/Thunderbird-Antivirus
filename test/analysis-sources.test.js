@@ -331,6 +331,12 @@ test('Hybrid Analysis API v2 Quick-Scan and Overview payloads classify id, finis
  assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'hash'},200,{sha256:'abc',verdict:'whitelisted',whitelisted:true})},{state:'checked',verdict:'none'});
  assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,{sha256:'abc',verdict:null,whitelisted:false,scanners_v2:{metadefender:{status:'malicious',positives:4,total:35}}})},{state:'checked',verdict:'malicious'});
  assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,{sha256:'abc',verdict:'no-classification',scanners:[{name:'MetaDefender',status:'clean',positives:0,total:35}]})},{state:'checked',verdict:'none'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,{threat_level:0})},{state:'checked',verdict:'none'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,{threat_level:1})},{state:'checked',verdict:'suspicious'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,{threat_level:2})},{state:'checked',verdict:'malicious'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,{threat_score:15})},{state:'checked',verdict:'none'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,[{threat_level:0,threat_score:5}])},{state:'checked',verdict:'none'});
+ assert.deepEqual({...a.response({provider:'hybridanalysis',scope:'report'},200,{scanners:[{name:'MetaDefender',status:'harmless'}]})},{state:'checked',verdict:'none'});
 });
 
 test('VirusTotal, URLhaus, AbuseIPDB and URLScan.io API response parsers handle normalized and edge payloads accurately',()=>{
@@ -348,12 +354,25 @@ test('VirusTotal, URLhaus, AbuseIPDB and URLScan.io API response parsers handle 
  // URLScan.io engines maliciousTotal, brand objects, and suspicious score
  assert.deepEqual({...a.response({provider:'urlscan',scope:'report'},200,{verdicts:{overall:{malicious:false,score:10},engines:{maliciousTotal:2}}})},{state:'checked',verdict:'malicious'});
  assert.deepEqual({...a.response({provider:'urlscan',scope:'report'},200,{verdicts:{overall:{malicious:false,score:65},urlscan:{brands:[{name:'PayPal',key:'paypal'}]}}})},{state:'checked',verdict:'suspicious'});
+ assert.deepEqual({...a.response({provider:'urlscan',scope:'report'},200,{page:{url:'https://clean.example'}})},{state:'checked',verdict:'none'});
  // Legacy restoration of stored urlscan link verdict
  const legacyUrlscan=a.legacy({links:[{url:'https://phish.example',state:'UNKNOWN',urlscan:{status:'MALICIOUS_VISUAL',observedAt:500}}]});
  assert.equal(legacyUrlscan.rows.length,1);
  assert.equal(legacyUrlscan.rows[0].provider,'urlscan');
  assert.equal(legacyUrlscan.rows[0].verdict,'malicious');
  assert.equal(legacyUrlscan.rows[0].observedAt,500);
+
+ // Status code and error harmonization (404, 429, 401)
+ assert.deepEqual({...a.response({provider:'virustotal',scope:'hash'},404,{})},{state:'not_found',verdict:'unknown',errorDetails:'Element not yet recorded in VirusTotal database.'});
+ assert.deepEqual({...a.response({provider:'virustotal',scope:'hash'},429,{})},{state:'failed',verdict:'unknown',errorCode:'rate_limited',errorDetails:'The VirusTotal rate limit or quota was reached. Please try again later.'});
+ assert.deepEqual({...a.response({provider:'virustotal',scope:'hash'},429,{retry_after:42})},{state:'failed',verdict:'unknown',errorCode:'rate_limited',errorDetails:'Rate limit or quota reached. Please try again in 42 seconds.',retryAfter:42});
+ assert.deepEqual({...a.response({provider:'virustotal',scope:'hash'},401,{})},{state:'failed',verdict:'unknown',errorCode:'invalid_key',errorDetails:'Invalid or unauthorized VirusTotal API key.'});
+ assert.deepEqual({...a.response({provider:'abuseipdb',scope:'ip'},429,{})},{state:'failed',verdict:'unknown',errorCode:'rate_limited',errorDetails:'The AbuseIPDB rate limit or quota was reached. Please try again later.'});
+ assert.deepEqual({...a.response({provider:'abuseipdb',scope:'ip'},401,{})},{state:'failed',verdict:'unknown',errorCode:'invalid_key',errorDetails:'Invalid or unauthorized AbuseIPDB API key.'});
+ assert.deepEqual({...a.response({provider:'urlhaus',scope:'domain'},429,{})},{state:'failed',verdict:'unknown',errorCode:'rate_limited',errorDetails:'The URLhaus rate limit or quota was reached. Please try again later.'});
+ assert.deepEqual({...a.response({provider:'urlhaus',scope:'domain'},401,{})},{state:'failed',verdict:'unknown',errorCode:'invalid_key',errorDetails:'Invalid or unauthorized URLhaus API key.'});
+ assert.deepEqual({...a.response({provider:'urlhaus',scope:'domain'},200,{query_status:'invalid_api_key'})},{state:'failed',verdict:'unknown',errorCode:'invalid_key',errorDetails:'Invalid or unauthorized URLhaus API key.'});
+ assert.deepEqual({...a.response({provider:'urlhaus',scope:'domain'},200,{query_status:'host_not_found'})},{state:'not_found',verdict:'unknown'});
 });
 
 

@@ -126,6 +126,12 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 for (const reason of result.reasons) { const item = document.createElement('li'); item.textContent = String(reason); reasons.appendChild(item); }
                 reasons.hidden = !reasons.childElementCount;
             }
+            if (result && (result.errorDetails || result.check?.error)) {
+                const errItem = document.createElement('li');
+                errItem.textContent = String(result.errorDetails || result.check.error);
+                reasons.appendChild(errItem);
+                reasons.hidden = false;
+            }
             const score = document.createElement('p'); score.className = 'note';
             score.textContent = labels.score + ': ' + (Number.isFinite(result && result.score) ? result.score + ' / 100' : labels.unavailable);
             card.insertBefore(score, note);

@@ -6,10 +6,39 @@ class ApiGateway {
         this.active = new Map();
         this.waiting = new Map();
         this.generation = 0;
+        this.backoffs = new Map();
     }
 
     setApikey(service, key) {
         this.apikeys[service] = key;
+    }
+
+    getBackoff(host) {
+        if (!host || !this.backoffs.has(host)) return null;
+        const entry = this.backoffs.get(host);
+        const remainingMs = entry.until - Date.now();
+        if (remainingMs <= 0) {
+            this.backoffs.delete(host);
+            return null;
+        }
+        return {
+            active: true,
+            remainingSeconds: Math.max(1, Math.ceil(remainingMs / 1000)),
+            until: entry.until
+        };
+    }
+
+    setBackoff(host, seconds) {
+        if (!host) return;
+        const s = Math.min(3600, Math.max(1, Math.ceil(seconds)));
+        this.backoffs.set(host, {
+            until: Date.now() + (s * 1000),
+            duration: s
+        });
+    }
+
+    clearBackoffs() {
+        this.backoffs.clear();
     }
 
     _injectAuthHeaders(url, options) {
@@ -94,22 +123,75 @@ class ApiGateway {
     }
 
     async fetchWithTimeout(url, options = {}, timeout = 15000) {
-        if (this.beforeRequest) await this.beforeRequest();
-        const controller = new AbortController();
-        this.controllers.add(controller);
-        const id = setTimeout(() => controller.abort(), timeout);
+        let hostname = null;
+        try {
+            hostname = new URL(url).hostname;
+        } catch (_) {
+            hostname = null;
+        }
 
         const context = options.analysisContext;
         const info = typeof ThundyAnalysis !== 'undefined' && context ? ThundyAnalysis.spec(url, options.method) : null;
         if (info && ['report','url'].includes(context.scopeOverride) && info.provider === 'hybridanalysis') info.scope = context.scopeOverride;
         const emit = event => { try { const pending = context?.event({ ...info, ...event }); pending?.catch?.(() => {}); } catch (_) { /* metadata never blocks protection */ } };
+
+        if (hostname) {
+            const activeBackoff = this.getBackoff(hostname);
+            if (activeBackoff && activeBackoff.active) {
+                const retrySeconds = activeBackoff.remainingSeconds;
+                const synthesizedData = {
+                    error: 'rate_limited',
+                    message: `Rate limit backoff active for ${hostname}`,
+                    retry_after: retrySeconds
+                };
+                const headerMap = {
+                    'content-type': 'application/json',
+                    'retry-after': String(retrySeconds)
+                };
+                const synthesizedHeaders = typeof Headers !== 'undefined'
+                    ? new Headers(headerMap)
+                    : { get: k => headerMap[k.toLowerCase()] || headerMap[k] || null };
+                const ResponseCtor = typeof Response !== 'undefined' ? Response : class MockResponse {
+                    constructor(body, init = {}) {
+                        this.status = init.status || 200;
+                        this.statusText = init.statusText || '';
+                        this.headers = init.headers;
+                        this._body = body;
+                    }
+                    async json() { return JSON.parse(this._body); }
+                    async text() { return String(this._body); }
+                };
+                const synthesizedResponse = new ResponseCtor(JSON.stringify(synthesizedData), {
+                    status: 429,
+                    statusText: 'Too Many Requests',
+                    headers: synthesizedHeaders
+                });
+                synthesizedResponse.json = async () => synthesizedData;
+                if (info) {
+                    emit({
+                        phase: 'finish',
+                        responded: true,
+                        ...ThundyAnalysis.response(info, 429, synthesizedData),
+                        retryAfter: retrySeconds,
+                        observedAt: Date.now()
+                    });
+                }
+                return synthesizedResponse;
+            }
+        }
+
+        if (this.beforeRequest) await this.beforeRequest();
+        const controller = new AbortController();
+        this.controllers.add(controller);
+        const id = setTimeout(() => controller.abort(), timeout);
+
         const fetchOptions = { ...this._injectAuthHeaders(url, options), signal: controller.signal };
         delete fetchOptions.analysisContext;
         let started = false, responded = false;
 
         let release;
         try {
-            release = await this.acquire(new URL(url).hostname, controller.signal);
+            release = await this.acquire(hostname || new URL(url).hostname, controller.signal);
             if (this.beforeRequest) await this.beforeRequest();
             let response;
             for (let attempt = 0; attempt < 3; attempt++) {
@@ -117,12 +199,13 @@ class ApiGateway {
                 if (info && !started) { emit({ phase: 'start' }); started = true; }
                 response = await fetch(url, fetchOptions);
                 responded = true;
-                const retryAfter = response.headers && response.headers.get('retry-after');
-                if ((options.method || 'GET').toUpperCase() !== 'GET' || !retryAfter || ![429, 503].includes(response.status) || attempt === 2) break;
+                const retryAfter = response.headers && typeof response.headers.get === 'function' ? response.headers.get('retry-after') : null;
+                const isGet = (options.method || 'GET').toUpperCase() === 'GET';
+                if (!isGet || !retryAfter || ![429, 503].includes(response.status) || attempt === 2) break;
                 const seconds = Number(retryAfter);
                 const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(retryAfter) - Date.now();
-                if (!Number.isFinite(delay)) break;
-                await this.pause(Math.min(30000, Math.max(0, delay)), controller.signal);
+                if (!Number.isFinite(delay) || delay > 2000 || delay < 0) break;
+                await this.pause(delay, controller.signal);
             }
             // Provider responses are JSON. Keep the slot, abort signal and deadline
             // active until the body has been consumed, not just until headers arrive.
@@ -136,13 +219,31 @@ class ApiGateway {
 
             if (response.status === 429) {
                 console.warn('[ApiGateway] Provider rate limit exceeded (429)');
-                // In a production scenario, you might want to implement retry logic here
+                let backoffSeconds = 60;
+                const retryHeader = response.headers && typeof response.headers.get === 'function' ? response.headers.get('retry-after') : null;
+                if (retryHeader) {
+                    const parsedNum = Number(retryHeader);
+                    if (Number.isFinite(parsedNum) && parsedNum > 0) {
+                        backoffSeconds = Math.min(3600, parsedNum);
+                    } else {
+                        const parsedDate = Date.parse(retryHeader);
+                        if (Number.isFinite(parsedDate) && parsedDate > Date.now()) {
+                            backoffSeconds = Math.min(3600, Math.ceil((parsedDate - Date.now()) / 1000));
+                        }
+                    }
+                }
+                if (hostname) {
+                    this.setBackoff(hostname, backoffSeconds);
+                }
+                if (observedData && typeof observedData === 'object') {
+                    observedData.retry_after = backoffSeconds;
+                }
             }
 
             if (info) emit({ phase: 'finish', responded: true, ...ThundyAnalysis.response(info, response.status, observedData), observedAt: Date.now() });
             return response;
         } catch (error) {
-            if (info && started) emit({ phase: 'finish', responded, state: 'failed', verdict: 'unknown', observedAt: null });
+            if (info && started) emit({ phase: 'finish', responded, state: 'failed', verdict: 'unknown', errorDetails: error.message || String(error), observedAt: null });
             clearTimeout(id);
             if (error.name === 'AbortError') {
                 throw new Error(typeof ThundyI18n !== 'undefined' ? ThundyI18n.get('gatewayRequestTimeout') : `[ApiGateway] Request cancelled or timed out after ${timeout}ms`);

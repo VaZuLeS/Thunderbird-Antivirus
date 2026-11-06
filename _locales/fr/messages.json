@@ -1960,5 +1960,107 @@
         "content": "$2"
       }
     }
+  },
+  "urlscanErrorDetails": {
+    "message": "Raison : $DETAILS$",
+    "placeholders": {
+      "details": {
+        "content": "$1"
+      }
+    }
+  },
+  "urlscanRateLimited": {
+    "message": "La limite de requêtes ou le quota de urlscan.io a été atteint. Veuillez réessayer plus tard."
+  },
+  "urlscanInvalidKey": {
+    "message": "Clé API urlscan.io non valide ou non autorisée."
+  },
+  "urlscanTimeoutDetails": {
+    "message": "Délai dépassé : Le résultat de l'analyse n'était pas disponible dans les 30 secondes."
+  },
+  "urlscanDomainUnresolvable": {
+    "message": "Le domaine n'a pas pu être résolu par urlscan.io."
+  },
+  "hybridNotFound": {
+    "message": "Élément pas encore enregistré dans Hybrid Analysis (aucune analyse antérieure trouvée)."
+  },
+  "virustotalNotFound": {
+    "message": "Élément pas encore enregistré dans la base de données VirusTotal."
+  },
+  "virustotalRateLimited": {
+    "message": "La limite de requêtes ou le quota VirusTotal a été atteint. Veuillez réessayer plus tard."
+  },
+  "virustotalInvalidKey": {
+    "message": "Clé d'API VirusTotal non valide ou non autorisée."
+  },
+  "abuseipdbRateLimited": {
+    "message": "La limite de requêtes ou le quota AbuseIPDB a été atteint. Veuillez réessayer plus tard."
+  },
+  "abuseipdbInvalidKey": {
+    "message": "Clé d'API AbuseIPDB non valide ou non autorisée."
+  },
+  "urlhausRateLimited": {
+    "message": "La limite de requêtes ou le quota URLhaus a été atteint. Veuillez réessayer plus tard."
+  },
+  "urlhausInvalidKey": {
+    "message": "Clé d'API URLhaus non valide ou non autorisée."
+  },
+  "testApiKeyButton": {
+    "message": "Tester la connexion"
+  },
+  "testApiKeyTesting": {
+    "message": "Test de la connexion en cours…"
+  },
+  "testApiKeyValid": {
+    "message": "Connexion réussie. La clé d'API est valide."
+  },
+  "testApiKeyInvalid": {
+    "message": "Échec de la connexion : clé d'API non valide."
+  },
+  "testApiKeyRateLimited": {
+    "message": "Limite de débit ou quota atteint. Veuillez réessayer plus tard."
+  },
+  "testApiKeyError": {
+    "message": "Échec du test de connexion."
+  },
+  "testApiKeyEmpty": {
+    "message": "Veuillez d'abord saisir une clé d'API."
+  },
+  "testApiKeyPermissionDenied": {
+    "message": "L'autorisation d'accéder au service a été refusée."
+  },
+  "testApiKeySelectProvider": {
+    "message": "Veuillez d'abord sélectionner un fournisseur de réputation IP."
+  },
+  "rateLimitWithWait": {
+    "message": "Limite de débit ou quota atteint. Veuillez réessayer dans $SECONDS$ secondes.",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
+  },
+  "checkOutcome_rate_limited": {
+    "message": "Limite de débit atteinte"
+  },
+  "checkOutcome_invalid_key": {
+    "message": "Clé d'API non valide"
+  },
+  "auditErrorCode": {
+    "message": "Code d'erreur"
+  },
+  "auditErrorDetails": {
+    "message": "Détails de l'erreur"
+  },
+  "auditRetryAfter": {
+    "message": "Temps d'attente"
+  },
+  "auditRetryAfterSeconds": {
+    "message": "$SECONDS$ secondes",
+    "placeholders": {
+      "seconds": {
+        "content": "$1"
+      }
+    }
   }
 }

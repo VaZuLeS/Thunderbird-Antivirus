@@ -23,7 +23,10 @@ const ThundySourceExport = (() => {
                 state:states.includes(row.state) ? row.state : 'incomplete',source:historical ? 'stored' : sources.includes(row.source) ? row.source : 'unknown',
                 verdict:verdicts.includes(row.verdict) ? row.verdict : 'unknown',
                 active:historical ? 0 : count(row.active),responses:count(row.responses),failures:count(row.failures),cacheHits:count(row.cacheHits),
-                observedAt:time(row.observedAt),findingAt:time(row.findingAt),attemptedAt:time(row.attemptedAt)}));
+                observedAt:time(row.observedAt),findingAt:time(row.findingAt),attemptedAt:time(row.attemptedAt),
+                errorCode:typeof row.errorCode === 'string' && /^[a-z0-9_-]{1,50}$/i.test(row.errorCode) ? row.errorCode : null,
+                errorDetails:typeof row.errorDetails === 'string' ? row.errorDetails.replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g,'').slice(0,200) : null,
+                retryAfter:Number.isFinite(row.retryAfter) && row.retryAfter > 0 ? Math.min(row.retryAfter, 86400) : null}));
         const local = snapshot?.local || {};
         return {schemaVersion:1,kind:'thundy-analysis-sources',authenticatedSource:false,createdAt:time(createdAt),
             current:{local:{state:['checked','incomplete','failed','unrecorded'].includes(local.state) ? local.state : 'unrecorded',
@@ -31,7 +34,7 @@ const ThundySourceExport = (() => {
                 reason:['decryption_unavailable','text_unavailable','read_failed'].includes(local.reason) ? local.reason : null},
                 rows:rows(snapshot?.rows,false),truncated:snapshot?.truncated === true || (snapshot?.rows?.length || 0) > 1200,
                 availability:Object.fromEntries(providers.map(provider => [provider,reasons.includes(snapshot?.availability?.[provider]) ? snapshot.availability[provider] : 'unknown'])),
-                diagnostics:{unavailable:snapshot?.unavailable === true,sourcePersistenceFailed:snapshot?.sourcePersistenceFailed === true,reportArchiveBlocked:snapshot?.reportArchiveBlocked === true}},
+                diagnostics:{unavailable:snapshot?.unavailable === true,sourcePersistenceFailed:snapshot?.sourcePersistenceFailed === true,reportArchiveBlocked:snapshot?.reportArchiveBlocked === true,backoffs:typeof snapshot?.diagnostics?.backoffs === 'object' && snapshot?.diagnostics?.backoffs !== null ? Object.fromEntries(Object.entries(snapshot.diagnostics.backoffs).filter(([host, data]) => typeof host === 'string' && host.length <= 100 && typeof data === 'object' && data !== null).map(([host, data]) => [host, { active: data.active === true, remainingSeconds: Number.isFinite(data.remainingSeconds) ? Math.min(Math.max(0, data.remainingSeconds), 86400) : 0 }])) : {}}},
             history:{association:'unconfirmed',rows:rows(snapshot?.sourceHistory?.rows,true),truncated:snapshot?.sourceHistory?.truncated === true || (snapshot?.sourceHistory?.rows?.length || 0) > 1200}};
     }
     function mount(api, document, location, urls = URL, BlobType = Blob) {
