@@ -761,6 +761,35 @@ async function persistThreatIntelSummary(message, summary) {
   }
 }
 
+/**
+ * Reads attachment verdicts already stored for this message (Hybrid Analysis
+ * report or VirusTotal stats). Local-only: no provider request is made here.
+ */
+async function collectAttachmentFindings(message) {
+  if (!message || (!message.headerMessageId && message.id == null)) return [];
+  if (typeof getFromStore !== 'function' || typeof getSharedDB !== 'function') return [];
+  try {
+    const record = await getFromStore(await getSharedDB(), 'hybridanalysis', message.headerMessageId || 'message:' + message.id);
+    const findings = [];
+    for (const att of (record && Array.isArray(record.attachments) ? record.attachments : [])) {
+      if (!att || typeof att !== 'object') continue;
+      const name = typeof att.attachment_name === 'string' ? att.attachment_name : '';
+      const ha = att.report && typeof extractHybridVerdictFromOverview === 'function' ? extractHybridVerdictFromOverview(att.report) : null;
+      const vt = att.virustotal_stats && typeof att.virustotal_stats === 'object' ? att.virustotal_stats : null;
+      const vtMalicious = vt && Number.isFinite(vt.malicious) && vt.malicious > 0;
+      const vtSuspicious = vt && Number.isFinite(vt.suspicious) && vt.suspicious > 0;
+      if (ha === 'MALICIOUS') findings.push({ name, verdict: 'malicious', provider: 'Hybrid Analysis' });
+      else if (vtMalicious) findings.push({ name, verdict: 'malicious', provider: 'VirusTotal' });
+      else if (ha === 'SUSPICIOUS') findings.push({ name, verdict: 'suspicious', provider: 'Hybrid Analysis' });
+      else if (vtSuspicious) findings.push({ name, verdict: 'suspicious', provider: 'VirusTotal' });
+    }
+    return findings;
+  } catch (e) {
+    Logger.warn('Anhang-Befunde konnten nicht gelesen werden', e);
+    return [];
+  }
+}
+
 async function collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal = true, analysisContext = null }) {
   const rawAuthHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
   const settings = await browser.storage.local.get('trustedAuthServers');
@@ -771,10 +800,11 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
   const receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
 
   const domainCoverage = {};
-  const [maliciousIps, urlhausDomains, becData] = await Promise.all([
+  const [maliciousIps, urlhausDomains, becData, attachmentFindings] = await Promise.all([
     allowExternal ? checkIPReputation(receivedHeaders, analysisContext) : [],
     allowExternal ? checkURLhausDomains(filteredUrls, parsedUrlCache, domainCoverage, analysisContext) : [],
-    extractBecProtectionData(message, fullMessage)
+    extractBecProtectionData(message, fullMessage),
+    typeof collectAttachmentFindings === 'function' ? collectAttachmentFindings(message) : []
   ]);
 
   if (domainCoverage.detected != null) await persistScanCoverage(message, 'domains', domainCoverage);
@@ -794,7 +824,8 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
     subject: becData.subject,
     replyTo: becData.replyTo,
     parsedUrlCache,
-    maliciousIps
+    maliciousIps,
+    attachmentFindings
   };
 }
 
@@ -1588,6 +1619,23 @@ async function persistUrlscanLinkResult(message, url, res) {
     }
 }
 
+async function persistHybridLinkVerdict(message, url, result) {
+    if (!message || !message.headerMessageId || !url || !result || !result.status) return;
+    try {
+        const observedAt = Number.isFinite(result.check?.observedAt) ? result.check.observedAt : Date.now();
+        await updateStore(await getSharedDB(), 'hybridanalysis', message.headerMessageId, existingRecord => {
+            if (!existingRecord || !Array.isArray(existingRecord.links)) return existingRecord;
+            for (const item of existingRecord.links) {
+                if (item && item.url === url) item.hybrid_verdict = { status: result.status, observedAt };
+            }
+            existingRecord.updatedAt = observedAt;
+            return existingRecord;
+        }, { preserveReports: true });
+    } catch (e) {
+        Logger.error('Fehler beim Speichern des Hybrid-Analysis-Link-Urteils:', e);
+    }
+}
+
 async function handleCheckLinkState(request, sender, sendResponse) {
     try {
         // Need to find the active message to get headerMessageId
@@ -1650,7 +1698,12 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         }
 
         if (linkObj) {
-            const result = await checkHybridAnalysisResult(linkObj.hybrid_sha256, linkObj.state, { requested: request.userAction === true, observedAt: linkObj.observedAt, analysisContext });
+            // A previously observed live verdict outranks the submission state.
+            const storedVerdict = linkObj.hybrid_verdict && ['MALICIOUS', 'SUSPICIOUS', 'CLEAN'].includes(linkObj.hybrid_verdict.status) ? linkObj.hybrid_verdict : null;
+            const result = await checkHybridAnalysisResult(linkObj.hybrid_sha256, storedVerdict ? storedVerdict.status : linkObj.state, { requested: request.userAction === true, observedAt: storedVerdict && Number.isFinite(storedVerdict.observedAt) ? storedVerdict.observedAt : linkObj.observedAt, analysisContext });
+            if (result && result.check && result.check.origin === 'live' && result.check.outcome === 'success' && typeof persistHybridLinkVerdict === 'function') {
+                await persistHybridLinkVerdict(message, linkObj.url, result);
+            }
             sendResponse({ ...result, provider: 'Hybrid Analysis' });
         } else {
             sendResponse({ status: 'UNKNOWN', provider: urlscanAttempt ? 'urlscan.io' : 'none', check: urlscanAttempt || { origin: 'none', outcome: !request.userAction ? 'not_requested' : !mayTransmitExternally() ? 'disabled' : 'missing_reference', attemptedAt: request.userAction ? Date.now() : null, observedAt: null } });

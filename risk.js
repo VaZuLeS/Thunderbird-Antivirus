@@ -411,11 +411,33 @@ function evaluateMaliciousIps(maliciousIps, score, reasons) {
     return score;
 }
 
+/**
+ * Attachment verdicts already obtained from Hybrid Analysis or VirusTotal.
+ * Each finding: { name, verdict: 'malicious' | 'suspicious', provider }.
+ */
+function evaluateAttachmentFindings(findings, score, reasons) {
+    if (!Array.isArray(findings)) return score;
+    for (const finding of findings.slice(0, 20)) {
+        if (!finding || typeof finding !== 'object') continue;
+        const name = typeof finding.name === 'string' && finding.name.trim() ? finding.name.trim().slice(0, 200) : '?';
+        const provider = typeof finding.provider === 'string' && finding.provider.trim() ? finding.provider.trim() : 'Sandbox';
+        if (finding.verdict === 'malicious') {
+            score += 80;
+            addReason(reasons, "reasonMaliciousAttachment", "Anhang \"$1\" wurde von $2 als bösartig eingestuft.", [name, provider]);
+        } else if (finding.verdict === 'suspicious') {
+            score += 30;
+            addReason(reasons, "reasonSuspiciousAttachment", "Anhang \"$1\" wurde von $2 als verdächtig eingestuft.", [name, provider]);
+        }
+    }
+    return score;
+}
+
 function calculateThreatScore(author, urls, options = {}) {
     const {
         authHeaders = [],
         urlhausDomains = [],
         maliciousIps = [],
+        attachmentFindings = [],
         isFirstCommunication = false,
         messageText = "",
         subject = "",
@@ -439,6 +461,7 @@ function calculateThreatScore(author, urls, options = {}) {
 
     score = evaluateUrlhaus(urlhausDomains, score, reasons);
     score = evaluateMaliciousIps(maliciousIps, score, reasons);
+    score = evaluateAttachmentFindings(attachmentFindings, score, reasons);
     score = evaluateReplyTo(replyTo, senderDomain, score, reasons);
     score = evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons);
 

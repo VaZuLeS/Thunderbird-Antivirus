@@ -1905,5 +1905,27 @@
   },
   "hybridRateLimited": {
     "message": "La limite de requêtes ou le quota de Hybrid Analysis a été atteint. Veuillez réessayer plus tard."
+  },
+  "reasonMaliciousAttachment": {
+    "message": "La pièce jointe « $NAME$ » a été classée comme malveillante par $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "La pièce jointe « $NAME$ » a été classée comme suspecte par $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
   }
 }

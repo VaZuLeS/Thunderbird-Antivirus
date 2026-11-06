@@ -1908,5 +1908,27 @@
   },
   "hybridRateLimited": {
     "message": "Das Rate-Limit bzw. Kontingent von Hybrid Analysis wurde erreicht. Bitte später erneut versuchen."
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Anhang „$NAME$“ wurde von $PROVIDER$ als bösartig eingestuft.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Anhang „$NAME$“ wurde von $PROVIDER$ als verdächtig eingestuft.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
   }
 }

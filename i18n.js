@@ -1910,6 +1910,28 @@ const ThundyI18n = (() => {
   },
   "hybridRateLimited": {
     "message": "The Hybrid Analysis rate limit or quota was reached. Please try again later."
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Attachment \"$NAME$\" was classified as malicious by $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Attachment \"$NAME$\" was classified as suspicious by $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
   }
 };
     function get(key, params = []) {

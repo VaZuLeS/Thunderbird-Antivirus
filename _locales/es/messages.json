@@ -1905,5 +1905,27 @@
   },
   "hybridRateLimited": {
     "message": "Se alcanzó el límite de solicitudes o la cuota de Hybrid Analysis. Inténtelo de nuevo más tarde."
+  },
+  "reasonMaliciousAttachment": {
+    "message": "El adjunto \"$NAME$\" fue clasificado como malicioso por $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "El adjunto \"$NAME$\" fue clasificado como sospechoso por $PROVIDER$.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
   }
 }

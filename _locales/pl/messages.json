@@ -1905,5 +1905,27 @@
   },
   "hybridRateLimited": {
     "message": "Osiągnięto limit zapytań lub limit przydziału Hybrid Analysis. Spróbuj ponownie później."
+  },
+  "reasonMaliciousAttachment": {
+    "message": "Załącznik „$NAME$” został sklasyfikowany przez $PROVIDER$ jako złośliwy.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousAttachment": {
+    "message": "Załącznik „$NAME$” został sklasyfikowany przez $PROVIDER$ jako podejrzany.",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
   }
 }

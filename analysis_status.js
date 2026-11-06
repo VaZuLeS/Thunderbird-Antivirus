@@ -136,7 +136,11 @@ const ThundyAnalysis = (() => {
         const links = Array.isArray(record?.links) ? record.links : [];
         for (const [item, resource] of [...attachments.map(item => [item, validResource('attachment:' + item.partName) ? 'attachment:' + item.partName : null]), ...links.map((item,index) => [item, validResource(item.analysisResourceRef) ? item.analysisResourceRef : 'link:' + index])]) {
             const report = item.report;
-            if (report || ['KNOWN', 'UPLOADED'].includes(item.state)) {
+            const hvVerdict = ({MALICIOUS:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[item.hybrid_verdict?.status];
+            if (!report && hvVerdict && item.url) {
+                const info = { provider: 'hybridanalysis', scope: 'url', resource };
+                if (!documented.has(rowKey(info))) model.event({ ...info, phase: 'cache', state: 'checked', verdict: hvVerdict, observedAt: Number.isFinite(item.hybrid_verdict.observedAt) ? item.hybrid_verdict.observedAt : null });
+            } else if (report || ['KNOWN', 'UPLOADED'].includes(item.state)) {
                 const info = { provider: 'hybridanalysis', scope: report ? 'report' : item.url ? 'url' : item.state === 'UPLOADED' ? 'file' : 'hash', resource };
                 if (!documented.has(rowKey(info))) model.event({ ...info, phase: 'cache', ...(report ? response(info, 200, report) : { state: item.state === 'UPLOADED' ? 'submitted' : 'received', verdict: 'unknown' }), observedAt: report && Number.isFinite(Date.parse(item.report_fetched_at)) ? Date.parse(item.report_fetched_at) : null });
             }

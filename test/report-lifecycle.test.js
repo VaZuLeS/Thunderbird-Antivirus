@@ -156,3 +156,68 @@ test('provider error messages and rate limits are shown to the tester', () => {
         assert.ok(!main.textContent.includes('Provider message'));
     } finally { state.dom.window.close(); }
 });
+
+// Phase 4.3/4.4: stored sandbox verdicts feed the in-mail warning and provider matrix.
+function loadSlice(file, name, context) {
+    const source = fs.readFileSync(file, 'utf8');
+    const start = source.search(new RegExp('(async )?function ' + name + '\\(')), end = source.indexOf('\n}', start) + 2;
+    assert.ok(start >= 0, name);
+    vm.runInContext(source.slice(start, end), context);
+}
+
+test('attachment findings from Hybrid Analysis and VirusTotal raise the threat score with reasons', () => {
+    const context = vm.createContext({ uiText: (key, fallback, params = []) => params.reduce((text, value, i) => text.replace('$' + (i + 1), value), fallback) });
+    loadSlice('risk.js', 'addReason', context);
+    loadSlice('risk.js', 'evaluateAttachmentFindings', context);
+    const reasons = [];
+    const score = context.evaluateAttachmentFindings([
+        { name: 'invoice.exe', verdict: 'malicious', provider: 'Hybrid Analysis' },
+        { name: 'doc.pdf', verdict: 'suspicious', provider: 'VirusTotal' },
+        { name: 'ok.txt', verdict: 'clean' }, null, 'junk'
+    ], 0, reasons);
+    assert.equal(score, 110);
+    assert.equal(reasons.length, 2);
+    assert.ok(reasons[0].includes('invoice.exe') && reasons[0].includes('Hybrid Analysis'));
+    assert.deepEqual(JSON.parse(JSON.stringify(reasons.details.map(d => d.code))), ['reasonMaliciousAttachment', 'reasonSuspiciousAttachment']);
+    assert.equal(context.evaluateAttachmentFindings('not-an-array', 5, []), 5);
+});
+
+test('collectAttachmentFindings derives verdicts from stored reports and VirusTotal stats only', async () => {
+    const record = { attachments: [
+        { attachment_name: 'a.exe', report: { verdict: 'malicious' } },
+        { attachment_name: 'b.doc', virustotal_stats: { malicious: 3, suspicious: 0 } },
+        { attachment_name: 'c.js', report: { threat_level: 1 } },
+        { attachment_name: 'd.pdf', report: { finished: false, verdict: 'malicious' } },
+        { attachment_name: 'e.txt', report: { verdict: 'no specific threat' }, virustotal_stats: { malicious: 0 } }
+    ] };
+    const keys = [];
+    const context = vm.createContext({ Logger: { warn() {} }, getSharedDB: async () => ({}), getFromStore: async (_db, _store, key) => { keys.push(key); return record; } });
+    loadSlice('background.js', 'extractHybridVerdictFromOverview', context);
+    loadSlice('background.js', 'collectAttachmentFindings', context);
+    const findings = await context.collectAttachmentFindings({ id: 4 });
+    assert.deepEqual(keys, ['message:4']);
+    assert.deepEqual(JSON.parse(JSON.stringify(findings)), [
+        { name: 'a.exe', verdict: 'malicious', provider: 'Hybrid Analysis' },
+        { name: 'b.doc', verdict: 'malicious', provider: 'VirusTotal' },
+        { name: 'c.js', verdict: 'suspicious', provider: 'Hybrid Analysis' }
+    ]);
+    context.getFromStore = async () => { throw new Error('db'); };
+    assert.equal((await context.collectAttachmentFindings({ headerMessageId: 'm' })).length, 0);
+});
+
+test('a live Hybrid Analysis link verdict is persisted and restored into the provider matrix', async () => {
+    const record = { links: [{ url: 'https://x.invalid/', state: 'UPLOADED', hybrid_sha256: 'h' }, { url: 'https://other.invalid/' }] };
+    const context = vm.createContext({ Logger: { error() {} }, getSharedDB: async () => ({}), updateStore: async (_db, _store, _key, edit) => edit(record) });
+    loadSlice('background.js', 'persistHybridLinkVerdict', context);
+    await context.persistHybridLinkVerdict({ headerMessageId: 'm' }, 'https://x.invalid/', { status: 'MALICIOUS', check: { observedAt: 1234 } });
+    assert.deepEqual(JSON.parse(JSON.stringify(record.links[0].hybrid_verdict)), { status: 'MALICIOUS', observedAt: 1234 });
+    assert.equal(record.links[1].hybrid_verdict, undefined);
+
+    const statusContext = vm.createContext({ console });
+    vm.runInContext(fs.readFileSync('analysis_status.js', 'utf8'), statusContext);
+    const analysis = vm.runInContext('typeof ThundyAnalysis !== "undefined" ? ThundyAnalysis : this.ThundyAnalysis', statusContext);
+    const data = analysis.legacy({ links: [{ url: 'https://x.invalid/', state: 'UPLOADED', hybrid_verdict: { status: 'MALICIOUS', observedAt: 1234 } }] });
+    const row = data.rows.find(r => r.provider === 'hybridanalysis');
+    assert.equal(row.verdict, 'malicious');
+    assert.equal(row.scope, 'url');
+});
