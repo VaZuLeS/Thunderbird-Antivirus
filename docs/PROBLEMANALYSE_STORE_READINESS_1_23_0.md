@@ -7,7 +7,6 @@
 **Prüfmethode:** Ausführung der Projekt-Gates (`npm ci`, `npm run pre-submit-checks`, `npm test`,
 `npm run lint:filtered`, `npm run check:i18n`/`check:vendor`/`check:design`, `npm run package`,
 `npm run store-gate -- --no-commands`), statische Inspektion, Tag-/Doku-Abgleich
-**Erstellt mit:** [KI_PROMPT_STORE_READINESS.md](KI_PROMPT_STORE_READINESS.md) (Masterprompt, §1)
 **Datum:** 2026-10-16
 
 ---

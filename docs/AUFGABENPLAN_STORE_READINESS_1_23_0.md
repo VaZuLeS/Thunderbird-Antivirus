@@ -1,8 +1,7 @@
 # Aufgabenplan Store-Readiness 1.23.0 — „Thundy AV“ (Thunderbird Add-ons Store / ATN)
 
 **Bezug:** [PROBLEMANALYSE_STORE_READINESS_1_23_0.md](PROBLEMANALYSE_STORE_READINESS_1_23_0.md)
-(Befunde B1–B5, H1–H2, M1–M2) · erstellt mit
-[KI_PROMPT_STORE_READINESS.md](KI_PROMPT_STORE_READINESS.md)
+(Befunde B1–B5, H1–H2, M1–M2)
 **Snapshot:** Branch `cline/rxk1fthv`, Basis `f9f1e95`, Add-on-Version 1.23.0
 **Ziel:** Vollständige, überprüfbare Freigabe („GO“ im Submission-Gate) und Einreichung bei
 addons.thunderbird.net (ATN)
@@ -60,7 +59,7 @@ Live-Test), *Release* (Tag/Signatur/Upload). Bei einer Einzelperson sind das Zei
 
 | ID | Aufgabe | DoD | Aufwand | Abhängig | Rolle |
 |---|---|---|---|---|---|
-| **A-01** | **Tag & GitHub-Release 1.23.0:** Tag `v1.23.0` auf den freigegebenen Commit; GitHub-Release (kein Pre-Release) mit unsigniertem XPI als Asset und den 1.23.0-Release-Notes aus [CHANGELOG.md](CHANGELOG.md) | `gh release view v1.23.0` zeigt Tag, Asset, Notes; `releases/latest` → `v1.23.0` | 1 h | E-01, A-22* | Release |
+| **A-01** | **Tag & GitHub-Release 1.23.0:** Tag `v1.23.0` auf den freigegebenen Commit; GitHub-Release (kein Pre-Release) mit unsigniertem XPI als Asset und den 1.23.0-Release-Notes aus [CHANGELOG.md](../CHANGELOG.md) | `gh release view v1.23.0` zeigt Tag, Asset, Notes; `releases/latest` → `v1.23.0` | 1 h | E-01, A-22* | Release |
 | **A-02** | **Gates erneut messen:** `npm run check` und `npm run store-gate` ausführen; C7 muss PASS melden | Gate-Protokoll: C7 PASS; XPI-SHA-256 dokumentiert | 0,5 h | A-01 | QS |
 | **A-03** | **ATN-Signierung** ✋: `npx web-ext sign --amo-base-url https://addons.thunderbird.net/api/v5/ --channel listed --approval-timeout 0` mit den ATN-API-Schlüsseln des Maintainers (Kommando steht in [STATUS.md](STATUS.md) „Remaining“ und `release.yml`) | Signiertes XPI vorliegend; Signier-Log dokumentiert | 1 h ✋ | A-02 | Release |
 | **A-04** | **ATN-Einreichung** ✋: Listing-Felder aus [store_listing.md](store_listing.md) ausfüllen, signiertes XPI hochreichen, Version zur Prüfung einreichen | ATN-Status „in review“; Einreichungs-Screenshot dokumentiert | 1 h ✋ | A-03, G2 | Release |
@@ -188,7 +187,7 @@ Release https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.23.0 (�
 | A-22 | **erledigt** | D12–D14 in [decisions.md](decisions.md), Kopf auf „Thundy AV“ ohne Alt-Version |
 | A-23 | **erledigt** | Versions-Grep: `store_listing.md`/`store_assets.md` nennen 1.23.0; verbleibende 1.6.x-Referenzen nur in als historisch markierten Snapshots (STATUS §„Stand: 1. Oktober 2026“) |
 | A-24 | **erledigt** | Review-Rücklauf-Prozess: [atn_review_process.md](atn_review_process.md) (SOP, Fristen, Eskalation) + Issue-Vorlage `.github/ISSUE_TEMPLATE/atn_review_feedback.md` mit Label `atn-review` |
-| A-25 | **erledigt** | Enterprise-Fahrplan: [AUFGABENPLAN_ENTERPRISE_N06.md](AUFGABENPLAN_ENTERPRISE_N06.md) (G0–G6, Traceability zu N01–N18, 19 EN-Tasks, ≈ 150 h davon ≈ 146 h ✋) |
+| A-25 | **erledigt** | Enterprise-Fahrplan: [ENTERPRISE_N06_ABNAHME.md](ENTERPRISE_N06_ABNAHME.md) (G0–G6, Traceability zu N01–N18, 19 EN-Tasks, ≈ 150 h davon ≈ 146 h ✋) |
 | A-26 | **erledigt** | Support-Kanal: [support_faq.md](support_faq.md) (Kanäle inkl. Signaturprüfung über `SHA256SUMS.txt`, FAQ, Grenzen); verlinkt aus [store_listing.md](store_listing.md) |
 
 **Verbleibende Blocker bis zur Store-Listung:** ausschließlich A-03/A-04 (Signierung + Einreichung,

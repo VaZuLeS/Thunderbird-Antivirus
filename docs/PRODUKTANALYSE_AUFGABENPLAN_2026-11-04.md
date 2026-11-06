@@ -2,8 +2,8 @@
 
 **Rolle:** Technischer Produktarchitekt und erfahrener Thunderbird-Extension-Entwickler
 **Projekt:** Thundy AV — E-Mail-Anhang- und Link-Scanner für Mozilla Thunderbird (WebExtension, MV3)
-**Bezug:** Stand nach Merge PR #741 (Commit `b7dadd71`), Vorbereitung Version 1.24.5
-**Datum:** 04. November 2026
+**Bezug:** Stand Release **1.24.6** (`main`)
+**Datum:** 04. November 2026 (aktualisiert auf Release 1.24.6)
 **Status:** Verbindliche architektonische Bestandsaufnahme und evidenzbasierter Entwicklungsplan
 
 ---
@@ -16,16 +16,15 @@ Zur Vermeidung von Fehlannahmen wird strikt zwischen Arbeitsbaum, lokalem Git-St
 
 | Ebene | Tatsächlicher Zustand | Beleg / Evidenz / Prüfgrenze |
 | :--- | :--- | :--- |
-| **Commit / HEAD** | `b7dadd71bd53a7ee956226cc7f56de95bfbf6471` (Merge PR #741) | `git log -n 1 --pretty=fuller`; Arbeitsbaum ist sauber (`git status`). |
-| **Branch** | `jules-10917209575449674190-cf691228` | Lokaler Entwicklungszweig. |
-| **Deklarierte Version** | `1.24.5` | Identisch in `package.json` und `manifest.json`. |
-| **Git-Tag** | `v1.24.5` zeigt direkt auf `b7dadd71` | `git show v1.24.5`. |
-| **Veröffentlichter Stand** | GitHub-Release **1.24.4** ist das letzte vorliegende Release; Vorbereitung **1.24.5** dokumentiert in `docs/VEROEFFENTLICHUNG_1_24_5.md` | `docs/releases/1.24.4.md`, `docs/VEROEFFENTLICHUNG_1_24_5.md`. Ein Git-Tag oder eine Dokumentationsdatei ist noch kein Nachweis eines aktiven GitHub-Releases oder einer ATN-Listung. |
-| **Paket-Fingerprint** | SHA-256: `283ad4dd941b31058dee8762ccd3ed945527e323b57f7b9552e593bd9d249035`, Source-Fingerprint: `14a665e6...` | Deterministischer Paketbau über `node scripts/build-and-verify-package.js` (47 Dateien, 999.471 Bytes entpackt). |
-| **Automatisierte Tests** | **1.076 bestanden, 0 fehlgeschlagen** (73 Testsuiten) | `pnpm test` (über Node.js v22 Test-Runner). Hinweis: Erfordert das Nichtvorhandensein von `pnpm-lock.yaml`, da `test/manifest.test.js` das Vorhandensein von Lockfiles streng prüft. |
-| **Linter** | **0 Fehler, 27 bekannte Thunderbird-Warnungen** | `pnpm run lint:filtered` via `scripts/lint-with-filter.js` (alle 27 Warnungen sind kuratierte MailExtension-False-Positives wie `messagesRead`, `messages.getAttachmentFile` etc.). |
-| **Store-Readiness-Gate** | C1 (Pre-submit), C3 (Linter), C5 (Screenshots) und C7 (Release-Match) PASS. C2 (npm test) PASS nach Bereinigung. C4 (Build-Ordner) und C6 (Live-Testprotokoll 1.24.5) FAIL im reinen Quellcheckout. | Ausführung von `node scripts/submission-gate.js` liefert NO-GO, da `./build` nicht vorliegt und `docs/audits/candidate-1_24_5.json` nicht als Datei existiert (existiert als `docs/audits/report-controls-2026-11-04.json`). |
-| **GitHub Pages** | Jekyll-Quellen unter `docs/` mit `docs/_config.yml` | `pnpm run check:docs` bestätigt 54 Dateien und 318 Links ohne Fehler. |
+| **Branch** | `main` | Aktiver Hauptentwicklungszweig. |
+| **Deklarierte Version** | `1.24.6` | Identisch in `package.json` und `manifest.json`. |
+| **Git-Tag** | `v1.24.6` (`c6f5c4c`) | `git show v1.24.6`. |
+| **Veröffentlichter Stand** | GitHub-Release **1.24.6** veröffentlicht (`thundy-av-1.24.6.xpi`, 273.220 Bytes, SHA-256 `4ad8d9895d7705cdc7bf804384c14c27ce3f72798e27626f45aef3154e1cd36a`); Umfang dokumentiert in [HOTFIX_QUELLENLADEFEHLER_1_24_6.md](HOTFIX_QUELLENLADEFEHLER_1_24_6.md) | [Release-Notizen 1.24.6](releases/1.24.6.md), [Live-Prüfung 1.24.6](live_test_1_24_6.md). Eine ATN-Listung oder -Signierung ist damit weiterhin nicht behauptet. |
+| **Paket-Fingerprint** | Deterministischer Paketbau über `node scripts/build-and-verify-package.js` (47 Dateien) | Siehe [REPRODUZIERBARE_PAKETE.md](REPRODUZIERBARE_PAKETE.md). Nachgelagerte Optimierungen auf `main` erfordern für den nächsten Release-Tag einen Versionsbump auf `1.24.7`. |
+| **Automatisierte Tests** | **1.085 bestanden, 0 fehlgeschlagen** (73 Testsuiten) | `npm test` (über Node.js Test-Runner). Hinweis: `package-lock.json` bleibt das einzige Lockfile (`test/manifest.test.js`). |
+| **Linter** | **0 Fehler, 27 bekannte Thunderbird-Warnungen** | `npm run lint:filtered` via `scripts/lint-with-filter.js` (alle 27 Warnungen sind kuratierte MailExtension-False-Positives wie `messagesRead`, `messages.getAttachmentFile` etc.). |
+| **Store-Readiness-Gate** | C1 (Pre-submit), C2 (npm test), C3 (Linter), C4 (Package) und C5 (Screenshots) PASS. C6/C7 prüfen Kandidatennachweis und Tag-Bindung. | Ausführung von `node scripts/submission-gate.js --candidate`. |
+| **GitHub Pages** | Jekyll-Quellen unter `docs/` mit `docs/_config.yml` (`exclude: [ci]`) | `npm run check:docs` prüft alle relativen Verweise, Permalinks und Jekyll-Excludes. |
 
 ---
 
@@ -147,7 +146,7 @@ Die Einordnung erfolgt nach den Entwicklungstypen:
 ### AVN-008b: Bereinigung der Entwicklungsabhängigkeiten und Tooling-Härtung
 - **Themenbereich:** Architektur, Wartbarkeit & Tooling (E)
 - **Entwicklungstyp:** Optimierung
-- **Befund mit Beleg:** `package.json` und `pnpm audit` weisen transitive Sicherheitsbefunde in Test-/Linter-Werkzeugen auf. Ein unbedachtes `npm audit fix` führt zu inkompatiblen Downgrades von `web-ext` oder Konflikten mit Vite 8 (`PRODUKTANALYSE_AUFGABENPLAN_2026-11-02.md`).
+- **Befund mit Beleg:** `package.json` und `npm audit` weisen transitive Sicherheitsbefunde in Test-/Linter-Werkzeugen auf (`0` im Laufzeitpaket, `3` `low` in der `web-ext`-Kette). Ein unbedachtes `npm audit fix` führt zu inkompatiblen Downgrades von `web-ext` oder Konflikten mit Vite 8 ([WERKZEUG_ADVISORIES.md](WERKZEUG_ADVISORIES.md)).
 - **Ziel & Nutzwert:** Gezielte Auflösung der bekannten Advisories durch präzise Versionsanpassungen oder isolierte Linter-Subpakete, ohne die MailExtension-Kompatibilität zu gefährden.
 - **Abgegrenzter Umfang:** Aktualisierung der `devDependencies` in `package.json`; Verifikation von `scripts/lint-with-filter.js` und `scripts/verify-package.js`. Keine Änderung am produktiven Add-on-Code.
 - **Priorität & Aufwand:** Priorität **P1**, Aufwand **S**.

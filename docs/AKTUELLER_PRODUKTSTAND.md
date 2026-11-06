@@ -18,7 +18,7 @@ Die Unicode-Abweichung ist danach [im begrenzten Thundy-AV-Eingangsweg für die 
 
 Die [Quellenhistorie](QUELLENHISTORIE_ZUORDNUNG.md) wird jetzt von aktuellen Beobachtungen getrennt und nach einem Prozesswechsel nicht anhand alter Zahlen neu gebunden. Neue Quellenstände verwenden einen additiven UUID-Bereich; alte Quellenfelder bleiben erhalten. Gespeicherte Anhangkarten benötigen einen aktuellen Hashnachweis im aktiven Kontext. Dies ist ein defensiver Teilschritt, keine vollständige Ressourcen-/Vorkommensmigration oder unbegrenzte Archivierung.
 
-Vorheriger Ausführungsstand ist die [detaillierte Aufgabenliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md). Die [Bestandsaufnahme](PRODUKTANALYSE_AUFGABENPLAN_2026-11-02.md) beschreibt den Ausgangscommit `6046fe0`; alte Statusmeldungen sind zeitgebundene Nachweise und keine aktuelle Freigabe.
+Vorheriger Ausführungsstand ist die [detaillierte Aufgabenliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md). Die [aktuelle Bestandsaufnahme und der Aufgabenplan](PRODUKTANALYSE_AUFGABENPLAN_2026-11-04.md) dokumentieren den aktuellen Entwicklungs- und Release-Stand; alte Statusmeldungen sind zeitgebundene Nachweise und keine aktuelle Freigabe.
 
 Die [begrenzte Protokollhistorie](PROTOKOLLHISTORIE.md) sichert nun die bisherigen gespeicherten Ressourcenprotokolle vor Ersetzung in derselben Transaktion. Lokales Wiederlesen desselben Anhanginhalts erhält den fertigen Bericht; volle Kapazität oder Commitfehler erhalten die alten Daten und werden angezeigt. Die bestehende Cacheaufbewahrung gilt weiterhin; unabhängige Langzeitarchivierung und dauerhafte Vorkommensmigration bleiben offen.
 
