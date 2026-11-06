@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.24.8 — 2026-11-06
+
+- Implement durable message content key derivation and storage key resolution (`deriveMessageContentKey`, `resolveMessageStorageKey`) in `db.js` and `background.js` (AVN-009).
+- Add local protection profiles (`LocalProtectionProfile`) with live difference preview and JSON schema validation (`docs/schemas/local-protection-profile-v1.json`) in `options.js` (AVN-010).
+- Expand synthetic risk corpus with PSL-aware subdomains, official brand whitelist counterexamples, typosquatting and verified malicious attachment/link findings in `testdata/risk-behavior.json` (AVN-005).
+- Enforce strict documentation and version parity checks in `tools/docs-links.dev.cjs` and `scripts/pre-submit-checks.js` (AVN-016).
+- Upgrade CI workflows and action steps to Node.js 24 LTS.
+
+## 1.24.7 — 2026-11-06
+
+- Vollständiger Hybrid Analysis v2 API-Parser (`normalizeHybridAnalysisReport`) für Overview-, Summary-, Hash-Search- und Quick-Scan-Payloads mit automatischem Fallback auf `/api/v2/quick-scan/{id}` bei 404 und sofortiger Persistierung fertiger Quick-Scan-Antworten.
+- Korrigierte Normalisierung externer Threat-Intel-Provider (AbuseIPDB `isWhitelisted`-Vorrang, URLScan.io `brands` und Screenshot-/Report-Links, URLhaus-Host-Berichte).
+- Offline-Darstellung gespeicherter fertiger Anhang- und Link-Berichte ohne aktive Einwilligung oder API-Key.
+- Direkte Integration verifizierter Anhang- und Link-Befunde in `calculateThreatScore` und sofortiges `refreshThreatBanner`.
+
 ## 1.24.4 — unreleased development (2026-11-02)
 
 - Separate unbound source history from current observations in all six languages; show all recorded service names without inheriting old numeric-ID verdicts. Save new cumulative context snapshots under independent UUIDs, preserving legacy source fields and exposing capacity/commit failures. Require an actual attachment hash match before showing a named cached report (docs/QUELLENHISTORIE_ZUORDNUNG.md).

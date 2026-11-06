@@ -2,8 +2,8 @@
 
 **Rolle:** Technischer Produktarchitekt und erfahrener Thunderbird-Extension-Entwickler
 **Projekt:** Thundy AV — E-Mail-Anhang- und Link-Scanner für Mozilla Thunderbird (WebExtension, MV3)
-**Bezug:** Stand Release **1.24.7** (`main`)
-**Datum:** 06. November 2026 (aktualisiert auf Release 1.24.7)
+**Bezug:** Stand Release **1.24.8** (`main`)
+**Datum:** 06. November 2026 (aktualisiert auf Release 1.24.8)
 **Status:** Verbindliche architektonische Bestandsaufnahme und evidenzbasierter Entwicklungsplan
 
 ---
@@ -17,11 +17,11 @@ Zur Vermeidung von Fehlannahmen wird strikt zwischen Arbeitsbaum, lokalem Git-St
 | Ebene | Tatsächlicher Zustand | Beleg / Evidenz / Prüfgrenze |
 | :--- | :--- | :--- |
 | **Branch** | `main` | Aktiver Hauptentwicklungszweig. |
-| **Deklarierte Version** | `1.24.7` | Identisch in `package.json` und `manifest.json`. |
-| **Git-Tag** | `v1.24.7` | [Release-Notizen 1.24.7](releases/1.24.7.md), [Live-Prüfung 1.24.7](live_test_1_24_7.md). |
-| **Veröffentlichter Stand** | GitHub-Release **1.24.7** vorbereitet und getaggt; Umfang dokumentiert in [VEROEFFENTLICHUNG_1_24_7.md](VEROEFFENTLICHUNG_1_24_7.md) (Vorgänger [1.24.6](HOTFIX_QUELLENLADEFEHLER_1_24_6.md) bleibt erhalten) | [Release-Notizen 1.24.7](releases/1.24.7.md), [Live-Prüfung 1.24.7](live_test_1_24_7.md). Eine ATN-Listung oder -Signierung ist damit weiterhin nicht behauptet. |
+| **Deklarierte Version** | `1.24.8` | Identisch in `package.json` und `manifest.json`. |
+| **Git-Tag** | `v1.24.8` | [Release-Notizen 1.24.8](releases/1.24.8.md), [Live-Prüfung 1.24.8](live_test_1_24_8.md). |
+| **Veröffentlichter Stand** | GitHub-Release **1.24.8** vorbereitet und getaggt; Umfang dokumentiert in [VEROEFFENTLICHUNG_1_24_8.md](VEROEFFENTLICHUNG_1_24_8.md) (Vorgänger [1.24.7](VEROEFFENTLICHUNG_1_24_7.md) bleibt erhalten) | [Release-Notizen 1.24.8](releases/1.24.8.md), [Live-Prüfung 1.24.8](live_test_1_24_8.md). Eine ATN-Listung oder -Signierung ist damit weiterhin nicht behauptet. |
 | **Paket-Fingerprint** | Deterministischer Paketbau über `node scripts/build-and-verify-package.js` (47 Dateien) | Siehe [REPRODUZIERBARE_PAKETE.md](REPRODUZIERBARE_PAKETE.md). |
-| **Automatisierte Tests** | **1.109 bestanden, 0 fehlgeschlagen** (73 Testsuiten) | `npm test` (über Node.js Test-Runner). Hinweis: `package-lock.json` bleibt das einzige Lockfile (`test/manifest.test.js`). |
+| **Automatisierte Tests** | **1.113 bestanden, 0 fehlgeschlagen** (73 Testsuiten) | `npm test` (über Node.js Test-Runner). Hinweis: `package-lock.json` bleibt das einzige Lockfile (`test/manifest.test.js`). |
 | **Linter** | **0 Fehler, 27 bekannte Thunderbird-Warnungen** | `npm run lint:filtered` via `scripts/lint-with-filter.js` (alle 27 Warnungen sind kuratierte MailExtension-False-Positives wie `messagesRead`, `messages.getAttachmentFile` etc.). |
 | **Store-Readiness-Gate** | C1 (Pre-submit), C2 (npm test), C3 (Linter), C4 (Package) und C5 (Screenshots) PASS. C6/C7 prüfen Kandidatennachweis und Tag-Bindung. | Ausführung von `node scripts/submission-gate.js --candidate`. |
 | **GitHub Pages** | Jekyll-Quellen unter `docs/` mit `docs/_config.yml` (`exclude: [ci]`) | `npm run check:docs` prüft alle relativen Verweise, Permalinks und Jekyll-Excludes. |

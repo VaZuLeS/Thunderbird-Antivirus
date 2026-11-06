@@ -1,5 +1,7 @@
 # Aktueller Produktstand — 6. November 2026
 
+Die **1.24.8** ergänzt die [dauerhafte Vorkommensidentität und Speicherschlüsselableitung (AVN-009), konfigurierbare lokale Schutzprofile mit Live-Differenzvorschau (AVN-010) sowie das Heuristik-Benchmarking und die Dokumentationsparität (AVN-005, AVN-016)](VEROEFFENTLICHUNG_1_24_8.md). Tatsächlicher [Veröffentlichungsstatus und Download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.8); ein vorbereiteter Quellstand allein bestätigt keine Veröffentlichung. 1.24.7 bleibt unverändert erhalten.
+
 Die **1.24.7** ergänzt die [vollständige Überarbeitung der Remote-API-Parser (insb. Hybrid Analysis v2 Quick-Scan-Lebenszyklus), die Offline-Darstellung gespeicherter Berichte ohne aktive Einwilligung sowie die direkte Risiko-Score-Integration verifizierter Anhang- und Link-Befunde](VEROEFFENTLICHUNG_1_24_7.md). Tatsächlicher [Veröffentlichungsstatus und Download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.7); ein vorbereiteter Quellstand allein bestätigt keine Veröffentlichung. 1.24.6 bleibt unverändert erhalten.
 
 Die **1.24.6** ergänzt den [Fix für unlesbare gespeicherte Quellenlisten und präzisere Antwortzustände](HOTFIX_QUELLENLADEFEHLER_1_24_6.md). Tatsächlicher [Veröffentlichungsstatus und Download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.6); ein vorbereiteter Quellstand allein bestätigt keine Veröffentlichung. 1.24.5 bleibt unverändert erhalten.
@@ -38,8 +40,8 @@ Der [reproduzierbare Paketaufbau AVN-014.b](REPRODUZIERBARE_PAKETE.md) erzeugt d
 
 | Ebene | Stand |
 | --- | --- |
-| GitHub-Distribution | Zielversion 1.24.7, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.6 bleibt historisch erhalten |
-| Quellstand | 1.24.7 mit vervollständigten Remote-API-Parsern, Quick-Scan-Lebenszyklus, Offline-Darstellung gespeicherter Berichte und Risiko-Score-Integration; ATN-Signierung und automatische Updates bleiben eigenständige Schritte |
+| GitHub-Distribution | Zielversion 1.24.8, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.7 bleibt historisch erhalten |
+| Quellstand | 1.24.8 mit dauerhafter Vorkommensidentität, Schutzprofilen mit Differenzvorschau und Risikobenchmarking; ATN-Signierung und automatische Updates bleiben eigenständige Schritte |
 | Tatsächliches Add-on | MV3-MailExtension; Hintergrundskripte, eigene HTML-Seiten, IndexedDB und browser.storage.local |
 | React | separate gekennzeichnete Websimulation mit eigenem localStorage; nicht im XPI |
 | Enterprise | deaktivierte Profile plus lokale Node-Werkzeuge; neuer Offline-Audit-Review aktiviert keinen Dienst |

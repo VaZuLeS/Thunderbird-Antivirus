@@ -1,10 +1,10 @@
-> Aktueller Release-Stand **1.24.7** (unsignierte GitHub-Distribution, vorbereitet für ATN-Einreichung): [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_24_7.md), [Datenmatrix](privacy_policy.md). Vor einer tatsächlichen ATN-Einreichung die aktuelle Checkliste verwenden.
+> Aktueller Release-Stand **1.24.8** (unsignierte GitHub-Distribution, vorbereitet für ATN-Einreichung): [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_24_8.md), [Datenmatrix](privacy_policy.md). Vor einer tatsächlichen ATN-Einreichung die aktuelle Checkliste verwenden.
 
 # Reviewer Notes — Thundy AV (Thunderbird Add-on)
 
 **Add-on name:** Thundy AV – Email Scanner for Thunderbird (short name: "Thundy AV")
 **Add-on ID:** thundy-av@bludau-it-services.de
-**Version:** 1.24.7
+**Version:** 1.24.8
 **Manifest:** MV3 (`manifest_version: 3`), `strict_min_version: 140.0`
 **License:** GNU GPL v3 (`GPL-3.0-only`)
 **Repository:** https://github.com/VaZuLeS/Thunderbird-Antivirus
