@@ -285,6 +285,17 @@ describe('pre-submit-checks', () => {
     assert.ok(!MATCH_PATTERN_RE.test('http:/example.com/*'));
     assert.ok(!MATCH_PATTERN_RE.test('https://example.com'));
   });
+
+  it('fails when a landing page links to a stale release tag or XPI version (AVN-016)', () => {
+    const staleTag = runChecks(createExtension({
+      'docs/index.html': '<a href="privacy_policy.html">Privacy</a><a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.5.0">Release</a>'
+    }));
+    assert.ok(staleTag.errors.some((e) => e.includes('release tag link does not match manifest.json version')));
+    const staleXpi = runChecks(createExtension({
+      'docs/index_de.html': '<a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.5.0/thundy-av-1.5.0.xpi">XPI</a>'
+    }));
+    assert.ok(staleXpi.errors.some((e) => e.includes('XPI download link does not match manifest.json version')));
+  });
 });
 
 

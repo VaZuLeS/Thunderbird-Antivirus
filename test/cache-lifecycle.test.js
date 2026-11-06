@@ -35,3 +35,26 @@ test('cleanup callback failure does not stop expiry or leak the idle timer',()=>
  const f=fixture();let count=0;const cache=new f.Cache(10,f.clock,{autoExpire:true,onEvict:()=>{count++;throw Error('cleanup')}});
  cache.set('a',1).set('b',2);f.advance(10);assert.equal(count,2);assert.equal(cache.size,0);assert.equal(f.timers.size,0);
 });
+test('content-based fallback key survives folder moves and read-only lookup preserves updatedAt/observedAt (AVN-009)',async()=>{
+ const dbCtx=vm.createContext({TextEncoder,crypto:require('node:crypto').webcrypto});
+ vm.runInContext(fs.readFileSync('db.js','utf8'),dbCtx);
+ const msgBeforeMove={id:10,headerMessageId:'',author:'Alice <alice@example.org>',subject:'Quarterly Invoice',date:'2026-10-01T12:00:00Z'};
+ const msgAfterMove={id:99,headerMessageId:'',author:'Alice <alice@example.org>',subject:'Quarterly Invoice',date:'2026-10-01T12:00:00Z'};
+ const differentMsg={id:99,headerMessageId:'',author:'Bob <bob@example.org>',subject:'Quarterly Invoice',date:'2026-10-01T12:00:00Z'};
+ const hashA='a'.repeat(64),hashB='b'.repeat(64);
+ const keyBefore=dbCtx.resolveMessageStorageKey(msgBeforeMove,[hashB,hashA]);
+ const keyAfter=dbCtx.resolveMessageStorageKey(msgAfterMove,[hashA,hashB]);
+ assert.ok(keyBefore.startsWith('content:'));
+ assert.equal(keyBefore,keyAfter);
+ assert.notEqual(keyBefore,dbCtx.resolveMessageStorageKey(differentMsg,[hashA,hashB]));
+ assert.equal(dbCtx.resolveMessageStorageKey({id:4}),'message:4');
+ assert.equal(dbCtx.resolveMessageStorageKey({id:4,headerMessageId:'<msg-4@example.org>'}),'<msg-4@example.org>');
+ const stored={messageHeader:keyBefore,updatedAt:1700000000000,links:[{url:'https://example.org',hybrid_verdict:{status:'CLEAN',observedAt:1699999999000}}]};
+ const snapshotBefore=JSON.stringify(stored);
+ const fakeDb={transaction:(_stores,mode)=>{assert.equal(mode,'readonly');return {objectStore:()=>({get:k=>{const r={};setImmediate(()=>{r.result=k===keyAfter?stored:null;r.onsuccess();});return r;}})};}};
+ const loaded=await dbCtx.getFromStore(fakeDb,'hybridanalysis',keyAfter);
+ assert.equal(JSON.stringify(loaded),snapshotBefore);
+ assert.equal(loaded.updatedAt,1700000000000);
+ assert.equal(loaded.links[0].hybrid_verdict.observedAt,1699999999000);
+});
+

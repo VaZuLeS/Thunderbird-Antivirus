@@ -252,3 +252,28 @@ function pruneStore(db, storeName, now = Date.now()) {
         };
     });
 }
+
+function deriveMessageContentKey(message, attachmentHashes = []) {
+    if (!message || typeof message !== 'object') return null;
+    const author = typeof message.author === 'string' ? message.author.trim().toLowerCase() : '';
+    const subject = typeof message.subject === 'string' ? message.subject.trim() : '';
+    const rawDate = message.date instanceof Date ? message.date.getTime() : typeof message.date === 'number' ? message.date : typeof message.date === 'string' && message.date.trim() ? Date.parse(message.date) : NaN;
+    const datePart = Number.isFinite(rawDate) ? String(rawDate) : '';
+    const hashes = Array.isArray(attachmentHashes) ? attachmentHashes.filter(h => typeof h === 'string' && /^[0-9a-f]{64}$/i.test(h)).map(h => h.toLowerCase()).sort() : [];
+    if (!author && !subject && !datePart && !hashes.length) return message.id != null ? 'message:' + message.id : null;
+    const canonical = JSON.stringify({ v: 1, author, subject, date: datePart, attachments: hashes });
+    let h1 = 0x811c9dc5, h2 = 0x01000193;
+    for (let i = 0; i < canonical.length; i++) {
+        const c = canonical.charCodeAt(i);
+        h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
+        h2 = Math.imul(h2 ^ (c + i), 0x85ebca6b) >>> 0;
+    }
+    return 'content:' + h1.toString(16).padStart(8, '0') + h2.toString(16).padStart(8, '0') + ':' + canonical.length;
+}
+
+function resolveMessageStorageKey(message, attachmentHashes = []) {
+    if (!message || typeof message !== 'object') return null;
+    if (typeof message.headerMessageId === 'string' && message.headerMessageId.trim()) return message.headerMessageId;
+    return deriveMessageContentKey(message, attachmentHashes);
+}
+

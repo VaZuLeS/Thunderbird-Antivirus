@@ -59,3 +59,27 @@ test('profile preview is read-only; confirmation writes only appearance and reje
  const fresh=await p.prepare(JSON.stringify(profile),storage);fail=true;await assert.rejects(p.commit(fresh,storage),/quota/);assert.equal(store.thundyAppearance,'light');fail=false;
  await p.commit(fresh,storage);assert.equal(writes,1);assert.equal(store.thundyAppearance,'dark');assert.equal(store.apikey,'retained');assert.equal(store.externalAnalysisConsent,false);assert.equal(store.timeOfClickProtection,true);assert.equal(store.linkAuditLog[0].outcome,'PENDING');
 });
+function protectionProfiles(){const c=vm.createContext({document:{addEventListener(){},getElementById(){return {addEventListener(){}}}}});vm.runInContext(fs.readFileSync('options.js','utf8')+'\nglobalThis.protection=LocalProtectionProfile;',c);return c.protection;}
+test('local protection profiles validate safe protection options and reject keys, consent, rules and history (AVN-010)',async()=>{
+ const p=protectionProfiles();const profile=p.create({privacyTier:'balanced',alwaysManual:true,timeOfClickProtection:true,apikey:'secret',externalAnalysisConsent:true,scanningEnabledSenders:['a@b.test'],linkAuditLog:[{outcome:'OPENED'}]});
+ assert.deepEqual(JSON.parse(JSON.stringify(profile)),{schemaVersion:1,kind:'thundy-local-protection',protection:{privacyTier:'balanced',alwaysManual:true,timeOfClickProtection:true}});
+ for(const mutation of [v=>{v.schemaVersion=2},v=>{v.apikey='secret'},v=>{v.externalAnalysisConsent=true},v=>{v.protection.privacyTier='all'},v=>{v.protection.alwaysManual='yes'},v=>{v.protection.externalAnalysisConsent=true},v=>{v.protection.scanningEnabledSenders=['x@y.z']},v=>{delete v.protection.timeOfClickProtection},v=>{v.kind='thundy-local-settings'}]){const bad=JSON.parse(JSON.stringify(profile));mutation(bad);assert.throws(()=>p.parse(JSON.stringify(bad)));}
+ assert.throws(()=>p.parse(' '.repeat(8193)));assert.throws(()=>p.parse('{"__proto__":{"polluted":true}}'));assert.equal({}.polluted,undefined);
+ const Ajv=require('ajv/dist/2020');const validate=new Ajv().compile(JSON.parse(fs.readFileSync('docs/schemas/local-protection-profile-v1.json')));
+ assert.equal(validate(JSON.parse(JSON.stringify(profile))),true);assert.equal(validate({...profile,externalAnalysisConsent:true}),false);
+ const store={apikey:'retained',externalAnalysisConsent:false,privacyTier:'strict',alwaysManual:false,timeOfClickProtection:true,scanningEnabledSenders:['keep@example.com'],linkAuditLog:[{outcome:'PENDING'}]};let writes=0,fail=false;
+ const storage={get:async()=>structuredClone(store),set:async value=>{if(fail)throw new Error('quota');writes++;Object.assign(store,structuredClone(value))}};
+ const draft=await p.prepare(JSON.stringify(profile),storage);assert.equal(writes,0);assert.equal(store.privacyTier,'strict');
+ store.alwaysManual=true;await assert.rejects(p.commit(draft,storage),/PROFILE_CHANGED/);assert.equal(writes,0);
+ store.alwaysManual=false;const fresh=await p.prepare(JSON.stringify(profile),storage);fail=true;await assert.rejects(p.commit(fresh,storage),/quota/);assert.equal(store.privacyTier,'strict');fail=false;
+ await p.commit(fresh,storage);assert.equal(writes,1);assert.equal(store.privacyTier,'balanced');assert.equal(store.alwaysManual,true);assert.equal(store.apikey,'retained');assert.equal(store.externalAnalysisConsent,false);assert.deepEqual(store.scanningEnabledSenders,['keep@example.com']);assert.equal(store.linkAuditLog[0].outcome,'PENDING');
+});
+test('synthetic risk corpus evaluates legitimate counterexamples and threat contracts (AVN-005)',()=>{
+ const {execFileSync}=require('node:child_process');
+ const out=JSON.parse(execFileSync(process.execPath,['tools/risk-corpus.dev.cjs'],{encoding:'utf8'}));
+ assert.equal(out.kind,'thundy-synthetic-risk-corpus');
+ assert.equal(out.privateSuffixSeparation,true);
+ assert.ok(out.results.length>=17);
+ assert.ok(out.results.every(r=>r.passed===true));
+});
+

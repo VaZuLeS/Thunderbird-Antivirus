@@ -141,7 +141,7 @@ const messageAnalyses = typeof ExpiringMap !== 'undefined' ? new ExpiringMap(900
 }) : new Map();
 async function getMessageAnalysisContext(message, tabId = null, inventory = {}) {
     if (typeof ThundyAnalysis === 'undefined' || !message) return null;
-    const key = message.headerMessageId || 'message:' + message.id;
+    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : (message.headerMessageId || 'message:' + message.id);
     const contextKey = key + ':' + message.id;
     if (!messageAnalyses.has(contextKey)) {
         const ready = (async () => {
@@ -751,7 +751,7 @@ async function extractBecProtectionData(message, fullMessage) {
 
 async function persistThreatIntelSummary(message, summary) {
   if (!message || (!message.headerMessageId && message.id == null)) return;
-  const key = message.headerMessageId || 'message:' + message.id;
+  const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : (message.headerMessageId || 'message:' + message.id);
   try {
     await updateStore(await getSharedDB(), 'hybridanalysis', key, existing => ({
       ...(existing || { messageHeader: key }),
@@ -771,7 +771,8 @@ async function collectAttachmentFindings(message) {
   if (!message || (!message.headerMessageId && message.id == null)) return [];
   if (typeof getFromStore !== 'function' || typeof getSharedDB !== 'function') return [];
   try {
-    const record = await getFromStore(await getSharedDB(), 'hybridanalysis', message.headerMessageId || 'message:' + message.id);
+    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : (message.headerMessageId || 'message:' + message.id);
+    const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
     const findings = [];
     for (const att of (record && Array.isArray(record.attachments) ? record.attachments : [])) {
       if (!att || typeof att !== 'object') continue;
@@ -801,7 +802,8 @@ async function collectLinkFindings(message) {
   if (!message || (!message.headerMessageId && message.id == null)) return [];
   if (typeof getFromStore !== 'function' || typeof getSharedDB !== 'function') return [];
   try {
-    const record = await getFromStore(await getSharedDB(), 'hybridanalysis', message.headerMessageId || 'message:' + message.id);
+    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : (message.headerMessageId || 'message:' + message.id);
+    const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
     const findings = [];
     for (const link of (record && Array.isArray(record.links) ? record.links : [])) {
       if (!link || typeof link !== 'object') continue;

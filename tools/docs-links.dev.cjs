@@ -39,4 +39,25 @@ for (const file of files) {
     }
 }
 assert.deepEqual(missing, [], 'broken current documentation links');
-console.log(JSON.stringify({ files: files.length, checked, missing: 0, scope: 'current local sources and Jekyll permalink resolution; no HTTP or Jekyll runtime claim' }));
+const version = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8')).version;
+const tagPages = ['README.md', 'README.de.md', 'docs/index.md', 'docs/index.html', ...['en', 'de', 'fr', 'es', 'it', 'pl'].map(lang => 'docs/index_' + lang + '.html')];
+for (const page of tagPages) {
+    const content = fs.readFileSync(path.join(root, page), 'utf8');
+    assert.ok(content.includes('releases/tag/v' + version), page + ' must link to releases/tag/v' + version);
+    const staleTags = [...content.matchAll(/releases\/tag\/v(\d+\.\d+\.\d+)/g)].map(m => m[1]).filter(v => v !== version);
+    assert.deepEqual(staleTags, [], page + ' contains stale release tag links');
+}
+for (const lang of ['en', 'de', 'fr', 'es', 'it', 'pl']) {
+    const page = 'docs/index_' + lang + '.html';
+    const content = fs.readFileSync(path.join(root, page), 'utf8');
+    const expectedXpi = 'releases/download/v' + version + '/thundy-av-' + version + '.xpi';
+    assert.ok(content.includes(expectedXpi), page + ' must link to ' + expectedXpi);
+    const staleDownloads = [...content.matchAll(/releases\/download\/v(\d+\.\d+\.\d+)\/thundy-av-(\d+\.\d+\.\d+)\.xpi/g)]
+        .filter(m => m[1] !== version || m[2] !== version);
+    assert.deepEqual(staleDownloads, [], page + ' contains stale XPI download links');
+}
+for (const doc of ['docs/reviewer_notes.md', 'docs/store_listing.md']) {
+    const content = fs.readFileSync(path.join(root, doc), 'utf8');
+    assert.ok(content.includes('**Version:** ' + version), doc + ' must declare Version ' + version);
+}
+console.log(JSON.stringify({ files: files.length, checked, missing: 0, versionParity: version, scope: 'current local sources, version parity and Jekyll permalink resolution; no HTTP or Jekyll runtime claim' }));

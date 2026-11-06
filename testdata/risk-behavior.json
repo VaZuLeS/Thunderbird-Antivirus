@@ -131,6 +131,146 @@
         "maxScore": 100,
         "reason": "ui_092"
       }
+    },
+    {
+      "id": "BENIGN-SUBDOMAIN-PSL",
+      "author": "Operations <ops@company.co.uk>",
+      "urls": [
+        "https://portal.company.co.uk/status"
+      ],
+      "options": {
+        "authHeaders": [
+          "mx.company.co.uk; spf=pass; dkim=pass; dmarc=pass"
+        ],
+        "replyTo": "support@company.co.uk",
+        "subject": "Monthly status report",
+        "messageText": "All systems operational."
+      },
+      "expect": {
+        "minScore": 0,
+        "maxScore": 0,
+        "authStatus": "pass"
+      }
+    },
+    {
+      "id": "BENIGN-KNOWN-BRAND-OFFICIAL-LINK",
+      "author": "PayPal Service <service@paypal.com>",
+      "urls": [
+        "https://www.paypal.com/myaccount/summary"
+      ],
+      "options": {
+        "authHeaders": [
+          "mx.paypal.com; spf=pass; dkim=pass; dmarc=pass"
+        ],
+        "subject": "Your monthly account statement",
+        "messageText": "View your statement online."
+      },
+      "expect": {
+        "minScore": 0,
+        "maxScore": 0,
+        "authStatus": "pass"
+      }
+    },
+    {
+      "id": "KNOWN-CONTACT-URGENCY-COUNTEREXAMPLE",
+      "author": "Colleague <colleague@example.org>",
+      "urls": [],
+      "options": {
+        "authHeaders": [
+          "mx.example.org; spf=pass; dkim=pass; dmarc=pass"
+        ],
+        "subject": "Urgent review notes for tomorrow",
+        "isFirstCommunication": false
+      },
+      "expect": {
+        "minScore": 20,
+        "maxScore": 20,
+        "authStatus": "pass",
+        "reason": "ui_093"
+      }
+    },
+    {
+      "id": "SENDER-TYPOSQUATTING-BRAND",
+      "author": "Support <service@paypa1.com>",
+      "urls": [],
+      "options": {
+        "subject": "Account notification"
+      },
+      "expect": {
+        "minScore": 60,
+        "maxScore": 100,
+        "reason": "ui_095"
+      }
+    },
+    {
+      "id": "LINK-SENDER-DOMAIN-MISMATCH",
+      "author": "Billing <billing@example.org>",
+      "urls": [
+        "https://login-check.example.net/verify"
+      ],
+      "options": {
+        "subject": "Security check"
+      },
+      "expect": {
+        "minScore": 40,
+        "maxScore": 100,
+        "reason": "ui_097"
+      }
+    },
+    {
+      "id": "LINK-TYPOSQUATTING-BRAND",
+      "author": "Billing <billing@example.org>",
+      "urls": [
+        "https://www.paypa1.com/login"
+      ],
+      "options": {
+        "subject": "Invoice copy"
+      },
+      "expect": {
+        "minScore": 60,
+        "maxScore": 100,
+        "reason": "ui_096"
+      }
+    },
+    {
+      "id": "VERIFIED-MALICIOUS-ATTACHMENT",
+      "author": "Alice <alice@example.org>",
+      "urls": [],
+      "options": {
+        "attachmentFindings": [
+          {
+            "name": "invoice.exe",
+            "verdict": "malicious",
+            "provider": "VirusTotal (7/70)"
+          }
+        ]
+      },
+      "expect": {
+        "minScore": 80,
+        "maxScore": 100,
+        "reason": "reasonMaliciousAttachment"
+      }
+    },
+    {
+      "id": "VERIFIED-MALICIOUS-LINK",
+      "author": "Alice <alice@example.org>",
+      "urls": [
+        "https://malware.example.net/payload"
+      ],
+      "options": {
+        "linkFindings": [
+          {
+            "url": "https://malware.example.net/payload",
+            "verdict": "malicious",
+            "provider": "Hybrid Analysis"
+          }
+        ]
+      },
+      "expect": {
+        "minScore": 80,
+        "maxScore": 100,
+        "reason": "reasonMaliciousLinkVerdict"
+      }
     }
   ]
 }

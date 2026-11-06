@@ -25,6 +25,39 @@ const LocalSettingsProfile = (() => {
     return { keys, parse, create, prepare, commit };
 })();
 
+// Portable protection profiles contain only safe local protection options,
+// never consent, provider keys, host permissions, sender trust lists or logs.
+const LocalProtectionProfile = (() => {
+    const keys = ['privacyTier', 'alwaysManual', 'timeOfClickProtection'];
+    const tiers = ['strict', 'balanced', 'max'];
+    const object = value => value && typeof value === 'object' && !Array.isArray(value);
+    function parse(input) {
+        if (typeof input === 'string') { if (input.length > 8192) throw new Error('PROFILE_INVALID'); input = JSON.parse(input); }
+        if (!object(input) || Object.keys(input).sort().join(',') !== 'kind,protection,schemaVersion' || input.schemaVersion !== 1 || input.kind !== 'thundy-local-protection' || !object(input.protection) || Object.keys(input.protection).sort().join(',') !== 'alwaysManual,privacyTier,timeOfClickProtection') throw new Error('PROFILE_INVALID');
+        const { privacyTier, alwaysManual, timeOfClickProtection } = input.protection;
+        if (!tiers.includes(privacyTier) || typeof alwaysManual !== 'boolean' || typeof timeOfClickProtection !== 'boolean') throw new Error('PROFILE_INVALID');
+        return { schemaVersion: 1, kind: 'thundy-local-protection', protection: { privacyTier, alwaysManual, timeOfClickProtection } };
+    }
+    function create(settings = {}) {
+        const privacyTier = tiers.includes(settings.privacyTier) ? settings.privacyTier : 'strict';
+        const alwaysManual = settings.alwaysManual === true;
+        const timeOfClickProtection = settings.timeOfClickProtection !== undefined ? Boolean(settings.timeOfClickProtection) : true;
+        return parse({ schemaVersion: 1, kind: 'thundy-local-protection', protection: { privacyTier, alwaysManual, timeOfClickProtection } });
+    }
+    async function prepare(input, storage) { return { profile: parse(input), before: create(await storage.get(keys)) }; }
+    async function commit(proposal, storage) {
+        const profile = parse(proposal?.profile), before = parse(proposal?.before);
+        if (JSON.stringify(create(await storage.get(keys))) !== JSON.stringify(before)) throw new Error('PROFILE_CHANGED');
+        await storage.set({
+            privacyTier: profile.protection.privacyTier,
+            alwaysManual: profile.protection.alwaysManual,
+            timeOfClickProtection: profile.protection.timeOfClickProtection
+        });
+        return profile;
+    }
+    return { keys, parse, create, prepare, commit };
+})();
+
 // Explicit field projection: never serialize storage, error objects or API keys.
 const SupportReport = (() => {
     const keys = ['privacyTier', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'externalAnalysisConsent', 'thundyAppearance', 'thundyAccent', 'thundyDensity'];
@@ -144,12 +177,26 @@ document.addEventListener('DOMContentLoaded', function() {
             reset(); const own = generation, input = profileInput.value;
             try {
                 if (typeof ThundyTheme !== 'undefined') await ThundyTheme.whenIdle();
-                const prepared = await LocalSettingsProfile.prepare(input, browser.storage.local);
-                if (own !== generation) return;
-                proposal = prepared;
-                const names = { mode: 'themeMode', accent: 'themeAccent', density: 'themeDensity' };
-                const values = { system: 'themeSystem', light: 'themeLight', dark: 'themeDark', ocean: 'themeOcean', violet: 'themeViolet', forest: 'themeForest', amber: 'themeAmber', comfortable: 'themeComfortable', compact: 'themeCompact' };
-                preview.textContent = Object.keys(names).map(field => uiText(names[field], field) + ': ' + uiText(values[prepared.before.appearance[field]], '') + ' → ' + uiText(values[prepared.profile.appearance[field]], '')).join('\n');
+                const parsedKind = typeof input === 'string' && input.length <= 8192 ? JSON.parse(input)?.kind : null;
+                if (parsedKind === 'thundy-local-protection') {
+                    const prepared = await LocalProtectionProfile.prepare(input, browser.storage.local);
+                    if (own !== generation) return;
+                    proposal = prepared;
+                    const tierLabels = { strict: 'ui_145', balanced: 'ui_146', max: 'ui_147' };
+                    const boolLabel = v => v ? 'true' : 'false';
+                    preview.textContent = [
+                        uiText('ui_144', 'Privacy tier:') + ' ' + uiText(tierLabels[prepared.before.protection.privacyTier], prepared.before.protection.privacyTier) + ' → ' + uiText(tierLabels[prepared.profile.protection.privacyTier], prepared.profile.protection.privacyTier),
+                        uiText('ui_160', 'Always scan manually') + ': ' + boolLabel(prepared.before.protection.alwaysManual) + ' → ' + boolLabel(prepared.profile.protection.alwaysManual),
+                        uiText('ui_164', 'Check links before opening them') + ': ' + boolLabel(prepared.before.protection.timeOfClickProtection) + ' → ' + boolLabel(prepared.profile.protection.timeOfClickProtection)
+                    ].join('\n');
+                } else {
+                    const prepared = await LocalSettingsProfile.prepare(input, browser.storage.local);
+                    if (own !== generation) return;
+                    proposal = prepared;
+                    const names = { mode: 'themeMode', accent: 'themeAccent', density: 'themeDensity' };
+                    const values = { system: 'themeSystem', light: 'themeLight', dark: 'themeDark', ocean: 'themeOcean', violet: 'themeViolet', forest: 'themeForest', amber: 'themeAmber', comfortable: 'themeComfortable', compact: 'themeCompact' };
+                    preview.textContent = Object.keys(names).map(field => uiText(names[field], field) + ': ' + uiText(values[prepared.before.appearance[field]], '') + ' → ' + uiText(values[prepared.profile.appearance[field]], '')).join('\n');
+                }
                 preview.hidden = false; apply.disabled = false; preview.focus();
             } catch (error) { if (own === generation) status.textContent = uiText('localProfileInvalid', 'Invalid profile'); }
         });
@@ -159,7 +206,19 @@ document.addEventListener('DOMContentLoaded', function() {
             applying = true; apply.disabled = true;
             const controls = Array.from(document.querySelectorAll('#appearance input,#localProfile input,#localProfile textarea,#localProfile button')).filter(control => control !== apply);
             const states = controls.map(control => control.disabled); controls.forEach(control => { control.disabled = true; });
-            try { if (typeof ThundyTheme !== 'undefined') await ThundyTheme.whenIdle(); await LocalSettingsProfile.commit(proposal, browser.storage.local); reset(); status.textContent = uiText('localProfileApplied', 'Profile applied'); }
+            try {
+                if (typeof ThundyTheme !== 'undefined') await ThundyTheme.whenIdle();
+                if (proposal.profile?.kind === 'thundy-local-protection') {
+                    const committed = await LocalProtectionProfile.commit(proposal, browser.storage.local);
+                    const tierEl = document.getElementById('privacyTier'), manualEl = document.getElementById('alwaysManual'), tocEl = document.getElementById('timeOfClickProtection');
+                    if (tierEl) tierEl.value = committed.protection.privacyTier;
+                    if (manualEl) manualEl.checked = committed.protection.alwaysManual;
+                    if (tocEl) tocEl.checked = committed.protection.timeOfClickProtection;
+                } else {
+                    await LocalSettingsProfile.commit(proposal, browser.storage.local);
+                }
+                reset(); status.textContent = uiText('localProfileApplied', 'Profile applied');
+            }
             catch (error) { status.textContent = uiText(error.message === 'PROFILE_CHANGED' ? 'localProfileChanged' : 'localProfileFailed', 'Profile could not be applied'); apply.disabled = false; }
             finally { applying = false; controls.forEach((control, index) => { control.disabled = states[index]; }); if (document.activeElement === document.body || document.activeElement === apply) (proposal ? apply : document.getElementById('localProfilePreview')).focus(); }
         });

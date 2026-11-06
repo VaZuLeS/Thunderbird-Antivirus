@@ -294,6 +294,21 @@ function runChecks(rootDir) {
   if (linked.length === 0) warn('no landing page links to the privacy policy');
   else ok('privacy policy is linked from ' + linked.length + ' landing page(s)');
 
+  const allLandingPages = ['docs/index.html', 'docs/index_en.html', 'docs/index_de.html', 'docs/index_fr.html', 'docs/index_es.html', 'docs/index_it.html', 'docs/index_pl.html'];
+  for (const file of allLandingPages) {
+    const absolute = path.join(rootDir, file);
+    if (!fs.existsSync(absolute)) continue;
+    const html = fs.readFileSync(absolute, 'utf8');
+    const tagMatches = [...html.matchAll(/releases\/tag\/v(\d+\.\d+(?:\.\d+)?)/g)].map((m) => m[1]);
+    const xpiMatches = [...html.matchAll(/releases\/download\/v(\d+\.\d+(?:\.\d+)?)\/thundy-av-(\d+\.\d+(?:\.\d+)?)\.xpi/g)];
+    if (tagMatches.some((v) => v !== manifest.version)) {
+      fail(file + ': release tag link does not match manifest.json version (' + manifest.version + ')');
+    }
+    if (xpiMatches.some((m) => m[1] !== manifest.version || m[2] !== manifest.version)) {
+      fail(file + ': XPI download link does not match manifest.json version (' + manifest.version + ')');
+    }
+  }
+
   if (fs.existsSync(path.join(rootDir, 'package.json'))) {
     try {
       const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
