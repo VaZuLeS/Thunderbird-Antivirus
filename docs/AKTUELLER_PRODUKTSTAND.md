@@ -1,4 +1,6 @@
-# Aktueller Produktstand — 4. November 2026
+# Aktueller Produktstand — 6. November 2026
+
+Die **1.24.7** ergänzt die [vollständige Überarbeitung der Remote-API-Parser (insb. Hybrid Analysis v2 Quick-Scan-Lebenszyklus), die Offline-Darstellung gespeicherter Berichte ohne aktive Einwilligung sowie die direkte Risiko-Score-Integration verifizierter Anhang- und Link-Befunde](VEROEFFENTLICHUNG_1_24_7.md). Tatsächlicher [Veröffentlichungsstatus und Download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.7); ein vorbereiteter Quellstand allein bestätigt keine Veröffentlichung. 1.24.6 bleibt unverändert erhalten.
 
 Die **1.24.6** ergänzt den [Fix für unlesbare gespeicherte Quellenlisten und präzisere Antwortzustände](HOTFIX_QUELLENLADEFEHLER_1_24_6.md). Tatsächlicher [Veröffentlichungsstatus und Download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.6); ein vorbereiteter Quellstand allein bestätigt keine Veröffentlichung. 1.24.5 bleibt unverändert erhalten.
 
@@ -6,7 +8,7 @@ Der [Freigabeumfang 1.24.5](VEROEFFENTLICHUNG_1_24_5.md) ergänzt den Lade-/Dars
 
 Die **1.24.5** behebt einen [reproduzierten Ladeabbruch bei gespeicherten Analyseprotokollen](HOTFIX_ANALYSEERGEBNISSE_1_24_5.md) und ergänzt sichtbare Ergebnis-/Herkunftskennzeichnungen aller fünf Dienste im Popup und in der Nachricht. Die anschließende [Korrektur der Berichtsschaltflächen](BERICHTSAKTIONEN_1_24_5.md) bindet Aktionen an die konkrete Karte und den passenden Ressourcenpfad, auch bei gleichen Anhanghashes. Der aktuelle Veröffentlichungsstatus ist am obigen Release-Link maßgeblich.
 
-Der Freigabeumfang **1.24.4** ergänzt [sichtbare Analysequellen in Nachricht und Toolbar-Popup](ANALYSEQUELLEN_1_24_4.md). Der [nächste Umsetzungsschritt](FORTSCHRITT_AVN_001_002_009.md) korrigiert Ressourceninventare und Kontextcaches; die dauerhafte Identitäts-/Retentionsarbeit bleibt nach einem nativen Gegenbeweis offen. Die weitere [Umsetzung des Informationsdarstellungsplans](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md) ergänzt Ressourcenbezug und ausstehende Prüfzustände. GitHub-Downloadverweise und Pages führen nun die Zielversion 1.24.6; tatsächlicher Veröffentlichungsstatus und Paketbytes sind am Release-Link zu prüfen. 1.24.3 bleibt historisch erhalten.
+Der Freigabeumfang **1.24.4** ergänzt [sichtbare Analysequellen in Nachricht und Toolbar-Popup](ANALYSEQUELLEN_1_24_4.md). Der [nächste Umsetzungsschritt](FORTSCHRITT_AVN_001_002_009.md) korrigiert Ressourceninventare und Kontextcaches; die dauerhafte Identitäts-/Retentionsarbeit bleibt nach einem nativen Gegenbeweis offen. Die weitere [Umsetzung des Informationsdarstellungsplans](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md) ergänzt Ressourcenbezug und ausstehende Prüfzustände. GitHub-Downloadverweise und Pages führen nun die Zielversion 1.24.7; tatsächlicher Veröffentlichungsstatus und Paketbytes sind am Release-Link zu prüfen. 1.24.3 bleibt historisch erhalten.
 
 Die bisherige Weiterentwicklung (Headerparser, Prüfherkunft, Entscheidungsgründe, Prüfumfang und lokaler Supportexport) ist im [aktuellen Ausführungsprotokoll](AUSFUEHRUNG_WEITERENTWICKLUNG_1_24_3.md) abgegrenzt.
 
@@ -36,8 +38,8 @@ Der [reproduzierbare Paketaufbau AVN-014.b](REPRODUZIERBARE_PAKETE.md) erzeugt d
 
 | Ebene | Stand |
 | --- | --- |
-| GitHub-Distribution | Zielversion 1.24.6, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.5 bleibt historisch erhalten |
-| Quellstand | 1.24.6 mit Quellen-Leseprojektion, präzisierter Antwortanzeige und gemeinsamen Dienstkarten; ATN-Signierung und automatische Updates bleiben eigenständige Schritte |
+| GitHub-Distribution | Zielversion 1.24.7, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.6 bleibt historisch erhalten |
+| Quellstand | 1.24.7 mit vervollständigten Remote-API-Parsern, Quick-Scan-Lebenszyklus, Offline-Darstellung gespeicherter Berichte und Risiko-Score-Integration; ATN-Signierung und automatische Updates bleiben eigenständige Schritte |
 | Tatsächliches Add-on | MV3-MailExtension; Hintergrundskripte, eigene HTML-Seiten, IndexedDB und browser.storage.local |
 | React | separate gekennzeichnete Websimulation mit eigenem localStorage; nicht im XPI |
 | Enterprise | deaktivierte Profile plus lokale Node-Werkzeuge; neuer Offline-Audit-Review aktiviert keinen Dienst |
