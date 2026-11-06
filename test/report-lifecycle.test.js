@@ -281,3 +281,93 @@ test('urlscan reportUrl is persisted and rendered as a clickable link in the pop
     assert.equal(await provContext.checkAbuseIPDB('8.8.8.8', 'key'), false);
 });
 
+test('persistHybridReport upgrades UPLOADED state to KNOWN on finished report and get_hybrid_report_by_sha256 triggers refreshThreatBanner', async () => {
+    const sentMessages = [];
+    const state = popup({
+        attachments: [{ attachment_name: 'sample.exe', hybrid_sha256: '1'.repeat(64), hybrid_job_id: 'job-1', state: 'UPLOADED' }],
+        links: [{ url: 'https://test.invalid/', hybrid_sha256: '2'.repeat(64), hybrid_job_id: 'job-2', state: 'UPLOADED' }]
+    });
+    state.context.fetch = async () => ({
+        status: 200,
+        json: async () => ({ state: 'SUCCESS', verdict: 'malicious', threat_score: 100, sha256: '1'.repeat(64) })
+    });
+    state.context.browser.runtime.sendMessage = async (msg) => { sentMessages.push(msg); return { success: true }; };
+    try {
+        await state.context.get_hybrid_report_by_sha256({
+            hybrid_sha: '1'.repeat(64),
+            attachmentName: 'sample.exe',
+            messageId: 42,
+            partName: '1.2',
+            headerMessageId: 'mail',
+            jobId: 'job-1'
+        });
+        assert.equal(state.record.attachments[0].state, 'KNOWN');
+        assert.ok(sentMessages.some(m => m && m.action === 'refreshThreatBanner' && m.messageId === 42));
+
+        await state.context.persistHybridReport({
+            headerMessageId: 'mail',
+            sha256: '2'.repeat(64),
+            jobId: 'job-2',
+            report: { state: 'SUCCESS', verdict: 'suspicious' }
+        });
+        assert.equal(state.record.links[0].state, 'KNOWN');
+    } finally { state.dom.window.close(); }
+});
+
+test('renderStoredResultWithoutConsent and renderManualUrlScanUI render stored hybrid_verdict', () => {
+    const state = popup();
+    state.context.TextEncoder = TextEncoder;
+    try {
+        const container = state.dom.window.document.getElementById('hybrid_analysis_api_content');
+        const card = state.context.renderStoredResultWithoutConsent('https://bad.invalid/', null, container, null, null, { status: 'MALICIOUS' });
+        const verdictEl = card.querySelector('.hybrid-link-verdict');
+        assert.ok(verdictEl);
+        assert.ok(verdictEl.className.includes('text-danger'));
+        assert.match(verdictEl.textContent, /MALICIOUS/);
+
+        state.context.renderManualUrlScanUI('https://susp.invalid/', 'mail', container, null, { status: 'SUSPICIOUS' });
+        const verdicts = container.querySelectorAll('.hybrid-link-verdict');
+        assert.equal(verdicts.length, 2);
+        assert.ok(verdicts[1].className.includes('text-warning'));
+    } finally { state.dom.window.close(); }
+});
+
+test('collectLinkFindings and evaluateLinkFindings incorporate Hybrid Analysis and URLScan.io link verdicts into the threat score', async () => {
+    const riskContext = vm.createContext({
+        sanitizeUrlForLog: u => u,
+        uiText: (_key, fallback, params = []) => params.reduce((text, value, i) => text.replace('$' + (i + 1), value), fallback)
+    });
+    loadSlice('risk.js', 'addReason', riskContext);
+    loadSlice('risk.js', 'evaluateLinkFindings', riskContext);
+    const reasons = [];
+    const score = riskContext.evaluateLinkFindings([
+        { url: 'https://evil.invalid/login', verdict: 'malicious', provider: 'Hybrid Analysis' },
+        { url: 'https://odd.invalid/', verdict: 'suspicious', provider: 'URLScan.io' }
+    ], 0, reasons);
+    assert.equal(score, 115);
+    assert.equal(reasons.length, 2);
+    assert.deepEqual(JSON.parse(JSON.stringify(reasons.details.map(d => d.code))), ['reasonMaliciousLinkVerdict', 'reasonSuspiciousLinkVerdict']);
+
+    const bgContext = vm.createContext({
+        Logger: { warn() {} },
+        getSharedDB: async () => ({}),
+        getFromStore: async () => ({
+            links: [
+                { url: 'https://a.invalid/', report: { verdict: 'malicious' } },
+                { url: 'https://b.invalid/', hybrid_verdict: { status: 'SUSPICIOUS' } },
+                { url: 'https://c.invalid/', urlscan: { status: 'MALICIOUS_VISUAL' } },
+                { url: 'https://d.invalid/', urlscan: { status: 'CLEAN' } }
+            ]
+        })
+    });
+    loadSlice('background.js', 'extractHybridVerdictFromOverview', bgContext);
+    loadSlice('background.js', 'collectLinkFindings', bgContext);
+    const findings = await bgContext.collectLinkFindings({ headerMessageId: 'm' });
+    assert.deepEqual(JSON.parse(JSON.stringify(findings)), [
+        { url: 'https://a.invalid/', verdict: 'malicious', provider: 'Hybrid Analysis' },
+        { url: 'https://b.invalid/', verdict: 'suspicious', provider: 'Hybrid Analysis' },
+        { url: 'https://c.invalid/', verdict: 'malicious', provider: 'URLScan.io' }
+    ]);
+});
+
+

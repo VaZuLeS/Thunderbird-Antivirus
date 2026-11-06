@@ -308,7 +308,11 @@ try {
                         processRecordLinks(record.links, message.headerMessageId, liveContainer, fetchTasks);
                     } else {
                         for (const linkObj of record.links) {
-                            renderStoredResultWithoutConsent(linkObj.url, linkObj.hybrid_sha256, liveContainer, null, linkObj.urlscan);
+                            if (hasFinalStoredReport(linkObj)) {
+                                fetchTasks.push(buildStoredLinkReportTask(linkObj, message.headerMessageId));
+                            } else {
+                                renderStoredResultWithoutConsent(linkObj.url, linkObj.hybrid_sha256, liveContainer, null, linkObj.urlscan, linkObj.hybrid_verdict);
+                            }
                         }
                     }
                 }
@@ -665,6 +669,17 @@ function renderUrlscanResult(urlscan, card) {
     }
 }
 
+function renderHybridLinkVerdict(hybridVerdict, card) {
+    if (!hybridVerdict || typeof hybridVerdict !== 'object' || Array.isArray(hybridVerdict) || typeof hybridVerdict.status !== 'string') return;
+    const status = hybridVerdict.status.trim().toUpperCase();
+    if (!status) return;
+    const statusClass = status === 'MALICIOUS' ? 'text-danger' : status === 'SUSPICIOUS' ? 'text-warning' : status === 'CLEAN' ? 'text-success' : '';
+    const pVerdict = document.createElement('p');
+    pVerdict.className = `ml-2 hybrid-link-verdict ${statusClass}`.trim();
+    pVerdict.textContent = uiText('hybridLinkVerdictStatus', 'Hybrid Analysis: $1', [status]);
+    card.appendChild(pVerdict);
+}
+
 function renderThreatIntelSummary(threatIntel, targetContainer) {
     if (!threatIntel || typeof threatIntel !== 'object' || Array.isArray(threatIntel)) return null;
     const domains = Array.isArray(threatIntel.urlhausDomains) ? threatIntel.urlhausDomains.filter(d => typeof d === 'string' && d.trim()) : [];
@@ -885,7 +900,7 @@ if (typeof browser !== 'undefined' && browser.runtime && browser.runtime.onMessa
  * the popup shows when the global consent is off: the data was already on the
  * machine, so displaying it is fine, only the network lookup is skipped (P0-7).
  */
-function renderStoredResultWithoutConsent(name, hash, targetContainer, virustotal_stats = null, urlscan = null) {
+function renderStoredResultWithoutConsent(name, hash, targetContainer, virustotal_stats = null, urlscan = null, hybridVerdict = null) {
     const container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     if (!container) return null;
 
@@ -906,6 +921,9 @@ function renderStoredResultWithoutConsent(name, hash, targetContainer, virustota
 
     if (virustotal_stats && typeof virustotal_stats === 'object' && !Array.isArray(virustotal_stats)) {
         renderVirusTotalStats(virustotal_stats, card);
+    }
+    if (hybridVerdict && typeof hybridVerdict === 'object' && !Array.isArray(hybridVerdict)) {
+        renderHybridLinkVerdict(hybridVerdict, card);
     }
     if (urlscan && typeof urlscan === 'object' && !Array.isArray(urlscan)) {
         renderUrlscanResult(urlscan, card);
@@ -1195,11 +1213,22 @@ async function persistHybridReport({ headerMessageId, sha256, attachmentName, re
                     (!jobId || item.hybrid_job_id === jobId) &&
                     (!submissionId || item.hybrid_submission_id === submissionId)
                 );
+                const finalReport = !isHybridReportInProgress(report);
                 for (const att of (record.attachments || [])) {
-                    if (matches(att)) { att.report = report; att.report_fetched_at = fetchedAt || new Date().toISOString(); changed = true; }
+                    if (matches(att)) {
+                        att.report = report;
+                        att.report_fetched_at = fetchedAt || new Date().toISOString();
+                        if (finalReport && att.state === 'UPLOADED') att.state = 'KNOWN';
+                        changed = true;
+                    }
                 }
                 for (const link of (record.links || [])) {
-                    if (matches(link)) { link.report = report; link.report_fetched_at = fetchedAt || new Date().toISOString(); changed = true; }
+                    if (matches(link)) {
+                        link.report = report;
+                        link.report_fetched_at = fetchedAt || new Date().toISOString();
+                        if (finalReport && link.state === 'UPLOADED') link.state = 'KNOWN';
+                        changed = true;
+                    }
                 }
                 if (changed) record.updatedAt = updatedAt;
                 return record;
@@ -1296,6 +1325,12 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
                 status.textContent = uiText('reportNotSaved', 'This report could not be saved locally.');
                 reportNode.appendChild(status);
             }
+            if (saved && json_data && !isHybridReportInProgress(json_data) && typeof browser !== 'undefined' && browser.runtime && typeof browser.runtime.sendMessage === 'function') {
+                const activeMessageId = Number.isInteger(messageId) ? messageId : popupMessageId;
+                if (Number.isInteger(activeMessageId)) {
+                    Promise.resolve(browser.runtime.sendMessage({ action: 'refreshThreatBanner', messageId: activeMessageId })).catch(() => {});
+                }
+            }
             if (json_data && isHybridReportInProgress(json_data) && _attempt < HYBRID_REPORT_POLL_MAX_ATTEMPTS) {
                 scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, _attempt: _attempt + 1 }, targetContainer, reportNode);
             }
@@ -1358,7 +1393,7 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
 function processRecordLinks(links, headerMessageId, syncFragment, fetchTasks) {
     for (const linkObj of links) {
         if (linkObj.state === 'UNKNOWN') {
-            renderManualUrlScanUI(linkObj.url, headerMessageId, syncFragment, linkObj.urlscan);
+            renderManualUrlScanUI(linkObj.url, headerMessageId, syncFragment, linkObj.urlscan, linkObj.hybrid_verdict);
         } else if (hasFinalStoredReport(linkObj)) {
             // FA-3: finished protocol already persisted; render it offline.
             fetchTasks.push(buildStoredLinkReportTask(linkObj, headerMessageId));
@@ -1375,7 +1410,7 @@ function processRecordLinks(links, headerMessageId, syncFragment, fetchTasks) {
     }
 }
 
-function renderManualUrlScanUI(url, headerMessageId, targetContainer, urlscan = null) {
+function renderManualUrlScanUI(url, headerMessageId, targetContainer, urlscan = null, hybridVerdict = null) {
     let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     // Erzeuge eine sichere, eindeutige ID für die URL
     const u8 = new TextEncoder().encode(url);
@@ -1402,6 +1437,9 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer, urlscan = 
     pInfo.appendChild(document.createTextNode("."));
     card.appendChild(pInfo);
 
+    if (hybridVerdict && typeof hybridVerdict === 'object' && !Array.isArray(hybridVerdict)) {
+        renderHybridLinkVerdict(hybridVerdict, card);
+    }
     if (urlscan && typeof urlscan === 'object' && !Array.isArray(urlscan)) {
         renderUrlscanResult(urlscan, card);
     }

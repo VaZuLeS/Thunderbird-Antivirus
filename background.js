@@ -792,6 +792,36 @@ async function collectAttachmentFindings(message) {
   }
 }
 
+/**
+ * Reads link verdicts already stored for this message (Hybrid Analysis
+ * report, Hybrid Analysis live link verdict, or URLScan.io result).
+ * Local-only: no provider request is made here.
+ */
+async function collectLinkFindings(message) {
+  if (!message || (!message.headerMessageId && message.id == null)) return [];
+  if (typeof getFromStore !== 'function' || typeof getSharedDB !== 'function') return [];
+  try {
+    const record = await getFromStore(await getSharedDB(), 'hybridanalysis', message.headerMessageId || 'message:' + message.id);
+    const findings = [];
+    for (const link of (record && Array.isArray(record.links) ? record.links : [])) {
+      if (!link || typeof link !== 'object') continue;
+      const url = typeof link.url === 'string' ? link.url : '';
+      const haReportVerdict = link.report && typeof extractHybridVerdictFromOverview === 'function' ? extractHybridVerdictFromOverview(link.report) : null;
+      const haLiveVerdict = link.hybrid_verdict && typeof link.hybrid_verdict.status === 'string' ? link.hybrid_verdict.status.trim().toUpperCase() : null;
+      const ha = haReportVerdict || haLiveVerdict;
+      const urlscanStatus = link.urlscan && typeof link.urlscan.status === 'string' ? link.urlscan.status.trim().toUpperCase() : null;
+      if (ha === 'MALICIOUS') findings.push({ url, verdict: 'malicious', provider: 'Hybrid Analysis' });
+      else if (urlscanStatus === 'MALICIOUS' || urlscanStatus === 'MALICIOUS_VISUAL') findings.push({ url, verdict: 'malicious', provider: 'URLScan.io' });
+      else if (ha === 'SUSPICIOUS') findings.push({ url, verdict: 'suspicious', provider: 'Hybrid Analysis' });
+      else if (urlscanStatus === 'SUSPICIOUS') findings.push({ url, verdict: 'suspicious', provider: 'URLScan.io' });
+    }
+    return findings;
+  } catch (e) {
+    Logger.warn('Link-Befunde konnten nicht gelesen werden', e);
+    return [];
+  }
+}
+
 async function collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal = true, analysisContext = null }) {
   const rawAuthHeaders = (fullMessage.headers && fullMessage.headers['authentication-results']) || [];
   const settings = await browser.storage.local.get('trustedAuthServers');
@@ -802,11 +832,12 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
   const receivedHeaders = (fullMessage.headers && fullMessage.headers['received']) || [];
 
   const domainCoverage = {};
-  const [maliciousIps, urlhausDomains, becData, attachmentFindings] = await Promise.all([
+  const [maliciousIps, urlhausDomains, becData, attachmentFindings, linkFindings] = await Promise.all([
     allowExternal ? checkIPReputation(receivedHeaders, analysisContext) : [],
     allowExternal ? checkURLhausDomains(filteredUrls, parsedUrlCache, domainCoverage, analysisContext) : [],
     extractBecProtectionData(message, fullMessage),
-    typeof collectAttachmentFindings === 'function' ? collectAttachmentFindings(message) : []
+    typeof collectAttachmentFindings === 'function' ? collectAttachmentFindings(message) : [],
+    typeof collectLinkFindings === 'function' ? collectLinkFindings(message) : []
   ]);
 
   if (domainCoverage.detected != null) await persistScanCoverage(message, 'domains', domainCoverage);
@@ -827,7 +858,8 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
     replyTo: becData.replyTo,
     parsedUrlCache,
     maliciousIps,
-    attachmentFindings
+    attachmentFindings,
+    linkFindings
   };
 }
 
@@ -1926,6 +1958,29 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 recordLocalCoverage(context, threat.coverage);
                 return threat;
             })().then(threat => sendResponse({ status: 'success', threat })).catch(() => sendResponse({ status: 'error' }));
+            return true;
+        case "refreshThreatBanner":
+            if (sender?.url?.split(/[?#]/)[0] !== browser.runtime.getURL('popup.html') || !Number.isInteger(request.messageId)) { sendResponse({ success: false }); return false; }
+            (async () => {
+                const message = await browser.messages.get(request.messageId);
+                const fullMessage = await readFullForAnalysis(message);
+                const messageText = extractTextFromParts(fullMessage.parts || fullMessage);
+                const urls = extractUrls(messageText);
+                const filteredUrls = filterUrls(urls);
+                const parsedUrlCache = new Map();
+                const context = await getMessageAnalysisContext(message, null, { fullMessage });
+                const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls, messageText, parsedUrlCache, allowExternal: false, analysisContext: context });
+                const threat = calculateThreatScore(message.author, urls, options);
+                threat.coverage = localContentCoverage(fullMessage);
+                for (const tab of (context && context.tabs ? context.tabs : [])) {
+                    try {
+                        const active = await getFirstDisplayedMessage(tab, { throwOnError: true });
+                        if (!context.disposed && active?.id === message.id) await injectThreatBanner(tab, threat);
+                    } catch (_) { /* closed or changed message */ }
+                }
+                if (context) { recordLocalCoverage(context, threat.coverage); await context.flush().catch(() => {}); }
+                return { success: true, score: threat.score };
+            })().then(sendResponse).catch(() => sendResponse({ success: false }));
             return true;
         case "clearMemoryCaches":
             if (typeof clearReportArchiveWarnings === 'function') clearReportArchiveWarnings();

@@ -432,12 +432,35 @@ function evaluateAttachmentFindings(findings, score, reasons) {
     return score;
 }
 
+/**
+ * Link verdicts already obtained from Hybrid Analysis or URLScan.io.
+ * Each finding: { url, verdict: 'malicious' | 'suspicious', provider }.
+ */
+function evaluateLinkFindings(findings, score, reasons) {
+    if (!Array.isArray(findings)) return score;
+    for (const finding of findings.slice(0, 20)) {
+        if (!finding || typeof finding !== 'object') continue;
+        const rawUrl = typeof finding.url === 'string' && finding.url.trim() ? finding.url.trim() : '?';
+        const displayUrl = typeof sanitizeUrlForLog === 'function' ? sanitizeUrlForLog(rawUrl).slice(0, 200) : rawUrl.slice(0, 200);
+        const provider = typeof finding.provider === 'string' && finding.provider.trim() ? finding.provider.trim() : 'Scanner';
+        if (finding.verdict === 'malicious') {
+            score += 80;
+            addReason(reasons, "reasonMaliciousLinkVerdict", "Link \"$1\" wurde von $2 als bösartig eingestuft.", [displayUrl, provider]);
+        } else if (finding.verdict === 'suspicious') {
+            score += 35;
+            addReason(reasons, "reasonSuspiciousLinkVerdict", "Link \"$1\" wurde von $2 als verdächtig eingestuft.", [displayUrl, provider]);
+        }
+    }
+    return score;
+}
+
 function calculateThreatScore(author, urls, options = {}) {
     const {
         authHeaders = [],
         urlhausDomains = [],
         maliciousIps = [],
         attachmentFindings = [],
+        linkFindings = [],
         isFirstCommunication = false,
         messageText = "",
         subject = "",
@@ -462,6 +485,7 @@ function calculateThreatScore(author, urls, options = {}) {
     score = evaluateUrlhaus(urlhausDomains, score, reasons);
     score = evaluateMaliciousIps(maliciousIps, score, reasons);
     score = evaluateAttachmentFindings(attachmentFindings, score, reasons);
+    score = evaluateLinkFindings(linkFindings, score, reasons);
     score = evaluateReplyTo(replyTo, senderDomain, score, reasons);
     score = evaluateBehavior(subject, messageText, isFirstCommunication, score, reasons);
 

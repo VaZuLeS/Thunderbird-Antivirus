@@ -1933,5 +1933,35 @@
   },
   "urlscanReportLink": {
     "message": "Vollständigen Bericht auf urlscan.io öffnen"
+  },
+  "hybridLinkVerdictStatus": {
+    "message": "Hybrid Analysis: $STATUS$",
+    "placeholders": {
+      "status": {
+        "content": "$1"
+      }
+    }
+  },
+  "reasonMaliciousLinkVerdict": {
+    "message": "Link „$URL$“ wurde von $PROVIDER$ als bösartig eingestuft.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
+  },
+  "reasonSuspiciousLinkVerdict": {
+    "message": "Link „$URL$“ wurde von $PROVIDER$ als verdächtig eingestuft.",
+    "placeholders": {
+      "url": {
+        "content": "$1"
+      },
+      "provider": {
+        "content": "$2"
+      }
+    }
   }
 }
