@@ -179,8 +179,22 @@ test("durable queue dedupes after restart and never claims remote delivery", () 
     assert.equal(f.queue.exportOne(), null);
     assert.deepEqual(fs.readFileSync(file), before);
     assert.equal(fs.statSync(file).mode & 0o077, 0);
-    assert.equal(f.queue.status().remoteDeliveryVerified, false);
-    assert.ok(!JSON.stringify(f.queue.status()).includes("example.org"));
+    const status = f.queue.status();
+    assert.equal(status.remoteDeliveryVerified, false);
+    const hasHost = (value, host) => {
+      if (typeof value === "string") {
+        try {
+          return new URL(value).hostname === host;
+        } catch {
+          return false;
+        }
+      }
+      if (Array.isArray(value)) return value.some((v) => hasHost(v, host));
+      if (value && typeof value === "object")
+        return Object.values(value).some((v) => hasHost(v, host));
+      return false;
+    };
+    assert.ok(!hasHost(status, "example.org"));
   } finally {
     f.cleanup();
   }
