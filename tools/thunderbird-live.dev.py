@@ -1905,6 +1905,7 @@ def main():
                         pass
                 server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), LocalPage)
                 tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                tls.minimum_version = ssl.TLSVersion.TLSv1_2
                 tls.load_cert_chain(cert, key)
                 server.socket = tls.wrap_socket(server.socket, server_side=True)
                 threading.Thread(target=server.serve_forever, daemon=True).start()
