@@ -31,6 +31,7 @@ async function checkAbuseIPDB(ip, apikey, analysisContext = null) {
         });
         if (response.status !== 200) return null;
         const data = await response.json();
+        if (data?.data?.isWhitelisted === true) return false;
         if (Number.isFinite(data?.data?.abuseConfidenceScore)) return data.data.abuseConfidenceScore > 50;
     } catch (e) {
         Logger.error("Fehler bei AbuseIPDB Abfrage", e);
@@ -240,12 +241,16 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
                  }
             }
 
+            const rawReportUrl = typeof resultData?.task?.reportURL === 'string' && /^https:\/\/urlscan\.io\/result\//i.test(resultData.task.reportURL)
+                ? resultData.task.reportURL
+                : `https://urlscan.io/result/${encodeURIComponent(uuid)}/`;
+
             if (isMalicious) {
-                return { status: 'MALICIOUS_VISUAL', reasons: reasons };
+                return { status: 'MALICIOUS_VISUAL', reasons: reasons, reportUrl: rawReportUrl };
             } else if (isSuspicious) {
-                return { status: 'SUSPICIOUS', reasons: reasons };
+                return { status: 'SUSPICIOUS', reasons: reasons, reportUrl: rawReportUrl };
             } else {
-                return { status: 'CLEAN' };
+                return { status: 'CLEAN', reportUrl: rawReportUrl };
             }
         } else if (resultRes.status === 404) {
             // Not ready yet, continue polling

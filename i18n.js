@@ -1932,6 +1932,9 @@ const ThundyI18n = (() => {
         "content": "$2"
       }
     }
+  },
+  "urlscanReportLink": {
+    "message": "Open full report on urlscan.io"
   }
 };
     function get(key, params = []) {

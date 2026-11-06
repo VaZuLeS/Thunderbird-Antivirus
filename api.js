@@ -643,6 +643,26 @@ function renderUrlscanResult(urlscan, card) {
             card.appendChild(pReason);
         }
     }
+
+    if (typeof urlscan.reportUrl === 'string' && /^https:\/\/urlscan\.io\/result\/[A-Za-z0-9_-]+\/?$/i.test(urlscan.reportUrl.trim())) {
+        const cleanUrl = urlscan.reportUrl.trim();
+        const pLink = document.createElement('p');
+        pLink.className = 'ml-4';
+        const a = document.createElement('a');
+        a.href = cleanUrl;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.className = 'urlscan-report-link';
+        a.textContent = uiText('urlscanReportLink', 'Open full report on urlscan.io');
+        a.addEventListener('click', event => {
+            if (typeof browser !== 'undefined' && browser.windows && typeof browser.windows.openDefaultBrowser === 'function') {
+                event.preventDefault();
+                Promise.resolve(browser.windows.openDefaultBrowser(cleanUrl)).catch(() => {});
+            }
+        });
+        pLink.appendChild(a);
+        card.appendChild(pLink);
+    }
 }
 
 function renderThreatIntelSummary(threatIntel, targetContainer) {

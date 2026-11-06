@@ -1930,5 +1930,8 @@
         "content": "$2"
       }
     }
+  },
+  "urlscanReportLink": {
+    "message": "Open full report on urlscan.io"
   }
 }

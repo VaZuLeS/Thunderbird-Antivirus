@@ -1927,5 +1927,8 @@
         "content": "$2"
       }
     }
+  },
+  "urlscanReportLink": {
+    "message": "Abrir el informe completo en urlscan.io"
   }
 }

@@ -509,12 +509,14 @@ async function processAndUploadUrls(message, filteredUrls, allowExternal = true,
                     const response = await apiGateway.fetchWithTimeout(options.url, options);
                     if (response.status === 200 || response.status === 201) {
                         const json_data = await response.json();
+                        const quickReport = typeof quickScanReport === 'function' ? quickScanReport(json_data) : null;
                         result = {
                             url: url,
                             state: 'UPLOADED',
                             hybrid_submission_id: json_data.submission_id || json_data.id,
                             hybrid_job_id: json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id,
-                            hybrid_sha256: json_data.sha256
+                            hybrid_sha256: json_data.sha256,
+                            ...(quickReport && { report: quickReport, report_fetched_at: new Date().toISOString() })
                         };
                     }
                 } catch (e) {
@@ -1600,6 +1602,9 @@ async function persistUrlscanLinkResult(message, url, res) {
         const reqUrl = url.endsWith('/') ? url.slice(0, -1) : url;
         const reqUrlSlash = reqUrl + '/';
         const observedAt = Date.now();
+        const reportUrl = typeof res.reportUrl === 'string' && /^https:\/\/urlscan\.io\/result\/[A-Za-z0-9_-]+\/?$/i.test(res.reportUrl.trim())
+            ? res.reportUrl.trim()
+            : null;
         await updateStore(db, 'hybridanalysis', message.headerMessageId, existingRecord => {
             if (!existingRecord || !Array.isArray(existingRecord.links)) return existingRecord;
             for (const item of existingRecord.links) {
@@ -1607,6 +1612,7 @@ async function persistUrlscanLinkResult(message, url, res) {
                     item.urlscan = {
                         status: res.status,
                         reasons: Array.isArray(res.reasons) ? res.reasons : [],
+                        ...(reportUrl && { reportUrl }),
                         observedAt
                     };
                 }
@@ -1698,9 +1704,17 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         }
 
         if (linkObj) {
-            // A previously observed live verdict outranks the submission state.
+            // A previously observed live verdict or stored report outranks the submission state.
             const storedVerdict = linkObj.hybrid_verdict && ['MALICIOUS', 'SUSPICIOUS', 'CLEAN'].includes(linkObj.hybrid_verdict.status) ? linkObj.hybrid_verdict : null;
-            const result = await checkHybridAnalysisResult(linkObj.hybrid_sha256, storedVerdict ? storedVerdict.status : linkObj.state, { requested: request.userAction === true, observedAt: storedVerdict && Number.isFinite(storedVerdict.observedAt) ? storedVerdict.observedAt : linkObj.observedAt, analysisContext });
+            const reportVerdict = !storedVerdict && linkObj.report && typeof extractHybridVerdictFromOverview === 'function' ? extractHybridVerdictFromOverview(linkObj.report) : null;
+            const fallbackStatus = storedVerdict ? storedVerdict.status : (reportVerdict || linkObj.state);
+            const fallbackObservedAt = storedVerdict && Number.isFinite(storedVerdict.observedAt) ? storedVerdict.observedAt : linkObj.observedAt;
+            const result = await checkHybridAnalysisResult(linkObj.hybrid_sha256, fallbackStatus, {
+                requested: request.userAction === true,
+                observedAt: fallbackObservedAt,
+                analysisContext,
+                quickScanId: linkObj.hybrid_submission_id || linkObj.hybrid_job_id || null
+            });
             if (result && result.check && result.check.origin === 'live' && result.check.outcome === 'success' && typeof persistHybridLinkVerdict === 'function') {
                 await persistHybridLinkVerdict(message, linkObj.url, result);
             }
@@ -1779,7 +1793,7 @@ function quickScanReport(json_data) {
 
 // Optional legacy fields never imply a known observation time. `created` on a
 // submission is not the time a provider observed its final verdict.
-async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { requested = true, observedAt = null, analysisContext = null } = {}) {
+async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { requested = true, observedAt = null, analysisContext = null, quickScanId = null } = {}) {
     const check = { origin: fallbackState ? 'stored' : 'none', outcome: 'not_requested', attemptedAt: requested ? Date.now() : null, observedAt: Number.isFinite(observedAt) ? observedAt : null };
     const fallback = () => ({ status: fallbackState || 'UNKNOWN', check });
     if (!requested) return fallback();
@@ -1792,7 +1806,13 @@ async function checkHybridAnalysisResult(hybrid_sha256, fallbackState, { request
     try { await requireHostPermission(options.url); }
     catch (error) { check.outcome = 'permission_denied'; return fallback(); }
     try {
-        const response = await apiGateway.fetchWithTimeout(options.url, options);
+        let response = await apiGateway.fetchWithTimeout(options.url, options);
+        const qsId = quickScanId != null ? String(quickScanId) : '';
+        if (response.status === 404 && /^[A-Za-z0-9_-]{1,128}$/.test(qsId) && !['MANUAL_CHECK', 'PENDING_UPLOAD', 'N/A'].includes(qsId)) {
+            const qsUrl = 'https://hybrid-analysis.com/api/v2/quick-scan/' + encodeURIComponent(qsId);
+            await requireHostPermission(qsUrl);
+            response = await apiGateway.fetchWithTimeout(qsUrl, { ...options, url: qsUrl });
+        }
         if (response.ok === false) throw new Error('Provider HTTP failure');
         const data = await response.json();
         const verdict = extractHybridVerdictFromOverview(data);

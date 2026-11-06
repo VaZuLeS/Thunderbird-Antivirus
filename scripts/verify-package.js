@@ -118,9 +118,9 @@ const FORBIDDEN = [
 ];
 // Six complete catalogs and a bundled Public Suffix List require more than the former 400 KiB budget.
 // First-install wizard adds six-language instructions, UI and bundled fallback.
-// 1.23.0 ships 44 allowlisted files including the shared design runtime/CSS.
+// 1.24.6 ships 47 allowlisted files including analysis_status, source_export and remote provider parsers.
 // Generator sources stay excluded; retain a small, explicit size budget.
-const MAX_UNCOMPRESSED_BYTES = 1000 * 1024;
+const MAX_UNCOMPRESSED_BYTES = 1200 * 1024;
 
 /**
  * Picks the artifact to check. `web-ext` writes one ZIP per version into the

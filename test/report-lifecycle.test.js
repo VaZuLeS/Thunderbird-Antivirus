@@ -221,3 +221,63 @@ test('a live Hybrid Analysis link verdict is persisted and restored into the pro
     assert.equal(row.verdict, 'malicious');
     assert.equal(row.scope, 'url');
 });
+
+test('checkHybridAnalysisResult falls back to GET /quick-scan/{id} on 404 overview', async () => {
+    const requestedUrls = [];
+    const context = vm.createContext({
+        mayTransmitExternally: () => true,
+        apikey_hybridanalysis: 'key',
+        getHybridAnalysisOptions: () => ({}),
+        requireHostPermission: async () => {},
+        apiGateway: {
+            fetchWithTimeout: async (url) => {
+                requestedUrls.push(url);
+                if (url.includes('/overview/')) return { ok: false, status: 404, json: async () => ({}) };
+                return { ok: true, status: 200, json: async () => ({ finished: true, scanners_v2: { crowdstrike_ml: { status: 'malicious' } } }) };
+            }
+        }
+    });
+    loadSlice('background.js', 'extractHybridVerdictFromOverview', context);
+    loadSlice('background.js', 'checkHybridAnalysisResult', context);
+    const res = await context.checkHybridAnalysisResult('f'.repeat(64), 'UPLOADED', { requested: true, quickScanId: 'qs-live-1' });
+    assert.equal(res.status, 'MALICIOUS');
+    assert.equal(res.check.origin, 'live');
+    assert.equal(requestedUrls.length, 2);
+    assert.ok(requestedUrls[1].endsWith('/api/v2/quick-scan/qs-live-1'));
+});
+
+test('urlscan reportUrl is persisted and rendered as a clickable link in the popup, and checkAbuseIPDB respects isWhitelisted', async () => {
+    const record = { links: [{ url: 'https://phish.invalid/' }] };
+    const bgContext = vm.createContext({ Logger: { error() {} }, getSharedDB: async () => ({}), updateStore: async (_db, _store, _key, edit) => edit(record) });
+    loadSlice('background.js', 'persistUrlscanLinkResult', bgContext);
+    await bgContext.persistUrlscanLinkResult({ headerMessageId: 'm' }, 'https://phish.invalid/', {
+        status: 'MALICIOUS_VISUAL',
+        reasons: ['Brand spoof'],
+        reportUrl: 'https://urlscan.io/result/12345678-aaaa-bbbb-cccc-1234567890ab/'
+    });
+    assert.equal(record.links[0].urlscan.reportUrl, 'https://urlscan.io/result/12345678-aaaa-bbbb-cccc-1234567890ab/');
+
+    const state = popup();
+    try {
+        const card = state.dom.window.document.createElement('div');
+        state.context.renderUrlscanResult(record.links[0].urlscan, card);
+        const link = card.querySelector('a.urlscan-report-link');
+        assert.ok(link);
+        assert.equal(link.getAttribute('href'), 'https://urlscan.io/result/12345678-aaaa-bbbb-cccc-1234567890ab/');
+    } finally { state.dom.window.close(); }
+
+    const provContext = vm.createContext({
+        mayTransmitExternally: () => true,
+        requireHostPermission: async () => {},
+        Logger: { error() {} },
+        apiGateway: {
+            fetchWithTimeout: async () => ({
+                status: 200,
+                json: async () => ({ data: { abuseConfidenceScore: 95, isWhitelisted: true } })
+            })
+        }
+    });
+    loadSlice('providers.js', 'checkAbuseIPDB', provContext);
+    assert.equal(await provContext.checkAbuseIPDB('8.8.8.8', 'key'), false);
+});
+
