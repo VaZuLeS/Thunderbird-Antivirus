@@ -799,9 +799,9 @@ tag: tag,
             headerMessageId: 'hdr1'
         });
 
-        for (let i = 0; i < 4; i += 1) await new Promise((resolve) => setImmediate(resolve));
+        for (let i = 0; i < 12; i += 1) await new Promise((resolve) => setImmediate(resolve));
 
-        assert.strictEqual(fetchCalls, 3, 'polling must stop at HYBRID_REPORT_POLL_MAX_ATTEMPTS');
+        assert.strictEqual(fetchCalls, context.HYBRID_REPORT_POLL_MAX_ATTEMPTS ?? 8, 'polling must stop at HYBRID_REPORT_POLL_MAX_ATTEMPTS');
 
         context.fetch_hybrid_report = originalFetch;
         context.setTimeout = originalSetTimeout;
@@ -2256,7 +2256,7 @@ describe('renderReport', () => {
         });
 
         assert.strictEqual(card.tagName, 'div');
-        assert.strictEqual(card.className, 'card mb-3');
+        assert.strictEqual(card.className, 'card card-success mb-3');
         const h2 = card.childNodes[0];
         assert.strictEqual(h2.textContent, 'Geprüftes Element: test.pdf');
     });
@@ -2285,7 +2285,7 @@ describe('renderReport', () => {
         });
 
         assert.strictEqual(card.tagName, 'div');
-        assert.strictEqual(card.className, 'card mb-3');
+        assert.strictEqual(card.className, 'card card-danger mb-3');
         const h2 = card.childNodes[0];
         assert.strictEqual(h2.textContent, 'Geprüftes Element: malicious.exe');
     });

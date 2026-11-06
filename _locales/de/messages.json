@@ -1894,5 +1894,19 @@
         "content": "$1"
       }
     }
+  },
+  "hybridReportLink": {
+    "message": "Vollständigen Bericht auf Hybrid Analysis öffnen"
+  },
+  "hybridProviderMessage": {
+    "message": "Meldung des Anbieters: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Das Rate-Limit bzw. Kontingent von Hybrid Analysis wurde erreicht. Bitte später erneut versuchen."
   }
 }

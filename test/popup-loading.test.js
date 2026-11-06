@@ -129,7 +129,7 @@ test('URL report rescan uses the bound URL action and offers no local attachment
 
 test('one unreadable stored protocol does not erase its neighboring report or rewrite stored data',async()=>{
  const record={links:[
-  {url:'https://broken.example.invalid',state:'KNOWN',hybrid_sha256:'a',report:{state:'COMPLETE',last_file_name:{toString:null}}},
+  {url:'https://broken.example.invalid',state:'KNOWN',hybrid_sha256:'a',report:{state:'COMPLETE',analysis_start_time:{toString:null,valueOf:null}}},
   {url:'https://valid.example.invalid',state:'KNOWN',hybrid_sha256:'b',report:{state:'COMPLETE',threat_score:90,verdict:'malicious'}}
  ]},before=JSON.stringify(record);
  const f=await popup(record);try{

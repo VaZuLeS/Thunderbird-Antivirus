@@ -1891,5 +1891,19 @@
         "content": "$1"
       }
     }
+  },
+  "hybridReportLink": {
+    "message": "Apri il report completo su Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Messaggio del fornitore: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "È stato raggiunto il limite di richieste o la quota di Hybrid Analysis. Riprova più tardi."
   }
 }

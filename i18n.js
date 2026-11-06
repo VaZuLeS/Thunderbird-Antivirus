@@ -1896,6 +1896,20 @@ const ThundyI18n = (() => {
         "content": "$1"
       }
     }
+  },
+  "hybridReportLink": {
+    "message": "Open full report on Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Provider message: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "The Hybrid Analysis rate limit or quota was reached. Please try again later."
   }
 };
     function get(key, params = []) {

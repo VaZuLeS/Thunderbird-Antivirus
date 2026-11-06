@@ -461,12 +461,50 @@ function deriveHybridVerdict(json_data) {
     const threatScore = typeof json_data.threat_score === 'number' && Number.isFinite(json_data.threat_score) ? json_data.threat_score : null;
     const multiscan = typeof json_data.multiscan_result === 'number' && Number.isFinite(json_data.multiscan_result) ? json_data.multiscan_result : null;
 
-    if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50)) return 'malicious';
-    if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0)) return 'suspicious';
+    if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50) || json_data.threat_level === 2) return 'malicious';
+    if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0) || json_data.threat_level === 1) return 'suspicious';
     if (json_data.whitelisted === true) return 'whitelisted';
-    if (hasCleanScanner) return 'clean';
+    if (hasCleanScanner || (json_data.threat_level === 0 && !isHybridReportInProgress(json_data))) return 'clean';
     return rawVerdict;
 }
+
+/**
+ * Maps a Hybrid Analysis report to a card severity class so malicious,
+ * suspicious and clean results are distinguishable at a glance.
+ */
+function hybridVerdictCardClass(json_data) {
+    if (isHybridReportInProgress(json_data)) return '';
+    const verdict = String(deriveHybridVerdict(json_data) || '').toLowerCase();
+    if (verdict === 'malicious') return 'card-danger';
+    if (verdict === 'suspicious') return 'card-warning';
+    if (['no specific threat', 'no threat', 'clean', 'whitelisted'].includes(verdict)) return 'card-success';
+    return '';
+}
+
+/**
+ * Renders a link to the full public Hybrid Analysis report. The link opens in
+ * the user's default browser; nothing is transmitted by rendering it.
+ */
+function renderHybridReportLink(sha256, card) {
+    if (typeof sha256 !== 'string' || !/^[0-9a-f]{64}$/i.test(sha256)) return;
+    const url = 'https://www.hybrid-analysis.com/sample/' + sha256.toLowerCase();
+    const p = document.createElement('p');
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.className = 'hybrid-report-link';
+    a.textContent = uiText('hybridReportLink', 'Open full report on Hybrid Analysis');
+    a.addEventListener('click', event => {
+        if (typeof browser !== 'undefined' && browser.windows && typeof browser.windows.openDefaultBrowser === 'function') {
+            event.preventDefault();
+            Promise.resolve(browser.windows.openDefaultBrowser(url)).catch(() => {});
+        }
+    });
+    p.appendChild(a);
+    card.appendChild(p);
+}
+
 
 function renderThreatInfo(json_data, card) {
     const score = typeof json_data.threat_score === 'number' && Number.isFinite(json_data.threat_score) && json_data.threat_score >= 0 && json_data.threat_score <= 100 ? json_data.threat_score : null;
@@ -500,19 +538,27 @@ function renderThreatInfo(json_data, card) {
     pVerdict.appendChild(verdictStrong);
     pVerdict.appendChild(document.createTextNode(" "));
     const verdictSpan = document.createElement('span');
-    verdictSpan.className = threatClass;
     const resolvedVerdict = deriveHybridVerdict(json_data);
+    const verdictLower = String(resolvedVerdict).toLowerCase();
+    // Quick-scan payloads often carry no threat_score; colour the verdict itself then.
+    verdictSpan.className = score !== null ? threatClass
+        : verdictLower === 'malicious' ? 'text-danger'
+        : verdictLower === 'suspicious' ? 'text-warning'
+        : ['no specific threat', 'no threat', 'clean', 'whitelisted'].includes(verdictLower) ? 'text-success'
+        : threatClass;
     const verdictKeys = { 'no specific threat': 'providerNoDetection', 'no threat': 'providerNoDetection', 'clean': 'providerNoDetection', 'whitelisted': 'providerNoDetection', 'malicious': 'providerMalicious', 'suspicious': 'providerSuspicious', 'in progress': 'providerPending' };
-    const verdictKey = verdictKeys[String(resolvedVerdict).toLowerCase()];
+    const verdictKey = verdictKeys[verdictLower];
     verdictSpan.textContent = verdictKey && typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(verdictKey) : typeof resolvedVerdict === 'string' && resolvedVerdict ? resolvedVerdict : uiText('providerUnknown','Unknown');
     pVerdict.appendChild(verdictSpan);
     card.appendChild(pVerdict);
 
+    const vxFamily = typeof json_data.vx_family === 'string' && json_data.vx_family.trim() ? json_data.vx_family.trim() : '';
     const pVxFamily = document.createElement('p');
+    if (vxFamily) pVxFamily.className = 'text-danger';
     const vxStrong = document.createElement('strong');
     vxStrong.textContent = uiText("ui_015", "Vx-Familie:");
     pVxFamily.appendChild(vxStrong);
-    pVxFamily.appendChild(document.createTextNode(` ${json_data.vx_family || 'N/A'}`));
+    pVxFamily.appendChild(document.createTextNode(` ${vxFamily || 'N/A'}`));
     card.appendChild(pVxFamily);
 
     const pMulti = document.createElement('p');
@@ -690,21 +736,26 @@ function renderScannerResults(scanners, card, scanners_v2 = null) {
     }
 }
 
-function renderFileDetails(json_data, card, boundHash = null) {
+function renderFileDetails(json_data, card, boundHash = null, knownName = null) {
     const pHash256 = document.createElement('p');
     pHash256.textContent = uiText("ui_030", "SHA-256-Hashwert: $1", [json_data.sha256 || boundHash || uiText('providerUnknown','Unknown')]);
     card.appendChild(pHash256);
 
+    const text = value => typeof value === 'string' && value.trim() ? value.trim() : '';
+    const fileName = text(json_data.last_file_name) || text(json_data.submit_name) ||
+        (Array.isArray(json_data.submissions) ? json_data.submissions.map(s => text(s && s.filename)).find(Boolean) : '') ||
+        text(knownName);
     const pFileName = document.createElement('p');
-    pFileName.textContent = uiText("ui_031", "Letzter Dateiname: $1", [json_data.last_file_name || 'N/A']);
+    pFileName.textContent = uiText("ui_031", "Letzter Dateiname: $1", [fileName || 'N/A']);
     card.appendChild(pFileName);
 
     const pSize = document.createElement('p');
     pSize.textContent = uiText("ui_032", "Größe: $1 Bytes", [(typeof ThundyI18n !== 'undefined' ? ThundyI18n.number(json_data.size) : json_data.size) ?? 'N/A']);
     card.appendChild(pSize);
 
+    const typeShort = Array.isArray(json_data.type_short) ? json_data.type_short.filter(t => typeof t === 'string' && t.trim()).join(', ') : text(json_data.type_short);
     const pType = document.createElement('p');
-    pType.textContent = uiText("ui_033", "Typ: $1", [json_data.type || 'N/A']);
+    pType.textContent = uiText("ui_033", "Typ: $1", [text(json_data.type) || typeShort || 'N/A']);
     card.appendChild(pType);
 }
 
@@ -764,7 +815,8 @@ function renderProtocolMeta({ hybrid_sha, jobId = null, submissionId = null, fet
 function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats = null, urlscan = null, jobId = null, submissionId = null, fetched_at = null, attempt = null, controlId = hybrid_sha, allowCdr = true }) {
     if (!json_data || typeof json_data !== 'object' || Array.isArray(json_data)) throw new TypeError('Invalid report');
     const card = document.createElement('div');
-    card.className = "card mb-3";
+    const verdictClass = hybridVerdictCardClass(json_data);
+    card.className = verdictClass ? `card ${verdictClass} mb-3` : "card mb-3";
 
     const h2 = document.createElement('h2');
     h2.textContent = uiText("ui_036", "Geprüftes Element: $1", [attachmentName || uiText('unknownAttachment', "Unbekannt")]);
@@ -796,7 +848,9 @@ function renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats 
         notice.textContent = uiText('reportFieldsUnavailable','Some report details have an unsupported format and could not be displayed.');
         card.appendChild(notice);
     }
-    renderFileDetails(json_data, card, hybrid_sha);
+    const knownName = typeof attachmentName === 'string' && !/^https?:\/\//i.test(attachmentName) ? attachmentName : null;
+    renderFileDetails(json_data, card, hybrid_sha, knownName);
+    renderHybridReportLink(json_data.sha256 || hybrid_sha, card);
     renderActionButtons(controlId, attachmentName, card, allowCdr);
     return card;
 }
@@ -851,7 +905,9 @@ function hasExternalAnalysisConsent() {
     return externalAnalysisConsent === true;
 }
 
-async function fetch_hybrid_report(hybrid_sha, resource = null) {
+const HYBRID_QUICK_SCAN_ID = /^[A-Za-z0-9_-]{1,128}$/;
+
+async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = null) {
     const reportContext = popupAnalysisContext ? {scopeOverride:'report', event:event => { if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) ThundyAnalysis.cacheTime('hybridanalysis','report',hybrid_sha,event.observedAt); return popupAnalysisContext.event({...event,resource}); }} : null;
     if (!hasExternalAnalysisConsent()) {
         throw new Error('external-analysis-disabled');
@@ -879,13 +935,27 @@ async function fetch_hybrid_report(hybrid_sha, resource = null) {
         },
     };
 
+    const request = async (url) => {
+        const response = typeof apiGateway !== 'undefined' ? await apiGateway.fetchWithTimeout(url, { ...options, url }) : await fetch(url, { ...options, url });
+        let json_data = null;
+        try { json_data = await response.json(); }
+        catch (error) { if (response.status === 200) throw error; }
+        return { response, json_data };
+    };
+
     const fetchPromise = (async () => {
         try {
-            const response = typeof apiGateway !== 'undefined' ? await apiGateway.fetchWithTimeout(options.url, options) : await fetch(options.url, options);
-            const json_data = await response.json();
-
-            const result = { response, json_data };
-            if (response.status !== 200) {
+            let result = await request(options.url);
+            // A fresh quick-scan submission is often not yet known to the
+            // overview endpoint. Its scanner state lives under /quick-scan/{id}.
+            const qsId = quickScanId != null ? String(quickScanId) : '';
+            if (result.response.status === 404 && HYBRID_QUICK_SCAN_ID.test(qsId) && !['MANUAL_CHECK', 'PENDING_UPLOAD', 'N/A'].includes(qsId)) {
+                const quick = await request('https://hybrid-analysis.com/api/v2/quick-scan/' + encodeURIComponent(qsId));
+                if (quick.response.status === 200 && quick.json_data && typeof quick.json_data === 'object' && !Array.isArray(quick.json_data)) {
+                    result = { response: quick.response, json_data: { ...quick.json_data, sha256: quick.json_data.sha256 || hybrid_sha }, source: 'quick-scan' };
+                }
+            }
+            if (result.response.status !== 200) {
                 hybrid_report_cache.delete(hybrid_sha);
             }
 
@@ -1006,14 +1076,14 @@ function setupCdrButton({ hybrid_sha, attachmentName, messageId, partName, contr
     }
 }
 
-function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, json_data, jobId = null, submissionId = null, fetched_at = null, attempt = null }, targetContainer, replaceNode = null) {
+function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan = null, json_data, jobId = null, submissionId = null, fetched_at = null, attempt = null }, targetContainer, replaceNode = null) {
     let container = targetContainer || document.getElementById('hybrid_analysis_api_content');
     const boundMessageId = messageId ?? popupMessageId;
     const kind = Number.isInteger(boundMessageId) && boundMessageId > 0 ? partName ? 'attachment' : popupLinkResources.has(attachmentName) ? 'link' : 'unknown' : 'unknown';
     // Presentation IDs are local to this popup, not resource identities. Equal
     // file contents can occur in multiple parts and must have distinct controls.
     const controlId = 'thundy-report-' + (++hybridReportCardSequence);
-    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats, jobId, submissionId, fetched_at, attempt, controlId, allowCdr:kind === 'attachment' });
+    let reportNode = renderReport({ json_data, attachmentName, hybrid_sha, virustotal_stats, urlscan, jobId, submissionId, fetched_at, attempt, controlId, allowCdr:kind === 'attachment' });
     // A poll attempt replaces the previous (still IN_PROGRESS) card instead of
     // appending a duplicate report (FA-1).
     if (replaceNode && typeof replaceNode.replaceWith === 'function') {
@@ -1027,7 +1097,7 @@ function render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partNa
     return reportNode;
 }
 
-function handle_hybrid_report_error(response, attachmentName, targetContainer) {
+function handle_hybrid_report_error(response, attachmentName, targetContainer, json_data = null) {
     console.error(`Hybrid Analysis API error: ${response.status} - ${response.statusText}`);
     let errDiv1 = document.createElement('div');
     errDiv1.className = 'alert-error';
@@ -1037,6 +1107,22 @@ function handle_hybrid_report_error(response, attachmentName, targetContainer) {
     errMsg.id = 'api-error-msg-key';
     errMsg.textContent = uiText("ui_054", "API Error: $1 für Element $2", [response.status, attachmentName]);
     errDiv1.appendChild(errMsg);
+
+    // Hybrid Analysis explains quota, key and parameter problems in `message`.
+    const providerMessage = json_data && typeof json_data === 'object' && !Array.isArray(json_data)
+        ? [json_data.message, json_data.error, json_data.detail].find(value => typeof value === 'string' && value.trim())
+        : null;
+    if (providerMessage) {
+        const pProvider = document.createElement('p');
+        pProvider.className = 'hybrid-provider-message';
+        pProvider.textContent = uiText('hybridProviderMessage', 'Provider message: $1', [providerMessage.trim().slice(0, 500)]);
+        errDiv1.appendChild(pProvider);
+    }
+    if (response.status === 429) {
+        const pRate = document.createElement('p');
+        pRate.textContent = uiText('hybridRateLimited', 'The Hybrid Analysis rate limit or quota was reached. Please try again later.');
+        errDiv1.appendChild(pRate);
+    }
 
     if (response.status === 401 || response.status === 403) {
         errMsg.textContent += uiText("ui_055", " (Möglicherweise ungültiger oder fehlender API-Schlüssel).");
@@ -1156,7 +1242,8 @@ function buildStoredLinkReportTask(linkObj, headerMessageId) {
 // Polling bounds for the in-progress analysis protocol (FA-1). The Hybrid
 // Analysis overview endpoint returns state IN_PROGRESS until the analysis is
 // finished; without polling the popup never delivered the finished protocol.
-const HYBRID_REPORT_POLL_MAX_ATTEMPTS = 3;
+// Quick scans with several engines regularly need 20-45 seconds.
+const HYBRID_REPORT_POLL_MAX_ATTEMPTS = 8;
 const HYBRID_REPORT_POLL_DELAY_MS = 5000;
 
 function scheduleHybridReportPoll(params, targetContainer, replaceNode) {
@@ -1177,7 +1264,7 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
     const generation = hybridReportGeneration;
     if (hybridReportDisposed) return;
     try {
-        const { response, json_data } = await fetch_hybrid_report(hybrid_sha, partName ? 'attachment:' + partName : popupLinkResources.get(attachmentName) || null);
+        const { response, json_data } = await fetch_hybrid_report(hybrid_sha, partName ? 'attachment:' + partName : popupLinkResources.get(attachmentName) || null, submissionId || jobId);
         if (hybridReportDisposed || generation !== hybridReportGeneration) return;
 
         if (response.status === 200) {
@@ -1197,7 +1284,7 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
             const reportNode = render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, json_data: pendingReport, jobId, submissionId, attempt: _attempt }, targetContainer, replaceNode);
             scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, _attempt: _attempt + 1 }, targetContainer, reportNode);
         } else {
-            handle_hybrid_report_error(response, attachmentName, targetContainer);
+            handle_hybrid_report_error(response, attachmentName, targetContainer, json_data);
         }
     } catch (error) {
         if (!hybridReportDisposed && generation === hybridReportGeneration) handle_hybrid_report_fetch_error(error, attachmentName, targetContainer);

@@ -1144,8 +1144,14 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
                     uploadData.job_id || (Array.isArray(uploadData.reports) && uploadData.reports[0]) || uploadData.id,
                     uploadData.sha256 || local_hash,
                     'UPLOADED',
-                    attachment
+                    attachment,
+                    virustotal_stats
                 );
+                const quickReport = typeof quickScanReport === 'function' ? quickScanReport(uploadData) : null;
+                if (quickReport) {
+                    hybridData.report = quickReport;
+                    hybridData.report_fetched_at = new Date().toISOString();
+                }
                 return hybridData;
             } else {
                 Logger.error('Fehler beim automatischen Upload, falle auf manuell zurück.');
@@ -1301,8 +1307,9 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
         virustotal_stats: result.virustotal_stats,
         // A new submission invalidates any previously persisted analysis
         // protocol (FA-3); a freshly fetched KNOWN overview report is preserved.
-        report: result.hybrid_data.state === 'KNOWN' && result.report ? result.report : null,
-        report_fetched_at: result.hybrid_data.state === 'KNOWN' && result.report ? (result.report_fetched_at || new Date().toISOString()) : null,
+        // A quick-scan upload may already return scanner states (UPLOADED).
+        report: ['KNOWN', 'UPLOADED'].includes(result.hybrid_data.state) && result.report ? result.report : null,
+        report_fetched_at: ['KNOWN', 'UPLOADED'].includes(result.hybrid_data.state) && result.report ? (result.report_fetched_at || new Date().toISOString()) : null,
         created: new Date()
       }));
 
@@ -1695,11 +1702,26 @@ function extractHybridVerdictFromOverview(data) {
     const threatScore = typeof data.threat_score === 'number' && Number.isFinite(data.threat_score) ? data.threat_score : null;
     const multiscan = typeof data.multiscan_result === 'number' && Number.isFinite(data.multiscan_result) ? data.multiscan_result : null;
 
-    if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50)) return 'MALICIOUS';
-    if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0)) return 'SUSPICIOUS';
+    if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50) || data.threat_level === 2) return 'MALICIOUS';
+    if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0) || data.threat_level === 1) return 'SUSPICIOUS';
     if (data.whitelisted === true || hasCleanScanner) return 'CLEAN';
     if (rawVerdict === 'unknown') return 'UNKNOWN';
     return null;
+}
+
+/**
+ * Returns the POST /quick-scan/* response as a storable report when it already
+ * carries scanner results or a verdict; bare submission receipts yield null.
+ * Callers guard with typeof so isolated test loaders may omit it.
+ */
+function quickScanReport(json_data) {
+    if (!json_data || typeof json_data !== 'object' || Array.isArray(json_data)) return null;
+    const hasScanners = (Array.isArray(json_data.scanners) && json_data.scanners.length > 0) ||
+        (json_data.scanners_v2 && typeof json_data.scanners_v2 === 'object' && !Array.isArray(json_data.scanners_v2) && Object.keys(json_data.scanners_v2).length > 0);
+    const hasVerdict = (typeof json_data.verdict === 'string' && json_data.verdict.trim() !== '') ||
+        (typeof json_data.threat_score === 'number' && Number.isFinite(json_data.threat_score)) ||
+        typeof json_data.finished === 'boolean';
+    return hasScanners || hasVerdict ? json_data : null;
 }
 
 // Optional legacy fields never imply a known observation time. `created` on a
@@ -1997,8 +2019,10 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
                         existingRecord.links[linkIndex].hybrid_job_id = json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id;
                         existingRecord.links[linkIndex].hybrid_sha256 = json_data.sha256;
                         existingRecord.links[linkIndex].state = 'UPLOADED';
-                        existingRecord.links[linkIndex].report = null;
-                        existingRecord.links[linkIndex].report_fetched_at = null;
+                        // Keep the immediate quick-scan payload (scanner states) instead of discarding it.
+                        const quickReport = typeof quickScanReport === 'function' ? quickScanReport(json_data) : null;
+                        existingRecord.links[linkIndex].report = quickReport;
+                        existingRecord.links[linkIndex].report_fetched_at = quickReport ? new Date().toISOString() : null;
                     }
                 }
                 return existingRecord;
@@ -2060,8 +2084,10 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
                         existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id;
                         if (json_data.sha256) existingRecord.attachments[attIndex].hybrid_sha256 = json_data.sha256;
                         existingRecord.attachments[attIndex].state = 'UPLOADED';
-                        existingRecord.attachments[attIndex].report = null;
-                        existingRecord.attachments[attIndex].report_fetched_at = null;
+                        // Keep the immediate quick-scan payload (scanner states) instead of discarding it.
+                        const quickReport = typeof quickScanReport === 'function' ? quickScanReport(json_data) : null;
+                        existingRecord.attachments[attIndex].report = quickReport;
+                        existingRecord.attachments[attIndex].report_fetched_at = quickReport ? new Date().toISOString() : null;
                     }
                 }
                 return existingRecord;

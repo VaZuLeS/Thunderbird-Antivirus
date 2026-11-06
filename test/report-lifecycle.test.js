@@ -73,3 +73,86 @@ test('a failed local report write remains visibly unconfirmed', async () => {
         assert.ok([...state.dom.window.document.querySelectorAll('[role="status"]')].some(node => node.textContent.includes('could not be saved')));
     } finally { state.dom.window.close(); }
 });
+
+// Phase 4.1: Hybrid Analysis quick-scan fallback and payload persistence.
+test('a 404 overview for a fresh submission falls back to GET /quick-scan/{id}', async () => {
+    const state = popup();
+    try {
+        const sha = 'c'.repeat(64);
+        state.context.fetch = async url => {
+            state.requests.push(url);
+            if (url.includes('/overview/')) return { status: 404, json: async () => ({ message: 'Not Found' }) };
+            return { status: 200, json: async () => ({ id: 'qs-1', finished: false, scanners_v2: { crowdstrike_ml: { status: 'in-progress' } } }) };
+        };
+        const { response, json_data } = await state.context.fetch_hybrid_report(sha, null, 'qs-1');
+        assert.equal(response.status, 200);
+        assert.equal(state.requests.length, 2);
+        assert.ok(state.requests[1].endsWith('/api/v2/quick-scan/qs-1'));
+        assert.equal(json_data.sha256, sha);
+        assert.equal(state.context.isHybridReportInProgress(json_data), true);
+    } finally { state.dom.window.close(); }
+});
+
+test('no quick-scan fallback without a usable submission id and non-JSON errors keep their status', async () => {
+    const state = popup();
+    try {
+        state.context.fetch = async url => { state.requests.push(url); return { status: 404, json: async () => { throw new SyntaxError('html'); } }; };
+        for (const id of [null, 'MANUAL_CHECK', '../etc']) {
+            const { response, json_data } = await state.context.fetch_hybrid_report('d'.repeat(64), null, id);
+            assert.equal(response.status, 404);
+            assert.equal(json_data, null);
+        }
+        assert.ok(state.requests.every(url => url.includes('/overview/')));
+    } finally { state.dom.window.close(); }
+});
+
+test('quickScanReport keeps scanner payloads and drops bare submission receipts', () => {
+    const source = fs.readFileSync('background.js', 'utf8');
+    const start = source.indexOf('function quickScanReport('), end = source.indexOf('\n}', start) + 2;
+    const context = vm.createContext({});
+    vm.runInContext(source.slice(start, end), context);
+    assert.equal(context.quickScanReport({ job_id: 'j', submission_id: 's', sha256: 'x' }), null);
+    assert.equal(context.quickScanReport(null), null);
+    const payload = { id: 'qs', finished: true, scanners_v2: { metadefender: { status: 'no-classification' } } };
+    assert.equal(context.quickScanReport(payload), payload);
+});
+
+// Phase 4.2: complete Hybrid Analysis v2 representation in the popup.
+test('a quick-scan report shows threat level verdict, family, name/type fallbacks and the report link', () => {
+    const state = popup();
+    try {
+        const sha = 'e'.repeat(64);
+        const card = state.context.renderReport({
+            json_data: { finished: true, threat_level: 2, vx_family: 'AgentTesla', submit_name: 'invoice.exe', type_short: ['peexe', 'executable'], scanners_v2: {} },
+            attachmentName: 'fallback.exe', hybrid_sha: sha
+        });
+        assert.ok(card.className.split(' ').includes('card-danger'));
+        assert.ok(card.textContent.includes('AgentTesla'));
+        assert.ok(card.textContent.includes('invoice.exe'));
+        assert.ok(card.textContent.includes('peexe, executable'));
+        const link = card.querySelector('a.hybrid-report-link');
+        assert.equal(link.getAttribute('href'), 'https://www.hybrid-analysis.com/sample/' + sha);
+        assert.equal(link.getAttribute('rel'), 'noopener noreferrer');
+
+        const clean = state.context.renderReport({ json_data: { finished: true, threat_level: 0, scanners_v2: {} }, attachmentName: 'ok.pdf', hybrid_sha: 'not-a-hash' });
+        assert.ok(clean.className.split(' ').includes('card-success'));
+        assert.equal(clean.querySelector('a.hybrid-report-link'), null);
+        assert.ok(clean.textContent.includes('ok.pdf'));
+
+        const pending = state.context.renderReport({ json_data: { finished: false, threat_level: 0 }, attachmentName: 'wait.pdf', hybrid_sha: sha });
+        assert.equal(pending.className, 'card mb-3');
+    } finally { state.dom.window.close(); }
+});
+
+test('provider error messages and rate limits are shown to the tester', () => {
+    const state = popup();
+    try {
+        const main = state.dom.window.document.querySelector('main');
+        state.context.handle_hybrid_report_error({ status: 429, statusText: 'Too Many Requests' }, 'x.pdf', main, { message: 'API quota exceeded' });
+        assert.ok(main.textContent.includes('API quota exceeded'));
+        assert.ok(main.textContent.includes('rate limit'));
+        main.textContent = '';
+        state.context.handle_hybrid_report_error({ status: 500, statusText: 'err' }, 'x.pdf', main, ['not', 'an', 'object']);
+        assert.ok(!main.textContent.includes('Provider message'));
+    } finally { state.dom.window.close(); }
+});

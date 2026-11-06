@@ -1891,5 +1891,19 @@
         "content": "$1"
       }
     }
+  },
+  "hybridReportLink": {
+    "message": "Otwórz pełny raport w Hybrid Analysis"
+  },
+  "hybridProviderMessage": {
+    "message": "Komunikat dostawcy: $MESSAGE$",
+    "placeholders": {
+      "message": {
+        "content": "$1"
+      }
+    }
+  },
+  "hybridRateLimited": {
+    "message": "Osiągnięto limit zapytań lub limit przydziału Hybrid Analysis. Spróbuj ponownie później."
   }
 }
