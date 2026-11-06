@@ -13,9 +13,9 @@
 <p data-i18n="sourceExportIntro"></p>
 <p class="card audit-disclosure" data-i18n="sourceExportPrivacy"></p>
 <div class="audit-actions">
-<button type="button" id="sourceExportPreview" data-i18n="supportPreview">Preview report</button>
-<button type="button" id="sourceExportSave" data-i18n="supportSave" disabled>Save report locally</button>
-<button type="button" id="sourceExportCancel" data-i18n="sourceExportCancel">Discard preview</button>
+<button type="button" id="sourceExportPreview" aria-describedby="sourceExportStatus" data-i18n="supportPreview">Preview report</button>
+<button type="button" id="sourceExportSave" aria-describedby="sourceExportStatus" data-i18n="supportSave" disabled>Save report locally</button>
+<button type="button" id="sourceExportCancel" aria-describedby="sourceExportStatus" data-i18n="sourceExportCancel">Discard preview</button>
 </div>
 <p id="sourceExportStatus" role="status" aria-live="polite"></p>
 <pre id="sourceExportContent" class="card" tabindex="0" data-i18n-aria-label="sourceExportContentLabel" aria-label="Report preview" hidden></pre>
