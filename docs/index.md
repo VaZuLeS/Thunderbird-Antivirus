@@ -13,7 +13,7 @@ Version **1.24.6**, unsigned GitHub distribution: [release status and download](
 - [Privacy and data-flow matrix](privacy_policy.md)
 - [Data lifecycle and rollback limits](DATENLEBENSZYKLUS.md)
 - [Native Thunderbird and screenreader acceptance](NATIVE_ABNAHME_2026-11.md)
-- [Active CI and release verification](ci/README.md)
+- [Active CI and release verification](https://github.com/VaZuLeS/Thunderbird-Antivirus/blob/main/docs/ci/README.md)
 - [Reviewer notes](reviewer_notes.md) · [Store listing](store_listing.md)
 - [Support](support_faq.md) · [License](license.md)
 

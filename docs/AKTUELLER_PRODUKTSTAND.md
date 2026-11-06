@@ -36,8 +36,8 @@ Der [reproduzierbare Paketaufbau AVN-014.b](REPRODUZIERBARE_PAKETE.md) erzeugt d
 
 | Ebene | Stand |
 | --- | --- |
-| GitHub-Distribution | Zielversion 1.24.4, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.3 bleibt historisch erhalten |
-| Quellstand | Unveröffentlichte 1.24.5 mit Ladefehlerkorrektur und gemeinsamen Dienstkarten; ATN-Signierung und automatische Updates bleiben eigenständige Schritte |
+| GitHub-Distribution | Zielversion 1.24.6, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.5 bleibt historisch erhalten |
+| Quellstand | 1.24.6 mit Quellen-Leseprojektion, präzisierter Antwortanzeige und gemeinsamen Dienstkarten; ATN-Signierung und automatische Updates bleiben eigenständige Schritte |
 | Tatsächliches Add-on | MV3-MailExtension; Hintergrundskripte, eigene HTML-Seiten, IndexedDB und browser.storage.local |
 | React | separate gekennzeichnete Websimulation mit eigenem localStorage; nicht im XPI |
 | Enterprise | deaktivierte Profile plus lokale Node-Werkzeuge; neuer Offline-Audit-Review aktiviert keinen Dienst |
