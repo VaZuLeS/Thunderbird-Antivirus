@@ -2,7 +2,7 @@
 
 Historischer Umsetzungsstand vor dem Veröffentlichungsauftrag. Der [Veröffentlichungsabschluss](VEROEFFENTLICHUNG_1_24_3.md) ergänzt den inzwischen implementierten Darstellungsprofil-Import und neue paketgebundene Nachweise.
 
-Grundlage: [Aufgabenplan](AUFGABENPLAN_WEITERENTWICKLUNG_1_24_3.md), analysierter Ausgangscommit `3024636`. Der aktuelle Auftrag umfasst die Umsetzung. Veröffentlicht bleibt 1.24.2; diese Änderungen bereiten neue Kandidatenbytes für 1.24.3 vor. Eine vorhandene Freigabe früherer Paketbytes gilt dafür nicht.
+Analysierter Ausgangscommit `3024636`; aktueller Aufgabenplan: [Aufgabenplan](PRODUKTANALYSE_AUFGABENPLAN_2026-11-04.md). Veröffentlicht war zum Ausführungszeitpunkt 1.24.2; diese Änderungen bereiteten neue Kandidatenbytes für 1.24.3 vor. Eine vorhandene Freigabe früherer Paketbytes galt dafür nicht.
 
 ## Aufgabenstatus
 

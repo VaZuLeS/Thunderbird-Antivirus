@@ -1,6 +1,6 @@
 # Detaillierte Ausführungsliste — Thundy AV
 
-Stand: 2. November 2026. Ausgangscommit `6046fe0`; Grundlage: [Produktplan](PRODUKTANALYSE_AUFGABENPLAN_2026-11-02.md).
+Stand: 2. November 2026. Ausgangscommit `6046fe0`; aktueller Produktplan: [Produktplan](PRODUKTANALYSE_AUFGABENPLAN_2026-11-04.md).
 
 Status: `[ ]` offen; `[x]` ausgeführt mit Beleg. Eine vorbereitete Prüfanweisung ist kein ausgeführter nativer Test. Extern blockierte Teilaufgaben bleiben offen und erhalten konkrete Voraussetzungen.
 

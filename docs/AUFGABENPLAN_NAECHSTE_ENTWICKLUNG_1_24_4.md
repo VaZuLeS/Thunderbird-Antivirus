@@ -2,7 +2,7 @@
 
 Ursprünglicher Planungsstand: 2. November 2026, damals ohne Umsetzung. Der Fortschritt vom 3. November ist unten gesondert dokumentiert. Untersucht wurde `codex/analysis-sources-ui-20261102` auf Commit `2588ff08c172606fbbcd00741220e7e7535e6361`, Runtime-Fingerprint `78fe4735c95044a0dbaace538f5f46dc672941944ca3d00adb97e7aa566c9ab7`. Die anschließend angelegten Planungsdateien ändern diesen Produktstand nicht.
 
-Der [separat gespeicherte Analyseprompt V2](PROMPT_PRODUKTANALYSE_THUNDERBIRD_V2.md) ergänzt den ursprünglichen Auftrag um Ressourcenbesitz, echte TTL-Wirkung, persistierte Identitäten, Lesbarkeit verschlüsselter Nachrichten und genaue Nachweisgrenzen. Der [bisherige Prompt](PROMPT_PRODUKTANALYSE_THUNDERBIRD.md) bleibt erhalten. Diese Ergänzungen sind sinnvoll, weil die jüngste Quellenanzeige neue Datenbeziehungen eingeführt hat, die der ursprüngliche allgemeine Prompt nicht ausdrücklich abprüfte.
+Der erweiterte Analyseauftrag prüft Ressourcenbesitz, echte TTL-Wirkung, persistierte Identitäten, Lesbarkeit verschlüsselter Nachrichten und genaue Nachweisgrenzen, weil die Quellenanzeige neue Datenbeziehungen eingeführt hat.
 
 ## Fortschritt seit der Planung
 

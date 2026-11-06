@@ -52,6 +52,6 @@ The candidate gate requires a clean packaged source tree and matching package/ev
 
 ## Project records
 
-[Analysis and roadmap](docs/PRODUKTANALYSE_AUFGABENPLAN_2026-11-02.md) · [Detailed execution checklist](docs/AUSFUEHRUNG_AUFGABEN_2026-11-02.md) · [Support](docs/support_faq.md) · [GitHub Pages](https://vazules.github.io/Thunderbird-Antivirus/)
+[Analysis and roadmap](docs/PRODUKTANALYSE_AUFGABENPLAN_2026-11-04.md) · [Detailed execution checklist](docs/AUSFUEHRUNG_AUFGABEN_2026-11-02.md) · [Support](docs/support_faq.md) · [GitHub Pages](https://vazules.github.io/Thunderbird-Antivirus/)
 
 Current source: GNU GPL v3 (`GPL-3.0-only`). Published releases retain their original license terms. See [LICENSE](LICENSE).
