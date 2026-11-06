@@ -46,7 +46,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Install dependencies
         run: npm ci
       - name: Type-check and build the separate web demo
@@ -68,7 +68,7 @@ jobs:
       - name: Build and verify extension package
         run: npm run package
       - name: Preserve package for real Thunderbird checks
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: thunderbird-test-package
           path: build/*.zip
@@ -91,7 +91,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
       - run: npm ci
       - name: Install pinned Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -103,7 +103,7 @@ jobs:
           npm run check:ui -- --lang ${{ matrix.language }} --view audit.html --zoom 2
       - name: Preserve browser evidence and failure screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-ui-${{ matrix.language }}
           path: .audit/ui/
@@ -126,7 +126,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: thunderbird-test-package
           path: build
@@ -170,7 +170,7 @@ jobs:
           done
       - name: Preserve real-client report, logs and screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: thunderbird-linux-live
           path: .audit/thunderbird-live/
@@ -188,18 +188,18 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
           cache: npm
       - run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: thunderbird-test-package
           path: build
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: thunderbird-linux-live
           path: .audit/thunderbird-live
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: browser-ui-*
           path: .audit/browser
@@ -207,7 +207,7 @@ jobs:
         run: node scripts/candidate-evidence.js --write .audit/thunderbird-live .audit/browser
       - name: Verify candidate without claiming publication
         run: npm run goal -- --candidate
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: validated-release-candidate
           path: |

@@ -13,7 +13,7 @@
     "url": "https://github.com/VaZuLeS/Thunderbird-Antivirus/issues"
   },
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",

@@ -26,10 +26,10 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '24'
       - name: Install validation dependencies without rebuilding the tested archive
         run: npm ci
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: validated-release-candidate
           path: .
