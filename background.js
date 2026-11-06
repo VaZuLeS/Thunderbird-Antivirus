@@ -1444,7 +1444,13 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
           // references address this local list and must survive result updates.
           const incoming = new Map(newLinks.map(item => [item.url,item]));
           const seen = new Set();
-          recordToSave.links = recordToSave.links.map(item => { seen.add(item.url); return incoming.get(item.url) || item; });
+          recordToSave.links = recordToSave.links.map(item => {
+            seen.add(item.url);
+            const next = incoming.get(item.url);
+            if (!next) return item;
+            if (next.state === 'UNKNOWN' && (item.report != null || item.urlscan != null || item.hybrid_verdict != null || ['KNOWN', 'UPLOADED'].includes(item.state))) return item;
+            return item.urlscan != null && next.urlscan == null ? { ...next, urlscan: item.urlscan } : next;
+          });
           for (const item of newLinks) if (!seen.has(item.url)) { recordToSave.links.push(item); seen.add(item.url); }
 
 
@@ -1572,16 +1578,18 @@ async function scanLinksOfDisplayedMessage(tabId) {
         assertExternalAnalysisAllowed();
         const fullMessage = await readFullForAnalysis(message);
         const text = extractTextFromParts(fullMessage.parts || fullMessage);
-        const urls = filterUrls(extractUrls(text));
+        const rawUrls = extractUrls(text);
+        const urls = filterUrls(rawUrls);
         if (urls.length === 0) {
             notify('notificationTitle', 'notificationNoLinks', []);
             return;
         }
         const analysisContext = await getMessageAnalysisContext(message, tabId);
+        const messageKey = message.headerMessageId || 'message:' + message.id;
         let submitted = 0;
         for (const url of urls.slice(0, 20)) {
             try {
-                await handleUrlScan(url, message.headerMessageId, analysisContext);
+                await handleUrlScan(url, messageKey, analysisContext);
                 submitted++;
             } catch (e) {
                 Logger.error('Could not submit link for analysis', e);
@@ -1589,6 +1597,9 @@ async function scanLinksOfDisplayedMessage(tabId) {
         }
         const coverage = scanCoverage(urls.length, urls.length, submitted, Math.min(urls.length, 20) - submitted, 'batch_limit_20');
         await persistScanCoverage(message, 'batchLinks', coverage);
+        if (submitted > 0 && typeof evaluateAndInjectThreats === 'function') {
+            await evaluateAndInjectThreats({ tab: { id: tabId }, message, fullMessage, urls: rawUrls, filteredUrls: urls, messageText: text, allowExternal: false, analysisContext }).catch(() => {});
+        }
         notify('notificationTitle', 'coverageSummary', [coverage.detected, coverage.eligible, coverage.processed, coverage.failed, coverage.skipped].map(String));
     } catch (e) {
         notify('notificationTitleError', 'notificationScanError', [e.message]);
@@ -1616,7 +1627,7 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             // Need a dummy headerMessageId as context menu might be clicked outside standard flow
             // or we just fetch the active message
             const activeMessage = await getFirstDisplayedMessage(tab && tab.id);
-            let msgId = activeMessage ? activeMessage.headerMessageId : "context_menu_scan";
+            let msgId = activeMessage ? (activeMessage.headerMessageId || 'message:' + activeMessage.id) : "context_menu_scan";
 
             let result = await handleUrlScan(url, msgId, activeMessage ? await getMessageAnalysisContext(activeMessage, tab?.id) : null);
 

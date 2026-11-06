@@ -370,4 +370,55 @@ test('collectLinkFindings and evaluateLinkFindings incorporate Hybrid Analysis a
     ]);
 });
 
+test('manual upload and URL scan handlers preserve existing virustotal_stats and urlscan when polling for the report', async () => {
+    const state = popup();
+    state.context.TextEncoder = TextEncoder;
+    const reportCalls = [];
+    state.context.get_hybrid_report_by_sha256 = opts => { reportCalls.push(opts); };
+    state.context.browser.runtime.sendMessage = async () => ({ status: 'success', data: { sha256: '3'.repeat(64), id: 'qs-3' } });
+    try {
+        const container = state.dom.window.document.getElementById('hybrid_analysis_api_content');
+        const vtStats = { malicious: 2, suspicious: 1, harmless: 40 };
+        state.context.renderManualUploadUI('3'.repeat(64), 'file.bin', 11, '1.2', 'mail-11', container, vtStats);
+        const uploadBtn = container.querySelector(`#btn-upload-${'3'.repeat(64)}`);
+        uploadBtn.click();
+        await new Promise(resolve => setImmediate(resolve));
+        state.timers.at(-1)();
+        assert.equal(reportCalls.length, 1);
+        assert.deepEqual(JSON.parse(JSON.stringify(reportCalls[0].virustotal_stats)), vtStats);
 
+        const urlscanData = { status: 'SUSPICIOUS', reasons: ['Brand mismatch'] };
+        state.context.renderManualUrlScanUI('https://url.invalid/', 'mail-11', container, urlscanData);
+        const urlBtns = container.querySelectorAll('button.btn-primary');
+        urlBtns[urlBtns.length - 1].click();
+        await new Promise(resolve => setImmediate(resolve));
+        state.timers.at(-1)();
+        assert.equal(reportCalls.length, 2);
+        assert.deepEqual(JSON.parse(JSON.stringify(reportCalls[1].urlscan)), urlscanData);
+    } finally { state.dom.window.close(); }
+});
+
+test('indexedDB_save_links_objects_to_db preserves existing link findings on UNKNOWN fallback and keeps urlscan on re-upload', async () => {
+    const record = {
+        messageHeader: 'mail-1',
+        links: [
+            { url: 'https://keep.invalid/', state: 'KNOWN', report: { verdict: 'malicious' }, urlscan: { status: 'MALICIOUS_VISUAL' } },
+            { url: 'https://reupload.invalid/', state: 'UNKNOWN', urlscan: { status: 'SUSPICIOUS', reasons: ['Test'] } }
+        ]
+    };
+    const bgContext = vm.createContext({
+        Date, Map, Set,
+        Logger: { error() {} },
+        getSharedDB: async () => ({}),
+        updateStore: async (_db, _store, _key, edit) => edit(record)
+    });
+    loadSlice('background.js', 'indexedDB_save_links_objects_to_db', bgContext);
+    await bgContext.indexedDB_save_links_objects_to_db({ headerMessageId: 'mail-1' }, [
+        { url: 'https://keep.invalid/', state: 'UNKNOWN' },
+        { url: 'https://reupload.invalid/', state: 'UPLOADED', hybrid_sha256: '4'.repeat(64) }
+    ]);
+    assert.equal(record.links[0].state, 'KNOWN');
+    assert.equal(record.links[0].report.verdict, 'malicious');
+    assert.equal(record.links[1].state, 'UPLOADED');
+    assert.equal(record.links[1].urlscan.status, 'SUSPICIOUS');
+});

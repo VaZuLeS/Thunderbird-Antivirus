@@ -1346,7 +1346,7 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
     }
 }
 
-function handleUrlScanClick(btn, url, urlId, headerMessageId) {
+function handleUrlScanClick(btn, url, urlId, headerMessageId, urlscan = null) {
     let statusEl = document.getElementById(`upload-status-${urlId}`);
     btn.disabled = true;
     btn.setAttribute('aria-busy', 'true');
@@ -1372,6 +1372,7 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId) {
                 get_hybrid_report_by_sha256({
                     hybrid_sha: response.data.sha256,
                     attachmentName: url, headerMessageId,
+                    urlscan,
                     jobId: response.data?.job_id || (Array.isArray(response.data?.reports) && response.data.reports[0]) || response.data?.id,
                     submissionId: response.data?.submission_id || response.data?.id
                 });
@@ -1461,11 +1462,11 @@ function renderManualUrlScanUI(url, headerMessageId, targetContainer, urlscan = 
     container.appendChild(card);
 
     btnUpload.addEventListener('click', function() {
-        handleUrlScanClick(this, url, urlId, headerMessageId);
+        handleUrlScanClick(this, url, urlId, headerMessageId, urlscan);
     });
 }
 
-function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
+function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }) {
     const handler = function() {
         let btn = this;
         let statusId = `upload-status-${safeHash}`;
@@ -1499,7 +1500,8 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                         attachmentName: attachmentName,
                         messageId: messageId,
                         partName: partName,
-                        headerMessageId: headerMessageId
+                        headerMessageId: headerMessageId,
+                        virustotal_stats: virustotal_stats
                     });
                 }, 3000);
             } else {
@@ -1519,7 +1521,7 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
     return handler;
 }
 
-function createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId }) {
+function createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null }) {
     let btnUpload = document.createElement('button');
     btnUpload.id = `btn-upload-${safeHash}`;
     btnUpload.className = "btn-primary mt-2";
@@ -1534,7 +1536,7 @@ function createUploadButton(card, { hash, safeHash, attachmentName, messageId, p
     pUploadStatus.setAttribute('role', 'status');
     card.appendChild(pUploadStatus);
 
-    btnUpload.addEventListener('click', handleUploadClick({ hash, safeHash, attachmentName, messageId, partName, headerMessageId }));
+    btnUpload.addEventListener('click', handleUploadClick({ hash, safeHash, attachmentName, messageId, partName, headerMessageId, virustotal_stats }));
 }
 
 function createCdrButton(card, safeHash, attachmentName, messageId, partName) {
@@ -1622,7 +1624,7 @@ function renderManualUploadUI(hash, attachmentName, messageId, partName, headerM
         renderVirusTotalStats(virustotal_stats, card);
     }
 
-    createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId });
+    createUploadButton(card, { hash, safeHash, attachmentName, messageId, partName, headerMessageId, virustotal_stats });
     createCdrButton(card, safeHash, attachmentName, messageId, partName);
 
     if (targetContainer) {
