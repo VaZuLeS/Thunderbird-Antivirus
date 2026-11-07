@@ -57,6 +57,24 @@ export function disarmHTML(htmlString: string): string {
   }
   const safeGetContent = Object.getOwnPropertyDescriptor(protoForContent, 'content')!.get!;
 
+  let protoForDocument = Object.getPrototypeOf(doc);
+  while (protoForDocument && !Object.getOwnPropertyDescriptor(protoForDocument, 'documentElement')) {
+      protoForDocument = Object.getPrototypeOf(protoForDocument);
+  }
+  const safeGetDocumentElement = Object.getOwnPropertyDescriptor(protoForDocument, 'documentElement')!.get!;
+
+  let protoForBody = Object.getPrototypeOf(doc);
+  while (protoForBody && !Object.getOwnPropertyDescriptor(protoForBody, 'body')) {
+      protoForBody = Object.getPrototypeOf(protoForBody);
+  }
+  const safeGetBody = Object.getOwnPropertyDescriptor(protoForBody, 'body')!.get!;
+
+  let protoForInnerHTML = Object.getPrototypeOf(safeEl);
+  while (protoForInnerHTML && !Object.getOwnPropertyDescriptor(protoForInnerHTML, 'innerHTML')) {
+      protoForInnerHTML = Object.getPrototypeOf(protoForInnerHTML);
+  }
+  const safeGetInnerHTML = Object.getOwnPropertyDescriptor(protoForInnerHTML, 'innerHTML')!.get!;
+
   function processRoot(root: Node) {
     const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
     let el = walker.currentNode as Element;
@@ -95,7 +113,7 @@ export function disarmHTML(htmlString: string): string {
     }
   }
 
-  processRoot(doc.documentElement);
+  processRoot(safeGetDocumentElement.call(doc) as Node);
 
   for (let i = nodesToRemove.length - 1; i >= 0; i--) {
       const pNode = safeGetParentNode.call(nodesToRemove[i]) as Node | null;
@@ -104,7 +122,7 @@ export function disarmHTML(htmlString: string): string {
       }
   }
 
-  return doc.body.innerHTML;
+  return safeGetInnerHTML.call(safeGetBody.call(doc)) as string;
 }
 
 export function extractLinksFromHtml(html: string): string[] {

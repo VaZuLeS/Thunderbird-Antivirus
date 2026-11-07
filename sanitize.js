@@ -54,6 +54,24 @@ function disarmHTML(htmlString) {
     }
     const safeGetContent = Object.getOwnPropertyDescriptor(protoForContent, 'content').get;
 
+    let protoForDocument = Object.getPrototypeOf(doc);
+    while (protoForDocument && !Object.getOwnPropertyDescriptor(protoForDocument, 'documentElement')) {
+        protoForDocument = Object.getPrototypeOf(protoForDocument);
+    }
+    const safeGetDocumentElement = Object.getOwnPropertyDescriptor(protoForDocument, 'documentElement').get;
+
+    let protoForBody = Object.getPrototypeOf(doc);
+    while (protoForBody && !Object.getOwnPropertyDescriptor(protoForBody, 'body')) {
+        protoForBody = Object.getPrototypeOf(protoForBody);
+    }
+    const safeGetBody = Object.getOwnPropertyDescriptor(protoForBody, 'body').get;
+
+    let protoForInnerHTML = Object.getPrototypeOf(safeEl);
+    while (protoForInnerHTML && !Object.getOwnPropertyDescriptor(protoForInnerHTML, 'innerHTML')) {
+        protoForInnerHTML = Object.getPrototypeOf(protoForInnerHTML);
+    }
+    const safeGetInnerHTML = Object.getOwnPropertyDescriptor(protoForInnerHTML, 'innerHTML').get;
+
     function processRoot(root) {
         const walker = doc.createTreeWalker(root, 1 /* NodeFilter.SHOW_ELEMENT */);
         let el = walker.currentNode;
@@ -95,7 +113,7 @@ function disarmHTML(htmlString) {
         }
     }
 
-    processRoot(doc.documentElement);
+    processRoot(safeGetDocumentElement.call(doc));
 
     // Remove active tags collected during the pass
     for (let i = nodesToRemove.length - 1; i >= 0; i--) {
@@ -105,6 +123,6 @@ function disarmHTML(htmlString) {
         }
     }
 
-    return doc.documentElement.outerHTML;
+    return safeGetInnerHTML.call(safeGetBody.call(doc));
 }
 
