@@ -99,3 +99,10 @@ test('unavailable attachment inventory still renders and scans independently ava
  const f=runtime({apikey:''});f.c.browser.messages.listAttachments=async()=>{throw Error('decryption unavailable');};await f.s.display({id:7},f.message);await f.s.settled(1);
  assert.equal(f.s.get(1).state,'incomplete');assert.equal(f.stored.fixture.links[0].urlscan.status,'CLEAN');assert.equal(f.context.scanJob.errors,1);
 });
+
+test('a provider quota observation survives an adapter returning no result',async()=>{
+ const f=runtime({apikey:'',urlscanApikey:'',virustotalApikey:'synthetic-vt'});
+ f.c.browser.messages.listAttachments=async()=>[{partName:'1.2',name:'fixture.txt',size:4}];f.c.get_sha256_hash=async()=> 'a'.repeat(64);
+ f.c.checkVirusTotal=async(hash,key,ctx)=>{ctx.event({provider:'virustotal',phase:'finish',state:'failed',httpStatus:429});return null;};
+ await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.s.get(1).providers.virustotal.error,'rate_limited');assert.equal(f.s.get(1).state,'incomplete');
+});
