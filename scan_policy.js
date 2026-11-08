@@ -52,7 +52,7 @@ async function requireHostPermission(url) {
 }
 
 // Host origins that are declared in manifest.json -> optional_host_permissions
-const PROVIDER_ORIGINS = {
+const PROVIDER_ORIGINS = typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,value])=>[id,value.origin])) : {
     hybridanalysis: 'https://hybrid-analysis.com/*',
     virustotal: 'https://www.virustotal.com/*',
     urlscan: 'https://urlscan.io/*',
@@ -61,6 +61,7 @@ const PROVIDER_ORIGINS = {
 };
 
 function originForUrl(url) {
+    if (typeof ThundyProviders !== 'undefined') {try{return ThundyProviders.identify(url).config.origin;}catch(_){return null;}}
     try {
         const host = new URL(url).hostname;
         if (host === 'hybrid-analysis.com' || host.endsWith('.hybrid-analysis.com')) return PROVIDER_ORIGINS.hybridanalysis;

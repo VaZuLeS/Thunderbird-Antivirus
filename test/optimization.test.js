@@ -101,7 +101,7 @@ test('link protection intercepts normal and middle clicks and presents an explic
         assert.equal(event.defaultPrevented, true);
         await new Promise(resolve => setImmediate(resolve));
         assert.equal(payload.userAction, true); assert.equal(payload.messageId, 7);
-        assert.equal(dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelectorAll('button').length, 2);
+        assert.equal(dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelectorAll('button').length, 3);
         dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelector('.primary').click();
         await new Promise(resolve => setImmediate(resolve));
         assert.equal(payload.action, 'openCheckedLink');
@@ -474,11 +474,14 @@ test('injected dialogs and background auditing record both decisions with one ev
     const context = vm.createContext({ document: dom.window.document, URL, args: injected.args, browser: { runtime: { sendMessage: route } } });
     vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
     const click = () => dom.window.document.querySelector('a').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, cancelable: true }));
-    click(); await new Promise(resolve => setImmediate(resolve));
+    click();
+    for(let attempt=0;attempt<200&&!dom.window.document.querySelector('[role=alertdialog]')?.shadowRoot.querySelector('.primary');attempt++)await new Promise(resolve=>setTimeout(resolve,5));
     const panel = dom.window.document.querySelector('[role="alertdialog"]');
-    assert.ok(panel.shadowRoot.textContent.includes('100 / 100'));
-    panel.shadowRoot.querySelector('.primary').click(); await new Promise(resolve => setImmediate(resolve));
-    click(); await new Promise(resolve => setImmediate(resolve));
+    assert.ok(panel.shadowRoot.textContent.includes('100 / 100'), panel.shadowRoot.textContent);
+    panel.shadowRoot.querySelector('.primary').click();
+    for(let attempt=0;attempt<200&&panel.isConnected;attempt++)await new Promise(resolve=>setTimeout(resolve,5));
+    click();
+    for(let attempt=0;attempt<200&&!dom.window.document.querySelector('[role=alertdialog]')?.shadowRoot.querySelector('.primary');attempt++)await new Promise(resolve=>setTimeout(resolve,5));
     dom.window.document.querySelector('[role="alertdialog"]').shadowRoot.querySelector('button').click();
     await new Promise(resolve => setImmediate(resolve));
     const data = await state.context.readLinkAudit(); assert.equal(data.records.length, 2);

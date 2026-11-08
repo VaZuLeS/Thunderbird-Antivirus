@@ -104,7 +104,9 @@ async function handleAuditedLinkCheck(request, sender) {
             providerReasons: (verdict.reasons || []).slice(0, 20)
         }); }
         catch (error) { reportLinkAuditFailure(); }
-        return { ...verdict, score: session.score, auditSaved: saved && session.auditSaved };
+        let protection=null;
+        if(typeof ThundyLinkSecurity !== 'undefined' && (await ThundySecurity.read()).policy?.enabled) { try {protection=(await ThundyLinkSecurity.evaluate(session,sender)).decision;}catch(_){protection={required:true,reason:'context_changed'};} }
+        return { ...verdict, score: session.score, protection, auditSaved: saved && session.auditSaved };
     } catch (error) {
         // Consume ready rejection even when cancellation arrives while initialising.
         reportLinkAuditFailure();
@@ -143,6 +145,7 @@ async function handleOpenAuditedLink(request, sender) {
     try {
         await session.ready;
         const result = await handleOpenCheckedLink(request, sender);
+        if (result.required || ['LINK_CHECK_REQUIRED','LINK_CONTEXT_CHANGED'].includes(result.code)) return {...result,auditSaved:session.auditSaved};
         session.record.openAttempts++;
         session.terminal = result.success;
         const decidedAt = Date.now();

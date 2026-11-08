@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.querySelector("input[name=external]:checked").value ===
       "configure";
     try {
-      await browser.storage.local.set({
+      await (typeof ThundySettings !== 'undefined' ? ThundySettings.storage : browser.storage.local).set({
         timeOfClickProtection: $("linkProtection").checked,
         onboardingState: {
           schemaVersion: 1,

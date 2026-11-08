@@ -85,168 +85,25 @@ const SupportReport = (() => {
     return { project, create };
 })();
 
+const settingsStorage = typeof ThundySettings !== 'undefined' ? ThundySettings.storage : typeof browser !== 'undefined' ? browser.storage.local : null;
 const ProviderKeyTester = (() => {
-    const endpoints = {
-        hybridanalysis: {
-            origin: 'https://hybrid-analysis.com/*',
-            async test(key) {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 10000);
-                try {
-                    const res = await fetch('https://hybrid-analysis.com/api/v2/overview/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', {
-                        method: 'GET',
-                        headers: {
-                            'api-key': key,
-                            'User-Agent': 'Falcon activity client',
-                            'accept': 'application/json'
-                        },
-                        signal: controller.signal
-                    });
-                    if (res.status === 200 || res.status === 404) return { status: 'valid' };
-                    if (res.status === 401 || res.status === 403) return { status: 'invalid_key' };
-                    if (res.status === 429) return { status: 'rate_limited' };
-                    return { status: 'error', code: res.status };
-                } catch (err) {
-                    return { status: 'error', message: err.message || String(err) };
-                } finally {
-                    clearTimeout(timeout);
-                }
-            }
-        },
-        virustotal: {
-            origin: 'https://www.virustotal.com/*',
-            async test(key) {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 10000);
-                try {
-                    const res = await fetch('https://www.virustotal.com/api/v3/ip_addresses/8.8.8.8', {
-                        method: 'GET',
-                        headers: {
-                            'x-apikey': key,
-                            'accept': 'application/json'
-                        },
-                        signal: controller.signal
-                    });
-                    if (res.status === 200 || res.status === 404) return { status: 'valid' };
-                    if (res.status === 401 || res.status === 403) return { status: 'invalid_key' };
-                    if (res.status === 429) return { status: 'rate_limited' };
-                    return { status: 'error', code: res.status };
-                } catch (err) {
-                    return { status: 'error', message: err.message || String(err) };
-                } finally {
-                    clearTimeout(timeout);
-                }
-            }
-        },
-        urlhaus: {
-            origin: 'https://urlhaus-api.abuse.ch/*',
-            async test(key) {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 10000);
-                try {
-                    const res = await fetch('https://urlhaus-api.abuse.ch/v1/host/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'Auth-Key': key
-                        },
-                        body: 'host=example.com',
-                        signal: controller.signal
-                    });
-                    if (res.status === 200) {
-                        const data = await res.json().catch(() => null);
-                        if (data && data.query_status === 'invalid_api_key') return { status: 'invalid_key' };
-                        return { status: 'valid' };
-                    }
-                    if (res.status === 401 || res.status === 403) return { status: 'invalid_key' };
-                    if (res.status === 429) return { status: 'rate_limited' };
-                    return { status: 'error', code: res.status };
-                } catch (err) {
-                    return { status: 'error', message: err.message || String(err) };
-                } finally {
-                    clearTimeout(timeout);
-                }
-            }
-        },
-        abuseipdb: {
-            origin: 'https://api.abuseipdb.com/*',
-            async test(key) {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 10000);
-                try {
-                    const res = await fetch('https://api.abuseipdb.com/api/v2/check?ipAddress=1.1.1.1&maxAgeInDays=90', {
-                        method: 'GET',
-                        headers: {
-                            'Key': key,
-                            'Accept': 'application/json'
-                        },
-                        signal: controller.signal
-                    });
-                    if (res.status === 200) return { status: 'valid' };
-                    if (res.status === 401 || res.status === 403) return { status: 'invalid_key' };
-                    if (res.status === 429) return { status: 'rate_limited' };
-                    return { status: 'error', code: res.status };
-                } catch (err) {
-                    return { status: 'error', message: err.message || String(err) };
-                } finally {
-                    clearTimeout(timeout);
-                }
-            }
-        },
-        urlscan: {
-            origin: 'https://urlscan.io/*',
-            async test(key) {
-                const controller = new AbortController();
-                const timeout = setTimeout(() => controller.abort(), 10000);
-                try {
-                    const res = await fetch('https://urlscan.io/api/v1/search/?q=domain:example.com&size=1', {
-                        method: 'GET',
-                        headers: {
-                            'API-Key': key,
-                            'Accept': 'application/json'
-                        },
-                        signal: controller.signal
-                    });
-                    if (res.status === 200) return { status: 'valid' };
-                    if (res.status === 401 || res.status === 403) return { status: 'invalid_key' };
-                    if (res.status === 429) return { status: 'rate_limited' };
-                    return { status: 'error', code: res.status };
-                } catch (err) {
-                    return { status: 'error', message: err.message || String(err) };
-                } finally {
-                    clearTimeout(timeout);
-                }
-            }
+    async function testKey(provider,key,permissionsApi=browser.permissions) {
+        const conf=ThundyProviders.registry[provider];
+        if(!key||!key.trim())return {status:'empty'};
+        if(!conf)return {status:'error'};
+        if(!await permissionsApi.contains({origins:[conf.origin]}).catch(()=>false)) {
+            if(!await permissionsApi.request({origins:[conf.origin]}).catch(()=>false))return {status:'permission_denied'};
         }
-    };
-
-    async function testKey(provider, key, permissionsApi = (typeof browser !== 'undefined' ? browser.permissions : null)) {
-        if (!key || !key.trim()) return { status: 'empty' };
-        const conf = endpoints[provider];
-        if (!conf) return { status: 'error', message: 'Unknown provider' };
-
-        if (permissionsApi && typeof permissionsApi.contains === 'function') {
-            const has = await permissionsApi.contains({ origins: [conf.origin] }).catch(() => false);
-            if (!has) {
-                if (typeof permissionsApi.request !== 'function') return { status: 'permission_denied' };
-                const granted = await permissionsApi.request({ origins: [conf.origin] }).catch(() => false);
-                if (!granted) return { status: 'permission_denied' };
-            }
-        }
-        return await conf.test(key.trim());
+        if(typeof ThundySettings!=='undefined')return ThundySettings.send({action:'testProviderKey',provider,key:key.trim()});
+        return ThundyProviders.test(provider,key.trim());
     }
-
-    return { testKey, endpoints };
+    return {testKey,get endpoints(){return typeof ThundyProviders !== 'undefined' ? ThundyProviders.registry : {};}};
 })();
 if (typeof globalThis !== 'undefined') globalThis.ProviderKeyTester = ProviderKeyTester;
-
 function uiText(key, fallback, params = []) {
     return typeof ThundyI18n !== 'undefined' ? ThundyI18n.get(key, params) : params.reduce((text, value, i) => text.replaceAll('$' + (i + 1), String(value)), fallback);
 }
 
-// ---------------------------------------------------------------------------
-// Data collection consent
-//
 // manifest.json declares `data_collection_permissions: { required: ["none"],
 // optional: ["personalCommunications"] }` and the Thunderbird permission
 // `sensitiveDataUpload` as an optional permission. Thunderbird has no built-in
@@ -364,13 +221,13 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 if (typeof ThundyTheme !== 'undefined') await ThundyTheme.whenIdle();
                 if (proposal.profile?.kind === 'thundy-local-protection') {
-                    const committed = await LocalProtectionProfile.commit(proposal, browser.storage.local);
+                    const committed = await LocalProtectionProfile.commit(proposal, settingsStorage);
                     const tierEl = document.getElementById('privacyTier'), manualEl = document.getElementById('alwaysManual'), tocEl = document.getElementById('timeOfClickProtection');
                     if (tierEl) tierEl.value = committed.protection.privacyTier;
                     if (manualEl) manualEl.checked = committed.protection.alwaysManual;
                     if (tocEl) tocEl.checked = committed.protection.timeOfClickProtection;
                 } else {
-                    await LocalSettingsProfile.commit(proposal, browser.storage.local);
+                    await LocalSettingsProfile.commit(proposal, settingsStorage);
                 }
                 reset(); status.textContent = uiText('localProfileApplied', 'Profile applied');
             }
@@ -492,6 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
               statusSpan.textContent = uiText('testApiKeyTesting', 'Testing connection…');
 
               try {
+                  if (!window.confirm(uiText('providerTestDisclosure', 'This sends your key and fixed test data to the provider, without message content. Continue?'))) { button.disabled=false;return; }
                   const result = await ProviderKeyTester.testKey(provider, rawKey);
                   if (result.status === 'valid') {
                       statusSpan.className = 'key-test-status text-success';
@@ -603,7 +461,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     const consentPromise = externalAnalysisConsentSetting ? requestDataCollectionConsent(requestedOrigins.map(([, origin]) => origin)) : Promise.resolve(false);
-    browser.storage.local.set({
+    settingsStorage.set({
         scanningEnabledSenders: [...new Set(senderEntries)],
         trustedAuthServers: (document.getElementById('trustedAuthServers')?.value || '').split(',').map(host => host.trim().toLowerCase()).filter(host => /^[a-z0-9.-]+$/.test(host)),
         apikey: mySetting,
@@ -634,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const consentGranted = await consentPromise;
             if (!consentGranted) {
                 externalAnalysisConsentSetting = false;
-                await browser.storage.local.set({ externalAnalysisConsent: false });
+                await settingsStorage.set({ externalAnalysisConsent: false });
                 const consentBox = document.getElementById('externalAnalysisConsent');
                 if (consentBox) consentBox.checked = false;
                 statusSpan.textContent = uiText("ui_076", "Zustimmung zur Datenübermittlung nicht erteilt – es wird nichts übertragen.");
@@ -643,7 +501,7 @@ document.addEventListener('DOMContentLoaded', function() {
             await removeDataCollectionConsent();
         }
 
-        await browser.storage.local.set({ externalAnalysisConsent: externalAnalysisConsentSetting === true });
+        await settingsStorage.set({ externalAnalysisConsent: externalAnalysisConsentSetting === true });
 
         if (externalAnalysisConsentSetting && requestedOrigins.length > 0) {
             const denied = [];
@@ -711,8 +569,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     try {
         const db = await openDB('thunderbird_av', 3);
-        const cleared = await clearStore(db, 'hybridanalysis');
-        await browser.runtime.sendMessage({ action: 'clearMemoryCaches' });
+        const cleared = typeof ThundySettings !== 'undefined' ? (await ThundySettings.send({action:'securityClearCache'})).success : await clearStore(db, 'hybridanalysis');
+        await (typeof ThundySettings !== 'undefined' ? ThundySettings.send({action:'clearMemoryCaches'}) : browser.runtime.sendMessage({action:'clearMemoryCaches'}));
         if (typeof db.close === 'function') db.close();
 
         if (cleared) {

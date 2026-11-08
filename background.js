@@ -141,7 +141,7 @@ const messageAnalyses = typeof ExpiringMap !== 'undefined' ? new ExpiringMap(900
 }) : new Map();
 async function getMessageAnalysisContext(message, tabId = null, inventory = {}) {
     if (typeof ThundyAnalysis === 'undefined' || !message) return null;
-    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : (message.headerMessageId || 'message:' + message.id);
+    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
     const contextKey = key + ':' + message.id;
     if (!messageAnalyses.has(contextKey)) {
         const ready = (async () => {
@@ -205,8 +205,11 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     } catch (_) { /* retain known live metadata */ }
                     const enabled = { hybridanalysis: !!apikey_hybridanalysis, virustotal: !!apikey_virustotal || ipReputationProvider === 'virustotal' && !!ipReputationApiKey, urlhaus: !!urlhausApikey, abuseipdb: ipReputationProvider === 'abuseipdb' && !!ipReputationApiKey, urlscan: !!urlscanApikey };
                     const availability = {};
+                    const providerAccess = {};
+                    const connectionTests = (await browser.storage.local.get('providerConnectionTests')).providerConnectionTests || {};
                     const authorized = await authorizeMessageScan(message);
                     await Promise.all(ThundyAnalysis.providers.map(async provider => {
+                        providerAccess[provider] = {configured:!!enabled[provider],testStatus:['valid','invalid_key','rate_limited','permission_denied','error'].includes(connectionTests[provider]?.status)?connectionTests[provider].status:null,testedAt:Number.isFinite(connectionTests[provider]?.observedAt)?connectionTests[provider].observedAt:null};
                         availability[provider] = !enabled[provider] ? 'unconfigured' : !mayTransmitExternally() ? 'disabled' : !await hasHostPermissionFor(PROVIDER_ORIGINS[provider]) ? 'permission' : provider === 'urlscan' ? !tierAtLeast('max') ? 'policy' : 'on_action' : !authorized ? 'authorization' : 'unrecorded';
                     }));
                     const resourceLabels = {};
@@ -227,7 +230,9 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                             }
                         }
                     }
-                    return { ...JSON.parse(JSON.stringify(model.data)), sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    const security = typeof ThundySecurity !== 'undefined' ? await ThundySecurity.read() : null;
+                    const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:model.data.local.score,coverage:model.data.local.state,verdict:model.data.rows.some(row=>row.verdict==='malicious')?'MALICIOUS':model.data.rows.length && model.data.rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?model.data.rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
+                    return { ...JSON.parse(JSON.stringify(model.data)), protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
@@ -387,7 +392,12 @@ async function addSenderOptIn(senderEmail) {
 // Listener für Änderungen an den Einstellungen (API Key)
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local') {
-    if (changes.externalAnalysisConsent && changes.externalAnalysisConsent.newValue !== true) {
+    if (changes.thundySecurityV1) {
+        for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(async context => {
+            for (const tabId of context.tabs || []) { try { const current=await getFirstDisplayedMessage(tabId,{throwOnError:true});if(current?.id===context.messageId) await injectTimeOfClickProtection(tabId,[],current.id); }catch(_){} }
+        }).catch(()=>{});
+    }
+    if ((changes.externalAnalysisConsent && changes.externalAnalysisConsent.newValue !== true) || changes.privacyTier) {
       if (typeof apiGateway.abortAll === 'function') apiGateway.abortAll();
     }
     if (['externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'apikey', 'virustotalApikey', 'urlhausApikey', 'urlscanApikey'].some(key => changes[key])) {
@@ -657,7 +667,7 @@ function scanCoverage(detected, eligible, processed, failed, reason) {
     return { detected, eligible, processed, failed, skipped: detected - processed - failed, reason, observedAt: Date.now() };
 }
 async function persistScanCoverage(message, kind, coverage) {
-    const key = message.headerMessageId || 'message:' + message.id;
+    const key = (typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id);
     await updateStore(await getSharedDB(), 'hybridanalysis', key, existing => ({
         ...(existing || { messageHeader: key }), scanCoverage: { ...(existing?.scanCoverage || {}), [kind]: coverage },
         ...(typeof ThundyAnalysis !== 'undefined' ? {scanCoverageBindings:{...(existing?.scanCoverageBindings || {}),[kind]:{runtimeId:getAnalysisRuntimeId(),messageId:message.id}}} : {})
@@ -760,7 +770,7 @@ async function extractBecProtectionData(message, fullMessage) {
 
 async function persistThreatIntelSummary(message, summary) {
   if (!message || (!message.headerMessageId && message.id == null)) return;
-  const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : (message.headerMessageId || 'message:' + message.id);
+  const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
   try {
     await updateStore(await getSharedDB(), 'hybridanalysis', key, existing => ({
       ...(existing || { messageHeader: key }),
@@ -780,12 +790,17 @@ async function collectAttachmentFindings(message) {
   if (!message || (!message.headerMessageId && message.id == null)) return [];
   if (typeof getFromStore !== 'function' || typeof getSharedDB !== 'function') return [];
   try {
-    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : (message.headerMessageId || 'message:' + message.id);
+    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
     const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
+    const current = await browser.messages.listAttachments(message.id);
+    const hashes = new Map();
+    for (const item of current.slice(0,100)) { if (item.size > 25*1024*1024) continue; try { const file=await browser.messages.getAttachmentFile(message.id,item.partName);hashes.set(String(item.partName),await get_sha256_hash(await file.arrayBuffer())); } catch (_) {} }
     const findings = [];
     for (const att of (record && Array.isArray(record.attachments) ? record.attachments : [])) {
       if (!att || typeof att !== 'object') continue;
-      const name = typeof att.attachment_name === 'string' ? att.attachment_name : '';
+      if (!att.partName || !hashes.has(String(att.partName)) || hashes.get(String(att.partName)) !== String(att.hybrid_sha256 || '').toLowerCase()) continue;
+      const actual = current.find(item=>String(item.partName)===String(att.partName));
+      const name = typeof actual?.name === 'string' ? actual.name : typeof att.attachment_name === 'string' ? att.attachment_name : '';
       const ha = att.report && typeof extractHybridVerdictFromOverview === 'function' ? extractHybridVerdictFromOverview(att.report) : null;
       const vt = att.virustotal_stats && typeof att.virustotal_stats === 'object' ? att.virustotal_stats : null;
       const vtMalicious = vt && Number.isFinite(vt.malicious) && vt.malicious > 0;
@@ -807,16 +822,19 @@ async function collectAttachmentFindings(message) {
  * report, Hybrid Analysis live link verdict, or URLScan.io result).
  * Local-only: no provider request is made here.
  */
-async function collectLinkFindings(message) {
+async function collectLinkFindings(message, fullMessage = null) {
   if (!message || (!message.headerMessageId && message.id == null)) return [];
   if (typeof getFromStore !== 'function' || typeof getSharedDB !== 'function') return [];
   try {
-    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : (message.headerMessageId || 'message:' + message.id);
+    const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
     const record = await getFromStore(await getSharedDB(), 'hybridanalysis', key);
+    const full = fullMessage || await readFullForAnalysis(message);
+    const currentLinks = new Set(filterUrls(extractUrls(extractTextFromParts(full.parts || full))));
     const findings = [];
     for (const link of (record && Array.isArray(record.links) ? record.links : [])) {
       if (!link || typeof link !== 'object') continue;
       const url = typeof link.url === 'string' ? link.url : '';
+      if (!currentLinks.has(url)) continue;
       const haReportVerdict = link.report && typeof extractHybridVerdictFromOverview === 'function' ? extractHybridVerdictFromOverview(link.report) : null;
       const haLiveVerdict = link.hybrid_verdict && typeof link.hybrid_verdict.status === 'string' ? link.hybrid_verdict.status.trim().toUpperCase() : null;
       const ha = haReportVerdict || haLiveVerdict;
@@ -848,7 +866,7 @@ async function collectThreatEvaluationOptions({ message, fullMessage, filteredUr
     allowExternal ? checkURLhausDomains(filteredUrls, parsedUrlCache, domainCoverage, analysisContext) : [],
     extractBecProtectionData(message, fullMessage),
     typeof collectAttachmentFindings === 'function' ? collectAttachmentFindings(message) : [],
-    typeof collectLinkFindings === 'function' ? collectLinkFindings(message) : []
+    typeof collectLinkFindings === 'function' ? collectLinkFindings(message, fullMessage) : []
   ]);
 
   if (domainCoverage.detected != null) await persistScanCoverage(message, 'domains', domainCoverage);
@@ -879,7 +897,7 @@ async function evaluateAndInjectThreats({ tab, message, fullMessage, urls, filte
   const threat = calculateThreatScore(message.author, urls, options);
   threat.coverage = localContentCoverage(fullMessage);
   await injectThreatBanner(tab.id, threat);
-  if (analysisContext) { recordLocalCoverage(analysisContext, threat.coverage); await analysisContext.flush().catch(() => {}); }
+  if (analysisContext) { recordLocalCoverage(analysisContext, threat.coverage, threat); await analysisContext.flush().catch(() => {}); }
 }
 
 // This describes the available text input, not an antivirus or full MIME verdict.
@@ -901,9 +919,9 @@ function localContentCoverage(fullMessage) {
   return unavailable ? {state:'incomplete',reason:'decryption_unavailable'} : missingText ? {state:'incomplete',reason:'text_unavailable'} : {state:'checked'};
 }
 
-function recordLocalCoverage(context, coverage) {
+function recordLocalCoverage(context, coverage, threat = null) {
   if (!context || context.disposed) return;
-  context.model.data.local = {...coverage,source:'local',observedAt:Date.now()};
+  context.model.data.local = {...coverage,source:'local',observedAt:Date.now(),...(threat ? {score:threat.score,reasons:threat.reasons.slice(0,20)} : {})};
   context.schedule();
 }
 
@@ -1368,7 +1386,7 @@ async function sent_to_hybrid_by_attachment(message, attachments, allowExternal 
 }
 
 async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
-  if (!message.headerMessageId && message.id != null) message = { ...message, headerMessageId: 'message:' + message.id };
+  if (!message.headerMessageId && message.id != null) message = { ...message, headerMessageId: typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id };
   try {
     const db = await getSharedDB();
 
@@ -1435,7 +1453,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
 
 // Speicherung der Ergebnisse in IndexedDB
 async function indexedDB_save_links_objects_to_db(message, urlObjects) {
-  if (!message.headerMessageId && message.id != null) message = { ...message, headerMessageId: 'message:' + message.id };
+  if (!message.headerMessageId && message.id != null) message = { ...message, headerMessageId: typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id };
   try {
     const db = await getSharedDB();
 
@@ -1483,7 +1501,7 @@ async function indexedDB_save_links_objects_to_db(message, urlObjects) {
 }
 
 async function indexedDB_save_links_to_db(message, urls) {
-  if (!message.headerMessageId && message.id != null) message = { ...message, headerMessageId: 'message:' + message.id };
+  if (!message.headerMessageId && message.id != null) message = { ...message, headerMessageId: typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id };
   try {
     const db = await getSharedDB();
 
@@ -1596,7 +1614,7 @@ async function scanLinksOfDisplayedMessage(tabId) {
             return;
         }
         const analysisContext = await getMessageAnalysisContext(message, tabId);
-        const messageKey = message.headerMessageId || 'message:' + message.id;
+        const messageKey = (typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id);
         let submitted = 0;
         for (const url of urls.slice(0, 20)) {
             try {
@@ -1638,7 +1656,7 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
             // Need a dummy headerMessageId as context menu might be clicked outside standard flow
             // or we just fetch the active message
             const activeMessage = await getFirstDisplayedMessage(tab && tab.id);
-            let msgId = activeMessage ? (activeMessage.headerMessageId || 'message:' + activeMessage.id) : "context_menu_scan";
+            let msgId = activeMessage ? (typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(activeMessage) : activeMessage.headerMessageId || 'message:' + activeMessage.id) : "context_menu_scan";
 
             let result = await handleUrlScan(url, msgId, activeMessage ? await getMessageAnalysisContext(activeMessage, tab?.id) : null);
 
@@ -1650,6 +1668,7 @@ if (browser.menus && browser.menus.onClicked) browser.menus.onClicked.addListene
 });
 
 async function persistUrlscanLinkResult(message, url, res) {
+    if (message && !message.headerMessageId && message.id != null) message={...message,headerMessageId:typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id};
     if (!message || !message.headerMessageId || !res || !res.status) return;
     try {
         const db = await getSharedDB();
@@ -1682,6 +1701,7 @@ async function persistUrlscanLinkResult(message, url, res) {
 }
 
 async function persistHybridLinkVerdict(message, url, result) {
+    if (message && !message.headerMessageId && message.id != null) message={...message,headerMessageId:typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id};
     if (!message || !message.headerMessageId || !url || !result || !result.status) return;
     try {
         const observedAt = Number.isFinite(result.check?.observedAt) ? result.check.observedAt : Date.now();
@@ -1701,7 +1721,8 @@ async function persistHybridLinkVerdict(message, url, result) {
 async function handleCheckLinkState(request, sender, sendResponse) {
     try {
         // Need to find the active message to get headerMessageId
-        const message = await getFirstDisplayedMessage(sender && sender.tab && sender.tab.id, { throwOnError: true });
+        let message = await getFirstDisplayedMessage(sender && sender.tab && sender.tab.id, { throwOnError: true });
+        if (message && !message.headerMessageId && message.id != null) message={...message,headerMessageId:typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id};
         if (!message || !message.headerMessageId || (request.messageId != null && request.messageId !== message.id)) {
             sendResponse({status: 'UNKNOWN'});
             return;
@@ -1818,6 +1839,7 @@ async function handleOpenCheckedLink(request, sender) {
         if (url.protocol !== 'http:' && url.protocol !== 'https:') return { success: false };
         const message = await getFirstDisplayedMessage(tabId, { throwOnError: true });
         if (!message || message.id !== request.messageId) return { success: false };
+        if (typeof ThundyLinkSecurity !== 'undefined') return await ThundyLinkSecurity.open(request,sender);
         await browser.windows.openDefaultBrowser(url.href);
         return { success: true };
     } catch (error) {
@@ -1984,6 +2006,7 @@ async function handleRequestScan(request, sender) {
     try {
         const messageObj = await browser.messages.get(request.messageId);
         if (request.persist === true && messageObj.author) {
+            if (typeof ThundySecurity !== 'undefined' && (await ThundySecurity.read()).admin) await ThundySecurity.authorized(sender,request.token);
             await addSenderOptIn(extractEmailAddress(messageObj.author));
         }
         const analysisContext = await getMessageAnalysisContext(messageObj, sender?.tab?.id ?? request.tabId);
@@ -2010,6 +2033,34 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     if (!request || typeof request !== 'object') return false;
 
+    if (typeof ThundySecurity !== 'undefined' && ['securityCommand','securitySettingsWrite','testProviderKey','startLinkApproval','linkApprovalCommand','securityClearCache'].includes(request.action)) {
+        (async () => {
+            if (request.action === 'securityCommand') return {success:true,...await ThundySecurity.command(request,sender)};
+            if (request.action === 'securitySettingsWrite') return await ThundySecurity.write(request.values,sender,request.token);
+            if (request.action === 'testProviderKey') {
+                await ThundySecurity.authorized(sender,request.token);
+                const result=await ThundyProviders.test(request.provider,request.key,()=>ThundySecurity.authorized(sender,request.token,false));
+                const config=ThundyProviders.registry[request.provider];
+                const stored=await browser.storage.local.get(['providerConnectionTests',config?.key || 'apikey','ipReputationProvider','ipReputationApiKey']);
+                const matches=config && (stored[config.key]===request.key.trim() || stored.ipReputationProvider===request.provider && stored.ipReputationApiKey===request.key.trim());
+                if(matches)await browser.storage.local.set({providerConnectionTests:{...stored.providerConnectionTests,[request.provider]:{status:result.status,httpStatus:result.httpStatus||null,observedAt:Date.now(),uploadVerified:false}}});
+                return {success:true,...result};
+            }
+            if (request.action === 'startLinkApproval') return await ThundyLinkSecurity.start(request,sender);
+            if (request.action === 'linkApprovalCommand') return await ThundyLinkSecurity.command(request,sender);
+            await ThundySecurity.authorized(sender,request.token);
+            const db=await getSharedDB();await clearStore(db,'hybridanalysis');return {success:true};
+        })().then(sendResponse).catch(error => sendResponse({success:false,code:error.code||(/^[A-Z_]+$/.test(error.message)?error.message:'SECURITY_REQUEST_FAILED')}));
+        return true;
+    }
+    if (typeof ThundySecurity !== 'undefined' && ['clearLinkAudit','clearMemoryCaches'].includes(request.action)) {
+        ThundySecurity.authorized(sender,request.token).then(async()=>{
+            if(request.action==='clearLinkAudit') { await editLinkAudit(records=>{records.length=0;}); }
+            else { urlhausCache.clear();ipReputationCache.clear();vtCache.clear();knownSendersCache.clear();for(const ready of messageAnalyses.values()) Promise.resolve(ready).then(c=>c.dispose()).catch(()=>{});messageAnalyses.clear(); }
+            sendResponse({success:true,status:'success'});
+        }).catch(()=>sendResponse({success:false,code:'ADMIN_LOCKED'}));
+        return true;
+    }
     switch (request.action) {
         case "reportArchiveBlocked":
             if (sender?.url?.split(/[?#]/)[0] !== browser.runtime.getURL('popup.html') || typeof request.headerMessageId !== 'string' || request.headerMessageId.length > 4096) return false;
@@ -2051,7 +2102,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const threat = calculateThreatScore(message.author, urls, options);
                 threat.coverage = localContentCoverage(fullMessage);
                 const context = await getMessageAnalysisContext(message, null, {fullMessage});
-                recordLocalCoverage(context, threat.coverage);
+                recordLocalCoverage(context, threat.coverage, threat);
                 return threat;
             })().then(threat => sendResponse({ status: 'success', threat })).catch(() => sendResponse({ status: 'error' }));
             return true;
@@ -2074,7 +2125,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         if (!context.disposed && active?.id === message.id) await injectThreatBanner(tab, threat);
                     } catch (_) { /* closed or changed message */ }
                 }
-                if (context) { recordLocalCoverage(context, threat.coverage); await context.flush().catch(() => {}); }
+                if (context) { recordLocalCoverage(context, threat.coverage, threat); await context.flush().catch(() => {}); }
                 return { success: true, score: threat.score };
             })().then(sendResponse).catch(() => sendResponse({ success: false }));
             return true;
@@ -2100,7 +2151,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 let context = null;
                 if (Number.isInteger(request.messageId)) {
                     const message = await browser.messages.get(request.messageId);
-                    const key = message.headerMessageId || 'message:' + message.id;
+                    const key = (typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id);
                     if (key !== request.headerMessageId) throw typedError('MESSAGE_CONTEXT_CHANGED', msg('analysisContextChanged'));
                     context = await getMessageAnalysisContext(message);
                 }

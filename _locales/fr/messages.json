@@ -2012,7 +2012,7 @@
     "message": "Test de la connexion en cours…"
   },
   "testApiKeyValid": {
-    "message": "Connexion réussie. La clé d'API est valide."
+    "message": "Requête acceptée. Cela ne confirme ni les droits d’envoi ni le quota restant."
   },
   "testApiKeyInvalid": {
     "message": "Échec de la connexion : clé d'API non valide."
@@ -2062,5 +2062,161 @@
         "content": "$1"
       }
     }
+  },
+  "securityTitle": {
+    "message": "Administration et protection des liens"
+  },
+  "securityScope": {
+    "message": "Limité à ce profil Thunderbird. Ne bloque pas la modification du profil, la désactivation du module ou les liens copiés ailleurs."
+  },
+  "securityAdminPassword": {
+    "message": "Mot de passe administrateur (12 caractères minimum ; vide pour conserver)"
+  },
+  "securityApprovalPassword": {
+    "message": "Mot de passe distinct pour autoriser les liens (12 caractères minimum ; vide pour conserver)"
+  },
+  "securityThreshold": {
+    "message": "Autorisation à partir du score (0–100, seuil inclus)"
+  },
+  "securityEnablePolicy": {
+    "message": "Activer la protection obligatoire des liens"
+  },
+  "securityUnknownApproval": {
+    "message": "Exiger aussi une autorisation si la vérification est incomplète"
+  },
+  "securityUnlock": {
+    "message": "Déverrouiller les paramètres"
+  },
+  "securitySave": {
+    "message": "Enregistrer la protection"
+  },
+  "securityLock": {
+    "message": "Verrouiller"
+  },
+  "securityDisable": {
+    "message": "Supprimer le mot de passe des paramètres"
+  },
+  "securityRecovery": {
+    "message": "Code de récupération"
+  },
+  "securityRecover": {
+    "message": "Réinitialiser le mot de passe avec le code"
+  },
+  "securityStopTransfers": {
+    "message": "Arrêter les transferts externes"
+  },
+  "securityLocked": {
+    "message": "Paramètres verrouillés. Saisissez le mot de passe administrateur."
+  },
+  "securityUnlocked": {
+    "message": "Paramètres déverrouillés ; verrouillage après cinq minutes sans activité."
+  },
+  "securityOptional": {
+    "message": "Protection par mot de passe facultative, désactivée. Sans mot de passe de lien, les liens protégés restent bloqués."
+  },
+  "securityError": {
+    "message": "Opération refusée. Vérifiez mot de passe, session et saisie."
+  },
+  "securityWait": {
+    "message": "Trop de tentatives. Patientez avant de réessayer."
+  },
+  "securityLength": {
+    "message": "Utilisez au moins douze caractères et des mots de passe distincts."
+  },
+  "securityRecoverySave": {
+    "message": "Conservez ce code à usage unique séparément. Il ne sera plus affiché :"
+  },
+  "securitySaved": {
+    "message": "Protection enregistrée."
+  },
+  "securityDisableConfirm": {
+    "message": "Supprimer le mot de passe ? La protection des liens reste configurée."
+  },
+  "securityStopped": {
+    "message": "Transferts externes arrêtés."
+  },
+  "securityApprovalTitle": {
+    "message": "Autoriser un contenu potentiellement dangereux"
+  },
+  "securityConfirmDanger": {
+    "message": "Je souhaite quand même ouvrir ce contenu potentiellement dangereux."
+  },
+  "securityApproveOnce": {
+    "message": "Autoriser et ouvrir une fois"
+  },
+  "securityExpired": {
+    "message": "Autorisation expirée ou contexte modifié. Recommencez depuis le message."
+  },
+  "securityOpened": {
+    "message": "Thunderbird a accepté la demande d’ouverture."
+  },
+  "securityApprovalFailed": {
+    "message": "Ouverture refusée. Vérifiez le mot de passe ou recommencez depuis le message."
+  },
+  "providerTestDisclosure": {
+    "message": "La clé et des données de test fixes seront envoyées au service, sans contenu de message. Le test ne confirme ni les droits d’envoi ni le quota. Continuer ?"
+  },
+  "analysisSimple": {
+    "message": "Vue simple"
+  },
+  "analysisExpert": {
+    "message": "Détails techniques"
+  },
+  "analysisSimpleNone": {
+    "message": "Aucun signe suspect détecté"
+  },
+  "analysisSimpleCaution": {
+    "message": "Prudence"
+  },
+  "analysisSimpleDanger": {
+    "message": "Contenu dangereux signalé"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Vérification incomplète"
+  },
+  "analysisScoreExplanation": {
+    "message": "Le score est fondé sur des règles, pas une probabilité ni une garantie."
+  },
+  "analysisSimpleBasis": {
+    "message": "Services avec résultats / indisponibles"
+  },
+  "analysisProviderSetup": {
+    "message": "Accès aux services et données transmises"
+  },
+  "analysisProviderConfigured": {
+    "message": "Clé configurée ; son enregistrement ne lance pas d’analyse."
+  },
+  "analysisProviderNoKey": {
+    "message": "Aucune clé configurée"
+  },
+  "analysisDataHash": {
+    "message": "Empreinte de fichier (SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Pièce jointe complète"
+  },
+  "analysisDataUrl": {
+    "message": "URL complète ; peut contenir des jetons confidentiels"
+  },
+  "analysisDataDomain": {
+    "message": "Domaine du lien"
+  },
+  "analysisDataIp": {
+    "message": "IP publique des en-têtes du message"
+  },
+  "analysisDataReport": {
+    "message": "Identifiant du rapport"
+  },
+  "analysisApprovalRequired": {
+    "message": "Autorisation supplémentaire requise ; annulez ou contactez l’administrateur."
+  },
+  "analysisContinueWarning": {
+    "message": "Vérifiez les motifs avant de continuer. Vous pouvez annuler."
+  },
+  "analysisConflict": {
+    "message": "Les services divergent ; les alertes sont prioritaires."
+  },
+  "analysisExportSensitive": {
+    "message": "Vérifiez avant export : les détails peuvent identifier des ressources du message."
   }
 }

@@ -173,7 +173,11 @@ function addonMock({
       openOptionsPage: async () => {},
       onMessage: { addListener: () => {} },
       sendMessage: async (p) =>
-        p.action === "getLinkAudit"
+        p.action === "securityCommand"
+          ? {success:true,protected:false,unlocked:true,approvalConfigured:false,policy:{enabled:false,threshold:50,unknown:'warn',revision:0}}
+          : p.action === 'securitySettingsWrite'
+          ? (await window.browser.storage.local.set(p.values),{success:true})
+          : p.action === "getLinkAudit"
           ? {
               success: true,
               records: populated

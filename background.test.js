@@ -1873,7 +1873,7 @@ describe('background.js', () => {
         it('calculates threat score correctly for custom whitelist exact match', async () => {
             context.set_customWhitelist(new Set(['good@guy.com']));
             const result = context.calculateThreatScore("Good <good@guy.com>", [], {
-                urlhausDomains: ['malware.com'] // should be ignored due to whitelist return
+                urlhausDomains: [] // no hard threat: sender allowlist still applies
             });
             assert.strictEqual(result.score, 0);
             assert.ok(result.reasons.some(r => r.includes("steht auf der Whitelist")));
@@ -1883,7 +1883,7 @@ describe('background.js', () => {
         it('calculates threat score correctly for custom whitelist domain match', async () => {
             context.set_customWhitelist(new Set(['guy.com']));
             const result = context.calculateThreatScore("Good <good@guy.com>", [], {
-                urlhausDomains: ['malware.com'] // should be ignored due to whitelist return
+                urlhausDomains: [] // no hard threat: sender allowlist still applies
             });
             assert.strictEqual(result.score, 0);
             assert.ok(result.reasons.some(r => r.includes("steht auf der Whitelist")));
@@ -1999,8 +1999,8 @@ describe('background.js', () => {
             assert.strictEqual(executedScripts.length, 1);
             assert.strictEqual(executedScripts[0].target.tabId, 10);
             assert.strictEqual(typeof executedScripts[0].func, 'function');
-            // Labels, message identity and the isolated appearance snapshot.
-            assert.strictEqual(executedScripts[0].args.length, 3);
+            // Labels, message identity, appearance and forced-protection state.
+            assert.strictEqual(executedScripts[0].args.length, 4);
             assert.strictEqual(executedScripts[0].args[2], null);
             assert.ok(executedScripts[0].args[0].waiting);
         });
@@ -3035,7 +3035,7 @@ describe('background.js', () => {
             });
         });
 
-        it('returns UNKNOWN if no active message or headerMessageId', async () => {
+        it('returns UNKNOWN without a message and resolves the fallback key without a Message-ID', async () => {
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [] });
 
             let response;
@@ -3043,8 +3043,10 @@ describe('background.js', () => {
             assert.deepEqual(response, { status: 'UNKNOWN' });
 
             context.browser.messageDisplay.getDisplayedMessages = async () => ({ messages: [{ id: 1 }] }); // Missing headerMessageId
+            let fallbackKey;context.getFromStore=async(_db,_store,key)=>{fallbackKey=key;return {links:[]};};
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.deepEqual(response, { status: 'UNKNOWN' });
+            assert.equal(response.status,'UNKNOWN');
+            assert.equal(fallbackKey,'message:1');
         });
 
         it('returns UNKNOWN if no link object is found and urlscan is disabled', async () => {

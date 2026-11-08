@@ -2015,7 +2015,7 @@
     "message": "Verbindung wird getestet…"
   },
   "testApiKeyValid": {
-    "message": "Verbindung erfolgreich. API-Schlüssel ist gültig."
+    "message": "Anfrage akzeptiert. Dies bestätigt keine Uploadrechte oder verbleibendes Kontingent."
   },
   "testApiKeyInvalid": {
     "message": "Verbindung fehlgeschlagen: Ungültiger API-Schlüssel."
@@ -2065,5 +2065,161 @@
         "content": "$1"
       }
     }
+  },
+  "securityTitle": {
+    "message": "Administration und Linkschutz"
+  },
+  "securityScope": {
+    "message": "Gilt für dieses Thunderbird-Profil. Verhindert keine Profilmanipulation, Deaktivierung des Add-ons oder Öffnung kopierter Links außerhalb."
+  },
+  "securityAdminPassword": {
+    "message": "Administratorpasswort (mindestens 12 Zeichen; leer lassen zum Beibehalten)"
+  },
+  "securityApprovalPassword": {
+    "message": "Separates Linkfreigabepasswort (mindestens 12 Zeichen; leer lassen zum Beibehalten)"
+  },
+  "securityThreshold": {
+    "message": "Freigabe ab Risikoscore (0–100, einschließlich Grenzwert)"
+  },
+  "securityEnablePolicy": {
+    "message": "Verbindlichen Linkschutz aktivieren"
+  },
+  "securityUnknownApproval": {
+    "message": "Auch bei unvollständiger Prüfung Freigabe verlangen"
+  },
+  "securityUnlock": {
+    "message": "Einstellungen entsperren"
+  },
+  "securitySave": {
+    "message": "Schutzeinstellungen speichern"
+  },
+  "securityLock": {
+    "message": "Jetzt sperren"
+  },
+  "securityDisable": {
+    "message": "Einstellungspasswort entfernen"
+  },
+  "securityRecovery": {
+    "message": "Wiederherstellungscode"
+  },
+  "securityRecover": {
+    "message": "Adminpasswort mit Code zurücksetzen"
+  },
+  "securityStopTransfers": {
+    "message": "Externe Übertragungen stoppen"
+  },
+  "securityLocked": {
+    "message": "Einstellungen gesperrt. Zum Entsperren Administratorpasswort eingeben."
+  },
+  "securityUnlocked": {
+    "message": "Einstellungen entsperrt; Sperre nach fünf Minuten ohne Aktivität."
+  },
+  "securityOptional": {
+    "message": "Passwortschutz ist optional und derzeit aus. Ohne Freigabepasswort bleiben freigabepflichtige Links gesperrt."
+  },
+  "securityError": {
+    "message": "Vorgang abgelehnt. Passwort, Sitzung und Eingaben prüfen."
+  },
+  "securityWait": {
+    "message": "Zu viele Versuche. Vor dem nächsten Versuch warten."
+  },
+  "securityLength": {
+    "message": "Mindestens zwölf Zeichen und unterschiedliche Passwörter verwenden."
+  },
+  "securityRecoverySave": {
+    "message": "Diesen einmaligen Wiederherstellungscode separat sichern. Er wird nicht erneut angezeigt:"
+  },
+  "securitySaved": {
+    "message": "Schutzeinstellungen gespeichert."
+  },
+  "securityDisableConfirm": {
+    "message": "Einstellungspasswort entfernen? Der Linkschutz bleibt konfiguriert."
+  },
+  "securityStopped": {
+    "message": "Externe Übertragungen gestoppt."
+  },
+  "securityApprovalTitle": {
+    "message": "Möglicherweise gefährliche Inhalte freigeben"
+  },
+  "securityConfirmDanger": {
+    "message": "Ich möchte diesen möglicherweise gefährlichen Inhalt trotzdem öffnen."
+  },
+  "securityApproveOnce": {
+    "message": "Einmal freigeben und öffnen"
+  },
+  "securityExpired": {
+    "message": "Freigabe abgelaufen oder Kontext geändert. Erneut aus der Nachricht starten."
+  },
+  "securityOpened": {
+    "message": "Thunderbird hat die Öffnungsanforderung angenommen."
+  },
+  "securityApprovalFailed": {
+    "message": "Öffnung abgelehnt. Passwort prüfen oder abgelaufene Freigabe aus der Nachricht neu starten."
+  },
+  "providerTestDisclosure": {
+    "message": "API-Schlüssel und feste Testdaten werden an den gewählten Dienst gesendet, ohne Nachrichteninhalte. Ein erfolgreicher Lesetest bestätigt keine Uploadrechte oder verfügbares Kontingent. Fortfahren?"
+  },
+  "analysisSimple": {
+    "message": "Übersicht"
+  },
+  "analysisExpert": {
+    "message": "Fachansicht"
+  },
+  "analysisSimpleNone": {
+    "message": "Keine Auffälligkeit erkannt"
+  },
+  "analysisSimpleCaution": {
+    "message": "Vorsicht"
+  },
+  "analysisSimpleDanger": {
+    "message": "Gefährlicher Inhalt gemeldet"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Prüfung unvollständig"
+  },
+  "analysisScoreExplanation": {
+    "message": "Der Risikoscore ist eine Regelbewertung, keine Wahrscheinlichkeit oder Sicherheitsgarantie."
+  },
+  "analysisSimpleBasis": {
+    "message": "Dienste mit Befunden / nicht verfügbar"
+  },
+  "analysisProviderSetup": {
+    "message": "Anbieterzugriff und Datenübertragung"
+  },
+  "analysisProviderConfigured": {
+    "message": "Schlüssel hinterlegt; Speichern startet keinen Scan."
+  },
+  "analysisProviderNoKey": {
+    "message": "Kein Schlüssel hinterlegt"
+  },
+  "analysisDataHash": {
+    "message": "Dateifingerabdruck (SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Vollständiger Anhang"
+  },
+  "analysisDataUrl": {
+    "message": "Vollständige URL; kann vertrauliche Tokens enthalten"
+  },
+  "analysisDataDomain": {
+    "message": "Domain des Links"
+  },
+  "analysisDataIp": {
+    "message": "Öffentliche IP aus Nachrichtenkopfzeilen"
+  },
+  "analysisDataReport": {
+    "message": "Berichtskennung"
+  },
+  "analysisApprovalRequired": {
+    "message": "Zusätzliche Freigabe erforderlich; abbrechen oder Administrator hinzuziehen."
+  },
+  "analysisContinueWarning": {
+    "message": "Gründe vor dem Fortfahren prüfen. Sie können abbrechen."
+  },
+  "analysisConflict": {
+    "message": "Anbieter widersprechen sich; Warnbefunde haben Vorrang."
+  },
+  "analysisExportSensitive": {
+    "message": "Vor Export prüfen: Technische Details können Nachrichtenressourcen identifizieren."
   }
 }

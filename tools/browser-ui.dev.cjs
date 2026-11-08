@@ -168,8 +168,12 @@ async function ready(page, c) {
       await page.waitForFunction(
         () => !document.getElementById("next").disabled,
       );
-    if (c.view === "popup.html")
+    if (c.view === "popup.html" && c.populated) {
+      await page.locator('#thundy-analysis-status [data-focus-key="view-switch"]').waitFor();
+      assert.equal(await page.locator('body').getAttribute('data-thundy-analysis-view'),'simple');
+      await page.locator('#thundy-analysis-status [data-focus-key="view-switch"]').click();
       await page.locator("#hybrid_analysis_api_content .card").waitFor();
+    }
     if (c.view === "audit.html")
       await page.waitForFunction(
         () => document.getElementById("auditJson").disabled === false,
@@ -356,7 +360,7 @@ async function interaction(page, c) {
     );
   } else if (c.view === "popup.html" && c.populated) {
     await page.locator("#thundy-analysis-status .mode").waitFor();
-    const sourceText = await page.locator("#thundy-analysis-status .card").innerText();
+    const sourceText = await page.locator("#thundy-analysis-status .card:visible").innerText();
     for (const brand of ["Hybrid Analysis","VirusTotal","URLhaus","AbuseIPDB","urlscan.io"])
       assert.ok(sourceText.includes(brand), "missing source: " + brand);
     const sourceCatalog = JSON.parse(fs.readFileSync(path.join(root,"_locales",c.lang,"messages.json")));

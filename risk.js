@@ -474,7 +474,7 @@ function calculateThreatScore(author, urls, options = {}) {
     let senderDomain = extractEmailDomain(email);
 
     const listCheck = checkLists(email, senderDomain);
-    if (listCheck) {
+    if (listCheck && (listCheck.listType === 'blacklist' || (!attachmentFindings.some(x => x.verdict === 'malicious') && !linkFindings.some(x => x.verdict === 'malicious') && !urlhausDomains.length && !maliciousIps.length && !Object.values(parseAuthenticationResults(authHeaders)).some(values => values.some(value => value === 'fail' || value === 'softfail'))))) {
         return { score: listCheck.score, reasons: listCheck.reasons, authStatus: 'neutral' };
     }
 

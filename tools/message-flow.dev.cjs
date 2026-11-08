@@ -93,7 +93,9 @@ async function prepareMessage(page, c, catalog) {
   );
 }
 async function checkMessage(page, c, tags) {
-  const sources = page.locator("#thundy-analysis-status .card");
+  assert.equal(await page.locator('body').getAttribute('data-thundy-analysis-view'),'simple');
+  await page.locator('#thundy-analysis-status [data-focus-key="view-switch"]').click();
+  const sources = page.locator("#thundy-analysis-status .card:visible");
   assert.equal(await sources.evaluate(el=>getComputedStyle(el).fontSize),"14px");
   assert.equal(await sources.evaluate(el=>getComputedStyle(el).backgroundColor),c.scheme === "dark" ? "rgb(25, 37, 50)" : "rgb(255, 255, 255)");
   for (const brand of ["Hybrid Analysis","VirusTotal","URLhaus","AbuseIPDB","urlscan.io"])

@@ -190,8 +190,9 @@ test('collectAttachmentFindings derives verdicts from stored reports and VirusTo
         { attachment_name: 'd.pdf', report: { finished: false, verdict: 'malicious' } },
         { attachment_name: 'e.txt', report: { verdict: 'no specific threat' }, virustotal_stats: { malicious: 0 } }
     ] };
+    record.attachments.forEach((item,index)=>{item.partName=String(index+1);item.hybrid_sha256='a'.repeat(64);});
     const keys = [];
-    const context = vm.createContext({ Logger: { warn() {} }, getSharedDB: async () => ({}), getFromStore: async (_db, _store, key) => { keys.push(key); return record; } });
+    const context = vm.createContext({ browser:{messages:{listAttachments:async()=>record.attachments.map(item=>({partName:item.partName,size:1})),getAttachmentFile:async()=>({arrayBuffer:async()=>new ArrayBuffer(1)})}},get_sha256_hash:async()=>'a'.repeat(64),Logger: { warn() {} }, getSharedDB: async () => ({}), getFromStore: async (_db, _store, key) => { keys.push(key); return record; } });
     loadSlice('background.js', 'extractHybridVerdictFromOverview', context);
     loadSlice('background.js', 'collectAttachmentFindings', context);
     const findings = await context.collectAttachmentFindings({ id: 4 });
@@ -201,6 +202,8 @@ test('collectAttachmentFindings derives verdicts from stored reports and VirusTo
         { name: 'b.doc', verdict: 'malicious', provider: 'VirusTotal' },
         { name: 'c.js', verdict: 'suspicious', provider: 'Hybrid Analysis' }
     ]);
+    context.get_sha256_hash=async()=>'b'.repeat(64);
+    assert.equal((await context.collectAttachmentFindings({id:4})).length,0,'different attachment bytes never inherit findings');
     context.getFromStore = async () => { throw new Error('db'); };
     assert.equal((await context.collectAttachmentFindings({ headerMessageId: 'm' })).length, 0);
 });
@@ -361,6 +364,7 @@ test('collectLinkFindings and evaluateLinkFindings incorporate Hybrid Analysis a
         })
     });
     loadSlice('background.js', 'extractHybridVerdictFromOverview', bgContext);
+    Object.assign(bgContext,{readFullForAnalysis:async()=>({parts:[]}),extractTextFromParts:()=>'',extractUrls:()=>['https://a.invalid/','https://b.invalid/','https://c.invalid/','https://d.invalid/'],filterUrls:urls=>urls});
     loadSlice('background.js', 'collectLinkFindings', bgContext);
     const findings = await bgContext.collectLinkFindings({ headerMessageId: 'm' });
     assert.deepEqual(JSON.parse(JSON.stringify(findings)), [
@@ -368,6 +372,8 @@ test('collectLinkFindings and evaluateLinkFindings incorporate Hybrid Analysis a
         { url: 'https://b.invalid/', verdict: 'suspicious', provider: 'Hybrid Analysis' },
         { url: 'https://c.invalid/', verdict: 'malicious', provider: 'URLScan.io' }
     ]);
+    bgContext.extractUrls=()=>[];
+    assert.equal((await bgContext.collectLinkFindings({headerMessageId:'m'})).length,0,'absent links cannot inherit old verdicts');
 });
 
 test('manual upload and URL scan handlers preserve existing virustotal_stats and urlscan when polling for the report', async () => {

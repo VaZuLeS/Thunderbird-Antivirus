@@ -2015,7 +2015,7 @@
     "message": "Testing connection…"
   },
   "testApiKeyValid": {
-    "message": "Connection successful. API key is valid."
+    "message": "Request accepted. This does not confirm upload rights or remaining quota."
   },
   "testApiKeyInvalid": {
     "message": "Connection failed: Invalid API key."
@@ -2065,5 +2065,161 @@
         "content": "$1"
       }
     }
+  },
+  "securityTitle": {
+    "message": "Administration and link protection"
+  },
+  "securityScope": {
+    "message": "Local to this Thunderbird profile. Does not prevent profile changes, disabling the add-on or opening copied links elsewhere."
+  },
+  "securityAdminPassword": {
+    "message": "Administrator password (12+ characters; leave blank to keep)"
+  },
+  "securityApprovalPassword": {
+    "message": "Separate link approval password (12+ characters; leave blank to keep)"
+  },
+  "securityThreshold": {
+    "message": "Require approval at risk score (0–100, inclusive)"
+  },
+  "securityEnablePolicy": {
+    "message": "Enable enforced link protection"
+  },
+  "securityUnknownApproval": {
+    "message": "Require approval for incomplete checks too"
+  },
+  "securityUnlock": {
+    "message": "Unlock settings"
+  },
+  "securitySave": {
+    "message": "Save protection settings"
+  },
+  "securityLock": {
+    "message": "Lock now"
+  },
+  "securityDisable": {
+    "message": "Remove settings password"
+  },
+  "securityRecovery": {
+    "message": "Recovery code"
+  },
+  "securityRecover": {
+    "message": "Reset admin password using code"
+  },
+  "securityStopTransfers": {
+    "message": "Stop external transfers"
+  },
+  "securityLocked": {
+    "message": "Settings locked. Enter administrator password to unlock."
+  },
+  "securityUnlocked": {
+    "message": "Settings unlocked; lock after five minutes without activity."
+  },
+  "securityOptional": {
+    "message": "Password protection is optional and currently off. Without an approval password, protected links stay blocked."
+  },
+  "securityError": {
+    "message": "Operation refused. Check your password, session and input."
+  },
+  "securityWait": {
+    "message": "Too many attempts. Wait before retrying."
+  },
+  "securityLength": {
+    "message": "Use at least twelve characters and distinct passwords."
+  },
+  "securityRecoverySave": {
+    "message": "Save this one-time recovery code separately. It will not be shown again:"
+  },
+  "securitySaved": {
+    "message": "Protection settings saved."
+  },
+  "securityDisableConfirm": {
+    "message": "Remove the settings password? Link protection remains configured."
+  },
+  "securityStopped": {
+    "message": "External transfers stopped."
+  },
+  "securityApprovalTitle": {
+    "message": "Approve potentially dangerous content"
+  },
+  "securityConfirmDanger": {
+    "message": "I want to open this potentially dangerous content anyway."
+  },
+  "securityApproveOnce": {
+    "message": "Approve and open once"
+  },
+  "securityExpired": {
+    "message": "Approval expired or context changed. Start again from the message."
+  },
+  "securityOpened": {
+    "message": "Thunderbird accepted the opening request."
+  },
+  "securityApprovalFailed": {
+    "message": "Opening refused. Check the password or restart the expired approval from the message."
+  },
+  "providerTestDisclosure": {
+    "message": "This sends your API key and fixed test data to the selected provider, without message content. A successful read test does not verify uploads or available quota. Continue?"
+  },
+  "analysisSimple": {
+    "message": "Overview"
+  },
+  "analysisExpert": {
+    "message": "Technical details"
+  },
+  "analysisSimpleNone": {
+    "message": "No suspicious signs detected"
+  },
+  "analysisSimpleCaution": {
+    "message": "Caution"
+  },
+  "analysisSimpleDanger": {
+    "message": "Dangerous content reported"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Check incomplete"
+  },
+  "analysisScoreExplanation": {
+    "message": "Risk score is a rule-based assessment, not a probability or safety guarantee."
+  },
+  "analysisSimpleBasis": {
+    "message": "Services with findings / unavailable"
+  },
+  "analysisProviderSetup": {
+    "message": "Provider access and data disclosure"
+  },
+  "analysisProviderConfigured": {
+    "message": "Key configured; storing it does not start a scan."
+  },
+  "analysisProviderNoKey": {
+    "message": "No key configured"
+  },
+  "analysisDataHash": {
+    "message": "File fingerprint (SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Complete attachment"
+  },
+  "analysisDataUrl": {
+    "message": "Complete URL; may contain confidential tokens"
+  },
+  "analysisDataDomain": {
+    "message": "Link domain"
+  },
+  "analysisDataIp": {
+    "message": "Public IP from message headers"
+  },
+  "analysisDataReport": {
+    "message": "Report identifier"
+  },
+  "analysisApprovalRequired": {
+    "message": "Additional approval required; cancel or request an administrator."
+  },
+  "analysisContinueWarning": {
+    "message": "Review the reasons before continuing. You can cancel."
+  },
+  "analysisConflict": {
+    "message": "Providers disagree; concerning findings take priority."
+  },
+  "analysisExportSensitive": {
+    "message": "Review before export: technical details may identify message resources."
   }
 }

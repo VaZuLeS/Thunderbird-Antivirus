@@ -133,7 +133,7 @@ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded
     $('auditClear').addEventListener('click', () => { $('auditConfirm').showModal(); $('auditKeep').focus(); });
     $('auditKeep').addEventListener('click', () => $('auditConfirm').close());
     $('auditDelete').addEventListener('click', async () => {
-        try { const result = await browser.runtime.sendMessage({ action: 'clearLinkAudit' }); if (!result || !result.success) throw new Error('Cannot clear audit'); $('auditConfirm').close(); await refresh(); }
+        try { const result = await (typeof ThundySettings !== 'undefined' ? ThundySettings.send({action:'clearLinkAudit'}) : browser.runtime.sendMessage({action:'clearLinkAudit'})); if (!result || !result.success) throw new Error('Cannot clear audit'); $('auditConfirm').close(); await refresh(); }
         catch (error) { $('auditStatus').textContent = t('auditFailure'); }
     });
     refresh();

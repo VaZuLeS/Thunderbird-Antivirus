@@ -540,6 +540,8 @@ def check_followup(m, base, out, report, display, source_catalog):
     native_click(display, point['x'], point['y'])
     wait_for(lambda: m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup_browser = 'document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda: m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector("[data-focus-key=view-switch]");', browser=popup_browser))
+    m.page('if(document.body.dataset.thundyAnalysisView!=="expert")document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=view-switch]").click();', browser=popup_browser)
     wait_for(lambda: m.page('return document.body?.innerText?.includes("101") && document.body?.innerText?.includes("100");', browser=popup_browser))
     if 'analysisModeRunning' in source_catalog:
         # These are explicit synthetic observations through the real popup bridge,
@@ -1758,6 +1760,43 @@ def check_crash_recovery(m, args, out, report, restart, base, installed):
     assert report.get('forcedRestarts') == 2
 
 
+def check_administration(m, base, out, report):
+    """Real UI and background authorization; no provider traffic or mocked extension APIs."""
+    open_page(m,base+'options.html')
+    wait_for(lambda:m.page('return !!document.getElementById("securitySettingsForm");'))
+    m.page('''const set=(key,value)=>{const el=document.querySelector('[data-security="'+key+'"]');if(el.type==='checkbox')el.checked=value;else el.value=value;};
+        set('securityAdminPassword','native-admin-password');set('securityApprovalPassword','native-approval-password');
+        set('securityEnablePolicy',true);set('securityThreshold',0);document.getElementById('securitySettingsForm').requestSubmit();''')
+    wait_for(lambda:m.page('return document.querySelector(".settings-shell").hidden && document.getElementById("securityRecoveryOutput").textContent.length>65;'))
+    rejected=m.page('''return window.wrappedJSObject.browser.runtime.sendMessage({action:'securitySettingsWrite',values:{privacyTier:'max'}});''')
+    assert rejected['success'] is False and rejected['code']=='ADMIN_LOCKED',rejected
+    state=m.page('''return window.wrappedJSObject.browser.storage.local.get('thundySecurityV1').then(s=>({adminIterations:s.thundySecurityV1.admin.iterations,approvalIterations:s.thundySecurityV1.approval.iterations,separateSalts:s.thundySecurityV1.admin.salt!==s.thundySecurityV1.approval.salt,threshold:s.thundySecurityV1.policy.threshold}));''')
+    assert state=={'adminIterations':600000,'approvalIterations':600000,'separateSalts':True,'threshold':0}
+    m.page('''document.querySelector('[data-security="securityAdminPassword"]').value='native-admin-password';document.querySelector('[data-security="unlock"]').click();''')
+    wait_for(lambda:m.page('return !document.querySelector(".settings-shell").hidden;'))
+    m.page('document.querySelector("[data-security=lock]").click();')
+    wait_for(lambda:m.page('return document.querySelector(".settings-shell").hidden;'))
+    m.screenshot(out/'settings-protected.png')
+    message_tab=m.js('return window.gTabmail.tabInfo.findIndex(tab=>tab.mode.name==="mailMessageTab");')
+    assert message_tab>=0
+    m.js('window.gTabmail.switchToTab(arguments[0]);',[message_tab])
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status");'))
+    m.page('document.querySelector("a[href]").click();')
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-link-dialog")?.shadowRoot.querySelector(".primary");'))
+    m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelector(".primary").click();')
+    wait_for(lambda:m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.includes("/security.html?approval=");'))
+    wait_for(lambda:m.page('return !!document.getElementById("destination")?.textContent;'))
+    assert m.page('return document.getElementById("password").type;')=='password'
+    m.screenshot(out/'link-approval.png')
+    m.page('document.getElementById("confirmed").checked=true;document.getElementById("password").value="native-approval-password";document.getElementById("approvalForm").requestSubmit();')
+    wait_for(lambda:m.page('return document.getElementById("approvalForm").hidden;'))
+    snapshot=m.page('return window.wrappedJSObject.browser.storage.local.get("linkAuditLog");')
+    approved=[r for r in snapshot['linkAuditLog'] if r.get('approvalDecision')=='granted']
+    assert len(approved)==1 and approved[0]['outcome']=='OPENED' and approved[0]['openAttempts']==1,approved
+    assert approved[0]['blockReason']=='threshold'
+    report['administration']={'passed':True,'realThunderbirdAPIs':True,'protectedWriteRejected':True,'unlockAndRelock':True,'separatePasswordPage':True,'oneApprovedOpening':True,'passwordVerifiers':state,'liveProviderCalls':False}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--thunderbird', type=Path, required=True)
@@ -1768,6 +1807,7 @@ def main():
                         help='Permanent upgrade with two graceful restarts; requires --previous-xpi')
     parser.add_argument('--real-browser', type=Path, help='Isolated real Chromium handoff to a controlled local HTTPS page, direct install only')
     parser.add_argument('--restore-check', action='store_true', help='Verify clean pre-upgrade profile backup restore; requires --restart-check')
+    parser.add_argument('--security-check', action='store_true', help='Real optional administration, protected writes and one-time link approval')
     parser.add_argument('--performance-check', action='store_true', help='Measure actual local message analysis through the extension API')
     parser.add_argument('--message-kib', type=int, default=0, help='Synthetic newsletter body size for direct-install performance checks (0..10240 KiB)')
     parser.add_argument('--context-load-check', action='store_true', help='Real 205-message source cache bound and owned-process PSS/RSS probe after direct install')
@@ -2023,6 +2063,9 @@ def main():
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
                     run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check or args.source_export_check or args.hybrid_popup_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    if args.security_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_administration(m,base,out,report)
                     if args.resource_isolation_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_resource_isolation(m,base,out,report)

@@ -80,6 +80,20 @@ class ApiGateway {
         return requestOptions;
     }
 
+    sanitizeResponse(data, options = {}) {
+        const input=options.headers || {};
+        const headers=typeof input.entries==='function'?Object.fromEntries(input.entries()):Array.isArray(input)?Object.fromEntries(input):input;
+        const secrets=[...Object.values(this.apikeys),...Object.entries(headers).filter(([key])=>/^(x-apikey|api-key|auth-key|key|authorization)$/i.test(key)).map(([,value])=>value)].filter(value=>typeof value==='string'&&value.length>=6);
+        const copy=(value,depth=0)=>{
+            if(depth>32)return null;
+            if(typeof value==='string'){for(const secret of secrets)value=value.split(secret).join('[redacted]');return value;}
+            if(Array.isArray(value))return value.map(item=>copy(item,depth+1));
+            if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,/^(api[_-]?key|authorization|password|secret|access[_-]?token)$/i.test(key)?'[redacted]':copy(item,depth+1)]));
+            return value;
+        };
+        return copy(data);
+    }
+
     abortAll() {
         this.generation++;
         for (const controller of this.controllers) controller.abort();
@@ -180,22 +194,31 @@ class ApiGateway {
             }
         }
 
-        if (this.beforeRequest) await this.beforeRequest();
+        if (options.keyTestAuthorization) await options.keyTestAuthorization();
+        if (typeof ThundyProviders !== 'undefined') await ThundyProviders.enforce(url, options);
+        if (!options.keyTest && this.beforeRequest) await this.beforeRequest();
         const controller = new AbortController();
         this.controllers.add(controller);
         const id = setTimeout(() => controller.abort(), timeout);
 
         const fetchOptions = { ...this._injectAuthHeaders(url, options), signal: controller.signal };
         delete fetchOptions.analysisContext;
+        delete fetchOptions.keyTest;
+        delete fetchOptions.keyTestAuthorization;
+        fetchOptions.redirect = 'error';
         let started = false, responded = false;
 
         let release;
         try {
             release = await this.acquire(hostname || new URL(url).hostname, controller.signal);
-            if (this.beforeRequest) await this.beforeRequest();
+            if (options.keyTestAuthorization) await options.keyTestAuthorization();
+            if (typeof ThundyProviders !== 'undefined') await ThundyProviders.enforce(url, options);
+            if (!options.keyTest && this.beforeRequest) await this.beforeRequest();
             let response;
             for (let attempt = 0; attempt < 3; attempt++) {
-                if (this.beforeRequest) await this.beforeRequest();
+                if (options.keyTestAuthorization) await options.keyTestAuthorization();
+            if (typeof ThundyProviders !== 'undefined') await ThundyProviders.enforce(url, options);
+            if (!options.keyTest && this.beforeRequest) await this.beforeRequest();
                 if (info && !started) { emit({ phase: 'start' }); started = true; }
                 response = await fetch(url, fetchOptions);
                 responded = true;
@@ -211,7 +234,10 @@ class ApiGateway {
             // active until the body has been consumed, not just until headers arrive.
             let observedData;
             if ((response.body || info) && typeof response.json === 'function') {
-                const data = await response.json();
+                let data;
+                try { data = await response.json(); }
+                catch(error) { if(response.status>=200&&response.status<300)throw error;data=null; }
+                data=this.sanitizeResponse(data,fetchOptions);
                 observedData = data;
                 response.json = async () => data;
             }
@@ -240,10 +266,10 @@ class ApiGateway {
                 }
             }
 
-            if (info) emit({ phase: 'finish', responded: true, ...ThundyAnalysis.response(info, response.status, observedData), observedAt: Date.now() });
+            if (info) emit({ phase: 'finish', responded: true, ...(typeof ThundyProviders !== 'undefined' ? ThundyProviders.registry[info.provider].normalize(info,response.status,observedData) : ThundyAnalysis.response(info, response.status, observedData)), ...(typeof ThundyProviders !== 'undefined' ? ThundyProviders.metadata(info.provider,observedData,response.status) : {}), observedAt: Date.now() });
             return response;
         } catch (error) {
-            if (info && started) emit({ phase: 'finish', responded, state: 'failed', verdict: 'unknown', errorDetails: error.message || String(error), observedAt: null });
+            if (info && started) emit({ phase: 'finish', responded, state: 'failed', verdict: 'unknown', errorDetails: error.code || error.name || 'Request failed', observedAt: null });
             clearTimeout(id);
             if (error.name === 'AbortError') {
                 throw new Error(typeof ThundyI18n !== 'undefined' ? ThundyI18n.get('gatewayRequestTimeout') : `[ApiGateway] Request cancelled or timed out after ${timeout}ms`);

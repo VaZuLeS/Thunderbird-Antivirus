@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     render();
     $("profileStatus").textContent = t("profilesSaving");
     try {
-      await browser.storage.local.set({ enterpriseProfileSelection: current });
+      await (typeof ThundySettings !== 'undefined' ? ThundySettings.storage : browser.storage.local).set({ enterpriseProfileSelection: current });
       persisted = current;
       $("profileStatus").textContent = t("profilesSaved");
     } catch (_) {

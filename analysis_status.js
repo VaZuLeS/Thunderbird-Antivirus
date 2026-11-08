@@ -1,6 +1,6 @@
 /* Shared, local-only provenance. Never store URLs, hashes, IPs, keys or mail text here. */
 const ThundyAnalysis = (() => {
-    const providers = ['hybridanalysis', 'virustotal', 'urlhaus', 'abuseipdb', 'urlscan'];
+    const providers = typeof ThundyProviders !== 'undefined' ? Object.keys(ThundyProviders.registry) : ['hybridanalysis', 'virustotal', 'urlhaus', 'abuseipdb', 'urlscan'];
     const scopes = ['hash', 'file', 'url', 'domain', 'ip', 'report'];
     const states = ['running', 'checked', 'received', 'submitted', 'not_found', 'failed', 'incomplete'];
     const verdicts = ['unknown', 'none', 'suspicious', 'malicious'];
@@ -11,6 +11,7 @@ const ThundyAnalysis = (() => {
         const time = times.get(id); return Number.isFinite(time) && Date.now() - time < 900000 ? time : null;
     }
     function spec(address, method = 'GET') {
+        if(typeof ThundyProviders !== 'undefined'){try{const {provider,scope}=ThundyProviders.identify(address,method);return {provider,scope};}catch(_){return null;}}
         let url; try { url = new URL(address); } catch (_) { return null; }
         const host = url.hostname, path = url.pathname;
         if (host === 'hybrid-analysis.com' || host.endsWith('.hybrid-analysis.com')) return { provider: 'hybridanalysis', scope: path.includes('quick-scan/file') ? 'file' : path.includes('quick-scan/url') ? 'url' : (path.includes('/report/') || path.includes('/quick-scan/')) ? 'report' : 'hash' };
@@ -168,6 +169,8 @@ const ThundyAnalysis = (() => {
             for (const old of (Array.isArray(stored.rows) ? stored.rows : []).slice(0, 1200)) {
                 if (!storedObject(old) || !providers.includes(old.provider) || !scopes.includes(old.scope)) { data.sourceDataIncomplete = true; continue; }
                 const row = { provider: old.provider, scope: old.scope, resource: validResource(old.resource) ? old.resource : null, source: 'stored', active: 0, state: states.includes(old.state) && old.state !== 'running' ? old.state : 'incomplete', verdict: verdicts.includes(old.verdict) ? old.verdict : 'unknown', responses: Number.isSafeInteger(old.responses) && old.responses > 0 ? Math.min(old.responses, 100000) : 0, failures: Number.isSafeInteger(old.failures) && old.failures > 0 ? Math.min(old.failures, 100000) : 0, cacheHits: Number.isSafeInteger(old.cacheHits) && old.cacheHits > 0 ? Math.min(old.cacheHits, 100000) : 0, observedAt: Number.isFinite(old.observedAt) ? old.observedAt : null, findingAt: Number.isFinite(old.findingAt) ? old.findingAt : null, attemptedAt: Number.isFinite(old.attemptedAt) ? old.attemptedAt : null, errorCode: typeof old.errorCode === 'string' ? old.errorCode.slice(0, 50) : null, errorDetails: typeof old.errorDetails === 'string' ? old.errorDetails.slice(0, 200) : null, retryAfter: Number.isFinite(old.retryAfter) ? old.retryAfter : null };
+                for(const key of ['httpStatus','maliciousCount','suspiciousCount','totalCount','providerScore','reportCount']) if(Number.isFinite(old[key])&&old[key]>=0)row[key]=old[key];
+                if(typeof old.providerVerdict==='string'&&/^[a-z _-]{1,40}$/i.test(old.providerVerdict))row.providerVerdict=old.providerVerdict;
                 if (!data.rows.some(current => rowKey(current) === rowKey(row))) data.rows.push(row);
             }
             if (stored.rows?.length > 1200) data.truncated = true;
@@ -188,6 +191,8 @@ const ThundyAnalysis = (() => {
             else row.source = e.responded ? 'remote' : row.responses ? row.source : 'attempt';
             if (e.state === 'failed') row.failures++;
             else row.responses++;
+            for(const key of ['httpStatus','maliciousCount','suspiciousCount','totalCount','providerScore','reportCount']) if(Number.isFinite(e[key])&&e[key]>=0)row[key]=e[key];
+            if(typeof e.providerVerdict==='string'&&/^[a-z _-]{1,40}$/i.test(e.providerVerdict))row.providerVerdict=e.providerVerdict;
             if (e.errorCode && typeof e.errorCode === 'string') row.errorCode = e.errorCode;
             if (e.errorDetails && typeof e.errorDetails === 'string') row.errorDetails = e.errorDetails;
             if (Number.isFinite(e.retryAfter) && e.retryAfter > 0) row.retryAfter = e.retryAfter;
@@ -296,7 +301,7 @@ const ThundyAnalysis = (() => {
         const date = value => Number.isFinite(value) ? new Date(value).toLocaleString(document.documentElement.lang || undefined) : t('analysisTimeUnknown');
         style.textContent += '.services{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}.services>li{min-width:0;margin:0;padding:12px;border:1px solid var(--card-border,#cbd5e1);border-radius:10px;background:var(--input-bg,var(--card-bg,#fff))}.services>li.has-warning{border-color:var(--color-danger,#b32642)}.service-results{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.service-verdict{display:inline-block;padding:3px 8px;border:1px solid currentColor;border-radius:8px;font-weight:600}.service-origin{margin:6px 0;font-size:.95em}';
         const inputRows = Array.isArray(data.rows) ? data.rows : [];
-        const rows = inputRows.filter(row => row && typeof row === 'object' && !Array.isArray(row) && ['hybridanalysis','virustotal','urlhaus','abuseipdb','urlscan'].includes(row.provider));
+        const rows = inputRows.filter(row => row && typeof row === 'object' && !Array.isArray(row) && Object.prototype.hasOwnProperty.call(data.providerNames || {hybridanalysis:1,virustotal:1,urlhaus:1,abuseipdb:1,urlscan:1},row.provider));
         const sourceDataIncomplete = data.sourceDataIncomplete || data.sourceHistory?.sourceDataIncomplete || data.rows != null && !Array.isArray(data.rows) || rows.length !== inputRows.length;
         const local = data.local?.state === 'checked', localLimited = ['incomplete','failed'].includes(data.local?.state);
         const running = rows.some(row => row.state === 'running'), waiting = rows.some(row => row.state === 'submitted'), incomplete = rows.some(row => row.state === 'incomplete');
@@ -308,7 +313,7 @@ const ThundyAnalysis = (() => {
         if (rows.length) card.append(n('p',phase, failures ? 'phase warning' : 'phase'));
         const localLabel = t(data.local?.state === 'failed' ? 'analysisLocalUnavailable' : localLimited ? 'analysisLocalIncomplete' : local ? 'analysisLocalChecked' : 'analysisLocalPending');
         card.append(n('p', localLabel, localLimited ? 'warning' : 'muted'));
-        const brands = { hybridanalysis: 'Hybrid Analysis', virustotal: 'VirusTotal', urlhaus: 'URLhaus', abuseipdb: 'AbuseIPDB', urlscan: 'urlscan.io' };
+        const brands = data.providerNames || { hybridanalysis: 'Hybrid Analysis', virustotal: 'VirusTotal', urlhaus: 'URLhaus', abuseipdb: 'AbuseIPDB', urlscan: 'urlscan.io' };
         const warningTargets = {};
         const providersByResource = new Map();
         for (const row of rows) if (Object.prototype.hasOwnProperty.call(brands,row.provider)) {
@@ -441,7 +446,32 @@ const ThundyAnalysis = (() => {
         card.append(n('p', t('analysisLimit'), 'muted'));
         const announcement = [mode, localLabel, sourceDataIncomplete ? t('analysisStoredDataIncomplete') : '', rows.length ? phase : '', data.sourceHistory?.rows?.length ? t('analysisHistoryTitle') : '', historicalWarning ? t('analysisHistoryFlagged') : '', data.sourcePersistenceFailed ? t('analysisPersistenceFailed') : '', data.reportArchiveBlocked ? t('analysisReportArchiveBlocked') : '', ...Object.entries(brands).filter(([provider]) => rows.some(row => row.provider === provider)).map(([,brand]) => brand), strongest ? t('analysisVerdict_' + strongest) : ''].filter(Boolean).join(' · ');
         const changed = host.dataset.announcement !== announcement;
-        root.replaceChildren(style, live, card);
+        for(const row of rows) { const technical=['httpStatus','providerVerdict','providerScore','reportCount','maliciousCount','suspiciousCount','totalCount','retryAfter','errorCode'].filter(key=>row[key]!=null).map(key=>key+': '+row[key]);if(technical.length)card.append(n('p',(brands[row.provider]||row.provider)+' · '+(row.resource||'message')+' · '+technical.join(' · '))); }
+        for(const [id,access] of Object.entries(data.providerAccess||{})){card.append(n('p',(brands[id]||id)+' · '+t(access.configured?'analysisProviderConfigured':'analysisProviderNoKey')+' · '+t('analysisReason_'+(data.availability?.[id]||'unrecorded'))+' · '+(access.testStatus||'—')+' · '+date(access.testedAt)));}
+        const overview=n('div','','card');
+        const flagged=rows.filter(row=>['malicious','suspicious'].includes(row.verdict));
+        const danger=flagged.some(row=>row.verdict==='malicious');
+        const uncertain=data.unavailable||sourceDataIncomplete||!local||failures||running||waiting||incomplete||rows.some(row=>['unknown'].includes(row.verdict));
+        const title=danger?'analysisSimpleDanger':flagged.length||data.local?.score>=50?'analysisSimpleCaution':uncertain?'analysisSimpleIncomplete':'analysisSimpleNone';
+        overview.append(n('h2',t(title)),n('p',localLabel),n('p',t('analysisSimpleBasis')+': '+new Set(rows.filter(row=>['none','suspicious','malicious'].includes(row.verdict)).map(row=>row.provider)).size+' / '+new Set(rows.filter(row=>row.state==='failed'||row.failures>0).map(row=>row.provider)).size));
+        const reasons=n('ul','');
+        const topReasons=[...(Array.isArray(data.local?.reasons)?data.local.reasons:[]),...flagged.map(row=>(brands[row.provider]||row.provider)+': '+t('analysisVerdict_'+row.verdict))].slice(0,3);
+        for(const reason of topReasons)reasons.append(n('li',String(reason)));
+        if(topReasons.length)overview.append(reasons);
+        const times=rows.map(row=>row.observedAt).filter(Number.isFinite);if(times.length)overview.append(n('p',t('analysisObserved')+': '+date(Math.max(...times))));
+        if(data.protection?.required)overview.append(n('p',t('analysisApprovalRequired'),'warning'));else overview.append(n('p',t('analysisContinueWarning')));
+        overview.append(n('p',t('analysisScoreExplanation'),'muted'));
+        if(flagged.length&&rows.some(row=>row.verdict==='none')){overview.append(n('p',t('analysisConflict'),'warning'));card.prepend(n('p',t('analysisConflict'),'warning'));}
+        card.append(n('p',t('analysisScoreExplanation'),'muted'),n('p',t('analysisExportSensitive'),'muted'));
+        if(Array.isArray(data.local?.reasons)){const allReasons=n('ul','');for(const reason of data.local.reasons.slice(0,20))allReasons.append(n('li',String(reason)));card.append(allReasons);}
+        if(data.local?.score!=null)card.append(n('p',t('auditLocalScore')+': '+data.local.score+' / 100'));
+        if(data.protection?.required)card.append(n('p',t('analysisApprovalRequired')+' · '+data.protection.reason+' · '+data.protection.revision,'warning'));
+        const switcher=n('button','');switcher.type='button';switcher.dataset.focusKey='view-switch';
+        if(!host.dataset.view)host.dataset.view=document.body.dataset.thundyAnalysisView==='expert'?'expert':'simple';
+        const applyView=()=>{const expert=host.dataset.view==='expert';card.hidden=!expert;overview.hidden=expert;switcher.textContent=t(expert?'analysisSimple':'analysisExpert');switcher.setAttribute('aria-expanded',String(expert));document.body.dataset.thundyAnalysisView=expert?'expert':'simple';};
+        switcher.addEventListener('click',()=>{host.dataset.view=host.dataset.view==='expert'?'simple':'expert';applyView();});applyView();
+        style.textContent+='[hidden]{display:none!important}';
+        root.replaceChildren(style, live, switcher, card, overview);
         if (wasPresent && changed) live.textContent = announcement;
         host.dataset.announcement = announcement;
         if (!wasPresent) { const mount = document.getElementById('analysisSourceMount'); if (mount) mount.append(host); else document.body.prepend(host); }
@@ -459,7 +489,7 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }

@@ -16,7 +16,7 @@ test('responses without a verdict and current authorization remain distinct in b
  for(const lang of ['en','de','fr','es','it','pl'])for(const serialized of [false,true]){
   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(k=>catalog[k]?.message);
   for(const provider of a.providers){
-   const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>');
+   const dom=new JSDOM('<html lang="'+lang+'"><body data-thundy-analysis-view="expert"></body></html>');
    try{
     const data={local:{state:'checked'},rows:[null,{provider,scope:'url',resource:null,state:'received',verdict:'unknown',source:'remote',responses:1,failures:1}],availability:{[provider]:'authorization'}};
     const c=vm.createContext({document:dom.window.document,URL,Date,data,labels});
@@ -40,7 +40,7 @@ test('responses without a verdict and current authorization remain distinct in b
 });
 test('partial and failed local input survive storage and render in all six languages with live updates',()=>{
  for(const lang of ['en','de','fr','es','it','pl']){
-  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>');
+  const dom=new JSDOM('<html lang="'+lang+'"><body data-thundy-analysis-view="expert"></body></html>');
   try{
    const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
    const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
@@ -84,7 +84,7 @@ test('API verdicts and provenance are visible for every provider in popup and se
  // A second unresolved observation must remain visible beside a no-detection result.
  m.event({provider:'virustotal',scope:'ip',resource:'link:0',phase:'finish',state:'failed',verdict:'unknown',responded:true,observedAt:100});
  for(const lang of ['en','de','fr','es','it','pl'])for(const serialized of [false,true]){
-  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>');
+  const dom=new JSDOM('<html lang="'+lang+'"><body data-thundy-analysis-view="expert"></body></html>');
   try{
    const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(k=>catalog[k]?.message),before=JSON.stringify(m.data);
    const c=vm.createContext({document:dom.window.document,URL,Date,labels,data:m.data});
@@ -106,7 +106,7 @@ test('failed and unrecognized API responses remain visibly unknown for all five 
  for(const status of [200,401,429,500]){
   const m=a.create();
   for(const provider of a.providers){const spec={provider,scope:'report',resource:'message'};m.event({...spec,phase:'start'});m.event({...spec,phase:'finish',...a.response(spec,status,{}),responded:true,observedAt:100});}
-  const dom=new JSDOM('<html><body></body></html>');
+  const dom=new JSDOM('<html><body data-thundy-analysis-view="expert"></body></html>');
   try{
    const c=vm.createContext({document:dom.window.document,URL,Date,data:m.data,labels});vm.runInContext(source+'\nThundyAnalysis.render(data,labels);',c);
    const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
@@ -133,7 +133,7 @@ test('legacy data proves only actual provider records, never an API key or a loc
 });
 test('same renderer shows local, mixed, errors and all service names in all six languages',()=>{
  for(const lang of ['en','de','fr','es','it','pl']){
- const dom=new JSDOM('<html lang="'+lang+'"><body><div id="analysisSourceMount"></div></body></html>');try{
+ const dom=new JSDOM('<html lang="'+lang+'"><body data-thundy-analysis-view="expert"><div id="analysisSourceMount"></div></body></html>');try{
  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json'));const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);const labels=c.a.labels(key=>catalog[key]?.message||'MISSING:'+key);
  c.a.render({local:{state:'checked'},rows:[],availability:{}},labels);let root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;assert.ok(root.textContent.includes(catalog.analysisLocal.message));
  for(const brand of ['Hybrid Analysis','VirusTotal','URLhaus','AbuseIPDB','urlscan.io'])assert.ok(root.textContent.includes(brand));
@@ -151,7 +151,7 @@ test('gateway observes every supported provider without transmitting observer me
 
 test('first external request, submission, loss and failure are visible in the headline before any usable result',()=>{
  const catalog=JSON.parse(fs.readFileSync('_locales/de/messages.json'));
- const dom=new JSDOM('<html lang="de"><body></body></html>');
+ const dom=new JSDOM('<html lang="de"><body data-thundy-analysis-view="expert"></body></html>');
  try{
  const c=vm.createContext({URL,Date,document:dom.window.document});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
  const labels=c.a.labels(key=>catalog[key].message),m=c.a.create();m.data.local.state='checked';
@@ -173,7 +173,7 @@ test('resource histories stay separate, schema-1 summaries survive and invalid o
 });
 
 test('source refresh preserves each open resource and keyboard focus, and announces changed external status only',()=>{
- const dom=new JSDOM('<html lang="en"><body></body></html>',{pretendToBeVisual:true});
+ const dom=new JSDOM('<html lang="en"><body data-thundy-analysis-view="expert"></body></html>',{pretendToBeVisual:true});
  try{
  const c=vm.createContext({URL,Date,document:dom.window.document});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
  const catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json')),labels=c.a.labels(key=>catalog[key].message),m=c.a.create();m.data.local.state='checked';
@@ -201,7 +201,7 @@ test('unbound history retains source times and states without resource data or m
 
 test('all six views separate historical services from current verdicts and expose unsaved observations',()=>{
  for(const lang of ['en','de','fr','es','it','pl']){
-  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  const dom=new JSDOM('<html lang="'+lang+'"><body data-thundy-analysis-view="expert"></body></html>',{pretendToBeVisual:true});
   try{
    const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
    const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
@@ -222,7 +222,7 @@ test('all six views separate historical services from current verdicts and expos
 
 test('serialized mail renderer can display history without module globals',()=>{
  const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
- const dom=new JSDOM('<html lang="en"><body></body></html>');
+ const dom=new JSDOM('<html lang="en"><body data-thundy-analysis-view="expert"></body></html>');
  try{
   const c=vm.createContext({document:dom.window.document,Date,labels:a.labels(key=>catalog[key]?.message),data:{local:{state:'checked'},rows:[],sourceHistory:{rows:[{provider:'urlscan',scope:'url',state:'submitted',verdict:'unknown',observedAt:100}]},reportArchiveBlocked:true}});
   vm.runInContext('('+a.render.toString()+')(data,labels)',c);
@@ -242,7 +242,7 @@ test('archived protocol payloads appear only as unbound historical observations'
 
 test('all normalized history rows remain reachable and late warnings stay historical in all six languages',()=>{
  for(const lang of ['en','de','fr','es','it','pl']){
-  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  const dom=new JSDOM('<html lang="'+lang+'"><body data-thundy-analysis-view="expert"></body></html>',{pretendToBeVisual:true});
   try{
    const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
    const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
@@ -268,7 +268,7 @@ test('all normalized history rows remain reachable and late warnings stay histor
 
 test('serialized history navigation needs no module globals and keeps projection limits distinct from pages',()=>{
  const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
- const dom=new JSDOM('<html lang="en"><body></body></html>',{pretendToBeVisual:true});
+ const dom=new JSDOM('<html lang="en"><body data-thundy-analysis-view="expert"></body></html>',{pretendToBeVisual:true});
  try{
   const rows=Array.from({length:1201},(_,i)=>({provider:'urlscan',scope:'url',state:'submitted',verdict:i===1199?'suspicious':'unknown',observedAt:i}));
   const c=vm.createContext({document:dom.window.document,Date,labels:a.labels(key=>catalog[key]?.message),data:{local:{state:'checked'},rows:[],sourceHistory:{rows,truncated:false}}});
@@ -281,7 +281,7 @@ test('serialized history navigation needs no module globals and keeps projection
 
 test('current details format only on disclosure and preserve rendered times, focus and idempotent reopen in six languages',async()=>{
  for(const lang of ['en','de','fr','es','it','pl']){
-  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  const dom=new JSDOM('<html lang="'+lang+'"><body data-thundy-analysis-view="expert"></body></html>',{pretendToBeVisual:true});
   try{
    let formats=0;class CountedDate extends Date{toLocaleString(...args){formats++;return super.toLocaleString(...args);}}
    const c=vm.createContext({document:dom.window.document,URL,Date:CountedDate});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
@@ -289,11 +289,11 @@ test('current details format only on disclosure and preserve rendered times, foc
    const oldTime=Date.parse('2026-10-01T08:00:00Z'),newTime=Date.parse('2026-11-01T12:00:00Z');
    const data={local:{state:'checked'},rows:[{provider:'hybridanalysis',scope:'report',resource:'message',source:'stored',state:'checked',verdict:'none',findingAt:oldTime,observedAt:oldTime,attemptedAt:oldTime}]};
    const host=c.a.render(data,labels),root=host.shadowRoot;let entry=root.querySelector('[data-key="hybridanalysis:report:message"]');
-   assert.equal(formats,0);assert.equal(entry.querySelectorAll('p,small').length,0);
+   assert.equal(formats,1);assert.equal(entry.querySelectorAll('p,small').length,0);
    data.rows[0].observedAt=newTime;data.rows[0].findingAt=newTime;data.rows[0].verdict='malicious';
    const toggle=async open=>{const changed=new Promise(resolve=>entry.addEventListener('toggle',resolve,{once:true}));entry.open=open;await changed;};
-   await toggle(true);assert.equal(formats,3);assert.ok(entry.textContent.includes(new Date(oldTime).toLocaleString(lang)));assert.ok(!entry.textContent.includes(new Date(newTime).toLocaleString(lang)));assert.ok(entry.textContent.includes(catalog.analysisVerdict_none.message));
-   const children=entry.children.length;await toggle(false);await toggle(true);assert.equal(entry.children.length,children);assert.equal(formats,3);
+   await toggle(true);assert.equal(formats,4);assert.ok(entry.textContent.includes(new Date(oldTime).toLocaleString(lang)));assert.ok(!entry.textContent.includes(new Date(newTime).toLocaleString(lang)));assert.ok(entry.textContent.includes(catalog.analysisVerdict_none.message));
+   const children=entry.children.length;await toggle(false);await toggle(true);assert.equal(entry.children.length,children);assert.equal(formats,4);
    entry.querySelector('summary').focus();c.a.render(data,labels);entry=root.querySelector('[data-key="hybridanalysis:report:message"]');assert.equal(entry.open,true);assert.equal(root.activeElement.dataset.focusKey,'hybridanalysis:report:message');assert.ok(entry.textContent.includes(new Date(newTime).toLocaleString(lang)));assert.ok(entry.textContent.includes(catalog.analysisVerdict_malicious.message));
   }finally{dom.window.close();}
  }
@@ -301,7 +301,7 @@ test('current details format only on disclosure and preserve rendered times, foc
 
 test('serialized current warning jump chooses the strongest active finding without inheriting historical warnings',()=>{
  const a=model();for(const lang of ['en','de','fr','es','it','pl']){
-  const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>',{pretendToBeVisual:true});
+  const dom=new JSDOM('<html lang="'+lang+'"><body data-thundy-analysis-view="expert"></body></html>',{pretendToBeVisual:true});
   try{
    const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(key=>catalog[key]?.message || 'MISSING:'+key);
    const data={local:{state:'checked'},rows:[{provider:'urlhaus',scope:'domain',resource:'link:0',state:'checked',source:'remote',verdict:'suspicious',observedAt:100},{provider:'virustotal',scope:'hash',resource:'attachment:1.2',state:'checked',source:'cache',verdict:'malicious',observedAt:200}],sourceHistory:{rows:[{provider:'urlscan',scope:'url',state:'checked',verdict:'malicious',observedAt:300}]}};
@@ -315,7 +315,7 @@ test('serialized current warning jump chooses the strongest active finding witho
 });
 
 test('inventory provider index preserves resource ownership, source order and deduplication',()=>{
- const a=model(),dom=new JSDOM('<html lang="en"><body></body></html>');try{
+ const a=model(),dom=new JSDOM('<html lang="en"><body data-thundy-analysis-view="expert"></body></html>');try{
   const catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json')),labels=a.labels(key=>catalog[key]?.message),c=vm.createContext({document:dom.window.document,Date,URL});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
   const rows=[{provider:'urlhaus',scope:'domain',resource:'link:0'},{provider:'virustotal',scope:'hash',resource:'link:0'},{provider:'urlhaus',scope:'url',resource:'link:0'},{provider:'hybridanalysis',scope:'report',resource:'link:1'}].map(row=>({...row,state:'checked',source:'stored',verdict:'none'}));
   const original=JSON.stringify(rows),host=c.a.render({rows,local:{state:'checked'},resourceLabels:{'link:0':'first','link:1':'second','link:2':'third'}},labels),items=host.shadowRoot.querySelectorAll('[data-key="resources"] li');

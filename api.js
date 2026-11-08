@@ -112,7 +112,7 @@ if (!message) {
     return;
 }
 
-if (!message.headerMessageId) message.headerMessageId = 'message:' + message.id;
+if (!message.headerMessageId) message.headerMessageId = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id;
 popupMessageId = message.id;
 if (typeof ThundyAnalysis !== 'undefined') {
     popupAnalysisContext = { scopeOverride: 'report', event: event => browser.runtime.sendMessage({ action: 'recordAnalysisEvent', messageId: message.id, event }) };

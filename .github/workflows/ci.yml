@@ -134,10 +134,10 @@ jobs:
         run: |
           python3 - <<'PYTHON'
           import hashlib, pathlib, urllib.request
-          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.24.7/thundy-av-1.24.7.xpi'
+          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.24.8/thundy-av-1.24.8.xpi'
           with urllib.request.urlopen(url, timeout=30) as response:
               data = response.read()
-          if hashlib.sha256(data).hexdigest() != 'b3441e54786a5c3d167e9f41024bbb87b931f572e04d5b98cd363c4a832a7730':
+          if hashlib.sha256(data).hexdigest() != '9242f5ec97fcb067489ee0d181eef94661ccd16583ae67e67f1045b431cb6062':
               raise SystemExit('Previous release hash mismatch')
           pathlib.Path('build/previous.xpi').write_bytes(data)
           PYTHON
@@ -151,6 +151,7 @@ jobs:
           cp "$1" .audit/thundy-av.xpi
           chmod 644 .audit/thundy-av.xpi
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --resource-isolation-check --context-load-check --identity-lifecycle-check --mime-content-check --unicode-input-check --report-actions-check --out .audit/thunderbird-live/install-en
+          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --security-check --out .audit/thunderbird-live/security-en
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --stored-source-check --out .audit/thunderbird-live/stored-sources-en
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --source-history-check --out .audit/thunderbird-live/source-history-en
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --report-archive-check --out .audit/thunderbird-live/report-archive-en

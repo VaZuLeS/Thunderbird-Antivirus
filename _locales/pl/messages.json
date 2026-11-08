@@ -2012,7 +2012,7 @@
     "message": "Testowanie połączenia…"
   },
   "testApiKeyValid": {
-    "message": "Połączenie udane. Klucz API jest prawidłowy."
+    "message": "Żądanie przyjęte. Nie potwierdza praw przesyłania ani pozostałego limitu."
   },
   "testApiKeyInvalid": {
     "message": "Błąd połączenia: nieprawidłowy klucz API."
@@ -2062,5 +2062,161 @@
         "content": "$1"
       }
     }
+  },
+  "securityTitle": {
+    "message": "Administracja i ochrona linków"
+  },
+  "securityScope": {
+    "message": "Dotyczy tego profilu Thunderbird. Nie zapobiega zmianom profilu, wyłączeniu dodatku ani otwieraniu skopiowanych linków poza nim."
+  },
+  "securityAdminPassword": {
+    "message": "Hasło administratora (co najmniej 12 znaków; puste zachowuje obecne)"
+  },
+  "securityApprovalPassword": {
+    "message": "Osobne hasło do zezwalania na linki (co najmniej 12 znaków; puste zachowuje obecne)"
+  },
+  "securityThreshold": {
+    "message": "Wymagaj zgody od wyniku (0–100, włącznie)"
+  },
+  "securityEnablePolicy": {
+    "message": "Włącz wymuszoną ochronę linków"
+  },
+  "securityUnknownApproval": {
+    "message": "Wymagaj zgody również przy niepełnym sprawdzeniu"
+  },
+  "securityUnlock": {
+    "message": "Odblokuj ustawienia"
+  },
+  "securitySave": {
+    "message": "Zapisz ochronę"
+  },
+  "securityLock": {
+    "message": "Zablokuj teraz"
+  },
+  "securityDisable": {
+    "message": "Usuń hasło ustawień"
+  },
+  "securityRecovery": {
+    "message": "Kod odzyskiwania"
+  },
+  "securityRecover": {
+    "message": "Zresetuj hasło za pomocą kodu"
+  },
+  "securityStopTransfers": {
+    "message": "Zatrzymaj transmisje zewnętrzne"
+  },
+  "securityLocked": {
+    "message": "Ustawienia zablokowane. Wpisz hasło administratora."
+  },
+  "securityUnlocked": {
+    "message": "Ustawienia odblokowane; blokada po pięciu minutach bezczynności."
+  },
+  "securityOptional": {
+    "message": "Opcjonalna ochrona hasłem jest wyłączona. Bez hasła zgody chronione linki pozostają zablokowane."
+  },
+  "securityError": {
+    "message": "Odmowa operacji. Sprawdź hasło, sesję i dane."
+  },
+  "securityWait": {
+    "message": "Za dużo prób. Poczekaj przed kolejną próbą."
+  },
+  "securityLength": {
+    "message": "Użyj co najmniej dwunastu znaków i różnych haseł."
+  },
+  "securityRecoverySave": {
+    "message": "Zapisz osobno ten jednorazowy kod odzyskiwania. Nie będzie ponownie wyświetlany:"
+  },
+  "securitySaved": {
+    "message": "Ochrona zapisana."
+  },
+  "securityDisableConfirm": {
+    "message": "Usunąć hasło? Ochrona linków pozostaje skonfigurowana."
+  },
+  "securityStopped": {
+    "message": "Transmisje zewnętrzne zatrzymane."
+  },
+  "securityApprovalTitle": {
+    "message": "Zezwól na potencjalnie niebezpieczną treść"
+  },
+  "securityConfirmDanger": {
+    "message": "Mimo to chcę otworzyć tę potencjalnie niebezpieczną treść."
+  },
+  "securityApproveOnce": {
+    "message": "Zezwól i otwórz jednorazowo"
+  },
+  "securityExpired": {
+    "message": "Zgoda wygasła lub kontekst się zmienił. Rozpocznij ponownie z wiadomości."
+  },
+  "securityOpened": {
+    "message": "Thunderbird przyjął żądanie otwarcia."
+  },
+  "securityApprovalFailed": {
+    "message": "Odmowa otwarcia. Sprawdź hasło lub rozpocznij ponownie z wiadomości."
+  },
+  "providerTestDisclosure": {
+    "message": "Klucz i stałe dane testowe zostaną wysłane do usługi, bez wiadomości. Test nie potwierdza prawa przesyłania ani dostępnego limitu. Kontynuować?"
+  },
+  "analysisSimple": {
+    "message": "Podsumowanie"
+  },
+  "analysisExpert": {
+    "message": "Szczegóły techniczne"
+  },
+  "analysisSimpleNone": {
+    "message": "Nie wykryto podejrzanych oznak"
+  },
+  "analysisSimpleCaution": {
+    "message": "Uwaga"
+  },
+  "analysisSimpleDanger": {
+    "message": "Zgłoszono niebezpieczną treść"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Sprawdzenie niepełne"
+  },
+  "analysisScoreExplanation": {
+    "message": "Wynik opiera się na regułach, nie jest prawdopodobieństwem ani gwarancją."
+  },
+  "analysisSimpleBasis": {
+    "message": "Usługi z wynikami / niedostępne"
+  },
+  "analysisProviderSetup": {
+    "message": "Dostęp do usług i przesyłane dane"
+  },
+  "analysisProviderConfigured": {
+    "message": "Klucz skonfigurowany; zapis nie rozpoczyna analizy."
+  },
+  "analysisProviderNoKey": {
+    "message": "Brak skonfigurowanego klucza"
+  },
+  "analysisDataHash": {
+    "message": "Odcisk pliku (SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Cały załącznik"
+  },
+  "analysisDataUrl": {
+    "message": "Pełny URL; może zawierać poufne tokeny"
+  },
+  "analysisDataDomain": {
+    "message": "Domena linku"
+  },
+  "analysisDataIp": {
+    "message": "Publiczny IP z nagłówków wiadomości"
+  },
+  "analysisDataReport": {
+    "message": "Identyfikator raportu"
+  },
+  "analysisApprovalRequired": {
+    "message": "Wymagana dodatkowa zgoda; anuluj lub poproś administratora."
+  },
+  "analysisContinueWarning": {
+    "message": "Sprawdź powody przed kontynuowaniem. Możesz anulować."
+  },
+  "analysisConflict": {
+    "message": "Usługi są niezgodne; ostrzeżenia mają pierwszeństwo."
+  },
+  "analysisExportSensitive": {
+    "message": "Sprawdź przed eksportem: szczegóły mogą identyfikować zasoby wiadomości."
   }
 }

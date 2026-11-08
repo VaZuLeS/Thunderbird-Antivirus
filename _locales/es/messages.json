@@ -2012,7 +2012,7 @@
     "message": "Probando conexión…"
   },
   "testApiKeyValid": {
-    "message": "Conexión exitosa. La clave de API es válida."
+    "message": "Solicitud aceptada. No confirma permisos de carga ni cuota restante."
   },
   "testApiKeyInvalid": {
     "message": "Error de conexión: clave de API no válida."
@@ -2062,5 +2062,161 @@
         "content": "$1"
       }
     }
+  },
+  "securityTitle": {
+    "message": "Administración y protección de enlaces"
+  },
+  "securityScope": {
+    "message": "Limitado a este perfil de Thunderbird. No impide modificar el perfil, desactivar el complemento ni abrir enlaces copiados fuera."
+  },
+  "securityAdminPassword": {
+    "message": "Contraseña de administrador (mínimo 12 caracteres; vacío para conservar)"
+  },
+  "securityApprovalPassword": {
+    "message": "Contraseña distinta para autorizar enlaces (mínimo 12 caracteres; vacío para conservar)"
+  },
+  "securityThreshold": {
+    "message": "Autorización a partir de puntuación (0–100, inclusive)"
+  },
+  "securityEnablePolicy": {
+    "message": "Activar protección obligatoria de enlaces"
+  },
+  "securityUnknownApproval": {
+    "message": "Exigir autorización también con comprobaciones incompletas"
+  },
+  "securityUnlock": {
+    "message": "Desbloquear ajustes"
+  },
+  "securitySave": {
+    "message": "Guardar protección"
+  },
+  "securityLock": {
+    "message": "Bloquear ahora"
+  },
+  "securityDisable": {
+    "message": "Eliminar contraseña de ajustes"
+  },
+  "securityRecovery": {
+    "message": "Código de recuperación"
+  },
+  "securityRecover": {
+    "message": "Restablecer contraseña con el código"
+  },
+  "securityStopTransfers": {
+    "message": "Detener transferencias externas"
+  },
+  "securityLocked": {
+    "message": "Ajustes bloqueados. Introduzca la contraseña de administrador."
+  },
+  "securityUnlocked": {
+    "message": "Ajustes desbloqueados; bloqueo tras cinco minutos de inactividad."
+  },
+  "securityOptional": {
+    "message": "Protección por contraseña opcional, desactivada. Sin contraseña de autorización, los enlaces protegidos siguen bloqueados."
+  },
+  "securityError": {
+    "message": "Operación rechazada. Revise contraseña, sesión y datos."
+  },
+  "securityWait": {
+    "message": "Demasiados intentos. Espere antes de reintentar."
+  },
+  "securityLength": {
+    "message": "Use al menos doce caracteres y contraseñas distintas."
+  },
+  "securityRecoverySave": {
+    "message": "Guarde este código de un solo uso por separado. No volverá a mostrarse:"
+  },
+  "securitySaved": {
+    "message": "Protección guardada."
+  },
+  "securityDisableConfirm": {
+    "message": "¿Eliminar la contraseña? La protección de enlaces permanece configurada."
+  },
+  "securityStopped": {
+    "message": "Transferencias externas detenidas."
+  },
+  "securityApprovalTitle": {
+    "message": "Autorizar contenido potencialmente peligroso"
+  },
+  "securityConfirmDanger": {
+    "message": "Quiero abrir este contenido potencialmente peligroso de todos modos."
+  },
+  "securityApproveOnce": {
+    "message": "Autorizar y abrir una vez"
+  },
+  "securityExpired": {
+    "message": "Autorización caducada o contexto cambiado. Reinicie desde el mensaje."
+  },
+  "securityOpened": {
+    "message": "Thunderbird aceptó la solicitud de apertura."
+  },
+  "securityApprovalFailed": {
+    "message": "Apertura rechazada. Revise la contraseña o reinicie desde el mensaje."
+  },
+  "providerTestDisclosure": {
+    "message": "Se enviarán la clave y datos de prueba fijos al servicio, sin mensajes. No confirma permisos de carga ni cuota disponible. ¿Continuar?"
+  },
+  "analysisSimple": {
+    "message": "Resumen"
+  },
+  "analysisExpert": {
+    "message": "Detalles técnicos"
+  },
+  "analysisSimpleNone": {
+    "message": "Sin indicios sospechosos"
+  },
+  "analysisSimpleCaution": {
+    "message": "Precaución"
+  },
+  "analysisSimpleDanger": {
+    "message": "Contenido peligroso detectado"
+  },
+  "analysisSimpleIncomplete": {
+    "message": "Comprobación incompleta"
+  },
+  "analysisScoreExplanation": {
+    "message": "La puntuación se basa en reglas; no es probabilidad ni garantía."
+  },
+  "analysisSimpleBasis": {
+    "message": "Servicios con resultados / no disponibles"
+  },
+  "analysisProviderSetup": {
+    "message": "Acceso a servicios y datos enviados"
+  },
+  "analysisProviderConfigured": {
+    "message": "Clave configurada; guardarla no inicia análisis."
+  },
+  "analysisProviderNoKey": {
+    "message": "Sin clave configurada"
+  },
+  "analysisDataHash": {
+    "message": "Huella de archivo (SHA-256)"
+  },
+  "analysisDataFile": {
+    "message": "Adjunto completo"
+  },
+  "analysisDataUrl": {
+    "message": "URL completa; puede contener tokens confidenciales"
+  },
+  "analysisDataDomain": {
+    "message": "Dominio del enlace"
+  },
+  "analysisDataIp": {
+    "message": "IP pública de cabeceras del mensaje"
+  },
+  "analysisDataReport": {
+    "message": "Identificador del informe"
+  },
+  "analysisApprovalRequired": {
+    "message": "Se requiere autorización adicional; cancele o contacte al administrador."
+  },
+  "analysisContinueWarning": {
+    "message": "Revise los motivos antes de continuar. Puede cancelar."
+  },
+  "analysisConflict": {
+    "message": "Los servicios discrepan; prevalecen las alertas."
+  },
+  "analysisExportSensitive": {
+    "message": "Revise antes de exportar: los detalles pueden identificar recursos del mensaje."
   }
 }

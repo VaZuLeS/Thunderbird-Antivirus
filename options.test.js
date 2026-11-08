@@ -82,6 +82,7 @@ describe('options.js', () => {
 
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8');
+        vm.runInContext(fs.readFileSync('provider_registry.js','utf8'), context);
         vm.runInContext(code, context);
 
         // Trigger DOMContentLoaded for all tests so listeners are attached
@@ -327,6 +328,8 @@ describe('atomic consent save', () => {
                 runtime: { sendMessage: async () => ({ status: 'success' }) }
             }
         });
+        vm.runInContext(fs.readFileSync('provider_registry.js','utf8'),context);
+        vm.runInContext(fs.readFileSync('api_gateway.js','utf8'),context);
         vm.runInContext(fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8'), context);
         dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
         await new Promise(resolve => setImmediate(resolve));
@@ -349,6 +352,7 @@ describe('ProviderKeyTester and test buttons', () => {
         const dom = new JSDOM(html);
         const { window } = dom;
         const { document } = window;
+        window.confirm=()=>true;
         const defaultBrowser = {
             storage: { local: { get: async () => ({}), set: async () => ({}) } },
             permissions: { contains: async () => true, request: async () => true, getAll: async () => ({}) },
@@ -375,6 +379,8 @@ describe('ProviderKeyTester and test buttons', () => {
                 get: (k) => k
             }
         });
+        vm.runInContext(fs.readFileSync('provider_registry.js','utf8'),context);
+        vm.runInContext(fs.readFileSync('api_gateway.js','utf8'),context);
         vm.runInContext(fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8') + '\nglobalThis.tester = ProviderKeyTester;', context);
         return context.tester;
     }
@@ -436,8 +442,7 @@ describe('ProviderKeyTester and test buttons', () => {
 
             globalThis.fetch = async () => ({ status: 500 });
             const res500 = await tester.testKey('hybridanalysis', 'err-key', mockPermissions);
-            assert.strictEqual(res500.status, 'error');
-            assert.strictEqual(res500.code, 500);
+            assert.strictEqual(res500.status, 'rate_limited', 'shared transport preserves the previous quota backoff');
         } finally {
             globalThis.fetch = oldFetch;
         }
@@ -573,7 +578,7 @@ describe('ProviderKeyTester and test buttons', () => {
             };
             const res = await tester.testKey('virustotal', 'key', mockPermissions);
             assert.strictEqual(res.status, 'error');
-            assert.ok(res.message.includes('Network timeout'));
+            assert.strictEqual(res.message,'Connection failed');
         } finally {
             globalThis.fetch = oldFetch;
         }
@@ -584,6 +589,7 @@ describe('ProviderKeyTester and test buttons', () => {
         const dom = new JSDOM(html, { runScripts: 'outside-only' });
         const { window } = dom;
         const { document } = window;
+        window.confirm=()=>true;
         const oldFetch = globalThis.fetch;
 
         try {
@@ -631,6 +637,8 @@ describe('ProviderKeyTester and test buttons', () => {
                     get: (k) => k
                 }
             });
+            vm.runInContext(fs.readFileSync('provider_registry.js','utf8'),context);
+            vm.runInContext(fs.readFileSync('api_gateway.js','utf8'),context);
             vm.runInContext(source, context);
 
             // Fire DOMContentLoaded
