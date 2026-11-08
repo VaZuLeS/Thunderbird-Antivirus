@@ -632,6 +632,12 @@ def open_page(m, url):
     wait_for(lambda: m.page('return document.readyState==="complete" && !!document.querySelector("h1");'))
 
 
+def expert_view(m, browser='window.gTabmail.currentTabInfo.browser'):
+    """Select the public technical view before testing its disclosed controls."""
+    wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot?.querySelector("[data-focus-key=view-switch]");',browser=browser))
+    m.page('if(document.body.dataset.thundyAnalysisView!=="expert")document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=view-switch]").click();',browser=browser)
+
+
 def storage_snapshot(m):
     return m.page('return window.wrappedJSObject.browser.storage.local.get(null);')
 
@@ -1105,6 +1111,7 @@ def check_source_history(m, base, out, report, restart, display):
       MailUtils.displayMessage(Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Source History").messages).find(h=>h.subject==="Thundy source history B"));''')
     brands=['Hybrid Analysis','VirusTotal','URLhaus','AbuseIPDB','urlscan.io']
     wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(\'[data-key="unbound-history"]\');'))
+    expert_view(m)
     visible=m.page('''const root=document.getElementById("thundy-analysis-status").shadowRoot;
       const detail=root.querySelector('[data-key="unbound-history"]');detail.open=true;
       return {summary:detail.querySelector("summary").textContent,currentNotMalicious:root.querySelector(".card").style.borderColor===""};''')
@@ -1116,6 +1123,7 @@ def check_source_history(m, base, out, report, restart, display):
     native_click(display,point['x'],point['y'])
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    expert_view(m,popup)
     summary=wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(\'[data-key="unbound-history"] summary\')?.textContent;',browser=popup))
     assert all(brand in summary for brand in brands),summary
     subprocess.run(['import','-window','root',str(out/'source-history-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
@@ -1161,6 +1169,7 @@ def check_active_sources(m, base, out, report, display, baseline=False):
     })();''',[target,urls],browser=options)
     assert measured['activeRows']==1200 and measured['inventory']==500 and measured['sourceTimesUnchanged'],measured
     inspect='''const root=document.getElementById("thundy-analysis-status").shadowRoot,items=Array.from(root.querySelectorAll("details")).filter(d=>/^(hybridanalysis|virustotal|urlhaus|abuseipdb|urlscan):/.test(d.dataset.key||""));return {nodes:root.querySelectorAll("*").length,details:items.length,closedWithBody:items.filter(d=>!d.open&&d.querySelector("p,small")).length,opened:items.filter(d=>d.open).length,firstKey:items[0].dataset.key,jumpAvailable:!!root.querySelector('[data-focus-key="current-find-warning"]')};'''
+    expert_view(m)
     initial=m.page(inspect);assert initial['details']==1200,initial
     assert initial['closedWithBody']==(1200 if baseline else 0),initial
     m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot;Array.from(root.querySelectorAll("details")).find(d=>d.dataset.key?.startsWith("hybridanalysis:")).querySelector("summary").focus();')
@@ -1180,6 +1189,7 @@ def check_active_sources(m, base, out, report, display, baseline=False):
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup='document.getElementById("webextension-remote-preload-panel").querySelector(\'browser[webextension-view-type="popup"]\')'
     wait_for(lambda:m.page('return Array.from(document.getElementById("thundy-analysis-status")?.shadowRoot.querySelectorAll("details")||[]).filter(d=>/^(hybridanalysis|virustotal|urlhaus|abuseipdb|urlscan):/.test(d.dataset.key||"")).length===1200;',browser=popup))
+    expert_view(m,popup)
     popup_initial=m.page(inspect,browser=popup);popup_ms=round((time.monotonic()-started)*1000)
     assert popup_initial['closedWithBody']==(1200 if baseline else 0),popup_initial
     wait_for(lambda:m.page('return !!document.querySelector(".local-risk")&&!document.getElementById("thundy-initial-loading");',browser=popup))
@@ -1217,6 +1227,7 @@ def check_history_pages(m, base, out, report, display):
     })();''')
     wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".history-range");'))
     inspect='''const host=document.getElementById("thundy-analysis-status"),root=host.shadowRoot,detail=root.querySelector('[data-key="unbound-history"]');return {page:Number(host.dataset.historyPage),entries:detail.querySelectorAll(".history-entries li").length,range:detail.querySelector(".history-range").textContent,summary:detail.querySelector("summary").textContent,localOnly:root.querySelector(".mode").textContent==="Local · no external results recorded",noCurrentThreat:root.querySelector(".card").style.borderColor==="",nodes:root.querySelectorAll("*").length,focused:root.activeElement?.dataset.focusKey||null,warningFocused:root.activeElement?.dataset.historyWarning==="true"};'''
+    expert_view(m)
     first=m.page(inspect);assert first['entries']==30 and first['page']==0 and first['noCurrentThreat'],first
     assert 'association unconfirmed' in first['summary'] and 'Suspicious or malicious historical finding' in first['summary'],first
     m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="unbound-history"]\');d.open=true;d.querySelector(\'[data-focus-key="history-next"]\').focus();')
@@ -1236,6 +1247,7 @@ def check_history_pages(m, base, out, report, display):
     native_click(display,point['x'],point['y'])
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    expert_view(m,popup)
     wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".history-range");',browser=popup))
     popup_first=m.page(inspect,browser=popup);assert popup_first['page']==0 and popup_first['entries']==30 and popup_first['noCurrentThreat'],popup_first
     wait_for(lambda:m.page('return !!document.querySelector(".local-risk")&&!document.getElementById("thundy-initial-loading");',browser=popup))
@@ -1307,6 +1319,7 @@ def check_hybrid_popup(m, base, out, report, display, baseline=False, actions=Fa
     native_click(display,point['x'],point['y'])
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    expert_view(m,popup)
     wait_for(lambda:m.page('const area=document.getElementById("hybrid_analysis_api_content");return document.getElementById("subject")?.textContent==="Thundy hybrid popup"&&area?.childElementCount>0&&!document.getElementById("thundy-initial-loading");',browser=popup))
     result=m.page('''const area=document.getElementById("hybrid_analysis_api_content");return {genericError:!!document.getElementById("unexpected-error-msg"),first:area.textContent.includes(arguments[0]),second:area.textContent.includes(arguments[1]),partialNotice:area.textContent.includes("unsupported format"),providerCards:document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll(".service-results").length};''',names,browser=popup)
     assert result['genericError']==baseline,result
@@ -1392,6 +1405,7 @@ def check_stored_sources(m, base, out, report, display, baseline=False):
     native_click(display,point['x'],point['y'])
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    expert_view(m,popup)
     wait_for(lambda:m.page('return document.getElementById("subject")?.textContent==="Thundy hybrid popup"&&!!document.getElementById("hybrid_analysis_api_content")?.childElementCount&&!document.getElementById("thundy-initial-loading");',browser=popup))
     assert m.page('return !!document.getElementById("unexpected-error-msg");',browser=popup)==baseline
     if not baseline:
@@ -1457,6 +1471,7 @@ def check_source_export(m, base, out, report, restart, display):
     native_click(display,point['x'],point['y'])
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    expert_view(m,popup)
     wait_for(lambda:m.page('return !!document.querySelector(".local-risk")&&!document.getElementById("thundy-initial-loading");',browser=popup))
     m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;const ready=await bg.getMessageAnalysisContext(await b.messages.get(arguments[0]));await (ready.wrappedJSObject||ready).flush();return true;})();''',[target_id],browser=popup)
     url=wait_for(lambda:m.page('const a=document.getElementById("sourceExportOpen");return a&&!a.hidden&&a.href;',browser=popup))
