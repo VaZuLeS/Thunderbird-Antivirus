@@ -2218,5 +2218,89 @@
   },
   "analysisExportSensitive": {
     "message": "Revise antes de exportar: los detalles pueden identificar recursos del mensaje."
+  },
+  "scanActions": {
+    "message": "Análisis externos"
+  },
+  "scanStart": {
+    "message": "Analizar ahora"
+  },
+  "scanRepeat": {
+    "message": "Volver a analizar"
+  },
+  "scanRefresh": {
+    "message": "Actualizar resultados"
+  },
+  "scanRunning": {
+    "message": "Análisis externo en curso"
+  },
+  "scanProgress": {
+    "message": "Recursos completados: $1 / $2"
+  },
+  "scanMigrationNotice": {
+    "message": "Elija el modo automático en ajustes. Hasta entonces se mantienen las reglas anteriores."
+  },
+  "scanState_idle": {
+    "message": "Ningún análisis iniciado"
+  },
+  "scanState_queued": {
+    "message": "Análisis aceptado; inicio pendiente"
+  },
+  "scanState_running": {
+    "message": "Análisis externo en curso"
+  },
+  "scanState_completed": {
+    "message": "Análisis completado"
+  },
+  "scanState_pending": {
+    "message": "El proveedor sigue procesando; actualice los resultados"
+  },
+  "scanState_incomplete": {
+    "message": "Análisis incompleto; faltan algunos resultados"
+  },
+  "scanState_failed": {
+    "message": "Error en el análisis; inténtelo de nuevo"
+  },
+  "scanState_blocked": {
+    "message": "No se inició el análisis externo; vea los requisitos"
+  },
+  "analysisReason_manual": {
+    "message": "Modo manual"
+  },
+  "analysisReason_sender": {
+    "message": "Remitente no autorizado"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Análisis automático de enlaces desactivado"
+  },
+  "analysisReason_no_resources": {
+    "message": "No hay recursos adecuados"
+  },
+  "analysisReason_quota": {
+    "message": "Cuota alcanzada; espere antes de reintentar"
+  },
+  "analysisReason_running": {
+    "message": "El proveedor está procesando"
+  },
+  "analysisReason_provider_error": {
+    "message": "Error en la solicitud al proveedor"
+  },
+  "scanModeLabel": {
+    "message": "Análisis externos automáticos"
+  },
+  "scanModeKeep": {
+    "message": "Conservar ajuste anterior (elegir modo)"
+  },
+  "scanModeAll": {
+    "message": "Todos los mensajes abiertos"
+  },
+  "scanModeSenders": {
+    "message": "Solo remitentes autorizados"
+  },
+  "scanModeManual": {
+    "message": "Solo manual"
+  },
+  "scanModeHelp": {
+    "message": "Todos los mensajes abiertos elimina la autorización individual del remitente. Los servicios configurados pueden recibir hashes y, en Máximo con análisis automático de enlaces, URL completas. Se siguen requiriendo consentimiento y permisos. Los mensajes sin abrir no se analizan."
   }
 }

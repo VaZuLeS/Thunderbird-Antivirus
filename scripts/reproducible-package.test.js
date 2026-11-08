@@ -57,7 +57,7 @@ test('signed metadata, duplicate names, unsafe paths, symlinks and excessive pay
     [['manifest.json','one'],['manifest.json','two']], [['../escape','data']],
     [['/absolute','data']], [['folder\\escape','data']], [['a/./b','data']],
     Array.from({length:1025},(_,i)=>['file-'+i,'']),
-    [['manifest.json','x'.repeat(1200*1024+1)]]
+    [['manifest.json','x'.repeat(1300*1024+1)]]
   ]) {
     const input=path.join(root,'input.zip'),output=path.join(root,'output.zip');zip(input,entries);
     const r=normalize(input,output);assert.notEqual(r.status,0);assert.equal(fs.existsSync(output),false);

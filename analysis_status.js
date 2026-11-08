@@ -307,7 +307,8 @@ const ThundyAnalysis = (() => {
         const running = rows.some(row => row.state === 'running'), waiting = rows.some(row => row.state === 'submitted'), incomplete = rows.some(row => row.state === 'incomplete');
         const failures = rows.some(row => row.failures > 0 || row.state === 'failed'), received = rows.some(row => row.responses > 0 || row.cacheHits > 0);
         const usable = rows.some(row => ['none','suspicious','malicious'].includes(row.verdict) && (row.responses > 0 || row.cacheHits > 0));
-        const mode = t(data.unavailable ? 'analysisUnavailable' : rows.length ? local || localLimited ? 'analysisMixed' : 'analysisExternal' : local || localLimited ? 'analysisLocal' : 'analysisModeUnknown');
+        const jobBusy=['queued','running'].includes(data.scanJob?.state);
+        const mode = t(jobBusy ? 'scanRunning' : data.unavailable ? 'analysisUnavailable' : rows.length ? local || localLimited ? 'analysisMixed' : 'analysisExternal' : local || localLimited ? 'analysisLocal' : 'analysisModeUnknown');
         const phase = t(running ? 'analysisModeRunning' : waiting ? 'analysisModeSubmitted' : failures ? usable ? 'analysisModePartial' : received ? 'analysisModeResponsesFailed' : 'analysisModeFailed' : incomplete ? 'analysisModeIncomplete' : usable ? 'analysisModeResults' : received ? 'analysisModeResponses' : 'analysisModeUnknown');
         const card = n('div', '', 'card'); card.append(n('h2', t('analysisTitle')), n('p', mode, 'mode'));
         if (rows.length) card.append(n('p',phase, failures ? 'phase warning' : 'phase'));
@@ -451,7 +452,7 @@ const ThundyAnalysis = (() => {
         const overview=n('div','','card');
         const flagged=rows.filter(row=>['malicious','suspicious'].includes(row.verdict));
         const danger=flagged.some(row=>row.verdict==='malicious');
-        const uncertain=data.unavailable||sourceDataIncomplete||!local||failures||running||waiting||incomplete||rows.some(row=>['unknown'].includes(row.verdict));
+        const uncertain=jobBusy||data.unavailable||sourceDataIncomplete||!local||failures||running||waiting||incomplete||rows.some(row=>['unknown'].includes(row.verdict));
         const title=danger?'analysisSimpleDanger':flagged.length||data.local?.score>=50?'analysisSimpleCaution':uncertain?'analysisSimpleIncomplete':'analysisSimpleNone';
         overview.append(n('h2',t(title)),n('p',localLabel),n('p',t('analysisSimpleBasis')+': '+new Set(rows.filter(row=>['none','suspicious','malicious'].includes(row.verdict)).map(row=>row.provider)).size+' / '+new Set(rows.filter(row=>row.state==='failed'||row.failures>0).map(row=>row.provider)).size));
         const reasons=n('ul','');
@@ -470,8 +471,18 @@ const ThundyAnalysis = (() => {
         if(!host.dataset.view)host.dataset.view=document.body.dataset.thundyAnalysisView==='expert'?'expert':'simple';
         const applyView=()=>{const expert=host.dataset.view==='expert';card.hidden=!expert;overview.hidden=expert;switcher.textContent=t(expert?'analysisSimple':'analysisExpert');switcher.setAttribute('aria-expanded',String(expert));document.body.dataset.thundyAnalysisView=expert?'expert':'simple';};
         switcher.addEventListener('click',()=>{host.dataset.view=host.dataset.view==='expert'?'simple':'expert';applyView();});applyView();
-        style.textContent+='[hidden]{display:none!important}';
-        root.replaceChildren(style, live, switcher, card, overview);
+        style.textContent+='[hidden]{display:none!important}.scan-actions{font:14px/1.5 system-ui;color:var(--text-color,#192b40);background:var(--card-bg,#fff);overflow-wrap:anywhere;padding:12px;border:1px solid var(--card-border,#cbd5e1);border-radius:10px;margin-bottom:12px}.scan-actions button{margin:4px;max-width:100%;white-space:normal;overflow-wrap:anywhere}';
+        const actions=n('section','','scan-actions');actions.setAttribute('aria-label',t('scanActions'));
+        if(data.scanJob){
+            const job=data.scanJob;const needsRefresh=job.pending||job.state==='pending';const state=n('p',t('scanState_'+(job.state||'idle')));state.setAttribute('role','status');actions.append(state);
+            if(job.total)actions.append(n('p',t('scanProgress').replace('$1',String(job.completed)).replace('$2',String(job.total))));
+            const button=n('button',t(jobBusy?'scanRunning':needsRefresh?'scanRefresh':['completed','incomplete','failed'].includes(job.state)?'scanRepeat':'scanStart'));button.type='button';button.dataset.focusKey='scan-start';button.disabled=jobBusy||job.manualAllowed===false;
+            button.addEventListener('click',async()=>{button.disabled=true;state.textContent=t('scanRunning');try{const response=await browser.runtime.sendMessage({action:'requestScan',messageId:data.messageId,contextToken:data.contextToken,operation:needsRefresh?'refresh':'scan'});if(!response?.success)throw Error('scan');state.textContent=t('scanState_'+(response.state||'queued'));}catch(_){state.textContent=t('scanState_failed');button.disabled=false;}});actions.append(button);
+            const settings=n('button',t('bannerOpenOptions'));settings.type='button';settings.dataset.focusKey='scan-settings';settings.addEventListener('click',()=>browser.runtime.sendMessage({action:'openScanSettings'}));actions.append(settings);
+            if(job.migration)actions.append(n('p',t('scanMigrationNotice')));
+            const reasons=n('ul','');for(const [id,value] of Object.entries(job.providers||{})){const unique=[...new Set((value.checks||[]).map(c=>c.reason).filter(Boolean))];if(value.state==='failed')unique.push(value.error==='rate_limited'?'quota':'provider_error');if(unique.length)reasons.append(n('li',(brands[id]||id)+': '+unique.map(reason=>t('analysisReason_'+reason)).join(' · ')));}if(reasons.childElementCount)actions.append(reasons);
+        }
+        root.replaceChildren(style, live, ...(data.scanJob?[actions]:[]), switcher, card, overview);
         if (wasPresent && changed) live.textContent = announcement;
         host.dataset.announcement = announcement;
         if (!wasPresent) { const mount = document.getElementById('analysisSourceMount'); if (mount) mount.append(host); else document.body.prepend(host); }
@@ -483,14 +494,14 @@ const ThundyAnalysis = (() => {
     }
     function withCache(context, provider, scope, key) {
         if (!context) return context;
-        return { cached: (...args) => context.cached?.(...args), event(event) {
+        return { ...context, cached: (...args) => context.cached?.(...args), event(event) {
             if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) cacheTime(provider, scope, key, event.observedAt);
             return context.event(event);
         } };
     }
     function labels(get) {
-        const keys = ['auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
-        for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
+        const keys = ['scanActions','scanStart','scanRepeat','scanRefresh','scanRunning','scanProgress','scanMigrationNotice','scanState_idle','scanState_queued','scanState_running','scanState_completed','scanState_pending','scanState_incomplete','scanState_failed','scanState_blocked','bannerOpenOptions','auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded','manual','sender','links_disabled','no_resources','quota','running','provider_error']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }
     return { providers, scopes, create, spec, response, resources, legacy, history, render, cacheTime, labels, withCache, bind, validResource, rowKey };

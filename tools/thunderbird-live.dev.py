@@ -1812,6 +1812,62 @@ def check_administration(m, base, out, report):
     report['administration']={'passed':True,'realThunderbirdAPIs':True,'protectedWriteRejected':True,'unlockAndRelock':True,'separatePasswordPage':True,'oneApprovedOpening':True,'passwordVerifiers':state,'liveProviderCalls':False}
 
 
+def check_automatic_scans(m, base, out, report, display):
+    # Real display events, persistence and UI; synthetic transport only.
+    open_page(m,base+'options.html')
+    wait_for(lambda:m.page('return !!document.getElementById("scanMode");'))
+    assert m.page('return document.getElementById("scanMode").value;') == ''
+    m.js('''const {ExtensionPermissions}=ChromeUtils.importESModule("resource://gre/modules/ExtensionPermissions.sys.mjs");return ExtensionPermissions.add(arguments[0],{permissions:[],origins:["https://hybrid-analysis.com/*","https://urlscan.io/*"]},WebExtensionPolicy.getByID(arguments[0]).extension);''',[ADDON_ID])
+    setup=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const message=(await b.messages.query({subject:"Thundy AV synthetic live test"})).messages.find(m=>m.subject==="Thundy AV synthetic live test");
+      const calls=[];window.wrappedJSObject.__automaticScanCalls=calls;
+      const errors=[];window.wrappedJSObject.__automaticScanErrors=errors;bg.console.error=(...args)=>errors.push(args.map(x=>typeof x==='string'?x:x?.message||x?.name||'error').join(' '));
+      bg.fetch=async(url,options={})=>{
+        url=String(url);calls.push({url,method:options.method||'GET',body:typeof options.body==='string'?options.body:null});
+        let data;
+        if(url==='https://hybrid-analysis.com/api/v2/quick-scan/url')data={id:'native-hybrid-job',verdict:'clean',finished:true};
+        else if(url.includes('hybrid-analysis.com/api/v2/quick-scan/'))data={id:'native-hybrid-job',verdict:'clean',finished:true};
+        else if(url==='https://urlscan.io/api/v1/scan/')data={uuid:'native-urlscan-job'};
+        else if(url.includes('urlscan.io/api/v1/result/'))data={verdicts:{overall:{malicious:false,score:0}},page:{url:'https://destination.example.invalid/test'}};
+        else throw Error('Unexpected synthetic provider route');
+        return new bg.Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
+      };
+      await b.storage.local.set({scanMode:'allDisplayed',alwaysManual:false,externalAnalysisConsent:true,privacyTier:'max',autoScanLinks:true,apikey:'synthetic-native-ha',urlscanApikey:'synthetic-native-urlscan'});
+      await b.messageDisplay.open({messageId:message.id,location:'tab'});return {messageId:message.id};
+    })();''')
+    options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
+    def snapshot():
+        return m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[setup['messageId']],browser=options)
+    try:
+        finished=wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('state')=='completed' else None),45)
+    except TimeoutError:
+        report['automaticScanFailure']={'snapshot':snapshot(),'errors':m.page('return window.wrappedJSObject.__automaticScanErrors;',browser=options),'calls':m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options),'probe':m.page('return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;const tab=(await b.tabs.query({active:true,currentWindow:true}))[0];return bg.handleRequestScan({messageId:arguments[0],tabId:tab.id},{});})();',[setup['messageId']],browser=options)}
+        raise
+    calls=m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options)
+    ha=[c for c in calls if c['method']=='POST' and 'hybrid-analysis' in c['url']]
+    us=[c for c in calls if c['method']=='POST' and 'urlscan.io' in c['url']]
+    assert ha and us,calls
+    assert all(json.loads(c['body'])['visibility']=='unlisted' for c in us)
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.textContent==="Check again";'))
+    m.screenshot(out/'automatic-scan-message.png')
+    # A second display event attaches to the current scan; it must not submit again.
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;await bg.handleDisplayedMessage({id:(await b.tabs.query({active:true,currentWindow:true}))[0].id},await b.messages.get(arguments[0]));return true;})();''',[setup['messageId']],browser=options)
+    assert len(m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options))==len(calls)
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.textContent==="Check again";',browser=popup))
+    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();',browser=popup)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='completed' else None),45)
+    later=m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options)
+    assert len([c for c in later if c['method']=='POST' and 'urlscan.io' in c['url']])>len(us)
+    report['passed']=True
+    report['automaticScans']={'passed':True,'realDisplayEvents':True,'bothProvidersWithoutLinkClick':True,'popupClosedDuringRetry':True,'duplicateDisplayReused':True,'unlisted':True,'syntheticTransport':True,'liveProviderCalls':False}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--thunderbird', type=Path, required=True)
@@ -1822,6 +1878,7 @@ def main():
                         help='Permanent upgrade with two graceful restarts; requires --previous-xpi')
     parser.add_argument('--real-browser', type=Path, help='Isolated real Chromium handoff to a controlled local HTTPS page, direct install only')
     parser.add_argument('--restore-check', action='store_true', help='Verify clean pre-upgrade profile backup restore; requires --restart-check')
+    parser.add_argument('--automatic-scan-check', action='store_true', help='Real automatic display scans and popup retry with synthetic provider transport')
     parser.add_argument('--security-check', action='store_true', help='Real optional administration, protected writes and one-time link approval')
     parser.add_argument('--performance-check', action='store_true', help='Measure actual local message analysis through the extension API')
     parser.add_argument('--message-kib', type=int, default=0, help='Synthetic newsletter body size for direct-install performance checks (0..10240 KiB)')
@@ -2077,7 +2134,10 @@ def main():
                 if args.restart_check:
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
-                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check or args.source_export_check or args.hybrid_popup_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check or args.source_export_check or args.hybrid_popup_check, audit_only=args.automatic_scan_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    if args.automatic_scan_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_automatic_scans(m,base,out,report,display)
                     if args.security_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_administration(m,base,out,report)

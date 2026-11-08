@@ -260,22 +260,15 @@
             >
           </div>
           <div class="mb-3">
-            <input
-              type="checkbox"
-              id="alwaysManual"
-              aria-describedby="alwaysManualHelp"
-            />
-            <label for="alwaysManual"
-              ><span data-i18n="ui_160"
-                >Always scan manually (no automatic uploads)</span
-              ></label
-            >
-            <small id="alwaysManualHelp"
-              ><span data-i18n="ui_161"
-                >Prevents automatic external scans. Explicit manual actions
-                still require consent and the appropriate privacy tier.</span
-              ></small
-            >
+            <label for="scanMode" data-i18n="scanModeLabel">Automatic external scans</label>
+            <select id="scanMode" aria-describedby="scanModeHelp">
+              <option value="" data-i18n="scanModeKeep">Keep previous setting (choose a mode)</option>
+              <option value="allDisplayed" data-i18n="scanModeAll">All opened messages</option>
+              <option value="approvedSenders" data-i18n="scanModeSenders">Approved senders only</option>
+              <option value="manual" data-i18n="scanModeManual">Manual only</option>
+            </select>
+            <small id="scanModeHelp" data-i18n="scanModeHelp">All opened messages removes individual sender approval. Configured services may receive hashes and, at Maximum with automatic link analysis, full URLs. Consent and provider permissions are still required. This does not scan unread messages.</small>
+            <input type="checkbox" id="alwaysManual" hidden />
           </div>
           <div class="mb-3">
             <input

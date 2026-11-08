@@ -11,11 +11,13 @@ function typedError(code, message) {
 }
 
 async function authorizeMessageScan(message, userAction = false) {
-    const settings = await browser.storage.local.get(['externalAnalysisConsent', 'scanningEnabledSenders', 'alwaysManual']);
+    const settings = await browser.storage.local.get(['externalAnalysisConsent', 'scanningEnabledSenders', 'alwaysManual', 'scanMode']);
     if (settings.externalAnalysisConsent !== true) return false;
     if (userAction) return true;
     const email = extractEmailAddress(message.author || '').toLowerCase();
-    return !settings.alwaysManual && !!email && (settings.scanningEnabledSenders || []).includes(email);
+    const mode = ['allDisplayed','approvedSenders','manual'].includes(settings.scanMode) ? settings.scanMode : settings.alwaysManual ? 'manual' : 'approvedSenders';
+    if (mode === 'allDisplayed') return true;
+    return mode !== 'manual' && !!email && (settings.scanningEnabledSenders || []).includes(email);
 }
 
 function mayTransmitExternally() {

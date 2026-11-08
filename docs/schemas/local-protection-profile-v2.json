@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Thundy local protection settings profile v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "protection"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 2
+    },
+    "kind": {
+      "const": "thundy-local-protection"
+    },
+    "protection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "privacyTier": {
+          "enum": [
+            "strict",
+            "balanced",
+            "max"
+          ]
+        },
+        "alwaysManual": {
+          "type": "boolean"
+        },
+        "timeOfClickProtection": {
+          "type": "boolean"
+        },
+        "scanMode": {
+          "enum": [
+            "allDisplayed",
+            "approvedSenders",
+            "manual"
+          ]
+        },
+        "autoScanLinks": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "privacyTier",
+        "alwaysManual",
+        "timeOfClickProtection",
+        "scanMode",
+        "autoScanLinks"
+      ]
+    }
+  }
+}

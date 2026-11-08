@@ -114,6 +114,8 @@ if (!message) {
 
 if (!message.headerMessageId) message.headerMessageId = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id;
 popupMessageId = message.id;
+let refreshStoredResults = null, refreshLocalAssessment = null;
+let refreshTimer = null, lastJobState = null;
 if (typeof ThundyAnalysis !== 'undefined') {
     popupAnalysisContext = { scopeOverride: 'report', event: event => browser.runtime.sendMessage({ action: 'recordAnalysisEvent', messageId: message.id, event }) };
     let sourceGeneration = 0;
@@ -130,7 +132,11 @@ if (typeof ThundyAnalysis !== 'undefined') {
                 if (!exportLink.hidden) exportLink.href = browser.runtime.getURL('source_export.html') + '?messageId=' + message.id + '&contextToken=' + encodeURIComponent(result.contextToken);
                 else exportLink.removeAttribute('href');
             }
-            if (!hybridReportDisposed && own === sourceGeneration && result?.success && result.messageId === message.id) ThundyAnalysis.render(result, sourceLabels, sourceTheme);
+            if (!hybridReportDisposed && own === sourceGeneration && result?.success && result.messageId === message.id) {
+                ThundyAnalysis.render(result, sourceLabels, sourceTheme);
+                const signature=JSON.stringify([result.scanJob?.id,result.scanJob?.state,result.scanJob?.completed]);
+                if(signature!==lastJobState){lastJobState=signature;if(refreshTimer)clearTimeout(refreshTimer);refreshTimer=setTimeout(async()=>{if(hybridReportDisposed)return;await refreshStoredResults?.();await refreshLocalAssessment?.();},150);}
+            }
             else if (!hybridReportDisposed && own === sourceGeneration) ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme);
         } catch (_) { if (!hybridReportDisposed && own === sourceGeneration) { document.getElementById('sourceExportOpen')?.setAttribute('hidden','');ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme); } }
     };
@@ -158,6 +164,7 @@ updateGridField("from", message.author, uiText('noSender', "(Unbekannter Absende
 updateGridField("MessageHeaderID", message.headerMessageId, uiText('noId', "(Keine ID)"));
 
 // The local assessment is independent of provider configuration and consent.
+refreshLocalAssessment = async () => {
 try {
     const local = await browser.runtime.sendMessage({ action: 'getLocalRisk', messageId: message.id });
     if (local && local.threat) {
@@ -187,9 +194,12 @@ try {
             }
             card.appendChild(list);
         }
+        document.querySelector('.local-risk')?.remove();
         document.querySelector('.grid-container').before(card);
     }
-} catch (e) { /* local assessment can be retried by reopening the popup */ }
+} catch (e) { /* The next update can retry the local assessment. */ }
+};
+await refreshLocalAssessment();
 
 // Initialen Lade-Status für async Operationen setzen
 let apiContainer = document.getElementById('hybrid_analysis_api_content');
@@ -232,6 +242,7 @@ if (!externalAnalysisConsent && apiContainer) {
     apiContainer.before(consentCard);
 }
 
+refreshStoredResults = async () => {
 try {
 
     const db = await openDB('thunderbird_av', 3);
@@ -284,7 +295,7 @@ try {
                             // FA-3: a finished protocol was already persisted; show it
                             // without a new provider request (the data is local).
                             fetchTasks.push(buildStoredAttachmentReportTask(att, message));
-                        } else if (externalAnalysisConsent && apikey_hybridanalysis) {
+                        } else if (!record?.scanJobMeta && externalAnalysisConsent && apikey_hybridanalysis) {
                             fetchTasks.push((frag) =>
                                 get_hybrid_report_by_sha256({
                                     hybrid_sha: hash256,
@@ -304,7 +315,7 @@ try {
                 }
 
                 if (hasLinks) {
-                    if (externalAnalysisConsent && apikey_hybridanalysis) {
+                    if (!record?.scanJobMeta && externalAnalysisConsent && apikey_hybridanalysis) {
                         processRecordLinks(record.links, message.headerMessageId, liveContainer, fetchTasks);
                     } else {
                         for (const linkObj of record.links) {
@@ -376,6 +387,8 @@ try {
         container.appendChild(errDiv);
     }
 }
+};
+await refreshStoredResults();
 })();
 
 function createEl(tag, className = '', textContent = '') {

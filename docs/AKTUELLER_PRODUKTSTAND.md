@@ -1,5 +1,7 @@
 # Aktueller Produktstand — 8. November 2026
 
+Korrekturstand **1.25.1**: gemeinsame automatische Hintergrundprüfungen und sichtbare Prüfaktionen. [Konfiguration und Ablauf](AUTOMATISCHE_PRUEFUNGEN.md), [Release-Gate](VEROEFFENTLICHUNG_1_25_1.md). Bestehende Profile behalten ihre Freigabegrenzen bis zur ausdrücklichen Moduswahl.
+
 Die **1.25.0** ergänzt verständliche und technische Ergebnisansichten, ein gemeinsames Anbieterregister sowie optionale lokale Administration mit separater Linkfreigabe. Schutzregeln bleiben nach Upgrade ausgeschaltet. [Release-Umfang und Nachweise](VEROEFFENTLICHUNG_1_25_0.md), [Einrichtung und Datenflüsse](EXTERNE_ANALYSEN_UND_LINKFREIGABE.md), [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.0). Die neue Passwort-/Freigabefunktion ist lokal unter Linux mit Thunderbird 153.5.1 ESR geprüft; Windows/macOS und echte Anbieterzugänge bleiben gesonderte Abnahmen.
 
 Die **1.24.8** ergänzt die [dauerhafte Vorkommensidentität und Speicherschlüsselableitung (AVN-009), konfigurierbare lokale Schutzprofile mit Live-Differenzvorschau (AVN-010) sowie das Heuristik-Benchmarking und die Dokumentationsparität (AVN-005, AVN-016)](VEROEFFENTLICHUNG_1_24_8.md). Tatsächlicher [Veröffentlichungsstatus und Download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.8); ein vorbereiteter Quellstand allein bestätigt keine Veröffentlichung. 1.24.7 bleibt unverändert erhalten.

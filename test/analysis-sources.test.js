@@ -376,3 +376,19 @@ test('VirusTotal, URLhaus, AbuseIPDB and URLScan.io API response parsers handle 
 });
 
 
+
+test('scan actions stay visible in both views, use accepted state and disable running duplicate starts',async()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json')),labels=a.labels(k=>catalog[k]?.message);
+ const dom=new JSDOM('<html lang="en"><body></body></html>');const calls=[];
+ try {
+ const data={messageId:7,contextToken:'document',local:{state:'checked'},rows:[],scanJob:{state:'pending',manualAllowed:true,completed:1,total:2}};
+ const c=vm.createContext({document:dom.window.document,URL,Date,data,labels,browser:{runtime:{sendMessage:async request=>{calls.push(request);return {success:true,id:'new-job',state:'queued'};}}}});
+ vm.runInContext(source,c);vm.runInContext('ThundyAnalysis.render(data,labels);',c);
+ let root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+ const button=root.querySelector('[data-focus-key="scan-start"]');assert.equal(button.textContent,catalog.scanRefresh.message);assert.equal(root.querySelector('.scan-actions').hidden,false);
+ button.click();await new Promise(setImmediate);assert.equal(calls[0].operation,'refresh');assert.equal(calls[0].contextToken,'document');assert.ok(root.textContent.includes(catalog.scanState_queued.message));assert.equal(button.disabled,true);
+ root.querySelector('[data-focus-key="view-switch"]').click();assert.equal(root.querySelector('.scan-actions').hidden,false);
+ data.scanJob.state='running';vm.runInContext('ThundyAnalysis.render(data,labels);',c);root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;assert.equal(root.querySelector('[data-focus-key="scan-start"]').disabled,true);
+ assert.ok(root.textContent.includes(catalog.scanRunning.message));
+ } finally {dom.window.close();}
+});

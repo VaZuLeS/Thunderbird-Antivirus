@@ -2221,5 +2221,89 @@
   },
   "analysisExportSensitive": {
     "message": "Review before export: technical details may identify message resources."
+  },
+  "scanActions": {
+    "message": "External checks"
+  },
+  "scanStart": {
+    "message": "Check now"
+  },
+  "scanRepeat": {
+    "message": "Check again"
+  },
+  "scanRefresh": {
+    "message": "Refresh results"
+  },
+  "scanRunning": {
+    "message": "External check in progress"
+  },
+  "scanProgress": {
+    "message": "Completed resources: $1 / $2"
+  },
+  "scanMigrationNotice": {
+    "message": "Choose an automatic scan mode in settings. Until then, previous sender and manual rules apply."
+  },
+  "scanState_idle": {
+    "message": "No check started"
+  },
+  "scanState_queued": {
+    "message": "Check accepted; waiting to start"
+  },
+  "scanState_running": {
+    "message": "External check in progress"
+  },
+  "scanState_completed": {
+    "message": "Check completed"
+  },
+  "scanState_pending": {
+    "message": "Provider is still processing; refresh results"
+  },
+  "scanState_incomplete": {
+    "message": "Check incomplete; some results are missing"
+  },
+  "scanState_failed": {
+    "message": "Check failed; try again"
+  },
+  "scanState_blocked": {
+    "message": "No external check started; see requirements below"
+  },
+  "analysisReason_manual": {
+    "message": "Manual mode"
+  },
+  "analysisReason_sender": {
+    "message": "Sender not approved"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Automatic link analysis off"
+  },
+  "analysisReason_no_resources": {
+    "message": "No matching resources"
+  },
+  "analysisReason_quota": {
+    "message": "Quota reached; wait before retrying"
+  },
+  "analysisReason_running": {
+    "message": "Provider is processing"
+  },
+  "analysisReason_provider_error": {
+    "message": "Provider request failed"
+  },
+  "scanModeLabel": {
+    "message": "Automatic external scans"
+  },
+  "scanModeKeep": {
+    "message": "Keep previous setting (choose a mode)"
+  },
+  "scanModeAll": {
+    "message": "All opened messages"
+  },
+  "scanModeSenders": {
+    "message": "Approved senders only"
+  },
+  "scanModeManual": {
+    "message": "Manual only"
+  },
+  "scanModeHelp": {
+    "message": "All opened messages removes individual sender approval. Configured services may receive hashes and, at Maximum with automatic link analysis, full URLs. Consent and provider permissions are still required. Unopened messages are not scanned."
   }
 }

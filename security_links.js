@@ -15,7 +15,7 @@ const ThundyLinkSecurity = (() => {
         const input={score:threat.score,coverage:localContentCoverage(full).state,verdict:session.verdict||'UNKNOWN',check:session.check,malicious:[...(options.linkFindings||[]),...(options.attachmentFindings||[])].some(x=>x.verdict==='malicious')};
         const saved=await ThundySecurity.read();
         const policy={...ThundySecurity.defaults,...saved.policy};
-        return {policy,input,decision:ThundySecurity.decision(policy,input),fingerprint:await fingerprint({messageId:message.id,url:session.url,text,parts:full,score:input.score,verdict:input.verdict,check:session.check,reasons:threat.reasons,revision:policy.revision})};
+        return {policy,input,decision:ThundySecurity.decision(policy,input),fingerprint:await fingerprint({scanRevision:typeof ThundyScans !== 'undefined' ? ThundyScans.revision(message.id) : null,messageId:message.id,url:session.url,text,parts:full,score:input.score,verdict:input.verdict,check:session.check,reasons:threat.reasons,revision:policy.revision})};
     }
     async function open(request,sender) {
         return ThundySecurity.serialized(async()=>{

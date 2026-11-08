@@ -17,6 +17,7 @@ const ThundyProviders = (() => {
         else scope=provider==='urlhaus'?'domain':provider==='abuseipdb'?'ip':path.includes('/result/')?'report':'url';
         return {provider,config,scope};
     }
+    registry.hybridanalysis.scanKinds={hash:true,url:true};registry.virustotal.scanKinds={hash:true};registry.urlhaus.scanKinds={domain:true};registry.abuseipdb.scanKinds={ip:true};registry.urlscan.scanKinds={url:true};
     for(const [id,config] of Object.entries(registry))config.normalize=(info,status,data)=>ThundyAnalysis.response({...info,provider:id},status,data);
     async function enforce(address,options={}) {
         const {config,scope}=identify(address,options.method);

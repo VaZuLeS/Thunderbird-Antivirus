@@ -28,21 +28,23 @@ const LocalSettingsProfile = (() => {
 // Portable protection profiles contain only safe local protection options,
 // never consent, provider keys, host permissions, sender trust lists or logs.
 const LocalProtectionProfile = (() => {
-    const keys = ['privacyTier', 'alwaysManual', 'timeOfClickProtection'];
+    const keys = ['privacyTier', 'alwaysManual', 'timeOfClickProtection', 'scanMode', 'autoScanLinks'];
     const tiers = ['strict', 'balanced', 'max'];
     const object = value => value && typeof value === 'object' && !Array.isArray(value);
     function parse(input) {
         if (typeof input === 'string') { if (input.length > 8192) throw new Error('PROFILE_INVALID'); input = JSON.parse(input); }
-        if (!object(input) || Object.keys(input).sort().join(',') !== 'kind,protection,schemaVersion' || input.schemaVersion !== 1 || input.kind !== 'thundy-local-protection' || !object(input.protection) || Object.keys(input.protection).sort().join(',') !== 'alwaysManual,privacyTier,timeOfClickProtection') throw new Error('PROFILE_INVALID');
+        if (!object(input) || Object.keys(input).sort().join(',') !== 'kind,protection,schemaVersion' || ![1,2].includes(input.schemaVersion) || input.kind !== 'thundy-local-protection' || !object(input.protection) || Object.keys(input.protection).sort().join(',') !== (input.schemaVersion === 1 ? 'alwaysManual,privacyTier,timeOfClickProtection' : 'alwaysManual,autoScanLinks,privacyTier,scanMode,timeOfClickProtection')) throw new Error('PROFILE_INVALID');
         const { privacyTier, alwaysManual, timeOfClickProtection } = input.protection;
         if (!tiers.includes(privacyTier) || typeof alwaysManual !== 'boolean' || typeof timeOfClickProtection !== 'boolean') throw new Error('PROFILE_INVALID');
-        return { schemaVersion: 1, kind: 'thundy-local-protection', protection: { privacyTier, alwaysManual, timeOfClickProtection } };
+        if (input.schemaVersion === 2 && (!['allDisplayed','approvedSenders','manual'].includes(input.protection.scanMode) || typeof input.protection.autoScanLinks !== 'boolean' || alwaysManual !== (input.protection.scanMode === 'manual'))) throw new Error('PROFILE_INVALID');
+        return { schemaVersion: input.schemaVersion, kind: 'thundy-local-protection', protection: { privacyTier, alwaysManual, timeOfClickProtection, ...(input.schemaVersion === 2 ? {scanMode:input.protection.scanMode,autoScanLinks:input.protection.autoScanLinks} : {}) } };
     }
     function create(settings = {}) {
         const privacyTier = tiers.includes(settings.privacyTier) ? settings.privacyTier : 'strict';
         const alwaysManual = settings.alwaysManual === true;
         const timeOfClickProtection = settings.timeOfClickProtection !== undefined ? Boolean(settings.timeOfClickProtection) : true;
-        return parse({ schemaVersion: 1, kind: 'thundy-local-protection', protection: { privacyTier, alwaysManual, timeOfClickProtection } });
+        const explicit = ['allDisplayed','approvedSenders','manual'].includes(settings.scanMode);
+        return parse({ schemaVersion: explicit ? 2 : 1, kind: 'thundy-local-protection', protection: { privacyTier, alwaysManual: explicit ? settings.scanMode === 'manual' : alwaysManual, timeOfClickProtection, ...(explicit ? {scanMode:settings.scanMode,autoScanLinks:settings.autoScanLinks === true} : {}) } });
     }
     async function prepare(input, storage) { return { profile: parse(input), before: create(await storage.get(keys)) }; }
     async function commit(proposal, storage) {
@@ -51,7 +53,8 @@ const LocalProtectionProfile = (() => {
         await storage.set({
             privacyTier: profile.protection.privacyTier,
             alwaysManual: profile.protection.alwaysManual,
-            timeOfClickProtection: profile.protection.timeOfClickProtection
+            timeOfClickProtection: profile.protection.timeOfClickProtection,
+            ...(profile.schemaVersion === 2 ? {scanMode:profile.protection.scanMode,autoScanLinks:profile.protection.autoScanLinks} : profile.protection.alwaysManual && before.schemaVersion === 2 ? {scanMode:'manual'} : {})
         });
         return profile;
     }
@@ -199,6 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     preview.textContent = [
                         uiText('ui_144', 'Privacy tier:') + ' ' + uiText(tierLabels[prepared.before.protection.privacyTier], prepared.before.protection.privacyTier) + ' → ' + uiText(tierLabels[prepared.profile.protection.privacyTier], prepared.profile.protection.privacyTier),
                         uiText('ui_160', 'Always scan manually') + ': ' + boolLabel(prepared.before.protection.alwaysManual) + ' → ' + boolLabel(prepared.profile.protection.alwaysManual),
+                        ...(prepared.profile.schemaVersion === 2 ? [uiText('scanModeLabel','Automatic external scans') + ': ' + uiText(({allDisplayed:'scanModeAll',approvedSenders:'scanModeSenders',manual:'scanModeManual'})[prepared.profile.protection.scanMode],prepared.profile.protection.scanMode),uiText('ui_162','Automatic link analysis') + ': ' + boolLabel(prepared.profile.protection.autoScanLinks),uiText('scanModeHelp','Configured services may receive full URLs.')] : []),
                         uiText('ui_164', 'Check links before opening them') + ': ' + boolLabel(prepared.before.protection.timeOfClickProtection) + ' → ' + boolLabel(prepared.profile.protection.timeOfClickProtection)
                     ].join('\n');
                 } else {
@@ -225,6 +229,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const tierEl = document.getElementById('privacyTier'), manualEl = document.getElementById('alwaysManual'), tocEl = document.getElementById('timeOfClickProtection');
                     if (tierEl) tierEl.value = committed.protection.privacyTier;
                     if (manualEl) manualEl.checked = committed.protection.alwaysManual;
+                    const modeEl=document.getElementById('scanMode'), linksEl=document.getElementById('autoScanLinks');
+                    if(modeEl) modeEl.value=committed.protection.scanMode || (committed.protection.alwaysManual ? 'manual' : modeEl.value);
+                    if(linksEl && committed.schemaVersion === 2) linksEl.checked=committed.protection.autoScanLinks;
                     if (tocEl) tocEl.checked = committed.protection.timeOfClickProtection;
                 } else {
                     await LocalSettingsProfile.commit(proposal, settingsStorage);
@@ -264,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Abrufen der gespeicherten Einstellung
     browser.storage.local.get([
         'apikey', 'urlhausApikey', 'urlscanApikey', 'virustotalApikey',
-        'alwaysManual', 'autoScanLinks', 'timeOfClickProtection',
+        'alwaysManual', 'scanMode', 'autoScanLinks', 'timeOfClickProtection',
         'privacyTier', 'customWhitelist', 'customBlacklist',
         'externalAnalysisConsent', 'ipReputationProvider', 'ipReputationApiKey', 'trustedAuthServers', 'scanningEnabledSenders'
     ]).then((result) => {
@@ -279,7 +286,9 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('privacyTier').value = result.privacyTier || "strict";
       document.getElementById('customWhitelist').value = (result.customWhitelist || []).join(', ');
       document.getElementById('customBlacklist').value = (result.customBlacklist || []).join(', ');
-      document.getElementById('alwaysManual').checked = result.alwaysManual || false;
+      document.getElementById('alwaysManual').checked = result.scanMode ? result.scanMode === 'manual' : result.alwaysManual || false;
+      const modeSelect = document.getElementById('scanMode');
+      if (modeSelect) { modeSelect.value = result.scanMode || ''; modeSelect.addEventListener('change', () => { document.getElementById('alwaysManual').checked = modeSelect.value === 'manual'; updatePrivacyTierStatus(); }); }
       document.getElementById('autoScanLinks').checked = result.autoScanLinks || false;
       // Default für timeOfClickProtection ist true
       document.getElementById('timeOfClickProtection').checked = result.timeOfClickProtection !== undefined ? result.timeOfClickProtection : true;
@@ -472,6 +481,7 @@ document.addEventListener('DOMContentLoaded', function() {
         customWhitelist: whitelistSetting,
         customBlacklist: blacklistSetting,
         alwaysManual: alwaysManualSetting,
+        ...(['allDisplayed','approvedSenders','manual'].includes(document.getElementById('scanMode')?.value) ? {scanMode: document.getElementById('scanMode').value} : {}),
         autoScanLinks: autoScanLinksSetting,
         timeOfClickProtection: timeOfClickProtectionSetting,
         externalAnalysisConsent: false,

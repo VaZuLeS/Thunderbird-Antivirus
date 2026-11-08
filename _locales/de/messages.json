@@ -2221,5 +2221,89 @@
   },
   "analysisExportSensitive": {
     "message": "Vor Export prüfen: Technische Details können Nachrichtenressourcen identifizieren."
+  },
+  "scanActions": {
+    "message": "Externe Prüfungen"
+  },
+  "scanStart": {
+    "message": "Jetzt prüfen"
+  },
+  "scanRepeat": {
+    "message": "Erneut prüfen"
+  },
+  "scanRefresh": {
+    "message": "Ergebnisse aktualisieren"
+  },
+  "scanRunning": {
+    "message": "Externe Prüfung läuft"
+  },
+  "scanProgress": {
+    "message": "Abgeschlossene Ressourcen: $1 / $2"
+  },
+  "scanMigrationNotice": {
+    "message": "Automatischen Scanmodus in den Einstellungen wählen. Bis dahin gelten die bisherigen Absender- und manuellen Regeln."
+  },
+  "scanState_idle": {
+    "message": "Noch keine Prüfung gestartet"
+  },
+  "scanState_queued": {
+    "message": "Prüfung angenommen; Start steht aus"
+  },
+  "scanState_running": {
+    "message": "Externe Prüfung läuft"
+  },
+  "scanState_completed": {
+    "message": "Prüfung abgeschlossen"
+  },
+  "scanState_pending": {
+    "message": "Anbieter verarbeitet noch; Ergebnisse aktualisieren"
+  },
+  "scanState_incomplete": {
+    "message": "Prüfung unvollständig; Ergebnisse fehlen teilweise"
+  },
+  "scanState_failed": {
+    "message": "Prüfung fehlgeschlagen; erneut versuchen"
+  },
+  "scanState_blocked": {
+    "message": "Keine externe Prüfung gestartet; Voraussetzungen siehe unten"
+  },
+  "analysisReason_manual": {
+    "message": "Manueller Modus"
+  },
+  "analysisReason_sender": {
+    "message": "Absender nicht freigegeben"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Automatische Linkanalyse aus"
+  },
+  "analysisReason_no_resources": {
+    "message": "Keine passenden Ressourcen"
+  },
+  "analysisReason_quota": {
+    "message": "Kontingent erreicht; vor Wiederholung warten"
+  },
+  "analysisReason_running": {
+    "message": "Anbieter verarbeitet noch"
+  },
+  "analysisReason_provider_error": {
+    "message": "Anbieteranfrage fehlgeschlagen"
+  },
+  "scanModeLabel": {
+    "message": "Automatische externe Prüfungen"
+  },
+  "scanModeKeep": {
+    "message": "Bisherige Einstellung beibehalten (Modus wählen)"
+  },
+  "scanModeAll": {
+    "message": "Alle geöffneten Nachrichten"
+  },
+  "scanModeSenders": {
+    "message": "Nur freigegebene Absender"
+  },
+  "scanModeManual": {
+    "message": "Nur manuell"
+  },
+  "scanModeHelp": {
+    "message": "Alle geöffneten Nachrichten hebt die einzelne Absenderfreigabe auf. Konfigurierte Dienste erhalten möglicherweise Hashes und bei Maximum mit automatischer Linkanalyse vollständige URLs. Einwilligung und Anbieterrechte bleiben erforderlich. Ungeöffnete Nachrichten werden nicht geprüft."
   }
 }

@@ -134,10 +134,10 @@ jobs:
         run: |
           python3 - <<'PYTHON'
           import hashlib, pathlib, urllib.request
-          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.24.8/thundy-av-1.24.8.xpi'
+          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.25.0/thundy-av-1.25.0.xpi'
           with urllib.request.urlopen(url, timeout=30) as response:
               data = response.read()
-          if hashlib.sha256(data).hexdigest() != '9242f5ec97fcb067489ee0d181eef94661ccd16583ae67e67f1045b431cb6062':
+          if hashlib.sha256(data).hexdigest() != '3ce561bcd547c26043f98fd2778ea98d6fbe109961ad9539ed6173338e2f83bc':
               raise SystemExit('Previous release hash mismatch')
           pathlib.Path('build/previous.xpi').write_bytes(data)
           PYTHON
@@ -158,6 +158,7 @@ jobs:
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --source-export-check --out .audit/thunderbird-live/source-export-en
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --history-pages-check --out .audit/thunderbird-live/history-pages-en
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --active-sources-check --out .audit/thunderbird-live/active-sources-en
+          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --automatic-scan-check --out .audit/thunderbird-live/automatic-scans-en
           for lang in en de fr es it pl; do
             set -- --locale "$lang"
             if test "$lang" != en; then

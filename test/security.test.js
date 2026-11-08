@@ -70,7 +70,7 @@ function links(){
  vm.runInContext(fs.readFileSync('security_links.js','utf8')+'\nglobalThis.links=ThundyLinkSecurity;',c);
  c.handleOpenAuditedLink=async(r,s)=>{const result=await c.links.open(r,s);if(result.success)session.terminal=true;return result;};
  const approvalSender={id:'addon',url:'moz-extension://addon/security.html',tab:{id:99}};
- return {...f,l:c.links,request,sender,session,logs,approvalSender,getOpened:()=>opened,getVerified:()=>verified,config,advance:ms=>now+=ms,setScore:x=>score=x,setBody:x=>body=x,challenge:()=>new URL(created).searchParams.get('approval')};
+ return {...f,c,l:c.links,request,sender,session,logs,approvalSender,getOpened:()=>opened,getVerified:()=>verified,config,advance:ms=>now+=ms,setScore:x=>score=x,setBody:x=>body=x,challenge:()=>new URL(created).searchParams.get('approval')};
 }
 test('legacy bypass is blocked; isolated, acknowledged approval opens exactly once',async()=>{
  const f=links();
@@ -144,4 +144,11 @@ test('parallel password guesses cannot bypass the retry delay',async()=>{
 test('recovery also enforces separation between administrator and link passwords',async()=>{
  const f=fixture();const setup=await f.s.command({op:'configure',adminPassword:'administrator-123',approvalPassword:'approval-secret-123',policy},f.sender);
  await assert.rejects(f.s.command({op:'recover',recovery:setup.recovery,password:'approval-secret-123'},f.sender),/PASSWORDS_DISTINCT/);
+});
+
+test('scan mode changes remain administratively protected and new scan revisions invalidate approvals',async()=>{
+ const f=fixture();await f.s.command({op:'configure',adminPassword:'admin-password-123',approvalPassword:'approval-password-123',policy},f.sender);
+ await assert.rejects(f.s.write({scanMode:'allDisplayed'},f.sender),/ADMIN_LOCKED/);
+ const l=links();let revision=1;l.c.ThundyScans={revision:()=>revision};await l.l.start(l.request,l.sender);const challenge=l.challenge();revision++;
+ await assert.rejects(l.l.command({op:'approve',challenge,password:'approval-secret-123',confirmed:true},l.approvalSender));assert.equal(l.getOpened(),0);
 });

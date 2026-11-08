@@ -2218,5 +2218,89 @@
   },
   "analysisExportSensitive": {
     "message": "Verifica prima di esportare: i dettagli possono identificare risorse del messaggio."
+  },
+  "scanActions": {
+    "message": "Analisi esterne"
+  },
+  "scanStart": {
+    "message": "Analizza ora"
+  },
+  "scanRepeat": {
+    "message": "Analizza di nuovo"
+  },
+  "scanRefresh": {
+    "message": "Aggiorna risultati"
+  },
+  "scanRunning": {
+    "message": "Analisi esterna in corso"
+  },
+  "scanProgress": {
+    "message": "Risorse completate: $1 / $2"
+  },
+  "scanMigrationNotice": {
+    "message": "Scegli la modalità automatica nelle impostazioni. Fino ad allora restano le regole precedenti."
+  },
+  "scanState_idle": {
+    "message": "Nessuna analisi avviata"
+  },
+  "scanState_queued": {
+    "message": "Analisi accettata; avvio in attesa"
+  },
+  "scanState_running": {
+    "message": "Analisi esterna in corso"
+  },
+  "scanState_completed": {
+    "message": "Analisi completata"
+  },
+  "scanState_pending": {
+    "message": "Il servizio sta elaborando; aggiorna i risultati"
+  },
+  "scanState_incomplete": {
+    "message": "Analisi incompleta; alcuni risultati mancano"
+  },
+  "scanState_failed": {
+    "message": "Analisi non riuscita; riprova"
+  },
+  "scanState_blocked": {
+    "message": "Nessuna analisi esterna avviata; vedi i requisiti"
+  },
+  "analysisReason_manual": {
+    "message": "Modalità manuale"
+  },
+  "analysisReason_sender": {
+    "message": "Mittente non autorizzato"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Analisi automatica dei link disattivata"
+  },
+  "analysisReason_no_resources": {
+    "message": "Nessuna risorsa adatta"
+  },
+  "analysisReason_quota": {
+    "message": "Quota raggiunta; attendi prima di riprovare"
+  },
+  "analysisReason_running": {
+    "message": "Il servizio sta elaborando"
+  },
+  "analysisReason_provider_error": {
+    "message": "Richiesta al servizio non riuscita"
+  },
+  "scanModeLabel": {
+    "message": "Analisi esterne automatiche"
+  },
+  "scanModeKeep": {
+    "message": "Mantieni impostazione precedente (scegli modalità)"
+  },
+  "scanModeAll": {
+    "message": "Tutti i messaggi aperti"
+  },
+  "scanModeSenders": {
+    "message": "Solo mittenti autorizzati"
+  },
+  "scanModeManual": {
+    "message": "Solo manuale"
+  },
+  "scanModeHelp": {
+    "message": "Tutti i messaggi aperti elimina l’autorizzazione per mittente. I servizi configurati possono ricevere hash e, con Massimo e analisi automatica dei link, URL completi. Consenso e permessi restano necessari. I messaggi non aperti non vengono analizzati."
   }
 }

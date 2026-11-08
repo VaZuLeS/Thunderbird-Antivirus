@@ -2218,5 +2218,89 @@
   },
   "analysisExportSensitive": {
     "message": "Sprawdź przed eksportem: szczegóły mogą identyfikować zasoby wiadomości."
+  },
+  "scanActions": {
+    "message": "Kontrole zewnętrzne"
+  },
+  "scanStart": {
+    "message": "Sprawdź teraz"
+  },
+  "scanRepeat": {
+    "message": "Sprawdź ponownie"
+  },
+  "scanRefresh": {
+    "message": "Odśwież wyniki"
+  },
+  "scanRunning": {
+    "message": "Trwa kontrola zewnętrzna"
+  },
+  "scanProgress": {
+    "message": "Ukończone zasoby: $1 / $2"
+  },
+  "scanMigrationNotice": {
+    "message": "Wybierz tryb automatyczny w ustawieniach. Do tego czasu obowiązują poprzednie reguły."
+  },
+  "scanState_idle": {
+    "message": "Nie rozpoczęto kontroli"
+  },
+  "scanState_queued": {
+    "message": "Kontrola przyjęta; oczekiwanie na start"
+  },
+  "scanState_running": {
+    "message": "Trwa kontrola zewnętrzna"
+  },
+  "scanState_completed": {
+    "message": "Kontrola zakończona"
+  },
+  "scanState_pending": {
+    "message": "Usługa nadal przetwarza; odśwież wyniki"
+  },
+  "scanState_incomplete": {
+    "message": "Kontrola niepełna; brakuje części wyników"
+  },
+  "scanState_failed": {
+    "message": "Kontrola nie powiodła się; spróbuj ponownie"
+  },
+  "scanState_blocked": {
+    "message": "Nie rozpoczęto kontroli zewnętrznej; wymagania poniżej"
+  },
+  "analysisReason_manual": {
+    "message": "Tryb ręczny"
+  },
+  "analysisReason_sender": {
+    "message": "Nadawca niezatwierdzony"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Automatyczna analiza odnośników wyłączona"
+  },
+  "analysisReason_no_resources": {
+    "message": "Brak odpowiednich zasobów"
+  },
+  "analysisReason_quota": {
+    "message": "Osiągnięto limit; poczekaj przed ponowieniem"
+  },
+  "analysisReason_running": {
+    "message": "Usługa przetwarza"
+  },
+  "analysisReason_provider_error": {
+    "message": "Żądanie do usługi nie powiodło się"
+  },
+  "scanModeLabel": {
+    "message": "Automatyczne kontrole zewnętrzne"
+  },
+  "scanModeKeep": {
+    "message": "Zachowaj poprzednie ustawienie (wybierz tryb)"
+  },
+  "scanModeAll": {
+    "message": "Wszystkie otwarte wiadomości"
+  },
+  "scanModeSenders": {
+    "message": "Tylko zatwierdzeni nadawcy"
+  },
+  "scanModeManual": {
+    "message": "Tylko ręcznie"
+  },
+  "scanModeHelp": {
+    "message": "Wszystkie otwarte wiadomości znosi zgodę dla poszczególnych nadawców. Usługi mogą otrzymywać skróty i, na poziomie Maksimum z automatyczną analizą odnośników, pełne adresy URL. Nadal wymagane są zgoda i uprawnienia. Nieotwarte wiadomości nie są skanowane."
   }
 }

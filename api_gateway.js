@@ -194,10 +194,15 @@ class ApiGateway {
             }
         }
 
+        options.analysisContext?.guard?.();
         if (options.keyTestAuthorization) await options.keyTestAuthorization();
         if (typeof ThundyProviders !== 'undefined') await ThundyProviders.enforce(url, options);
         if (!options.keyTest && this.beforeRequest) await this.beforeRequest();
         const controller = new AbortController();
+        const upstreamSignal=options.analysisContext?.signal;
+        const upstreamAbort=()=>controller.abort();
+        upstreamSignal?.addEventListener('abort',upstreamAbort,{once:true});
+        if(upstreamSignal?.aborted)controller.abort();
         this.controllers.add(controller);
         const id = setTimeout(() => controller.abort(), timeout);
 
@@ -211,12 +216,14 @@ class ApiGateway {
         let release;
         try {
             release = await this.acquire(hostname || new URL(url).hostname, controller.signal);
-            if (options.keyTestAuthorization) await options.keyTestAuthorization();
+            options.analysisContext?.guard?.();
+        if (options.keyTestAuthorization) await options.keyTestAuthorization();
             if (typeof ThundyProviders !== 'undefined') await ThundyProviders.enforce(url, options);
             if (!options.keyTest && this.beforeRequest) await this.beforeRequest();
             let response;
             for (let attempt = 0; attempt < 3; attempt++) {
-                if (options.keyTestAuthorization) await options.keyTestAuthorization();
+                options.analysisContext?.guard?.();
+        if (options.keyTestAuthorization) await options.keyTestAuthorization();
             if (typeof ThundyProviders !== 'undefined') await ThundyProviders.enforce(url, options);
             if (!options.keyTest && this.beforeRequest) await this.beforeRequest();
                 if (info && !started) { emit({ phase: 'start' }); started = true; }
@@ -278,6 +285,7 @@ class ApiGateway {
             throw error; // Preserve typed policy failures
         } finally {
             clearTimeout(id);
+            upstreamSignal?.removeEventListener('abort',upstreamAbort);
             this.controllers.delete(controller);
             if (release) release();
         }

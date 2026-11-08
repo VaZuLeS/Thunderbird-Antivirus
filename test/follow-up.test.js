@@ -83,3 +83,14 @@ test('synthetic risk corpus evaluates legitimate counterexamples and threat cont
  assert.ok(out.results.every(r=>r.passed===true));
 });
 
+
+test('v2 protection profiles preview transmission scope; v1 imports cannot enable all senders or URL submission',async()=>{
+ const p=protectionProfiles(),store={privacyTier:'strict',scanMode:'approvedSenders',autoScanLinks:false,alwaysManual:false,timeOfClickProtection:true};
+ const storage={get:async()=>structuredClone(store),set:async value=>Object.assign(store,value)};
+ const profile=p.create({...store,scanMode:'allDisplayed',autoScanLinks:true});assert.equal(profile.schemaVersion,2);
+ const draft=await p.prepare(profile,storage);assert.equal(store.scanMode,'approvedSenders');await p.commit(draft,storage);assert.equal(store.scanMode,'allDisplayed');assert.equal(store.autoScanLinks,true);
+ const old={schemaVersion:1,kind:'thundy-local-protection',protection:{privacyTier:'strict',alwaysManual:true,timeOfClickProtection:true}};
+ await p.commit(await p.prepare(old,storage),storage);assert.equal(store.scanMode,'manual');
+ store.autoScanLinks=false;old.protection.alwaysManual=false;await p.commit(await p.prepare(old,storage),storage);assert.equal(store.scanMode,'manual');assert.equal(store.autoScanLinks,false);
+ const bad=JSON.parse(JSON.stringify(profile));bad.protection.scanMode='unknown';assert.throws(()=>p.parse(bad));
+});

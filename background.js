@@ -170,7 +170,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 const links = saved.links.filter(item => currentLinks.has(item.url));
                 const scanCoverage = Object.fromEntries(Object.entries(saved.scanCoverage || {}).filter(([kind]) => saved.scanCoverageBindings?.[kind]?.runtimeId === getAnalysisRuntimeId() && saved.scanCoverageBindings[kind].messageId === message.id));
                 const threatIntel = saved.threatIntel && (!saved.threatIntelBinding || (saved.threatIntelBinding.runtimeId === getAnalysisRuntimeId() && saved.threatIntelBinding.messageId === message.id)) ? saved.threatIntel : undefined;
-                return {messageHeader:saved.messageHeader, attachments, links, ...(saved.sourceDataIncomplete ? {sourceDataIncomplete:true} : {}), scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined, ...(threatIntel ? {threatIntel} : {})};
+                return {messageHeader:saved.messageHeader, attachments, links, ...(saved.scanJobMeta ? {scanJobMeta:saved.scanJobMeta}:{}), ...(saved.sourceDataIncomplete ? {sourceDataIncomplete:true} : {}), scanCoverage:Object.keys(scanCoverage).length ? scanCoverage : undefined, ...(threatIntel ? {threatIntel} : {})};
             };
             const model = ThundyAnalysis.create(ThundyAnalysis.legacy(sourceRecord(record)));
             // Current unreadability must not inherit a historical "checked" state.
@@ -201,7 +201,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     try {
                         const original = await getFromStore(await getSharedDB(), 'hybridanalysis', key), saved = original ? ThundyAnalysis.resources(original) : null, current = sourceRecord(original);
                         if (saved) sourceHistory = ThundyAnalysis.history({...saved,attachments:(saved.attachments || []).filter(item => !(current.attachments || []).includes(item)),links:(saved.links || []).filter(item => !currentLinks.has(item.url))},snapshotId);
-                        for (const row of ThundyAnalysis.legacy({...current,analysisStatus:model.data}).rows) if (!model.data.rows.some(active => ThundyAnalysis.rowKey(active) === ThundyAnalysis.rowKey(row)) && model.data.rows.length < 1200) model.data.rows.push(row);
+                        if (!context.scanRunId) for (const row of ThundyAnalysis.legacy({...current,analysisStatus:model.data}).rows) if (!model.data.rows.some(active => ThundyAnalysis.rowKey(active) === ThundyAnalysis.rowKey(row)) && model.data.rows.length < 1200) model.data.rows.push(row);
                     } catch (_) { /* retain known live metadata */ }
                     const enabled = { hybridanalysis: !!apikey_hybridanalysis, virustotal: !!apikey_virustotal || ipReputationProvider === 'virustotal' && !!ipReputationApiKey, urlhaus: !!urlhausApikey, abuseipdb: ipReputationProvider === 'abuseipdb' && !!ipReputationApiKey, urlscan: !!urlscanApikey };
                     const availability = {};
@@ -212,6 +212,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                         providerAccess[provider] = {configured:!!enabled[provider],testStatus:['valid','invalid_key','rate_limited','permission_denied','error'].includes(connectionTests[provider]?.status)?connectionTests[provider].status:null,testedAt:Number.isFinite(connectionTests[provider]?.observedAt)?connectionTests[provider].observedAt:null};
                         availability[provider] = !enabled[provider] ? 'unconfigured' : !mayTransmitExternally() ? 'disabled' : !await hasHostPermissionFor(PROVIDER_ORIGINS[provider]) ? 'permission' : provider === 'urlscan' ? !tierAtLeast('max') ? 'policy' : 'on_action' : !authorized ? 'authorization' : 'unrecorded';
                     }));
+                    if (context.scanJob?.providers) for(const [id,value] of Object.entries(context.scanJob.providers)) { const reasons=value.checks.map(c=>c.reason);availability[id]=value.state==='failed'&&value.error==='rate_limited'?'quota':reasons.some(r=>!r)?value.state==='running'?'running':'unrecorded':reasons[0]||'no_resources'; }
                     const resourceLabels = {};
                     const clean = text => String(text || '').replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g,'').slice(0,512);
                     for (const [partName,name] of currentParts) if (ThundyAnalysis.validResource('attachment:' + partName)) resourceLabels['attachment:' + partName] = clean(name) + ' (' + partName + ')';
@@ -232,7 +233,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     }
                     const security = typeof ThundySecurity !== 'undefined' ? await ThundySecurity.read() : null;
                     const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:model.data.local.score,coverage:model.data.local.state,verdict:model.data.rows.some(row=>row.verdict==='malicious')?'MALICIOUS':model.data.rows.length && model.data.rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?model.data.rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
-                    return { ...JSON.parse(JSON.stringify(model.data)), protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    return { ...JSON.parse(JSON.stringify(model.data)), scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
@@ -311,7 +312,7 @@ const GLOBAL_IPV4_REGEX = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?
 // Einstellungen laden
 async function loadSettings() {
   try {
-    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent']);
+    const result = await browser.storage.local.get(['apikey', 'virustotalApikey', 'privacyTier', 'urlhausApikey', 'urlscanApikey', 'alwaysManual', 'autoScanLinks', 'timeOfClickProtection', 'ipReputationProvider', 'ipReputationApiKey', 'customBlacklist', 'customWhitelist', 'externalAnalysisConsent','scanMode']);
     if (result.virustotalApikey !== undefined) {
       apikey_virustotal = result.virustotalApikey;
     }
@@ -335,7 +336,7 @@ async function loadSettings() {
       urlscanApikey = result.urlscanApikey;
     }
     if (result.alwaysManual !== undefined) {
-      alwaysManual = result.alwaysManual;
+      alwaysManual = result.scanMode ? result.scanMode === 'manual' : result.alwaysManual;
     }
     if (result.autoScanLinks !== undefined) {
       autoScanLinks = result.autoScanLinks;
@@ -349,6 +350,7 @@ async function loadSettings() {
     if (result.ipReputationApiKey !== undefined) {
       ipReputationApiKey = result.ipReputationApiKey;
     }
+    if (['allDisplayed','approvedSenders','manual'].includes(result.scanMode)) alwaysManual = result.scanMode === 'manual';
     syncGatewayApikeys();
   } catch (error) {
     Logger.error("Fehler beim Laden der Einstellungen:", error);
@@ -368,7 +370,7 @@ function syncGatewayApikeys() {
     apiGateway.setApikey('abuseipdb', ipReputationProvider === 'abuseipdb' ? ipReputationApiKey : '');
 }
 
-loadSettings();
+const settingsReady = loadSettings();
 syncGatewayApikeys();
 apiGateway.beforeRequest = () => assertExternalAnalysisAllowed();
 
@@ -389,9 +391,12 @@ async function addSenderOptIn(senderEmail) {
 }
 
 
+for (const event of [browser.permissions?.onAdded,browser.permissions?.onRemoved]) event?.addListener(() => { if(typeof ThundyScans !== 'undefined') ThundyScans.reconfigure(); });
+
 // Listener für Änderungen an den Einstellungen (API Key)
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local') {
+    if (typeof ThundyScans !== 'undefined' && ['scanMode','alwaysManual','autoScanLinks','externalAnalysisConsent','privacyTier','scanningEnabledSenders','apikey','virustotalApikey','urlscanApikey','urlhausApikey','ipReputationProvider','ipReputationApiKey'].some(key=>changes[key])) { ThundyScans.reconfigure();apiGateway.abortAll(); }
     if (changes.thundySecurityV1) {
         for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(async context => {
             for (const tabId of context.tabs || []) { try { const current=await getFirstDisplayedMessage(tabId,{throwOnError:true});if(current?.id===context.messageId) await injectTimeOfClickProtection(tabId,[],current.id); }catch(_){} }
@@ -1061,6 +1066,7 @@ async function tab_mail_open_display(tab, messages) {
 }
 
 async function handleDisplayedMessage(tab, message) {
+  if (typeof ThundyScans !== 'undefined') { try { return await ThundyScans.display(tab,message); } catch(error) { Logger.error('Message scan setup failed',error.code || error.name); } return; }
   if (!message || message.id === undefined || message.id === null) return;
   let analysisContext = null;
   try {
@@ -1325,6 +1331,7 @@ async function check_hybrid_analysis_for_attachment(local_hash, attachment, cont
         return item;
     }
 
+    if (responseCheck.status !== 404) throw typedError(responseCheck.status===429?'rate_limited':responseCheck.status===401||responseCheck.status===403?'invalid_key':'provider_error','Provider request failed');
     return await handle_unknown_attachment({
         attachment,
         content_of_attachment,
@@ -1983,6 +1990,7 @@ async function checkHybridAnalysisVerdict(hash, fallbackState) {
  * the scan stays a one-off action (no hidden opt-in).
  */
 async function handleRequestScan(request, sender) {
+    if (typeof ThundyScans !== 'undefined') { try { return await ThundyScans.request(request,sender); } catch(error) { return {success:false,code:error.code || error.message,error:error.code || error.message}; } }
     if (!request || !request.messageId) {
         return { success: false, error: 'invalid_request' };
     }
@@ -2061,6 +2069,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }).catch(()=>sendResponse({success:false,code:'ADMIN_LOCKED'}));
         return true;
     }
+    if (request.action === 'openScanSettings') { browser.runtime.openOptionsPage().then(()=>sendResponse({success:true})).catch(()=>sendResponse({success:false}));return true; }
     switch (request.action) {
         case "reportArchiveBlocked":
             if (sender?.url?.split(/[?#]/)[0] !== browser.runtime.getURL('popup.html') || typeof request.headerMessageId !== 'string' || request.headerMessageId.length > 4096) return false;
@@ -2130,6 +2139,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })().then(sendResponse).catch(() => sendResponse({ success: false }));
             return true;
         case "clearMemoryCaches":
+            if(typeof ThundyScans !== 'undefined') ThundyScans.invalidate({silent:true,clear:true});
             if (typeof clearReportArchiveWarnings === 'function') clearReportArchiveWarnings();
             if (typeof apiGateway !== 'undefined' && typeof apiGateway.clearBackoffs === 'function') apiGateway.clearBackoffs();
             urlhausCache.clear(); ipReputationCache.clear(); vtCache.clear(); knownSendersCache.clear();

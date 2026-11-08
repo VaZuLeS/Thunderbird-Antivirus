@@ -2218,5 +2218,89 @@
   },
   "analysisExportSensitive": {
     "message": "Vérifiez avant export : les détails peuvent identifier des ressources du message."
+  },
+  "scanActions": {
+    "message": "Analyses externes"
+  },
+  "scanStart": {
+    "message": "Analyser maintenant"
+  },
+  "scanRepeat": {
+    "message": "Relancer l’analyse"
+  },
+  "scanRefresh": {
+    "message": "Actualiser les résultats"
+  },
+  "scanRunning": {
+    "message": "Analyse externe en cours"
+  },
+  "scanProgress": {
+    "message": "Ressources traitées : $1 / $2"
+  },
+  "scanMigrationNotice": {
+    "message": "Choisissez le mode automatique dans les paramètres. Les règles précédentes restent applicables jusque-là."
+  },
+  "scanState_idle": {
+    "message": "Aucune analyse lancée"
+  },
+  "scanState_queued": {
+    "message": "Analyse acceptée ; démarrage en attente"
+  },
+  "scanState_running": {
+    "message": "Analyse externe en cours"
+  },
+  "scanState_completed": {
+    "message": "Analyse terminée"
+  },
+  "scanState_pending": {
+    "message": "Traitement en cours chez le fournisseur ; actualisez les résultats"
+  },
+  "scanState_incomplete": {
+    "message": "Analyse incomplète ; certains résultats manquent"
+  },
+  "scanState_failed": {
+    "message": "Échec de l’analyse ; réessayez"
+  },
+  "scanState_blocked": {
+    "message": "Aucune analyse externe lancée ; conditions ci-dessous"
+  },
+  "analysisReason_manual": {
+    "message": "Mode manuel"
+  },
+  "analysisReason_sender": {
+    "message": "Expéditeur non autorisé"
+  },
+  "analysisReason_links_disabled": {
+    "message": "Analyse automatique des liens désactivée"
+  },
+  "analysisReason_no_resources": {
+    "message": "Aucune ressource correspondante"
+  },
+  "analysisReason_quota": {
+    "message": "Quota atteint ; patientez avant de réessayer"
+  },
+  "analysisReason_running": {
+    "message": "Traitement chez le fournisseur"
+  },
+  "analysisReason_provider_error": {
+    "message": "Échec de la requête au fournisseur"
+  },
+  "scanModeLabel": {
+    "message": "Analyses externes automatiques"
+  },
+  "scanModeKeep": {
+    "message": "Conserver le réglage précédent (choisir un mode)"
+  },
+  "scanModeAll": {
+    "message": "Tous les messages ouverts"
+  },
+  "scanModeSenders": {
+    "message": "Expéditeurs autorisés uniquement"
+  },
+  "scanModeManual": {
+    "message": "Manuellement uniquement"
+  },
+  "scanModeHelp": {
+    "message": "Tous les messages ouverts supprime l’autorisation par expéditeur. Les services configurés peuvent recevoir des empreintes et, au niveau Maximum avec analyse automatique des liens, des URL complètes. Consentement et permissions restent requis. Les messages non ouverts ne sont pas analysés."
   }
 }

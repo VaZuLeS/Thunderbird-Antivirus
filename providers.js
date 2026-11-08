@@ -229,7 +229,9 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
 
         if (!uuid) throw new Error(uiText("ui_101", "Keine UUID von urlscan.io erhalten."));
 
-        return await pollUrlscanIoResult(uuid, apikey, analysisContext);
+        if(analysisContext?.submitted)await analysisContext.submitted(uuid);
+        const result=await pollUrlscanIoResult(uuid, apikey, analysisContext);
+        return analysisContext?.submitted?{...result,uuid}:result;
     } catch (e) {
         Logger.error("Fehler bei urlscan.io Abfrage", e);
         return { status: 'ERROR', errorCode: 'fetch_failed', details: e.message };
@@ -254,7 +256,9 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
 
     while (elapsed < maxTime && Date.now() < deadline) {
         assertExternalAnalysisAllowed();
-        await new Promise(r => setTimeout(r, Math.min(waitTime, Math.max(0, deadline - Date.now()))));
+        analysisContext?.guard?.();
+        if (analysisContext?.signal) await apiGateway.pause(Math.min(waitTime, Math.max(0, deadline - Date.now())),analysisContext.signal);
+        else await new Promise(r => setTimeout(r, Math.min(waitTime, Math.max(0, deadline - Date.now()))));
         elapsed += waitTime;
         waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
 

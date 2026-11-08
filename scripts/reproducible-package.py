@@ -12,7 +12,7 @@ import zipfile
 import zlib
 
 TIMESTAMP = (1980, 1, 1, 0, 0, 0)
-MAX_BYTES = 1200 * 1024
+MAX_BYTES = 1300 * 1024
 MAX_ENTRIES = 1024
 
 
