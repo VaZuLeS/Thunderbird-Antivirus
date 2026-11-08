@@ -636,3 +636,8 @@
 #localProfile label { display: block; margin-top: 12px; }
 #localProfile :is(textarea,input[type="file"]) { width: 100%; max-width: 100%; }
 #localProfileDiff { white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; border: 1px solid var(--card-border); border-radius: 8px; }
+
+/* Provider key controls must wrap with translated labels and enlarged text. */
+.api-key-input-row { flex-wrap: wrap; }
+.api-key-input-row input { flex: 1 1 12rem; max-width: 100%; }
+.test-key-btn { flex: 0 1 auto; max-width: 100%; white-space: normal; overflow-wrap: anywhere; }

@@ -181,15 +181,11 @@ async function ready(page, c) {
   }
 }
 async function checks(page, c) {
-  assert.equal(
-    await page.evaluate(
-      () =>
-        document.documentElement.scrollWidth <=
-        document.documentElement.clientWidth,
-    ),
-    true,
-    "horizontal page overflow",
-  );
+  const overflow = await page.evaluate(() => {
+    const root=document.documentElement;
+    return {excess:root.scrollWidth-root.clientWidth,offenders:[...document.querySelectorAll('body *')].map(el=>({tag:el.tagName,id:el.id,className:typeof el.className==='string'?el.className:'',right:Math.round(el.getBoundingClientRect().right),width:Math.round(el.getBoundingClientRect().width)})).filter(el=>el.right>root.clientWidth+1).slice(-12)};
+  });
+  assert.ok(overflow.excess<=0, 'horizontal page overflow: '+JSON.stringify(overflow));
   const theme = await page.evaluate(
     () => getComputedStyle(document.body).backgroundColor,
   );
