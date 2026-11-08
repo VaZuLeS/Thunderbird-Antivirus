@@ -452,7 +452,7 @@ const ThundyAnalysis = (() => {
         const overview=n('div','','card');
         const flagged=rows.filter(row=>['malicious','suspicious'].includes(row.verdict));
         const danger=flagged.some(row=>row.verdict==='malicious');
-        const uncertain=jobBusy||data.unavailable||sourceDataIncomplete||!local||failures||running||waiting||incomplete||rows.some(row=>['unknown'].includes(row.verdict));
+        const uncertain=jobBusy||['pending','incomplete','failed'].includes(data.scanJob?.state)||data.unavailable||sourceDataIncomplete||!local||failures||running||waiting||incomplete||rows.some(row=>['unknown'].includes(row.verdict));
         const title=danger?'analysisSimpleDanger':flagged.length||data.local?.score>=50?'analysisSimpleCaution':uncertain?'analysisSimpleIncomplete':'analysisSimpleNone';
         overview.append(n('h2',t(title)),n('p',localLabel),n('p',t('analysisSimpleBasis')+': '+new Set(rows.filter(row=>['none','suspicious','malicious'].includes(row.verdict)).map(row=>row.provider)).size+' / '+new Set(rows.filter(row=>row.state==='failed'||row.failures>0).map(row=>row.provider)).size));
         const reasons=n('ul','');

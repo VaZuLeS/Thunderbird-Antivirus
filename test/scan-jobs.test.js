@@ -94,3 +94,8 @@ test('preparation timeout releases the start queue before any network work',asyn
  const f=coordinator();f.env.prepare=()=>new Promise(()=>{});const request=f.s.start({id:1});await tick();f.advance(300001);await assert.rejects(request,/SCAN_PREPARATION_TIMEOUT/);assert.equal(f.s.get(1),null);
  f.env.prepare=async()=>({fingerprint:'new',providers:{}});await f.s.start({id:2});await f.s.settled(2);assert.equal(f.s.get(2).state,'blocked');
 });
+
+test('unavailable attachment inventory still renders and scans independently available links',async()=>{
+ const f=runtime({apikey:''});f.c.browser.messages.listAttachments=async()=>{throw Error('decryption unavailable');};await f.s.display({id:7},f.message);await f.s.settled(1);
+ assert.equal(f.s.get(1).state,'incomplete');assert.equal(f.stored.fixture.links[0].urlscan.status,'CLEAN');assert.equal(f.context.scanJob.errors,1);
+});

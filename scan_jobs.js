@@ -129,7 +129,9 @@ const ThundyScans=(()=>{
     const coordinator=createScanCoordinator({valid:job=>!job.prepared.context.disposed,now:()=>Date.now(),uuid:()=>crypto.randomUUID(),setTimeout:(fn,ms)=>setTimeout(fn,ms),clearTimeout:id=>clearTimeout(id),
         async prepare(message,options){
             if(typeof settingsReady!=='undefined')await settingsReady;await loadSettings();const settings=await browser.storage.local.get(keys);
-            const full=options.full||await readFullForAnalysis(message);const attachments=(options.attachments||await browser.messages.listAttachments(message.id)).slice(0,100);
+            let full=options.full||await readFullForAnalysis(message),attachments=options.attachments;
+            if(!attachments)try{attachments=await browser.messages.listAttachments(message.id);}catch(_){attachments=[];full={...full,thundyInputStatus:'incomplete',thundyInventoryIncomplete:true};}
+            attachments=attachments.slice(0,100);
             const urls=[...new Set(filterUrls(extractUrls(extractTextFromParts(full.parts||full))))].slice(0,100);
             const key=resolveMessageStorageKey(message);const context=await getMessageAnalysisContext(message,options.tabId,{fullMessage:full,attachments});
             const preparationDeadline=Date.now()+300000;
@@ -148,7 +150,7 @@ const ThundyScans=(()=>{
             p.context.model.data.rows=[];p.context.scanRunId=job.id;
         },
         async run(job,assert,changed){
-            const p=job.prepared;job.domains=[];job.ips=[];
+            const p=job.prepared;job.domains=[];job.ips=[];if(p.full.thundyInventoryIncomplete)job.errors++;
             if(job.options.manual&&!job.options.refresh){vtCache.clear();urlhausCache.clear();ipReputationCache.clear();}
             await indexedDB_save_links_to_db(p.message,p.urls);assert(job);
             const work=await tasks(job);job.total=work.length;await changed();let index=0;
@@ -166,10 +168,12 @@ const ThundyScans=(()=>{
     });
     async function display(tab,message){
         if(typeof settingsReady!=='undefined')await settingsReady;
-        const full=await readFullForAnalysis(message),attachments=await browser.messages.listAttachments(message.id);
+        let full;
+        try{full=await readFullForAnalysis(message);}catch(_){const context=await getMessageAnalysisContext(message,tab.id,{fullMessage:null,attachments:[]});context.scanJob={state:'failed',manualAllowed:mayTransmitExternally()};await context.flush();return;}
+        let attachments;try{attachments=await browser.messages.listAttachments(message.id);}catch(_){attachments=[];full={...full,thundyInputStatus:'incomplete',thundyInventoryIncomplete:true};}
         await injectIntoMessageDisplay(tab.id,function(id){document.documentElement.dataset.thundyAnalysisMessage=String(id);},[message.id]);
         const context=await getMessageAnalysisContext(message,tab.id,{fullMessage:full,attachments});
-        await processAttachments(message,false,false,context);const text=extractTextFromParts(full.parts||full),urls=filterUrls(extractUrls(text));await indexedDB_save_links_to_db(message,urls);
+        if(!full.thundyInventoryIncomplete)await processAttachments(message,false,false,context);const text=extractTextFromParts(full.parts||full),urls=filterUrls(extractUrls(text));await indexedDB_save_links_to_db(message,urls);
         await injectTimeOfClickProtection(tab.id,urls,message.id);
         await evaluateAndInjectThreats({tab,message,fullMessage:full,urls,filteredUrls:urls,messageText:text,allowExternal:false,analysisContext:context});
         await coordinator.start(message,{tabId:tab.id,full,attachments,manual:false});

@@ -607,7 +607,7 @@ async function main() {
         } catch (error) {
           result.status = "failed";
           result.error = error.message;
-          if (error.violations) result.violations = error.violations;
+          if (error.violations) { result.violations = error.violations; console.error(JSON.stringify({id:c.id,violations:error.violations})); }
           result.pageErrors = errors;
           result.externalRequests = network;
           await page
