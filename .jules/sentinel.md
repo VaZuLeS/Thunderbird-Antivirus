@@ -86,3 +86,8 @@ The `api.js` file used custom functions `setElementHtml` and `appendElementHtml`
 **Vulnerability:** API key fields and sensitive configuration textareas (allowlist/blocklist) lacked protective attributes like spellCheck={false}, autoComplete='off', and maxLength={255}.
 **Learning:** Sensitive user configurations can be inadvertently cached or leaked to third-party services through browser autofill or spellchecking mechanisms (spelljacking).
 **Prevention:** Apply autoComplete='off', spellCheck={false}, and a reasonable maxLength (e.g., 255) to all inputs and textareas that handle sensitive configuration data (like API keys and network lists) to prevent data leakage.
+
+## 2026-10-31 - DOM Clobbering in HTML Sanitizer (document properties)
+**Vulnerability:** The HTML sanitizers (`sanitize.js` and `sanitizer.ts`) were vulnerable to DOM clobbering because they accessed document properties like `doc.documentElement`, `doc.body`, and `doc.body.innerHTML` directly via dot notation. Attackers could inject elements (e.g. `<form id="body"><img name="innerHTML" src="x"></form>`) to override these properties, causing the sanitizer to crash or bypass sanitizing specific nodes.
+**Learning:** Any top-level document properties accessed on an untrusted parsed Document are susceptible to DOM Clobbering and must be accessed via unclobbered prototype getters.
+**Prevention:** Extract the unforgeable native getters for `documentElement`, `body`, and `innerHTML` from prototype chains and apply them using `.call()` rather than accessing them directly.
