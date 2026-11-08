@@ -2238,7 +2238,7 @@
     "message": "Externe Prüfung läuft"
   },
   "scanProgress": {
-    "message": "Abgeschlossene Ressourcen: $1 / $2"
+    "message": "Abgeschlossene Ressourcen"
   },
   "scanMigrationNotice": {
     "message": "Automatischen Scanmodus in den Einstellungen wählen. Bis dahin gelten die bisherigen Absender- und manuellen Regeln."
@@ -2305,5 +2305,65 @@
   },
   "scanModeHelp": {
     "message": "Alle geöffneten Nachrichten hebt die einzelne Absenderfreigabe auf. Konfigurierte Dienste erhalten möglicherweise Hashes und bei Maximum mit automatischer Linkanalyse vollständige URLs. Einwilligung und Anbieterrechte bleiben erforderlich. Ungeöffnete Nachrichten werden nicht geprüft."
+  },
+  "assessmentCompletion": {
+    "message": "Verarbeitungsstand"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Anbieter verarbeitet noch"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Bericht vollständig abgerufen"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Keine eindeutige Bewertung verfügbar"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Technische Verarbeitung fehlgeschlagen"
+  },
+  "assessmentConflict": {
+    "message": "Unterschiedliche Teilbewertungen; der stärkste Befund bestimmt die Handlung."
+  },
+  "assessmentSignals": {
+    "message": "Bewertungsgrundlage"
+  },
+  "assessmentJob": {
+    "message": "Anbieter-Auftragskennung"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Anbieterurteil"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Scannerbefund"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Originaler Bedrohungsscore"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Originales Multiscan-Ergebnis"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Originale Gefahrenstufe"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Whitelist-Angabe des Anbieters"
+  },
+  "assessmentSignal_overall": {
+    "message": "urlscan-Gesamtbewertung"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Bewertung des urlscan-Moduls"
+  },
+  "assessmentSignal_engines": {
+    "message": "Befunde weiterer Engines"
+  },
+  "assessmentSignal_brand": {
+    "message": "Markenhinweis; bestimmt allein keine Gefahrenstufe"
+  },
+  "assessmentSignal_report": {
+    "message": "Berichtszustand"
+  },
+  "assessmentOriginal": {
+    "message": "Originales Anbieterurteil"
   }
 }

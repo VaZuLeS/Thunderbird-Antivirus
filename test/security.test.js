@@ -94,7 +94,7 @@ test('expired, changed checks and policy revisions never consume an opening',asy
 test('simple and expert share findings, preserve mode and never label partial checks as safe in six languages',()=>{
  for(const lang of ['en','de','fr','es','it','pl']){
   const dom=new JSDOM('<html lang="'+lang+'"><body></body></html>');
-  const c=vm.createContext({document:dom.window.document,Date,URL});vm.runInContext(fs.readFileSync('analysis_status.js','utf8')+'\nglobalThis.a=ThundyAnalysis;',c);
+  const c=vm.createContext({document:dom.window.document,Date,URL});vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('analysis_status.js','utf8'))+'\nglobalThis.a=ThundyAnalysis;',c);
   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json'));
   const labels=c.a.labels(key=>catalog[key]?.message||key);
   const data={local:{state:'checked'},rows:[{provider:'virustotal',scope:'hash',state:'failed',verdict:'unknown',failures:1}],protection:{required:true,reason:'threshold',revision:2}};
@@ -111,7 +111,7 @@ test('real settings client renders, locks, unlocks and writes through background
  const browser={...f.browser,runtime:{...f.browser.runtime,sendMessage:async request=>{try{return {success:true,...await f.s.command(request,f.sender)};}catch(e){return {success:false,code:e.code||e.message};}}}};
  const catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
  Object.assign(dom.window,{browser,ThundyI18n:{get:key=>catalog[key]?.message||key}});
- const c=dom.getInternalVMContext();vm.runInContext(fs.readFileSync('provider_registry.js','utf8'),c);vm.runInContext(fs.readFileSync('security_client.js','utf8'),c);
+ const c=dom.getInternalVMContext();vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8')),c);vm.runInContext(fs.readFileSync('security_client.js','utf8'),c);
  dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
  const wait=async condition=>{for(let i=0;i<100;i++){if(condition())return;await new Promise(resolve=>setTimeout(resolve,20));}throw Error('UI did not settle');};
  const doc=dom.window.document;
@@ -151,4 +151,15 @@ test('scan mode changes remain administratively protected and new scan revisions
  await assert.rejects(f.s.write({scanMode:'allDisplayed'},f.sender),/ADMIN_LOCKED/);
  const l=links();let revision=1;l.c.ThundyScans={revision:()=>revision};await l.l.start(l.request,l.sender);const challenge=l.challenge();revision++;
  await assert.rejects(l.l.command({op:'approve',challenge,password:'approval-secret-123',confirmed:true},l.approvalSender));assert.equal(l.getOpened(),0);
+});
+
+test('a report revision changing during the last opening check consumes no OS opening',async()=>{
+ const l=links();let revision=1,calls=0;l.c.ThundyScans={revision:()=>revision};await l.l.start(l.request,l.sender);const challenge=l.challenge();
+ l.c.getFirstDisplayedMessage=async()=>{if(++calls===3)revision++;return {id:4};};
+ const result=await l.l.command({op:'approve',challenge,password:'approval-secret-123',confirmed:true},l.approvalSender);assert.equal(result.success,false);assert.equal(result.code,'APPROVAL_CHANGED');assert.equal(l.getOpened(),0);
+});
+
+test('incomplete shared provider analysis also enforces the unknown-result approval policy',async()=>{
+ const l=links();l.setScore(1);l.config.policy.unknown='approval';l.c.ThundyScans={revision:()=>1,get:()=>({assessmentIncomplete:true})};
+ const result=await l.l.open(l.request,l.sender);assert.equal(result.success,false);assert.equal(result.reason,'incomplete');assert.equal(l.getOpened(),0);
 });

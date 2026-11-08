@@ -54,6 +54,7 @@
       "vendor/tldts.js",
       "risk.js",
       "sanitize.js",
+      "provider_results.js",
       "provider_registry.js",
       "scan_policy.js",
       "providers.js",

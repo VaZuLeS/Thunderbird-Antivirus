@@ -2235,7 +2235,7 @@
     "message": "Analyse externe en cours"
   },
   "scanProgress": {
-    "message": "Ressources traitées : $1 / $2"
+    "message": "Ressources traitées"
   },
   "scanMigrationNotice": {
     "message": "Choisissez le mode automatique dans les paramètres. Les règles précédentes restent applicables jusque-là."
@@ -2302,5 +2302,65 @@
   },
   "scanModeHelp": {
     "message": "Tous les messages ouverts supprime l’autorisation par expéditeur. Les services configurés peuvent recevoir des empreintes et, au niveau Maximum avec analyse automatique des liens, des URL complètes. Consentement et permissions restent requis. Les messages non ouverts ne sont pas analysés."
+  },
+  "assessmentCompletion": {
+    "message": "État du traitement"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Traitement en cours"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Rapport récupéré"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Aucune évaluation concluante"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Échec technique du traitement"
+  },
+  "assessmentConflict": {
+    "message": "Évaluations partielles différentes ; le signal le plus grave détermine l’action."
+  },
+  "assessmentSignals": {
+    "message": "Base de l’évaluation"
+  },
+  "assessmentJob": {
+    "message": "Identifiant de tâche"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Verdict du fournisseur"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Résultat du moteur"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Score de menace original"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Résultat multiscan original"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Niveau de menace original"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Indication de liste autorisée"
+  },
+  "assessmentSignal_overall": {
+    "message": "Évaluation globale urlscan"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Évaluation du moteur urlscan"
+  },
+  "assessmentSignal_engines": {
+    "message": "Résultats des autres moteurs"
+  },
+  "assessmentSignal_brand": {
+    "message": "Indication de marque ; ne détermine pas seule le risque"
+  },
+  "assessmentSignal_report": {
+    "message": "État du rapport"
+  },
+  "assessmentOriginal": {
+    "message": "Verdict original du fournisseur"
   }
 }

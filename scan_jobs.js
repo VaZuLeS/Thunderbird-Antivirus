@@ -4,7 +4,7 @@ function createScanCoordinator(env) {
     const serial=fn=>{const next=queue.then(fn);queue=next.catch(()=>{});return next;};
     const active=job=>jobs.get(job.messageId)===job&&!job.controller.signal.aborted&&job.generation===generation&&env.now()<job.deadline&&(!env.valid||env.valid(job));
     const assert=job=>{if(!active(job))throw Object.assign(Error('SCAN_CANCELLED'),{code:'SCAN_CANCELLED'});};
-    const snapshot=job=>job?{schemaVersion:1,id:job.id,state:job.state,completed:job.completed,total:job.total,startedAt:job.startedAt,finishedAt:job.finishedAt||null,providers:job.providers,pending:job.pending||false,errors:job.errors||0,revision:job.revision}:null;
+    const snapshot=job=>job?{schemaVersion:1,id:job.id,state:job.state,completed:job.completed,total:job.total,startedAt:job.startedAt,finishedAt:job.finishedAt||null,providers:job.providers,pending:job.pending||false,errors:job.errors||0,revision:job.revision,assessmentIncomplete:['queued','running','pending','incomplete','failed'].includes(job.state)||!!job.prepared.context?.model.data.rows?.some(r=>r.verdict==='unknown'||r.state!=='checked')}:null;
     async function start(input,options={}) {
         return serial(async()=>{
             const requestedAt=env.now();
@@ -24,7 +24,7 @@ function createScanCoordinator(env) {
                 try {
                     await env.begin(job);assert(job);job.state='running';await env.changed(job,snapshot(job));
                     await env.run(job,assert,async()=>{if(active(job))await env.changed(job,snapshot(job));});assert(job);
-                    job.state=job.pending?'pending':job.errors||Object.values(job.providers).some(p=>p.state==='failed')?'incomplete':job.total?'completed':'blocked';
+                    job.state=job.errors||Object.values(job.providers).some(p=>p.state==='failed')?'incomplete':job.pending?'pending':job.total?'completed':'blocked';
                 }catch(error){if(jobs.get(input.id)===job&&job.generation===generation)job.state=job.controller.signal.aborted?'incomplete':'failed';}
                 finally {env.clearTimeout(timer);job.finishedAt=env.now();if(jobs.get(input.id)===job&&job.generation===generation)await env.changed(job,snapshot(job)).catch(()=>{});}
             })();
@@ -56,23 +56,39 @@ const ThundyScans=(()=>{
     }
     function bound(job,ctx){return {signal:job.controller.signal,guard:()=>coordinator.assert(job),event:event=>{if(coordinator.active(job)){if(event.phase==='finish'&&event.state==='failed'&&job.providers[event.provider]){job.providers[event.provider].state='failed';job.providers[event.provider].error=event.httpStatus===429?'rate_limited':'provider_error';}ctx?.event?.(event);job.prepared.context.schedule();}},cached:(...args)=>{if(coordinator.active(job))ctx?.cached?.(...args);}};}
     async function record(job,edit,terminal=false){if(!terminal)coordinator.assert(job);await updateStore(await getSharedDB(),'hybridanalysis',job.prepared.key,old=>{if(!terminal)coordinator.assert(job);else if(!coordinator.current(job)||job.prepared.context.disposed)throw Error('SCAN_CANCELLED');const value=edit(old||{messageHeader:job.prepared.key});value.updatedAt=Date.now();return value;},{preserveReports:true});if(!terminal)coordinator.assert(job);}
-    async function attachment(job,item,patch){await record(job,old=>{const values=[...(old.attachments||[])];let index=values.findIndex(a=>a.partName===item.partName);const digest=job.prepared.hashes[item.partName];let previous=index<0?{}:values[index];if(previous.hybrid_sha256!==digest)previous={};const value={...previous,partName:item.partName,attachment_name:item.name,hybrid_sha256:digest,created:previous.created||new Date().toISOString(),...patch};if(index<0)values.push(value);else values[index]=value;return {...old,attachments:values};});}
-    async function link(job,url,patch){await record(job,old=>{const values=[...(old.links||[])];const index=values.findIndex(l=>l.url===url);const value={...(index<0?{}:values[index]),url,created:index<0?new Date().toISOString():values[index].created,...patch};if(index<0)values.push(value);else values[index]=value;return {...old,links:values};});}
+    async function attachment(job,item,patch){await record(job,old=>{const values=[...(old.attachments||[])];let index=values.findIndex(a=>a.partName===item.partName);const digest=job.prepared.hashes[item.partName];let previous=index<0?{}:values[index];if(previous.hybrid_sha256!==digest)previous={};if(patch.assessment){patch={...patch,assessment:(previous.assessmentScanId===job.id||job.options.refresh||previous.state==='UPLOADED'&&patch.hybrid_submission_id===undefined)?ThundyProviderResults.merge(previous.assessment,patch.assessment):patch.assessment,assessmentScanId:job.id};}const value={...previous,partName:item.partName,attachment_name:item.name,hybrid_sha256:digest,created:previous.created||new Date().toISOString(),...patch};if(index<0)values.push(value);else values[index]=value;return {...old,attachments:values};});job.revision=crypto.randomUUID();scheduleRisk(job);}
+    async function link(job,url,patch){await record(job,old=>{const values=[...(old.links||[])];const index=values.findIndex(l=>l.url===url);const previous=index<0?{}:values[index];if(patch.urlscan&&previous.urlscan?.uuid===patch.urlscan.uuid&&previous.urlscan?.assessment&&!patch.urlscan.assessment)patch={...patch,urlscan:{...previous.urlscan,...patch.urlscan}};if(patch.urlscan?.assessment&&previous.urlscan?.uuid===patch.urlscan.uuid&&previous.urlscan?.assessment){const assessed=ThundyProviderResults.merge(previous.urlscan.assessment,patch.urlscan.assessment);patch={...patch,urlscan:{...patch.urlscan,assessment:assessed,status:assessed.state==='failed'?'ERROR':assessed.verdict==='malicious'?'MALICIOUS':assessed.verdict==='suspicious'?'SUSPICIOUS':assessed.verdict==='none'?'CLEAN':'UNKNOWN'}};}if(patch.assessment){patch={...patch,assessment:(previous.assessmentScanId===job.id||job.options.refresh||previous.state==='UPLOADED'&&patch.hybrid_submission_id===undefined)?ThundyProviderResults.merge(previous.assessment,patch.assessment):patch.assessment,assessmentScanId:job.id};patch.hybrid_verdict={status:({malicious:'MALICIOUS',suspicious:'SUSPICIOUS',none:'CLEAN',unknown:'UNKNOWN'})[patch.assessment.verdict],observedAt:Date.now()};}const value={...previous,url,created:index<0?new Date().toISOString():values[index].created,...patch};if(index<0)values.push(value);else values[index]=value;return {...old,links:values};});job.revision=crypto.randomUUID();scheduleRisk(job);}
     function pending(job,resource,value){job.pendingResources ||= new Set();if(value)job.pendingResources.add(resource);else job.pendingResources.delete(resource);job.pending=job.pendingResources.size>0;}
-    async function hybridReport(job,item,ctx,save){
-        if(extractHybridVerdictFromOverview(item.report)){await save({state:'KNOWN'});return false;}
-        const until=Math.min(job.deadline,Date.now()+30000);const current=item;
+    async function updateRisk(job){
+        coordinator.assert(job);const p=job.prepared,text=extractTextFromParts(p.full.parts||p.full);
+        const risk=await collectThreatEvaluationOptions({message:p.message,fullMessage:p.full,filteredUrls:p.urls,messageText:text,allowExternal:false});coordinator.assert(job);
+        risk.urlhausDomains=job.domains||[];risk.maliciousIps=job.ips||[];const threat=calculateThreatScore(p.message.author,p.urls,risk);threat.coverage=localContentCoverage(p.full);recordLocalCoverage(p.context,threat.coverage,threat);
+        for(const tab of p.context.tabs){const current=await getFirstDisplayedMessage(tab);coordinator.assert(job);if(current?.id===p.message.id)await injectThreatBanner(tab,threat);}
+    }
+    function scheduleRisk(job){if(job.riskTimer)return;job.riskTimer=setTimeout(()=>{job.riskTimer=null;if(coordinator.active(job))updateRisk(job).catch(()=>{});},300);}
+    async function hybridReport(job,item,ctx,save,fresh=false){
+        const initial=ThundyProviderResults.evaluate('hybridanalysis',item.report);
+        if(!fresh&&item.assessment?.assessmentVersion===1)ctx?.event?.({...ThundyProviderResults.stored('hybridanalysis',item),provider:'hybridanalysis',scope:'report',phase:'cache',observedAt:Number.isFinite(Date.parse(item.report_fetched_at))?Date.parse(item.report_fetched_at):null});
+        if(fresh&&initial.completion==='complete'){await save({state:'KNOWN',assessment:initial});return false;}
+        const until=Math.min(job.deadline,Date.now()+30000);
         while(Date.now()<until){
-            coordinator.assert(job);const sha=current.hybrid_sha256,id=current.hybrid_submission_id||current.hybrid_job_id;
+            coordinator.assert(job);const sha=item.hybrid_sha256,id=item.hybrid_submission_id||item.hybrid_job_id;
             const validId=/^[A-Za-z0-9_-]{1,128}$/.test(id||'')&&!['N/A','MANUAL_CHECK','PENDING_UPLOAD'].includes(id);
             if(!/^[a-f0-9]{64}$/i.test(sha||'')&&!validId)throw Error('no_result');
             let url=/^[a-f0-9]{64}$/i.test(sha||'')?'https://hybrid-analysis.com/api/v2/overview/'+sha:'https://hybrid-analysis.com/api/v2/quick-scan/'+encodeURIComponent(id);
-            let response=await apiGateway.fetchWithTimeout(url,{...getHybridAnalysisOptions('GET'),analysisContext:ctx});
-            if(response.status===404&&validId)response=await apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/'+encodeURIComponent(id),{...getHybridAnalysisOptions('GET'),analysisContext:ctx});
+            const responseContext={...ctx,validateResponse:data=>{const reports=Array.isArray(data)?data:[data];if(sha&&reports.some(r=>typeof r?.sha256==='string'&&r.sha256.toLowerCase()!==sha.toLowerCase()))throw Object.assign(Error('RESOURCE_MISMATCH'),{code:'RESOURCE_MISMATCH'});}};
+            let response=await apiGateway.fetchWithTimeout(url,{...getHybridAnalysisOptions('GET'),analysisContext:responseContext});
+            if(response.status===404&&validId)response=await apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/'+encodeURIComponent(id),{...getHybridAnalysisOptions('GET'),analysisContext:responseContext});
             coordinator.assert(job);
             if([401,403,429].includes(response.status))throw Object.assign(Error(response.status===429?'rate_limited':'invalid_key'),{code:response.status===429?'rate_limited':'invalid_key'});
-            if(response.status===200){const data=await response.json();const report=quickScanReport(data)||data;await save({report,report_fetched_at:new Date().toISOString(),state:extractHybridVerdictFromOverview(report)?'KNOWN':'UPLOADED'});if(extractHybridVerdictFromOverview(report))return false;}
-            else if(response.status!==404)throw Error('provider_error');
+            if(response.status===200){
+                const data=await response.json();
+                if(sha&&typeof data?.sha256==='string'&&data.sha256.toLowerCase()!==sha.toLowerCase())throw Error('resource_mismatch');
+                const report=quickScanReport(data)||data,assessment=ThundyProviderResults.evaluate('hybridanalysis',report);
+                await save({report,assessment,report_fetched_at:new Date().toISOString(),state:assessment.completion==='complete'?'KNOWN':'UPLOADED'});
+                if(assessment.completion==='complete'){for(const scope of ['file','url'])ctx?.event?.({...assessment,provider:'hybridanalysis',scope,phase:'assessment',observedAt:Date.now()});return false;}
+                if(assessment.completion==='failed')throw Error(assessment.errorCode||'provider_error');
+            }else if(response.status!==404)throw Error('provider_error');
             await apiGateway.pause(Math.min(2000,Math.max(0,until-Date.now())),job.controller.signal);
         }
         return true;
@@ -90,8 +106,8 @@ const ThundyScans=(()=>{
                 const file=await browser.messages.getAttachmentFile(p.message.id,item.partName);
                 const result=await check_hybrid_analysis_for_attachment(digest,item,file.slice(),null,file.type,ctx);coordinator.assert(job);
                 const h=result.hybrid_data;
-                await save({hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id,state:h.state,report:result.report||null,report_fetched_at:result.report?new Date().toISOString():null});
-                if(h.state==='UPLOADED'||h.state==='KNOWN'&&!extractHybridVerdictFromOverview(result.report)){const ref='ha:attachment:'+item.partName;pending(job,ref,true);pending(job,ref,await hybridReport(job,{hybrid_sha256:digest,hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id},ctx,save));}
+                await save({hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id,state:h.state,report:result.report||null,...(result.report?{assessment:ThundyProviderResults.evaluate('hybridanalysis',result.report)}:{}),report_fetched_at:result.report?new Date().toISOString():null});
+                if(h.state==='UPLOADED'||h.state==='KNOWN'&&ThundyProviderResults.evaluate('hybridanalysis',result.report).completion!=='complete'){const ref='ha:attachment:'+item.partName;pending(job,ref,true);pending(job,ref,await hybridReport(job,{hybrid_sha256:digest,hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id,report:result.report},ctx,save,true));}
             });
         }
         for(const url of p.urls){
@@ -100,13 +116,13 @@ const ThundyScans=(()=>{
                 if((job.options.refresh||previous?.state==='UPLOADED')&&previous){const ref='ha:url:'+url;pending(job,ref,true);pending(job,ref,await hybridReport(job,previous,ctx,save));return;}
                 const body=new URLSearchParams({scan_type:'all',url});const response=await apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/url',{...getHybridAnalysisOptions('POST',body,true),analysisContext:ctx});coordinator.assert(job);
                 if(![200,201].includes(response.status))throw Object.assign(Error('provider_error'),{code:response.status===429?'rate_limited':response.status===401||response.status===403?'invalid_key':'provider_error'});
-                const data=await response.json(),value={state:'UPLOADED',hybrid_sha256:data.sha256,hybrid_submission_id:data.submission_id||data.id,hybrid_job_id:data.job_id||data.id,report:quickScanReport(data)};
-                await save(value);const ref='ha:url:'+url;pending(job,ref,true);pending(job,ref,await hybridReport(job,value,ctx,save));
+                const data=await response.json(),value={state:'UPLOADED',hybrid_sha256:data.sha256,hybrid_submission_id:data.submission_id||data.id,hybrid_job_id:data.job_id||data.id,report:quickScanReport(data)};if(value.report)value.assessment=ThundyProviderResults.evaluate('hybridanalysis',value.report,'url');
+                await save(value);const ref='ha:url:'+url;pending(job,ref,true);pending(job,ref,await hybridReport(job,value,ctx,save,true));
             });
             if(ThundyProviders.registry.urlscan)add('urlscan','url',async()=>{
                 const ctx=bound(job,await p.context.forLinks([url]));const previous=p.record?.links?.find(l=>l.url===url)?.urlscan;
                 let result,submittedUuid;const ref='urlscan:'+url;
-                if(previous?.uuid&&(job.options.refresh||['TIMEOUT','SUBMITTED','ERROR'].includes(previous.status))){pending(job,ref,true);result={...await pollUrlscanIoResult(previous.uuid,s.urlscanApikey,ctx),uuid:previous.uuid};}
+                if(previous?.uuid&&(job.options.refresh||['TIMEOUT','SUBMITTED','ERROR'].includes(previous.status))){if(previous.assessment?.assessmentVersion===1)ctx.event({...ThundyProviderResults.stored('urlscan',previous),provider:'urlscan',scope:'report',phase:'cache',observedAt:previous.observedAt||null});pending(job,ref,true);result={...await pollUrlscanIoResult(previous.uuid,s.urlscanApikey,ctx),uuid:previous.uuid};}
                 else{
                     if(job.options.refresh)return;
                     ctx.submitted=async uuid=>{coordinator.assert(job);submittedUuid=uuid;pending(job,ref,true);await link(job,url,{urlscan:{status:'SUBMITTED',uuid,observedAt:Date.now()}});};
@@ -138,10 +154,10 @@ const ThundyScans=(()=>{
             const hashes={};for(const item of attachments){if(Date.now()>preparationDeadline)throw Error('SCAN_PREPARATION_TIMEOUT');if(item.size>25*1024*1024)continue;try{const file=await browser.messages.getAttachmentFile(message.id,item.partName);hashes[item.partName]=await get_sha256_hash(await file.arrayBuffer());context.forAttachment(item.partName,item.name,hashes[item.partName]);}catch(_){}}
             const record=await getFromStore(await getSharedDB(),'hybridanalysis',key);
             const providers=await plan(settings,message,attachments,urls,options.manual,full);
-            const fingerprint=await hash({messageId:message.id,full,hashes,settings:Object.fromEntries(Object.entries(settings).sort(([a],[b])=>a.localeCompare(b))),providers});
+            const fingerprint=await hash({assessmentVersion:1,messageId:message.id,full,hashes,settings:Object.fromEntries(Object.entries(settings).sort(([a],[b])=>a.localeCompare(b))),providers});
             const meta=record?.scanJobMeta, same=meta?.fingerprint===fingerprint;
             const pending=record?.links?.some(l=>urls.includes(l.url)&&(l.state==='UPLOADED'||l.urlscan?.uuid&&['SUBMITTED','TIMEOUT','ERROR'].includes(l.urlscan.status)))||record?.attachments?.some(a=>hashes[a.partName]===a.hybrid_sha256&&a.state==='UPLOADED');
-            const reusable=same&&meta.state==='completed'&&Date.now()-meta.finishedAt<900000?{...meta,providers,pending:false}:!options.manual&&pending&&!Object.values(providers).some(p=>p.checks.some(c=>!c.reason))?{state:'pending',providers,pending:true,finishedAt:Date.now(),total:meta?.total||0,completed:meta?.completed||0}:null;
+            const reusable=same&&meta.state==='completed'&&Date.now()-meta.finishedAt<900000?{...meta,providers,pending:false}:!options.manual&&pending&&!Object.values(providers).some(p=>p.checks.some(c=>!c.reason))?{state:meta?.errors?'incomplete':'pending',errors:meta?.errors||0,providers,pending:true,finishedAt:Date.now(),total:meta?.total||0,completed:meta?.completed||0}:null;
             return {reusable,message:{...message,headerMessageId:key},settings,full,attachments,urls,key,context,hashes,record,fingerprint,providers};
         },
         async begin(job){const p=job.prepared;if(!Object.values(p.providers).some(v=>v.checks.some(c=>!c.reason)))return;
@@ -158,9 +174,7 @@ const ThundyScans=(()=>{
             assert(job);
             if(job.domains.length||job.ips.length)await record(job,old=>({...old,threatIntel:{urlhausDomains:job.domains,maliciousIps:job.ips,observedAt:Date.now()},threatIntelBinding:{runtimeId:getAnalysisRuntimeId(),messageId:p.message.id}}));
             assert(job);
-            const text=extractTextFromParts(p.full.parts||p.full),risk=await collectThreatEvaluationOptions({message:p.message,fullMessage:p.full,filteredUrls:p.urls,messageText:text,allowExternal:false});
-            risk.urlhausDomains=job.domains;risk.maliciousIps=job.ips;const threat=calculateThreatScore(p.message.author,p.urls,risk);threat.coverage=localContentCoverage(p.full);recordLocalCoverage(p.context,threat.coverage,threat);
-            assert(job);for(const tab of p.context.tabs){assert(job);const current=await getFirstDisplayedMessage(tab);if(current?.id===p.message.id)await injectThreatBanner(tab,threat);}
+            if(job.riskTimer){clearTimeout(job.riskTimer);job.riskTimer=null;}await updateRisk(job);
         },
         async changed(job,summary){if(!coordinator.current(job))return;const p=job.prepared;p.context.scanJob={...summary,migration:!p.settings.scanMode,manualAllowed:p.settings.externalAnalysisConsent===true};
             if(!p.context.disposed){p.context.schedule();await record(job,old=>({...old,scanJobMeta:{...summary,fingerprint:job.fingerprint}}),!['queued','running'].includes(summary.state)).catch(()=>{});}

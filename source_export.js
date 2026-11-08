@@ -5,7 +5,7 @@ const ThundySourceExport = (() => {
     const states = ['running','checked','received','submitted','not_found','failed','incomplete'];
     const sources = ['remote','cache','stored','attempt'];
     const verdicts = ['unknown','none','suspicious','malicious'];
-    const reasons = ['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded'];
+    const reasons = ['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded','manual','sender','links_disabled','no_resources','quota','running','provider_error'];
     const time = value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) <= 8640000000000000 ? value : null;
     const count = value => Number.isSafeInteger(value) && value >= 0 ? Math.min(value,100000) : 0;
     function project(snapshot, createdAt = Date.now()) {
@@ -19,7 +19,7 @@ const ThundySourceExport = (() => {
         };
         const rows = (input, historical) => (Array.isArray(input) ? input : []).slice(0,1200)
             .filter(row => row && providers.includes(row.provider) && scopes.includes(row.scope))
-            .map(row => ({provider:row.provider,scope:row.scope,resource:historical ? {kind:'unbound'} : resource(row.resource),
+            .map(row => ({...ThundyProviderResults.project(row),provider:row.provider,scope:row.scope,resource:historical ? {kind:'unbound'} : resource(row.resource),
                 state:states.includes(row.state) ? row.state : 'incomplete',source:historical ? 'stored' : sources.includes(row.source) ? row.source : 'unknown',
                 verdict:verdicts.includes(row.verdict) ? row.verdict : 'unknown',
                 active:historical ? 0 : count(row.active),responses:count(row.responses),failures:count(row.failures),cacheHits:count(row.cacheHits),

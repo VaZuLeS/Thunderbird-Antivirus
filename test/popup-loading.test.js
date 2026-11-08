@@ -29,8 +29,8 @@ async function popup(record, lang='de') {
    });
   },number:value=>value,date:value=>new Date(value).toLocaleString()},
   fetch:async url=>{requests.push(url);throw Error('No network expected');}});
- vm.runInContext(fs.readFileSync('analysis_status.js','utf8'),context);
- const source=fs.readFileSync('api.js','utf8').replace(/^\(async \(\) => \{/m,'async function initializePopup() {').replace(/\}\)\(\);/m,'}');
+ vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('analysis_status.js','utf8')),context);
+ const source=(fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('api.js','utf8')).replace(/^\(async \(\) => \{/m,'async function initializePopup() {').replace(/\}\)\(\);/m,'}');
  vm.runInContext(source,context);
  await context.initializePopup();
  return {dom,context,requests,reads,messages,catalog,close:()=>dom.window.close()};

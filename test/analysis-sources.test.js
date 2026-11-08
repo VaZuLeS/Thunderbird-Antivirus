@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {JSDOM}=require('jsdom');
-const source=fs.readFileSync('analysis_status.js','utf8');
+const source=(fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('analysis_status.js','utf8'));
 function model(){const c=vm.createContext({URL,Date});vm.runInContext(source+'\nglobalThis.analysis=ThundyAnalysis;',c);return c.analysis;}
 test('malformed stored rows and resource collections do not hide valid provider history',()=>{
  const a=model();
@@ -68,7 +68,7 @@ test('all five services classify actual responses, submission is separate from c
  ['https://urlscan.io/api/v1/result/id/','GET',{verdicts:{overall:{malicious:false}}},'urlscan','url','checked'],
  ]){const spec=a.spec(url,method);assert.equal(spec.provider,provider);assert.equal(spec.scope,scope);assert.equal(a.response(spec,200,data).state,state)}
  assert.equal(a.response({provider:'urlscan'},200,{verdicts:{overall:{}}}).state,'received');
- assert.equal(a.response({provider:'hybridanalysis',scope:'file'},200,{}).state,'received');
+ assert.equal(a.response({provider:'hybridanalysis',scope:'file'},200,{}).state,'failed');
  assert.equal(a.spec('https://virustotal.com.attacker.invalid/x'),null);
 });
 test('API verdicts and provenance are visible for every provider in popup and serialized message cards',()=>{
@@ -112,7 +112,7 @@ test('failed and unrecognized API responses remain visibly unknown for all five 
    const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
    for(const provider of a.providers){const entry=root.querySelector('[data-provider="'+provider+'"]');
     assert.equal(entry.querySelector('.service-results').textContent,catalog.analysisVerdict_unknown.message);
-    assert.ok(entry.querySelector('.service-status').textContent.includes(catalog[status===200?'analysisState_received':'analysisState_failed'].message));
+    assert.ok(entry.querySelector('.service-status').textContent.includes(catalog[status===200&&!['hybridanalysis','urlscan'].includes(provider)?'analysisState_received':'analysisState_failed'].message));
    }
   }finally{dom.window.close();}
  }
@@ -354,7 +354,7 @@ test('VirusTotal, URLhaus, AbuseIPDB and URLScan.io API response parsers handle 
  // URLScan.io engines maliciousTotal, brand objects, and suspicious score
  assert.deepEqual({...a.response({provider:'urlscan',scope:'report'},200,{verdicts:{overall:{malicious:false,score:10},engines:{maliciousTotal:2}}})},{state:'checked',verdict:'malicious'});
  assert.deepEqual({...a.response({provider:'urlscan',scope:'report'},200,{verdicts:{overall:{malicious:false,score:65},urlscan:{brands:[{name:'PayPal',key:'paypal'}]}}})},{state:'checked',verdict:'suspicious'});
- assert.deepEqual({...a.response({provider:'urlscan',scope:'report'},200,{page:{url:'https://clean.example'}})},{state:'checked',verdict:'none'});
+ assert.deepEqual({...a.response({provider:'urlscan',scope:'report'},200,{page:{url:'https://clean.example'}})},{state:'received',verdict:'unknown'});
  // Legacy restoration of stored urlscan link verdict
  const legacyUrlscan=a.legacy({links:[{url:'https://phish.example',state:'UNKNOWN',urlscan:{status:'MALICIOUS_VISUAL',observedAt:500}}]});
  assert.equal(legacyUrlscan.rows.length,1);

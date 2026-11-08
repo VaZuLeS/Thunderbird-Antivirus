@@ -125,7 +125,7 @@ describe('background.js', () => {
         };
 
         vm.createContext(context);
-        const code = fs.readFileSync(path.join(__dirname, 'background.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'background.js'), 'utf8'));
         const gatewayCode = fs.readFileSync(path.join(__dirname, 'api_gateway.js'), 'utf8');
         const riskCode = fs.readFileSync(path.join(__dirname, 'risk.js'), 'utf8');
         const sanitizeCode = fs.readFileSync(path.join(__dirname, 'sanitize.js'), 'utf8');
@@ -1169,7 +1169,7 @@ describe('background.js', () => {
             };
 
             const result = await context.checkUrlscanIo('http://malicious.com', 'apikey');
-            assert.strictEqual(result.status, 'MALICIOUS_VISUAL');
+            assert.strictEqual(result.status, 'MALICIOUS');
             assert.ok(result.reasons.includes("Die URL wurde von urlscan.io generell als bösartig eingestuft."));
         });
 
@@ -1218,7 +1218,7 @@ describe('background.js', () => {
                     resultFetchOptions = options;
                     return {
                         status: 200,
-                        json: async () => ({ verdicts: {} })
+                        json: async () => ({ verdicts: {overall:{malicious:false}} })
                     };
                 }
             };
@@ -3076,7 +3076,7 @@ describe('background.js', () => {
 
             let response;
             await context.handleCheckLinkState({ userAction: true, url: 'http://test.com' }, { tab: { id: 1 } }, (res) => { response = res; });
-            assert.strictEqual(response.status, 'MALICIOUS_VISUAL');
+            assert.strictEqual(response.status, 'MALICIOUS');
         });
 
         it('returns linkObj state if urlscan is clean and hybrid_sha256 is missing', async () => {

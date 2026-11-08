@@ -2235,7 +2235,7 @@
     "message": "Analisi esterna in corso"
   },
   "scanProgress": {
-    "message": "Risorse completate: $1 / $2"
+    "message": "Risorse completate"
   },
   "scanMigrationNotice": {
     "message": "Scegli la modalità automatica nelle impostazioni. Fino ad allora restano le regole precedenti."
@@ -2302,5 +2302,65 @@
   },
   "scanModeHelp": {
     "message": "Tutti i messaggi aperti elimina l’autorizzazione per mittente. I servizi configurati possono ricevere hash e, con Massimo e analisi automatica dei link, URL completi. Consenso e permessi restano necessari. I messaggi non aperti non vengono analizzati."
+  },
+  "assessmentCompletion": {
+    "message": "Stato di elaborazione"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Il servizio sta elaborando"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Rapporto recuperato"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Nessuna valutazione conclusiva"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Elaborazione tecnica non riuscita"
+  },
+  "assessmentConflict": {
+    "message": "Valutazioni parziali diverse; il risultato più grave determina l’azione."
+  },
+  "assessmentSignals": {
+    "message": "Base della valutazione"
+  },
+  "assessmentJob": {
+    "message": "Identificativo attività"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Verdetto del servizio"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Risultato del motore"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Punteggio di minaccia originale"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Risultato multiscan originale"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Livello di minaccia originale"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Indicazione della lista consentita"
+  },
+  "assessmentSignal_overall": {
+    "message": "Valutazione complessiva urlscan"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Valutazione del motore urlscan"
+  },
+  "assessmentSignal_engines": {
+    "message": "Risultati di altri motori"
+  },
+  "assessmentSignal_brand": {
+    "message": "Indicazione di marchio; da sola non determina il rischio"
+  },
+  "assessmentSignal_report": {
+    "message": "Stato del rapporto"
+  },
+  "assessmentOriginal": {
+    "message": "Verdetto originale del servizio"
   }
 }

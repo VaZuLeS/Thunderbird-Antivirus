@@ -41,8 +41,8 @@ function runtime(overrides={}){
  indexedDB_save_links_to_db:async()=>{},collectThreatEvaluationOptions:async()=>({}),calculateThreatScore:()=>({score:0}),localContentCoverage:()=>({state:'checked'}),recordLocalCoverage:()=>{},injectThreatBanner:async()=>{},getFirstDisplayedMessage:async()=>message,
  injectIntoMessageDisplay:async()=>{},processAttachments:async()=>{},injectTimeOfClickProtection:async()=>{},evaluateAndInjectThreats:async()=>{},vtCache:new Map(),urlhausCache:new Map(),ipReputationCache:new Map(),mayTransmitExternally:()=>settings.externalAnalysisConsent,
  });
- vm.runInContext(fs.readFileSync('provider_registry.js','utf8')+'\n'+source+'\nglobalThis.scans=ThundyScans;',c);
- return {s:c.scans,c,settings,stored,calls,context,message,full,permission:value=>permission=value};
+ vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8'))+'\n'+source+'\nglobalThis.scans=ThundyScans;',c);
+ return {s:c.scans,c,settings,stored,calls,events,context,message,full,permission:value=>permission=value};
 }
 for(const [title,keys,count] of [['Hybrid only',{urlscanApikey:''},1],['urlscan only',{apikey:''},1],['both',{},2]])test('opening a message starts '+title+' without a link click',async()=>{
  const f=runtime(keys);await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.s.get(1).state,'completed');
@@ -80,8 +80,8 @@ test('urlscan submissions are serialized across resources',async()=>{
 });
 test('accepted identifier survives a lost poll response and background restart in manual mode',async()=>{
  const f=runtime({apikey:''});f.c.checkUrlscanIo=async(url,key,ctx)=>{await ctx.submitted('accepted-before-loss');return {status:'ERROR',errorCode:'fetch_failed'};};
- await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.stored.fixture.links[0].urlscan.uuid,'accepted-before-loss');assert.equal(f.s.get(1).state,'pending');
- const restarted=runtime({apikey:'',scanMode:'manual'});Object.assign(restarted.stored,structuredClone(f.stored));await restarted.s.display({id:7},restarted.message);assert.equal(restarted.calls.length,0);assert.equal(restarted.s.get(1).state,'pending');
+ await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.stored.fixture.links[0].urlscan.uuid,'accepted-before-loss');assert.equal(f.s.get(1).state,'incomplete');
+ const restarted=runtime({apikey:'',scanMode:'manual'});Object.assign(restarted.stored,structuredClone(f.stored));await restarted.s.display({id:7},restarted.message);assert.equal(restarted.calls.length,0);assert.equal(restarted.s.get(1).state,'incomplete');
  await restarted.s.request({messageId:1,operation:'refresh'},{});await restarted.s.settled(1);assert.ok(restarted.calls.some(x=>x.uuid==='accepted-before-loss'&&x.refresh));assert.equal(restarted.calls.filter(x=>x.submit).length,0);
 });
 
@@ -105,4 +105,14 @@ test('a provider quota observation survives an adapter returning no result',asyn
  f.c.browser.messages.listAttachments=async()=>[{partName:'1.2',name:'fixture.txt',size:4}];f.c.get_sha256_hash=async()=> 'a'.repeat(64);
  f.c.checkVirusTotal=async(hash,key,ctx)=>{ctx.event({provider:'virustotal',phase:'finish',state:'failed',httpStatus:429});return null;};
  await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.s.get(1).providers.virustotal.error,'rate_limited');assert.equal(f.s.get(1).state,'incomplete');
+});
+
+test('Hybrid polling keeps a partial malicious finding, finishes on terminal unknown and refreshes the same job',async()=>{
+ const f=runtime({urlscanApikey:''});let clock=1000000,gets=0;
+ f.c.Date=class extends Date{static now(){return clock;}};f.c.apiGateway.pause=async ms=>{clock+=ms;};
+ f.c.apiGateway.fetchWithTimeout=async(url,options)=>{f.calls.push({url,method:options.method});return {status:200,json:async()=>options.method==='POST'?{id:'known-job',finished:false}:++gets===1?{id:'known-job',finished:false,verdict:'clean',scanners:[{status:'malicious'},{status:'in-progress'}]}:{id:'known-job',finished:true,verdict:'unknown'}};};
+ await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.s.get(1).state,'completed');assert.equal(f.stored.fixture.links[0].assessment.verdict,'malicious');assert.equal(f.stored.fixture.links[0].assessment.completion,'complete');assert.equal(f.stored.fixture.links[0].report.verdict,'unknown');assert.equal(f.stored.fixture.links[0].hybrid_verdict.status,'MALICIOUS');
+ const before=gets;f.events.length=0;await f.s.request({messageId:1,operation:'refresh'},{});await f.s.settled(1);assert.ok(gets>before);assert.ok(f.events.some(e=>e.phase==='cache'&&e.provider==='hybridanalysis'&&e.verdict==='malicious'));assert.equal(f.calls.filter(c=>c.method==='POST').length,1);assert.equal(f.stored.fixture.links[0].assessment.verdict,'malicious');
+ const restarted=runtime({urlscanApikey:''});Object.assign(restarted.stored,structuredClone(f.stored));restarted.c.apiGateway.fetchWithTimeout=f.c.apiGateway.fetchWithTimeout;
+ await restarted.s.request({messageId:1,operation:'refresh'},{});await restarted.s.settled(1);assert.equal(restarted.stored.fixture.links[0].assessment.verdict,'malicious');assert.equal(f.calls.filter(c=>c.method==='POST').length,1);
 });

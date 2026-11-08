@@ -2,8 +2,8 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 function fixture(){
  const calls=[],settings={externalAnalysisConsent:false,privacyTier:'strict'};let granted=true,body={},status=200,hang=false,malformed=false;
  const c=vm.createContext({URL,Headers,Response,AbortController,TextEncoder,setTimeout,clearTimeout,console:{warn(){},error(){}},browser:{storage:{local:{get:async()=>settings}},permissions:{contains:async()=>granted}},fetch:async(url,options)=>{calls.push({url,options});if(hang)return new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(Object.assign(Error('Aborted'),{name:'AbortError'}))));return new Response(malformed?'not json':JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});}});
- vm.runInContext(fs.readFileSync('provider_registry.js','utf8')+'\n'+fs.readFileSync('api_gateway.js','utf8')+'\nglobalThis.registry=ThundyProviders;globalThis.gateway=apiGateway;',c);
- return {c,calls,settings,setGranted:v=>granted=v,setResponse:(s,b={},invalid=false)=>{status=s;body=b;malformed=invalid;}};
+ vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8'))+'\n'+fs.readFileSync('analysis_status.js','utf8')+'\n'+fs.readFileSync('api_gateway.js','utf8')+'\nglobalThis.registry=ThundyProviders;globalThis.gateway=apiGateway;',c);
+ return {c,calls,settings,setGranted:v=>granted=v,setHang:v=>hang=v,setResponse:(s,b={},invalid=false)=>{status=s;body=b;malformed=invalid;}};
 }
 test('every service uses its fixed-data test without communication consent, with exact auth and redirection refusal',async()=>{
  for(const [id,conf] of Object.entries(fixture().c.registry.registry)){
@@ -52,4 +52,22 @@ test('provider-specific scores remain attributed values rather than normalized p
  const r=fixture().c.registry;assert.equal(r.metadata('abuseipdb',{data:{abuseConfidenceScore:87,totalReports:9}},200).providerScore,87);
  assert.equal(r.metadata('urlscan',{verdicts:{overall:{score:65}}},200).providerScore,65);assert.equal(r.metadata('hybridanalysis',{threat_score:73},200).providerScore,73);
  assert.equal(r.metadata('urlhaus',{query_status:'no_results'},200).providerVerdict,'no_results');
+});
+
+test('Hybrid and urlscan preserve typed errors, pending 404 and successful unknown responses through shared transport',async()=>{
+ for(const [provider,url] of [['hybridanalysis','https://hybrid-analysis.com/api/v2/quick-scan/synthetic'],['urlscan','https://urlscan.io/api/v1/result/synthetic/']]){
+  for(const status of [401,403,404,429]){
+   const f=fixture(),events=[];f.settings.externalAnalysisConsent=true;f.settings.privacyTier='max';f.setResponse(status);
+   await f.c.gateway.fetchWithTimeout(url,{analysisContext:{event:e=>events.push(e)}});
+   const finish=events.find(e=>e.phase==='finish');assert.equal(finish.verdict,'unknown');assert.equal(finish.httpStatus,status);assert.equal(finish.completion,status===404?provider==='urlscan'?'pending':'unknown':'failed');
+  }
+  const malformed=fixture();malformed.settings.externalAnalysisConsent=true;malformed.settings.privacyTier='max';malformed.setResponse(200,{},true);await assert.rejects(malformed.c.gateway.fetchWithTimeout(url));
+  const stalled=fixture();stalled.settings.externalAnalysisConsent=true;stalled.settings.privacyTier='max';stalled.setHang(true);await assert.rejects(stalled.c.gateway.fetchWithTimeout(url,{},10));assert.equal(stalled.c.gateway.controllers.size,0);
+ }
+});
+
+test('resource validation rejects foreign report bodies before any verdict is emitted',async()=>{
+ const f=fixture();f.settings.externalAnalysisConsent=true;f.settings.privacyTier='max';f.setResponse(200,{task:{uuid:'foreign'},verdicts:{overall:{malicious:true}}});const events=[];
+ await assert.rejects(f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/result/requested/',{analysisContext:{event:e=>events.push(e),validateResponse:data=>{if(data.task.uuid!=='requested')throw Object.assign(Error('RESOURCE_MISMATCH'),{code:'RESOURCE_MISMATCH'});}}}),/RESOURCE_MISMATCH/);
+ assert.ok(events.every(e=>e.verdict!=='malicious'));assert.equal(events.at(-1).state,'failed');assert.equal(events.at(-1).errorCode,'RESOURCE_MISMATCH');
 });

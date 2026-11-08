@@ -77,7 +77,7 @@ test('same recorded revision is deduplicated while distinct observations stay pr
 test('real popup persistence archives an earlier protocol and ignores mismatched late responses',async()=>{
  const s=setup({messageHeader:'mail',attachments:[item()]});const dom=new JSDOM('<main></main>');
  Object.assign(s.c,{document:dom.window.document,window:dom.window,setTimeout,clearTimeout,browser:{runtime:{onMessage:{addListener(){}}}},openDB:async()=>s.db});
- const source=fs.readFileSync('api.js','utf8').replace(/^\(async \(\) => \{/m,'async function initializeForTest() {').replace(/\}\)\(\);/m,'}');
+ const source=(fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('api.js','utf8')).replace(/^\(async \(\) => \{/m,'async function initializeForTest() {').replace(/\}\)\(\);/m,'}');
  vm.runInContext(source,s.c);s.c.openDB=async()=>s.db;
  try{
   assert.equal(await s.c.persistHybridReport({headerMessageId:'mail',sha256:'a'.repeat(64),jobId:'job',report:{state:'COMPLETE',verdict:'no specific threat'},fetchedAt:'2026-10-03T00:00:00Z'}),true);
@@ -89,7 +89,7 @@ test('real popup persistence archives an earlier protocol and ignores mismatched
 });
 
 function loadBackgroundFunction(c,name){
- const source=fs.readFileSync('background.js','utf8'),start=source.indexOf('async function '+name+'('),end=source.indexOf('\n}',start)+2;
+ const source=(fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('background.js','utf8')),start=source.indexOf('async function '+name+'('),end=source.indexOf('\n}',start)+2;
  assert.ok(start>=0 && end>start);vm.runInContext(source.slice(start,end),c);
 }
 test('actual batch writers keep an offline report and archive changed content and link submissions',async()=>{

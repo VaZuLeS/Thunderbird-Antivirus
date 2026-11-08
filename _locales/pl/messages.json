@@ -2235,7 +2235,7 @@
     "message": "Trwa kontrola zewnętrzna"
   },
   "scanProgress": {
-    "message": "Ukończone zasoby: $1 / $2"
+    "message": "Ukończone zasoby"
   },
   "scanMigrationNotice": {
     "message": "Wybierz tryb automatyczny w ustawieniach. Do tego czasu obowiązują poprzednie reguły."
@@ -2302,5 +2302,65 @@
   },
   "scanModeHelp": {
     "message": "Wszystkie otwarte wiadomości znosi zgodę dla poszczególnych nadawców. Usługi mogą otrzymywać skróty i, na poziomie Maksimum z automatyczną analizą odnośników, pełne adresy URL. Nadal wymagane są zgoda i uprawnienia. Nieotwarte wiadomości nie są skanowane."
+  },
+  "assessmentCompletion": {
+    "message": "Stan przetwarzania"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Usługa nadal przetwarza"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Raport pobrany"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "Brak jednoznacznej oceny"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Błąd techniczny przetwarzania"
+  },
+  "assessmentConflict": {
+    "message": "Różne oceny częściowe; najpoważniejsze ustalenie określa działanie."
+  },
+  "assessmentSignals": {
+    "message": "Podstawa oceny"
+  },
+  "assessmentJob": {
+    "message": "Identyfikator zadania"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Ocena usługi"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Wynik silnika"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Oryginalny wynik zagrożenia"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Oryginalny wynik multiscan"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Oryginalny poziom zagrożenia"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Wskazanie listy dozwolonych"
+  },
+  "assessmentSignal_overall": {
+    "message": "Ogólna ocena urlscan"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Ocena silnika urlscan"
+  },
+  "assessmentSignal_engines": {
+    "message": "Wyniki pozostałych silników"
+  },
+  "assessmentSignal_brand": {
+    "message": "Wskazanie marki; samo nie określa zagrożenia"
+  },
+  "assessmentSignal_report": {
+    "message": "Stan raportu"
+  },
+  "assessmentOriginal": {
+    "message": "Oryginalna ocena usługi"
   }
 }

@@ -63,7 +63,7 @@ function validateReports(identity, thunderbird, browserUi) {
     const expected = matrix({ matrix: 'full', zoom: 1 }, ['alerts', 'capacity-alerts', 'capacity', 'cases', 'events', 'health', 'heartbeats', 'storage']);
     const versionParts=identity.extensionVersion.split('.').map(Number);
     if(versionParts[0]>1 || versionParts[0]===1 && (versionParts[1]>25 || versionParts[1]===25 && versionParts[2]>=1)) {
-        const automatic=thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.automaticScans?.passed===true&&r.automaticScans.bothProvidersWithoutLinkClick===true&&r.automaticScans.popupClosedDuringRetry===true&&r.automaticScans.duplicateDisplayReused===true&&r.automaticScans.unlisted===true&&r.automaticScans.syntheticTransport===true);
+        const automatic=thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.automaticScans?.passed===true&&r.automaticScans.bothProvidersWithoutLinkClick===true&&r.automaticScans.popupClosedDuringRetry===true&&r.automaticScans.duplicateDisplayReused===true&&r.automaticScans.unlisted===true&&r.automaticScans.syntheticTransport===true&&r.providerResults?.passed===true&&r.providerResults.partialMaliciousBlocks===true&&r.providerResults.terminalUnknownRetainsFinding===true&&r.providerResults.brandDoesNotEscalate===true&&r.providerResults.refreshWithoutSubmission===true&&r.providerResults.bothViewsAgree===true);
         if(!automatic)throw new Error('Missing package-bound automatic scan acceptance');
     }
     for (const lang of languages) {

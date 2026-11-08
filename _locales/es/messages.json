@@ -2235,7 +2235,7 @@
     "message": "Análisis externo en curso"
   },
   "scanProgress": {
-    "message": "Recursos completados: $1 / $2"
+    "message": "Recursos completados"
   },
   "scanMigrationNotice": {
     "message": "Elija el modo automático en ajustes. Hasta entonces se mantienen las reglas anteriores."
@@ -2302,5 +2302,65 @@
   },
   "scanModeHelp": {
     "message": "Todos los mensajes abiertos elimina la autorización individual del remitente. Los servicios configurados pueden recibir hashes y, en Máximo con análisis automático de enlaces, URL completas. Se siguen requiriendo consentimiento y permisos. Los mensajes sin abrir no se analizan."
+  },
+  "assessmentCompletion": {
+    "message": "Estado del procesamiento"
+  },
+  "assessmentCompletion_pending": {
+    "message": "El proveedor sigue procesando"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Informe recuperado"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "No hay evaluación concluyente"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Fallo técnico de procesamiento"
+  },
+  "assessmentConflict": {
+    "message": "Evaluaciones parciales diferentes; el hallazgo más grave determina la acción."
+  },
+  "assessmentSignals": {
+    "message": "Base de la evaluación"
+  },
+  "assessmentJob": {
+    "message": "Identificador de tarea"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Veredicto del proveedor"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Hallazgo del motor"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Puntuación de amenaza original"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Resultado multiscan original"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Nivel de amenaza original"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Indicación de lista permitida"
+  },
+  "assessmentSignal_overall": {
+    "message": "Evaluación general de urlscan"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "Evaluación del motor urlscan"
+  },
+  "assessmentSignal_engines": {
+    "message": "Hallazgos de otros motores"
+  },
+  "assessmentSignal_brand": {
+    "message": "Indicio de marca; no determina el riesgo por sí solo"
+  },
+  "assessmentSignal_report": {
+    "message": "Estado del informe"
+  },
+  "assessmentOriginal": {
+    "message": "Veredicto original del proveedor"
   }
 }

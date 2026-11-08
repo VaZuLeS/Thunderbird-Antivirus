@@ -81,7 +81,7 @@ test('fresh popup without API credentials renders local risk and HTML actions wi
         }
     });
     vm.runInContext(fs.readFileSync('i18n.js', 'utf8') + '\n' + fs.readFileSync('runtime.js', 'utf8') + '\n' + fs.readFileSync('api_gateway.js', 'utf8'), context);
-    const api = fs.readFileSync('api.js', 'utf8').replace(/^\(async \(\) => \{/m, 'globalThis.initialization = (async () => {');
+    const api = (fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('api.js', 'utf8')).replace(/^\(async \(\) => \{/m, 'globalThis.initialization = (async () => {');
     vm.runInContext(api, context);
     await context.initialization;
     const text = dom.window.document.body.textContent;

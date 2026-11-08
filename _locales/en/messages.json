@@ -2238,7 +2238,7 @@
     "message": "External check in progress"
   },
   "scanProgress": {
-    "message": "Completed resources: $1 / $2"
+    "message": "Completed resources"
   },
   "scanMigrationNotice": {
     "message": "Choose an automatic scan mode in settings. Until then, previous sender and manual rules apply."
@@ -2305,5 +2305,65 @@
   },
   "scanModeHelp": {
     "message": "All opened messages removes individual sender approval. Configured services may receive hashes and, at Maximum with automatic link analysis, full URLs. Consent and provider permissions are still required. Unopened messages are not scanned."
+  },
+  "assessmentCompletion": {
+    "message": "Processing status"
+  },
+  "assessmentCompletion_pending": {
+    "message": "Provider is still processing"
+  },
+  "assessmentCompletion_complete": {
+    "message": "Report retrieval complete"
+  },
+  "assessmentCompletion_unknown": {
+    "message": "No conclusive assessment available"
+  },
+  "assessmentCompletion_failed": {
+    "message": "Technical processing failed"
+  },
+  "assessmentConflict": {
+    "message": "Different partial assessments; the strongest finding determines the action."
+  },
+  "assessmentSignals": {
+    "message": "Assessment basis"
+  },
+  "assessmentJob": {
+    "message": "Provider job ID"
+  },
+  "assessmentSignal_verdict": {
+    "message": "Provider verdict"
+  },
+  "assessmentSignal_scanner": {
+    "message": "Scanner finding"
+  },
+  "assessmentSignal_threat_score": {
+    "message": "Original threat score"
+  },
+  "assessmentSignal_multiscan_result": {
+    "message": "Original multiscan result"
+  },
+  "assessmentSignal_threat_level": {
+    "message": "Original threat level"
+  },
+  "assessmentSignal_whitelist": {
+    "message": "Provider whitelist indication"
+  },
+  "assessmentSignal_overall": {
+    "message": "urlscan overall assessment"
+  },
+  "assessmentSignal_urlscan": {
+    "message": "urlscan engine assessment"
+  },
+  "assessmentSignal_engines": {
+    "message": "Other engine findings"
+  },
+  "assessmentSignal_brand": {
+    "message": "Brand indication; does not determine risk by itself"
+  },
+  "assessmentSignal_report": {
+    "message": "Report state"
+  },
+  "assessmentOriginal": {
+    "message": "Original provider verdict"
   }
 }

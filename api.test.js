@@ -51,7 +51,7 @@ describe('escapeHTML', () => {
         const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
         vm.runInContext(dbCode, context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         // Prevent the IIFE from executing during test initialization
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
 
@@ -153,7 +153,7 @@ describe('createEl', () => {
 
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         // Prevent the IIFE from executing during test initialization
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
@@ -221,7 +221,7 @@ describe('renderInProgressStatus', () => {
 
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
 
         // Load db.js first just like in other suites, to define global functions
         const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
@@ -324,7 +324,7 @@ describe('renderThreatInfo', () => {
 
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
 
         // Load db.js first just like in other suites, to define global functions
         const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
@@ -343,34 +343,34 @@ describe('renderThreatInfo', () => {
         renderThreatInfo = context.renderThreatInfo;
     });
 
-    it('renders low threat score with text-success class', () => {
+    it('renders low threat score as a neutral original value', () => {
         const card = context.document.createElement('div');
         const json_data = { threat_score: 10, verdict: 'clean' };
         renderThreatInfo(json_data, card);
         const pThreat = card.childNodes[0];
-        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-success');
-        assert.strictEqual(pThreat.childNodes[2].className, 'text-success');
-        assert.strictEqual(pThreat.childNodes[2].textContent, '10 (Normal)');
+        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-muted');
+        assert.strictEqual(pThreat.childNodes[2].className, 'text-muted');
+        assert.strictEqual(pThreat.childNodes[2].textContent, '10');
     });
 
-    it('renders medium threat score with text-warning class', () => {
+    it('renders medium threat score as a neutral original value', () => {
         const card = context.document.createElement('div');
         const json_data = { threat_score: 60, verdict: 'suspicious' };
         renderThreatInfo(json_data, card);
         const pThreat = card.childNodes[0];
-        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-warning');
-        assert.strictEqual(pThreat.childNodes[2].className, 'text-warning');
-        assert.strictEqual(pThreat.childNodes[2].textContent, '60 (Suspicious)');
+        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-muted');
+        assert.strictEqual(pThreat.childNodes[2].className, 'text-muted');
+        assert.strictEqual(pThreat.childNodes[2].textContent, '60');
     });
 
-    it('renders high threat score with text-danger class', () => {
+    it('renders high threat score as a neutral original value', () => {
         const card = context.document.createElement('div');
         const json_data = { threat_score: 90, verdict: 'malicious' };
         renderThreatInfo(json_data, card);
         const pThreat = card.childNodes[0];
-        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-danger');
-        assert.strictEqual(pThreat.childNodes[2].className, 'text-danger');
-        assert.strictEqual(pThreat.childNodes[2].textContent, '90 (Critical)');
+        assert.strictEqual(pThreat.childNodes[0].className, 'head_line text-muted');
+        assert.strictEqual(pThreat.childNodes[2].className, 'text-muted');
+        assert.strictEqual(pThreat.childNodes[2].textContent, '90');
     });
 
     it('renders fallback N/A values for missing optional fields', () => {
@@ -411,7 +411,7 @@ describe('renderThreatInfo', () => {
 
         const pThreat = card.childNodes[0];
         assert.strictEqual(pThreat.childNodes[0].textContent, 'Bedrohungsscore:');
-        assert.strictEqual(pThreat.childNodes[2].textContent, '25 (Normal)');
+        assert.strictEqual(pThreat.childNodes[2].textContent, '25');
 
         const pVerdict = card.childNodes[1];
         assert.strictEqual(pVerdict.childNodes[0].textContent, 'Urteil:');
@@ -558,7 +558,7 @@ tag: tag,
         const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
         vm.runInContext(dbCode, context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
 
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
@@ -954,7 +954,7 @@ describe('handle_hybrid_report_fetch_error', () => {
 
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
@@ -1047,7 +1047,7 @@ describe('handle_hybrid_report_error', () => {
 
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
@@ -1171,7 +1171,7 @@ describe('renderManualUploadUI', () => {
         const path = require('path');
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
@@ -1472,7 +1472,7 @@ describe('renderManualUrlScanUI', () => {
         const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
         vm.runInContext(dbCode, context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
 
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
@@ -1643,7 +1643,7 @@ describe('renderVirusTotalStats', () => {
         vm.createContext(context);
 
         // We load api.js and prevent the IIFE from executing
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
 
@@ -1786,7 +1786,7 @@ describe('renderScannerResults', () => {
         vm.createContext(context);
 
         // We load api.js and prevent the IIFE from executing
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
 
@@ -1893,7 +1893,7 @@ describe('renderFileDetails', () => {
 
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/, '}');
 
@@ -1984,7 +1984,7 @@ describe('handleUploadClick', () => {
 
         const vm = require('vm');
         const fs = require('fs');
-        const code = fs.readFileSync('api.js', 'utf8').replace(/^\(async \(\) => \{/m, 'async function initAPI() {').replace(/\}\)\(\);/m, '}');
+        const code = (fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('api.js', 'utf8')).replace(/^\(async \(\) => \{/m, 'async function initAPI() {').replace(/\}\)\(\);/m, '}');
 
         // Wrap the code to extract handleUploadClick
         let wrappedCode = `(function() {
@@ -2226,7 +2226,7 @@ describe('renderReport', () => {
         const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
         vm.runInContext(dbCode, context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
@@ -2349,7 +2349,7 @@ describe('fetch_hybrid_report', () => {
         const dbCode = fs.readFileSync(path.join(__dirname, 'db.js'), 'utf8');
         vm.runInContext(dbCode, context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
@@ -2547,7 +2547,7 @@ describe('setupCdrButton', () => {
         const path = require('path');
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
@@ -2712,7 +2712,7 @@ describe('createCdrButton', () => {
         const path = require('path');
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
@@ -2941,7 +2941,7 @@ describe('createUploadButton', () => {
         const path = require('path');
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
@@ -3175,7 +3175,7 @@ describe('handleUrlScanClick', () => {
         const path = require('path');
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
@@ -3325,7 +3325,7 @@ describe('renderActionButtons', () => {
 
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         const modifiedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {').replace(/\}\)\(\);/m, '}') + '\n; globalThis.renderActionButtons = renderActionButtons;';
 
         vm.runInContext(modifiedCode, context);
@@ -3446,7 +3446,7 @@ describe('setupRescanButton', () => {
 
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite
@@ -3603,7 +3603,7 @@ describe('createCdrButton', () => {
         const path = require('path');
         vm.createContext(context);
 
-        const code = fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8');
+        const code = (fs.readFileSync(path.join(__dirname,'provider_results.js'),'utf8')+'\n'+fs.readFileSync(path.join(__dirname, 'api.js'), 'utf8'));
         let wrappedCode = code.replace(/^\(async \(\) => \{/m, 'async function initAPI() {');
         wrappedCode = wrappedCode.replace(/\}\)\(\);/m, '}');
         wrappedCode += '\n; externalAnalysisConsent = true;\n';  // consent granted in this suite

@@ -17,8 +17,8 @@ const ThundyProviders = (() => {
         else scope=provider==='urlhaus'?'domain':provider==='abuseipdb'?'ip':path.includes('/result/')?'report':'url';
         return {provider,config,scope};
     }
-    registry.hybridanalysis.scanKinds={hash:true,url:true};registry.virustotal.scanKinds={hash:true};registry.urlhaus.scanKinds={domain:true};registry.abuseipdb.scanKinds={ip:true};registry.urlscan.scanKinds={url:true};
-    for(const [id,config] of Object.entries(registry))config.normalize=(info,status,data)=>ThundyAnalysis.response({...info,provider:id},status,data);
+    registry.hybridanalysis.scanKinds={hash:true,url:true};registry.virustotal.scanKinds={hash:true};registry.urlhaus.scanKinds={domain:true};registry.abuseipdb.scanKinds={ip:true};registry.urlscan.scanKinds={url:true};registry.urlscan.submitConcurrency=1;
+    for(const [id,config] of Object.entries(registry))config.normalize=(info,status,data)=>({...ThundyAnalysis.response({...info,provider:id},status,data),...(['hybridanalysis','urlscan'].includes(id)&&status>=200&&status<300?ThundyProviderResults.evaluate(id,data,info.scope):['hybridanalysis','urlscan'].includes(id)?{assessmentVersion:1,completion:status===404?id==='urlscan'?'pending':'unknown':'failed',signals:[],conflicts:[]}:{} )});
     async function enforce(address,options={}) {
         const {config,scope}=identify(address,options.method);
         if(!await browser.permissions.contains({origins:[config.origin]}))throw Object.assign(Error('HOST_PERMISSION_MISSING'),{code:'HOST_PERMISSION_MISSING'});
@@ -46,6 +46,8 @@ const ThundyProviders = (() => {
     }
     function metadata(provider,data,httpStatus) {
         const result={httpStatus};
+        const jobId=provider==='urlscan'?data?.uuid||data?.task?.uuid:provider==='hybridanalysis'?data?.submission_id||data?.job_id||data?.id:null;
+        if(typeof jobId==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(jobId))result.providerJobId=jobId;
         const stats=provider==='virustotal'?data?.data?.attributes?.last_analysis_stats:null;
         if(stats){if(Number.isFinite(stats.malicious))result.maliciousCount=stats.malicious;if(Number.isFinite(stats.suspicious))result.suspiciousCount=stats.suspicious;result.totalCount=Object.values(stats).filter(Number.isFinite).reduce((a,b)=>a+b,0);}
         if(provider==='abuseipdb'){if(Number.isFinite(data?.data?.abuseConfidenceScore))result.providerScore=data.data.abuseConfidenceScore;if(Number.isFinite(data?.data?.totalReports))result.reportCount=data.data.totalReports;if(data?.data?.isWhitelisted===true)result.providerVerdict='whitelisted';}

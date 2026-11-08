@@ -806,7 +806,7 @@ async function collectAttachmentFindings(message) {
       if (!att.partName || !hashes.has(String(att.partName)) || hashes.get(String(att.partName)) !== String(att.hybrid_sha256 || '').toLowerCase()) continue;
       const actual = current.find(item=>String(item.partName)===String(att.partName));
       const name = typeof actual?.name === 'string' ? actual.name : typeof att.attachment_name === 'string' ? att.attachment_name : '';
-      const ha = att.report && typeof extractHybridVerdictFromOverview === 'function' ? extractHybridVerdictFromOverview(att.report) : null;
+      const a=ThundyProviderResults.stored('hybridanalysis',att);const ha=({malicious:'MALICIOUS',suspicious:'SUSPICIOUS',none:'CLEAN'})[a.verdict]||null;
       const vt = att.virustotal_stats && typeof att.virustotal_stats === 'object' ? att.virustotal_stats : null;
       const vtMalicious = vt && Number.isFinite(vt.malicious) && vt.malicious > 0;
       const vtSuspicious = vt && Number.isFinite(vt.suspicious) && vt.suspicious > 0;
@@ -840,14 +840,8 @@ async function collectLinkFindings(message, fullMessage = null) {
       if (!link || typeof link !== 'object') continue;
       const url = typeof link.url === 'string' ? link.url : '';
       if (!currentLinks.has(url)) continue;
-      const haReportVerdict = link.report && typeof extractHybridVerdictFromOverview === 'function' ? extractHybridVerdictFromOverview(link.report) : null;
-      const haLiveVerdict = link.hybrid_verdict && typeof link.hybrid_verdict.status === 'string' ? link.hybrid_verdict.status.trim().toUpperCase() : null;
-      const ha = haReportVerdict || haLiveVerdict;
-      const urlscanStatus = link.urlscan && typeof link.urlscan.status === 'string' ? link.urlscan.status.trim().toUpperCase() : null;
-      if (ha === 'MALICIOUS') findings.push({ url, verdict: 'malicious', provider: 'Hybrid Analysis' });
-      else if (urlscanStatus === 'MALICIOUS' || urlscanStatus === 'MALICIOUS_VISUAL') findings.push({ url, verdict: 'malicious', provider: 'URLScan.io' });
-      else if (ha === 'SUSPICIOUS') findings.push({ url, verdict: 'suspicious', provider: 'Hybrid Analysis' });
-      else if (urlscanStatus === 'SUSPICIOUS') findings.push({ url, verdict: 'suspicious', provider: 'URLScan.io' });
+      const fact=ThundyProviderResults.resource(link);
+      if(['malicious','suspicious'].includes(fact.verdict))findings.push({url,verdict:fact.verdict,provider:fact.provider==='hybridanalysis'?'Hybrid Analysis':'URLScan.io'});
     }
     return findings;
   } catch (e) {
@@ -1691,6 +1685,8 @@ async function persistUrlscanLinkResult(message, url, res) {
                 if (item && (item.url === reqUrl || item.url === reqUrlSlash)) {
                     item.urlscan = {
                         status: res.status,
+                        ...(res.assessment?.assessmentVersion===1?{assessment:ThundyProviderResults.merge(item.urlscan?.uuid===res.uuid?item.urlscan?.assessment:null,res.assessment)}:{}),
+                        ...(typeof res.uuid==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(res.uuid)?{uuid:res.uuid}:{}),
                         reasons: Array.isArray(res.reasons) ? res.reasons : [],
                         ...(res.details && { details: res.details }),
                         ...(res.errorCode && { errorCode: res.errorCode }),
@@ -1731,7 +1727,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         let message = await getFirstDisplayedMessage(sender && sender.tab && sender.tab.id, { throwOnError: true });
         if (message && !message.headerMessageId && message.id != null) message={...message,headerMessageId:typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : 'message:' + message.id};
         if (!message || !message.headerMessageId || (request.messageId != null && request.messageId !== message.id)) {
-            sendResponse({status: 'UNKNOWN'});
+            await sendResponse({status: 'UNKNOWN'});
             return;
         }
 
@@ -1756,6 +1752,14 @@ async function handleCheckLinkState(request, sender, sendResponse) {
             }
         }
 
+        const forward=sendResponse;let incompleteProvider=false;
+        sendResponse=async result=>{
+            try{const latest=await getFromStore(db,'hybridanalysis',message.headerMessageId);const base=request.url.endsWith('/')?request.url.slice(0,-1):request.url;linkObj=latest?.links?.find(l=>l.url===base||l.url===base+'/')||linkObj;}catch(_){incompleteProvider=true;}
+            const fact=ThundyProviderResults.resource(linkObj),rank={unknown:0,none:1,suspicious:2,malicious:3},status=({MALICIOUS:'malicious',MALICIOUS_VISUAL:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[result.status]||'unknown';
+            if(rank[fact.verdict]>rank[status]&&['malicious','suspicious'].includes(fact.verdict))result={...result,status:fact.verdict==='malicious'?'MALICIOUS':'SUSPICIOUS',provider:fact.provider==='hybridanalysis'?'Hybrid Analysis':'urlscan.io',retainedFinding:true,check:{...result.check,origin:'stored',outcome:result.check?.outcome||'success',observedAt:fact.observedAt}};
+            else if(result.status==='CLEAN'&&(incompleteProvider||typeof ThundyScans!=='undefined'&&ThundyScans.get?.(message.id)?.assessmentIncomplete))result={...result,status:'UNKNOWN',check:{...result.check,outcome:'incomplete'}};
+            await forward(result);
+        };
         const messageContext = await getMessageAnalysisContext(message, sender?.tab?.id);
         if (messageContext && !linkObj) await indexedDB_save_links_to_db(message, [request.url]);
         const analysisContext = messageContext?.forLinks ? await messageContext.forLinks([linkObj?.url || request.url]) : messageContext;
@@ -1764,6 +1768,8 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         if (request.userAction === true && urlscanApikey && tierAtLeast('max') && (!linkObj || linkObj.state === 'UNKNOWN')) {
             try {
                 const res = await checkUrlscanIo(request.url, urlscanApikey, analysisContext);
+                if(res?.status==='UNKNOWN'){incompleteProvider=true;await persistUrlscanLinkResult(message,request.url,res);}
+                if(['ERROR','TIMEOUT'].includes(res?.status))incompleteProvider=true;
                 const outcome = res?.status === 'NOT_CHECKED' ? 'not_requested' :
                     res?.errorCode === 'rate_limited' ? 'rate_limited' :
                     res?.errorCode === 'invalid_key' ? 'invalid_key' : 'failed';
@@ -1779,7 +1785,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                 if (res && res.status !== 'ERROR' && res.status !== 'TIMEOUT' && res.status !== 'NOT_CHECKED') {
                     await persistUrlscanLinkResult(message, request.url, res);
                     // Wir überschreiben das Verhalten: Wenn es Visuelles Phishing ist, sofort warnen
-                    sendResponse({ status: res.status, reasons: res.reasons, provider: 'urlscan.io', check: { origin: 'live', outcome: 'success', attemptedAt: Date.now(), observedAt: Date.now() } });
+                    await sendResponse({ status: res.status, reasons: res.reasons, provider: 'urlscan.io', check: { origin: 'live', outcome: 'success', attemptedAt: Date.now(), observedAt: Date.now() } });
                     return;
                 } else if (res && (res.status === 'ERROR' || res.status === 'TIMEOUT')) {
                     await persistUrlscanLinkResult(message, request.url, res);
@@ -1791,7 +1797,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
         }
 
         if (linkObj && linkObj.urlscan && ['MALICIOUS_VISUAL', 'MALICIOUS', 'SUSPICIOUS', 'CLEAN'].includes(linkObj.urlscan.status) && (!linkObj.hybrid_sha256 || linkObj.state === 'UNKNOWN')) {
-            sendResponse({
+            await sendResponse({
                 status: linkObj.urlscan.status,
                 reasons: Array.isArray(linkObj.urlscan.reasons) ? linkObj.urlscan.reasons : [],
                 provider: 'urlscan.io',
@@ -1815,9 +1821,9 @@ async function handleCheckLinkState(request, sender, sendResponse) {
             if (result && result.check && result.check.origin === 'live' && result.check.outcome === 'success' && typeof persistHybridLinkVerdict === 'function') {
                 await persistHybridLinkVerdict(message, linkObj.url, result);
             }
-            sendResponse({ ...result, provider: 'Hybrid Analysis' });
+            await sendResponse({ ...result, provider: 'Hybrid Analysis' });
         } else {
-            sendResponse({
+            await sendResponse({
                 status: 'UNKNOWN',
                 provider: urlscanAttempt ? 'urlscan.io' : 'none',
                 errorDetails: urlscanAttempt?.errorDetails || null,
@@ -1827,7 +1833,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
             });
         }
     } catch (err) {
-        sendResponse({status: 'ERROR'});
+        await sendResponse({status: 'ERROR'});
     }
 }
 
@@ -1855,42 +1861,7 @@ async function handleOpenCheckedLink(request, sender) {
     }
 }
 
-function extractHybridVerdictFromOverview(data) {
-    if (!data) return null;
-    if (Array.isArray(data)) {
-        if (data.length === 0) return null;
-        const candidateVerdicts = data.map(extractHybridVerdictFromOverview).filter(Boolean);
-        if (candidateVerdicts.includes('MALICIOUS')) return 'MALICIOUS';
-        if (candidateVerdicts.includes('SUSPICIOUS')) return 'SUSPICIOUS';
-        if (candidateVerdicts.includes('CLEAN')) return 'CLEAN';
-        if (candidateVerdicts.includes('UNKNOWN')) return 'UNKNOWN';
-        return null;
-    }
-    if (typeof data !== 'object') return null;
-    const rawState = typeof data.state === 'string' ? data.state.toUpperCase() : '';
-    const scannersArr = Array.isArray(data.scanners) ? data.scanners.filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
-    const scannersV2 = data.scanners_v2 && typeof data.scanners_v2 === 'object' && !Array.isArray(data.scanners_v2) ? Object.values(data.scanners_v2).filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
-    const allScanners = [...scannersArr, ...scannersV2];
-    const scannerPending = allScanners.some(s => typeof s.status === 'string' && ['in-progress', 'in_queue', 'in-queue', 'pending', 'running', 'queued'].includes(s.status.toLowerCase()));
-    if (rawState === 'IN_PROGRESS' || rawState === 'IN_QUEUE' || data.finished === false || scannerPending) return null;
-
-    const verdicts = { 'no specific threat': 'CLEAN', 'no threat': 'CLEAN', 'no-threat': 'CLEAN', clean: 'CLEAN', whitelisted: 'CLEAN', harmless: 'CLEAN', malicious: 'MALICIOUS', suspicious: 'SUSPICIOUS' };
-    const rawVerdict = typeof data.verdict === 'string' ? data.verdict.trim().toLowerCase() : '';
-    if (verdicts[rawVerdict]) return verdicts[rawVerdict];
-
-    const cleanStatuses = ['clean', 'whitelisted', 'no threat', 'no_threat', 'no-threat', 'harmless'];
-    const hasMaliciousScanner = allScanners.some(s => (typeof s.status === 'string' && s.status.toLowerCase() === 'malicious') || (Number.isFinite(s.positives) && s.positives > 0) || (Array.isArray(s.anti_virus_results) && s.anti_virus_results.some(av => typeof av?.verdict === 'string' && av.verdict.toLowerCase() === 'malicious')));
-    const hasSuspiciousScanner = allScanners.some(s => typeof s.status === 'string' && s.status.toLowerCase() === 'suspicious');
-    const hasCleanScanner = allScanners.some(s => (typeof s.status === 'string' && cleanStatuses.includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0)) || (Number.isFinite(s.positives) && s.positives === 0 && Number.isFinite(s.total) && s.total > 0));
-    const threatScore = typeof data.threat_score === 'number' && Number.isFinite(data.threat_score) ? data.threat_score : null;
-    const multiscan = typeof data.multiscan_result === 'number' && Number.isFinite(data.multiscan_result) ? data.multiscan_result : null;
-
-    if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50) || data.threat_level === 2) return 'MALICIOUS';
-    if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0) || data.threat_level === 1) return 'SUSPICIOUS';
-    if (data.whitelisted === true || hasCleanScanner || data.threat_level === 0 || (threatScore !== null && threatScore < 30)) return 'CLEAN';
-    if (rawVerdict === 'unknown') return 'UNKNOWN';
-    return null;
-}
+function extractHybridVerdictFromOverview(data) { return ThundyProviderResults.legacy('hybridanalysis',data); }
 
 /**
  * Returns the POST /quick-scan/* response as a storable report when it already

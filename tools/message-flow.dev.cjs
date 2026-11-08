@@ -42,7 +42,7 @@ async function injection(catalog, scheme) {
 async function prepareMessage(page, c, catalog) {
   const payload = await injection(catalog, c.scheme);
   const context = vm.createContext({URL, Date});
-  vm.runInContext(fs.readFileSync(path.join(__dirname,"../analysis_status.js"),"utf8") + "\nglobalThis.analysis=ThundyAnalysis;", context);
+  vm.runInContext(fs.readFileSync(path.join(__dirname,"../provider_results.js"),"utf8")+"\n"+fs.readFileSync(path.join(__dirname,"../analysis_status.js"),"utf8") + "\nglobalThis.analysis=ThundyAnalysis;", context);
   await page.evaluate(({source, labels, theme}) => {
     document.documentElement.dataset.thundyAnalysisMessage = "42";
     const rows = [

@@ -226,7 +226,7 @@ function addonMock({
             ? {success:true,record:null}
           : p.action === "getMessageAnalysis"
             ? {success:true,messageId:p.messageId,scanJob:{id:"synthetic-job",state:"pending",completed:2,total:2,manualAllowed:true},local:{state:"checked"},rows:[
-                {provider:"hybridanalysis",resource:"attachment:1.2",scope:"hash",responses:1,state:"checked",verdict:"none",source:"remote",observedAt:1791014400000},
+                {provider:"hybridanalysis",resource:"attachment:1.2",scope:"hash",responses:1,state:"incomplete",verdict:"malicious",assessmentVersion:1,completion:"pending",signals:[{code:"scanner",verdict:"malicious",value:2,total:35},{code:"verdict",verdict:"none"}],conflicts:["mixed_verdicts"],source:"remote",observedAt:1791014400000},
                 {provider:"virustotal",resource:"attachment:1.3",scope:"hash",responses:1,state:"checked",verdict:"none",source:"cache",observedAt:1791014400000},
                 {provider:"urlhaus",resource:"link:0",scope:"domain",responses:1,state:"checked",verdict:"none",source:"remote",observedAt:1791014400000},
                 {provider:"abuseipdb",resource:"message",scope:"ip",state:"failed",verdict:"malicious",source:"stored",responses:1,failures:1,observedAt:1791014400000},

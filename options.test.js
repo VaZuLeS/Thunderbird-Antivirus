@@ -82,7 +82,7 @@ describe('options.js', () => {
 
         vm.createContext(context);
         const code = fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8');
-        vm.runInContext(fs.readFileSync('provider_registry.js','utf8'), context);
+        vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8')), context);
         vm.runInContext(code, context);
 
         // Trigger DOMContentLoaded for all tests so listeners are attached
@@ -328,7 +328,7 @@ describe('atomic consent save', () => {
                 runtime: { sendMessage: async () => ({ status: 'success' }) }
             }
         });
-        vm.runInContext(fs.readFileSync('provider_registry.js','utf8'),context);
+        vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8')),context);
         vm.runInContext(fs.readFileSync('api_gateway.js','utf8'),context);
         vm.runInContext(fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8'), context);
         dom.window.document.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
@@ -379,7 +379,7 @@ describe('ProviderKeyTester and test buttons', () => {
                 get: (k) => k
             }
         });
-        vm.runInContext(fs.readFileSync('provider_registry.js','utf8'),context);
+        vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8')),context);
         vm.runInContext(fs.readFileSync('api_gateway.js','utf8'),context);
         vm.runInContext(fs.readFileSync(path.join(__dirname, 'options.js'), 'utf8') + '\nglobalThis.tester = ProviderKeyTester;', context);
         return context.tester;
@@ -637,7 +637,7 @@ describe('ProviderKeyTester and test buttons', () => {
                     get: (k) => k
                 }
             });
-            vm.runInContext(fs.readFileSync('provider_registry.js','utf8'),context);
+            vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8')),context);
             vm.runInContext(fs.readFileSync('api_gateway.js','utf8'),context);
             vm.runInContext(source, context);
 

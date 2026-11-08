@@ -16,7 +16,7 @@ function popup(record = { attachments: [], links: [] }) {
         fetch: async url => { requests.push(url); return { status: 200, json: async () => ({ state: 'IN_PROGRESS' }) }; },
         browser: { runtime: { onMessage: { addListener() {} } } }
     });
-    const source = fs.readFileSync('api.js', 'utf8')
+    const source = (fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('api.js', 'utf8'))
         .replace(/^\(async \(\) => \{/m, 'async function initializeForTest() {')
         .replace(/\}\)\(\);/m, '}');
     vm.runInContext(source + '\nexternalAnalysisConsent = true;', context);
@@ -107,10 +107,10 @@ test('no quick-scan fallback without a usable submission id and non-JSON errors 
 });
 
 test('quickScanReport keeps scanner payloads and drops bare submission receipts', () => {
-    const source = fs.readFileSync('background.js', 'utf8');
+    const source = (fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('background.js', 'utf8'));
     const start = source.indexOf('function quickScanReport('), end = source.indexOf('\n}', start) + 2;
     const context = vm.createContext({});
-    vm.runInContext(source.slice(start, end), context);
+    vm.runInContext(fs.readFileSync('provider_results.js','utf8')+'\n'+source.slice(start, end), context);
     assert.equal(context.quickScanReport({ job_id: 'j', submission_id: 's', sha256: 'x' }), null);
     assert.equal(context.quickScanReport(null), null);
     const payload = { id: 'qs', finished: true, scanners_v2: { metadefender: { status: 'no-classification' } } };
@@ -162,7 +162,7 @@ function loadSlice(file, name, context) {
     const source = fs.readFileSync(file, 'utf8');
     const start = source.search(new RegExp('(async )?function ' + name + '\\(')), end = source.indexOf('\n}', start) + 2;
     assert.ok(start >= 0, name);
-    vm.runInContext(source.slice(start, end), context);
+    vm.runInContext(fs.readFileSync('provider_results.js','utf8')+'\n'+source.slice(start, end), context);
 }
 
 test('attachment findings from Hybrid Analysis and VirusTotal raise the threat score with reasons', () => {
@@ -200,7 +200,8 @@ test('collectAttachmentFindings derives verdicts from stored reports and VirusTo
     assert.deepEqual(JSON.parse(JSON.stringify(findings)), [
         { name: 'a.exe', verdict: 'malicious', provider: 'Hybrid Analysis' },
         { name: 'b.doc', verdict: 'malicious', provider: 'VirusTotal' },
-        { name: 'c.js', verdict: 'suspicious', provider: 'Hybrid Analysis' }
+        { name: 'c.js', verdict: 'suspicious', provider: 'Hybrid Analysis' },
+        { name: 'd.pdf', verdict: 'malicious', provider: 'Hybrid Analysis' }
     ]);
     context.get_sha256_hash=async()=>'b'.repeat(64);
     assert.equal((await context.collectAttachmentFindings({id:4})).length,0,'different attachment bytes never inherit findings');
@@ -217,7 +218,7 @@ test('a live Hybrid Analysis link verdict is persisted and restored into the pro
     assert.equal(record.links[1].hybrid_verdict, undefined);
 
     const statusContext = vm.createContext({ console });
-    vm.runInContext(fs.readFileSync('analysis_status.js', 'utf8'), statusContext);
+    vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('analysis_status.js', 'utf8')), statusContext);
     const analysis = vm.runInContext('typeof ThundyAnalysis !== "undefined" ? ThundyAnalysis : this.ThundyAnalysis', statusContext);
     const data = analysis.legacy({ links: [{ url: 'https://x.invalid/', state: 'UPLOADED', hybrid_verdict: { status: 'MALICIOUS', observedAt: 1234 } }] });
     const row = data.rows.find(r => r.provider === 'hybridanalysis');

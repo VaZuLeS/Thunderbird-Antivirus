@@ -99,7 +99,7 @@ class ApiGateway {
         for (const controller of this.controllers) controller.abort();
     }
 
-    acquire(host, signal) {
+    acquire(host, signal, limit = 2) {
         return new Promise((resolve, reject) => {
             const queue = this.waiting.get(host) || [];
             this.waiting.set(host, queue);
@@ -119,7 +119,7 @@ class ApiGateway {
             };
             if (signal.aborted) { cancelled(); return; }
             signal.addEventListener('abort', cancelled, { once: true });
-            if ((this.active.get(host) || 0) < 2) item.start();
+            if ((this.active.get(host) || 0) < limit) item.start();
             else queue.push(item);
         });
     }
@@ -213,8 +213,9 @@ class ApiGateway {
         fetchOptions.redirect = 'error';
         let started = false, responded = false;
 
-        let release;
+        let release,releaseSubmission;
         try {
+            if(typeof ThundyProviders !== 'undefined') { const {provider,config,scope}=ThundyProviders.identify(url,options.method);if((options.method||'GET').toUpperCase()==='POST'&&scope==='url'&&config.submitConcurrency)releaseSubmission=await this.acquire('submit:'+provider,controller.signal,config.submitConcurrency); }
             release = await this.acquire(hostname || new URL(url).hostname, controller.signal);
             options.analysisContext?.guard?.();
         if (options.keyTestAuthorization) await options.keyTestAuthorization();
@@ -245,6 +246,7 @@ class ApiGateway {
                 try { data = await response.json(); }
                 catch(error) { if(response.status>=200&&response.status<300)throw error;data=null; }
                 data=this.sanitizeResponse(data,fetchOptions);
+                await options.analysisContext?.validateResponse?.(data);
                 observedData = data;
                 response.json = async () => data;
             }
@@ -276,7 +278,7 @@ class ApiGateway {
             if (info) emit({ phase: 'finish', responded: true, ...(typeof ThundyProviders !== 'undefined' ? ThundyProviders.registry[info.provider].normalize(info,response.status,observedData) : ThundyAnalysis.response(info, response.status, observedData)), ...(typeof ThundyProviders !== 'undefined' ? ThundyProviders.metadata(info.provider,observedData,response.status) : {}), observedAt: Date.now() });
             return response;
         } catch (error) {
-            if (info && started) emit({ phase: 'finish', responded, state: 'failed', verdict: 'unknown', errorDetails: error.code || error.name || 'Request failed', observedAt: null });
+            if (info && started) emit({ phase: 'finish', responded, state: 'failed', verdict: 'unknown',errorCode:error.code||error.name, errorDetails: error.code || error.name || 'Request failed', observedAt: null });
             clearTimeout(id);
             if (error.name === 'AbortError') {
                 throw new Error(typeof ThundyI18n !== 'undefined' ? ThundyI18n.get('gatewayRequestTimeout') : `[ApiGateway] Request cancelled or timed out after ${timeout}ms`);
@@ -288,6 +290,7 @@ class ApiGateway {
             upstreamSignal?.removeEventListener('abort',upstreamAbort);
             this.controllers.delete(controller);
             if (release) release();
+            if (releaseSubmission) releaseSubmission();
         }
     }
 

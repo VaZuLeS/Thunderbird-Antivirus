@@ -181,6 +181,7 @@ function extractUrlscanBrandNames(verdicts) {
 }
 
 async function checkUrlscanIo(url, apikey, analysisContext = null) {
+    let submittedUuid=null;
     if (!apikey) return null;
     if (!mayTransmitExternally()) return null;
     if (!tierAtLeast('max')) return { status: 'NOT_CHECKED' };
@@ -225,16 +226,16 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
         if (!scanRes.ok) throw new Error(uiText("ui_100", "Fehler beim Starten des Scans (urlscan.io): ") + scanRes.status);
 
         const scanData = await scanRes.json();
-        const uuid = scanData.uuid;
+        const uuid = scanData.uuid;submittedUuid=uuid;
 
         if (!uuid) throw new Error(uiText("ui_101", "Keine UUID von urlscan.io erhalten."));
 
         if(analysisContext?.submitted)await analysisContext.submitted(uuid);
         const result=await pollUrlscanIoResult(uuid, apikey, analysisContext);
-        return analysisContext?.submitted?{...result,uuid}:result;
+        return {...result,uuid};
     } catch (e) {
         Logger.error("Fehler bei urlscan.io Abfrage", e);
-        return { status: 'ERROR', errorCode: 'fetch_failed', details: e.message };
+        return { status: 'ERROR', errorCode: 'fetch_failed', details: e.message,...(submittedUuid?{uuid:submittedUuid}:{}) };
     }
 }
 
@@ -246,6 +247,7 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
 
     const pollContext = analysisContext ? {
         ...analysisContext,
+        validateResponse:data=>{analysisContext.validateResponse?.(data);if(data?.task?.uuid&&data.task.uuid!==uuid)throw Object.assign(Error('RESOURCE_MISMATCH'),{code:'RESOURCE_MISMATCH'});},
         event: (evt) => {
             if (evt && evt.phase === 'finish' && evt.state === 'incomplete' && Date.now() < deadline) {
                 return;
@@ -273,43 +275,20 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
         if (resultRes.status === 200) {
             const resultData = await resultRes.json();
 
-            let isMalicious = false;
-            let isSuspicious = false;
-            let reasons = [];
-
-            const verdicts = resultData && resultData.verdicts ? resultData.verdicts : {};
-            const overallScore = Number.isFinite(verdicts.overall?.score) ? verdicts.overall.score : null;
-            const urlscanScore = Number.isFinite(verdicts.urlscan?.score) ? verdicts.urlscan.score : null;
-            const enginesMalicious = Boolean(verdicts.engines?.malicious || (Number.isFinite(verdicts.engines?.maliciousTotal) && verdicts.engines.maliciousTotal > 0));
-
-            if ((verdicts.overall && verdicts.overall.malicious) || enginesMalicious || (overallScore !== null && overallScore >= 80)) {
-                isMalicious = true;
-                addReason(reasons, "ui_102", "Die URL wurde von urlscan.io generell als bösartig eingestuft.");
-            } else if ((overallScore !== null && overallScore >= 50) || (urlscanScore !== null && urlscanScore >= 50)) {
-                isSuspicious = true;
-                addReason(reasons, "ui_102", "Die URL wurde von urlscan.io generell als bösartig eingestuft.");
-            }
-
-            const brandNames = extractUrlscanBrandNames(verdicts);
-            if (brandNames.length > 0) {
-                 // Check if it's visually trying to spoof a brand
-                 if ((verdicts.urlscan && verdicts.urlscan.malicious) || isMalicious || isSuspicious) {
-                    isMalicious = true;
-                    addReason(reasons, 'visualImpersonation', 'Visuelle Erkennung: Die Seite gibt sich als $1 aus (Phishing-Verdacht).', [brandNames.join(', ')]);
-                 }
-            }
-
+            if(resultData?.task?.uuid && resultData.task.uuid!==uuid) return {status:'ERROR',errorCode:'resource_mismatch'};
+            const assessment=ThundyProviderResults.evaluate('urlscan',resultData,'report');
+            const reasons=[];
+            if(assessment.verdict==='malicious')addReason(reasons,'ui_102','Die URL wurde von urlscan.io generell als bösartig eingestuft.');
+            else if(assessment.verdict==='suspicious')addReason(reasons,'providerSuspicious','The provider reported suspicious indicators.');
+            const brandNames=extractUrlscanBrandNames(resultData.verdicts||{});
+            if(assessment.verdict==='malicious'&&resultData.verdicts?.urlscan?.malicious===true&&brandNames.length)addReason(reasons,'visualImpersonation','Visuelle Erkennung: Die Seite gibt sich als $1 aus (Phishing-Verdacht).',[brandNames.join(', ')]);
             const rawReportUrl = typeof resultData?.task?.reportURL === 'string' && /^https:\/\/urlscan\.io\/result\//i.test(resultData.task.reportURL)
                 ? resultData.task.reportURL
                 : `https://urlscan.io/result/${encodeURIComponent(uuid)}/`;
 
-            if (isMalicious) {
-                return { status: 'MALICIOUS_VISUAL', reasons: reasons, reportUrl: rawReportUrl };
-            } else if (isSuspicious) {
-                return { status: 'SUSPICIOUS', reasons: reasons, reportUrl: rawReportUrl };
-            } else {
-                return { status: 'CLEAN', reportUrl: rawReportUrl };
-            }
+            if(assessment.completion==='complete')analysisContext?.event?.({...assessment,provider:'urlscan',scope:'url',phase:'assessment',observedAt:Date.now()});
+            const visual=assessment.verdict==='malicious'&&resultData.verdicts?.urlscan?.malicious===true&&brandNames.length>0;
+            return {status:assessment.state==='failed'?'ERROR':assessment.verdict==='malicious'?visual?'MALICIOUS_VISUAL':'MALICIOUS':assessment.verdict==='suspicious'?'SUSPICIOUS':assessment.verdict==='none'?'CLEAN':'UNKNOWN',assessment,reasons,reportUrl:rawReportUrl,...(assessment.errorCode?{errorCode:assessment.errorCode}:{})};
         } else if (resultRes.status === 404) {
             // Not ready yet, continue polling
         } else if (resultRes.status === 429) {

@@ -116,7 +116,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     container: debian:trixie
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Install real Thunderbird and isolated X11 runtime
         run: |
@@ -175,7 +175,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: thunderbird-linux-live
-          path: .audit/thunderbird-live/
+          path: |
+            .audit/thunderbird-live/
+            !.audit/thunderbird-live/**/.rollback-profile/**
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 14

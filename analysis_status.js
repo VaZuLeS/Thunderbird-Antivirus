@@ -74,34 +74,7 @@ const ThundyAnalysis = (() => {
             return { state: 'failed', verdict: 'unknown', errorCode: 'invalid_key', errorDetails };
         }
         if (!(status >= 200 && status < 300)) return { state: 'failed', verdict: 'unknown' };
-        if (info.provider === 'hybridanalysis') {
-            if (Array.isArray(data)) {
-                if (data.length === 0) return result;
-                const responses = data.map(item => response(info, status, item));
-                if (responses.some(r => r.verdict === 'malicious')) return { state: 'checked', verdict: 'malicious' };
-                if (responses.some(r => r.verdict === 'suspicious')) return { state: 'checked', verdict: 'suspicious' };
-                if (responses.some(r => r.verdict === 'none')) return { state: 'checked', verdict: 'none' };
-                return responses[0] || result;
-            }
-            if ((info.scope === 'file' || info.scope === 'url') && (data?.submission_id || data?.job_id || (data?.id && data?.finished !== true && !data?.verdict))) return { state: 'submitted', verdict: 'unknown' };
-            const rawState = typeof data?.state === 'string' ? data.state.toUpperCase() : '';
-            const scannersArr = Array.isArray(data?.scanners) ? data.scanners.filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
-            const scannersV2 = data?.scanners_v2 && typeof data.scanners_v2 === 'object' && !Array.isArray(data.scanners_v2) ? Object.values(data.scanners_v2).filter(s => s && typeof s === 'object' && !Array.isArray(s)) : [];
-            const allScanners = [...scannersArr, ...scannersV2];
-            const scannerPending = allScanners.some(s => typeof s.status === 'string' && ['in-progress', 'in_queue', 'in-queue', 'pending', 'running', 'queued'].includes(s.status.toLowerCase()));
-            if (rawState === 'IN_PROGRESS' || rawState === 'IN_QUEUE' || data?.finished === false || scannerPending) return { state: 'incomplete', verdict: 'unknown' };
-            const value = typeof data?.verdict === 'string' ? data.verdict.trim().toLowerCase() : '';
-            if (['malicious', 'suspicious', 'no specific threat', 'no threat', 'no-threat', 'clean', 'whitelisted', 'harmless'].includes(value)) return { state: 'checked', verdict: ['no specific threat', 'no threat', 'no-threat', 'clean', 'whitelisted', 'harmless'].includes(value) ? 'none' : value };
-            const cleanStatuses = ['clean', 'whitelisted', 'no threat', 'no_threat', 'no-threat', 'harmless'];
-            const hasMaliciousScanner = allScanners.some(s => (typeof s.status === 'string' && s.status.toLowerCase() === 'malicious') || (Number.isFinite(s.positives) && s.positives > 0) || (Array.isArray(s.anti_virus_results) && s.anti_virus_results.some(av => typeof av?.verdict === 'string' && av.verdict.toLowerCase() === 'malicious')));
-            const hasSuspiciousScanner = allScanners.some(s => typeof s.status === 'string' && s.status.toLowerCase() === 'suspicious');
-            const hasCleanScanner = allScanners.some(s => (typeof s.status === 'string' && cleanStatuses.includes(s.status.toLowerCase()) && (!Number.isFinite(s.positives) || s.positives === 0)) || (Number.isFinite(s.positives) && s.positives === 0 && Number.isFinite(s.total) && s.total > 0));
-            const threatScore = typeof data?.threat_score === 'number' && Number.isFinite(data.threat_score) ? data.threat_score : null;
-            const multiscan = typeof data?.multiscan_result === 'number' && Number.isFinite(data.multiscan_result) ? data.multiscan_result : null;
-            if (hasMaliciousScanner || (threatScore !== null && threatScore >= 70) || (multiscan !== null && multiscan >= 50) || data?.threat_level === 2) return { state: 'checked', verdict: 'malicious' };
-            if (hasSuspiciousScanner || (threatScore !== null && threatScore >= 30) || (multiscan !== null && multiscan > 0) || data?.threat_level === 1) return { state: 'checked', verdict: 'suspicious' };
-            if (data?.whitelisted === true || hasCleanScanner || data?.threat_level === 0 || (threatScore !== null && threatScore < 30)) return { state: 'checked', verdict: 'none' };
-        }
+        if (['hybridanalysis','urlscan'].includes(info.provider)) { const a=ThundyProviderResults.evaluate(info.provider,data,info.scope);return {state:a.state,verdict:a.verdict}; }
         if (info.provider === 'virustotal') {
             const stats = data?.data?.attributes?.last_analysis_stats || data?.attributes?.last_analysis_stats || data?.last_analysis_stats;
             if (Number.isFinite(stats?.malicious)) return { state: 'checked', verdict: stats.malicious > 0 ? 'malicious' : stats.suspicious > 0 ? 'suspicious' : 'none' };
@@ -122,20 +95,6 @@ const ThundyAnalysis = (() => {
             const score = data.data.abuseConfidenceScore;
             const whitelisted = data.data.isWhitelisted === true;
             return { state: 'checked', verdict: whitelisted ? 'none' : score > 50 ? 'malicious' : score >= 25 ? 'suspicious' : 'none' };
-        }
-        if (info.provider === 'urlscan') {
-            if (typeof data?.uuid === 'string' && !data?.verdicts) return { state: 'submitted', verdict: 'unknown' };
-            const overall = data?.verdicts?.overall, us = data?.verdicts?.urlscan, eng = data?.verdicts?.engines;
-            const hasBool = typeof overall?.malicious === 'boolean' || typeof us?.malicious === 'boolean' || typeof eng?.malicious === 'boolean';
-            const hasScore = Number.isFinite(overall?.score) || Number.isFinite(us?.score) || Number.isFinite(eng?.maliciousTotal);
-            if (hasBool || hasScore) {
-                if (overall?.malicious || us?.malicious || eng?.malicious || (Number.isFinite(eng?.maliciousTotal) && eng.maliciousTotal > 0) || (Number.isFinite(overall?.score) && overall.score >= 80)) return { state: 'checked', verdict: 'malicious' };
-                if ((Number.isFinite(overall?.score) && overall.score >= 50) || (Number.isFinite(us?.score) && us.score >= 50)) return { state: 'checked', verdict: 'suspicious' };
-                return { state: 'checked', verdict: 'none' };
-            }
-            if ((data?.task || data?.page) && (data?.page || data?.lists)) {
-                return { state: 'checked', verdict: 'none' };
-            }
         }
         return result;
     }
@@ -169,6 +128,8 @@ const ThundyAnalysis = (() => {
             for (const old of (Array.isArray(stored.rows) ? stored.rows : []).slice(0, 1200)) {
                 if (!storedObject(old) || !providers.includes(old.provider) || !scopes.includes(old.scope)) { data.sourceDataIncomplete = true; continue; }
                 const row = { provider: old.provider, scope: old.scope, resource: validResource(old.resource) ? old.resource : null, source: 'stored', active: 0, state: states.includes(old.state) && old.state !== 'running' ? old.state : 'incomplete', verdict: verdicts.includes(old.verdict) ? old.verdict : 'unknown', responses: Number.isSafeInteger(old.responses) && old.responses > 0 ? Math.min(old.responses, 100000) : 0, failures: Number.isSafeInteger(old.failures) && old.failures > 0 ? Math.min(old.failures, 100000) : 0, cacheHits: Number.isSafeInteger(old.cacheHits) && old.cacheHits > 0 ? Math.min(old.cacheHits, 100000) : 0, observedAt: Number.isFinite(old.observedAt) ? old.observedAt : null, findingAt: Number.isFinite(old.findingAt) ? old.findingAt : null, attemptedAt: Number.isFinite(old.attemptedAt) ? old.attemptedAt : null, errorCode: typeof old.errorCode === 'string' ? old.errorCode.slice(0, 50) : null, errorDetails: typeof old.errorDetails === 'string' ? old.errorDetails.slice(0, 200) : null, retryAfter: Number.isFinite(old.retryAfter) ? old.retryAfter : null };
+                Object.assign(row,ThundyProviderResults.project(old));
+                if(typeof old.providerJobId==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(old.providerJobId))row.providerJobId=old.providerJobId;
                 for(const key of ['httpStatus','maliciousCount','suspiciousCount','totalCount','providerScore','reportCount']) if(Number.isFinite(old[key])&&old[key]>=0)row[key]=old[key];
                 if(typeof old.providerVerdict==='string'&&/^[a-z _-]{1,40}$/i.test(old.providerVerdict))row.providerVerdict=old.providerVerdict;
                 if (!data.rows.some(current => rowKey(current) === rowKey(row))) data.rows.push(row);
@@ -176,11 +137,13 @@ const ThundyAnalysis = (() => {
             if (stored.rows?.length > 1200) data.truncated = true;
         }
         function event(e) {
-            if (!e || !providers.includes(e.provider) || !scopes.includes(e.scope) || !['start', 'finish', 'cache'].includes(e.phase) || e.resource != null && !validResource(e.resource)) return false;
+            if (!e || !providers.includes(e.provider) || !scopes.includes(e.scope) || !['start', 'finish', 'cache', 'assessment'].includes(e.phase) || e.resource != null && !validResource(e.resource)) return false;
             if (e.phase !== 'start' && (!states.includes(e.state) || !verdicts.includes(e.verdict))) return false;
+            if(e.phase==='assessment'&&e.assessmentVersion!==1)return false;
             const resource = e.resource || null;
             let row = data.rows.find(r => r.provider === e.provider && r.scope === e.scope && r.resource === resource);
             if (!row) {
+                if(e.phase==='assessment')return false;
                 if (data.rows.length >= 1200) { data.truncated = true; return false; }
                 row = { provider: e.provider, scope: e.scope, resource, state: 'running', verdict: 'unknown', source: 'attempt', active: 0, responses: 0, failures: 0, cacheHits: 0, observedAt: null, attemptedAt: null };
                 data.rows.push(row);
@@ -188,9 +151,12 @@ const ThundyAnalysis = (() => {
             if (e.phase === 'start') { row.active++; row.attemptedAt = Date.now(); row.state = 'running'; return true; }
             if (e.phase === 'finish') row.active = Math.max(0, row.active - 1);
             if (e.phase === 'cache') { row.cacheHits++; row.source = 'cache'; }
-            else row.source = e.responded ? 'remote' : row.responses ? row.source : 'attempt';
-            if (e.state === 'failed') row.failures++;
-            else row.responses++;
+            else if(e.phase!=='assessment')row.source = e.responded ? 'remote' : row.responses ? row.source : 'attempt';
+            if(e.phase!=='assessment'){if (e.state === 'failed') row.failures++;
+            else row.responses++;}
+            Object.assign(row,ThundyProviderResults.project(ThundyProviderResults.merge(row,e)));
+            if(e.state==='failed'&&row.assessmentVersion)row.completion='failed';
+            if(typeof e.providerJobId==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(e.providerJobId))row.providerJobId=e.providerJobId;
             for(const key of ['httpStatus','maliciousCount','suspiciousCount','totalCount','providerScore','reportCount']) if(Number.isFinite(e[key])&&e[key]>=0)row[key]=e[key];
             if(typeof e.providerVerdict==='string'&&/^[a-z _-]{1,40}$/i.test(e.providerVerdict))row.providerVerdict=e.providerVerdict;
             if (e.errorCode && typeof e.errorCode === 'string') row.errorCode = e.errorCode;
@@ -219,13 +185,13 @@ const ThundyAnalysis = (() => {
                 if (!documented.has(rowKey(info))) model.event({ ...info, phase: 'cache', state: 'checked', verdict: hvVerdict, observedAt: Number.isFinite(item.hybrid_verdict.observedAt) ? item.hybrid_verdict.observedAt : null });
             } else if (report || ['KNOWN', 'UPLOADED'].includes(item.state)) {
                 const info = { provider: 'hybridanalysis', scope: report ? 'report' : item.url ? 'url' : item.state === 'UPLOADED' ? 'file' : 'hash', resource };
-                if (!documented.has(rowKey(info))) model.event({ ...info, phase: 'cache', ...(report ? response(info, 200, report) : { state: item.state === 'UPLOADED' ? 'submitted' : 'received', verdict: 'unknown' }), observedAt: report && Number.isFinite(Date.parse(item.report_fetched_at)) ? Date.parse(item.report_fetched_at) : null });
+                if (!documented.has(rowKey(info)) || report && !model.data.rows.find(r=>rowKey(r)===rowKey(info))?.assessmentVersion) model.event({ ...info, phase: 'cache', ...(report ? ThundyProviderResults.stored('hybridanalysis',item) : { state: item.state === 'UPLOADED' ? 'submitted' : 'received', verdict: 'unknown' }), observedAt: report && Number.isFinite(Date.parse(item.report_fetched_at)) ? Date.parse(item.report_fetched_at) : null });
             }
             const vt = {provider:'virustotal',scope:'hash',resource};
             if (!documented.has(rowKey(vt)) && Number.isFinite(item.virustotal_stats?.malicious)) model.event({ ...vt, phase: 'cache', state: 'checked', verdict: item.virustotal_stats.malicious > 0 ? 'malicious' : item.virustotal_stats.suspicious > 0 ? 'suspicious' : 'none', observedAt: null });
             const us = {provider:'urlscan',scope:'url',resource};
-            const usVerdict = ({MALICIOUS_VISUAL:'malicious',MALICIOUS:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[item.urlscan?.status];
-            if (!documented.has(rowKey(us)) && usVerdict) model.event({ ...us, phase: 'cache', state: 'checked', verdict: usVerdict, observedAt: Number.isFinite(item.urlscan?.observedAt) ? item.urlscan.observedAt : null });
+            const usVerdict = item.urlscan?.assessment?.assessmentVersion===1?ThundyProviderResults.stored('urlscan',item.urlscan).verdict:({MALICIOUS_VISUAL:'malicious',MALICIOUS:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[item.urlscan?.status];
+            if (!documented.has(rowKey(us)) && usVerdict) model.event({ ...us, phase: 'cache', state: item.urlscan?.status==='ERROR'?'failed':item.urlscan?.assessment?.assessmentVersion===1?ThundyProviderResults.stored('urlscan',item.urlscan).state:'checked', verdict: usVerdict, ...(item.urlscan?.errorCode?{errorCode:item.urlscan.errorCode}:{}), ...ThundyProviderResults.project(item.urlscan?.assessment),observedAt: Number.isFinite(item.urlscan?.observedAt) ? item.urlscan.observedAt : null });
         }
         for (const row of model.data.rows) row.source = 'stored';
         return model.data;
@@ -333,6 +299,11 @@ const ThundyAnalysis = (() => {
             entry.append(n('p',brand,'service-status'));
             if (verdict && verdict !== 'unknown') entry.append(n('p', t('analysisVerdict_' + verdict), warning ? 'warning' : ''));
             if (errorDetails) entry.append(n('p', errorDetails, 'warning'));
+            if(body.completion)entry.append(n('p',t('assessmentCompletion')+': '+t('assessmentCompletion_'+body.completion)));
+            if(body.providerJobId)entry.append(n('p',t('assessmentJob')+': '+body.providerJobId));
+            if(body.conflicts?.includes('mixed_verdicts'))entry.append(n('p',t('assessmentConflict'),'warning'));
+            if(body.signals?.length){entry.append(n('strong',t('assessmentSignals')));const list=n('ul','');for(const signal of body.signals){const item=n('li',t('assessmentSignal_'+signal.code)+' · '+t('analysisVerdict_'+signal.verdict)+(Number.isFinite(signal.value)?' · '+signal.value:'')+(Number.isFinite(signal.total)?' / '+signal.total:''));list.append(item);}entry.append(list);}
+
             entry.append(n('p', t('analysisFindingObserved') + ': ' + date(findingAt)));
             entry.append(n('small', t('analysisObserved') + ': ' + date(observedAt) + ' · ' + t('analysisAttempted') + ': ' + date(attemptedAt)));
         };
@@ -364,7 +335,7 @@ const ThundyAnalysis = (() => {
                     const warning = ['malicious','suspicious'].includes(row.verdict);
                     const entry = details(key, resourceName(row) + ' · ' + t('analysisScope_' + row.scope) + ' · ' + t('analysisState_' + row.state) + ' · ' + t('analysisSource_' + row.source) + (warning ? ' · ' + t('analysisVerdict_' + row.verdict) : ''));
                     if (warning) entry.querySelector('summary').className = 'warning';
-                    detailBodies.set(entry,{brand,verdict:row.verdict,warning,findingAt:row.findingAt,observedAt:row.observedAt,attemptedAt:row.attemptedAt,errorDetails:row.errorDetails});
+                    detailBodies.set(entry,{brand,verdict:row.verdict,warning,findingAt:row.findingAt,observedAt:row.observedAt,attemptedAt:row.attemptedAt,errorDetails:row.errorDetails,completion:row.completion,signals:row.signals,conflicts:row.conflicts,providerJobId:row.providerJobId});
                     if (entry.open) hydrate(entry);
                     if (warning && !warningTargets[row.verdict]) warningTargets[row.verdict] = entry;
                     li.append(entry);
@@ -455,6 +426,10 @@ const ThundyAnalysis = (() => {
         const uncertain=jobBusy||['pending','incomplete','failed'].includes(data.scanJob?.state)||data.unavailable||sourceDataIncomplete||!local||failures||running||waiting||incomplete||rows.some(row=>['unknown'].includes(row.verdict));
         const title=danger?'analysisSimpleDanger':flagged.length||data.local?.score>=50?'analysisSimpleCaution':uncertain?'analysisSimpleIncomplete':'analysisSimpleNone';
         overview.append(n('h2',t(title)),n('p',localLabel),n('p',t('analysisSimpleBasis')+': '+new Set(rows.filter(row=>['none','suspicious','malicious'].includes(row.verdict)).map(row=>row.provider)).size+' / '+new Set(rows.filter(row=>row.state==='failed'||row.failures>0).map(row=>row.provider)).size));
+        if(rows.some(r=>r.completion==='pending'))overview.append(n('p',t('assessmentCompletion_pending')));
+        if(rows.some(r=>r.completion==='complete'&&r.verdict==='unknown'))overview.append(n('p',t('assessmentCompletion_unknown')));
+        if(rows.some(r=>r.completion==='failed'))overview.append(n('p',t('assessmentCompletion_failed'),'warning'));
+        if(rows.some(r=>r.conflicts?.includes('mixed_verdicts')))overview.append(n('p',t('assessmentConflict'),'warning'));
         const reasons=n('ul','');
         const topReasons=[...(Array.isArray(data.local?.reasons)?data.local.reasons:[]),...flagged.map(row=>(brands[row.provider]||row.provider)+': '+t('analysisVerdict_'+row.verdict))].slice(0,3);
         for(const reason of topReasons)reasons.append(n('li',String(reason)));
@@ -475,12 +450,12 @@ const ThundyAnalysis = (() => {
         const actions=n('section','','scan-actions');actions.setAttribute('aria-label',t('scanActions'));
         if(data.scanJob){
             const job=data.scanJob;const needsRefresh=job.pending||job.state==='pending';const state=n('p',t('scanState_'+(job.state||'idle')));state.setAttribute('role','status');actions.append(state);
-            if(job.total)actions.append(n('p',t('scanProgress').replace('$1',String(job.completed)).replace('$2',String(job.total))));
+            if(job.total)actions.append(n('p',t('scanProgress')+': '+job.completed+' / '+job.total));
             const button=n('button',t(jobBusy?'scanRunning':needsRefresh?'scanRefresh':['completed','incomplete','failed'].includes(job.state)?'scanRepeat':'scanStart'));button.type='button';button.dataset.focusKey='scan-start';button.disabled=jobBusy||job.manualAllowed===false;
             button.addEventListener('click',async()=>{button.disabled=true;state.textContent=t('scanRunning');try{const response=await browser.runtime.sendMessage({action:'requestScan',messageId:data.messageId,contextToken:data.contextToken,operation:needsRefresh?'refresh':'scan'});if(!response?.success)throw Error('scan');state.textContent=t('scanState_'+(response.state||'queued'));}catch(_){state.textContent=t('scanState_failed');button.disabled=false;}});actions.append(button);
             const settings=n('button',t('bannerOpenOptions'));settings.type='button';settings.dataset.focusKey='scan-settings';settings.addEventListener('click',()=>browser.runtime.sendMessage({action:'openScanSettings'}));actions.append(settings);
             if(job.migration)actions.append(n('p',t('scanMigrationNotice')));
-            const reasons=n('ul','');for(const [id,value] of Object.entries(job.providers||{})){const unique=[...new Set((value.checks||[]).map(c=>c.reason).filter(Boolean))];if(value.state==='failed')unique.push(value.error==='rate_limited'?'quota':'provider_error');if(unique.length)reasons.append(n('li',(brands[id]||id)+': '+unique.map(reason=>t('analysisReason_'+reason)).join(' · ')));}if(reasons.childElementCount)actions.append(reasons);
+            const reasons=n('ul','');for(const [id,value] of Object.entries(job.providers||{})){const unique=[...new Set((value.checks||[]).map(c=>c.reason).filter(reason=>reason&&(reason!=='no_resources'||!value.checks.some(c=>!c.reason))))];if(value.state==='failed')unique.push(value.error==='rate_limited'?'quota':'provider_error');if(unique.length)reasons.append(n('li',(brands[id]||id)+': '+unique.map(reason=>t('analysisReason_'+reason)).join(' · ')));}if(reasons.childElementCount)actions.append(reasons);
         }
         root.replaceChildren(style, live, ...(data.scanJob?[actions]:[]), switcher, card, overview);
         if (wasPresent && changed) live.textContent = announcement;
@@ -500,7 +475,7 @@ const ThundyAnalysis = (() => {
         } };
     }
     function labels(get) {
-        const keys = ['scanActions','scanStart','scanRepeat','scanRefresh','scanRunning','scanProgress','scanMigrationNotice','scanState_idle','scanState_queued','scanState_running','scanState_completed','scanState_pending','scanState_incomplete','scanState_failed','scanState_blocked','bannerOpenOptions','auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
+        const keys = ['assessmentCompletion','assessmentCompletion_pending','assessmentCompletion_complete','assessmentCompletion_unknown','assessmentCompletion_failed','assessmentConflict','assessmentSignals','assessmentJob',...['verdict','scanner','threat_score','multiscan_result','threat_level','whitelist','overall','urlscan','engines','brand','report'].map(c=>'assessmentSignal_'+c),'scanActions','scanStart','scanRepeat','scanRefresh','scanRunning','scanProgress','scanMigrationNotice','scanState_idle','scanState_queued','scanState_running','scanState_completed','scanState_pending','scanState_incomplete','scanState_failed','scanState_blocked','bannerOpenOptions','auditLocalScore','analysisProviderConfigured','analysisProviderNoKey','analysisSimple','analysisExpert','analysisSimpleNone','analysisSimpleCaution','analysisSimpleDanger','analysisSimpleIncomplete','analysisSimpleBasis','analysisScoreExplanation','analysisApprovalRequired','analysisContinueWarning','analysisConflict','analysisExportSensitive','analysisModeResponses','analysisModeResponsesFailed','analysisCurrentAvailability','analysisStoredDataIncomplete','analysisCurrentFindWarning','analysisHistoryPages','analysisHistoryEntries','analysisHistoryFlagged','analysisHistoryFindWarning','auditPrevious','auditNext','analysisReportArchiveBlocked','analysisHistoryTitle','analysisHistoryWarning','analysisPersistenceFailed','analysisResources','analysisResourceLocal','analysisResourceTarget','analysisResourceNoExternal','analysisModeUnknown','analysisModeRunning','analysisModeSubmitted','analysisModeIncomplete','analysisModePartial','analysisModeFailed','analysisModeResults','analysisResourceMessage','analysisResourceAttachment','analysisResourceLink','analysisResourceUnknown','analysisTruncated','analysisUnavailable','analysisTitle','analysisUnknown','analysisTimeUnknown','analysisMixed','analysisExternal','analysisLocal','analysisLocalChecked','analysisLocalIncomplete','analysisLocalUnavailable','analysisLocalPending','analysisObserved','analysisFindingObserved','analysisAttempted','analysisPartial','analysisOtherServices','analysisLimit'];
         for (const [prefix, values] of [['Scope',scopes],['State',states],['Source',['remote','cache','stored','attempt']],['Verdict',verdicts],['Reason',['unconfigured','disabled','permission','authorization','policy','on_action','unrecorded','manual','sender','links_disabled','no_resources','quota','running','provider_error']]]) for (const value of values) keys.push('analysis'+prefix+'_'+value);
         return Object.fromEntries(keys.map(key => [key, get(key)]));
     }

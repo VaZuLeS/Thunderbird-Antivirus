@@ -1,6 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const {JSDOM}=require('jsdom');
-const source=fs.readFileSync('source_export.js','utf8');
+const source=(fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('source_export.js','utf8'));
 const fresh=()=>({success:true,messageId:7,contextToken:'runtime-context',local:{state:'checked',source:'local',observedAt:100},rows:[{provider:'urlhaus',scope:'domain',resource:'link:456',state:'running',source:'attempt',verdict:'unknown',active:1,attemptedAt:200}],sourceHistory:{rows:[{provider:'hybridanalysis',scope:'report',resource:'attachment:1.99',state:'incomplete',source:'remote',verdict:'malicious',observedAt:50,findingAt:40}]}});
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function fixture(lang='en',query='?messageId=7&contextToken=runtime-context'){

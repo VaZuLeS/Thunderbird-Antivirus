@@ -1866,6 +1866,69 @@ def check_automatic_scans(m, base, out, report, display):
     assert len([c for c in later if c['method']=='POST' and 'urlscan.io' in c['url']])>len(us)
     report['passed']=True
     report['automaticScans']={'passed':True,'realDisplayEvents':True,'bothProvidersWithoutLinkClick':True,'popupClosedDuringRetry':True,'duplicateDisplayReused':True,'unlisted':True,'syntheticTransport':True,'liveProviderCalls':False}
+    check_provider_results(m,base,out,report,display,setup['messageId'])
+
+
+def check_provider_results(m, base, out, report, display, message_id):
+    # All resources and provider responses are synthetic; real extension UI and persistence.
+    options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
+    m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      const configured=await b.runtime.sendMessage({action:'securityCommand',op:'configure',policy:{enabled:true,threshold:100,unknown:'warn'}});if(!configured.success)throw Error('Policy setup failed');
+      window.wrappedJSObject.__providerReleased=false;window.wrappedJSObject.__providerCalls=[];let hybridPolls=0;
+      bg.fetch=async(url,options={})=>{
+        url=String(url);window.wrappedJSObject.__providerCalls.push({url,method:options.method||'GET'});let data;
+        if(url==='https://hybrid-analysis.com/api/v2/quick-scan/url')data={id:'provider-hybrid-job',finished:false};
+        else if(url.includes('hybrid-analysis.com/api/v2/quick-scan/')){
+          hybridPolls++;
+          if(hybridPolls===1)data={id:'provider-hybrid-job',finished:false,verdict:'clean',scanners:[{status:'malicious',positives:2,total:35},{status:'in-progress'}]};
+          else{if(!window.wrappedJSObject.__providerReleased)await new Promise(resolve=>window.wrappedJSObject.__releaseProvider=resolve);data={id:'provider-hybrid-job',finished:true,verdict:'unknown'};}
+        }else if(url==='https://urlscan.io/api/v1/scan/')data={uuid:'provider-urlscan-job'};
+        else if(url.includes('urlscan.io/api/v1/result/'))data={task:{uuid:'provider-urlscan-job'},verdicts:{overall:{malicious:false,score:65},urlscan:{malicious:false,brands:['Example']}}};
+        else throw Error('Unexpected synthetic provider route');
+        return new bg.Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
+      };return true;
+    })();''',browser=options)
+    def snapshot():
+        return m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[message_id],browser=options)
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.disabled===false;'))
+    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();')
+    def partial():
+        state=snapshot()
+        return state if any(r.get('provider')=='hybridanalysis' and r.get('completion')=='pending' and r.get('verdict')=='malicious' for r in state.get('rows',[])) and any(r.get('provider')=='urlscan' and r.get('verdict')=='suspicious' for r in state.get('rows',[])) else None
+    try:
+        observed=wait_for(partial,20)
+    except TimeoutError:
+        report['providerFailure']={'snapshot':snapshot(),'calls':m.page('return window.wrappedJSObject.__providerCalls;',browser=options),'errors':m.page('return window.wrappedJSObject.__automaticScanErrors;',browser=options)}
+        raise
+    assert observed['protection']['required'] and observed['protection']['reason']=='malicious',observed
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("Dangerous content reported");'))
+    expert_view(m)
+    m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot;Array.from(root.querySelectorAll("details")).find(d=>d.dataset.key?.startsWith("hybridanalysis:report:" )).open=true;')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("Different partial assessments");'))
+    m.screenshot(out/'provider-partial-malicious.png')
+    m.page('window.wrappedJSObject.__providerReleased=true;window.wrappedJSObject.__releaseProvider?.();',browser=options)
+    final=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('state')=='completed' else None),20)
+    assert any(r['provider']=='hybridanalysis' and r['verdict']=='malicious' and r.get('completion')=='complete' for r in final['rows']),final
+    record=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysisRecord",messageId:arguments[0]});',[message_id],browser=options)['record']
+    assert any(l.get('report',{}).get('verdict')=='unknown' and l.get('assessment',{}).get('verdict')=='malicious' for l in record['links']),record
+    assert all(l.get('urlscan',{}).get('status')=='SUSPICIOUS' for l in record['links'])
+    before=m.page('return window.wrappedJSObject.__providerCalls.filter(c=>c.method==="POST").length;',browser=options)
+    accepted=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;return bg.handleRequestScan({messageId:arguments[0],tabId:(await b.tabs.query({active:true,currentWindow:true}))[0].id,operation:'refresh'},{});})();''',[message_id],browser=options)
+    assert accepted['success'] and accepted.get('id')!=final['scanJob']['id'],accepted
+    refreshed=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('state')=='completed' else None),20)
+    assert m.page('return window.wrappedJSObject.__providerCalls.filter(c=>c.method==="POST").length;',browser=options)==before
+    assert any(r['provider']=='hybridanalysis' and r['verdict']=='malicious' for r in refreshed['rows']),refreshed
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes("Dangerous content reported");',browser=popup))
+    expert_view(m,popup)
+    wait_for(lambda:m.page('return !!document.querySelector("#hybrid_analysis_api_content .card-danger");',browser=popup))
+    m.screenshot(out/'provider-results-popup.png')
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'syntheticTransport':True}
 
 
 def main():

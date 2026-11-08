@@ -21,4 +21,6 @@ Die übrigen nativen Installations-, Neustart-, Crash-, Profil-, Audit-, Passwor
 
 Diese lokalen Entwicklungsprüfungen ersetzen nicht die Paketbindung des Release-Gates. Nach Integration der zwischenzeitlichen GitHub-Sanitizerkorrekturen wurden Webbuild und 139 betroffene Tests erneut bestanden. Das Gate prüft den endgültigen Commit einschließlich aller sechs Sprachen und der bisherigen nativen Abnahmen erneut.
 
+Die erweiterte native Automatikabnahme mit synthetischen Anbieterantworten wurde lokal unter Thunderbird 153.5.1 ESR bestanden: bösartiger Hybrid-Teilbefund während weiterer Verarbeitung, unbekannter Abschluss ohne Verlust des Befunds, identische Anzeige in Nachricht und Popup, verdächtiger urlscan-Bericht mit Markenhinweis ohne unbegründete Eskalation sowie Aktualisierung beider Aufträge ohne zusätzliche Einreichung. Der gemeinsame Adapter und der Transport besitzen zusätzliche Vertragstests; siehe [Auswertung und Regeln](ANBIETER_AUSWERTUNG.md).
+
 **Summe:** 10 OK / 0 FAIL / 0 N/A / 0 OFFEN

@@ -12,18 +12,22 @@ const ThundyLinkSecurity = (() => {
         if(!urls.some(value=>{try{return new URL(value).href===new URL(session.url).href;}catch(_){return false;}}))throw Error('LINK_CONTEXT_CHANGED');
         const options=await collectThreatEvaluationOptions({message,fullMessage:full,filteredUrls:[session.url],messageText:text,allowExternal:false});
         const threat=calculateThreatScore(message.author,[session.url],options);
-        const input={score:threat.score,coverage:localContentCoverage(full).state,verdict:session.verdict||'UNKNOWN',check:session.check,malicious:[...(options.linkFindings||[]),...(options.attachmentFindings||[])].some(x=>x.verdict==='malicious')};
+        const scan=typeof ThundyScans!=='undefined'?ThundyScans.get?.(message.id):null;
+        const input={score:threat.score,coverage:scan?.assessmentIncomplete?'incomplete':localContentCoverage(full).state,verdict:session.verdict||'UNKNOWN',check:session.check,malicious:[...(options.linkFindings||[]),...(options.attachmentFindings||[])].some(x=>x.verdict==='malicious')};
         const saved=await ThundySecurity.read();
         const policy={...ThundySecurity.defaults,...saved.policy};
-        return {policy,input,decision:ThundySecurity.decision(policy,input),fingerprint:await fingerprint({scanRevision:typeof ThundyScans !== 'undefined' ? ThundyScans.revision(message.id) : null,messageId:message.id,url:session.url,text,parts:full,score:input.score,verdict:input.verdict,check:session.check,reasons:threat.reasons,revision:policy.revision})};
+        const scanRevision=typeof ThundyScans !== 'undefined' ? ThundyScans.revision(message.id) : null;
+        return {policy,input,scanRevision,decision:ThundySecurity.decision(policy,input),fingerprint:await fingerprint({scanRevision,messageId:message.id,url:session.url,text,parts:full,score:input.score,coverage:input.coverage,verdict:input.verdict,check:session.check,reasons:threat.reasons,revision:policy.revision})};
     }
     async function open(request,sender) {
         return ThundySecurity.serialized(async()=>{
             const saved=await ThundySecurity.read();
             const key=auditSessionKey(request,sender), session=key&&linkAuditSessions.get(key);
+            let openingRevision;
             if(saved.policy?.enabled) {
                 if(!session||!session.checked||session.terminal||session.url!==request.url||session.messageId!==request.messageId)return failure('LINK_CHECK_REQUIRED');
                 let current;try{current=await evaluate(session,sender);}catch(_){return failure('LINK_CONTEXT_CHANGED');}
+                openingRevision=current.scanRevision;
                 const d=current.decision;
                 if(d.required) {
                     const approval=session.approval;delete session.approval;
@@ -38,6 +42,7 @@ const ThundyLinkSecurity = (() => {
             const url=new URL(request.url);if(!['http:','https:'].includes(url.protocol))return failure('LINK_SCHEME_INVALID');
             const message=await getFirstDisplayedMessage(sender.tab.id,{throwOnError:true});
             if(!message||message.id!==request.messageId)return failure('MESSAGE_CONTEXT_CHANGED');
+            if(openingRevision!==undefined&&typeof ThundyScans!=='undefined'&&ThundyScans.revision(message.id)!==openingRevision)return failure('APPROVAL_CHANGED');
             await browser.windows.openDefaultBrowser(url.href);return {success:true};
         });
     }
