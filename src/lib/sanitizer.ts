@@ -8,6 +8,7 @@ const activeTags = new Set([
 ]);
 
 const DANGEROUS_URI_CHARS_REGEX = /[\x00-\x20\x7F-\x9F\xA0\u1680\u180E\u2000-\u2029\u202F\u205F\u3000\u200B-\u200D\uFEFF\uFFFD]/g;
+const DANGEROUS_URI_CHARS_TEST_REGEX = /[\x00-\x20\x7F-\x9F\xA0\u1680\u180E\u2000-\u2029\u202F\u205F\u3000\u200B-\u200D\uFEFF\uFFFD]/;
 
 export function disarmHTML(htmlString: string): string {
   if (!htmlString) return '';
@@ -88,13 +89,13 @@ export function disarmHTML(htmlString: string): string {
                     const attrs = safeGetAttributes.call(el) as NamedNodeMap;
                     for (let j = attrs.length - 1; j >= 0; j--) {
                         const attrName = attrs[j].name.toLowerCase();
-                        if (attrName.startsWith('on') || ['style', 'src', 'srcset', 'background', 'poster', 'ping'].includes(attrName)) {
+                        if (attrName.startsWith('on') || attrName === 'style' || attrName === 'src' || attrName === 'srcset' || attrName === 'background' || attrName === 'poster' || attrName === 'ping') {
                             safeRemoveAttribute.call(el, attrName);
                             continue;
                         }
                         if (dangerousAttributes.has(attrName)) {
                             let val = attrs[j].value.toLowerCase();
-                            let cleanVal = val.replace(DANGEROUS_URI_CHARS_REGEX, '');
+                            let cleanVal = DANGEROUS_URI_CHARS_TEST_REGEX.test(val) ? val.replace(DANGEROUS_URI_CHARS_REGEX, '') : val;
                             if (cleanVal.startsWith('javascript:') || cleanVal.startsWith('data:') || cleanVal.startsWith('vbscript:')) {
                                 safeRemoveAttribute.call(el, attrName);
                             }
