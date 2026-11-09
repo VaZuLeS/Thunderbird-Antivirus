@@ -123,3 +123,11 @@ test('expert Hybrid resource details never enter the provenance export',()=>{
   const out=f.c.subject.project(snapshot);assert.equal(out.hybridReports,undefined);assert.ok(!JSON.stringify(out).includes('PRIVATE_RESOURCE'));
  }finally{f.close();}
 });
+
+test('source export retains only bounded quota fields and fixed actions',()=>{
+ const f=fixture();try{
+  const snapshot=fresh();snapshot.rows[0]={...snapshot.rows[0],quotaAction:'submit-unlisted',quotaRemaining:0,quotaLimit:10,quotaScope:'user',quotaWindow:'day',retryAt:100,quotaResetAt:200,localBackoff:true,authorization:'CANARY'};
+  let row=f.c.subject.project(snapshot).current.rows[0];assert.equal(row.quotaRemaining,0);assert.equal(row.localBackoff,true);assert.equal(row.retryAt,100);assert.ok(!JSON.stringify(row).includes('CANARY'));
+  snapshot.rows[0].quotaAction='CANARY';snapshot.rows[0].quotaLimit=-1;row=f.c.subject.project(snapshot).current.rows[0];assert.equal(row.quotaAction,undefined);assert.equal(row.quotaLimit,undefined);
+ }finally{f.close();}
+});

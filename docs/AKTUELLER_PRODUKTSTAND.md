@@ -1,6 +1,8 @@
-# Aktueller Produktstand — 8. November 2026
+# Aktueller Produktstand — 9. November 2026
 
-Die vorbereitete **1.25.2** ergänzt [detaillierte Hybrid-Analysis-Berichte in der Fachansicht](HYBRID_FACHANSICHT.md). [Freigabeumfang](VEROEFFENTLICHUNG_1_25_2.md); Veröffentlichung erst nach paketgebundener Abnahme. **1.25.1** wurde vollständig freigegeben; veröffentlichte XPI-Version und SHA-256 wurden nach Download verifiziert.
+Entwicklungsstand **1.25.3** ergänzt [aktionsbezogene urlscan-Kontingente und transparente Wartezeiten](URLSCAN_KONTINGENTE.md). [Freigabeumfang](VEROEFFENTLICHUNG_1_25_3.md). **1.25.2** wurde nach vollständiger Kandidaten- und Release-Abnahme veröffentlicht. Der Download enthält Version 1.25.2; SHA-256 `d43e7e442dc0744b09ad0e416329a9f822d1dae66c092c5bcf3ef850f8ad55c3` stimmt mit der veröffentlichten Prüfsummendatei überein. [Verifiziertes Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.2).
+
+Die veröffentlichte **1.25.2** ergänzt [detaillierte Hybrid-Analysis-Berichte in der Fachansicht](HYBRID_FACHANSICHT.md). [Freigabeumfang](VEROEFFENTLICHUNG_1_25_2.md); Veröffentlichung nach paketgebundener Abnahme. **1.25.1** wurde vollständig freigegeben; veröffentlichte XPI-Version und SHA-256 wurden nach Download verifiziert.
 
 Korrekturstand **1.25.1**: gemeinsame automatische Hintergrundprüfungen und sichtbare Prüfaktionen. [Konfiguration und Ablauf](AUTOMATISCHE_PRUEFUNGEN.md), [Release-Gate](VEROEFFENTLICHUNG_1_25_1.md). Bestehende Profile behalten ihre Freigabegrenzen bis zur ausdrücklichen Moduswahl.
 
@@ -60,4 +62,4 @@ Der aktuelle Gate bindet reale Upgrade-/Crashnachweise und sechssprachige Browse
 
 **Keine Sicherheitsgarantie aus einem niedrigen Score:** unbekannte Providerresultate, fehlende Zustimmung oder eine fehlgeschlagene Analyse sind kein Sicherheitsnachweis. `OPENED` bestätigt nur die von Thunderbird angenommene Öffnungsanforderung; `PENDING` bleibt nach Prozessverlust offen. Backups und spätere Neubewertungen ändern historische Entscheidungssnapshots nicht.
 
-Die unveröffentlichte 1.25.2 ergänzt [Admin- und Anzeigeeinstellungen sowie API-Korrekturen](EINSTELLUNGEN_ADMIN_UND_ANSICHT.md). Vollständige API-Vertragsabnahme und Live-Kontoberechtigungen bleiben gesonderte Nachweise.
+Die veröffentlichte 1.25.2 ergänzt [Admin- und Anzeigeeinstellungen sowie API-Korrekturen](EINSTELLUNGEN_ADMIN_UND_ANSICHT.md). Vollständige API-Vertragsabnahme und Live-Kontoberechtigungen bleiben gesonderte Nachweise.

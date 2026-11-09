@@ -2470,5 +2470,14 @@
   },
   "urlscanSubmissionRejected": {
     "message": "Der Anbieter hat die Übermittlung abgelehnt; die Antwort belegt keinen DNS-Fehler."
+  },
+  "analysisQuotaReset": {
+    "message": "Gemeldeter Kontingent-Reset"
+  },
+  "analysisRetryAt": {
+    "message": "Frühester erneuter Versuch"
+  },
+  "analysisLocalBackoff": {
+    "message": "Dieser Versuch wurde lokal zurückgestellt; es wurde keine neue Anbieteranfrage gesendet."
   }
 }

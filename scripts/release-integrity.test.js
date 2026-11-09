@@ -120,3 +120,13 @@ test('1.25.2 requires package-bound native Hybrid expert detail evidence',()=>{
  assert.throws(()=>validateReports(identity,[detailed,{...report,xpiSha256:'b'.repeat(64),administration:{passed:true,protectedDisplaySettings:true}}],[]),/protected display settings/);
  assert.throws(()=>validateReports(identity,[{...detailed,administration:{passed:true,protectedDisplaySettings:true}}],[]),/real Thunderbird/);
 });
+
+test('1.25.3 requires package-bound synthetic urlscan action quota acceptance',()=>{
+ const identity={extensionVersion:'1.25.3',packageSha256:'a'.repeat(64)};
+ const report={passed:true,extensionVersion:identity.extensionVersion,xpiSha256:identity.packageSha256,automaticScans:{passed:true,bothProvidersWithoutLinkClick:true,popupClosedDuringRetry:true,duplicateDisplayReused:true,unlisted:true,syntheticTransport:true},providerResults:{passed:true,partialMaliciousBlocks:true,terminalUnknownRetainsFinding:true,brandDoesNotEscalate:true,refreshWithoutSubmission:true,bothViewsAgree:true,hybridExpertDetails:true},administration:{passed:true,protectedDisplaySettings:true}};
+ assert.throws(()=>validateReports(identity,[report],[]),/urlscan action quota/);
+ const quota={...report,providerResults:{...report.providerResults,actionScopedQuota:true,syntheticTransport:true}};
+ assert.throws(()=>validateReports(identity,[report,{...quota,xpiSha256:'b'.repeat(64)}],[]),/urlscan action quota/);
+ assert.throws(()=>validateReports(identity,[{...quota,providerResults:{...quota.providerResults,syntheticTransport:false}}],[]),/urlscan action quota/);
+ assert.throws(()=>validateReports(identity,[quota],[]),/real Thunderbird/);
+});

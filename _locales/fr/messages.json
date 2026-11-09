@@ -2467,5 +2467,14 @@
   },
   "urlscanSubmissionRejected": {
     "message": "Le fournisseur a refusé l’envoi ; la réponse ne confirme pas une erreur DNS."
+  },
+  "analysisQuotaReset": {
+    "message": "Réinitialisation du quota signalée"
+  },
+  "analysisRetryAt": {
+    "message": "Nouvelle tentative au plus tôt"
+  },
+  "analysisLocalBackoff": {
+    "message": "Cette tentative a été différée localement ; aucune nouvelle requête n’a été envoyée au fournisseur."
   }
 }

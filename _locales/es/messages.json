@@ -2467,5 +2467,14 @@
   },
   "urlscanSubmissionRejected": {
     "message": "El proveedor rechazó el envío; la respuesta no confirma un error DNS."
+  },
+  "analysisQuotaReset": {
+    "message": "Restablecimiento de cuota comunicado"
+  },
+  "analysisRetryAt": {
+    "message": "Próximo intento como mínimo"
+  },
+  "analysisLocalBackoff": {
+    "message": "Este intento se aplazó localmente; no se envió una nueva solicitud al proveedor."
   }
 }

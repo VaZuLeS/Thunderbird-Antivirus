@@ -447,3 +447,18 @@ test('manual view selection survives the first delayed settings response in popu
   }finally{dom.window.close();}
  }
 });
+
+test('quota metadata preserves zero and local provenance across restart and both six-language views',()=>{
+ const a=model();for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<html><body data-thundy-analysis-view="expert"></body></html>');try{
+   const c=vm.createContext({document:dom.window.document,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+   const m=c.a.create(),base={provider:'urlscan',scope:'url',resource:'link:0'};
+   m.event({...base,phase:'start'});m.event({...base,phase:'finish',responded:false,state:'failed',verdict:'unknown',errorCode:'rate_limited',errorDetails:'Quota exhausted',localBackoff:true,quotaAction:'submit-unlisted',quotaRemaining:0,quotaLimit:10,quotaWindow:'day',quotaScope:'user',quotaResetAt:Date.now()+7200000,retryAt:Date.now()+7200000,retryAfter:7200});
+   const row=m.data.rows[0];assert.equal(row.source,'attempt');assert.equal(row.responses,0);assert.equal(row.quotaRemaining,0);
+   const restored=c.a.create(JSON.parse(JSON.stringify(m.data))).data;assert.equal(restored.rows[0].localBackoff,true);
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(k=>catalog[k]?.message);
+   const host=c.a.render(restored,labels);assert.ok(host.shadowRoot.textContent.includes(catalog.analysisLocalBackoff.message));assert.ok(host.shadowRoot.textContent.includes('quotaRemaining: 0'));
+   m.event({...base,phase:'finish',responded:true,state:'checked',verdict:'none',observedAt:Date.now()});assert.equal(row.localBackoff,undefined);assert.equal(row.quotaRemaining,undefined);assert.equal(row.retryAt,undefined);assert.equal(row.retryAfter,undefined);assert.equal(row.errorCode,undefined);assert.equal(row.errorDetails,undefined);assert.equal(row.failures,1);
+  }finally{dom.window.close();}
+ }
+});

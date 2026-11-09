@@ -1948,7 +1948,36 @@ def check_provider_results(m, base, out, report, display, message_id):
     expert_details(popup)
     subprocess.run(['import','-window','root',str(out/'provider-results-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
-    report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'hybridExpertDetails':True,'syntheticTransport':True}
+    quota=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page,original=bg.fetch;let submissions=0;
+      bg.fetch=async(url,options={})=>{
+        if(String(url)==='https://urlscan.io/api/v1/scan/'&&options.method==='POST'){submissions++;return new bg.Response('{}',{status:429,headers:{'Content-Type':'application/json','X-Rate-Limit-Action':'unlisted','X-Rate-Limit-Scope':'user','X-Rate-Limit-Window':'day','X-Rate-Limit-Remaining':'0','X-Rate-Limit-Reset-After':'7200'}});}
+        return original(url,options);
+      };
+      try{
+        const key='native-urlscan-synthetic',first=await bg.checkUrlscanIo('https://synthetic-quota.example.invalid/',key),result=await bg.pollUrlscanIoResult('provider-urlscan-job',key),again=await bg.checkUrlscanIo('https://synthetic-quota.example.invalid/',key);
+        return {first:first.errorCode,result:result.status,again:again.errorCode,submissions,wait:first.retryAfter};
+      }finally{bg.fetch=original;}
+    })();''',browser=options)
+    assert quota['first']=='rate_limited' and quota['again']=='rate_limited' and quota['result']=='SUSPICIOUS' and quota['submissions']==1 and quota['wait']>=7195,quota
+    previous_scan=snapshot()['scanJob']['id']
+    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();')
+    limited=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('id')!=previous_scan and any(r.get('provider')=='urlscan' and r.get('localBackoff') is True and r.get('quotaRemaining')==0 for r in s.get('rows',[])) else None),20)
+    assert any(r.get('retryAt',0)>0 and r.get('quotaAction')=='submit-unlisted' for r in limited['rows']),limited
+    def quota_details(browser='window.gTabmail.currentTabInfo.browser'):
+        expert_view(m,browser)
+        wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("This attempt was deferred locally; no new provider request was sent.");',browser=browser))
+        assert m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes("quotaRemaining: 0");',browser=browser)
+        wait_for(lambda:m.page('const node=Array.from(document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("p")).find(p=>p.textContent==="This attempt was deferred locally; no new provider request was sent.");node.scrollIntoView({block:"center"});const r=node.getBoundingClientRect();return r.height>0&&r.top>=0&&r.bottom<=innerHeight;',browser=browser))
+    quota_details()
+    m.screenshot(out/'urlscan-quota-inline.png')
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    quota_details(popup)
+    subprocess.run(['import','-window','root',str(out/'urlscan-quota-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'hybridExpertDetails':True,'actionScopedQuota':True,'syntheticTransport':True}
 
 
 def main():

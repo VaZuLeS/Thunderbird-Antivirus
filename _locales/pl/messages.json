@@ -2467,5 +2467,14 @@
   },
   "urlscanSubmissionRejected": {
     "message": "Dostawca odrzucił zgłoszenie; odpowiedź nie potwierdza błędu DNS."
+  },
+  "analysisQuotaReset": {
+    "message": "Zgłoszone odnowienie limitu"
+  },
+  "analysisRetryAt": {
+    "message": "Najwcześniejsza ponowna próba"
+  },
+  "analysisLocalBackoff": {
+    "message": "Tę próbę odroczono lokalnie; nie wysłano nowego zapytania do dostawcy."
   }
 }

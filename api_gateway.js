@@ -10,31 +10,63 @@ class ApiGateway {
     }
 
     setApikey(service, key) {
+        if(service==='urlscan'&&this.apikeys[service]!==key){
+            for(const [bucket,value] of this.backoffs)if(bucket.startsWith('urlscan.io:')&&value.quotaScope==='user')this.backoffs.delete(bucket);
+        }
         this.apikeys[service] = key;
     }
 
     getBackoff(host) {
-        if (!host || !this.backoffs.has(host)) return null;
-        const entry = this.backoffs.get(host);
-        const remainingMs = entry.until - Date.now();
-        if (remainingMs <= 0) {
-            this.backoffs.delete(host);
-            return null;
+        if(!host)return null;
+        const keys=[host];if(host.startsWith('urlscan.io:')&&!host.endsWith(':ip-address'))keys.push(host+':ip-address');
+        let current=null;
+        for(const key of keys){
+            const entry=this.backoffs.get(key);if(!entry)continue;
+            const remainingMs=entry.until-Date.now();if(remainingMs<=0){this.backoffs.delete(key);continue;}
+            if(!current||entry.until>current.until)current={active:true,remainingSeconds:Math.max(1,Math.ceil(remainingMs/1000)),until:entry.until,...entry.quota};
         }
-        return {
-            active: true,
-            remainingSeconds: Math.max(1, Math.ceil(remainingMs / 1000)),
-            until: entry.until
-        };
+        return current;
     }
 
-    setBackoff(host, seconds) {
-        if (!host) return;
-        const s = Math.min(3600, Math.max(1, Math.ceil(seconds)));
+    setBackoff(host, seconds, quota = {}, maxSeconds = 3600) {
+        if (!host || !Number.isFinite(seconds)) return;
+        if(host.startsWith('urlscan.io:')&&quota.quotaScope==='ip-address'&&!host.endsWith(':ip-address'))host+=':ip-address';
+        const ceiling=Number.isFinite(maxSeconds)&&maxSeconds>0?Math.min(86400,maxSeconds):3600;
+        const s = Math.min(ceiling, Math.max(1, Math.ceil(seconds)));
+        const until=Date.now()+s*1000;
+        if(this.backoffs.get(host)?.until>=until)return;
         this.backoffs.set(host, {
-            until: Date.now() + (s * 1000),
-            duration: s
+            until,duration: s,quota,
+            quotaScope:quota.quotaScope
         });
+    }
+
+    rateHeaders(response, policy) {
+        const read=name=>{const value=response.headers?.get?.(name);return typeof value==='string'&&value.length<=128?value.trim():null;};
+        const integer=name=>{const value=read(name);return value!==null&&/^\d+$/.test(value)&&Number.isSafeInteger(Number(value))&&Number(value)<=1000000000?Number(value):null;};
+        const future=value=>{const date=Date.parse(value||'');return Number.isFinite(date)&&date>Date.now()?date:null;};
+        const delay=value=>value!==null&&/^\d+(?:\.\d+)?$/.test(value)?Number(value):(future(value)-Date.now())/1000;
+        const retry=read('retry-after');const delays=[];if(retry!==null){const value=delay(retry);if(Number.isFinite(value)&&value>=0)delays.push(value);}
+        const quota={};
+        if(policy){
+            quota.quotaAction=policy.action;
+            const reportedAction=read('x-rate-limit-action');
+            const reported=Object.prototype.hasOwnProperty.call(policy.headerActions||{},reportedAction)?policy.headerActions[reportedAction]:null;
+            if(reported===policy.action||policy.action.startsWith('submit-')&&reported?.startsWith('submit-'))quota.quotaAction=reported;
+            const scope=read('x-rate-limit-scope'),window=read('x-rate-limit-window');
+            if(['user','ip-address'].includes(scope))quota.quotaScope=scope;
+            if(['minute','hour','day'].includes(window))quota.quotaWindow=window;
+            for(const [name,key] of [['x-rate-limit-limit','quotaLimit'],['x-rate-limit-remaining','quotaRemaining']]){const value=integer(name);if(value!==null)quota[key]=value;}
+            const reset=future(read('x-rate-limit-reset')),after=read('x-rate-limit-reset-after');
+            const resetAfter=after!==null&&/^\d+(?:\.\d+)?$/.test(after)?Number(after):null;
+            if(reset)quota.quotaResetAt=reset;
+            if(Number.isFinite(resetAfter)&&resetAfter>=0){const at=Date.now()+Math.min(86400,resetAfter)*1000;quota.quotaResetAt=Math.max(quota.quotaResetAt||0,at);}
+            if(response.status===429||quota.quotaRemaining===0){
+                if(reset)delays.push((reset-Date.now())/1000);
+                if(Number.isFinite(resetAfter)&&resetAfter>=0)delays.push(resetAfter);
+            }
+        }
+        return {quota,key:policy?policy.host+':'+quota.quotaAction:null,seconds:delays.length?Math.min(policy?.maxSeconds||3600,Math.max(...delays)):null};
     }
 
     clearBackoffs() {
@@ -149,50 +181,21 @@ class ApiGateway {
         if (info && ['report','url'].includes(context.scopeOverride) && info.provider === 'hybridanalysis') info.scope = context.scopeOverride;
         const emit = event => { try { const pending = context?.event({ ...info, ...event }); pending?.catch?.(() => {}); } catch (_) { /* metadata never blocks protection */ } };
 
-        if (hostname) {
-            const activeBackoff = this.getBackoff(hostname);
-            if (activeBackoff && activeBackoff.active) {
-                const retrySeconds = activeBackoff.remainingSeconds;
-                const synthesizedData = {
-                    error: 'rate_limited',
-                    message: `Rate limit backoff active for ${hostname}`,
-                    retry_after: retrySeconds
-                };
-                const headerMap = {
-                    'content-type': 'application/json',
-                    'retry-after': String(retrySeconds)
-                };
-                const synthesizedHeaders = typeof Headers !== 'undefined'
-                    ? new Headers(headerMap)
-                    : { get: k => headerMap[k.toLowerCase()] || headerMap[k] || null };
-                const ResponseCtor = typeof Response !== 'undefined' ? Response : class MockResponse {
-                    constructor(body, init = {}) {
-                        this.status = init.status || 200;
-                        this.statusText = init.statusText || '';
-                        this.headers = init.headers;
-                        this._body = body;
-                    }
-                    async json() { return JSON.parse(this._body); }
-                    async text() { return String(this._body); }
-                };
-                const synthesizedResponse = new ResponseCtor(JSON.stringify(synthesizedData), {
-                    status: 429,
-                    statusText: 'Too Many Requests',
-                    headers: synthesizedHeaders
-                });
-                synthesizedResponse.json = async () => synthesizedData;
-                if (info) {
-                    emit({
-                        phase: 'finish',
-                        responded: true,
-                        ...ThundyAnalysis.response(info, 429, synthesizedData),
-                        retryAfter: retrySeconds,
-                        observedAt: Date.now()
-                    });
-                }
-                return synthesizedResponse;
+        let ratePolicy=null;
+        if(typeof ThundyProviders!=='undefined')try{ratePolicy=ThundyProviders.rateLimit(url,options);}catch(_){}
+        const rateKey=ratePolicy?.key||hostname;
+        const currentBackoff=()=>[...new Set([rateKey,hostname,ratePolicy?.host])].map(key=>this.getBackoff(key)).filter(Boolean).sort((a,b)=>b.remainingSeconds-a.remainingSeconds)[0]||null;
+        const localResponse=backoff=>{
+            const data={error:'rate_limited',message:'Provider cooldown active',retry_after:backoff.remainingSeconds};
+            const headers={'content-type':'application/json','retry-after':String(backoff.remainingSeconds)};
+            const ResponseCtor=typeof Response!=='undefined'?Response:class {constructor(body,init){this.status=init.status;this.headers={get:key=>headers[key.toLowerCase()]||null};}async json(){return data;}};
+            const response=new ResponseCtor(JSON.stringify(data),{status:429,statusText:'Too Many Requests',headers});response.json=async()=>data;response.localBackoff=true;
+            if(info){
+                emit({phase:'start'});
+                emit({phase:'finish',responded:false,...(typeof ThundyProviders!=='undefined'?ThundyProviders.registry[info.provider].normalize(info,429,data):ThundyAnalysis.response(info,429,data)),...(typeof ThundyProviderResults!=='undefined'?ThundyProviderResults.projectQuota({...backoff,retryAt:backoff.until}):{}),localBackoff:true,retryAfter:backoff.remainingSeconds,observedAt:null});
             }
-        }
+            return response;
+        };
 
         options.analysisContext?.guard?.();
         if (options.keyTestAuthorization) await options.keyTestAuthorization();
@@ -218,25 +221,28 @@ class ApiGateway {
             if(typeof ThundyProviders !== 'undefined') { const {provider,config,scope}=ThundyProviders.identify(url,options.method);if((options.method||'GET').toUpperCase()==='POST'&&scope==='url'&&config.submitConcurrency)releaseSubmission=await this.acquire('submit:'+provider,controller.signal,config.submitConcurrency); }
             release = await this.acquire(hostname || new URL(url).hostname, controller.signal);
             options.analysisContext?.guard?.();
-        if (options.keyTestAuthorization) await options.keyTestAuthorization();
+            if (options.keyTestAuthorization) await options.keyTestAuthorization();
             if (typeof ThundyProviders !== 'undefined') await ThundyProviders.enforce(url, options);
             if (!options.keyTest && this.beforeRequest) await this.beforeRequest();
-            let response;
+            let response,quota={},retrySeconds=null,cooldownKey=rateKey;
             for (let attempt = 0; attempt < 3; attempt++) {
                 options.analysisContext?.guard?.();
-        if (options.keyTestAuthorization) await options.keyTestAuthorization();
-            if (typeof ThundyProviders !== 'undefined') await ThundyProviders.enforce(url, options);
-            if (!options.keyTest && this.beforeRequest) await this.beforeRequest();
+                if (options.keyTestAuthorization) await options.keyTestAuthorization();
+                if (typeof ThundyProviders !== 'undefined') await ThundyProviders.enforce(url, options);
+                if (!options.keyTest && this.beforeRequest) await this.beforeRequest();
+                const blocked=currentBackoff();
+                if(blocked){if(response)break;return localResponse(blocked);}
                 if (info && !started) { emit({ phase: 'start' }); started = true; }
                 response = await fetch(url, fetchOptions);
                 responded = true;
-                const retryAfter = response.headers && typeof response.headers.get === 'function' ? response.headers.get('retry-after') : null;
-                const isGet = (options.method || 'GET').toUpperCase() === 'GET';
-                if (!isGet || !retryAfter || ![429, 503].includes(response.status) || attempt === 2) break;
-                const seconds = Number(retryAfter);
-                const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(retryAfter) - Date.now();
-                if (!Number.isFinite(delay) || delay > 2000 || delay < 0) break;
-                await this.pause(delay, controller.signal);
+                const rate=this.rateHeaders(response,ratePolicy);quota=rate.quota;retrySeconds=rate.seconds;cooldownKey=rate.key||rateKey;
+                if(response.status===429||quota.quotaRemaining===0&&retrySeconds!==null){
+                    const seconds=retrySeconds??60;
+                    this.setBackoff(cooldownKey,seconds,quota,ratePolicy?.maxSeconds||3600);
+                }
+                const isGet=(options.method||'GET').toUpperCase()==='GET';
+                if(!isGet||![429,503].includes(response.status)||retrySeconds===null||retrySeconds>2||attempt===2)break;
+                await this.pause(Math.max(1,Math.ceil(retrySeconds))*1000,controller.signal);
             }
             // Provider responses are JSON. Keep the slot, abort signal and deadline
             // active until the body has been consumed, not just until headers arrive.
@@ -252,30 +258,14 @@ class ApiGateway {
             }
             clearTimeout(id);
 
-            if (response.status === 429) {
+            if(response.status===429){
                 console.warn('[ApiGateway] Provider rate limit exceeded (429)');
-                let backoffSeconds = 60;
-                const retryHeader = response.headers && typeof response.headers.get === 'function' ? response.headers.get('retry-after') : null;
-                if (retryHeader) {
-                    const parsedNum = Number(retryHeader);
-                    if (Number.isFinite(parsedNum) && parsedNum > 0) {
-                        backoffSeconds = Math.min(3600, parsedNum);
-                    } else {
-                        const parsedDate = Date.parse(retryHeader);
-                        if (Number.isFinite(parsedDate) && parsedDate > Date.now()) {
-                            backoffSeconds = Math.min(3600, Math.ceil((parsedDate - Date.now()) / 1000));
-                        }
-                    }
-                }
-                if (hostname) {
-                    this.setBackoff(hostname, backoffSeconds);
-                }
-                if (observedData && typeof observedData === 'object') {
-                    observedData.retry_after = backoffSeconds;
-                }
+                retrySeconds=this.getBackoff(cooldownKey)?.remainingSeconds||currentBackoff()?.remainingSeconds||retrySeconds||60;
+                if(observedData&&typeof observedData==='object')observedData.retry_after=retrySeconds;
             }
 
-            if (info) emit({ phase: 'finish', responded: true, ...(typeof ThundyProviders !== 'undefined' ? ThundyProviders.registry[info.provider].normalize(info,response.status,observedData) : ThundyAnalysis.response(info, response.status, observedData)), ...(typeof ThundyProviders !== 'undefined' ? ThundyProviders.metadata(info.provider,observedData,response.status) : {}), observedAt: Date.now() });
+            const cooldown=this.getBackoff(cooldownKey)||currentBackoff();
+            if (info) emit({ phase: 'finish', responded: true, ...(typeof ThundyProviders !== 'undefined' ? ThundyProviders.registry[info.provider].normalize(info,response.status,observedData) : ThundyAnalysis.response(info, response.status, observedData)), ...(typeof ThundyProviders !== 'undefined' ? ThundyProviders.metadata(info.provider,observedData,response.status) : {}),...quota,...(response.status===429?{retryAfter:retrySeconds}:{}),...(cooldown?{retryAt:cooldown.until}:{}), observedAt: Date.now() });
             return response;
         } catch (error) {
             if (info && started) emit({ phase: 'finish', responded, state: 'failed', verdict: 'unknown',errorCode:error.code||error.name, errorDetails: error.code || error.name || 'Request failed', observedAt: null });

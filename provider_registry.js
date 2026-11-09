@@ -18,6 +18,18 @@ const ThundyProviders = (() => {
         return {provider,config,scope};
     }
     registry.hybridanalysis.scanKinds={hash:true,url:true};registry.virustotal.scanKinds={hash:true};registry.urlhaus.scanKinds={domain:true};registry.abuseipdb.scanKinds={ip:true};registry.urlscan.scanKinds={url:true};registry.urlscan.submitConcurrency=1;
+    registry.urlscan.rateLimits={host:'urlscan.io',maxSeconds:86400,headerActions:{public:'submit-public',unlisted:'submit-unlisted',private:'submit-private',result:'result',search:'search'}};
+    // Fixed operation names only: never retain a resource or a credential in a bucket key.
+    function rateLimit(address,options={}) {
+        const {config}=identify(address,options.method);if(!config.rateLimits)return null;
+        const path=new URL(address).pathname.replace(/\/$/,''),method=(options.method||'GET').toUpperCase();let action;
+        if(method==='POST'&&path==='/api/v1/scan'){
+            let visibility;try{visibility=JSON.parse(options.body||'{}').visibility;}catch(_){}
+            action='submit-'+(['public','unlisted','private'].includes(visibility)?visibility:visibility===undefined?'public':'unknown');
+        }else if(method==='GET'&&/^\/api\/v1\/result\/[^/]+$/.test(path))action='result';
+        else if(method==='GET'&&path==='/api/v1/search')action='search';
+        return action?{key:config.rateLimits.host+':'+action,host:config.rateLimits.host,action,maxSeconds:config.rateLimits.maxSeconds,headerActions:config.rateLimits.headerActions}:null;
+    }
     for(const [id,config] of Object.entries(registry))config.normalize=(info,status,data)=>({...ThundyAnalysis.response({...info,provider:id},status,data),...(['hybridanalysis','urlscan'].includes(id)&&status>=200&&status<300?ThundyProviderResults.evaluate(id,data,info.scope):['hybridanalysis','urlscan'].includes(id)?{assessmentVersion:1,completion:status===404?id==='urlscan'?'pending':'unknown':'failed',signals:[],conflicts:[]}:{} )});
     async function enforce(address,options={}) {
         const {config,scope}=identify(address,options.method);
@@ -41,7 +53,7 @@ const ThundyProviders = (() => {
             const response=await apiGateway.fetchWithTimeout(config.test.url,options,10000);
             const data=typeof response.json==='function'?await response.json().catch(()=>null):null;
             const status=response.status===401||response.status===403||data?.query_status==='invalid_api_key'?'invalid_key':response.status===429?'rate_limited':response.status===200||response.status===404?'valid':'error';
-            return {status,...(status==='error'?{code:response.status}:{}),httpStatus:response.status,capability:'read-test',uploadVerified:false,observedAt:Date.now()};
+            return {status,...(status==='error'?{code:response.status}:{}),httpStatus:response.localBackoff?null:response.status,...(response.localBackoff?{localBackoff:true}:{}),capability:'read-test',uploadVerified:false,observedAt:Date.now()};
         }catch(e){return {status:e.code==='HOST_PERMISSION_MISSING'?'permission_denied':'error',message:'Connection failed'};}
     }
     function metadata(provider,data,httpStatus) {
@@ -58,5 +70,5 @@ const ThundyProviders = (() => {
         if(['malicious','suspicious','clean','whitelisted','no specific threat'].includes(verdict))result.providerVerdict=verdict;
         return result;
     }
-    return {registry,identify,enforce,test,metadata};
+    return {registry,identify,enforce,test,metadata,rateLimit};
 })();

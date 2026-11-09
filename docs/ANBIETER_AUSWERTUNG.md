@@ -39,3 +39,5 @@ Der vorherige native CI-Lauf wurde kurz vor Abschluss durch die 15-Minuten-Grenz
 ## Fachansicht ab 1.25.2
 
 Die [detaillierte Hybrid-Analysis-Fachansicht](HYBRID_FACHANSICHT.md) ergänzt eine getrennte Anzeigeprojektion der tatsächlich empfangenen API-v2-Berichte. Bewertungsregeln, historische Entscheidungen und Datenschutzvoraussetzungen bleiben dabei unverändert.
+
+Ab 1.25.3 werden [urlscan-Kontingente je API-Aktion](URLSCAN_KONTINGENTE.md) behandelt und in Fachansicht und lokalem Export nachvollziehbar ausgewiesen. Eine lokale Zurückstellung ist keine weitere Anbieterantwort.

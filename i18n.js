@@ -2472,6 +2472,15 @@ const ThundyI18n = (() => {
   },
   "urlscanSubmissionRejected": {
     "message": "The provider rejected the submission; the response does not establish a DNS failure."
+  },
+  "analysisQuotaReset": {
+    "message": "Reported quota reset"
+  },
+  "analysisRetryAt": {
+    "message": "Earliest retry"
+  },
+  "analysisLocalBackoff": {
+    "message": "This attempt was deferred locally; no new provider request was sent."
   }
 };
     function get(key, params = []) {

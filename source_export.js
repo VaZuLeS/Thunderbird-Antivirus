@@ -19,7 +19,7 @@ const ThundySourceExport = (() => {
         };
         const rows = (input, historical) => (Array.isArray(input) ? input : []).slice(0,1200)
             .filter(row => row && providers.includes(row.provider) && scopes.includes(row.scope))
-            .map(row => ({...ThundyProviderResults.project(row),provider:row.provider,scope:row.scope,resource:historical ? {kind:'unbound'} : resource(row.resource),
+            .map(row => ({...ThundyProviderResults.project(row),...ThundyProviderResults.projectQuota(row),provider:row.provider,scope:row.scope,resource:historical ? {kind:'unbound'} : resource(row.resource),
                 state:states.includes(row.state) ? row.state : 'incomplete',source:historical ? 'stored' : sources.includes(row.source) ? row.source : 'unknown',
                 verdict:verdicts.includes(row.verdict) ? row.verdict : 'unknown',
                 active:historical ? 0 : count(row.active),responses:count(row.responses),failures:count(row.failures),cacheHits:count(row.cacheHits),

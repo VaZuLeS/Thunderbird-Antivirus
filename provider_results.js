@@ -69,6 +69,14 @@ var ThundyProviderResults = (function () {
         if(/\bDNS\b|could not resolve|not resolvable/i.test(messages))return 'domain_unresolvable';
         return data?.code==='validationerror'||errors.some(error=>error?.code==='validationerror')?'invalid_request':'submission_rejected';
     }
+    function projectQuota(value){
+        const out={};
+        for(const [key,allowed] of [['quotaAction',['submit-public','submit-unlisted','submit-private','submit-unknown','result','search']],['quotaScope',['user','ip-address']],['quotaWindow',['minute','hour','day']]])if(allowed.includes(value?.[key]))out[key]=value[key];
+        for(const key of ['quotaLimit','quotaRemaining'])if(Number.isSafeInteger(value?.[key])&&value[key]>=0&&value[key]<=1000000000)out[key]=value[key];
+        for(const key of ['quotaResetAt','retryAt'])if(Number.isFinite(value?.[key])&&value[key]>=0&&value[key]<=8640000000000000)out[key]=value[key];
+        if(value?.localBackoff===true)out.localBackoff=true;
+        return out;
+    }
     function evaluate(provider,data,scope='report'){return provider==='hybridanalysis'?hybrid(data,scope):provider==='urlscan'?urlscan(data,scope):result([],'unknown');}
     function project(value){
         if(value?.assessmentVersion!==1)return {};
@@ -178,5 +186,5 @@ var ThundyProviderResults = (function () {
         if(scanners.some(s=>Array.isArray(s.anti_virus_results))&&scanners.filter(s=>Array.isArray(s.anti_virus_results)).every(s=>s.anti_virus_results.length===0))emptySections.push('antivirus');
         return {schemaVersion:1,sections,emptySections,truncated};
     }
-    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,urlscanRejection};
+    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,urlscanRejection,projectQuota};
 }());
