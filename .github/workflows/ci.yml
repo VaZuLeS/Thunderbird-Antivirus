@@ -23,7 +23,7 @@ jobs:
       run: ${{ steps.route.outputs.result }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/github-script@v8
+      - uses: actions/github-script@v9
         id: route
         with:
           script: |
