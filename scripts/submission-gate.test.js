@@ -24,6 +24,60 @@ function createRoot(files) {
 
 const manifest = JSON.stringify({ manifest_version: 3, version: '1.6' }, null, 2);
 
+// Catch a completed protocol that cannot pass C6 during the ordinary unit suite,
+// before the expensive package-bound native/browser evidence is collected.
+function assertProtocolConsistent(content) {
+  const lines = content.split(/\r?\n/);
+  const cells = line => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(cell => cell.trim());
+  const header = lines.findIndex(line => /^\s*\|/.test(line) && cells(line).includes('Status'));
+  assert.ok(header >= 0, 'Missing protocol status table');
+  const column = cells(lines[header]).indexOf('Status');
+  const totals = { OK: 0, FAIL: 0, 'N/A': 0, OFFEN: 0 };
+  for (const line of lines.slice(header + 1)) {
+    if (!/^\s*\|/.test(line)) break;
+    const values = cells(line);
+    if (values.every(value => /^:?-+:?$/.test(value))) continue;
+    const status = values[column];
+    assert.ok(Object.hasOwn(totals, status), 'Unknown protocol status: ' + status);
+    totals[status]++;
+  }
+  const summary = content.match(/^\*\*Summe:\*\*\s+(\d+|__) OK\s*\/\s*(\d+|__) FAIL\s*\/\s*(\d+|__) N\/A\s*\/\s*(\d+|__) OFFEN\s*$/m);
+  assert.ok(summary, 'Missing or malformed protocol summary');
+  if (summary.slice(1).includes('__')) return; // An explicitly unfinished draft.
+  const declared = Object.fromEntries(Object.keys(totals).map((status, i) => [status, Number(summary[i + 1])]));
+  assert.deepStrictEqual(totals, declared, 'Protocol rows and summary disagree');
+  if (totals.OFFEN > 0) return; // Recorded open work is not release readiness.
+  assert.strictEqual(totals.FAIL, 0, 'Completed protocol contains documented failures');
+  assert.ok(totals.OK >= 10, 'Completed protocol needs at least 10 passed cases, as required by C6');
+}
+
+describe('early acceptance protocol consistency', () => {
+  const protocol = (statuses, summary) => '| ID | Prüffall | Status | Nachweis |\n| --- | --- | --- | --- |\n' +
+    statuses.map((status, i) => '| Q' + i + ' | Synthetic case | ' + status + ' | Synthetic evidence |').join('\n') +
+    '\n\n**Summe:** ' + summary + '\n';
+  it('rejects seven passed cases declared as a completed protocol', () => {
+    assert.throws(() => assertProtocolConsistent(protocol(Array(7).fill('OK'), '7 OK / 0 FAIL / 0 N/A / 0 OFFEN')), /at least 10/);
+  });
+  it('rejects summary counts that differ from the table', () => {
+    assert.throws(() => assertProtocolConsistent(protocol(Array(10).fill('OK'), '13 OK / 0 FAIL / 0 N/A / 0 OFFEN')), /rows and summary disagree/);
+  });
+  it('rejects documented failures in an otherwise completed protocol', () => {
+    assert.throws(() => assertProtocolConsistent(protocol([...Array(10).fill('OK'), 'FAIL'], '10 OK / 1 FAIL / 0 N/A / 0 OFFEN')), /documented failures/);
+  });
+  it('accepts ten passed cases with a matching completed summary', () => {
+    assert.doesNotThrow(() => assertProtocolConsistent(protocol(Array(10).fill('OK'), '10 OK / 0 FAIL / 0 N/A / 0 OFFEN')));
+  });
+  it('allows explicit open work and unfinished summary placeholders', () => {
+    assert.doesNotThrow(() => assertProtocolConsistent(protocol(['OK', 'FAIL', 'OFFEN'], '1 OK / 1 FAIL / 0 N/A / 1 OFFEN')));
+    assert.doesNotThrow(() => assertProtocolConsistent(protocol(['OFFEN'], '__ OK / __ FAIL / __ N/A / __ OFFEN')));
+  });
+  it('checks the current version-specific protocol before CI collects native evidence', () => {
+    const root = path.resolve(__dirname, '..');
+    const version = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'))).version;
+    assertProtocolConsistent(fs.readFileSync(path.join(root, 'docs', 'live_test_' + version.replaceAll('.', '_') + '.md'), 'utf8'));
+  });
+});
+
 /** Minimal real PNG buffer with the given dimensions (signature + IHDR). */
 function pngBuffer(width, height) {
   const buffer = Buffer.alloc(8 + 4 + 4 + 13 + 4);
