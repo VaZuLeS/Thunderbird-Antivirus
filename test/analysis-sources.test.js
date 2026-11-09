@@ -430,3 +430,20 @@ test('saved display defaults apply to both renderers without overriding manual s
   }finally{dom.window.close();}
  }
 });
+
+test('manual view selection survives the first delayed settings response in popup and email',()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
+ for(const serialized of [false,true])for(const selected of ['simple','expert']){
+  const dom=new JSDOM('<html><body></body></html>');try{
+   const data={local:{state:'unrecorded'},rows:[],messageId:7};
+   const c=vm.createContext({document:dom.window.document,Date,data,labels:a.labels(k=>catalog[k]?.message)});if(!serialized)vm.runInContext(source,c);
+   const render=()=>vm.runInContext(serialized?'('+a.render.toString()+')(data,labels)':'ThundyAnalysis.render(data,labels)',c);
+   render();const host=dom.window.document.getElementById('thundy-analysis-status'),root=host.shadowRoot;
+   root.querySelector('[data-focus-key=view-switch]').click();if(selected==='simple')root.querySelector('[data-focus-key=view-switch]').click();
+   assert.equal(host.dataset.view,selected);
+   const configured=selected==='expert'?'simple':'expert';data.displayPreferences={view:configured,hybridDetails:true};render();
+   assert.equal(host.dataset.view,selected,'delayed defaults must not undo an explicit choice');assert.equal(host.dataset.viewPreference,configured);
+   data.displayPreferences.view=selected;render();data.displayPreferences.view=configured;render();assert.equal(host.dataset.view,configured,'a subsequent settings change still applies');
+  }finally{dom.window.close();}
+ }
+});

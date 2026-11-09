@@ -1226,7 +1226,7 @@ def check_history_pages(m, base, out, report, display):
       await b.messageDisplay.open({messageId:message.id,location:"tab"});return {id:message.id,legacy:JSON.stringify(legacy)};
     })();''')
     wait_for(lambda:m.page('return !!document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector(".history-range");'))
-    inspect='''const host=document.getElementById("thundy-analysis-status"),root=host.shadowRoot,detail=root.querySelector('[data-key="unbound-history"]');return {page:Number(host.dataset.historyPage),entries:detail.querySelectorAll(".history-entries li").length,range:detail.querySelector(".history-range").textContent,summary:detail.querySelector("summary").textContent,localOnly:root.querySelector(".mode").textContent==="Local · no external results recorded",noCurrentThreat:root.querySelector(".card").style.borderColor==="",nodes:root.querySelectorAll("*").length,focused:root.activeElement?.dataset.focusKey||null,warningFocused:root.activeElement?.dataset.historyWarning==="true"};'''
+    inspect='''const host=document.getElementById("thundy-analysis-status"),root=host.shadowRoot,detail=root.querySelector('[data-key="unbound-history"]');return {view:host.dataset.view,cardHidden:root.querySelector(".card").hidden,page:Number(host.dataset.historyPage),entries:detail.querySelectorAll(".history-entries li").length,range:detail.querySelector(".history-range").textContent,summary:detail.querySelector("summary").textContent,localOnly:root.querySelector(".mode").textContent==="Local · no external results recorded",noCurrentThreat:root.querySelector(".card").style.borderColor==="",nodes:root.querySelectorAll("*").length,focused:root.activeElement?.dataset.focusKey||null,warningFocused:root.activeElement?.dataset.historyWarning==="true"};'''
     expert_view(m)
     first=m.page(inspect);assert first['entries']==30 and first['page']==0 and first['noCurrentThreat'],first
     assert 'association unconfirmed' in first['summary'] and 'Suspicious or malicious historical finding' in first['summary'],first
@@ -1257,6 +1257,8 @@ def check_history_pages(m, base, out, report, display):
     m.js('document.getElementById("webextension-remote-preload-panel").querySelector(\'browser[webextension-view-type="popup"]\').focus();')
     m.page('const d=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(\'[data-key="unbound-history"]\');d.open=true;d.querySelector(\'[data-focus-key="history-next"]\').focus();',browser=popup)
     m.page('return new Promise(resolve=>window.requestAnimationFrame(()=>window.requestAnimationFrame(()=>resolve(true))));',browser=popup)
+    popup_ready=m.page(inspect,browser=popup)
+    assert popup_ready['view']=='expert' and not popup_ready['cardHidden'] and popup_ready['focused']=='history-next',popup_ready
     native_key(display,'Return')
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").dataset.historyPage==="1";',browser=popup))
     native_key(display,'space')

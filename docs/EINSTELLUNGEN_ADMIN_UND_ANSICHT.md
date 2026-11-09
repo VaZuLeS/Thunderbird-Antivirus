@@ -21,6 +21,8 @@ Die interne Speicherung verwendet `analysisDefaultView` (`simple` oder `expert`)
 
 Die allgemeine Änderungserkennung berücksichtigt nur die dazugehörigen Einstellungen. Administrator-, Wiederherstellungs- und Anzeigeformular besitzen eigene Speichervorgänge. Dadurch erzeugen ihre Eingaben keinen zusätzlichen allgemeinen Speicherhinweis, der bei vergrößerter Darstellung Bedienelemente verdecken kann.
 
+Eine manuelle Auswahl während des anfänglichen Ladens bleibt beim Eintreffen der gespeicherten Ansichtsvorgabe erhalten. Eine später tatsächlich geänderte Standardansicht wird weiterhin übernommen. Die Wahl gilt für die aktuelle Oberfläche und verändert keine Schutzentscheidung.
+
 Die Anbieterübersicht in den Einstellungen aktualisiert den lokal dokumentierten Schlüssel-/Verbindungsteststatus nach Änderungen. Sie zeigt übersetzte, erlaubte Testzustände statt beliebiger gespeicherter Texte. Diese Aktualisierung liest ausschließlich lokalen Speicher; sie testet keinen Schlüssel automatisch. Ein akzeptierter Verbindungstest bestätigt weiterhin keine Uploadberechtigung oder verfügbares Kontingent.
 
 ## API-Korrekturen

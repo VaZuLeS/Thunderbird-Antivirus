@@ -489,10 +489,15 @@ const ThundyAnalysis = (() => {
         if(data.protection?.required)card.append(n('p',t('analysisApprovalRequired')+' · '+data.protection.reason+' · '+data.protection.revision,'warning'));
         const switcher=n('button','');switcher.type='button';switcher.dataset.focusKey='view-switch';
         const preference=['simple','expert'].includes(data.displayPreferences?.view)?data.displayPreferences.view:null;
-        if(preference&&host.dataset.viewPreference!==preference){host.dataset.view=preference;host.dataset.viewPreference=preference;}
+        if(preference&&host.dataset.viewPreference!==preference){
+            // The first settings response can arrive after the user switched
+            // the loading view. Later explicit setting changes still apply.
+            if(host.dataset.viewPreference!==undefined||host.dataset.viewChosen!=='true')host.dataset.view=preference;
+            host.dataset.viewPreference=preference;
+        }
         if(!host.dataset.view)host.dataset.view=document.body.dataset.thundyAnalysisView==='expert'?'expert':'simple';
         const applyView=()=>{const expert=host.dataset.view==='expert';card.hidden=!expert;overview.hidden=expert;switcher.textContent=t(expert?'analysisSimple':'analysisExpert');switcher.setAttribute('aria-expanded',String(expert));document.body.dataset.thundyAnalysisView=expert?'expert':'simple';};
-        switcher.addEventListener('click',()=>{host.dataset.view=host.dataset.view==='expert'?'simple':'expert';applyView();});applyView();
+        switcher.addEventListener('click',()=>{host.dataset.viewChosen='true';host.dataset.view=host.dataset.view==='expert'?'simple':'expert';applyView();});applyView();
         style.textContent+='[hidden]{display:none!important}.scan-actions{font:14px/1.5 system-ui;color:var(--text-color,#192b40);background:var(--card-bg,#fff);overflow-wrap:anywhere;padding:12px;border:1px solid var(--card-border,#cbd5e1);border-radius:10px;margin-bottom:12px}.scan-actions button{margin:4px;max-width:100%;white-space:normal;overflow-wrap:anywhere}';
         const actions=n('section','','scan-actions');actions.setAttribute('aria-label',t('scanActions'));
         if(data.scanJob){
