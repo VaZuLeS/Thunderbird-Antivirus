@@ -381,6 +381,18 @@ async function interaction(page, c) {
     await page.keyboard.press("Tab");
     assert.equal(await page.locator("#thundy-analysis-status").evaluate(el=>el.shadowRoot.activeElement?.tagName),"SUMMARY");
 
+    const hybridPanel=page.locator("#thundy-analysis-status .hybrid-expert");
+    await hybridPanel.locator(":scope > summary").focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await hybridPanel.evaluate(el=>el.open),true);
+    const mitre=hybridPanel.locator('[data-key="hybrid:attachment:1.2:mitre"]');
+    await mitre.locator("summary").focus();await page.keyboard.press("Enter");
+    await mitre.locator("dd").first().waitFor();
+    assert.ok((await mitre.innerText()).includes("T1059"));
+    assert.ok((await hybridPanel.innerText()).includes(sourceCatalog.hybridExpertMissing.message));
+    assert.ok((await hybridPanel.innerText()).includes(sourceCatalog.hybridExpertEmpty.message));
+    assert.equal(await hybridPanel.locator("img,script,a").count(),0);
+
     assert.equal(
       await page.locator(".local-risk .risk-meter").getAttribute("value"),
       "72",

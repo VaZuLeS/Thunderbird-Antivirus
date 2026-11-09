@@ -2367,6 +2367,60 @@ const ThundyI18n = (() => {
   },
   "assessmentOriginal": {
     "message": "Original provider verdict"
+  },
+  "hybridExpertTitle": {
+    "message": "API v2 report details"
+  },
+  "hybridExpertScope": {
+    "message": "Only fields actually received are shown. A Quick Scan does not prove a full sandbox execution. Missing data is not a negative finding. URLs omit credentials, query strings and fragments; command lines and raw reports are not displayed. Opening these details sends no request."
+  },
+  "hybridExpertMissing": {
+    "message": "Not supplied in this report"
+  },
+  "hybridExpertYes": {
+    "message": "Yes"
+  },
+  "hybridExpertNo": {
+    "message": "No"
+  },
+  "hybridExpert_identity": {
+    "message": "File and resource identity"
+  },
+  "hybridExpert_assessment": {
+    "message": "Original assessment and processing"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scanner results"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Individual antivirus detections"
+  },
+  "hybridExpert_reports": {
+    "message": "Referenced sandbox reports"
+  },
+  "hybridExpert_counts": {
+    "message": "Reported totals"
+  },
+  "hybridExpert_signatures": {
+    "message": "Behavioral signatures"
+  },
+  "hybridExpert_mitre": {
+    "message": "MITRE ATT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Network indicators"
+  },
+  "hybridExpert_processes": {
+    "message": "Processes"
+  },
+  "hybridExpert_extracted": {
+    "message": "Extracted files"
+  },
+  "hybridExpert_certificates": {
+    "message": "Certificates"
+  },
+  "hybridExpertEmpty": {
+    "message": "Supplied as an empty list; no entries reported"
   }
 };
     function get(key, params = []) {

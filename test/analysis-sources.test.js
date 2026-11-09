@@ -392,3 +392,25 @@ test('scan actions stay visible in both views, use accepted state and disable ru
  assert.ok(root.textContent.includes(catalog.scanRunning.message));
  } finally {dom.window.close();}
 });
+
+test('Hybrid report details render in popup and serialized email in all six languages without network or markup execution',async()=>{
+ const a=model();
+ const c0=vm.createContext({URL});vm.runInContext(fs.readFileSync('provider_results.js','utf8')+'\nglobalThis.p=ThundyProviderResults;',c0);
+ const report=c0.p.hybridDetails({sha256:'ab'.repeat(32),finished:false,verdict:'malicious',scanners_v2:{Fixture:{status:'malicious',positives:1,total:20}},signatures:[{name:'<img src=x onerror=alert(1)>',threat_level:2}],mitre_attcks:[{attck_id:'T1059'}]});
+ for(const lang of ['en','de','fr','es','it','pl'])for(const serialized of [false,true]){
+  const dom=new JSDOM('<html><body></body></html>');
+  try{
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(k=>catalog[k]?.message||'MISSING:'+k);
+   const data={messageId:7,local:{state:'checked'},rows:[],hybridReports:{'link:0':{...report,observedAt:100},'invalid-reference':report},resourceLabels:{'link:0':'example.invalid'}};
+   const c=vm.createContext({document:dom.window.document,Date,labels,data,fetch:()=>{throw Error('No network permitted');}});if(!serialized)vm.runInContext(source,c);
+   const render=()=>vm.runInContext(serialized?'('+a.render.toString()+')(data,labels)':'ThundyAnalysis.render(data,labels)',c);
+   render();const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+   const panel=root.querySelector('.hybrid-expert');assert.equal(root.querySelectorAll('.hybrid-expert').length,1);assert.equal(panel.closest('.card').hidden,true);
+   root.querySelector('[data-focus-key="view-switch"]').click();assert.equal(panel.closest('.card').hidden,false);panel.open=true;
+   for(const group of panel.querySelectorAll('details')){group.open=true;group.dispatchEvent(new dom.window.Event('toggle'));}
+   assert.ok(panel.textContent.includes('T1059'));assert.ok(panel.textContent.includes('Fixture'));assert.ok(panel.textContent.includes('<img src=x onerror=alert(1)>'));assert.equal(panel.querySelectorAll('img,script,a').length,0);assert.ok(panel.textContent.includes(catalog.hybridExpertMissing.message));assert.ok(!panel.textContent.includes('MISSING:'));
+   render();assert.equal(root.querySelector('[data-key="hybrid:link:0:mitre"]').open,true);assert.ok(root.querySelector('.hybrid-expert').textContent.includes('T1059'));
+   data.hybridReports={};render();assert.equal(root.querySelector('.hybrid-expert'),null);
+  }finally{dom.window.close();}
+ }
+});

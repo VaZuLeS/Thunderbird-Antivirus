@@ -46,3 +46,35 @@ test('a benign result from another service never suppresses an applicable malici
  const {a}=adapter();const resource={url:'https://fixture.invalid',report:{verdict:'clean'},hybrid_verdict:{status:'MALICIOUS',observedAt:10},urlscan:{status:'CLEAN',assessment:a.evaluate('urlscan',{verdicts:{overall:{malicious:false}}}),observedAt:20}};
  const result=a.resource(resource);assert.equal(result.verdict,'malicious');assert.equal(result.provider,'hybridanalysis');assert.equal(result.observedAt,10);
 });
+
+test('Hybrid expert projection keeps API fields separate from secrets, raw protocols and zero defaults',()=>{
+ const {a}=adapter(),digest='ab'.repeat(32);
+ const raw={sha256:digest,finished:false,verdict:'clean',threat_score:0,password:'CANARY_SECRET',headers:{'api-key':'CANARY_SECRET'},target_url:'https://user:CANARY_SECRET@example.invalid/path?token=CANARY_SECRET#CANARY_SECRET',scanners_v2:{metadefender:{status:'malicious',positives:3,total:35,anti_virus_results:[{product:'Fixture AV',verdict:'Fixture.Trojan',token:'CANARY_SECRET'}]}},reports:['job-123',{job_id:'job-456',environment_id:160,verdict:'malicious',threat_score:85}],mitre_attcks:[{attck_id:'T1059',tactic:'execution',description:'Synthetic technique'}],signatures:[{name:'Synthetic behavior',threat_level:2}],processes:[{name:'fixture.exe',process_id:12,command_line:'--password=CANARY_SECRET',environment:{SECRET:'CANARY_SECRET'}}],domains:['c2.example.invalid'],extracted_files:[{name:'child.exe',sha256:digest,size:12}],total_processes:0};
+ const before=JSON.stringify(raw),details=a.hybridDetails(raw),json=JSON.stringify(details);
+ assert.equal(JSON.stringify(raw),before);assert.equal(details.schemaVersion,1);assert.equal(details.truncated,false);
+ for(const expected of ['metadefender','Fixture AV','Fixture.Trojan','job-123','job-456','T1059','fixture.exe','c2.example.invalid','child.exe','https://example.invalid/path'])assert.ok(json.includes(expected),expected);
+ assert.ok(!json.includes('CANARY_SECRET'));assert.ok(!json.includes('command_line'));assert.ok(!json.includes('total_signatures'));
+ assert.ok(details.sections.find(s=>s.id==='counts').rows[0].some(f=>f.key==='total_processes'&&f.value===0));
+ assert.ok(details.sections.find(s=>s.id==='assessment').rows[0].some(f=>f.key==='finished'&&f.value===false));
+ assert.deepEqual(Object.keys(a.project({...a.evaluate('hybridanalysis',raw),hybridReports:details})).sort(),['assessmentVersion','completion','conflicts','signals']);
+});
+
+test('Hybrid expert projection bounds display data and tolerates absent, malformed and multiple reports',()=>{
+ const {a}=adapter();for(const raw of [null,{},3,{scanners_v2:3,reports:3,processes:[null,4]}])assert.equal(a.hybridDetails(raw).sections.length,0);
+ const details=a.hybridDetails([{job_id:'job1',verdict:'clean'},{job_id:'job2',verdict:'malicious',scanners_v2:[{name:'Array scanner',status:'error'}],signatures:Array.from({length:70},()=>({name:'x'.repeat(800),threat_level:2}))}]);
+ assert.equal(details.truncated,true);assert.equal(details.sections.find(s=>s.id==='assessment').rows.length,2);assert.equal(details.sections.find(s=>s.id==='scanners').rows[0][0].value,'Array scanner');assert.ok(details.sections.every(s=>s.rows.length<=50));assert.ok(JSON.stringify(details).length<65000);
+});
+
+test('expert Hybrid projection refuses explicit foreign report hashes',()=>{
+ const {a}=adapter(),expected='ab'.repeat(32),foreign='cd'.repeat(32);
+ assert.equal(a.hybridDetails({sha256:foreign,verdict:'malicious'},expected).sections.length,0);
+ const detail=a.hybridDetails([{sha256:foreign,verdict:'malicious'},{sha256:expected,verdict:'clean'}],expected);
+ assert.ok(!JSON.stringify(detail).includes(foreign));assert.ok(JSON.stringify(detail).includes(expected));
+});
+
+test('Hybrid expert details distinguish explicitly empty lists from missing and malformed data',()=>{
+ const {a}=adapter(),empty=a.hybridDetails({reports:[],scanners_v2:{},mitre_attcks:[],domains:[],processes:[]});
+ for(const id of ['reports','scanners','mitre','network','processes'])assert.ok(empty.emptySections.includes(id),id);
+ assert.equal(a.hybridDetails({}).emptySections.length,0);assert.ok(!a.hybridDetails({scanners:[null],processes:[null]}).emptySections.includes('scanners'));
+ assert.equal(a.hybridDetails({verdict:'unknown'},123).sections[0].id,'assessment');
+});

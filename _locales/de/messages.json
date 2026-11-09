@@ -2365,5 +2365,59 @@
   },
   "assessmentOriginal": {
     "message": "Originales Anbieterurteil"
+  },
+  "hybridExpertTitle": {
+    "message": "API-v2-Berichtsdetails"
+  },
+  "hybridExpertScope": {
+    "message": "Angezeigt werden nur tatsächlich empfangene Felder. Ein Quick-Scan belegt keine vollständige Sandboxausführung. Fehlende Daten sind kein unauffälliger Befund. URLs erscheinen ohne Zugangsdaten, Abfrageparameter und Fragment; Befehlszeilen und Rohberichte werden nicht angezeigt. Das Aufklappen sendet keine Anfrage."
+  },
+  "hybridExpertMissing": {
+    "message": "In diesem Bericht nicht geliefert"
+  },
+  "hybridExpertYes": {
+    "message": "Ja"
+  },
+  "hybridExpertNo": {
+    "message": "Nein"
+  },
+  "hybridExpert_identity": {
+    "message": "Datei- und Ressourcenidentität"
+  },
+  "hybridExpert_assessment": {
+    "message": "Originalbewertung und Verarbeitung"
+  },
+  "hybridExpert_scanners": {
+    "message": "Scannerergebnisse"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Einzelne Antivirus-Erkennungen"
+  },
+  "hybridExpert_reports": {
+    "message": "Referenzierte Sandboxberichte"
+  },
+  "hybridExpert_counts": {
+    "message": "Gemeldete Gesamtzahlen"
+  },
+  "hybridExpert_signatures": {
+    "message": "Verhaltenssignaturen"
+  },
+  "hybridExpert_mitre": {
+    "message": "MITRE ATT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Netzwerkindikatoren"
+  },
+  "hybridExpert_processes": {
+    "message": "Prozesse"
+  },
+  "hybridExpert_extracted": {
+    "message": "Extrahierte Dateien"
+  },
+  "hybridExpert_certificates": {
+    "message": "Zertifikate"
+  },
+  "hybridExpertEmpty": {
+    "message": "Als leere Liste geliefert; keine Einträge gemeldet"
   }
 }

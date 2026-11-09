@@ -2362,5 +2362,59 @@
   },
   "assessmentOriginal": {
     "message": "Veredicto original del proveedor"
+  },
+  "hybridExpertTitle": {
+    "message": "Detalles del informe API v2"
+  },
+  "hybridExpertScope": {
+    "message": "Solo se muestran los campos recibidos. Un Quick Scan no demuestra una ejecución completa en sandbox. Los datos ausentes no indican ausencia de amenazas. Las URL omiten credenciales, parámetros y fragmentos; no se muestran líneas de comandos ni informes sin filtrar. Abrir estos detalles no envía solicitudes."
+  },
+  "hybridExpertMissing": {
+    "message": "No proporcionado en este informe"
+  },
+  "hybridExpertYes": {
+    "message": "Sí"
+  },
+  "hybridExpertNo": {
+    "message": "No"
+  },
+  "hybridExpert_identity": {
+    "message": "Identidad del archivo y del recurso"
+  },
+  "hybridExpert_assessment": {
+    "message": "Evaluación original y procesamiento"
+  },
+  "hybridExpert_scanners": {
+    "message": "Resultados de los escáneres"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Detecciones antivirus individuales"
+  },
+  "hybridExpert_reports": {
+    "message": "Informes sandbox referenciados"
+  },
+  "hybridExpert_counts": {
+    "message": "Totales comunicados"
+  },
+  "hybridExpert_signatures": {
+    "message": "Firmas de comportamiento"
+  },
+  "hybridExpert_mitre": {
+    "message": "MITRE ATT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Indicadores de red"
+  },
+  "hybridExpert_processes": {
+    "message": "Procesos"
+  },
+  "hybridExpert_extracted": {
+    "message": "Archivos extraídos"
+  },
+  "hybridExpert_certificates": {
+    "message": "Certificados"
+  },
+  "hybridExpertEmpty": {
+    "message": "Lista vacía recibida; no se comunicaron entradas"
   }
 }

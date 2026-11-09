@@ -938,3 +938,15 @@ test('source writes serialize their snapshots and a failed write does not poison
  s.context.updateStore=async()=>{throw new Error('offline');};await ctx.flush();assert.equal(ctx.persistenceFailed,true);
  sourceRecords(s,records.get(s.message.headerMessageId));await ctx.flush();assert.equal(ctx.persistenceFailed,false);ctx.dispose();
 });
+
+test('expert report snapshot exposes only current resources and never persists display details',async()=>{
+ const s=setup({},true);await s.context.configure();
+ const record={links:[{url:'https://other.invalid/',report:{verdict:'malicious',signatures:[{name:'FOREIGN_SIGNATURE'}]}},{url:'https://example.com/',report:{finished:true,verdict:'unknown',mitre_attcks:[{attck_id:'T1059'}]},report_fetched_at:'2026-11-09T00:00:00Z'}]};
+ const records=sourceRecords(s,record),before=JSON.stringify(record),ctx=await s.context.getMessageAnalysisContext(s.message);
+ try{
+  let snapshot=await ctx.snapshot();assert.deepEqual(Object.keys(snapshot.hybridReports),['link:1']);assert.ok(JSON.stringify(snapshot.hybridReports).includes('T1059'));assert.ok(!JSON.stringify(snapshot.hybridReports).includes('FOREIGN_SIGNATURE'));
+  assert.equal(JSON.stringify(records.get(s.message.headerMessageId)),before);assert.equal(s.requests.length,0);
+  await ctx.flush();assert.ok(!JSON.stringify(records.get(s.message.headerMessageId).analysisSourceSnapshots).includes('hybridReports'));
+  records.set(s.message.headerMessageId,null);snapshot=await ctx.snapshot();assert.equal(Object.keys(snapshot.hybridReports).length,0);
+ }finally{ctx.dispose();}
+});

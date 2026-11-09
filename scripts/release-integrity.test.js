@@ -109,3 +109,11 @@ test('publication refuses mismatched existing asset bytes', () => releaseFixture
         return { status: 0 };
     } }), /published bytes differ/);
 }));
+
+test('1.25.2 requires package-bound native Hybrid expert detail evidence',()=>{
+ const identity={extensionVersion:'1.25.2',packageSha256:'a'.repeat(64)};
+ const report={passed:true,extensionVersion:identity.extensionVersion,xpiSha256:identity.packageSha256,automaticScans:{passed:true,bothProvidersWithoutLinkClick:true,popupClosedDuringRetry:true,duplicateDisplayReused:true,unlisted:true,syntheticTransport:true},providerResults:{passed:true,partialMaliciousBlocks:true,terminalUnknownRetainsFinding:true,brandDoesNotEscalate:true,refreshWithoutSubmission:true,bothViewsAgree:true}};
+ assert.throws(()=>validateReports(identity,[report],[]),/Hybrid expert detail/);
+ assert.throws(()=>validateReports(identity,[report,{...report,xpiSha256:'b'.repeat(64),providerResults:{hybridExpertDetails:true}}],[]),/Hybrid expert detail/);
+ assert.throws(()=>validateReports(identity,[{...report,providerResults:{...report.providerResults,hybridExpertDetails:true}}],[]),/real Thunderbird/);
+});

@@ -1,5 +1,7 @@
 # Aktueller Produktstand — 8. November 2026
 
+Die vorbereitete **1.25.2** ergänzt [detaillierte Hybrid-Analysis-Berichte in der Fachansicht](HYBRID_FACHANSICHT.md). [Freigabeumfang](VEROEFFENTLICHUNG_1_25_2.md); Veröffentlichung erst nach paketgebundener Abnahme. **1.25.1** wurde vollständig freigegeben; veröffentlichte XPI-Version und SHA-256 wurden nach Download verifiziert.
+
 Korrekturstand **1.25.1**: gemeinsame automatische Hintergrundprüfungen und sichtbare Prüfaktionen. [Konfiguration und Ablauf](AUTOMATISCHE_PRUEFUNGEN.md), [Release-Gate](VEROEFFENTLICHUNG_1_25_1.md). Bestehende Profile behalten ihre Freigabegrenzen bis zur ausdrücklichen Moduswahl.
 
 Die **1.25.0** ergänzt verständliche und technische Ergebnisansichten, ein gemeinsames Anbieterregister sowie optionale lokale Administration mit separater Linkfreigabe. Schutzregeln bleiben nach Upgrade ausgeschaltet. [Release-Umfang und Nachweise](VEROEFFENTLICHUNG_1_25_0.md), [Einrichtung und Datenflüsse](EXTERNE_ANALYSEN_UND_LINKFREIGABE.md), [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.0). Die neue Passwort-/Freigabefunktion ist lokal unter Linux mit Thunderbird 153.5.1 ESR geprüft; Windows/macOS und echte Anbieterzugänge bleiben gesonderte Abnahmen.

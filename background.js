@@ -198,9 +198,22 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 schedule() { if (context.disposed) return; if (!context.timer) context.timer = setTimeout(() => { context.timer = null; context.flush().catch(() => {}); }, 300); },
                 async snapshot() {
                     let sourceHistory = {rows:[],truncated:false};
+                    const hybridReports = {};
+                    let hybridReportsTruncated=false,hybridReportBudget=500000;
                     try {
                         const original = await getFromStore(await getSharedDB(), 'hybridanalysis', key), saved = original ? ThundyAnalysis.resources(original) : null, current = sourceRecord(original);
                         if (saved) sourceHistory = ThundyAnalysis.history({...saved,attachments:(saved.attachments || []).filter(item => !(current.attachments || []).includes(item)),links:(saved.links || []).filter(item => !currentLinks.has(item.url))},snapshotId);
+                        // Only current, content-bound resources enter the detailed display.
+                        // Raw protocols and these resource details never enter provenance exports.
+                        for(const item of [...(current?.attachments||[]),...(current?.links||[])]){
+                            const ref=item.url?item.analysisResourceRef:'attachment:'+item.partName;
+                            if(item.report&&ThundyAnalysis.validResource(ref)){
+                                const details={...ThundyProviderResults.hybridDetails(item.report,item.hybrid_sha256||null),observedAt:Number.isFinite(Date.parse(item.report_fetched_at))?Date.parse(item.report_fetched_at):null};
+                                const size=JSON.stringify(details).length;
+                                if(Object.keys(hybridReports).length>=100||size>hybridReportBudget){hybridReportsTruncated=true;continue;}
+                                hybridReportBudget-=size;hybridReports[ref]=details;
+                            }
+                        }
                         if (!context.scanRunId) for (const row of ThundyAnalysis.legacy({...current,analysisStatus:model.data}).rows) if (!model.data.rows.some(active => ThundyAnalysis.rowKey(active) === ThundyAnalysis.rowKey(row)) && model.data.rows.length < 1200) model.data.rows.push(row);
                     } catch (_) { /* retain known live metadata */ }
                     const enabled = { hybridanalysis: !!apikey_hybridanalysis, virustotal: !!apikey_virustotal || ipReputationProvider === 'virustotal' && !!ipReputationApiKey, urlhaus: !!urlhausApikey, abuseipdb: ipReputationProvider === 'abuseipdb' && !!ipReputationApiKey, urlscan: !!urlscanApikey };
@@ -233,7 +246,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     }
                     const security = typeof ThundySecurity !== 'undefined' ? await ThundySecurity.read() : null;
                     const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:model.data.local.score,coverage:model.data.local.state,verdict:model.data.rows.some(row=>row.verdict==='malicious')?'MALICIOUS':model.data.rows.length && model.data.rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?model.data.rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
-                    return { ...JSON.parse(JSON.stringify(model.data)), scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    return { ...JSON.parse(JSON.stringify(model.data)), hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;

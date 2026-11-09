@@ -1882,7 +1882,7 @@ def check_provider_results(m, base, out, report, display, message_id):
         else if(url.includes('hybrid-analysis.com/api/v2/quick-scan/')){
           hybridPolls++;
           if(hybridPolls===1)data={id:'provider-hybrid-job',finished:false,verdict:'clean',scanners:[{status:'malicious',positives:2,total:35},{status:'in-progress'}]};
-          else{if(!window.wrappedJSObject.__providerReleased)await new Promise(resolve=>window.wrappedJSObject.__releaseProvider=resolve);data={id:'provider-hybrid-job',finished:true,verdict:'unknown'};}
+          else{if(!window.wrappedJSObject.__providerReleased)await new Promise(resolve=>window.wrappedJSObject.__releaseProvider=resolve);data={id:'provider-hybrid-job',finished:true,verdict:'unknown',type:'Synthetic HTML',scanners_v2:{Fixture:{status:'unknown'}},mitre_attcks:[{attck_id:'T1059',tactic:'execution'}],signatures:[{name:'Synthetic expert signature',threat_level:2}],total_processes:0};}
         }else if(url==='https://urlscan.io/api/v1/scan/')data={uuid:'provider-urlscan-job'};
         else if(url.includes('urlscan.io/api/v1/result/'))data={task:{uuid:'provider-urlscan-job'},verdicts:{overall:{malicious:false,score:65},urlscan:{malicious:false,brands:['Example']}}};
         else throw Error('Unexpected synthetic provider route');
@@ -1919,6 +1919,17 @@ def check_provider_results(m, base, out, report, display, message_id):
     refreshed=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('state')=='completed' else None),20)
     assert m.page('return window.wrappedJSObject.__providerCalls.filter(c=>c.method==="POST").length;',browser=options)==before
     assert any(r['provider']=='hybridanalysis' and r['verdict']=='malicious' for r in refreshed['rows']),refreshed
+    def expert_details(browser='window.gTabmail.currentTabInfo.browser'):
+        m.page('const root=document.getElementById("thundy-analysis-status").shadowRoot;const panel=root.querySelector(".hybrid-expert");if(!panel)throw Error("Missing Hybrid expert panel");panel.open=true;for(const group of panel.querySelectorAll("details"))group.open=true;',browser=browser)
+        wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".hybrid-expert").textContent.includes("T1059");',browser=browser))
+        result=m.page('const panel=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".hybrid-expert");return {text:panel.textContent,activeContent:panel.querySelectorAll("script,img,a").length};',browser=browser)
+        assert 'Synthetic expert signature' in result['text'] and 'total_processes' in result['text'] and result['activeContent']==0,result
+        m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".hybrid-expert details[data-key$=mitre]").scrollIntoView({block:"center"});',browser=browser)
+        def visible_details():
+            return m.page('const node=document.getElementById("thundy-analysis-status").shadowRoot.querySelector(".hybrid-expert details[data-key$=mitre]");node.scrollIntoView({block:"center"});const r=node.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight;',browser=browser)
+        wait_for(visible_details)
+    expert_details()
+    m.screenshot(out/'hybrid-expert-inline.png')
     point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
     native_click(display,point['x'],point['y'])
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
@@ -1926,9 +1937,10 @@ def check_provider_results(m, base, out, report, display, message_id):
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes("Dangerous content reported");',browser=popup))
     expert_view(m,popup)
     wait_for(lambda:m.page('return !!document.querySelector("#hybrid_analysis_api_content .card-danger");',browser=popup))
-    m.screenshot(out/'provider-results-popup.png')
+    expert_details(popup)
+    subprocess.run(['import','-window','root',str(out/'provider-results-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
-    report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'syntheticTransport':True}
+    report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'hybridExpertDetails':True,'syntheticTransport':True}
 
 
 def main():

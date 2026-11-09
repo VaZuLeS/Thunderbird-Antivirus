@@ -88,5 +88,89 @@ var ThundyProviderResults = (function () {
         return values.reduce((a,b)=>verdicts.indexOf(b.verdict)>verdicts.indexOf(a.verdict)?b:a,{verdict:'unknown',provider:null,observedAt:null});
     }
     function legacy(provider,data){const a=evaluate(provider,data);return a.verdict==='malicious'?'MALICIOUS':a.verdict==='suspicious'?'SUSPICIOUS':a.verdict==='none'&&a.completion==='complete'?'CLEAN':a.completion==='complete'?'UNKNOWN':null;}
-    return {evaluate,project,merge,stored,resource,legacy};
+    // Display-only API v2 projection. Kept separate from provenance, exports and
+    // protection decisions. No raw JSON, command lines, cookies or arbitrary keys.
+    function hybridDetails(data, expectedHash = null) {
+        if(typeof expectedHash!=='string'||!/^[a-f0-9]{64}$/i.test(expectedHash))expectedHash=null;
+        const sections=[];let truncated=false,budget=60000;
+        const text=value=>{
+            if(typeof value!=='string')return null;
+            const clean=value.replace(/[\u0000-\u001f\u007f\u202a-\u202e\u2066-\u2069]/g,' ').trim();
+            if(!clean)return null;
+            if(clean.length>512)truncated=true;
+            return clean.slice(0,512);
+        };
+        const url=value=>{try{const u=new URL(value);if(!['http:','https:'].includes(u.protocol))return null;return text(u.origin+u.pathname);}catch(_){return null;}};
+        const hash=value=>typeof value==='string'&&/^[a-f0-9]{32,128}$/i.test(value)?value:null;
+        const id=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value)?value:null;
+        const fields=(value,keys)=>{
+            if(!object(value))return [];
+            return keys.flatMap(key=>{
+                const raw=value[key];let v=null;
+                if(['md5','sha1','sha256','sha512','imphash'].includes(key))v=hash(raw);
+                else if(['id','job_id','submission_id'].includes(key))v=id(raw);
+                else if(['url','target_url'].includes(key))v=url(raw);
+                else if(typeof raw==='boolean'||number(raw))v=raw;
+                else if(Array.isArray(raw)){if(raw.length>20)truncated=true;v=raw.slice(0,20).map(text).filter(Boolean).join(', ')||null;}
+                else v=text(raw);
+                return v===null?[]:[{key,value:v}];
+            });
+        };
+        const add=(section,rows)=>{
+            const available=rows.filter(row=>row.length);
+            if(available.length>50)truncated=true;
+            const selected=[];
+            for(const row of available.slice(0,50)){
+                const size=JSON.stringify(row).length;
+                if(size>budget){truncated=true;break;}
+                budget-=size;selected.push(row);
+            }
+            if(selected.length)sections.push({id:section,rows:selected});
+        };
+        const roots=(Array.isArray(data)?data:[data]).filter(value=>object(value)&&(!expectedHash||typeof value.sha256!=='string'||value.sha256.toLowerCase()===expectedHash.toLowerCase()));
+        if(roots.length>20)truncated=true;
+        const values=roots.slice(0,20);
+        add('identity',values.map(v=>fields(v,['sha256','sha1','md5','sha512','imphash','type','type_short','size','last_file_name','submit_name','url_analysis','target_url'])));
+        add('assessment',values.map(v=>fields(v,['id','job_id','submission_id','state','finished','verdict','threat_score','threat_level','multiscan_result','av_detect','whitelisted','vx_family','classification_tags','tags','analysis_start_time','environment_id','environment_description','error_type','error_origin'])));
+        const scanners=[];
+        for(const v of values){
+            for(const scanner of (Array.isArray(v.scanners)?v.scanners:[]))if(object(scanner))scanners.push(scanner);
+            const v2=v.scanners_v2;
+            if(object(v2)){for(const [name,scanner] of Object.entries(v2))if(object(scanner))scanners.push({...scanner,name:scanner.name||name});}
+            else if(Array.isArray(v2)){for(const scanner of v2)if(object(scanner))scanners.push(scanner);}
+        }
+        add('scanners',scanners.map(s=>fields(s,['name','status','progress','positives','total','percent','scan_time','scan_date'])));
+        const av=[];
+        for(const scanner of scanners)for(const entry of (Array.isArray(scanner.anti_virus_results)?scanner.anti_virus_results:[]))if(object(entry))av.push([...fields(scanner,['name']),...fields(entry,['product','verdict','version','update'])]);
+        add('antivirus',av);
+        const reports=[];
+        for(const v of values)for(const report of (Array.isArray(v.reports)?v.reports:[])){
+            if(typeof report==='string')reports.push(fields({job_id:report},['job_id']));
+            else if(object(report))reports.push(fields(report,['job_id','id','environment_id','environment_description','state','verdict','threat_score','threat_level','analysis_start_time']));
+        }
+        add('reports',reports);
+        add('counts',values.map(v=>fields(v,['total_network_connections','total_processes','total_signatures'])));
+        const collect=(key,keys)=>values.flatMap(v=>(Array.isArray(v[key])?v[key]:[]).map(row=>fields(row,keys)));
+        add('signatures',collect('signatures',['name','type','category','threat_level','threat_score']));
+        add('mitre',collect('mitre_attcks',['attck_id','tactic','technique','description']));
+        const network=[];
+        for(const v of values)for(const key of ['domains','hosts','compromised_hosts'])for(const item of (Array.isArray(v[key])?v[key]:[])){
+            const row=typeof item==='string'?fields({[key]:item},[key]):fields(item,['domain','host','ip','port','protocol','country','asn']);
+            if(row.length)network.push(row);
+        }
+        add('network',network);
+        add('processes',collect('processes',['uid','name','process_id','parent_uid','file_path','sha256']));
+        add('extracted',collect('extracted_files',['name','type','size','sha256','sha1','md5','threat_level','threat_score']));
+        add('certificates',collect('certificates',['subject','issuer','valid_from','valid_until','serial_number']));
+        const emptySections=[];
+        for(const [section,keys] of Object.entries({reports:['reports'],signatures:['signatures'],mitre:['mitre_attcks'],network:['domains','hosts','compromised_hosts'],processes:['processes'],extracted:['extracted_files'],certificates:['certificates']})){
+            const arrays=values.flatMap(v=>keys.filter(key=>Array.isArray(v[key])).map(key=>v[key]));
+            if(arrays.length&&arrays.every(rows=>rows.length===0)&&!sections.some(s=>s.id===section))emptySections.push(section);
+        }
+        const scannerLists=values.flatMap(v=>[...(Array.isArray(v.scanners)?[v.scanners]:[]),...(Array.isArray(v.scanners_v2)?[v.scanners_v2]:object(v.scanners_v2)?[Object.values(v.scanners_v2)]:[])]);
+        if(scannerLists.length&&scannerLists.every(rows=>rows.length===0))emptySections.push('scanners');
+        if(scanners.some(s=>Array.isArray(s.anti_virus_results))&&scanners.filter(s=>Array.isArray(s.anti_virus_results)).every(s=>s.anti_virus_results.length===0))emptySections.push('antivirus');
+        return {schemaVersion:1,sections,emptySections,truncated};
+    }
+    return {evaluate,project,merge,stored,resource,legacy,hybridDetails};
 }());

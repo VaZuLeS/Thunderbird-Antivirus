@@ -2362,5 +2362,59 @@
   },
   "assessmentOriginal": {
     "message": "Oryginalna ocena usługi"
+  },
+  "hybridExpertTitle": {
+    "message": "Szczegóły raportu API v2"
+  },
+  "hybridExpertScope": {
+    "message": "Wyświetlane są tylko otrzymane pola. Quick Scan nie potwierdza pełnego uruchomienia w piaskownicy. Brak danych nie oznacza braku zagrożeń. Adresy URL nie zawierają danych logowania, parametrów ani fragmentów; wiersze poleceń i surowe raporty nie są wyświetlane. Otwarcie szczegółów nie wysyła zapytania."
+  },
+  "hybridExpertMissing": {
+    "message": "Nie dostarczono w tym raporcie"
+  },
+  "hybridExpertYes": {
+    "message": "Tak"
+  },
+  "hybridExpertNo": {
+    "message": "Nie"
+  },
+  "hybridExpert_identity": {
+    "message": "Tożsamość pliku i zasobu"
+  },
+  "hybridExpert_assessment": {
+    "message": "Oryginalna ocena i przetwarzanie"
+  },
+  "hybridExpert_scanners": {
+    "message": "Wyniki skanerów"
+  },
+  "hybridExpert_antivirus": {
+    "message": "Poszczególne wykrycia antywirusowe"
+  },
+  "hybridExpert_reports": {
+    "message": "Powiązane raporty piaskownicy"
+  },
+  "hybridExpert_counts": {
+    "message": "Zgłoszone sumy"
+  },
+  "hybridExpert_signatures": {
+    "message": "Sygnatury zachowania"
+  },
+  "hybridExpert_mitre": {
+    "message": "MITRE ATT&CK"
+  },
+  "hybridExpert_network": {
+    "message": "Wskaźniki sieciowe"
+  },
+  "hybridExpert_processes": {
+    "message": "Procesy"
+  },
+  "hybridExpert_extracted": {
+    "message": "Wyodrębnione pliki"
+  },
+  "hybridExpert_certificates": {
+    "message": "Certyfikaty"
+  },
+  "hybridExpertEmpty": {
+    "message": "Dostarczono pustą listę; nie zgłoszono wpisów"
   }
 }

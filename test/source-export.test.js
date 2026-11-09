@@ -116,3 +116,10 @@ test('source export projects error codes, sanitized error details, retryAfter an
         f.close();
     }
 });
+
+test('expert Hybrid resource details never enter the provenance export',()=>{
+ const f=fixture();try{
+  const snapshot={...fresh(),hybridReports:{'link:0':{schemaVersion:1,sections:[{id:'identity',rows:[[{key:'sha256',value:'PRIVATE_RESOURCE'}]]}]}},hybridReportsTruncated:true};
+  const out=f.c.subject.project(snapshot);assert.equal(out.hybridReports,undefined);assert.ok(!JSON.stringify(out).includes('PRIVATE_RESOURCE'));
+ }finally{f.close();}
+});

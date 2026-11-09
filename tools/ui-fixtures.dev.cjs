@@ -231,7 +231,7 @@ function addonMock({
                 {provider:"urlhaus",resource:"link:0",scope:"domain",responses:1,state:"checked",verdict:"none",source:"remote",observedAt:1791014400000},
                 {provider:"abuseipdb",resource:"message",scope:"ip",state:"failed",verdict:"malicious",source:"stored",responses:1,failures:1,observedAt:1791014400000},
                 {provider:"urlscan",resource:"link:1",scope:"url",responses:1,state:"submitted",verdict:"unknown",source:"remote",observedAt:1791014400000}
-              ],resourceLabels:{"attachment:1.2":"same.txt (1.2)","attachment:1.3":"same.txt (1.3)","link:0":"https://first.invalid/path","link:1":"https://second.invalid/path"},availability:{}}
+              ],hybridReports:{"attachment:1.2":{schemaVersion:1,observedAt:1791014400000,sections:[{id:"scanners",rows:[[{key:"name",value:"Synthetic scanner"},{key:"status",value:"malicious"},{key:"positives",value:2},{key:"total",value:35}]]},{id:"mitre",rows:[[{key:"attck_id",value:"T1059"},{key:"tactic",value:"execution"}]]}],emptySections:["certificates"],truncated:false}},resourceLabels:{"attachment:1.2":"same.txt (1.2)","attachment:1.3":"same.txt (1.3)","link:0":"https://first.invalid/path","link:1":"https://second.invalid/path"},availability:{}}
           : p.action === "requestScan"
             ? {success:true,id:"synthetic-retry",state:"queued"}
           : p.action === "getLocalRisk"

@@ -35,3 +35,7 @@ Vertragstests prüfen widersprüchliche Befunde, abgeschlossene unbekannte Beric
 Der native Automatiktest verwendet synthetische Antworten mit realen Thunderbird-Anzeigeereignissen und beiden Oberflächen. Er hält einen Hybrid-Bericht nach einem bösartigen Teilbefund offen, überprüft die Sperrentscheidung, liefert einen unbekannten Abschlussbericht und aktualisiert danach beide Anbieter ohne erneutes POST. Keine Produktionsschlüssel oder echten Nachrichten werden verwendet. Das Release-Gate verlangt diesen paketgebundenen Nachweis zusätzlich zur bisherigen Abnahme.
 
 Der vorherige native CI-Lauf wurde kurz vor Abschluss durch die 15-Minuten-Grenze abgebrochen. Die Grenze wird auf 25 Minuten erhöht; Prüfungen werden nicht entfernt. Temporäre Rollback-Profile werden von den Beweisartefakten ausgeschlossen, damit ein Abbruch keine gleichzeitige Archivierung und Bereinigung dieser Profile auslöst.
+
+## Fachansicht ab 1.25.2
+
+Die [detaillierte Hybrid-Analysis-Fachansicht](HYBRID_FACHANSICHT.md) ergänzt eine getrennte Anzeigeprojektion der tatsächlich empfangenen API-v2-Berichte. Bewertungsregeln, historische Entscheidungen und Datenschutzvoraussetzungen bleiben dabei unverändert.
