@@ -106,9 +106,11 @@ const ThundySecurity = (() => {
         // Stopping transfers is always available, but cannot smuggle other edits.
         if (!(Object.keys(values).length===1 && values.externalAnalysisConsent===false)) await authorized(sender,token);
         else if (!sender?.id || sender.id!==browser.runtime.id) throw error('ADMIN_PAGE_REQUIRED');
-        const allowed = new Set(['apikey','virustotalApikey','urlhausApikey','urlscanApikey','privacyTier','alwaysManual','scanMode','autoScanLinks','timeOfClickProtection','ipReputationProvider','ipReputationApiKey','externalAnalysisConsent','scanningEnabledSenders','trustedAuthServers','customWhitelist','customBlacklist','onboardingState','thundyAppearance','thundyAccent','thundyDensity','enterpriseProfile','enterpriseConfiguration','enterpriseProfileSelection']);
+        const allowed = new Set(['apikey','virustotalApikey','urlhausApikey','urlscanApikey','privacyTier','alwaysManual','scanMode','autoScanLinks','timeOfClickProtection','ipReputationProvider','ipReputationApiKey','externalAnalysisConsent','scanningEnabledSenders','trustedAuthServers','customWhitelist','customBlacklist','onboardingState','thundyAppearance','thundyAccent','thundyDensity','analysisDefaultView','analysisShowHybridDetails','enterpriseProfile','enterpriseConfiguration','enterpriseProfileSelection']);
         if (Object.keys(values).some(k=>!allowed.has(k))) throw error('SETTINGS_INVALID');
         if('scanMode' in values && !['allDisplayed','approvedSenders','manual'].includes(values.scanMode))throw error('SETTINGS_INVALID');
+        if('analysisDefaultView' in values && !['simple','expert'].includes(values.analysisDefaultView))throw error('SETTINGS_INVALID');
+        if('analysisShowHybridDetails' in values && typeof values.analysisShowHybridDetails!=='boolean')throw error('SETTINGS_INVALID');
         const changedKeys=['apikey','virustotalApikey','urlhausApikey','urlscanApikey','ipReputationApiKey','ipReputationProvider'];
         if(changedKeys.some(key=>Object.prototype.hasOwnProperty.call(values,key))) {
             const old=await browser.storage.local.get([...changedKeys,'providerConnectionTests']);

@@ -39,6 +39,11 @@ const ThundyAnalysis = (() => {
     }
     function response(info, status, data) {
         const result = { state: 'received', verdict: 'unknown' };
+        if(info.provider==='urlscan'&&status===400){
+            const errorCode=ThundyProviderResults.urlscanRejection(data);
+            const messages={domain_unresolvable:['urlscanDnsError','The provider could not resolve the target domain.'],invalid_request:['urlscanInvalidRequest','The provider rejected invalid submission parameters.'],submission_rejected:['urlscanSubmissionRejected','The provider rejected the submission; the response does not establish a DNS failure.']};
+            return {state:'failed',verdict:'unknown',errorCode,errorDetails:uiText(...messages[errorCode])};
+        }
         if (status === 404) {
             if (info.provider === 'urlscan') return { state: 'incomplete', verdict: 'unknown' };
             let errorDetails = null;
@@ -355,6 +360,7 @@ const ThundyAnalysis = (() => {
         // This renderer also runs serialized in the message's isolated world.
         // All provider data is projected in the background, never interpreted as HTML.
         for(const [ref,report] of Object.entries(data.hybridReports||{})){
+            if(data.displayPreferences?.hybridDetails===false)break;
             if(!(typeof ref==='string'&&ref.length<=80&&/^(?:attachment:[0-9]+(?:\.[0-9]+)*|link:[0-9]{1,6})$/.test(ref))||report?.schemaVersion!==1||!Array.isArray(report.sections))continue;
             const panel=details('hybrid:'+ref,'Hybrid Analysis · '+t('hybridExpertTitle')+' · '+resourceName({resource:ref}));
             panel.className='hybrid-expert';
@@ -482,6 +488,8 @@ const ThundyAnalysis = (() => {
         if(data.local?.score!=null)card.append(n('p',t('auditLocalScore')+': '+data.local.score+' / 100'));
         if(data.protection?.required)card.append(n('p',t('analysisApprovalRequired')+' · '+data.protection.reason+' · '+data.protection.revision,'warning'));
         const switcher=n('button','');switcher.type='button';switcher.dataset.focusKey='view-switch';
+        const preference=['simple','expert'].includes(data.displayPreferences?.view)?data.displayPreferences.view:null;
+        if(preference&&host.dataset.viewPreference!==preference){host.dataset.view=preference;host.dataset.viewPreference=preference;}
         if(!host.dataset.view)host.dataset.view=document.body.dataset.thundyAnalysisView==='expert'?'expert':'simple';
         const applyView=()=>{const expert=host.dataset.view==='expert';card.hidden=!expert;overview.hidden=expert;switcher.textContent=t(expert?'analysisSimple':'analysisExpert');switcher.setAttribute('aria-expanded',String(expert));document.body.dataset.thundyAnalysisView=expert?'expert':'simple';};
         switcher.addEventListener('click',()=>{host.dataset.view=host.dataset.view==='expert'?'simple':'expert';applyView();});applyView();

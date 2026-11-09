@@ -262,6 +262,15 @@ async function interaction(page, c) {
       );
     }
   } else if (c.view === "options.html") {
+    await page.locator('#analysisDisplayForm').waitFor();
+    await page.locator('#analysisDefaultView').selectOption('expert');
+    await page.locator('#analysisShowHybridDetails').uncheck();
+    await page.locator('#analysisDisplayForm button').click();
+    await page.waitForFunction(()=>!!document.getElementById('analysisDisplayStatus').textContent);
+    const displayWrite=await page.evaluate(()=>uiTest.writes.find(v=>v.analysisDefaultView==='expert'));
+    assert.deepEqual(displayWrite,{analysisDefaultView:'expert',analysisShowHybridDetails:false});
+    const appearanceWriteOffset=await page.evaluate(()=>uiTest.writes.length);
+    assert.equal(await page.evaluate(()=>uiTest.permissionRequests),0);
     await page.waitForFunction(
       () => !document.querySelector('[name="appearance"]').disabled,
     );
@@ -284,12 +293,13 @@ async function interaction(page, c) {
     );
     assert.equal(
       await page.evaluate(
-        () =>
-          uiTest.writes.every((p) =>
+        (offset) =>
+          uiTest.writes.slice(offset).every((p) =>
             Object.keys(p).every((k) =>
               ["thundyAppearance", "thundyAccent", "thundyDensity"].includes(k),
             ),
           ) && uiTest.permissionRequests === 0,
+        appearanceWriteOffset,
       ),
       true,
       "appearance changed consent",

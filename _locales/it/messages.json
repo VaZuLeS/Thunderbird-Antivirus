@@ -2416,5 +2416,56 @@
   },
   "hybridExpertEmpty": {
     "message": "Elenco vuoto ricevuto; nessuna voce segnalata"
+  },
+  "securityPasswordHelp": {
+    "message": "Protezione facoltativa per questo profilo. Usare password diverse di almeno dodici caratteri per amministrazione e autorizzazione dei link. Lasciare vuoti i campi nuovi per mantenere le password esistenti. Conservare separatamente il codice di recupero monouso."
+  },
+  "securityAdminConfirm": {
+    "message": "Conferma nuova password amministratore"
+  },
+  "securityApprovalConfirm": {
+    "message": "Conferma nuova password di autorizzazione dei link"
+  },
+  "securityRecoveryPassword": {
+    "message": "Nuova password amministratore per il recupero"
+  },
+  "securityApprovalConfigured": {
+    "message": "È configurata una password di autorizzazione dei link; può essere sostituita, mai mostrata."
+  },
+  "securityApprovalMissing": {
+    "message": "Nessuna password di autorizzazione dei link configurata. I link che la richiedono restano bloccati."
+  },
+  "securityConfirmMismatch": {
+    "message": "Le nuove password non corrispondono alle conferme."
+  },
+  "securityUnlockPassword": {
+    "message": "Password amministratore attuale"
+  },
+  "displaySettingsTitle": {
+    "message": "Visualizzazione dell’analisi"
+  },
+  "displaySettingsHelp": {
+    "message": "Queste preferenze non modificano scansioni, trasmissioni esterne, punteggi o protezione dei link. È sempre possibile passare dalla panoramica alla vista esperta."
+  },
+  "displayDefaultView": {
+    "message": "Vista predefinita per messaggio e popup"
+  },
+  "displayHybridDetails": {
+    "message": "Mostra le sezioni aggiuntive del rapporto API Hybrid"
+  },
+  "displaySave": {
+    "message": "Salva preferenze di visualizzazione"
+  },
+  "displaySaved": {
+    "message": "Preferenze di visualizzazione salvate."
+  },
+  "urlscanDnsError": {
+    "message": "Il fornitore non ha potuto risolvere il dominio di destinazione."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Il fornitore ha rifiutato parametri di invio non validi."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Il fornitore ha rifiutato l’invio; la risposta non conferma un errore DNS."
   }
 }

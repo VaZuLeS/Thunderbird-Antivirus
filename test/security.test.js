@@ -108,7 +108,7 @@ test('real settings client renders, locks, unlocks and writes through background
  const f=fixture();const dom=new JSDOM('<html><body><div class="settings-shell"><h1>Settings</h1></div></body></html>',{url:'moz-extension://addon/options.html',runScripts:'outside-only'});
  await new Promise(setImmediate);
  const errors=[];dom.window.addEventListener('error',e=>errors.push(e.message));
- const browser={...f.browser,runtime:{...f.browser.runtime,sendMessage:async request=>{try{return {success:true,...await f.s.command(request,f.sender)};}catch(e){return {success:false,code:e.code||e.message};}}}};
+ const changed=[];const browser={...f.browser,storage:{...f.browser.storage,onChanged:{addListener:listener=>changed.push(listener),removeListener(){}}},runtime:{...f.browser.runtime,sendMessage:async request=>{try{return {success:true,...await (request.action==='securitySettingsWrite'?f.s.write(request.values,f.sender,request.token):f.s.command(request,f.sender))};}catch(e){return {success:false,code:e.code||e.message};}}}};
  const catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
  Object.assign(dom.window,{browser,ThundyI18n:{get:key=>catalog[key]?.message||key}});
  const c=dom.getInternalVMContext();vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8')),c);vm.runInContext(fs.readFileSync('security_client.js','utf8'),c);
@@ -118,14 +118,27 @@ test('real settings client renders, locks, unlocks and writes through background
  try{
   await wait(()=>doc.getElementById('securitySettingsForm'));
   assert.equal(doc.querySelector('.settings-shell').hidden,false);
+  f.stored.apikey='PRIVATE_API_CANARY';f.stored.providerConnectionTests={hybridanalysis:{status:'valid',observedAt:Date.now(),httpStatus:200}};changed[0]({apikey:{newValue:f.stored.apikey}},'local');
+  await wait(()=>doc.getElementById('securityProviderOverview').textContent.includes(catalog.testApiKeyValid.message));assert.ok(!doc.body.textContent.includes('PRIVATE_API_CANARY'));
   const value=(key,text)=>doc.querySelector('[data-security="'+key+'"]').value=text;
-  value('securityAdminPassword','administrator-123');value('securityApprovalPassword','approval-secret-123');
+  value('securityAdminPassword','administrator-123');value('securityAdminConfirm','different-secret-123');doc.getElementById('securitySettingsForm').requestSubmit();
+  await wait(()=>doc.getElementById('securityRecoveryOutput').textContent===catalog.securityConfirmMismatch.message);assert.equal(f.stored.thundySecurityV1,undefined);
+  value('securityAdminPassword','administrator-123');value('securityAdminConfirm','administrator-123');value('securityApprovalPassword','approval-secret-123');value('securityApprovalConfirm','approval-secret-123');
   doc.getElementById('securitySettingsForm').requestSubmit();
   await wait(()=>doc.querySelector('.settings-shell').hidden&&doc.getElementById('securityRecoveryOutput').textContent.includes('code'));
+  const recoveryCode=doc.getElementById('securityRecoveryOutput').textContent.match(/[a-f0-9]{64}$/)[0];
   assert.equal(doc.querySelector('[data-security=securityAdminPassword]').value,'');
+  assert.equal(doc.querySelector('#analysisDisplayForm button').disabled,true);
   value('securityAdminPassword','administrator-123');doc.querySelector('[data-security=unlock]').click();
   await wait(()=>!doc.querySelector('.settings-shell').hidden);
+  doc.getElementById('analysisDefaultView').value='expert';doc.getElementById('analysisShowHybridDetails').checked=false;doc.getElementById('analysisDisplayForm').requestSubmit();
+  await wait(()=>f.stored.analysisDefaultView==='expert'&&f.stored.analysisShowHybridDetails===false);assert.equal(f.stored.externalAnalysisConsent,undefined);
+  assert.ok(doc.getElementById('securityApprovalState').textContent.includes('configured'));
   doc.querySelector('[data-security=lock]').click();await wait(()=>doc.querySelector('.settings-shell').hidden);
+  await assert.rejects(f.s.write({analysisDefaultView:'simple'},f.sender),/ADMIN_LOCKED/);
+  value('securityRecovery',recoveryCode);value('securityRecoveryPassword','new-admin-password');value('securityRecoveryConfirm','new-admin-password');doc.querySelector('[data-security=recover]').click();
+  await wait(()=>/[a-f0-9]{64}$/.test(doc.getElementById('securityRecoveryOutput').textContent));
+  await f.s.command({op:'unlock',password:'new-admin-password'},f.sender);assert.equal(f.stored.analysisDefaultView,'expert');
   assert.deepEqual(errors,[]);
  }finally{dom.window.close();}
 });
@@ -162,4 +175,17 @@ test('a report revision changing during the last opening check consumes no OS op
 test('incomplete shared provider analysis also enforces the unknown-result approval policy',async()=>{
  const l=links();l.setScore(1);l.config.policy.unknown='approval';l.c.ThundyScans={revision:()=>1,get:()=>({assessmentIncomplete:true})};
  const result=await l.l.open(l.request,l.sender);assert.equal(result.success,false);assert.equal(result.reason,'incomplete');assert.equal(l.getOpened(),0);
+});
+
+test('display settings validate atomically and remain protected independently of their effect on presentation',async()=>{
+ const f=fixture();
+ for(const values of [{analysisDefaultView:'disabled'},{analysisShowHybridDetails:'false'},{analysisDefaultView:'expert',analysisShowHybridDetails:3}])await assert.rejects(f.s.write(values,f.sender),/SETTINGS_INVALID/);
+ assert.equal(f.stored.analysisDefaultView,undefined);
+ await f.s.write({analysisDefaultView:'expert',analysisShowHybridDetails:false},f.sender);
+ assert.equal(f.stored.analysisDefaultView,'expert');assert.equal(f.stored.analysisShowHybridDetails,false);
+ await f.s.command({op:'configure',adminPassword:'administrator-123',policy},f.sender);
+ await assert.rejects(f.s.write({analysisShowHybridDetails:true},f.sender),/ADMIN_LOCKED/);
+ const {token}=await f.s.command({op:'unlock',password:'administrator-123'},f.sender);
+ await f.s.write({analysisShowHybridDetails:true},f.sender,token);assert.equal(f.stored.analysisShowHybridDetails,true);
+ await f.s.write({externalAnalysisConsent:false},f.sender);assert.equal(f.stored.externalAnalysisConsent,false);
 });

@@ -2419,5 +2419,56 @@
   },
   "hybridExpertEmpty": {
     "message": "Als leere Liste geliefert; keine Einträge gemeldet"
+  },
+  "securityPasswordHelp": {
+    "message": "Optionaler Schutz für dieses Profil. Verwenden Sie unterschiedliche Passwörter mit mindestens zwölf Zeichen für Administration und Linkfreigabe. Neue Passwortfelder leer lassen, um bestehende Passwörter beizubehalten. Den einmaligen Wiederherstellungscode separat aufbewahren."
+  },
+  "securityAdminConfirm": {
+    "message": "Neues Administratorpasswort bestätigen"
+  },
+  "securityApprovalConfirm": {
+    "message": "Neues Linkfreigabepasswort bestätigen"
+  },
+  "securityRecoveryPassword": {
+    "message": "Neues Administratorpasswort zur Wiederherstellung"
+  },
+  "securityApprovalConfigured": {
+    "message": "Ein Linkfreigabepasswort ist eingerichtet; es kann ersetzt, aber niemals angezeigt werden."
+  },
+  "securityApprovalMissing": {
+    "message": "Kein Linkfreigabepasswort eingerichtet. Links mit erforderlicher Passwortfreigabe bleiben gesperrt."
+  },
+  "securityConfirmMismatch": {
+    "message": "Die neuen Passwörter stimmen nicht mit ihren Bestätigungen überein."
+  },
+  "securityUnlockPassword": {
+    "message": "Aktuelles Administratorpasswort"
+  },
+  "displaySettingsTitle": {
+    "message": "Darstellung der Analyse"
+  },
+  "displaySettingsHelp": {
+    "message": "Diese Anzeigeoptionen verändern weder Prüfungen, externe Übertragungen, Scores noch den Linkschutz. Beim Lesen der Ergebnisse bleibt der Wechsel zwischen Übersicht und Fachansicht möglich."
+  },
+  "displayDefaultView": {
+    "message": "Standardansicht für Nachricht und Popup"
+  },
+  "displayHybridDetails": {
+    "message": "Zusätzliche Hybrid-API-Berichtsbereiche anzeigen"
+  },
+  "displaySave": {
+    "message": "Anzeigeoptionen speichern"
+  },
+  "displaySaved": {
+    "message": "Anzeigeoptionen gespeichert."
+  },
+  "urlscanDnsError": {
+    "message": "Der Anbieter konnte die Ziel-Domain nicht auflösen."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Der Anbieter hat ungültige Übermittlungsparameter abgelehnt."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Der Anbieter hat die Übermittlung abgelehnt; die Antwort belegt keinen DNS-Fehler."
   }
 }

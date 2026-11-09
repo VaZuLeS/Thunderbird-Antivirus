@@ -53,7 +53,7 @@ test('authorized senders respect manual mode and full URL tier', async () => {
         const state = setup({ externalAnalysisConsent: true, alwaysManual: manual, privacyTier: tier, apikey: 'dummy', autoScanLinks: true, scanningEnabledSenders: ['alice@example.com'] });
         await state.context.configure();
         await state.context.handleDisplayedMessage({ id: 1 }, state.message);
-        assert.equal(state.requests.some(x => x.url.endsWith('/quick-scan/url')), !manual && tier === 'max');
+        assert.equal(state.requests.some(x => x.url.endsWith('/quick-scan/url-for-analysis')), !manual && tier === 'max');
         if (manual) assert.equal(state.requests.length, 0);
     }
 });
@@ -949,4 +949,20 @@ test('expert report snapshot exposes only current resources and never persists d
   await ctx.flush();assert.ok(!JSON.stringify(records.get(s.message.headerMessageId).analysisSourceSnapshots).includes('hybridReports'));
   records.set(s.message.headerMessageId,null);snapshot=await ctx.snapshot();assert.equal(Object.keys(snapshot.hybridReports).length,0);
  }finally{ctx.dispose();}
+});
+
+test('display preference reads suppress only extra report projection and never transmit or change findings',async()=>{
+ const s=setup({analysisDefaultView:'expert',analysisShowHybridDetails:false},true);await s.context.configure();
+ const records=sourceRecords(s,{links:[{url:'https://example.com/',report:{verdict:'malicious',finished:true,mitre_attcks:[{attck_id:'T1059'}]}}]});
+ const ctx=await s.context.getMessageAnalysisContext(s.message);try{
+  let snapshot=await ctx.snapshot();assert.equal(snapshot.displayPreferences.view,'expert');assert.equal(Object.keys(snapshot.hybridReports).length,0);assert.ok(snapshot.rows.some(row=>row.verdict==='malicious'));
+  s.config.analysisDefaultView='simple';s.config.analysisShowHybridDetails=true;snapshot=await ctx.snapshot();assert.equal(snapshot.displayPreferences.view,'simple');assert.ok(JSON.stringify(snapshot.hybridReports).includes('T1059'));assert.equal(s.requests.length,0);assert.equal(records.size,1);
+ }finally{ctx.dispose();}
+});
+
+test('urlscan HTTP 400 distinguishes DNS, validation and unknown rejection without exposing raw payloads',async()=>{
+ for(const [body,errorCode] of [[{message:'DNS Error - Could not resolve domain'},'domain_unresolvable'],[{code:'validationerror',message:'private-token=CANARY'},'invalid_request'],[{message:'Submission blocked CANARY'},'submission_rejected'],[{errors:{some:'CANARY'}},'submission_rejected'],[null,'submission_rejected']]){
+  const s=setup({externalAnalysisConsent:true,privacyTier:'max'},true);await s.context.configure();s.context.fetch=async()=>({status:400,ok:false,json:async()=>body});
+  const result=await s.context.checkUrlscanIo('https://example.com/','synthetic');assert.equal(result.errorCode,errorCode);assert.equal(result.httpStatus,400);assert.ok(!JSON.stringify(result).includes('CANARY'));
+ }
 });

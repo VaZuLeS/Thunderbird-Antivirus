@@ -2416,5 +2416,56 @@
   },
   "hybridExpertEmpty": {
     "message": "Liste vide fournie ; aucune entrée signalée"
+  },
+  "securityPasswordHelp": {
+    "message": "Protection facultative pour ce profil. Utilisez des mots de passe différents de douze caractères minimum pour l’administration et l’autorisation des liens. Laissez les champs de nouveau mot de passe vides pour conserver les mots de passe existants. Conservez le code de récupération unique séparément."
+  },
+  "securityAdminConfirm": {
+    "message": "Confirmer le nouveau mot de passe administrateur"
+  },
+  "securityApprovalConfirm": {
+    "message": "Confirmer le nouveau mot de passe d’autorisation des liens"
+  },
+  "securityRecoveryPassword": {
+    "message": "Nouveau mot de passe administrateur pour la récupération"
+  },
+  "securityApprovalConfigured": {
+    "message": "Un mot de passe d’autorisation des liens est configuré ; il peut être remplacé, jamais affiché."
+  },
+  "securityApprovalMissing": {
+    "message": "Aucun mot de passe d’autorisation des liens. Les liens nécessitant cette autorisation restent bloqués."
+  },
+  "securityConfirmMismatch": {
+    "message": "Les nouveaux mots de passe ne correspondent pas à leurs confirmations."
+  },
+  "securityUnlockPassword": {
+    "message": "Mot de passe administrateur actuel"
+  },
+  "displaySettingsTitle": {
+    "message": "Affichage de l’analyse"
+  },
+  "displaySettingsHelp": {
+    "message": "Ces préférences ne modifient ni les analyses, ni les transmissions externes, ni les scores, ni la protection des liens. Le passage entre aperçu et vue experte reste possible."
+  },
+  "displayDefaultView": {
+    "message": "Vue par défaut du message et du popup"
+  },
+  "displayHybridDetails": {
+    "message": "Afficher les sections supplémentaires du rapport API Hybrid"
+  },
+  "displaySave": {
+    "message": "Enregistrer les préférences d’affichage"
+  },
+  "displaySaved": {
+    "message": "Préférences d’affichage enregistrées."
+  },
+  "urlscanDnsError": {
+    "message": "Le fournisseur n’a pas pu résoudre le domaine cible."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Le fournisseur a refusé des paramètres d’envoi invalides."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Le fournisseur a refusé l’envoi ; la réponse ne confirme pas une erreur DNS."
   }
 }

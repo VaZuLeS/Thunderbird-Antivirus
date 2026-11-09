@@ -63,6 +63,12 @@ var ThundyProviderResults = (function () {
         const valid=receipt||object(data.verdicts)||object(data.page)||object(data.task)||data.finished!==undefined||word(data.state);
         return result(signals,processing?'pending':failed?'failed':valid?'complete':'unknown',receipt,!valid);
     }
+    function urlscanRejection(data){
+        const errors=Array.isArray(data?.errors)?data.errors:[];
+        const messages=[data?.message,...errors.slice(0,10).map(error=>error?.title)].filter(value=>typeof value==='string').map(value=>value.slice(0,512)).join(' ');
+        if(/\bDNS\b|could not resolve|not resolvable/i.test(messages))return 'domain_unresolvable';
+        return data?.code==='validationerror'||errors.some(error=>error?.code==='validationerror')?'invalid_request':'submission_rejected';
+    }
     function evaluate(provider,data,scope='report'){return provider==='hybridanalysis'?hybrid(data,scope):provider==='urlscan'?urlscan(data,scope):result([],'unknown');}
     function project(value){
         if(value?.assessmentVersion!==1)return {};
@@ -172,5 +178,5 @@ var ThundyProviderResults = (function () {
         if(scanners.some(s=>Array.isArray(s.anti_virus_results))&&scanners.filter(s=>Array.isArray(s.anti_virus_results)).every(s=>s.anti_virus_results.length===0))emptySections.push('antivirus');
         return {schemaVersion:1,sections,emptySections,truncated};
     }
-    return {evaluate,project,merge,stored,resource,legacy,hybridDetails};
+    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,urlscanRejection};
 }());

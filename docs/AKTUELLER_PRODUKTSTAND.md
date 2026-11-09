@@ -59,3 +59,5 @@ Die Dependency-Kollision Vite 8 / React-Plugin 4 wurde durch das passende Plugin
 Der aktuelle Gate bindet reale Upgrade-/Crashnachweise und sechssprachige Browserberichte an Quellfingerprint und exakte Paketbytes. Ein alter Protokolltext, eine Testzahl oder ein Tag allein reicht nicht. Browser-/axe-Tests bleiben Simulationen; echte Thunderbirdberichte bleiben echte Clienttests mit ausdrücklich begrenztem Umfang.
 
 **Keine Sicherheitsgarantie aus einem niedrigen Score:** unbekannte Providerresultate, fehlende Zustimmung oder eine fehlgeschlagene Analyse sind kein Sicherheitsnachweis. `OPENED` bestätigt nur die von Thunderbird angenommene Öffnungsanforderung; `PENDING` bleibt nach Prozessverlust offen. Backups und spätere Neubewertungen ändern historische Entscheidungssnapshots nicht.
+
+Die unveröffentlichte 1.25.2 ergänzt [Admin- und Anzeigeeinstellungen sowie API-Korrekturen](EINSTELLUNGEN_ADMIN_UND_ANSICHT.md). Vollständige API-Vertragsabnahme und Live-Kontoberechtigungen bleiben gesonderte Nachweise.

@@ -71,3 +71,11 @@ test('resource validation rejects foreign report bodies before any verdict is em
  await assert.rejects(f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/result/requested/',{analysisContext:{event:e=>events.push(e),validateResponse:data=>{if(data.task.uuid!=='requested')throw Object.assign(Error('RESOURCE_MISMATCH'),{code:'RESOURCE_MISMATCH'});}}}),/RESOURCE_MISMATCH/);
  assert.ok(events.every(e=>e.verdict!=='malicious'));assert.equal(events.at(-1).state,'failed');assert.equal(events.at(-1).errorCode,'RESOURCE_MISMATCH');
 });
+
+test('urlscan submission errors have identical typed meanings in the shared transport model',async()=>{
+ for(const [body,expected] of [[{message:'DNS Error - Could not resolve domain'},'domain_unresolvable'],[{code:'validationerror',message:'CANARY_PRIVATE'},'invalid_request'],[{message:'Blocked CANARY_PRIVATE'},'submission_rejected'],[{errors:{some:'invalid'}},'submission_rejected']]){
+  const f=fixture();f.settings.externalAnalysisConsent=true;f.settings.privacyTier='max';f.setResponse(400,body);const events=[];
+  await f.c.gateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',analysisContext:{event:e=>events.push(e)}});
+  const event=events.at(-1);assert.equal(event.errorCode,expected);assert.equal(event.state,'failed');assert.equal(event.verdict,'unknown');assert.ok(!JSON.stringify(event).includes('CANARY_PRIVATE'));
+ }
+});

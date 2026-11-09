@@ -1143,7 +1143,9 @@ describe('background.js', () => {
 
             const result = await context.checkUrlscanIo('http://example.com', 'apikey');
             assert.strictEqual(result.status, 'ERROR');
-            assert.strictEqual(result.details, 'Domain not resolvable');
+            assert.strictEqual(result.errorCode, 'submission_rejected');
+            assert.strictEqual(result.httpStatus, 400);
+            assert.ok(result.details.includes('does not establish a DNS failure'));
         });
 
         it('handles successful scan and result polling (malicious overall)', async () => {

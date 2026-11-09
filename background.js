@@ -197,6 +197,8 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                 },
                 schedule() { if (context.disposed) return; if (!context.timer) context.timer = setTimeout(() => { context.timer = null; context.flush().catch(() => {}); }, 300); },
                 async snapshot() {
+                    const displaySettings=await browser.storage.local.get(['analysisDefaultView','analysisShowHybridDetails']);
+                    const displayPreferences={view:displaySettings.analysisDefaultView==='expert'?'expert':'simple',hybridDetails:displaySettings.analysisShowHybridDetails!==false};
                     let sourceHistory = {rows:[],truncated:false};
                     const hybridReports = {};
                     let hybridReportsTruncated=false,hybridReportBudget=500000;
@@ -207,7 +209,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                         // Raw protocols and these resource details never enter provenance exports.
                         for(const item of [...(current?.attachments||[]),...(current?.links||[])]){
                             const ref=item.url?item.analysisResourceRef:'attachment:'+item.partName;
-                            if(item.report&&ThundyAnalysis.validResource(ref)){
+                            if(displayPreferences.hybridDetails&&item.report&&ThundyAnalysis.validResource(ref)){
                                 const details={...ThundyProviderResults.hybridDetails(item.report,item.hybrid_sha256||null),observedAt:Number.isFinite(Date.parse(item.report_fetched_at))?Date.parse(item.report_fetched_at):null};
                                 const size=JSON.stringify(details).length;
                                 if(Object.keys(hybridReports).length>=100||size>hybridReportBudget){hybridReportsTruncated=true;continue;}
@@ -246,7 +248,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     }
                     const security = typeof ThundySecurity !== 'undefined' ? await ThundySecurity.read() : null;
                     const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:model.data.local.score,coverage:model.data.local.state,verdict:model.data.rows.some(row=>row.verdict==='malicious')?'MALICIOUS':model.data.rows.length && model.data.rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?model.data.rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
-                    return { ...JSON.parse(JSON.stringify(model.data)), hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    return { ...JSON.parse(JSON.stringify(model.data)), displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
@@ -409,6 +411,7 @@ for (const event of [browser.permissions?.onAdded,browser.permissions?.onRemoved
 // Listener für Änderungen an den Einstellungen (API Key)
 browser.storage.onChanged.addListener((changes, area) => {
   if (area === 'local') {
+    if(changes.analysisDefaultView||changes.analysisShowHybridDetails)for(const ready of messageAnalyses.values())Promise.resolve(ready).then(context=>context.schedule()).catch(()=>{});
     if (typeof ThundyScans !== 'undefined' && ['scanMode','alwaysManual','autoScanLinks','externalAnalysisConsent','privacyTier','scanningEnabledSenders','apikey','virustotalApikey','urlscanApikey','urlhausApikey','ipReputationProvider','ipReputationApiKey'].some(key=>changes[key])) { ThundyScans.reconfigure();apiGateway.abortAll(); }
     if (changes.thundySecurityV1) {
         for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(async context => {
@@ -520,7 +523,7 @@ async function processAndUploadUrls(message, filteredUrls, allowExternal = true,
     await indexedDB_save_links_to_db(message, filteredUrls);
     if (allowExternal && (manualAction || (!alwaysManual && autoScanLinks)) && privacyTier === 'max' && mayTransmitExternally()) {
         try {
-            await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/url');
+            await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis');
         } catch (e) {
             Logger.warn('Skipping URL upload: host permission missing', e);
             return;
@@ -542,7 +545,7 @@ async function processAndUploadUrls(message, filteredUrls, allowExternal = true,
 
                     const options = getHybridAnalysisOptions('POST', formBody, true);
                     options.analysisContext = analysisContext?.forLinks ? await analysisContext.forLinks([url]) : analysisContext;
-                    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url';
+                    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis';
                     const response = await apiGateway.fetchWithTimeout(options.url, options);
                     if (response.status === 200 || response.status === 201) {
                         const json_data = await response.json();
@@ -2250,7 +2253,7 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
     if (!tierAtLeast('max')) {
         throw typedError(TIER_REQUIRES_MAX, msg('errorTierUrlScanBlocked'));
     }
-    await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/url');
+    await requireHostPermission('https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis');
     if (analysisContext?.forLinks) {
         await indexedDB_save_links_to_db({id:analysisContext.messageId,headerMessageId:analysisContext.headerMessageId}, [url]);
         analysisContext = await analysisContext.forLinks([url]);
@@ -2263,7 +2266,7 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
 
     const options = getHybridAnalysisOptions('POST', formBody, true);
     options.analysisContext = analysisContext;
-    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url';
+    options.url = 'https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis';
 
     const response = await apiGateway.fetchWithTimeout(options.url, options);
     const json_data = await response.json();

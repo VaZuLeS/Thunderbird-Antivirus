@@ -2416,5 +2416,56 @@
   },
   "hybridExpertEmpty": {
     "message": "Dostarczono pustą listę; nie zgłoszono wpisów"
+  },
+  "securityPasswordHelp": {
+    "message": "Opcjonalna ochrona tego profilu. Używaj różnych haseł co najmniej dwunastoznakowych do administracji i zatwierdzania linków. Pozostaw nowe pola puste, aby zachować istniejące hasła. Jednorazowy kod odzyskiwania przechowuj osobno."
+  },
+  "securityAdminConfirm": {
+    "message": "Potwierdź nowe hasło administratora"
+  },
+  "securityApprovalConfirm": {
+    "message": "Potwierdź nowe hasło zatwierdzania linków"
+  },
+  "securityRecoveryPassword": {
+    "message": "Nowe hasło administratora do odzyskiwania"
+  },
+  "securityApprovalConfigured": {
+    "message": "Hasło zatwierdzania linków jest skonfigurowane; można je zastąpić, ale nigdy wyświetlić."
+  },
+  "securityApprovalMissing": {
+    "message": "Brak hasła zatwierdzania linków. Linki wymagające hasła pozostają zablokowane."
+  },
+  "securityConfirmMismatch": {
+    "message": "Nowe hasła nie są zgodne z ich potwierdzeniami."
+  },
+  "securityUnlockPassword": {
+    "message": "Aktualne hasło administratora"
+  },
+  "displaySettingsTitle": {
+    "message": "Wyświetlanie analizy"
+  },
+  "displaySettingsHelp": {
+    "message": "Te ustawienia nie zmieniają skanów, transmisji zewnętrznych, punktacji ani ochrony linków. Nadal można przełączać widok ogólny i ekspercki."
+  },
+  "displayDefaultView": {
+    "message": "Domyślny widok wiadomości i okna podręcznego"
+  },
+  "displayHybridDetails": {
+    "message": "Pokaż dodatkowe sekcje raportu API Hybrid"
+  },
+  "displaySave": {
+    "message": "Zapisz ustawienia wyświetlania"
+  },
+  "displaySaved": {
+    "message": "Zapisano ustawienia wyświetlania."
+  },
+  "urlscanDnsError": {
+    "message": "Dostawca nie mógł rozwiązać domeny docelowej."
+  },
+  "urlscanInvalidRequest": {
+    "message": "Dostawca odrzucił nieprawidłowe parametry zgłoszenia."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "Dostawca odrzucił zgłoszenie; odpowiedź nie potwierdza błędu DNS."
   }
 }

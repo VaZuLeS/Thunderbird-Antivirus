@@ -2419,5 +2419,56 @@
   },
   "hybridExpertEmpty": {
     "message": "Supplied as an empty list; no entries reported"
+  },
+  "securityPasswordHelp": {
+    "message": "Optional protection for this profile. Use different passwords of at least twelve characters for administration and link approval. Leave new password fields empty to keep existing passwords. Save the one-time recovery code separately."
+  },
+  "securityAdminConfirm": {
+    "message": "Confirm new administrator password"
+  },
+  "securityApprovalConfirm": {
+    "message": "Confirm new link approval password"
+  },
+  "securityRecoveryPassword": {
+    "message": "New administrator password for recovery"
+  },
+  "securityApprovalConfigured": {
+    "message": "A link approval password is configured; it can be replaced but never displayed."
+  },
+  "securityApprovalMissing": {
+    "message": "No link approval password is configured. Links requiring password approval remain blocked."
+  },
+  "securityConfirmMismatch": {
+    "message": "The new passwords and their confirmations do not match."
+  },
+  "securityUnlockPassword": {
+    "message": "Current administrator password"
+  },
+  "displaySettingsTitle": {
+    "message": "Analysis display"
+  },
+  "displaySettingsHelp": {
+    "message": "Display preferences do not change scans, external transfers, scores or link protection. You can still switch between overview and expert view while reading results."
+  },
+  "displayDefaultView": {
+    "message": "Default view for message and popup"
+  },
+  "displayHybridDetails": {
+    "message": "Show the additional Hybrid API report sections"
+  },
+  "displaySave": {
+    "message": "Save display preferences"
+  },
+  "displaySaved": {
+    "message": "Display preferences saved."
+  },
+  "urlscanDnsError": {
+    "message": "The provider could not resolve the target domain."
+  },
+  "urlscanInvalidRequest": {
+    "message": "The provider rejected invalid submission parameters."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "The provider rejected the submission; the response does not establish a DNS failure."
   }
 }

@@ -204,9 +204,9 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
         }
 
         if (scanRes.status === 400) {
-            Logger.error("urlscan.io API Error 400 (e.g. Domain not resolvable)", errData);
-            const details = errData?.message || 'Domain not resolvable';
-            return { status: 'ERROR', errorCode: 'domain_unresolvable', details };
+            const errorCode=ThundyProviderResults.urlscanRejection(errData),dns=errorCode==='domain_unresolvable',invalid=errorCode==='invalid_request';
+            Logger.warn('urlscan.io: HTTP 400 ('+errorCode+')');
+            return { status: 'ERROR',errorCode,httpStatus:400,details:uiText(dns?'urlscanDnsError':invalid?'urlscanInvalidRequest':'urlscanSubmissionRejected',dns?'The provider could not resolve the target domain.':invalid?'The provider rejected invalid submission parameters.':'The provider rejected the submission; the response does not establish a DNS failure.') };
         }
 
         if (scanRes.status === 429) {

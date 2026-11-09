@@ -414,3 +414,19 @@ test('Hybrid report details render in popup and serialized email in all six lang
   }finally{dom.window.close();}
  }
 });
+
+test('saved display defaults apply to both renderers without overriding manual switching or protection',()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json'));
+ for(const serialized of [false,true]){
+  const dom=new JSDOM('<html><body></body></html>');try{
+   const data={local:{state:'checked'},rows:[{provider:'hybridanalysis',scope:'report',resource:'link:0',state:'checked',verdict:'malicious',source:'remote'}],protection:{required:true,reason:'malicious',revision:1},displayPreferences:{view:'expert',hybridDetails:true},hybridReports:{'link:0':{schemaVersion:1,sections:[],emptySections:[]}}};
+   const c=vm.createContext({document:dom.window.document,Date,data,labels:a.labels(k=>catalog[k]?.message)});if(!serialized)vm.runInContext(source,c);
+   const render=()=>vm.runInContext(serialized?'('+a.render.toString()+')(data,labels)':'ThundyAnalysis.render(data,labels)',c);
+   render();const host=dom.window.document.getElementById('thundy-analysis-status'),root=host.shadowRoot;
+   assert.equal(host.dataset.view,'expert');assert.equal(root.querySelectorAll('.hybrid-expert').length,1);
+   root.querySelector('[data-focus-key=view-switch]').click();render();assert.equal(host.dataset.view,'simple');
+   data.displayPreferences={view:'expert',hybridDetails:false};render();assert.equal(host.dataset.view,'simple');assert.equal(root.querySelector('.hybrid-expert'),null);assert.ok(root.textContent.includes(catalog.analysisApprovalRequired.message));
+   data.displayPreferences.view='simple';render();data.displayPreferences.view='expert';render();assert.equal(host.dataset.view,'expert');assert.equal(data.protection.required,true);
+  }finally{dom.window.close();}
+ }
+});

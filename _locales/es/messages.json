@@ -2416,5 +2416,56 @@
   },
   "hybridExpertEmpty": {
     "message": "Lista vacía recibida; no se comunicaron entradas"
+  },
+  "securityPasswordHelp": {
+    "message": "Protección opcional para este perfil. Use contraseñas distintas de al menos doce caracteres para administración y autorización de enlaces. Deje vacíos los campos nuevos para conservar las contraseñas existentes. Guarde por separado el código de recuperación de un solo uso."
+  },
+  "securityAdminConfirm": {
+    "message": "Confirmar nueva contraseña de administrador"
+  },
+  "securityApprovalConfirm": {
+    "message": "Confirmar nueva contraseña de autorización de enlaces"
+  },
+  "securityRecoveryPassword": {
+    "message": "Nueva contraseña de administrador para recuperación"
+  },
+  "securityApprovalConfigured": {
+    "message": "Hay una contraseña de autorización de enlaces configurada; puede reemplazarse, pero nunca mostrarse."
+  },
+  "securityApprovalMissing": {
+    "message": "No hay contraseña de autorización de enlaces. Los enlaces que la requieren permanecen bloqueados."
+  },
+  "securityConfirmMismatch": {
+    "message": "Las nuevas contraseñas no coinciden con sus confirmaciones."
+  },
+  "securityUnlockPassword": {
+    "message": "Contraseña actual de administrador"
+  },
+  "displaySettingsTitle": {
+    "message": "Presentación del análisis"
+  },
+  "displaySettingsHelp": {
+    "message": "Estas preferencias no cambian análisis, transmisiones externas, puntuaciones ni protección de enlaces. Sigue siendo posible alternar entre resumen y vista experta."
+  },
+  "displayDefaultView": {
+    "message": "Vista predeterminada del mensaje y la ventana emergente"
+  },
+  "displayHybridDetails": {
+    "message": "Mostrar las secciones adicionales del informe API Hybrid"
+  },
+  "displaySave": {
+    "message": "Guardar preferencias de presentación"
+  },
+  "displaySaved": {
+    "message": "Preferencias de presentación guardadas."
+  },
+  "urlscanDnsError": {
+    "message": "El proveedor no pudo resolver el dominio de destino."
+  },
+  "urlscanInvalidRequest": {
+    "message": "El proveedor rechazó parámetros de envío no válidos."
+  },
+  "urlscanSubmissionRejected": {
+    "message": "El proveedor rechazó el envío; la respuesta no confirma un error DNS."
   }
 }

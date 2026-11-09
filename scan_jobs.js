@@ -114,7 +114,7 @@ const ThundyScans=(()=>{
             if(ThundyProviders.registry.hybridanalysis)add('hybridanalysis','url',async()=>{
                 const ctx=bound(job,await p.context.forLinks([url]));const previous=p.record?.links?.find(l=>l.url===url);const save=patch=>link(job,url,patch);
                 if((job.options.refresh||previous?.state==='UPLOADED')&&previous){const ref='ha:url:'+url;pending(job,ref,true);pending(job,ref,await hybridReport(job,previous,ctx,save));return;}
-                const body=new URLSearchParams({scan_type:'all',url});const response=await apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/url',{...getHybridAnalysisOptions('POST',body,true),analysisContext:ctx});coordinator.assert(job);
+                const body=new URLSearchParams({scan_type:'all',url});const response=await apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis',{...getHybridAnalysisOptions('POST',body,true),analysisContext:ctx});coordinator.assert(job);
                 if(![200,201].includes(response.status))throw Object.assign(Error('provider_error'),{code:response.status===429?'rate_limited':response.status===401||response.status===403?'invalid_key':'provider_error'});
                 const data=await response.json(),value={state:'UPLOADED',hybrid_sha256:data.sha256,hybrid_submission_id:data.submission_id||data.id,hybrid_job_id:data.job_id||data.id,report:quickScanReport(data)};if(value.report)value.assessment=ThundyProviderResults.evaluate('hybridanalysis',value.report,'url');
                 await save(value);const ref='ha:url:'+url;pending(job,ref,true);pending(job,ref,await hybridReport(job,value,ctx,save,true));

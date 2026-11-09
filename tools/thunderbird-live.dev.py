@@ -1780,15 +1780,21 @@ def check_administration(m, base, out, report):
     open_page(m,base+'options.html')
     wait_for(lambda:m.page('return !!document.getElementById("securitySettingsForm");'))
     m.page('''const set=(key,value)=>{const el=document.querySelector('[data-security="'+key+'"]');if(el.type==='checkbox')el.checked=value;else el.value=value;};
-        set('securityAdminPassword','native-admin-password');set('securityApprovalPassword','native-approval-password');
+        set('securityAdminPassword','native-admin-password');set('securityAdminConfirm','native-admin-password');set('securityApprovalPassword','native-approval-password');set('securityApprovalConfirm','native-approval-password');
         set('securityEnablePolicy',true);set('securityThreshold',0);document.getElementById('securitySettingsForm').requestSubmit();''')
     wait_for(lambda:m.page('return document.querySelector(".settings-shell").hidden && document.getElementById("securityRecoveryOutput").textContent.length>65;'))
     rejected=m.page('''return window.wrappedJSObject.browser.runtime.sendMessage({action:'securitySettingsWrite',values:{privacyTier:'max'}});''')
     assert rejected['success'] is False and rejected['code']=='ADMIN_LOCKED',rejected
+    display_rejected=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"securitySettingsWrite",values:{analysisDefaultView:"expert"}});')
+    assert display_rejected['success'] is False and display_rejected['code']=='ADMIN_LOCKED',display_rejected
     state=m.page('''return window.wrappedJSObject.browser.storage.local.get('thundySecurityV1').then(s=>({adminIterations:s.thundySecurityV1.admin.iterations,approvalIterations:s.thundySecurityV1.approval.iterations,separateSalts:s.thundySecurityV1.admin.salt!==s.thundySecurityV1.approval.salt,threshold:s.thundySecurityV1.policy.threshold}));''')
     assert state=={'adminIterations':600000,'approvalIterations':600000,'separateSalts':True,'threshold':0}
     m.page('''document.querySelector('[data-security="securityAdminPassword"]').value='native-admin-password';document.querySelector('[data-security="unlock"]').click();''')
     wait_for(lambda:m.page('return !document.querySelector(".settings-shell").hidden;'))
+    m.page('document.getElementById("analysisDefaultView").value="expert";document.getElementById("analysisShowHybridDetails").checked=false;document.getElementById("analysisDisplayForm").requestSubmit();')
+    wait_for(lambda:m.page('return window.wrappedJSObject.browser.storage.local.get(["analysisDefaultView","analysisShowHybridDetails"]).then(s=>s.analysisDefaultView==="expert"&&s.analysisShowHybridDetails===false);'))
+    m.page('document.getElementById("analysisShowHybridDetails").checked=true;document.getElementById("analysisDisplayForm").requestSubmit();')
+    wait_for(lambda:m.page('return window.wrappedJSObject.browser.storage.local.get("analysisShowHybridDetails").then(s=>s.analysisShowHybridDetails===true);'))
     m.page('document.querySelector("[data-security=lock]").click();')
     wait_for(lambda:m.page('return document.querySelector(".settings-shell").hidden;'))
     m.screenshot(out/'settings-protected.png')
@@ -1809,7 +1815,7 @@ def check_administration(m, base, out, report):
     approved=[r for r in snapshot['linkAuditLog'] if r.get('approvalDecision')=='granted']
     assert len(approved)==1 and approved[0]['outcome']=='OPENED' and approved[0]['openAttempts']==1,approved
     assert approved[0]['blockReason']=='threshold'
-    report['administration']={'passed':True,'realThunderbirdAPIs':True,'protectedWriteRejected':True,'unlockAndRelock':True,'separatePasswordPage':True,'oneApprovedOpening':True,'passwordVerifiers':state,'liveProviderCalls':False}
+    report['administration']={'passed':True,'realThunderbirdAPIs':True,'protectedWriteRejected':True,'protectedDisplaySettings':True,'unlockAndRelock':True,'separatePasswordPage':True,'oneApprovedOpening':True,'passwordVerifiers':state,'liveProviderCalls':False}
 
 
 def check_automatic_scans(m, base, out, report, display):
@@ -1826,7 +1832,7 @@ def check_automatic_scans(m, base, out, report, display):
       bg.fetch=async(url,options={})=>{
         url=String(url);calls.push({url,method:options.method||'GET',body:typeof options.body==='string'?options.body:null});
         let data;
-        if(url==='https://hybrid-analysis.com/api/v2/quick-scan/url')data={id:'native-hybrid-job',verdict:'clean',finished:true};
+        if(url==='https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis')data={id:'native-hybrid-job',verdict:'clean',finished:true};
         else if(url.includes('hybrid-analysis.com/api/v2/quick-scan/'))data={id:'native-hybrid-job',verdict:'clean',finished:true};
         else if(url==='https://urlscan.io/api/v1/scan/')data={uuid:'native-urlscan-job'};
         else if(url.includes('urlscan.io/api/v1/result/'))data={verdicts:{overall:{malicious:false,score:0}},page:{url:'https://destination.example.invalid/test'}};
@@ -1878,7 +1884,7 @@ def check_provider_results(m, base, out, report, display, message_id):
       window.wrappedJSObject.__providerReleased=false;window.wrappedJSObject.__providerCalls=[];let hybridPolls=0;
       bg.fetch=async(url,options={})=>{
         url=String(url);window.wrappedJSObject.__providerCalls.push({url,method:options.method||'GET'});let data;
-        if(url==='https://hybrid-analysis.com/api/v2/quick-scan/url')data={id:'provider-hybrid-job',finished:false};
+        if(url==='https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis')data={id:'provider-hybrid-job',finished:false};
         else if(url.includes('hybrid-analysis.com/api/v2/quick-scan/')){
           hybridPolls++;
           if(hybridPolls===1)data={id:'provider-hybrid-job',finished:false,verdict:'clean',scanners:[{status:'malicious',positives:2,total:35},{status:'in-progress'}]};

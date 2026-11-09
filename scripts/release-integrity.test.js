@@ -115,5 +115,8 @@ test('1.25.2 requires package-bound native Hybrid expert detail evidence',()=>{
  const report={passed:true,extensionVersion:identity.extensionVersion,xpiSha256:identity.packageSha256,automaticScans:{passed:true,bothProvidersWithoutLinkClick:true,popupClosedDuringRetry:true,duplicateDisplayReused:true,unlisted:true,syntheticTransport:true},providerResults:{passed:true,partialMaliciousBlocks:true,terminalUnknownRetainsFinding:true,brandDoesNotEscalate:true,refreshWithoutSubmission:true,bothViewsAgree:true}};
  assert.throws(()=>validateReports(identity,[report],[]),/Hybrid expert detail/);
  assert.throws(()=>validateReports(identity,[report,{...report,xpiSha256:'b'.repeat(64),providerResults:{hybridExpertDetails:true}}],[]),/Hybrid expert detail/);
- assert.throws(()=>validateReports(identity,[{...report,providerResults:{...report.providerResults,hybridExpertDetails:true}}],[]),/real Thunderbird/);
+ const detailed={...report,providerResults:{...report.providerResults,hybridExpertDetails:true}};
+ assert.throws(()=>validateReports(identity,[detailed],[]),/protected display settings/);
+ assert.throws(()=>validateReports(identity,[detailed,{...report,xpiSha256:'b'.repeat(64),administration:{passed:true,protectedDisplaySettings:true}}],[]),/protected display settings/);
+ assert.throws(()=>validateReports(identity,[{...detailed,administration:{passed:true,protectedDisplaySettings:true}}],[]),/real Thunderbird/);
 });
