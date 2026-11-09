@@ -2,7 +2,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
-const canonicalize = require("canonicalize");
+const canonicalize = require("canonicalize").default;
 const { validateEventPayload } = require("./contracts.cjs");
 class LedgerError extends Error {
   constructor(code, status = 422) {

@@ -2,7 +2,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
-const canonicalize = require("canonicalize");
+const canonicalize = require("canonicalize").default;
 const { verifyEvidence } = require("./evidence.cjs");
 class StorageError extends Error {
   constructor(code) {

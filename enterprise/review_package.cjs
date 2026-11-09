@@ -1,6 +1,6 @@
 "use strict";
 const crypto = require("node:crypto"),
-  canonicalize = require("canonicalize");
+  canonicalize = require("canonicalize").default;
 const { need, exact, hex, clone } = require("./durable_journal.cjs"),
   { HeartbeatAlerts } = require("./heartbeat_alerts.cjs");
 const reviewLimits = require("./review_limits.cjs");

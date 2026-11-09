@@ -3,7 +3,7 @@
 const { verify } = require('node:crypto');
 const Ajv = require('ajv/dist/2020');
 const addFormats = require('ajv-formats');
-const canonicalize = require('canonicalize');
+const canonicalize = require('canonicalize').default;
 const policySchema = require('../docs/enterprise/policy.schema.json');
 const eventSchema = require('../docs/enterprise/event.schema.json');
 const ajv = new Ajv({ strict: true, strictTypes: false, allErrors: true });

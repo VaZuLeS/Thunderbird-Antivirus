@@ -2,7 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { generateKeyPairSync, sign } = require('node:crypto');
-const canonicalize = require('canonicalize');
+const canonicalize = require('canonicalize').default;
 const core = require('../contracts.cjs');
 const policyExample = require('../../docs/enterprise/policy.example.json');
 const eventExample = require('../../docs/enterprise/event.example.json');

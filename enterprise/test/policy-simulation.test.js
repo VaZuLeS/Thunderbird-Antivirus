@@ -2,7 +2,7 @@
 const { test } = require("node:test"),
   assert = require("node:assert/strict"),
   crypto = require("node:crypto"),
-  canonicalize = require("canonicalize"),
+  canonicalize = require("canonicalize").default,
   fs = require("node:fs"),
   os = require("node:os"),
   path = require("node:path");
