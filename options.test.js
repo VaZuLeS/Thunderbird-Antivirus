@@ -91,6 +91,16 @@ describe('options.js', () => {
         context.document.dispatchEvent(event);
     });
 
+    it('keeps independent admin and display forms outside the main unsaved-change indicator', () => {
+        const document=context.document,indicator=document.createElement('span');indicator.id='settingsDirty';indicator.hidden=true;document.body.append(indicator);
+        for(const id of ['securitySettingsForm','analysisDisplayForm']){
+            const section=document.createElement('section');section.className='security-controls';const form=document.createElement('form');form.id=id;
+            const input=document.createElement('input');form.append(input);section.append(form);document.body.append(section);
+            input.dispatchEvent(new dom.window.Event('input',{bubbles:true}));assert.strictEqual(indicator.hidden,true,id);
+        }
+        document.getElementById('apikey').dispatchEvent(new dom.window.Event('input',{bubbles:true}));assert.strictEqual(indicator.hidden,false);
+    });
+
     it('should load settings on DOMContentLoaded', async () => {
         // Wait a small tick to allow Promises in the listener to resolve
         await new Promise(resolve => setTimeout(resolve, 10));

@@ -169,7 +169,7 @@ let _saveTimeoutId = null;
 let _clearTimeoutId = null;
 document.addEventListener('DOMContentLoaded', function() {
     document.body.addEventListener('input', event => {
-        if (!event.target.closest('#appearance,#supportReport,#localProfile') && event.target.matches('input,select,textarea')) {
+        if (!event.target.closest('#appearance,#supportReport,#localProfile,.security-controls') && event.target.matches('input,select,textarea')) {
             const dirty = document.getElementById('settingsDirty');
             if (dirty) dirty.hidden = false;
         }

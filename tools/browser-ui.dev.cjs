@@ -264,9 +264,11 @@ async function interaction(page, c) {
   } else if (c.view === "options.html") {
     await page.locator('#analysisDisplayForm').waitFor();
     await page.locator('#analysisDefaultView').selectOption('expert');
+    assert.equal(await page.locator('#settingsDirty').evaluate(el=>el.hidden),true,'display preferences marked unrelated settings as unsaved');
     await page.locator('#analysisShowHybridDetails').uncheck();
     await page.locator('#analysisDisplayForm button').click();
     await page.waitForFunction(()=>!!document.getElementById('analysisDisplayStatus').textContent);
+    assert.equal(await page.locator('#settingsDirty').evaluate(el=>el.hidden),true,'display save left unrelated settings marked unsaved');
     const displayWrite=await page.evaluate(()=>uiTest.writes.find(v=>v.analysisDefaultView==='expert'));
     assert.deepEqual(displayWrite,{analysisDefaultView:'expert',analysisShowHybridDetails:false});
     const appearanceWriteOffset=await page.evaluate(()=>uiTest.writes.length);

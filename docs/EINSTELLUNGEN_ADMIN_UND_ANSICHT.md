@@ -19,6 +19,8 @@ Der neue Bereich nach den Darstellungseinstellungen besitzt eine eigene Speicher
 
 Die interne Speicherung verwendet `analysisDefaultView` (`simple` oder `expert`) und `analysisShowHybridDetails` (Boolean). Vorhandene Profile behalten die bisherigen Standardwerte, ohne neue Werte beim Start zu schreiben. Bei aktivem Adminschutz sind diese Änderungen nur in einer entsperrten Sitzung erlaubt. Anzeigeoptionen starten keine Prüfung, fordern keine Hostberechtigung an und verändern weder Einwilligung, Risikobewertung noch Linksperre. Aktuelle Warnungen bleiben in beiden Ansichten sichtbar. Bestehende Darstellungs- und Schutzprofile sowie Quellenexporte werden um diese Felder nicht stillschweigend erweitert.
 
+Die allgemeine Änderungserkennung berücksichtigt nur die dazugehörigen Einstellungen. Administrator-, Wiederherstellungs- und Anzeigeformular besitzen eigene Speichervorgänge. Dadurch erzeugen ihre Eingaben keinen zusätzlichen allgemeinen Speicherhinweis, der bei vergrößerter Darstellung Bedienelemente verdecken kann.
+
 Die Anbieterübersicht in den Einstellungen aktualisiert den lokal dokumentierten Schlüssel-/Verbindungsteststatus nach Änderungen. Sie zeigt übersetzte, erlaubte Testzustände statt beliebiger gespeicherter Texte. Diese Aktualisierung liest ausschließlich lokalen Speicher; sie testet keinen Schlüssel automatisch. Ein akzeptierter Verbindungstest bestätigt weiterhin keine Uploadberechtigung oder verfügbares Kontingent.
 
 ## API-Korrekturen

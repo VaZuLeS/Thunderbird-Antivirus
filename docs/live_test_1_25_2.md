@@ -9,7 +9,7 @@ Lokale Entwicklungsabnahme der detaillierten Hybrid-Analysis-Fachansicht unter L
 | H03 | Fremde Hashes, Ressourcenbindung und reine Textdarstellung | OK | test/provider-results.test.js, test/optimization.test.js, test/analysis-sources.test.js |
 | H04 | Größenlimits, unveränderte Rohdaten und Ausschluss vom Quellenexport | OK | test/provider-results.test.js, test/optimization.test.js, test/source-export.test.js |
 | H05 | Gemeinsamer Popup-/Nachrichtenrenderer ohne Modulglobals in sechs Sprachen | OK | test/analysis-sources.test.js |
-| H06 | Vollständige Regression: 1.204 Tests bestanden | OK | npm run check |
+| H06 | Vollständige Regression: 1.205 Tests bestanden | OK | npm run check |
 | H07 | Browserlayouts und Tastaturbedienung der neuen MITRE-Details | OK | 34 Smoke-Fälle; tools/browser-ui.dev.cjs |
 | H08 | Webbuild, Quell-, Übersetzungs-, Lint- und Paketprüfungen | OK | npm run check:web; npm run check |
 | H09 | Native Inline-Details mit Signatur, MITRE-Technik und gemeldeter Null | OK | --automatic-scan-check; Screenshot unten |
@@ -18,10 +18,11 @@ Lokale Entwicklungsabnahme der detaillierten Hybrid-Analysis-Fachansicht unter L
 | H12 | Geschützte Anzeigeoptionen, Entsperren und einmalige Linkfreigabe nativ | OK | --security-check; administration.protectedDisplaySettings=true |
 | H13 | Korrigierter Hybrid-URL-Pfad und gemeinsame urlscan-400-Fehlerklassen | OK | native Automatik, test/optimization.test.js, test/provider-contracts.test.js |
 | H14 | Anzeigevorgaben, manuelle Umschaltung und unveränderte Gefahrenbefunde | OK | test/analysis-sources.test.js, test/optimization.test.js |
+| H15 | Eigene Speicherzustände für Admin-/Anzeigeformulare; zwölf Zoomfälle in sechs Sprachen | OK | options.test.js; Browserprüfung options.html bei 200 Prozent, hell/dunkel |
 
-**Summe:** 14 OK / 0 FAIL / 0 N/A / 0 OFFEN
+**Summe:** 15 OK / 0 FAIL / 0 N/A / 0 OFFEN
 
-Getestetes lokales ZIP/XPI: Version 1.25.2, SHA-256 `45fce3c402e9ddc6d0c5e822ac399bb2d5f6b472b203d596293d3eb97f0edbec`. Paket-Fingerprint `e30c51dfee3d55a18716bb09b8abe1807ec3d6c30b9093ed4cab2494891f4e76`. Die native Ausgabe bestätigt weiterhin den bösartigen Teilbefund, den unbekannten Abschluss ohne Verlust dieses Befunds, Aktualisierung ohne POST und konsistente Schutzentscheidungen.
+Getestetes lokales ZIP/XPI: Version 1.25.2, SHA-256 `20645a62b523e52ee69ee4e22f338cffe1a33867f8cd7f118b2ca2c662afe31b`. Paket-Fingerprint `9235df33d0b4d77153922aa99b0af9e13ca28e69d7c3547b5cc984e97ac2516f`. Die native Ausgabe bestätigt weiterhin den bösartigen Teilbefund, den unbekannten Abschluss ohne Verlust dieses Befunds, Aktualisierung ohne POST und konsistente Schutzentscheidungen.
 
 Die folgende Aufnahme dokumentiert die vorherige Fachansicht vor Ergänzung der Admin-/Anzeigeoptionen.
 
