@@ -2185,6 +2185,12 @@ def check_crypto_content(m, base, out, report, fixtures):
         else:
             assert row['localCoverage']=='checked' and row['hasExpectedText'],row
             assert any(a['name']=='binary.bin' and a['sha256']==manifest['attachmentSha256'] for a in row['attachments']),row
+    if report['cryptoContent'].get('smimeApiPlaintextUnavailable'):
+        m.page('''return (async()=>{const b=window.wrappedJSObject.browser;const item=(await b.messages.query({subject:'Thundy crypto smime-encrypted'})).messages.find(x=>x.subject==='Thundy crypto smime-encrypted');await b.messageDisplay.open({messageId:item.id,location:'tab'});return true;})();''')
+        label=json.loads((ROOT/'_locales/en/messages.json').read_text())['analysisLocalIncomplete']['message']
+        wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[label]))
+        m.screenshot(out/'smime-input-incomplete.png')
+        report['cryptoContent']['smimeIncompleteVisible']=True
     report['cryptoContent'].update(passed=True,openpgpDecrypted=True,smimeSignedReadable=True,smimeEnvelopeConservative=True,attachmentBytesVerified=True)
     report['passed']=True
 
@@ -2195,7 +2201,7 @@ def check_imap_content(m, base, out, report, fixture):
     m.js('''Services.io.offline=false;const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const server=MailServices.accounts.createIncomingServer('fixture','127.0.0.1','imap');server.port=arguments[0];server.socketType=0;server.authMethod=3;server.password='synthetic-fixture';server.prettyName='Isolated IMAP';const account=MailServices.accounts.createAccount();account.incomingServer=server;server.performExpand(window.msgWindow);''',[state['port']])
     report['imapSetup']=m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const s=[...MailServices.accounts.allServers].find(s=>s.type==='imap');return {port:s.port,valid:s.valid,inboxFlag:Ci.nsMsgFolderFlags.Inbox,folders:[...s.rootFolder.subFolders].map(f=>({name:f.name,isServer:f.isServer,flags:f.flags}))};''')
     wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const server=[...MailServices.accounts.allServers].find(s=>s.type==='imap');return [...server.rootFolder.subFolders].some(f=>f.name.toUpperCase()==='INBOX');'''),30)
-    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const server=[...MailServices.accounts.allServers].find(s=>s.type==='imap');const folder=[...server.rootFolder.subFolders].find(f=>f.name.toUpperCase()==='INBOX');window.gTabmail.openTab('mail3PaneTab',{folderURI:folder.URI});''')
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const server=[...MailServices.accounts.allServers].find(s=>s.type==='imap');const folder=[...server.rootFolder.subFolders].find(f=>f.name.toUpperCase()==='INBOX');MailServices.imap.selectFolder(folder,null,null);''')
     wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const server=[...MailServices.accounts.allServers].find(s=>s.type==='imap');const folder=[...server.rootFolder.subFolders].find(f=>f.name.toUpperCase()==='INBOX');return folder.getTotalMessages(false)>0;'''),30)
     open_page(m,base+'options.html')
     row=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;const message=(await b.messages.query({subject:'Thundy IMAP fixture'})).messages.find(x=>x.subject==='Thundy IMAP fixture');if(!message)throw Error('IMAP message missing');const full=await bg.readFullForAnalysis(message);const context=await bg.getMessageAnalysisContext(message);await (context.wrappedJSObject||context).flush();return {messageReadable:bg.extractTextFromParts(full.parts||full).includes('Synthetic IMAP body.'),localCoverage:bg.localContentCoverage(full).state,sourcePersisted:!(context.wrappedJSObject||context).persistenceFailed};})();''')

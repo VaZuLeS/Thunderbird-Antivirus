@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-development-2026-11-10",
+  "unreleased": true,
+  "extensionVersion": "1.25.4",
+  "sourceFingerprint": "cd7bd26e251060e95cc4b38f32494f98e8814ce4a664079929edd914dfa053c8",
+  "packageSha256": "4a95a267c735732dce177c4b7af0048f249fdb79542abdcf19d46c965648264e",
+  "regression": {
+    "tests": 1278,
+    "passed": 1278,
+    "failed": 0,
+    "logSha256": "4da695508ac4c1efdebee33d468e459b4228cba71462a874e7929e264531eaea"
+  },
+  "native": {
+    "passed": true,
+    "clientVersion": "140.12.0",
+    "platform": "linux",
+    "runnerSha256": "ac7a90db797da6b5823d495fc9191b42e07597a71cc1e73bd530d70e6222ad79",
+    "reportSha256": "2fb714ebc017871b9f980451a5a1da3c2784676a0b3c344a6ea94293d1538d77",
+    "scope": "Actual message/popup rendering; explicitly injected attachment inventory failure; synthetic urlscan transport; real synthetic crypto identities and loopback Dovecot",
+    "inlineFreshManualScan": {
+      "passed": true,
+      "realThunderbirdAPIs": true,
+      "syntheticTransport": true,
+      "liveProviderCalls": false,
+      "contextRenewed": false,
+      "completed": true,
+      "visibleCompletion": true,
+      "submissions": 1,
+      "historicalAuditUnchanged": true
+    },
+    "scanCoverage": {
+      "passed": true,
+      "baselineObserved": false,
+      "realThunderbirdAPIs": true,
+      "syntheticTransport": true,
+      "injectedInventoryFailure": true,
+      "liveProviderCalls": false,
+      "state": "incomplete",
+      "assessmentIncomplete": true,
+      "coverage": {
+        "schemaVersion": 1,
+        "inventoryIncomplete": false,
+        "attachments": {
+          "total": 1,
+          "selected": 1,
+          "prepared": 0,
+          "readFailed": 1,
+          "sizeLimited": 0,
+          "omitted": 0
+        },
+        "urls": {
+          "total": 1,
+          "selected": 1,
+          "omitted": 0
+        },
+        "incomplete": true
+      },
+      "visibleState": true,
+      "visiblePopup": true,
+      "sourceCapacityPreserved": true,
+      "sourceCapacityReason": "source_capacity",
+      "additionalRequests": 2
+    },
+    "identityEventAccess": {
+      "accountsRead": false,
+      "events": {
+        "onUpdated": "available",
+        "onMoved": "unavailable",
+        "onCopied": "unavailable",
+        "onDeleted": "unavailable"
+      }
+    },
+    "cryptoContent": {
+      "synthetic": true,
+      "realThunderbirdAPIs": true,
+      "liveProviderCalls": false,
+      "rows": [
+        {
+          "kind": "OpenPGP",
+          "localCoverage": "checked",
+          "hasExpectedText": true,
+          "attachments": [
+            {
+              "name": "binary.bin",
+              "sha256": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880"
+            }
+          ]
+        },
+        {
+          "kind": "smime-encrypted",
+          "localCoverage": "incomplete",
+          "hasExpectedText": false,
+          "attachments": [
+            {
+              "name": "smime.p7m",
+              "sha256": "1bfb00ee32dfd5088ac638ba7f15b43f2a48824acbe9d84ac53606ccb41da014"
+            }
+          ]
+        },
+        {
+          "kind": "smime-signed",
+          "localCoverage": "checked",
+          "hasExpectedText": true,
+          "attachments": [
+            {
+              "name": "binary.bin",
+              "sha256": "40aff2e9d2d8922e47afd4648e6967497158785fbd1da870e7110266bf944880"
+            },
+            {
+              "name": "smime.p7s",
+              "sha256": "6c0aa95724d4bd9c226f6875c4b8b24208852f35adedfdc3861c186e89b72e20"
+            }
+          ]
+        }
+      ],
+      "independentVerification": {
+        "openpgpDecrypt": true,
+        "openpgpSignature": true,
+        "smimeDecrypt": true,
+        "smimeSignature": true
+      },
+      "smimeApiPlaintextUnavailable": true,
+      "smimeIncompleteVisible": true,
+      "passed": true,
+      "openpgpDecrypted": true,
+      "smimeSignedReadable": true,
+      "smimeEnvelopeConservative": true,
+      "attachmentBytesVerified": true
+    },
+    "imapContent": {
+      "passed": true,
+      "realThunderbirdAPIs": true,
+      "realImapServer": true,
+      "loopbackOnly": true,
+      "synthetic": true,
+      "liveProviderCalls": false,
+      "retentionVerified": false,
+      "messageReadable": true,
+      "localCoverage": "checked",
+      "sourcePersisted": true
+    }
+  },
+  "pages": {
+    "localJekyllBuildPassed": true,
+    "publicHttpVerified": false
+  },
+  "checks": {
+    "sourcePassed": true,
+    "lintErrors": 0,
+    "knownThunderbirdWarnings": 39,
+    "webBuildPassed": true,
+    "packageVerified": true
+  },
+  "limits": {
+    "fullRemoteCandidateGateVerified": false,
+    "realProviderAccountsVerified": false,
+    "windowsVerified": false,
+    "macosVerified": false,
+    "screenReadersVerified": false,
+    "retentionAndRestoreImapVerified": false,
+    "automaticUpdateChannelVerified": false,
+    "releasePublished": false
+  }
+}

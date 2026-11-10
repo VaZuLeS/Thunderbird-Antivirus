@@ -6,6 +6,8 @@ Stand: 10. November 2026. Forschungsvertrag für die vorbereitete 1.25.4; keine 
 
 Das installierte Thunderbird 140.12.0 liefert `messages.json` im eigenen `omni.ja`, SHA-256 `4c6cf7726947fcb776db44ae0fb0ca1dee349650d114de98059fb5f470dce6b9`. Namespace `messages` verlangt `messagesRead`; `onMoved`, `onCopied`, `onDeleted` zusätzlich `accountsRead`. `move`/`copy` verlangen außerdem `messagesMove`. `onUpdated` ist mit `messagesRead` verfügbar, liefert aber keinen dauerhaften Vorkommensschlüssel. Das aktuelle Manifest besitzt weder `accountsRead` noch `messagesMove`. Das Prüfen nativer Ordneroperationen über privilegierte Testautomation beweist deshalb nicht, dass die Erweiterung deren Ereignisse selbst empfangen kann.
 
+Die native 1.25.4-Probe bestätigt `onUpdated: available`, die drei genannten Vorkommensereignisse dagegen `unavailable` und `accountsRead: false`.
+
 Eine vollständige ereignisgestützte Wiederbindung benötigt einen separat begründeten Berechtigungsauftrag und Abnahme auf Mindest-/aktueller Linie. Bis dahin gilt: neue Laufzeit bedeutet keine automatische Zuordnung alter Vorkommen. Ordnername, numerische Message-ID, Header-ID und bytegleiche Kopie reichen einzeln oder gemeinsam nicht als dauerhafter Vorkommensbeweis.
 
 ## Begriffe und Schreibvertrag

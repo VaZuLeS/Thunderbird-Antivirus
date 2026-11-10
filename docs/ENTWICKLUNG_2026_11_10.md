@@ -24,7 +24,7 @@ Für Kandidaten ab 1.25.4 verlangt das Gate beide Inlinevarianten sowie den Unvo
 
 `docs/distribution.json` trennt die veröffentlichte Downloadversion und deren XPI-Prüfsumme von der Entwicklungsversion. Dokument- und Einreichungsprüfungen akzeptieren den neuen Kandidaten, verlangen öffentlich aber weiterhin das tatsächlich veröffentlichte 1.25.3. Reviewer-/Storeunterlagen nennen 1.25.4 als Kandidaten. Öffentliche Links werden erst nach einer tatsächlichen Veröffentlichung umgestellt.
 
-Die CLI-GitHub-Anmeldung ist in dieser Sitzung ungültig; die verfügbare GitHub-Verbindung konnte die isolierte Arbeitsbranch anlegen. Commit, Remote-Abnahme und Review werden über diesen verfügbaren Zugang vorbereitet. Kein Tag, kein Überschreiben alter Releaseassets, keine ATN-/Updatebehauptung.
+Die CLI-GitHub-Anmeldung ist in dieser Sitzung ungültig; der Git-Transport konnte die isolierte Arbeitsbranch dennoch veröffentlichen. Der [Reviewentwurf #765](https://github.com/VaZuLeS/Thunderbird-Antivirus/pull/765) enthält die vorbereiteten Korrekturen. Die vollständige Remote-Abnahme läuft getrennt von den lokalen Nachweisen. Kein Tag, kein Überschreiben alter Releaseassets, keine ATN-/Updatebehauptung.
 
 ## Weiterführende Pakete und konkrete Grenzen
 
@@ -43,3 +43,13 @@ Die CLI-GitHub-Anmeldung ist in dieser Sitzung ungültig; die verfügbare GitHub
 | AVN-015 | Kein ATN-/Updatekanalzugang mit zwei angebotenen Versionen; manueller Upgrade-/Profilrestore ersetzt automatische Versorgung nicht. |
 
 Die Bedeutungen der bestehenden AVN-019/020 bleiben erhalten. Ein unübernommener Analysevorschlag mit konkurrierenden Nummern ist kein neues Aufgabenregister. AVN-010 wird nicht erneut implementiert: Schutzprofile mit v1/v2-Kompatibilität existieren bereits. Offene Issues erhalten durch ihren Zustand allein keinen höheren Evidenzrang als der Code.
+
+## Aktueller lokaler Nachweis
+
+[Maschinenlesbarer Bericht](audits/development-2026-11-10.json): 1.278 Node-Tests, Quellprüfungen, Lint (0 Fehler/39 kuratierte Warnungen), Web-Build und Paketprüfung bestanden. Ein gemeinsamer nativer Lauf gehört exakt zum dort genannten 1.25.4-Paket. Er bestätigt Umfang/Fokus in Nachricht und Popup, Kapazitätsverweigerung mit Historienerhalt, frischen Inline-Start sowie die tatsächliche Ereignisberechtigungsgrenze.
+
+AVN-003 ist weitergehend untersucht: OpenPGP liefert nach realem Schlüsselimport den erwarteten Unicode-Text und binär identische Anhangbytes; lesbare S/MIME-Signaturen ebenfalls. Der native Thunderbird-Viewer entschlüsselt die gültige S/MIME-Fixture, während die Erweiterungs-API nur die verschlüsselte Hülle liefert. Die bisher fälschlich vollständige lokale Eingangsdeckung wurde für unexpandierte `application/pkcs7-mime`/`application/x-pkcs7-mime`-Hüllen konservativ korrigiert. Ein lesbarer signierter MIME-Baum bleibt vollständig. Die tatsächliche Nachricht zeigt nun die unvollständige Add-on-Prüfung trotz im Client sichtbarem Klartext; keine erfolgreiche API-Entschlüsselung wird erfunden.
+
+AVN-009.d: Ein echter, nur über Loopback veröffentlichter Dovecot 2.3.19.1 liefert die synthetische Nachricht an den echten Thunderbird-Client; Text, lokale Deckung und Quellenspeicherung sind geprüft. Der Hilfsrunner verwendet für Thunderbird 140 den tatsächlich gültigen `selectFolder(folder, listener, msgWindow)`-Aufruf. Das ist weiterhin kein allgemeiner IMAP-Lifecycle-, Langzeitretention- oder Restorebeweis. Der temporäre Testcontainer wurde anschließend gestoppt.
+
+AVN-016: Jekyll mit den beiden konfigurierten Plugins wurde in einem isolierten Debian-Container tatsächlich ausgeführt; alle sieben HTML-Einstiege wurden erzeugt. Der öffentliche Pages-Aufruf bleibt durch die Netzrichtlinie blockiert. Lokaler Build und öffentliche Abnahme bleiben getrennt.

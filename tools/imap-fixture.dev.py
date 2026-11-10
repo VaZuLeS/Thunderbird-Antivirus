@@ -81,8 +81,13 @@ if __name__ == '__main__':
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--stop', action='store_true', help='Stop only the fixture recorded in this output directory')
     args = parser.parse_args()
+    root = Path(__file__).resolve().parents[1]
+    if args.out.resolve() == root or root in args.out.resolve().parents:
+        parser.error('Server state must be stored outside the repository')
     if args.stop:
         state = json.loads((args.out / 'server.json').read_text())
+        if docker('inspect', '--format', '{{.Config.Image}}', state['containerId']) != 'thundy-imap-fixture:local':
+            parser.error('The recorded container is not the IMAP fixture')
         docker('stop', state['containerId'])
     else:
         print(json.dumps(start(args.out.resolve())))
