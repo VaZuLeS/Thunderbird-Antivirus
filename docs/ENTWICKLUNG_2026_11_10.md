@@ -18,13 +18,13 @@ Der [Identitätsvertrag](IDENTITAETSVERTRAG_2026_11_10.md) beschreibt getrennte 
 
 Der bestehende Slot-/Scoregegenfall ist noch nicht produktiv behoben. AVN-003, weitere IMAP-/Lifecycleabnahme und ein gegebenenfalls separat begründeter Berechtigungsauftrag bleiben Voraussetzungen für einen vollständigen Migrationsauftrag. Keine neue IndexedDB-Version, keine Retentionänderung, keine Umdeutung historischer Entscheidungen.
 
-## AVN-014.c / AVN-016 — Gate geschlossen, Remote-Abnahme offen
+## AVN-014.c / AVN-016 — vollständiger Kandidatenlauf bestanden, Veröffentlichung offen
 
 Für Kandidaten ab 1.25.4 verlangt das Gate beide Inlinevarianten sowie den Unvollständigkeits-/Kapazitätsnachweis **je** `minimum`/`current`-Clientziel. Fehlender Popupnachweis, falscher Umfang, zusätzliche Einreichungen, falscher Pakethash oder fehlender Erhalt werden abgewiesen. Die dauerhafte Projektion erhält ausschließlich die dafür notwendigen Felder; beliebige Zusatzdaten werden verworfen. Die CI führt die neue Umfangsprobe aus.
 
 `docs/distribution.json` trennt die veröffentlichte Downloadversion und deren XPI-Prüfsumme von der Entwicklungsversion. Dokument- und Einreichungsprüfungen akzeptieren den neuen Kandidaten, verlangen öffentlich aber weiterhin das tatsächlich veröffentlichte 1.25.3. Reviewer-/Storeunterlagen nennen 1.25.4 als Kandidaten. Öffentliche Links werden erst nach einer tatsächlichen Veröffentlichung umgestellt.
 
-Die CLI-GitHub-Anmeldung ist in dieser Sitzung ungültig; der Git-Transport konnte die isolierte Arbeitsbranch dennoch veröffentlichen. Der [Reviewentwurf #765](https://github.com/VaZuLeS/Thunderbird-Antivirus/pull/765) enthält die vorbereiteten Korrekturen. Die vollständige Remote-Abnahme läuft getrennt von den lokalen Nachweisen. Kein Tag, kein Überschreiben alter Releaseassets, keine ATN-/Updatebehauptung.
+Die CLI-GitHub-Anmeldung ist in dieser Sitzung ungültig; der Git-Transport konnte die isolierte Arbeitsbranch dennoch veröffentlichen. Der [Reviewentwurf #765](https://github.com/VaZuLeS/Thunderbird-Antivirus/pull/765) enthält die vorbereiteten Korrekturen. Der vollständige [Remote-Kandidatenlauf 42736341784](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/42736341784) für `c1c2878021c2814e23a09faa823d829f83a35d31` ist erfolgreich: beide Linuxziele, sechs Browser-/Zoomsprachen und Kandidatengate. PR #765 ist zur Prüfung bereit. Kein Tag, kein Überschreiben alter Releaseassets, keine ATN-/Updatebehauptung.
 
 ## Weiterführende Pakete und konkrete Grenzen
 
@@ -61,3 +61,7 @@ Die neue Linux-Upgrade-/Crash-/Restorematrix verwendet das veröffentlichte 1.25
 Die nächste Remote-Probe zeigte einen Timingfehler im Popup-Retry-Prüfrunner: Das Popup wurde bereits während des vorgeschalteten Kontextlesens geschlossen, bevor ein Auftrag angenommen war. Die Probe wartet nun auf einen laufenden neuen Auftrag, hält eine synthetische Anbieterantwort zurück, schließt das Popup und gibt die Antwort danach frei. Dieser lokale native Lauf besteht einschließlich der nachfolgenden Anbieter-/Kontingentprüfungen. Das ist kein automatischer Retry und lockert keine Produktprüfung.
 
 Zusätzlich besteht der lokale direkte Übergang vom veröffentlichten 1.25.3-XPI zum aktuellen Kandidaten mit drei sauberen Neustarts, zwei Prozessabbrüchen und vollständigem Profilrestore. Der Nachweis bleibt auf Linux und manuelle Paketinstallation begrenzt; automatische Zustellung und andere Betriebssysteme bleiben offen. Alle sechs lokal von Jekyll erzeugten Sprachseiten wurden außerdem im Browser gerendert und auf den veröffentlichten 1.25.3-Download geprüft; externe Requests waren dabei gesperrt.
+
+Die nachfolgende Arbeitsbranch ergänzt die Erzeugung und erneute Validierung bereinigter `acceptance-1.25.4.json` bereits im Kandidatengate. Damit wird die Projektion an tatsächlichen CI-Berichten geprüft, ohne eine Veröffentlichung zu behaupten. Der akzeptierte Kandidatenstand bleibt in PR #765 unverändert.
+
+AVN-009.d wurde durch eine [native Speicher-/Restoreabnahme](SPEICHERABNAHME_2026_11_10.md) fortgeführt. Vorhandene Alters-/Kapazitätsregeln, echte Commitabbruchgrenze, Audit-/Cachetrennung und vollständiger Profilrestore sind im beschriebenen Umfang geprüft. Der nach dem Backup veränderte Loopback-IMAP-Server bleibt unverändert; diese Probe ist keine vollständige IMAP-Vorkommens- oder Mehrtagesabnahme.

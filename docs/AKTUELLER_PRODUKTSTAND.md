@@ -4,7 +4,7 @@
 
 **Aktuelle unveröffentlichte Stufe:** [Weiterentwicklung vom 10. November](ENTWICKLUNG_2026_11_10.md).
 
-**Frühere unveröffentlichte Weiterentwicklung auf dieser Basis:** [Umsetzung und priorisierte offene Pakete](ENTWICKLUNG_2026_11_09.md). Der Quellstand verwendet nun die Kandidatenversion **1.25.4**, ist nicht bytegleich mit dem veröffentlichten XPI und nicht als neuer Release freigegeben. [Kandidatenumfang](releases/1.25.4.md), [offenes Abnahmeprotokoll](live_test_1_25_4.md). Ein neuer Kandidat benötigt eigene paketgebundene Abnahme und eine neue Releaseidentität.
+**Frühere unveröffentlichte Weiterentwicklung auf dieser Basis:** [Umsetzung und priorisierte offene Pakete](ENTWICKLUNG_2026_11_09.md). Der Quellstand verwendet nun die Kandidatenversion **1.25.4**, ist nicht bytegleich mit dem veröffentlichten XPI und nicht als neuer Release freigegeben. [Kandidatenumfang](releases/1.25.4.md), [Abnahmeprotokoll](live_test_1_25_4.md). Ein neuer Kandidat benötigt eigene paketgebundene Abnahme und eine neue Releaseidentität.
 
 Die anschließende [Inline-Korrektur für „Jetzt prüfen“](INLINE_SCAN_KONTEXT.md) erneuert einen verlorenen Anzeigekontext beim ausdrücklichen Klick. Sie ist unveröffentlicht und besitzt eigene Paket-/Clientnachweise.
 
@@ -28,7 +28,7 @@ Die anschließende [Inline-Korrektur für „Jetzt prüfen“](INLINE_SCAN_KONTE
 
 ## Nachweise richtig lesen
 
-Aktuelle lokale Ausführung: [maschinenlesbarer Bericht](audits/development-2026-11-09.json). Er trennt getestete Paketbytes, Quellfingerprints, Simulationen und echte Clientprüfungen. Historische Testzahlen, Tags, Dokumenttitel und erfolgreiche Deployments sind keine aktuelle Inhalts- oder Plattformfreigabe.
+Aktuelle lokale Ausführung: [maschinenlesbarer Bericht](audits/development-2026-11-10.json). Vollständige Remote-Kandidatenabnahme für `c1c2878`: [CI 42736341784](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/42736341784) erfolgreich; keine Veröffentlichung oder automatische Updateversorgung daraus abgeleitet. Er trennt getestete Paketbytes, Quellfingerprints, Simulationen und echte Clientprüfungen. Historische Testzahlen, Tags, Dokumenttitel und erfolgreiche Deployments sind keine aktuelle Inhalts- oder Plattformfreigabe.
 
 Die Pages-Bereitstellung für `90df6607` war erfolgreich. Ein öffentlicher Seiten-/Downloadkettenlauf wurde in dieser Umgebung nicht bestätigt: Der Proxy verweigerte den HTTPS-Zugriff. Daraus folgt weder Websiteausfall noch erfolgreiche öffentliche Inhaltsabnahme. Lokale Version-/Linkprüfungen sind davon getrennt.
 

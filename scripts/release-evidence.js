@@ -23,6 +23,12 @@ function native(report) {
         acknowledgedCrashRecovery:recovery(report.acknowledgedCrashRecovery),pendingCrashRecovery:recovery(report.pendingCrashRecovery),
         finalAuditRecords:report.finalAuditRecords?.map(audit),
         inlineManualScan:pick(report.inlineManualScan,['passed','realThunderbirdAPIs','syntheticTransport','liveProviderCalls','contextRenewed','completed','visibleCompletion','submissions','historicalAuditUnchanged']),
+        storageLifecycle:report.storageLifecycle?{
+            ...booleans(report.storageLifecycle,['passed','realThunderbirdAPIs','syntheticRecords','liveProviderCalls','longSessionKeepsAgedRecord']),
+            database:booleans(report.storageLifecycle.database,['realIndexedDB','controlledCleanupClock','backwardKeeps','forwardRemoves','oldestGone','retained','unreadableRetained','putRequestSucceededBeforeAbort','aborted','atomicPreserved','byteLimitRefused','byteLimitPreserved']),
+            coldOpen:booleans(report.storageLifecycle.coldOpen,['expiredRemoved','freshRetained','futureRetained']),
+            audit:{...booleans(report.storageLifecycle.audit,['originalsPreserved','pendingUnchanged','cacheClearKeepsAudit']),...(Number.isSafeInteger(report.storageLifecycle.audit?.count)?{count:report.storageLifecycle.audit.count}:{})},
+            profileRestore:booleans(report.storageLifecycle.profileRestore,['passed','auditSnapshotPreserved','analysisSnapshotPreserved','newerEventsSeparatelySaved','newerEventsNotMerged','imapServerNotRolledBack'])}:undefined,
         cryptoContent:booleans(report.cryptoContent,['passed','synthetic','realThunderbirdAPIs','liveProviderCalls','openpgpDecrypted','smimeSignedReadable','smimeEnvelopeConservative','attachmentBytesVerified']),
         inlineFreshManualScan:pick(report.inlineFreshManualScan,['passed','realThunderbirdAPIs','syntheticTransport','liveProviderCalls','contextRenewed','completed','visibleCompletion','submissions','historicalAuditUnchanged']),
         scanCoverage:report.scanCoverage?{...pick(report.scanCoverage,['passed','baselineObserved','realThunderbirdAPIs','syntheticTransport','injectedInventoryFailure','liveProviderCalls','state','assessmentIncomplete','visibleState','visiblePopup','sourceCapacityPreserved','sourceCapacityReason']),coverage:{attachments:pick(report.scanCoverage.coverage?.attachments,['readFailed'])}}:undefined,
@@ -35,7 +41,7 @@ function browser(report) {
         results:report.results.map(row=>pick(row,['id','lang','view','kind','width','scheme','state','populated','url','scenario','density','status']))};
 }
 function healthy(thunderbird,browserUi) {
-    if(!Array.isArray(thunderbird)||!Array.isArray(browserUi)||thunderbird.some(r=>r.passed!==true||r.error)||browserUi.some(r=>r.fatalError||r.failed!==0||r.results?.some(row=>row.status!=='passed'||row.error||row.errors?.length||row.violations?.length)))throw Error('Refusing failed release evidence');
+    if(!Array.isArray(thunderbird)||!Array.isArray(browserUi)||thunderbird.some(r=>r.passed!==true||r.error||(r.storageLifecycle&&r.storageLifecycle.passed!==true))||browserUi.some(r=>r.fatalError||r.failed!==0||r.results?.some(row=>row.status!=='passed'||row.error||row.errors?.length||row.violations?.length)))throw Error('Refusing failed release evidence');
 }
 function create(identity,thunderbird,browserUi,commit) {
     // Validate BEFORE projection: a raw failure must never disappear in redaction.

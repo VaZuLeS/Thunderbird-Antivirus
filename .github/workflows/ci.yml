@@ -175,6 +175,7 @@ jobs:
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --inline-scan-check --out .audit/thunderbird-live/inline-scan-en
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --inline-fresh-scan-check --out .audit/thunderbird-live/inline-fresh-scan-en
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --scan-coverage-check --out .audit/thunderbird-live/scan-coverage-en
+          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --storage-lifecycle-check --out .audit/thunderbird-live/storage-lifecycle-en
           runuser -u thunderbird-test -- python3 tools/crypto-fixtures.dev.py --out /tmp/thundy-crypto-fixtures
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --crypto-fixtures /tmp/thundy-crypto-fixtures --out .audit/thunderbird-live/crypto-en
           for lang in en de fr es it pl; do
@@ -238,11 +239,22 @@ jobs:
         run: node scripts/candidate-evidence.js --write .audit/thunderbird-live .audit/browser
       - name: Verify candidate without claiming publication
         run: npm run goal -- --candidate
+      - name: Generate and revalidate redacted acceptance evidence
+        run: |
+          node scripts/release-evidence.js
+          node - <<'JS'
+          const fs=require('node:fs'),proof=require('./scripts/release-evidence.js');
+          const identity=require('./scripts/candidate-evidence.js').packageIdentity();
+          const evidence=JSON.parse(fs.readFileSync('build/acceptance-'+identity.extensionVersion+'.json'));
+          proof.verify(evidence,identity);
+          console.log(JSON.stringify({kind:evidence.kind,commit:evidence.commit,...identity,limits:evidence.limits}));
+          JS
       - uses: actions/upload-artifact@v7
         with:
           name: validated-release-candidate
           path: |
             build/*.zip
+            build/acceptance-*.json
             docs/audits/candidate-*.json
           if-no-files-found: error
           retention-days: 14

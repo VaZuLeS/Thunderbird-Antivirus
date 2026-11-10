@@ -37,3 +37,5 @@ Der spätere Schemawechsel darf erst nach Backend-/Cryptoabnahme festgelegt werd
 4. Voller Speicher, Commitfehler, parallele Writer, wiederholter Start und vollständiger Profilrestore: Originalbereiche und historische Audit-Snapshots müssen bytegleich bleiben. PENDING bleibt offen; OPENED bleibt Öffnungsannahme.
 
 **Freigabegrenze:** Der konservative Rohbytevertrag und die Berechtigungsgrenze sind konkretisiert. Eine allgemeine dauerhafte Bindung, IMAP-/Cryptoabnahme und Migration sind damit nicht abgeschlossen. Diese Arbeit benötigt AVN-003/009.d sowie gegebenenfalls den separat abgenommenen Ereignis-/Berechtigungsauftrag.
+
+Die [native Speicherabnahme](SPEICHERABNAHME_2026_11_10.md) liefert inzwischen abgegrenzte Commit-/Kapazitäts-/Restorebelege. Sie löst die Ereignis- und Vorkommensgrenze nicht; vollständiger lokaler/IMAP-Lifecycle und parallele Migrationswriter bleiben vor der Migration separat abzunehmen.

@@ -151,12 +151,14 @@ test('1.25.3 requires package-bound synthetic urlscan action quota acceptance',(
 
 test('durable release proof rejects raw failures before redaction and preserves historical equality without URLs',()=>{
  const identity={extensionVersion:'1.24.3',packageSha256:'a'.repeat(64),sourceFingerprint:'b'.repeat(64)}, {live,ui}=acceptanceFixture(identity),api=require('./release-evidence.js');
+ live[0].storageLifecycle={passed:true,realThunderbirdAPIs:true,database:{atomicPreserved:true,abortError:'CANARY'},audit:{originalsPreserved:true,count:2000,records:['CANARY']},profileRestore:{passed:true,path:'CANARY'},scope:'CANARY'};
  live[0].client.capabilities.browserVersion='CANARY';live[0].providerResults={CANARY:true};
  live[0].previousInstallation.auditRecord.url='https://private.invalid/?token=CANARY';
  live[0].finalAuditRecords[0].url=live[0].previousInstallation.auditRecord.url;
  live[0].finalAuditRecords[0]=Object.fromEntries(Object.entries(live[0].finalAuditRecords[0]).reverse());
- const proof=api.create(identity,live,ui,'fixture');assert.ok(!JSON.stringify(proof).includes('CANARY'));assert.ok(api.verify(proof,identity));
+ const proof=api.create(identity,live,ui,'fixture');assert.equal(proof.thunderbird[0].storageLifecycle.database.atomicPreserved,true);assert.equal(proof.thunderbird[0].storageLifecycle.audit.count,2000);assert.ok(!JSON.stringify(proof).includes('CANARY'));assert.ok(api.verify(proof,identity));
  assert.throws(()=>api.verify(proof,{...identity,packageSha256:'wrong'}),/identity/);
+ live[0].storageLifecycle.passed=false;assert.throws(()=>api.create(identity,live,ui,'fixture'),/failed release evidence/);live[0].storageLifecycle.passed=true;
  live[0].finalAuditRecords[0].url='https://changed.invalid/';assert.throws(()=>api.create(identity,live,ui,'fixture'),/real Thunderbird/);
  live[0].finalAuditRecords[0].url=live[0].previousInstallation.auditRecord.url;
  assert.throws(()=>api.create(identity,[...live,{...live[0],error:'CANARY'}],ui,'fixture'),/failed release evidence/);
