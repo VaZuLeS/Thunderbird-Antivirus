@@ -208,6 +208,8 @@
     "previousVersion": "1.25.3",
     "gracefulRestarts": 3,
     "forcedRestarts": 2,
-    "profileRestorePassed": null
+    "profileRestorePassed": true,
+    "restoredVersion": "1.25.3",
+    "snapshotRecordsPreserved": 3
   }
 }
