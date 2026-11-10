@@ -73,3 +73,7 @@ AVN-009.f/009.d erhalten außerdem die [separate lokale IMAP-Lifecyclebeobachtun
 ## Weitere Fortführung: Speicherwiederanlauf
 
 Die [Speicherwiederanlauf-Korrektur](SPEICHERWIEDERANLAUF_2026_11_10.md) schließt nach fehlgeschlagener Startbereinigung eine bislang offen gebliebene Verbindung und erhält den ursprünglichen Fehler. Native Gegenprobe und parallele aktuelle Writer sind getrennt protokolliert. Die neuen Paketbytes benötigen eine eigene vollständige CI; frühere Nachweise werden nicht übertragen.
+
+## Nachfolgender Kontrastbefund vor der Veröffentlichung
+
+Die CI 42842001744 fand bei 200 % Zoom einen Exportbutton mit 4,36:1 Kontrast, während er nach dem Speichern wieder aktiv wurde. Ein gehaltener synthetischer Download und ein MutationObserver machen den Übergang deterministisch: bisher blieb der gerade aktivierte Button kurz bei 0,6 Deckkraft. Die globale Opacity-Transition wurde entfernt; der Filter-Hovereffekt bleibt. Die Kontrastprüfung wurde nicht gelockert. Vier gezielte Zustandsfälle scheitern vor der Korrektur, alle 28 spanischen Export-/Zoomfälle bestehen danach. Der [lokale Schlussbericht](audits/final-candidate-1.25.4-local.json) bindet diese Beobachtung und einen erneuten nativen Speicherlauf an die neuen Paketbytes. Der vorherige native Bericht bleibt seinen früheren Bytes zugeordnet.

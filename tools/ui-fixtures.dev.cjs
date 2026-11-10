@@ -255,6 +255,7 @@ function addonMock({
           filename: p.filename,
           content: await (await fetch(p.url)).text(),
         });
+        if(scenario === "saved") await new Promise(resolve=>{uiTest.finishDownload=resolve;});
         return 1;
       },
     },

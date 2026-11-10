@@ -331,7 +331,15 @@ async function interaction(page, c) {
             assert.equal(await page.locator('#sourceExportSave').isDisabled(),true);
             assert.equal(await page.evaluate(()=>uiTest.downloads.length),0);
           } else {
-            await page.waitForFunction(()=>uiTest.downloads.length===1);
+            await page.waitForFunction(()=>typeof uiTest.finishDownload==='function');
+            assert.equal(await page.locator('#sourceExportSave').isDisabled(),true);
+            // Hold the download until the disabled style is painted. Observe the
+            // exact re-enable transition instead of sampling it after a delay.
+            await page.locator('#sourceExportSave').evaluate(async el=>{await Promise.all(el.getAnimations().map(animation=>animation.finished));});
+            await page.evaluate(()=>{const button=document.getElementById('sourceExportSave');const observer=new MutationObserver(()=>{if(!button.disabled){uiTest.opacityAfterSave=getComputedStyle(button).opacity;observer.disconnect();}});observer.observe(button,{attributes:true,attributeFilter:['disabled']});uiTest.finishDownload();});
+            await page.waitForFunction(()=>uiTest.opacityAfterSave!==undefined);
+            assert.equal(await page.evaluate(()=>uiTest.opacityAfterSave),'1','Enabled export button must immediately have full text contrast');
+            assert.equal(await page.locator('#sourceExportSave').isDisabled(),false);
             assert.deepEqual(JSON.parse(await page.evaluate(()=>uiTest.downloads[0].content)),report);
           }
         } else {

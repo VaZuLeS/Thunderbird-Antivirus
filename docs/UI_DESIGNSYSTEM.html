@@ -32,7 +32,8 @@ button {
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    transition: opacity 0.2s ease, filter 0.2s ease;
+    /* Re-enabled controls must immediately regain their full text contrast. */
+    transition: filter 0.2s ease;
 }
 
 button:hover:not(:disabled) {
