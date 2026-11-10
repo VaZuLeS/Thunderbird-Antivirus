@@ -17,7 +17,6 @@ Unveröffentlicht. Lokale Teilprüfungen sind keine vollständige Remote-Release
 | C11 | Dauerhafte Releaseassets einschließlich acceptance-1.25.4.json | OFFEN | Erst nach vollständigem Kandidatengate; keine Veröffentlichung behauptet |
 | C12 | OpenPGP-Entschlüsselung, S/MIME-Signatur und konservativer S/MIME-API-Umfang | OK | CI 42843384071 für aktuelle Paketbytes; echte Schlüssel im isolierten Linux-Profil, kein vollständiger S/MIME-API-Klartextzugriff |
 | C13 | Kontrollierter IMAP-Eingang mit echter Quellenspeicherung | OK | audits/final-1.25.4-imap.json; echter Loopback-Dovecot, keine allgemeine Retention-/Restorezusage |
-
 | C14 | Zusätzlicher Browserstart und kontrollierter lokaler HTTPS-Abruf | OK | audits/final-1.25.4-browser.json; Linux/Chromium, OPENED bleibt API-Annahme |
 | C15 | Speicherwiederanlauf, parallele Revisionen und Commitabbruch | OK | audits/final-candidate-1.25.4-local.json; beide nativen CI-Ziele 42843384071 |
 
