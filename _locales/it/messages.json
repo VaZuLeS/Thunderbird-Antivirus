@@ -2476,5 +2476,41 @@
   },
   "analysisLocalBackoff": {
     "message": "Questo tentativo è stato rinviato localmente; nessuna nuova richiesta è stata inviata al fornitore."
+  },
+  "scanState_deferred": {
+    "message": "Analisi rinviata: tutti gli spazi in background sono occupati. Riprovare al termine di un’altra analisi."
+  },
+  "scanCoverage": {
+    "message": "Alcune risorse non sono state controllate."
+  },
+  "scanCoverageAttachments": {
+    "message": "Allegati preparati"
+  },
+  "scanCoverageLinks": {
+    "message": "Link selezionati"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Non è stato possibile leggere un allegato o calcolarne l’hash."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Un allegato supera il limite di analisi di 25 MiB."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "È stato raggiunto il limite di risorse dell’analisi."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "L’elenco degli allegati è incompleto."
+  },
+  "scanFailure_source_capacity": {
+    "message": "La cronologia delle fonti è piena. Questa analisi non è iniziata; i dati esistenti sono stati conservati."
+  },
+  "scanFailure_cancelled": {
+    "message": "L’analisi è stata annullata. Ciò non implica un risultato completato."
+  },
+  "scanFailure_timeout": {
+    "message": "Il tempo di analisi è scaduto. I risultati restano incompleti."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Non è stato possibile completare l’analisi. I dati esistenti sono stati conservati."
   }
 }

@@ -7,10 +7,11 @@ const { spawnSync } = require('node:child_process');
 const digest = file => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 function publish({ tag, version, repository, root = path.resolve(__dirname, '..'), run = (args) => spawnSync('gh', args, { encoding: 'utf8' }) }) {
     if (tag !== 'v' + version || !/^\d+\.\d+\.\d+$/.test(version) || !/^[\w.-]+\/[\w.-]+$/.test(repository || '')) throw new Error('Invalid release identity');
-    const names = ['thundy-av-' + version + '.xpi', 'SHA256SUMS.txt'];
+    const names = ['thundy-av-' + version + '.xpi', 'SHA256SUMS.txt', 'acceptance-' + version + '.json'];
     const files = names.map(name => path.join(root, 'build', name));
     for (const file of files) if (!fs.statSync(file).isFile()) throw new Error('Missing release file');
     if (fs.readFileSync(files[1], 'utf8') !== digest(files[0]) + '  ' + names[0] + '\n') throw new Error('Release checksum mismatch');
+    require('./release-evidence.js').verify(JSON.parse(fs.readFileSync(files[2])), {extensionVersion:version,packageSha256:digest(files[0])});
     const existing = run(['api', 'repos/' + repository + '/releases/tags/' + tag]);
     if (existing.status === 0) {
         const release = JSON.parse(existing.stdout);

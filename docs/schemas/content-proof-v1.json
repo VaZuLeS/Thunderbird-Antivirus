@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Proposed exact raw content proof; not occurrence identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "algorithm", "scope", "byteLength", "sha256"],
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "kind": {"const": "thundy-content-proof"},
+    "algorithm": {"const": "raw-exact-sha256-v1"},
+    "scope": {"const": "raw-decrypt-false"},
+    "byteLength": {"type": "integer", "minimum": 0},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  }
+}

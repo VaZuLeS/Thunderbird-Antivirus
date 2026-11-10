@@ -68,7 +68,14 @@ function setup({
 }
 const tick = () => new Promise((r) => setTimeout(r, 15));
 async function ready(f) {
-  await tick();
+  // jsdom 31 queues DOMContentLoaded after entering "interactive". Observe
+  // actual theme application instead of relying on a wall-clock delay.
+  if (!f.w.document.documentElement.dataset.theme) await new Promise(resolve => {
+    const observer = new f.w.MutationObserver(() => {
+      if (f.w.document.documentElement.dataset.theme) { observer.disconnect(); resolve(); }
+    });
+    observer.observe(f.w.document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  });
   return f;
 }
 function select(f, name, value) {

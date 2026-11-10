@@ -90,20 +90,24 @@ function addonMock({
   mode = "system",
   version,
   populated = false,
+  scenario = "ready",
+  density = "comfortable",
 }) {
   const state = {
       thundyAppearance: mode,
       thundyAccent: "ocean",
-      thundyDensity: "comfortable",
+      thundyDensity: density,
       externalAnalysisConsent: false,
     },
-    callbacks = [];
+    callbacks = [], runtimeCallbacks = [];
   window.uiTest = {
     writes: [],
     failSave: false,
     failLoad: false,
     permissionRequests: 0,
     downloads: [],
+    approvals: 0,
+    notify: value => runtimeCallbacks.forEach(fn => fn(value)),
   };
   const t = (key, values = []) => {
     const item = catalog[key];
@@ -171,9 +175,14 @@ function addonMock({
       getURL: (p) => new URL(p, location.origin).href,
       getManifest: () => ({ version }),
       openOptionsPage: async () => {},
-      onMessage: { addListener: () => {} },
-      sendMessage: async (p) =>
-        p.action === "securityCommand"
+      onMessage: { addListener: fn => runtimeCallbacks.push(fn), removeListener: fn => {const i=runtimeCallbacks.indexOf(fn);if(i>=0)runtimeCallbacks.splice(i,1);} },
+      sendMessage: async (p) => {
+        if(p.action === 'getMessageAnalysis' && scenario === 'pending') await new Promise(resolve => {uiTest.finishSource=resolve;});
+        return         p.action === 'linkApprovalCommand'
+          ? p.op === 'status'
+            ? scenario === 'expired' ? {success:false,code:'APPROVAL_EXPIRED'} : {success:true,url:'https://controlled.example.invalid/'+'long-path-'.repeat(12),score:72,until:Date.now()+60000}
+            : (uiTest.approvals++, scenario === 'pending' ? await new Promise(resolve => {uiTest.finishApproval=()=>resolve({success:true});}) : {success:scenario !== 'failed',...(scenario === 'failed'?{code:'APPROVAL_CHANGED'}:{})})
+          : p.action === "securityCommand"
           ? {success:true,protected:false,unlocked:true,approvalConfigured:false,policy:{enabled:false,threshold:50,unknown:'warn',revision:0}}
           : p.action === 'securitySettingsWrite'
           ? (await window.browser.storage.local.set(p.values),{success:true})
@@ -225,7 +234,7 @@ function addonMock({
           : p.action === "getMessageAnalysisRecord"
             ? {success:true,record:null}
           : p.action === "getMessageAnalysis"
-            ? {success:true,messageId:p.messageId,scanJob:{id:"synthetic-job",state:"pending",completed:2,total:2,manualAllowed:true},local:{state:"checked"},rows:[
+            ? {success:scenario!=='unavailable',messageId:p.messageId,contextToken:'synthetic-context',scanJob:{id:"synthetic-job",state:"pending",completed:2,total:2,manualAllowed:true},local:{state:"checked"},rows:[
                 {provider:"hybridanalysis",resource:"attachment:1.2",scope:"hash",responses:1,state:"incomplete",verdict:"malicious",assessmentVersion:1,completion:"pending",signals:[{code:"scanner",verdict:"malicious",value:2,total:35},{code:"verdict",verdict:"none"}],conflicts:["mixed_verdicts"],source:"remote",observedAt:1791014400000},
                 {provider:"virustotal",resource:"attachment:1.3",scope:"hash",responses:1,state:"checked",verdict:"none",source:"cache",observedAt:1791014400000},
                 {provider:"urlhaus",resource:"link:0",scope:"domain",responses:1,state:"checked",verdict:"none",source:"remote",observedAt:1791014400000},
@@ -236,10 +245,12 @@ function addonMock({
             ? {success:true,id:"synthetic-retry",state:"queued"}
           : p.action === "getLocalRisk"
             ? { threat: { score: 72, reasons: [] } }
-            : { status: "success" },
+            : { status: "success" };
+      },
     },
     downloads: {
       download: async (p) => {
+        if(scenario === "failed") throw Error("synthetic download failure");
         uiTest.downloads.push({
           filename: p.filename,
           content: await (await fetch(p.url)).text(),

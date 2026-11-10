@@ -1,38 +1,55 @@
 /* Shared background coordinator. No popup owns network work or polling timers. */
 function createScanCoordinator(env) {
+    const MAX_JOBS = 200;
     const jobs=new Map();let queue=Promise.resolve(),generation=0;
     const serial=fn=>{const next=queue.then(fn);queue=next.catch(()=>{});return next;};
-    const active=job=>jobs.get(job.messageId)===job&&!job.controller.signal.aborted&&job.generation===generation&&env.now()<job.deadline&&(!env.valid||env.valid(job));
+    const active=job=>!!job&&jobs.get(job.messageId)===job&&!job.controller.signal.aborted&&job.generation===generation&&env.now()<job.deadline&&(!env.valid||env.valid(job));
     const assert=job=>{if(!active(job))throw Object.assign(Error('SCAN_CANCELLED'),{code:'SCAN_CANCELLED'});};
-    const snapshot=job=>job?{schemaVersion:1,id:job.id,state:job.state,completed:job.completed,total:job.total,startedAt:job.startedAt,finishedAt:job.finishedAt||null,providers:job.providers,pending:job.pending||false,errors:job.errors||0,revision:job.revision,assessmentIncomplete:['queued','running','pending','incomplete','failed'].includes(job.state)||!!job.prepared.context?.model.data.rows?.some(r=>r.verdict==='unknown'||r.state!=='checked')}:null;
+    const snapshot=job=>job?{schemaVersion:1,id:job.id,state:job.state,completed:job.completed,total:job.total,startedAt:job.startedAt,finishedAt:job.finishedAt||null,providers:job.providers,coverage:job.coverage||null,reason:job.reason||null,pending:job.pending||false,errors:job.errors||0,revision:job.revision,assessmentIncomplete:['queued','running','pending','incomplete','failed','deferred'].includes(job.state)||job.coverage?.incomplete===true||!!job.prepared.context?.model.data.local&&job.prepared.context.model.data.local.state!=='checked'||!!job.prepared.context?.model.data.rows?.some(r=>r.verdict==='unknown'||r.state!=='checked')}:null;
     async function start(input,options={}) {
         return serial(async()=>{
+            // Admission precedes preparation: a rejected request must not read/hash
+            // attachments, replace a job, or begin provider work. Existing jobs
+            // remain eligible for deduplication even when every slot is occupied.
+            if (!jobs.has(input.id)) {
+                while (jobs.size >= MAX_JOBS) {
+                    const terminal = [...jobs].find(([,job]) => !['queued','running'].includes(job.state));
+                    if (!terminal) {
+                        const deferred = {schemaVersion:1,id:null,state:'deferred',reason:'capacity',completed:0,total:0,startedAt:null,finishedAt:null,providers:{},pending:false,errors:0,revision:null,assessmentIncomplete:true};
+                        await env.deferred?.(input, deferred, options);
+                        return deferred;
+                    }
+                    jobs.delete(terminal[0]);
+                }
+            }
+            const preparationGeneration = generation;
             const requestedAt=env.now();
             let preparationTimer;
             const prepared=await Promise.race([env.prepare(input,options),new Promise((resolve,reject)=>{preparationTimer=env.setTimeout(()=>reject(Error('SCAN_PREPARATION_TIMEOUT')),300000);})]).finally(()=>env.clearTimeout(preparationTimer));
+            if (generation !== preparationGeneration) throw Object.assign(Error('SCAN_CANCELLED'),{code:'SCAN_CANCELLED'});
             if(env.now()-requestedAt>=300000)throw Error('SCAN_PREPARATION_TIMEOUT');
             const previous=jobs.get(input.id);
             if(previous&&previous.fingerprint===prepared.fingerprint&&!previous.controller.signal.aborted&&(!env.valid||env.valid(previous))&&(previous.state==='running'||previous.state==='queued'||!options.manual&&!options.refresh&&previous.state==='completed'&&env.now()-(previous.finishedAt||0)<900000))return {...snapshot(previous),attached:true};
             if(previous)previous.controller.abort();
-            const job={id:env.uuid(),messageId:input.id,revision:env.uuid(),fingerprint:prepared.fingerprint,prepared,options,generation,controller:new AbortController(),startedAt:env.now(),deadline:requestedAt+300000,state:'queued',completed:0,total:0,providers:prepared.providers,errors:0,pending:false};
+            const job={id:env.uuid(),messageId:input.id,revision:env.uuid(),fingerprint:prepared.fingerprint,prepared,options,generation,controller:new AbortController(),startedAt:env.now(),deadline:requestedAt+300000,state:'queued',completed:0,total:0,providers:prepared.providers,coverage:prepared.coverage||null,errors:0,pending:false};
             jobs.set(input.id,job);
             if(!options.manual&&!options.refresh&&prepared.reusable){Object.assign(job,prepared.reusable,{id:job.id,revision:job.revision});await env.changed(job,snapshot(job));return snapshot(job);}
-            while(jobs.size>200){const entry=[...jobs].find(([,j])=>!['queued','running'].includes(j.state));if(!entry)break;jobs.delete(entry[0]);}
+            env.admitted?.(job);
             await env.changed(job,snapshot(job));
             job.done=(async()=>{
-                const timer=env.setTimeout(()=>{if(jobs.get(input.id)!==job)return;job.controller.abort();job.state='incomplete';job.finishedAt=env.now();env.changed(job,snapshot(job)).catch(()=>{});},Math.max(0,job.deadline-env.now()));
+                const timer=env.setTimeout(()=>{if(jobs.get(input.id)!==job)return;job.controller.abort();job.state='incomplete';job.reason='timeout';job.finishedAt=env.now();env.changed(job,snapshot(job)).catch(()=>{});},Math.max(0,job.deadline-env.now()));
                 try {
                     await env.begin(job);assert(job);job.state='running';await env.changed(job,snapshot(job));
                     await env.run(job,assert,async()=>{if(active(job))await env.changed(job,snapshot(job));});assert(job);
-                    job.state=job.errors||Object.values(job.providers).some(p=>p.state==='failed')?'incomplete':job.pending?'pending':job.total?'completed':'blocked';
-                }catch(error){if(jobs.get(input.id)===job&&job.generation===generation)job.state=job.controller.signal.aborted?'incomplete':'failed';}
-                finally {env.clearTimeout(timer);job.finishedAt=env.now();if(jobs.get(input.id)===job&&job.generation===generation)await env.changed(job,snapshot(job)).catch(()=>{});}
+                    job.state=job.errors||Object.values(job.providers).some(p=>p.state==='failed')||job.coverage?.incomplete&&Object.values(job.providers).some(p=>p.checks?.some(c=>!c.reason))?'incomplete':job.pending?'pending':job.total?'completed':'blocked';
+                }catch(error){if(jobs.get(input.id)===job&&job.generation===generation){job.state=job.controller.signal.aborted?'incomplete':'failed';job.reason=job.reason||(job.controller.signal.aborted?'cancelled':error.code==='SOURCE_CAPACITY'||error.message==='SOURCE_CAPACITY'?'source_capacity':'scan_failed');}}
+                finally {env.clearTimeout(timer);job.finishedAt=env.now();if(jobs.get(input.id)===job&&job.generation===generation)await env.changed(job,snapshot(job)).catch(()=>{});await env.release?.(job);}
             })();
             return snapshot(job);
         });
     }
-    function invalidate(options={}){generation++;for(const job of jobs.values()){job.controller.abort();if(['running','queued'].includes(job.state)){job.state='incomplete';job.finishedAt=env.now();if(!options.silent)env.changed(job,snapshot(job)).catch(()=>{});}}if(options.clear)jobs.clear();}
-    return {start,invalidate,current:job=>jobs.get(job.messageId)===job,get:id=>snapshot(jobs.get(id)),revision:id=>jobs.get(id)?.revision||null,active,assert,settled:id=>jobs.get(id)?.done};
+    function invalidate(options={}){generation++;for(const job of jobs.values()){job.controller.abort();env.invalidated?.(job,options);if(['running','queued'].includes(job.state)){job.state='incomplete';job.finishedAt=env.now();if(!options.silent)env.changed(job,snapshot(job)).catch(()=>{});}}if(options.clear)jobs.clear();}
+    return {start,invalidate,current:job=>jobs.get(job.messageId)===job,get:id=>snapshot(jobs.get(id)),contextFor:id=>active(jobs.get(id))?jobs.get(id).prepared.context:null,revision:id=>jobs.get(id)?.revision||null,active,assert,settled:id=>jobs.get(id)?.done};
 }
 
 const ThundyScans=(()=>{
@@ -143,22 +160,53 @@ const ThundyScans=(()=>{
     const lanes=new Map();
     async function lane(provider,fn){if(provider!=='urlscan')return fn();const old=lanes.get(provider)||Promise.resolve();const next=old.catch(()=>{}).then(fn);lanes.set(provider,next);try{return await next;}finally{if(lanes.get(provider)===next)lanes.delete(provider);}}
     const coordinator=createScanCoordinator({valid:job=>!job.prepared.context.disposed,now:()=>Date.now(),uuid:()=>crypto.randomUUID(),setTimeout:(fn,ms)=>setTimeout(fn,ms),clearTimeout:id=>clearTimeout(id),
+        admitted(job) { job.prepared.context.scanJobOwner=job.id; },
+        invalidated(job,options) { if(options.clear){delete job.prepared.context.scanJobOwner;job.prepared.context.dispose?.();} },
+        async release(job) {
+            const context=job.prepared.context;
+            if(context.scanJobOwner!==job.id)return;
+            delete context.scanJobOwner;
+            if(!context.disposed && context.isCached && !context.isCached()) {
+                await context.flush().catch(()=>{});
+                if(!context.scanJobOwner && !context.isCached())context.dispose();
+            }
+        },
+        async deferred(message, summary, options) {
+            const context = await getMessageAnalysisContext(message, options.tabId);
+            context.scanJob = {...summary, manualAllowed:mayTransmitExternally()};
+            context.schedule();
+        },
         async prepare(message,options){
             if(typeof settingsReady!=='undefined')await settingsReady;await loadSettings();const settings=await browser.storage.local.get(keys);
             let full=options.full||await readFullForAnalysis(message),attachments=options.attachments;
             if(!attachments)try{attachments=await browser.messages.listAttachments(message.id);}catch(_){attachments=[];full={...full,thundyInputStatus:'incomplete',thundyInventoryIncomplete:true};}
+            const allUrls=[...new Set(filterUrls(extractUrls(extractTextFromParts(full.parts||full))))];
+            const coverage={schemaVersion:1,inventoryIncomplete:full.thundyInventoryIncomplete===true,
+                attachments:{total:attachments.length,selected:Math.min(100,attachments.length),prepared:0,readFailed:0,sizeLimited:0,omitted:Math.max(0,attachments.length-100)},
+                urls:{total:allUrls.length,selected:Math.min(100,allUrls.length),omitted:Math.max(0,allUrls.length-100)},incomplete:false};
             attachments=attachments.slice(0,100);
-            const urls=[...new Set(filterUrls(extractUrls(extractTextFromParts(full.parts||full))))].slice(0,100);
+            const urls=allUrls.slice(0,100);
             const key=resolveMessageStorageKey(message);const context=await getMessageAnalysisContext(message,options.tabId,{fullMessage:full,attachments});
             const preparationDeadline=Date.now()+300000;
-            const hashes={};for(const item of attachments){if(Date.now()>preparationDeadline)throw Error('SCAN_PREPARATION_TIMEOUT');if(item.size>25*1024*1024)continue;try{const file=await browser.messages.getAttachmentFile(message.id,item.partName);hashes[item.partName]=await get_sha256_hash(await file.arrayBuffer());context.forAttachment(item.partName,item.name,hashes[item.partName]);}catch(_){}}
+            const hashes={};for(const item of attachments){
+                if(Date.now()>preparationDeadline)throw Error('SCAN_PREPARATION_TIMEOUT');
+                if(item.size>25*1024*1024){coverage.attachments.sizeLimited++;continue;}
+                try{
+                    const file=await browser.messages.getAttachmentFile(message.id,item.partName);
+                    if(file.size>25*1024*1024){coverage.attachments.sizeLimited++;continue;}
+                    const digest=await get_sha256_hash(await file.arrayBuffer());
+                    if(typeof digest!=='string'||!/^[a-f0-9]{64}$/i.test(digest))throw Error('INVALID_HASH');
+                    context.forAttachment(item.partName,item.name,digest);hashes[item.partName]=digest;coverage.attachments.prepared++;
+                }catch(_){coverage.attachments.readFailed++;}
+            }
+            coverage.incomplete=coverage.inventoryIncomplete||coverage.attachments.readFailed>0||coverage.attachments.sizeLimited>0||coverage.attachments.omitted>0||coverage.urls.omitted>0;
             const record=await getFromStore(await getSharedDB(),'hybridanalysis',key);
             const providers=await plan(settings,message,attachments,urls,options.manual,full);
-            const fingerprint=await hash({assessmentVersion:1,messageId:message.id,full,hashes,settings:Object.fromEntries(Object.entries(settings).sort(([a],[b])=>a.localeCompare(b))),providers});
+            const fingerprint=await hash({assessmentVersion:2,messageId:message.id,full,hashes,coverage,settings:Object.fromEntries(Object.entries(settings).sort(([a],[b])=>a.localeCompare(b))),providers});
             const meta=record?.scanJobMeta, same=meta?.fingerprint===fingerprint;
             const pending=record?.links?.some(l=>urls.includes(l.url)&&(l.state==='UPLOADED'||l.urlscan?.uuid&&['SUBMITTED','TIMEOUT','ERROR'].includes(l.urlscan.status)))||record?.attachments?.some(a=>hashes[a.partName]===a.hybrid_sha256&&a.state==='UPLOADED');
             const reusable=same&&meta.state==='completed'&&Date.now()-meta.finishedAt<900000?{...meta,providers,pending:false}:!options.manual&&pending&&!Object.values(providers).some(p=>p.checks.some(c=>!c.reason))?{state:meta?.errors?'incomplete':'pending',errors:meta?.errors||0,providers,pending:true,finishedAt:Date.now(),total:meta?.total||0,completed:meta?.completed||0}:null;
-            return {reusable,message:{...message,headerMessageId:key},settings,full,attachments,urls,key,context,hashes,record,fingerprint,providers};
+            return {reusable,message:{...message,headerMessageId:key},settings,full,attachments,urls,key,context,hashes,record,fingerprint,providers,coverage};
         },
         async begin(job){const p=job.prepared;if(!Object.values(p.providers).some(v=>v.checks.some(c=>!c.reason)))return;
             await p.context.flush();
@@ -170,7 +218,7 @@ const ThundyScans=(()=>{
             if(job.options.manual&&!job.options.refresh){vtCache.clear();urlhausCache.clear();ipReputationCache.clear();}
             await indexedDB_save_links_to_db(p.message,p.urls);assert(job);
             const work=await tasks(job);job.total=work.length;await changed();let index=0;
-            await Promise.all(Array.from({length:Math.min(4,work.length)},async()=>{while(index<work.length){assert(job);const task=work[index++];await lane(task.provider,async()=>{assert(job);const state=job.providers[task.provider];state.state='running';await changed();try{await task.run();assert(job);if(state.state!=='failed')state.state='checked';}catch(error){assert(job);job.errors++;state.state='failed';state.error=state.error==='rate_limited'?'rate_limited':['rate_limited','invalid_key','no_result'].includes(error.code||error.message)?error.code||error.message:'provider_error';}finally{if(coordinator.active(job)){job.completed++;await changed();}}});}}));
+            await Promise.all(Array.from({length:Math.min(4,work.length)},async()=>{while(index<work.length){assert(job);const task=work[index++];await lane(task.provider,async()=>{assert(job);const state=job.providers[task.provider];if(state.state!=='failed')state.state='running';await changed();try{await task.run();assert(job);if(state.state!=='failed')state.state='checked';}catch(error){assert(job);job.errors++;state.state='failed';state.error=state.error==='rate_limited'?'rate_limited':['rate_limited','invalid_key','no_result'].includes(error.code||error.message)?error.code||error.message:'provider_error';}finally{if(coordinator.active(job)){job.completed++;await changed();}}});}}));
             assert(job);
             if(job.domains.length||job.ips.length)await record(job,old=>({...old,threatIntel:{urlhausDomains:job.domains,maliciousIps:job.ips,observedAt:Date.now()},threatIntelBinding:{runtimeId:getAnalysisRuntimeId(),messageId:p.message.id}}));
             assert(job);

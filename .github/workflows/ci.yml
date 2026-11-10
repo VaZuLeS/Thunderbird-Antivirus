@@ -101,6 +101,8 @@ jobs:
         run: |
           npm run check:ui -- --lang ${{ matrix.language }} --view options.html --zoom 2
           npm run check:ui -- --lang ${{ matrix.language }} --view audit.html --zoom 2
+          npm run check:ui -- --lang ${{ matrix.language }} --view security.html --zoom 2
+          npm run check:ui -- --lang ${{ matrix.language }} --view source_export.html --zoom 2
       - name: Preserve browser evidence and failure screenshots
         if: always()
         uses: actions/upload-artifact@v7
@@ -112,16 +114,27 @@ jobs:
           retention-days: 14
 
   thunderbird-live:
-    name: Thunderbird Linux GUI
+    name: Thunderbird Linux GUI (${{ matrix.client }})
+    strategy:
+      fail-fast: false
+      matrix:
+        client: [minimum, current]
     needs: test
     runs-on: ubuntu-latest
     container: debian:trixie
     timeout-minutes: 25
+    env:
+      CLIENT_TARGET: ${{ matrix.client }}
+      THUNDY_MINIMUM_DEBIAN_VERSION: '1:140.12.0esr-1~deb13u1'
     steps:
       - name: Install real Thunderbird and isolated X11 runtime
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends thunderbird thunderbird-l10n-de thunderbird-l10n-fr thunderbird-l10n-es-es thunderbird-l10n-it thunderbird-l10n-pl xvfb python3 imagemagick libxtst6 ca-certificates
+          set -- thunderbird thunderbird-l10n-de thunderbird-l10n-fr thunderbird-l10n-es-es thunderbird-l10n-it thunderbird-l10n-pl
+          if test "$CLIENT_TARGET" = minimum; then
+            set -- "thunderbird=$THUNDY_MINIMUM_DEBIAN_VERSION" "thunderbird-l10n-de=$THUNDY_MINIMUM_DEBIAN_VERSION" "thunderbird-l10n-fr=$THUNDY_MINIMUM_DEBIAN_VERSION" "thunderbird-l10n-es-es=$THUNDY_MINIMUM_DEBIAN_VERSION" "thunderbird-l10n-it=$THUNDY_MINIMUM_DEBIAN_VERSION" "thunderbird-l10n-pl=$THUNDY_MINIMUM_DEBIAN_VERSION"
+          fi
+          apt-get install -y --no-install-recommends "$@" xvfb python3 imagemagick libxtst6 ca-certificates gnupg openssl
           useradd --create-home thunderbird-test
       - uses: actions/checkout@v7
         with:
@@ -159,6 +172,11 @@ jobs:
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --history-pages-check --out .audit/thunderbird-live/history-pages-en
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --active-sources-check --out .audit/thunderbird-live/active-sources-en
           runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --automatic-scan-check --out .audit/thunderbird-live/automatic-scans-en
+          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --inline-scan-check --out .audit/thunderbird-live/inline-scan-en
+          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --inline-fresh-scan-check --out .audit/thunderbird-live/inline-fresh-scan-en
+          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --scan-coverage-check --out .audit/thunderbird-live/scan-coverage-en
+          runuser -u thunderbird-test -- python3 tools/crypto-fixtures.dev.py --out /tmp/thundy-crypto-fixtures
+          runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --crypto-fixtures /tmp/thundy-crypto-fixtures --out .audit/thunderbird-live/crypto-en
           for lang in en de fr es it pl; do
             set -- --locale "$lang"
             if test "$lang" != en; then
@@ -170,11 +188,20 @@ jobs:
             if test "$lang" = en; then set -- "$@" --identity-check; fi
             runuser -u thunderbird-test -- python3 tools/thunderbird-live.dev.py --thunderbird /usr/lib/thunderbird/thunderbird-bin --xvfb /usr/bin/Xvfb --xpi .audit/thundy-av.xpi --previous-xpi build/previous.xpi --restart-check --crash-check --restore-check "$@" --out ".audit/thunderbird-live/restart-$lang"
           done
+      - name: Bind the declared client target to successful native reports
+        run: |
+          python3 - <<'PYTHON'
+          import json, os, pathlib
+          for file in pathlib.Path('.audit/thunderbird-live').rglob('report.json'):
+              report = json.loads(file.read_text())
+              report['clientMatrixTarget'] = os.environ['CLIENT_TARGET']
+              file.write_text(json.dumps(report, indent=2) + '\n')
+          PYTHON
       - name: Preserve real-client report, logs and screenshots
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: thunderbird-linux-live
+          name: thunderbird-linux-live-${{ matrix.client }}
           path: |
             .audit/thunderbird-live/
             !.audit/thunderbird-live/**/.rollback-profile/**
@@ -201,7 +228,7 @@ jobs:
           path: build
       - uses: actions/download-artifact@v8
         with:
-          name: thunderbird-linux-live
+          pattern: thunderbird-linux-live-*
           path: .audit/thunderbird-live
       - uses: actions/download-artifact@v8
         with:

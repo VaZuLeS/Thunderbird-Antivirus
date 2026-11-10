@@ -2476,5 +2476,41 @@
   },
   "analysisLocalBackoff": {
     "message": "Tę próbę odroczono lokalnie; nie wysłano nowego zapytania do dostawcy."
+  },
+  "scanState_deferred": {
+    "message": "Analiza odroczona: wszystkie miejsca w tle są zajęte. Spróbuj ponownie po zakończeniu innej analizy."
+  },
+  "scanCoverage": {
+    "message": "Niektóre zasoby nie zostały sprawdzone."
+  },
+  "scanCoverageAttachments": {
+    "message": "Przygotowane załączniki"
+  },
+  "scanCoverageLinks": {
+    "message": "Wybrane odnośniki"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Nie udało się odczytać załącznika lub obliczyć jego skrótu."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Załącznik przekracza limit skanowania wynoszący 25 MiB."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Osiągnięto limit zasobów skanowania."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Lista załączników jest niekompletna."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Historia źródeł jest pełna. To skanowanie nie zostało rozpoczęte; istniejące dane zostały zachowane."
+  },
+  "scanFailure_cancelled": {
+    "message": "Skanowanie zostało anulowane. Nie oznacza to ukończonego wyniku."
+  },
+  "scanFailure_timeout": {
+    "message": "Przekroczono czas skanowania. Wyniki pozostają niekompletne."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Nie udało się ukończyć skanowania. Istniejące dane zostały zachowane."
   }
 }

@@ -1,3 +1,5 @@
+> Neue Ausführung vom 9. November 2026: [aktueller Produktstand](AKTUELLER_PRODUKTSTAND.md), [Umsetzung und offene Pakete](ENTWICKLUNG_2026_11_09.md). Ältere Abschlussmeldungen unten sind historische Paketnachweise.
+
 > Aktueller Ausführungsstand vom 2. November 2026: [Produktstand](AKTUELLER_PRODUKTSTAND.md) und [Aufgabenliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md). Die folgenden Abschnitte dokumentieren ihre jeweiligen historischen Pakete und Umgebungen.
 
 # Store-Readiness-Gate: GO und Release v1.23.0 — 16. Oktober 2026

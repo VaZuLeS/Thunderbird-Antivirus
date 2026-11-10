@@ -44,6 +44,35 @@ function runtime(overrides={}){
  vm.runInContext((fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('provider_registry.js','utf8'))+'\n'+source+'\nglobalThis.scans=ThundyScans;',c);
  return {s:c.scans,c,settings,stored,calls,events,context,message,full,permission:value=>permission=value};
 }
+for(const failure of ['read','hash','size'])test('scan coverage retains '+failure+' omissions beside successful links',async()=>{
+ const f=runtime({scanMode:'manual',apikey:''});
+ f.c.browser.messages.listAttachments=async()=>[{partName:'1.2',name:'private-name.bin',size:failure==='size'?26*1024*1024:12}];
+ f.c.browser.messages.getAttachmentFile=async()=>{if(failure==='read')throw Error('secret read detail');return new Blob(['file']);};
+ f.c.get_sha256_hash=async()=>{throw Error('secret hash detail');};
+ await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});await f.s.settled(1);
+ const job=f.s.get(1);assert.equal(job.state,'incomplete');assert.equal(job.assessmentIncomplete,true);
+ assert.equal(job.coverage.attachments[failure==='size'?'sizeLimited':'readFailed'],1);
+ assert.equal(f.stored.fixture.links[0].urlscan.status,'CLEAN');
+ assert.equal(JSON.stringify(job).includes('private-name'),false);assert.equal(JSON.stringify(job).includes('secret'),false);
+});
+test('resource limits report omitted counts without preparing or submitting excess resources',async()=>{
+ const f=runtime({scanMode:'manual',apikey:''});let reads=0;
+ f.c.browser.messages.listAttachments=async()=>Array.from({length:101},(_,i)=>({partName:String(i),name:'fixture',size:4}));
+ f.c.browser.messages.getAttachmentFile=async()=>{reads++;return new Blob(['file']);};f.c.get_sha256_hash=async()=> 'a'.repeat(64);
+ f.c.extractUrls=()=>Array.from({length:101},(_,i)=>`https://example.invalid/${i}`);
+ await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});await f.s.settled(1);
+ const job=f.s.get(1);assert.equal(job.state,'incomplete');assert.equal(reads,100);
+ assert.equal(job.coverage.attachments.omitted,1);assert.equal(job.coverage.attachments.prepared,100);assert.equal(job.coverage.urls.omitted,1);
+ assert.equal(f.calls.filter(x=>x.submit).length,100);
+});
+test('full source archives explain refusal and preserve prior revisions without provider work',async()=>{
+ const f=runtime({scanMode:'manual',apikey:''});f.context.model.data.rows=[{state:'checked',verdict:'none'}];
+ const snapshots=Object.fromEntries(Array.from({length:64},(_,i)=>[String(i),{savedAt:i,snapshot:{rows:[]}}]));
+ f.stored.fixture={analysisSourceSnapshots:structuredClone(snapshots)};
+ await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});await f.s.settled(1);
+ assert.equal(f.s.get(1).reason,'source_capacity');assert.equal(f.s.get(1).state,'failed');assert.equal(f.calls.length,0);
+ assert.deepEqual(f.stored.fixture.analysisSourceSnapshots,snapshots);assert.equal(f.context.model.data.rows.length,1);
+});
 for(const [title,keys,count] of [['Hybrid only',{urlscanApikey:''},1],['urlscan only',{apikey:''},1],['both',{},2]])test('opening a message starts '+title+' without a link click',async()=>{
  const f=runtime(keys);await f.s.display({id:7},f.message);await f.s.settled(1);assert.equal(f.s.get(1).state,'completed');
  assert.equal(f.calls.filter(x=>x.submit||x.method==='POST').length,count);
@@ -115,4 +144,61 @@ test('Hybrid polling keeps a partial malicious finding, finishes on terminal unk
  const before=gets;f.events.length=0;await f.s.request({messageId:1,operation:'refresh'},{});await f.s.settled(1);assert.ok(gets>before);assert.ok(f.events.some(e=>e.phase==='cache'&&e.provider==='hybridanalysis'&&e.verdict==='malicious'));assert.equal(f.calls.filter(c=>c.method==='POST').length,1);assert.equal(f.stored.fixture.links[0].assessment.verdict,'malicious');
  const restarted=runtime({urlscanApikey:''});Object.assign(restarted.stored,structuredClone(f.stored));restarted.c.apiGateway.fetchWithTimeout=f.c.apiGateway.fetchWithTimeout;
  await restarted.s.request({messageId:1,operation:'refresh'},{});await restarted.s.settled(1);assert.equal(restarted.stored.fixture.links[0].assessment.verdict,'malicious');assert.equal(f.calls.filter(c=>c.method==='POST').length,1);
+});
+
+test('capacity defers before preparation, preserves 200 active jobs and allows retry after completion (AVN-019)',async()=>{
+ const finishes=new Map(),f=coordinator(job=>{job.total=1;return new Promise(resolve=>finishes.set(job.messageId,resolve));});
+ let preparations=0;const prepare=f.env.prepare;f.env.prepare=async(...args)=>{preparations++;return prepare(...args);};
+ const deferred=[];f.env.deferred=async(input,summary)=>deferred.push({messageId:input.id,...summary});
+ for(let id=1;id<=200;id++)await f.s.start({id});
+ const before=preparations,result=await f.s.start({id:201},{manual:true});
+ assert.equal(result.state,'deferred');assert.equal(result.assessmentIncomplete,true);assert.equal(result.id,null);
+ assert.equal(preparations,before);assert.equal(f.s.get(201),null);assert.equal(deferred[0].messageId,201);
+ for(let id=1;id<=200;id++)assert.equal(f.s.get(id).state,'running');
+ const original=f.s.get(1).id;assert.equal((await f.s.start({id:1})).id,original,'reuse remains available at capacity');
+ finishes.get(1)();await f.s.settled(1);
+ await f.s.start({id:201},{manual:true});assert.equal(f.s.get(1),null);assert.equal(f.s.get(201).state,'running');
+ await tick();for(const finish of finishes.values())finish();await Promise.all(Array.from({length:200},(_,i)=>f.s.settled(i+2)));
+});
+
+test('invalidation during preparation admits no stale job or provider work',async()=>{
+ const f=coordinator();let release,started=0;f.env.run=async()=>{started++;};
+ f.env.prepare=()=>new Promise(resolve=>release=resolve);
+ const request=f.s.start({id:1});await tick();f.s.invalidate({clear:true});
+ release({fingerprint:'old',providers:{}});await assert.rejects(request,/SCAN_CANCELLED/);
+ assert.equal(f.s.get(1),null);assert.equal(started,0);assert.equal(f.changes.length,0);
+});
+
+test('renewing a manual view does not bypass message, context or consent checks',async()=>{
+ const f=runtime({scanMode:'manual'});
+ await assert.rejects(f.s.request({messageId:1,contextToken:'expired-context'},{tab:{id:7}}),/MESSAGE_CONTEXT_CHANGED/);
+ assert.equal(f.calls.length,0);
+ await assert.rejects(f.s.request({messageId:2,contextToken:'context'},{tab:{id:7}}),/MESSAGE_CONTEXT_CHANGED/);
+ assert.equal(f.calls.length,0);
+ f.c.typedError=code=>Object.assign(Error(code),{code});f.c.EXTERNAL_ANALYSIS_DISABLED='EXTERNAL_ANALYSIS_DISABLED';f.c.msg=key=>key;
+ f.settings.externalAnalysisConsent=false;
+ await assert.rejects(f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}}),/EXTERNAL_ANALYSIS_DISABLED/);
+ assert.equal(f.calls.length,0);
+});
+
+test('later resources retain an earlier provider failure in the final summary',async()=>{
+ const f=runtime({scanMode:'manual',apikey:'',urlscanApikey:'',urlhausApikey:'synthetic-urlhaus'});
+ f.c.extractUrls=()=>Array.from({length:5},(_,i)=>`https://resource-${i}.example.invalid/path`);
+ const checked=[];
+ f.c.checkURLhaus=async domain=>{checked.push(domain);return domain.startsWith('resource-0.')?null:false;};
+ await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});
+ await f.s.settled(1);
+ const summary=f.s.get(1);
+ assert.equal(checked.length,5);
+ assert.equal(summary.completed,5);
+ assert.equal(summary.state,'incomplete');
+ assert.equal(summary.providers.urlhaus.state,'failed');
+ assert.equal(summary.providers.urlhaus.error,'no_result');
+ assert.equal(f.stored.fixture.scanJobMeta.providers.urlhaus.state,'failed');
+ f.c.checkURLhaus=async()=>false;
+ await f.s.request({messageId:1,contextToken:'context'},{tab:{id:7}});
+ await f.s.settled(1);
+ assert.equal(f.s.get(1).state,'completed','a new explicit run can recover');
+ assert.equal(f.s.get(1).providers.urlhaus.state,'checked');
+ assert.equal(f.s.get(1).providers.urlhaus.error,undefined);
 });

@@ -1,3 +1,5 @@
+> Korrektur der aktuellen Einordnung vom 9. November 2026: Der unten beschriebene Metadatenfallback ist keine abgeschlossene dauerhafte Vorkommensidentität. Die [erneute Untersuchung und Migrationsgrenzen](IDENTITAET_FOLGEVERTRAG_2026_11_09.md) dokumentieren Gegenfälle. Das historische Release und seine Assets bleiben unverändert.
+
 # 1.24.8 — Dauerhafte Vorkommensidentität, Schutzprofile mit Differenzvorschau und Heuristik-Benchmarking
 
 Stand: 6. November 2026. Tatsächlicher [Veröffentlichungsstatus, XPI und Prüfsumme](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.8). Ein vorbereiteter Quellstand oder dieses Dokument allein bestätigt keine Veröffentlichung. [1.24.7](VEROEFFENTLICHUNG_1_24_7.md) und seine Assets bleiben unverändert erhalten.

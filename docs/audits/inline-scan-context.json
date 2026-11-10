@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-inline-scan-context-fix",
+  "generatedAt": "2026-11-10T00:19:36.791Z",
+  "unreleased": true,
+  "extensionVersion": "1.25.3",
+  "sourceFingerprint": "ab3d7602e3529033d373d5ad2d6d479b6d772793390fa2190260949f4b1809cb",
+  "packageSha256": "0b484be9dd890fa3b6aba2611f078d1b092bf2159556040067aef1312cf4fae5",
+  "before": {
+    "passed": false,
+    "error": "Inline Check now failed after cache clear",
+    "extensionVersion": "1.25.3",
+    "packageSha256": "d29233c452b770a9f20801b3c77e3319bff2d42d53caa5505875ffc600377022",
+    "runnerSha256": "97609a7f7eb03083aca6d1065123f059993a27bd9d0ff1bfd2f171797c23dde9",
+    "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+    "clientVersion": "140.12.0",
+    "scope": "Linux X11 GUI; synthetic plaintext; offline; no API mocks",
+    "inlineManualScan": null,
+    "reportSha256": "a8faecf2cd270f181b99451d16ffc01c2002b13737b833e8ca6442ceb4b88eaf"
+  },
+  "after": {
+    "passed": true,
+    "error": null,
+    "extensionVersion": "1.25.3",
+    "packageSha256": "0b484be9dd890fa3b6aba2611f078d1b092bf2159556040067aef1312cf4fae5",
+    "runnerSha256": "4e202ec4d9d5e1f3579ca5b2bae63c6524ae22fee72d275a4484637fe48ad301",
+    "binarySha256": "8eae9766ef1a3d3d44b058640cc67a85b63efdfb4f5cde1056037cc082d4bb7c",
+    "clientVersion": "140.12.0",
+    "scope": "Linux X11 GUI; actual Thunderbird APIs; controlled synthetic urlscan transport; no live provider calls",
+    "inlineManualScan": {
+      "passed": true,
+      "realThunderbirdAPIs": true,
+      "syntheticTransport": true,
+      "liveProviderCalls": false,
+      "contextRenewed": true,
+      "completed": true,
+      "visibleCompletion": true,
+      "submissions": 1,
+      "historicalAuditUnchanged": true
+    },
+    "reportSha256": "bd4b68fdcaa495a69d8ebd181e346092a94896ae3afb68693434c78ce39748d1"
+  },
+  "regression": {
+    "tests": 1263,
+    "passed": 1263,
+    "failed": 0,
+    "logSha256": "8cca6c0721b5a50e7cfaa6977815fdc98bbec66fe12d0f525bf6944a68773cd8"
+  },
+  "checks": {
+    "focusedRegressionPassed": true,
+    "serializedEmailRendererPassed": true,
+    "staleContextStillRejectedByBackground": true,
+    "changedMessageStillRejected": true,
+    "withdrawnConsentStillRejected": true,
+    "releaseGateRejectsMissingOrMismatchedEvidence": true
+  },
+  "limits": {
+    "realProviderAccountsVerified": false,
+    "windowsVerified": false,
+    "macosVerified": false,
+    "screenReadersVerified": false,
+    "remoteCiVerified": false,
+    "releasePublished": false
+  }
+}

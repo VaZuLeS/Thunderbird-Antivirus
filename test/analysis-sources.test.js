@@ -382,11 +382,11 @@ test('scan actions stay visible in both views, use accepted state and disable ru
  const dom=new JSDOM('<html lang="en"><body></body></html>');const calls=[];
  try {
  const data={messageId:7,contextToken:'document',local:{state:'checked'},rows:[],scanJob:{state:'pending',manualAllowed:true,completed:1,total:2}};
- const c=vm.createContext({document:dom.window.document,URL,Date,data,labels,browser:{runtime:{sendMessage:async request=>{calls.push(request);return {success:true,id:'new-job',state:'queued'};}}}});
+ const c=vm.createContext({document:dom.window.document,URL,Date,data,labels,browser:{runtime:{sendMessage:async request=>{calls.push(request);return request.action==='getMessageAnalysis'?{success:true,messageId:7,contextToken:'document'}:{success:true,id:'new-job',state:'queued'};}}}});
  vm.runInContext(source,c);vm.runInContext('ThundyAnalysis.render(data,labels);',c);
  let root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
  const button=root.querySelector('[data-focus-key="scan-start"]');assert.equal(button.textContent,catalog.scanRefresh.message);assert.equal(root.querySelector('.scan-actions').hidden,false);
- button.click();await new Promise(setImmediate);assert.equal(calls[0].operation,'refresh');assert.equal(calls[0].contextToken,'document');assert.ok(root.textContent.includes(catalog.scanState_queued.message));assert.equal(button.disabled,true);
+ button.click();await new Promise(setImmediate);assert.equal(calls[0].action,'getMessageAnalysis');assert.equal(calls[1].operation,'refresh');assert.equal(calls[1].contextToken,'document');assert.ok(root.textContent.includes(catalog.scanState_queued.message));assert.equal(button.disabled,true);
  root.querySelector('[data-focus-key="view-switch"]').click();assert.equal(root.querySelector('.scan-actions').hidden,false);
  data.scanJob.state='running';vm.runInContext('ThundyAnalysis.render(data,labels);',c);root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;assert.equal(root.querySelector('[data-focus-key="scan-start"]').disabled,true);
  assert.ok(root.textContent.includes(catalog.scanRunning.message));
@@ -461,4 +461,65 @@ test('quota metadata preserves zero and local provenance across restart and both
    m.event({...base,phase:'finish',responded:true,state:'checked',verdict:'none',observedAt:Date.now()});assert.equal(row.localBackoff,undefined);assert.equal(row.quotaRemaining,undefined);assert.equal(row.retryAt,undefined);assert.equal(row.retryAfter,undefined);assert.equal(row.errorCode,undefined);assert.equal(row.errorDetails,undefined);assert.equal(row.failures,1);
   }finally{dom.window.close();}
  }
+});
+
+test('deferred capacity is translated and never presented as a complete safe analysis',()=>{
+ for(const lang of ['en','de','fr','es','it','pl']) {
+  const dom=new JSDOM('<html><body></body></html>');
+  try {
+   const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+   const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json'));
+   const data={local:{state:'checked',score:0},rows:[],scanJob:{state:'deferred',assessmentIncomplete:true,manualAllowed:true}};
+   const host=c.a.render(data,c.a.labels(key=>catalog[key]?.message));
+   assert.ok(host.shadowRoot.textContent.includes(catalog.scanState_deferred.message));
+   assert.ok(host.shadowRoot.textContent.includes(catalog.analysisSimpleIncomplete.message));
+  } finally {dom.window.close();}
+ }
+});
+
+for(const serialized of [false,true])test('manual scan renews an expired display snapshot before requesting provider work; serialized='+serialized,async()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json')),labels=a.labels(k=>catalog[k]?.message);
+ const dom=new JSDOM('<html><body></body></html>'),calls=[];let admitted=0;
+ try {
+  const data={messageId:7,contextToken:'expired-context',local:{state:'checked'},rows:[],scanJob:{state:'blocked',manualAllowed:true}};
+  const browser={runtime:{sendMessage:async request=>{
+   calls.push(request);
+   if(request.action==='getMessageAnalysis')return {success:true,messageId:7,contextToken:'current-context'};
+   if(request.action==='requestScan'&&request.contextToken==='current-context'){admitted++;return {success:true,state:'queued'};}
+   return {success:false,code:'MESSAGE_CONTEXT_CHANGED'};
+  }}};
+  const c=vm.createContext({document:dom.window.document,URL,Date,data,labels,browser});
+  vm.runInContext(serialized?'('+a.render.toString()+')(data,labels);':source+'\nThundyAnalysis.render(data,labels);',c);
+  const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+  root.querySelector('[data-focus-key="scan-start"]').click();await new Promise(setImmediate);
+  assert.equal(admitted,1,'the visible Check now action must survive display-cache expiry');
+  assert.equal(calls[0].action,'getMessageAnalysis');assert.equal(calls[1].contextToken,'current-context');
+  assert.ok(root.textContent.includes(catalog.scanState_queued.message));
+ } finally {dom.window.close();}
+});
+
+for(const fresh of [null,{success:false},{success:true,messageId:8,contextToken:'other'},{success:true,messageId:7,contextToken:''}])test('manual scan refuses an unavailable or mismatched refreshed context: '+JSON.stringify(fresh),async()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/en/messages.json')),dom=new JSDOM('<html><body></body></html>'),calls=[];
+ try {
+  const c=vm.createContext({document:dom.window.document,URL,Date,data:{messageId:7,contextToken:'old',rows:[],scanJob:{state:'idle',manualAllowed:true}},labels:a.labels(k=>catalog[k]?.message),browser:{runtime:{sendMessage:async request=>{calls.push(request);return fresh;}}}});
+  vm.runInContext('('+a.render.toString()+')(data,labels);',c);
+  const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot,button=root.querySelector('[data-focus-key="scan-start"]');
+  button.click();await new Promise(setImmediate);
+  assert.equal(calls.length,1);assert.equal(calls[0].action,'getMessageAnalysis');assert.equal(button.disabled,false);
+  assert.ok(root.textContent.includes(catalog.scanState_failed.message));
+ } finally {dom.window.close();}
+});
+
+for(const lang of ['en','de','fr','es','it','pl'])test('scan omissions and archive refusal remain visible in both views: '+lang,()=>{
+ const a=model(),catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),dom=new JSDOM('<html><body></body></html>');
+ try{
+  const data={messageId:7,local:{state:'checked'},rows:[],scanJob:{state:'completed',reason:'source_capacity',manualAllowed:true,coverage:{incomplete:true,attachments:{total:2,prepared:1,readFailed:1},urls:{total:101,selected:100,omitted:1}}}};
+  const c=vm.createContext({document:dom.window.document,URL,Date,data,labels:a.labels(k=>catalog[k]?.message),browser:{runtime:{sendMessage:async()=>({})}}});
+  vm.runInContext('('+a.render.toString()+')(data,labels);',c);
+  const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+  assert.ok(root.textContent.includes(catalog.scanCoverage_read_failed.message));assert.ok(root.textContent.includes(catalog.scanCoverage_resource_limit.message));
+  assert.ok(root.textContent.includes(catalog.scanFailure_source_capacity.message));assert.ok(root.textContent.includes('1 / 2'));assert.ok(root.textContent.includes('100 / 101'));
+  assert.equal([...root.querySelectorAll('h2')].some(el=>!el.closest('[hidden]')&&el.textContent===catalog.analysisSimpleNone.message),false);
+  root.querySelector('[data-focus-key="view-switch"]').click();assert.ok(root.textContent.includes(catalog.scanCoverage_read_failed.message));
+ }finally{dom.window.close();}
 });

@@ -2476,5 +2476,41 @@
   },
   "analysisLocalBackoff": {
     "message": "Este intento se aplazó localmente; no se envió una nueva solicitud al proveedor."
+  },
+  "scanState_deferred": {
+    "message": "Análisis aplazado: todas las plazas en segundo plano están ocupadas. Reinténtelo cuando termine otro análisis."
+  },
+  "scanCoverage": {
+    "message": "Algunos recursos no se comprobaron."
+  },
+  "scanCoverageAttachments": {
+    "message": "Adjuntos preparados"
+  },
+  "scanCoverageLinks": {
+    "message": "Enlaces seleccionados"
+  },
+  "scanCoverage_read_failed": {
+    "message": "No se pudo leer un adjunto o calcular su hash."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Un adjunto supera el límite de análisis de 25 MiB."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Se alcanzó el límite de recursos del análisis."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "La lista de adjuntos está incompleta."
+  },
+  "scanFailure_source_capacity": {
+    "message": "El historial de fuentes está lleno. Este análisis no se inició; se conservaron los datos existentes."
+  },
+  "scanFailure_cancelled": {
+    "message": "El análisis se canceló. Esto no implica un resultado completado."
+  },
+  "scanFailure_timeout": {
+    "message": "Se agotó el tiempo del análisis. Los resultados siguen incompletos."
+  },
+  "scanFailure_scan_failed": {
+    "message": "No se pudo completar el análisis. Se conservaron los datos existentes."
   }
 }

@@ -67,10 +67,22 @@ function validateReports(identity, thunderbird, browserUi) {
         if(!automatic)throw new Error('Missing package-bound automatic scan acceptance');
         if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=2)&&!thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.providerResults?.hybridExpertDetails===true))throw new Error('Missing package-bound Hybrid expert detail acceptance');
         if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=3)&&!thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.providerResults?.passed===true&&r.providerResults.actionScopedQuota===true&&r.providerResults.syntheticTransport===true))throw new Error('Missing package-bound urlscan action quota acceptance');
+        if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=3)&&!thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.scanCapacity?.passed===true&&r.scanCapacity.syntheticCoordinatorEnvironment===true&&r.scanCapacity.realThunderbirdEngine===true&&r.scanCapacity.retainedActive===200&&r.scanCapacity.deferredIsIncomplete===true&&r.scanCapacity.rejectedBeforePreparation===true&&r.scanCapacity.reuseAtCapacity===true&&r.scanCapacity.retryAfterCompletion===true))throw new Error('Missing package-bound scan capacity acceptance');
+        if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=3)&&!thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.inlineManualScan?.passed===true&&r.inlineManualScan.realThunderbirdAPIs===true&&r.inlineManualScan.syntheticTransport===true&&r.inlineManualScan.contextRenewed===true&&r.inlineManualScan.completed===true&&r.inlineManualScan.visibleCompletion===true&&r.inlineManualScan.submissions===1&&r.inlineManualScan.historicalAuditUnchanged===true))throw new Error('Missing package-bound inline manual scan acceptance');
         if((versionParts[0]>1||versionParts[1]>25||versionParts[2]>=2)&&!thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.administration?.passed===true&&r.administration.protectedDisplaySettings===true))throw new Error('Missing package-bound protected display settings acceptance');
     }
+    if(versionParts[0]>1||versionParts[0]===1&&(versionParts[1]>25||versionParts[1]===25&&versionParts[2]>=4)) {
+        for(const target of ['minimum','current']) {
+            const matches=r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.clientMatrixTarget===target&&r.client?.capabilities?.browserName==='thunderbird';
+            const inline=r=>r?.passed===true&&r.realThunderbirdAPIs===true&&r.syntheticTransport===true&&r.liveProviderCalls===false&&r.completed===true&&r.visibleCompletion===true&&r.submissions===1&&r.historicalAuditUnchanged===true;
+            if(!thunderbird.some(r=>matches(r)&&inline(r.inlineFreshManualScan)&&r.inlineFreshManualScan.contextRenewed===false))throw Error('Missing fresh inline scan acceptance: '+target);
+            if(!thunderbird.some(r=>matches(r)&&inline(r.inlineManualScan)&&r.inlineManualScan.contextRenewed===true))throw Error('Missing renewed inline scan acceptance: '+target);
+            if(!thunderbird.some(r=>matches(r)&&r.scanCoverage?.passed===true&&r.scanCoverage.baselineObserved===false&&r.scanCoverage.realThunderbirdAPIs===true&&r.scanCoverage.syntheticTransport===true&&r.scanCoverage.injectedInventoryFailure===true&&r.scanCoverage.liveProviderCalls===false&&r.scanCoverage.state==='incomplete'&&r.scanCoverage.assessmentIncomplete===true&&r.scanCoverage.coverage?.attachments?.readFailed===1&&r.scanCoverage.visibleState===true&&r.scanCoverage.visiblePopup===true&&r.scanCoverage.sourceCapacityPreserved===true&&r.scanCoverage.sourceCapacityReason==='source_capacity'))throw Error('Missing scan coverage acceptance: '+target);
+            if(!thunderbird.some(r=>matches(r)&&r.cryptoContent?.passed===true&&r.cryptoContent.synthetic===true&&r.cryptoContent.realThunderbirdAPIs===true&&r.cryptoContent.liveProviderCalls===false&&['openpgpDecrypted','smimeSignedReadable','smimeEnvelopeConservative','attachmentBytesVerified'].every(key=>r.cryptoContent[key]===true)))throw Error('Missing crypto input acceptance: '+target);
+        }
+    }
     for (const lang of languages) {
-        const tb = thunderbird.find(report => {
+        const validUpgrade = report => {
             const language = report.uiLanguage || report.currentRestart?.uiLanguage;
             const pending = report.pendingCrashRecovery;
             const current = report.currentRestart;
@@ -82,8 +94,16 @@ function validateReports(identity, thunderbird, browserUi) {
                 pending?.storagePreserved === true && pending.decisionNotInvented === true && pending.extraOsDispatches === 0 &&
                 pending.record?.outcome === 'PENDING' && pending.record.decidedAt === null && pending.record.openAttempts === 0 &&
                 Array.isArray(report.finalAuditRecords) && report.finalAuditRecords.some(record => record.id === pending.record.id && record.outcome === 'PENDING' && record.decidedAt === null);
-        });
+        };
+        const tb = thunderbird.find(validUpgrade);
         if (!tb) throw new Error('Missing package-bound real Thunderbird upgrade/crash evidence: ' + lang);
+        if(versionParts[0]>1||versionParts[0]===1&&(versionParts[1]>25||versionParts[1]===25&&versionParts[2]>=3)) {
+            for(const target of ['minimum','current']) {
+                if(!thunderbird.some(report=>validUpgrade(report)&&report.clientMatrixTarget===target&&
+                    /^\d+\./.test(report.client?.capabilities?.browserVersion||'')&&
+                    (target==='minimum'?parseInt(report.client.capabilities.browserVersion,10)===140:parseInt(report.client.capabilities.browserVersion,10)>=140)))throw new Error('Missing client matrix upgrade/crash evidence: '+target+'/'+lang);
+            }
+        }
         const complete = browserUi.some(report => {
             if (report.schemaVersion !== 1 || report.kind !== 'thundy-browser-ui-check' || report.fatalError || report.sourceFingerprint !== identity.sourceFingerprint || report.view !== 'all' || (report.cssZoom ?? 1) !== 1 || report.matrix !== 'full' || !Array.isArray(report.results)) return false;
             const rows = report.results;
@@ -92,7 +112,7 @@ function validateReports(identity, thunderbird, browserUi) {
             const scope = report.language === 'all' ? languages : [report.language];
             if (!scope.includes(lang) || scope.some(value => !languages.includes(value))) return false;
             const wanted = expected.filter(row => scope.includes(row.lang));
-            return wanted.length === rows.length && wanted.every(want => rows.some(row => row.id === want.id && ['lang', 'view', 'kind', 'width', 'scheme', 'state', 'populated', 'url'].every(key => row[key] === want[key])));
+            return wanted.length === rows.length && wanted.every(want => rows.some(row => row.id === want.id && ['lang', 'view', 'kind', 'width', 'scheme', 'state', 'populated', 'url', 'scenario', 'density'].every(key => row[key] === want[key])));
         });
         if (!complete) throw new Error('Missing complete browser UI evidence: ' + lang);
     }

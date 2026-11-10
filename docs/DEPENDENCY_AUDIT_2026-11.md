@@ -25,3 +25,13 @@ Kompatible Patches: frische Installation, Node-22-/24-Gesamtprüfung und unverä
 ## Erneute Prüfung vor Veröffentlichung
 
 Die Registry liefert weiterhin web-ext 10.8.0, addons-linter 10.15.0 und deepmerge 4.3.1 als aktuelle Versionen. Deepmerge 4.3.1 ist selbst betroffen; eine unterstützte gepatchte Version ist damit nicht verfügbar. Minimatch 11.0.4 ist gepatcht, die betroffene Werkzeugkette verwendet jedoch mehrere ältere Major-Versionen. Ein pauschaler Major-Override aller Verbraucher wäre keine unterstützte Standardbehebung. Erneutes npm audit: weiterhin 9 mittel / 1 niedrig, keine hohe/kritische Meldung im Kandidatenbaum. Die Befunde werden im GitHub-Release offen benannt; die Meldungen des alten Standardbranchs sind davon zu unterscheiden.
+
+## AVN-008.b — erneuter Abgleich am 9. November 2026
+
+Nach Synchronisierung auf `92b4bad` und frischem `npm ci` unter Node 24 wurde erneut `npm audit --json` ausgeführt: **3 niedrig, 0 mittel, 0 hoch, 0 kritisch**. Die früheren neun/zehn Meldungen bleiben historische Ergebnisse und sind keine aktuelle Zählung. Betroffen sind die Meldungsgruppe `deepmerge`, `addons-linter` und `web-ext`; diese Werkzeuge werden nicht ins XPI aufgenommen. Das beweist keine allgemeine Nichtexploitierbarkeit der Buildumgebung.
+
+Aufgelöster Pfad: `web-ext@10.8.0 → addons-linter@10.14.0 → deepmerge@4.3.1`. Registry zum Abfragezeitpunkt: web-ext 10.8.0, addons-linter 10.15.0, deepmerge 4.3.1. Die bloße Verfügbarkeit des neueren Linters beweist keine Behebung von deepmerge. Es wurde weder ein pauschaler Override noch ein Force-/Downgrade installiert. Ein kompatibler behobener Upstreamweg bleibt erforderlich; neue Werkzeugversionen benötigen weiterhin negative Lint-/Paketprüfungen.
+
+Der aktuelle Abgleich ist abgeschlossen, die verbleibende Upstreambehebung nicht. [Ausführung und Grenzen](ENTWICKLUNG_2026_11_09.md).
+
+Der parallel integrierte jsdom-31-Stand setzt `readyState` bereits vor dem später eingeplanten DOMContentLoaded-Ereignis auf `interactive`. Die Onboarding-Fixture wartet nun auf den tatsächlichen Dokumentabschluss, bevor sie ihre eigene Initialisierung auslöst. Theme-Fixtures beobachten das angewandte Theme statt einer festen 15-ms-Frist. Die sechs sprachgleichen Doppel-Speicherfehler und der Theme-Startfehler wurden damit auf den Prüfharness eingegrenzt; produktive Ereignisse werden nicht zusätzlich ausgelöst.

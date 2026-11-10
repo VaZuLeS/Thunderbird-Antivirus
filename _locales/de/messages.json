@@ -2479,5 +2479,41 @@
   },
   "analysisLocalBackoff": {
     "message": "Dieser Versuch wurde lokal zurückgestellt; es wurde keine neue Anbieteranfrage gesendet."
+  },
+  "scanState_deferred": {
+    "message": "Prüfung zurückgestellt: Alle Hintergrundplätze sind belegt. Nach Abschluss einer anderen Prüfung erneut versuchen."
+  },
+  "scanCoverage": {
+    "message": "Einige Ressourcen wurden nicht geprüft."
+  },
+  "scanCoverageAttachments": {
+    "message": "Vorbereitete Anhänge"
+  },
+  "scanCoverageLinks": {
+    "message": "Ausgewählte Links"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Ein Anhang konnte nicht gelesen oder gehasht werden."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Ein Anhang überschreitet die Prüfgrenze von 25 MiB."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "Die Ressourcengrenze der Prüfung wurde erreicht."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "Die Anhangliste ist unvollständig."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Die Quellenhistorie ist voll. Diese Prüfung wurde nicht gestartet; vorhandene Daten bleiben erhalten."
+  },
+  "scanFailure_cancelled": {
+    "message": "Die Prüfung wurde abgebrochen. Daraus folgt kein abgeschlossenes Ergebnis."
+  },
+  "scanFailure_timeout": {
+    "message": "Die Prüfzeit wurde überschritten. Ergebnisse bleiben unvollständig."
+  },
+  "scanFailure_scan_failed": {
+    "message": "Die Prüfung konnte nicht abgeschlossen werden. Vorhandene Daten bleiben erhalten."
   }
 }

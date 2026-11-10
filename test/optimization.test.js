@@ -758,6 +758,16 @@ test('unbound legacy findings remain summaries and never leak a cached filename 
  const snapshot=await ctx.snapshot();assert.equal(snapshot.rows.length,0);assert.equal(snapshot.sourceHistory.rows[0].resource,null);assert.equal(snapshot.sourceHistory.rows[0].verdict,'malicious');
  assert.equal((await ctx.resourceRecord()).attachments.length,0);assert.ok(!JSON.stringify(snapshot.resourceLabels).includes('foreign-legacy'));
 });
+test('opaque S/MIME envelopes cannot imply checked text even when no decryption failure is reported',()=>{
+ const s=setup({},true);
+ for(const contentType of ['application/pkcs7-mime','application/x-pkcs7-mime']){
+  const opaque={contentType,name:'smime.p7m',size:100};
+  assert.equal(s.context.localContentCoverage({parts:[opaque]}).state,'incomplete');
+  assert.equal(s.context.localContentCoverage({decryptionStatus:'success',parts:[opaque]}).state,'incomplete');
+  assert.equal(s.context.localContentCoverage({parts:[{...opaque,parts:[{contentType:'text/plain',body:'readable',size:8}]}]}).state,'checked');
+ }
+ assert.equal(s.context.localContentCoverage({parts:[{contentType:'multipart/signed',parts:[{contentType:'text/plain',body:'signed text',size:11},{contentType:'application/pkcs7-signature',name:'smime.p7s'}]}]}).state,'checked');
+});
 
 test('header-only manual submission never attributes an evicted popup request to a remaining sibling context',async()=>{
  const s=setup({externalAnalysisConsent:true,privacyTier:'max',apikey:'ha'},true);await s.context.configure();sourceRecords(s);
@@ -965,4 +975,25 @@ test('urlscan HTTP 400 distinguishes DNS, validation and unknown rejection witho
   const s=setup({externalAnalysisConsent:true,privacyTier:'max'},true);await s.context.configure();s.context.fetch=async()=>({status:400,ok:false,json:async()=>body});
   const result=await s.context.checkUrlscanIo('https://example.com/','synthetic');assert.equal(result.errorCode,errorCode);assert.equal(result.httpStatus,400);assert.ok(!JSON.stringify(result).includes('CANARY'));
  }
+});
+
+test('active scan owners survive observer eviction and reuse the same message context (AVN-019)',async()=>{
+ const s=setup({},true);await s.context.configure();
+ const first=await s.context.getMessageAnalysisContext(s.message);first.scanJobOwner='running-job';
+ for(let id=100;id<305;id++)await s.context.getMessageAnalysisContext({...s.message,id});
+ await new Promise(setImmediate);assert.equal(first.isCached(),false);assert.equal(first.disposed,false);
+ assert.equal(first.event({provider:'urlhaus',scope:'domain',phase:'finish',state:'checked',verdict:'none',observedAt:100}),true);
+ s.context.ThundyScans={contextFor:id=>id===s.message.id?first:null};
+ assert.equal(await s.context.getMessageAnalysisContext(s.message),first);
+ delete first.scanJobOwner;first.dispose();vm.runInContext('messageAnalyses.clear()',s.context);
+});
+
+test('authorized cache clearing uses the same cancellation and notification path as legacy clearing',async()=>{
+ const s=setup({},true);await s.context.configure();const context=await s.context.getMessageAnalysisContext(s.message);
+ let cancellation;s.context.ThundyScans={invalidate:options=>{cancellation=options;}};
+ s.context.ThundySecurity={authorized:async()=>{}};const notifications=[];
+ s.context.browser.runtime.sendMessage=async value=>notifications.push(value);
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'clearMemoryCaches'},{},resolve));
+ await new Promise(setImmediate);assert.equal(result.success,true);assert.equal(cancellation.clear,true);assert.equal(cancellation.silent,true);
+ assert.equal(context.disposed,true);assert.ok(notifications.some(value=>value.action==='memoryCachesCleared'));
 });
