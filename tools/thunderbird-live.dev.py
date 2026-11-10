@@ -1526,8 +1526,11 @@ def check_source_export(m, base, out, report, restart, display):
     assert downloaded==expected
     navigation=[probe_source_export_navigation(m,base),probe_source_export_navigation(m,base,invalidate=True)]
     report['sourceExportNavigation']={'passed':True,'cases':navigation,'scope':'Actual same-tab forward navigation and history.back; document reuse observed rather than assumed. No synthetic pageshow event.'}
+    refused=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"clearMemoryCaches"});')
+    assert refused.get('success') is False,refused
+    options_browser='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
     m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;await bg.clearStore(await bg.getSharedDB(),"hybridanalysis");const result=await b.runtime.sendMessage({action:"clearMemoryCaches"});
-          if(result?.success!==true&&result?.status!=="success")throw Error("Cache clear refused: "+(result?.code||"unknown"));return true;})();''')
+          if(result?.success!==true&&result?.status!=="success")throw Error("Cache clear refused: "+(result?.code||"unknown"));return true;})();''',browser=options_browser)
     wait_for(lambda:m.page('return document.getElementById("sourceExportSave").disabled&&document.getElementById("sourceExportContent").textContent==="";'))
     m.page('document.getElementById("sourceExportPreview").click();')
     wait_for(lambda:m.page('return document.getElementById("sourceExportStatus").textContent.startsWith("The message context is no longer available");'))
@@ -1538,7 +1541,7 @@ def check_source_export(m, base, out, report, restart, display):
     m.page('document.getElementById("sourceExportPreview").click();')
     wait_for(lambda:m.page('return document.getElementById("sourceExportStatus").textContent.startsWith("The message context is no longer available");'))
     assert m.page('return document.getElementById("sourceExportSave").disabled&&document.getElementById("sourceExportContent").textContent==="";')
-    report['sourceExport']={'passed':True,'realPopupEntry':True,'realGtkDownload':True,'downloadMatchesPreview':True,'cancelAndCacheClearInvalidate':True,'oldRuntimeLinkRefusedAfterRestart':True,'syntheticObservations':True,'liveProviderCalls':False,'saveControl':save_control,'providers':sorted({row['provider'] for row in downloaded['current']['rows']}),'canonicalDownloadSha256':hashlib.sha256(json.dumps(downloaded,sort_keys=True).encode()).hexdigest(),'scope':'Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance.'}
+    report['sourceExport']={'passed':True,'realPopupEntry':True,'realGtkDownload':True,'downloadMatchesPreview':True,'nonAdminPageClearRefused':True,'cancelAndCacheClearInvalidate':True,'oldRuntimeLinkRefusedAfterRestart':True,'syntheticObservations':True,'liveProviderCalls':False,'saveControl':save_control,'providers':sorted({row['provider'] for row in downloaded['current']['rows']}),'canonicalDownloadSha256':hashlib.sha256(json.dumps(downloaded,sort_keys=True).encode()).hexdigest(),'scope':'Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance.'}
     return m
 
 

@@ -161,5 +161,15 @@
     "retentionAndRestoreImapVerified": false,
     "automaticUpdateChannelVerified": false,
     "releasePublished": false
+  },
+  "sourceExport": {
+    "passed": true,
+    "runnerSha256": "d5e049d44fbb46536f6ceac01a3e4929371000d1fd5655350413cf5321b6816e",
+    "reportSha256": "a1154ecc218314fdb663d2c72cdcdda70695419c7bf1da83e798dd3eac9f0e86",
+    "packageSha256": "4a95a267c735732dce177c4b7af0048f249fdb79542abdcf19d46c965648264e",
+    "nonAdminPageClearRefused": true,
+    "authorizedOptionsClearPassed": true,
+    "realGtkDownload": true,
+    "oldRuntimeLinkRefusedAfterRestart": true
   }
 }
