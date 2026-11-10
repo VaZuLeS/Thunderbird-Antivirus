@@ -69,3 +69,7 @@ AVN-009.d wurde durch eine [native Speicher-/Restoreabnahme](SPEICHERABNAHME_202
 Der vollständige [Fortführungslauf 42783981989](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/42783981989) für `17ce53d` ist erfolgreich. Beide Linuxziele prüfen nun echte Speichertransaktionen und Profilrestore. Das Kandidatengate erzeugt und revalidiert außerdem `acceptance-1.25.4.json` aus den tatsächlichen Berichten; die Paketidentität bleibt unverändert. Veröffentlichung und dauerhafte Releaseassets bleiben getrennt.
 
 AVN-009.f/009.d erhalten außerdem die [separate lokale IMAP-Lifecyclebeobachtung](audits/imap-lifecycle-2026-11-10.json). Sie schließt die zuvor fehlenden konkreten Kopier-/Verschiebe-/Lösch-/Komprimierungs-/Neustartgegenfälle für diese isolierte Umgebung. Fehlende Add-on-Ereignisrechte und UIDVALIDITY-/Netzausfälle verhindern weiterhin eine allgemeine Migrationsfreigabe.
+
+## Weitere Fortführung: Speicherwiederanlauf
+
+Die [Speicherwiederanlauf-Korrektur](SPEICHERWIEDERANLAUF_2026_11_10.md) schließt nach fehlgeschlagener Startbereinigung eine bislang offen gebliebene Verbindung und erhält den ursprünglichen Fehler. Native Gegenprobe und parallele aktuelle Writer sind getrennt protokolliert. Die neuen Paketbytes benötigen eine eigene vollständige CI; frühere Nachweise werden nicht übertragen.

@@ -54,3 +54,5 @@ Der [lokale Quellenbericht AVN-011](QUELLENEXPORT.md) erstellt nur auf ausdrück
 ## Ergänzende native Abnahme am 10. November 2026
 
 Die [Speicherabnahme für Kandidat 1.25.4](SPEICHERABNAHME_2026_11_10.md) ergänzt echte Alters-/Kapazitätsgrenzen, einen nach erfolgreichem Schreibrequest abgebrochenen Commit, Audit-/Cachetrennung und Profilrestore mit separater Sicherung neuerer Ereignisse. Der lokale IMAP-Server bleibt außerhalb des Profilrestores. Keine zusätzliche Löschpolitik und keine allgemeine Identitäts- oder Datenträgergarantie.
+
+Die [Fortführung zum Speicherwiederanlauf](SPEICHERWIEDERANLAUF_2026_11_10.md) ergänzt einen belegten Verbindungsfehlerpfad und native Parallelitätsprüfungen, ohne die Aufbewahrungsregeln zu verändern.

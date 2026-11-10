@@ -122,8 +122,14 @@ let sharedDBPromise = null;
 function getSharedDB() {
     if (!sharedDBPromise) {
         sharedDBPromise = openDB("thunderbird_av", 3).then(async db => {
-            if (typeof pruneStore === 'function') await pruneStore(db, 'hybridanalysis');
-            return db;
+            try {
+                if (typeof pruneStore === 'function') await pruneStore(db, 'hybridanalysis');
+                return db;
+            } catch (error) {
+                // A retry owns a new connection; failed startup must release this one.
+                try { db.close(); } catch (_) { /* Preserve the original cleanup failure. */ }
+                throw error;
+            }
         }).catch(error => { sharedDBPromise = null; throw error; });
     }
     return sharedDBPromise;

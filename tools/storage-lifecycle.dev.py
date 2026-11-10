@@ -24,6 +24,7 @@ def check(m, base, out, report, restart, fixture):
         raise TimeoutError('Storage options page did not load')
 
     options()
+    runpy.run_path(str(Path(__file__).with_name('storage-concurrency.dev.py')))['check'](m, report)
     seeded = m.page('''return (async()=>{
       const b=(window.wrappedJSObject||window).browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw,db=await bg.getSharedDB();
       const audit=(await b.storage.local.get('linkAuditLog')).linkAuditLog;
