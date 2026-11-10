@@ -1889,10 +1889,11 @@ def check_automatic_scans(m, base, out, report, display):
     setup=m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
       const message=(await b.messages.query({subject:"Thundy AV synthetic live test"})).messages.find(m=>m.subject==="Thundy AV synthetic live test");
-      const calls=[];window.wrappedJSObject.__automaticScanCalls=calls;
+      const calls=[];window.wrappedJSObject.__automaticScanCalls=calls;window.wrappedJSObject.__holdRetryResponses=false;window.wrappedJSObject.__retryResponseReleases=[];
       const errors=[];window.wrappedJSObject.__automaticScanErrors=errors;bg.console.error=(...args)=>errors.push(args.map(x=>typeof x==='string'?x:x?.message||x?.name||'error').join(' '));
       bg.fetch=async(url,options={})=>{
         url=String(url);calls.push({url,method:options.method||'GET',body:typeof options.body==='string'?options.body:null});
+        if(window.wrappedJSObject.__holdRetryResponses)await new Promise(resolve=>window.wrappedJSObject.__retryResponseReleases.push(resolve));
         let data;
         if(url==='https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis')data={id:'native-hybrid-job',verdict:'clean',finished:true};
         else if(url.includes('hybrid-analysis.com/api/v2/quick-scan/'))data={id:'native-hybrid-job',verdict:'clean',finished:true};
@@ -1927,8 +1928,12 @@ def check_automatic_scans(m, base, out, report, display):
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.textContent==="Check again";',browser=popup))
+    m.page('window.wrappedJSObject.__holdRetryResponses=true;',browser=options)
     m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();',browser=popup)
+    admitted=wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='running' else None),20)
+    wait_for(lambda:m.page('return window.wrappedJSObject.__retryResponseReleases.length>0;',browser=options))
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    m.page('window.wrappedJSObject.__holdRetryResponses=false;for(const resolve of window.wrappedJSObject.__retryResponseReleases.splice(0))resolve();',browser=options)
     wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='completed' else None),45)
     later=m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options)
     assert len([c for c in later if c['method']=='POST' and 'urlscan.io' in c['url']])>len(us)

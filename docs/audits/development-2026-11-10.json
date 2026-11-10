@@ -143,7 +143,8 @@
   },
   "pages": {
     "localJekyllBuildPassed": true,
-    "publicHttpVerified": false
+    "publicHttpVerified": false,
+    "localSixLanguageBrowserPassed": true
   },
   "checks": {
     "sourcePassed": true,
@@ -171,5 +172,42 @@
     "authorizedOptionsClearPassed": true,
     "realGtkDownload": true,
     "oldRuntimeLinkRefusedAfterRestart": true
+  },
+  "automaticScans": {
+    "passed": true,
+    "packageSha256": "4a95a267c735732dce177c4b7af0048f249fdb79542abdcf19d46c965648264e",
+    "runnerSha256": "02a98ee49c976800670f3f770116a7977d91abea50140eec676d2f589042dffa",
+    "reportSha256": "22ca614ae60eb25b588c2bd9f1bc0a82ebc7c87b00eb477233586306f9580088",
+    "acceptance": {
+      "passed": true,
+      "realDisplayEvents": true,
+      "bothProvidersWithoutLinkClick": true,
+      "popupClosedDuringRetry": true,
+      "duplicateDisplayReused": true,
+      "unlisted": true,
+      "syntheticTransport": true,
+      "liveProviderCalls": false
+    },
+    "providerResults": {
+      "passed": true,
+      "partialMaliciousBlocks": true,
+      "terminalUnknownRetainsFinding": true,
+      "brandDoesNotEscalate": true,
+      "refreshWithoutSubmission": true,
+      "bothViewsAgree": true,
+      "hybridExpertDetails": true,
+      "actionScopedQuota": true,
+      "syntheticTransport": true
+    }
+  },
+  "upgradeCrashRestore": {
+    "passed": true,
+    "packageSha256": "4a95a267c735732dce177c4b7af0048f249fdb79542abdcf19d46c965648264e",
+    "runnerSha256": "d5e049d44fbb46536f6ceac01a3e4929371000d1fd5655350413cf5321b6816e",
+    "reportSha256": "62b5a51abea7a3763d8b6f95e1c68a7da1f1ec2afaa14d509fc85f9ecdc65513",
+    "previousVersion": "1.25.3",
+    "gracefulRestarts": 3,
+    "forcedRestarts": 2,
+    "profileRestorePassed": null
   }
 }

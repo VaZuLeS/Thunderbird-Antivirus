@@ -12,12 +12,12 @@ Unveröffentlicht. Lokale Teilprüfungen sind keine vollständige Remote-Release
 | C06 | Öffentliche Downloadversion unabhängig vom Kandidaten | OK | scripts/pre-submit-checks.test.js; docs/distribution.json |
 | C07 | Konservativer Inhaltsvertrag, keine Migration | OK | test/cache-lifecycle.test.js; IDENTITAETSVERTRAG_2026_11_10.md |
 | C08 | Vollständige aktuelle Node-/Lint-/Paketregression | OK | 1.278 Node-Tests; Lint 0 Fehler/39 kuratierte Warnungen; verifiziertes Paket |
-| C09 | Vollständige Browsermatrix und 200-%-Zoom für sechs Sprachen | OFFEN | Aktueller Fingerprint erforderlich; ältere Browsernachweise nicht übernehmen |
+| C09 | Vollständige Browsermatrix und 200-%-Zoom für sechs Sprachen | OK | Alle sechs Browserjobs in CI 42734544576 bestanden; Gesamt-CI scheiterte danach separat am nativen Prüfrunner |
 | C10 | Mindest-/aktuelle Linuxlinie, sechs Sprach-Upgrades und Crashprüfungen | OFFEN | Neuer Remote-Kandidatenlauf erforderlich |
 | C11 | Dauerhafte Releaseassets einschließlich acceptance-1.25.4.json | OFFEN | Erst nach vollständigem Kandidatengate; keine Veröffentlichung behauptet |
 | C12 | OpenPGP-Entschlüsselung, S/MIME-Signatur und konservativer S/MIME-API-Umfang | OK | audits/development-2026-11-10.json; echte Schlüssel im isolierten Linux-Profil, kein vollständiger S/MIME-API-Klartextzugriff |
 | C13 | Kontrollierter IMAP-Eingang mit echter Quellenspeicherung | OK | audits/development-2026-11-10.json; echter Loopback-Dovecot, keine allgemeine Retention-/Restorezusage |
 
-**Summe:** 10 OK / 0 FAIL / 0 N/A / 3 OFFEN
+**Summe:** 11 OK / 0 FAIL / 0 N/A / 2 OFFEN
 
 Echte Anbieter, Windows/NVDA, macOS/VoiceOver, unabhängiger Sprachreview, öffentlicher Pages-Abruf und ATN-Updates bleiben eigenständige Abnahmen. OPENED bestätigt nur Thunderbirds Öffnungsannahme; PENDING bleibt nach Prozessverlust offen.
