@@ -197,4 +197,16 @@ test('new candidates require six-language upgrade/crash proof for both declared 
   assert.throws(()=>validateReports(next,broken,ui),/inline|coverage|crypto/);
  }
  const nextProof=api.create(next,reports,ui,'fixture');assert.ok(api.verify(nextProof,next));assert.ok(!JSON.stringify(nextProof).includes('CANARY'));
+ const current={...next,extensionVersion:'1.25.5'},currentReports=structuredClone(reports);
+ for(const r of currentReports){r.extensionVersion=current.extensionVersion;r.currentRestart.addon.version=current.extensionVersion;}
+ assert.throws(()=>validateReports(current,currentReports,ui),/protection profile/);
+ const flags=['passed','realThunderbirdAPIs','realDownloadsAPI','nativeFilePicker','exportedSavedPolicy','explicitUiImport','previewReadOnly','cancelPreserved','unrelatedDataPreserved','v1Compatible','noConsentOrPermissionGrant','noProviderRequests','appearanceProfileCompatible'];
+ for(const r of currentReports)r.protectionProfile={...Object.fromEntries(flags.map(key=>[key,true])),rawProfile:'CANARY'};
+ validateReports(current,currentReports,ui);
+ for(const mutate of [r=>{delete r.protectionProfile;},r=>{r.protectionProfile.noProviderRequests=false;},r=>{r.protectionProfile.unrelatedDataPreserved=false;},r=>{r.protectionProfile.realDownloadsAPI=false;},r=>{r.xpiSha256='wrong';}]){
+  const broken=structuredClone(currentReports);for(const r of broken.filter(r=>r.clientMatrixTarget==='current'&&r.uiLanguage==='pl'))mutate(r);
+  assert.throws(()=>validateReports(current,broken,ui),/protection profile|matrix|inline|coverage|crypto/);
+ }
+ const currentProof=api.create(current,currentReports,ui,'fixture');assert.ok(api.verify(currentProof,current));assert.ok(!JSON.stringify(currentProof).includes('CANARY'));
+
 });

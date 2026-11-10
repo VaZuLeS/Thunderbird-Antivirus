@@ -1555,10 +1555,10 @@
     "message": "Grenzen pro Lauf: 100 Anhänge, 25 MiB je Anhang, 100 eindeutige Domains, 20 Stapellinks. Bearbeitet bedeutet weder extern geprüft noch sicher."
   },
   "localProfileTitle": {
-    "message": "Lokale Darstellungsprofile"
+    "message": "Lokale Profile"
   },
   "localProfileHelp": {
-    "message": "Nur Darstellung, Akzent und Dichte übertragen. Jeden Import zuerst prüfen und bestätigen. Schlüssel, Zustimmung, Berechtigungen, Schutzregeln und Audithistorie sind ausgeschlossen."
+    "message": "Gespeicherte Darstellung oder lokale Schutzoptionen getrennt exportieren. Importe in der Vorschau prüfen und bestätigen. Schlüssel, Einwilligungen, Berechtigungen, vertrauenswürdige Absender und Entscheidungsprotokolle bleiben ausgeschlossen."
   },
   "localProfileExport": {
     "message": "Darstellung exportieren"
@@ -2515,5 +2515,17 @@
   },
   "scanFailure_scan_failed": {
     "message": "Die Prüfung konnte nicht abgeschlossen werden. Vorhandene Daten bleiben erhalten."
+  },
+  "localProtectionProfileExport": {
+    "message": "Schutzoptionen exportieren"
+  },
+  "localProfileYes": {
+    "message": "Ja"
+  },
+  "localProfileNo": {
+    "message": "Nein"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Ältere Schutzprofile können den automatischen Prüfumfang nicht erweitern und keine URL-Übermittlung einschalten. Die Vorschau zeigt das wirksame Ergebnis."
   }
 }

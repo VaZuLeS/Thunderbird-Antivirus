@@ -617,6 +617,8 @@ def check_followup(m, base, out, report, display, source_catalog):
         probe['analysisSources']['nativeStoredMessage'] = True
         m.screenshot(out / 'analysis-sources-message.png')
     report['followup'] = {'passed': True, 'realThunderbirdAPIs': True, **probe}
+    if tuple(map(int, report['extensionVersion'].split('.'))) >= (1,25,5):
+        runpy.run_path(str(ROOT/'tools/protection-profile.dev.py'))['check'](m, base, out, report, display, source_catalog, native_json_download)
 
 
 def addon_state(m):
@@ -1725,6 +1727,8 @@ def check_restart_upgrade(m, args, out, display, report, restart):
     report['newRecordAfterRestart'] = added[0]
     report['finalAuditRecords'] = final
     assert report.get('gracefulRestarts') == 2
+    if tuple(map(int, current_version.split('.'))) >= (1,25,5):
+        runpy.run_path(str(ROOT/'tools/protection-profile.dev.py'))['check'](m, base, out, report, display, catalog, native_json_download)
     if args.crash_check:
         check_crash_recovery(m, args, out, report, restart, base, current_state)
     if args.restore_check:

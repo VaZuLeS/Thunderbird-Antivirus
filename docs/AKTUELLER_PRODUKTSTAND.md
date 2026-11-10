@@ -33,3 +33,7 @@ Historischer Nachweis: Die Pages-Bereitstellung für `90df6607` war erfolgreich.
 Die bisherigen [Aufgabenpläne](PRODUKTANALYSE_AUFGABENPLAN_2026-11-04.md), [Ausführungsprotokolle](AUSFUEHRUNG_WEITERENTWICKLUNG_1_24_3.md) und versionsgebundenen Release-/Live-Protokolle bleiben erhalten. Insbesondere sind Inhaltsumfang, begrenzter Unicode-Eingangsfix, Ressourceninventare, Quellenhistorie, Protokollrevisionen, Exportnavigation und reproduzierbarer Paketbau jeweils mit ihrem damaligen Prüfumfang zu lesen. Die neue Bestandsaufnahme ersetzt keine dieser historischen Paketidentitäten.
 
 Die [Fortführung vom 10. November](IDENTITAETSVERTRAG_2026_11_10.md) konkretisiert AVN-009.f ohne Migration. AVN-019.b ergänzt explizite Ressourcenauslassungen und Startfehler. Öffentliche Downloads folgen `distribution.json`, nicht automatisch der Entwicklungsversion.
+
+## Vorbereiteter Entwicklungsstand 1.25.5
+
+Der [Schutzprofilexport und Importkonfliktschutz](SCHUTZPROFILE_1_25_5.md) ist lokal implementiert. [Abnahmeprotokoll](live_test_1_25_5.md): gezielte lokale Nachweise vorhanden; vollständige Remote-Matrix und Veröffentlichung stehen aus. Der veröffentlichte Stand bleibt 1.25.4.

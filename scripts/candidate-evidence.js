@@ -95,6 +95,12 @@ function validateReports(identity, thunderbird, browserUi) {
                 pending.record?.outcome === 'PENDING' && pending.record.decidedAt === null && pending.record.openAttempts === 0 &&
                 Array.isArray(report.finalAuditRecords) && report.finalAuditRecords.some(record => record.id === pending.record.id && record.outcome === 'PENDING' && record.decidedAt === null);
         };
+        if(versionParts[0]>1||versionParts[0]===1&&(versionParts[1]>25||versionParts[1]===25&&versionParts[2]>=5)) {
+            for(const target of ['minimum','current']) {
+                const flags=['passed','realThunderbirdAPIs','realDownloadsAPI','nativeFilePicker','exportedSavedPolicy','explicitUiImport','previewReadOnly','cancelPreserved','unrelatedDataPreserved','v1Compatible','noConsentOrPermissionGrant','noProviderRequests','appearanceProfileCompatible'];
+                if(!thunderbird.some(r=>validUpgrade(r)&&r.clientMatrixTarget===target&&flags.every(key=>r.protectionProfile?.[key]===true)))throw Error('Missing native protection profile acceptance: '+target+'/'+lang);
+            }
+        }
         const tb = thunderbird.find(validUpgrade);
         if (!tb) throw new Error('Missing package-bound real Thunderbird upgrade/crash evidence: ' + lang);
         if(versionParts[0]>1||versionParts[0]===1&&(versionParts[1]>25||versionParts[1]===25&&versionParts[2]>=3)) {

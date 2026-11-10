@@ -1552,10 +1552,10 @@
     "message": "Limiti per esecuzione: 100 allegati, 25 MiB per allegato, 100 domini unici, 20 link per gruppo. Elaborato non significa analizzato esternamente o sicuro."
   },
   "localProfileTitle": {
-    "message": "Profili di aspetto locali"
+    "message": "Profili locali"
   },
   "localProfileHelp": {
-    "message": "Trasferisci solo aspetto, colore e densità. Controlla e conferma ogni importazione. Sono esclusi chiavi, consenso, autorizzazioni, regole di protezione e cronologia."
+    "message": "Esporta separatamente l’aspetto salvato o le impostazioni di protezione locali. Controlla l’anteprima e conferma ogni importazione. Chiavi, consensi, autorizzazioni, mittenti attendibili e cronologia delle decisioni sono esclusi."
   },
   "localProfileExport": {
     "message": "Esporta aspetto"
@@ -2512,5 +2512,17 @@
   },
   "scanFailure_scan_failed": {
     "message": "Non è stato possibile completare l’analisi. I dati esistenti sono stati conservati."
+  },
+  "localProtectionProfileExport": {
+    "message": "Esporta impostazioni di protezione"
+  },
+  "localProfileYes": {
+    "message": "Sì"
+  },
+  "localProfileNo": {
+    "message": "No"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "I profili di protezione precedenti non possono ampliare l’ambito delle analisi automatiche né attivare l’invio di URL. L’anteprima mostra il risultato effettivo."
   }
 }

@@ -1552,10 +1552,10 @@
     "message": "Limites par passage : 100 pièces jointes, 25 Mio par pièce jointe, 100 domaines uniques, 20 liens par lot. Traité ne signifie ni analysé en externe ni sûr."
   },
   "localProfileTitle": {
-    "message": "Profils d’apparence locaux"
+    "message": "Profils locaux"
   },
   "localProfileHelp": {
-    "message": "Transférez uniquement l’apparence, l’accent et la densité. Prévisualisez et confirmez chaque importation. Clés, consentements, autorisations, règles de protection et historique sont exclus."
+    "message": "Exportez séparément l’apparence enregistrée ou les paramètres de protection locaux. Vérifiez l’aperçu et confirmez chaque importation. Les clés, consentements, autorisations, expéditeurs de confiance et historiques de décision sont exclus."
   },
   "localProfileExport": {
     "message": "Exporter l’apparence"
@@ -2512,5 +2512,17 @@
   },
   "scanFailure_scan_failed": {
     "message": "L’analyse n’a pas pu se terminer. Les données existantes ont été conservées."
+  },
+  "localProtectionProfileExport": {
+    "message": "Exporter les paramètres de protection"
+  },
+  "localProfileYes": {
+    "message": "Oui"
+  },
+  "localProfileNo": {
+    "message": "Non"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Les anciens profils de protection ne peuvent ni étendre la portée des analyses automatiques ni activer l’envoi d’URL. L’aperçu montre le résultat effectif."
   }
 }

@@ -1,0 +1,54 @@
+{
+  "version": "1.25.5",
+  "published": false,
+  "sourceFingerprint": "293bb5684316d7f231e30cab5a0e126dd52ea389a4c2b65df12672a3c75270fa",
+  "packageSha256": "81923ae275e5e8c9f98b62817d434474b4045c4b8c86a80cd278aec29b224be3",
+  "native": [
+    {
+      "case": "native-final2",
+      "reportSha256": "c6c92ef246b9c146013d5b63232c8147551f27d2fd2e010e09046932690bc1f0",
+      "protectionProfile": {
+        "passed": true,
+        "helperSha256": "e4defa56cb056afdbff1d6dcce78d38cadeb0e427291e69b1e3aac8628eb120a",
+        "realThunderbirdAPIs": true,
+        "realDownloadsAPI": true,
+        "nativeFilePicker": true,
+        "exportedSavedPolicy": true,
+        "explicitUiImport": true,
+        "previewReadOnly": true,
+        "cancelPreserved": true,
+        "unrelatedDataPreserved": true,
+        "v1Compatible": true,
+        "noConsentOrPermissionGrant": true,
+        "noProviderRequests": true,
+        "appearanceProfileCompatible": true,
+        "scope": "Actual UI and downloads in an isolated synthetic profile; no live providers. Storage/validation/stale failures have separate simulated checks."
+      },
+      "passed": true
+    },
+    {
+      "case": "upgrade-with-profile",
+      "reportSha256": "705bac682e6fac4ec4894623d414a8bff6f5ee898d2b3ccfbe7e7c0614be5394",
+      "passed": true,
+      "protectionProfile": {
+        "passed": true,
+        "helperSha256": "e4defa56cb056afdbff1d6dcce78d38cadeb0e427291e69b1e3aac8628eb120a",
+        "realThunderbirdAPIs": true,
+        "realDownloadsAPI": true,
+        "nativeFilePicker": true,
+        "exportedSavedPolicy": true,
+        "explicitUiImport": true,
+        "previewReadOnly": true,
+        "cancelPreserved": true,
+        "unrelatedDataPreserved": true,
+        "v1Compatible": true,
+        "noConsentOrPermissionGrant": true,
+        "noProviderRequests": true,
+        "appearanceProfileCompatible": false,
+        "scope": "Actual UI and downloads in an isolated synthetic profile; no live providers. Storage/validation/stale failures have separate simulated checks."
+      },
+      "gracefulRestarts": 3,
+      "forcedRestarts": 2
+    }
+  ]
+}

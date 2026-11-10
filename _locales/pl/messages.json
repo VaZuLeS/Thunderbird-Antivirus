@@ -1552,10 +1552,10 @@
     "message": "Limity na przebieg: 100 załączników, 25 MiB na załącznik, 100 unikalnych domen, 20 linków zbiorczych. Przetworzenie nie oznacza analizy zewnętrznej ani bezpieczeństwa."
   },
   "localProfileTitle": {
-    "message": "Lokalne profile wyglądu"
+    "message": "Profile lokalne"
   },
   "localProfileHelp": {
-    "message": "Przenoś tylko wygląd, kolor i gęstość. Sprawdź i potwierdź każdy import. Klucze, zgody, uprawnienia, reguły ochrony i historia są wykluczone."
+    "message": "Eksportuj osobno zapisany wygląd lub lokalne ustawienia ochrony. Sprawdź podgląd i potwierdź każdy import. Klucze, zgody, uprawnienia, zaufani nadawcy i historia decyzji są wykluczone."
   },
   "localProfileExport": {
     "message": "Eksportuj wygląd"
@@ -2512,5 +2512,17 @@
   },
   "scanFailure_scan_failed": {
     "message": "Nie udało się ukończyć skanowania. Istniejące dane zostały zachowane."
+  },
+  "localProtectionProfileExport": {
+    "message": "Eksportuj ustawienia ochrony"
+  },
+  "localProfileYes": {
+    "message": "Tak"
+  },
+  "localProfileNo": {
+    "message": "Nie"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Starsze profile ochrony nie mogą rozszerzać zakresu automatycznego sprawdzania ani włączać przesyłania adresów URL. Podgląd pokazuje rzeczywisty wynik."
   }
 }

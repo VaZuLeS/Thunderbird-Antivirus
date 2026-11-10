@@ -1,0 +1,11 @@
+# Schutzprofile 1.25.5 – vorbereiteter Entwicklungsstand
+
+GitHub veröffentlicht weiterhin 1.25.4. Diese Erweiterung ist noch nicht veröffentlicht. [Kandidatennotizen](releases/1.25.5.md), [Abnahme](live_test_1_25_5.md) und [lokale Nachweise](audits/protection-profiles-1.25.5.json) bleiben getrennt vom veröffentlichten Paket.
+
+Der neue Export speichert ausschließlich die fünf erlaubten Schutzoptionen im bestehenden v2-Format. Er verwendet gespeicherte effektive Werte, keine ungespeicherten Eingaben. Schlüssel, Zustimmung, Berechtigungen, Absenderlisten und Auditdaten werden nicht exportiert. Vorschau, Abbruch und Export verändern den Speicher nicht. Der Erscheinungsprofilexport bleibt separat.
+
+Ein kontrollierter Gegenfall mit options.js aus dem veröffentlichten 1.25.4-XPI zeigt: Bei fehlendem scanMode erkennt der alte v1-Snapshot eine zwischenzeitlich geänderte autoScanLinks-Einstellung nicht. In beiden Richtungen konnte die alte Vorschau diese neuere Wahl überschreiben. Dies ist ein simulierter Storagegegenfall, kein Nachweis einer tatsächlich erfolgten Übermittlung. Der neue Vergleich umfasst alle fünf effektiven Optionen und weist den Konflikt vor dem Schreiben zurück. Ältere Profile können den automatischen Umfang nicht erweitern oder URL-Übermittlung einschalten. Die Vorschau zeigt das tatsächliche Ergebnis einschließlich erhaltener Werte.
+
+Die gezielten Konflikt- und Fehlerprüfungen verwenden simulierten Speicher. Linux-Thunderbird 140.12.0 prüft dagegen echte Optionen, Download-API, GTK-Dateiauswahl, expliziten Import, Vorschau und Abbruch sowie das Upgrade von 1.25.4 einschließlich Crash und vollständigem Profilrestore. EN/PL-Browserprüfungen decken Tastatur und 200-%-Zoom ab. Die vollständige Remote-Matrix mit sechs Sprachen und beiden Linuxlinien steht noch aus.
+
+Der Schutz vor veralteten Vorschauen ist keine allgemeine Compare-and-swap-Garantie gegenüber beliebigen direkten externen Storage-Schreibzugriffen. Keine zusätzliche Berechtigung, Datenmigration oder Änderung historischer Entscheidungen. OPENED bleibt Thunderbirds Öffnungsannahme; PENDING bleibt nach Prozessverlust offen. Windows/macOS, Screenreader, menschlicher Sprachreview, echte Anbieter und ATN-Verteilung bleiben gesonderte offene Abnahmen.
