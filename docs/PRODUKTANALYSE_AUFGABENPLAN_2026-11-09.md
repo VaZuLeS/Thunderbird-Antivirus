@@ -1,10 +1,17 @@
 # Thundy AV — Produktarchitektur, Bestandsaufnahme und dynamischer Aufgabenplan
 
+> **Einordnung nach Übernahme von PR #764 am 10. November 2026:** Der folgende Text bleibt als historischer Vorschlag vom 9. November erhalten. Er ist keine aktuelle Freigabe oder neue Vergabe bestehender Aufgaben-IDs. Maßgeblich sind der [aktuelle Produktstand](AKTUELLER_PRODUKTSTAND.md), der [Veröffentlichungsnachweis 1.25.4](VEROEFFENTLICHUNG_1_25_4.md) und die [datierten Ausführungsbefunde](ENTWICKLUNG_2026_11_10.md).
+>
+> - **Identität:** Die unten als nachgewiesen bezeichnete dauerhafte Vorkommensidentität ist nicht belegt. `deriveMessageContentKey` verwendet Metadaten; gleiche/fehlende Header-IDs können weiterhin Befunde verdrängen. [Gegenfall und Scorefolge](IDENTITAET_FOLGEVERTRAG_2026_11_09.md), [konservativer Identitätsvertrag](IDENTITAETSVERTRAG_2026_11_10.md). Keine produktive Migration ist freigegeben oder implementiert.
+> - **Stabile IDs:** AVN-019 bezeichnet weiterhin die Auftragsbegrenzung, AVN-019.b Prüfvollständigkeit und Startfehler. AVN-020 bezeichnet die Sicherheits-/Exportoberflächenprüfung. Die unten konkurrierend so benannten Fixture- und Refaktorthemen vergeben diese IDs nicht neu; die Fixturekorrektur ist inzwischen umgesetzt, die größere Entkopplung gehört zu AVN-013.
+> - **Prüfqualität:** Acht synthetische Korpusfälle sind Verhaltensregression, keine unabhängige Schutzqualitätsabnahme. Eine vollständige bestandene Testsuite beweist keine 100-%-Codeabdeckung. Solche Kennzahlen wurden hier nicht unabhängig nachgewiesen; AVN-005 bleibt ohne Korpus und Labels offen.
+> - **Reifegrad:** Die heutigen Crypto-/IMAP-/Speicher- und Releasebelege sind im 1.25.4-Nachweis getrennt erfasst. Sie bestätigen keine produktiven Enterprise-, Live-Anbieter-, Screenreader- oder automatischen Updatepfade. Historische Testzahlen und Paketidentitäten werden nicht auf heutige Bytes übertragen.
+
 **Rolle:** Technischer Produktarchitekt und erfahrener Thunderbird-Extension-Entwickler
 **Projekt:** Thundy AV — MailExtension für Mozilla Thunderbird (Manifest V3)
 **Bezug:** Stand Version **1.25.3** (Commit `92b4bad`, 537 Dateien)
 **Datum:** 09. November 2026
-**Status:** Verbindliche architektonische Gesamtanalyse und evidenzbasierter Entwicklungsplan
+**Status:** Historischer Analysevorschlag; durch den aktuellen Produktstand und die paketgebundenen 1.25.4-Nachweise fortgeschrieben
 
 ---
 
