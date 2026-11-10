@@ -2,6 +2,7 @@
 import hashlib
 import imaplib
 import json
+import runpy
 from pathlib import Path
 import shutil
 
@@ -127,6 +128,8 @@ def check(m, base, out, report, restart, fixture):
             audit={k:retained[k] for k in ['count','originalsPreserved','pendingUnchanged','cacheClearKeepsAudit']},
             profileRestore={'passed':True,'auditSnapshotPreserved':True,'analysisSnapshotPreserved':True,'newerEventsSeparatelySaved':True,'newerEventExportSha256':hashlib.sha256(exported.read_bytes()).hexdigest(),'newerEventsNotMerged':True,'imapServerNotRolledBack':server_unchanged},
             scope='Actual native IndexedDB/storage/profile restore; injected transaction abort and controlled cleanup timestamps; real loopback IMAP when configured. No disk failure or unlimited archive guarantee.')
+        if fixture:
+            m = runpy.run_path(str(Path(__file__).with_name('imap-lifecycle.dev.py')))['check'](m, base, out, report, restart, fixture)
         report['passed'] = True
         return m
     finally:
