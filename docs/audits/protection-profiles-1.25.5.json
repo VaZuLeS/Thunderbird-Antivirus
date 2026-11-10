@@ -1,35 +1,13 @@
 {
   "version": "1.25.5",
   "published": false,
-  "sourceFingerprint": "293bb5684316d7f231e30cab5a0e126dd52ea389a4c2b65df12672a3c75270fa",
-  "packageSha256": "81923ae275e5e8c9f98b62817d434474b4045c4b8c86a80cd278aec29b224be3",
+  "sourceFingerprint": "def26a13be032ffb11b041e1f5a423647db730ac8feebabb77151d4f03765e64",
+  "packageSha256": "e1ece067f01e169063d92e944c60a3d88b5c933630fa3a7ab6991a2a33cbaaaa",
   "native": [
     {
-      "case": "native-final2",
-      "reportSha256": "c6c92ef246b9c146013d5b63232c8147551f27d2fd2e010e09046932690bc1f0",
-      "protectionProfile": {
-        "passed": true,
-        "helperSha256": "e4defa56cb056afdbff1d6dcce78d38cadeb0e427291e69b1e3aac8628eb120a",
-        "realThunderbirdAPIs": true,
-        "realDownloadsAPI": true,
-        "nativeFilePicker": true,
-        "exportedSavedPolicy": true,
-        "explicitUiImport": true,
-        "previewReadOnly": true,
-        "cancelPreserved": true,
-        "unrelatedDataPreserved": true,
-        "v1Compatible": true,
-        "noConsentOrPermissionGrant": true,
-        "noProviderRequests": true,
-        "appearanceProfileCompatible": true,
-        "scope": "Actual UI and downloads in an isolated synthetic profile; no live providers. Storage/validation/stale failures have separate simulated checks."
-      },
-      "passed": true
-    },
-    {
-      "case": "upgrade-with-profile",
-      "reportSha256": "705bac682e6fac4ec4894623d414a8bff6f5ee898d2b3ccfbe7e7c0614be5394",
+      "case": "upgrade-with-profile-final-layout",
       "passed": true,
+      "reportSha256": "6758fbd055a515ac8c65905c449234ef0660a34b355f783a45ff3cefd56fc1a0",
       "protectionProfile": {
         "passed": true,
         "helperSha256": "e4defa56cb056afdbff1d6dcce78d38cadeb0e427291e69b1e3aac8628eb120a",
@@ -50,5 +28,79 @@
       "gracefulRestarts": 3,
       "forcedRestarts": 2
     }
-  ]
+  ],
+  "browser": [
+    {
+      "language": "de",
+      "zoom": 2,
+      "passed": 2,
+      "failed": 0,
+      "reportSha256": "aa9fdda2818e737b3c284dcb3d8b247c9687dc25175347171fbc0f3ba1fc6597",
+      "scope": "Chromium 154, simulated extension APIs, real pointer interaction"
+    }
+  ],
+  "ciLayoutCounterexample": {
+    "runId": 42860895176,
+    "language": "de",
+    "zoom": 2,
+    "browser": "158.0.8127.18",
+    "selector": "#localProfilePreview",
+    "observation": "sticky settings-save footer intercepted pointer events in both themes",
+    "localChromium154Reproduced": false,
+    "fix": "save actions in normal document flow"
+  },
+  "previousLocalCandidate": {
+    "version": "1.25.5",
+    "published": false,
+    "sourceFingerprint": "293bb5684316d7f231e30cab5a0e126dd52ea389a4c2b65df12672a3c75270fa",
+    "packageSha256": "81923ae275e5e8c9f98b62817d434474b4045c4b8c86a80cd278aec29b224be3",
+    "native": [
+      {
+        "case": "native-final2",
+        "reportSha256": "c6c92ef246b9c146013d5b63232c8147551f27d2fd2e010e09046932690bc1f0",
+        "protectionProfile": {
+          "passed": true,
+          "helperSha256": "e4defa56cb056afdbff1d6dcce78d38cadeb0e427291e69b1e3aac8628eb120a",
+          "realThunderbirdAPIs": true,
+          "realDownloadsAPI": true,
+          "nativeFilePicker": true,
+          "exportedSavedPolicy": true,
+          "explicitUiImport": true,
+          "previewReadOnly": true,
+          "cancelPreserved": true,
+          "unrelatedDataPreserved": true,
+          "v1Compatible": true,
+          "noConsentOrPermissionGrant": true,
+          "noProviderRequests": true,
+          "appearanceProfileCompatible": true,
+          "scope": "Actual UI and downloads in an isolated synthetic profile; no live providers. Storage/validation/stale failures have separate simulated checks."
+        },
+        "passed": true
+      },
+      {
+        "case": "upgrade-with-profile",
+        "reportSha256": "705bac682e6fac4ec4894623d414a8bff6f5ee898d2b3ccfbe7e7c0614be5394",
+        "passed": true,
+        "protectionProfile": {
+          "passed": true,
+          "helperSha256": "e4defa56cb056afdbff1d6dcce78d38cadeb0e427291e69b1e3aac8628eb120a",
+          "realThunderbirdAPIs": true,
+          "realDownloadsAPI": true,
+          "nativeFilePicker": true,
+          "exportedSavedPolicy": true,
+          "explicitUiImport": true,
+          "previewReadOnly": true,
+          "cancelPreserved": true,
+          "unrelatedDataPreserved": true,
+          "v1Compatible": true,
+          "noConsentOrPermissionGrant": true,
+          "noProviderRequests": true,
+          "appearanceProfileCompatible": false,
+          "scope": "Actual UI and downloads in an isolated synthetic profile; no live providers. Storage/validation/stale failures have separate simulated checks."
+        },
+        "gracefulRestarts": 3,
+        "forcedRestarts": 2
+      }
+    ]
+  }
 }

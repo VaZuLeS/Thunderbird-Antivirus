@@ -430,8 +430,8 @@
   text-underline-offset: 4px;
 }
 .settings-save {
-  position: sticky;
-  bottom: 16px;
+  /* Keep actions in normal flow: a zoomed or translated footer must not cover profile controls. */
+  position: static;
   display: flex;
   align-items: center;
   justify-content: space-between;
