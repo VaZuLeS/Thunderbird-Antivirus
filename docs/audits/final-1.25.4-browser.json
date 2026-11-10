@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-1.25.4-browser-handoff",
+  "extensionVersion": "1.25.4",
+  "packageSha256": "df7220351b039e49975ac2d25e4df777c2f97131a4a022fb5b0272c7e55a253e",
+  "passed": true,
+  "platform": "linux",
+  "clientVersion": "140.12.0",
+  "runnerSha256": "f32dd933fcae6932f080b8a01ad0e1ac68ee08413b95c7872c05a569aa7f35d0",
+  "reportSha256": "f2df4a482cbe858982bf50d722ada49460b0b799e0ab92eea89d839df05533a9",
+  "browserStarted": true,
+  "controlledLocalPageRequested": true,
+  "inlineFreshManualScan": {
+    "passed": true,
+    "realThunderbirdAPIs": true,
+    "syntheticTransport": true,
+    "liveProviderCalls": false,
+    "contextRenewed": false,
+    "completed": true,
+    "visibleCompletion": true,
+    "submissions": 1,
+    "historicalAuditUnchanged": true
+  },
+  "limits": [
+    "Isolated Chromium and local HTTPS fixture, no external website",
+    "OPENED still denotes Thunderbird API acceptance only",
+    "No Windows/macOS or automatic-update evidence"
+  ]
+}
