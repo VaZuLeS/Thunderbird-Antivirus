@@ -1,65 +1,39 @@
-# Aktueller Produktstand — 9. November 2026
+# Aktueller Produktstand — 10. November 2026
 
-Die veröffentlichte **1.25.3** ergänzt [aktionsbezogene urlscan-Kontingente und transparente Wartezeiten](URLSCAN_KONTINGENTE.md). [Freigabeumfang](VEROEFFENTLICHUNG_1_25_3.md). **1.25.2** wurde nach vollständiger Kandidaten- und Release-Abnahme veröffentlicht. Der Download enthält Version 1.25.2; SHA-256 `d43e7e442dc0744b09ad0e416329a9f822d1dae66c092c5bcf3ef850f8ad55c3` stimmt mit der veröffentlichten Prüfsummendatei überein. [Verifiziertes Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.2). Die vollständige Kandidaten- und Release-Abnahme ist bestanden; Downloadversion 1.25.3 und SHA-256 `d29233c452b770a9f20801b3c77e3319bff2d42d53caa5505875ffc600377022` sind verifiziert. [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_25_3.md#veröffentlichungsnachweis).
+**Veröffentlicht: 1.25.3.** [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.3), XPI-SHA-256 `d29233c452b770a9f20801b3c77e3319bff2d42d53caa5505875ffc600377022`. Paketversion und Downloadprüfsumme wurden unabhängig gelesen. Release-CI einschließlich sechs Browser-Sprachjobs, echtem Linux-Thunderbird-Lauf und Kandidatengate bestand. [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_25_3.md).
 
-Die veröffentlichte **1.25.2** ergänzt [detaillierte Hybrid-Analysis-Berichte in der Fachansicht](HYBRID_FACHANSICHT.md). [Freigabeumfang](VEROEFFENTLICHUNG_1_25_2.md); Veröffentlichung nach paketgebundener Abnahme. **1.25.1** wurde vollständig freigegeben; veröffentlichte XPI-Version und SHA-256 wurden nach Download verifiziert.
+**Aktuelle unveröffentlichte Stufe:** [Weiterentwicklung vom 10. November](ENTWICKLUNG_2026_11_10.md).
 
-Korrekturstand **1.25.1**: gemeinsame automatische Hintergrundprüfungen und sichtbare Prüfaktionen. [Konfiguration und Ablauf](AUTOMATISCHE_PRUEFUNGEN.md), [Release-Gate](VEROEFFENTLICHUNG_1_25_1.md). Bestehende Profile behalten ihre Freigabegrenzen bis zur ausdrücklichen Moduswahl.
+**Frühere unveröffentlichte Weiterentwicklung auf dieser Basis:** [Umsetzung und priorisierte offene Pakete](ENTWICKLUNG_2026_11_09.md). Der Quellstand verwendet nun die Kandidatenversion **1.25.4**, ist nicht bytegleich mit dem veröffentlichten XPI und nicht als neuer Release freigegeben. [Kandidatenumfang](releases/1.25.4.md), [Abnahmeprotokoll](live_test_1_25_4.md). Ein neuer Kandidat benötigt eigene paketgebundene Abnahme und eine neue Releaseidentität.
 
-Die **1.25.0** ergänzt verständliche und technische Ergebnisansichten, ein gemeinsames Anbieterregister sowie optionale lokale Administration mit separater Linkfreigabe. Schutzregeln bleiben nach Upgrade ausgeschaltet. [Release-Umfang und Nachweise](VEROEFFENTLICHUNG_1_25_0.md), [Einrichtung und Datenflüsse](EXTERNE_ANALYSEN_UND_LINKFREIGABE.md), [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.0). Die neue Passwort-/Freigabefunktion ist lokal unter Linux mit Thunderbird 153.5.1 ESR geprüft; Windows/macOS und echte Anbieterzugänge bleiben gesonderte Abnahmen.
+Die anschließende [Inline-Korrektur für „Jetzt prüfen“](INLINE_SCAN_KONTEXT.md) erneuert einen verlorenen Anzeigekontext beim ausdrücklichen Klick. Sie ist unveröffentlicht und besitzt eigene Paket-/Clientnachweise.
 
-Die **1.24.8** ergänzt die [dauerhafte Vorkommensidentität und Speicherschlüsselableitung (AVN-009), konfigurierbare lokale Schutzprofile mit Live-Differenzvorschau (AVN-010) sowie das Heuristik-Benchmarking und die Dokumentationsparität (AVN-005, AVN-016)](VEROEFFENTLICHUNG_1_24_8.md). Tatsächlicher [Veröffentlichungsstatus und Download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.8); ein vorbereiteter Quellstand allein bestätigt keine Veröffentlichung. 1.24.7 bleibt unverändert erhalten.
+## Funktionen und nachgewiesene Grenzen
 
-Die **1.24.7** ergänzt die [vollständige Überarbeitung der Remote-API-Parser (insb. Hybrid Analysis v2 Quick-Scan-Lebenszyklus), die Offline-Darstellung gespeicherter Berichte ohne aktive Einwilligung sowie die direkte Risiko-Score-Integration verifizierter Anhang- und Link-Befunde](VEROEFFENTLICHUNG_1_24_7.md). Tatsächlicher [Veröffentlichungsstatus und Download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.7); ein vorbereiteter Quellstand allein bestätigt keine Veröffentlichung. 1.24.6 bleibt unverändert erhalten.
-
-Die **1.24.6** ergänzt den [Fix für unlesbare gespeicherte Quellenlisten und präzisere Antwortzustände](HOTFIX_QUELLENLADEFEHLER_1_24_6.md). Tatsächlicher [Veröffentlichungsstatus und Download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.6); ein vorbereiteter Quellstand allein bestätigt keine Veröffentlichung. 1.24.5 bleibt unverändert erhalten.
-
-Der [Freigabeumfang 1.24.5](VEROEFFENTLICHUNG_1_24_5.md) ergänzt den Lade-/Darstellungsfix. Tatsächlicher [GitHub-Release-Status und Download](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.24.5); ein vorbereiteter Quellstand allein bestätigt keine Veröffentlichung. [1.24.4](VEROEFFENTLICHUNG_1_24_4.md) bleibt als vorheriger Release erhalten.
-
-Die **1.24.5** behebt einen [reproduzierten Ladeabbruch bei gespeicherten Analyseprotokollen](HOTFIX_ANALYSEERGEBNISSE_1_24_5.md) und ergänzt sichtbare Ergebnis-/Herkunftskennzeichnungen aller fünf Dienste im Popup und in der Nachricht. Die anschließende [Korrektur der Berichtsschaltflächen](BERICHTSAKTIONEN_1_24_5.md) bindet Aktionen an die konkrete Karte und den passenden Ressourcenpfad, auch bei gleichen Anhanghashes. Der aktuelle Veröffentlichungsstatus ist am obigen Release-Link maßgeblich.
-
-Der Freigabeumfang **1.24.4** ergänzt [sichtbare Analysequellen in Nachricht und Toolbar-Popup](ANALYSEQUELLEN_1_24_4.md). Der [nächste Umsetzungsschritt](FORTSCHRITT_AVN_001_002_009.md) korrigiert Ressourceninventare und Kontextcaches; die dauerhafte Identitäts-/Retentionsarbeit bleibt nach einem nativen Gegenbeweis offen. Die weitere [Umsetzung des Informationsdarstellungsplans](UMSETZUNG_INFORMATIONSDARSTELLUNG_ANALYSEQUELLEN.md) ergänzt Ressourcenbezug und ausstehende Prüfzustände. GitHub-Downloadverweise und Pages führen nun die Zielversion 1.24.7; tatsächlicher Veröffentlichungsstatus und Paketbytes sind am Release-Link zu prüfen. 1.24.3 bleibt historisch erhalten.
-
-Die bisherige Weiterentwicklung (Headerparser, Prüfherkunft, Entscheidungsgründe, Prüfumfang und lokaler Supportexport) ist im [aktuellen Ausführungsprotokoll](AUSFUEHRUNG_WEITERENTWICKLUNG_1_24_3.md) abgegrenzt.
-
-Die weitere [Identitätsuntersuchung](IDENTITAET_ANALYSEBEFUNDE.md) zeigt, dass auch unveränderte Nachrichteninhalte bei Statusänderung oder Komprimierung andere Rohdaten-Hashes erhalten können. Inhaltsnachweis, Nachrichtenvorkommen und historische Entscheidung benötigen getrennte Bindungen. Der ergänzte native Prüfrunner ändert weder den produktiven Speicherschlüssel noch vorhandene Daten.
-
-Der [anschließende Inhaltsumfang-Fix](PRUEFUMFANG_NACHRICHTENINHALT.md) verhindert einen lokalen Abschluss für nicht verfügbare Inhalte und zeigt Teilprüfung/Lesefehler in allen sechs Sprachen. Echte Linux-Prüfungen unter 140/153 bestätigen Nachricht und Popup sowie binäre Ressourcen. Erfolgreiche Cryptoabnahmen und die dauerhafte Identitätsmigration bleiben offen.
-
-Die Unicode-Abweichung ist danach [im begrenzten Thundy-AV-Eingangsweg für die belegten UTF-8/QP-Fälle behoben](UNICODE_NACHRICHTENEINGANG.md): Normale Texte bleiben beim bestehenden API-Aufruf; betroffene Textparts werden strikt verifiziert, unbestätigte Eingaben bleiben unvollständig. Die nativen 140/153-Matrizen bestehen mit 13 gültigen und einem bewusst ungültigen Fall. Erfolgreiche Cryptoabnahmen, große Nachrichten, andere Speicherbackends und dauerhafte Identitätsmigration sind weiter offen.
-
-Die [Quellenhistorie](QUELLENHISTORIE_ZUORDNUNG.md) wird jetzt von aktuellen Beobachtungen getrennt und nach einem Prozesswechsel nicht anhand alter Zahlen neu gebunden. Neue Quellenstände verwenden einen additiven UUID-Bereich; alte Quellenfelder bleiben erhalten. Gespeicherte Anhangkarten benötigen einen aktuellen Hashnachweis im aktiven Kontext. Dies ist ein defensiver Teilschritt, keine vollständige Ressourcen-/Vorkommensmigration oder unbegrenzte Archivierung.
-
-Vorheriger Ausführungsstand ist die [detaillierte Aufgabenliste](AUSFUEHRUNG_AUFGABEN_2026-11-02.md). Die [aktuelle Bestandsaufnahme und der Aufgabenplan](PRODUKTANALYSE_AUFGABENPLAN_2026-11-04.md) dokumentieren den aktuellen Entwicklungs- und Release-Stand; alte Statusmeldungen sind zeitgebundene Nachweise und keine aktuelle Freigabe.
-
-Die [begrenzte Protokollhistorie](PROTOKOLLHISTORIE.md) sichert nun die bisherigen gespeicherten Ressourcenprotokolle vor Ersetzung in derselben Transaktion. Lokales Wiederlesen desselben Anhanginhalts erhält den fertigen Bericht; volle Kapazität oder Commitfehler erhalten die alten Daten und werden angezeigt. Die bestehende Cacheaufbewahrung gilt weiterhin; unabhängige Langzeitarchivierung und dauerhafte Vorkommensmigration bleiben offen.
-
-Der [lokale Quellenbericht](QUELLENEXPORT.md) bietet eine datensparsame Vorschau und einen ausdrücklichen Download des aufgezeichneten Prüfstands. Aktuelle Beobachtungen und unbestätigte Historie bleiben getrennt. Ressourceninhalte und interne Kennungen sind ausgeschlossen; Kontextwechsel, Änderungen und Cachelöschung machen ältere Vorschauen ungültig. Es startet keine neue Analyse oder automatische Übermittlung.
-
-Die [Historiennavigation AVN-007.a](GROSSE_QUELLENHISTORIEN.md) macht alle bis zu 1.200 normalisierten historischen Beobachtungen in 30er-Seiten erreichbar. Ein auffälliger historischer Befund bleibt bereits in der Zusammenfassung sichtbar und kann direkt angesprungen werden. Die Zuordnung bleibt unbestätigt; aktuelle Bewertungen und gespeicherte Originaldaten werden dadurch nicht geändert.
-
-Die [großen aktiven Quellenansichten AVN-007.b](AKTIVE_QUELLENANSICHTEN.md) werden anschließend nativ untersucht und gezielt optimiert: Inhalte geschlossener Prüfdetaileinträge entstehen erst beim Öffnen, offene Details/Fokus bleiben bei Aktualisierungen erhalten. Der stärkste aktuelle Warnbefund ist direkt erreichbar; Quellenart und ursprüngliche Zeiten bleiben unverändert. Die Zusammenfassungen werden weiterhin vollständig angezeigt.
-
-Der [Lint-Prüfvertrag AVN-008.a](LINT_PRUEFVERTRAG.md) weist unvollständige Berichte, widersprüchliche Prozessresultate und zu breit passende Warnungsausnahmen ab. Der isolierte neuere Linter besteht die abgegrenzte Vergleichsprobe, wird ohne belegten Advisory-/Integrationsvorteil aber nicht erzwungen. Die App-Nutzdaten und das exakt nativ geprüfte Entwicklungspaket bleiben unverändert; dies ist eine Verbesserung der Buildprüfung, keine neue Analysefähigkeit.
-
-Die [native Exportnavigation AVN-011.b](EXPORT_NAVIGATION.md) prüft anschließend die tatsächliche Rückkehr im selben Inhaltstab mit und ohne Cachelöschung während der Abwesenheit. Unter Linux 140/153 wird jeweils ein neues Dokument mit leerer Vorschau geladen; ein gelöschter Kontext bleibt unzugänglich. Die vermutete Wiederherstellung desselben Dokuments wurde nicht beobachtet. Die begrenzte Untersuchung ist abgeschlossen und im bestehenden nativen CI-Schritt abgesichert; Runtime und Paketbytes bleiben unverändert.
-
-Der [reproduzierbare Paketaufbau AVN-014.b](REPRODUZIERBARE_PAKETE.md) erzeugt danach neue Kandidaten mit fester ZIP-Reihenfolge/-Metadatenpolitik und lokal gepinntem CLI-Aufruf. Der Runtime-Fingerprint bleibt unverändert, die neuen Archivbytes (SHA-256 `44acb38fff48ddff2fc21acd8b2d4e19ed7fb40045c6d05d243728963b24687c`) sind erneut unter Linux 140/153 sowie per manuellem Upgrade von 1.24.3 und Profilrestore unter 153 geprüft. Alte Paketnachweise bleiben ihren ursprünglichen Bytes zugeordnet. Reproduzierbarkeit gilt für die dokumentierte Python-/zlib-Toolchain; Signierung, Remote-Kandidatengate und Veröffentlichung bleiben getrennt.
-
-| Ebene | Stand |
+| Bereich | Tatsächlicher Stand |
 | --- | --- |
-| GitHub-Distribution | Zielversion 1.25.0, unsigniert; tatsächliche Verfügbarkeit über den Release-Link prüfen. 1.24.7 bleibt historisch erhalten |
-| Quellstand | 1.25.0 mit zwei Ergebnisansichten, gemeinsamen Anbieterregeln und optionaler lokaler Administration/Linkfreigabe; ATN-Signierung und automatische Updates bleiben eigenständige Schritte |
-| Tatsächliches Add-on | MV3-MailExtension; Hintergrundskripte, eigene HTML-Seiten, IndexedDB und browser.storage.local |
-| React | separate gekennzeichnete Websimulation mit eigenem localStorage; nicht im XPI |
-| Enterprise | deaktivierte Profile plus lokale Node-Werkzeuge; neuer Offline-Audit-Review aktiviert keinen Dienst |
-| Reale lokale Abnahme | isolierte Linux-Profile mit Thunderbird 140.12.0 ESR und 153.6.0 ESR; Sprach-/Upgrade-/Crashberichte im Kandidatennachweis |
-| Weiterhin offen | Windows/macOS, NVDA/VoiceOver, native DPI/High Contrast, automatische Updateverteilung, ATN, produktiver Enterprise-Pilot |
+| Add-on | MV3-MailExtension ab Thunderbird 140, Hintergrundskripte, eigene HTML-Seiten, IndexedDB und browser.storage.local |
+| Lokale Analyse | Heuristische Bewertung, HTML-Bereinigung, Linkschutz und getrennte Inhaltsverfügbarkeit; kein Malwarefreiheitsbeweis |
+| Externe Dienste | Fünf optionale Anbieter, gemeinsame Bewertung und Hintergrundaufträge; aktuelle echte Konto-/Rechte-/Quotenabnahme weiterhin separat offen |
+| Darstellung | Übersicht/Fachansicht, detaillierte Hybrid-Berichte, gemeinsame Themes und Dichte; sechs Sprachen EN/DE/FR/ES/IT/PL mitgeliefert |
+| Linkprotokoll | URL, Score, Prüfherkunft und historische Entscheidungssnapshots; OPENED bezeichnet nur Thunderbirds angenommene Öffnungsanforderung. PENDING bleibt nach Prozessverlust offen |
+| Identität | Metadatenfallback und aktuelle Ressourcenhashprüfungen sind implementiert. Dauerhafte Vorkommensidentität und sichere Gesamtmigration sind **nicht abgeschlossen**; [erneuter Gegenfall und Folgeentwurf](IDENTITAET_FOLGEVERTRAG_2026_11_09.md) |
+| Historie und Datenschutz | Additive Quellen-/Berichtsarchive im begrenzten Analysecache; separate Auditretention. Kein unbegrenztes oder unveränderliches Langzeitarchiv |
+| Einrichtung | Lokale Darstellungsprofile und Schutzprofile mit Vorschau/Bestätigung und v1/v2-Kompatibilität vorhanden; keine importierte Einwilligung oder versteckte Integrationsaktivierung |
+| Lokale Administration | Optionale profilbezogene Adminsperre, getrenntes Freigabepasswort und Wiederherstellung; kein zentraler SSO-/MDM-Dienst und kein Schutz vor Änderungen am Benutzerprofil |
+| Enterprise | Deaktivierte Konfigurationsprofile und lokale Node-Werkzeuge mit signierten Journalelementen, Outbox und Offline-Reviews. Produktive SSO/RBAC-/OS-/SEALED-Gesamtintegration weiterhin offen |
+| React | Separate gekennzeichnete Websimulation mit eigenem localStorage; nicht im XPI |
+| Installation und Rückweg | GitHub-XPI und begrenzte echte Linux-Upgrade-/Crash-/Profilrestore-Nachweise. ATN, automatische Updates und allgemeiner In-place-Downgrade dadurch nicht bestätigt |
+| Weitere Plattformen | Windows/macOS, NVDA/VoiceOver, native DPI/High Contrast weiterhin eigenständige offene Abnahmen |
 
-Die Dependency-Kollision Vite 8 / React-Plugin 4 wurde durch das passende Plugin 6.1.2 behoben. Der tldts-Pin und das mitgelieferte PSL-Bundle werden zusammen geprüft. Verlorene Releasefähigkeiten (fertige Analyseberichte, begrenztes Polling, Protokollmetadaten und Gateway-/urlscan-Authentifizierung) wurden wieder aufgenommen. Verspätete Berichte werden bei Kontextverlust verworfen und dürfen neuere Einreichungen nicht überschreiben.
+## Nachweise richtig lesen
 
-Der aktuelle Gate bindet reale Upgrade-/Crashnachweise und sechssprachige Browserberichte an Quellfingerprint und exakte Paketbytes. Ein alter Protokolltext, eine Testzahl oder ein Tag allein reicht nicht. Browser-/axe-Tests bleiben Simulationen; echte Thunderbirdberichte bleiben echte Clienttests mit ausdrücklich begrenztem Umfang.
+Aktuelle lokale Ausführung: [maschinenlesbarer Bericht](audits/development-2026-11-10.json). Vollständige Remote-Kandidatenabnahme für `c1c2878`: [CI 42736341784](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/42736341784) erfolgreich; keine Veröffentlichung oder automatische Updateversorgung daraus abgeleitet. Er trennt getestete Paketbytes, Quellfingerprints, Simulationen und echte Clientprüfungen. Historische Testzahlen, Tags, Dokumenttitel und erfolgreiche Deployments sind keine aktuelle Inhalts- oder Plattformfreigabe.
 
-**Keine Sicherheitsgarantie aus einem niedrigen Score:** unbekannte Providerresultate, fehlende Zustimmung oder eine fehlgeschlagene Analyse sind kein Sicherheitsnachweis. `OPENED` bestätigt nur die von Thunderbird angenommene Öffnungsanforderung; `PENDING` bleibt nach Prozessverlust offen. Backups und spätere Neubewertungen ändern historische Entscheidungssnapshots nicht.
+Die Pages-Bereitstellung für `90df6607` war erfolgreich. Ein öffentlicher Seiten-/Downloadkettenlauf wurde in dieser Umgebung nicht bestätigt: Der Proxy verweigerte den HTTPS-Zugriff. Daraus folgt weder Websiteausfall noch erfolgreiche öffentliche Inhaltsabnahme. Lokale Version-/Linkprüfungen sind davon getrennt.
 
-Die veröffentlichte 1.25.2 ergänzt [Admin- und Anzeigeeinstellungen sowie API-Korrekturen](EINSTELLUNGEN_ADMIN_UND_ANSICHT.md). Vollständige API-Vertragsabnahme und Live-Kontoberechtigungen bleiben gesonderte Nachweise.
+## Historische Entwicklung
+
+Die bisherigen [Aufgabenpläne](PRODUKTANALYSE_AUFGABENPLAN_2026-11-04.md), [Ausführungsprotokolle](AUSFUEHRUNG_WEITERENTWICKLUNG_1_24_3.md) und versionsgebundenen Release-/Live-Protokolle bleiben erhalten. Insbesondere sind Inhaltsumfang, begrenzter Unicode-Eingangsfix, Ressourceninventare, Quellenhistorie, Protokollrevisionen, Exportnavigation und reproduzierbarer Paketbau jeweils mit ihrem damaligen Prüfumfang zu lesen. Die neue Bestandsaufnahme ersetzt keine dieser historischen Paketidentitäten.
+
+Die [Fortführung vom 10. November](IDENTITAETSVERTRAG_2026_11_10.md) konkretisiert AVN-009.f ohne Migration. AVN-019.b ergänzt explizite Ressourcenauslassungen und Startfehler. Öffentliche Downloads folgen `distribution.json`, nicht automatisch der Entwicklungsversion.

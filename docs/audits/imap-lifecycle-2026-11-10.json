@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-native-imap-lifecycle",
+  "unreleased": true,
+  "extensionVersion": "1.25.4",
+  "packageSha256": "4a95a267c735732dce177c4b7af0048f249fdb79542abdcf19d46c965648264e",
+  "runnerSha256": "f32dd933fcae6932f080b8a01ad0e1ac68ee08413b95c7872c05a569aa7f35d0",
+  "storageHelperSha256": "aeaf20afed8ddefd22a3a5fc17fcf12fd81d13480d1eff05015415eeb9f3a7fe",
+  "reportSha256": "5de8842de2f25ca1d6c05cdbfed5c6550b4c6d0199a0082f44bb7e557e4b93e6",
+  "clientVersion": "140.12.0",
+  "platform": "linux",
+  "passed": true,
+  "gracefulRestarts": 4,
+  "imapLifecycle": {
+    "passed": true,
+    "stages": {
+      "initial": {
+        "messages": [
+          {
+            "id": 1,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "25a2dea1adebf053d3eb6f5a4da95ce5a2ef675404d64265161a07b9927173f1",
+            "bodySha256": "63af35c2874ea93fdcf6880631a0f9e4f9699b9b1e9273a689217247fc5de0c9"
+          },
+          {
+            "id": 2,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "c83a9607370b763c3722ea58829be6bf9f9e7d394b85febcf590f96cb8a53882",
+            "bodySha256": "ba9f64fa5223005955565c9f6154a3608280480f3d444f63ed31352c2079bf85"
+          }
+        ],
+        "folderCounts": [
+          2,
+          0,
+          0
+        ]
+      },
+      "copied": {
+        "messages": [
+          {
+            "id": 1,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "25a2dea1adebf053d3eb6f5a4da95ce5a2ef675404d64265161a07b9927173f1",
+            "bodySha256": "63af35c2874ea93fdcf6880631a0f9e4f9699b9b1e9273a689217247fc5de0c9"
+          },
+          {
+            "id": 2,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "c83a9607370b763c3722ea58829be6bf9f9e7d394b85febcf590f96cb8a53882",
+            "bodySha256": "ba9f64fa5223005955565c9f6154a3608280480f3d444f63ed31352c2079bf85"
+          },
+          {
+            "id": 3,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "25a2dea1adebf053d3eb6f5a4da95ce5a2ef675404d64265161a07b9927173f1",
+            "bodySha256": "63af35c2874ea93fdcf6880631a0f9e4f9699b9b1e9273a689217247fc5de0c9"
+          }
+        ],
+        "folderCounts": [
+          2,
+          1,
+          0
+        ]
+      },
+      "moved": {
+        "messages": [
+          {
+            "id": 1,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "25a2dea1adebf053d3eb6f5a4da95ce5a2ef675404d64265161a07b9927173f1",
+            "bodySha256": "63af35c2874ea93fdcf6880631a0f9e4f9699b9b1e9273a689217247fc5de0c9"
+          },
+          {
+            "id": 3,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "25a2dea1adebf053d3eb6f5a4da95ce5a2ef675404d64265161a07b9927173f1",
+            "bodySha256": "63af35c2874ea93fdcf6880631a0f9e4f9699b9b1e9273a689217247fc5de0c9"
+          },
+          {
+            "id": 4,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "c83a9607370b763c3722ea58829be6bf9f9e7d394b85febcf590f96cb8a53882",
+            "bodySha256": "ba9f64fa5223005955565c9f6154a3608280480f3d444f63ed31352c2079bf85"
+          }
+        ],
+        "folderCounts": [
+          1,
+          1,
+          1
+        ]
+      },
+      "flagsChanged": {
+        "messages": [
+          {
+            "id": 1,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": true,
+            "flagged": true,
+            "rawSha256": "25a2dea1adebf053d3eb6f5a4da95ce5a2ef675404d64265161a07b9927173f1",
+            "bodySha256": "63af35c2874ea93fdcf6880631a0f9e4f9699b9b1e9273a689217247fc5de0c9"
+          },
+          {
+            "id": 3,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "25a2dea1adebf053d3eb6f5a4da95ce5a2ef675404d64265161a07b9927173f1",
+            "bodySha256": "63af35c2874ea93fdcf6880631a0f9e4f9699b9b1e9273a689217247fc5de0c9"
+          },
+          {
+            "id": 4,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "c83a9607370b763c3722ea58829be6bf9f9e7d394b85febcf590f96cb8a53882",
+            "bodySha256": "ba9f64fa5223005955565c9f6154a3608280480f3d444f63ed31352c2079bf85"
+          }
+        ],
+        "folderCounts": [
+          1,
+          1,
+          1
+        ]
+      },
+      "deleted": {
+        "messages": [
+          {
+            "id": 3,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "25a2dea1adebf053d3eb6f5a4da95ce5a2ef675404d64265161a07b9927173f1",
+            "bodySha256": "63af35c2874ea93fdcf6880631a0f9e4f9699b9b1e9273a689217247fc5de0c9"
+          },
+          {
+            "id": 4,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "c83a9607370b763c3722ea58829be6bf9f9e7d394b85febcf590f96cb8a53882",
+            "bodySha256": "ba9f64fa5223005955565c9f6154a3608280480f3d444f63ed31352c2079bf85"
+          }
+        ],
+        "folderCounts": [
+          0,
+          1,
+          1
+        ]
+      },
+      "compacted": {
+        "messages": [
+          {
+            "id": 3,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "25a2dea1adebf053d3eb6f5a4da95ce5a2ef675404d64265161a07b9927173f1",
+            "bodySha256": "63af35c2874ea93fdcf6880631a0f9e4f9699b9b1e9273a689217247fc5de0c9"
+          },
+          {
+            "id": 4,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "c83a9607370b763c3722ea58829be6bf9f9e7d394b85febcf590f96cb8a53882",
+            "bodySha256": "ba9f64fa5223005955565c9f6154a3608280480f3d444f63ed31352c2079bf85"
+          }
+        ],
+        "folderCounts": [
+          0,
+          1,
+          1
+        ]
+      },
+      "restarted": {
+        "messages": [
+          {
+            "id": 1,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "c83a9607370b763c3722ea58829be6bf9f9e7d394b85febcf590f96cb8a53882",
+            "bodySha256": "ba9f64fa5223005955565c9f6154a3608280480f3d444f63ed31352c2079bf85"
+          },
+          {
+            "id": 2,
+            "headerMessageId": "imap-lifecycle-duplicate@example.invalid",
+            "folderId": null,
+            "read": false,
+            "flagged": false,
+            "rawSha256": "25a2dea1adebf053d3eb6f5a4da95ce5a2ef675404d64265161a07b9927173f1",
+            "bodySha256": "63af35c2874ea93fdcf6880631a0f9e4f9699b9b1e9273a689217247fc5de0c9"
+          }
+        ],
+        "folderCounts": [
+          0,
+          1,
+          1
+        ]
+      }
+    },
+    "mutationActor": "Privileged test harness; no added extension permissions",
+    "helperSha256": "206639b16513b9ee6bac68e472140f54d546d74d64e2a48fda33e7d382daf7e1",
+    "realThunderbirdAPIs": true,
+    "realImapServer": true,
+    "loopbackOnly": true,
+    "synthetic": true,
+    "liveProviderCalls": false,
+    "auditUnchanged": true,
+    "permissions": {
+      "accountsRead": false,
+      "onMoved": false,
+      "onCopied": false,
+      "onDeleted": false
+    },
+    "scope": "Actual IMAP copy/move/flags/delete/compact/restart with read-only extension observations. No durable occurrence inference, retention change or permission addition."
+  },
+  "limits": [
+    "Isolated synthetic loopback server, not a production mailbox",
+    "Mutations by privileged test harness, not by extension",
+    "Fresh authentication supplied by test harness after restart",
+    "No occurrence rebind, new permission or migration",
+    "No long-running, network-loss or UIDVALIDITY-change evidence"
+  ]
+}

@@ -25,8 +25,8 @@ async function fixture(
   });
   t.after(() => dom.window.close());
   await new Promise((r) =>
-    dom.window.document.readyState === "loading"
-      ? dom.window.document.addEventListener("DOMContentLoaded", r, {
+    dom.window.document.readyState !== "complete"
+      ? dom.window.addEventListener("load", r, {
           once: true,
         })
       : r(),

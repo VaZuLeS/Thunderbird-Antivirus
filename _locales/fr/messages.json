@@ -2476,5 +2476,41 @@
   },
   "analysisLocalBackoff": {
     "message": "Cette tentative a été différée localement ; aucune nouvelle requête n’a été envoyée au fournisseur."
+  },
+  "scanState_deferred": {
+    "message": "Analyse différée : tous les emplacements en arrière-plan sont occupés. Réessayez après la fin d’une autre analyse."
+  },
+  "scanCoverage": {
+    "message": "Certaines ressources n’ont pas été vérifiées."
+  },
+  "scanCoverageAttachments": {
+    "message": "Pièces jointes préparées"
+  },
+  "scanCoverageLinks": {
+    "message": "Liens sélectionnés"
+  },
+  "scanCoverage_read_failed": {
+    "message": "Une pièce jointe n’a pas pu être lue ou hachée."
+  },
+  "scanCoverage_size_limit": {
+    "message": "Une pièce jointe dépasse la limite d’analyse de 25 Mio."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "La limite de ressources de l’analyse a été atteinte."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "La liste des pièces jointes est incomplète."
+  },
+  "scanFailure_source_capacity": {
+    "message": "L’historique des sources est plein. Cette analyse n’a pas démarré ; les données existantes ont été conservées."
+  },
+  "scanFailure_cancelled": {
+    "message": "L’analyse a été annulée. Cela ne constitue pas un résultat terminé."
+  },
+  "scanFailure_timeout": {
+    "message": "Le délai d’analyse a expiré. Les résultats restent incomplets."
+  },
+  "scanFailure_scan_failed": {
+    "message": "L’analyse n’a pas pu se terminer. Les données existantes ont été conservées."
   }
 }

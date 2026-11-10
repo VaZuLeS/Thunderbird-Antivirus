@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-native-storage-lifecycle",
+  "unreleased": true,
+  "extensionVersion": "1.25.4",
+  "packageSha256": "4a95a267c735732dce177c4b7af0048f249fdb79542abdcf19d46c965648264e",
+  "clientVersion": "140.12.0",
+  "platform": "linux",
+  "reportSha256": "3436d6320437499076b341becea8fdc46894e0e91dc68fa827380986a88f7276",
+  "mainRunnerSha256": "d13fcf44255f748d3b217077574ca12e21b10906b3dd5fdf9208200e8c72f586",
+  "helperAtExecutionSha256": null,
+  "passed": true,
+  "gracefulRestarts": 3,
+  "storageLifecycle": {
+    "database": {
+      "realIndexedDB": true,
+      "controlledCleanupClock": true,
+      "backwardKeeps": true,
+      "forwardRemoves": true,
+      "oldestGone": true,
+      "retained": true,
+      "unreadableRetained": true,
+      "putRequestSucceededBeforeAbort": true,
+      "aborted": true,
+      "atomicPreserved": true,
+      "byteLimitRefused": true,
+      "byteLimitPreserved": true
+    },
+    "coldOpen": {
+      "expiredRemoved": true,
+      "freshRetained": true,
+      "futureRetained": true
+    },
+    "longSessionKeepsAgedRecord": true,
+    "passed": true,
+    "realThunderbirdAPIs": true,
+    "syntheticRecords": true,
+    "liveProviderCalls": false,
+    "audit": {
+      "count": 2000,
+      "originalsPreserved": true,
+      "pendingUnchanged": true,
+      "cacheClearKeepsAudit": true
+    },
+    "profileRestore": {
+      "passed": true,
+      "auditSnapshotPreserved": true,
+      "analysisSnapshotPreserved": true,
+      "newerEventsSeparatelySaved": true,
+      "newerEventExportSha256": "deb36ac1724a69c8e19455d31dbca1dcfd1f21bde3ff3bc7297443a4204754f7",
+      "newerEventsNotMerged": true,
+      "imapServerNotRolledBack": true
+    },
+    "scope": "Actual native IndexedDB/storage/profile restore; injected transaction abort and controlled cleanup timestamps; real loopback IMAP when configured. No disk failure or unlimited archive guarantee."
+  },
+  "limits": [
+    "Synthetic records in isolated profile",
+    "Real loopback IMAP, not production provider",
+    "Controlled cleanup timestamps, not changed OS clock",
+    "Injected transaction abort, not disk or power failure",
+    "No continuous multi-day session",
+    "No automatic update or in-place downgrade",
+    "No general occurrence identity or migration approval"
+  ],
+  "withoutImapRun": {
+    "passed": true,
+    "packageSha256": "4a95a267c735732dce177c4b7af0048f249fdb79542abdcf19d46c965648264e",
+    "mainRunnerSha256": "d13fcf44255f748d3b217077574ca12e21b10906b3dd5fdf9208200e8c72f586",
+    "helperSha256": "88bfcbb8b4dc15d9774223af42a9076707bbd2d9049272551553b92f70243dce",
+    "reportSha256": "28746065e678519bd2836c6f15bd760476237fe2da30410d550ee2ff2cebafe6",
+    "gracefulRestarts": 3,
+    "scope": "Same CLI invocation as CI; actual IndexedDB and full profile restore, no IMAP configured"
+  }
+}

@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import select
+import runpy
 import shutil
 import signal
 import socket
@@ -86,16 +87,16 @@ class Marionette:
             'sandbox': 'default', 'scriptTimeout': 35000,
         })['value']
 
-    def page(self, script, args=None, browser='window.gTabmail.currentTabInfo.browser'):
+    def page(self, script, args=None, browser='window.gTabmail.currentTabInfo.browser', sandbox='default'):
         # Thunderbird content tabs require the shipped Marionette actor. No API mocks.
         result = self.js('''const done=arguments[arguments.length-1];
             const target=(''' + browser + ''');
             if(!target?.browsingContext?.currentWindowGlobal){done(null);return;}
             const actor=target.browsingContext.currentWindowGlobal.getActor("MarionetteCommands");
             actor.executeScript(arguments[0],arguments[1],
-                {newSandbox:true,sandboxName:"default",async:false,timeout:30000})
+                {newSandbox:true,sandboxName:arguments[2],async:false,timeout:30000})
                 .then(done,e=>done({automationError:String(e)}));''',
-                         [script, args or []], asynchronous=True)
+                         [script, args or [], sandbox], asynchronous=True)
         if isinstance(result, dict) and 'automationError' in result:
             error = result['automationError']
             if error.startswith("AbortError: Actor 'MarionetteCommands' destroyed before query"):
@@ -849,6 +850,30 @@ def check_identity_lifecycle(m, base, out, report, restart):
     assert all(len(r['attachments'])==1 for r in initial),initial
     assert len({(r['attachments'][0]['partName'],r['attachments'][0]['name'],r['attachments'][0]['size']) for r in initial})==1,initial
     assert len({r['attachments'][0]['sha256'] for r in initial})==2,initial
+    probe['runtimeConsequences']=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;
+      const a=await b.messages.get(arguments[0]),other=await b.messages.get(arguments[1]);
+      const aPart=(await b.messages.listAttachments(a.id))[0],otherPart=(await b.messages.listAttachments(other.id))[0];
+      const beforeAudit=JSON.stringify((await b.storage.local.get('linkAuditLog')).linkAuditLog);
+      const result=(part,digest,verdict)=>{
+        const value=new bg.Object();value.attachmentName=part.name;value.hybrid_data=new bg.Object();
+        Object.assign(value.hybrid_data,{sha256:digest,partName:part.partName,state:'KNOWN'});
+        value.report=new bg.Object();Object.assign(value.report,{state:'COMPLETE',verdict});
+        const values=new bg.Array();values.push(value);return values;
+      };
+      const score=findings=>{const options=new bg.Object();options.attachmentFindings=findings;return bg.calculateThreatScore(a.author,new bg.Array(),options).score;};
+      await bg.indexedDB_save_batch_hybrid_data_to_db(a,result(aPart,arguments[2],'malicious'));
+      const original=await bg.collectAttachmentFindings(a),guarded=await bg.collectAttachmentFindings(other);
+      await bg.indexedDB_save_batch_hybrid_data_to_db(other,result(otherPart,arguments[3],'clean'));
+      const after=await bg.collectAttachmentFindings(a),record=await bg.getFromStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(a));
+      return {realThunderbirdAPIs:true,syntheticReports:true,liveProviderCalls:false,
+        sameStorageKey:bg.resolveMessageStorageKey(a)===bg.resolveMessageStorageKey(other),
+        foreignAttachmentFindingRejected:guarded.length===0,originalFindingsBefore:original.length,originalFindingsAfter:after.length,
+        originalScoreBefore:score(original),originalScoreAfter:score(after),
+        priorReportArchived:record.analysisReportArchive.entries.some(entry=>entry.resource.report?.verdict==='malicious'),
+        auditUnchanged:beforeAudit===JSON.stringify((await b.storage.local.get('linkAuditLog')).linkAuditLog)};
+    })();''',[initial[0]['id'],initial[1]['id'],initial[0]['attachments'][0]['sha256'],initial[1]['attachments'][0]['sha256']])
+    assert probe['runtimeConsequences']['auditUnchanged'] and probe['runtimeConsequences']['priorReportArchived'],probe['runtimeConsequences']
     keys=m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");
       return Array.from(MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Identity Source").messages).map(h=>h.messageKey).sort((a,b)=>a-b);''')
     for key, destination, move in [(keys[0],'Identity Copy',False),(keys[1],'Identity Moved',True)]:
@@ -1433,7 +1458,8 @@ def probe_source_export_navigation(m, base, invalidate=False):
     if invalidate:
         m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
           await bg.clearStore(await bg.getSharedDB(),"hybridanalysis");
-          await b.runtime.sendMessage({action:"clearMemoryCaches"});return true;})();''')
+          const result=await b.runtime.sendMessage({action:"clearMemoryCaches"});
+          if(result?.success!==true&&result?.status!=="success")throw Error("Cache clear refused: "+(result?.code||"unknown"));return true;})();''')
     m.page('setTimeout(()=>history.back(),0);')
     wait_for(lambda:m.page('return location.pathname.endsWith("/source_export.html")&&document.readyState==="complete";'))
     observed=m.page('''return {sameDocument:window.wrappedJSObject.__thundyNavigationMarker==="original-export-document",
@@ -1501,7 +1527,11 @@ def check_source_export(m, base, out, report, restart, display):
     assert downloaded==expected
     navigation=[probe_source_export_navigation(m,base),probe_source_export_navigation(m,base,invalidate=True)]
     report['sourceExportNavigation']={'passed':True,'cases':navigation,'scope':'Actual same-tab forward navigation and history.back; document reuse observed rather than assumed. No synthetic pageshow event.'}
-    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;await bg.clearStore(await bg.getSharedDB(),"hybridanalysis");await b.runtime.sendMessage({action:"clearMemoryCaches"});return true;})();''')
+    refused=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"clearMemoryCaches"});')
+    assert refused.get('success') is False,refused
+    options_browser='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;await bg.clearStore(await bg.getSharedDB(),"hybridanalysis");const result=await b.runtime.sendMessage({action:"clearMemoryCaches"});
+          if(result?.success!==true&&result?.status!=="success")throw Error("Cache clear refused: "+(result?.code||"unknown"));return true;})();''',browser=options_browser)
     wait_for(lambda:m.page('return document.getElementById("sourceExportSave").disabled&&document.getElementById("sourceExportContent").textContent==="";'))
     m.page('document.getElementById("sourceExportPreview").click();')
     wait_for(lambda:m.page('return document.getElementById("sourceExportStatus").textContent.startsWith("The message context is no longer available");'))
@@ -1512,7 +1542,7 @@ def check_source_export(m, base, out, report, restart, display):
     m.page('document.getElementById("sourceExportPreview").click();')
     wait_for(lambda:m.page('return document.getElementById("sourceExportStatus").textContent.startsWith("The message context is no longer available");'))
     assert m.page('return document.getElementById("sourceExportSave").disabled&&document.getElementById("sourceExportContent").textContent==="";')
-    report['sourceExport']={'passed':True,'realPopupEntry':True,'realGtkDownload':True,'downloadMatchesPreview':True,'cancelAndCacheClearInvalidate':True,'oldRuntimeLinkRefusedAfterRestart':True,'syntheticObservations':True,'liveProviderCalls':False,'saveControl':save_control,'providers':sorted({row['provider'] for row in downloaded['current']['rows']}),'canonicalDownloadSha256':hashlib.sha256(json.dumps(downloaded,sort_keys=True).encode()).hexdigest(),'scope':'Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance.'}
+    report['sourceExport']={'passed':True,'realPopupEntry':True,'realGtkDownload':True,'downloadMatchesPreview':True,'nonAdminPageClearRefused':True,'cancelAndCacheClearInvalidate':True,'oldRuntimeLinkRefusedAfterRestart':True,'syntheticObservations':True,'liveProviderCalls':False,'saveControl':save_control,'providers':sorted({row['provider'] for row in downloaded['current']['rows']}),'canonicalDownloadSha256':hashlib.sha256(json.dumps(downloaded,sort_keys=True).encode()).hexdigest(),'scope':'Native Linux APIs and real download of allowlisted snapshot; synthetic observations, no live provider or screen reader acceptance.'}
     return m
 
 
@@ -1813,6 +1843,8 @@ def check_administration(m, base, out, report):
     m.screenshot(out/'link-approval.png')
     m.page('document.getElementById("confirmed").checked=true;document.getElementById("password").value="native-approval-password";document.getElementById("approvalForm").requestSubmit();')
     wait_for(lambda:m.page('return document.getElementById("approvalForm").hidden;'))
+    assert m.page('return document.activeElement?.id;')=='status'
+    assert m.page('return document.getElementById("approvalScore").textContent;')
     snapshot=m.page('return window.wrappedJSObject.browser.storage.local.get("linkAuditLog");')
     approved=[r for r in snapshot['linkAuditLog'] if r.get('approvalDecision')=='granted']
     assert len(approved)==1 and approved[0]['outcome']=='OPENED' and approved[0]['openAttempts']==1,approved
@@ -1825,14 +1857,44 @@ def check_automatic_scans(m, base, out, report, display):
     open_page(m,base+'options.html')
     wait_for(lambda:m.page('return !!document.getElementById("scanMode");'))
     assert m.page('return document.getElementById("scanMode").value;') == ''
+    pid=m.js('return Services.appinfo.processID;')
+    before=owned_process_memory(pid)
+    started=time.monotonic()
+    capacity=m.page('''return (async()=>{
+      const raw=await window.wrappedJSObject.browser.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;
+      let prepared=0;const releases=[];
+      const environment={now:()=>Date.now(),uuid:()=>crypto.randomUUID(),setTimeout:(fn,ms)=>setTimeout(fn,ms),clearTimeout:id=>clearTimeout(id),
+        prepare:async input=>{prepared++;const value=new bg.Object();value.fingerprint=String(input.id);value.providers=new bg.Object();return value;},begin:async()=>{},changed:async()=>{},
+        run:job=>{job.total=1;return new Promise(resolve=>releases.push(resolve));}};
+      const environmentObject=new bg.Object();for(const [key,value] of Object.entries(environment))environmentObject[key]=value;
+      const engine=bg.createScanCoordinator(environmentObject);
+      const input=id=>{const value=new bg.Object();value.id=id;return value;};
+      try {
+        for(let id=1;id<=200;id++)await engine.start(input(id));
+        const before=prepared,deferred=await engine.start(input(201));const rejectedBeforePreparation=prepared===before;
+        const retained=Array.from({length:200},(_,i)=>engine.get(i+1)).filter(j=>j?.state==='running').length;
+        const same=(await engine.start(input(1))).attached===true;
+        await new Promise(resolve=>setTimeout(resolve,0));releases[0]();await engine.settled(1);
+        const retry=await engine.start(input(201));
+        await new Promise(resolve=>setTimeout(resolve,0));for(const resolve of releases)resolve();
+        await Promise.all(Array.from({length:200},(_,i)=>engine.settled(i+2)));
+        return {passed:retained===200&&before===200&&deferred.state==='deferred'&&deferred.assessmentIncomplete===true&&same&&!!retry.id,
+          retainedActive:retained,rejectedBeforePreparation,deferredIsIncomplete:deferred.assessmentIncomplete===true,reuseAtCapacity:same,retryAfterCompletion:!!retry.id};
+      } finally {engine.invalidate({silent:true,clear:true});for(const resolve of releases)resolve();}
+    })();''')
+    assert capacity['passed'] and capacity['rejectedBeforePreparation'],capacity
+    report['scanCapacity']={**capacity,'syntheticCoordinatorEnvironment':True,'realThunderbirdEngine':True,'liveProviderCalls':False,
+      'elapsedMs':round((time.monotonic()-started)*1000),'memoryBefore':before,'memoryAfter':owned_process_memory(pid),
+      'scope':'Coordinator admission under delayed synthetic work; process memory includes the client and automation, not a global memory bound.'}
     m.js('''const {ExtensionPermissions}=ChromeUtils.importESModule("resource://gre/modules/ExtensionPermissions.sys.mjs");return ExtensionPermissions.add(arguments[0],{permissions:[],origins:["https://hybrid-analysis.com/*","https://urlscan.io/*"]},WebExtensionPolicy.getByID(arguments[0]).extension);''',[ADDON_ID])
     setup=m.page('''return (async()=>{
       const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
       const message=(await b.messages.query({subject:"Thundy AV synthetic live test"})).messages.find(m=>m.subject==="Thundy AV synthetic live test");
-      const calls=[];window.wrappedJSObject.__automaticScanCalls=calls;
+      const calls=[];window.wrappedJSObject.__automaticScanCalls=calls;window.wrappedJSObject.__holdRetryResponses=false;window.wrappedJSObject.__retryResponseReleases=[];
       const errors=[];window.wrappedJSObject.__automaticScanErrors=errors;bg.console.error=(...args)=>errors.push(args.map(x=>typeof x==='string'?x:x?.message||x?.name||'error').join(' '));
       bg.fetch=async(url,options={})=>{
         url=String(url);calls.push({url,method:options.method||'GET',body:typeof options.body==='string'?options.body:null});
+        if(window.wrappedJSObject.__holdRetryResponses)await new Promise(resolve=>window.wrappedJSObject.__retryResponseReleases.push(resolve));
         let data;
         if(url==='https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis')data={id:'native-hybrid-job',verdict:'clean',finished:true};
         else if(url.includes('hybrid-analysis.com/api/v2/quick-scan/'))data={id:'native-hybrid-job',verdict:'clean',finished:true};
@@ -1867,8 +1929,12 @@ def check_automatic_scans(m, base, out, report, display):
     wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
     popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.textContent==="Check again";',browser=popup))
+    m.page('window.wrappedJSObject.__holdRetryResponses=true;',browser=options)
     m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();',browser=popup)
+    admitted=wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='running' else None),20)
+    wait_for(lambda:m.page('return window.wrappedJSObject.__retryResponseReleases.length>0;',browser=options))
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    m.page('window.wrappedJSObject.__holdRetryResponses=false;for(const resolve of window.wrappedJSObject.__retryResponseReleases.splice(0))resolve();',browser=options)
     wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='completed' else None),45)
     later=m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options)
     assert len([c for c in later if c['method']=='POST' and 'urlscan.io' in c['url']])>len(us)
@@ -1980,6 +2046,181 @@ def check_provider_results(m, base, out, report, display, message_id):
     report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'hybridExpertDetails':True,'actionScopedQuota':True,'syntheticTransport':True}
 
 
+def check_inline_scan(m, base, out, report, display, fresh=False):
+    """An actual Check now click, optionally after cache clear, no real providers."""
+    open_page(m,base+'options.html')
+    m.js('''const {ExtensionPermissions}=ChromeUtils.importESModule("resource://gre/modules/ExtensionPermissions.sys.mjs");return ExtensionPermissions.add(arguments[0],{permissions:[],origins:["https://urlscan.io/*"]},WebExtensionPolicy.getByID(arguments[0]).extension);''',[ADDON_ID])
+    setup=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;
+      const calls=[];window.wrappedJSObject.inlineScanCalls=calls;
+      bg.fetch=async(url,options={})=>{
+        url=String(url);calls.push({url,method:options.method||'GET'});
+        if(url==='https://urlscan.io/api/v1/scan/')return new bg.Response(JSON.stringify({uuid:'inline-context-job'}),{status:200});
+        if(url==='https://urlscan.io/api/v1/result/inline-context-job/')return new bg.Response(JSON.stringify({verdicts:{overall:{malicious:false,score:0}},page:{url:'https://destination.example.invalid/test'}}),{status:200});
+        throw Error('Unexpected synthetic route');
+      };
+      await b.storage.local.set({scanMode:'manual',alwaysManual:true,externalAnalysisConsent:true,privacyTier:'max',autoScanLinks:false,apikey:'',virustotalApikey:'',urlhausApikey:'',urlscanApikey:'inline-synthetic-key',ipReputationProvider:'none'});
+      const message=(await b.messages.query({subject:'Thundy AV synthetic live test'})).messages.find(item=>item.subject==='Thundy AV synthetic live test');
+      await b.messageDisplay.open({messageId:message.id,location:'tab'});return {messageId:message.id};
+    })();''')
+    options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
+    def snapshot():
+        return m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[setup['messageId']],browser=options)
+    wait_for(lambda:snapshot().get('scanJob',{}).get('state')=='blocked')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.textContent==="Check now";'))
+    # Let the existing reconfiguration notification settle, without replaying any writes.
+    m.page('return new Promise(resolve=>setTimeout(resolve,500));')
+    before=snapshot()
+    invalidated=m.page('''return (async()=>{
+      const b=window.wrappedJSObject.browser;
+      const old=(await b.storage.local.get('linkAuditLog')).linkAuditLog;
+      if(!arguments[0]){
+        const result=await b.runtime.sendMessage({action:'clearMemoryCaches'});
+        if(!result.success)throw Error('Cache clear rejected');
+      }
+      window.wrappedJSObject.inlineAuditBefore=JSON.stringify(old);return true;
+    })();''',[fresh],browser=options)
+    renewed=snapshot()
+    assert invalidated
+    assert (before['contextToken']==renewed['contextToken']) if fresh else (before['contextToken']!=renewed['contextToken'])
+    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();')
+    def outcome():
+        state=snapshot()
+        if state.get('scanJob',{}).get('state')=='completed':return state
+        failed=m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes("Check failed; try again");')
+        if failed:raise AssertionError('Inline Check now failed in fresh profile' if fresh else 'Inline Check now failed after cache clear')
+        return None
+    finished=wait_for(outcome,30)
+    completed_label=json.loads((ROOT/'_locales/en/messages.json').read_text())['scanState_completed']['message']
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[completed_label]))
+    calls=m.page('return window.wrappedJSObject.inlineScanCalls;',browser=options)
+    assert len([row for row in calls if row['method']=='POST'])==1,calls
+    unchanged=m.page('return window.wrappedJSObject.browser.storage.local.get("linkAuditLog").then(value=>JSON.stringify(value.linkAuditLog)===window.wrappedJSObject.inlineAuditBefore);',browser=options)
+    assert unchanged
+    m.screenshot(out/('inline-scan-fresh-profile.png' if fresh else 'inline-scan-after-cache-clear.png'))
+    report['inlineFreshManualScan' if fresh else 'inlineManualScan']={'passed':True,'realThunderbirdAPIs':True,'syntheticTransport':True,'liveProviderCalls':False,'contextRenewed':before['contextToken']!=renewed['contextToken'],'completed':finished['scanJob']['state']=='completed','visibleCompletion':True,'submissions':1,'historicalAuditUnchanged':unchanged}
+    report['passed']=True
+    report['scope']='Linux X11 GUI; actual Thunderbird APIs; controlled synthetic urlscan transport; no live provider calls'
+
+
+
+def check_scan_coverage(m, base, out, report, display, baseline=False):
+    """Actual message/popup rendering with explicit inventory fault injection."""
+    check_inline_scan(m,base,out,report,display,fresh=True)
+    options='window.gTabmail.tabInfo.filter(tab=>tab.browser?.currentURI.spec.endsWith("/options.html")).at(-1).browser'
+    target=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;
+      const message=(await b.messages.query({subject:'Thundy AV synthetic live test'})).messages.find(x=>x.subject==='Thundy AV synthetic live test');
+      const list=bg.browser.messages.listAttachments,get=bg.browser.messages.getAttachmentFile;
+      bg.browser.messages.listAttachments=async id=>id===message.id?[{partName:'1.2',name:'unreadable.bin',size:12}]:list(id);
+      bg.browser.messages.getAttachmentFile=async(id,part)=>{if(id===message.id&&part==='1.2')throw Error('Injected read failure');return get(id,part);};
+      return message.id;
+    })();''',browser=options)
+    before=m.page('return window.wrappedJSObject.inlineScanCalls.length;',browser=options)
+    old=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[target],browser=options)['scanJob']['id']
+    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();')
+    def result():
+        r=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[target],browser=options)
+        return r if r.get('scanJob',{}).get('id')!=old and r.get('scanJob',{}).get('state') in ['completed','incomplete','failed'] else None
+    final=wait_for(result,30)
+    expected='completed' if baseline else 'incomplete'
+    assert final['scanJob']['state']==expected,final['scanJob']
+    key='scanState_'+expected
+    label=json.loads((ROOT/'_locales/en/messages.json').read_text())[key]['message']
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[label]))
+    if not baseline:
+        assert final['scanJob']['coverage']['attachments']['readFailed']==1,final['scanJob']
+        assert final['scanJob']['assessmentIncomplete'] is True
+        warning=json.loads((ROOT/'_locales/en/messages.json').read_text())['scanCoverage_read_failed']['message']
+        wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[warning]))
+    m.screenshot(out/'scan-coverage-message.png')
+    point=m.js('''const b=window.gTabmail.currentTabInfo.chromeBrowser,r=b.contentDocument.getElementById("thundy-av_bludau-it-services_de-messageDisplayAction-toolbarbutton").getBoundingClientRect(),p=b.getBoundingClientRect();return {x:window.mozInnerScreenX+p.x+r.x+r.width/2,y:window.mozInnerScreenY+p.y+r.y+r.height/2};''')
+    native_click(display,point['x'],point['y'])
+    popup='document.querySelector(\'browser[webextension-view-type="popup"]\')'
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[label],browser=popup))
+    if not baseline:
+        wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[warning],browser=popup))
+    m.screenshot(out/'scan-coverage-popup.png')
+    m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    m.page('''return (async()=>{const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;
+      const message=await b.messages.get(arguments[0]),db=await bg.getSharedDB(),key=bg.resolveMessageStorageKey(message);
+      await bg.updateStore(db,'hybridanalysis',key,old=>{const snapshots={...old.analysisSourceSnapshots};for(let i=Object.keys(snapshots).length;i<64;i++)snapshots['capacity-'+i]={savedAt:Date.now(),snapshot:{schemaVersion:1,rows:[]}};return {...old,analysisSourceSnapshots:snapshots};},{preserveReports:true});
+      const ready=await bg.getMessageAnalysisContext(message),active=ready.wrappedJSObject||ready;window.wrappedJSObject.coverageActiveSnapshot=active.snapshotId;
+      const record=await bg.getFromStore(db,'hybridanalysis',key);window.wrappedJSObject.coverageHistoryBefore=JSON.stringify(Object.fromEntries(Object.entries(record.analysisSourceSnapshots).filter(([id])=>id!==active.snapshotId)));
+      window.wrappedJSObject.coverageCallsBefore=window.wrappedJSObject.inlineScanCalls.length;return true;
+    })();''',[target],browser=options)
+    old=final['scanJob']['id']
+    m.page('document.getElementById("thundy-analysis-status").shadowRoot.querySelector("[data-focus-key=scan-start]").click();')
+    capacity=wait_for(result,30)
+    assert capacity['scanJob']['state']=='failed',capacity['scanJob']
+    if not baseline:
+        assert capacity['scanJob']['reason']=='source_capacity',capacity['scanJob']
+        capacity_label=json.loads((ROOT/'_locales/en/messages.json').read_text())['scanFailure_source_capacity']['message']
+        wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[capacity_label]))
+    preserved=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw,db=await bg.getSharedDB();const record=await bg.getFromStore(db,'hybridanalysis',bg.resolveMessageStorageKey(await b.messages.get(arguments[0])));return {historyEqual:JSON.stringify(Object.fromEntries(Object.entries(record.analysisSourceSnapshots).filter(([id])=>id!==window.wrappedJSObject.coverageActiveSnapshot)))===window.wrappedJSObject.coverageHistoryBefore,callsBefore:window.wrappedJSObject.coverageCallsBefore,callsAfter:window.wrappedJSObject.inlineScanCalls.length,historyCount:Object.keys(record.analysisSourceSnapshots).length};})();''',[target],browser=options)
+    report['coverageCapacityDiagnostics']=preserved
+    assert preserved['historyEqual'] and preserved['callsBefore']==preserved['callsAfter'],preserved
+    preserved=True
+    m.screenshot(out/'scan-capacity-message.png')
+    report['identityEventAccess']=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,result={accountsRead:await b.permissions.contains({permissions:['accountsRead']}),events:{}};for(const name of ['onUpdated','onMoved','onCopied','onDeleted']){const listener=()=>{};try{const event=b.messages[name];if(!event){result.events[name]='unavailable';continue;}event.addListener(listener);event.removeListener(listener);result.events[name]='available';}catch(_){result.events[name]='denied';}}return result;})();''',browser=options)
+    report['scanCoverage']={'passed':not baseline,'baselineObserved':baseline,'realThunderbirdAPIs':True,'syntheticTransport':True,'injectedInventoryFailure':True,'liveProviderCalls':False,'state':final['scanJob']['state'],'assessmentIncomplete':final['scanJob'].get('assessmentIncomplete'),'coverage':final['scanJob'].get('coverage'),'visibleState':True,'visiblePopup':True,'sourceCapacityPreserved':preserved,'sourceCapacityReason':capacity['scanJob'].get('reason'),'additionalRequests':m.page('return window.wrappedJSObject.inlineScanCalls.length;',browser=options)-before}
+    report['passed']=True
+    report['scope']='Linux actual message UI; injected attachment API failure; synthetic provider transport; no live provider calls'
+
+
+def check_crypto_content(m, base, out, report, fixtures):
+    """Actual Thunderbird key import/decryption; synthetic identities only."""
+    manifest=json.loads((fixtures/'manifest.json').read_text())
+    assert manifest['synthetic'] and all(manifest['independentVerification'].values())
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");MailServices.accounts.localFoldersServer.rootFolder.createSubfolder("Crypto Content",null);''')
+    for index,name in enumerate(['openpgp-encrypted','smime-encrypted','smime-signed']):
+        m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[0]);MailServices.copy.copyFileMessage(file,MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Crypto Content"),null,false,0,"",null,null);''',[str(fixtures/(name+'.eml'))])
+        wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");return MailServices.accounts.localFoldersServer.rootFolder.getChildNamed("Crypto Content").getTotalMessages(false);''')==index+1)
+    imported=m.js('''return (async()=>{const {RNP}=ChromeUtils.importESModule("chrome://openpgp/content/modules/RNP.sys.mjs");if(!RNP.hasRan)await RNP.once();if(!RNP.libLoaded)throw Error('RNP unavailable');const key=await IOUtils.readUTF8(arguments[0]);const result=await RNP.importSecKeyBlockImpl(window,()=>'',false,key);const file=Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);file.initWithPath(arguments[1]);const db=Cc["@mozilla.org/security/x509certdb;1"].getService(Ci.nsIX509CertDB);db.importPKCS12File(file,'synthetic-fixture');return {pgpImported:result.exitCode===0};})();''',[str(fixtures/'openpgp-secret.asc'),str(fixtures/'smime-identity.p12')])
+    assert imported['pgpImported'],imported
+    open_page(m,base+'options.html')
+    result=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw,result=[];
+      for(const subject of ['Thundy crypto OpenPGP','Thundy crypto smime-encrypted','Thundy crypto smime-signed']){
+        const message=(await b.messages.query({subject})).messages.find(x=>x.subject===subject);if(!message)throw Error('Crypto fixture missing');
+        const full=await bg.readFullForAnalysis(message),text=bg.extractTextFromParts(full.parts||full),attachments=[];
+        for(const item of await b.messages.listAttachments(message.id)){const file=await b.messages.getAttachmentFile(message.id,item.partName);const bytes=await file.arrayBuffer();attachments.push({name:item.name,sha256:await bg.get_sha256_hash(bytes)});}
+        result.push({kind:subject.replace('Thundy crypto ',''),localCoverage:bg.localContentCoverage(full).state,hasExpectedText:text.includes('Grüße')&&text.includes('żółć'),attachments});
+      }return result;
+    })();''')
+    report['cryptoContent']={'synthetic':True,'realThunderbirdAPIs':True,'liveProviderCalls':False,'rows':result,'independentVerification':manifest['independentVerification']}
+    for row in result:
+        if row['kind']=='smime-encrypted' and not row['hasExpectedText']:
+            assert row['localCoverage']=='incomplete',row
+            report['cryptoContent']['smimeApiPlaintextUnavailable']=True
+        else:
+            assert row['localCoverage']=='checked' and row['hasExpectedText'],row
+            assert any(a['name']=='binary.bin' and a['sha256']==manifest['attachmentSha256'] for a in row['attachments']),row
+    if report['cryptoContent'].get('smimeApiPlaintextUnavailable'):
+        m.page('''return (async()=>{const b=window.wrappedJSObject.browser;const item=(await b.messages.query({subject:'Thundy crypto smime-encrypted'})).messages.find(x=>x.subject==='Thundy crypto smime-encrypted');await b.messageDisplay.open({messageId:item.id,location:'tab'});return true;})();''')
+        label=json.loads((ROOT/'_locales/en/messages.json').read_text())['analysisLocalIncomplete']['message']
+        wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[label]))
+        m.screenshot(out/'smime-input-incomplete.png')
+        report['cryptoContent']['smimeIncompleteVisible']=True
+    report['cryptoContent'].update(passed=True,openpgpDecrypted=True,smimeSignedReadable=True,smimeEnvelopeConservative=True,attachmentBytesVerified=True)
+    report['passed']=True
+
+
+def check_imap_content(m, base, out, report, fixture):
+    """Connect the real client to the isolated loopback Dovecot fixture."""
+    state=json.loads(fixture.read_text());assert state['host']=='127.0.0.1' and state['realImapServer']
+    m.js('''Services.io.offline=false;const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const server=MailServices.accounts.createIncomingServer('fixture','127.0.0.1','imap');server.port=arguments[0];server.socketType=0;server.authMethod=3;server.password='synthetic-fixture';server.prettyName='Isolated IMAP';const account=MailServices.accounts.createAccount();account.incomingServer=server;server.performExpand(window.msgWindow);''',[state['port']])
+    # Initial account seeding must not erase the fixture account on each restart.
+    # Only this runner's private user.js is changed; product profile policy is untouched.
+    m.js('''return (async()=>{const file=Services.dirsvc.get('ProfD',Ci.nsIFile);file.append('user.js');const text=await IOUtils.readUTF8(file.path);await IOUtils.writeUTF8(file.path,text.split('\\n').filter(line=>!line.startsWith('user_pref("mail.accountmanager.accounts",')).join('\\n'));Services.prefs.savePrefFile(null);return true;})();''')
+    report['imapSetup']=m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const s=[...MailServices.accounts.allServers].find(s=>s.type==='imap');return {port:s.port,valid:s.valid,inboxFlag:Ci.nsMsgFolderFlags.Inbox,folders:[...s.rootFolder.subFolders].map(f=>({name:f.name,isServer:f.isServer,flags:f.flags}))};''')
+    wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const server=[...MailServices.accounts.allServers].find(s=>s.type==='imap');return [...server.rootFolder.subFolders].some(f=>f.name.toUpperCase()==='INBOX');'''),30)
+    m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const server=[...MailServices.accounts.allServers].find(s=>s.type==='imap');const folder=[...server.rootFolder.subFolders].find(f=>f.name.toUpperCase()==='INBOX');MailServices.imap.selectFolder(folder,null,null);''')
+    wait_for(lambda:m.js('''const {MailServices}=ChromeUtils.importESModule("resource:///modules/MailServices.sys.mjs");const server=[...MailServices.accounts.allServers].find(s=>s.type==='imap');const folder=[...server.rootFolder.subFolders].find(f=>f.name.toUpperCase()==='INBOX');return folder.getTotalMessages(false)>0;'''),30)
+    open_page(m,base+'options.html')
+    row=m.page('''return (async()=>{const b=window.wrappedJSObject.browser,raw=await b.runtime.getBackgroundPage(),bg=raw.wrappedJSObject||raw;const message=(await b.messages.query({subject:'Thundy IMAP fixture'})).messages.find(x=>x.subject==='Thundy IMAP fixture');if(!message)throw Error('IMAP message missing');const full=await bg.readFullForAnalysis(message);const context=await bg.getMessageAnalysisContext(message);await (context.wrappedJSObject||context).flush();return {messageReadable:bg.extractTextFromParts(full.parts||full).includes('Synthetic IMAP body.'),localCoverage:bg.localContentCoverage(full).state,sourcePersisted:!(context.wrappedJSObject||context).persistenceFailed};})();''')
+    assert row['messageReadable'] and row['localCoverage']=='checked' and row['sourcePersisted'],row
+    report['imapContent']={'passed':True,'realThunderbirdAPIs':True,'realImapServer':True,'loopbackOnly':True,'synthetic':True,'liveProviderCalls':False,'retentionVerified':False,**row}
+    report['passed']=True
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--thunderbird', type=Path, required=True)
@@ -1990,6 +2231,14 @@ def main():
                         help='Permanent upgrade with two graceful restarts; requires --previous-xpi')
     parser.add_argument('--real-browser', type=Path, help='Isolated real Chromium handoff to a controlled local HTTPS page, direct install only')
     parser.add_argument('--restore-check', action='store_true', help='Verify clean pre-upgrade profile backup restore; requires --restart-check')
+    inline_modes = parser.add_mutually_exclusive_group()
+    inline_modes.add_argument('--inline-scan-check', action='store_true', help='Real inline Check now after cache invalidation, synthetic transport only')
+    inline_modes.add_argument('--inline-fresh-scan-check', action='store_true', help='Real inline Check now without cache invalidation or message change, synthetic transport only')
+    parser.add_argument('--scan-coverage-check', action='store_true', help='Real UI for incomplete scan with explicit attachment fault injection')
+    parser.add_argument('--scan-coverage-baseline', action='store_true', help='Expect the pre-fix completed state; requires --scan-coverage-check')
+    parser.add_argument('--crypto-fixtures', type=Path, help='Explicit isolated synthetic directory generated by crypto-fixtures.dev.py')
+    parser.add_argument('--storage-lifecycle-check', action='store_true', help='Real IndexedDB retention, transaction abort, audit separation and isolated profile restore')
+    parser.add_argument('--imap-fixture', type=Path, help='Explicit loopback-only Dovecot server.json')
     parser.add_argument('--automatic-scan-check', action='store_true', help='Real automatic display scans and popup retry with synthetic provider transport')
     parser.add_argument('--security-check', action='store_true', help='Real optional administration, protected writes and one-time link approval')
     parser.add_argument('--performance-check', action='store_true', help='Measure actual local message analysis through the extension API')
@@ -2246,7 +2495,20 @@ def main():
                 if args.restart_check:
                     check_restart_upgrade(m, args, out, display, report, restart_client)
                 else:
-                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check or args.source_export_check or args.hybrid_popup_check, audit_only=args.automatic_scan_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    run_checks(m, args.xpi, out, display, report, args.locale, args.langpack, args.previous_xpi, permanent=args.identity_lifecycle_check or args.source_history_check or args.report_archive_check or args.source_export_check or args.hybrid_popup_check or args.storage_lifecycle_check, audit_only=args.automatic_scan_check or args.inline_scan_check or args.inline_fresh_scan_check or args.scan_coverage_check or bool(args.crypto_fixtures) or bool(args.imap_fixture) or args.storage_lifecycle_check, banner_root_shot=args.banner_root_shot, message_kib=args.message_kib)
+                    if args.scan_coverage_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_scan_coverage(m,base,out,report,display,baseline=args.scan_coverage_baseline)
+                    if args.inline_scan_check or args.inline_fresh_scan_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        check_inline_scan(m,base,out,report,display,fresh=args.inline_fresh_scan_check)
+                    if args.crypto_fixtures or args.imap_fixture:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        if args.crypto_fixtures:check_crypto_content(m,base,out,report,args.crypto_fixtures.resolve())
+                        if args.imap_fixture:check_imap_content(m,base,out,report,args.imap_fixture.resolve())
+                    if args.storage_lifecycle_check:
+                        base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
+                        m=runpy.run_path(str(ROOT/'tools/storage-lifecycle.dev.py'))['check'](m,base,out,report,restart_client,args.imap_fixture)
                     if args.automatic_scan_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_automatic_scans(m,base,out,report,display)

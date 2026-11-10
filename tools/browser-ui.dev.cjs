@@ -145,6 +145,16 @@ function matrix(o, kinds) {
           scheme,
         });
       }
+  // Dedicated state matrices exercise the real page scripts with synthetic APIs.
+  for (const file of ['security.html','source_export.html'])
+    for (const lang of langs)
+      for (const width of o.matrix === 'smoke' ? [360] : [320,1280])
+        for (const scheme of o.matrix === 'smoke' ? ['dark'] : ['light','dark'])
+          for (const density of ['comfortable','compact'])
+            for (const scenario of file === 'security.html' ? ['ready','pending','failed','expired','opened'] : ['empty','ready','pending','unavailable','changed','saved','failed'])
+              cases.push({id:`addon-${file}-${scenario}-${lang}-${width}-${scheme}-${density}`,kind:'addon',view:file,
+                url:'/'+file+(file === 'security.html' ? '?approval=synthetic-challenge' : '?messageId=42&contextToken=synthetic-context'),
+                lang,width,scheme,density,scenario});
   const selected = (o.view ? cases.filter((c) => c.view === o.view) : cases).filter(c => o.zoom === 1 || c.width >= 600);
   if (selected.length === 0) throw Error("UI_VIEW_INVALID");
   return selected;
@@ -155,6 +165,8 @@ async function ready(page, c) {
     c.lang,
   );
   if (c.kind === "addon") {
+    if (c.view === 'security.html')
+      await page.waitForFunction(() => document.getElementById('destination').textContent || document.getElementById('approvalForm').hidden);
     if (c.view === "options.html")
       await page
         .locator('[name="appearance"]')
@@ -261,6 +273,83 @@ async function interaction(page, c) {
         "complete export changed after filter",
       );
     }
+  } else if (c.view === 'security.html') {
+    const catalog=JSON.parse(fs.readFileSync(path.join(root,'_locales',c.lang,'messages.json')));
+    if(c.scenario === 'expired') {
+      assert.equal(await page.locator('#approvalForm').isVisible(),false);
+      assert.equal(await page.locator('#status').textContent(),catalog.securityExpired.message);
+      assert.equal(await page.locator('#status').evaluate(el=>el===document.activeElement),true);
+    } else {
+      assert.ok((await page.locator('#destination').textContent()).startsWith('https://controlled.example.invalid/'));
+      assert.equal(await page.locator('#approvalScore').textContent(),'72/100');
+      await page.locator('#confirmed').focus();await page.keyboard.press('Space');
+      assert.equal(await page.locator('#confirmed').isChecked(),true);
+      await page.keyboard.press('Tab');assert.equal(await page.locator('#password').evaluate(el=>el===document.activeElement),true);
+      if(c.scenario !== 'ready') {
+        await page.locator('#password').fill('synthetic-secret-canary');
+        await page.keyboard.press('Tab');await page.keyboard.press('Enter');
+        await page.waitForFunction(()=>uiTest.approvals===1);
+        assert.equal(await page.locator('#password').inputValue(),'');
+        if(c.scenario === 'pending') {
+          assert.equal(await page.locator('#approvalForm button').isDisabled(),true);
+          await page.evaluate(()=>uiTest.finishApproval());
+        }
+        const expected=c.scenario==='failed' ? catalog.securityApprovalFailed.message : catalog.securityOpened.message;
+        await page.waitForFunction(text=>document.getElementById('status').textContent===text,expected);
+        assert.equal(await page.locator('#approvalForm').isVisible(),c.scenario==='failed');
+        if(c.scenario!=='failed')assert.equal(await page.locator('#status').evaluate(el=>el===document.activeElement),true);
+        assert.ok(!(await page.locator('body').textContent()).includes('synthetic-secret-canary'));
+      }
+    }
+    assert.equal(await page.evaluate(()=>uiTest.permissionRequests),0);
+  } else if (c.view === 'source_export.html') {
+    assert.equal(await page.locator('#sourceExportSave').isDisabled(),true);
+    if(c.scenario !== 'empty') {
+      await page.locator('#sourceExportPreview').focus();await page.keyboard.press('Enter');
+      if(c.scenario === 'pending') {
+        await page.waitForFunction(()=>typeof uiTest.finishSource==='function');
+        assert.equal(await page.locator('#sourceExportSave').isDisabled(),true);
+        await page.evaluate(()=>uiTest.finishSource());
+      }
+      if(c.scenario === 'unavailable') {
+        await page.waitForFunction(()=>!!document.getElementById('sourceExportStatus').textContent);
+        assert.equal(await page.locator('#sourceExportSave').isDisabled(),true);
+      } else {
+        await page.locator('#sourceExportContent').waitFor({state:'visible'});
+        assert.equal(await page.locator('#sourceExportContent').evaluate(el=>el===document.activeElement),true);
+        const report=JSON.parse(await page.locator('#sourceExportContent').textContent());
+        assert.equal(report.authenticatedSource,false);
+        assert.ok(!JSON.stringify(report).includes('synthetic-context'));
+        if(c.scenario==='changed') {
+          await page.evaluate(()=>uiTest.notify({action:'memoryCachesCleared'}));
+          assert.equal(await page.locator('#sourceExportSave').isDisabled(),true);
+          assert.equal(await page.locator('#sourceExportContent').isVisible(),false);
+        } else if(['saved','failed'].includes(c.scenario)) {
+          await page.locator('#sourceExportSave').focus();await page.keyboard.press('Enter');
+          if(c.scenario==='failed') {
+            await page.waitForFunction(()=>document.getElementById('sourceExportContent').hidden);
+            assert.equal(await page.locator('#sourceExportSave').isDisabled(),true);
+            assert.equal(await page.evaluate(()=>uiTest.downloads.length),0);
+          } else {
+            await page.waitForFunction(()=>typeof uiTest.finishDownload==='function');
+            assert.equal(await page.locator('#sourceExportSave').isDisabled(),true);
+            // Hold the download until the disabled style is painted. Observe the
+            // exact re-enable transition instead of sampling it after a delay.
+            await page.locator('#sourceExportSave').evaluate(async el=>{await Promise.all(el.getAnimations().map(animation=>animation.finished));});
+            await page.evaluate(()=>{const button=document.getElementById('sourceExportSave');const observer=new MutationObserver(()=>{if(!button.disabled){uiTest.opacityAfterSave=getComputedStyle(button).opacity;observer.disconnect();}});observer.observe(button,{attributes:true,attributeFilter:['disabled']});uiTest.finishDownload();});
+            await page.waitForFunction(()=>uiTest.opacityAfterSave!==undefined);
+            assert.equal(await page.evaluate(()=>uiTest.opacityAfterSave),'1','Enabled export button must immediately have full text contrast');
+            assert.equal(await page.locator('#sourceExportSave').isDisabled(),false);
+            assert.deepEqual(JSON.parse(await page.evaluate(()=>uiTest.downloads[0].content)),report);
+          }
+        } else {
+          await page.locator('#sourceExportCancel').focus();await page.keyboard.press('Enter');
+          assert.equal(await page.locator('#sourceExportPreview').evaluate(el=>el===document.activeElement),true);
+          assert.equal(await page.locator('#sourceExportSave').isDisabled(),true);
+        }
+      }
+    }
+    assert.equal(await page.evaluate(()=>uiTest.permissionRequests),0);
   } else if (c.view === "options.html") {
     await page.locator('#analysisDisplayForm').waitFor();
     await page.locator('#analysisDefaultView').selectOption('expert');
@@ -604,6 +693,8 @@ async function main() {
               lang: c.lang,
               version: require("../manifest.json").version,
               populated: c.populated === true,
+              scenario: c.scenario,
+              density: c.density,
             });
           page = await context.newPage();
           page.setDefaultTimeout(10000);
@@ -623,6 +714,7 @@ async function main() {
           if (o.zoom !== 1) await page.evaluate(zoom => { document.documentElement.style.zoom = String(zoom); }, o.zoom);
           Object.assign(result, await checks(page, c));
           await interaction(page, c);
+          if (["security.html","source_export.html"].includes(c.view)) Object.assign(result,await checks(page,c));
           if (c.kind === "message")
             Object.assign(result, await checkMessage(page, c, tags));
           assert.deepEqual(errors, [], "page errors");

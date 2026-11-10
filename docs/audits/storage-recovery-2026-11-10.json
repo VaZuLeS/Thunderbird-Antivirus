@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-native-storage-recovery",
+  "unreleased": true,
+  "extensionVersion": "1.25.4",
+  "sourceFingerprint": "82094481b9d6c53dd76fc3cfbfc900bc712c4842aa8d3987dd1d7df41eb93352",
+  "packageSha256": "576bc20efd16ff5ad563c89256bfdda7e8cf6e8c25ce2fd94c3952689046394a",
+  "clientVersion": "140.12.0",
+  "platform": "linux",
+  "runnerSha256": "f32dd933fcae6932f080b8a01ad0e1ac68ee08413b95c7872c05a569aa7f35d0",
+  "storageHelperSha256": "3eff13392d1ecf28ee89fc9ae3c8106e1ef5ae902be62e8cd9b4e4540e031023",
+  "baseline": {
+    "expectedFailure": true,
+    "packageSha256": "4a95a267c735732dce177c4b7af0048f249fdb79542abdcf19d46c965648264e",
+    "reportSha256": "3f80bcaedf5f920544dd4da00fb78e738e32a7c93ec58b94e45a2c4b41a4f9ac",
+    "startup": {
+      "sameFailurePromise": true,
+      "originalErrorPreserved": true,
+      "upgradeUnblocked": false,
+      "retrySucceeded": true,
+      "retryCached": true,
+      "openedTwice": true,
+      "cleanupRetried": true
+    }
+  },
+  "corrected": {
+    "passed": true,
+    "reportSha256": "536aa1fc5e7c6088264bfb683d19e013f3f33dd42e5e2d8f3dccdaa968a53010",
+    "gracefulRestarts": 3,
+    "storageConcurrency": {
+      "passed": true,
+      "helperSha256": "487b6ed0ad6acb227e72f42157658bcfdcd36fb20cd9fcaba6cc41740a049691",
+      "startup": {
+        "sameFailurePromise": true,
+        "originalErrorPreserved": true,
+        "upgradeUnblocked": true,
+        "retrySucceeded": true,
+        "retryCached": true,
+        "openedTwice": true,
+        "cleanupRetried": true
+      },
+      "scope": "Installed product DAO and startup function; two native DB connections, concurrent report replacement, abort followed by write, refresh before cleanup. Not a migration or disk-failure test.",
+      "parallel": {
+        "twoNativeConnections": true,
+        "bothRevisionsRetained": true,
+        "distinctArchiveIds": true,
+        "requestSucceededBeforeAbort": true,
+        "firstWriterAborted": true,
+        "followingWriterCommitted": true,
+        "abortedRevisionNotArchived": true,
+        "refreshBeforePruneRetained": true
+      },
+      "realIndexedDB": true,
+      "realThunderbirdEngine": true,
+      "syntheticRecords": true,
+      "liveProviderCalls": false
+    },
+    "storageLifecycle": {
+      "helperSha256": "3eff13392d1ecf28ee89fc9ae3c8106e1ef5ae902be62e8cd9b4e4540e031023",
+      "database": {
+        "realIndexedDB": true,
+        "controlledCleanupClock": true,
+        "backwardKeeps": true,
+        "forwardRemoves": true,
+        "oldestGone": true,
+        "retained": true,
+        "unreadableRetained": true,
+        "putRequestSucceededBeforeAbort": true,
+        "aborted": true,
+        "abortError": "Database transaction failed",
+        "atomicPreserved": true,
+        "byteLimitRefused": true,
+        "byteLimitPreserved": true
+      },
+      "coldOpen": {
+        "expiredRemoved": true,
+        "freshRetained": true,
+        "futureRetained": true
+      },
+      "longSessionKeepsAgedRecord": true,
+      "passed": true,
+      "realThunderbirdAPIs": true,
+      "syntheticRecords": true,
+      "liveProviderCalls": false,
+      "audit": {
+        "count": 2000,
+        "originalsPreserved": true,
+        "pendingUnchanged": true,
+        "cacheClearKeepsAudit": true
+      },
+      "profileRestore": {
+        "passed": true,
+        "auditSnapshotPreserved": true,
+        "analysisSnapshotPreserved": true,
+        "newerEventsSeparatelySaved": true,
+        "newerEventExportSha256": "431bbdd58d214d8df3b255755a888f7ec56f182c29c4b70d011fdd9f7ac43a04",
+        "newerEventsNotMerged": true,
+        "imapServerNotRolledBack": null
+      },
+      "scope": "Actual native IndexedDB/storage/profile restore; injected transaction abort and controlled cleanup timestamps; real loopback IMAP when configured. No disk failure or unlimited archive guarantee."
+    }
+  },
+  "limits": [
+    "Synthetic isolated profile and private test databases",
+    "Installed startup function in an isolated closure with injected cleanup transaction abort",
+    "Product database schema remains version 3",
+    "Two connections in one Thunderbird engine, not a future multi-store migration",
+    "No OS disk failure, long-running session or live provider proof"
+  ]
+}

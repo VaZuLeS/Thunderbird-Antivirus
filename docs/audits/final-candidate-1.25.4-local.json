@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-final-1.25.4-local",
+  "unreleased": true,
+  "extensionVersion": "1.25.4",
+  "sourceFingerprint": "5bc260c90cc7fb684ce4650675708197e14a1ccb80f281b3b610b76132e6a061",
+  "packageSha256": "df7220351b039e49975ac2d25e4df777c2f97131a4a022fb5b0272c7e55a253e",
+  "contrastRegression": {
+    "baseline": {
+      "sourceFingerprint": "82094481b9d6c53dd76fc3cfbfc900bc712c4842aa8d3987dd1d7df41eb93352",
+      "passed": 24,
+      "failed": 4,
+      "reportSha256": "d360fdc0e14ea76ddc3f780d0e10ea8a161a20e20a754bf4ff97ebb63ed9cf49",
+      "expectedFailure": "Enabled export button retained 0.6 opacity after disabled state"
+    },
+    "corrected": {
+      "passed": 28,
+      "failed": 0,
+      "reportSha256": "b8d69955f1be4acab328f53fc4192512c9d6eeaec770674ebf4962b346a0436f",
+      "language": "es",
+      "cssZoom": 2,
+      "browser": "154.0.8037.57",
+      "scope": "Real Chromium layout/axe and exact mutation observation; simulated extension/download APIs"
+    }
+  },
+  "nativeStorage": {
+    "passed": true,
+    "packageSha256": "df7220351b039e49975ac2d25e4df777c2f97131a4a022fb5b0272c7e55a253e",
+    "clientVersion": "140.12.0",
+    "runnerSha256": "f32dd933fcae6932f080b8a01ad0e1ac68ee08413b95c7872c05a569aa7f35d0",
+    "helperSha256": "3eff13392d1ecf28ee89fc9ae3c8106e1ef5ae902be62e8cd9b4e4540e031023",
+    "reportSha256": "f45bd88e07baa25c573f14b8d9397a0fc8ae75810b8e8df92a2e1eda3c8d3049",
+    "storageConcurrency": {
+      "passed": true,
+      "helperSha256": "487b6ed0ad6acb227e72f42157658bcfdcd36fb20cd9fcaba6cc41740a049691",
+      "startup": {
+        "sameFailurePromise": true,
+        "originalErrorPreserved": true,
+        "upgradeUnblocked": true,
+        "retrySucceeded": true,
+        "retryCached": true,
+        "openedTwice": true,
+        "cleanupRetried": true
+      },
+      "scope": "Installed product DAO and startup function; two native DB connections, concurrent report replacement, abort followed by write, refresh before cleanup. Not a migration or disk-failure test.",
+      "parallel": {
+        "twoNativeConnections": true,
+        "bothRevisionsRetained": true,
+        "distinctArchiveIds": true,
+        "requestSucceededBeforeAbort": true,
+        "firstWriterAborted": true,
+        "followingWriterCommitted": true,
+        "abortedRevisionNotArchived": true,
+        "refreshBeforePruneRetained": true
+      },
+      "realIndexedDB": true,
+      "realThunderbirdEngine": true,
+      "syntheticRecords": true,
+      "liveProviderCalls": false
+    },
+    "gracefulRestarts": 3
+  },
+  "limits": [
+    "Full remote CI still required for final commit",
+    "No screenreader or live provider acceptance",
+    "No product data migration"
+  ]
+}

@@ -2479,5 +2479,41 @@
   },
   "analysisLocalBackoff": {
     "message": "This attempt was deferred locally; no new provider request was sent."
+  },
+  "scanState_deferred": {
+    "message": "Analysis deferred: all background slots are occupied. Retry after another analysis finishes."
+  },
+  "scanCoverage": {
+    "message": "Some resources were not checked."
+  },
+  "scanCoverageAttachments": {
+    "message": "Attachments prepared"
+  },
+  "scanCoverageLinks": {
+    "message": "Links selected"
+  },
+  "scanCoverage_read_failed": {
+    "message": "An attachment could not be read or hashed."
+  },
+  "scanCoverage_size_limit": {
+    "message": "An attachment exceeds the 25 MiB scan limit."
+  },
+  "scanCoverage_resource_limit": {
+    "message": "The scan resource limit was reached."
+  },
+  "scanCoverage_inventory_incomplete": {
+    "message": "The attachment inventory is incomplete."
+  },
+  "scanFailure_source_capacity": {
+    "message": "Source history is full. This check did not start; existing records were retained."
+  },
+  "scanFailure_cancelled": {
+    "message": "The check was cancelled. No completed result is implied."
+  },
+  "scanFailure_timeout": {
+    "message": "The check timed out. Results remain incomplete."
+  },
+  "scanFailure_scan_failed": {
+    "message": "The check could not finish. Existing records were retained."
   }
 }

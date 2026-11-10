@@ -1,3 +1,5 @@
+> Historischer Plan vom 4. November 2026. Maßgeblich für den neuen Arbeitsstand sind [Umsetzung und offene Pakete vom 9. November](ENTWICKLUNG_2026_11_09.md); frühere Statusangaben sind keine aktuelle Freigabe.
+
 # Thundy AV — Produktanalyse und priorisierter Aufgabenplan (Stand: 4. November 2026)
 
 **Rolle:** Technischer Produktarchitekt und erfahrener Thunderbird-Extension-Entwickler

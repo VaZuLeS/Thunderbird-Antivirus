@@ -122,8 +122,14 @@ let sharedDBPromise = null;
 function getSharedDB() {
     if (!sharedDBPromise) {
         sharedDBPromise = openDB("thunderbird_av", 3).then(async db => {
-            if (typeof pruneStore === 'function') await pruneStore(db, 'hybridanalysis');
-            return db;
+            try {
+                if (typeof pruneStore === 'function') await pruneStore(db, 'hybridanalysis');
+                return db;
+            } catch (error) {
+                // A retry owns a new connection; failed startup must release this one.
+                try { db.close(); } catch (_) { /* Preserve the original cleanup failure. */ }
+                throw error;
+            }
         }).catch(error => { sharedDBPromise = null; throw error; });
     }
     return sharedDBPromise;
@@ -137,11 +143,16 @@ const MAX_SOURCE_SNAPSHOTS = 64;
 const MAX_SOURCE_SNAPSHOT_BYTES = 1024 * 1024;
 const messageAnalyses = typeof ExpiringMap !== 'undefined' ? new ExpiringMap(900000, () => Date.now(), {
     maxSize: MAX_MESSAGE_ANALYSES, autoExpire: true,
-    onEvict: ready => Promise.resolve(ready).then(context => context.dispose()).catch(() => {})
+    onEvict: ready => Promise.resolve(ready).then(context => { if(!context.scanJobOwner)context.dispose(); }).catch(() => {})
 }) : new Map();
 async function getMessageAnalysisContext(message, tabId = null, inventory = {}) {
     if (typeof ThundyAnalysis === 'undefined' || !message) return null;
     const key = typeof resolveMessageStorageKey === 'function' ? resolveMessageStorageKey(message) : message.headerMessageId || 'message:' + message.id;
+    const pinned = typeof ThundyScans !== 'undefined' ? ThundyScans.contextFor?.(message.id) : null;
+    if(pinned && !pinned.disposed && pinned.headerMessageId===key) {
+        if(tabId!=null)pinned.tabs.add(tabId);
+        return pinned;
+    }
     const contextKey = key + ':' + message.id;
     if (!messageAnalyses.has(contextKey)) {
         const ready = (async () => {
@@ -177,8 +188,9 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
             if (currentCoverage.state !== 'checked') model.data.local = {...currentCoverage,source:'local',observedAt:Date.now()};
             let snapshotCreated = false, persistenceQueue = Promise.resolve();
             const context = { disposed: false, model, snapshotId, persistenceFailed:false, headerMessageId: key, messageId: message.id, tabs: new Set(), timer: null,
+                isCached() { return messageAnalyses.get(contextKey) === ready; },
                 dispose() { context.disposed = true; if (context.timer) clearTimeout(context.timer); context.timer = null; context.tabs.clear(); },
-                event(event) { if (context.disposed || messageAnalyses.get(contextKey) !== ready) { context.dispose(); return false; } messageAnalyses.touch?.(contextKey); const valid = model.event(event); if (valid) context.schedule(); return valid; },
+                event(event) { if (context.disposed || !context.scanJobOwner && messageAnalyses.get(contextKey) !== ready) { context.dispose(); return false; } messageAnalyses.touch?.(contextKey); const valid = model.event(event); if (valid) context.schedule(); return valid; },
                 cached(provider, scope, verdict, observedAt) { context.event({ provider, scope, phase: 'cache', state: verdict === 'unknown' ? 'received' : 'checked', verdict, observedAt }); },
                 forAttachment(partName, name, hash) { if (name != null) currentParts.set(String(partName), name); if (/^[0-9a-f]{64}$/i.test(hash || '')) verifiedHashes.set(String(partName), hash.toLowerCase()); return ThundyAnalysis.bind(context, ['attachment:' + partName]); },
                 async resourceRecord() {
@@ -296,6 +308,15 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
     messageAnalyses.touch?.(contextKey);
     if (tabId != null) context.tabs.add(tabId);
     return context;
+}
+function clearAnalysisMemory() {
+    if(typeof ThundyScans !== 'undefined')ThundyScans.invalidate({silent:true,clear:true});
+    if(typeof clearReportArchiveWarnings === 'function')clearReportArchiveWarnings();
+    apiGateway?.clearBackoffs?.();
+    urlhausCache.clear();ipReputationCache.clear();vtCache.clear();knownSendersCache.clear();
+    for(const ready of messageAnalyses.values())Promise.resolve(ready).then(context=>context.dispose()).catch(()=>{});
+    messageAnalyses.clear();
+    browser.runtime.sendMessage?.({action:'memoryCachesCleared'})?.catch?.(()=>{});
 }
 async function analysisByHeader(key) {
     // Header-only fallbacks may not attribute events when duplicate headers exist.
@@ -923,7 +944,8 @@ function localContentCoverage(fullMessage) {
   const visit = part => {
     if (!part || typeof part !== 'object') return;
     if (['fail','skipped'].includes(part.decryptionStatus) ||
-        part.contentType === 'multipart/encrypted' && fullMessage.decryptionStatus !== 'success') unavailable = true;
+        part.contentType === 'multipart/encrypted' && fullMessage.decryptionStatus !== 'success' ||
+        ['application/pkcs7-mime','application/x-pkcs7-mime'].includes(part.contentType) && !part.parts?.length) unavailable = true;
     // Thunderbird omits body for valid zero-length text parts. Absence alone
     // is no failure; a positive decoded size supplies the missing evidence.
     const attachment = !!part.name || (part.headers?.['content-disposition'] || []).some(value => /^attachment(?:;|$)/i.test(value.trim()));
@@ -2051,7 +2073,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (typeof ThundySecurity !== 'undefined' && ['clearLinkAudit','clearMemoryCaches'].includes(request.action)) {
         ThundySecurity.authorized(sender,request.token).then(async()=>{
             if(request.action==='clearLinkAudit') { await editLinkAudit(records=>{records.length=0;}); }
-            else { urlhausCache.clear();ipReputationCache.clear();vtCache.clear();knownSendersCache.clear();for(const ready of messageAnalyses.values()) Promise.resolve(ready).then(c=>c.dispose()).catch(()=>{});messageAnalyses.clear(); }
+            else { clearAnalysisMemory(); }
             sendResponse({success:true,status:'success'});
         }).catch(()=>sendResponse({success:false,code:'ADMIN_LOCKED'}));
         return true;
@@ -2126,15 +2148,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
             })().then(sendResponse).catch(() => sendResponse({ success: false }));
             return true;
         case "clearMemoryCaches":
-            if(typeof ThundyScans !== 'undefined') ThundyScans.invalidate({silent:true,clear:true});
-            if (typeof clearReportArchiveWarnings === 'function') clearReportArchiveWarnings();
-            if (typeof apiGateway !== 'undefined' && typeof apiGateway.clearBackoffs === 'function') apiGateway.clearBackoffs();
-            urlhausCache.clear(); ipReputationCache.clear(); vtCache.clear(); knownSendersCache.clear();
-            for (const ready of messageAnalyses.values()) Promise.resolve(ready).then(context => {
-                context.dispose();
-            }).catch(() => {});
-            messageAnalyses.clear();
-            if (browser.runtime.sendMessage) browser.runtime.sendMessage({ action: 'memoryCachesCleared' }).catch(() => {});
+            clearAnalysisMemory();
             sendResponse({ status: 'success' });
             return false;
         case "uploadAttachment":

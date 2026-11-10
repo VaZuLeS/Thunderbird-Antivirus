@@ -2629,6 +2629,23 @@ describe('background.js', () => {
             assert.strictEqual(db, fakeDB);
         });
 
+        it('closes a connection after failed startup cleanup and retries without hiding the error', async () => {
+            const cleanupError = new Error('injected cleanup abort');
+            let opens = 0, closes = 0, cleanups = 0;
+            const failedDB = {close() { closes++; throw new Error('injected close error'); }};
+            const readyDB = {close() { throw new Error('Ready connection must remain open'); }};
+            context.openDB = async () => ++opens === 1 ? failedDB : readyDB;
+            context.pruneStore = async () => { if (++cleanups === 1) throw cleanupError; };
+            const first = context.getSharedDB(), same = context.getSharedDB();
+            assert.strictEqual(first, same);
+            await assert.rejects(first, error => error === cleanupError);
+            assert.strictEqual(closes, 1, 'A failed cleanup must close its opened connection');
+            assert.strictEqual(await context.getSharedDB(), readyDB);
+            assert.strictEqual(await context.getSharedDB(), readyDB);
+            assert.strictEqual(opens, 2);
+            assert.strictEqual(cleanups, 2);
+        });
+
         it('calls openDB again if sharedDBPromise is reset', async () => {
             let openDBCalls = 0;
             context.openDB = () => {

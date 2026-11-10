@@ -189,3 +189,12 @@ test('display settings validate atomically and remain protected independently of
  await f.s.write({analysisShowHybridDetails:true},f.sender,token);assert.equal(f.stored.analysisShowHybridDetails,true);
  await f.s.write({externalAnalysisConsent:false},f.sender);assert.equal(f.stored.externalAnalysisConsent,false);
 });
+
+test('a capacity-deferred analysis remains incomplete even without an admitted job',async()=>{
+ const f=links();f.setScore(0);f.config.policy.unknown='approval';
+ f.c.ThundyScans={get:()=>null,revision:()=>null};
+ f.c.getMessageAnalysisContext=async()=>({scanJob:{state:'deferred',assessmentIncomplete:true}});
+ const evaluated=await f.l.evaluate(f.session,f.sender);
+ assert.equal(evaluated.input.coverage,'incomplete');assert.equal(evaluated.decision.reason,'incomplete');
+ assert.equal((await f.l.open(f.request,f.sender)).code,'APPROVAL_REQUIRED');assert.equal(f.getOpened(),0);
+});

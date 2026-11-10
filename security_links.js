@@ -12,7 +12,10 @@ const ThundyLinkSecurity = (() => {
         if(!urls.some(value=>{try{return new URL(value).href===new URL(session.url).href;}catch(_){return false;}}))throw Error('LINK_CONTEXT_CHANGED');
         const options=await collectThreatEvaluationOptions({message,fullMessage:full,filteredUrls:[session.url],messageText:text,allowExternal:false});
         const threat=calculateThreatScore(message.author,[session.url],options);
-        const scan=typeof ThundyScans!=='undefined'?ThundyScans.get?.(message.id):null;
+        let scan=typeof ThundyScans!=='undefined'?ThundyScans.get?.(message.id):null;
+        // A capacity rejection has no admitted job. Its local display context
+        // still records incomplete coverage and must not authorize as complete.
+        if(!scan && typeof getMessageAnalysisContext==='function')scan=(await getMessageAnalysisContext(message)).scanJob;
         const input={score:threat.score,coverage:scan?.assessmentIncomplete?'incomplete':localContentCoverage(full).state,verdict:session.verdict||'UNKNOWN',check:session.check,malicious:[...(options.linkFindings||[]),...(options.attachmentFindings||[])].some(x=>x.verdict==='malicious')};
         const saved=await ThundySecurity.read();
         const policy={...ThundySecurity.defaults,...saved.policy};

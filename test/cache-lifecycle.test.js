@@ -3,6 +3,19 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const vm=require('node:vm');
 const source=fs.readFileSync('runtime.js','utf8');
+test('proposed content proof preserves raw bytes and never equates content with occurrences',()=>{
+ const {exactRawProof}=require('../tools/content-proof.dev.cjs');
+ const validate=new(require('ajv'))().compile(JSON.parse(fs.readFileSync('docs/schemas/content-proof-v1.json')));
+ const mail=Buffer.from('Message-ID: <same>\r\nX-Mozilla-Status: 0000\r\n\r\nbody\xff','latin1');
+ const proof=exactRawProof(mail);assert.ok(validate(proof));assert.equal(proof.byteLength,mail.length);
+ assert.deepEqual(exactRawProof(Buffer.from(mail)),proof);
+ assert.notEqual(exactRawProof(Buffer.from(mail.toString('latin1').replace('0000','0001'),'latin1')).sha256,proof.sha256);
+ assert.notEqual(exactRawProof(Buffer.from(mail.toString('latin1').replace('body','other'),'latin1')).sha256,proof.sha256);
+ assert.throws(()=>exactRawProof(mail.toString('utf8')),/raw bytes/);
+ assert.equal(validate({...proof,occurrenceId:'guessed-from-header'}),false);
+ assert.equal(validate({...proof,scope:'decrypted-content'}),false);
+ assert.equal(validate({...proof,sha256:'incomplete'}),false);
+});
 function fixture(){
  let now=0,next=1;const timers=new Map(),removed=[];
  const context=vm.createContext({setTimeout:(fn,delay)=>{const id=next++;timers.set(id,{fn,at:now+delay});return id},clearTimeout:id=>timers.delete(id)});

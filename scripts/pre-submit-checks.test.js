@@ -290,11 +290,24 @@ describe('pre-submit-checks', () => {
     const staleTag = runChecks(createExtension({
       'docs/index.html': '<a href="privacy_policy.html">Privacy</a><a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.5.0">Release</a>'
     }));
-    assert.ok(staleTag.errors.some((e) => e.includes('release tag link does not match manifest.json version')));
+    assert.ok(staleTag.errors.some((e) => e.includes('release tag link does not match published distribution version')));
     const staleXpi = runChecks(createExtension({
       'docs/index_de.html': '<a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.5.0/thundy-av-1.5.0.xpi">XPI</a>'
     }));
-    assert.ok(staleXpi.errors.some((e) => e.includes('XPI download link does not match manifest.json version')));
+    assert.ok(staleXpi.errors.some((e) => e.includes('XPI download link does not match published distribution version')));
+  });
+  it('keeps published downloads independent of an unreleased candidate', () => {
+    const identity={schemaVersion:1,publishedVersion:'1.25.3',xpiSha256:'a'.repeat(64)};
+    const files={
+      'docs/distribution.json':JSON.stringify(identity),
+      'docs/index.html':'<a href="privacy_policy.html">Privacy</a><a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.3">Release</a>',
+      'docs/index_de.html':'<a href="https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.25.3/thundy-av-1.25.3.xpi">XPI</a>'
+    };
+    assert.deepStrictEqual(runChecks(createExtension(files,{version:'1.25.4'})).errors,[]);
+    for(const bad of [{...identity,publishedVersion:'1.25.5'},{...identity,xpiSha256:'wrong'},{...identity,extra:'unexpected'}]){
+      const result=runChecks(createExtension({...files,'docs/distribution.json':JSON.stringify(bad)},{version:'1.25.4'}));
+      assert.ok(result.errors.some(e=>/distribution identity|exceeds candidate/.test(e)));
+    }
   });
 });
 
