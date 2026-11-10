@@ -1,5 +1,7 @@
 # Weiterentwicklung vom 10. November 2026 — Kandidat 1.25.4
 
+**Nachtrag:** Diese Arbeitsphase mündete in den [geprüften GitHub-Release 1.25.4](VEROEFFENTLICHUNG_1_25_4.md). Die folgenden Abschnitte dokumentieren die damaligen Entwicklungsstände und ihre getrennten Paketidentitäten.
+
 Veröffentlicht bleibt 1.25.3. Die Entwicklung hat eine eigene Version 1.25.4; [Umfang](releases/1.25.4.md) und [Abnahmeprotokoll](live_test_1_25_4.md) behaupten keine Veröffentlichung. Frühere [Belege](audits/development-2026-11-09.json) behalten ihre alten Paketidentitäten.
 
 ## AVN-019.b — implementiert und abgegrenzt nachgewiesen

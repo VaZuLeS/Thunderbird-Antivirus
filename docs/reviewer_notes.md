@@ -1,4 +1,4 @@
-> Aktueller Release-Stand **1.25.3** (unsignierte GitHub-Distribution, vorbereitet für ATN-Einreichung): [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_25_2.md), [Datenmatrix](privacy_policy.md). Vor einer tatsächlichen ATN-Einreichung die aktuelle Checkliste verwenden.
+> Aktueller GitHub-Release-Stand **1.25.4** (unsignierte Distribution). ATN-Signierung und Review bleiben separat offen: [aktueller Stand](AKTUELLER_PRODUKTSTAND.md), [versionsgebundene Prüfung](live_test_1_25_4.md), [Datenmatrix](privacy_policy.md).
 
 # Reviewer Notes — Thundy AV (Thunderbird Add-on)
 

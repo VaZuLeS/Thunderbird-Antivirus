@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-published-release-verification",
+  "verified": true,
+  "releaseTag": "v1.25.4",
+  "releaseId": 440592878,
+  "releaseUrl": "https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.4",
+  "publishedAt": "2026-11-10T16:09:56Z",
+  "verifiedAt": "2026-11-10T17:11:00.919426+01:00",
+  "releaseRun": 42847499890,
+  "tagCommit": "2fe23aa95f23938dfa3dad923db1b6927512d16a",
+  "xpiSha256": "df7220351b039e49975ac2d25e4df777c2f97131a4a022fb5b0272c7e55a253e",
+  "sourceFingerprint": "5bc260c90cc7fb684ce4650675708197e14a1ccb80f281b3b610b76132e6a061",
+  "assets": [
+    {
+      "name": "acceptance-1.25.4.json",
+      "bytes": 642367,
+      "sha256": "9e7e438441ea2bca2e65011831c43e712302c6b92887104ed3a36cc786ed7dd6",
+      "githubAssetId": 732061178
+    },
+    {
+      "name": "SHA256SUMS.txt",
+      "bytes": 87,
+      "sha256": "6414e4dde87e906395fbc5b0ac18a20d36dba297f51d87deca532a3917f444c8",
+      "githubAssetId": 732061176
+    },
+    {
+      "name": "thundy-av-1.25.4.xpi",
+      "bytes": 360332,
+      "sha256": "df7220351b039e49975ac2d25e4df777c2f97131a4a022fb5b0272c7e55a253e",
+      "githubAssetId": 732061174
+    }
+  ],
+  "clientTargets": [
+    {
+      "target": "current",
+      "version": "153.6.0",
+      "platform": "Linux CI"
+    },
+    {
+      "target": "minimum",
+      "version": "140.12.0",
+      "platform": "Linux CI"
+    }
+  ],
+  "browserLanguages": [
+    "de",
+    "en",
+    "es",
+    "fr",
+    "it",
+    "pl"
+  ],
+  "limits": {
+    "unsignedEvidence": true,
+    "syntheticProviderResponses": true,
+    "realProviderAccountsVerified": false,
+    "windowsVerified": false,
+    "macosVerified": false,
+    "screenReadersVerified": false,
+    "automaticUpdateChannelVerified": false
+  },
+  "verificationScope": "Independent HTTPS download of all three public assets, manifest/checksum equality, API digest equality where available, full acceptance revalidation and exact tag commit; no ATN or automatic channel claim."
+}
