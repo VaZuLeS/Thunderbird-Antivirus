@@ -64,8 +64,9 @@ def check(m, base, out, report, display, catalog, native_download):
         assert m.page('return window.wrappedJSObject.__protectionProbe.calls;') == 0
         report['protectionProfile'].update(passed=True,realThunderbirdAPIs=True,realDownloadsAPI=True,nativeFilePicker=True,
             exportedSavedPolicy=True,explicitUiImport=True,previewReadOnly=True,cancelPreserved=True,unrelatedDataPreserved=True,
-            v1Compatible=True,noConsentOrPermissionGrant=True,noProviderRequests=True,appearanceProfileCompatible=report.get('appearanceProfile',{}).get('passed') is True,
+            v1Compatible=True,noConsentOrPermissionGrant=True,noProviderRequests=True,appearanceProfileCompatible=(report.get('appearanceProfile',{}).get('passed') is True or all(report.get('appearanceProfileRestart',{}).get(key) is True for key in ['passed','confirmedUiImport','storagePreserved','unrelatedDataPreserved'])),
             scope='Actual UI and downloads in an isolated synthetic profile; no live providers. Storage/validation/stale failures have separate simulated checks.')
+        assert report['protectionProfile']['appearanceProfileCompatible'], 'Missing confirmed appearance profile compatibility proof'
         m.screenshot(out/'protection-profile.png')
     finally:
         # Restore effective policy through actual storage, then restore absence of

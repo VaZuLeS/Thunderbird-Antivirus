@@ -5,12 +5,12 @@
   "packageSha256": "e1ece067f01e169063d92e944c60a3d88b5c933630fa3a7ab6991a2a33cbaaaa",
   "native": [
     {
-      "case": "upgrade-with-profile-final-layout",
+      "case": "isolated-upgrade-with-profile",
       "passed": true,
-      "reportSha256": "6758fbd055a515ac8c65905c449234ef0660a34b355f783a45ff3cefd56fc1a0",
+      "reportSha256": "a7b502563180a18dfa7300f6179b49825d0801f0ff24f566eae8e37360f3ba0f",
       "protectionProfile": {
         "passed": true,
-        "helperSha256": "e4defa56cb056afdbff1d6dcce78d38cadeb0e427291e69b1e3aac8628eb120a",
+        "helperSha256": "be2a2f0e63b3d17741bd252c8e43cc50cdb3357e196e2d166bc0f4863116d718",
         "realThunderbirdAPIs": true,
         "realDownloadsAPI": true,
         "nativeFilePicker": true,
@@ -22,7 +22,7 @@
         "v1Compatible": true,
         "noConsentOrPermissionGrant": true,
         "noProviderRequests": true,
-        "appearanceProfileCompatible": false,
+        "appearanceProfileCompatible": true,
         "scope": "Actual UI and downloads in an isolated synthetic profile; no live providers. Storage/validation/stale failures have separate simulated checks."
       },
       "gracefulRestarts": 3,
@@ -102,5 +102,31 @@
         "forcedRestarts": 2
       }
     ]
-  }
+  },
+  "priorLayoutRunnerReport": [
+    {
+      "case": "upgrade-with-profile-final-layout",
+      "passed": true,
+      "reportSha256": "6758fbd055a515ac8c65905c449234ef0660a34b355f783a45ff3cefd56fc1a0",
+      "protectionProfile": {
+        "passed": true,
+        "helperSha256": "e4defa56cb056afdbff1d6dcce78d38cadeb0e427291e69b1e3aac8628eb120a",
+        "realThunderbirdAPIs": true,
+        "realDownloadsAPI": true,
+        "nativeFilePicker": true,
+        "exportedSavedPolicy": true,
+        "explicitUiImport": true,
+        "previewReadOnly": true,
+        "cancelPreserved": true,
+        "unrelatedDataPreserved": true,
+        "v1Compatible": true,
+        "noConsentOrPermissionGrant": true,
+        "noProviderRequests": true,
+        "appearanceProfileCompatible": false,
+        "scope": "Actual UI and downloads in an isolated synthetic profile; no live providers. Storage/validation/stale failures have separate simulated checks."
+      },
+      "gracefulRestarts": 3,
+      "forcedRestarts": 2
+    }
+  ]
 }

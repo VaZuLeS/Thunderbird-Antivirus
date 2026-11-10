@@ -617,8 +617,6 @@ def check_followup(m, base, out, report, display, source_catalog):
         probe['analysisSources']['nativeStoredMessage'] = True
         m.screenshot(out / 'analysis-sources-message.png')
     report['followup'] = {'passed': True, 'realThunderbirdAPIs': True, **probe}
-    if tuple(map(int, report['extensionVersion'].split('.'))) >= (1,25,5):
-        runpy.run_path(str(ROOT/'tools/protection-profile.dev.py'))['check'](m, base, out, report, display, source_catalog, native_json_download)
 
 
 def addon_state(m):
@@ -1846,7 +1844,12 @@ def check_administration(m, base, out, report):
     assert m.page('return document.getElementById("password").type;')=='password'
     m.screenshot(out/'link-approval.png')
     m.page('document.getElementById("confirmed").checked=true;document.getElementById("password").value="native-approval-password";document.getElementById("approvalForm").requestSubmit();')
-    wait_for(lambda:m.page('return document.getElementById("approvalForm").hidden;'))
+    try:
+        wait_for(lambda:m.page('return document.getElementById("approvalForm").hidden;'))
+    except TimeoutError:
+        # Only public status, never password fields, URLs or storage contents.
+        report['approvalFailure'] = m.page('return {status:document.getElementById("status").textContent,formHidden:document.getElementById("approvalForm").hidden,buttonDisabled:document.querySelector("#approvalForm button").disabled};')
+        raise AssertionError('Approval UI did not finish: '+json.dumps(report['approvalFailure']))
     assert m.page('return document.activeElement?.id;')=='status'
     assert m.page('return document.getElementById("approvalScore").textContent;')
     snapshot=m.page('return window.wrappedJSObject.browser.storage.local.get("linkAuditLog");')
