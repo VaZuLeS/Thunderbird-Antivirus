@@ -55,3 +55,5 @@ AVN-009.d: Ein echter, nur über Loopback veröffentlichter Dovecot 2.3.19.1 lie
 AVN-016: Jekyll mit den beiden konfigurierten Plugins wurde in einem isolierten Debian-Container tatsächlich ausgeführt; alle sieben HTML-Einstiege wurden erzeugt. Der öffentliche Pages-Aufruf bleibt durch die Netzrichtlinie blockiert. Lokaler Build und öffentliche Abnahme bleiben getrennt.
 
 Die erste Remote-Ausführung für `10545d6` scheiterte im Quellenexport-Prüfrunner: Er forderte die administrative Cachelöschung aus der Exportseite an und erhielt korrekt `ADMIN_LOCKED`. Der Runner prüft nun diese Ablehnung ausdrücklich und führt die berechtigte Löschung aus einer vorhandenen Optionsseite aus. Der echte lokale Export-/GTK-/Neustartlauf besteht mit den aktuellen Paketbytes. Die Produktberechtigungen wurden dafür nicht gelockert; der vollständige Remote-Lauf wird mit dem korrigierten Runner wiederholt.
+
+Die neue Linux-Upgrade-/Crash-/Restorematrix verwendet das veröffentlichte 1.25.3-XPI als ausdrücklich gepinnte Vorgängerversion, einschließlich dessen geprüfter SHA-256. Der bisherige 1.25.0-Pin wird für diesen Kandidaten nicht als unmittelbarer Vorgängernachweis ausgegeben.
