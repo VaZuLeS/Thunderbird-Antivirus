@@ -134,7 +134,7 @@ jobs:
           if test "$CLIENT_TARGET" = minimum; then
             set -- "thunderbird=$THUNDY_MINIMUM_DEBIAN_VERSION" "thunderbird-l10n-de=$THUNDY_MINIMUM_DEBIAN_VERSION" "thunderbird-l10n-fr=$THUNDY_MINIMUM_DEBIAN_VERSION" "thunderbird-l10n-es-es=$THUNDY_MINIMUM_DEBIAN_VERSION" "thunderbird-l10n-it=$THUNDY_MINIMUM_DEBIAN_VERSION" "thunderbird-l10n-pl=$THUNDY_MINIMUM_DEBIAN_VERSION"
           fi
-          apt-get install -y --no-install-recommends "$@" xvfb python3 imagemagick libxtst6 ca-certificates gnupg openssl
+          apt-get install -y --no-install-recommends "$@" xvfb x11-utils python3 imagemagick libxtst6 ca-certificates gnupg openssl
           useradd --create-home thunderbird-test
       - uses: actions/checkout@v7
         with:

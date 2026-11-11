@@ -11,6 +11,7 @@ import threading
 from urllib.parse import urlparse
 import json
 import os
+import re
 from pathlib import Path
 import select
 import runpy
@@ -191,15 +192,40 @@ def native_save_path(display, path, save_button=False):
     finally: x11.XCloseDisplay(connection)
 
 
+def native_dialogs(display):
+    """Observe mapped transient X11 windows; GTK can grab keys without changing focus."""
+    env={**os.environ,'LC_ALL':'C'}
+    tree=subprocess.run(['xwininfo','-display',display,'-root','-tree'],capture_output=True,text=True,check=True,timeout=3,env=env).stdout
+    mapped=set()
+    for window in set(re.findall(r'^\s+(0x[0-9a-fA-F]+)\b',tree,re.M)):
+        transient=subprocess.run(['xprop','-display',display,'-id',window,'WM_TRANSIENT_FOR'],capture_output=True,text=True,timeout=3,env=env)
+        if transient.returncode or not re.search(r'window id # 0x[1-9a-fA-F][0-9a-fA-F]*',transient.stdout):continue
+        info=subprocess.run(['xwininfo','-display',display,'-id',window],capture_output=True,text=True,timeout=3,env=env)
+        if info.returncode==0 and 'Map State: IsViewable' in info.stdout:mapped.add(window)
+    return mapped
+
+
 def native_download(m, display, out, button, stem, browser='window.gTabmail.currentTabInfo.browser', button_browser=None, save_button=False):
+    ready_before = m.page('return document.readyState;',browser=button_browser or browser)
     known = m.page('return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.map(item=>item.id));',browser=browser)
+    dialogs_before=native_dialogs(display)
     m.page('document.getElementById(arguments[0]).click();', [button],browser=button_browser or browser)
-    time.sleep(1)
-    native_save_path(display, out / stem, save_button=save_button)
     def completed():
         return m.page('''const known=new Set(arguments[0]);return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.find(item=>!known.has(item.id)&&item.state==="complete")||null);''', [known],browser=browser)
-    try: item = wait_for(completed, timeout=40)
+    try:
+        # Observe the actual native picker before sending its path.
+        wait_for(lambda:native_dialogs(display)-dialogs_before)
+        native_save_path(display, out / stem, save_button=save_button)
+        item = wait_for(completed, timeout=40)
     except TimeoutError:
+        # Fixed public states only: never print download URLs, paths or credentials.
+        try:
+            diagnostic=m.page('return window.wrappedJSObject.browser.downloads.search({}).then(items=>({readyState:document.readyState,status:(document.getElementById("localProfileStatus")?.textContent||"").slice(0,160),downloads:items.filter(item=>!arguments[0].includes(item.id)).map(item=>({state:item.state,error:item.error||null,exists:item.exists}))}));',[known],browser=browser)
+        except Exception:
+            diagnostic={'diagnosticUnavailable':True}
+        diagnostic['readyStateBeforeClick']=ready_before
+        (out/(stem+'-failure.json')).write_text(json.dumps(diagnostic,indent=2)+'\n')
+        print(json.dumps({'nativeDownloadFailure':stem,**diagnostic}),flush=True)
         subprocess.run(['import','-window','root',str(out/(stem+'-failure.png'))], env={**os.environ,'DISPLAY':display},check=True,timeout=10)
         raise
     actual = Path(item['filename'])

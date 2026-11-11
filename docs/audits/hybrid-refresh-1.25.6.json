@@ -3,7 +3,7 @@
   "candidateVersion": "1.25.6",
   "published": false,
   "xpiSha256": "bb128b12f7f4bed11b7e0dc65091b7743e57ca5f07a3e154a17ad142d4c6b80a",
-  "nativeReportSha256": "749d499425c0c24fc46ea098d5aa4deaa7d1d24c328e7f8b8f18ac1804795b8a",
+  "nativeReportSha256": "cbc07399ebeb0ba4862a84cecb62253567a161297e1966601be5a86c88598cb9",
   "hybridStoredRefresh": {
     "passed": true,
     "helperSha256": "9c9e4d8ba1d52bcaab087540bed70a8f6cc38bbec6215e0310a1797e42ed1752",
@@ -22,5 +22,39 @@
   },
   "client": "140.12.0",
   "scope": "Actual Linux Thunderbird APIs and IndexedDB, synthetic provider payloads, no real provider account contract; other candidate bytes and external platforms are not implied.",
-  "sourceFingerprint": "bdf66d1a16d431178e587c953c4b42fa8ddbc876407e9d091c806b808492d9a0"
+  "sourceFingerprint": "bdf66d1a16d431178e587c953c4b42fa8ddbc876407e9d091c806b808492d9a0",
+  "upgrade": {
+    "from": "1.25.5",
+    "to": "1.25.6",
+    "passed": true,
+    "reportSha256": "e4051f0e706392ed5113f678f5dbdf077db1c1b7966fff700de0776ae0e3f97b",
+    "gracefulRestarts": 3,
+    "forcedRestarts": 2,
+    "protectionProfile": {
+      "passed": true,
+      "helperSha256": "d8335769f3e07049c6f9888ee35f04c7d05b0ee1e18ea6f3645eccec727f17a8",
+      "realThunderbirdAPIs": true,
+      "realDownloadsAPI": true,
+      "nativeFilePicker": true,
+      "exportedSavedPolicy": true,
+      "explicitUiImport": true,
+      "previewReadOnly": true,
+      "cancelPreserved": true,
+      "unrelatedDataPreserved": true,
+      "v1Compatible": true,
+      "noConsentOrPermissionGrant": true,
+      "noProviderRequests": true,
+      "appearanceProfileCompatible": true,
+      "scope": "Actual UI and downloads in an isolated synthetic profile; no live providers. Storage/validation/stale failures have separate simulated checks."
+    },
+    "backupRestorePassed": true
+  },
+  "releasedPredecessor": {
+    "version": "1.25.5",
+    "xpiSha256": "e1ece067f01e169063d92e944c60a3d88b5c933630fa3a7ab6991a2a33cbaaaa",
+    "backgroundSha256": "b428e97e9c114c000bd218ddb3c9fb4e5bcdef88cca54ac4cc35a23637b3f829",
+    "analysisStatusSha256": "530f2a5be01007bce7e0950123b371d7bf9344ff2e53b92e92055625a81a3b60",
+    "appendOnlyStoredRefreshPresent": true,
+    "scope": "Immutable released predecessor confirms the same stale-row merge path exercised by the failing synthetic regression; no claim about the user response structure."
+  }
 }
