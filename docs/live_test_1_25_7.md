@@ -13,9 +13,9 @@ Unveröffentlichter Entwicklungskandidat. Providerantworten sind synthetisch; de
 | C07 | Admin-Debugoberfläche in echtem Thunderbird | OK | lokale Linux-140.12.0-Probe, synthetischer Transport |
 | C08 | JSON über tatsächlichen nativen Speicherdialog exportieren | OK | tools/api-debug.dev.py; tatsächliche Datei erneut gelesen |
 | C09 | Hintergrund- und Popup-Erfassung ohne Berichtsleserecht im Popup | OK | tatsächliche Thunderbird-APIs und Senderprüfung |
-| C10 | Sechs Sprachen, Themes, Tastatur und Zoom im Browser | OFFEN | vollständige aktuelle Browsermatrix erforderlich |
-| C11 | Vollständige neue Paket-CI für beide Linuxlinien | OFFEN | Kandidatengate einschließlich API-Debugprobe |
+| C10 | Sechs Sprachen, Themes, Tastatur und Zoom im Browser | OK | CI 43061284103: vollständige aktuelle Browsermatrix |
+| C11 | Vollständige neue Paket-CI für beide Linuxlinien | OK | CI 43061284103: API-Debugprobe, Upgrade von 1.25.6, Crash, Restore und Kandidatengate |
 | C12 | Öffentliche Releaseassets unabhängig prüfen | OFFEN | erst nach Veröffentlichung |
 | C13 | Audit erhalten und Deaktivierung leert Aufzeichnungen | OK | native Speicher- und Exportgegenprobe |
 
-**Summe:** 10 OK / 0 FAIL / 0 N/A / 3 OFFEN
+**Summe:** 12 OK / 0 FAIL / 0 N/A / 1 OFFEN

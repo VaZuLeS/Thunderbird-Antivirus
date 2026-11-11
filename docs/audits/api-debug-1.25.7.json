@@ -51,7 +51,6 @@
     "scope": "Six languages and four settings theme/density combinations; earlier source before API call-site whitespace/unused argument cleanup. Not substituted for final package acceptance."
   },
   "open": [
-    "Complete final CI across both Linux client targets and all six browser language jobs",
     "Public assets after release",
     "Actual user/provider response and live account/reference contract",
     "Windows/macOS and native screenreaders"
@@ -116,5 +115,28 @@
       },
       "scope": "Actual final integrated package, real Thunderbird APIs and native export, synthetic provider transport."
     }
+  },
+  "remoteAcceptance": {
+    "run": 43061284103,
+    "head": "555b5c12777dca7a66db3dcd2c8e6597270fa273",
+    "passed": true,
+    "tests": 1298,
+    "failed": 0,
+    "browserLanguages": [
+      "en",
+      "de",
+      "fr",
+      "es",
+      "it",
+      "pl"
+    ],
+    "linuxTargets": [
+      "minimum",
+      "current"
+    ],
+    "packageSha256": "4d397e08bf3d27e038221ea0222b90b0d135ef46d5572152dcf014fb16be55c7",
+    "sourceFingerprint": "51bff1e9b6f32b0a499735023f4f8331f2d4cd3f27cb0f8ca815fa476112c50a",
+    "candidateGate": true,
+    "liveProviderAccountsVerified": false
   }
 }
