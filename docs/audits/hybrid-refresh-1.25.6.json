@@ -27,7 +27,7 @@
     "from": "1.25.5",
     "to": "1.25.6",
     "passed": true,
-    "reportSha256": "e4051f0e706392ed5113f678f5dbdf077db1c1b7966fff700de0776ae0e3f97b",
+    "reportSha256": "2c934203b814509dc774d4336404a63fe4fb67c4f102b6b0163b2f76134cfa3a",
     "gracefulRestarts": 3,
     "forcedRestarts": 2,
     "protectionProfile": {
@@ -56,5 +56,11 @@
     "analysisStatusSha256": "530f2a5be01007bce7e0950123b371d7bf9344ff2e53b92e92055625a81a3b60",
     "appendOnlyStoredRefreshPresent": true,
     "scope": "Immutable released predecessor confirms the same stale-row merge path exercised by the failing synthetic regression; no claim about the user response structure."
+  },
+  "backgroundDownload": {
+    "passed": true,
+    "realLocalCdrDownload": true,
+    "scriptRemoved": true,
+    "reportSha256": "de6eac7f9452f26cef78cdf4547f73d263e8763789630b5bea67d19573792f19"
   }
 }

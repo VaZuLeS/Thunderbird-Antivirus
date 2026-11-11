@@ -193,13 +193,13 @@ def native_save_path(display, path, save_button=False):
 
 
 def native_dialogs(display):
-    """Observe mapped transient X11 windows; GTK can grab keys without changing focus."""
+    """Observe mapped dialog windows, including background-owned GTK save pickers."""
     env={**os.environ,'LC_ALL':'C'}
     tree=subprocess.run(['xwininfo','-display',display,'-root','-tree'],capture_output=True,text=True,check=True,timeout=3,env=env).stdout
     mapped=set()
     for window in set(re.findall(r'^\s+(0x[0-9a-fA-F]+)\b',tree,re.M)):
-        transient=subprocess.run(['xprop','-display',display,'-id',window,'WM_TRANSIENT_FOR'],capture_output=True,text=True,timeout=3,env=env)
-        if transient.returncode or not re.search(r'window id # 0x[1-9a-fA-F][0-9a-fA-F]*',transient.stdout):continue
+        kind=subprocess.run(['xprop','-display',display,'-id',window,'_NET_WM_WINDOW_TYPE'],capture_output=True,text=True,timeout=3,env=env)
+        if kind.returncode or '_NET_WM_WINDOW_TYPE_DIALOG' not in kind.stdout:continue
         info=subprocess.run(['xwininfo','-display',display,'-id',window],capture_output=True,text=True,timeout=3,env=env)
         if info.returncode==0 and 'Map State: IsViewable' in info.stdout:mapped.add(window)
     return mapped
