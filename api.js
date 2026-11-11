@@ -305,6 +305,7 @@ try {
                                     headerMessageId: message.headerMessageId,
                                     virustotal_stats: att.virustotal_stats,
                                     jobId: att.hybrid_job_id,
+                                    quickScanId: att.hybrid_quick_scan_id,
                                     submissionId: att.hybrid_submission_id
                                 }, frag)
                             );
@@ -1305,11 +1306,11 @@ function scheduleHybridReportPoll(params, targetContainer, replaceNode) {
     }, HYBRID_REPORT_POLL_DELAY_MS);
 }
 
-async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null, urlscan = null, jobId = null, submissionId = null, _attempt = 1 }, targetContainer, replaceNode = null) {
+async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats = null, urlscan = null, jobId = null, submissionId = null, quickScanId = null, _attempt = 1 }, targetContainer, replaceNode = null) {
     const generation = hybridReportGeneration;
     if (hybridReportDisposed) return;
     try {
-        const { response, json_data } = await fetch_hybrid_report(hybrid_sha, partName ? 'attachment:' + partName : popupLinkResources.get(attachmentName) || null, submissionId || jobId);
+        const { response, json_data } = await fetch_hybrid_report(hybrid_sha, partName ? 'attachment:' + partName : popupLinkResources.get(attachmentName) || null, quickScanId || submissionId || jobId);
         if (hybridReportDisposed || generation !== hybridReportGeneration) return;
 
         if (response.status === 200) {
@@ -1328,12 +1329,12 @@ async function get_hybrid_report_by_sha256({ hybrid_sha, attachmentName, message
                 }
             }
             if (json_data && isHybridReportInProgress(json_data) && _attempt < HYBRID_REPORT_POLL_MAX_ATTEMPTS) {
-                scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, _attempt: _attempt + 1 }, targetContainer, reportNode);
+                scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, quickScanId, _attempt: _attempt + 1 }, targetContainer, reportNode);
             }
         } else if (response.status === 404 && (jobId || submissionId) && _attempt < HYBRID_REPORT_POLL_MAX_ATTEMPTS) {
             const pendingReport = { state: 'IN_PROGRESS', sha256: hybrid_sha, job_id: jobId, submission_id: submissionId };
             const reportNode = render_hybrid_report_ui({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, json_data: pendingReport, jobId, submissionId, attempt: _attempt }, targetContainer, replaceNode);
-            scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, _attempt: _attempt + 1 }, targetContainer, reportNode);
+            scheduleHybridReportPoll({ hybrid_sha, attachmentName, messageId, partName, headerMessageId, virustotal_stats, urlscan, jobId, submissionId, quickScanId, _attempt: _attempt + 1 }, targetContainer, reportNode);
         } else {
             handle_hybrid_report_error(response, attachmentName, targetContainer, json_data);
         }
@@ -1370,6 +1371,7 @@ function handleUrlScanClick(btn, url, urlId, headerMessageId, urlscan = null) {
                     attachmentName: url, headerMessageId,
                     urlscan,
                     jobId: response.data?.job_id || (Array.isArray(response.data?.reports) && response.data.reports[0]) || response.data?.id,
+                    quickScanId: response.data?.id,
                     submissionId: response.data?.submission_id || response.data?.id
                 });
             }, 3000);
@@ -1401,6 +1403,7 @@ function processRecordLinks(links, headerMessageId, syncFragment, fetchTasks) {
                 headerMessageId: headerMessageId,
                 urlscan: linkObj.urlscan,
                 jobId: linkObj.hybrid_job_id,
+                quickScanId: linkObj.hybrid_quick_scan_id,
                 submissionId: linkObj.hybrid_submission_id
             }, frag));
         }
@@ -1492,6 +1495,7 @@ function handleUploadClick({ hash, safeHash, attachmentName, messageId, partName
                     get_hybrid_report_by_sha256({
                         hybrid_sha: response.data?.sha256 || hash,
                         jobId: response.data?.job_id || (Array.isArray(response.data?.reports) && response.data.reports[0]) || response.data?.id,
+                        quickScanId: response.data?.id,
                         submissionId: response.data?.submission_id || response.data?.id,
                         attachmentName: attachmentName,
                         messageId: messageId,

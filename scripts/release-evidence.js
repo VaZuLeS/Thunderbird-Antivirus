@@ -23,6 +23,7 @@ function native(report) {
         acknowledgedCrashRecovery:recovery(report.acknowledgedCrashRecovery),pendingCrashRecovery:recovery(report.pendingCrashRecovery),
         finalAuditRecords:report.finalAuditRecords?.map(audit),
         inlineManualScan:pick(report.inlineManualScan,['passed','realThunderbirdAPIs','syntheticTransport','liveProviderCalls','contextRenewed','completed','visibleCompletion','submissions','historicalAuditUnchanged']),
+        apiDebug:report.apiDebug?booleans(report.apiDebug,["passed", "realThunderbirdAPIs", "adminProtected", "backgroundCaptured", "popupCaptured", "httpStatusVisible", "invalidJsonVisible", "exportVerified", "secretsRedacted", "noExtraRequests", "auditPreserved", "disabledCleared", "syntheticTransport", "liveProviderCalls"]):undefined,
         hybridStoredRefresh:report.hybridStoredRefresh?booleans(report.hybridStoredRefresh,['passed','realThunderbirdAPIs','realIndexedDB','syntheticProviderPayload','liveProviderCalls','pendingAdvanced','sameContext','messageView','popupView','capacityReasonVisible','historyPreserved','auditPreserved','readCountersStable','storedVerdictRetained','unfinishedReportPreserved','localFindingAgrees','storedSnapshotAgrees']):undefined,
         protectionProfile:report.protectionProfile?booleans(report.protectionProfile,['passed','realThunderbirdAPIs','realDownloadsAPI','nativeFilePicker','exportedSavedPolicy','explicitUiImport','previewReadOnly','cancelPreserved','unrelatedDataPreserved','v1Compatible','noConsentOrPermissionGrant','noProviderRequests','appearanceProfileCompatible']):undefined,
         storageConcurrency:report.storageConcurrency?{
@@ -47,7 +48,7 @@ function browser(report) {
         results:report.results.map(row=>pick(row,['id','lang','view','kind','width','scheme','state','populated','url','scenario','density','status']))};
 }
 function healthy(thunderbird,browserUi) {
-    if(!Array.isArray(thunderbird)||!Array.isArray(browserUi)||thunderbird.some(r=>r.passed!==true||r.error||(r.storageLifecycle&&r.storageLifecycle.passed!==true)||(r.storageConcurrency&&r.storageConcurrency.passed!==true)||(r.protectionProfile&&r.protectionProfile.passed!==true)||(r.hybridStoredRefresh&&r.hybridStoredRefresh.passed!==true))||browserUi.some(r=>r.fatalError||r.failed!==0||r.results?.some(row=>row.status!=='passed'||row.error||row.errors?.length||row.violations?.length)))throw Error('Refusing failed release evidence');
+    if(!Array.isArray(thunderbird)||!Array.isArray(browserUi)||thunderbird.some(r=>r.passed!==true||r.error||(r.storageLifecycle&&r.storageLifecycle.passed!==true)||(r.storageConcurrency&&r.storageConcurrency.passed!==true)||(r.protectionProfile&&r.protectionProfile.passed!==true)||(r.hybridStoredRefresh&&r.hybridStoredRefresh.passed!==true)||(r.apiDebug&&r.apiDebug.passed!==true))||browserUi.some(r=>r.fatalError||r.failed!==0||r.results?.some(row=>row.status!=='passed'||row.error||row.errors?.length||row.violations?.length)))throw Error('Refusing failed release evidence');
 }
 function create(identity,thunderbird,browserUi,commit) {
     // Validate BEFORE projection: a raw failure must never disappear in redaction.

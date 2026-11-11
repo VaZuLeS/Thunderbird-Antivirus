@@ -14,7 +14,7 @@ const ThundySecurity = (() => {
         const saved=(await browser.storage.local.get(KEY))[KEY];
         if(saved===undefined)return {schemaVersion:1,policy:{...defaults}};
         const validVerifier=value=>value && value.algorithm==='PBKDF2-SHA-256' && value.iterations===ITERATIONS && /^[0-9a-f]{64}$/.test(value.salt) && /^[0-9a-f]{64}$/.test(value.hash);
-        if(!saved || saved.schemaVersion!==1 || !saved.policy || typeof saved.policy.enabled!=='boolean' || !Number.isInteger(saved.policy.threshold) || saved.policy.threshold<0 || saved.policy.threshold>100 || !['warn','approval'].includes(saved.policy.unknown) || !Number.isSafeInteger(saved.policy.revision) || saved.policy.revision<0 || ['admin','approval','recovery'].some(key=>saved[key]!==undefined&&!validVerifier(saved[key])))throw error('SECURITY_STATE_INVALID');
+        if(!saved || saved.schemaVersion!==1 || (saved.apiDebugEnabled!==undefined&&typeof saved.apiDebugEnabled!=='boolean') || !saved.policy || typeof saved.policy.enabled!=='boolean' || !Number.isInteger(saved.policy.threshold) || saved.policy.threshold<0 || saved.policy.threshold>100 || !['warn','approval'].includes(saved.policy.unknown) || !Number.isSafeInteger(saved.policy.revision) || saved.policy.revision<0 || ['admin','approval','recovery'].some(key=>saved[key]!==undefined&&!validVerifier(saved[key])))throw error('SECURITY_STATE_INVALID');
         return saved;
     }
     async function digest(password, salt) {
@@ -77,6 +77,16 @@ const ThundySecurity = (() => {
                 sessions.clear(); saved.policy={...defaults,...saved.policy,revision:(saved.policy?.revision||0)+1};await browser.storage.local.set({[KEY]:saved});return {recovery};
             }
             await authorized(sender,token);
+            if (['apiDebugStatus','apiDebugSet','apiDebugReport','apiDebugClear'].includes(op)) {
+                if(op==='apiDebugSet') {
+                    if(typeof request.enabled!=='boolean')throw error('SETTINGS_INVALID');
+                    saved.apiDebugEnabled=request.enabled;
+                    await browser.storage.local.set({[KEY]:saved});
+                    ThundyApiDiagnostics.reset();
+                }
+                if(op==='apiDebugClear')ThundyApiDiagnostics.reset();
+                return {enabled:saved.apiDebugEnabled===true,...(op==='apiDebugReport'?{report:ThundyApiDiagnostics.report()}:{} )};
+            }
             let recovery;
             if (op==='configure') {
                 if (request.adminPassword) {

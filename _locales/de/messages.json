@@ -2545,5 +2545,38 @@
   },
   "analysisSimpleDocumentationIncomplete": {
     "message": "Befunde verfügbar • Dokumentation unvollständig"
+  },
+  "apiDebugTitle": {
+    "message": "API-Debugmodus"
+  },
+  "apiDebugHelp": {
+    "message": "Neue API-Versuche lokal zur Fehlerdiagnose erfassen. Aktivieren, den Fehler reproduzieren und den Bericht ansehen oder exportieren. Bei gesetztem Adminpasswort ist eine Adminentsperrung nötig. Schlüssel, private URLs, Nachrichteninhalte und Rohdaten werden ausgelassen; Referenz-IDs werden pseudonymisiert. Höchstens 100 Einträge / 1 MiB bleiben eine Stunde im Arbeitsspeicher und gehen beim Neustart verloren. Deaktivieren leert den Bericht. Es erfolgt keine zusätzliche Dienstanfrage."
+  },
+  "apiDebugEnable": {
+    "message": "API-Diagnose aktivieren"
+  },
+  "apiDebugSave": {
+    "message": "Debugeinstellung speichern"
+  },
+  "apiDebugPreview": {
+    "message": "Debugbericht ansehen"
+  },
+  "apiDebugExport": {
+    "message": "Debugbericht exportieren"
+  },
+  "apiDebugClear": {
+    "message": "Debugbericht leeren"
+  },
+  "apiDebugSaved": {
+    "message": "Debugeinstellung gespeichert. Bisherige Diagnosedaten geleert."
+  },
+  "apiDebugCleared": {
+    "message": "Debugbericht geleert."
+  },
+  "apiDebugFailed": {
+    "message": "Debugaktion fehlgeschlagen. Administration entsperren und erneut versuchen."
+  },
+  "apiDebugFailureHint": {
+    "message": "Für einen detaillierten Fehlerbericht den API-Debugmodus in den Einstellungen aktivieren, die Prüfung wiederholen und den Debugbericht exportieren."
   }
 }

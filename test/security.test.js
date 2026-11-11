@@ -6,7 +6,7 @@ function fixture(){
  let now=1000000;const stored={},connect=[];
  const browser={runtime:{id:'addon',getURL:p=>'moz-extension://addon/'+p,onConnect:{addListener:fn=>connect.push(fn)}},storage:{local:{get:async key=>key===null?{...stored}:typeof key==='string'?{[key]:stored[key]}:Object.fromEntries(key.map(k=>[k,stored[k]])),set:async values=>Object.assign(stored,values)}}};
  const c=vm.createContext({browser,crypto:webcrypto,TextEncoder,Date:class extends Date{static now(){return now;}}});
- vm.runInContext(fs.readFileSync('security.js','utf8')+'\nglobalThis.security=ThundySecurity;',c);
+ vm.runInContext(fs.readFileSync('security.js','utf8')+'\n'+fs.readFileSync('api_diagnostics.js','utf8')+'\nglobalThis.security=ThundySecurity;',c);
  return {s:c.security,c,browser,stored,advance:ms=>now+=ms,sender:{id:'addon',url:browser.runtime.getURL('options.html'),tab:{id:1},documentId:'doc-1'}};
 }
 const policy={enabled:true,threshold:50,unknown:'warn'};
@@ -129,13 +129,23 @@ test('real settings client renders, locks, unlocks and writes through background
   const recoveryCode=doc.getElementById('securityRecoveryOutput').textContent.match(/[a-f0-9]{64}$/)[0];
   assert.equal(doc.querySelector('[data-security=securityAdminPassword]').value,'');
   assert.equal(doc.querySelector('#analysisDisplayForm button').disabled,true);
+  assert.equal(doc.querySelector('#apiDebugEnabled').disabled,true);
+  assert.equal(doc.querySelector('#apiDebugExport').disabled,true);
   value('securityAdminPassword','administrator-123');doc.querySelector('[data-security=unlock]').click();
   await wait(()=>!doc.querySelector('.settings-shell').hidden);
   doc.getElementById('analysisDefaultView').value='expert';doc.getElementById('analysisShowHybridDetails').checked=false;doc.getElementById('analysisDisplayForm').requestSubmit();
   await wait(()=>f.stored.analysisDefaultView==='expert'&&f.stored.analysisShowHybridDetails===false);assert.equal(f.stored.externalAnalysisConsent,undefined);
   assert.ok(doc.getElementById('securityApprovalState').textContent.includes('configured'));
+  doc.getElementById('apiDebugEnabled').checked=true;doc.getElementById('apiDebugForm').requestSubmit();
+  await wait(()=>f.stored.thundySecurityV1.apiDebugEnabled===true&&!doc.getElementById('apiDebugPreview').disabled);
+  doc.getElementById('apiDebugPreview').click();await wait(()=>!doc.getElementById('apiDebugContent').hidden);
+  assert.ok(doc.getElementById('apiDebugContent').textContent.includes('thundy-api-debug'));
+  assert.ok(!doc.getElementById('apiDebugContent').textContent.includes('PRIVATE_API_CANARY'));
   doc.querySelector('[data-security=lock]').click();await wait(()=>doc.querySelector('.settings-shell').hidden);
   await assert.rejects(f.s.write({analysisDefaultView:'simple'},f.sender),/ADMIN_LOCKED/);
+  assert.equal(doc.getElementById('apiDebugContent').textContent,'');
+  assert.equal(doc.getElementById('apiDebugExport').disabled,true);
+  await assert.rejects(f.s.command({op:'apiDebugReport'},f.sender),/ADMIN_LOCKED/);
   value('securityRecovery',recoveryCode);value('securityRecoveryPassword','new-admin-password');value('securityRecoveryConfirm','new-admin-password');doc.querySelector('[data-security=recover]').click();
   await wait(()=>/[a-f0-9]{64}$/.test(doc.getElementById('securityRecoveryOutput').textContent));
   await f.s.command({op:'unlock',password:'new-admin-password'},f.sender);assert.equal(f.stored.analysisDefaultView,'expert');

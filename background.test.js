@@ -2958,7 +2958,7 @@ describe('background.js', () => {
                 appendedData = options.body;
                 return {
                     status: 200,
-                    json: async () => ({ submission_id: 'sub_123', job_id: 'job_456', sha256: 'hash_api' })
+                    json: async () => ({ id:'quick_789', submission_id: 'sub_123', job_id: 'job_456', sha256: 'hash_api' })
                 };
             };
 
@@ -2975,6 +2975,7 @@ describe('background.js', () => {
             assert.ok(appendedData);
             assert.deepEqual(result, {
                 hybrid_data: {
+                    quick_scan_id: 'quick_789',
                     submission_id: 'sub_123',
                     job_id: 'job_456',
                     sha256: 'hash_api',

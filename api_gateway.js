@@ -169,6 +169,15 @@ class ApiGateway {
     }
 
     async fetchWithTimeout(url, options = {}, timeout = 15000) {
+        const diagnostic=typeof ThundyApiDiagnostics!=='undefined'?ThundyApiDiagnostics:null;
+        const ticket=diagnostic?await diagnostic.start(url,this._injectAuthHeaders(url,options)):null;
+        const trace={attempts:[]};
+        try {return await this._fetchWithTimeout(url,options,timeout,ticket===null?null:trace);}
+        catch(error){if(!trace.reason&&diagnostic)trace.reason=diagnostic.classify(error);if(diagnostic&&!trace.errorCode)trace.errorCode=diagnostic.code(error);throw error;}
+        finally {if(ticket!==null)await diagnostic.finish(ticket,trace);}
+    }
+
+    async _fetchWithTimeout(url, options = {}, timeout = 15000, trace = null) {
         let hostname = null;
         try {
             hostname = new URL(url).hostname;
@@ -186,6 +195,7 @@ class ApiGateway {
         const rateKey=ratePolicy?.key||hostname;
         const currentBackoff=()=>[...new Set([rateKey,hostname,ratePolicy?.host])].map(key=>this.getBackoff(key)).filter(Boolean).sort((a,b)=>b.remainingSeconds-a.remainingSeconds)[0]||null;
         const localResponse=backoff=>{
+            if(trace){trace.localBackoff=true;trace.reason='rate_limited';}
             const data={error:'rate_limited',message:'Provider cooldown active',retry_after:backoff.remainingSeconds};
             const headers={'content-type':'application/json','retry-after':String(backoff.remainingSeconds)};
             const ResponseCtor=typeof Response!=='undefined'?Response:class {constructor(body,init){this.status=init.status;this.headers={get:key=>headers[key.toLowerCase()]||null};}async json(){return data;}};
@@ -233,7 +243,9 @@ class ApiGateway {
                 const blocked=currentBackoff();
                 if(blocked){if(response)break;return localResponse(blocked);}
                 if (info && !started) { emit({ phase: 'start' }); started = true; }
+                const attemptAt=Date.now();
                 response = await fetch(url, fetchOptions);
+                if(trace){const type=response.headers?.get?.('content-type')||'';trace.attempts.push({status:response.status,durationMs:Math.max(0,Date.now()-attemptAt),contentType:!type?'missing':/json/i.test(type)?'json':/html/i.test(type)?'html':/^text\//i.test(type)?'text':'other'});trace.reason=ThundyApiDiagnostics.classify(null,response.status);}
                 responded = true;
                 const rate=this.rateHeaders(response,ratePolicy);quota=rate.quota;retrySeconds=rate.seconds;cooldownKey=rate.key||rateKey;
                 if(response.status===429||quota.quotaRemaining===0&&retrySeconds!==null){
@@ -250,8 +262,9 @@ class ApiGateway {
             if ((response.body || info) && typeof response.json === 'function') {
                 let data;
                 try { data = await response.json(); }
-                catch(error) { if(response.status>=200&&response.status<300)throw error;data=null; }
+                catch(error) { if(trace){trace.bodyState='invalid_json';if(response.status>=200&&response.status<300)trace.reason='invalid_json';}if(response.status>=200&&response.status<300)throw error;data=null; }
                 data=this.sanitizeResponse(data,fetchOptions);
+                if(trace){trace.bodyState=trace.bodyState||'json';trace.response=ThundyApiDiagnostics.project(data);}
                 await options.analysisContext?.validateResponse?.(data);
                 observedData = data;
                 response.json = async () => data;
@@ -268,6 +281,7 @@ class ApiGateway {
             if (info) emit({ phase: 'finish', responded: true, ...(typeof ThundyProviders !== 'undefined' ? ThundyProviders.registry[info.provider].normalize(info,response.status,observedData) : ThundyAnalysis.response(info, response.status, observedData)), ...(typeof ThundyProviders !== 'undefined' ? ThundyProviders.metadata(info.provider,observedData,response.status) : {}),...quota,...(response.status===429?{retryAfter:retrySeconds}:{}),...(cooldown?{retryAt:cooldown.until}:{}), observedAt: Date.now() });
             return response;
         } catch (error) {
+            if(trace){trace.reason=ThundyApiDiagnostics.classify(error);trace.errorCode=ThundyApiDiagnostics.code(error);}
             if (info && started) emit({ phase: 'finish', responded, state: 'failed', verdict: 'unknown',errorCode:error.code||error.name, errorDetails: error.code || error.name || 'Request failed', observedAt: null });
             clearTimeout(id);
             if (error.name === 'AbortError') {

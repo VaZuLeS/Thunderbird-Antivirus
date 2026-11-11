@@ -2542,5 +2542,38 @@
   },
   "analysisSimpleDocumentationIncomplete": {
     "message": "Résultats disponibles • documentation incomplète"
+  },
+  "apiDebugTitle": {
+    "message": "Mode de débogage API"
+  },
+  "apiDebugHelp": {
+    "message": "Enregistrez localement les nouvelles tentatives API. Activez le mode, reproduisez l’erreur, puis consultez ou exportez le rapport. Le déverrouillage administrateur est requis si un mot de passe est défini. Les clés, URL privées, contenus des messages et données brutes sont omis ; les identifiants sont pseudonymisés. Jusqu’à 100 entrées / 1 Mio restent en mémoire pendant une heure et sont perdues au redémarrage. La désactivation efface le rapport. Aucune requête supplémentaire n’est envoyée."
+  },
+  "apiDebugEnable": {
+    "message": "Activer le diagnostic API"
+  },
+  "apiDebugSave": {
+    "message": "Enregistrer le réglage de débogage"
+  },
+  "apiDebugPreview": {
+    "message": "Consulter le rapport de débogage"
+  },
+  "apiDebugExport": {
+    "message": "Exporter le rapport de débogage"
+  },
+  "apiDebugClear": {
+    "message": "Effacer le rapport de débogage"
+  },
+  "apiDebugSaved": {
+    "message": "Réglage enregistré. Les diagnostics précédents ont été effacés."
+  },
+  "apiDebugCleared": {
+    "message": "Rapport de débogage effacé."
+  },
+  "apiDebugFailed": {
+    "message": "Échec de l’opération. Déverrouillez l’administration et réessayez."
+  },
+  "apiDebugFailureHint": {
+    "message": "Pour un rapport détaillé, activez le débogage API dans les paramètres, relancez la vérification et exportez le rapport."
   }
 }

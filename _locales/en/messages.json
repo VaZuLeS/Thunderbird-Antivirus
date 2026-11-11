@@ -2545,5 +2545,38 @@
   },
   "analysisSimpleDocumentationIncomplete": {
     "message": "Findings available • documentation incomplete"
+  },
+  "apiDebugTitle": {
+    "message": "API debug mode"
+  },
+  "apiDebugHelp": {
+    "message": "Capture new API attempts locally to diagnose failures. Enable, reproduce the failure, then preview or export the report. Admin unlock is required when an admin password is set. Keys, private URLs, message contents and raw bodies are omitted; reference IDs are pseudonymized. Up to 100 entries / 1 MiB are kept in memory for one hour and lost on restart. Disabling clears the report. No additional service request is made."
+  },
+  "apiDebugEnable": {
+    "message": "Enable API diagnostics"
+  },
+  "apiDebugSave": {
+    "message": "Save debug setting"
+  },
+  "apiDebugPreview": {
+    "message": "Preview debug report"
+  },
+  "apiDebugExport": {
+    "message": "Export debug report"
+  },
+  "apiDebugClear": {
+    "message": "Clear debug report"
+  },
+  "apiDebugSaved": {
+    "message": "Debug setting saved. Previous diagnostics cleared."
+  },
+  "apiDebugCleared": {
+    "message": "Debug report cleared."
+  },
+  "apiDebugFailed": {
+    "message": "Debug operation failed. Unlock administration and try again."
+  },
+  "apiDebugFailureHint": {
+    "message": "For a detailed failure report, enable API debug mode in settings, reproduce the check and export the debug report."
   }
 }

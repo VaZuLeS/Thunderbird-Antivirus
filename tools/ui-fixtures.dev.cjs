@@ -183,7 +183,10 @@ function addonMock({
             ? scenario === 'expired' ? {success:false,code:'APPROVAL_EXPIRED'} : {success:true,url:'https://controlled.example.invalid/'+'long-path-'.repeat(12),score:72,until:Date.now()+60000}
             : (uiTest.approvals++, scenario === 'pending' ? await new Promise(resolve => {uiTest.finishApproval=()=>resolve({success:true});}) : {success:scenario !== 'failed',...(scenario === 'failed'?{code:'APPROVAL_CHANGED'}:{})})
           : p.action === "securityCommand"
-          ? {success:true,protected:false,unlocked:true,approvalConfigured:false,policy:{enabled:false,threshold:50,unknown:'warn',revision:0}}
+          ? p.op==='apiDebugReport' ? {success:true,report:{schemaVersion:1,kind:'thundy-api-debug',entries:[]}}
+          : p.op==='apiDebugStatus' ? {success:true,enabled:uiTest.debugEnabled===true}
+          : p.op==='apiDebugSet' ? (uiTest.debugEnabled=p.enabled,{success:true,enabled:p.enabled})
+          : {success:true,protected:false,unlocked:true,approvalConfigured:false,policy:{enabled:false,threshold:50,unknown:'warn',revision:0}}
           : p.action === 'securitySettingsWrite'
           ? (await window.browser.storage.local.set(p.values),{success:true})
           : p.action === "getLinkAudit"

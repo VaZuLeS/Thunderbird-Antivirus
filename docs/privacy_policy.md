@@ -94,3 +94,20 @@ IT: Crea un’istantanea locale dei controlli registrati senza avviare una nuova
 PL: Tworzy lokalny obraz zapisanych kontroli bez uruchamiania nowej analizy. Bieżące obserwacje i zapisana historia z niepotwierdzonym powiązaniem pozostają rozdzielone. Zawiera usługi, stany, werdykty i dokładne czasy obserwacji. Nie zawiera adresów URL, nazw plików, skrótów, adresów IP, kluczy, treści wiadomości ani wewnętrznych identyfikatorów. Numery zasobów obowiązują tylko w tym raporcie. To nie jest pełna historia ani uwierzytelniony dowód. Nic nie jest wysyłane automatycznie. Sprawdź przed udostępnieniem.
 
 [Datenvertrag und Kontextgrenzen](QUELLENEXPORT.md).
+
+
+## Ergänzung: optionaler API-Debugmodus (Entwicklungskandidat 1.25.7)
+
+EN: Capture new API attempts locally to diagnose failures. Enable, reproduce the failure, then preview or export the report. Admin unlock is required when an admin password is set. Keys, private URLs, message contents and raw bodies are omitted; reference IDs are pseudonymized. Up to 100 entries / 1 MiB are kept in memory for one hour and lost on restart. Disabling clears the report. No additional service request is made.
+
+DE: Neue API-Versuche lokal zur Fehlerdiagnose erfassen. Aktivieren, den Fehler reproduzieren und den Bericht ansehen oder exportieren. Bei gesetztem Adminpasswort ist eine Adminentsperrung nötig. Schlüssel, private URLs, Nachrichteninhalte und Rohdaten werden ausgelassen; Referenz-IDs werden pseudonymisiert. Höchstens 100 Einträge / 1 MiB bleiben eine Stunde im Arbeitsspeicher und gehen beim Neustart verloren. Deaktivieren leert den Bericht. Es erfolgt keine zusätzliche Dienstanfrage.
+
+FR: Enregistrez localement les nouvelles tentatives API. Activez le mode, reproduisez l’erreur, puis consultez ou exportez le rapport. Le déverrouillage administrateur est requis si un mot de passe est défini. Les clés, URL privées, contenus des messages et données brutes sont omis ; les identifiants sont pseudonymisés. Jusqu’à 100 entrées / 1 Mio restent en mémoire pendant une heure et sont perdues au redémarrage. La désactivation efface le rapport. Aucune requête supplémentaire n’est envoyée.
+
+ES: Registra localmente los nuevos intentos de API. Activa el modo, reproduce el error y consulta o exporta el informe. Se requiere desbloqueo de administrador si hay contraseña. Se omiten claves, URL privadas, mensajes y datos sin procesar; los identificadores se seudonimizan. Hasta 100 entradas / 1 MiB permanecen en memoria una hora y se pierden al reiniciar. Desactivar borra el informe. No se envían solicitudes adicionales.
+
+IT: Registra localmente i nuovi tentativi API. Attiva la modalità, riproduci l’errore e visualizza o esporta il rapporto. Se è impostata una password amministratore, occorre sbloccare l’amministrazione. Chiavi, URL privati, messaggi e dati grezzi sono omessi; gli identificatori sono pseudonimizzati. Fino a 100 voci / 1 MiB restano in memoria per un’ora e si perdono al riavvio. La disattivazione cancella il rapporto. Nessuna richiesta aggiuntiva viene inviata.
+
+PL: Zapisuj lokalnie nowe próby API. Włącz tryb, odtwórz błąd, a następnie wyświetl lub wyeksportuj raport. Jeśli ustawiono hasło administratora, wymagane jest odblokowanie administracji. Klucze, prywatne adresy URL, treść wiadomości i surowe dane są pomijane; identyfikatory są pseudonimizowane. Do 100 wpisów / 1 MiB pozostaje w pamięci przez godzinę i znika po ponownym uruchomieniu. Wyłączenie czyści raport. Nie są wysyłane dodatkowe żądania.
+
+Der lokale Bericht enthält ausschließlich begrenzte projizierte Transport- und Antwortmetadaten. Er ist kein Rohmitschnitt. Die Einstellung bleibt im Profil, die Aufzeichnung nicht. Exportierte Dateien werden durch Ausschalten oder Leeren nicht gelöscht. Details: [API-Debugmodus](API_DEBUGMODUS_1_25_7.md).

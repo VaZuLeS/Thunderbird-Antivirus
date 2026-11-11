@@ -2542,5 +2542,38 @@
   },
   "analysisSimpleDocumentationIncomplete": {
     "message": "Wyniki dostępne • dokumentacja niepełna"
+  },
+  "apiDebugTitle": {
+    "message": "Tryb debugowania API"
+  },
+  "apiDebugHelp": {
+    "message": "Zapisuj lokalnie nowe próby API. Włącz tryb, odtwórz błąd, a następnie wyświetl lub wyeksportuj raport. Jeśli ustawiono hasło administratora, wymagane jest odblokowanie administracji. Klucze, prywatne adresy URL, treść wiadomości i surowe dane są pomijane; identyfikatory są pseudonimizowane. Do 100 wpisów / 1 MiB pozostaje w pamięci przez godzinę i znika po ponownym uruchomieniu. Wyłączenie czyści raport. Nie są wysyłane dodatkowe żądania."
+  },
+  "apiDebugEnable": {
+    "message": "Włącz diagnostykę API"
+  },
+  "apiDebugSave": {
+    "message": "Zapisz ustawienie debugowania"
+  },
+  "apiDebugPreview": {
+    "message": "Wyświetl raport debugowania"
+  },
+  "apiDebugExport": {
+    "message": "Eksportuj raport debugowania"
+  },
+  "apiDebugClear": {
+    "message": "Wyczyść raport debugowania"
+  },
+  "apiDebugSaved": {
+    "message": "Zapisano ustawienie. Poprzednia diagnostyka została wyczyszczona."
+  },
+  "apiDebugCleared": {
+    "message": "Raport debugowania wyczyszczony."
+  },
+  "apiDebugFailed": {
+    "message": "Operacja nie powiodła się. Odblokuj administrację i spróbuj ponownie."
+  },
+  "apiDebugFailureHint": {
+    "message": "Aby uzyskać szczegółowy raport, włącz debugowanie API w ustawieniach, powtórz sprawdzanie i wyeksportuj raport."
   }
 }
