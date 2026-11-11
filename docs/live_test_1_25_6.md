@@ -16,5 +16,6 @@ Unveröffentlichter Kandidat. Die tatsächliche Antwort des Nutzers ist noch nic
 | C10 | Kein neuer Provideraufruf durch Aktualisierung | OK | native Fetchzählung und simulierte Transportprüfung |
 | C11 | Vollständige neue Remote-Paketabnahme | OFFEN | Sechs Sprachen und beide Linuxlinien erforderlich |
 | C12 | Öffentliche Releaseassets unabhängig prüfen | OFFEN | Nach Veröffentlichung |
+| C13 | Separates gespeichertes URL-Urteil bleibt neben unfertigem Rohbericht sichtbar | OK | Tatsächlicher persistHybridLinkVerdict-Schreibpfad, Modellregression und native Gegenprobe; Rohbericht bleibt ausstehend |
 
-**Summe:** 10 OK / 0 FAIL / 0 N/A / 2 OFFEN
+**Summe:** 11 OK / 0 FAIL / 0 N/A / 2 OFFEN

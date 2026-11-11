@@ -658,6 +658,19 @@ test('an existing source context exposes a later stored Hybrid URL result withou
  }finally{ctx.dispose();}
 });
 
+test('a saved Hybrid URL verdict remains visible beside its unfinished raw report',async()=>{
+ const s=setup({},true);await s.context.configure();const records=sourceRecords(s,{messageHeader:s.message.headerMessageId,links:[{url:'https://example.com/',state:'UPLOADED',report:{id:'synthetic-quickscan',finished:false}}]});
+ const ctx=await s.context.getMessageAnalysisContext(s.message);
+ try{
+  await ctx.snapshot();await s.context.persistHybridLinkVerdict(s.message,'https://example.com/',{status:'MALICIOUS',check:{origin:'live',outcome:'success',observedAt:12345}});
+  const snapshot=await ctx.snapshot(),findings=await s.context.collectLinkFindings(s.message,s.full);
+  assert.equal(findings[0].verdict,'malicious');
+  assert.ok(snapshot.rows.some(row=>row.provider==='hybridanalysis'&&row.scope==='url'&&row.resource==='link:0'&&row.verdict==='malicious'&&row.observedAt===12345),'the actual saved URL verdict must not be hidden by a pending report');
+  assert.ok(snapshot.rows.some(row=>row.provider==='hybridanalysis'&&row.scope==='report'&&row.completion==='pending'));
+  assert.equal(records.get(s.message.headerMessageId).links[0].report.finished,false);assert.equal(s.requests.length,0);
+ }finally{ctx.dispose();}
+});
+
 test('source RPC survives malformed stored lists and retains link slots and all provider history',async()=>{
  const s=setup({},true);await s.context.configure();
  const record={attachments:{bad:true},links:[null,{url:'https://example.com/',state:'KNOWN',report:{state:'COMPLETE',verdict:'malicious'}}],analysisStatus:{schemaVersion:2,rows:[null,...['hybridanalysis','virustotal','urlhaus','abuseipdb','urlscan'].map(provider=>({provider,scope:'report',state:'checked',verdict:'malicious',observedAt:10,responses:1}))]}};

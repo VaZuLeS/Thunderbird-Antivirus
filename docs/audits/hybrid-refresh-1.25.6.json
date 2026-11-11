@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "candidateVersion": "1.25.6",
   "published": false,
-  "xpiSha256": "bb128b12f7f4bed11b7e0dc65091b7743e57ca5f07a3e154a17ad142d4c6b80a",
-  "nativeReportSha256": "cbc07399ebeb0ba4862a84cecb62253567a161297e1966601be5a86c88598cb9",
+  "xpiSha256": "ac8c93be9be6e71e27265ba1572ee9a090d1aba45bcbd33413ee49064fe2123f",
+  "nativeReportSha256": "5ec74d3c4b937edc97b911dec4addf6e59d3ebf37049380905fa3d310ee1aba5",
   "hybridStoredRefresh": {
     "passed": true,
-    "helperSha256": "9c9e4d8ba1d52bcaab087540bed70a8f6cc38bbec6215e0310a1797e42ed1752",
+    "helperSha256": "c340c87963bcde5c7c81fd5f6ab56595ff65a9a5bc454dc886201ecb12258bc9",
     "realThunderbirdAPIs": true,
     "realIndexedDB": true,
     "syntheticProviderPayload": true,
@@ -18,16 +18,19 @@
     "capacityReasonVisible": true,
     "historyPreserved": true,
     "auditPreserved": true,
-    "readCountersStable": true
+    "readCountersStable": true,
+    "storedVerdictRetained": true,
+    "unfinishedReportPreserved": true,
+    "localFindingAgrees": true
   },
   "client": "140.12.0",
   "scope": "Actual Linux Thunderbird APIs and IndexedDB, synthetic provider payloads, no real provider account contract; other candidate bytes and external platforms are not implied.",
-  "sourceFingerprint": "bdf66d1a16d431178e587c953c4b42fa8ddbc876407e9d091c806b808492d9a0",
+  "sourceFingerprint": "c5bc56c663a52beb90cf35208114caa271d40505dc0873aa168efaa5800f96ec",
   "upgrade": {
     "from": "1.25.5",
     "to": "1.25.6",
     "passed": true,
-    "reportSha256": "2c934203b814509dc774d4336404a63fe4fb67c4f102b6b0163b2f76134cfa3a",
+    "reportSha256": "7332025d567bfd699c00bea3a014f156c03f4625b9732c0abe18d5adb0492964",
     "gracefulRestarts": 3,
     "forcedRestarts": 2,
     "protectionProfile": {
@@ -61,6 +64,13 @@
     "passed": true,
     "realLocalCdrDownload": true,
     "scriptRemoved": true,
-    "reportSha256": "de6eac7f9452f26cef78cdf4547f73d263e8763789630b5bea67d19573792f19"
+    "reportSha256": "de6eac7f9452f26cef78cdf4547f73d263e8763789630b5bea67d19573792f19",
+    "xpiSha256": "bb128b12f7f4bed11b7e0dc65091b7743e57ca5f07a3e154a17ad142d4c6b80a",
+    "scope": "Earlier candidate: native-dialog orchestration check only, not acceptance of final runtime bytes."
+  },
+  "previousCandidate": {
+    "xpiSha256": "bb128b12f7f4bed11b7e0dc65091b7743e57ca5f07a3e154a17ad142d4c6b80a",
+    "sourceFingerprint": "bdf66d1a16d431178e587c953c4b42fa8ddbc876407e9d091c806b808492d9a0",
+    "nativeReportSha256": "cbc07399ebeb0ba4862a84cecb62253567a161297e1966601be5a86c88598cb9"
   }
 }

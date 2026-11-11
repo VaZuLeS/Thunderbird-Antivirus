@@ -562,3 +562,13 @@ test('failed source persistence does not claim a fully documented external statu
   assert.equal(rows[0]?.completion,rows.length?'complete':undefined);dom.window.close();
  }
 });
+
+
+test('a documented URL verdict does not disappear or complete a separate unfinished Hybrid report',()=>{
+ const a=model();for(const [status,verdict] of [['MALICIOUS','malicious'],['SUSPICIOUS','suspicious'],['CLEAN','none'],['UNKNOWN',null]]){
+  const record={links:[{url:'https://example.com/',state:'UPLOADED',report:{id:'synthetic',finished:false},hybrid_verdict:{status,observedAt:12345}}]},before=JSON.stringify(record),rows=a.legacy(record).rows;
+  assert.ok(rows.some(row=>row.scope==='report'&&row.completion==='pending'));
+  if(verdict)assert.ok(rows.some(row=>row.scope==='url'&&row.state==='checked'&&row.verdict===verdict&&row.observedAt===12345));else assert.ok(!rows.some(row=>row.scope==='url'));
+  assert.equal(JSON.stringify(record),before);
+ }
+});

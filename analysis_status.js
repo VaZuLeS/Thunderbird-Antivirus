@@ -189,10 +189,12 @@ const ThundyAnalysis = (() => {
         for (const [item, resource] of [...attachments.map(item => [item, validResource('attachment:' + item.partName) ? 'attachment:' + item.partName : null]), ...links.map((item,index) => [item, validResource(item.analysisResourceRef) ? item.analysisResourceRef : 'link:' + index])]) {
             const report = item.report;
             const hvVerdict = ({MALICIOUS:'malicious',SUSPICIOUS:'suspicious',CLEAN:'none'})[item.hybrid_verdict?.status];
-            if (!report && hvVerdict && item.url) {
+            if (hvVerdict && item.url) {
                 const info = { provider: 'hybridanalysis', scope: 'url', resource };
                 if (!documented.has(rowKey(info))) model.event({ ...info, phase: 'cache', state: 'checked', verdict: hvVerdict, observedAt: Number.isFinite(item.hybrid_verdict.observedAt) ? item.hybrid_verdict.observedAt : null });
-            } else if (report || ['KNOWN', 'UPLOADED'].includes(item.state)) {
+            }
+            // A URL verdict and a pending raw report are distinct observations.
+            if (report || !(hvVerdict && item.url) && ['KNOWN', 'UPLOADED'].includes(item.state)) {
                 const info = { provider: 'hybridanalysis', scope: report ? 'report' : item.url ? 'url' : item.state === 'UPLOADED' ? 'file' : 'hash', resource };
                 if (!documented.has(rowKey(info)) || report && !model.data.rows.find(r=>rowKey(r)===rowKey(info))?.assessmentVersion) model.event({ ...info, phase: 'cache', ...(report ? ThundyProviderResults.stored('hybridanalysis',item) : { state: item.state === 'UPLOADED' ? 'submitted' : 'received', verdict: 'unknown' }), observedAt: report && Number.isFinite(Date.parse(item.report_fetched_at)) ? Date.parse(item.report_fetched_at) : null });
             }
