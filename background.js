@@ -274,7 +274,11 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                             if (previous != null && (typeof previous !== 'object' || Array.isArray(previous))) throw Object.assign(new Error('Invalid source snapshot container'),{code:'snapshot_invalid'});
                             if (!snapshotCreated && Object.prototype.hasOwnProperty.call(previous || {}, snapshotId)) throw Object.assign(new Error('Source snapshot identifier collision'),{code:'snapshot_collision'});
                             if (!Object.prototype.hasOwnProperty.call(previous || {}, snapshotId) && Object.keys(previous || {}).length >= MAX_SOURCE_SNAPSHOTS) throw Object.assign(new Error('Source snapshot capacity reached'),{code:'snapshot_count'});
-                            const snapshots = {...previous,[snapshotId]:{savedAt:Date.now(),snapshot:value}};
+                            // Reconcile the captured event state with current stored facts
+                            // inside the transaction. Do not persist an older cached view.
+                            const synchronized = {data:JSON.parse(JSON.stringify(value))};
+                            if (!context.scanRunId) ThundyAnalysis.refreshStored(synchronized,sourceRecord(old));
+                            const snapshots = {...previous,[snapshotId]:{savedAt:Date.now(),snapshot:synchronized.data}};
                             if (new TextEncoder().encode(JSON.stringify(snapshots)).length > MAX_SOURCE_SNAPSHOT_BYTES) throw Object.assign(new Error('Source snapshot byte capacity reached'),{code:'snapshot_bytes'});
                             // Additive area: never overwrite legacy snapshots under reused IDs.
                             return {...(old || {messageHeader:key}),analysisSourceSnapshots:snapshots,updatedAt:Date.now()};

@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "candidateVersion": "1.25.6",
   "published": false,
-  "xpiSha256": "ac8c93be9be6e71e27265ba1572ee9a090d1aba45bcbd33413ee49064fe2123f",
-  "nativeReportSha256": "5ec74d3c4b937edc97b911dec4addf6e59d3ebf37049380905fa3d310ee1aba5",
+  "xpiSha256": "10b74ef475555ac27bce5d4d042695ac908cb942d3084d9cbe1ee1610b8453f0",
+  "nativeReportSha256": "e1a6b39ed4d2baeb1834997560fb552e93fc85ccdba6e00b32d15c57373483e2",
   "hybridStoredRefresh": {
     "passed": true,
-    "helperSha256": "c340c87963bcde5c7c81fd5f6ab56595ff65a9a5bc454dc886201ecb12258bc9",
+    "helperSha256": "8869f34eed73a45aaa37ea9e9b1cbc28d52745fc080059c6d06e723c87127d11",
     "realThunderbirdAPIs": true,
     "realIndexedDB": true,
     "syntheticProviderPayload": true,
@@ -21,16 +21,17 @@
     "readCountersStable": true,
     "storedVerdictRetained": true,
     "unfinishedReportPreserved": true,
-    "localFindingAgrees": true
+    "localFindingAgrees": true,
+    "storedSnapshotAgrees": true
   },
   "client": "140.12.0",
   "scope": "Actual Linux Thunderbird APIs and IndexedDB, synthetic provider payloads, no real provider account contract; other candidate bytes and external platforms are not implied.",
-  "sourceFingerprint": "c5bc56c663a52beb90cf35208114caa271d40505dc0873aa168efaa5800f96ec",
+  "sourceFingerprint": "26134fdad6b59e3fbaafabc647aa00db7546d7c4fc125738335c74eaa01ebd8d",
   "upgrade": {
     "from": "1.25.5",
     "to": "1.25.6",
     "passed": true,
-    "reportSha256": "7332025d567bfd699c00bea3a014f156c03f4625b9732c0abe18d5adb0492964",
+    "reportSha256": "185c14f50f9a2876887f2ab6663388e7f0c9618357863750f45618c2438f6433",
     "gracefulRestarts": 3,
     "forcedRestarts": 2,
     "protectionProfile": {
@@ -72,5 +73,12 @@
     "xpiSha256": "bb128b12f7f4bed11b7e0dc65091b7743e57ca5f07a3e154a17ad142d4c6b80a",
     "sourceFingerprint": "bdf66d1a16d431178e587c953c4b42fa8ddbc876407e9d091c806b808492d9a0",
     "nativeReportSha256": "cbc07399ebeb0ba4862a84cecb62253567a161297e1966601be5a86c88598cb9"
-  }
+  },
+  "previousCandidates": [
+    {
+      "xpiSha256": "ac8c93be9be6e71e27265ba1572ee9a090d1aba45bcbd33413ee49064fe2123f",
+      "sourceFingerprint": "c5bc56c663a52beb90cf35208114caa271d40505dc0873aa168efaa5800f96ec",
+      "nativeReportSha256": "5ec74d3c4b937edc97b911dec4addf6e59d3ebf37049380905fa3d310ee1aba5"
+    }
+  ]
 }

@@ -663,7 +663,11 @@ test('a saved Hybrid URL verdict remains visible beside its unfinished raw repor
  const ctx=await s.context.getMessageAnalysisContext(s.message);
  try{
   await ctx.snapshot();await s.context.persistHybridLinkVerdict(s.message,'https://example.com/',{status:'MALICIOUS',check:{origin:'live',outcome:'success',observedAt:12345}});
+  await ctx.flush();
   const snapshot=await ctx.snapshot(),findings=await s.context.collectLinkFindings(s.message,s.full);
+  const written=records.get(s.message.headerMessageId).analysisSourceSnapshots[ctx.snapshotId].snapshot;
+  assert.ok(written.rows.some(row=>row.scope==='url'&&row.verdict==='malicious'),'the persisted source snapshot must include the saved URL verdict');
+  assert.ok(written.rows.some(row=>row.scope==='report'&&row.completion==='pending'));
   assert.equal(findings[0].verdict,'malicious');
   assert.ok(snapshot.rows.some(row=>row.provider==='hybridanalysis'&&row.scope==='url'&&row.resource==='link:0'&&row.verdict==='malicious'&&row.observedAt===12345),'the actual saved URL verdict must not be hidden by a pending report');
   assert.ok(snapshot.rows.some(row=>row.provider==='hybridanalysis'&&row.scope==='report'&&row.completion==='pending'));
