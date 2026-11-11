@@ -58,6 +58,6 @@ Die [Speicherabnahme für Kandidat 1.25.4](SPEICHERABNAHME_2026_11_10.md) ergän
 Die [Fortführung zum Speicherwiederanlauf](SPEICHERWIEDERANLAUF_2026_11_10.md) ergänzt einen belegten Verbindungsfehlerpfad und native Parallelitätsprüfungen, ohne die Aufbewahrungsregeln zu verändern.
 
 
-## Optionale API-Diagnose ab Entwicklungskandidat 1.25.7
+## Optionale API-Diagnose ab 1.25.7
 
 Die standardmäßig ausgeschaltete Diagnose speichert keine Rohantworten in IndexedDB, browser.storage oder im Audit. Die Aktivierung wird in der administrativ geschützten Sicherheitskonfiguration gespeichert; die bereinigten Einträge liegen nur im Hintergrund-Arbeitsspeicher (100 Einträge / 1 MiB, höchstens eine Stunde; ablaufende laufende Tickets separat begrenzt). Ausschalten oder Leeren invalidiert auch verspätete Antworten. Aufzeichnungen gehen beim Hintergrundneustart verloren. Exportierte Dateien sind eigenständige Kopien und müssen gesondert gelöscht werden. Historische Anbieterbefunde und Nutzerentscheidungen bleiben unverändert. [Umfang, Bedienung und Grenzen](API_DEBUGMODUS_1_25_7.md).

@@ -1,5 +1,7 @@
 # API-Debugmodus und Hybrid-Abrufvertrag — 11. November 2026
 
+**Nachtrag:** [1.25.7 ist veröffentlicht und unabhängig geprüft](VEROEFFENTLICHUNG_1_25_7.md). Frühere Kandidatenangaben bleiben historisch ihren jeweiligen Paketbytes zugeordnet. Der ursprüngliche Anbieterfall bleibt ohne tatsächliche Diagnosedaten gesondert offen.
+
 Entwicklungskandidat **1.25.7**; veröffentlicht bleibt bis zur gesonderten Freigabe 1.25.6. Keine Live-Kontoabnahme aus synthetischen Antworten ableiten.
 
 ## Bedienung
@@ -53,3 +55,22 @@ Windows/macOS, NVDA/VoiceOver, tatsächliche Kontoverträge und automatische Upd
 Die Pseudonyme enthalten einen getrennten Bereich je Popup-Kontext; gleiche Nummern verschiedener Fenster beweisen keine gemeinsame Anbieterreferenz. Der Upgrade-Lauf ist auf die unabhängig geprüften öffentlichen 1.25.6-Bytes gepinnt.
 
 CI-Vorbereitung: Der bisherige Browserinstaller blieb bei einem Ubuntu-Mirror-DNS-Fehler vor der ersten Browserprüfung stehen. Chromium wird weiterhin über die gepinnte Playwright-Version installiert; ein zusätzlicher echter Start prüft die vorhandenen Runner-Systembibliotheken. Kein Systembrowser-Fallback und keine abgeschwächte Oberflächenmatrix.
+
+
+## Den Debugbericht lesen
+
+| Beobachtung | Bedeutung und nächster Prüfschritt |
+| --- | --- |
+| HTTP 200 / `reason: success` | Transport erfolgreich; `finished`, `state` und Urteil separat prüfen. Keine Sicherheitsfreigabe. |
+| `finished: false` / ausstehende Scanner | Es liegt noch kein fertiger Gesamtbericht vor. Nur einen zulässigen Ergebnisabruf ausführen; keine automatische neue Einreichung. |
+| HTTP 401 / 403 | Schlüssel, Kontorechte oder Dienstfreigabe prüfen. Der Status allein beweist die genaue Ursache nicht. |
+| HTTP 404 | Route und Referenztyp prüfen. Bei urlscan kann der Scan noch laufen; 404 ist kein sauberer Befund. |
+| HTTP 410 bei urlscan | Ergebnis wurde laut Dienstvertrag gelöscht; daraus folgt kein aktuelles Sicherheitsurteil. |
+| HTTP 429 / `localBackoff: true` | Quoten-/Wartezustand. Eine leere Versuchsliste bei lokalem Backoff bedeutet, dass keine neue HTTP-Anfrage begann. |
+| `bodyState: invalid_json` | Antwort war nicht als JSON auswertbar. HTTP-Status und `contentType` gemeinsam lesen; eine HTML-403-Seite ist kein Anbieterbericht. |
+| `network_error` | Browser meldet einen Transportfehler. DNS, TLS, Verbindung oder Redirect sind damit nicht eindeutig unterschieden. |
+| `HOST_PERMISSION_MISSING` | Erforderliche optionale Hostberechtigung fehlt. |
+| `EXTERNAL_ANALYSIS_DISABLED` / `TIER_BLOCKS_REQUEST` | Einwilligung beziehungsweise Datenschutzstufe verhindert die Anfrage. Debugging ändert diese Freigaben nicht. |
+| `RESOURCE_MISMATCH` | Antwort passt nicht zur erwarteten Ressource; nicht als deren Prüfergebnis übernehmen. |
+
+`ref-b-…` gilt für den Hintergrundkontext; unterschiedliche `ref-p…-…`-Bereiche gehören zu getrennten Popup-Kontexten. Gleiche Ziffern verschiedener Bereiche beweisen keine gemeinsame Kennung. `pending` mit `completion: unconfirmed` ist nur ein unbestätigtes Diagnoseticket, keine nachträgliche Nutzerentscheidung.

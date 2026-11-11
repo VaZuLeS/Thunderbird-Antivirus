@@ -96,7 +96,7 @@ PL: Tworzy lokalny obraz zapisanych kontroli bez uruchamiania nowej analizy. Bie
 [Datenvertrag und Kontextgrenzen](QUELLENEXPORT.md).
 
 
-## Ergänzung: optionaler API-Debugmodus (Entwicklungskandidat 1.25.7)
+## Ergänzung: optionaler API-Debugmodus (ab 1.25.7)
 
 EN: Capture new API attempts locally to diagnose failures. Enable, reproduce the failure, then preview or export the report. Admin unlock is required when an admin password is set. Keys, private URLs, message contents and raw bodies are omitted; reference IDs are pseudonymized. Up to 100 entries / 1 MiB are kept in memory for one hour and lost on restart. Disabling clears the report. No additional service request is made.
 
