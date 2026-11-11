@@ -14,8 +14,8 @@ Unveröffentlichter Kandidat. Die tatsächliche Antwort des Nutzers ist noch nic
 | C08 | Nachrichtenansicht und echtes Popup zeigen Hybrid-Befund | OK | Linux-Thunderbird 140.12.0, synthetische Providerdaten |
 | C09 | Audit und Kontextidentität erhalten | OK | native Speichervergleiche |
 | C10 | Kein neuer Provideraufruf durch Aktualisierung | OK | native Fetchzählung und simulierte Transportprüfung |
-| C11 | Vollständige neue Remote-Paketabnahme | OFFEN | Sechs Sprachen und beide Linuxlinien erforderlich |
+| C11 | Vollständige neue Remote-Paketabnahme | OK | CI 42991575788: sechs Sprachen, beide Clientlinien, Quellen-/Snapshotnachweise, Upgrade, Crash, Restore und Kandidatengate |
 | C12 | Öffentliche Releaseassets unabhängig prüfen | OFFEN | Nach Veröffentlichung |
 | C13 | Separates gespeichertes URL-Urteil bleibt neben unfertigem Rohbericht sichtbar | OK | Tatsächlicher persistHybridLinkVerdict-Schreibpfad, Modellregression und native Gegenprobe; Rohbericht bleibt ausstehend; gespeicherter Quellensnapshot stimmt überein |
 
-**Summe:** 11 OK / 0 FAIL / 0 N/A / 2 OFFEN
+**Summe:** 12 OK / 0 FAIL / 0 N/A / 1 OFFEN
