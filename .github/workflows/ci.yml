@@ -147,10 +147,10 @@ jobs:
         run: |
           python3 - <<'PYTHON'
           import hashlib, pathlib, urllib.request
-          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.25.5/thundy-av-1.25.5.xpi'
+          url = 'https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/download/v1.25.6/thundy-av-1.25.6.xpi'
           with urllib.request.urlopen(url, timeout=30) as response:
               data = response.read()
-          if hashlib.sha256(data).hexdigest() != 'e1ece067f01e169063d92e944c60a3d88b5c933630fa3a7ab6991a2a33cbaaaa':
+          if hashlib.sha256(data).hexdigest() != '10b74ef475555ac27bce5d4d042695ac908cb942d3084d9cbe1ee1610b8453f0':
               raise SystemExit('Previous release hash mismatch')
           pathlib.Path('build/previous.xpi').write_bytes(data)
           PYTHON

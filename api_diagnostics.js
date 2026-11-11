@@ -2,7 +2,7 @@
 const ThundyApiDiagnostics = (() => {
     const MAX_ENTRIES=100, MAX_BYTES=1048576, MAX_AGE=3600000;
     const entries=[], pending=new Map(), references=new Map();
-    let epoch=0, sequence=0, dropped=0, expiryTimer=null;
+    let epoch=0, sequence=0, dropped=0, expiryTimer=null, referenceNamespace=null;
     const central=()=>typeof ThundySecurity!=='undefined';
     const providers=['hybridanalysis','urlscan','virustotal','urlhaus','abuseipdb'];
     const fields=new Set(('id uuid sha256 sha1 md5 submission_id job_id submission_type state status verdict finished progress positives total percent threat_score threat_level multiscan_result whitelisted whitelist scanners scanners_v2 reports anti_virus_results assessment verdicts overall urlscan engines malicious maliciousTotal suspicious score error errors code message detail description retry_after visibility query_status data attributes stats harmless undetected timeout type count quota limit remaining reset resource url file scan_type environment_id result api search results submitted').split(' '));
@@ -17,7 +17,7 @@ const ThundyApiDiagnostics = (() => {
         if(depth>7)return '[depth limit]';
         if(value===null||typeof value==='boolean')return value;
         if(typeof value==='number')return safeNumber(value);
-        if(typeof value==='string')return enums.has(value)||/^ref-[0-9]{1,4}$/.test(value)||['[redacted string]','[depth limit]','[reference limit]','[unsupported]'].includes(value)?value:'[redacted string]';
+        if(typeof value==='string')return enums.has(value)||/^ref-(?:b|p[a-f0-9]{12})-[0-9]{1,4}$/.test(value)||['[redacted string]','[depth limit]','[reference limit]','[unsupported]'].includes(value)?value:'[redacted string]';
         if(Array.isArray(value))return value.slice(0,8).map(item=>clean(item,depth+1));
         if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([key])=>fields.has(key)||['items','count','truncated','omittedFields'].includes(key)).slice(0,40).map(([key,item])=>[key,clean(item,depth+1)]));
         return null;
@@ -30,7 +30,8 @@ const ThundyApiDiagnostics = (() => {
             if(value.length>128)return '[redacted string]';
             if(refFields.has(key)) {
                 if(!/^[A-Za-z0-9_-]{1,128}$/.test(value))return '[redacted string]';
-                if(!references.has(value)){if(references.size>=1000)return '[reference limit]';references.set(value,'ref-'+(references.size+1));}
+                if(!referenceNamespace)referenceNamespace=central()?'b':'p'+Array.from(crypto.getRandomValues(new Uint8Array(6)),byte=>byte.toString(16).padStart(2,'0')).join('');
+                if(!references.has(value)){if(references.size>=1000)return '[reference limit]';references.set(value,'ref-'+referenceNamespace+'-'+(references.size+1));}
                 return references.get(value);
             }
             return enums.has(value.toUpperCase())?value.toUpperCase():'[redacted string]';

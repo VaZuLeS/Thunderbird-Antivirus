@@ -3,11 +3,11 @@
   "candidateVersion": "1.25.7",
   "published": false,
   "extensionVersion": "1.25.7",
-  "sourceFingerprint": "37cf703590e77ddb01a041eee786d1fcea5881e238f9efd4e9afd2046178cb4a",
-  "packageSha256": "b878860d975496abb362bf80615b7c9c945e566111e5901ce7d289f28b79a1ad",
+  "sourceFingerprint": "51bff1e9b6f32b0a499735023f4f8331f2d4cd3f27cb0f8ca815fa476112c50a",
+  "packageSha256": "4d397e08bf3d27e038221ea0222b90b0d135ef46d5572152dcf014fb16be55c7",
   "native": {
     "passed": true,
-    "reportSha256": "efbe3cc5baaa20d43c801e894cae45fd5b2aa3eee74609154abf3ff7e2b6803a",
+    "reportSha256": "dffe943c062eec3b0f8b2022299a7a7c0faef9de6f3f90c4183a140c9e43b7dc",
     "client": "140.12.0",
     "platform": "Linux",
     "apiDebug": {
@@ -27,7 +27,7 @@
       "syntheticTransport": true,
       "helperSha256": "a1dd60843335dc1af46a6d9afd9ff265a4f4dbb1e9b955f887949fa2b95d3c4d"
     },
-    "scope": "Actual final integrated package, real Thunderbird APIs and native export, synthetic provider transport."
+    "scope": "Final package with scoped popup aliases; actual Thunderbird APIs and native export, synthetic transport."
   },
   "regression": {
     "passed": 1297,
@@ -85,8 +85,36 @@
     }
   },
   "integratedTargeted": {
-    "passed": 60,
+    "passed": 61,
     "failed": 0,
-    "logSha256": "e1a74792bd720644b8511c43163e61eb056bda6d18cbfdaf96a0b0993b620e5b"
+    "logSha256": "1e2af36c9d59f5b811eb4e8facfbd04a82415fe17f15bb3c6ce70b5357c4ba44"
+  },
+  "previousIntegratedStage": {
+    "sourceFingerprint": "37cf703590e77ddb01a041eee786d1fcea5881e238f9efd4e9afd2046178cb4a",
+    "packageSha256": "b878860d975496abb362bf80615b7c9c945e566111e5901ce7d289f28b79a1ad",
+    "native": {
+      "passed": true,
+      "reportSha256": "efbe3cc5baaa20d43c801e894cae45fd5b2aa3eee74609154abf3ff7e2b6803a",
+      "client": "140.12.0",
+      "platform": "Linux",
+      "apiDebug": {
+        "passed": true,
+        "realThunderbirdAPIs": true,
+        "adminProtected": true,
+        "backgroundCaptured": true,
+        "popupCaptured": true,
+        "httpStatusVisible": true,
+        "invalidJsonVisible": true,
+        "exportVerified": true,
+        "secretsRedacted": true,
+        "noExtraRequests": true,
+        "auditPreserved": true,
+        "disabledCleared": true,
+        "liveProviderCalls": false,
+        "syntheticTransport": true,
+        "helperSha256": "a1dd60843335dc1af46a6d9afd9ff265a4f4dbb1e9b955f887949fa2b95d3c4d"
+      },
+      "scope": "Actual final integrated package, real Thunderbird APIs and native export, synthetic provider transport."
+    }
   }
 }

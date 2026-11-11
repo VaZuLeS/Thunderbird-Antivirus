@@ -70,3 +70,14 @@ test('diagnostic projection bounds oversized strings and branching response stru
  for(let i=0;i<8;i++)tree={data:tree,attributes:tree,verdicts:tree};
  const projected=JSON.stringify(f.d.project(tree));assert.ok(projected.length<32768);assert.ok(projected.includes('[depth limit]'));assert.ok(!projected.includes('CANARY'));
 });
+
+test('independent popup reference namespaces cannot imply a shared provider identifier',async()=>{
+ const f=fixture();await f.enable();
+ for(const documentId of ['popup-one','popup-two']){
+  const sender={...f.sender,url:'moz-extension://addon/popup.html',documentId};
+  const browser={...f.browser,runtime:{...f.browser.runtime,sendMessage:async request=>({success:true,...await f.d.capture(request,sender)})}};
+  const c=vm.createContext({browser,URL,crypto:webcrypto});vm.runInContext(fs.readFileSync('provider_registry.js','utf8')+'\n'+fs.readFileSync('api_diagnostics.js','utf8')+'\nglobalThis.d=ThundyApiDiagnostics;',c);
+  const ticket=await c.d.start(url,{method:'POST'});await c.d.finish(ticket,{attempts:[{status:200,durationMs:1}],response:c.d.project({id:'provider-reference'}),bodyState:'json'});
+ }
+ const rows=f.d.report().entries;assert.equal(rows.length,2);assert.notEqual(rows[0].response.id,rows[1].response.id);assert.ok(rows.every(row=>/^ref-p[a-f0-9]{12}-1$/.test(row.response.id)));
+});
