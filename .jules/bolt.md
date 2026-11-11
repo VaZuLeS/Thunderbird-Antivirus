@@ -45,3 +45,6 @@
 ## 2024-11-05 - Use exec to avoid array allocation in global regex
 **Learning:** Using `String.prototype.match()` with a global regex allocates an entire array of matched strings before returning. In performance-critical hot paths, extracting matches using a while loop with `RegExp.prototype.exec()` is significantly faster because it avoids this full array allocation overhead and processes matches iteratively.
 **Action:** When extracting multiple substrings from large strings in hot paths, prefer using a `while ((match = regex.exec(str)) !== null)` loop over `str.match(regex)` to eliminate unnecessary object allocations.
+## 2024-11-15 - Optimize array includes checks with direct string equality in hot paths
+**Learning:** Inline array instantiations for `.includes()` checks inside mapping functions over large data structures cause immense, recurrent allocation and garbage collection overhead.
+**Action:** Replace inline array `.includes()` with direct string equality checks in these hot paths to drastically reduce memory churn and improve execution speed.
