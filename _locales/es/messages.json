@@ -2542,5 +2542,38 @@
   },
   "analysisSimpleDocumentationIncomplete": {
     "message": "Resultados disponibles • documentación incompleta"
+  },
+  "apiDebugTitle": {
+    "message": "Modo de depuración de API"
+  },
+  "apiDebugHelp": {
+    "message": "Registra localmente los nuevos intentos de API. Activa el modo, reproduce el error y consulta o exporta el informe. Se requiere desbloqueo de administrador si hay contraseña. Se omiten claves, URL privadas, mensajes y datos sin procesar; los identificadores se seudonimizan. Hasta 100 entradas / 1 MiB permanecen en memoria una hora y se pierden al reiniciar. Desactivar borra el informe. No se envían solicitudes adicionales."
+  },
+  "apiDebugEnable": {
+    "message": "Activar diagnóstico de API"
+  },
+  "apiDebugSave": {
+    "message": "Guardar ajuste de depuración"
+  },
+  "apiDebugPreview": {
+    "message": "Ver informe de depuración"
+  },
+  "apiDebugExport": {
+    "message": "Exportar informe de depuración"
+  },
+  "apiDebugClear": {
+    "message": "Borrar informe de depuración"
+  },
+  "apiDebugSaved": {
+    "message": "Ajuste guardado. Se borraron los diagnósticos anteriores."
+  },
+  "apiDebugCleared": {
+    "message": "Informe de depuración borrado."
+  },
+  "apiDebugFailed": {
+    "message": "La operación falló. Desbloquea la administración y vuelve a intentarlo."
+  },
+  "apiDebugFailureHint": {
+    "message": "Para obtener un informe detallado, activa la depuración de API en los ajustes, repite la comprobación y exporta el informe."
   }
 }

@@ -62,7 +62,7 @@ const ThundySettings = (() => {
         document.body.prepend(panel);
         // Appearance preferences have their own save operation: no key tests,
         // permission prompts, scan restart or consent changes accompany it.
-        let view,showDetails,displaySave;
+        let view,showDetails,displaySave,debugControls=[],debugRefresh=async()=>{},debugHide=()=>{};
         if(location.pathname.endsWith('/options.html')){
             const section=document.createElement('section');section.className='security-controls';section.id='analysisDisplaySettings';
             const title=document.createElement('h2');title.id='analysisDisplayTitle';title.textContent=t('displaySettingsTitle');section.setAttribute('aria-labelledby',title.id);section.append(title);
@@ -76,18 +76,42 @@ const ThundySettings = (() => {
             const saved=await browser.storage.local.get(['analysisDefaultView','analysisShowHybridDetails']);view.value=saved.analysisDefaultView==='expert'?'expert':'simple';showDetails.checked=saved.analysisShowHybridDetails!==false;
             preferences.onsubmit=async event=>{event.preventDefault();displaySave.disabled=view.disabled=showDetails.disabled=true;status.textContent='';try{await set({analysisDefaultView:view.value,analysisShowHybridDetails:showDetails.checked});status.textContent=t('displaySaved');}catch(e){status.textContent=t(e.code==='ADMIN_LOCKED'?'securityLocked':'securityError');await refresh();}finally{displaySave.disabled=view.disabled=showDetails.disabled=!current?.unlocked;}};
             const appearance=shell.querySelector('#appearance');if(appearance)appearance.after(section);else (shell.querySelector('main')||shell).prepend(section);
+
+            const debug=document.createElement('section');debug.className='security-controls';debug.id='apiDebugSettings';
+            const debugTitle=document.createElement('h2');debugTitle.id='apiDebugTitle';debugTitle.textContent=t('apiDebugTitle');debug.setAttribute('aria-labelledby',debugTitle.id);debug.append(debugTitle);
+            const debugNote=document.createElement('p');debugNote.textContent=t('apiDebugHelp');debug.append(debugNote);
+            const debugForm=document.createElement('form');debugForm.id='apiDebugForm';debug.append(debugForm);
+            const debugLabel=document.createElement('label'),debugEnabled=document.createElement('input');debugEnabled.id='apiDebugEnabled';debugEnabled.type='checkbox';debugLabel.append(debugEnabled,document.createTextNode(t('apiDebugEnable')));debugForm.append(debugLabel);
+            const debugSave=document.createElement('button');debugSave.type='submit';debugSave.textContent=t('apiDebugSave');debugForm.append(debugSave);
+            const debugPreview=document.createElement('button'),debugExport=document.createElement('button'),debugClear=document.createElement('button');
+            for(const [button,key,id] of [[debugPreview,'apiDebugPreview','apiDebugPreview'],[debugExport,'apiDebugExport','apiDebugExport'],[debugClear,'apiDebugClear','apiDebugClear']]){button.type='button';button.id=id;button.textContent=t(key);debug.append(button);}
+            const debugState=document.createElement('p');debugState.id='apiDebugStatus';debugState.setAttribute('role','status');debug.append(debugState);
+            const debugContent=document.createElement('pre');debugContent.id='apiDebugContent';debugContent.tabIndex=0;debugContent.hidden=true;debugContent.setAttribute('aria-label',t('apiDebugPreview'));debugContent.style.cssText='max-height:24rem;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere';debug.append(debugContent);section.after(debug);
+            debugControls=[debugEnabled,debugSave,debugPreview,debugExport,debugClear];let debugBusy=false;
+            debugHide=()=>{debugContent.textContent='';debugContent.hidden=true;};
+            debugRefresh=async()=>{if(!current?.unlocked){debugHide();return;}const result=await command('apiDebugStatus');debugEnabled.checked=result.enabled;};
+            const debugRun=async task=>{
+                if(debugBusy)return;debugBusy=true;debugControls.forEach(control=>control.disabled=true);debugState.textContent='';
+                try{await task();}catch(error){debugHide();debugState.textContent=t(error.code==='ADMIN_LOCKED'?'securityLocked':'apiDebugFailed');}
+                finally{debugBusy=false;await refresh();}
+            };
+            debugForm.onsubmit=event=>{event.preventDefault();debugRun(async()=>{await command('apiDebugSet',{enabled:debugEnabled.checked});debugHide();debugState.textContent=t('apiDebugSaved');});};
+            debugPreview.onclick=()=>debugRun(async()=>{const result=await command('apiDebugReport');debugContent.textContent=JSON.stringify(result.report,null,2);debugContent.hidden=false;debugContent.focus();});
+            debugExport.onclick=()=>debugRun(async()=>{const result=await command('apiDebugReport');let url;try{url=URL.createObjectURL(new Blob([JSON.stringify(result.report,null,2)],{type:'application/json'}));await browser.downloads.download({url,filename:'thundy-api-debug.json',saveAs:true});debugState.textContent=t('auditExported');}finally{if(url)URL.revokeObjectURL(url);}});
+            debugClear.onclick=()=>debugRun(async()=>{await command('apiDebugClear');debugHide();debugState.textContent=t('apiDebugCleared');});
         }
         let current;
         const refresh=async()=>{
             try{current=await command('status');shell.hidden=hideShell&&!current.unlocked;
                 state.textContent=t(current.protected?current.unlocked?'securityUnlocked':'securityLocked':'securityOptional');
-                for(const input of [approval,adminConfirm,approvalConfirm,threshold,enabled,unknown,save,view,showDetails,displaySave])if(input)input.disabled=!current.unlocked;
+                for(const input of [approval,adminConfirm,approvalConfirm,threshold,enabled,unknown,save,view,showDetails,displaySave,...debugControls])if(input)input.disabled=!current.unlocked;
                 adminConfirm.parentElement.hidden=!current.unlocked;approvalConfirm.parentElement.hidden=!current.unlocked;
                 admin.autocomplete=current.unlocked?'new-password':'current-password';admin.parentElement.firstChild.textContent=t(current.unlocked?'securityAdminPassword':'securityUnlockPassword');
                 disable.hidden=!current.protected||!current.unlocked;lock.hidden=!current.protected||!current.unlocked;unlock.hidden=!current.protected||current.unlocked;recoveryGroup.hidden=!current.protected||current.unlocked;
                 approvalState.textContent=t(current.approvalConfigured?'securityApprovalConfigured':'securityApprovalMissing');
                 threshold.value=current.policy.threshold;enabled.checked=current.policy.enabled;unknown.checked=current.policy.unknown==='approval';
-            }catch(_){shell.hidden=hideShell;state.textContent=t('securityError');}
+                await debugRefresh();
+            }catch(_){shell.hidden=hideShell;debugHide();for(const input of debugControls)input.disabled=true;state.textContent=t('securityError');}
         };
         const run=async fn=>{if(busy)return;busy=true;output.textContent='';try{await fn();await refresh();}catch(e){output.textContent=t(e.code==='PASSWORD_WAIT'?'securityWait':['PASSWORD_LENGTH','PASSWORDS_DISTINCT'].includes(e.code)?'securityLength':e.code==='PASSWORD_CONFIRM'?'securityConfirmMismatch':'securityError');if(e.code==='ADMIN_LOCKED')await refresh();}finally{busy=false;for(const input of [admin,adminConfirm,approval,approvalConfirm,recovery,recoveryAdmin,recoveryConfirm])input.value='';}};
         const confirm=(password,repeated)=>{if(password!==repeated)throw Object.assign(Error('PASSWORD_CONFIRM'),{code:'PASSWORD_CONFIRM'});};

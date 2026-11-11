@@ -2561,6 +2561,8 @@ def main():
                     if args.security_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_administration(m,base,out,report)
+                        if tuple(map(int,report['extensionVersion'].split('.'))) >= (1,25,7):
+                            runpy.run_path(str(ROOT/'tools/api-debug.dev.py'))['check'](m,base,out,report,display,wait_for,open_page,native_click,native_json_download)
                     if args.resource_isolation_check:
                         base=m.js('const tab=window.gTabmail.tabInfo.find(tab=>tab.browser?.currentURI.spec.startsWith("moz-extension:"));return tab.browser.currentURI.prePath+"/";')
                         check_resource_isolation(m,base,out,report)

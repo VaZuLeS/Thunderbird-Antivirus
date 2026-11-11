@@ -219,6 +219,14 @@ test('new candidates require six-language upgrade/crash proof for both declared 
   assert.throws(()=>validateReports(future,broken,ui),/Hybrid|matrix|inline|coverage|crypto/);
  }
  const futureProof=api.create(future,futureReports,ui,'fixture');assert.ok(api.verify(futureProof,future));assert.ok(!JSON.stringify(futureProof).includes('CANARY'));
+ const debug={...future,extensionVersion:'1.25.7'},debugReports=structuredClone(futureReports);
+ for(const r of debugReports){r.extensionVersion=debug.extensionVersion;r.currentRestart.addon.version=debug.extensionVersion;}
+ assert.throws(()=>validateReports(debug,debugReports,ui),/API debug/);
+ for(const r of debugReports)r.apiDebug={...Object.fromEntries(["passed", "realThunderbirdAPIs", "adminProtected", "backgroundCaptured", "popupCaptured", "httpStatusVisible", "invalidJsonVisible", "exportVerified", "secretsRedacted", "noExtraRequests", "auditPreserved", "disabledCleared", "syntheticTransport"].map(key=>[key,true])),liveProviderCalls:false,rawPayload:'CANARY'};
+ validateReports(debug,debugReports,ui);
+ for(const key of ['popupCaptured','adminProtected','secretsRedacted','exportVerified']){const bad=structuredClone(debugReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.apiDebug[key]=false;assert.throws(()=>validateReports(debug,bad,ui),/API debug/);}
+ const debugProof=api.create(debug,debugReports,ui,'fixture');assert.ok(api.verify(debugProof,debug));assert.ok(!JSON.stringify(debugProof).includes('CANARY'));
+
 
 
 });

@@ -202,3 +202,20 @@ test('later resources retain an earlier provider failure in the final summary',a
  assert.equal(f.s.get(1).providers.urlhaus.state,'checked');
  assert.equal(f.s.get(1).providers.urlhaus.error,undefined);
 });
+
+test('Hybrid quick-scan retrieval uses response id when submission and job references differ',async()=>{
+ const f=runtime({urlscanApikey:''}),sha='ab'.repeat(32);
+ f.c.apiGateway.fetchWithTimeout=async(url,options)=>{
+  f.calls.push({url,method:options.method});
+  if(options.method==='POST')return {status:200,json:async()=>({id:'quick-reference',submission_id:'submission-reference',job_id:'sandbox-reference',sha256:sha,finished:false})};
+  if(url.endsWith('/overview/'+sha))return {status:404,json:async()=>({})};
+  if(url.endsWith('/quick-scan/quick-reference'))return {status:200,json:async()=>({id:'quick-reference',sha256:sha,finished:true,verdict:'clean'})};
+  return {status:403,json:async()=>({})};
+ };
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
+ assert.equal(f.s.get(1).state,'completed');
+ assert.ok(f.calls.some(call=>call.url.endsWith('/quick-scan/quick-reference')));
+ assert.ok(!f.calls.some(call=>/quick-scan\/(submission-reference|sandbox-reference)$/.test(call.url)));
+ assert.equal(f.stored.fixture.links[0].hybrid_quick_scan_id,'quick-reference');
+ assert.equal(f.stored.fixture.links[0].hybrid_submission_id,'submission-reference');
+});

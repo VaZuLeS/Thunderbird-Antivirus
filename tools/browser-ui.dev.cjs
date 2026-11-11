@@ -360,6 +360,16 @@ async function interaction(page, c) {
     assert.equal(await page.locator('#settingsDirty').evaluate(el=>el.hidden),true,'display save left unrelated settings marked unsaved');
     const displayWrite=await page.evaluate(()=>uiTest.writes.find(v=>v.analysisDefaultView==='expert'));
     assert.deepEqual(displayWrite,{analysisDefaultView:'expert',analysisShowHybridDetails:false});
+    await page.locator('#apiDebugEnabled').check();
+    await page.locator('#apiDebugForm button').click();
+    await page.waitForFunction(()=>document.getElementById('apiDebugStatus').textContent.length>0&&!document.getElementById('apiDebugPreview').disabled);
+    await page.locator('#apiDebugPreview').focus();await page.keyboard.press('Enter');
+    await page.locator('#apiDebugContent').waitFor({state:'visible'});
+    assert.equal(await page.locator('#apiDebugContent').evaluate(el=>JSON.parse(el.textContent).kind),'thundy-api-debug');
+    assert.equal(await page.locator('#apiDebugContent').evaluate(el=>el===document.activeElement),true);
+    await page.locator('#apiDebugEnabled').uncheck();await page.locator('#apiDebugForm button').click();
+    await page.waitForFunction(()=>document.getElementById('apiDebugContent').hidden);
+    assert.equal(await page.locator('#settingsDirty').evaluate(el=>el.hidden),true);
     const appearanceWriteOffset=await page.evaluate(()=>uiTest.writes.length);
     assert.equal(await page.evaluate(()=>uiTest.permissionRequests),0);
     await page.waitForFunction(

@@ -2542,5 +2542,38 @@
   },
   "analysisSimpleDocumentationIncomplete": {
     "message": "Risultati disponibili • documentazione incompleta"
+  },
+  "apiDebugTitle": {
+    "message": "Modalità debug API"
+  },
+  "apiDebugHelp": {
+    "message": "Registra localmente i nuovi tentativi API. Attiva la modalità, riproduci l’errore e visualizza o esporta il rapporto. Se è impostata una password amministratore, occorre sbloccare l’amministrazione. Chiavi, URL privati, messaggi e dati grezzi sono omessi; gli identificatori sono pseudonimizzati. Fino a 100 voci / 1 MiB restano in memoria per un’ora e si perdono al riavvio. La disattivazione cancella il rapporto. Nessuna richiesta aggiuntiva viene inviata."
+  },
+  "apiDebugEnable": {
+    "message": "Attiva diagnostica API"
+  },
+  "apiDebugSave": {
+    "message": "Salva impostazione debug"
+  },
+  "apiDebugPreview": {
+    "message": "Visualizza rapporto debug"
+  },
+  "apiDebugExport": {
+    "message": "Esporta rapporto debug"
+  },
+  "apiDebugClear": {
+    "message": "Cancella rapporto debug"
+  },
+  "apiDebugSaved": {
+    "message": "Impostazione salvata. Diagnostica precedente cancellata."
+  },
+  "apiDebugCleared": {
+    "message": "Rapporto debug cancellato."
+  },
+  "apiDebugFailed": {
+    "message": "Operazione non riuscita. Sblocca l’amministrazione e riprova."
+  },
+  "apiDebugFailureHint": {
+    "message": "Per un rapporto dettagliato, attiva il debug API nelle impostazioni, ripeti il controllo ed esporta il rapporto."
   }
 }

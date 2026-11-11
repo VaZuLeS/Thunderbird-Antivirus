@@ -89,7 +89,7 @@ const ThundyScans=(()=>{
         if(fresh&&initial.completion==='complete'){await save({state:'KNOWN',assessment:initial});return false;}
         const until=Math.min(job.deadline,Date.now()+30000);
         while(Date.now()<until){
-            coordinator.assert(job);const sha=item.hybrid_sha256,id=item.hybrid_submission_id||item.hybrid_job_id;
+            coordinator.assert(job);const sha=item.hybrid_sha256,id=item.hybrid_quick_scan_id||item.hybrid_submission_id||item.hybrid_job_id;
             const validId=/^[A-Za-z0-9_-]{1,128}$/.test(id||'')&&!['N/A','MANUAL_CHECK','PENDING_UPLOAD'].includes(id);
             if(!/^[a-f0-9]{64}$/i.test(sha||'')&&!validId)throw Error('no_result');
             let url=/^[a-f0-9]{64}$/i.test(sha||'')?'https://hybrid-analysis.com/api/v2/overview/'+sha:'https://hybrid-analysis.com/api/v2/quick-scan/'+encodeURIComponent(id);
@@ -123,8 +123,8 @@ const ThundyScans=(()=>{
                 const file=await browser.messages.getAttachmentFile(p.message.id,item.partName);
                 const result=await check_hybrid_analysis_for_attachment(digest,item,file.slice(),null,file.type,ctx);coordinator.assert(job);
                 const h=result.hybrid_data;
-                await save({hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id,state:h.state,report:result.report||null,...(result.report?{assessment:ThundyProviderResults.evaluate('hybridanalysis',result.report)}:{}),report_fetched_at:result.report?new Date().toISOString():null});
-                if(h.state==='UPLOADED'||h.state==='KNOWN'&&ThundyProviderResults.evaluate('hybridanalysis',result.report).completion!=='complete'){const ref='ha:attachment:'+item.partName;pending(job,ref,true);pending(job,ref,await hybridReport(job,{hybrid_sha256:digest,hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id,report:result.report},ctx,save,true));}
+                await save({hybrid_quick_scan_id:h.quick_scan_id||null,hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id,state:h.state,report:result.report||null,...(result.report?{assessment:ThundyProviderResults.evaluate('hybridanalysis',result.report)}:{}),report_fetched_at:result.report?new Date().toISOString():null});
+                if(h.state==='UPLOADED'||h.state==='KNOWN'&&ThundyProviderResults.evaluate('hybridanalysis',result.report).completion!=='complete'){const ref='ha:attachment:'+item.partName;pending(job,ref,true);pending(job,ref,await hybridReport(job,{hybrid_sha256:digest,hybrid_quick_scan_id:h.quick_scan_id||null,hybrid_submission_id:h.submission_id,hybrid_job_id:h.job_id,report:result.report},ctx,save,true));}
             });
         }
         for(const url of p.urls){
@@ -133,7 +133,7 @@ const ThundyScans=(()=>{
                 if((job.options.refresh||previous?.state==='UPLOADED')&&previous){const ref='ha:url:'+url;pending(job,ref,true);pending(job,ref,await hybridReport(job,previous,ctx,save));return;}
                 const body=new URLSearchParams({scan_type:'all',url});const response=await apiGateway.fetchWithTimeout('https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis',{...getHybridAnalysisOptions('POST',body,true),analysisContext:ctx});coordinator.assert(job);
                 if(![200,201].includes(response.status))throw Object.assign(Error('provider_error'),{code:response.status===429?'rate_limited':response.status===401||response.status===403?'invalid_key':'provider_error'});
-                const data=await response.json(),value={state:'UPLOADED',hybrid_sha256:data.sha256,hybrid_submission_id:data.submission_id||data.id,hybrid_job_id:data.job_id||data.id,report:quickScanReport(data)};if(value.report)value.assessment=ThundyProviderResults.evaluate('hybridanalysis',value.report,'url');
+                const data=await response.json(),value={state:'UPLOADED',hybrid_quick_scan_id:typeof data.id==='string'?data.id:null,hybrid_sha256:data.sha256,hybrid_submission_id:data.submission_id||data.id,hybrid_job_id:data.job_id||data.id,report:quickScanReport(data)};if(value.report)value.assessment=ThundyProviderResults.evaluate('hybridanalysis',value.report,'url');
                 await save(value);const ref='ha:url:'+url;pending(job,ref,true);pending(job,ref,await hybridReport(job,value,ctx,save,true));
             });
             if(ThundyProviders.registry.urlscan)add('urlscan','url',async()=>{

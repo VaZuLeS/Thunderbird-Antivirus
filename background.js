@@ -578,6 +578,7 @@ async function processAndUploadUrls(message, filteredUrls, allowExternal = true,
                         result = {
                             url: url,
                             state: 'UPLOADED',
+                            hybrid_quick_scan_id: typeof json_data.id==='string'?json_data.id:null,
                             hybrid_submission_id: json_data.submission_id || json_data.id,
                             hybrid_job_id: json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id,
                             hybrid_sha256: json_data.sha256,
@@ -1283,6 +1284,7 @@ async function handle_unknown_attachment({ attachment, content_of_attachment, lo
                     attachment,
                     virustotal_stats
                 );
+                hybridData.hybrid_data.quick_scan_id = typeof uploadData.id==='string'?uploadData.id:null;
                 const quickReport = typeof quickScanReport === 'function' ? quickScanReport(uploadData) : null;
                 if (quickReport) {
                     hybridData.report = quickReport;
@@ -1435,6 +1437,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
 
     if (message.headerMessageId) {
       const newAttachments = results.map(result => ({
+        hybrid_quick_scan_id: result.hybrid_data.quick_scan_id || null,
         hybrid_submission_id: result.hybrid_data.submission_id,
         hybrid_job_id: result.hybrid_data.job_id,
         hybrid_sha256: result.hybrid_data.sha256,
@@ -1467,7 +1470,7 @@ async function indexedDB_save_batch_hybrid_data_to_db(message, results) {
                 const old = atts[j];
                 // An offline/local reread is not a new provider submission.
                 const sameContent = /^[0-9a-f]{64}$/i.test(newAtt.hybrid_sha256 || '') && old.hybrid_sha256?.toLowerCase() === newAtt.hybrid_sha256.toLowerCase();
-                atts[j] = sameContent && ['MANUAL_CHECK_PENDING','UNKNOWN','NOT_CHECKED'].includes(newAtt.state) && (old.report != null || old.virustotal_stats != null || ['KNOWN','UPLOADED'].includes(old.state)) ? {...newAtt,state:old.state,hybrid_job_id:old.hybrid_job_id,hybrid_submission_id:old.hybrid_submission_id,report:old.report,report_fetched_at:old.report_fetched_at,virustotal_stats:newAtt.virustotal_stats ?? old.virustotal_stats} : newAtt;
+                atts[j] = sameContent && ['MANUAL_CHECK_PENDING','UNKNOWN','NOT_CHECKED'].includes(newAtt.state) && (old.report != null || old.virustotal_stats != null || ['KNOWN','UPLOADED'].includes(old.state)) ? {...newAtt,state:old.state,hybrid_quick_scan_id:old.hybrid_quick_scan_id,hybrid_job_id:old.hybrid_job_id,hybrid_submission_id:old.hybrid_submission_id,report:old.report,report_fetched_at:old.report_fetched_at,virustotal_stats:newAtt.virustotal_stats ?? old.virustotal_stats} : newAtt;
                 found = true;
                 break;
               }
@@ -1858,7 +1861,7 @@ async function handleCheckLinkState(request, sender, sendResponse) {
                 requested: request.userAction === true,
                 observedAt: fallbackObservedAt,
                 analysisContext,
-                quickScanId: linkObj.hybrid_submission_id || linkObj.hybrid_job_id || null
+                quickScanId: linkObj.hybrid_quick_scan_id || linkObj.hybrid_submission_id || linkObj.hybrid_job_id || null
             });
             if (result && result.check && result.check.origin === 'live' && result.check.outcome === 'success' && typeof persistHybridLinkVerdict === 'function') {
                 await persistHybridLinkVerdict(message, linkObj.url, result);
@@ -2053,6 +2056,11 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return false;
     }
     if (!request || typeof request !== 'object') return false;
+
+    if(request.action==='apiDebugCapture'&&typeof ThundyApiDiagnostics!=='undefined') {
+        ThundyApiDiagnostics.capture(request,sender).then(result=>sendResponse({success:true,...result})).catch(()=>sendResponse({success:false,code:'DIAGNOSTIC_REJECTED'}));
+        return true;
+    }
 
     if (typeof ThundySecurity !== 'undefined' && ['securityCommand','securitySettingsWrite','testProviderKey','startLinkApproval','linkApprovalCommand','securityClearCache'].includes(request.action)) {
         (async () => {
@@ -2306,6 +2314,7 @@ async function handleUrlScan(url, headerMessageId, analysisContext = null) {
                         }
                     }
                     if (linkIndex > -1) {
+                        existingRecord.links[linkIndex].hybrid_quick_scan_id = typeof json_data.id==='string'?json_data.id:null;
                         existingRecord.links[linkIndex].hybrid_submission_id = json_data.submission_id || json_data.id;
                         existingRecord.links[linkIndex].hybrid_job_id = json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id;
                         existingRecord.links[linkIndex].hybrid_sha256 = json_data.sha256;
@@ -2371,6 +2380,7 @@ async function handleManualUpload(messageId, partName, attachmentName, hash, hea
                         }
                     }
                     if (attIndex > -1) {
+                        existingRecord.attachments[attIndex].hybrid_quick_scan_id = typeof json_data.id==='string'?json_data.id:null;
                         existingRecord.attachments[attIndex].hybrid_submission_id = json_data.submission_id || json_data.id;
                         existingRecord.attachments[attIndex].hybrid_job_id = json_data.job_id || (Array.isArray(json_data.reports) && json_data.reports[0]) || json_data.id;
                         if (json_data.sha256) existingRecord.attachments[attIndex].hybrid_sha256 = json_data.sha256;
