@@ -93,8 +93,20 @@ jobs:
         with:
           node-version: '24'
       - run: npm ci
+      # Hosted runner images include Chrome's Linux libraries. Avoid a redundant
+      # apt update (which can fail before tests on a mirror DNS outage), and
+      # prove those libraries suffice by launching the pinned browser below.
       - name: Install pinned Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
+      - name: Verify pinned Chromium runtime
+        run: |
+          node - <<'NODE'
+          (async () => {
+            const browser = await require('playwright').chromium.launch({headless:true});
+            try { console.log('Pinned Chromium runtime: ' + browser.version()); }
+            finally { await browser.close(); }
+          })().catch(error => { console.error(error); process.exitCode = 1; });
+          NODE
       - name: Check layouts, keyboard, exports and accessibility
         run: npm run check:ui -- --lang ${{ matrix.language }}
       - name: Check 200 percent CSS zoom in settings and audit
