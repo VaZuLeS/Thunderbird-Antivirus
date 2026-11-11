@@ -550,3 +550,15 @@ test('source persistence diagnostics use translated fixed reasons without exposi
   }
  }
 });
+
+
+test('failed source persistence does not claim a fully documented external status or change an actual verdict',()=>{
+ const a=model();for(const lang of ['en','de','fr','es','it','pl'])for(const rows of [[],[{provider:'hybridanalysis',scope:'report',resource:'link:0',source:'stored',state:'checked',verdict:'malicious',completion:'complete',responses:1,active:0}]]){
+  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(k=>catalog[k]?.message),dom=new JSDOM('<body></body>');
+  const c=vm.createContext({document:dom.window.document,URL,Date,data:{local:{state:'checked'},rows,sourcePersistenceFailed:true,sourcePersistenceReason:'snapshot_count'},labels});
+  vm.runInContext('('+a.render.toString()+')(data,labels)',c);const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+  if(!rows.length){assert.equal(root.querySelector('.mode').textContent,catalog.analysisModeUnknown.message);assert.ok(root.textContent.includes(catalog.analysisSimpleDocumentationIncomplete.message));}
+  else assert.ok(root.textContent.includes(catalog.analysisSimpleDanger.message));
+  assert.equal(rows[0]?.completion,rows.length?'complete':undefined);dom.window.close();
+ }
+});

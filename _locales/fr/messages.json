@@ -2539,5 +2539,8 @@
   },
   "analysisPersistence_storage_failed": {
     "message": "L’accès au stockage local a échoué."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Résultats disponibles • documentation incomplète"
   }
 }

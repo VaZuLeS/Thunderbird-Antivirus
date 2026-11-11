@@ -2544,6 +2544,9 @@ const ThundyI18n = (() => {
   },
   "analysisPersistence_storage_failed": {
     "message": "Access to local storage failed."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Findings available • documentation incomplete"
   }
 };
     function get(key, params = []) {
