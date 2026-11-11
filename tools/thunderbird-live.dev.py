@@ -157,7 +157,7 @@ def native_key(display, name):
     finally: x11.XCloseDisplay(connection)
 
 
-def native_save_path(display, path, save_button=False):
+def native_save_path(display, path, save_button=False, dialog_window=None):
     """Type an ASCII location in the genuine GTK file picker with XTest."""
     x11 = ctypes.CDLL('libX11.so.6'); xtest = ctypes.CDLL('libXtst.so.6')
     x11.XOpenDisplay.argtypes = [ctypes.c_char_p]; x11.XOpenDisplay.restype = ctypes.c_void_p
@@ -172,6 +172,17 @@ def native_save_path(display, path, save_button=False):
         if not code or not xtest.XTestFakeKeyEvent(connection, code, pressed, 0): raise RuntimeError('Cannot type save path')
         x11.XFlush(connection)
     try:
+        if dialog_window is not None:
+            # No window manager runs in Xvfb. PointerRoot focus otherwise sends
+            # keys to whichever window lies under the mouse, not the chooser.
+            x11.XSetInputFocus.argtypes=[ctypes.c_void_p,ctypes.c_ulong,ctypes.c_int,ctypes.c_ulong]
+            x11.XGetInputFocus.argtypes=[ctypes.c_void_p,ctypes.POINTER(ctypes.c_ulong),ctypes.POINTER(ctypes.c_int)]
+            x11.XSync.argtypes=[ctypes.c_void_p,ctypes.c_int]
+            x11.XSetInputFocus(connection,int(dialog_window,16),1,0)
+            x11.XSync(connection,0)
+            focused=ctypes.c_ulong();revert=ctypes.c_int()
+            x11.XGetInputFocus(connection,ctypes.byref(focused),ctypes.byref(revert))
+            if focused.value in (0,1):raise RuntimeError('Native save dialog has no keyboard focus')
         key('Control_L',1); key('l',1); key('l',0); key('Control_L',0)
         time.sleep(.35)
         # Select the entire editable location explicitly; GTK may retain a
@@ -214,8 +225,9 @@ def native_download(m, display, out, button, stem, browser='window.gTabmail.curr
         return m.page('''const known=new Set(arguments[0]);return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.find(item=>!known.has(item.id)&&item.state==="complete")||null);''', [known],browser=browser)
     try:
         # Observe the actual native picker before sending its path.
-        wait_for(lambda:native_dialogs(display)-dialogs_before)
-        native_save_path(display, out / stem, save_button=save_button)
+        dialogs=wait_for(lambda:native_dialogs(display)-dialogs_before)
+        if len(dialogs)!=1:raise RuntimeError('Ambiguous native save dialog')
+        native_save_path(display, out / stem, save_button=save_button, dialog_window=next(iter(dialogs)))
         item = wait_for(completed, timeout=40)
     except TimeoutError:
         # Fixed public states only: never print download URLs, paths or credentials.
@@ -234,7 +246,8 @@ def native_download(m, display, out, button, stem, browser='window.gTabmail.curr
 
 
 def native_json_download(m, display, out, button, stem):
-    actual = native_download(m,display,out,button,stem)
+    # Enter can only navigate GTK location completion; confirm the Save action.
+    actual = native_download(m,display,out,button,stem,save_button=True)
     # GTK can add/retain filename extensions. Bind to the actual newly completed
     # download ID and content, never an older file or an assumed basename.
     def content():
@@ -2477,7 +2490,7 @@ def main():
                                        '--marionette', '--remote-allow-system-access', '-offline'],
                                       start_new_session=True,
                                       env={**os.environ, 'DISPLAY': display, 'XDG_DATA_HOME': str(data_home),
-                                           'XDG_CONFIG_HOME': str(config_home)}, stdout=log, stderr=subprocess.STDOUT)
+                                           'XDG_CONFIG_HOME': str(config_home), 'LC_ALL':'C.UTF-8', 'LANG':'C.UTF-8'}, stdout=log, stderr=subprocess.STDOUT)
                 cleanup.callback(stop, tb)
                 def connect():
                     if tb.poll() is not None:

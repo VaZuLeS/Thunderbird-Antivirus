@@ -30,8 +30,10 @@
   "upgrade": {
     "from": "1.25.5",
     "to": "1.25.6",
+    "locale": "fr",
+    "nativeGTKSystemLocale": "C.UTF-8",
     "passed": true,
-    "reportSha256": "185c14f50f9a2876887f2ab6663388e7f0c9618357863750f45618c2438f6433",
+    "reportSha256": "73c69e433212c070c0090a1f8f08cf3a76b00f40c9beee04e56dc90eb8fdcd82",
     "gracefulRestarts": 3,
     "forcedRestarts": 2,
     "protectionProfile": {
@@ -62,12 +64,11 @@
     "scope": "Immutable released predecessor confirms the same stale-row merge path exercised by the failing synthetic regression; no claim about the user response structure."
   },
   "backgroundDownload": {
+    "xpiSha256": "10b74ef475555ac27bce5d4d042695ac908cb942d3084d9cbe1ee1610b8453f0",
     "passed": true,
     "realLocalCdrDownload": true,
     "scriptRemoved": true,
-    "reportSha256": "de6eac7f9452f26cef78cdf4547f73d263e8763789630b5bea67d19573792f19",
-    "xpiSha256": "bb128b12f7f4bed11b7e0dc65091b7743e57ca5f07a3e154a17ad142d4c6b80a",
-    "scope": "Earlier candidate: native-dialog orchestration check only, not acceptance of final runtime bytes."
+    "reportSha256": "efdc41417c82e80dd79d68a6d73fa800727214aff33b14d0fcf7c237f244059c"
   },
   "previousCandidate": {
     "xpiSha256": "bb128b12f7f4bed11b7e0dc65091b7743e57ca5f07a3e154a17ad142d4c6b80a",
@@ -80,5 +81,15 @@
       "sourceFingerprint": "c5bc56c663a52beb90cf35208114caa271d40505dc0873aa168efaa5800f96ec",
       "nativeReportSha256": "5ec74d3c4b937edc97b911dec4addf6e59d3ebf37049380905fa3d310ee1aba5"
     }
-  ]
+  ],
+  "nativeSavePointerProbe": {
+    "xpiSha256": "10b74ef475555ac27bce5d4d042695ac908cb942d3084d9cbe1ee1610b8453f0",
+    "beforePointerOutsidePassed": false,
+    "afterDialogFocusPassed": true,
+    "beforeFocus": "PointerRoot",
+    "beforeLogSha256": "4ceafc4b5177e621c246b560b03927d42b5bef613780de027072718e37b791ef",
+    "afterLogSha256": "5bce14476368b3bf2bb9f3c6e794d96dc9e32cd89c0d2308ba163772cc011569",
+    "probeHarnessSha256": "29ca4c253a295a4034af2f7049b6ac4524ff7b1276dc7637e33ba1a52890cf7c",
+    "scope": "Temporary diagnostic harness moves the pointer outside the actual GTK dialog; real APIs and downloads, no API mocking. Separate from normal release acceptance."
+  }
 }
