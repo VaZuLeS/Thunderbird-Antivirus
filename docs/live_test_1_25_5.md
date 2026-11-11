@@ -16,7 +16,7 @@ Unveröffentlichter Kandidat. [Umfang und Grenzen](SCHUTZPROFILE_1_25_5.md). Lok
 | C10 | Sechs vollständige Sprachkataloge | OK | 730 Schlüssel je Sprache |
 | C11 | Gezielte EN/PL-Tastatur-/Zoomprüfung | OK | Chromium mit simulierten Erweiterungs-APIs |
 | C12 | Echtes 1.25.4-Upgrade, Crash und Restore | OK | Linux-Thunderbird 140.12.0, isoliertes Profil |
-| C13 | Vollständige Remote-Matrix beider Linuxlinien | OFFEN | Vor Veröffentlichung erforderlich |
+| C13 | Vollständige Remote-Matrix beider Linuxlinien | OK | CI 42863563644: sechs Sprachen, beide Clientlinien, Schutzprofil/Upgrade/Crash/Restore und Kandidatengate |
 | C14 | Öffentliche drei Releaseassets unabhängig prüfen | OFFEN | Erst nach Veröffentlichung möglich |
 
-**Summe:** 12 OK / 0 FAIL / 0 N/A / 2 OFFEN
+**Summe:** 13 OK / 0 FAIL / 0 N/A / 1 OFFEN
