@@ -20,7 +20,7 @@ def check(m, base, out, report, display, catalog, native_download):
     selected = m.js('return window.gTabmail.tabInfo.indexOf(window.gTabmail.currentTabInfo);')
     m.js('window.gTabmail.openTab("contentTab",{url:arguments[0]});', [base+'options.html'])
     wait(lambda: m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.endsWith("/options.html");'))
-    wait(lambda: m.page('return !!document.getElementById("localProtectionProfileExport");'))
+    wait(lambda: m.page('return document.readyState==="complete" && !!document.getElementById("localProtectionProfileExport");'))
     original = m.page('return window.wrappedJSObject.browser.storage.local.get(null);')
     permissions = m.page('return window.wrappedJSObject.browser.permissions.getAll();')
     report['protectionProfile'] = {'passed': False, 'helperSha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}

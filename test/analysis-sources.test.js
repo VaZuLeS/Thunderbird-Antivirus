@@ -523,3 +523,52 @@ for(const lang of ['en','de','fr','es','it','pl'])test('scan omissions and archi
   root.querySelector('[data-focus-key="view-switch"]').click();assert.ok(root.textContent.includes(catalog.scanCoverage_read_failed.message));
  }finally{dom.window.close();}
 });
+
+
+test('stored reconciliation advances pending reports once and preserves live/error/older findings',()=>{
+ const a=model(),record=(report,time)=>({links:[{url:'https://example.com/',state:'KNOWN',report,report_fetched_at:time}]});
+ const pending=record({id:'synthetic',finished:false},'2026-11-10T10:00:00Z'),finished=record({finished:true,verdict:'malicious',threat_score:85},'2026-11-10T10:01:00Z');
+ const m=a.create(a.legacy(pending)),before=JSON.stringify(pending),counts=JSON.stringify([m.data.rows[0].responses,m.data.rows[0].cacheHits,m.data.rows[0].failures]);
+ a.refreshStored(m,finished);assert.equal(m.data.rows[0].completion,'complete');assert.equal(m.data.rows[0].verdict,'malicious');
+ assert.equal(JSON.stringify([m.data.rows[0].responses,m.data.rows[0].cacheHits,m.data.rows[0].failures]),counts);
+ const stable=JSON.stringify(m.data);a.refreshStored(m,finished);assert.equal(JSON.stringify(m.data),stable);assert.equal(JSON.stringify(pending),before);
+ a.refreshStored(m,record({finished:true,verdict:'clean'},'2026-11-10T09:00:00Z'));assert.equal(JSON.stringify(m.data),stable);
+ for(const values of [{source:'remote'},{active:1,state:'running'},{state:'failed',failures:1,completion:'failed',errorCode:'rate_limited'}]){
+  const live=a.create(a.legacy(pending));Object.assign(live.data.rows[0],values);const original=JSON.stringify(live.data);a.refreshStored(live,finished);assert.equal(JSON.stringify(live.data),original);
+ }
+});
+
+test('source persistence diagnostics use translated fixed reasons without exposing raw failures',()=>{
+ const a=model();for(const lang of ['en','de','fr','es','it','pl']){
+  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(k=>catalog[k]?.message);
+  for(const reason of ['snapshot_count','snapshot_bytes','snapshot_collision','snapshot_invalid','storage_failed','CANARY_SECRET']){
+   const dom=new JSDOM('<body></body>'),c=vm.createContext({document:dom.window.document,URL,Date,data:{local:{state:'checked'},rows:[],sourcePersistenceFailed:true,sourcePersistenceReason:reason},labels});
+   vm.runInContext('('+a.render.toString()+')(data,labels)',c);
+   const text=dom.window.document.getElementById('thundy-analysis-status').shadowRoot.textContent;
+   assert.ok(text.includes(catalog.analysisPersistenceFailed.message));assert.ok(!text.includes('CANARY_SECRET'));
+   if(reason!=='CANARY_SECRET')assert.ok(text.includes(catalog['analysisPersistence_'+reason].message));dom.window.close();
+  }
+ }
+});
+
+
+test('failed source persistence does not claim a fully documented external status or change an actual verdict',()=>{
+ const a=model();for(const lang of ['en','de','fr','es','it','pl'])for(const rows of [[],[{provider:'hybridanalysis',scope:'report',resource:'link:0',source:'stored',state:'checked',verdict:'malicious',completion:'complete',responses:1,active:0}]]){
+  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(k=>catalog[k]?.message),dom=new JSDOM('<body></body>');
+  const c=vm.createContext({document:dom.window.document,URL,Date,data:{local:{state:'checked'},rows,sourcePersistenceFailed:true,sourcePersistenceReason:'snapshot_count'},labels});
+  vm.runInContext('('+a.render.toString()+')(data,labels)',c);const root=dom.window.document.getElementById('thundy-analysis-status').shadowRoot;
+  if(!rows.length){assert.equal(root.querySelector('.mode').textContent,catalog.analysisModeUnknown.message);assert.ok(root.textContent.includes(catalog.analysisSimpleDocumentationIncomplete.message));}
+  else assert.ok(root.textContent.includes(catalog.analysisSimpleDanger.message));
+  assert.equal(rows[0]?.completion,rows.length?'complete':undefined);dom.window.close();
+ }
+});
+
+
+test('a documented URL verdict does not disappear or complete a separate unfinished Hybrid report',()=>{
+ const a=model();for(const [status,verdict] of [['MALICIOUS','malicious'],['SUSPICIOUS','suspicious'],['CLEAN','none'],['UNKNOWN',null]]){
+  const record={links:[{url:'https://example.com/',state:'UPLOADED',report:{id:'synthetic',finished:false},hybrid_verdict:{status,observedAt:12345}}]},before=JSON.stringify(record),rows=a.legacy(record).rows;
+  assert.ok(rows.some(row=>row.scope==='report'&&row.completion==='pending'));
+  if(verdict)assert.ok(rows.some(row=>row.scope==='url'&&row.state==='checked'&&row.verdict===verdict&&row.observedAt===12345));else assert.ok(!rows.some(row=>row.scope==='url'));
+  assert.equal(JSON.stringify(record),before);
+ }
+});

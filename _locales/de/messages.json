@@ -2244,7 +2244,7 @@
     "message": "Automatischen Scanmodus in den Einstellungen wählen. Bis dahin gelten die bisherigen Absender- und manuellen Regeln."
   },
   "scanState_idle": {
-    "message": "Noch keine Prüfung gestartet"
+    "message": "In dieser Ansicht ist kein Prüfauftrag aktiv."
   },
   "scanState_queued": {
     "message": "Prüfung angenommen; Start steht aus"
@@ -2527,5 +2527,23 @@
   },
   "localProtectionLegacyHelp": {
     "message": "Ältere Schutzprofile können den automatischen Prüfumfang nicht erweitern und keine URL-Übermittlung einschalten. Die Vorschau zeigt das wirksame Ergebnis."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Die vorhandene Quellenhistorie ist nicht lesbar und wurde unverändert erhalten."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Ein Speicherkonflikt verhindert das Ergänzen der Quellenhistorie."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Das Quellenarchiv dieser Nachricht hat seine Eintragsgrenze erreicht."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Das Quellenarchiv dieser Nachricht hat seine Speichergrenze erreicht."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Der Zugriff auf den lokalen Speicher ist fehlgeschlagen."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Befunde verfügbar • Dokumentation unvollständig"
   }
 }

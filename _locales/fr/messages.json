@@ -2241,7 +2241,7 @@
     "message": "Choisissez le mode automatique dans les paramètres. Les règles précédentes restent applicables jusque-là."
   },
   "scanState_idle": {
-    "message": "Aucune analyse lancée"
+    "message": "Aucune tâche d’analyse n’est active dans cette vue."
   },
   "scanState_queued": {
     "message": "Analyse acceptée ; démarrage en attente"
@@ -2524,5 +2524,23 @@
   },
   "localProtectionLegacyHelp": {
     "message": "Les anciens profils de protection ne peuvent ni étendre la portée des analyses automatiques ni activer l’envoi d’URL. L’aperçu montre le résultat effectif."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "L’historique des sources existant est illisible et a été conservé sans modification."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Un conflit de stockage empêche de compléter l’historique des sources."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "L’archive des sources de ce message a atteint sa limite d’entrées."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "L’archive des sources de ce message a atteint sa limite de stockage."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "L’accès au stockage local a échoué."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Résultats disponibles • documentation incomplète"
   }
 }

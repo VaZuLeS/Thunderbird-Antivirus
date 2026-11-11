@@ -2241,7 +2241,7 @@
     "message": "Elija el modo automático en ajustes. Hasta entonces se mantienen las reglas anteriores."
   },
   "scanState_idle": {
-    "message": "Ningún análisis iniciado"
+    "message": "No hay ninguna tarea de análisis activa en esta vista."
   },
   "scanState_queued": {
     "message": "Análisis aceptado; inicio pendiente"
@@ -2524,5 +2524,23 @@
   },
   "localProtectionLegacyHelp": {
     "message": "Los perfiles de protección antiguos no pueden ampliar el alcance de los análisis automáticos ni activar el envío de URL. La vista previa muestra el resultado efectivo."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "El historial de fuentes existente no se puede leer y se ha conservado sin cambios."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Un conflicto de almacenamiento impide ampliar el historial de fuentes."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "El archivo de fuentes de este mensaje ha alcanzado su límite de entradas."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "El archivo de fuentes de este mensaje ha alcanzado su límite de almacenamiento."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "No se ha podido acceder al almacenamiento local."
+  },
+  "analysisSimpleDocumentationIncomplete": {
+    "message": "Resultados disponibles • documentación incompleta"
   }
 }

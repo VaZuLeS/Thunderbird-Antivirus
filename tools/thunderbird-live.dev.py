@@ -11,6 +11,7 @@ import threading
 from urllib.parse import urlparse
 import json
 import os
+import re
 from pathlib import Path
 import select
 import runpy
@@ -156,7 +157,7 @@ def native_key(display, name):
     finally: x11.XCloseDisplay(connection)
 
 
-def native_save_path(display, path, save_button=False):
+def native_save_path(display, path, save_button=False, dialog_window=None):
     """Type an ASCII location in the genuine GTK file picker with XTest."""
     x11 = ctypes.CDLL('libX11.so.6'); xtest = ctypes.CDLL('libXtst.so.6')
     x11.XOpenDisplay.argtypes = [ctypes.c_char_p]; x11.XOpenDisplay.restype = ctypes.c_void_p
@@ -171,6 +172,17 @@ def native_save_path(display, path, save_button=False):
         if not code or not xtest.XTestFakeKeyEvent(connection, code, pressed, 0): raise RuntimeError('Cannot type save path')
         x11.XFlush(connection)
     try:
+        if dialog_window is not None:
+            # No window manager runs in Xvfb. PointerRoot focus otherwise sends
+            # keys to whichever window lies under the mouse, not the chooser.
+            x11.XSetInputFocus.argtypes=[ctypes.c_void_p,ctypes.c_ulong,ctypes.c_int,ctypes.c_ulong]
+            x11.XGetInputFocus.argtypes=[ctypes.c_void_p,ctypes.POINTER(ctypes.c_ulong),ctypes.POINTER(ctypes.c_int)]
+            x11.XSync.argtypes=[ctypes.c_void_p,ctypes.c_int]
+            x11.XSetInputFocus(connection,int(dialog_window,16),1,0)
+            x11.XSync(connection,0)
+            focused=ctypes.c_ulong();revert=ctypes.c_int()
+            x11.XGetInputFocus(connection,ctypes.byref(focused),ctypes.byref(revert))
+            if focused.value in (0,1):raise RuntimeError('Native save dialog has no keyboard focus')
         key('Control_L',1); key('l',1); key('l',0); key('Control_L',0)
         time.sleep(.35)
         # Select the entire editable location explicitly; GTK may retain a
@@ -191,15 +203,41 @@ def native_save_path(display, path, save_button=False):
     finally: x11.XCloseDisplay(connection)
 
 
+def native_dialogs(display):
+    """Observe mapped dialog windows, including background-owned GTK save pickers."""
+    env={**os.environ,'LC_ALL':'C'}
+    tree=subprocess.run(['xwininfo','-display',display,'-root','-tree'],capture_output=True,text=True,check=True,timeout=3,env=env).stdout
+    mapped=set()
+    for window in set(re.findall(r'^\s+(0x[0-9a-fA-F]+)\b',tree,re.M)):
+        kind=subprocess.run(['xprop','-display',display,'-id',window,'_NET_WM_WINDOW_TYPE'],capture_output=True,text=True,timeout=3,env=env)
+        if kind.returncode or '_NET_WM_WINDOW_TYPE_DIALOG' not in kind.stdout:continue
+        info=subprocess.run(['xwininfo','-display',display,'-id',window],capture_output=True,text=True,timeout=3,env=env)
+        if info.returncode==0 and 'Map State: IsViewable' in info.stdout:mapped.add(window)
+    return mapped
+
+
 def native_download(m, display, out, button, stem, browser='window.gTabmail.currentTabInfo.browser', button_browser=None, save_button=False):
+    ready_before = m.page('return document.readyState;',browser=button_browser or browser)
     known = m.page('return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.map(item=>item.id));',browser=browser)
+    dialogs_before=native_dialogs(display)
     m.page('document.getElementById(arguments[0]).click();', [button],browser=button_browser or browser)
-    time.sleep(1)
-    native_save_path(display, out / stem, save_button=save_button)
     def completed():
         return m.page('''const known=new Set(arguments[0]);return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.find(item=>!known.has(item.id)&&item.state==="complete")||null);''', [known],browser=browser)
-    try: item = wait_for(completed, timeout=40)
+    try:
+        # Observe the actual native picker before sending its path.
+        dialogs=wait_for(lambda:native_dialogs(display)-dialogs_before)
+        if len(dialogs)!=1:raise RuntimeError('Ambiguous native save dialog')
+        native_save_path(display, out / stem, save_button=save_button, dialog_window=next(iter(dialogs)))
+        item = wait_for(completed, timeout=40)
     except TimeoutError:
+        # Fixed public states only: never print download URLs, paths or credentials.
+        try:
+            diagnostic=m.page('return window.wrappedJSObject.browser.downloads.search({}).then(items=>({readyState:document.readyState,status:(document.getElementById("localProfileStatus")?.textContent||"").slice(0,160),downloads:items.filter(item=>!arguments[0].includes(item.id)).map(item=>({state:item.state,error:item.error||null,exists:item.exists}))}));',[known],browser=browser)
+        except Exception:
+            diagnostic={'diagnosticUnavailable':True}
+        diagnostic['readyStateBeforeClick']=ready_before
+        (out/(stem+'-failure.json')).write_text(json.dumps(diagnostic,indent=2)+'\n')
+        print(json.dumps({'nativeDownloadFailure':stem,**diagnostic}),flush=True)
         subprocess.run(['import','-window','root',str(out/(stem+'-failure.png'))], env={**os.environ,'DISPLAY':display},check=True,timeout=10)
         raise
     actual = Path(item['filename'])
@@ -208,7 +246,8 @@ def native_download(m, display, out, button, stem, browser='window.gTabmail.curr
 
 
 def native_json_download(m, display, out, button, stem):
-    actual = native_download(m,display,out,button,stem)
+    # Enter can only navigate GTK location completion; confirm the Save action.
+    actual = native_download(m,display,out,button,stem,save_button=True)
     # GTK can add/retain filename extensions. Bind to the actual newly completed
     # download ID and content, never an older file or an assumed basename.
     def content():
@@ -2451,7 +2490,7 @@ def main():
                                        '--marionette', '--remote-allow-system-access', '-offline'],
                                       start_new_session=True,
                                       env={**os.environ, 'DISPLAY': display, 'XDG_DATA_HOME': str(data_home),
-                                           'XDG_CONFIG_HOME': str(config_home)}, stdout=log, stderr=subprocess.STDOUT)
+                                           'XDG_CONFIG_HOME': str(config_home), 'LC_ALL':'C.UTF-8', 'LANG':'C.UTF-8'}, stdout=log, stderr=subprocess.STDOUT)
                 cleanup.callback(stop, tb)
                 def connect():
                     if tb.poll() is not None:
@@ -2584,6 +2623,8 @@ def main():
                         check_hybrid_popup(m,base,out,report,display,args.hybrid_popup_baseline,args.report_actions_check,args.report_actions_baseline)
                         if args.stored_source_check:
                             check_stored_sources(m,base,out,report,display,args.stored_source_baseline)
+                            if tuple(map(int, report['extensionVersion'].split('.'))) >= (1,25,6) and not args.stored_source_baseline:
+                                runpy.run_path(str(ROOT/'tools/hybrid-refresh.dev.py'))['check'](m,base,out,report,display,wait_for,open_page,native_click)
 
             except Exception:
                 try:

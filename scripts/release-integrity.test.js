@@ -208,5 +208,17 @@ test('new candidates require six-language upgrade/crash proof for both declared 
   assert.throws(()=>validateReports(current,broken,ui),/protection profile|matrix|inline|coverage|crypto/);
  }
  const currentProof=api.create(current,currentReports,ui,'fixture');assert.ok(api.verify(currentProof,current));assert.ok(!JSON.stringify(currentProof).includes('CANARY'));
+ const future={...current,extensionVersion:'1.25.6'},futureReports=structuredClone(currentReports);
+ for(const r of futureReports){r.extensionVersion=future.extensionVersion;r.currentRestart.addon.version=future.extensionVersion;}
+ assert.throws(()=>validateReports(future,futureReports,ui),/stored Hybrid/);
+ const refreshFlags=['passed','realThunderbirdAPIs','realIndexedDB','syntheticProviderPayload','pendingAdvanced','sameContext','messageView','popupView','capacityReasonVisible','historyPreserved','auditPreserved','readCountersStable','storedVerdictRetained','unfinishedReportPreserved','localFindingAgrees','storedSnapshotAgrees'];
+ for(const r of futureReports)r.hybridStoredRefresh={...Object.fromEntries(refreshFlags.map(key=>[key,true])),liveProviderCalls:false,rawPayload:'CANARY'};
+ validateReports(future,futureReports,ui);
+ for(const mutate of [r=>{delete r.hybridStoredRefresh;},r=>{r.hybridStoredRefresh.historyPreserved=false;},r=>{r.hybridStoredRefresh.unfinishedReportPreserved=false;},r=>{r.hybridStoredRefresh.localFindingAgrees=false;},r=>{r.hybridStoredRefresh.storedSnapshotAgrees=false;},r=>{r.hybridStoredRefresh.popupView=false;},r=>{r.hybridStoredRefresh.liveProviderCalls=true;},r=>{r.xpiSha256='wrong';}]){
+  const broken=structuredClone(futureReports);for(const r of broken.filter(r=>r.clientMatrixTarget==='current'))mutate(r);
+  assert.throws(()=>validateReports(future,broken,ui),/Hybrid|matrix|inline|coverage|crypto/);
+ }
+ const futureProof=api.create(future,futureReports,ui,'fixture');assert.ok(api.verify(futureProof,future));assert.ok(!JSON.stringify(futureProof).includes('CANARY'));
+
 
 });

@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-11",
+  "scope": "Development tooling only; node_modules is excluded from the extension package.",
+  "dependencyPath": [
+    "web-ext",
+    "@devicefarmer/adbkit",
+    "node-forge"
+  ],
+  "consumerRange": "^1.3.1",
+  "beforeVersion": "1.4.2",
+  "afterVersion": "1.4.3",
+  "overrideUsed": false,
+  "reports": [
+    {
+      "phase": "before",
+      "reportSha256": "9d0bea3480fa9ff36894992a23116ffe7b4887328918dd0b50b76cb438eaae77",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 3,
+        "moderate": 1,
+        "high": 0,
+        "critical": 0,
+        "total": 4
+      }
+    },
+    {
+      "phase": "after",
+      "reportSha256": "afd4d663d696e7633e9eac420412ca8a6bf78f77434a08821cef0a590b10d3d9",
+      "vulnerabilities": {
+        "info": 0,
+        "low": 3,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 3
+      }
+    }
+  ],
+  "remaining": "Three low findings in web-ext/addons-linter/deepmerge; no forced downgrade applied."
+}
