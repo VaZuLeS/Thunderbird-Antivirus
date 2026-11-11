@@ -3,11 +3,11 @@
   "candidateVersion": "1.25.7",
   "published": false,
   "extensionVersion": "1.25.7",
-  "sourceFingerprint": "0e91dac13297ee40e768ac31446b0680788ee53a1089f5f581d6ebf0814a60ed",
-  "packageSha256": "bece69891cdec2f19e22a6bf5194eaea1cff5e0fc9520adae2ace14fec1af409",
+  "sourceFingerprint": "37cf703590e77ddb01a041eee786d1fcea5881e238f9efd4e9afd2046178cb4a",
+  "packageSha256": "b878860d975496abb362bf80615b7c9c945e566111e5901ce7d289f28b79a1ad",
   "native": {
     "passed": true,
-    "reportSha256": "6748556cb9ea5c9909b80dc0bbd4f5fe9a30888aec5ed2a59b782fac33268675",
+    "reportSha256": "efbe3cc5baaa20d43c801e894cae45fd5b2aa3eee74609154abf3ff7e2b6803a",
     "client": "140.12.0",
     "platform": "Linux",
     "apiDebug": {
@@ -27,20 +27,21 @@
       "syntheticTransport": true,
       "helperSha256": "a1dd60843335dc1af46a6d9afd9ff265a4f4dbb1e9b955f887949fa2b95d3c4d"
     },
-    "scope": "Actual Thunderbird admin, popup, background and native file export; synthetic provider transport; no live account contract."
+    "scope": "Actual final integrated package, real Thunderbird APIs and native export, synthetic provider transport."
   },
   "regression": {
     "passed": 1297,
     "failed": 0,
     "skipped": 0,
-    "logSha256": "815afe2812b4c72addee586e3c7df9bf15bea43924aea1d6657ba7a10ff7860c"
+    "logSha256": "815afe2812b4c72addee586e3c7df9bf15bea43924aea1d6657ba7a10ff7860c",
+    "scope": "Before the independent main renderer optimization; complete final remote regression still required."
   },
   "browserZoom": {
     "passed": 12,
     "failed": 0,
     "sourceFingerprint": "0e91dac13297ee40e768ac31446b0680788ee53a1089f5f581d6ebf0814a60ed",
     "reportSha256": "44e34f3fedcdd160d7ab576529de7767ec4a319a8d279236c0c697095628c72e",
-    "scope": "Six languages, current source, settings only, 200 percent CSS zoom; simulated extension APIs, no screenreader."
+    "scope": "Six-language settings zoom before the independently merged main renderer optimization; not substituted for final package acceptance."
   },
   "earlierBrowserStage": {
     "passed": 24,
@@ -54,5 +55,38 @@
     "Public assets after release",
     "Actual user/provider response and live account/reference contract",
     "Windows/macOS and native screenreaders"
-  ]
+  ],
+  "previousStage": {
+    "sourceFingerprint": "0e91dac13297ee40e768ac31446b0680788ee53a1089f5f581d6ebf0814a60ed",
+    "packageSha256": "bece69891cdec2f19e22a6bf5194eaea1cff5e0fc9520adae2ace14fec1af409",
+    "native": {
+      "passed": true,
+      "reportSha256": "6748556cb9ea5c9909b80dc0bbd4f5fe9a30888aec5ed2a59b782fac33268675",
+      "client": "140.12.0",
+      "platform": "Linux",
+      "apiDebug": {
+        "passed": true,
+        "realThunderbirdAPIs": true,
+        "adminProtected": true,
+        "backgroundCaptured": true,
+        "popupCaptured": true,
+        "httpStatusVisible": true,
+        "invalidJsonVisible": true,
+        "exportVerified": true,
+        "secretsRedacted": true,
+        "noExtraRequests": true,
+        "auditPreserved": true,
+        "disabledCleared": true,
+        "liveProviderCalls": false,
+        "syntheticTransport": true,
+        "helperSha256": "a1dd60843335dc1af46a6d9afd9ff265a4f4dbb1e9b955f887949fa2b95d3c4d"
+      },
+      "scope": "Actual Thunderbird admin, popup, background and native file export; synthetic provider transport; no live account contract."
+    }
+  },
+  "integratedTargeted": {
+    "passed": 60,
+    "failed": 0,
+    "logSha256": "e1a74792bd720644b8511c43163e61eb056bda6d18cbfdaf96a0b0993b620e5b"
+  }
 }
