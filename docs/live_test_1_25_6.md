@@ -1,6 +1,6 @@
 # Abnahmeprotokoll 1.25.6
 
-Unveröffentlichter Kandidat. Die tatsächliche Antwort des Nutzers ist noch nicht als bereinigtes JSON verfügbar. Der reproduzierte Gegenfall verwendet ausdrücklich synthetische Providerdaten, keine behauptete Live-Kontoabnahme.
+GitHub veröffentlicht und Assets unabhängig geprüft. Die tatsächliche Antwort des Nutzers ist noch nicht als bereinigtes JSON verfügbar. Der reproduzierte Gegenfall verwendet ausdrücklich synthetische Providerdaten, keine behauptete Live-Kontoabnahme.
 
 | ID | Prüffall | Status | Nachweis |
 | --- | --- | --- | --- |
@@ -14,8 +14,8 @@ Unveröffentlichter Kandidat. Die tatsächliche Antwort des Nutzers ist noch nic
 | C08 | Nachrichtenansicht und echtes Popup zeigen Hybrid-Befund | OK | Linux-Thunderbird 140.12.0, synthetische Providerdaten |
 | C09 | Audit und Kontextidentität erhalten | OK | native Speichervergleiche |
 | C10 | Kein neuer Provideraufruf durch Aktualisierung | OK | native Fetchzählung und simulierte Transportprüfung |
-| C11 | Vollständige neue Remote-Paketabnahme | OK | CI 42991575788: sechs Sprachen, beide Clientlinien, Quellen-/Snapshotnachweise, Upgrade, Crash, Restore und Kandidatengate |
-| C12 | Öffentliche Releaseassets unabhängig prüfen | OFFEN | Nach Veröffentlichung |
+| C11 | Vollständige neue Remote-Paketabnahme | OK | Release-CI 42995168820: sechs Sprachen und beide Linuxlinien |
+| C12 | Öffentliche Releaseassets unabhängig prüfen | OK | audits/release-1.25.6.json; alle drei Assets erneut validiert |
 | C13 | Separates gespeichertes URL-Urteil bleibt neben unfertigem Rohbericht sichtbar | OK | Tatsächlicher persistHybridLinkVerdict-Schreibpfad, Modellregression und native Gegenprobe; Rohbericht bleibt ausstehend; gespeicherter Quellensnapshot stimmt überein |
 
-**Summe:** 12 OK / 0 FAIL / 0 N/A / 1 OFFEN
+**Summe:** 13 OK / 0 FAIL / 0 N/A / 0 OFFEN
