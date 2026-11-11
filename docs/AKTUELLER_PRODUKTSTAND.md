@@ -1,8 +1,8 @@
-# Aktueller Produktstand — 10. November 2026
+# Aktueller Produktstand — 11. November 2026
 
-**Veröffentlicht: 1.25.4.** [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.4), XPI-SHA-256 `df7220351b039e49975ac2d25e4df777c2f97131a4a022fb5b0272c7e55a253e`. Die drei Releaseassets wurden unabhängig heruntergeladen und geprüft. [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_25_4.md), [Abnahmeprotokoll](live_test_1_25_4.md), [Releaseumfang](releases/1.25.4.md).
+**Veröffentlicht: 1.25.5.** [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.5), XPI-SHA-256 `e1ece067f01e169063d92e944c60a3d88b5c933630fa3a7ab6991a2a33cbaaaa`. Alle drei öffentlichen Assets sind unabhängig geprüft. [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_25_5.md) und [Abnahme](live_test_1_25_5.md).
 
-Die [Weiterentwicklung vom 10. November](ENTWICKLUNG_2026_11_10.md) und [vorherige Arbeitsphase](ENTWICKLUNG_2026_11_09.md) sind datierte historische Stufen vor dieser Veröffentlichung; ihre früheren Paketnachweise werden nicht übertragen. Der [1.25.3-Nachweis](VEROEFFENTLICHUNG_1_25_3.md) bleibt unverändert erhalten. ATN, automatische Versorgung und weitere Plattform-/Liveabnahmen bleiben separat offen.
+Lokale Schutzprofile sind ausdrücklich exportierbar; die effektive Vorschau und der Altprofil-Konfliktvergleich sind ergänzt. [Umfang](releases/1.25.5.md). Keine Migration oder zusätzliche Berechtigung. Die [Veröffentlichung 1.25.4](VEROEFFENTLICHUNG_1_25_4.md) und ältere Entwicklungsnachweise bleiben historisch ihren Paketbytes zugeordnet.
 
 ## Funktionen und nachgewiesene Grenzen
 
@@ -33,7 +33,3 @@ Historischer Nachweis: Die Pages-Bereitstellung für `90df6607` war erfolgreich.
 Die bisherigen [Aufgabenpläne](PRODUKTANALYSE_AUFGABENPLAN_2026-11-04.md), [Ausführungsprotokolle](AUSFUEHRUNG_WEITERENTWICKLUNG_1_24_3.md) und versionsgebundenen Release-/Live-Protokolle bleiben erhalten. Insbesondere sind Inhaltsumfang, begrenzter Unicode-Eingangsfix, Ressourceninventare, Quellenhistorie, Protokollrevisionen, Exportnavigation und reproduzierbarer Paketbau jeweils mit ihrem damaligen Prüfumfang zu lesen. Die neue Bestandsaufnahme ersetzt keine dieser historischen Paketidentitäten.
 
 Die [Fortführung vom 10. November](IDENTITAETSVERTRAG_2026_11_10.md) konkretisiert AVN-009.f ohne Migration. AVN-019.b ergänzt explizite Ressourcenauslassungen und Startfehler. Öffentliche Downloads folgen `distribution.json`, nicht automatisch der Entwicklungsversion.
-
-## Vorbereiteter Entwicklungsstand 1.25.5
-
-Der [Schutzprofilexport und Importkonfliktschutz](SCHUTZPROFILE_1_25_5.md) ist lokal implementiert. [Abnahmeprotokoll](live_test_1_25_5.md): gezielte lokale Nachweise vorhanden; vollständige Remote-Matrix und Veröffentlichung stehen aus. Der veröffentlichte Stand bleibt 1.25.4.
