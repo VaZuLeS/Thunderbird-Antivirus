@@ -2246,7 +2246,7 @@ const ThundyI18n = (() => {
     "message": "Choose an automatic scan mode in settings. Until then, previous sender and manual rules apply."
   },
   "scanState_idle": {
-    "message": "No check started"
+    "message": "No scan job is active in this view."
   },
   "scanState_queued": {
     "message": "Check accepted; waiting to start"
@@ -2529,6 +2529,21 @@ const ThundyI18n = (() => {
   },
   "localProtectionLegacyHelp": {
     "message": "Older protection profiles cannot expand the automatic scan scope or turn on URL submission. The preview shows the effective result."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "The existing source history cannot be read and was preserved unchanged."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "A storage conflict prevented the source history from being extended."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "The source archive for this message has reached its entry limit."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "The source archive for this message has reached its storage limit."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Access to local storage failed."
   }
 };
     function get(key, params = []) {

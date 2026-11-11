@@ -523,3 +523,30 @@ for(const lang of ['en','de','fr','es','it','pl'])test('scan omissions and archi
   root.querySelector('[data-focus-key="view-switch"]').click();assert.ok(root.textContent.includes(catalog.scanCoverage_read_failed.message));
  }finally{dom.window.close();}
 });
+
+
+test('stored reconciliation advances pending reports once and preserves live/error/older findings',()=>{
+ const a=model(),record=(report,time)=>({links:[{url:'https://example.com/',state:'KNOWN',report,report_fetched_at:time}]});
+ const pending=record({id:'synthetic',finished:false},'2026-11-10T10:00:00Z'),finished=record({finished:true,verdict:'malicious',threat_score:85},'2026-11-10T10:01:00Z');
+ const m=a.create(a.legacy(pending)),before=JSON.stringify(pending),counts=JSON.stringify([m.data.rows[0].responses,m.data.rows[0].cacheHits,m.data.rows[0].failures]);
+ a.refreshStored(m,finished);assert.equal(m.data.rows[0].completion,'complete');assert.equal(m.data.rows[0].verdict,'malicious');
+ assert.equal(JSON.stringify([m.data.rows[0].responses,m.data.rows[0].cacheHits,m.data.rows[0].failures]),counts);
+ const stable=JSON.stringify(m.data);a.refreshStored(m,finished);assert.equal(JSON.stringify(m.data),stable);assert.equal(JSON.stringify(pending),before);
+ a.refreshStored(m,record({finished:true,verdict:'clean'},'2026-11-10T09:00:00Z'));assert.equal(JSON.stringify(m.data),stable);
+ for(const values of [{source:'remote'},{active:1,state:'running'},{state:'failed',failures:1,completion:'failed',errorCode:'rate_limited'}]){
+  const live=a.create(a.legacy(pending));Object.assign(live.data.rows[0],values);const original=JSON.stringify(live.data);a.refreshStored(live,finished);assert.equal(JSON.stringify(live.data),original);
+ }
+});
+
+test('source persistence diagnostics use translated fixed reasons without exposing raw failures',()=>{
+ const a=model();for(const lang of ['en','de','fr','es','it','pl']){
+  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=a.labels(k=>catalog[k]?.message);
+  for(const reason of ['snapshot_count','snapshot_bytes','snapshot_collision','snapshot_invalid','storage_failed','CANARY_SECRET']){
+   const dom=new JSDOM('<body></body>'),c=vm.createContext({document:dom.window.document,URL,Date,data:{local:{state:'checked'},rows:[],sourcePersistenceFailed:true,sourcePersistenceReason:reason},labels});
+   vm.runInContext('('+a.render.toString()+')(data,labels)',c);
+   const text=dom.window.document.getElementById('thundy-analysis-status').shadowRoot.textContent;
+   assert.ok(text.includes(catalog.analysisPersistenceFailed.message));assert.ok(!text.includes('CANARY_SECRET'));
+   if(reason!=='CANARY_SECRET')assert.ok(text.includes(catalog['analysisPersistence_'+reason].message));dom.window.close();
+  }
+ }
+});

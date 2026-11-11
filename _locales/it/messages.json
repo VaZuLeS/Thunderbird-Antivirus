@@ -2241,7 +2241,7 @@
     "message": "Scegli la modalità automatica nelle impostazioni. Fino ad allora restano le regole precedenti."
   },
   "scanState_idle": {
-    "message": "Nessuna analisi avviata"
+    "message": "Nessuna attività di analisi è attiva in questa vista."
   },
   "scanState_queued": {
     "message": "Analisi accettata; avvio in attesa"
@@ -2524,5 +2524,20 @@
   },
   "localProtectionLegacyHelp": {
     "message": "I profili di protezione precedenti non possono ampliare l’ambito delle analisi automatiche né attivare l’invio di URL. L’anteprima mostra il risultato effettivo."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "La cronologia delle fonti esistente non è leggibile ed è stata conservata senza modifiche."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Un conflitto di archiviazione impedisce di estendere la cronologia delle fonti."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "L’archivio delle fonti di questo messaggio ha raggiunto il limite di voci."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "L’archivio delle fonti di questo messaggio ha raggiunto il limite di spazio."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "L’accesso alla memoria locale non è riuscito."
   }
 }

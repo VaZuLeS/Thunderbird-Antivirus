@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "candidateVersion": "1.25.6",
+  "published": false,
+  "xpiSha256": "c023608a6586595f160f8b4818aff4c0b5d289799e4e82c7195704c7c3afcc2d",
+  "nativeReportSha256": "84b972c140a2a27c763bf164876fc2b4caef87c20b75506aacc7315d8d91a40e",
+  "hybridStoredRefresh": {
+    "passed": true,
+    "helperSha256": "9c9e4d8ba1d52bcaab087540bed70a8f6cc38bbec6215e0310a1797e42ed1752",
+    "realThunderbirdAPIs": true,
+    "realIndexedDB": true,
+    "syntheticProviderPayload": true,
+    "liveProviderCalls": false,
+    "pendingAdvanced": true,
+    "sameContext": true,
+    "messageView": true,
+    "popupView": true,
+    "capacityReasonVisible": true,
+    "historyPreserved": true,
+    "auditPreserved": true,
+    "readCountersStable": true
+  },
+  "client": "140.12.0",
+  "scope": "Actual Linux Thunderbird APIs and IndexedDB, synthetic provider payloads, no real provider account contract; other candidate bytes and external platforms are not implied.",
+  "sourceFingerprint": "76aa3cfb837eb415381dc21ff2f360dd66f3f37a4d652dbb5a1689336a8752de"
+}

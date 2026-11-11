@@ -645,6 +645,19 @@ function sourceRecords(state, initial = null) {
     return records;
 }
 
+test('an existing source context exposes a later stored Hybrid URL result without another request',async()=>{
+ const s=setup({},true);await s.context.configure();const records=sourceRecords(s,{messageHeader:s.message.headerMessageId,links:[{url:'https://example.com/',state:'UPLOADED',report:{id:'synthetic-quickscan',finished:false}}]});
+ const ctx=await s.context.getMessageAnalysisContext(s.message);
+ try{
+  assert.ok((await ctx.snapshot()).rows.some(row=>row.provider==='hybridanalysis'&&row.completion==='pending'));
+  records.set(s.message.headerMessageId,{messageHeader:s.message.headerMessageId,links:[{url:'https://example.com/',state:'KNOWN',report:{state:'COMPLETE',verdict:'malicious',threat_score:85},report_fetched_at:'2026-11-10T10:00:00Z'}]});
+  const before=JSON.stringify(records.get(s.message.headerMessageId)),snapshot=await ctx.snapshot();
+  assert.ok(snapshot.rows.some(row=>row.provider==='hybridanalysis'&&row.resource==='link:0'&&row.verdict==='malicious'),'saved matching URL report must be visible in the existing context');
+  const findings=await s.context.collectLinkFindings(s.message,s.full);assert.equal(findings.length,1);assert.equal(findings[0].verdict,'malicious');assert.equal(findings[0].provider,'Hybrid Analysis');
+  assert.equal(JSON.stringify(records.get(s.message.headerMessageId)),before);assert.equal(s.requests.length,0);
+ }finally{ctx.dispose();}
+});
+
 test('source RPC survives malformed stored lists and retains link slots and all provider history',async()=>{
  const s=setup({},true);await s.context.configure();
  const record={attachments:{bad:true},links:[null,{url:'https://example.com/',state:'KNOWN',report:{state:'COMPLETE',verdict:'malicious'}}],analysisStatus:{schemaVersion:2,rows:[null,...['hybridanalysis','virustotal','urlhaus','abuseipdb','urlscan'].map(provider=>({provider,scope:'report',state:'checked',verdict:'malicious',observedAt:10,responses:1}))]}};
@@ -934,7 +947,7 @@ test('snapshot count, byte limits, collisions and write errors preserve history 
   records.set(s.message.headerMessageId,{messageHeader:s.message.headerMessageId,analysisSourceSnapshots:snapshots});
   const original=JSON.stringify(records.get(s.message.headerMessageId));if(problem==='transaction')s.context.updateStore=async()=>{throw new Error('commit failed');};
   ctx.event({provider:'urlhaus',scope:'domain',phase:'start'});await ctx.flush();
-  assert.equal(JSON.stringify(records.get(s.message.headerMessageId)),original,problem);assert.equal((await ctx.snapshot()).sourcePersistenceFailed,true,problem);ctx.dispose();
+  assert.equal(JSON.stringify(records.get(s.message.headerMessageId)),original,problem);const failed=await ctx.snapshot();assert.equal(failed.sourcePersistenceFailed,true,problem);assert.equal(failed.sourcePersistenceReason,({count:'snapshot_count',bytes:'snapshot_bytes',collision:'snapshot_collision',transaction:'storage_failed'})[problem]);ctx.dispose();
  }
 });
 
@@ -946,7 +959,7 @@ test('source writes serialize their snapshots and a failed write does not poison
  ctx.event({provider:'virustotal',scope:'hash',phase:'start'});const second=ctx.flush();await new Promise(resolve=>setImmediate(resolve));assert.equal(attempts,1);
  release();await Promise.all([first,second]);assert.equal(records.get(s.message.headerMessageId).analysisSourceSnapshots[ctx.snapshotId].snapshot.rows.length,2);
  s.context.updateStore=async()=>{throw new Error('offline');};await ctx.flush();assert.equal(ctx.persistenceFailed,true);
- sourceRecords(s,records.get(s.message.headerMessageId));await ctx.flush();assert.equal(ctx.persistenceFailed,false);ctx.dispose();
+ sourceRecords(s,records.get(s.message.headerMessageId));await ctx.flush();assert.equal(ctx.persistenceFailed,false);assert.equal((await ctx.snapshot()).sourcePersistenceReason,null);ctx.dispose();
 });
 
 test('expert report snapshot exposes only current resources and never persists display details',async()=>{

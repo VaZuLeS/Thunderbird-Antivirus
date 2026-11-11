@@ -228,7 +228,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                                 hybridReportBudget-=size;hybridReports[ref]=details;
                             }
                         }
-                        if (!context.scanRunId) for (const row of ThundyAnalysis.legacy({...current,analysisStatus:model.data}).rows) if (!model.data.rows.some(active => ThundyAnalysis.rowKey(active) === ThundyAnalysis.rowKey(row)) && model.data.rows.length < 1200) model.data.rows.push(row);
+                        if (!context.scanRunId) ThundyAnalysis.refreshStored(model,current);
                     } catch (_) { /* retain known live metadata */ }
                     const enabled = { hybridanalysis: !!apikey_hybridanalysis, virustotal: !!apikey_virustotal || ipReputationProvider === 'virustotal' && !!ipReputationApiKey, urlhaus: !!urlhausApikey, abuseipdb: ipReputationProvider === 'abuseipdb' && !!ipReputationApiKey, urlscan: !!urlscanApikey };
                     const availability = {};
@@ -260,7 +260,7 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                     }
                     const security = typeof ThundySecurity !== 'undefined' ? await ThundySecurity.read() : null;
                     const protection = security ? ThundySecurity.decision({...ThundySecurity.defaults,...security.policy},{score:model.data.local.score,coverage:model.data.local.state,verdict:model.data.rows.some(row=>row.verdict==='malicious')?'MALICIOUS':model.data.rows.length && model.data.rows.every(row=>['none','suspicious'].includes(row.verdict)&&row.state==='checked')?model.data.rows.some(row=>row.verdict==='suspicious')?'SUSPICIOUS':'CLEAN':'UNKNOWN'}) : null;
-                    return { ...JSON.parse(JSON.stringify(model.data)), displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
+                    return { ...JSON.parse(JSON.stringify(model.data)), displayPreferences, hybridReports, hybridReportsTruncated, scanJob:context.scanJob || {state:'idle',migration:(await browser.storage.local.get('scanMode')).scanMode===undefined,manualAllowed:mayTransmitExternally()}, scanRunId:context.scanRunId || null, contextToken:context.snapshotId, protection, providerAccess, providerNames:typeof ThundyProviders !== 'undefined' ? Object.fromEntries(Object.entries(ThundyProviders.registry).map(([id,v])=>[id,v.name])) : undefined, sourceHistory, sourcePersistenceFailed:context.persistenceFailed, sourcePersistenceReason:context.persistenceReason || null, reportArchiveBlocked:typeof wasReportArchiveBlocked === 'function' && wasReportArchiveBlocked(key), resourceLabels, availability, diagnostics: { backoffs }, messageId: message.id };
                 },
                 async flush() {
                     if (context.disposed) return;
@@ -271,18 +271,18 @@ async function getMessageAnalysisContext(message, tabId = null, inventory = {}) 
                         await updateStore(await getSharedDB(), 'hybridanalysis', key, old => {
                             if (context.disposed) return old;
                             const previous = old?.analysisSourceSnapshots;
-                            if (previous != null && (typeof previous !== 'object' || Array.isArray(previous))) throw new Error('Invalid source snapshot container');
-                            if (!snapshotCreated && Object.prototype.hasOwnProperty.call(previous || {}, snapshotId)) throw new Error('Source snapshot identifier collision');
-                            if (!Object.prototype.hasOwnProperty.call(previous || {}, snapshotId) && Object.keys(previous || {}).length >= MAX_SOURCE_SNAPSHOTS) throw new Error('Source snapshot capacity reached');
+                            if (previous != null && (typeof previous !== 'object' || Array.isArray(previous))) throw Object.assign(new Error('Invalid source snapshot container'),{code:'snapshot_invalid'});
+                            if (!snapshotCreated && Object.prototype.hasOwnProperty.call(previous || {}, snapshotId)) throw Object.assign(new Error('Source snapshot identifier collision'),{code:'snapshot_collision'});
+                            if (!Object.prototype.hasOwnProperty.call(previous || {}, snapshotId) && Object.keys(previous || {}).length >= MAX_SOURCE_SNAPSHOTS) throw Object.assign(new Error('Source snapshot capacity reached'),{code:'snapshot_count'});
                             const snapshots = {...previous,[snapshotId]:{savedAt:Date.now(),snapshot:value}};
-                            if (new TextEncoder().encode(JSON.stringify(snapshots)).length > MAX_SOURCE_SNAPSHOT_BYTES) throw new Error('Source snapshot byte capacity reached');
+                            if (new TextEncoder().encode(JSON.stringify(snapshots)).length > MAX_SOURCE_SNAPSHOT_BYTES) throw Object.assign(new Error('Source snapshot byte capacity reached'),{code:'snapshot_bytes'});
                             // Additive area: never overwrite legacy snapshots under reused IDs.
                             return {...(old || {messageHeader:key}),analysisSourceSnapshots:snapshots,updatedAt:Date.now()};
                         });
                         snapshotCreated = true;
-                        context.persistenceFailed = false;
+                        context.persistenceFailed = false; context.persistenceReason = null;
                       }
-                      catch (_) { context.persistenceFailed = true; Logger.warn('Analysis source metadata could not be persisted'); }
+                      catch (error) { context.persistenceFailed = true; context.persistenceReason = ['snapshot_invalid','snapshot_collision','snapshot_count','snapshot_bytes'].includes(error?.code) ? error.code : 'storage_failed'; Logger.warn('Analysis source metadata could not be persisted'); }
                     });
                     await persistenceQueue;
                     const snapshot = await context.snapshot();

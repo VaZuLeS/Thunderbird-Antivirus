@@ -2584,6 +2584,8 @@ def main():
                         check_hybrid_popup(m,base,out,report,display,args.hybrid_popup_baseline,args.report_actions_check,args.report_actions_baseline)
                         if args.stored_source_check:
                             check_stored_sources(m,base,out,report,display,args.stored_source_baseline)
+                            if tuple(map(int, report['extensionVersion'].split('.'))) >= (1,25,6) and not args.stored_source_baseline:
+                                runpy.run_path(str(ROOT/'tools/hybrid-refresh.dev.py'))['check'](m,base,out,report,display,wait_for,open_page,native_click)
 
             except Exception:
                 try:

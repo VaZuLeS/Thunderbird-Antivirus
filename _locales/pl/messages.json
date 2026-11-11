@@ -2241,7 +2241,7 @@
     "message": "Wybierz tryb automatyczny w ustawieniach. Do tego czasu obowiązują poprzednie reguły."
   },
   "scanState_idle": {
-    "message": "Nie rozpoczęto kontroli"
+    "message": "W tym widoku nie ma aktywnego zadania skanowania."
   },
   "scanState_queued": {
     "message": "Kontrola przyjęta; oczekiwanie na start"
@@ -2524,5 +2524,20 @@
   },
   "localProtectionLegacyHelp": {
     "message": "Starsze profile ochrony nie mogą rozszerzać zakresu automatycznego sprawdzania ani włączać przesyłania adresów URL. Podgląd pokazuje rzeczywisty wynik."
+  },
+  "analysisPersistence_snapshot_invalid": {
+    "message": "Istniejącej historii źródeł nie można odczytać; zachowano ją bez zmian."
+  },
+  "analysisPersistence_snapshot_collision": {
+    "message": "Konflikt zapisu uniemożliwia uzupełnienie historii źródeł."
+  },
+  "analysisPersistence_snapshot_count": {
+    "message": "Archiwum źródeł tej wiadomości osiągnęło limit wpisów."
+  },
+  "analysisPersistence_snapshot_bytes": {
+    "message": "Archiwum źródeł tej wiadomości osiągnęło limit miejsca."
+  },
+  "analysisPersistence_storage_failed": {
+    "message": "Dostęp do pamięci lokalnej nie powiódł się."
   }
 }
