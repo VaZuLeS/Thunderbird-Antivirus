@@ -1,5 +1,7 @@
 # Schutzprofile 1.25.5 – vorbereiteter Entwicklungsstand
 
+**Nachtrag:** Diese Entwicklungsstufen mündeten in den [unabhängig geprüften GitHub-Release 1.25.5](VEROEFFENTLICHUNG_1_25_5.md). Die nachfolgenden früheren Kandidatenangaben bleiben historisch; sie werden nicht nachträglich umgedeutet.
+
 GitHub veröffentlicht weiterhin 1.25.4. Diese Erweiterung ist noch nicht veröffentlicht. [Kandidatennotizen](releases/1.25.5.md), [Abnahme](live_test_1_25_5.md) und [lokale Nachweise](audits/protection-profiles-1.25.5.json) bleiben getrennt vom veröffentlichten Paket.
 
 Der neue Export speichert ausschließlich die fünf erlaubten Schutzoptionen im bestehenden v2-Format. Er verwendet gespeicherte effektive Werte, keine ungespeicherten Eingaben. Schlüssel, Zustimmung, Berechtigungen, Absenderlisten und Auditdaten werden nicht exportiert. Vorschau, Abbruch und Export verändern den Speicher nicht. Der Erscheinungsprofilexport bleibt separat.
