@@ -94,3 +94,40 @@ test('v2 protection profiles preview transmission scope; v1 imports cannot enabl
  store.autoScanLinks=false;old.protection.alwaysManual=false;await p.commit(await p.prepare(old,storage),storage);assert.equal(store.scanMode,'manual');assert.equal(store.autoScanLinks,false);
  const bad=JSON.parse(JSON.stringify(profile));bad.protection.scanMode='unknown';assert.throws(()=>p.parse(bad));
 });
+
+test('protection export projects saved effective policy without credentials, consent or decisions',()=>{
+ const p=protectionProfiles(),secret='DO_NOT_EXPORT';
+ const legacy={privacyTier:'balanced',alwaysManual:true,timeOfClickProtection:true,apikey:secret,externalAnalysisConsent:true,scanningEnabledSenders:[secret],linkAuditLog:[{outcome:'PENDING',url:secret}]};
+ const before=JSON.stringify(legacy),profile=p.createExport(legacy);
+ assert.deepEqual(JSON.parse(JSON.stringify(profile)),{schemaVersion:2,kind:'thundy-local-protection',protection:{privacyTier:'balanced',alwaysManual:true,timeOfClickProtection:true,scanMode:'manual',autoScanLinks:false}});
+ assert.equal(JSON.stringify(legacy),before);assert.ok(!JSON.stringify(profile).includes(secret));
+ const defaults=p.createExport({});assert.equal(defaults.protection.scanMode,'approvedSenders');assert.equal(defaults.protection.alwaysManual,false);assert.equal(defaults.protection.autoScanLinks,false);
+ const explicit=p.createExport({...legacy,scanMode:'allDisplayed',autoScanLinks:true});assert.equal(explicit.protection.scanMode,'allDisplayed');assert.equal(explicit.protection.alwaysManual,false);assert.equal(explicit.protection.autoScanLinks,true);
+ const Ajv=require('ajv/dist/2020'),validate=new Ajv().compile(JSON.parse(fs.readFileSync('docs/schemas/local-protection-profile-v2.json')));assert.ok(validate(JSON.parse(JSON.stringify(profile))));assert.ok(validate(JSON.parse(JSON.stringify(explicit))));
+});
+
+test('protection draft detects newer URL-scan choice when legacy scanMode is absent',async()=>{
+ for(const original of [false,true]){
+  const p=protectionProfiles(),saved={privacyTier:'strict',alwaysManual:false,timeOfClickProtection:true,autoScanLinks:original};let writes=0;
+  const storage={get:async()=>structuredClone(saved),set:async values=>{writes++;Object.assign(saved,values);}};
+  const target={schemaVersion:2,kind:'thundy-local-protection',protection:{privacyTier:'strict',alwaysManual:false,timeOfClickProtection:true,scanMode:'approvedSenders',autoScanLinks:original}};
+  const draft=await p.prepare(target,storage);saved.autoScanLinks=!original;
+  await assert.rejects(p.commit(draft,storage),/PROFILE_CHANGED/);assert.equal(writes,0);assert.equal(saved.autoScanLinks,!original);
+ }
+});
+
+test('legacy protection preview describes effective manual scope and preserves URL choice',async()=>{
+ const p=protectionProfiles(),saved={privacyTier:'strict',alwaysManual:true,timeOfClickProtection:true,scanMode:'manual',autoScanLinks:true};
+ const storage={get:async()=>structuredClone(saved),set:async values=>Object.assign(saved,values)};
+ const old={schemaVersion:1,kind:'thundy-local-protection',protection:{privacyTier:'strict',alwaysManual:false,timeOfClickProtection:true}};
+ const draft=await p.prepare(old,storage);assert.equal(draft.after.protection.alwaysManual,true);assert.equal(draft.after.protection.scanMode,'manual');assert.equal(draft.after.protection.autoScanLinks,true);
+ await p.commit(draft,storage);assert.deepEqual(JSON.parse(JSON.stringify(p.createExport(saved))),JSON.parse(JSON.stringify(draft.after)));
+});
+
+test('legacy protection import cannot relax manual policy even without a stored scanMode',async()=>{
+ const p=protectionProfiles(),saved={privacyTier:'strict',alwaysManual:true,timeOfClickProtection:true,autoScanLinks:false};
+ const storage={get:async()=>structuredClone(saved),set:async values=>Object.assign(saved,values)};
+ const profile={schemaVersion:1,kind:'thundy-local-protection',protection:{privacyTier:'strict',alwaysManual:false,timeOfClickProtection:true}};
+ const draft=await p.prepare(profile,storage);assert.equal(draft.after.protection.scanMode,'manual');
+ await p.commit(draft,storage);assert.equal(saved.alwaysManual,true);assert.equal(saved.scanMode,'manual');assert.equal(saved.autoScanLinks,false);
+});

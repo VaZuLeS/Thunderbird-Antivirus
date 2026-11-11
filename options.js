@@ -1,4 +1,4 @@
-// Portable profiles intentionally contain appearance only, never permissions,
+// Portable appearance profiles contain appearance only, never permissions,
 // consent, provider keys, sender rules or historical decisions.
 const LocalSettingsProfile = (() => {
     const keys = ['thundyAppearance', 'thundyAccent', 'thundyDensity'];
@@ -46,19 +46,27 @@ const LocalProtectionProfile = (() => {
         const explicit = ['allDisplayed','approvedSenders','manual'].includes(settings.scanMode);
         return parse({ schemaVersion: explicit ? 2 : 1, kind: 'thundy-local-protection', protection: { privacyTier, alwaysManual: explicit ? settings.scanMode === 'manual' : alwaysManual, timeOfClickProtection, ...(explicit ? {scanMode:settings.scanMode,autoScanLinks:settings.autoScanLinks === true} : {}) } });
     }
-    async function prepare(input, storage) { return { profile: parse(input), before: create(await storage.get(keys)) }; }
+    function createExport(settings = {}) {
+        // Match the effective scan-policy defaults, without exporting consent.
+        const scanMode = ['allDisplayed','approvedSenders','manual'].includes(settings.scanMode) ? settings.scanMode : settings.alwaysManual === true ? 'manual' : 'approvedSenders';
+        return create({...settings, scanMode, autoScanLinks: settings.autoScanLinks === true});
+    }
+    function changes(profile, settings) {
+        if (profile.schemaVersion === 2) return {...profile.protection};
+        const scanMode = profile.protection.alwaysManual ? 'manual' : createExport(settings).protection.scanMode;
+        return {...profile.protection, scanMode, alwaysManual:scanMode === 'manual'};
+    }
+    async function prepare(input, storage) {
+        const profile = parse(input), settings = await storage.get(keys);
+        return {profile, before:createExport(settings), after:createExport({...settings,...changes(profile,settings)})};
+    }
     async function commit(proposal, storage) {
-        const profile = parse(proposal?.profile), before = parse(proposal?.before);
-        if (JSON.stringify(create(await storage.get(keys))) !== JSON.stringify(before)) throw new Error('PROFILE_CHANGED');
-        await storage.set({
-            privacyTier: profile.protection.privacyTier,
-            alwaysManual: profile.protection.alwaysManual,
-            timeOfClickProtection: profile.protection.timeOfClickProtection,
-            ...(profile.schemaVersion === 2 ? {scanMode:profile.protection.scanMode,autoScanLinks:profile.protection.autoScanLinks} : profile.protection.alwaysManual && before.schemaVersion === 2 ? {scanMode:'manual'} : {})
-        });
+        const profile = parse(proposal?.profile), before = parse(proposal?.before), settings = await storage.get(keys);
+        if (JSON.stringify(createExport(settings)) !== JSON.stringify(before)) throw new Error('PROFILE_CHANGED');
+        await storage.set(changes(profile,settings));
         return profile;
     }
-    return { keys, parse, create, prepare, commit };
+    return { keys, parse, create, createExport, prepare, commit };
 })();
 
 // Explicit field projection: never serialize storage, error objects or API keys.
@@ -197,13 +205,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     const prepared = await LocalProtectionProfile.prepare(input, browser.storage.local);
                     if (own !== generation) return;
                     proposal = prepared;
+                    const desired = prepared.after.protection;
                     const tierLabels = { strict: 'ui_145', balanced: 'ui_146', max: 'ui_147' };
-                    const boolLabel = v => v ? 'true' : 'false';
+                    const boolLabel = v => v ? uiText('localProfileYes', 'Yes') : uiText('localProfileNo', 'No');
                     preview.textContent = [
-                        uiText('ui_144', 'Privacy tier:') + ' ' + uiText(tierLabels[prepared.before.protection.privacyTier], prepared.before.protection.privacyTier) + ' → ' + uiText(tierLabels[prepared.profile.protection.privacyTier], prepared.profile.protection.privacyTier),
-                        uiText('ui_160', 'Always scan manually') + ': ' + boolLabel(prepared.before.protection.alwaysManual) + ' → ' + boolLabel(prepared.profile.protection.alwaysManual),
-                        ...(prepared.profile.schemaVersion === 2 ? [uiText('scanModeLabel','Automatic external scans') + ': ' + uiText(({allDisplayed:'scanModeAll',approvedSenders:'scanModeSenders',manual:'scanModeManual'})[prepared.profile.protection.scanMode],prepared.profile.protection.scanMode),uiText('ui_162','Automatic link analysis') + ': ' + boolLabel(prepared.profile.protection.autoScanLinks),uiText('scanModeHelp','Configured services may receive full URLs.')] : []),
-                        uiText('ui_164', 'Check links before opening them') + ': ' + boolLabel(prepared.before.protection.timeOfClickProtection) + ' → ' + boolLabel(prepared.profile.protection.timeOfClickProtection)
+                        uiText('ui_144', 'Privacy tier:') + ' ' + uiText(tierLabels[prepared.before.protection.privacyTier], prepared.before.protection.privacyTier) + ' → ' + uiText(tierLabels[desired.privacyTier], desired.privacyTier),
+                        uiText('ui_160', 'Always scan manually') + ': ' + boolLabel(prepared.before.protection.alwaysManual) + ' → ' + boolLabel(desired.alwaysManual),
+                        uiText('scanModeLabel','Automatic external scans') + ': ' + uiText(({allDisplayed:'scanModeAll',approvedSenders:'scanModeSenders',manual:'scanModeManual'})[prepared.before.protection.scanMode],prepared.before.protection.scanMode) + ' → ' + uiText(({allDisplayed:'scanModeAll',approvedSenders:'scanModeSenders',manual:'scanModeManual'})[desired.scanMode],desired.scanMode),
+                        uiText('ui_162','Automatic link analysis') + ': ' + boolLabel(prepared.before.protection.autoScanLinks) + ' → ' + boolLabel(desired.autoScanLinks),
+                        uiText('scanModeHelp','Configured services may receive full URLs.'),
+                        ...(prepared.profile.schemaVersion === 1 ? [uiText('localProtectionLegacyHelp','Older profiles cannot expand automatic scan scope or turn on URL submission. The preview shows the effective result.')] : []),
+                        uiText('ui_164', 'Check links before opening them') + ': ' + boolLabel(prepared.before.protection.timeOfClickProtection) + ' → ' + boolLabel(desired.timeOfClickProtection)
                     ].join('\n');
                 } else {
                     const prepared = await LocalSettingsProfile.prepare(input, browser.storage.local);
@@ -225,7 +237,8 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 if (typeof ThundyTheme !== 'undefined') await ThundyTheme.whenIdle();
                 if (proposal.profile?.kind === 'thundy-local-protection') {
-                    const committed = await LocalProtectionProfile.commit(proposal, settingsStorage);
+                    await LocalProtectionProfile.commit(proposal, settingsStorage);
+                    const committed = proposal.after;
                     const tierEl = document.getElementById('privacyTier'), manualEl = document.getElementById('alwaysManual'), tocEl = document.getElementById('timeOfClickProtection');
                     if (tierEl) tierEl.value = committed.protection.privacyTier;
                     if (manualEl) manualEl.checked = committed.protection.alwaysManual;
@@ -241,12 +254,21 @@ document.addEventListener('DOMContentLoaded', function() {
             catch (error) { status.textContent = uiText(error.message === 'PROFILE_CHANGED' ? 'localProfileChanged' : 'localProfileFailed', 'Profile could not be applied'); apply.disabled = false; }
             finally { applying = false; controls.forEach((control, index) => { control.disabled = states[index]; }); if (document.activeElement === document.body || document.activeElement === apply) (proposal ? apply : document.getElementById('localProfilePreview')).focus(); }
         });
-        document.getElementById('localProfileExport').addEventListener('click', async () => {
+        const exportProfile = async protection => {
             let url;
-            try { if (typeof ThundyTheme !== 'undefined') await ThundyTheme.whenIdle(); const profile = LocalSettingsProfile.create(await browser.storage.local.get(LocalSettingsProfile.keys)); url = URL.createObjectURL(new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' })); await browser.downloads.download({ url, filename: 'thundy-local-settings.json', saveAs: true }); status.textContent = uiText('auditExported', 'Export saved'); }
-            catch (error) { status.textContent = uiText('auditExportFailed', 'Export failed'); }
+            try {
+                if (typeof ThundyTheme !== 'undefined') await ThundyTheme.whenIdle();
+                const model = protection ? LocalProtectionProfile : LocalSettingsProfile;
+                const settings = await browser.storage.local.get(model.keys);
+                const profile = protection ? model.createExport(settings) : model.create(settings);
+                url = URL.createObjectURL(new Blob([JSON.stringify(profile, null, 2)], {type:'application/json'}));
+                await browser.downloads.download({url, filename:protection ? 'thundy-local-protection.json' : 'thundy-local-settings.json', saveAs:true});
+                status.textContent = uiText('auditExported', 'Export saved');
+            } catch (_) { status.textContent = uiText('auditExportFailed', 'Export failed'); }
             finally { if (url) URL.revokeObjectURL(url); }
-        });
+        };
+        document.getElementById('localProfileExport').addEventListener('click', () => exportProfile(false));
+        document.getElementById('localProtectionProfileExport').addEventListener('click', () => exportProfile(true));
     }
     const previewButton = document.getElementById('supportPreview');
     if (previewButton) {

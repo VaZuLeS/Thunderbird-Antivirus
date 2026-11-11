@@ -1555,10 +1555,10 @@
     "message": "Limits per pass: 100 attachments, 25 MiB per attachment, 100 unique domains, 20 batch links. Processed does not mean externally scanned or safe."
   },
   "localProfileTitle": {
-    "message": "Local appearance profiles"
+    "message": "Local profiles"
   },
   "localProfileHelp": {
-    "message": "Transfer appearance, accent and density only. Preview and confirm every import. Keys, consent, permissions, protection rules and audit history are excluded."
+    "message": "Export saved appearance or local protection settings separately. Preview and confirm imports. Keys, consent, permissions, trusted senders and audit history are excluded."
   },
   "localProfileExport": {
     "message": "Export appearance"
@@ -2515,5 +2515,17 @@
   },
   "scanFailure_scan_failed": {
     "message": "The check could not finish. Existing records were retained."
+  },
+  "localProtectionProfileExport": {
+    "message": "Export protection settings"
+  },
+  "localProfileYes": {
+    "message": "Yes"
+  },
+  "localProfileNo": {
+    "message": "No"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Older protection profiles cannot expand the automatic scan scope or turn on URL submission. The preview shows the effective result."
   }
 }

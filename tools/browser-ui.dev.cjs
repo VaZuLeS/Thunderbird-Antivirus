@@ -442,6 +442,46 @@ async function interaction(page, c) {
     assert.equal(await page.evaluate(() => document.documentElement.dataset.accent), 'violet', 'stale preview overwrote newer choice');
     await page.locator('#localProfileDiscard').click();
     assert.equal(await page.locator('#localProfileApply').isDisabled(), true);
+    // Export committed protection policy, never unsaved fields or secrets.
+    await page.evaluate(()=>browser.storage.local.set({apikey:'PROTECTION_EXPORT_CANARY',externalAnalysisConsent:false,scanningEnabledSenders:['keep@example.invalid'],linkAuditLog:[{id:'retained',outcome:'PENDING'}]}));
+    const savedBefore=await page.evaluate(()=>browser.storage.local.get(null));
+    const writesBeforeExport=await page.evaluate(()=>uiTest.writes.length);
+    await page.locator('#autoScanLinks').check();
+    await page.locator('#localProtectionProfileExport').focus();await page.keyboard.press('Enter');
+    await page.waitForFunction(()=>uiTest.downloads.length===3);
+    const protection=JSON.parse(await page.evaluate(()=>uiTest.downloads[2].content));
+    assert.deepEqual(protection,{schemaVersion:2,kind:'thundy-local-protection',protection:{privacyTier:'strict',alwaysManual:false,timeOfClickProtection:true,scanMode:'approvedSenders',autoScanLinks:false}});
+    assert.equal(await page.evaluate(()=>uiTest.downloads[2].filename),'thundy-local-protection.json');
+    assert.equal(await page.evaluate(()=>uiTest.writes.length),writesBeforeExport);
+    assert.deepEqual(await page.evaluate(()=>browser.storage.local.get(null)),savedBefore);
+    assert.ok(!JSON.stringify(protection).includes('CANARY'));
+    const imported={schemaVersion:2,kind:'thundy-local-protection',protection:{privacyTier:'strict',alwaysManual:true,timeOfClickProtection:true,scanMode:'manual',autoScanLinks:false}};
+    await page.locator('#localProfileInput').fill(JSON.stringify(imported));await page.locator('#localProfilePreview').click();
+    await page.waitForFunction(()=>!document.getElementById('localProfileApply').disabled);
+    assert.deepEqual(await page.evaluate(()=>browser.storage.local.get(null)),savedBefore,'Protection preview changed saved data');
+    const catalog=JSON.parse(fs.readFileSync(path.join(root,'_locales',c.lang,'messages.json')));
+    assert.ok((await page.locator('#localProfileDiff').textContent()).includes(catalog.localProfileYes.message));
+    await page.evaluate(()=>uiTest.failSave=true);await page.locator('#localProfileApply').click();
+    await page.waitForFunction(()=>!document.getElementById('localProfileApply').disabled);
+    assert.deepEqual(await page.evaluate(()=>browser.storage.local.get(null)),savedBefore,'Failed protection import changed saved data');
+    await page.evaluate(()=>{uiTest.failSave=false;return browser.storage.local.set({autoScanLinks:true});});
+    const newerSettings=await page.evaluate(()=>browser.storage.local.get(null));
+    await page.locator('#localProfileApply').click();
+    await page.waitForFunction(text=>document.getElementById('localProfileStatus').textContent===text,catalog.localProfileChanged.message);
+    assert.deepEqual(await page.evaluate(()=>browser.storage.local.get(null)),newerSettings,'Stale protection preview overwrote a newer URL-scan choice');
+    await page.evaluate(previous=>Object.hasOwn(previous,'autoScanLinks')?browser.storage.local.set({autoScanLinks:previous.autoScanLinks}):browser.storage.local.remove('autoScanLinks'),savedBefore);
+    await page.locator('#localProfilePreview').click();await page.waitForFunction(()=>!document.getElementById('localProfileApply').disabled);
+    await page.locator('#localProfileApply').click();
+    await page.waitForFunction(()=>document.getElementById('localProfileDiff').hidden);
+    const committed=await page.evaluate(()=>browser.storage.local.get(null));
+    for(const [key,value] of Object.entries(savedBefore))if(!['privacyTier','alwaysManual','timeOfClickProtection','scanMode','autoScanLinks'].includes(key))assert.deepEqual(committed[key],value);
+    for(const [key,value] of Object.entries(imported.protection))assert.equal(committed[key],value);
+    const writesBeforeCancel=await page.evaluate(()=>uiTest.writes.length);
+    await page.locator('#localProfileInput').fill(JSON.stringify(protection));await page.locator('#localProfilePreview').click();
+    await page.waitForFunction(()=>!document.getElementById('localProfileApply').disabled);await page.locator('#localProfileDiscard').click();
+    assert.equal(await page.evaluate(()=>uiTest.writes.length),writesBeforeCancel);
+    assert.deepEqual(await page.evaluate(()=>browser.storage.local.get(null)),committed);
+    assert.equal(await page.evaluate(()=>uiTest.permissionRequests),0);
   } else if (c.view === "enterprise_setup.html") {
     await page.locator("#profileBundle").selectOption("microsoft");
     assert.equal(await page.locator("#profileChanges").isVisible(), true);
@@ -715,6 +755,8 @@ async function main() {
           Object.assign(result, await checks(page, c));
           await interaction(page, c);
           if (["security.html","source_export.html"].includes(c.view)) Object.assign(result,await checks(page,c));
+          // The options interaction explicitly imports a light appearance profile.
+          if (c.view === "options.html") Object.assign(result,await checks(page,{...c,scheme:'light'}));
           if (c.kind === "message")
             Object.assign(result, await checkMessage(page, c, tags));
           assert.deepEqual(errors, [], "page errors");

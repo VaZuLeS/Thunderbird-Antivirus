@@ -1552,10 +1552,10 @@
     "message": "Límites por ejecución: 100 adjuntos, 25 MiB por adjunto, 100 dominios únicos, 20 enlaces por lote. Procesado no significa analizado externamente ni seguro."
   },
   "localProfileTitle": {
-    "message": "Perfiles locales de apariencia"
+    "message": "Perfiles locales"
   },
   "localProfileHelp": {
-    "message": "Transfiera solo apariencia, color y densidad. Revise y confirme cada importación. Se excluyen claves, consentimiento, permisos, reglas de protección e historial."
+    "message": "Exporte por separado la apariencia guardada o los ajustes de protección locales. Revise la vista previa y confirme cada importación. Se excluyen las claves, los consentimientos, los permisos, los remitentes de confianza y el historial de decisiones."
   },
   "localProfileExport": {
     "message": "Exportar apariencia"
@@ -2512,5 +2512,17 @@
   },
   "scanFailure_scan_failed": {
     "message": "No se pudo completar el análisis. Se conservaron los datos existentes."
+  },
+  "localProtectionProfileExport": {
+    "message": "Exportar ajustes de protección"
+  },
+  "localProfileYes": {
+    "message": "Sí"
+  },
+  "localProfileNo": {
+    "message": "No"
+  },
+  "localProtectionLegacyHelp": {
+    "message": "Los perfiles de protección antiguos no pueden ampliar el alcance de los análisis automáticos ni activar el envío de URL. La vista previa muestra el resultado efectivo."
   }
 }
