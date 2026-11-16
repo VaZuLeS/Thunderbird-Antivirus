@@ -226,6 +226,14 @@ test('new candidates require six-language upgrade/crash proof for both declared 
  validateReports(debug,debugReports,ui);
  for(const key of ['popupCaptured','adminProtected','secretsRedacted','exportVerified']){const bad=structuredClone(debugReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.apiDebug[key]=false;assert.throws(()=>validateReports(debug,bad,ui),/API debug/);}
  const debugProof=api.create(debug,debugReports,ui,'fixture');assert.ok(api.verify(debugProof,debug));assert.ok(!JSON.stringify(debugProof).includes('CANARY'));
+ const recovery={...debug,extensionVersion:'1.25.8'},recoveryReports=structuredClone(debugReports);
+ for(const r of recoveryReports){r.extensionVersion=recovery.extensionVersion;r.currentRestart.addon.version=recovery.extensionVersion;}
+ assert.throws(()=>validateReports(recovery,recoveryReports,ui),/failed stored/);
+ for(const r of recoveryReports)r.failedStoredRecovery={...Object.fromEntries(["passed", "realThunderbirdAPIs", "realIndexedDB", "syntheticProviderPayload", "messageView", "popupView", "earlierFailuresPreserved", "responseCountersPreserved", "storedSnapshotAgrees", "localFindingAgrees", "auditPreserved", "idempotent"].map(key=>[key,true])),liveProviderCalls:false,rawPayload:'CANARY'};
+ validateReports(recovery,recoveryReports,ui);
+ for(const key of ['earlierFailuresPreserved','responseCountersPreserved','popupView','storedSnapshotAgrees']){const bad=structuredClone(recoveryReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.failedStoredRecovery[key]=false;assert.throws(()=>validateReports(recovery,bad,ui),/failed stored/);}
+ const recoveryProof=api.create(recovery,recoveryReports,ui,'fixture');assert.ok(api.verify(recoveryProof,recovery));assert.ok(!JSON.stringify(recoveryProof).includes('CANARY'));
+
 
 
 

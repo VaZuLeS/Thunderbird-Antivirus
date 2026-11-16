@@ -6,7 +6,7 @@ const ThundyApiDiagnostics = (() => {
     const central=()=>typeof ThundySecurity!=='undefined';
     const providers=['hybridanalysis','urlscan','virustotal','urlhaus','abuseipdb'];
     const fields=new Set(('id uuid sha256 sha1 md5 submission_id job_id submission_type state status verdict finished progress positives total percent threat_score threat_level multiscan_result whitelisted whitelist scanners scanners_v2 reports anti_virus_results assessment verdicts overall urlscan engines malicious maliciousTotal suspicious score error errors code message detail description retry_after visibility query_status data attributes stats harmless undetected timeout type count quota limit remaining reset resource url file scan_type environment_id result api search results submitted').split(' '));
-    const enums=new Set(('MALICIOUS SUSPICIOUS CLEAN HARMLESS WHITELISTED UNKNOWN NO-CLASSIFICATION ERROR FAILED FAILURE SUCCESS COMPLETE COMPLETED FINISHED DONE IN_PROGRESS IN_QUEUE IN-PROGRESS IN-QUEUE PENDING RUNNING QUEUED SUBMITTED PUBLIC PRIVATE UNLISTED PAGE_URL FILE URL ALL INVALID_KEY UNAUTHORIZED FORBIDDEN NOT_FOUND RATE_LIMITED VALIDATIONERROR OK NO_RESULTS').split(' '));
+    const enums=new Set([...('MALICIOUS MALICIOUS_VISUAL SUSPICIOUS CLEAN HARMLESS WHITELISTED NO-THREAT NO_THREAT UNKNOWN NO-CLASSIFICATION ERROR FAILED FAILURE SUCCESS COMPLETE COMPLETED FINISHED DONE IN_PROGRESS IN_QUEUE IN-PROGRESS IN-QUEUE PENDING RUNNING QUEUED SUBMITTED PUBLIC PRIVATE UNLISTED PAGE_URL FILE URL ALL INVALID_KEY INVALID_API_KEY UNAUTHORIZED FORBIDDEN NOT_FOUND RATE_LIMITED VALIDATIONERROR OK NO_RESULTS').split(' '),'NO SPECIFIC THREAT','NO THREAT']);
     const reasons=['success','invalid_json','timeout_or_cancelled','network_error','policy_blocked','resource_mismatch','authentication','permission','rate_limited','not_found','gone','invalid_request','server_error','unknown'];
     const errorCodes=new Set(['HOST_PERMISSION_MISSING','EXTERNAL_ANALYSIS_DISABLED','TIER_BLOCKS_REQUEST','RESOURCE_MISMATCH','SCAN_CANCELLED','ADMIN_LOCKED','KEY_TEST_INVALID','AbortError','SyntaxError','TypeError']);
     const code=error=>errorCodes.has(error?.code)?error.code:errorCodes.has(error?.name)?error.name:errorCodes.has(error?.message)?error.message:null;
@@ -67,15 +67,16 @@ const ThundyApiDiagnostics = (() => {
             if(typeof source.keys==='function')body={kind:'form',fields:[...new Set([...source.keys()].filter(key=>fields.has(key)))].slice(0,35)};
             else if(typeof source==='string') {
                 let parsed;try{parsed=JSON.parse(source);}catch(_){}
-                body={kind:'text',bytes:source.length,...(parsed&&typeof parsed==='object'?{shape:project(parsed)}:{})};
+                body={kind:'text',bytes:new TextEncoder().encode(source).byteLength,...(parsed&&typeof parsed==='object'?{shape:project(parsed)}:{})};
             } else body={kind:'binary'};
         }
         return {provider:providers.includes(provider)?provider:'unknown',endpoint,pathReferences,scope:['hash','file','url','report','ip','domain'].includes(scope)?scope:'unknown',method:['GET','POST','HEAD'].includes((options.method||'GET').toUpperCase())?(options.method||'GET').toUpperCase():'OTHER',authPresent,body};
     }
     function prune() {
         const now=Date.now();
-        while(entries.length&&now-entries[0].startedAt>MAX_AGE)entries.shift();
-        for(const [id,value] of pending)if(now-value.startedAt>300000)pending.delete(id);
+        // Completion order need not match start order for concurrent requests.
+        for(let i=entries.length-1;i>=0;i--)if(now-entries[i].startedAt>=MAX_AGE)entries.splice(i,1);
+        for(const [id,value] of pending)if(now-value.startedAt>=300000)pending.delete(id);
     }
     function expire() {
         if(expiryTimer!==null)clearTimeout(expiryTimer);
@@ -95,6 +96,7 @@ const ThundyApiDiagnostics = (() => {
         return id;
     }
     function finishLocal(id,trace,sender) {
+        prune();
         const entry=pending.get(id);if(!entry||entry.epoch!==epoch||entry.owner!==(sender?ThundySecurity.identity(sender):'background'))return;
         pending.delete(id);prune();
         const record={...entry};delete record.owner;delete record.epoch;
@@ -131,7 +133,7 @@ const ThundyApiDiagnostics = (() => {
             // A popup can only append bounded diagnostics, never inspect the report.
             const r=request.request;
             if(!r||!providers.includes(r.provider)||typeof r.endpoint!=='string'||!/^\/[a-z0-9/:-]{0,256}$/.test(r.endpoint))return {ticket:null};
-            return {ticket:await startLocal({provider:r.provider,endpoint:r.endpoint,pathReferences:(Array.isArray(r.pathReferences)?r.pathReferences:[]).slice(0,4).map(ref=>({type:['sha256','md5'].includes(ref.type)?ref.type:'opaque',reference:clean(ref.reference)})),method:['GET','POST','HEAD'].includes(r.method)?r.method:'OTHER',scope:['hash','file','url','report','ip','domain'].includes(r.scope)?r.scope:'unknown',authPresent:r.authPresent===true,body:{kind:['none','form','text','binary'].includes(r.body?.kind)?r.body.kind:'none',...(Array.isArray(r.body?.fields)?{fields:r.body.fields.filter(key=>fields.has(key)).slice(0,35)}:{}),...(r.body?.shape?{shape:clean(r.body.shape)}:{})}},sender)};
+            return {ticket:await startLocal({provider:r.provider,endpoint:r.endpoint,pathReferences:(Array.isArray(r.pathReferences)?r.pathReferences:[]).slice(0,4).map(ref=>({type:['sha256','md5'].includes(ref.type)?ref.type:'opaque',reference:clean(ref.reference)})),method:['GET','POST','HEAD'].includes(r.method)?r.method:'OTHER',scope:['hash','file','url','report','ip','domain'].includes(r.scope)?r.scope:'unknown',authPresent:r.authPresent===true,body:{kind:['none','form','text','binary'].includes(r.body?.kind)?r.body.kind:'none',...(Number.isSafeInteger(r.body?.bytes)&&r.body.bytes>=0&&r.body.bytes<=1e12?{bytes:r.body.bytes}:{}),...(Array.isArray(r.body?.fields)?{fields:r.body.fields.filter(key=>fields.has(key)).slice(0,35)}:{}),...(r.body?.shape?{shape:clean(r.body.shape)}:{})}},sender)};
         }
         // Only schema-projected diagnostic data from a trusted popup is admitted.
         if(request.stage==='finish'&&Number.isSafeInteger(request.ticket)&&request.trace&&JSON.stringify(request.trace).length<=40000)finishLocal(request.ticket,request.trace,sender);

@@ -525,7 +525,7 @@ for(const lang of ['en','de','fr','es','it','pl'])test('scan omissions and archi
 });
 
 
-test('stored reconciliation advances pending reports once and preserves live/error/older findings',()=>{
+test('stored reconciliation advances pending reports once and preserves live attempts and older findings',()=>{
  const a=model(),record=(report,time)=>({links:[{url:'https://example.com/',state:'KNOWN',report,report_fetched_at:time}]});
  const pending=record({id:'synthetic',finished:false},'2026-11-10T10:00:00Z'),finished=record({finished:true,verdict:'malicious',threat_score:85},'2026-11-10T10:01:00Z');
  const m=a.create(a.legacy(pending)),before=JSON.stringify(pending),counts=JSON.stringify([m.data.rows[0].responses,m.data.rows[0].cacheHits,m.data.rows[0].failures]);
@@ -533,7 +533,7 @@ test('stored reconciliation advances pending reports once and preserves live/err
  assert.equal(JSON.stringify([m.data.rows[0].responses,m.data.rows[0].cacheHits,m.data.rows[0].failures]),counts);
  const stable=JSON.stringify(m.data);a.refreshStored(m,finished);assert.equal(JSON.stringify(m.data),stable);assert.equal(JSON.stringify(pending),before);
  a.refreshStored(m,record({finished:true,verdict:'clean'},'2026-11-10T09:00:00Z'));assert.equal(JSON.stringify(m.data),stable);
- for(const values of [{source:'remote'},{active:1,state:'running'},{state:'failed',failures:1,completion:'failed',errorCode:'rate_limited'}]){
+ for(const values of [{source:'remote'},{active:1,state:'running'},{source:'remote',state:'failed',failures:1,completion:'failed',errorCode:'rate_limited'}]){
   const live=a.create(a.legacy(pending));Object.assign(live.data.rows[0],values);const original=JSON.stringify(live.data);a.refreshStored(live,finished);assert.equal(JSON.stringify(live.data),original);
  }
 });
@@ -570,5 +570,30 @@ test('a documented URL verdict does not disappear or complete a separate unfinis
   assert.ok(rows.some(row=>row.scope==='report'&&row.completion==='pending'));
   if(verdict)assert.ok(rows.some(row=>row.scope==='url'&&row.state==='checked'&&row.verdict===verdict&&row.observedAt===12345));else assert.ok(!rows.some(row=>row.scope==='url'));
   assert.equal(JSON.stringify(record),before);
+ }
+});
+
+test('newer stored reports recover failed source rows without rewriting earlier attempts',()=>{
+ const a=model(),url='https://fixture.invalid/';
+ for(const verdict of ['malicious','clean']){
+  const original={links:[{url,state:'UPLOADED',report:{state:'ERROR'},report_fetched_at:new Date(100).toISOString()}]},before=JSON.stringify(original);
+  const m=a.create(a.legacy(original)),row=m.data.rows[0];row.errorCode='earlier_error';row.errorDetails='Earlier stored attempt failed';
+  const counters={responses:row.responses,failures:row.failures,cacheHits:row.cacheHits};
+  const current={links:[{url,state:'KNOWN',report:{finished:true,verdict},report_fetched_at:new Date(200).toISOString()}]};
+  a.refreshStored(m,current);assert.equal(row.verdict,verdict==='clean'?'none':'malicious');assert.equal(row.state,'checked');assert.equal(row.completion,'complete');assert.equal(row.observedAt,200);
+  for(const [key,value] of Object.entries(counters))assert.equal(row[key],value);
+  assert.equal(row.errorCode,'earlier_error');assert.equal(row.errorDetails,'Earlier stored attempt failed');assert.equal(JSON.stringify(original),before);
+  for(const lang of ['en','de','fr','es','it','pl'])for(const view of ['simple','expert']){
+   const dom=new JSDOM('<html><body data-thundy-analysis-view="'+view+'"></body></html>');
+   try{const c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+'\nglobalThis.a=ThundyAnalysis;',c);
+    const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json'));m.data.local={state:'checked',score:0};c.a.render(m.data,c.a.labels(key=>catalog[key]?.message));
+    const badge=dom.window.document.getElementById('thundy-analysis-status').shadowRoot.querySelector('[data-provider=hybridanalysis] .service-results');
+    assert.equal(badge.textContent,catalog['analysisVerdict_'+row.verdict].message);
+   }finally{dom.window.close();}
+  }
+
+  const stable=JSON.stringify(m.data);a.refreshStored(m,current);assert.equal(JSON.stringify(m.data),stable);
+  for(const source of ['remote','attempt']){const live=a.create(a.legacy(original));live.data.rows[0].source=source;const unchanged=JSON.stringify(live.data);a.refreshStored(live,current);assert.equal(JSON.stringify(live.data),unchanged);}
+  const active=a.create(a.legacy(original));active.data.rows[0].active=1;const unchanged=JSON.stringify(active.data);a.refreshStored(active,current);assert.equal(JSON.stringify(active.data),unchanged);
  }
 });
