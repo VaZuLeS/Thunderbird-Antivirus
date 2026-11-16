@@ -1,6 +1,6 @@
 # Fünf Korrekturen nach der Fehleranalyse — 16. November 2026
 
-Entwicklungskandidat 1.25.8. Veröffentlicht bleibt 1.25.7 bis zur gesonderten vollständigen Freigabe. Keine Aussage über die Ursache des noch nicht mit einem echten Debugbericht untersuchten Live-Anbieterfehlers.
+Version 1.25.8 ist nach vollständiger Paket-CI und unabhängiger Assetprüfung veröffentlicht. Keine Aussage über die Ursache des noch nicht mit einem echten Debugbericht untersuchten Live-Anbieterfehlers.
 
 ## Aktuelles Urteil und frühere Fehler
 
@@ -29,4 +29,4 @@ Neue deterministische Gegenfälle für gespeicherte Fehler mit späterem Bericht
 
 [Abnahmeprotokoll](live_test_1_25_8.md), [Releaseumfang](releases/1.25.8.md). Windows/macOS, Screenreader, Live-Kontoverträge und automatische Updateverteilung bleiben gesonderte offene Nachweise. OPENED bezeichnet Thunderbirds Öffnungsannahme; PENDING bleibt nach Prozessverlust offen. Keine Datenmigration oder zusätzliche Löschpolitik für Analyse-/Auditdaten.
 
-Lokaler Stand: 1.303 Regressionen sowie 86 gezielte Prüfungen erfolgreich. [Maschinenlesbarer Kandidatennachweis](audits/five-fixes-1.25.8.json). Native Prüfungen sind in dieser Umgebung mangels Thunderbird/Xvfb noch nicht ausgeführt; beide Linuxlinien bleiben Pflicht der neuen CI. Frühere Paketnachweise werden nicht auf diese Bytes übertragen.
+Lokaler Stand: 1.303 Regressionen sowie 86 gezielte Prüfungen erfolgreich. [Maschinenlesbarer Kandidatennachweis](audits/five-fixes-1.25.8.json). Native Prüfungen wurden lokal mangels Thunderbird/Xvfb nicht ausgeführt. Die vollständige Release-CI bestätigt beide Linuxlinien einschließlich des neuen Fehler-Recovery-Gegenfalls. Frühere Paketnachweise werden nicht auf diese Bytes übertragen.

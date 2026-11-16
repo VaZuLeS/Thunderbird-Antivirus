@@ -1,8 +1,8 @@
-# Aktueller Produktstand — 11. November 2026
+# Aktueller Produktstand — 16. November 2026
 
-**Veröffentlicht: 1.25.7.** [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.7), XPI-SHA-256 `4d397e08bf3d27e038221ea0222b90b0d135ef46d5572152dcf014fb16be55c7`. Alle drei öffentlichen Assets sind unabhängig geprüft. [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_25_7.md), [Abnahme](live_test_1_25_7.md).
+**Veröffentlicht: 1.25.8.** [GitHub-Release](https://github.com/VaZuLeS/Thunderbird-Antivirus/releases/tag/v1.25.8), XPI-SHA-256 `12f6f4f19ea9950f3ccd318f4b7df7c73abcb4cc10dadbf9914dcb7d51b416c4`. Alle drei öffentlichen Assets sind unabhängig geprüft. [Veröffentlichungsnachweis](VEROEFFENTLICHUNG_1_25_8.md), [Abnahme](live_test_1_25_8.md).
 
-API-Debugmodus mit Hintergrund-Adminprüfung, Vorschau und Export ergänzt; Quick-Scan-ID wird bei neuen Hybrid-Antworten zusätzlich erhalten. [Umfang und Grenzen](releases/1.25.7.md). Keine zusätzliche Berechtigung oder Identitätsmigration. Der ursprüngliche Nutzerfall bleibt ohne tatsächliche Diagnosedaten gesondert offen. [1.25.6](VEROEFFENTLICHUNG_1_25_6.md) bleibt historische Veröffentlichung.
+Gespeicherte Anbieterfehler blockieren neuere belegte Befunde nicht mehr. API-Diagnose korrigiert Ablauf paralleler Aufzeichnungen, sichere Protokollwerte und UTF-8-Größen. Der gepinnte Vendorbestand ist abgeglichen. [Fünf Korrekturen](FEHLERKORREKTUREN_1_25_8.md), [Releaseumfang](releases/1.25.8.md). Keine Identitätsmigration oder zusätzliche Anbieteranfragen. Der ursprüngliche Live-Anbieterfall bleibt ohne tatsächliche Diagnosedaten offen. [1.25.7](VEROEFFENTLICHUNG_1_25_7.md) bleibt historische Veröffentlichung.
 
 ## Funktionen und nachgewiesene Grenzen
 
@@ -25,7 +25,7 @@ API-Debugmodus mit Hintergrund-Adminprüfung, Vorschau und Export ergänzt; Quic
 
 ## Nachweise richtig lesen
 
-Aktueller Veröffentlichungsnachweis: [Paket und Releaseassets](audits/release-1.25.7.json), [Release-CI 43064322166](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/43064322166). Frühere Kandidatenberichte behalten ihre eigenen Paketidentitäten. Eine automatische Updateversorgung wird daraus nicht abgeleitet. Er trennt getestete Paketbytes, Quellfingerprints, Simulationen und echte Clientprüfungen. Historische Testzahlen, Tags, Dokumenttitel und erfolgreiche Deployments sind keine aktuelle Inhalts- oder Plattformfreigabe.
+Aktueller Veröffentlichungsnachweis: [Paket und Releaseassets](audits/release-1.25.8.json), [Release-CI 43842985011](https://github.com/VaZuLeS/Thunderbird-Antivirus/actions/runs/43842985011). Frühere Kandidatenberichte behalten ihre eigenen Paketidentitäten. Eine automatische Updateversorgung wird daraus nicht abgeleitet. Er trennt getestete Paketbytes, Quellfingerprints, Simulationen und echte Clientprüfungen. Historische Testzahlen, Tags, Dokumenttitel und erfolgreiche Deployments sind keine aktuelle Inhalts- oder Plattformfreigabe.
 
 Historischer Nachweis: Die Pages-Bereitstellung für `90df6607` war erfolgreich. Ein öffentlicher Seiten-/Downloadkettenlauf wurde in dieser Umgebung nicht bestätigt: Der Proxy verweigerte den HTTPS-Zugriff. Daraus folgt weder Websiteausfall noch erfolgreiche öffentliche Inhaltsabnahme. Lokale Version-/Linkprüfungen sind davon getrennt.
 

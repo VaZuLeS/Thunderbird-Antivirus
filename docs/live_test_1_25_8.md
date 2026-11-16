@@ -1,6 +1,6 @@
 # Abnahmeprotokoll 1.25.8
 
-Unveröffentlichter Kandidat. Synthetische Anbieterantworten und echte Thunderbird-/OS-Prüfungen werden getrennt ausgewiesen.
+Veröffentlichte GitHub-Distribution; öffentliche Assets unabhängig geprüft. Synthetische Anbieterantworten und echte Thunderbird-/OS-Prüfungen werden getrennt ausgewiesen.
 
 | ID | Prüffall | Status | Nachweis |
 | --- | --- | --- | --- |
@@ -14,8 +14,8 @@ Unveröffentlichter Kandidat. Synthetische Anbieterantworten und echte Thunderbi
 | C08 | UTF-8-Größe korrekt, auch im Popup-Vertrag | OK | ASCII-/Umlaut-/Emoji-Gegenfälle |
 | C09 | Gepinnter Vendorstand und Lizenz bytegleich | OK | check:vendor nach reproduzierbarer Generierung |
 | C10 | Sechs Sprachen in Übersicht und Fachansicht | OK | tatsächlicher Renderer mit simuliertem DOM |
-| C11 | Beide Linuxlinien einschließlich neuer nativer Fehler-Recovery | OFFEN | vollständige neue paketgebundene CI erforderlich |
-| C12 | Vollständige Browser-Sprach-/Theme-/Tastatur-/Zoommatrix | OFFEN | vollständige neue CI erforderlich |
-| C13 | Öffentliche Releaseassets unabhängig prüfen | OFFEN | erst nach Veröffentlichung |
+| C11 | Beide Linuxlinien einschließlich neuer nativer Fehler-Recovery | OK | Release-CI 43842985011; tatsächliche Nachrichtenansicht, Popup, IndexedDB und Audit |
+| C12 | Vollständige Browser-Sprach-/Theme-/Tastatur-/Zoommatrix | OK | Release-CI 43842985011; sechs Sprachen |
+| C13 | Öffentliche Releaseassets unabhängig prüfen | OK | audits/release-1.25.8.json; alle drei Assets heruntergeladen und validiert |
 
-**Summe:** 10 OK / 0 FAIL / 0 N/A / 3 OFFEN
+**Summe:** 13 OK / 0 FAIL / 0 N/A / 0 OFFEN
