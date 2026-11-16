@@ -208,7 +208,8 @@ const ThundyAnalysis = (() => {
         return model.data;
     }
     // Reconcile current, content-bound stored resources without replaying events
-    // or counting another response. Active/live attempts and errors stay authoritative.
+    // or counting another response. Active/live attempts stay authoritative;
+    // stored failure counters remain history beside any newer stored finding.
     function refreshStored(model, record) {
         for (const row of legacy(record).rows) {
             const active = model.data.rows.find(old => rowKey(old) === rowKey(row));
@@ -217,12 +218,12 @@ const ThundyAnalysis = (() => {
                 else model.data.truncated = true;
                 continue;
             }
-            if (active.source !== 'stored' || active.active || active.failures || active.state === 'failed') continue;
+            if (active.source !== 'stored' || active.active) continue;
             const oldTime = Number.isFinite(active.observedAt) ? active.observedAt : null;
             const newTime = Number.isFinite(row.observedAt) ? row.observedAt : null;
             if (oldTime !== null && (newTime === null || newTime < oldTime)) continue;
             const newer = newTime !== null && (oldTime === null || newTime > oldTime);
-            const completed = ['pending','unknown'].includes(active.completion) && row.completion === 'complete';
+            const completed = ['pending','unknown','failed'].includes(active.completion) && row.completion === 'complete';
             if (!newer && !completed) continue;
             const verdict = worst(active.verdict, row.verdict);
             Object.assign(active, ThundyProviderResults.project(ThundyProviderResults.merge(active,row)), {

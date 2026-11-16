@@ -81,3 +81,36 @@ test('independent popup reference namespaces cannot imply a shared provider iden
  }
  const rows=f.d.report().entries;assert.equal(rows.length,2);assert.notEqual(rows[0].response.id,rows[1].response.id);assert.ok(rows.every(row=>/^ref-p[a-f0-9]{12}-1$/.test(row.response.id)));
 });
+
+test('retention expires all entries when requests complete out of start order',async()=>{
+ const f=fixture();let timer;f.c.setTimeout=(callback,ms)=>(timer={callback,ms,unref(){}});f.c.clearTimeout=()=>{};await f.enable();
+ const a=await f.d.start(url,{method:'POST'});f.advance(100);const b=await f.d.start(url,{method:'POST'});f.advance(100);
+ await f.d.finish(b,{attempts:[{status:200}],reason:'success'});f.advance(100);await f.d.finish(a,{attempts:[{status:200}],reason:'success'});
+ f.advance(3599750);timer.callback();const report=f.d.report();
+ assert.equal(report.entries.length,1);assert.equal(report.createdAt-report.entries[0].startedAt,3599950);assert.equal(timer.ms,51);
+ f.advance(50);assert.equal(f.d.report().entries.length,0);f.d.reset();
+});
+test('expired diagnostic tickets cannot append a late completion',async()=>{
+ const f=fixture();await f.enable();const ticket=await f.d.start(url,{method:'POST'});f.advance(300001);
+ await f.d.finish(ticket,{attempts:[{status:200}],reason:'success'});assert.equal(f.d.report().entries.length,0);f.d.reset();
+});
+test('diagnostic body sizes count UTF-8 bytes rather than UTF-16 code units',async()=>{
+ const f=fixture();await f.enable();
+ for(const text of ['ASCII','ä','😀']){
+  const body=JSON.stringify({url:'https://example.invalid/'+text,visibility:'unlisted'});
+  await f.g.fetchWithTimeout('https://urlscan.io/api/v1/scan/',{method:'POST',body});
+  assert.equal(f.d.report().entries.at(-1).request.body.bytes,Buffer.byteLength(body,'utf8'));
+ }
+ const sender={...f.sender,url:'moz-extension://addon/popup.html',documentId:'size-popup'};
+ const {ticket}=await f.d.capture({stage:'start',request:{provider:'urlscan',endpoint:'/api/v1/scan/',method:'POST',scope:'url',body:{kind:'text',bytes:64}}},sender);
+ await f.d.capture({stage:'finish',ticket,trace:{attempts:[{status:200}]}},sender);
+ assert.equal(f.d.report().entries.at(-1).request.body.bytes,64);f.d.reset();
+});
+test('known provider protocol values survive projection while arbitrary strings remain redacted',async()=>{
+ const f=fixture();await f.enable();const input={query_status:'invalid_api_key',verdict:'no specific threat',status:'MALICIOUS_VISUAL',message:'CANARY_PRIVATE'};
+ const projected=f.d.project(input);assert.equal(projected.query_status,'INVALID_API_KEY');assert.equal(projected.verdict,'NO SPECIFIC THREAT');assert.equal(projected.status,'MALICIOUS_VISUAL');assert.equal(projected.message,'[redacted string]');
+ const sender={...f.sender,url:'moz-extension://addon/popup.html',documentId:'protocol-popup'};
+ const {ticket}=await f.d.capture({stage:'start',request:{provider:'hybridanalysis',endpoint:'/api/v2/overview/:reference',method:'GET'}},sender);
+ await f.d.capture({stage:'finish',ticket,trace:{response:projected,attempts:[{status:200}]}},sender);
+ assert.equal(f.d.report().entries[0].response.verdict,'NO SPECIFIC THREAT');assert.ok(!JSON.stringify(f.d.report()).includes('CANARY'));f.d.reset();
+});

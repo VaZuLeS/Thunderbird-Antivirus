@@ -2627,6 +2627,8 @@ def main():
                             check_stored_sources(m,base,out,report,display,args.stored_source_baseline)
                             if tuple(map(int, report['extensionVersion'].split('.'))) >= (1,25,6) and not args.stored_source_baseline:
                                 runpy.run_path(str(ROOT/'tools/hybrid-refresh.dev.py'))['check'](m,base,out,report,display,wait_for,open_page,native_click)
+                            if tuple(map(int,report['extensionVersion'].split('.'))) >= (1,25,8) and not args.stored_source_baseline:
+                                runpy.run_path(str(ROOT/'tools/stored-failure-recovery.dev.py'))['check'](m,base,out,report,display,wait_for,open_page,native_click)
 
             except Exception:
                 try:
