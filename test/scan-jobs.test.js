@@ -289,3 +289,10 @@ for(const failure of [410,429,'network'])test('urlscan retains an observed parti
  const saved=f.stored.fixture.links[0].urlscan;assert.equal(saved.uuid,'retained-job');assert.equal(saved.assessment.verdict,'malicious');assert.equal(saved.assessment.completion,'failed');assert.equal(saved.status,'ERROR');
  assert.equal(f.s.get(1).pending,failure!==410);assert.equal(saved.errorCode,failure===410?'result_gone':failure===429?'rate_limited':'fetch_failed');
 });
+test('standalone urlscan polling rejects a foreign UUID without losing the earlier valid finding',async()=>{
+ const f=urlscanRuntime();let calls=0;
+ f.c.setTimeout=(fn,ms)=>{f.c.apiGateway.pause(ms).then(fn);return 0;};
+ f.c.apiGateway.fetchWithTimeout=async()=>({status:200,json:async()=>++calls===1?{task:{uuid:'own-job'},finished:false,verdicts:{overall:{malicious:true}}}:{task:{uuid:'foreign-job'},finished:true,verdicts:{overall:{malicious:false}}}});
+ const result=await f.c.pollUrlscanIoResult('own-job','synthetic-key');
+ assert.equal(calls,2);assert.equal(result.errorCode,'resource_mismatch');assert.equal(result.status,'ERROR');assert.equal(result.assessment.verdict,'malicious');assert.equal(result.assessment.completion,'failed');assert.ok(!JSON.stringify(result).includes('foreign-job'));
+});

@@ -3,21 +3,17 @@
   "kind": "thundy-local-development-validation",
   "published": false,
   "extensionVersion": "1.25.8",
-  "sourceFingerprint": "e2e081f3856f036950bdb3dfb3adb38005f3f69c1f4298024d8fb10fdcc51dfb",
-  "packageSha256": "5a0d785ebe614346e46730950d373e23f3e2351870570d04264593e22bff8a55",
+  "sourceFingerprint": "fcebc0fcc1a7828eacd869b3327c37cbf4808d323d420e777b8c7fb99d51d57f",
+  "packageSha256": "b5813e6ead25961fa4723c5e8c8f4b338133ea04fc0e8d30d504f2f396dc3394",
   "regression": {
-    "passed": 1315,
+    "passed": 1316,
     "failed": 0,
     "cancelled": 0,
     "skipped": 0,
-    "logSha256": "3b1c7c856daf906d47435d901c80f05f849d8af9bf97eae8f1a919cbe5881cad"
+    "logSha256": "530d071e874bfb118c32471f5e36dd391a3b4451a80e6eed0a9ed6f0eb04a3e6"
   },
   "targeted": {
-    "passed": 55,
-    "failed": 0
-  },
-  "integration": {
-    "passed": 403,
+    "passed": 56,
     "failed": 0
   },
   "native": {

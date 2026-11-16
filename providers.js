@@ -283,7 +283,7 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=
         if (resultRes.status === 200) {
             const resultData = await resultRes.json();
 
-            if(resultData?.task?.uuid && resultData.task.uuid!==uuid) return {status:'ERROR',errorCode:'resource_mismatch'};
+            if(resultData?.task?.uuid && resultData.task.uuid!==uuid) return failure('resource_mismatch');
             const assessment=ThundyProviderResults.merge(retainedAssessment,ThundyProviderResults.evaluate('urlscan',resultData,'report'));
             retainedAssessment=assessment;
             const reasons=[];

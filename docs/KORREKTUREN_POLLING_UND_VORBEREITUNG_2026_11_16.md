@@ -16,7 +16,7 @@ Die [offizielle urlscan-Anleitung](https://docs.urlscan.io/guides/quickstart) be
 
 ## Erhalt von Daten und Schutzverhalten
 
-Teilergebnisse werden innerhalb eines Pollinglaufs zusammengeführt. Auch nach anschließendem HTTP 410, HTTP 429 oder Transportfehler bleibt ein zuvor beobachtetes bösartiges Signal im gespeicherten Assessment erhalten. Ein solches Ergebnis ist trotzdem fehlgeschlagen beziehungsweise unvollständig. Cachewiederverwendung darf eine bekannte noch ausstehende Ressource nicht als abgeschlossenen Auftrag übernehmen.
+Teilergebnisse werden innerhalb eines Pollinglaufs zusammengeführt. Auch nach anschließendem HTTP 410, HTTP 429 oder Transportfehler sowie bei einer fremden Antwort-UUID bleibt ein zuvor beobachtetes bösartiges Signal im gespeicherten Assessment erhalten. Ein solches Ergebnis ist trotzdem fehlgeschlagen beziehungsweise unvollständig. Cachewiederverwendung darf eine bekannte noch ausstehende Ressource nicht als abgeschlossenen Auftrag übernehmen.
 
 Keine Datenmigration, Änderung historischer Nutzerentscheidungen, zusätzliche automatische POST-Wiederholung oder neue Einwilligung. Externe Dienste bleiben optional. OPENED bestätigt ausschließlich Thunderbirds angenommene Öffnungsanforderung; PENDING bleibt nach Prozessverlust offen. Der API-Debugmodus und seine Adminprüfung bleiben erhalten.
 
@@ -28,4 +28,4 @@ Die native Linux-Probe verwendet für den Vergleich gemischter Befunde bereits a
 
 Lokale Thunderbird-/Xvfb-Binaries sind in dieser Ausführungsumgebung nicht vorhanden. Native Prüfungen müssen daher separat in der vorhandenen CI ausgeführt werden. Bestehende Releasebelege werden nicht auf diese neuen Paketbytes übertragen. Windows/macOS, Screenreader, Live-Anbieterkonten und automatische Updatekanäle bleiben eigenständige Abnahmen.
 
-Lokale Abnahme: 1.315 Tests ohne Fehler, abgebrochene oder übersprungene Fälle. 403 Integrationsprüfungen und zuletzt 55 gezielte Anbieter-/Koordinatorprüfungen bestanden. Source-/Sprach-/Vendor-/Design-/Dokumentprüfung, Lint und Paketbau bestanden. [Maschinenlesbarer lokaler Nachweis](audits/polling-preparation-2026-11-16.json).
+Lokale Abnahme: 1.316 Tests ohne Fehler, abgebrochene oder übersprungene Fälle. 56 gezielte Anbieter-/Koordinatorprüfungen bestanden. Source-/Sprach-/Vendor-/Design-/Dokumentprüfung, Lint und Paketbau bestanden. [Maschinenlesbarer lokaler Nachweis](audits/polling-preparation-2026-11-16.json).
