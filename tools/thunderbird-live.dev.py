@@ -2101,10 +2101,20 @@ def check_provider_results(m, base, out, report, display, message_id):
     # A deleted accepted result is terminal; its earlier finding remains stored.
     deleted=m.page('''return (async()=>{const w=window.wrappedJSObject,b=w.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
       const cleared=await b.runtime.sendMessage({action:'clearMemoryCaches'});if(!cleared.success)throw Error('Cache clear rejected');const fetch=bg.fetch;
+      // The preceding quota scenario rejected a NEW submission. Restore the
+      // separately captured accepted-result fixture for the deletion scenario.
+      const accepted=new Map(arguments[1].map(link=>[link.url,link.urlscan])),message=await b.messages.get(arguments[0]);
+      await bg.updateStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(message),old=>({...old,links:old.links.map(link=>{
+        const saved=accepted.get(link.url);if(!saved?.uuid)throw Error('Missing accepted UUID fixture');return {...link,urlscan:saved};
+      })}),{preserveReports:true});
       bg.fetch=async(url,options={})=>{if(String(url).includes('urlscan.io/api/v1/result/')){w.__providerCalls.push({url:String(url),method:options.method||'GET'});return new bg.Response('{}',{status:410});}return fetch(url,options);};
       const result=await bg.handleRequestScan({messageId:arguments[0],tabId:(await b.tabs.query({active:true,currentWindow:true}))[0].id,operation:'refresh'},{});
-      return {id:result.id,reason:b.i18n.getMessage('urlscanResultGone')};})();''',[message_id],browser=options)
-    gone=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('id')==deleted['id'] and s.get('scanJob',{}).get('state')=='incomplete' else None),20)
+      if(!result.success)throw Error(result.code||'Deleted result probe rejected');
+      return {id:result.id,reason:b.i18n.getMessage('urlscanResultGone')};})();''',[message_id,record['links']],browser=options)
+    try:
+        gone=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('id')==deleted['id'] and s.get('scanJob',{}).get('state')=='incomplete' else None),20)
+    except TimeoutError:
+        raise AssertionError({'deletedResultExpectedJob':deleted['id'],'actualJob':snapshot().get('scanJob')})
     assert gone['scanJob']['pending'] is False,gone
     record=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysisRecord",messageId:arguments[0]});',[message_id],browser=options)['record']
     assert all(link['urlscan']['terminal'] and link['urlscan']['errorCode']=='result_gone' and link['urlscan']['assessment']['verdict']=='suspicious' for link in record['links']),record
