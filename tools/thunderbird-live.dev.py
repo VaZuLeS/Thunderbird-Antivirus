@@ -2101,6 +2101,7 @@ def check_provider_results(m, base, out, report, display, message_id):
     # A deleted accepted result is terminal; its earlier finding remains stored.
     deleted=m.page('''return (async()=>{const w=window.wrappedJSObject,b=w.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
       const cleared=await b.runtime.sendMessage({action:'clearMemoryCaches'});if(!cleared.success)throw Error('Cache clear rejected');const fetch=bg.fetch;
+      const postCount=w.__providerCalls.filter(call=>call.method==='POST').length;
       // The preceding quota scenario rejected a NEW submission. Restore the
       // separately captured accepted-result fixture for the deletion scenario.
       const accepted=new Map(arguments[1].map(link=>[link.url,link.urlscan])),message=await b.messages.get(arguments[0]);
@@ -2110,7 +2111,7 @@ def check_provider_results(m, base, out, report, display, message_id):
       bg.fetch=async(url,options={})=>{if(String(url).includes('urlscan.io/api/v1/result/')){w.__providerCalls.push({url:String(url),method:options.method||'GET'});return new bg.Response('{}',{status:410});}return fetch(url,options);};
       const result=await bg.handleRequestScan({messageId:arguments[0],tabId:(await b.tabs.query({active:true,currentWindow:true}))[0].id,operation:'refresh'},{});
       if(!result.success)throw Error(result.code||'Deleted result probe rejected');
-      return {id:result.id,reason:b.i18n.getMessage('urlscanResultGone')};})();''',[message_id,record['links']],browser=options)
+      return {id:result.id,postCount,reason:b.i18n.getMessage('urlscanResultGone')};})();''',[message_id,record['links']],browser=options)
     try:
         gone=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('id')==deleted['id'] and s.get('scanJob',{}).get('state')=='incomplete' else None),20)
     except TimeoutError:
@@ -2126,7 +2127,7 @@ def check_provider_results(m, base, out, report, display, message_id):
     m.page('for(const detail of document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("details"))detail.open=true;',browser=popup)
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes(arguments[0]);',[deleted['reason']],browser=popup))
     m.screenshot(out/'urlscan-deleted-result-popup.png');m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
-    assert m.page('return window.wrappedJSObject.__providerCalls.filter(c=>c.method==="POST").length;',browser=options)==before
+    assert m.page('return window.wrappedJSObject.__providerCalls.filter(c=>c.method==="POST").length;',browser=options)==deleted['postCount']
     report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'hybridExpertDetails':True,'actionScopedQuota':True,'existingUrlscanJobs':True,'deletedResultTerminal':True,'hybridScannerList':True,'syntheticTransport':True}
 
 
