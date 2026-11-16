@@ -220,7 +220,9 @@ def native_download(m, display, out, button, stem, browser='window.gTabmail.curr
     ready_before = m.page('return document.readyState;',browser=button_browser or browser)
     known = m.page('return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.map(item=>item.id));',browser=browser)
     dialogs_before=native_dialogs(display)
-    m.page('document.getElementById(arguments[0]).click();', [button],browser=button_browser or browser)
+    # Popup report cards may rerender while the download inventory is queried.
+    # Resolve a semantic locator and click in the same JS turn; no stale node ID.
+    wait_for(lambda:m.page('''const locator=arguments[0],button=typeof locator==='string'?document.getElementById(locator):[...document.querySelectorAll('#hybrid_analysis_api_content button')].filter(node=>node.textContent===window.wrappedJSObject.browser.i18n.getMessage(locator.labelKey))[locator.index];if(!button||button.disabled)return false;button.click();return true;''',[button],browser=button_browser or browser))
     def completed():
         return m.page('''const known=new Set(arguments[0]);return window.wrappedJSObject.browser.downloads.search({}).then(items=>items.find(item=>!known.has(item.id)&&item.state==="complete")||null);''', [known],browser=browser)
     try:
@@ -1412,7 +1414,7 @@ def check_hybrid_popup(m, base, out, report, display, baseline=False, actions=Fa
             wait_for(lambda:m.page('const b=document.getElementById(arguments[0]),s=document.getElementById(b.getAttribute("aria-describedby"));return !b.disabled&&s.textContent.startsWith(window.wrappedJSObject.browser.i18n.getMessage("ui_045"));',[controls['firstRescan']],browser=popup))
             assert controls['unique']
             assert m.page('const b=document.getElementById(arguments[0]);return !b.disabled&&document.getElementById(b.getAttribute("aria-describedby")).textContent==="";',[controls['secondRescan']],browser=popup)
-            actual=native_download(m,display,out,controls['secondDownload'],'local-cdr-report.html',browser=options,button_browser=popup,save_button=True)
+            actual=native_download(m,display,out,{'labelKey':'ui_035','index':1},'local-cdr-report.html',browser=options,button_browser=popup,save_button=True)
             data=actual.read_bytes();assert b'Fixture' in data and b'<script' not in data.lower(),data
             observed=json.loads(m.page('return JSON.stringify(window.wrappedJSObject.__reportActionRows);',browser=options))
             assert observed==[{'action':'uploadAttachment','messageId':target,'partName':'1.2'},{'action':'downloadDisarmed','messageId':target,'partName':'1.3'}],observed
