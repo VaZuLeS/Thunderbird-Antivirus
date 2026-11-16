@@ -219,3 +219,73 @@ test('Hybrid quick-scan retrieval uses response id when submission and job refer
  assert.equal(f.stored.fixture.links[0].hybrid_quick_scan_id,'quick-reference');
  assert.equal(f.stored.fixture.links[0].hybrid_submission_id,'submission-reference');
 });
+
+function urlscanRuntime(){
+ const f=runtime({apikey:''});let now=1000000;
+ f.c.Date=class extends Date{static now(){return now;}};f.c.apiGateway.pause=async ms=>{now+=ms;};
+ f.c.tierAtLeast=()=>true;f.c.requireHostPermission=async()=>{};f.c.assertExternalAnalysisAllowed=()=>{};f.c.Logger={error(){},warn(){}};
+ f.c.uiText=(key,fallback)=>fallback;f.c.msg=key=>key;f.c.addReason=(array,key,text)=>array.push(text);
+ vm.runInContext(fs.readFileSync('providers.js','utf8'),f.c);
+ return {...f,now:()=>now};
+}
+test('fresh urlscan waits thirty seconds and retrieves a later result using only its accepted UUID',async()=>{
+ const f=urlscanRuntime();const requests=[];
+ f.c.apiGateway.fetchWithTimeout=async(url,options)=>{requests.push({url,method:options.method,at:f.now()-1000000});return {ok:true,status:options.method==='POST'||f.now()>=1045000?200:404,json:async()=>options.method==='POST'?{uuid:'accepted-job'}:{task:{uuid:'accepted-job'},verdicts:{overall:{malicious:false}}}};};
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
+ assert.equal(requests[1].at,30000);assert.ok(requests.at(-1).at>=45000);assert.equal(requests.filter(r=>r.method==='POST').length,1);
+ assert.ok(requests.filter(r=>r.method==='GET').every(r=>r.url.endsWith('/accepted-job/')));assert.equal(f.s.get(1).state,'completed');
+});
+test('unfinished HTTP 200 stays pending until a final result and retains earlier malicious evidence',async()=>{
+ const f=urlscanRuntime();let gets=0;
+ f.c.apiGateway.fetchWithTimeout=async(url,options)=>({ok:true,status:200,json:async()=>options.method==='POST'?{uuid:'partial-job'}:{task:{uuid:'partial-job'},finished:++gets>1,verdicts:{overall:{malicious:gets===1}}}});
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
+ assert.equal(gets,2);const saved=f.stored.fixture.links[0].urlscan;
+ assert.equal(saved.assessment.verdict,'malicious');assert.equal(saved.assessment.completion,'complete');assert.equal(saved.status,'MALICIOUS');assert.equal(f.s.get(1).pending,false);
+});
+test('unfinished HTTP 200 times out with its partial findings and remains resumable without a POST',async()=>{
+ const f=urlscanRuntime();const requests=[];
+ f.c.apiGateway.fetchWithTimeout=async(url,options)=>{requests.push(options.method);return {ok:true,status:200,json:async()=>options.method==='POST'?{uuid:'pending-job'}:{task:{uuid:'pending-job'},finished:false,verdicts:{overall:{malicious:true}}}};};
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
+ assert.equal(f.s.get(1).state,'pending');assert.equal(f.s.get(1).assessmentIncomplete,true);
+ assert.equal(f.stored.fixture.links[0].urlscan.assessment.verdict,'malicious');assert.equal(f.stored.fixture.links[0].urlscan.status,'TIMEOUT');assert.ok(f.now()<=1090000);
+ await f.s.request({messageId:1,operation:'refresh'},{tab:{id:7}});await f.s.settled(1);assert.equal(requests.filter(x=>x==='POST').length,1);
+});
+test('deleted urlscan result is terminal, preserves its UUID and only an explicit new scan submits again',async()=>{
+ const f=urlscanRuntime();const requests=[];
+ f.c.apiGateway.fetchWithTimeout=async(url,options)=>{requests.push(options.method);return {ok:options.method==='POST',status:options.method==='POST'?200:410,json:async()=>({uuid:'deleted-job'})};};
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
+ const saved=f.stored.fixture.links[0].urlscan;assert.equal(saved.errorCode,'result_gone');assert.equal(saved.terminal,true);assert.equal(saved.uuid,'deleted-job');assert.equal(f.s.get(1).pending,false);
+ await f.s.request({messageId:1,operation:'refresh'},{tab:{id:7}});await f.s.settled(1);
+ await f.s.display({id:7},f.message);await f.s.settled(1);assert.deepEqual(requests,['POST','GET']);assert.equal(f.s.get(1).providers.urlscan.error,'result_gone');
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);assert.equal(requests.filter(x=>x==='POST').length,2);
+});
+for(const stage of ['file','hash'])test('timed out '+stage+' preparation cannot mutate a later context binding',async()=>{
+ const f=runtime({apikey:'',urlscanApikey:'',scanMode:'manual'});let now=1000000,release;const timers=[];
+ f.c.Date=class extends Date{static now(){return now;}};f.c.setTimeout=(fn,ms)=>{const timer={fn,ms};timers.push(timer);return timer;};f.c.clearTimeout=()=>{};
+ f.c.browser.messages.listAttachments=async()=>[{partName:'1.2',name:'fixture.txt',size:4}];
+ f.c.browser.messages.getAttachmentFile=async()=>stage==='file'?await new Promise(r=>release=r):new Blob(['old']);
+ f.c.get_sha256_hash=async()=>stage==='hash'?await new Promise(r=>release=r):'a'.repeat(64);
+ const bindings=[];f.context.forAttachment=(...args)=>{bindings.push(args);return {event(){}};};
+ const request=f.s.request({messageId:1},{tab:{id:7}});const rejected=assert.rejects(request,/SCAN_PREPARATION_TIMEOUT/);while(!release)await tick();now+=300001;timers.find(t=>t.ms===300000).fn();await rejected;
+ f.c.browser.messages.getAttachmentFile=async()=>new Blob(['new']);f.c.get_sha256_hash=async()=> 'b'.repeat(64);
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);assert.equal(bindings.length,1);assert.equal(bindings[0][2],'b'.repeat(64));
+ release(stage==='file'?new Blob(['old']):'a'.repeat(64));for(let i=0;i<8;i++)await tick();assert.equal(bindings.length,1);assert.equal(bindings[0][2],'b'.repeat(64));
+});
+test('invalidation rejects an outstanding attachment preparation immediately and discards its late result',async()=>{
+ const f=runtime({apikey:'',urlscanApikey:'',scanMode:'manual'});let release;const bindings=[];
+ f.c.browser.messages.listAttachments=async()=>[{partName:'1.2',name:'fixture.txt',size:4}];f.c.browser.messages.getAttachmentFile=()=>new Promise(r=>release=r);f.c.get_sha256_hash=async()=> 'a'.repeat(64);f.context.forAttachment=(...args)=>bindings.push(args);
+ const request=f.s.request({messageId:1},{tab:{id:7}}),rejected=assert.rejects(request,/SCAN_CANCELLED/);while(!release)await tick();f.s.invalidate();await rejected;
+ release(new Blob(['late']));for(let i=0;i<8;i++)await tick();assert.equal(bindings.length,0);assert.equal(f.calls.length,0);assert.equal(f.s.get(1),null);
+});
+for(const failure of [410,429,'network'])test('urlscan retains an observed partial finding after '+failure,async()=>{
+ const f=urlscanRuntime();let gets=0;
+ f.c.apiGateway.fetchWithTimeout=async(url,options)=>{
+  if(options.method==='POST')return {ok:true,status:200,json:async()=>({uuid:'retained-job'})};
+  gets++;if(gets===1)return {status:200,json:async()=>({task:{uuid:'retained-job'},finished:false,verdicts:{overall:{malicious:true}}})};
+  if(failure==='network')throw Error('Synthetic network failure');
+  return {status:failure,json:async()=>({})};
+ };
+ await f.s.request({messageId:1},{tab:{id:7}});await f.s.settled(1);
+ const saved=f.stored.fixture.links[0].urlscan;assert.equal(saved.uuid,'retained-job');assert.equal(saved.assessment.verdict,'malicious');assert.equal(saved.assessment.completion,'failed');assert.equal(saved.status,'ERROR');
+ assert.equal(f.s.get(1).pending,failure!==410);assert.equal(saved.errorCode,failure===410?'result_gone':failure===429?'rate_limited':'fetch_failed');
+});

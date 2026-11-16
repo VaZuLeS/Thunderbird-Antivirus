@@ -1976,7 +1976,7 @@
     "message": "Clé API urlscan.io non valide ou non autorisée."
   },
   "urlscanTimeoutDetails": {
-    "message": "Délai dépassé : Le résultat de l'analyse n'était pas disponible dans les 30 secondes."
+    "message": "Le résultat n’était pas prêt pendant la période d’interrogation. L’analyse acceptée peut être vérifiée à nouveau sans nouvel envoi."
   },
   "urlscanDomainUnresolvable": {
     "message": "Le domaine n'a pas pu être résolu par urlscan.io."
@@ -2575,5 +2575,8 @@
   },
   "apiDebugFailureHint": {
     "message": "Pour un rapport détaillé, activez le débogage API dans les paramètres, relancez la vérification et exportez le rapport."
+  },
+  "urlscanResultGone": {
+    "message": "Ce résultat a été supprimé par urlscan.io. Une actualisation ne le restaure pas ; un nouvel envoi nécessite une analyse lancée explicitement."
   }
 }

@@ -1976,7 +1976,7 @@
     "message": "Nieprawidłowy lub nieautoryzowany klucz API urlscan.io."
   },
   "urlscanTimeoutDetails": {
-    "message": "Przekroczono limit czasu: Wynik skanowania nie był gotowy w ciągu 30 sekund."
+    "message": "Wynik nie był gotowy w czasie odpytywania. Przyjęty skan można sprawdzić ponownie bez nowego zgłoszenia."
   },
   "urlscanDomainUnresolvable": {
     "message": "Nie udało się rozwiązać domeny przez urlscan.io."
@@ -2575,5 +2575,8 @@
   },
   "apiDebugFailureHint": {
     "message": "Aby uzyskać szczegółowy raport, włącz debugowanie API w ustawieniach, powtórz sprawdzanie i wyeksportuj raport."
+  },
+  "urlscanResultGone": {
+    "message": "Ten wynik został usunięty przez urlscan.io. Odświeżenie go nie przywróci; nowe zgłoszenie wymaga jawnego uruchomienia skanowania."
   }
 }

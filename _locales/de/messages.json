@@ -1979,7 +1979,7 @@
     "message": "Ungültiger oder nicht autorisierter urlscan.io API-Schlüssel."
   },
   "urlscanTimeoutDetails": {
-    "message": "Zeitüberschreitung: Das Scan-Ergebnis lag innerhalb von 30 Sekunden nicht vor."
+    "message": "Das Ergebnis war innerhalb des Abfragezeitraums noch nicht bereit. Der angenommene Auftrag kann ohne erneute Einreichung aktualisiert werden."
   },
   "urlscanDomainUnresolvable": {
     "message": "Domain konnte von urlscan.io nicht aufgelöst werden."
@@ -2578,5 +2578,8 @@
   },
   "apiDebugFailureHint": {
     "message": "Für einen detaillierten Fehlerbericht den API-Debugmodus in den Einstellungen aktivieren, die Prüfung wiederholen und den Debugbericht exportieren."
+  },
+  "urlscanResultGone": {
+    "message": "Dieses Ergebnis wurde von urlscan.io gelöscht. Aktualisieren stellt es nicht wieder her; eine neue Einreichung erfordert einen ausdrücklich gestarteten Scan."
   }
 }

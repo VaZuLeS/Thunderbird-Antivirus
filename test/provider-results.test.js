@@ -78,3 +78,25 @@ test('Hybrid expert details distinguish explicitly empty lists from missing and 
  assert.equal(a.hybridDetails({}).emptySections.length,0);assert.ok(!a.hybridDetails({scanners:[null],processes:[null]}).emptySections.includes('scanners'));
  assert.equal(a.hybridDetails({verdict:'unknown'},123).sections[0].id,'assessment');
 });
+
+test('Hybrid scanner dictionaries and lists produce identical conservative assessments',()=>{
+ const {a}=adapter();
+ for(const scanners of [[],[{status:'clean'}],[{status:'malicious',positives:2,total:40}],[{status:'malicious'},{status:'in-progress'}],[null,3,{status:'suspicious'}]]){
+  const input={finished:true,verdict:'clean'};
+  const array=a.evaluate('hybridanalysis',{...input,scanners_v2:scanners});
+  const dictionary=a.evaluate('hybridanalysis',{...input,scanners_v2:Object.fromEntries(scanners.map((row,i)=>[i,row]))});
+  assert.deepEqual(JSON.parse(JSON.stringify(array)),JSON.parse(JSON.stringify(dictionary)));
+  if(scanners.some(s=>s?.status==='malicious'))assert.equal(array.verdict,'malicious');
+ }
+});
+
+test('urlscan completion controls status and retry eligibility independently of retained verdicts',()=>{
+ const {a}=adapter();
+ for(const malicious of [false,true]){
+  const partial=a.evaluate('urlscan',{finished:false,verdicts:{overall:{malicious}}});
+  assert.equal(a.urlscanStatus(partial),'SUBMITTED');assert.equal(a.urlscanPending({uuid:'fixture',status:'CLEAN',assessment:partial}),true);
+  assert.equal(a.urlscanPending({uuid:'fixture',status:'ERROR',assessment:partial,errorCode:'result_gone'}),false);
+ }
+ assert.equal(a.urlscanPending({uuid:'fixture',status:'ERROR',terminal:true}),false);
+ assert.equal(a.urlscanPending({uuid:'fixture',status:'ERROR'}),true);
+});

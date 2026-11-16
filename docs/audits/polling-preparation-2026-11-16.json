@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "kind": "thundy-local-development-validation",
+  "published": false,
+  "extensionVersion": "1.25.8",
+  "sourceFingerprint": "e2e081f3856f036950bdb3dfb3adb38005f3f69c1f4298024d8fb10fdcc51dfb",
+  "packageSha256": "5a0d785ebe614346e46730950d373e23f3e2351870570d04264593e22bff8a55",
+  "regression": {
+    "passed": 1315,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "logSha256": "3b1c7c856daf906d47435d901c80f05f849d8af9bf97eae8f1a919cbe5881cad"
+  },
+  "targeted": {
+    "passed": 55,
+    "failed": 0
+  },
+  "integration": {
+    "passed": 403,
+    "failed": 0
+  },
+  "native": {
+    "executedLocally": false,
+    "required": "Current package-bound remote Linux CI, with mixed provider/list-scanner and terminal deleted-result probes."
+  },
+  "limits": [
+    "Not the published 1.25.8 bytes; new free version required before publication.",
+    "Synthetic provider responses do not establish real account behavior.",
+    "Windows/macOS, screenreaders and automatic update channel remain separate."
+  ]
+}

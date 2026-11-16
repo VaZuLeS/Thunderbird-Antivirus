@@ -44,6 +44,7 @@ const ThundyAnalysis = (() => {
             const messages={domain_unresolvable:['urlscanDnsError','The provider could not resolve the target domain.'],invalid_request:['urlscanInvalidRequest','The provider rejected invalid submission parameters.'],submission_rejected:['urlscanSubmissionRejected','The provider rejected the submission; the response does not establish a DNS failure.']};
             return {state:'failed',verdict:'unknown',errorCode,errorDetails:uiText(...messages[errorCode])};
         }
+        if(info.provider==='urlscan'&&status===410)return {state:'failed',verdict:'unknown',errorCode:'result_gone',errorDetails:uiText('urlscanResultGone','This result was deleted by urlscan.io. Updating cannot restore it; a new submission requires an explicit scan.')};
         if (status === 404) {
             if (info.provider === 'urlscan') return { state: 'incomplete', verdict: 'unknown' };
             let errorDetails = null;

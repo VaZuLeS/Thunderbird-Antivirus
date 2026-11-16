@@ -1730,6 +1730,7 @@ async function persistUrlscanLinkResult(message, url, res) {
                 if (item && (item.url === reqUrl || item.url === reqUrlSlash)) {
                     item.urlscan = {
                         status: res.status,
+                        ...(res.terminal===true?{terminal:true}:{}),
                         ...(res.assessment?.assessmentVersion===1?{assessment:ThundyProviderResults.merge(item.urlscan?.uuid===res.uuid?item.urlscan?.assessment:null,res.assessment)}:{}),
                         ...(typeof res.uuid==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(res.uuid)?{uuid:res.uuid}:{}),
                         reasons: Array.isArray(res.reasons) ? res.reasons : [],

@@ -1956,7 +1956,7 @@ def check_automatic_scans(m, base, out, report, display):
     def snapshot():
         return m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[setup['messageId']],browser=options)
     try:
-        finished=wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('state')=='completed' else None),45)
+        finished=wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('state')=='completed' else None),100)
     except TimeoutError:
         report['automaticScanFailure']={'snapshot':snapshot(),'errors':m.page('return window.wrappedJSObject.__automaticScanErrors;',browser=options),'calls':m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options),'probe':m.page('return (async()=>{const b=window.wrappedJSObject.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;const tab=(await b.tabs.query({active:true,currentWindow:true}))[0];return bg.handleRequestScan({messageId:arguments[0],tabId:tab.id},{});})();',[setup['messageId']],browser=options)}
         raise
@@ -1981,7 +1981,7 @@ def check_automatic_scans(m, base, out, report, display):
     wait_for(lambda:m.page('return window.wrappedJSObject.__retryResponseReleases.length>0;',browser=options))
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     m.page('window.wrappedJSObject.__holdRetryResponses=false;for(const resolve of window.wrappedJSObject.__retryResponseReleases.splice(0))resolve();',browser=options)
-    wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='completed' else None),45)
+    wait_for(lambda:(r if (r:=snapshot()).get('scanJob',{}).get('id')!=finished['scanJob']['id'] and r.get('scanJob',{}).get('state')=='completed' else None),100)
     later=m.page('return window.wrappedJSObject.__automaticScanCalls;',browser=options)
     assert len([c for c in later if c['method']=='POST' and 'urlscan.io' in c['url']])>len(us)
     report['passed']=True
@@ -2001,14 +2001,21 @@ def check_provider_results(m, base, out, report, display, message_id):
         if(url==='https://hybrid-analysis.com/api/v2/quick-scan/url-for-analysis')data={id:'provider-hybrid-job',finished:false};
         else if(url.includes('hybrid-analysis.com/api/v2/quick-scan/')){
           hybridPolls++;
-          if(hybridPolls===1)data={id:'provider-hybrid-job',finished:false,verdict:'clean',scanners:[{status:'malicious',positives:2,total:35},{status:'in-progress'}]};
+          if(hybridPolls===1)data={id:'provider-hybrid-job',finished:false,verdict:'clean',scanners_v2:[{status:'malicious',positives:2,total:35},{status:'in-progress'}]};
           else{if(!window.wrappedJSObject.__providerReleased)await new Promise(resolve=>window.wrappedJSObject.__releaseProvider=resolve);data={id:'provider-hybrid-job',finished:true,verdict:'unknown',type:'Synthetic HTML',scanners_v2:{Fixture:{status:'unknown'}},mitre_attcks:[{attck_id:'T1059',tactic:'execution'}],signatures:[{name:'Synthetic expert signature',threat_level:2}],total_processes:0};}
         }else if(url==='https://urlscan.io/api/v1/scan/')data={uuid:'provider-urlscan-job'};
         else if(url.includes('urlscan.io/api/v1/result/'))data={task:{uuid:'provider-urlscan-job'},verdicts:{overall:{malicious:false,score:65},urlscan:{malicious:false,brands:['Example']}}};
         else throw Error('Unexpected synthetic provider route');
         return new bg.Response(JSON.stringify(data),{status:200,headers:{'Content-Type':'application/json'}});
-      };return true;
-    })();''',browser=options)
+      };
+      // This probe exercises mixed findings using already accepted synthetic UUIDs.
+      // Fresh submission timing is exercised separately by the inline probes.
+      const message=await b.messages.get(arguments[0]);
+      await bg.updateStore(await bg.getSharedDB(),'hybridanalysis',bg.resolveMessageStorageKey(message),old=>{
+        if(!old?.links?.length)throw Error('Missing synthetic resource inventory');
+        return {...old,links:old.links.map(link=>({...link,urlscan:{status:'SUBMITTED',uuid:'provider-urlscan-job'}}))};
+      },{preserveReports:true});return true;
+    })();''',[message_id],browser=options)
     def snapshot():
         return m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[message_id],browser=options)
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.querySelector("[data-focus-key=scan-start]")?.disabled===false;'))
@@ -2089,7 +2096,26 @@ def check_provider_results(m, base, out, report, display, message_id):
     quota_details(popup)
     subprocess.run(['import','-window','root',str(out/'urlscan-quota-popup.png')],env={**os.environ,'DISPLAY':display},check=True,timeout=10)
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
-    report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'hybridExpertDetails':True,'actionScopedQuota':True,'syntheticTransport':True}
+    # A deleted accepted result is terminal; its earlier finding remains stored.
+    deleted=m.page('''return (async()=>{const w=window.wrappedJSObject,b=w.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
+      bg.apiGateway.clearBackoffs();const fetch=bg.fetch;
+      bg.fetch=async(url,options={})=>{if(String(url).includes('urlscan.io/api/v1/result/')){w.__providerCalls.push({url:String(url),method:options.method||'GET'});return new bg.Response('{}',{status:410});}return fetch(url,options);};
+      const result=await bg.handleRequestScan({messageId:arguments[0],tabId:(await b.tabs.query({active:true,currentWindow:true}))[0].id,operation:'refresh'},{});
+      return {id:result.id,reason:b.i18n.getMessage('urlscanResultGone')};})();''',[message_id],browser=options)
+    gone=wait_for(lambda:(s if (s:=snapshot()).get('scanJob',{}).get('id')==deleted['id'] and s.get('scanJob',{}).get('state')=='incomplete' else None),20)
+    assert gone['scanJob']['pending'] is False,gone
+    record=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysisRecord",messageId:arguments[0]});',[message_id],browser=options)['record']
+    assert all(link['urlscan']['terminal'] and link['urlscan']['errorCode']=='result_gone' and link['urlscan']['assessment']['verdict']=='suspicious' for link in record['links']),record
+    m.page('for(const detail of document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("details"))detail.open=true;')
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes(arguments[0]);',[deleted['reason']]))
+    m.screenshot(out/'urlscan-deleted-result-message.png')
+    native_click(display,point['x'],point['y']);wait_for(lambda:m.js('return document.getElementById("webextension-remote-preload-panel")?.state==="open";'))
+    expert_view(m,popup)
+    m.page('for(const detail of document.getElementById("thundy-analysis-status").shadowRoot.querySelectorAll("details"))detail.open=true;',browser=popup)
+    wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status").shadowRoot.textContent.includes(arguments[0]);',[deleted['reason']],browser=popup))
+    m.screenshot(out/'urlscan-deleted-result-popup.png');m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
+    assert m.page('return window.wrappedJSObject.__providerCalls.filter(c=>c.method==="POST").length;',browser=options)==before
+    report['providerResults']={'passed':True,'partialMaliciousBlocks':True,'terminalUnknownRetainsFinding':True,'brandDoesNotEscalate':True,'refreshWithoutSubmission':True,'bothViewsAgree':True,'hybridExpertDetails':True,'actionScopedQuota':True,'existingUrlscanJobs':True,'deletedResultTerminal':True,'hybridScannerList':True,'syntheticTransport':True}
 
 
 def check_inline_scan(m, base, out, report, display, fresh=False):
@@ -2136,7 +2162,7 @@ def check_inline_scan(m, base, out, report, display, fresh=False):
         failed=m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes("Check failed; try again");')
         if failed:raise AssertionError('Inline Check now failed in fresh profile' if fresh else 'Inline Check now failed after cache clear')
         return None
-    finished=wait_for(outcome,30)
+    finished=wait_for(outcome,45)
     completed_label=json.loads((ROOT/'_locales/en/messages.json').read_text())['scanState_completed']['message']
     wait_for(lambda:m.page('return document.getElementById("thundy-analysis-status")?.shadowRoot.textContent.includes(arguments[0]);',[completed_label]))
     calls=m.page('return window.wrappedJSObject.inlineScanCalls;',browser=options)
@@ -2167,7 +2193,7 @@ def check_scan_coverage(m, base, out, report, display, baseline=False):
     def result():
         r=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"getMessageAnalysis",messageId:arguments[0]});',[target],browser=options)
         return r if r.get('scanJob',{}).get('id')!=old and r.get('scanJob',{}).get('state') in ['completed','incomplete','failed'] else None
-    final=wait_for(result,30)
+    final=wait_for(result,45)
     expected='completed' if baseline else 'incomplete'
     assert final['scanJob']['state']==expected,final['scanJob']
     key='scanState_'+expected

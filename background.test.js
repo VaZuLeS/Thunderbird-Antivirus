@@ -1118,7 +1118,7 @@ describe('background.js', () => {
             context.console.error = () => {};
             context.console.log = () => {};
             context.setTimeout = (cb, ms) => {
-                if (ms < 15000) cb(); // Fast-forward polling waits, not request deadlines.
+                if (ms < 15000 || ms === 30000) cb(); // Fast-forward poll waits (including fresh scans), not request deadlines.
                 return 0;
             };
         });

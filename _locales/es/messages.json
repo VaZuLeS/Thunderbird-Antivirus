@@ -1976,7 +1976,7 @@
     "message": "Clave de API de urlscan.io no válida o no autorizada."
   },
   "urlscanTimeoutDetails": {
-    "message": "Tiempo de espera agotado: El resultado del escaneo no estuvo listo en 30 segundos."
+    "message": "El resultado no estuvo listo durante el período de consulta. El análisis aceptado se puede consultar de nuevo sin otro envío."
   },
   "urlscanDomainUnresolvable": {
     "message": "El dominio no se pudo resolver mediante urlscan.io."
@@ -2575,5 +2575,8 @@
   },
   "apiDebugFailureHint": {
     "message": "Para obtener un informe detallado, activa la depuración de API en los ajustes, repite la comprobación y exporta el informe."
+  },
+  "urlscanResultGone": {
+    "message": "urlscan.io eliminó este resultado. Actualizar no lo restaura; un nuevo envío requiere iniciar un análisis explícitamente."
   }
 }

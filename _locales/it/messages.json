@@ -1976,7 +1976,7 @@
     "message": "Chiave API urlscan.io non valida o non autorizzata."
   },
   "urlscanTimeoutDetails": {
-    "message": "Timeout: Il risultato della scansione non era pronto entro 30 secondi."
+    "message": "Il risultato non era pronto durante il periodo di interrogazione. La scansione accettata può essere verificata di nuovo senza un nuovo invio."
   },
   "urlscanDomainUnresolvable": {
     "message": "Impossibile risolvere il dominio tramite urlscan.io."
@@ -2575,5 +2575,8 @@
   },
   "apiDebugFailureHint": {
     "message": "Per un rapporto dettagliato, attiva il debug API nelle impostazioni, ripeti il controllo ed esporta il rapporto."
+  },
+  "urlscanResultGone": {
+    "message": "Questo risultato è stato eliminato da urlscan.io. Aggiornare non lo ripristina; un nuovo invio richiede una scansione avviata esplicitamente."
   }
 }

@@ -26,7 +26,7 @@ var ThundyProviderResults = (function () {
         const signals=[];const add=(code,verdict,value,total)=>signals.push({code,verdict,...(number(value)?{value}:{}),...(number(total)?{total}:{})});
         const v=judgement(data.verdict);if(v!=='unknown'||['UNKNOWN','NO-CLASSIFICATION'].includes(word(data.verdict)))add('verdict',v);
         if(data.whitelisted===true)add('whitelist','none');
-        const scanners=[...(Array.isArray(data.scanners)?data.scanners:[]),...(object(data.scanners_v2)?Object.values(data.scanners_v2):[])].filter(object);
+        const scanners=[...(Array.isArray(data.scanners)?data.scanners:[]),...(Array.isArray(data.scanners_v2)?data.scanners_v2:object(data.scanners_v2)?Object.values(data.scanners_v2):[])].filter(object);
         for(const scanner of scanners){
             let verdict=judgement(scanner.status);const positives=number(scanner.positives)?scanner.positives:null,total=number(scanner.total)?scanner.total:null;
             if(positives>0)verdict='malicious';else if(verdict==='unknown'&&positives===0&&total>0)verdict='none';
@@ -62,6 +62,12 @@ var ThundyProviderResults = (function () {
         const failed=['ERROR','FAILED','FAILURE'].includes(word(data.state));
         const valid=receipt||object(data.verdicts)||object(data.page)||object(data.task)||data.finished!==undefined||word(data.state);
         return result(signals,processing?'pending':failed?'failed':valid?'complete':'unknown',receipt,!valid);
+    }
+    function urlscanStatus(assessment,visual=false){
+        return assessment.state==='failed'||assessment.completion==='failed'?'ERROR':assessment.completion==='pending'?'SUBMITTED':assessment.verdict==='malicious'?visual?'MALICIOUS_VISUAL':'MALICIOUS':assessment.verdict==='suspicious'?'SUSPICIOUS':assessment.verdict==='none'?'CLEAN':'UNKNOWN';
+    }
+    function urlscanPending(item){
+        return !!item?.uuid&&item.terminal!==true&&item.errorCode!=='result_gone'&&(item.assessment?.completion==='pending'||['TIMEOUT','SUBMITTED','ERROR'].includes(item.status));
     }
     function urlscanRejection(data){
         const errors=Array.isArray(data?.errors)?data.errors:[];
@@ -188,5 +194,5 @@ var ThundyProviderResults = (function () {
         if(scanners.some(s=>Array.isArray(s.anti_virus_results))&&scanners.filter(s=>Array.isArray(s.anti_virus_results)).every(s=>s.anti_virus_results.length===0))emptySections.push('antivirus');
         return {schemaVersion:1,sections,emptySections,truncated};
     }
-    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,urlscanRejection,projectQuota};
+    return {evaluate,project,merge,stored,resource,legacy,hybridDetails,urlscanStatus,urlscanPending,urlscanRejection,projectQuota};
 }());

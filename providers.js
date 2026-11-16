@@ -231,7 +231,7 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
         if (!uuid) throw new Error(uiText("ui_101", "Keine UUID von urlscan.io erhalten."));
 
         if(analysisContext?.submitted)await analysisContext.submitted(uuid);
-        const result=await pollUrlscanIoResult(uuid, apikey, analysisContext);
+        const result=await pollUrlscanIoResult(uuid, apikey, analysisContext, {fresh:true});
         return {...result,uuid};
     } catch (e) {
         Logger.error("Fehler bei urlscan.io Abfrage", e);
@@ -239,10 +239,13 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
     }
 }
 
-async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
-    let waitTime = 2000;
+async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=false} = {}) {
+    // Fresh scans need at least 30 seconds; refreshing an existing UUID can start sooner.
+    let waitTime = fresh ? 30000 : 2000;
     let elapsed = 0;
-    const maxTime = 30000;
+    const maxTime = 90000;
+    let retainedAssessment = null;
+    const failure=(errorCode,details,extra={})=>({status:'ERROR',errorCode,details,...extra,...(retainedAssessment?{assessment:ThundyProviderResults.merge(retainedAssessment,{assessmentVersion:1,completion:'failed',signals:[],state:'failed'})}:{})});
     const deadline = Date.now() + maxTime;
 
     const pollContext = analysisContext ? {
@@ -265,18 +268,24 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
         waitTime = Math.min(waitTime * 1.5, 10000); // 1.5x backoff, max 10s
 
         if (Date.now() >= deadline) break;
-        const resultRes = await apiGateway.fetchWithTimeout(`https://urlscan.io/api/v1/result/${encodeURIComponent(uuid)}/`, {
+        let resultRes;
+        try { resultRes = await apiGateway.fetchWithTimeout(`https://urlscan.io/api/v1/result/${encodeURIComponent(uuid)}/`, {
             method: 'GET', analysisContext: pollContext,
             headers: {
                 'API-Key': apikey,
                 'Accept': 'application/json'
             }
         }, Math.min(15000, deadline - Date.now()));
+        } catch(error) {
+            analysisContext?.guard?.();
+            return failure(error.code==='RESOURCE_MISMATCH'?'resource_mismatch':'fetch_failed',error.message);
+        }
         if (resultRes.status === 200) {
             const resultData = await resultRes.json();
 
             if(resultData?.task?.uuid && resultData.task.uuid!==uuid) return {status:'ERROR',errorCode:'resource_mismatch'};
-            const assessment=ThundyProviderResults.evaluate('urlscan',resultData,'report');
+            const assessment=ThundyProviderResults.merge(retainedAssessment,ThundyProviderResults.evaluate('urlscan',resultData,'report'));
+            retainedAssessment=assessment;
             const reasons=[];
             if(assessment.verdict==='malicious')addReason(reasons,'ui_102','Die URL wurde von urlscan.io generell als bösartig eingestuft.');
             else if(assessment.verdict==='suspicious')addReason(reasons,'providerSuspicious','The provider reported suspicious indicators.');
@@ -286,21 +295,24 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null) {
                 ? resultData.task.reportURL
                 : `https://urlscan.io/result/${encodeURIComponent(uuid)}/`;
 
-            if(assessment.completion==='complete')analysisContext?.event?.({...assessment,provider:'urlscan',scope:'url',phase:'assessment',observedAt:Date.now()});
+            analysisContext?.event?.({...assessment,provider:'urlscan',scope:'url',phase:'assessment',observedAt:Date.now()});
+            if(assessment.completion==='pending')continue;
             const visual=assessment.verdict==='malicious'&&resultData.verdicts?.urlscan?.malicious===true&&brandNames.length>0;
-            return {status:assessment.state==='failed'?'ERROR':assessment.verdict==='malicious'?visual?'MALICIOUS_VISUAL':'MALICIOUS':assessment.verdict==='suspicious'?'SUSPICIOUS':assessment.verdict==='none'?'CLEAN':'UNKNOWN',assessment,reasons,reportUrl:rawReportUrl,...(assessment.errorCode?{errorCode:assessment.errorCode}:{})};
+            return {status:ThundyProviderResults.urlscanStatus(assessment,visual),assessment,reasons,reportUrl:rawReportUrl,...(assessment.errorCode?{errorCode:assessment.errorCode}:{})};
         } else if (resultRes.status === 404) {
             // Not ready yet, continue polling
+        } else if (resultRes.status === 410) {
+            return failure('result_gone',uiText('urlscanResultGone','This result was deleted by urlscan.io. Updating cannot restore it; a new submission requires an explicit scan.'),{terminal:true,httpStatus:410});
         } else if (resultRes.status === 429) {
             let errData = null; try { errData = await resultRes.json(); } catch (_) {}
-            return { status: 'ERROR', errorCode: 'rate_limited', details: errData?.message || uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.') };
+            return failure('rate_limited',errData?.message || uiText('urlscanRateLimited', 'The urlscan.io rate limit or quota was reached. Please try again later.'));
         } else if (resultRes.status === 401 || resultRes.status === 403) {
             let errData = null; try { errData = await resultRes.json(); } catch (_) {}
-            return { status: 'ERROR', errorCode: 'invalid_key', details: errData?.message || uiText('urlscanInvalidKey', 'Invalid or unauthorized urlscan.io API key.') };
+            return failure('invalid_key',errData?.message || uiText('urlscanInvalidKey', 'Invalid or unauthorized urlscan.io API key.'));
         } else {
-            throw new Error(uiText("ui_105", "Fehler beim Abrufen der Ergebnisse (urlscan.io): ") + resultRes.status);
+            return failure('fetch_failed',uiText("ui_105", "Fehler beim Abrufen der Ergebnisse (urlscan.io): ") + resultRes.status);
         }
     }
 
-    return { status: 'TIMEOUT', errorCode: 'timeout', details: uiText('urlscanTimeoutDetails', 'Timeout: Scan result was not ready within 30 seconds.') };
+    return { status: 'TIMEOUT', errorCode: 'timeout', ...(retainedAssessment?{assessment:retainedAssessment}:{}), details: uiText('urlscanTimeoutDetails', 'The result was not ready within the polling window. The accepted scan can be checked again without a new submission.') };
 }

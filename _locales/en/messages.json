@@ -1979,7 +1979,7 @@
     "message": "Invalid or unauthorized urlscan.io API key."
   },
   "urlscanTimeoutDetails": {
-    "message": "Timeout: Scan result was not ready within 30 seconds."
+    "message": "The result was not ready within the polling window. The accepted scan can be checked again without a new submission."
   },
   "urlscanDomainUnresolvable": {
     "message": "Domain could not be resolved by urlscan.io."
@@ -2578,5 +2578,8 @@
   },
   "apiDebugFailureHint": {
     "message": "For a detailed failure report, enable API debug mode in settings, reproduce the check and export the debug report."
+  },
+  "urlscanResultGone": {
+    "message": "This result was deleted by urlscan.io. Updating cannot restore it; a new submission requires an explicit scan."
   }
 }

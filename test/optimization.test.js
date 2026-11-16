@@ -585,8 +585,10 @@ test('disabled external analysis exposes local-only status and stored findings w
 test('urlscan submission is visible before its later report and VirusTotal IP scope is distinct', {timeout:15000}, async()=>{
  const s=setup({externalAnalysisConsent:true,privacyTier:'max',urlscanApikey:'url-key',ipReputationProvider:'virustotal',ipReputationApiKey:'ip-key'},true);await s.context.configure();
  s.context.fetch=async(url)=>({status:200,ok:true,json:async()=>url.includes('/scan/')?{uuid:'scan-id'}:url.includes('/result/')?{verdicts:{overall:{malicious:true}}}:{data:{attributes:{last_analysis_stats:{malicious:2}}}}});
+ const nativeTimer=s.context.setTimeout;let releasePoll;s.context.setTimeout=(fn,ms)=>ms===30000?(releasePoll=fn,0):nativeTimer(fn,ms);
  const ctx=await s.context.getMessageAnalysisContext(s.message);const pending=s.context.checkUrlscanIo('https://example.net/','url-key',ctx);await new Promise(resolve=>setImmediate(resolve));
- assert.equal(ctx.model.data.rows.find(r=>r.provider==='urlscan').state,'submitted');await pending;assert.equal(ctx.model.data.rows.find(r=>r.provider==='urlscan').verdict,'malicious');
+ assert.ok(releasePoll,'fresh scan waits before fetching its result');
+ assert.equal(ctx.model.data.rows.find(r=>r.provider==='urlscan').state,'submitted');releasePoll();s.context.setTimeout=nativeTimer;await pending;assert.equal(ctx.model.data.rows.find(r=>r.provider==='urlscan').verdict,'malicious');
  await s.context.checkIPReputation(['from sender ([8.8.8.8])'],ctx);assert.ok(ctx.model.data.rows.some(r=>r.provider==='virustotal'&&r.scope==='ip'&&r.verdict==='malicious'));await ctx.flush();
 });
 
