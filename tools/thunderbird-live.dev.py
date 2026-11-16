@@ -2098,7 +2098,7 @@ def check_provider_results(m, base, out, report, display, message_id):
     m.js('document.getElementById("webextension-remote-preload-panel").hidePopup();')
     # A deleted accepted result is terminal; its earlier finding remains stored.
     deleted=m.page('''return (async()=>{const w=window.wrappedJSObject,b=w.browser,page=await b.runtime.getBackgroundPage(),bg=page.wrappedJSObject||page;
-      bg.apiGateway.clearBackoffs();const fetch=bg.fetch;
+      const cleared=await b.runtime.sendMessage({action:'clearMemoryCaches'});if(!cleared.success)throw Error('Cache clear rejected');const fetch=bg.fetch;
       bg.fetch=async(url,options={})=>{if(String(url).includes('urlscan.io/api/v1/result/')){w.__providerCalls.push({url:String(url),method:options.method||'GET'});return new bg.Response('{}',{status:410});}return fetch(url,options);};
       const result=await bg.handleRequestScan({messageId:arguments[0],tabId:(await b.tabs.query({active:true,currentWindow:true}))[0].id,operation:'refresh'},{});
       return {id:result.id,reason:b.i18n.getMessage('urlscanResultGone')};})();''',[message_id],browser=options)
