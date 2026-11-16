@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "candidateVersion": "1.25.8",
-  "published": false,
+  "published": true,
   "extensionVersion": "1.25.8",
   "sourceFingerprint": "4acf0bece81db17f390eb4d7e3d8bb060aee5f964c046692ccd58303be586447",
   "packageSha256": "12f6f4f19ea9950f3ccd318f4b7df7c73abcb4cc10dadbf9914dcb7d51b416c4",
@@ -21,10 +21,8 @@
     "reason": "Thunderbird and Xvfb binaries absent in current runtime; complete package-bound CI required for both declared Linux targets."
   },
   "open": [
-    "Full current six-language browser matrix",
-    "Native failed-stored-recovery acceptance on minimum/current Linux",
-    "Independent public asset verification after publication",
-    "Original live provider case; no live account contract claimed"
+    "Original live provider case; no live account contract claimed",
+    "Windows/macOS, screenreaders and automatic update channel remain separate"
   ],
   "browserSmoke": {
     "passed": 41,
@@ -32,5 +30,11 @@
     "language": "de",
     "reportSha256": "b78c329029740f1d7dcf790e802c4020647f081ebfb93bb452faf9487ff69011",
     "scope": "System Chromium, simulated extension APIs, smoke scope only."
+  },
+  "remoteAcceptance": {
+    "passed": true,
+    "run": 43842985011,
+    "tagCommit": "94c4e2395a88bac5acec119c495d30be20c361ee",
+    "publicVerification": "release-1.25.8.json"
   }
 }
