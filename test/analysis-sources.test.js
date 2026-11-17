@@ -597,3 +597,15 @@ test('newer stored reports recover failed source rows without rewriting earlier 
   const active=a.create(a.legacy(original));active.data.rows[0].active=1;const unchanged=JSON.stringify(active.data);a.refreshStored(active,current);assert.equal(JSON.stringify(active.data),unchanged);
  }
 });
+
+test('message score is visible in both views across six languages, with unavailable separate from zero',()=>{
+ for(const lang of ['en','de','fr','es','it','pl']){
+  const dom=new JSDOM('<body></body>'),c=vm.createContext({document:dom.window.document,URL,Date});vm.runInContext(source+';globalThis.a=ThundyAnalysis;',c);
+  const catalog=JSON.parse(fs.readFileSync('_locales/'+lang+'/messages.json')),labels=c.a.labels(k=>catalog[k]?.message);
+  try{for(const score of [0,40,100]){
+   const data={local:{state:'checked',score,reasons:score?['Local warning']:[]},rows:[]};const host=c.a.render(data,labels),root=host.shadowRoot;
+   for(let i=0;i<2;i++){const visible=[...root.querySelectorAll('.local-score')].filter(n=>!n.closest('[hidden]'));assert.equal(visible.length,1);assert.ok(visible[0].textContent.includes(score+' / 100'));root.querySelector('[data-focus-key=view-switch]').click();}
+   data.local={state:'failed',score:null};c.a.render(data,labels);assert.ok([...root.querySelectorAll('.local-score')].every(n=>!n.textContent.includes('0 / 100')));
+  }}finally{dom.window.close();}
+ }
+});

@@ -116,13 +116,53 @@ if (!message.headerMessageId) message.headerMessageId = typeof resolveMessageSto
 popupMessageId = message.id;
 let refreshStoredResults = null, refreshLocalAssessment = null;
 let refreshTimer = null, lastJobState = null;
+// Mount the local assessment before starting cache/source requests. Neither
+// those requests nor stored report refreshes own this independent result.
+let localGeneration=0,localResult=null,renderLocalSourceState=()=>{};
+const localCard=document.createElement('section');localCard.className='card local-risk';localCard.setAttribute('role','status');
+document.querySelector('.grid-container').before(localCard);
+function renderLocalAssessment(threat,state){
+    const valid=state!=='failed'&&typeof threat?.score==='number'&&Number.isFinite(threat.score)&&threat.score>=0&&threat.score<=100;
+    const risk=valid?threat.score:null;
+    localCard.className='card local-risk'+(valid?' '+(risk>=50?'risk-high':risk>=25?'risk-medium':'risk-low'):'');
+    localCard.dataset.state=state;localCard.setAttribute('aria-busy',String(state==='pending'));
+    const heading=document.createElement('div');heading.className='risk-heading';
+    const title=document.createElement('h2');title.textContent=uiText('popupLocalAssessment','Local risk assessment');
+    const score=document.createElement('span');score.className='risk-score';
+    score.textContent=uiText('localScoreMessage','Local message score')+': '+(valid?risk+' / 100':uiText(state==='pending'?'analysisLocalPending':'auditUnavailable'));
+    heading.append(title,score);const content=[heading];
+    if(valid){const meter=document.createElement('progress');meter.className='risk-meter';meter.max=100;meter.value=risk;meter.setAttribute('aria-label',score.textContent);content.push(meter);}
+    const status=document.createElement('p');status.className='risk-note';
+    status.textContent=uiText(state==='pending'?'analysisLocalPending':state==='failed'?'analysisLocalUnavailable':state==='incomplete'?'analysisLocalIncomplete':risk>0?'localScoreIndicators':'localScoreNoIndicators');content.push(status);
+    const reasons=Array.isArray(threat?.reasons)?threat.reasons:[];
+    if(valid&&reasons.length){const list=document.createElement('ul');list.className='risk-reasons';for(const reason of reasons.slice(0,3)){const item=document.createElement('li');item.textContent=String(reason);list.append(item);}content.push(list);}
+    const note=document.createElement('p');note.className='risk-note';note.textContent=uiText('popupLocalExplanation','Local indicators only. This score is not an antivirus verdict or a guarantee of safety.');content.push(note);
+    localCard.replaceChildren(...content);
+    localResult={state:state==='pending'?'unrecorded':state,score:valid?risk:null,reasons:valid?reasons.slice(0,20):[],source:'local',observedAt:state==='pending'?null:Date.now()};renderLocalSourceState();
+}
+renderLocalAssessment(null,'pending');
+refreshLocalAssessment=async()=>{
+    const own=++localGeneration;let timer;
+    const current=()=>!hybridReportDisposed&&popupMessageId===message.id&&own===localGeneration;
+    try{
+        const result=await Promise.race([browser.runtime.sendMessage({action:'getLocalRisk',messageId:message.id}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('LOCAL_RISK_TIMEOUT')),5000);})]);
+        if(!current())return;
+        const threat=result?.threat,state=threat?.coverage?.state||'checked';
+        if(!threat||!Number.isFinite(threat.score)||threat.score<0||threat.score>100||state==='failed')renderLocalAssessment(null,'failed');
+        else renderLocalAssessment(threat,state==='incomplete'?'incomplete':'checked');
+    }catch(_){if(current())renderLocalAssessment(null,'failed');}finally{clearTimeout(timer);}
+};
+void refreshLocalAssessment();
+
 if (typeof ThundyAnalysis !== 'undefined') {
     popupAnalysisContext = { scopeOverride: 'report', event: event => browser.runtime.sendMessage({ action: 'recordAnalysisEvent', messageId: message.id, event }) };
     let sourceGeneration = 0;
     const sourceLabels = ThundyAnalysis.labels(key => uiText(key, key));
     const sourceTheme = typeof ThundyTheme !== 'undefined' ? (await ThundyTheme.snapshot())?.css || '' : '';
     const noSources = { messageId: message.id, local: { state: 'unrecorded' }, rows: [], availability: {} };
-    ThundyAnalysis.render(noSources, sourceLabels, sourceTheme);
+    let sourceView=noSources;
+    const renderSourceState=data=>{if(data)sourceView=data;ThundyAnalysis.render({...sourceView,...(localResult?{local:localResult}:{})},sourceLabels,sourceTheme);};
+    renderLocalSourceState=()=>renderSourceState();renderSourceState(noSources);
     const refreshSources = async () => {
         const own = ++sourceGeneration;
         try { const result = await browser.runtime.sendMessage({ action: 'getMessageAnalysis', messageId: message.id });
@@ -133,15 +173,15 @@ if (typeof ThundyAnalysis !== 'undefined') {
                 else exportLink.removeAttribute('href');
             }
             if (!hybridReportDisposed && own === sourceGeneration && result?.success && result.messageId === message.id) {
-                ThundyAnalysis.render(result, sourceLabels, sourceTheme);
+                renderSourceState(result);
                 const signature=JSON.stringify([result.scanJob?.id,result.scanJob?.state,result.scanJob?.completed,result.rows?.map(r=>[r.provider,r.scope,r.resource,r.verdict,r.completion,r.observedAt])]);
-                if(signature!==lastJobState){lastJobState=signature;if(refreshTimer)clearTimeout(refreshTimer);refreshTimer=setTimeout(async()=>{if(hybridReportDisposed)return;await refreshStoredResults?.();await refreshLocalAssessment?.();},150);}
+                if(signature!==lastJobState){lastJobState=signature;if(refreshTimer)clearTimeout(refreshTimer);refreshTimer=setTimeout(async()=>{if(hybridReportDisposed)return;void refreshStoredResults?.();void refreshLocalAssessment?.();},150);}
             }
-            else if (!hybridReportDisposed && own === sourceGeneration) ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme);
-        } catch (_) { if (!hybridReportDisposed && own === sourceGeneration) { document.getElementById('sourceExportOpen')?.setAttribute('hidden','');ThundyAnalysis.render({ ...noSources, unavailable: true }, sourceLabels, sourceTheme); } }
+            else if (!hybridReportDisposed && own === sourceGeneration) renderSourceState({ ...noSources, unavailable: true });
+        } catch (_) { if (!hybridReportDisposed && own === sourceGeneration) { document.getElementById('sourceExportOpen')?.setAttribute('hidden','');renderSourceState({ ...noSources, unavailable: true }); } }
     };
     browser.runtime.onMessage?.addListener(request => { if (request?.action === 'analysisStatusChanged' && request.messageId === message.id || request?.action === 'memoryCachesCleared') refreshSources(); });
-    await refreshSources();
+    void refreshSources();
 }
 
 
@@ -162,44 +202,6 @@ const updateGridField = (id, value, fallbackText) => {
 updateGridField("subject", message.subject, uiText('noSubject', "(Kein Betreff)"));
 updateGridField("from", message.author, uiText('noSender', "(Unbekannter Absender)"));
 updateGridField("MessageHeaderID", message.headerMessageId, uiText('noId', "(Keine ID)"));
-
-// The local assessment is independent of provider configuration and consent.
-refreshLocalAssessment = async () => {
-try {
-    const local = await browser.runtime.sendMessage({ action: 'getLocalRisk', messageId: message.id });
-    if (local && local.threat) {
-        const card = document.createElement('div');
-        const risk = Math.max(0, Math.min(100, Number(local.threat.score) || 0));
-        card.className = 'card local-risk ' + (risk >= 50 ? 'risk-high' : risk >= 25 ? 'risk-medium' : 'risk-low');
-        card.setAttribute('role', 'status');
-        const heading = document.createElement('div'); heading.className = 'risk-heading';
-        const title = document.createElement('h2'); title.textContent = uiText('popupLocalAssessment', 'Local risk assessment');
-        const score = document.createElement('span'); score.className = 'risk-score';
-        score.textContent = uiText('bannerThreatScore', 'Risk score: $1 of 100', [risk]);
-        heading.append(title, score); card.appendChild(heading);
-        const meter = document.createElement('progress'); meter.className = 'risk-meter'; meter.max = 100; meter.value = risk;
-        meter.setAttribute('aria-label', score.textContent); card.appendChild(meter);
-        const note = document.createElement('p'); note.className = 'risk-note';
-        note.textContent = uiText('popupLocalExplanation', 'Local indicators only. This score is not an antivirus verdict or a guarantee of safety.');
-        card.appendChild(note);
-        if (['incomplete','failed'].includes(local.threat.coverage?.state)) {
-            const coverage = document.createElement('p'); coverage.className = 'risk-note';
-            coverage.textContent = uiText('analysisLocalIncomplete', 'Local analysis is incomplete: some message content is unavailable.');
-            card.appendChild(coverage);
-        }
-        if (local.threat.reasons.length) {
-            const list = document.createElement('ul'); list.className = 'risk-reasons';
-            for (const reason of local.threat.reasons) {
-                const item = document.createElement('li'); item.textContent = reason; list.appendChild(item);
-            }
-            card.appendChild(list);
-        }
-        document.querySelector('.local-risk')?.remove();
-        document.querySelector('.grid-container').before(card);
-    }
-} catch (e) { /* The next update can retry the local assessment. */ }
-};
-await refreshLocalAssessment();
 
 // Initialen Lade-Status für async Operationen setzen
 let apiContainer = document.getElementById('hybrid_analysis_api_content');

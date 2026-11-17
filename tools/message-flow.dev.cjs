@@ -75,7 +75,8 @@ async function prepareMessage(page, c, catalog) {
             });
           return {
             status: uiTest.checkStatus,
-            score: uiTest.checkStatus === "CLEAN" ? 0 : 72,
+            score: uiTest.localScore ?? (uiTest.checkStatus === "CLEAN" ? 0 : 72),
+            local: {state:"checked",score:uiTest.localScore ?? (uiTest.checkStatus === "CLEAN" ? 0 : 72),reasons:[]},
             reasons: [],
             auditSaved: true,
             ...(uiTest.checkMetadata ? {check:uiTest.checkMetadata} : {}),
@@ -118,6 +119,8 @@ async function checkMessage(page, c, tags) {
           ?.tagName,
     );
   await open();
+  assert.equal(await dialog.locator('.local-score').isVisible(),true,'local score is visible without expert mode');
+  assert.ok((await dialog.locator('.local-score').textContent()).includes('72 / 100'));
   assert.equal(await dialog.getAttribute("role"), "alertdialog");
   assert.ok((await dialog.getAttribute("aria-label")).includes("Thundy AV"));
   assert.equal(await focused(), "BUTTON");
@@ -261,6 +264,13 @@ async function checkMessage(page, c, tags) {
   assert.ok(text.includes(catalog.checkOrigin_stored.message));
   assert.ok(text.includes(catalog.checkOutcome_failed.message));
   await cancel.click();
+  for(const score of [0,40,100]){
+    await page.evaluate(value=>{uiTest.localScore=value;uiTest.checkStatus='UNKNOWN';uiTest.checkMetadata={origin:'none',outcome:'disabled'};},score);
+    await open();assert.equal(await dialog.locator('.local-score').isVisible(),true);
+    assert.ok((await dialog.locator('.local-score').textContent()).includes(score+' / 100'));
+    assert.ok(!(await dialog.locator('.result').textContent()).includes(catalog.analysisSimpleIncomplete.message));
+    await cancel.click();await dialog.waitFor({state:'detached'});
+  }
   return {
     rulesPassed: axe.passes.length,
     incomplete: axe.incomplete.map((r) => ({

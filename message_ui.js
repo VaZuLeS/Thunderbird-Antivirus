@@ -17,7 +17,7 @@ async function injectIntoMessageDisplay(tabId, func, args = []) {
 async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null) {
     const forced = typeof ThundySecurity !== 'undefined' && (await ThundySecurity.read()).policy?.enabled;
     if (!timeOfClickProtection && !forced) return;
-    const labels = { simple:msg('analysisSimple'), expert:msg('analysisExpert'), approval:msg('analysisApprovalRequired'), explanation:msg('analysisScoreExplanation'), incomplete:msg('analysisSimpleIncomplete'), danger:msg('analysisSimpleDanger'), caution:msg('analysisSimpleCaution'), waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), auditFailed: msg('auditFailure'), origins: { live: msg('checkOrigin_live'), stored: msg('checkOrigin_stored'), none: msg('checkOrigin_none') }, outcomes: {success: msg('checkOutcome_success'), failed: msg('checkOutcome_failed'), disabled: msg('checkOutcome_disabled'), permission_denied: msg('checkOutcome_permission_denied'), missing_key: msg('checkOutcome_missing_key'), missing_reference: msg('checkOutcome_missing_reference'), not_requested: msg('checkOutcome_not_requested'), no_result: msg('checkOutcome_no_result')}, observed: msg('checkObserved'), attempted: msg('checkAttempted') };
+    const labels = { scoreLabel:msg('localScoreLink'), localPending:msg('analysisLocalPending'), localFailed:msg('analysisLocalUnavailable'), localIncomplete:msg('analysisLocalIncomplete'), localNone:msg('localScoreNoIndicators'), localIndicators:msg('localScoreIndicators'), simple:msg('analysisSimple'), expert:msg('analysisExpert'), approval:msg('analysisApprovalRequired'), explanation:msg('analysisScoreExplanation'), incomplete:msg('analysisSimpleIncomplete'), danger:msg('analysisSimpleDanger'), caution:msg('analysisSimpleCaution'), waiting: msg('linkChecking'), warning: msg('linkWarning'), unknown: msg('linkUnknown'), proceed: msg('linkProceed'), noDetection: msg('linkNoDetection'), cancel: msg('linkCancel'), title: msg('linkDialogTitle'), destination: msg('linkDestination'), details: msg('linkUrlDetails'), open: msg('linkOpenBrowser'), opening: msg('linkOpening'), failed: msg('linkOpenFailed'), limited: msg('linkCheckLimited'), score: msg('auditLocalScore'), unavailable: msg('auditUnavailable'), auditFailed: msg('auditFailure'), origins: { live: msg('checkOrigin_live'), stored: msg('checkOrigin_stored'), none: msg('checkOrigin_none') }, outcomes: {success: msg('checkOutcome_success'), failed: msg('checkOutcome_failed'), disabled: msg('checkOutcome_disabled'), permission_denied: msg('checkOutcome_permission_denied'), missing_key: msg('checkOutcome_missing_key'), missing_reference: msg('checkOutcome_missing_reference'), not_requested: msg('checkOutcome_not_requested'), no_result: msg('checkOutcome_no_result')}, observed: msg('checkObserved'), attempted: msg('checkAttempted') };
     const theme = typeof ThundyTheme !== 'undefined' ? await ThundyTheme.snapshot() : null;
     await injectIntoMessageDisplay(tabId, function(labels, messageId, theme, forced) {
         document.documentElement.dataset.thundyForcedProtection = forced ? 'true' : 'false';
@@ -82,6 +82,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             const address = document.createElement('code'); address.textContent = url;
             details.append(summary, address); card.append(label, host, details);
             const text = document.createElement('p'); text.id = 'thundy-link-result'; text.className = 'result'; text.setAttribute('role', 'status'); text.setAttribute('aria-live', 'polite'); text.textContent = labels.waiting;
+            const score = document.createElement('p');score.className='note local-score';score.textContent=labels.scoreLabel+': '+labels.localPending;
             const note = document.createElement('p'); note.className = 'note'; note.textContent = labels.limited;
             const reasons = document.createElement('ul'); reasons.hidden = true;
             const error = document.createElement('p'); error.className = 'error'; error.setAttribute('role', 'alert');
@@ -97,7 +98,7 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             document.defaultView.addEventListener('pagehide', onPageHide);
 
             cancel.addEventListener('click', () => close('cancel')); footer.appendChild(cancel);
-            card.append(text, reasons, note, error, footer); root.append(themeStyle, style, card); document.body.appendChild(panel);
+            card.append(text, score, reasons, note, error, footer); root.append(themeStyle, style, card); document.body.appendChild(panel);
             // Refresh without delaying security UI if the background is unavailable.
             if (theme) {
                 Promise.resolve(browser.runtime.sendMessage({ action: 'getUiTheme' })).then(latest => {
@@ -122,10 +123,16 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
             if (!link.isConnected || link.href !== url) { close('destination_changed'); return; }
             const dangerous = /MALICIOUS|SUSPICIOUS|MALICIOUS_VISUAL/.test(result && result.status || '');
             const clean = result && result.status === 'CLEAN' && (!result.check || result.check.origin === 'live');
-            text.className = 'result ' + (dangerous ? 'danger' : clean ? '' : 'unknown');
-            text.textContent = dangerous ? labels.danger : result?.score >= 50 ? labels.caution : clean ? labels.noDetection : labels.incomplete;
-            if (result && Array.isArray(result.reasons)) {
-                for (const [index,reason] of result.reasons.entries()) { const item = document.createElement('li'); item.textContent = String(reason); if(index>=3){item.dataset.expert='true';item.hidden=true;} reasons.appendChild(item); }
+            const local=result?.local||{score:result?.score,state:'unknown',reasons:[]};
+            const validScore=typeof local.score==='number'&&Number.isFinite(local.score)&&local.score>=0&&local.score<=100&&local.state!=='failed';
+            const uncertain=result?.check?.origin==='stored'||!validScore||local.state!=='checked';
+            text.className = 'result ' + (dangerous ? 'danger' : uncertain||local.score>=25 ? 'unknown' : '');
+            text.textContent = dangerous ? labels.danger : validScore&&local.score>0 ? labels.localIndicators : local.state==='failed' ? labels.localFailed : local.state==='incomplete' ? labels.localIncomplete : local.state==='checked'&&validScore ? labels.localNone : clean ? labels.noDetection : labels.incomplete;
+            score.textContent=labels.scoreLabel+': '+(validScore?local.score+' / 100':labels.unavailable);
+            if(validScore&&local.state==='incomplete'){const limited=document.createElement('p');limited.className='note';limited.textContent=labels.localIncomplete;card.insertBefore(limited,note);}
+            const displayedReasons=[...(Array.isArray(local.reasons)?local.reasons.map(text=>({text,source:'local'})):[]),...(Array.isArray(result?.reasons)?result.reasons.map(text=>({text,source:'provider'})):[])];
+            if (displayedReasons.length) {
+                for (const [index,reason] of displayedReasons.entries()) { const item = document.createElement('li'); item.textContent = String(reason.text);item.dataset.source=reason.source; if(index>=3){item.dataset.expert='true';item.hidden=true;} reasons.appendChild(item); }
                 reasons.hidden = !reasons.childElementCount;
             }
             if (result && (result.errorDetails || result.check?.error)) {
@@ -135,9 +142,6 @@ async function injectTimeOfClickProtection(tabId, filteredUrls, messageId = null
                 reasons.appendChild(errItem);
                 reasons.hidden = false;
             }
-            const score = document.createElement('p'); score.className = 'note';score.dataset.expert='true';score.hidden=true;
-            score.textContent = labels.score + ': ' + (Number.isFinite(result && result.score) ? result.score + ' / 100' : labels.unavailable);
-            card.insertBefore(score, note);
             if (result?.check) {
                 const provenance = document.createElement('p'); provenance.className = 'note';provenance.dataset.expert='true';provenance.hidden=true;
                 const date = value => value == null ? labels.unavailable : new Date(value).toLocaleString();

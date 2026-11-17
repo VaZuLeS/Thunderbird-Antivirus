@@ -2725,5 +2725,17 @@
   },
   "diag_state_unconfirmed": {
     "message": "Zakończenie niepotwierdzone"
+  },
+  "localScoreMessage": {
+    "message": "Lokalna ocena wiadomości"
+  },
+  "localScoreLink": {
+    "message": "Lokalna ocena tego odnośnika w kontekście wiadomości"
+  },
+  "localScoreNoIndicators": {
+    "message": "Nie znaleziono lokalnych oznak zagrożenia."
+  },
+  "localScoreIndicators": {
+    "message": "Znaleziono lokalne oznaki zagrożenia. Przed otwarciem sprawdź przyczyny."
   }
 }

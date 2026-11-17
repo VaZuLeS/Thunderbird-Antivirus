@@ -4,7 +4,7 @@
 
 Gespeicherte Anbieterfehler blockieren neuere belegte Befunde nicht mehr. API-Diagnose korrigiert Ablauf paralleler Aufzeichnungen, sichere Protokollwerte und UTF-8-Größen. Der gepinnte Vendorbestand ist abgeglichen. [Fünf Korrekturen](FEHLERKORREKTUREN_1_25_8.md), [Releaseumfang](releases/1.25.8.md). Keine Identitätsmigration oder zusätzliche Anbieteranfragen. Der ursprüngliche Live-Anbieterfall bleibt ohne tatsächliche Diagnosedaten offen. [1.25.7](VEROEFFENTLICHUNG_1_25_7.md) bleibt historische Veröffentlichung.
 
-**Entwicklung: 1.25.9**, noch unveröffentlicht. Begrenzte Linkwartezeit und sichere Speicherfehlercodes werden um eine [eigene API-Diagnoseansicht](API_DIAGNOSEANSICHT_1_25_9.md) mit Ablaufkorrelation, Filter, Pause und Adminschutz ergänzt. Lokale und synthetische Nachweise ersetzen keine aktuelle native Paketabnahme.
+**Entwicklung: 1.25.9**, noch unveröffentlicht. Eine [sichtbare lokale Scoreanzeige](LOKALER_SCORE_1_25_9.md) ohne externe Dienste, begrenzte Linkwartezeit und sichere Speicherfehlercodes werden um eine [eigene API-Diagnoseansicht](API_DIAGNOSEANSICHT_1_25_9.md) mit Ablaufkorrelation, Filter, Pause und Adminschutz ergänzt. Lokale und synthetische Nachweise ersetzen keine aktuelle native Paketabnahme.
 
 ## Funktionen und nachgewiesene Grenzen
 

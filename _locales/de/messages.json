@@ -2728,5 +2728,17 @@
   },
   "diag_state_unconfirmed": {
     "message": "Abschluss unbestätigt"
+  },
+  "localScoreMessage": {
+    "message": "Lokaler Score dieser Nachricht"
+  },
+  "localScoreLink": {
+    "message": "Lokaler Score für diesen Link im Nachrichtenkontext"
+  },
+  "localScoreNoIndicators": {
+    "message": "Keine lokalen Auffälligkeiten gefunden."
+  },
+  "localScoreIndicators": {
+    "message": "Lokale Auffälligkeiten gefunden. Prüfe vor dem Öffnen die Gründe."
   }
 }

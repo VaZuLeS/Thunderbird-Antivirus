@@ -105,6 +105,9 @@ function validateReports(identity, thunderbird, browserUi) {
                 if(!thunderbird.some(r=>validUpgrade(r)&&r.clientMatrixTarget===target&&flags.every(key=>r.protectionProfile?.[key]===true)))throw Error('Missing native protection profile acceptance: '+target+'/'+lang);
             }
         }
+        if(versionParts[0]>1||versionParts[0]===1&&(versionParts[1]>25||versionParts[1]===25&&versionParts[2]>=9))for(const target of ['minimum','current']){
+            if(!thunderbird.some(r=>r.passed===true&&!r.error&&r.extensionVersion===identity.extensionVersion&&r.xpiSha256===identity.packageSha256&&r.clientMatrixTarget===target&&(r.uiLanguage||'').split('-')[0]===lang&&['passed','realThunderbirdAPIs','linkVisible','overviewVisible','popupVisible','noExternalServices'].every(key=>r.localScoreVisibility?.[key]===true)))throw Error('Missing native local score visibility: '+target+'/'+lang);
+        }
         const tb = thunderbird.find(validUpgrade);
         if (!tb) throw new Error('Missing package-bound real Thunderbird upgrade/crash evidence: ' + lang);
         if(versionParts[0]>1||versionParts[0]===1&&(versionParts[1]>25||versionParts[1]===25&&versionParts[2]>=3)) {

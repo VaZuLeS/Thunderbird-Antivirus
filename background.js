@@ -2133,8 +2133,8 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 const options = await collectThreatEvaluationOptions({ message, fullMessage, filteredUrls: urls, messageText, allowExternal: false });
                 const threat = calculateThreatScore(message.author, urls, options);
                 threat.coverage = localContentCoverage(fullMessage);
-                const context = await getMessageAnalysisContext(message, null, {fullMessage});
-                recordLocalCoverage(context, threat.coverage, threat);
+                // Recording provenance must not discard an already computed score.
+                void Promise.resolve().then(()=>getMessageAnalysisContext(message, null, {fullMessage})).then(context=>recordLocalCoverage(context, threat.coverage, threat)).catch(()=>{});
                 return threat;
             })().then(threat => sendResponse({ status: 'success', threat })).catch(() => sendResponse({ status: 'error' }));
             return true;

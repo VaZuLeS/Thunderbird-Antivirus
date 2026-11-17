@@ -266,7 +266,7 @@ async function clickDialog(status = 'UNKNOWN', open = async () => ({ success: tr
     const dom = new JSDOM('<a href="https://example.com/path?token=secret">Visit</a>', { url: 'https://mail.invalid/' });
     const sent = [];
     const context = vm.createContext({ document: dom.window.document, URL, browser: { runtime: { sendMessage: async payload => {
-        sent.push(payload); return payload.action === 'checkLinkState' ? { status, reasons: ['Provider result'] } : open(payload);
+        sent.push(payload); return payload.action === 'checkLinkState' ? typeof status==='string'?{ status, reasons: ['Provider result'] }:status : open(payload);
     } } }, args: injected.args });
     vm.runInContext('(' + injected.func.toString() + ')(...args)', context);
     const link = dom.window.document.querySelector('a');
@@ -1052,4 +1052,38 @@ test('source storage failures expose only a fixed safe exception name and clear 
  const save=s.context.updateStore;s.context.updateStore=async()=>{throw Object.assign(new Error('PRIVATE_PATH_CANARY'),{name:'QuotaExceededError'});};
  await ctx.flush();let snapshot=await ctx.snapshot();assert.equal(snapshot.sourcePersistenceReason,'storage_failed');assert.equal(snapshot.sourcePersistenceError,'QuotaExceededError');assert.ok(!JSON.stringify(snapshot).includes('PRIVATE_PATH_CANARY'));
  s.context.updateStore=save;await ctx.flush();snapshot=await ctx.snapshot();assert.equal(snapshot.sourcePersistenceError,null);ctx.dispose();
+});
+
+
+test('local-only checks return their own complete score and reasons without provider verdicts',async()=>{
+ for(const [url,score] of [['https://example.com/',0],['https://unrelated.invalid/',40],['https://paypa1.com/',100]]){
+  const s=setup();await s.context.configure();s.full.parts[0].body='Visit '+url;
+  const result=await s.context.handleAuditedLinkCheck({...auditRequest(),url},auditSender);
+  assert.equal(result.status,'UNKNOWN');assert.equal(result.score,score);assert.equal(result.local.score,score);assert.equal(result.local.state,'checked');assert.equal(result.local.scope,'link-in-message');assert.equal(s.requests.length,0);
+  assert.deepEqual(Array.from(result.local.reasons),Array.from((await s.context.readLinkAudit()).records[0].reasons));
+ }
+});
+test('local score and reasons are visible before switching to the expert link view',async()=>{
+ for(const score of [0,40,100]){
+  const f=await clickDialog({status:'UNKNOWN',local:{state:'checked',score,reasons:score?['Local warning']:[]},check:{origin:'none',outcome:'disabled'}});
+  try{const text=f.root.querySelector('.local-score');assert.ok(text.textContent.includes(score+' / 100'));assert.equal(text.hidden,false);assert.equal(text.closest('[hidden]'),null);
+   if(score)assert.equal(f.root.querySelector('[data-source=local]').hidden,false);
+   const switcher=[...f.root.querySelectorAll('button')].find(b=>!b.closest('footer'));switcher.click();assert.equal(text.hidden,false);switcher.click();assert.equal(text.hidden,false);
+  }finally{f.dom.window.close();}
+ }
+});
+test('local read failures remain unavailable instead of a zero score',async()=>{
+ const s=setup();await s.context.configure();s.context.browser.messages.getFull=async()=>{throw Error('read failure');};
+ const result=await s.context.handleAuditedLinkCheck(auditRequest(),auditSender);assert.equal(result.local.state,'failed');assert.equal(result.local.score,null);assert.equal(result.score,null);assert.equal(s.requests.length,0);
+ const f=await clickDialog(result);try{assert.ok(!f.root.querySelector('.local-score').textContent.includes('0 / 100'));assert.equal(f.root.querySelector('.local-score').closest('[hidden]'),null);}finally{f.dom.window.close();}
+});
+
+test('a failed source context does not discard an already calculated local popup score',async()=>{
+ const s=setup();await s.context.configure();s.full.parts[0].body='Visit https://paypa1.com/';s.context.getMessageAnalysisContext=async()=>{throw Error('source cache unavailable');};
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));assert.equal(result.status,'success');assert.equal(result.threat.score,100);assert.equal(s.requests.length,0);
+});
+
+test('a stalled source context does not hold a calculated local popup score',{timeout:2000},async()=>{
+ const s=setup();await s.context.configure();s.full.parts[0].body='Visit https://paypa1.com/';s.context.getMessageAnalysisContext=()=>new Promise(()=>{});
+ const result=await new Promise(resolve=>s.listeners.at(-1)({action:'getLocalRisk',messageId:7},{},resolve));assert.equal(result.status,'success');assert.equal(result.threat.score,100);assert.equal(s.requests.length,0);
 });

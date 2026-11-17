@@ -53,7 +53,7 @@ async function handleAuditedLinkCheck(request, sender) {
     const key = auditSessionKey(request, sender);
     if (!key || linkAuditSessions.has(key)) return { status: 'ERROR', auditSaved: false };
     if (linkAuditSessions.size >= LINK_AUDIT_LIMIT) linkAuditSessions.delete(linkAuditSessions.keys().next().value);
-    const session = { auditSaved: true, url: request.url, messageId: request.messageId, checked: false, terminal: false, opening: false, score: null };
+    const session = { auditSaved: true, url: request.url, messageId: request.messageId, checked: false, terminal: false, opening: false, score: null, local: {state:'pending',score:null,reasons:[],observedAt:null,scope:'link-in-message'} };
     linkAuditSessions.set(key, session);
     session.ready = (async () => {
         const url = new URL(request.url);
@@ -84,15 +84,16 @@ async function handleAuditedLinkCheck(request, sender) {
                 if(!localActive)return;
                 session.score = Number.isFinite(threat.score) ? Math.max(0, Math.min(100, threat.score)) : null;
                 session.scoredAt = Date.now();
+                session.local = {state:session.score===null?'failed':typeof localContentCoverage==='function'?localContentCoverage(fullMessage).state:'checked',score:session.score,reasons:copyAuditValue((threat.reasons||[]).slice(0,20)),reasonDetails:copyAuditValue((threat.reasonDetails||[]).slice(0,20)),observedAt:session.scoredAt,scope:'link-in-message'};
                 session.reasons = copyAuditValue((threat.reasons || []).slice(0, 20));
                 session.reasonDetails = copyAuditValue((threat.reasonDetails || []).slice(0, 20));
                 try {
                     const saved = await updateLinkAudit(session.record.id, { score: session.score, scoredAt: session.scoredAt, reasons: (threat.reasons || []).slice(0, 20), reasonDetails: (threat.reasonDetails || []).slice(0, 20) });
                     if (!saved) session.auditSaved = false;
                 } catch (error) { session.auditSaved = false; reportLinkAuditFailure(); }
-            } catch (error) { if(localActive)session.score = null; }
+            } catch (error) { if(localActive){session.score = null;session.local={state:'failed',score:null,reasons:[],observedAt:null,scope:'link-in-message'};} }
         })();
-        const localReady=bounded(localCheck,null).finally(()=>{localActive=false;});
+        const localReady=bounded(localCheck,null).finally(()=>{localActive=false;if(session.local.state==='pending')session.local={...session.local,state:'failed',reason:'timeout'};});
         const unavailable={status:'UNKNOWN',provider:'none',check:{origin:'none',outcome:'no_result',errorCode:'LINK_CHECK_TIMEOUT',attemptedAt:clickedAt,observedAt:null}};
         const verdict = await bounded(new Promise(resolve => {Promise.resolve().then(()=>handleCheckLinkState(request,sender,resolve)).catch(()=>resolve(unavailable));}),unavailable);
         session.providerReasons = copyAuditValue((verdict.reasons || []).slice(0, 20));
@@ -113,11 +114,11 @@ async function handleAuditedLinkCheck(request, sender) {
         catch (error) { reportLinkAuditFailure(); }
         let protection=null;
         if(typeof ThundyLinkSecurity !== 'undefined' && (await ThundySecurity.read()).policy?.enabled) { try {protection=(await ThundyLinkSecurity.evaluate(session,sender)).decision;}catch(_){protection={required:true,reason:'context_changed'};} }
-        return { ...verdict, score: session.score, protection, auditSaved: saved && session.auditSaved };
+        return { ...verdict, score: session.score, local: copyAuditValue(session.local), protection, auditSaved: saved && session.auditSaved };
     } catch (error) {
         // Consume ready rejection even when cancellation arrives while initialising.
         reportLinkAuditFailure();
-        return { status: 'ERROR', score: session.score, auditSaved: false };
+        return { status: 'ERROR', score: session.score, local:{...session.local,state:'failed'}, auditSaved: false };
     }
 }
 

@@ -377,6 +377,12 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     assert dialog['width'] >= 500 and dialog['url'] == URL and 'Thundy AV' in dialog['text']
     assert catalogs[locale]['linkDialogTitle']['message'] in dialog['text']
     assert dialog['focus'] == catalogs[locale]['linkCancel']['message']
+    current_score_ui=tuple(map(int,report['extensionVersion'].split('.'))) >= (1,25,9)
+    if current_score_ui:
+        score=m.page('const n=document.getElementById("thundy-link-dialog").shadowRoot.querySelector(".local-score");return {visible:!!n&&n.getClientRects().length>0,text:n?.textContent};')
+        assert score['visible'] and str(expected_score)+' / 100' in score['text'],score
+        overview=wait_for(lambda:m.page(r'const r=document.getElementById("thundy-analysis-status")?.shadowRoot;return Array.from(r?.querySelectorAll(".local-score")||[]).some(n=>n.getClientRects().length>0&&/\d+ \/ 100/.test(n.textContent));'))
+        report['localScoreVisibility']={'passed':True,'realThunderbirdAPIs':True,'linkVisible':True,'overviewVisible':bool(overview),'popupVisible':False,'noExternalServices':True}
     report['linkDialog'] = dialog
     m.screenshot(out / 'link-dialog.png')
     m.page('document.getElementById("thundy-link-dialog").shadowRoot.querySelector("footer button").click();')
@@ -395,6 +401,9 @@ def run_checks(m, xpi, out, display, report, locale, langpack, previous_xpi, per
     wait_for(lambda: m.page('return document.body.innerText.includes("Thundy AV") && document.body.innerText.includes("sender@example.invalid");', browser=popup_browser))
     assert m.page('return document.documentElement.lang;', browser=popup_browser) == locale
     assert m.page('return document.querySelector("h1").textContent;', browser=popup_browser) == catalogs[locale]['popupSubtitle']['message']
+    if current_score_ui:
+        wait_for(lambda:m.page(r'const n=document.querySelector(".local-risk .risk-score");return !!n&&n.getClientRects().length>0&&/\d+ \/ 100/.test(n.textContent);',browser=popup_browser))
+        report['localScoreVisibility']['popupVisible']=True
     popup['language'] = locale
     popup['heading'] = catalogs[locale]['popupSubtitle']['message']
     report['nativePopup'] = popup

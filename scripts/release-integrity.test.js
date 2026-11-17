@@ -237,9 +237,10 @@ test('new candidates require six-language upgrade/crash proof for both declared 
  for(const r of viewerReports){r.extensionVersion=viewer.extensionVersion;r.currentRestart.addon.version=viewer.extensionVersion;}
  assert.throws(()=>validateReports(viewer,viewerReports,ui),/debug viewer/);
  const viewerFlags=['viewerPassed','viewerDocumentSession','viewerReadOnly','viewerFilterPause','viewerExportVerified','viewerLockCleared'];
- for(const r of viewerReports)Object.assign(r.apiDebug,Object.fromEntries(viewerFlags.map(key=>[key,true])));
+ for(const r of viewerReports){Object.assign(r.apiDebug,Object.fromEntries(viewerFlags.map(key=>[key,true])));r.localScoreVisibility=Object.fromEntries(['passed','realThunderbirdAPIs','linkVisible','overviewVisible','popupVisible','noExternalServices'].map(key=>[key,true]));}
  validateReports(viewer,viewerReports,ui);
  for(const key of viewerFlags){const bad=structuredClone(viewerReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.apiDebug[key]=false;assert.throws(()=>validateReports(viewer,bad,ui),/debug viewer/);}
+ const missingScore=structuredClone(viewerReports);for(const r of missingScore.filter(r=>r.clientMatrixTarget==='current'))r.localScoreVisibility.popupVisible=false;assert.throws(()=>validateReports(viewer,missingScore,ui),/local score/);
  const viewerProof=api.create(viewer,viewerReports,ui,'fixture');assert.ok(api.verify(viewerProof,viewer));assert.ok(!JSON.stringify(viewerProof).includes('CANARY'));
 
 

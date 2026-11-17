@@ -2730,6 +2730,18 @@ const ThundyI18n = (() => {
   },
   "diag_state_unconfirmed": {
     "message": "Completion unconfirmed"
+  },
+  "localScoreMessage": {
+    "message": "Local message score"
+  },
+  "localScoreLink": {
+    "message": "Local score for this link in the message"
+  },
+  "localScoreNoIndicators": {
+    "message": "No local warning indicators found."
+  },
+  "localScoreIndicators": {
+    "message": "Local warning indicators found. Review the reasons before opening."
   }
 };
     function get(key, params = []) {

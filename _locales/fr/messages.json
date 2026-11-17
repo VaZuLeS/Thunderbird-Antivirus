@@ -2725,5 +2725,17 @@
   },
   "diag_state_unconfirmed": {
     "message": "Fin non confirmée"
+  },
+  "localScoreMessage": {
+    "message": "Score local du message"
+  },
+  "localScoreLink": {
+    "message": "Score local de ce lien dans le message"
+  },
+  "localScoreNoIndicators": {
+    "message": "Aucun indice suspect détecté localement."
+  },
+  "localScoreIndicators": {
+    "message": "Des indices suspects ont été détectés localement. Examinez les motifs avant d’ouvrir le lien."
   }
 }
