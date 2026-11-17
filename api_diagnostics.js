@@ -167,6 +167,15 @@ const ThundyApiDiagnostics = (() => {
         try {if((await browser.storage.local.get('thundySecurityV1')).thundySecurityV1?.apiDebugEnabled!==true)return null;const context=options.analysisContext?.diagnosticContext||options.analysisContext;let clientFlow;if(context&&typeof context==='object'){if(!contexts.has(context))contexts.set(context,'flow-'+Array.from(crypto.getRandomValues(new Uint8Array(6)),byte=>byte.toString(16).padStart(2,'0')).join(''));clientFlow=contexts.get(context);}
         const request={...describe(url,options),clientFlow,runId:options.analysisContext?.diagnosticRun,purpose:options.keyTest?'key_test':options.analysisContext?.diagnosticPurpose||'report'};return central()?await startLocal(request):((await browser.runtime.sendMessage({action:'apiDebugCapture',stage:'start',request}))?.ticket??null);}catch(_){return null;}
     }
+    async function note(context,provider,phase,data={}) {
+        try{
+            if((await browser.storage.local.get('thundySecurityV1')).thundySecurityV1?.apiDebugEnabled!==true)return;
+            const root=context?.diagnosticContext||context;let clientFlow;
+            if(root&&typeof root==='object'){if(!contexts.has(root))contexts.set(root,'flow-'+Array.from(crypto.getRandomValues(new Uint8Array(6)),byte=>byte.toString(16).padStart(2,'0')).join(''));clientFlow=contexts.get(root);}
+            if(central()){const id=context?.diagnosticRun||await beginRun('report');event(id,phase,{...data,provider});if(!context?.diagnosticRun)endRun(id,data.state==='blocked'?'blocked':'complete');}
+            else await browser.runtime.sendMessage({action:'apiDebugCapture',stage:'note',clientFlow,provider,phase,data});
+        }catch(_){} // Diagnostic collection never changes the caller's result.
+    }
     async function finish(ticket,trace) {
         if(ticket===null)return;
         try{if(central())finishLocal(ticket,trace);else await browser.runtime.sendMessage({action:'apiDebugCapture',stage:'finish',ticket,trace});}catch(_){}
@@ -180,6 +189,14 @@ const ThundyApiDiagnostics = (() => {
     }
     async function capture(request,sender) {
         if(!ThundySecurity.page(sender,'popup.html'))throw Object.assign(Error('ADMIN_PAGE_REQUIRED'),{code:'ADMIN_PAGE_REQUIRED'});
+        if(request.stage==='note'){
+            if(!providers.includes(request.provider)||!['precondition','cache'].includes(request.phase))return {};
+            const own=epoch;if(!(await ThundySecurity.read()).apiDebugEnabled||own!==epoch)return {};
+            const owner=ThundySecurity.identity(sender),flow=typeof request.clientFlow==='string'&&/^flow-[a-f0-9]{12}$/.test(request.clientFlow)?request.clientFlow:null;
+            let run=flow?[...runs.values()].find(run=>run.owner===owner&&run.sourceRef===flow):null;
+            if(!run){const id=createRun('report',sender);run=runs.get(id);if(run)run.sourceRef=flow;}
+            if(run){event(run.id,request.phase,{state:request.data?.state,reason:request.data?.reason,provider:request.provider});endRun(run.id,request.data?.state==='blocked'?'blocked':'complete');}return {};
+        }
         if(request.stage==='progress'){const entry=pending.get(request.ticket);if(entry?.owner===ThundySecurity.identity(sender))event(entry.runId,request.phase,{...request.data,operationId:request.ticket});return {};}
         if(request.stage==='start') {
             // A popup can only append bounded diagnostics, never inspect the report.
@@ -192,5 +209,5 @@ const ThundyApiDiagnostics = (() => {
         return {};
     }
     function report() {prune();const version=browser.runtime.getManifest?.().version;return {schemaVersion:2,kind:'thundy-api-debug',epoch,providers:Object.fromEntries(Object.entries(typeof ThundyProviders!=='undefined'?ThundyProviders.registry:{}).map(([id,value])=>[id,value.name])),runs:[...runs.values()].map(({owner,sourceRef,...run})=>JSON.parse(JSON.stringify(run))),...(typeof version==='string'&&/^[0-9.]{1,20}$/.test(version)?{extensionVersion:version}:{}),createdAt:Date.now(),entries:JSON.parse(JSON.stringify(entries)),pending:[...pending.entries()].map(([id,entry])=>({id,runId:entry.runId,request:entry.request,startedAt:entry.startedAt,completion:'unconfirmed'})),dropped,limits:{maxEntries:MAX_ENTRIES,maxBytes:MAX_BYTES,maxAgeMs:MAX_AGE,memoryOnly:true,rawBodiesIncluded:false,identifiersPseudonymized:true,transportStatusIsNotAnalysisVerdict:true,liveProviderVerification:false}};}
-    return {start,finish,project,classify,code,capture,report,reset,beginRun,event,endRun,progress};
+    return {start,finish,project,classify,code,capture,report,reset,beginRun,event,endRun,progress,note};
 })();

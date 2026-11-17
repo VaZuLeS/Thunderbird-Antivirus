@@ -166,3 +166,13 @@ test('safe provider scores and counters survive projection for VirusTotal and Ab
  f.d.event(id,'assessment',{provider:'virustotal',providerScore:85,maliciousCount:3,totalCount:26,providerVerdict:'whitelisted',private:'CANARY'});
  const event=f.d.report().runs[0].events[0];assert.equal(event.providerScore,85);assert.equal(event.maliciousCount,3);assert.equal(event.providerVerdict,'whitelisted');assert.ok(!JSON.stringify(event).includes('CANARY'));f.d.reset();
 });
+
+test('popup prerequisite and cache notes are private, bounded and require no HTTP operation',async()=>{
+ const f=fixture();await f.enable();const popup={...f.sender,url:'moz-extension://addon/popup.html',documentId:'notes'};
+ const note={stage:'note',clientFlow:'flow-012345abcdef',provider:'hybridanalysis',phase:'precondition',data:{state:'blocked',reason:'permission',message:'CANARY_PRIVATE'}};
+ await f.d.capture(note,popup);await f.d.capture({...note,phase:'cache',data:{state:'complete'}},popup);
+ const r=f.d.report();assert.equal(r.runs.length,1);assert.equal(r.runs[0].events.length,2);assert.equal(r.entries.length,0);assert.equal(f.calls.length,0);assert.ok(!JSON.stringify(r).includes('CANARY'));
+ const next=await f.d.capture({stage:'start',request:{clientFlow:note.clientFlow,provider:'hybridanalysis',endpoint:'/api/v2/overview/:reference',method:'GET'}},popup);assert.equal(f.d.report().pending.find(op=>op.id===next.ticket).runId,r.runs[0].id);
+ await assert.rejects(f.d.capture(note,{...popup,url:'moz-extension://addon/api_debug.html'}),/ADMIN_PAGE_REQUIRED/);
+ await f.s.command({op:'apiDebugSet',enabled:false},f.sender);await f.d.capture(note,popup);assert.equal(f.d.report().runs.length,0);
+});

@@ -953,14 +953,16 @@ const HYBRID_QUICK_SCAN_ID = /^[A-Za-z0-9_-]{1,128}$/;
 async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = null) {
     const reportContext = popupAnalysisContext ? {diagnosticContext:popupAnalysisContext,scopeOverride:'report', event:event => { if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) ThundyAnalysis.cacheTime('hybridanalysis','report',hybrid_sha,event.observedAt); return popupAnalysisContext.event({...event,resource}); }} : null;
     if (!hasExternalAnalysisConsent()) {
+        if(typeof ThundyApiDiagnostics!=='undefined')await ThundyApiDiagnostics.note(popupAnalysisContext,'hybridanalysis','precondition',{state:'blocked',reason:'disabled'});
         throw new Error('external-analysis-disabled');
     }
     if (typeof apiGateway !== 'undefined') {
         const current = await browser.storage.local.get('externalAnalysisConsent');
-        if (current.externalAnalysisConsent !== true || !await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] })) throw new Error(uiText('errorHostPermissionMissing', 'Host permission missing'));
+        if (current.externalAnalysisConsent !== true || !await browser.permissions.contains({ origins: ['https://hybrid-analysis.com/*'] })) {if(typeof ThundyApiDiagnostics!=='undefined')await ThundyApiDiagnostics.note(popupAnalysisContext,'hybridanalysis','precondition',{state:'blocked',reason:current.externalAnalysisConsent!==true?'disabled':'permission'});throw new Error(uiText('errorHostPermissionMissing', 'Host permission missing'));}
     }
     if (hybrid_report_cache.has(hybrid_sha)) {
         const cached = await hybrid_report_cache.get(hybrid_sha);
+        if(typeof ThundyApiDiagnostics!=='undefined')await ThundyApiDiagnostics.note(popupAnalysisContext,'hybridanalysis','cache',{state:'complete'});
         if (popupAnalysisContext && typeof ThundyAnalysis !== 'undefined') {
             const classified = ThundyAnalysis.response({ provider: 'hybridanalysis', scope: 'report' }, cached.response.status, cached.json_data);
             reportContext.event({ phase: 'cache', provider: 'hybridanalysis', scope: 'report', ...classified, observedAt: ThundyAnalysis.cacheTime('hybridanalysis', 'report', hybrid_sha) }).catch(() => {});
