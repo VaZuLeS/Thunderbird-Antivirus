@@ -114,3 +114,47 @@ test('known provider protocol values survive projection while arbitrary strings 
  await f.d.capture({stage:'finish',ticket,trace:{response:projected,attempts:[{status:200}]}},sender);
  assert.equal(f.d.report().entries[0].response.verdict,'NO SPECIFIC THREAT');assert.ok(!JSON.stringify(f.d.report()).includes('CANARY'));f.d.reset();
 });
+
+test('diagnostic page has document-bound read access but no settings or debug-enable privileges',async()=>{
+ const f=fixture(),page={...f.sender,url:'moz-extension://addon/api_debug.html',documentId:'diagnostic'};
+ await f.s.command({op:'configure',adminPassword:'administrator-123',policy:{enabled:false,threshold:50,unknown:'warn'}},f.sender);
+ await assert.rejects(f.s.command({op:'apiDebugReport'},page),/ADMIN_LOCKED/);
+ const {token}=await f.s.command({op:'unlock',password:'administrator-123'},page);
+ for(const op of ['configure','disableAdmin','recover','apiDebugSet'])await assert.rejects(f.s.command({op,enabled:true,token},page),/ADMIN_PAGE_REQUIRED/);
+ await assert.rejects(f.s.write({privacyTier:'max'},page,token),/ADMIN_PAGE_REQUIRED/);
+ assert.equal((await f.s.command({op:'apiDebugReport',token},page)).report.schemaVersion,2);
+ f.advance(299999);await f.s.command({op:'apiDebugReport',token},page);f.advance(2);
+ await assert.rejects(f.s.command({op:'apiDebugReport',token},page),/ADMIN_LOCKED/);
+});
+test('flow correlation exposes prerequisites and real transport steps without secret values or owner identity',async()=>{
+ const f=fixture();await f.enable();const run=await f.d.beginRun('manual');
+ f.d.event(run,'precondition',{provider:'urlscan',state:'blocked',reason:'storage_failed',message:'PRIVATE_CANARY'});
+ await f.g.fetchWithTimeout(url,{method:'POST',headers:{'api-key':'PRIVATE_CANARY'},analysisContext:{diagnosticRun:run}});
+ const report=f.d.report();assert.equal(report.schemaVersion,2);assert.equal(report.entries[0].runId,run);assert.equal(report.runs.length,1);
+ for(const phase of ['precondition','attempt','response','parse'])assert.ok(report.runs[0].events.some(e=>e.phase===phase),phase);
+ assert.ok(!JSON.stringify(report).includes('PRIVATE_CANARY'));assert.ok(!JSON.stringify(report).includes('owner'));
+ f.d.reset();assert.equal(f.d.report().runs.length,0);
+});
+test('pending captures and flow events share a UTF-8 byte bound and expose truncation',async()=>{
+ const f=fixture();await f.enable();const run=await f.d.beginRun('automatic');
+ for(let i=0;i<140;i++)f.d.event(run,'wait',{durationMs:1000,message:'CANARY'});
+ assert.ok(f.d.report().runs[0].truncated);assert.ok(f.d.report().dropped>0);
+ const popup={...f.sender,url:'moz-extension://addon/popup.html',documentId:'large-popup'};
+ for(let i=0;i<200;i++)await f.d.capture({stage:'start',request:{provider:'urlscan',endpoint:'/api/v1/scan/',body:{kind:'text',shape:{data:Array.from({length:8},()=>({attributes:Array.from({length:8},()=>({count:123456789}))}))}}}},popup);
+ const report=f.d.report();assert.ok(Buffer.byteLength(JSON.stringify(report))<1048576);assert.ok(report.pending.length<=200);assert.ok(!JSON.stringify(report).includes('CANARY'));f.d.reset();
+});
+
+test('policy and local cooldown are prerequisites, not invented HTTP responses',async()=>{
+ const f=fixture();await f.enable();
+ f.g.beforeRequest=async()=>{throw Object.assign(Error('CANARY'),{code:'EXTERNAL_ANALYSIS_DISABLED'});};
+ await assert.rejects(f.g.fetchWithTimeout(url,{method:'POST'}));
+ let r=f.d.report(),op=r.entries[0];assert.equal(op.networkStarted,false);assert.equal(f.calls.length,0);assert.equal(op.reason,'policy_blocked');assert.ok(!r.runs[0].events.some(e=>e.phase==='response'));
+ f.g.beforeRequest=null;f.g.setBackoff('hybrid-analysis.com',60);
+ await f.g.fetchWithTimeout(url,{method:'POST'});r=f.d.report();op=r.entries[1];assert.equal(op.localBackoff,true);assert.equal(op.networkStarted,false);assert.equal(f.calls.length,0);assert.ok(!r.runs[1].events.some(e=>e.phase==='response'));f.d.reset();
+});
+test('an operation does not prematurely finish an explicitly owned pipeline and abandoned flows stay unconfirmed',async()=>{
+ const f=fixture();await f.enable();const id=await f.d.beginRun('manual');
+ await f.g.fetchWithTimeout(url,{method:'POST',analysisContext:{diagnosticRun:id}});
+ assert.equal(f.d.report().runs[0].state,'running');f.d.event(id,'persistence',{state:'failed',reason:'storage_failed'});f.d.endRun(id,'incomplete');assert.equal(f.d.report().runs[0].state,'incomplete');
+ const abandoned=await f.d.beginRun('analysis');f.advance(300001);assert.equal(f.d.report().runs.find(r=>r.id===abandoned).state,'unconfirmed');f.d.reset();
+});

@@ -44,6 +44,29 @@ def check(m, base, out, report, display, wait, open_page, native_click, native_j
         m.screenshot(out/'api-debug-preview.png')
         exported=native_json_download(m,display,out,'apiDebugExport','api-debug-export.json')
         assert exported['entries']==preview['entries'] and 'CANARY' not in json.dumps(exported)
+        # Dedicated extension tab establishes its own document-bound read session.
+        m.page('document.getElementById("apiDebugOpen").click();')
+        wait(lambda:m.js('return window.gTabmail.currentTabInfo.browser?.currentURI.spec.endsWith("/api_debug.html");'))
+        wait(lambda:m.page('return !!document.getElementById("diagAuth")&&!document.getElementById("diagAuth").hidden;'))
+        assert m.page('return document.getElementById("diagView").hidden;')
+        denied=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"securityCommand",op:"apiDebugReport"});')
+        assert denied['success'] is False and denied['code']=='ADMIN_LOCKED'
+        m.page('document.getElementById("diagPassword").value="native-admin-password";document.getElementById("diagAuth").requestSubmit();')
+        wait(lambda:m.page('return document.querySelectorAll("#diagRuns button").length===3;'))
+        assert m.page('return document.getElementById("diagPassword").value===""&&!document.getElementById("diagView").hidden;')
+        denied=m.page('return window.wrappedJSObject.browser.runtime.sendMessage({action:"securityCommand",op:"apiDebugSet",enabled:false});')
+        assert denied['success'] is False
+        m.page('document.getElementById("diagPause").click();document.getElementById("diagProvider").value="urlscan";document.getElementById("diagFilters").dispatchEvent(new Event("input"));')
+        assert m.page('return document.querySelectorAll("#diagRuns button").length===1&&document.getElementById("diagContent").textContent.includes("urlscan");')
+        m.page('document.getElementById("diagReset").click();')
+        assert m.page('return document.querySelectorAll("#diagRuns button").length===3;')
+        viewer_export=native_json_download(m,display,out,'diagExport','api-debug-viewer-export.json')
+        assert viewer_export['schemaVersion']==2 and viewer_export['entries']==preview['entries']
+        assert len(viewer_export['runs'])==3 and 'CANARY' not in json.dumps(viewer_export)
+        m.screenshot(out/'api-debug-viewer.png')
+        m.page('document.getElementById("diagLock").click();')
+        wait(lambda:m.page('return document.getElementById("diagView").hidden&&document.querySelectorAll("#diagRuns button").length===0;'))
+        m.js('window.gTabmail.switchToTab(arguments[0]);',[tab])
         m.page('document.getElementById("apiDebugEnabled").checked=false;document.getElementById("apiDebugForm").requestSubmit();')
         wait(lambda:m.page('return !document.getElementById("apiDebugPreview").disabled&&document.getElementById("apiDebugStatus").textContent.length>0;'))
         m.page('document.getElementById("apiDebugPreview").click();')
@@ -52,7 +75,7 @@ def check(m, base, out, report, display, wait, open_page, native_click, native_j
         preserved=m.page('''return (async()=>{const w=window.wrappedJSObject,p=w.__apiDebugProbe;return {calls:p.calls,audit:JSON.stringify(await w.browser.storage.local.get('linkAuditLog'))===p.audit};})();''')
         assert preserved=={'calls':2,'audit':True},preserved
         report['apiDebug']={key:True for key in ['passed','realThunderbirdAPIs','adminProtected','backgroundCaptured','popupCaptured','httpStatusVisible','invalidJsonVisible','exportVerified','secretsRedacted','noExtraRequests','auditPreserved','disabledCleared']}
-        report['apiDebug'].update({'liveProviderCalls':False,'syntheticTransport':True,'helperSha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
+        report['apiDebug'].update({'viewerPassed':True,'viewerDocumentSession':True,'viewerReadOnly':True,'viewerFilterPause':True,'viewerExportVerified':True,'viewerLockCleared':True,'liveProviderCalls':False,'syntheticTransport':True,'helperSha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest()})
     finally:
         m.js('window.gTabmail.switchToTab(arguments[0]);',[tab])
         m.page('''const w=window.wrappedJSObject,p=w.__apiDebugProbe;if(p){p.bg.fetch=p.fetch;delete w.__apiDebugProbe;}''')

@@ -2583,6 +2583,153 @@ const ThundyI18n = (() => {
   },
   "urlscanResultGone": {
     "message": "This result was deleted by urlscan.io. Updating cannot restore it; a new submission requires an explicit scan."
+  },
+  "apiDebugOpen": {
+    "message": "Open API diagnostics"
+  },
+  "diagTitle": {
+    "message": "API diagnostics"
+  },
+  "diagHelp": {
+    "message": "Filtered checks in local memory. Keys, private URLs and raw content remain hidden. HTTP success is not a completed safety verdict. Only steps recorded after activation are available."
+  },
+  "diagOff": {
+    "message": "Debug mode is off. Enable it in settings."
+  },
+  "diagEmpty": {
+    "message": "No matching records."
+  },
+  "diagPause": {
+    "message": "Pause view"
+  },
+  "diagResume": {
+    "message": "Resume view"
+  },
+  "diagPaused": {
+    "message": "View paused; recording remains active."
+  },
+  "diagActive": {
+    "message": "Recording active; refreshing once per second."
+  },
+  "diagProvider": {
+    "message": "Provider"
+  },
+  "diagState": {
+    "message": "State"
+  },
+  "diagPurpose": {
+    "message": "Operation type"
+  },
+  "diagFrom": {
+    "message": "From"
+  },
+  "diagTo": {
+    "message": "To"
+  },
+  "diagAll": {
+    "message": "All"
+  },
+  "diagRuns": {
+    "message": "Check flows"
+  },
+  "diagDetails": {
+    "message": "Selected flow details"
+  },
+  "diagDropped": {
+    "message": "Dropped records or steps"
+  },
+  "diagNoHttp": {
+    "message": "No HTTP call recorded for this flow."
+  },
+  "diagNotCaptured": {
+    "message": "Not captured"
+  },
+  "diagTimeline": {
+    "message": "Timeline"
+  },
+  "diagRequest": {
+    "message": "Filtered request"
+  },
+  "diagResponse": {
+    "message": "Transport and filtered response"
+  },
+  "diagReset": {
+    "message": "Reset filters"
+  },
+  "diagTruncated": {
+    "message": "This flow was truncated due to recording limits."
+  },
+  "diag_phase_precondition": {
+    "message": "Prerequisites"
+  },
+  "diag_phase_queue": {
+    "message": "Queue"
+  },
+  "diag_phase_attempt": {
+    "message": "Send attempt"
+  },
+  "diag_phase_response": {
+    "message": "HTTP response / transport completion"
+  },
+  "diag_phase_parse": {
+    "message": "JSON processing"
+  },
+  "diag_phase_assessment": {
+    "message": "Assessment"
+  },
+  "diag_phase_persistence": {
+    "message": "Persistence"
+  },
+  "diag_phase_cache": {
+    "message": "Cache hit"
+  },
+  "diag_phase_wait": {
+    "message": "Waiting"
+  },
+  "diag_phase_cancelled": {
+    "message": "Cancelled"
+  },
+  "diag_phase_expired": {
+    "message": "Recording expired without confirmed completion"
+  },
+  "diag_purpose_automatic": {
+    "message": "Automatic check"
+  },
+  "diag_purpose_manual": {
+    "message": "Manual check"
+  },
+  "diag_purpose_link": {
+    "message": "Link check"
+  },
+  "diag_purpose_key_test": {
+    "message": "Key test"
+  },
+  "diag_purpose_report": {
+    "message": "Report request"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analysis"
+  },
+  "diag_state_running": {
+    "message": "Running"
+  },
+  "diag_state_complete": {
+    "message": "Operation finished"
+  },
+  "diag_state_pending": {
+    "message": "Pending"
+  },
+  "diag_state_blocked": {
+    "message": "Not started / blocked"
+  },
+  "diag_state_incomplete": {
+    "message": "Incomplete"
+  },
+  "diag_state_failed": {
+    "message": "Failed"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Completion unconfirmed"
   }
 };
     function get(key, params = []) {

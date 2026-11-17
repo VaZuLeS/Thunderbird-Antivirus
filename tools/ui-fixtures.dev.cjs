@@ -101,6 +101,8 @@ function addonMock({
     },
     callbacks = [], runtimeCallbacks = [];
   window.uiTest = {
+    debugEnabled: populated && location.pathname.endsWith('/api_debug.html'),
+    debugCleared:false,
     writes: [],
     failSave: false,
     failLoad: false,
@@ -183,7 +185,8 @@ function addonMock({
             ? scenario === 'expired' ? {success:false,code:'APPROVAL_EXPIRED'} : {success:true,url:'https://controlled.example.invalid/'+'long-path-'.repeat(12),score:72,until:Date.now()+60000}
             : (uiTest.approvals++, scenario === 'pending' ? await new Promise(resolve => {uiTest.finishApproval=()=>resolve({success:true});}) : {success:scenario !== 'failed',...(scenario === 'failed'?{code:'APPROVAL_CHANGED'}:{})})
           : p.action === "securityCommand"
-          ? p.op==='apiDebugReport' ? {success:true,report:{schemaVersion:1,kind:'thundy-api-debug',entries:[]}}
+          ? p.op==='apiDebugReport' ? {success:true,report:{schemaVersion:2,kind:'thundy-api-debug',runs:uiTest.debugCleared?[]:[{id:1,purpose:'manual',state:'failed',startedAt:Date.now()-1000,events:[{phase:'precondition',at:Date.now()-1000,provider:'hybridanalysis',state:'complete'},{phase:'attempt',at:Date.now()-500,state:'running'},{phase:'response',at:Date.now(),httpStatus:403},{phase:'persistence',at:Date.now(),state:'failed',reason:'storage_failed'}]}],entries:uiTest.debugCleared?[]:[{id:2,runId:1,request:{provider:'hybridanalysis',endpoint:'/api/v2/quick-scan/:reference',method:'GET'},attempts:[{status:403,durationMs:20,contentType:'json'}],networkStarted:true,reason:'permission',bodyState:'json',response:{message:'[redacted string]'}}],pending:[],dropped:0}}
+          : p.op==='apiDebugClear' ? (uiTest.debugCleared=true,{success:true})
           : p.op==='apiDebugStatus' ? {success:true,enabled:uiTest.debugEnabled===true}
           : p.op==='apiDebugSet' ? (uiTest.debugEnabled=p.enabled,{success:true,enabled:p.enabled})
           : {success:true,protected:false,unlocked:true,approvalConfigured:false,policy:{enabled:false,threshold:50,unknown:'warn',revision:0}}

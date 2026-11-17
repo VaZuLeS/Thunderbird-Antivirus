@@ -14,8 +14,9 @@ function popup(record = { attachments: [], links: [] }) {
         openDB: async () => ({ close() {} }),
         updateStore: async (_db, _store, _key, edit) => edit(record),
         fetch: async url => { requests.push(url); return { status: 200, json: async () => ({ state: 'IN_PROGRESS' }) }; },
-        browser: { runtime: { onMessage: { addListener() {} } } }
+        browser: { storage:{local:{get:async()=>({externalAnalysisConsent:true})}},permissions:{contains:async()=>true},runtime: { onMessage: { addListener() {} } } }
     });
+    context.apiGateway={fetchWithTimeout:(...args)=>context.fetch(...args),abortAll(){}};
     const source = (fs.readFileSync('provider_results.js','utf8')+'\n'+fs.readFileSync('api.js', 'utf8'))
         .replace(/^\(async \(\) => \{/m, 'async function initializeForTest() {')
         .replace(/\}\)\(\);/m, '}');
@@ -281,6 +282,7 @@ test('urlscan reportUrl is persisted and rendered as a clickable link in the pop
             })
         }
     });
+    loadSlice('providers.js', 'providerDiagnosticContext', provContext);
     loadSlice('providers.js', 'checkAbuseIPDB', provContext);
     assert.equal(await provContext.checkAbuseIPDB('8.8.8.8', 'key'), false);
 });

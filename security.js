@@ -42,8 +42,8 @@ const ThundySecurity = (() => {
         const job=(verificationQueues.get(kind)||Promise.resolve()).then(()=>verifyOne(password,saved,kind));
         verificationQueues.set(kind,job.catch(()=>{}));return job;
     }
-    async function authorized(sender, token, touch = true) {
-        if (!adminPage(sender)) throw error('ADMIN_PAGE_REQUIRED');
+    async function authorized(sender, token, touch = true, diagnostic = false) {
+        if (!adminPage(sender)&&!(diagnostic&&page(sender,'api_debug.html'))) throw error('ADMIN_PAGE_REQUIRED');
         const saved = await read();
         if (!saved.admin) return true;
         const session = sessions.get(token);
@@ -53,15 +53,17 @@ const ThundySecurity = (() => {
     }
     async function status(sender, token) {
         const saved = await read(); let unlocked = !saved.admin;
-        if (saved.admin) { try { await authorized(sender,token,false); unlocked=true; } catch (_) {} }
+        if (saved.admin) { try { await authorized(sender,token,false,page(sender,'api_debug.html')); unlocked=true; } catch (_) {} }
         return {protected:!!saved.admin,unlocked,approvalConfigured:!!saved.approval,policy:{...defaults,...saved.policy}};
     }
     function serialized(fn) { const job=queue.then(fn);queue=job.catch(()=>{});return job; }
     async function command(request,sender) {
         const {op,token}=request;
-        if (!adminPage(sender)) throw error('ADMIN_PAGE_REQUIRED');
+        const diagnostic=page(sender,'api_debug.html');
+        if(diagnostic&&!['status','unlock','lock','touch','apiDebugStatus','apiDebugReport','apiDebugClear'].includes(op))throw error('ADMIN_PAGE_REQUIRED');
+        if (!adminPage(sender)&&!diagnostic) throw error('ADMIN_PAGE_REQUIRED');
         if (op==='status') return status(sender,token);
-        if (op==='touch') { await authorized(sender,token);return {}; }
+        if (op==='touch') { await authorized(sender,token,true,diagnostic);return {}; }
         if (op==='lock') { sessions.delete(token);return {unlocked:false}; }
         if (op==='unlock') {
             await verify(request.password,(await read()).admin,'admin');
@@ -76,7 +78,7 @@ const ThundySecurity = (() => {
                 saved.admin=await verifier(request.password); const recovery=random();saved.recovery=await verifier(recovery);
                 sessions.clear(); saved.policy={...defaults,...saved.policy,revision:(saved.policy?.revision||0)+1};await browser.storage.local.set({[KEY]:saved});return {recovery};
             }
-            await authorized(sender,token);
+            await authorized(sender,token,!['apiDebugStatus','apiDebugReport'].includes(op),diagnostic);
             if (['apiDebugStatus','apiDebugSet','apiDebugReport','apiDebugClear'].includes(op)) {
                 if(op==='apiDebugSet') {
                     if(typeof request.enabled!=='boolean')throw error('SETTINGS_INVALID');

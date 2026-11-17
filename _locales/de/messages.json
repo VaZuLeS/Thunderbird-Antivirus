@@ -2581,5 +2581,152 @@
   },
   "urlscanResultGone": {
     "message": "Dieses Ergebnis wurde von urlscan.io gelöscht. Aktualisieren stellt es nicht wieder her; eine neue Einreichung erfordert einen ausdrücklich gestarteten Scan."
+  },
+  "apiDebugOpen": {
+    "message": "API-Diagnose öffnen"
+  },
+  "diagTitle": {
+    "message": "API-Diagnose"
+  },
+  "diagHelp": {
+    "message": "Gefilterter Prüfablauf im lokalen Arbeitsspeicher. Schlüssel, private URLs und Rohinhalte bleiben ausgeblendet. HTTP-Erfolg ist kein abgeschlossenes Sicherheitsurteil. Nur nach Aktivierung aufgezeichnete Schritte sind verfügbar."
+  },
+  "diagOff": {
+    "message": "Debugmodus aus. In den Einstellungen aktivieren."
+  },
+  "diagEmpty": {
+    "message": "Keine passenden Aufzeichnungen vorhanden."
+  },
+  "diagPause": {
+    "message": "Ansicht pausieren"
+  },
+  "diagResume": {
+    "message": "Ansicht fortsetzen"
+  },
+  "diagPaused": {
+    "message": "Ansicht pausiert; Aufzeichnung bleibt aktiv."
+  },
+  "diagActive": {
+    "message": "Aufzeichnung aktiv; Aktualisierung einmal pro Sekunde."
+  },
+  "diagProvider": {
+    "message": "Anbieter"
+  },
+  "diagState": {
+    "message": "Zustand"
+  },
+  "diagPurpose": {
+    "message": "Vorgangsart"
+  },
+  "diagFrom": {
+    "message": "Von"
+  },
+  "diagTo": {
+    "message": "Bis"
+  },
+  "diagAll": {
+    "message": "Alle"
+  },
+  "diagRuns": {
+    "message": "Prüfabläufe"
+  },
+  "diagDetails": {
+    "message": "Details des ausgewählten Ablaufs"
+  },
+  "diagDropped": {
+    "message": "Verworfene Einträge oder Schritte"
+  },
+  "diagNoHttp": {
+    "message": "Kein HTTP-Aufruf für diesen Ablauf aufgezeichnet."
+  },
+  "diagNotCaptured": {
+    "message": "Nicht erfasst"
+  },
+  "diagTimeline": {
+    "message": "Zeitlicher Ablauf"
+  },
+  "diagRequest": {
+    "message": "Gefilterte Anfrage"
+  },
+  "diagResponse": {
+    "message": "Transport und gefilterte Antwort"
+  },
+  "diagReset": {
+    "message": "Filter zurücksetzen"
+  },
+  "diagTruncated": {
+    "message": "Dieser Ablauf wurde aufgrund der Aufzeichnungsgrenzen gekürzt."
+  },
+  "diag_phase_precondition": {
+    "message": "Voraussetzungen"
+  },
+  "diag_phase_queue": {
+    "message": "Warteschlange"
+  },
+  "diag_phase_attempt": {
+    "message": "Sendeversuch"
+  },
+  "diag_phase_response": {
+    "message": "HTTP-Antwort / Transportabschluss"
+  },
+  "diag_phase_parse": {
+    "message": "JSON-Verarbeitung"
+  },
+  "diag_phase_assessment": {
+    "message": "Fachliche Auswertung"
+  },
+  "diag_phase_persistence": {
+    "message": "Speicherung"
+  },
+  "diag_phase_cache": {
+    "message": "Cachetreffer"
+  },
+  "diag_phase_wait": {
+    "message": "Wartephase"
+  },
+  "diag_phase_cancelled": {
+    "message": "Abgebrochen"
+  },
+  "diag_phase_expired": {
+    "message": "Aufzeichnung ohne bestätigten Abschluss abgelaufen"
+  },
+  "diag_purpose_automatic": {
+    "message": "Automatische Prüfung"
+  },
+  "diag_purpose_manual": {
+    "message": "Manuelle Prüfung"
+  },
+  "diag_purpose_link": {
+    "message": "Linkprüfung"
+  },
+  "diag_purpose_key_test": {
+    "message": "Schlüsseltest"
+  },
+  "diag_purpose_report": {
+    "message": "Berichtsabruf"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analyse"
+  },
+  "diag_state_running": {
+    "message": "Läuft"
+  },
+  "diag_state_complete": {
+    "message": "Vorgang beendet"
+  },
+  "diag_state_pending": {
+    "message": "Ausstehend"
+  },
+  "diag_state_blocked": {
+    "message": "Nicht gestartet / blockiert"
+  },
+  "diag_state_incomplete": {
+    "message": "Unvollständig"
+  },
+  "diag_state_failed": {
+    "message": "Fehlgeschlagen"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Abschluss unbestätigt"
   }
 }

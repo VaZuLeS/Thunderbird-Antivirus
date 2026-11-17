@@ -951,7 +951,7 @@ function hasExternalAnalysisConsent() {
 const HYBRID_QUICK_SCAN_ID = /^[A-Za-z0-9_-]{1,128}$/;
 
 async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = null) {
-    const reportContext = popupAnalysisContext ? {scopeOverride:'report', event:event => { if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) ThundyAnalysis.cacheTime('hybridanalysis','report',hybrid_sha,event.observedAt); return popupAnalysisContext.event({...event,resource}); }} : null;
+    const reportContext = popupAnalysisContext ? {diagnosticContext:popupAnalysisContext,scopeOverride:'report', event:event => { if (event.phase === 'finish' && event.state !== 'failed' && Number.isFinite(event.observedAt)) ThundyAnalysis.cacheTime('hybridanalysis','report',hybrid_sha,event.observedAt); return popupAnalysisContext.event({...event,resource}); }} : null;
     if (!hasExternalAnalysisConsent()) {
         throw new Error('external-analysis-disabled');
     }
@@ -979,7 +979,7 @@ async function fetch_hybrid_report(hybrid_sha, resource = null, quickScanId = nu
     };
 
     const request = async (url) => {
-        const response = typeof apiGateway !== 'undefined' ? await apiGateway.fetchWithTimeout(url, { ...options, url }) : await fetch(url, { ...options, url });
+        const response = typeof apiGateway !== 'undefined' ? await apiGateway.fetchWithTimeout(url, { ...options, url }) : await Promise.reject(new Error('API_GATEWAY_UNAVAILABLE'));
         let json_data = null;
         try { json_data = await response.json(); }
         catch (error) { if (response.status === 200) throw error; }

@@ -2578,5 +2578,152 @@
   },
   "urlscanResultGone": {
     "message": "Ce résultat a été supprimé par urlscan.io. Une actualisation ne le restaure pas ; un nouvel envoi nécessite une analyse lancée explicitement."
+  },
+  "apiDebugOpen": {
+    "message": "Ouvrir le diagnostic API"
+  },
+  "diagTitle": {
+    "message": "Diagnostic API"
+  },
+  "diagHelp": {
+    "message": "Contrôles filtrés en mémoire locale. Les clés, URL privées et contenus bruts restent masqués. Un succès HTTP ne constitue pas un verdict de sécurité terminé. Seules les étapes enregistrées après activation sont disponibles."
+  },
+  "diagOff": {
+    "message": "Mode débogage désactivé. Activez-le dans les paramètres."
+  },
+  "diagEmpty": {
+    "message": "Aucun enregistrement correspondant."
+  },
+  "diagPause": {
+    "message": "Suspendre la vue"
+  },
+  "diagResume": {
+    "message": "Reprendre la vue"
+  },
+  "diagPaused": {
+    "message": "Vue suspendue ; l’enregistrement reste actif."
+  },
+  "diagActive": {
+    "message": "Enregistrement actif ; actualisation chaque seconde."
+  },
+  "diagProvider": {
+    "message": "Fournisseur"
+  },
+  "diagState": {
+    "message": "État"
+  },
+  "diagPurpose": {
+    "message": "Type d’opération"
+  },
+  "diagFrom": {
+    "message": "Du"
+  },
+  "diagTo": {
+    "message": "Au"
+  },
+  "diagAll": {
+    "message": "Tous"
+  },
+  "diagRuns": {
+    "message": "Déroulements des contrôles"
+  },
+  "diagDetails": {
+    "message": "Détails du déroulement sélectionné"
+  },
+  "diagDropped": {
+    "message": "Enregistrements ou étapes écartés"
+  },
+  "diagNoHttp": {
+    "message": "Aucun appel HTTP enregistré pour ce déroulement."
+  },
+  "diagNotCaptured": {
+    "message": "Non enregistré"
+  },
+  "diagTimeline": {
+    "message": "Chronologie"
+  },
+  "diagRequest": {
+    "message": "Requête filtrée"
+  },
+  "diagResponse": {
+    "message": "Transport et réponse filtrée"
+  },
+  "diagReset": {
+    "message": "Réinitialiser les filtres"
+  },
+  "diagTruncated": {
+    "message": "Ce déroulement a été tronqué en raison des limites d’enregistrement."
+  },
+  "diag_phase_precondition": {
+    "message": "Conditions préalables"
+  },
+  "diag_phase_queue": {
+    "message": "File d’attente"
+  },
+  "diag_phase_attempt": {
+    "message": "Tentative d’envoi"
+  },
+  "diag_phase_response": {
+    "message": "Réponse HTTP / fin du transport"
+  },
+  "diag_phase_parse": {
+    "message": "Traitement JSON"
+  },
+  "diag_phase_assessment": {
+    "message": "Évaluation"
+  },
+  "diag_phase_persistence": {
+    "message": "Stockage"
+  },
+  "diag_phase_cache": {
+    "message": "Résultat en cache"
+  },
+  "diag_phase_wait": {
+    "message": "Attente"
+  },
+  "diag_phase_cancelled": {
+    "message": "Annulé"
+  },
+  "diag_phase_expired": {
+    "message": "Enregistrement expiré sans fin confirmée"
+  },
+  "diag_purpose_automatic": {
+    "message": "Contrôle automatique"
+  },
+  "diag_purpose_manual": {
+    "message": "Contrôle manuel"
+  },
+  "diag_purpose_link": {
+    "message": "Contrôle du lien"
+  },
+  "diag_purpose_key_test": {
+    "message": "Test de clé"
+  },
+  "diag_purpose_report": {
+    "message": "Demande de rapport"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analyse"
+  },
+  "diag_state_running": {
+    "message": "En cours"
+  },
+  "diag_state_complete": {
+    "message": "Opération terminée"
+  },
+  "diag_state_pending": {
+    "message": "En attente"
+  },
+  "diag_state_blocked": {
+    "message": "Non démarré / bloqué"
+  },
+  "diag_state_incomplete": {
+    "message": "Incomplet"
+  },
+  "diag_state_failed": {
+    "message": "Échec"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Fin non confirmée"
   }
 }

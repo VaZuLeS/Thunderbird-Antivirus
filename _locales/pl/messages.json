@@ -2578,5 +2578,152 @@
   },
   "urlscanResultGone": {
     "message": "Ten wynik został usunięty przez urlscan.io. Odświeżenie go nie przywróci; nowe zgłoszenie wymaga jawnego uruchomienia skanowania."
+  },
+  "apiDebugOpen": {
+    "message": "Otwórz diagnostykę API"
+  },
+  "diagTitle": {
+    "message": "Diagnostyka API"
+  },
+  "diagHelp": {
+    "message": "Filtrowane kontrole w pamięci lokalnej. Klucze, prywatne adresy URL i surowe treści pozostają ukryte. Sukces HTTP nie oznacza ukończonej oceny bezpieczeństwa. Dostępne są tylko kroki zapisane po włączeniu trybu."
+  },
+  "diagOff": {
+    "message": "Tryb debugowania jest wyłączony. Włącz go w ustawieniach."
+  },
+  "diagEmpty": {
+    "message": "Brak pasujących zapisów."
+  },
+  "diagPause": {
+    "message": "Wstrzymaj widok"
+  },
+  "diagResume": {
+    "message": "Wznów widok"
+  },
+  "diagPaused": {
+    "message": "Widok wstrzymany; rejestrowanie pozostaje aktywne."
+  },
+  "diagActive": {
+    "message": "Rejestrowanie aktywne; odświeżanie co sekundę."
+  },
+  "diagProvider": {
+    "message": "Dostawca"
+  },
+  "diagState": {
+    "message": "Stan"
+  },
+  "diagPurpose": {
+    "message": "Rodzaj operacji"
+  },
+  "diagFrom": {
+    "message": "Od"
+  },
+  "diagTo": {
+    "message": "Do"
+  },
+  "diagAll": {
+    "message": "Wszystkie"
+  },
+  "diagRuns": {
+    "message": "Przebiegi kontroli"
+  },
+  "diagDetails": {
+    "message": "Szczegóły wybranego przebiegu"
+  },
+  "diagDropped": {
+    "message": "Pominięte zapisy lub kroki"
+  },
+  "diagNoHttp": {
+    "message": "Nie zapisano wywołania HTTP dla tego przebiegu."
+  },
+  "diagNotCaptured": {
+    "message": "Nie zarejestrowano"
+  },
+  "diagTimeline": {
+    "message": "Oś czasu"
+  },
+  "diagRequest": {
+    "message": "Filtrowane żądanie"
+  },
+  "diagResponse": {
+    "message": "Transport i filtrowana odpowiedź"
+  },
+  "diagReset": {
+    "message": "Resetuj filtry"
+  },
+  "diagTruncated": {
+    "message": "Ten przebieg został skrócony z powodu limitów rejestrowania."
+  },
+  "diag_phase_precondition": {
+    "message": "Warunki wstępne"
+  },
+  "diag_phase_queue": {
+    "message": "Kolejka"
+  },
+  "diag_phase_attempt": {
+    "message": "Próba wysłania"
+  },
+  "diag_phase_response": {
+    "message": "Odpowiedź HTTP / zakończenie transportu"
+  },
+  "diag_phase_parse": {
+    "message": "Przetwarzanie JSON"
+  },
+  "diag_phase_assessment": {
+    "message": "Ocena"
+  },
+  "diag_phase_persistence": {
+    "message": "Zapis"
+  },
+  "diag_phase_cache": {
+    "message": "Wynik z pamięci podręcznej"
+  },
+  "diag_phase_wait": {
+    "message": "Oczekiwanie"
+  },
+  "diag_phase_cancelled": {
+    "message": "Anulowano"
+  },
+  "diag_phase_expired": {
+    "message": "Zapis wygasł bez potwierdzonego zakończenia"
+  },
+  "diag_purpose_automatic": {
+    "message": "Kontrola automatyczna"
+  },
+  "diag_purpose_manual": {
+    "message": "Kontrola ręczna"
+  },
+  "diag_purpose_link": {
+    "message": "Kontrola odnośnika"
+  },
+  "diag_purpose_key_test": {
+    "message": "Test klucza"
+  },
+  "diag_purpose_report": {
+    "message": "Pobranie raportu"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analiza"
+  },
+  "diag_state_running": {
+    "message": "W toku"
+  },
+  "diag_state_complete": {
+    "message": "Operacja zakończona"
+  },
+  "diag_state_pending": {
+    "message": "Oczekuje"
+  },
+  "diag_state_blocked": {
+    "message": "Nie uruchomiono / zablokowano"
+  },
+  "diag_state_incomplete": {
+    "message": "Niekompletne"
+  },
+  "diag_state_failed": {
+    "message": "Niepowodzenie"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Zakończenie niepotwierdzone"
   }
 }

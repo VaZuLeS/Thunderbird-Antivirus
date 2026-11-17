@@ -2578,5 +2578,152 @@
   },
   "urlscanResultGone": {
     "message": "urlscan.io eliminó este resultado. Actualizar no lo restaura; un nuevo envío requiere iniciar un análisis explícitamente."
+  },
+  "apiDebugOpen": {
+    "message": "Abrir diagnóstico API"
+  },
+  "diagTitle": {
+    "message": "Diagnóstico API"
+  },
+  "diagHelp": {
+    "message": "Comprobaciones filtradas en memoria local. Las claves, URL privadas y contenidos originales permanecen ocultos. Un éxito HTTP no es un veredicto de seguridad final. Solo se muestran pasos registrados tras activar el modo."
+  },
+  "diagOff": {
+    "message": "Modo de depuración desactivado. Actívelo en ajustes."
+  },
+  "diagEmpty": {
+    "message": "No hay registros coincidentes."
+  },
+  "diagPause": {
+    "message": "Pausar vista"
+  },
+  "diagResume": {
+    "message": "Reanudar vista"
+  },
+  "diagPaused": {
+    "message": "Vista pausada; el registro sigue activo."
+  },
+  "diagActive": {
+    "message": "Registro activo; actualización cada segundo."
+  },
+  "diagProvider": {
+    "message": "Proveedor"
+  },
+  "diagState": {
+    "message": "Estado"
+  },
+  "diagPurpose": {
+    "message": "Tipo de operación"
+  },
+  "diagFrom": {
+    "message": "Desde"
+  },
+  "diagTo": {
+    "message": "Hasta"
+  },
+  "diagAll": {
+    "message": "Todos"
+  },
+  "diagRuns": {
+    "message": "Flujos de comprobación"
+  },
+  "diagDetails": {
+    "message": "Detalles del flujo seleccionado"
+  },
+  "diagDropped": {
+    "message": "Registros o pasos descartados"
+  },
+  "diagNoHttp": {
+    "message": "No se registró ninguna llamada HTTP para este flujo."
+  },
+  "diagNotCaptured": {
+    "message": "No registrado"
+  },
+  "diagTimeline": {
+    "message": "Cronología"
+  },
+  "diagRequest": {
+    "message": "Solicitud filtrada"
+  },
+  "diagResponse": {
+    "message": "Transporte y respuesta filtrada"
+  },
+  "diagReset": {
+    "message": "Restablecer filtros"
+  },
+  "diagTruncated": {
+    "message": "Este flujo se recortó por los límites de registro."
+  },
+  "diag_phase_precondition": {
+    "message": "Requisitos"
+  },
+  "diag_phase_queue": {
+    "message": "Cola"
+  },
+  "diag_phase_attempt": {
+    "message": "Intento de envío"
+  },
+  "diag_phase_response": {
+    "message": "Respuesta HTTP / fin del transporte"
+  },
+  "diag_phase_parse": {
+    "message": "Procesamiento JSON"
+  },
+  "diag_phase_assessment": {
+    "message": "Evaluación"
+  },
+  "diag_phase_persistence": {
+    "message": "Almacenamiento"
+  },
+  "diag_phase_cache": {
+    "message": "Resultado en caché"
+  },
+  "diag_phase_wait": {
+    "message": "Espera"
+  },
+  "diag_phase_cancelled": {
+    "message": "Cancelado"
+  },
+  "diag_phase_expired": {
+    "message": "Registro caducado sin finalización confirmada"
+  },
+  "diag_purpose_automatic": {
+    "message": "Comprobación automática"
+  },
+  "diag_purpose_manual": {
+    "message": "Comprobación manual"
+  },
+  "diag_purpose_link": {
+    "message": "Comprobación de enlace"
+  },
+  "diag_purpose_key_test": {
+    "message": "Prueba de clave"
+  },
+  "diag_purpose_report": {
+    "message": "Consulta de informe"
+  },
+  "diag_purpose_analysis": {
+    "message": "Análisis"
+  },
+  "diag_state_running": {
+    "message": "En curso"
+  },
+  "diag_state_complete": {
+    "message": "Operación finalizada"
+  },
+  "diag_state_pending": {
+    "message": "Pendiente"
+  },
+  "diag_state_blocked": {
+    "message": "No iniciado / bloqueado"
+  },
+  "diag_state_incomplete": {
+    "message": "Incompleto"
+  },
+  "diag_state_failed": {
+    "message": "Fallido"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Finalización no confirmada"
   }
 }

@@ -85,6 +85,7 @@ const ThundySettings = (() => {
             const debugSave=document.createElement('button');debugSave.type='submit';debugSave.textContent=t('apiDebugSave');debugForm.append(debugSave);
             const debugPreview=document.createElement('button'),debugExport=document.createElement('button'),debugClear=document.createElement('button');
             for(const [button,key,id] of [[debugPreview,'apiDebugPreview','apiDebugPreview'],[debugExport,'apiDebugExport','apiDebugExport'],[debugClear,'apiDebugClear','apiDebugClear']]){button.type='button';button.id=id;button.textContent=t(key);debug.append(button);}
+            const openDebug=document.createElement('button');openDebug.type='button';openDebug.id='apiDebugOpen';openDebug.textContent=t('apiDebugOpen');openDebug.onclick=()=>browser.tabs.create({url:browser.runtime.getURL('api_debug.html')});debug.append(openDebug);
             const debugState=document.createElement('p');debugState.id='apiDebugStatus';debugState.setAttribute('role','status');debug.append(debugState);
             const debugContent=document.createElement('pre');debugContent.id='apiDebugContent';debugContent.tabIndex=0;debugContent.hidden=true;debugContent.setAttribute('aria-label',t('apiDebugPreview'));debugContent.style.cssText='max-height:24rem;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere';debug.append(debugContent);section.after(debug);
             debugControls=[debugEnabled,debugSave,debugPreview,debugExport,debugClear];let debugBusy=false;

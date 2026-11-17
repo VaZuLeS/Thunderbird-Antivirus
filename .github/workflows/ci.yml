@@ -109,12 +109,13 @@ jobs:
           NODE
       - name: Check layouts, keyboard, exports and accessibility
         run: npm run check:ui -- --lang ${{ matrix.language }}
-      - name: Check 200 percent CSS zoom in settings and audit
+      - name: Check 200 percent CSS zoom in add-on administration
         run: |
           npm run check:ui -- --lang ${{ matrix.language }} --view options.html --zoom 2
           npm run check:ui -- --lang ${{ matrix.language }} --view audit.html --zoom 2
           npm run check:ui -- --lang ${{ matrix.language }} --view security.html --zoom 2
           npm run check:ui -- --lang ${{ matrix.language }} --view source_export.html --zoom 2
+          npm run check:ui -- --lang ${{ matrix.language }} --view api_debug.html --zoom 2
       - name: Preserve browser evidence and failure screenshots
         if: always()
         uses: actions/upload-artifact@v7

@@ -2578,5 +2578,152 @@
   },
   "urlscanResultGone": {
     "message": "Questo risultato è stato eliminato da urlscan.io. Aggiornare non lo ripristina; un nuovo invio richiede una scansione avviata esplicitamente."
+  },
+  "apiDebugOpen": {
+    "message": "Apri diagnostica API"
+  },
+  "diagTitle": {
+    "message": "Diagnostica API"
+  },
+  "diagHelp": {
+    "message": "Controlli filtrati nella memoria locale. Chiavi, URL privati e contenuti originali restano nascosti. Un successo HTTP non è un verdetto di sicurezza definitivo. Sono disponibili solo i passaggi registrati dopo l’attivazione."
+  },
+  "diagOff": {
+    "message": "Debug disattivato. Attivalo nelle impostazioni."
+  },
+  "diagEmpty": {
+    "message": "Nessuna registrazione corrispondente."
+  },
+  "diagPause": {
+    "message": "Metti in pausa la vista"
+  },
+  "diagResume": {
+    "message": "Riprendi la vista"
+  },
+  "diagPaused": {
+    "message": "Vista in pausa; la registrazione resta attiva."
+  },
+  "diagActive": {
+    "message": "Registrazione attiva; aggiornamento ogni secondo."
+  },
+  "diagProvider": {
+    "message": "Fornitore"
+  },
+  "diagState": {
+    "message": "Stato"
+  },
+  "diagPurpose": {
+    "message": "Tipo di operazione"
+  },
+  "diagFrom": {
+    "message": "Da"
+  },
+  "diagTo": {
+    "message": "A"
+  },
+  "diagAll": {
+    "message": "Tutti"
+  },
+  "diagRuns": {
+    "message": "Flussi di controllo"
+  },
+  "diagDetails": {
+    "message": "Dettagli del flusso selezionato"
+  },
+  "diagDropped": {
+    "message": "Registrazioni o passaggi scartati"
+  },
+  "diagNoHttp": {
+    "message": "Nessuna chiamata HTTP registrata per questo flusso."
+  },
+  "diagNotCaptured": {
+    "message": "Non registrato"
+  },
+  "diagTimeline": {
+    "message": "Cronologia"
+  },
+  "diagRequest": {
+    "message": "Richiesta filtrata"
+  },
+  "diagResponse": {
+    "message": "Trasporto e risposta filtrata"
+  },
+  "diagReset": {
+    "message": "Reimposta filtri"
+  },
+  "diagTruncated": {
+    "message": "Questo flusso è stato troncato per i limiti di registrazione."
+  },
+  "diag_phase_precondition": {
+    "message": "Prerequisiti"
+  },
+  "diag_phase_queue": {
+    "message": "Coda"
+  },
+  "diag_phase_attempt": {
+    "message": "Tentativo di invio"
+  },
+  "diag_phase_response": {
+    "message": "Risposta HTTP / fine del trasporto"
+  },
+  "diag_phase_parse": {
+    "message": "Elaborazione JSON"
+  },
+  "diag_phase_assessment": {
+    "message": "Valutazione"
+  },
+  "diag_phase_persistence": {
+    "message": "Salvataggio"
+  },
+  "diag_phase_cache": {
+    "message": "Risultato in cache"
+  },
+  "diag_phase_wait": {
+    "message": "Attesa"
+  },
+  "diag_phase_cancelled": {
+    "message": "Annullato"
+  },
+  "diag_phase_expired": {
+    "message": "Registrazione scaduta senza conclusione confermata"
+  },
+  "diag_purpose_automatic": {
+    "message": "Controllo automatico"
+  },
+  "diag_purpose_manual": {
+    "message": "Controllo manuale"
+  },
+  "diag_purpose_link": {
+    "message": "Controllo del collegamento"
+  },
+  "diag_purpose_key_test": {
+    "message": "Test della chiave"
+  },
+  "diag_purpose_report": {
+    "message": "Richiesta del rapporto"
+  },
+  "diag_purpose_analysis": {
+    "message": "Analisi"
+  },
+  "diag_state_running": {
+    "message": "In corso"
+  },
+  "diag_state_complete": {
+    "message": "Operazione terminata"
+  },
+  "diag_state_pending": {
+    "message": "In attesa"
+  },
+  "diag_state_blocked": {
+    "message": "Non avviato / bloccato"
+  },
+  "diag_state_incomplete": {
+    "message": "Incompleto"
+  },
+  "diag_state_failed": {
+    "message": "Non riuscito"
+  },
+  "diag_state_unconfirmed": {
+    "message": "Conclusione non confermata"
   }
 }

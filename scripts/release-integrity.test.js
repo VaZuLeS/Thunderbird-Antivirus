@@ -233,6 +233,15 @@ test('new candidates require six-language upgrade/crash proof for both declared 
  validateReports(recovery,recoveryReports,ui);
  for(const key of ['earlierFailuresPreserved','responseCountersPreserved','popupView','storedSnapshotAgrees']){const bad=structuredClone(recoveryReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.failedStoredRecovery[key]=false;assert.throws(()=>validateReports(recovery,bad,ui),/failed stored/);}
  const recoveryProof=api.create(recovery,recoveryReports,ui,'fixture');assert.ok(api.verify(recoveryProof,recovery));assert.ok(!JSON.stringify(recoveryProof).includes('CANARY'));
+ const viewer={...recovery,extensionVersion:'1.25.9'},viewerReports=structuredClone(recoveryReports);
+ for(const r of viewerReports){r.extensionVersion=viewer.extensionVersion;r.currentRestart.addon.version=viewer.extensionVersion;}
+ assert.throws(()=>validateReports(viewer,viewerReports,ui),/debug viewer/);
+ const viewerFlags=['viewerPassed','viewerDocumentSession','viewerReadOnly','viewerFilterPause','viewerExportVerified','viewerLockCleared'];
+ for(const r of viewerReports)Object.assign(r.apiDebug,Object.fromEntries(viewerFlags.map(key=>[key,true])));
+ validateReports(viewer,viewerReports,ui);
+ for(const key of viewerFlags){const bad=structuredClone(viewerReports);for(const r of bad.filter(r=>r.clientMatrixTarget==='current'))r.apiDebug[key]=false;assert.throws(()=>validateReports(viewer,bad,ui),/debug viewer/);}
+ const viewerProof=api.create(viewer,viewerReports,ui,'fixture');assert.ok(api.verify(viewerProof,viewer));assert.ok(!JSON.stringify(viewerProof).includes('CANARY'));
+
 
 
 

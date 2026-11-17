@@ -14,6 +14,7 @@ const {
 } = require("./message-flow.dev.cjs");
 const root = path.resolve(__dirname, ".."),
   addonFiles = [
+    "api_debug.html",
     "options.html",
     "onboarding.html",
     "enterprise_setup.html",
@@ -110,10 +111,12 @@ function matrix(o, kinds) {
         for (const scheme of o.matrix === "smoke"
           ? ["dark"]
           : ["light", "dark"])
+          for(const density of file==="api_debug.html"?["comfortable","compact"]:[undefined])
           cases.push({
-            id: `addon-${file}-${lang}-${file === "popup.html" ? Math.max(600, width) : width}-${scheme}`,
+            id: `addon-${file}-${lang}-${file === "popup.html" ? Math.max(600, width) : width}-${scheme}${density?"-"+density:""}`,
             kind: "addon",
             view: file,
+            density,
             url: "/" + file,
             lang,
             width: file === "popup.html" ? Math.max(600, width) : width,
@@ -124,11 +127,13 @@ function matrix(o, kinds) {
       for (const scheme of o.matrix === "smoke"
         ? ["dark"]
         : ["light", "dark"]) {
-        for (const file of ["popup.html", "audit.html"])
+        for (const file of ["popup.html", "audit.html", "api_debug.html"])
+          for(const density of file==="api_debug.html"?["comfortable","compact"]:[undefined])
           cases.push({
-            id: `addon-${file}-populated-${lang}-${file === "popup.html" ? Math.max(600, width) : width}-${scheme}`,
+            id: `addon-${file}-populated-${lang}-${file === "popup.html" ? Math.max(600, width) : width}-${scheme}${density?"-"+density:""}`,
             kind: "addon",
             view: file,
+            density,
             url: "/" + file,
             lang,
             width: file === "popup.html" ? Math.max(600, width) : width,
@@ -273,6 +278,22 @@ async function interaction(page, c) {
         "complete export changed after filter",
       );
     }
+  } else if (c.view === 'api_debug.html') {
+    const catalog=JSON.parse(fs.readFileSync(path.join(root,'_locales',c.lang,'messages.json')));
+    await page.waitForFunction(()=>!!document.getElementById('diagStatus').textContent);
+    if(c.populated){
+      await page.locator('#diagRuns button').waitFor();
+      await page.locator('#diagPause').focus();await page.keyboard.press('Enter');
+      assert.equal(await page.locator('#diagPause').textContent(),catalog.diagResume.message);
+      await page.locator('#diagProvider').selectOption('urlscan');assert.equal(await page.locator('#diagRuns button').count(),0);
+      await page.locator('#diagReset').click();assert.equal(await page.locator('#diagRuns button').count(),1);
+      await page.locator('#diagRuns button').focus();await page.keyboard.press('Enter');
+      await page.locator('#diagContent summary').first().focus();await page.keyboard.press('Enter');
+      assert.equal(await page.locator('#diagContent details').first().getAttribute('open'),'');
+      await page.locator('#diagExport').click();await page.waitForFunction(()=>uiTest.downloads.length===1);
+      await page.locator('#diagClear').click();assert.equal(await page.locator('#diagRuns button').count(),0);
+    }else{assert.equal(await page.locator('#diagStatus').textContent(),catalog.diagOff.message);assert.equal(await page.locator('#diagExport').isDisabled(),true);}
+    assert.equal(await page.evaluate(()=>uiTest.permissionRequests),0);
   } else if (c.view === 'security.html') {
     const catalog=JSON.parse(fs.readFileSync(path.join(root,'_locales',c.lang,'messages.json')));
     if(c.scenario === 'expired') {
@@ -764,7 +785,7 @@ async function main() {
           if (o.zoom !== 1) await page.evaluate(zoom => { document.documentElement.style.zoom = String(zoom); }, o.zoom);
           Object.assign(result, await checks(page, c));
           await interaction(page, c);
-          if (["security.html","source_export.html"].includes(c.view)) Object.assign(result,await checks(page,c));
+          if (["security.html","source_export.html","api_debug.html"].includes(c.view)) Object.assign(result,await checks(page,c));
           // The options interaction explicitly imports a light appearance profile.
           if (c.view === "options.html") Object.assign(result,await checks(page,{...c,scheme:'light'}));
           if (c.kind === "message")

@@ -1,3 +1,14 @@
+async function providerDiagnosticContext(context,provider,purpose,configured=true){
+    if(typeof ThundyApiDiagnostics==='undefined')return context;
+    try{
+        const id=context?.diagnosticRun||await ThundyApiDiagnostics.beginRun(purpose);
+        if(!id)return context;
+        const result={...context,diagnosticRun:id,diagnosticOwnRun:!context?.diagnosticRun,event:event=>{ThundyApiDiagnostics.event(id,'assessment',{provider,...event});if(!context?.diagnosticRun&&event.phase==='finish')ThundyApiDiagnostics.endRun(id,event.state==='failed'?'failed':event.completion==='pending'?'pending':event.state==='incomplete'||event.verdict==='unknown'?'incomplete':'complete');return context?.event?.(event);}};
+        const reason=!configured?'unconfigured':!mayTransmitExternally()?'disabled':null;
+        ThundyApiDiagnostics.event(id,'precondition',{provider,state:reason?'blocked':'complete',reason});
+        if(reason)ThundyApiDiagnostics.endRun(id,'blocked');return result;
+    }catch(_){return context;}
+}
 // Provider adapters. All calls enforce the shared consent and host policy.
 function getHybridAnalysisOptions(method, body = null, isUrl = false) {
     if (!apikey_hybridanalysis) throw new Error(uiText("ui_086", "API-Key fehlt."));
@@ -18,9 +29,10 @@ function getHybridAnalysisOptions(method, body = null, isUrl = false) {
 }
 
 async function checkAbuseIPDB(ip, apikey, analysisContext = null) {
+    analysisContext=await providerDiagnosticContext(analysisContext,'abuseipdb','analysis',!!apikey);
     if (typeof ThundyAnalysis !== 'undefined') analysisContext = ThundyAnalysis.withCache(analysisContext, 'abuseipdb', 'ip', ip);
     if (!mayTransmitExternally()) return null;
-    await requireHostPermission('https://api.abuseipdb.com/api/v2/check');
+    await requireHostPermission('https://api.abuseipdb.com/api/v2/check').catch(error=>{if(typeof ThundyApiDiagnostics!=='undefined'&&analysisContext?.diagnosticRun){ThundyApiDiagnostics.event(analysisContext.diagnosticRun,'precondition',{state:'blocked',reason:'permission'});ThundyApiDiagnostics.endRun(analysisContext.diagnosticRun,'blocked');}throw error;});
     try {
         const response = await apiGateway.fetchWithTimeout(`https://api.abuseipdb.com/api/v2/check?ipAddress=${ip}&maxAgeInDays=90`, {
             method: 'GET', analysisContext,
@@ -45,9 +57,10 @@ async function checkAbuseIPDB(ip, apikey, analysisContext = null) {
 }
 
 async function checkVirusTotalIP(ip, apikey, analysisContext = null) {
+    analysisContext=await providerDiagnosticContext(analysisContext,'virustotal','analysis',!!apikey);
     if (typeof ThundyAnalysis !== 'undefined') analysisContext = ThundyAnalysis.withCache(analysisContext, 'virustotal', 'ip', ip);
     if (!mayTransmitExternally()) return null;
-    await requireHostPermission('https://www.virustotal.com/api/v3/ip_addresses/' + ip);
+    await requireHostPermission('https://www.virustotal.com/api/v3/ip_addresses/' + ip).catch(error=>{if(typeof ThundyApiDiagnostics!=='undefined'&&analysisContext?.diagnosticRun){ThundyApiDiagnostics.event(analysisContext.diagnosticRun,'precondition',{state:'blocked',reason:'permission'});ThundyApiDiagnostics.endRun(analysisContext.diagnosticRun,'blocked');}throw error;});
     try {
         const response = await apiGateway.fetchWithTimeout(`https://www.virustotal.com/api/v3/ip_addresses/${ip}`, {
             method: 'GET', analysisContext,
@@ -74,11 +87,13 @@ async function checkVirusTotalIP(ip, apikey, analysisContext = null) {
 }
 
 async function checkVirusTotal(hash, apikey, analysisContext = null) {
+    analysisContext=await providerDiagnosticContext(analysisContext,'virustotal','analysis',!!apikey);
     if (typeof ThundyAnalysis !== 'undefined') analysisContext = ThundyAnalysis.withCache(analysisContext, 'virustotal', 'hash', hash);
     if (!apikey) return null;
     if (!mayTransmitExternally()) return null;
     if (vtCache.has(hash)) {
         const stats = await vtCache.get(hash);
+        if(typeof ThundyApiDiagnostics!=='undefined'&&analysisContext?.diagnosticRun){ThundyApiDiagnostics.event(analysisContext.diagnosticRun,'cache',{provider:'virustotal',state:stats?'complete':'failed'});if(analysisContext.diagnosticOwnRun)ThundyApiDiagnostics.endRun(analysisContext.diagnosticRun,stats?'complete':'failed');}
         if (stats && analysisContext && typeof ThundyAnalysis !== 'undefined') analysisContext.cached('virustotal', 'hash', !Number.isFinite(stats.malicious) ? 'unknown' : stats.malicious > 0 ? 'malicious' : stats.suspicious > 0 ? 'suspicious' : 'none', ThundyAnalysis.cacheTime('virustotal', 'hash', hash));
         return stats;
     }
@@ -93,7 +108,7 @@ async function checkVirusTotal(hash, apikey, analysisContext = null) {
             }
         };
         try {
-            await requireHostPermission(url);
+            await requireHostPermission(url).catch(error=>{if(typeof ThundyApiDiagnostics!=='undefined'&&analysisContext?.diagnosticRun){ThundyApiDiagnostics.event(analysisContext.diagnosticRun,'precondition',{state:'blocked',reason:'permission'});ThundyApiDiagnostics.endRun(analysisContext.diagnosticRun,'blocked');}throw error;});
             const response = await apiGateway.fetchWithTimeout(url, options);
             if (response.status === 200) {
                 const data = await response.json();
@@ -130,11 +145,12 @@ async function checkVirusTotal(hash, apikey, analysisContext = null) {
 }
 
 async function checkURLhaus(domain, apikey, analysisContext = null) {
+    analysisContext=await providerDiagnosticContext(analysisContext,'urlhaus','analysis',!!apikey);
     if (typeof ThundyAnalysis !== 'undefined') analysisContext = ThundyAnalysis.withCache(analysisContext, 'urlhaus', 'domain', domain);
     if (!apikey) return null;
     if (!mayTransmitExternally()) return null;
     try {
-        await requireHostPermission('https://urlhaus-api.abuse.ch/v1/host/');
+        await requireHostPermission('https://urlhaus-api.abuse.ch/v1/host/').catch(error=>{if(typeof ThundyApiDiagnostics!=='undefined'&&analysisContext?.diagnosticRun){ThundyApiDiagnostics.event(analysisContext.diagnosticRun,'precondition',{state:'blocked',reason:'permission'});ThundyApiDiagnostics.endRun(analysisContext.diagnosticRun,'blocked');}throw error;});
         const body = new URLSearchParams();
         body.append('host', domain);
         const response = await apiGateway.fetchWithTimeout('https://urlhaus-api.abuse.ch/v1/host/', {
@@ -181,12 +197,13 @@ function extractUrlscanBrandNames(verdicts) {
 }
 
 async function checkUrlscanIo(url, apikey, analysisContext = null) {
+    analysisContext=await providerDiagnosticContext(analysisContext,'urlscan','link',!!apikey);
     let submittedUuid=null;
     if (!apikey) return null;
     if (!mayTransmitExternally()) return null;
-    if (!tierAtLeast('max')) return { status: 'NOT_CHECKED' };
+    if (!tierAtLeast('max')) {if(typeof ThundyApiDiagnostics!=='undefined'&&analysisContext?.diagnosticRun){ThundyApiDiagnostics.event(analysisContext.diagnosticRun,'precondition',{provider:'urlscan',state:'blocked',reason:'policy'});ThundyApiDiagnostics.endRun(analysisContext.diagnosticRun,'blocked');}return { status: 'NOT_CHECKED' };}
     try {
-        await requireHostPermission('https://urlscan.io/api/v1/scan/');
+        await requireHostPermission('https://urlscan.io/api/v1/scan/').catch(error=>{if(typeof ThundyApiDiagnostics!=='undefined'&&analysisContext?.diagnosticRun){ThundyApiDiagnostics.event(analysisContext.diagnosticRun,'precondition',{state:'blocked',reason:'permission'});ThundyApiDiagnostics.endRun(analysisContext.diagnosticRun,'blocked');}throw error;});
         // Start Scan
         // 🛡️ Sentinel: Prevent sensitive URL leakage by defaulting to 'unlisted' instead of 'public' visibility
         const scanRes = await apiGateway.fetchWithTimeout('https://urlscan.io/api/v1/scan/', {
@@ -240,6 +257,7 @@ async function checkUrlscanIo(url, apikey, analysisContext = null) {
 }
 
 async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=false} = {}) {
+    analysisContext=await providerDiagnosticContext(analysisContext,'urlscan','report',!!apikey);
     // Fresh scans need at least 30 seconds; refreshing an existing UUID can start sooner.
     let waitTime = fresh ? 30000 : 2000;
     let elapsed = 0;
@@ -262,6 +280,7 @@ async function pollUrlscanIoResult(uuid, apikey, analysisContext = null, {fresh=
     while (elapsed < maxTime && Date.now() < deadline) {
         assertExternalAnalysisAllowed();
         analysisContext?.guard?.();
+        if(typeof ThundyApiDiagnostics!=='undefined'&&analysisContext?.diagnosticRun)ThundyApiDiagnostics.event(analysisContext.diagnosticRun,'wait',{provider:'urlscan',state:'pending',durationMs:Math.min(waitTime,Math.max(0,deadline-Date.now()))});
         if (analysisContext?.signal) await apiGateway.pause(Math.min(waitTime, Math.max(0, deadline - Date.now())),analysisContext.signal);
         else await new Promise(r => setTimeout(r, Math.min(waitTime, Math.max(0, deadline - Date.now()))));
         elapsed += waitTime;
