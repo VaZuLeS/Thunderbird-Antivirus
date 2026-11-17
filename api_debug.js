@@ -6,7 +6,7 @@
     function wipe(){generation++;report=null;get('diagRuns').replaceChildren();get('diagContent').replaceChildren();get('diagSummary').textContent='';}
     function controls(){get('diagView').hidden=!unlocked;get('diagAuth').hidden=unlocked;get('diagLock').hidden=!token;for(const id of ['diagPause','diagExport','diagClear'])get(id).disabled=!unlocked||!enabled;}
     function node(tag,text){const n=document.createElement(tag);if(text!==undefined)n.textContent=String(text);return n;}
-    const date=value=>Number.isFinite(value)?new Date(value).toLocaleString():t('auditUnavailable');
+    const date=value=>Number.isFinite(value)?ThundyI18n.date(value):t('auditUnavailable');
     const label=(type,value)=>t('diag_'+type+'_'+value);
     function section(key,content){const details=node('details'),summary=node('summary',t(key));details.append(summary,content);get('diagContent').append(details);}
     function render(){

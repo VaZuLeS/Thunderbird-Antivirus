@@ -5,7 +5,7 @@ Stand: 17. November 2026. Die eigene Ansicht ergänzt den [bestehenden Debugmodu
 ## Bedienung
 
 1. Einstellungen öffnen, bei gesetztem Adminpasswort entsperren und den API-Debugmodus aktivieren. Aktivieren oder erneutes Speichern leert bisherige Aufzeichnungen.
-2. **API-Kommunikation öffnen** im Debugbereich wählen. Auch Fehler in der Quellenübersicht bieten diesen Einstieg. Die Ansicht öffnet einen eigenen Thunderbird-Tab.
+2. **API-Diagnose öffnen** im Debugbereich wählen. Auch Fehler in der Quellenübersicht bieten diesen Einstieg. Die Ansicht öffnet einen eigenen Thunderbird-Tab.
 3. Bei gesetztem Adminpasswort die Ansicht separat entsperren. Die Einstellungs-Sitzung wird nicht über die URL oder zwischen Dokumenten übertragen.
 4. Den betroffenen Vorgang ausdrücklich ausführen. Der Betrachter startet selbst keine Analyse, Schlüsselprüfung, neue Einreichung oder Wiederholung.
 5. Ablauf auswählen; nach Anbieter, Zustand, Anlass und Zeitraum filtern. Zeitleiste sowie Anfrage-/Antwortdetails aufklappen. **Pausieren** stoppt die Aktualisierung der angezeigten Daten, nicht die Aufzeichnung. Adminablauf und Abschaltung werden weiterhin kontrolliert.

@@ -12,7 +12,7 @@ async function viewer({protectedMode=false}={}){
  let interval,changed,notified,disconnected=0;
  w.setInterval=fn=>(interval=fn,1);w.clearInterval=()=>{};
  w.fetch=()=>{throw Error('Viewer must not access providers');};
- w.ThundyI18n={get:key=>catalog[key]?.message||key};
+ w.ThundyI18n={get:key=>catalog[key]?.message||key,date:value=>new Intl.DateTimeFormat('de',{dateStyle:'medium',timeStyle:'short'}).format(new Date(value))};
  w.URL.createObjectURL=blob=>(downloads.push({blob}), 'blob:filtered');w.URL.revokeObjectURL=()=>{};
  w.browser={storage:{onChanged:{addListener:fn=>changed=fn}},downloads:{download:async request=>downloads.push(request)},runtime:{
   id:'addon',onMessage:{addListener:fn=>notified=fn},
@@ -35,7 +35,7 @@ async function viewer({protectedMode=false}={}){
 }
 test('viewer groups and filters recorded operations, pauses, exports and clears without provider calls',async()=>{
  const f=await viewer();try{
-  assert.equal(f.by('diagRuns').children.length,2);assert.ok(f.by('diagContent').textContent.includes('storage_failed'));assert.ok(f.by('diagContent').textContent.includes('ref-b-1'));
+  assert.equal(f.by('diagRuns').children.length,2);assert.ok(f.by('diagContent').textContent.includes('01.01.1970'));assert.ok(f.by('diagContent').textContent.includes('storage_failed'));assert.ok(f.by('diagContent').textContent.includes('ref-b-1'));
   f.by('diagProvider').value='urlscan';f.by('diagFilters').dispatchEvent(new f.w.Event('input'));assert.equal(f.by('diagRuns').children.length,1);assert.ok(f.by('diagContent').textContent.includes(f.catalog.diagNoHttp.message));
   f.by('diagReset').click();f.by('diagState').value='failed';f.by('diagFilters').dispatchEvent(new f.w.Event('input'));assert.equal(f.by('diagRuns').children.length,1);
   f.by('diagPause').click();await settle();const reads=f.calls.filter(c=>c.op==='apiDebugReport').length;await f.tick();assert.equal(f.calls.filter(c=>c.op==='apiDebugReport').length,reads);
