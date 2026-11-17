@@ -6,7 +6,7 @@ const ThundyApiDiagnostics = (() => {
     let epoch=0, sequence=0, dropped=0, expiryTimer=null, referenceNamespace=null;
     const central=()=>typeof ThundySecurity!=='undefined';
     const providers=(typeof ThundyProviders!=='undefined'?Object.keys(ThundyProviders.registry):['hybridanalysis','urlscan','virustotal','urlhaus','abuseipdb']);
-    const fields=new Set(('id uuid sha256 sha1 md5 submission_id job_id submission_type state status verdict finished progress positives total percent threat_score threat_level multiscan_result whitelisted whitelist scanners scanners_v2 reports anti_virus_results assessment verdicts overall urlscan engines malicious maliciousTotal suspicious score error errors code message detail description retry_after visibility query_status data attributes stats harmless undetected timeout type count quota limit remaining reset resource url file scan_type environment_id result api search results submitted').split(' '));
+    const fields=new Set(('id uuid sha256 sha1 md5 submission_id job_id submission_type state status verdict finished progress positives total percent threat_score threat_level multiscan_result whitelisted whitelist scanners scanners_v2 reports anti_virus_results assessment verdicts overall urlscan engines malicious maliciousTotal suspicious score error errors code message detail description retry_after visibility query_status data attributes stats last_analysis_stats abuseConfidenceScore isWhitelisted totalReports harmless undetected timeout type count quota limit remaining reset resource url file scan_type environment_id result api search results submitted').split(' '));
     const enums=new Set([...('MALICIOUS MALICIOUS_VISUAL SUSPICIOUS CLEAN HARMLESS WHITELISTED NO-THREAT NO_THREAT UNKNOWN NO-CLASSIFICATION ERROR FAILED FAILURE SUCCESS COMPLETE COMPLETED FINISHED DONE IN_PROGRESS IN_QUEUE IN-PROGRESS IN-QUEUE PENDING RUNNING QUEUED SUBMITTED PUBLIC PRIVATE UNLISTED PAGE_URL FILE URL ALL INVALID_KEY INVALID_API_KEY UNAUTHORIZED FORBIDDEN NOT_FOUND RATE_LIMITED VALIDATIONERROR OK NO_RESULTS').split(' '),'NO SPECIFIC THREAT','NO THREAT']);
     const reasons=['success','invalid_json','timeout_or_cancelled','network_error','policy_blocked','resource_mismatch','authentication','permission','rate_limited','not_found','gone','invalid_request','server_error','unknown'];
     const errorCodes=new Set(['HOST_PERMISSION_MISSING','EXTERNAL_ANALYSIS_DISABLED','TIER_BLOCKS_REQUEST','RESOURCE_MISMATCH','SCAN_CANCELLED','ADMIN_LOCKED','KEY_TEST_INVALID','AbortError','SyntaxError','TypeError']);
@@ -99,7 +99,8 @@ const ThundyApiDiagnostics = (() => {
         if(providers.includes(data.provider))row.provider=data.provider;
         if(states.includes(data.state))row.state=data.state;
         if([...reasons,...localReasons].includes(data.reason))row.reason=data.reason;
-        for(const key of ['operationId','httpStatus','durationMs','count'])if(Number.isFinite(data[key])&&data[key]>=0&&data[key]<=1e12)row[key]=data[key];
+        for(const key of ['operationId','httpStatus','durationMs','count','providerScore','maliciousCount','suspiciousCount','totalCount','reportCount'])if(Number.isFinite(data[key])&&data[key]>=0&&data[key]<=1e12)row[key]=data[key];
+        if(['malicious','suspicious','clean','whitelisted','no specific threat','ok','no_results','invalid_api_key'].includes(data.providerVerdict))row.providerVerdict=data.providerVerdict;
         if(['unknown','none','suspicious','malicious'].includes(data.verdict))row.verdict=data.verdict;
         if(['pending','complete','failed','unknown'].includes(data.completion))row.completion=data.completion;
         if(run.events.length>=128){run.events.shift();run.truncated=true;dropped++;}

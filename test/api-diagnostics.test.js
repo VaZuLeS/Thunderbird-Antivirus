@@ -158,3 +158,11 @@ test('an operation does not prematurely finish an explicitly owned pipeline and 
  assert.equal(f.d.report().runs[0].state,'running');f.d.event(id,'persistence',{state:'failed',reason:'storage_failed'});f.d.endRun(id,'incomplete');assert.equal(f.d.report().runs[0].state,'incomplete');
  const abandoned=await f.d.beginRun('analysis');f.advance(300001);assert.equal(f.d.report().runs.find(r=>r.id===abandoned).state,'unconfirmed');f.d.reset();
 });
+
+test('safe provider scores and counters survive projection for VirusTotal and AbuseIPDB',async()=>{
+ const f=fixture();await f.enable();const id=await f.d.beginRun('analysis');
+ const payload={data:{abuseConfidenceScore:85,isWhitelisted:false,totalReports:12,ipAddress:'CANARY_PRIVATE_IP',attributes:{last_analysis_stats:{malicious:3,suspicious:1,harmless:20,undetected:2}}}};
+ const projected=f.d.project(payload);assert.equal(projected.data.abuseConfidenceScore,85);assert.equal(projected.data.isWhitelisted,false);assert.equal(projected.data.attributes.last_analysis_stats.malicious,3);assert.ok(!JSON.stringify(projected).includes('CANARY'));
+ f.d.event(id,'assessment',{provider:'virustotal',providerScore:85,maliciousCount:3,totalCount:26,providerVerdict:'whitelisted',private:'CANARY'});
+ const event=f.d.report().runs[0].events[0];assert.equal(event.providerScore,85);assert.equal(event.maliciousCount,3);assert.equal(event.providerVerdict,'whitelisted');assert.ok(!JSON.stringify(event).includes('CANARY'));f.d.reset();
+});
